@@ -1,0 +1,149 @@
+add_executable(
+    row_reader_test
+    RowReaderTest.cpp
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:vgraph_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+)
+target_link_libraries(
+    row_reader_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    gtest
+    glog
+    gflags
+    boost_context
+    ${COMPRESSION_LIBRARIES}
+    event
+    double-conversion
+    dl
+    -pthread
+)
+add_test(NAME row_reader_test COMMAND row_reader_test)
+
+
+add_executable(
+    row_writer_test
+    RowWriterTest.cpp
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:vgraph_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+)
+target_link_libraries(
+    row_writer_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    gtest
+    glog
+    gflags
+    boost_context
+    ${COMPRESSION_LIBRARIES}
+    event
+    double-conversion
+    dl
+    -pthread
+)
+add_test(NAME row_writer_test COMMAND row_writer_test)
+
+
+add_executable(
+    row_updater_test
+    RowUpdaterTest.cpp
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:vgraph_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+)
+target_link_libraries(
+    row_updater_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    gtest
+    glog
+    gflags
+    boost_context
+    ${COMPRESSION_LIBRARIES}
+    event
+    double-conversion
+    dl
+    -pthread
+)
+add_test(NAME row_updater_test COMMAND row_updater_test)
+
+
+add_executable(
+    rowset_reader_writer_test
+    RowSetReaderWriterTest.cpp
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:vgraph_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+)
+target_link_libraries(
+    rowset_reader_writer_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    gtest
+    glog
+    gflags
+    boost_context
+    ${COMPRESSION_LIBRARIES}
+    event
+    double-conversion
+    dl
+    -pthread
+)
+add_test(NAME rowset_reader_writer_test COMMAND rowset_reader_writer_test)
+
+
+add_executable(
+    row_writer_bm
+    RowWriterBenchmark.cpp
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:vgraph_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+)
+target_link_libraries(
+    row_writer_bm
+    ${THRIFT_LIBRARIES}
+    follybenchmark
+    wangle
+    folly
+    glog
+    gflags
+    boost_regex
+    boost_context
+    ${COMPRESSION_LIBRARIES}
+    event
+    double-conversion
+    dl
+    -pthread
+)
+
+
+add_executable(
+    row_reader_bm
+    RowReaderBenchmark.cpp
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:vgraph_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+)
+target_link_libraries(
+    row_reader_bm
+    ${THRIFT_LIBRARIES}
+    follybenchmark
+    wangle
+    folly
+    glog
+    gflags
+    boost_regex
+    boost_context
+    ${COMPRESSION_LIBRARIES}
+    event
+    double-conversion
+    dl
+    -pthread
+)
+

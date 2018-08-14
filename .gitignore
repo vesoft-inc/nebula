@@ -1,0 +1,12 @@
+*.swp
+
+_build
+_build.log
+
+common/base/Base.h.gch
+
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+CMakeFiles/
+
