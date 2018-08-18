@@ -37,7 +37,9 @@ if [[ $SOURCE_DIR/configure.ac -nt $SOURCE_DIR/configure ]]; then
     fi
 fi
 
-if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ]]; then
+if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
+      $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ||
+      $CURR_DIR/build-gmock.sh -nt $SOURCE_DIR/Makefile ]]; then
     if !(CC=$GCC_ROOT/bin/gcc CPP=$GCC_ROOT/bin/cpp CXX=$GCC_ROOT/bin/g++    CXXFLAGS="-fPIC -DPIC -DHAVE_LIB_GFLAGS -std=c++11  -I$INSTALL_PATH/include   $EXTRA_CXXFLAGS"      CFLAGS=$CXXFLAGS CPPFLAGS=$CXXFLAGS      LDFLAGS="-static-libgcc -static-libstdc++   -L$INSTALL_PATH/lib   $EXTRA_LDFLAGS"          $SOURCE_DIR/configure --prefix=$INSTALL_PATH --with-gnu-ld); then
         cd $CURR_DIR
         echo

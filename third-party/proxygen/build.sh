@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-prepareBuild "proxygen" "proxygen"
+prepareBuild "proxygen" "/proxygen"
 
 # Link the googletest
 cd $SOURCE_DIR/lib/test
@@ -39,8 +39,9 @@ if [[ $SOURCE_DIR/configure.ac -nt $SOURCE_DIR/configure ]]; then
     fi
 fi
 
-if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ]]; then
-    if !(PATH=$GPERF_RELEASE/bin:$PATH CC=$GCC_ROOT/bin/gcc CPP=$GCC_ROOT/bin/cpp CXX=$GCC_ROOT/bin/g++       CXXFLAGS="-fPIC -DPIC -I$INSTALL_PATH/include -I$BOOST_RELEASE/include -I$OPENSSL_RELEASE/include   $EXTRA_CXXFLAGS"  CPPFLAGS=$CXXFLAGS  CFLAGS=$CXXFLAGS        LDFLAGS="-static-libgcc -static-libstdc++ -L$INSTALL_PATH/lib -L$BOOST_RELEASE/lib -L$OPENSSL_RELEASE/lib -L$LIBUNWIND_RELEASE/lib   $EXTRA_LDFLAGS"           LIBS="-ldl"         $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
+if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
+      $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
+    if !(PATH=$GPERF_RELEASE/bin:$PATH CC=$GCC_ROOT/bin/gcc CPP=$GCC_ROOT/bin/cpp CXX=$GCC_ROOT/bin/g++       CXXFLAGS="-fPIC -DPIC -I$INSTALL_PATH/include -I$INSTALL_PATH/compression/include -I$BOOST_RELEASE/include -I$OPENSSL_RELEASE/include   $EXTRA_CXXFLAGS"  CPPFLAGS=$CXXFLAGS  CFLAGS=$CXXFLAGS        LDFLAGS="-static-libgcc -static-libstdc++ -L$INSTALL_PATH/lib -L$INSTALL_PATH/compression/lib -L$BOOST_RELEASE/lib -L$OPENSSL_RELEASE/lib -L$LIBUNWIND_RELEASE/lib   $EXTRA_LDFLAGS"           LIBS="-ldl"         $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"

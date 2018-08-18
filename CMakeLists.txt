@@ -37,6 +37,7 @@ find_package(PCHSupport)
 add_compile_options(-Winvalid-pch)
 
 include_directories(SYSTEM ${VGRAPH_HOME}/third-party/_build/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/_build/compression/include)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
 include_directories(SYSTEM ${KRB5_INCLUDE_DIRS})
@@ -44,7 +45,12 @@ include_directories(AFTER common)
 include_directories(AFTER interface)
 include_directories(AFTER ${VGRAPH_HOME})
 
-link_directories(third-party/_build/lib ${Boost_LIBRARY_DIRS} ${KRB5_LIBRARY_DIRS})
+link_directories(
+    third-party/_build/lib
+    third-party/_build/compression/lib
+    ${Boost_LIBRARY_DIRS}
+    ${KRB5_LIBRARY_DIRS}
+)
 
 # All thrift libraries
 set(THRIFT_LIBRARIES
