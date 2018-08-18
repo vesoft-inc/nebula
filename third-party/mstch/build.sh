@@ -4,9 +4,9 @@ source ../functions.sh
 
 prepareBuild "mstch"
 
-BOOST_RELEASE=$TOOLS_ROOT/boost
-OPENSSL_RELEASE=$TOOLS_ROOT/openssl
-LIBUNWIND_RELEASE=$TOOLS_ROOT/libunwind
+boost_release=$TOOLS_ROOT/boost
+openssl_release=$TOOLS_ROOT/openssl
+libunwind_release=$TOOLS_ROOT/libunwind
 
 echo
 echo Start building $PROJECT_NAME with gcc-$GCC_VER
@@ -22,12 +22,12 @@ echo
 
 cd $SOURCE_DIR
 
-CXXFLAGS="-fPIC -DPIC -I$INSTALL_PATH/include -I$BOOST_RELEASE/include  $EXTRA_CXXFLAGS"
-LDFLAGS="-static-libgcc -static-libstdc++ -L$INSTALL_PATH/lib -L$OPENSSL_RELEASE/lib -L$LIBUNWIND_RELEASE/lib -L$BOOST_RELEASE/lib  $EXTRA_LDFLAGS -lboost_context -lboost_chrono -lboost_thread -lboost_system -lboost_regex -levent -lunwind -ldl -lrt"
+CXXFLAGS="-fPIC -DPIC -I$boost_release/include  $EXTRA_CXXFLAGS"
+LDFLAGS="-static-libgcc -static-libstdc++ -L$openssl_release/lib -L$libunwind_release/lib -L$boost_release/lib  $EXTRA_LDFLAGS -lboost_context -lboost_chrono -lboost_thread -lboost_system -lboost_regex -levent -lunwind -ldl -lrt"
 
 if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !($CMAKE_ROOT/bin/cmake $CMAKE_FLAGS -DCMAKE_CXX_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CC_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CPP_FLAGS:STRING="$CXXFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS"  -DBOOST_INCLUDEDIR=$BOOST_RELEASE/include -DBOOST_LIBRARYDIR=$BOOST_RELEASE/lib    -DBoost_NO_SYSTEM_PATHS=ON      $SOURCE_DIR/.); then
+    if !($CMAKE_ROOT/bin/cmake $CMAKE_FLAGS -DCMAKE_CXX_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CC_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CPP_FLAGS:STRING="$CXXFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS"  -DBOOST_INCLUDEDIR=$boost_release/include -DBOOST_LIBRARYDIR=$boost_release/lib    -DBoost_NO_SYSTEM_PATHS=ON      $SOURCE_DIR/.); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"

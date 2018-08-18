@@ -4,9 +4,9 @@ source ../functions.sh
 
 prepareBuild "glog"
 
-#GFLAGS_RELEASE=$TOOLS_ROOT/gflags
-#DOUBLE_CONVERSION_RELEASE=$TOOLS_ROOT/double-conversion
-#LIBEVENT_RELEASE=$TOOLS_ROOT/libevent
+double_conversion_release=$THIRD_PARTY_DIR/double-conversion/_install
+gflags_release=$THIRD_PARTY_DIR/gflags/_install
+libevent_release=$THIRD_PARTY_DIR/libevent/_install
 
 echo
 echo Start building $PROJECT_NAME with gcc-$GCC_VER
@@ -26,7 +26,7 @@ fi
 
 if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !(CC=$GCC_ROOT/bin/gcc CPP=$GCC_ROOT/bin/cpp CXX=$GCC_ROOT/bin/g++    CXXFLAGS="-fPIC -DPIC -DHAVE_LIB_GFLAGS  -I$INSTALL_PATH/include   $EXTRA_CXXFLAGS"  CFLAGS=$CXXFLAGS  CPPFLAGS=$CXXFLAGS       LDFLAGS="-static-libgcc -static-libstdc++ -L$INSTALL_PATH/lib   $EXTRA_LDFLAGS"     LIBS="-lgflags"          $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
+    if !(CC=$GCC_ROOT/bin/gcc CPP=$GCC_ROOT/bin/cpp CXX=$GCC_ROOT/bin/g++    CXXFLAGS="-fPIC -DPIC -DHAVE_LIB_GFLAGS -I$double_conversion_release/include -I$gflags_release/include -I$libevent_release/include   $EXTRA_CXXFLAGS"  CFLAGS=$CXXFLAGS  CPPFLAGS=$CXXFLAGS       LDFLAGS="-static-libgcc -static-libstdc++ -L$double_conversion_release/lib -L$gflags_release/lib -L$libevent_release/lib   $EXTRA_LDFLAGS"     LIBS="-lgflags"          $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"

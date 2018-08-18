@@ -2,6 +2,7 @@
 
 _build
 _build.log
+_install
 
 common/base/Base.h.gch
 

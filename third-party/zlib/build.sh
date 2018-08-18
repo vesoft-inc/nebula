@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-prepareBuild "zlib" "" "/compression"
+prepareBuild "zlib"
 
 echo
 echo Start building $PROJECT_NAME with gcc-$GCC_VER
