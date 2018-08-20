@@ -82,15 +82,15 @@ TEST(FileBasedWal, CacheOverflow) {
 
     // Append > 10MB logs in total
     for (int i = 0; i < 10000; i++) {
-        EXPECT_TRUE(wal->appendLog(i, folly::stringPrintf(kMsg, i)));
+        ASSERT_TRUE(wal->appendLog(i, folly::stringPrintf(kMsg, i)));
     }
-    EXPECT_EQ(9999, wal->lastLogId());
+    ASSERT_EQ(9999, wal->lastLogId());
     // Close the wal
     wal.reset();
 
     // Check the number of files
     auto files = FileUtils::listAllFilesInDir(walDir.path());
-    EXPECT_EQ(11, files.size());
+    ASSERT_EQ(11, files.size());
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(), policy);
@@ -99,8 +99,8 @@ TEST(FileBasedWal, CacheOverflow) {
     auto it = wal->iterator(0);
     LogID id = 0;
     while (it->valid()) {
-        EXPECT_EQ(id, it->logId());
-        EXPECT_EQ(folly::stringPrintf(kMsg, id), it->logMsg());
+        ASSERT_EQ(id, it->logId());
+        ASSERT_EQ(folly::stringPrintf(kMsg, id), it->logMsg());
         ++(*it);
         ++id;
     }
