@@ -20,37 +20,41 @@ folly::ThreadLocal<ThriftSocketManager::SocketMap>
 
 
 std::shared_ptr<apache::thrift::async::TAsyncSocket>
-ThriftSocketManager::getSocket(int32_t addr, int32_t port) {
-    VLOG(2) << "Getting a socket to " << NetworkUtils::intToIPv4(addr)
-            << ":" << port;
-    auto it = socketMap_->find(std::make_pair(addr, port));
+ThriftSocketManager::getSocket(const HostAddr& host) {
+    VLOG(2) << "Getting a socket to "
+            << NetworkUtils::intToIPv4(host.first)
+            << ":" << host.second;
+    auto it = socketMap_->find(host);
     if (it != socketMap_->end()) {
         if (it->second->good()) {
             return it->second;
         }
-        LOG(ERROR) << "The existing socket to " << NetworkUtils::intToIPv4(addr)
-                   << ":" << port << " is no more good, creating a new one";
+        LOG(ERROR) << "The existing socket to "
+                   << NetworkUtils::intToIPv4(host.first)
+                   << ":" << host.second
+                   << " is not good, creating a new one";
     }
 
     // Need to create a new socket
-    std::string ipAddr = NetworkUtils::intToIPv4(addr);
+    std::string ipAddr = NetworkUtils::intToIPv4(host.first);
     VLOG(2) << "Trying to create a new socket to "
-            << ipAddr << ":" << port;
+            << ipAddr << ":" << host.second;
     auto socket = apache::thrift::async::TAsyncSocket::newSocket(
         folly::EventBaseManager::get()->getEventBase(),
         ipAddr,
-        port,
+        host.second,
         FLAGS_conn_timeout_ms);
     for (int i = 0; i < 4; i++) {
         usleep(1000 * FLAGS_conn_timeout_ms / 4);
         if (socket->good()) {
-            (*socketMap_)[std::make_pair(addr, port)] = socket;
-            LOG(INFO) << "Succeeded connecting to " << ipAddr << ":" << port;
+            (*socketMap_)[host] = socket;
+            LOG(INFO) << "Succeeded connecting to " << ipAddr
+                      << ":" << host.second;
             return socket;
         }
     }
 
-    LOG(ERROR) << "Failed to connect to " << ipAddr << ":" << port;
+    LOG(ERROR) << "Failed to connect to " << ipAddr << ":" << host.second;
     return nullptr;
 }
 

@@ -11,7 +11,6 @@
 #include "fs/TempDir.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
 using namespace vesoft::fs;
@@ -47,7 +46,8 @@ TEST(FileBasedWal, AppendLogs) {
 
     for (int i = 0; i < 10; i++) {
         EXPECT_TRUE(
-            wal->appendLog(i, 1, folly::stringPrintf("Test string %02d", i)));
+            wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf("Test string %02d", i)));
     }
     EXPECT_EQ(9, wal->lastLogId());
     // Close the wal
@@ -57,7 +57,7 @@ TEST(FileBasedWal, AppendLogs) {
     wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
     EXPECT_EQ(9, wal->lastLogId());
 
-    auto it = wal->iterator(0);
+    auto it = wal->iterator(0, 9);
     LogID id = 0;
     while (it->valid()) {
         EXPECT_EQ(id, it->logId());
@@ -86,7 +86,8 @@ TEST(FileBasedWal, CacheOverflow) {
 
     // Append > 10MB logs in total
     for (int i = 0; i < 10000; i++) {
-        ASSERT_TRUE(wal->appendLog(i, 1, folly::stringPrintf(kLongMsg, i)));
+        ASSERT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                                   folly::stringPrintf(kLongMsg, i)));
     }
     ASSERT_EQ(9999, wal->lastLogId());
 
@@ -105,7 +106,7 @@ TEST(FileBasedWal, CacheOverflow) {
     wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
     EXPECT_EQ(9999, wal->lastLogId());
 
-    auto it = wal->iterator(0);
+    auto it = wal->iterator(0, 9999);
     LogID id = 0;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
@@ -133,7 +134,8 @@ TEST(FileBasedWal, Rollback) {
 
     // Append > 10MB logs in total
     for (int i = 0; i < 10000; i++) {
-        ASSERT_TRUE(wal->appendLog(i, 1, folly::stringPrintf(kLongMsg, i)));
+        ASSERT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                                   folly::stringPrintf(kLongMsg, i)));
     }
     ASSERT_EQ(9999, wal->lastLogId());
 
@@ -142,7 +144,7 @@ TEST(FileBasedWal, Rollback) {
     ASSERT_EQ(9899, wal->lastLogId());
 
     // Try to read the last 10 logs
-    auto it = wal->iterator(9890);
+    auto it = wal->iterator(9890, 9899);
     LogID id = 9890;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
@@ -157,7 +159,7 @@ TEST(FileBasedWal, Rollback) {
     ASSERT_EQ(4999, wal->lastLogId());
 
     // Let's verify the last 10 logs
-    it = wal->iterator(4990);
+    it = wal->iterator(4990, 4999);
     id = 4990;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
@@ -169,12 +171,14 @@ TEST(FileBasedWal, Rollback) {
 
     // Now let's append 1000 more logs
     for (int i = 5000; i < 6000; i++) {
-        ASSERT_TRUE(wal->appendLog(i, 1, folly::stringPrintf(kLongMsg, i + 1000)));
+        ASSERT_TRUE(
+            wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                           folly::stringPrintf(kLongMsg, i + 1000)));
     }
     ASSERT_EQ(5999, wal->lastLogId());
 
     // Let's verify the last 10 logs
-    it = wal->iterator(5990);
+    it = wal->iterator(5990, 5999);
     id = 5990;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
@@ -187,8 +191,8 @@ TEST(FileBasedWal, Rollback) {
     // Wait one second to make sure all buffers being flushed
     sleep(1);
 }
-}  // namespace consensus
-}  // namespace vgraph
+
+}  // namespace raftex
 }  // namespace vesoft
 
 
@@ -197,7 +201,7 @@ int main(int argc, char** argv) {
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
 
-    using namespace vesoft::vgraph::raftex;
+    using namespace vesoft::raftex;
     flusher.reset(new BufferFlusher());
 
     return RUN_ALL_TESTS();

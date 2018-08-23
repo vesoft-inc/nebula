@@ -11,7 +11,6 @@
 #include "fs/FileUtils.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
 using namespace vesoft::fs;
@@ -27,7 +26,8 @@ std::shared_ptr<FileBasedWal> FileBasedWal::getWal(
         const folly::StringPiece dir,
         FileBasedWalPolicy policy,
         BufferFlusher* flusher) {
-    return std::make_shared<FileBasedWal>(dir, std::move(policy), flusher);
+    return (new FileBasedWal(dir, std::move(policy), flusher))
+        ->shared_from_this();
 }
 
 
@@ -149,8 +149,8 @@ void FileBasedWal::scanAllWalFiles() {
             close(fd);
             continue;
         }
-        int32_t msgLen;
-        if (read(fd, &msgLen, sizeof(int32_t)) != sizeof(int32_t)) {
+        int32_t succMsgLen;
+        if (read(fd, &succMsgLen, sizeof(int32_t)) != sizeof(int32_t)) {
             LOG(ERROR) << "Failed to read the last log length from \""
                        << fn << "\" (" << errno << "): "
                        << strerror(errno);
@@ -159,22 +159,24 @@ void FileBasedWal::scanAllWalFiles() {
         }
 
         // Verify the last log length
-        if (lseek(fd, -(sizeof(int32_t) * 2 + msgLen), SEEK_END) < 0) {
+        if (lseek(fd,
+                  -(sizeof(int32_t) * 2 + succMsgLen + sizeof(ClusterID)),
+                  SEEK_END) < 0) {
             LOG(ERROR) << "Failed to seek the last log length from \""
                        << fn << "\" (" << errno << "): "
                        << strerror(errno);
             close(fd);
             continue;
         }
-        int32_t firstMsgLen;
-        if (read(fd, &firstMsgLen, sizeof(int32_t)) != sizeof(int32_t)) {
+        int32_t precMsgLen;
+        if (read(fd, &precMsgLen, sizeof(int32_t)) != sizeof(int32_t)) {
             LOG(ERROR) << "Failed to read the last log length from \""
                        << fn << "\" (" << errno << "): "
                        << strerror(errno);
             close(fd);
             continue;
         }
-        if (msgLen != firstMsgLen) {
+        if (precMsgLen != succMsgLen) {
             LOG(ERROR) << "It seems the wal file \"" << fn
                        << "\" is corrupted. Ignore it";
             // TODO We might want to fix it as much as possible
@@ -184,7 +186,10 @@ void FileBasedWal::scanAllWalFiles() {
 
         // Read the last log term
         if (lseek(fd,
-                  -(sizeof(int32_t) * 2 + msgLen + sizeof(TermID)),
+                  -(sizeof(int32_t) * 2
+                    + succMsgLen
+                    + sizeof(ClusterID)
+                    + sizeof(TermID)),
                   SEEK_END) < 0) {
             LOG(ERROR) << "Failed to seek the last log term from \""
                        << fn << "\" (" << errno << "): "
@@ -205,7 +210,8 @@ void FileBasedWal::scanAllWalFiles() {
         // Read the last log id
         if (lseek(fd,
                   -(sizeof(int32_t) * 2
-                    + msgLen
+                    + succMsgLen
+                    + sizeof(ClusterID)
                     + sizeof(TermID)
                     + sizeof(LogID)),
                   SEEK_END) < 0) {
@@ -349,8 +355,9 @@ void FileBasedWal::flushBuffer(BufferPtr buffer) {
     Cord cord;
     auto accessFn = [&cord, this] (LogID id,
                                    TermID term,
+                                   ClusterID cluster,
                                    const std::string& log) {
-        cord << id << term << int32_t(log.size());
+        cord << id << term << int32_t(log.size()) << cluster;
         cord.write(log.data(), log.size());
         cord << int32_t(log.size());
 
@@ -408,6 +415,7 @@ BufferPtr FileBasedWal::createNewBuffer(
 bool FileBasedWal::appendLogInternal(BufferPtr& buffer,
                                      LogID id,
                                      TermID term,
+                                     ClusterID cluster,
                                      std::string msg) {
     if (stopped_) {
         LOG(ERROR) << "WAL has stopped. Do not accept logs any more";
@@ -422,8 +430,11 @@ bool FileBasedWal::appendLogInternal(BufferPtr& buffer,
     }
 
     if (buffer &&
-        (buffer->size() + msg.size() + sizeof(TermID) + sizeof(LogID)
-            > maxBufferSize_)) {
+        (buffer->size() +
+         msg.size() +
+         sizeof(ClusterID) +
+         sizeof(TermID) +
+         sizeof(LogID) > maxBufferSize_)) {
         // Freeze the current buffer
         buffer->freeze();
         flusher_->flushBuffer(shared_from_this(), buffer);
@@ -439,7 +450,7 @@ bool FileBasedWal::appendLogInternal(BufferPtr& buffer,
     DCHECK_EQ(
         id,
         static_cast<int64_t>(buffer->firstLogId() + buffer->numLogs()));
-    buffer->push(term, std::move(msg));
+    buffer->push(term, cluster, std::move(msg));
     lastLogId_ = id;
     lastLogTerm_ = term;
 
@@ -447,7 +458,10 @@ bool FileBasedWal::appendLogInternal(BufferPtr& buffer,
 }
 
 
-bool FileBasedWal::appendLog(LogID id, TermID term, std::string msg) {
+bool FileBasedWal::appendLog(LogID id,
+                             TermID term,
+                             ClusterID cluster,
+                             std::string msg) {
     BufferPtr buffer;
     {
         std::lock_guard<std::mutex> g(buffersMutex_);
@@ -456,7 +470,7 @@ bool FileBasedWal::appendLog(LogID id, TermID term, std::string msg) {
         }
     }
 
-    if (!appendLogInternal(buffer, id, term, std::move(msg))) {
+    if (!appendLogInternal(buffer, id, term, cluster, std::move(msg))) {
         LOG(ERROR) << "Failed to append log for logId " << id;
         return false;
     }
@@ -478,6 +492,7 @@ bool FileBasedWal::appendLogs(LogIterator& iter) {
         if (!appendLogInternal(buffer,
                                iter.logId(),
                                iter.logTerm(),
+                               iter.logSource(),
                                iter.logMsg().toString())) {
             LOG(ERROR) << "Failed to append log for logId "
                        << iter.logId();
@@ -489,9 +504,12 @@ bool FileBasedWal::appendLogs(LogIterator& iter) {
 }
 
 
-std::unique_ptr<LogIterator> FileBasedWal::iterator(LogID firstLogId) {
+std::unique_ptr<LogIterator> FileBasedWal::iterator(LogID firstLogId,
+                                                    LogID lastLogId) {
     return std::unique_ptr<LogIterator>(
-        new FileBasedWalIterator(shared_from_this(), firstLogId));
+        new FileBasedWalIterator(shared_from_this(),
+                                 firstLogId,
+                                 lastLogId));
 }
 
 
@@ -596,7 +614,8 @@ bool FileBasedWal::rollbackToLog(LogID id) {
             pos += sizeof(LogID)
                    + sizeof(TermID)
                    + sizeof(int32_t) * 2
-                   + msgLen;
+                   + msgLen
+                   + sizeof(ClusterID);
         }
         close(fd);
     }
@@ -639,6 +658,5 @@ size_t FileBasedWal::accessAllBuffers(
 }
 
 }  // namespace raftex
-}  // namespace vgraph
 }  // namespace vesoft
 

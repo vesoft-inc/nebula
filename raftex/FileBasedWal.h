@@ -14,7 +14,6 @@
 #include "raftex/WalFileInfo.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
 struct FileBasedWalPolicy {
@@ -49,12 +48,6 @@ public:
         FileBasedWalPolicy policy,
         BufferFlusher* flusher);
 
-    // Callers **SHOULD NEVER** use this constructor directly
-    // Callers should use static method getWal() instead
-    FileBasedWal(const folly::StringPiece dir,
-                 FileBasedWalPolicy policy,
-                 BufferFlusher* flusher);
-
     virtual ~FileBasedWal();
 
     // Signal all WAL holders to stop using this WAL
@@ -83,7 +76,10 @@ public:
     // Append one log messages to the WAL
     // This method **IS NOT** thread-safe
     // we **DO NOT** expect multiple threads will append logs simultaneously
-    bool appendLog(LogID id, TermID term, std::string msg) override;
+    bool appendLog(LogID id,
+                   TermID term,
+                   ClusterID cluster,
+                   std::string msg) override;
 
     // Append a list of log messages to the WAL
     // This method **IS NOT** thread-safe
@@ -98,7 +94,8 @@ public:
 
     // Scan [firstLogId, lastLogId]
     // This method IS thread-safe
-    std::unique_ptr<LogIterator> iterator(LogID firstLogId) override;
+    std::unique_ptr<LogIterator> iterator(LogID firstLogId,
+                                          LogID lastLogId) override;
 
     // Iterates through all wal file info in reversed order
     // (from the latest to the earliest)
@@ -124,6 +121,12 @@ private:
      * Private methods
      *
      **************************************/
+    // Callers **SHOULD NEVER** use this constructor directly
+    // Callers should use static method getWal() instead
+    FileBasedWal(const folly::StringPiece dir,
+                 FileBasedWalPolicy policy,
+                 BufferFlusher* flusher);
+
     // Scan all WAL files
     void scanAllWalFiles();
 
@@ -143,11 +146,9 @@ private:
     bool appendLogInternal(BufferPtr& buffer,
                            LogID id,
                            TermID term,
+                           ClusterID cluster,
                            std::string msg);
 
-
-private:
-    using WalFiles = std::map<LogID, WalFileInfoPtr>;
 
 private:
     using WalFiles = std::map<LogID, WalFileInfoPtr>;
@@ -191,7 +192,6 @@ private:
 };
 
 }  // namespace raftex
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // RAFTEX_FILEBASEDWAL_H_
 

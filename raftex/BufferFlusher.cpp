@@ -9,7 +9,6 @@
 #include "raftex/FileBasedWal.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
 BufferFlusher::BufferFlusher()
@@ -81,6 +80,5 @@ void BufferFlusher::flushLoop() {
 }
 
 }  // namespace raftex
-}  // namespace vgraph
 }  // namespace vesoft
 

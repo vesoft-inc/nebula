@@ -18,13 +18,13 @@ public:
     ThriftSocketManager() = delete;
 
     static std::shared_ptr<apache::thrift::async::TAsyncSocket> getSocket(
-        int32_t addr, int32_t port);
+        const HostAddr& host);
 
     static void disconnectOnCurrThread();
 
 private:
     using SocketMap = std::unordered_map<
-        std::pair<int32_t, int32_t>,  // <ip, port> pair
+        HostAddr,  // <ip, port> pair
         std::shared_ptr<apache::thrift::async::TAsyncSocket>  // Async socket
     >;
 

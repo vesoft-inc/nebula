@@ -2,22 +2,67 @@ add_executable(
     file_based_wal_test
     FileBasedWalTest.cpp
     $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:proc_obj>
 )
 target_link_libraries(
     file_based_wal_test
+    ${THRIFT_LIBRARIES}
+    wangle
     folly
     gtest
     glog
     gflags
     boost_context
+    boost_system
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
     event
+    ${COMPRESSION_LIBRARIES}
     double-conversion
     dl
     event
     -pthread
 )
 add_test(NAME file_based_wal_test COMMAND file_based_wal_test)
+
+
+add_executable(
+    leader_election_test
+    LeaderElectionTest.cpp
+    TestShard.cpp
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:proc_obj>
+)
+target_link_libraries(
+    leader_election_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    gtest
+    glog
+    gflags
+    boost_context
+    boost_system
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    event
+    ${COMPRESSION_LIBRARIES}
+    double-conversion
+    dl
+    event
+    -pthread
+)
+add_test(NAME leader_election_test COMMAND leader_election_test)
 
