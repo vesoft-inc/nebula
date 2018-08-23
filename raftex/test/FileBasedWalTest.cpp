@@ -6,12 +6,12 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
-#include "consensus/FileBasedWal.h"
+#include "raftex/FileBasedWal.h"
 #include "fs/TempDir.h"
 
 namespace vesoft {
 namespace vgraph {
-namespace consensus {
+namespace raftex {
 
 using namespace vesoft::fs;
 
