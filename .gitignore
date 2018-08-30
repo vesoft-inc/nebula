@@ -8,7 +8,5 @@ common/base/Base.h.gch
 CMakeCache.txt
 Makefile
 cmake_install.cmake
-CTestTestfile.cmake
 CMakeFiles/
-Testing/
 
