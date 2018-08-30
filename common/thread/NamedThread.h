@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#ifndef COMMON_CONCURRENT_THREAD_NAMEDTHREAD_H_
-#define COMMON_CONCURRENT_THREAD_NAMEDTHREAD_H_
+#ifndef COMMON_THREAD_NAMEDTHREAD_H_
+#define COMMON_THREAD_NAMEDTHREAD_H_
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -18,11 +18,11 @@
 #include <functional>
 
 namespace vesoft {
-namespace concurrent {
+namespace thread {
 
 pid_t gettid();
 
-class NamedThread : public std::thread {
+class NamedThread final : public std::thread {
 public:
     NamedThread() = default;
     NamedThread(NamedThread&&) = default;
@@ -69,7 +69,7 @@ private:
     static void hook(NamedThread *thread,
                      const std::string &name,
                      const std::function<void()> &f) {
-        thread->tid_ = vesoft::concurrent::gettid();
+        thread->tid_ = vesoft::thread::gettid();
         if (!name.empty()) {
             Nominator::set(name);
         }
@@ -86,7 +86,7 @@ NamedThread::NamedThread(const std::string &name, F &&f, Args&&...args)
                   std::bind(std::forward<F>(f), std::forward<Args>(args)...)) {
 };
 
-}   // namespace concurrent
+}   // namespace thread
 }   // namespace vesoft
 
-#endif  // COMMON_CONCURRENT_THREAD_NAMEDTHREAD_H_
+#endif  // COMMON_THREAD_NAMEDTHREAD_H_

@@ -7,11 +7,11 @@
 #include <sys/time.h>
 #include <string>
 #include <cstring>
-#include "concurrent/thread/GenericWorker.h"
+#include "common/thread/GenericWorker.h"
 using namespace std;
 
 namespace vesoft {
-namespace concurrent {
+namespace thread {
 
 TEST(GenericWorker, StartAndStop) {
     // inactive worker
@@ -148,5 +148,5 @@ TEST(GenericWorker, purgeRepeatTask) {
     }
 }
 
-}   // namespace concurrent
+}   // namespace thread
 }   // namespace vesoft

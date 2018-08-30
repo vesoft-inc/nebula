@@ -3,20 +3,21 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#ifndef COMMON_CONCURRENT_SYNC_LATCH_H_
-#define COMMON_CONCURRENT_SYNC_LATCH_H_
+#ifndef COMMON_CONCURRENT_LATCH_H_
+#define COMMON_CONCURRENT_LATCH_H_
 #include <mutex>
 #include <condition_variable>
+#include "common/cpp/helpers.h"
 /**
  * Latch is an one-shot synchronization object.
- * It provides synchronization point for multiple threads.
+ * It provides an synchronization point for multiple threads.
  * See shared/concurrent/test/LatchTest.cpp for use scenarios.
  */
 
 namespace vesoft {
 namespace concurrent {
 
-class Latch {
+class Latch final : public vesoft::cpp::NonCopyable, public vesoft::cpp::NonMovable {
 public:
     /**
      * @counter:  initial counter,
@@ -24,11 +25,7 @@ public:
      * Throws `std::invalid_argument' if counter is zero.
      */
     explicit Latch(size_t counter);
-    Latch(const Latch&) = delete;
-    Latch(Latch&&) = delete;
     ~Latch() = default;
-    Latch& operator=(const Latch&) = delete;
-    Latch& operator=(Latch&&) = delete;
     /**
      * Decrements the internal counter by one.
      * If the counter reaches 0, all blocking(in `wait')
@@ -64,4 +61,4 @@ private:
 }   // namespace concurrent
 }   // namespace vesoft
 
-#endif  // COMMON_CONCURRENT_SYNC_LATCH_H_
+#endif  // COMMON_CONCURRENT_LATCH_H_

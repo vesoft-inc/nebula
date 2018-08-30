@@ -8,8 +8,8 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
-#include "concurrent/sync/Latch.h"
-#include "concurrent/thread/GenericThreadPool.h"
+#include "common/concurrent/Latch.h"
+#include "common/thread/GenericThreadPool.h"
 
 namespace vesoft {
 namespace concurrent {
@@ -63,7 +63,7 @@ TEST(LatchTest, JoinLikeTest) {
     // start bunch of tasks, then wait for them all done.
     constexpr auto nthreads = 4UL;
     constexpr auto ntasks = 16UL;
-    concurrent::thread::GenericThreadPool pool;
+    thread::GenericThreadPool pool;
     Latch latch(ntasks);
     std::atomic<size_t> counter{0};
     auto task = [&] () {
@@ -83,7 +83,7 @@ TEST(LatchTest, SignalTest) {
     // Do I/O works with single thread, and CPU works concurrently.
     constexpr auto nthreads = 16UL;
     constexpr auto ntasks = 16UL;
-    concurrent::thread::GenericThreadPool pool;
+    thread::GenericThreadPool pool;
     Latch latch(1);
     pool.start(nthreads);
     std::atomic<size_t> counter{0};

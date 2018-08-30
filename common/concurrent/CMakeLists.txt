@@ -1,7 +1,6 @@
-add_library(concurrent_obj OBJECT thread/NamedThread.cpp
-        thread/GenericWorker.cpp
-        thread/GenericThreadPool.cpp
-        sync/Barrier.cpp
-        sync/Latch.cpp
+add_library(
+        concurrent_obj OBJECT
+        Barrier.cpp
+        Latch.cpp
 )
 add_subdirectory(test)

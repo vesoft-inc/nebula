@@ -3,10 +3,10 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#include "common/concurrent/thread/GenericThreadPool.h"
+#include "common/thread/GenericThreadPool.h"
 
 namespace vesoft {
-namespace concurrent {
+namespace thread {
 
 GenericThreadPool::GenericThreadPool() {
 }
@@ -53,5 +53,5 @@ void GenericThreadPool::purgeTimerTask(uint64_t id) {
     pool_[idx]->purgeTimerTask(id);
 }
 
-}   // namespace concurrent
+}   // namespace thread
 }   // namespace vesoft

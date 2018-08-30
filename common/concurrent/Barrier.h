@@ -3,32 +3,32 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#ifndef COMMON_CONCURRENT_SYNC_BARRIER_H_
-#define COMMON_CONCURRENT_SYNC_BARRIER_H_
+#ifndef COMMON_CONCURRENT_BARRIER_H_
+#define COMMON_CONCURRENT_BARRIER_H_
 #include <mutex>
 #include <condition_variable>
 #include <functional>
+#include "common/cpp/helpers.h"
 
 /**
  * Like `Latch', `Barrier' is a synchronization object, except that
  * `Barrier' is reusable.
  * Besides, `Barrier' features with an optional callable object,
  * which would be invoked at the completion phase, i.e. synchronization point,
- * by the last participating thread entering `wait'.
+ * by the last participating thread who entered `wait', before waking up other blocking threads.
  */
 
 namespace vesoft {
 namespace concurrent {
 
-class Barrier {
+class Barrier final : public vesoft::cpp::NonCopyable, public vesoft::cpp::NonMovable {
 public:
+    /**
+     * @counter     number of participating threads
+     * @completion  callback invoked at the completion phase
+     */
     explicit Barrier(size_t counter, std::function<void()> completion = nullptr);
-    Barrier() = delete;
     ~Barrier() = default;
-    Barrier(const Barrier&) = delete;
-    Barrier(Barrier&&) = delete;
-    Barrier& operator=(const Barrier&) = delete;
-    Barrier& operator=(Barrier&&) = delete;
     /**
      * Decrements the internal counter.
      * If the counter reaches zero, the completion callback would be invoked if present,
@@ -51,4 +51,4 @@ private:
 }   // namespace concurrent
 }   // namespace vesoft
 
-#endif  // COMMON_CONCURRENT_SYNC_BARRIER_H_
+#endif  // COMMON_CONCURRENT_BARRIER_H_

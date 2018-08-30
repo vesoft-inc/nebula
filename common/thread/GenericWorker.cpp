@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#include "common/concurrent/thread/GenericWorker.h"
+#include "common/thread/GenericWorker.h"
 #include <cassert>
 
 #ifndef EV_MULTIPLICITY
@@ -12,7 +12,7 @@
 #include <ev.h>
 
 namespace vesoft {
-namespace concurrent {
+namespace thread {
 
 GenericWorker::GenericWorker() {
 }
@@ -158,6 +158,6 @@ void GenericWorker::purgeTimerInternal(uint64_t id) {
     }
 }
 
-}   // namespace concurrent
+}   // namespace thread
 }   // namespace vesoft
 

@@ -7,12 +7,12 @@
 #include <sys/time.h>
 #include <string>
 #include <cstring>
-#include "common/concurrent/thread/GenericThreadPool.h"
+#include "common/thread/GenericThreadPool.h"
 #include "common/time/Duration.h"
 using namespace std;
 
 namespace vesoft {
-namespace concurrent {
+namespace thread {
 
 TEST(GenericThreadPool, StartAndStop) {
     // inactive pool
@@ -148,5 +148,5 @@ TEST(GenericThreadPool, purgeRepeatTask) {
     }
 }
 
-}   // namespace concurrent
+}   // namespace thread
 }   // namespace vesoft

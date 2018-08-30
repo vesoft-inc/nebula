@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#include "concurrent/sync/Latch.h"
+#include "concurrent/Latch.h"
 
 namespace vesoft {
 namespace concurrent {

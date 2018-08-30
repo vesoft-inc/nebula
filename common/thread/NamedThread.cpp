@@ -3,11 +3,12 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#include "common/concurrent/thread/NamedThread.h"
+#include "common/thread/NamedThread.h"
 
 namespace vesoft {
-namespace concurrent {
+namespace thread {
 
+namespace detail {
 class TLSThreadID {
 public:
     TLSThreadID() {
@@ -25,11 +26,12 @@ public:
 private:
     pid_t                           tid_;
 };
+}
 
 pid_t gettid() {
-    static thread_local TLSThreadID tlstid;
+    static thread_local detail::TLSThreadID tlstid;
     return tlstid.tid();
 }
 
-}   // namespace concurrent
+}   // namespace thread
 }   // namespace vesoft

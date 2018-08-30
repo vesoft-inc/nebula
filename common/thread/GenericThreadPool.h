@@ -3,9 +3,9 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#ifndef COMMON_CONCURRENT_THREAD_GENERICTHREADPOOL_H_
-#define COMMON_CONCURRENT_THREAD_GENERICTHREADPOOL_H_
-#include "common/concurrent/thread/GenericWorker.h"
+#ifndef COMMON_THREAD_GENERICTHREADPOOL_H_
+#define COMMON_THREAD_GENERICTHREADPOOL_H_
+#include "common/thread/GenericWorker.h"
 
 /**
  * Based on GenericWorker, GenericThreadPool implements a thread pool that execute tasks asynchronously.
@@ -17,9 +17,9 @@
  */
 
 namespace vesoft {
-namespace concurrent {
+namespace thread {
 
-class GenericThreadPool : public vesoft::cpp::NonCopyable, public vesoft::cpp::NonMovable {
+class GenericThreadPool final : public vesoft::cpp::NonCopyable, public vesoft::cpp::NonMovable {
 public:
     GenericThreadPool();
     ~GenericThreadPool();
@@ -120,7 +120,7 @@ uint64_t GenericThreadPool::addRepeatTask(size_t ms, F &&f, Args &&...args) {
     return ((idx << GenericWorker::TIMER_ID_BITS) | id);
 }
 
-}   // namespace concurrent
+}   // namespace thread
 }   // namespace vesoft
 
-#endif  // COMMON_CONCURRENT_THREAD_GENERICTHREADPOOL_H_
+#endif  // COMMON_THREAD_GENERICTHREADPOOL_H_

@@ -8,8 +8,8 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
-#include "concurrent/sync/Barrier.h"
-#include "concurrent/thread/GenericThreadPool.h"
+#include "common/concurrent/Barrier.h"
+#include "common/thread/GenericThreadPool.h"
 
 namespace vesoft {
 namespace concurrent {

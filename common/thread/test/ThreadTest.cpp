@@ -4,10 +4,10 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 #include <gtest/gtest.h>
-#include "concurrent/thread/NamedThread.h"
+#include "common/thread/NamedThread.h"
 
 namespace vesoft {
-namespace concurrent {
+namespace thread {
 
 TEST(NamedThread, ThreadName) {
     std::string setname("thread");
@@ -31,5 +31,5 @@ TEST(NamedThread, ThreadID) {
     ASSERT_EQ(tid, thread.tid());
 }
 
-}   // namespace concurrent
+}   // namespace thread
 }   // namespace vesoft

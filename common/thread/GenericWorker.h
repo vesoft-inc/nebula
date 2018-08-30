@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#ifndef COMMON_CONCURRENT_THREAD_GENERICWORKER_H_
-#define COMMON_CONCURRENT_THREAD_GENERICWORKER_H_
+#ifndef COMMON_THREAD_GENERICWORKER_H_
+#define COMMON_THREAD_GENERICWORKER_H_
 #include <string>
 #include <future>
 #include <vector>
@@ -12,8 +12,8 @@
 #include <mutex>
 #include <atomic>
 #include "common/cpp/helpers.h"
-#include "common/cpp/macros.h"
-#include "common/concurrent/thread/NamedThread.h"
+#include "common/base/Base.h"
+#include "common/thread/NamedThread.h"
 
 /**
  * GenericWorker implements a event-based task executor that executes tasks asynchronously
@@ -31,9 +31,9 @@ struct ev_timer;
 struct ev_async;
 
 namespace vesoft {
-namespace concurrent {
+namespace thread {
 
-class GenericWorker : public vesoft::cpp::NonCopyable, public vesoft::cpp::NonMovable {
+class GenericWorker final : public vesoft::cpp::NonCopyable, public vesoft::cpp::NonMovable {
 public:
     friend class GenericThreadPool;
     GenericWorker();
@@ -193,7 +193,7 @@ uint64_t GenericWorker::addTimerTask(size_t delay, size_t interval, F &&f, Args 
     return id;
 }
 
-}   // namespace concurrent
+}   // namespace thread
 }   // namespace vesoft
 
-#endif  // COMMON_CONCURRENT_THREAD_GENERICWORKER_H_
+#endif  // COMMON_THREAD_GENERICWORKER_H_
