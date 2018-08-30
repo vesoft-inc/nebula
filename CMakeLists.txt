@@ -6,6 +6,8 @@ set(CMAKE_SKIP_RPATH TRUE)
 
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
+enable_testing()
+
 if (!CMAKE_CXX_COMPILER)
     message(FATAL_ERROR "No C++ compiler found")
 endif()
