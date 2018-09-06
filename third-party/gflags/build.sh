@@ -30,7 +30,6 @@ fi
 
 if (make $@ install); then
     cd $CURR_DIR
-    rm -fr $INSTALL_PATH/lib/cmake
     echo
     echo ">>> $PROJECT_NAME is built and installed successfully <<<"
     echo
