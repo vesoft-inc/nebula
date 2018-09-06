@@ -4,4 +4,6 @@ add_library(
         GenericWorker.cpp
         GenericThreadPool.cpp
 )
+add_dependencies(thread_obj base_obj)
+
 add_subdirectory(test)
