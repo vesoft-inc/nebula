@@ -78,6 +78,18 @@ Branch from master:
 ```sh
 git checkout -b myfeature
 ```
+**NOTE**: Because your PR often consists of several commits, which might be squashed while being merged into upstream, 
+we strongly suggest you open a separate topic branch to make your changes on. After merged, 
+this topic branch could be just abandoned, thus you could synchronize your master branch with 
+upstream easily with a rebase like above. Otherwise, if you commit your changes directly into master, 
+maybe you must use a hard reset on the master branch, like:
+
+```sh
+git fetch upstream
+git checkout master
+git reset --hard upstream/master
+git push --force origin master
+```
 
 ### Step 4: Develop
 
