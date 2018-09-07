@@ -21,15 +21,18 @@ echo
 
 cd $SOURCE_DIR
 
-if !($CMAKE_ROOT/bin/cmake $CMAKE_FLAGS -DBOOST_ROOT=$TOOLS_ROOT/boost -DOPENSSL_ROOT_DIR=$TOOLS_ROOT/openssl .); then
-    cd $CURR_DIR
-    echo
-    echo "### $PROJECT_NAME failed to install ###"
-    echo
-    exit 1
+if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ||
+      $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
+    if !($CMAKE_ROOT/bin/cmake $CMAKE_FLAGS -DBOOST_ROOT=$TOOLS_ROOT/boost -DOPENSSL_ROOT_DIR=$TOOLS_ROOT/openssl -DWITH_TESTS=off .); then
+        cd $CURR_DIR
+        echo
+        echo "### $PROJECT_NAME failed to install ###"
+        echo
+        exit 1
+    fi
 fi
 
-if (PLATFORM=OS_LINUX      CCFLAGS="-DROCKSDB_PLATFORM_POSIX -DROCKSDB_SUPPORT_THREAD_LOCAL -DOS_LINUX -fno-builtin-memcmp -DZLIB -DBZIP2 -DSNAPPY -DZSTD -DROCKSDB_MALLOC_USABLE_SIZE -march=native -fPIC -DPIC -Wno-error=shadow  -I$INSTALL_PATH/include   $EXTRA_CXXFLAGS"             CXXFLAGS=$CCFLAGS                  PLATFORM_LDFLAGS="-static-libstdc++ -static-libgcc -L$INSTALL_PATH/lib   $EXTRA_LDFLAGS -lz -lbz2 -lsnappy -lzstd"                     JAVA_LDFLAGS=$PLATFORM_LDFLAGS      DEBUG_LEVEL=0         make $@); then
+if (PLATFORM=OS_LINUX      CCFLAGS="-DROCKSDB_PLATFORM_POSIX -DROCKSDB_SUPPORT_THREAD_LOCAL -DOS_LINUX -fno-builtin-memcmp -DZLIB -DBZIP2 -DSNAPPY -DZSTD -DROCKSDB_MALLOC_USABLE_SIZE -march=native -fPIC -DPIC -Wno-error=shadow  -I$INSTALL_PATH/compression/include   $EXTRA_CXXFLAGS"             CXXFLAGS=$CCFLAGS                  PLATFORM_LDFLAGS="-static-libstdc++ -static-libgcc -L$INSTALL_PATH/compression/lib   $EXTRA_LDFLAGS -lz -lbz2 -lsnappy -lzstd"                     JAVA_LDFLAGS=$PLATFORM_LDFLAGS      DEBUG_LEVEL=0         make $@); then
     if [[ $SOURCE_DIR/librocksdb.a -nt $INSTALL_PATH/lib/librocksdb.a ]]; then
         echo "===> Ready to install"
         if (INSTALL_PATH=$INSTALL_PATH   make install); then

@@ -20,7 +20,8 @@ cd $SOURCE_DIR
 
 COMPILE_FLAGS="-fPIC -DPIC -std=c++11    $EXTRA_CXXFLAGS "
 
-if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ]]; then
+if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ||
+      $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
     if !($CMAKE_ROOT/bin/cmake $CMAKE_FLAGS -DCMAKE_CXX_FLAGS:STRING="$COMPILE_FLAGS" -DCMAKE_CC_FLAGS:STRING="$COMPILE_FLAGS" -DCMAKE_CPP_FLAGS:STRING="$COMPILE_FLAGS" -DCMAKE_STATIC_LINKER_FLAGS:STRING="" -DCMAKE_LINK_LIBRARY_FLAG="-static-libgcc -static-libstdc++ -lrt"   $SOURCE_DIR); then
         cd $CURR_DIR
         echo

@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-prepareBuild "zstd"
+prepareBuild "zstd" "" "/compression"
 
 echo
 echo Start building $PROJECT_NAME with gcc-$GCC_VER

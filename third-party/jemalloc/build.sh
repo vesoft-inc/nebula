@@ -23,7 +23,8 @@ echo
 
 cd $SOURCE_DIR
 
-if [[ $SOURCE_DIR/configure.ac -nt $SOURCE_DIR/Makefile ]]; then
+if [[ $SOURCE_DIR/configure.ac -nt $SOURCE_DIR/Makefile ||
+      $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
     if !(CC=$GCC_ROOT/bin/gcc CPP=$GCC_ROOT/bin/cpp CXX=$GCC_ROOT/bin/g++    CXXFLAGS="-fPIC -DPIC -I$LIBUNWIND_RELEASE/include   $EXTRA_CXXFLAGS" CFLAGS=$CXXFLAGS    LDFLAGS="-static-libgcc -static-libstdc++ -L$LIBUNWIND_RELEASE/lib  $EXTRA_LDFLAGS"        $SOURCE_DIR/autogen.sh --enable-autogen --disable-valgrind --enable-stats --enable-prof --enable-prof-libunwind --with-static-libunwind=$LIBUNWIND_RELEASE/lib/libunwind.a --enable-prof-gcc --enable-prof-libgcc --prefix=$INSTALL_PATH); then
         cd $CURR_DIR
         echo

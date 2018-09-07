@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-prepareBuild "snappy"
+prepareBuild "snappy" "" "/compression"
 
 echo
 echo Start building $PROJECT_NAME with gcc-$GCC_VER
@@ -21,7 +21,8 @@ cd $SOURCE_DIR
 COMPILER_FLAGS=" -fPIC -DPIC   $EXTRA_CXXFLAGS"
 LINKER_FLAGS=" -static-libgcc -static-libstdc++    $EXTRA_LDFLAGS"
 
-if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ]]; then
+if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ||
+      $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
     if !($CMAKE_ROOT/bin/cmake $CMAKE_FLAGS -DCMAKE_INSTALL_LIBDIR=lib -DSNAPPY_BUILD_TESTS=NO -DCMAKE_SKIP_RPATH:BOOL=YES -DCMAKE_C_FLAGS:STRING="$COMPILER_FLAGS" -DCMAKE_CXX_FLAGS:STRING="$COMPILER_FLAGS" -DCMAKE_STATIC_LINKER_FLAGS:STRING="" -DCMAKE_EXE_LINKER_FLAGS:STRING="$LINKER_FLAGS"    $SOURCE_DIR); then
         cd $CURR_DIR
         echo

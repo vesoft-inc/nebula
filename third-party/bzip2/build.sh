@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-prepareBuild "bzip2"
+prepareBuild "bzip2" "" "/compression"
 
 echo
 echo Start building $PROJECT_NAME with gcc-$GCC_VER
