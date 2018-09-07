@@ -14,7 +14,7 @@ using namespace vesoft::network;
 TEST(NetworkUtils, getHostname) {
     std::string hostname = NetworkUtils::getHostname();
 
-    FILE* fp = popen("LD_PRELOAD= hostname -f | tr -d ['\n']", "r");
+    FILE* fp = popen("LD_PRELOAD= hostname | tr -d ['\n']", "r");
     char buffer[256];
     fgets(buffer, sizeof(buffer), fp);
     std::string hostnameCheck = buffer;
