@@ -1,5 +1,15 @@
 #!/bin/sh
 
+# The method takes up to three parameters
+#   1st: Project name
+#   2nd: source directory. It must be a sub-directory of
+#        the default source path "_build/${project_name}"
+#        If specified, it must start with "/", so that it can
+#        be appended to the default source path
+#   3rd: install_dir. It must be a sub-directory of the default
+#        install path "third-party/_build"
+#        If specified, it must start with "/", so that it can
+#        be appended to the default source path
 function prepareBuild() {
     # Make sure the script is executed from the source directory
     CURR_DIR=`dirname $0`
@@ -15,9 +25,15 @@ function prepareBuild() {
     local prj_name=$1
 
     if [[ $# > 1 ]]; then
-        local src_dir="/$2"
+        local src_dir=$2
     else
         local src_dir=""
+    fi
+
+    if [[ $# > 2 ]]; then
+        local install_dir=$3
+    else
+        local install_dir=""
     fi
 
     CURR_DIR=`pwd`
@@ -33,7 +49,7 @@ function prepareBuild() {
     tar -zxf ../$SOURCE_TAR_BALL_NAME --keep-newer-files 2> /dev/null
 
     SOURCE_DIR=${BUILD_PATH}/${PROJECT_NAME}${src_dir}
-    INSTALL_PATH=$THIRD_PARTY_DIR/_build
+    INSTALL_PATH=$THIRD_PARTY_DIR/_build${install_dir}
 
     GCC_ROOT=$TOOLS_ROOT/gcc
     CMAKE_ROOT=$TOOLS_ROOT/cmake

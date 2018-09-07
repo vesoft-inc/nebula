@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-prepareBuild "zlib"
+prepareBuild "zlib" "" "/compression"
 
 echo
 echo Start building $PROJECT_NAME with gcc-$GCC_VER
@@ -18,7 +18,8 @@ echo
 
 cd $SOURCE_DIR
 
-if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ]]; then
+if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
+      $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
     if !(CC=$GCC_ROOT/bin/gcc CPP=$GCC_ROOT/bin/cpp CXX=$GCC_ROOT/bin/g++    CXXFLAGS="-fPIC -DPIC   $EXTRA_CXXFLAGS" CFLAGS=$CXXFLAGS CPPFLAGS=$CXXFLAGS    LDFLAGS="-static-libgcc -static-libstdc++   $EXTRA_LDFLAGS"       $SOURCE_DIR/configure --prefix=$INSTALL_PATH --static); then
         cd $CURR_DIR
         echo
