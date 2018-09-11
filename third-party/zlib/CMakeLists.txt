@@ -5,6 +5,6 @@ add_custom_target(
 
 add_custom_target(
     clean-zlib
-    COMMAND "rm" "-fr" "_build" "_build.log"
+    COMMAND "rm" "-fr" "_build" "_install" "_build.log"
 )
 

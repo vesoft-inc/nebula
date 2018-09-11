@@ -10,7 +10,7 @@ echo
 echo Start installing $PROJECT_NAME
 echo
 
-mkdir -p $INSTALL_PATH
+mkdir -p $INSTALL_PATH/include
 #cp -r $SOURCE_DIR/demo $INSTALL_PATH
 #cp -r $SOURCE_DIR/docs $INSTALL_PATH
 cp -r $SOURCE_DIR/fatal $INSTALL_PATH/include/.
