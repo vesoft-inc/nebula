@@ -6,6 +6,6 @@ add_custom_target(
 
 add_custom_target(
     clean-wangle
-    COMMAND "rm" "-fr" "_build" "_build.log"
+    COMMAND "rm" "-fr" "_build" "_install" "_build.log"
 )
 

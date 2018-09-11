@@ -25,6 +25,5 @@ add_custom_target(
 
 add_custom_target(
     clean-third-party
-    COMMAND "rm" "-fr" "_build"
     DEPENDS clean-bzip2 clean-double-conversion clean-fatal clean-fbthrift clean-folly clean-gflags clean-glog clean-googletest clean-jemalloc clean-libevent clean-mstch clean-proxygen clean-rocksdb clean-snappy clean-wangle clean-zlib clean-zstd
 )

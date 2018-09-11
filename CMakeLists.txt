@@ -36,8 +36,23 @@ find_package(PCHSupport)
 
 add_compile_options(-Winvalid-pch)
 
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/_build/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/_build/compression/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/bzip2/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/double-conversion/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/fatal/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/fbthrift/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/folly/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/gflags/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/glog/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/googletest/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/jemalloc/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/libevent/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/mstch/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/proxygen/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/rocksdb/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/snappy/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/wangle/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/zlib/_install/include)
+include_directories(SYSTEM ${VGRAPH_HOME}/third-party/zstd/_install/include)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
 include_directories(SYSTEM ${KRB5_INCLUDE_DIRS})
@@ -46,8 +61,23 @@ include_directories(AFTER interface)
 include_directories(AFTER ${VGRAPH_HOME})
 
 link_directories(
-    third-party/_build/lib
-    third-party/_build/compression/lib
+    ${VGRAPH_HOME}/third-party/bzip2/_install/lib
+    ${VGRAPH_HOME}/third-party/double-conversion/_install/lib
+    ${VGRAPH_HOME}/third-party/fatal/_install/lib
+    ${VGRAPH_HOME}/third-party/fbthrift/_install/lib
+    ${VGRAPH_HOME}/third-party/folly/_install/lib
+    ${VGRAPH_HOME}/third-party/gflags/_install/lib
+    ${VGRAPH_HOME}/third-party/glog/_install/lib
+    ${VGRAPH_HOME}/third-party/googletest/_install/lib
+    ${VGRAPH_HOME}/third-party/jemalloc/_install/lib
+    ${VGRAPH_HOME}/third-party/libevent/_install/lib
+    ${VGRAPH_HOME}/third-party/mstch/_install/lib
+    ${VGRAPH_HOME}/third-party/proxygen/_install/lib
+    ${VGRAPH_HOME}/third-party/rocksdb/_install/lib64
+    ${VGRAPH_HOME}/third-party/snappy/_install/lib
+    ${VGRAPH_HOME}/third-party/wangle/_install/lib
+    ${VGRAPH_HOME}/third-party/zlib/_install/lib
+    ${VGRAPH_HOME}/third-party/zstd/_install/lib
     ${Boost_LIBRARY_DIRS}
     ${KRB5_LIBRARY_DIRS}
 )
@@ -86,12 +116,14 @@ add_dependencies(common third-party)
 add_custom_target(
     clean-build
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
+    COMMAND "find" "." "-name" "Testing" "|" "xargs" "rm" "-fr"
     DEPENDS clean-interface clean-pch
 )
 
 add_custom_target(
     clean-all
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
+    COMMAND "find" "." "-name" "Testing" "|" "xargs" "rm" "-fr"
     DEPENDS clean-interface clean-pch clean-third-party
 )
 
@@ -100,6 +132,7 @@ add_custom_target(
     COMMAND "find" "." "-name" "CMakeFiles" "|" "xargs" "rm" "-fr"
     COMMAND "find" "." "-name" "CMakeCache.txt" "|" "xargs" "rm" "-f"
     COMMAND "find" "." "-name" "cmake_install.cmake" "|" "xargs" "rm" "-f"
+    COMMAND "find" "." "-name" "CTestTestfile.cmake" "|" "xargs" "rm" "-f"
     COMMAND "find" "." "-name" "Makefile" "|" "xargs" "rm" "-f"
     DEPENDS clean-all
 )
