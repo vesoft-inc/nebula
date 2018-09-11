@@ -4,9 +4,15 @@ source ../functions.sh
 
 prepareBuild "wangle" "/wangle"
 
-BOOST_RELEASE=$TOOLS_ROOT/boost
-OPENSSL_RELEASE=$TOOLS_ROOT/openssl
-LIBUNWIND_RELEASE=$TOOLS_ROOT/libunwind
+boost_release=$TOOLS_ROOT/boost
+openssl_release=$TOOLS_ROOT/openssl
+libunwind_release=$TOOLS_ROOT/libunwind
+
+double_conversion_release=$THIRD_PARTY_DIR/double-conversion/_install
+gflags_release=$THIRD_PARTY_DIR/gflags/_install
+glog_release=$THIRD_PARTY_DIR/glog/_install
+folly_release=$THIRD_PARTY_DIR/folly/_install
+libevent_release=$THIRD_PARTY_DIR/libevent/_install
 
 echo
 echo Start building $PROJECT_NAME with gcc-$GCC_VER
@@ -23,13 +29,11 @@ echo
 cd $SOURCE_DIR
 
 CXXFLAGS="-fPIC -DPIC  $EXTRA_CXXFLAGS"
-LDFLAGS="-static-libgcc -static-libstdc++ -L$LIBUNWIND_RELEASE/lib  $EXTRA_LDFLAGS -lboost_context -lboost_chrono -lboost_thread -lboost_system -lboost_regex -lssl -lstdc++ -levent -lunwind -ldl -lrt"
-INCLUDE_DIR=$INSTALL_PATH/include
-LIB_DIR=$INSTALL_PATH/lib
+LDFLAGS="-static-libgcc -static-libstdc++ -L$libunwind_release/lib  $EXTRA_LDFLAGS -lboost_context -lboost_chrono -lboost_thread -lboost_system -lboost_regex -lssl -lstdc++ -levent -lunwind -ldl -lrt"
 
 if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !($CMAKE_ROOT/bin/cmake $CMAKE_FLAGS -DCMAKE_CXX_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CC_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CPP_FLAGS:STRING="$CXXFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS"   -DGLOG_INCLUDE_DIR=$INCLUDE_DIR -DGLOG_LIBRARY=$LIB_DIR/libglog.a   -DGFLAGS_INCLUDE_DIR=$INCLUDE_DIR -DGFLAGS_LIBRARY=$LIB_DIR/libgflags.a     -DDOUBLE_CONVERSION_INCLUDE_DIR=$INCLUDE_DIR -DDOUBLE_CONVERSION_LIBRARY=$LIB_DIR/libdouble-conversion.a     -DLIBEVENT_INCLUDE_DIR=$INCLUDE_DIR  -DLIBEVENT_LIBRARY=$LIB_DIR/libevent.a    -DFOLLY_INCLUDEDIR=$INCLUDE_DIR -DFOLLY_LIBRARYDIR=$LIB_DIR   -DBOOST_INCLUDEDIR=$BOOST_RELEASE/include -DBOOST_LIBRARYDIR=$BOOST_RELEASE/lib    -DBoost_NO_SYSTEM_PATHS=ON   -DOPENSSL_ROOT_DIR=$OPENSSL_RELEASE     -DBUILD_TESTS=OFF     $SOURCE_DIR/.); then
+    if !($CMAKE_ROOT/bin/cmake $CMAKE_FLAGS -DCMAKE_CXX_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CC_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CPP_FLAGS:STRING="$CXXFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DGLOG_INCLUDE_DIR=$glog_release/include -DGLOG_LIBRARY=$glog_release/lib/libglog.a -DGFLAGS_INCLUDE_DIR=$gflags_release/include -DGFLAGS_LIBRARY=$gflags_release/lib/libgflags.a -DDOUBLE_CONVERSION_INCLUDE_DIR=$double_conversion_release/include -DDOUBLE_CONVERSION_LIBRARY=$double_conversion_release/lib/libdouble-conversion.a -DLIBEVENT_INCLUDE_DIR=$libevent_release/include -DLIBEVENT_LIBRARY=$libevent_release/lib/libevent.a -DFOLLY_INCLUDEDIR=$folly_release/include -DFOLLY_LIBRARYDIR=$folly_release/lib -DBOOST_INCLUDEDIR=$boost_release/include -DBOOST_LIBRARYDIR=$boost_release/lib -DBoost_NO_SYSTEM_PATHS=ON -DOPENSSL_ROOT_DIR=$openssl_release -DBUILD_TESTS=OFF     $SOURCE_DIR/.); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"

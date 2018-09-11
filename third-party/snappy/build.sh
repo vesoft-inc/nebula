@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-prepareBuild "snappy" "" "/compression"
+prepareBuild "snappy"
 
 echo
 echo Start building $PROJECT_NAME with gcc-$GCC_VER
