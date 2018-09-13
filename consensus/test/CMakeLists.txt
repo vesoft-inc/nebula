@@ -3,6 +3,7 @@ add_executable(
     FileBasedWalTest.cpp
     $<TARGET_OBJECTS:consensus_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
 target_link_libraries(
@@ -15,6 +16,7 @@ target_link_libraries(
     event
     double-conversion
     dl
+    ev
     -pthread
 )
 add_test(NAME file_based_wal_test COMMAND file_based_wal_test)

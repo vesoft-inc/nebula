@@ -13,7 +13,7 @@ namespace consensus {
 
 using WalFileInfoPair = FileBasedWal::WalFiles::value_type;
 using namespace vesoft::fs;
-
+using namespace vesoft::thread;
 
 namespace internal {
 
@@ -115,6 +115,7 @@ public:
                     idRanges_.push_back(
                         std::make_pair(it->second.firstLogId,
                                        it->second.lastLogId));
+                    ++it;
                 }
             } else {
                 LOG(ERROR) << "LogID " << currId_
@@ -302,7 +303,8 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
     }
 
     bufferFlushThread_.reset(
-        new std::thread(std::bind(&FileBasedWal::bufferFlushLoop, this)));
+        new NamedThread("wal_buffer_flush_t",
+                        std::bind(&FileBasedWal::bufferFlushLoop, this)));
 }
 
 
@@ -597,12 +599,11 @@ void FileBasedWal::flushBuffer(std::shared_ptr<Buffer> buffer) {
 
     std::lock_guard<std::mutex> guard(walFilesLock_);
 
-    auto& info = walFiles_.back();
     Cord cord;
     int64_t logId = buffer->firstLogId();
     auto it = buffer->logs().begin();
     while (it != buffer->logs().end()) {
-        if (info.second.size + cord.size()
+        if (walFiles_.back().second.size + cord.size()
             + it->size()
             + sizeof(LogID)
             + sizeof(int32_t) * 2
@@ -614,7 +615,6 @@ void FileBasedWal::flushBuffer(std::shared_ptr<Buffer> buffer) {
             // Need to close the current file and create a new file
             closeCurrFile();
             prepareNewFile(logId);
-            info = walFiles_.back();
         }
 
         cord << logId << int32_t(it->size());

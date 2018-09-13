@@ -55,6 +55,7 @@
 #include <folly/ThreadLocal.h>
 #include <folly/Varint.h>
 
+#include "thread/NamedThread.h"
 //#include "base/StringUnorderedMap.h"
 
 #define VE_MUST_USE_RESULT              __attribute__((warn_unused_result))

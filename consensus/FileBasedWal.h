@@ -150,7 +150,7 @@ private:  // Members
     std::condition_variable bufferReadyCV_;
     std::condition_variable slotReadyCV_;
 
-    std::unique_ptr<std::thread> bufferFlushThread_;
+    std::unique_ptr<thread::NamedThread> bufferFlushThread_;
 
 private:  // Methods
     // Private constructor to prevent instantiating the class directly
