@@ -4,9 +4,9 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-namespace cpp vesoft.vgraph.consensus
-namespace java vesoft.vgraph.consensus
-namespace go vesoft.vgraph.consensus
+namespace cpp vesoft.vgraph.raftex
+namespace java vesoft.vgraph.raftex
+namespace go vesoft.vgraph.raftex
 
 
 enum ResultCode {
@@ -42,8 +42,7 @@ typedef i32 Port
 // A request to ask for vote
 struct AskForVoteRequest {
     1: GraphSpaceID space;           // My graph space id
-    2: PartitionID  partition;       // The data partition that the current
-                                     // replica represents
+    2: PartitionID  partition;       // The data partition
     3: IPv4         candidateIp;     // My IP
     4: Port         candidatePort;   // My port
     5: TermID       term;            // Proposed term (current term + 1)
@@ -108,7 +107,7 @@ struct AppendLogResponse {
 }
 
 
-service ConsensusService {
+service RaftexService {
     AskForVoteResponse askForVote(1: AskForVoteRequest req);
     AppendLogResponse appendLog(1: AppendLogRequest req);
 }
