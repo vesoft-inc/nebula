@@ -4,16 +4,16 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef CONSENSUS_WAL_FILEBASEDWAL_H_
-#define CONSENSUS_WAL_FILEBASEDWAL_H_
+#ifndef RAFTEX_WAL_FILEBASEDWAL_H_
+#define RAFTEX_WAL_FILEBASEDWAL_H_
 
 #include "base/Base.h"
 #include "base/Cord.h"
-#include "consensus/Wal.h"
+#include "raftex/Wal.h"
 
 namespace vesoft {
 namespace vgraph {
-namespace consensus {
+namespace raftex {
 
 struct FileBasedWalPolicy {
     // The life span of the log messages (number of seconds)
@@ -179,8 +179,8 @@ private:  // Methods
                            std::string msg);
 };
 
-}  // namespace consensus
+}  // namespace raftex
 }  // namespace vgraph
 }  // namespace vesoft
-#endif  // CONSENSUS_WAL_FILEBASEDWAL_H_
+#endif  // RAFTEX_WAL_FILEBASEDWAL_H_
 

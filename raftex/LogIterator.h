@@ -4,14 +4,14 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef CONSENSUS_LOGITERATOR_H_
-#define CONSENSUS_LOGITERATOR_H_
+#ifndef RAFTEX_LOGITERATOR_H_
+#define RAFTEX_LOGITERATOR_H_
 
 #include "base/Base.h"
 
 namespace vesoft {
 namespace vgraph {
-namespace consensus {
+namespace raftex {
 
 class LogIterator {
 public:
@@ -28,8 +28,8 @@ public:
     virtual std::string logMsg() const = 0;
 };
 
-}  // namespace consensus
+}  // namespace raftex
 }  // namespace vgraph
 }  // namespace vesoft
-#endif  // CONSENSUS_LOGITERATOR_H_
+#endif  // RAFTEX_LOGITERATOR_H_
 

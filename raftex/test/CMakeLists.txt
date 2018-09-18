@@ -1,7 +1,7 @@
 add_executable(
     file_based_wal_test
     FileBasedWalTest.cpp
-    $<TARGET_OBJECTS:consensus_obj>
+    $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>

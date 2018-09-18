@@ -4,12 +4,12 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "consensus/FileBasedWal.h"
+#include "raftex/FileBasedWal.h"
 #include "fs/FileUtils.h"
 
 namespace vesoft {
 namespace vgraph {
-namespace consensus {
+namespace raftex {
 
 using WalFileInfoPair = FileBasedWal::WalFiles::value_type;
 using namespace vesoft::fs;
@@ -721,7 +721,7 @@ std::unique_ptr<LogIterator> FileBasedWal::iterator(LogID firstLogId) {
         new internal::FileBasedWalIterator(shared_from_this(), firstLogId));
 }
 
-}  // namespace consensus
+}  // namespace raftex
 }  // namespace vgraph
 }  // namespace vesoft
 
