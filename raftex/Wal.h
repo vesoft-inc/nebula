@@ -4,15 +4,15 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef CONSENSUS_WAL_WAL_H_
-#define CONSENSUS_WAL_WAL_H_
+#ifndef RAFTEX_WAL_WAL_H_
+#define RAFTEX_WAL_WAL_H_
 
 #include "base/Base.h"
-#include "consensus/LogIterator.h"
+#include "raftex/LogIterator.h"
 
 namespace vesoft {
 namespace vgraph {
-namespace consensus {
+namespace raftex {
 
 /**
  * Base class for all WAL implementations
@@ -34,8 +34,8 @@ public:
     virtual std::unique_ptr<LogIterator> iterator(int64_t firstLogId) = 0;
 };
 
-}  // namespace consensus
+}  // namespace raftex
 }  // namespace vgraph
 }  // namespace vesoft
-#endif  // CONSENSUS_WAL_WAL_H_
+#endif  // RAFTEX_WAL_WAL_H_
 
