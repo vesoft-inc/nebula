@@ -5,6 +5,7 @@
  */
 #ifndef PARSER_ASTTYPES_H_
 #define PARSER_ASTTYPES_H_
+
 #include <boost/variant.hpp>
 
 namespace vesoft {
