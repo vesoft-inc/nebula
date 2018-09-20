@@ -10,6 +10,8 @@
 #include "parser/VGraphParser.hpp"
 #include "parser/VGraphScanner.h"
 
+// TODO(dutor) Check on the sematic value of tokens
+
 namespace vesoft {
 
 TEST(Scanner, Basic) {
@@ -27,6 +29,7 @@ TEST(Scanner, Basic) {
         {" * ",             TokenType::MUL},
         {" / ",             TokenType::DIV},
         {" % ",             TokenType::MOD},
+        {" @ ",             TokenType::AT},
 
         {" < ",             TokenType::LT},
         {" <= ",            TokenType::LE},
@@ -47,6 +50,9 @@ TEST(Scanner, Basic) {
         {" ] ",             TokenType::R_BRACKET},
         {" { ",             TokenType::L_BRACE},
         {" } ",             TokenType::R_BRACE},
+
+        {" <- ",             TokenType::L_ARROW},
+        {" -> ",             TokenType::R_ARROW},
 
         {" GO ",            TokenType::KW_GO},
         {" go ",            TokenType::KW_GO},
@@ -135,6 +141,9 @@ TEST(Scanner, Basic) {
         {" _var123 ",       TokenType::SYMBOL},
 
         {" 123 ",           TokenType::INTEGER},
+        {" 0x123 ",         TokenType::INTEGER},
+        {" 0Xdeadbeef ",    TokenType::INTEGER},
+        {" 0123 ",          TokenType::INTEGER},
         {" 123u ",          TokenType::UINTEGER},
         {" 123UL ",         TokenType::UINTEGER},
 

@@ -46,9 +46,11 @@ class VGraphScanner;
     vesoft::OverClause                     *over_clause;
     vesoft::WhereClause                    *where_clause;
     vesoft::ReturnClause                   *return_clause;
-    vesoft::ColumnList                     *column_list;
+    vesoft::ReturnFields                   *return_fields;
     vesoft::PropertyList                   *prop_list;
     vesoft::ValueList                      *value_list;
+    vesoft::UpdateList                     *update_list;
+    vesoft::UpdateItem                     *update_item;
 }
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
@@ -56,10 +58,11 @@ class VGraphScanner;
 %token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_NAMESPACE
 %token KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_UINT8 KW_UINT16 KW_UINT32 KW_UINT64
 %token KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
+%token KW_NO KW_OVERWRITE KW_IN
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
-%token DOT COLON SEMICOLON
+%token DOT COLON SEMICOLON L_ARROW R_ARROW AT
 
 /* token type specification */
 %token <boolval> BOOL
@@ -77,9 +80,11 @@ class VGraphScanner;
 %type <over_clause> over_clause
 %type <where_clause> where_clause
 %type <return_clause> return_clause
-%type <column_list> column_list
+%type <return_fields> return_fields
 %type <prop_list> prop_list
 %type <value_list> value_list
+%type <update_list> update_list
+%type <update_item> update_item
 
 %type <intval> ttl_spec
 
@@ -89,8 +94,9 @@ class VGraphScanner;
 %type <sentence> go_sentence match_sentence use_sentence
 %type <sentence> define_tag_sentence define_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
-%type <sentence> query_sentence set_sentence piped_sentence assignment_sentence
-%type <sentence> maintainance_sentence insert_vertex_sentence
+%type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
+%type <sentence> maintainance_sentence insert_vertex_sentence insert_edge_sentence
+%type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence
 %type <statement> statement
 
 %start statement
@@ -297,16 +303,16 @@ where_clause
 
 return_clause
     : %empty { $$ = nullptr; }
-    | KW_RETURN column_list { $$ = new ReturnClause($2); }
+    | KW_RETURN return_fields { $$ = new ReturnClause($2); }
     ;
 
-column_list
+return_fields
     : expression {
-        auto list = new ColumnList();
-        list->addColumn($1);
-        $$ = list;
+        auto fields = new ReturnFields();
+        fields->addColumn($1);
+        $$ = fields;
     }
-    | column_list COMMA expression {
+    | return_fields COMMA expression {
         $1->addColumn($3);
         $$ = $1;
     }
@@ -376,16 +382,16 @@ ttl_spec
     : KW_TTL ASSIGN INTEGER { $$ = $3; }
     ;
 
-query_sentence
+traverse_sentence
     : go_sentence {}
     | match_sentence {}
     ;
 
 set_sentence
-    : query_sentence {}
-    | set_sentence KW_UNION query_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
-    | set_sentence KW_INTERSECT query_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
-    | set_sentence KW_MINUS query_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
+    : traverse_sentence {}
+    | set_sentence KW_UNION traverse_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
+    | set_sentence KW_INTERSECT traverse_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | set_sentence KW_MINUS traverse_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
     | L_PAREN piped_sentence R_PAREN { $$ = $2; }
     ;
 
@@ -437,6 +443,144 @@ value_list
     }
     ;
 
+insert_edge_sentence
+    : KW_INSERT KW_EDGE SYMBOL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN
+      INTEGER R_ARROW INTEGER COLON value_list R_PAREN {
+        auto sentence = new InsertEdgeSentence();
+        sentence->setEdge($3);
+        sentence->setProps($5);
+        sentence->setSrcId($9);
+        sentence->setDstId($11);
+        sentence->setValues($13);
+        $$ = sentence;
+    }
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE SYMBOL L_PAREN prop_list R_PAREN
+      KW_VALUES L_PAREN INTEGER R_ARROW INTEGER COLON value_list R_PAREN {
+        auto sentence = new InsertEdgeSentence();
+        sentence->setOverwrite(false);
+        sentence->setEdge($5);
+        sentence->setProps($7);
+        sentence->setSrcId($11);
+        sentence->setDstId($13);
+        sentence->setValues($15);
+        $$ = sentence;
+    }
+    | KW_INSERT KW_EDGE SYMBOL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN
+      INTEGER R_ARROW INTEGER AT INTEGER COLON value_list R_PAREN {
+        auto sentence = new InsertEdgeSentence();
+        sentence->setEdge($3);
+        sentence->setProps($5);
+        sentence->setSrcId($9);
+        sentence->setDstId($11);
+        sentence->setRank($13);
+        sentence->setValues($15);
+        $$ = sentence;
+    }
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE SYMBOL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN
+      INTEGER R_ARROW INTEGER AT INTEGER COLON value_list R_PAREN {
+        auto sentence = new InsertEdgeSentence();
+        sentence->setOverwrite(false);
+        sentence->setEdge($5);
+        sentence->setProps($7);
+        sentence->setSrcId($11);
+        sentence->setDstId($13);
+        sentence->setRank($15);
+        sentence->setValues($17);
+        $$ = sentence;
+    }
+    ;
+
+update_vertex_sentence
+    : KW_UPDATE KW_VERTEX INTEGER KW_SET update_list where_clause return_clause {
+        auto sentence = new UpdateVertexSentence();
+        sentence->setVid($3);
+        sentence->setUpdateList($5);
+        sentence->setWhereClause($6);
+        sentence->setReturnClause($7);
+        $$ = sentence;
+    }
+    | KW_UPDATE KW_OR KW_INSERT KW_VERTEX INTEGER KW_SET update_list where_clause return_clause {
+        auto sentence = new UpdateVertexSentence();
+        sentence->setInsertable(true);
+        sentence->setVid($5);
+        sentence->setUpdateList($7);
+        sentence->setWhereClause($8);
+        sentence->setReturnClause($9);
+        $$ = sentence;
+    }
+    ;
+
+update_list
+    : update_item {
+        $$ = new UpdateList();
+        $$->addItem($1);
+    }
+    | update_list COMMA update_item {
+        $$ = $1;
+        $$->addItem($3);
+    }
+    ;
+
+update_item
+    : SYMBOL ASSIGN expression {
+        $$ = new UpdateItem($1, $3);
+    }
+    ;
+
+update_edge_sentence
+    : KW_UPDATE KW_EDGE INTEGER R_ARROW INTEGER
+      KW_SET update_list where_clause return_clause {
+        auto sentence = new UpdateEdgeSentence();
+        sentence->setSrcId($3);
+        sentence->setDstId($5);
+        sentence->setUpdateList($7);
+        sentence->setWhereClause($8);
+        sentence->setReturnClause($9);
+        $$ = sentence;
+    }
+    | KW_UPDATE KW_OR KW_INSERT KW_EDGE INTEGER R_ARROW INTEGER
+      KW_SET update_list where_clause return_clause {
+        auto sentence = new UpdateEdgeSentence();
+        sentence->setInsertable(true);
+        sentence->setSrcId($5);
+        sentence->setDstId($7);
+        sentence->setUpdateList($9);
+        sentence->setWhereClause($10);
+        sentence->setReturnClause($11);
+        $$ = sentence;
+    }
+    | KW_UPDATE KW_EDGE INTEGER R_ARROW INTEGER AT INTEGER
+      KW_SET update_list where_clause return_clause {
+        auto sentence = new UpdateEdgeSentence();
+        sentence->setSrcId($3);
+        sentence->setDstId($5);
+        sentence->setRank($7);
+        sentence->setUpdateList($9);
+        sentence->setWhereClause($10);
+        sentence->setReturnClause($11);
+        $$ = sentence;
+    }
+    | KW_UPDATE KW_OR KW_INSERT KW_EDGE INTEGER R_ARROW INTEGER AT INTEGER KW_SET
+      update_list where_clause return_clause {
+        auto sentence = new UpdateEdgeSentence();
+        sentence->setInsertable(true);
+        sentence->setSrcId($5);
+        sentence->setDstId($7);
+        sentence->setRank($9);
+        sentence->setUpdateList($11);
+        sentence->setWhereClause($12);
+        sentence->setReturnClause($13);
+        $$ = sentence;
+    }
+    ;
+
+mutate_sentence
+    : insert_vertex_sentence {}
+    | insert_edge_sentence {}
+    | update_vertex_sentence {}
+    | update_edge_sentence {}
+    ;
+
 maintainance_sentence
     : define_tag_sentence {}
     | define_edge_sentence {}
@@ -461,7 +605,7 @@ statement
         $$ = new Statement($1);
         *statement = $$;
     }
-    | insert_vertex_sentence {
+    | mutate_sentence {
         $$ = new Statement($1);
         *statement = $$;
     }
@@ -481,7 +625,7 @@ statement
         $$ = $1;
         $1->addSentence($3);
     }
-    | statement SEMICOLON insert_vertex_sentence {
+    | statement SEMICOLON mutate_sentence {
         $$ = $1;
         $1->addSentence($3);
     }

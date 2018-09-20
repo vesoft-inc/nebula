@@ -3,7 +3,9 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#pragma once
+#ifndef PARSER_GQLPARSER_H_
+#define PARSER_GQLPARSER_H_
+
 #include <sstream>
 #include <regex>
 #include "VGraphParser.hpp"
@@ -40,3 +42,5 @@ private:
 };
 
 }   // namespace vesoft
+
+#endif  // PARSER_GQLPARSER_H_

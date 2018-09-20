@@ -6,6 +6,8 @@
 #include <gtest/gtest.h>
 #include "parser/GQLParser.h"
 
+// TODO(dutor) Inspect the internal structures to check on the syntax and semantics
+
 namespace vesoft {
 
 TEST(Parser, Go) {
@@ -48,7 +50,6 @@ TEST(Parser, Go) {
         GQLParser parser;
         std::string query = "GO FROM 1 AS person RETURN person[manager].name,person.age";
         ASSERT_TRUE(parser.parse(query)) << parser.error();
-        fprintf(stderr, "statement: %s\n", parser.statement()->toString().c_str());
     }
     {
         GQLParser parser;
@@ -78,7 +79,8 @@ TEST(Parser, UseNamespace) {
 TEST(Parser, DefineTag) {
     {
         GQLParser parser;
-        std::string query = "DEFINE TAG person(name string, age uint8 TTL = 100, married bool, salary double)";
+        std::string query = "DEFINE TAG person(name string, age uint8 TTL = 100, "
+                            "married bool, salary double)";
         ASSERT_TRUE(parser.parse(query)) << parser.error();
     }
 }
@@ -109,7 +111,8 @@ TEST(Parser, Set) {
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person MINUS GO FROM 2 AS person UNION GO FROM 3 AS person";
+        std::string query = "GO FROM 1 AS person MINUS GO FROM 2 AS person "
+                            "UNION GO FROM 3 AS person";
         ASSERT_TRUE(parser.parse(query)) << parser.error();
     }
 }
@@ -130,15 +133,94 @@ TEST(Parser, Pipe) {
 TEST(Parser, InsertVertex) {
     {
         GQLParser parser;
-        std::string query = "INSERT VERTEX person(name,age,married,salary) VALUES(12345: \"dutor\", 30, true, 3.14)";
+        std::string query = "INSERT VERTEX person(name,age,married,salary) "
+                            "VALUES(12345: \"dutor\", 30, true, 3.14)";
         ASSERT_TRUE(parser.parse(query)) << parser.error();
-        fprintf(stderr, "statement: %s\n", parser.statement()->toString().c_str());
     }
     {
         GQLParser parser;
-        std::string query = "INSERT TAG person(name,age,married,salary) VALUES(12345: \"dutor\", 30, true, 3.14)";
+        std::string query = "INSERT TAG person(name,age,married,salary) "
+                            "VALUES(12345: \"dutor\", 30, true, 3.14)";
         ASSERT_TRUE(parser.parse(query)) << parser.error();
-        fprintf(stderr, "statement: %s\n", parser.statement()->toString().c_str());
+    }
+}
+
+TEST(Parser, UpdateVertex) {
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\",age=30,married=true";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\",age=31,married=true "
+                            "WHERE salary > 10000";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\",age=30,married=true "
+                            "RETURN name,salary";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE OR INSERT VERTEX 12345 SET name=\"dutor\",age=30,married=true "
+                            "RETURN name,salary";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
+    }
+}
+
+TEST(Parser, InsertEdge) {
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE transfer(amount, time) "
+                            "VALUES(12345 -> 54321: 3.75, 1537408527)";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE NO OVERWRITE transfer(amount, time) "
+                            "VALUES(12345 -> 54321: 3.75, 1537408527)";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE transfer(amount, time) "
+                            "VALUES(12345 -> 54321 @1537408527: 3.75, 1537408527)";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE NO OVERWRITE transfer(amount, time) "
+                            "VALUES(12345 -> 54321 @1537408527: 3.75, 1537408527)";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
+    }
+}
+
+TEST(Parser, UpdateEdge) {
+    {
+        GQLParser parser;
+        std::string query = "UPDATE EDGE 12345 -> 54321 SET amount=3.14,time=1537408527";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE EDGE 12345 -> 54321 SET amount=3.14,time=1537408527 "
+                            "WHERE amount > 3.14";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE EDGE 12345 -> 54321 SET amount=3.14,time=1537408527 "
+                            "WHERE amount > 3.14 RETURN amount,time";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE OR INSERT EDGE 12345 -> 54321 SET amount=3.14,time=1537408527 "
+                            "WHERE amount > 3.14 RETURN amount,time";
+        ASSERT_TRUE(parser.parse(query)) << parser.error();
     }
 }
 

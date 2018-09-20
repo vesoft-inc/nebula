@@ -61,10 +61,15 @@ TAG                         ([Tt][Aa][Gg])
 UNION                       ([Uu][Nn][Ii][Oo][Nn])
 INTERSECT                   ([Ii][Nn][Tt][Ee][Rr][Ss][Ee][Cc][Tt])
 MINUS                       ([Mm][Ii][Nn][Uu][Ss])
+NO                          ([Nn][Oo])
+OVERWRITE                   ([Oo][Vv][Ee][Rr][Ww][Rr][Ii][Tt][Ee])
 TRUE                        ([Tt][Rr][Uu][Ee])
 FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 
 ID                          ([_a-zA-Z][_a-zA-Z0-9]*)
+DEC                         ([0-9])
+HEX                         ([0-9a-fA-F])
+OCT                         ([0-7])
 
 
 %%
@@ -111,6 +116,8 @@ ID                          ([_a-zA-Z][_a-zA-Z0-9]*)
 {UNION}                     { return TokenType::KW_UNION; }
 {INTERSECT}                 { return TokenType::KW_INTERSECT; }
 {MINUS}                     { return TokenType::KW_MINUS; }
+{NO}                        { return TokenType::KW_NO; }
+{OVERWRITE}                 { return TokenType::KW_OVERWRITE; }
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 
@@ -118,6 +125,7 @@ ID                          ([_a-zA-Z][_a-zA-Z0-9]*)
 ","                         { return TokenType::COMMA; }
 ":"                         { return TokenType::COLON; }
 ";"                         { return TokenType::SEMICOLON; }
+"@"                         { return TokenType::AT; }
 
 "+"                         { return TokenType::ADD; }
 "-"                         { return TokenType::SUB; }
@@ -145,15 +153,33 @@ ID                          ([_a-zA-Z][_a-zA-Z0-9]*)
 "{"                         { return TokenType::L_BRACE; }
 "}"                         { return TokenType::R_BRACE; }
 
+"<-"                        { return TokenType::L_ARROW; }
+"->"                        { return TokenType::R_ARROW; }
 
-{ID}                        { yylval->strval = new std::string(yytext, yyleng); return TokenType::SYMBOL; }
+{ID}                        {
+                                // TODO(dutor) Whether to forbid the ID format that simply consists of `_'
+                                yylval->strval = new std::string(yytext, yyleng);
+                                return TokenType::SYMBOL;
+                            }
 
-[0-9]+                      { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
-[0-9]+[Uu][Ll]?             { yylval->intval = ::atoll(yytext); return TokenType::UINTEGER; }
-[0-9]+\.[0-9]*              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
-[0-9]*\.[0-9]+              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+{DEC}+                      { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
+0[Xx]{HEX}+                 {
+                                int64_t val = 0;
+                                sscanf(yytext, "%lx", &val);
+                                yylval->intval = val;
+                                return TokenType::INTEGER;
+                            }
+0{OCT}+                     {
+                                int64_t val = 0;
+                                sscanf(yytext, "%lo", &val);
+                                yylval->intval = val;
+                                return TokenType::INTEGER;
+                            }
+{DEC}+[Uu][Ll]?             { yylval->intval = ::atoll(yytext); return TokenType::UINTEGER; }
+{DEC}+\.{DEC}*              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+{DEC}*\.{DEC}+              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
 
-\$[0-9]+                    { yylval->intval = ::atoll(yytext + 1); return TokenType::COL_REF_ID; }
+\${DEC}+                    { yylval->intval = ::atoll(yytext + 1); return TokenType::COL_REF_ID; }
 \${ID}                      { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 
 
@@ -168,8 +194,8 @@ ID                          ([_a-zA-Z][_a-zA-Z0-9]*)
                                 ::strncpy(sbuf + pos, yytext, yyleng);
                                 pos += yyleng;
                             }
-<STR>\\[0-7]{1,3}           {
-                                int val;
+<STR>\\{OCT}{1,3}           {
+                                int val = 0;
                                 sscanf(yytext + 1, "%o", &val);
                                 if (val > 0xFF) {
                                     yyterminate();
@@ -177,7 +203,7 @@ ID                          ([_a-zA-Z][_a-zA-Z0-9]*)
                                 sbuf[pos] = val;
                                 pos++;
                             }
-<STR>\\[0-9]+               { yyterminate(); }
+<STR>\\{DEC}+               { yyterminate(); }
 <STR>\\n                    { sbuf[pos] = '\n'; pos++; }
 <STR>\\t                    { sbuf[pos] = '\t'; pos++; }
 <STR>\\r                    { sbuf[pos] = '\r'; pos++; }

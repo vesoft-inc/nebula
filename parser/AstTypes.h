@@ -13,18 +13,22 @@ namespace vesoft {
 class Expression {
 public:
     virtual ~Expression() {}
+
     virtual std::string toString() const {
         return "";
     }
+
     using ReturnType = boost::variant<int64_t, uint64_t, double, bool, std::string>;
     virtual ReturnType eval() const = 0;
 
     static int64_t asInt(const ReturnType &value) {
         return boost::get<int64_t>(value);
     }
+
     static uint64_t asUInt(const ReturnType &value) {
         return boost::get<uint64_t>(value);
     }
+
     static double asDouble(const ReturnType &value) {
         if (value.which() == 0) {
             return (double)boost::get<int64_t>(value);
@@ -34,6 +38,7 @@ public:
         }
         return boost::get<double>(value);
     }
+
     static bool asBool(const ReturnType &value) {
         switch (value.which()) {
             case 0:
@@ -50,24 +55,31 @@ public:
                 assert(false);
         }
     }
+
     static const std::string& asString(const ReturnType &value) {
         return boost::get<std::string>(value);
     }
+
     static bool isInt(const ReturnType &value) {
         return value.which() == 0;
     }
+
     static bool isUInt(const ReturnType &value) {
         return value.which() == 1;
     }
+
     static bool isDouble(const ReturnType &value) {
         return value.which() == 2;
     }
+
     static bool isBool(const ReturnType &value) {
         return value.which() == 3;
     }
+
     static bool isString(const ReturnType &value) {
         return value.which() == 4;
     }
+
     static bool isArithmetic(const ReturnType &value) {
         return isInt(value) || isUInt(value) || isDouble(value);
     }
@@ -703,15 +715,15 @@ private:
     std::unique_ptr<Expression>                 filter_;
 };
 
-class ColumnList final {
+class ReturnFields final {
 public:
-    void addColumn(Expression *column) {
-        columns_.emplace_back(column);
+    void addColumn(Expression *field) {
+        fields_.emplace_back(field);
     }
 
     std::string toString() const {
         std::string buf;
-        for (auto &expr : columns_) {
+        for (auto &expr : fields_) {
             buf += expr->toString();
             buf += ",";
         }
@@ -720,24 +732,24 @@ public:
     }
 
 private:
-    std::vector<std::unique_ptr<Expression>>    columns_;
+    std::vector<std::unique_ptr<Expression>>    fields_;
 };
 
 class ReturnClause final {
 public:
-    explicit ReturnClause(ColumnList *list) {
-        columnList_.reset(list);
+    explicit ReturnClause(ReturnFields *fields) {
+        returnFields_.reset(fields);
     }
 
     std::string toString() const {
         std::string buf;
         buf += "RETURN ";
-        buf += columnList_->toString();
+        buf += returnFields_->toString();
         return buf;
     }
 
 private:
-    std::unique_ptr<ColumnList>                 columnList_;
+    std::unique_ptr<ReturnFields>               returnFields_;
 };
 
 class GoSentence final : public Sentence {
@@ -810,11 +822,11 @@ public:
     }
 
 private:
-    std::unique_ptr<StepClause>         stepClause_;
-    std::unique_ptr<FromClause>         fromClause_;
-    std::unique_ptr<OverClause>         overClause_;
-    std::unique_ptr<WhereClause>        whereClause_;
-    std::unique_ptr<ReturnClause>       returnClause_;
+    std::unique_ptr<StepClause>                 stepClause_;
+    std::unique_ptr<FromClause>                 fromClause_;
+    std::unique_ptr<OverClause>                 overClause_;
+    std::unique_ptr<WhereClause>                whereClause_;
+    std::unique_ptr<ReturnClause>               returnClause_;
 };
 
 class MatchSentence final : public Sentence {
@@ -1087,12 +1099,12 @@ private:
 
 class InsertVertexSentence final : public Sentence {
 public:
-    InsertVertexSentence(int64_t id, std::string *vertex, PropertyList *props, ValueList *values, bool overwrite = true) {
+    InsertVertexSentence(int64_t id, std::string *vertex, PropertyList *props, ValueList *values, bool overwritable = true) {
         id_ = id;
         vertex_.reset(vertex);
         properties_.reset(props);
         values_.reset(values);
-        overwrite_ = overwrite;
+        overwritable_ = overwritable;
     }
 
     std::string toString() const {
@@ -1110,11 +1122,232 @@ public:
     }
 
 private:
-    bool                                        overwrite_{true};
+    bool                                        overwritable_{true};
     int64_t                                     id_;
     std::unique_ptr<std::string>                vertex_;
     std::unique_ptr<PropertyList>               properties_;
     std::unique_ptr<ValueList>                  values_;
+};
+
+class InsertEdgeSentence final : public Sentence {
+public:
+    void setOverwrite(bool overwritable) {
+        overwritable_ = overwritable;
+    }
+
+    void setSrcId(int64_t srcid) {
+        srcid_ = srcid;
+    }
+
+    void setDstId(int64_t dstid) {
+        dstid_ = dstid;
+    }
+
+    void setRank(int64_t rank) {
+        rank_ = rank;
+    }
+
+    void setEdge(std::string *edge) {
+        edge_.reset(edge);
+    }
+
+    void setProps(PropertyList *props) {
+        properties_.reset(props);
+    }
+
+    void setValues(ValueList *values) {
+        values_.reset(values);
+    }
+
+    std::string toString() const override {
+        std::string buf;
+        buf += "INSERT EDGE ";
+        if (!overwritable_) {
+            buf += "NO OVERWRITE ";
+        }
+        buf += *edge_;
+        buf += "(";
+        buf += properties_->toString();
+        buf += ") ";
+        buf += "VALUES(";
+        buf += std::to_string(srcid_);
+        buf += " -> ";
+        buf += std::to_string(dstid_);
+        if (rank_ != 0) {
+            buf += " @";
+            buf += std::to_string(rank_);
+        }
+        buf += ": ";
+        buf += values_->toString();
+        buf += ")";
+        return buf;
+    }
+
+private:
+    bool                                        overwritable_{true};
+    int64_t                                     srcid_{0};
+    int64_t                                     dstid_{0};
+    int64_t                                     rank_{0};
+    std::unique_ptr<std::string>                edge_;
+    std::unique_ptr<PropertyList>               properties_;
+    std::unique_ptr<ValueList>                  values_;
+};
+
+class UpdateItem final {
+public:
+    UpdateItem(std::string *field, Expression *value) {
+        field_.reset(field);
+        value_.reset(value);
+    }
+
+    std::string toString() const {
+        std::string buf;
+        buf += *field_;
+        buf += "=";
+        buf += value_->toString();
+        return buf;
+    }
+
+private:
+    std::unique_ptr<std::string>                field_;
+    std::unique_ptr<Expression>                 value_;
+};
+
+class UpdateList final {
+public:
+    void addItem(UpdateItem *item) {
+        items_.emplace_back(item);
+    }
+
+    std::string toString() const {
+        std::string buf;
+        for (auto &item : items_) {
+            buf += item->toString();
+            buf += ",";
+        }
+        buf.resize(buf.size() - 1);
+        return buf;
+    }
+
+private:
+    std::vector<std::unique_ptr<UpdateItem>>    items_;
+};
+
+class UpdateVertexSentence final : public Sentence {
+public:
+    void setInsertable(bool insertable) {
+        insertable_ = insertable;
+    }
+
+    void setVid(int64_t vid) {
+        vid_ = vid;
+    }
+
+    void setUpdateList(UpdateList *items) {
+        updateItems_.reset(items);
+    }
+
+    void setWhereClause(WhereClause *clause) {
+        whereClause_.reset(clause);
+    }
+
+    void setReturnClause(ReturnClause *clause) {
+        returnClause_.reset(clause);
+    }
+
+    std::string toString() const override {
+        std::string buf;
+        buf += "UPDATE ";
+        if (insertable_) {
+            buf += "OR INSERT ";
+        }
+        buf += "VERTEX ";
+        buf += std::to_string(vid_);
+        buf += " SET ";
+        buf += updateItems_->toString();
+        if (whereClause_ != nullptr) {
+            buf += " ";
+            buf += whereClause_->toString();
+        }
+        if (returnClause_ != nullptr) {
+            buf += " ";
+            buf += returnClause_->toString();
+        }
+
+        return buf;
+    }
+
+private:
+    bool                                        insertable_{false};
+    int64_t                                     vid_{0};
+    std::unique_ptr<UpdateList>                 updateItems_;
+    std::unique_ptr<WhereClause>                whereClause_;
+    std::unique_ptr<ReturnClause>               returnClause_;
+};
+
+class UpdateEdgeSentence final : public Sentence {
+public:
+    void setInsertable(bool insertable) {
+        insertable_ = insertable;
+    }
+
+    void setSrcId(int64_t srcid) {
+        srcid_ = srcid;
+    }
+
+    void setDstId(int64_t dstid) {
+        dstid_ = dstid;
+    }
+
+    void setRank(int64_t rank) {
+        rank_ = rank;
+    }
+
+    void setUpdateList(UpdateList *items) {
+        updateItems_.reset(items);
+    }
+
+    void setWhereClause(WhereClause *clause) {
+        whereClause_.reset(clause);
+    }
+
+    void setReturnClause(ReturnClause *clause) {
+        returnClause_.reset(clause);
+    }
+
+    std::string toString() const override {
+        std::string buf;
+        buf += "UPDATE ";
+        if (insertable_) {
+            buf += "OR INSERT ";
+        }
+        buf += "EDGE ";
+        buf += std::to_string(srcid_);
+        buf += "->";
+        buf += std::to_string(dstid_);
+        buf += " SET ";
+        buf += updateItems_->toString();
+        if (whereClause_ != nullptr) {
+            buf += " ";
+            buf += whereClause_->toString();
+        }
+        if (returnClause_ != nullptr) {
+            buf += " ";
+            buf += returnClause_->toString();
+        }
+
+        return buf;
+    }
+
+
+private:
+    bool                                        insertable_{false};
+    int64_t                                     srcid_{0};
+    int64_t                                     dstid_{0};
+    int64_t                                     rank_{0};
+    std::unique_ptr<UpdateList>                 updateItems_;
+    std::unique_ptr<WhereClause>                whereClause_;
+    std::unique_ptr<ReturnClause>               returnClause_;
 };
 
 class Statement final {
