@@ -591,6 +591,7 @@ public:
 
     std::string toString() const {
         std::string buf;
+        buf.reserve(256);
         if (isUpto()) {
             buf += "UPTO ";
         }
@@ -616,6 +617,7 @@ public:
 
     std::string toString(bool isRef) const {
         std::string buf;
+        buf.reserve(256);
         if (isRef) {
             buf += "[";
         }
@@ -663,6 +665,7 @@ public:
 
     std::string toString() const {
         std::string buf;
+        buf.reserve(256);
         buf += "FROM ";
         buf += srcNodeList_->toString(isRef_);
         buf += " AS ";
@@ -685,6 +688,7 @@ public:
 
     std::string toString() const {
         std::string buf;
+        buf.reserve(256);
         buf += "OVER ";
         buf += *edge_;
         if (isReversely_) {
@@ -706,6 +710,7 @@ public:
 
     std::string toString() const {
         std::string buf;
+        buf.reserve(256);
         buf += "WHERE ";
         buf += filter_->toString();
         return buf;
@@ -723,6 +728,7 @@ public:
 
     std::string toString() const {
         std::string buf;
+        buf.reserve(256);
         for (auto &expr : fields_) {
             buf += expr->toString();
             buf += ",";
@@ -743,6 +749,7 @@ public:
 
     std::string toString() const {
         std::string buf;
+        buf.reserve(256);
         buf += "RETURN ";
         buf += returnFields_->toString();
         return buf;
@@ -797,6 +804,7 @@ public:
 
     std::string toString() const override {
         std::string buf;
+        buf.reserve(256);
         buf += "GO ";
         if (stepClause_ != nullptr) {
             buf += stepClause_->toString();
@@ -858,6 +866,7 @@ public:
 
     std::string toString() const override {
         std::string buf;
+        buf.reserve(256);
         buf += "DEFINE TAG ";
         buf += *name_;
         buf += " (";
@@ -890,6 +899,7 @@ public:
 
     std::string toString() const override {
         std::string buf;
+        buf.reserve(256);
         buf += "DEFINE EDGE ";
         buf += *name_;
         buf += " (";
@@ -922,6 +932,7 @@ public:
 
     std::string toString() const override {
         std::string buf;
+        buf.reserve(256);
         buf += "ALTER TAG ";
         buf += *name_;
         buf += "(";
@@ -954,6 +965,7 @@ public:
 
     std::string toString() const override {
         std::string buf;
+        buf.reserve(256);
         buf += "ALTER EDGE ";
         buf += *name_;
         buf += "(";
@@ -991,6 +1003,7 @@ public:
 
     std::string toString() const override {
         std::string buf;
+        buf.reserve(256);
         buf = "(";
         buf += left_->toString();
         switch (op_) {
@@ -1024,6 +1037,7 @@ public:
 
     std::string toString() const override {
         std::string buf;
+        buf.reserve(256);
         buf += left_->toString();
         buf += " | ";
         buf += right_->toString();
@@ -1045,6 +1059,7 @@ public:
 
     std::string toString() const override {
         std::string buf;
+        buf.reserve(256);
         buf += "$";
         buf += *variable_;
         buf += " = ";
@@ -1065,6 +1080,7 @@ public:
 
     std::string toString() const {
         std::string buf;
+        buf.reserve(256);
         for (auto &prop : properties_) {
             buf += *prop;
             buf += ",";
@@ -1085,6 +1101,7 @@ public:
 
     std::string toString() const {
         std::string buf;
+        buf.reserve(256);
         for (auto &expr : values_) {
             buf += expr->toString();
             buf += ",";
@@ -1109,6 +1126,7 @@ public:
 
     std::string toString() const {
         std::string buf;
+        buf.reserve(256);
         buf += "INSERT VERTEX ";
         buf += *vertex_;
         buf += "(";
@@ -1161,6 +1179,7 @@ public:
 
     std::string toString() const override {
         std::string buf;
+        buf.reserve(256);
         buf += "INSERT EDGE ";
         if (!overwritable_) {
             buf += "NO OVERWRITE ";
@@ -1202,6 +1221,7 @@ public:
 
     std::string toString() const {
         std::string buf;
+        buf.reserve(256);
         buf += *field_;
         buf += "=";
         buf += value_->toString();
@@ -1221,6 +1241,7 @@ public:
 
     std::string toString() const {
         std::string buf;
+        buf.reserve(256);
         for (auto &item : items_) {
             buf += item->toString();
             buf += ",";
@@ -1257,6 +1278,7 @@ public:
 
     std::string toString() const override {
         std::string buf;
+        buf.reserve(256);
         buf += "UPDATE ";
         if (insertable_) {
             buf += "OR INSERT ";
@@ -1317,6 +1339,7 @@ public:
 
     std::string toString() const override {
         std::string buf;
+        buf.reserve(256);
         buf += "UPDATE ";
         if (insertable_) {
             buf += "OR INSERT ";
