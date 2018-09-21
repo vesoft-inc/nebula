@@ -109,6 +109,7 @@ add_subdirectory(server)
 add_subdirectory(console)
 add_subdirectory(raftex)
 #add_subdirectory(storage)
+add_subdirectory(parser)
 
 add_dependencies(common third-party)
 #add_dependencies(storage_engines common)
