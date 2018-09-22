@@ -34,6 +34,7 @@
 #include <list>
 #include <unordered_map>
 #include <unordered_set>
+#include <queue>
 #include <deque>
 
 #include <cstdio>
@@ -59,6 +60,7 @@
 #include <folly/Varint.h>
 #include <folly/dynamic.h>
 #include <folly/json.h>
+#include <folly/RWSpinLock.h>
 
 #include "thread/NamedThread.h"
 //#include "base/StringUnorderedMap.h"
