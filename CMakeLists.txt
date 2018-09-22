@@ -17,7 +17,9 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++")
 
 # Possible values are Debug, Release, RelWithDebInfo, MinSizeRel
-set(CMAKE_BUILD_TYPE "Debug")
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug" FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "_build")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "_build")
