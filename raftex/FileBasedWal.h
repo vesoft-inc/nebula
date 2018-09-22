@@ -149,6 +149,9 @@ private:
 private:
     using WalFiles = std::map<LogID, WalFileInfoPtr>;
 
+private:
+    using WalFiles = std::map<LogID, WalFileInfoPtr>;
+
     /***************************************
      *
      * FileBasedWal Member Fields
