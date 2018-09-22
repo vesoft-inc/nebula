@@ -5,8 +5,8 @@
 %option yylineno
 
 %{
-#include "GQLParser.h"
-#include "VGraphScanner.h"
+#include "parser/GQLParser.h"
+#include "parser/VGraphScanner.h"
 #include "VGraphParser.hpp"
 
 #define YY_USER_ACTION  yylloc->columns(yyleng);
