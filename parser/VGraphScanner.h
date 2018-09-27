@@ -6,6 +6,8 @@
 #ifndef PARSER_VGRAPHSCANNER_H_
 #define PARSER_VGRAPHSCANNER_H_
 
+#include "base/Base.h"
+
 // Only include FlexLexer.h if it hasn't been already included
 #if !defined(yyFlexLexerOnce)
 #include <FlexLexer.h>

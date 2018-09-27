@@ -4,8 +4,6 @@ source ../functions.sh
 
 prepareBuild "jemalloc"
 
-libunwind_release=$TOOLS_ROOT/libunwind
-
 echo
 echo Start building $PROJECT_NAME with gcc-$GCC_VER
 echo
@@ -23,9 +21,13 @@ echo
 
 cd $SOURCE_DIR
 
+if [[ -n $VGRAPH_LIBUNWIND_ROOT ]]; then
+    EXTRA_LDFLAGS="-L$VGRAPH_LIBUNWIND_ROOT/lib    $EXTRA_LDFLAGS"
+fi
+
 if [[ $SOURCE_DIR/configure.ac -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !(CC=$GCC_ROOT/bin/gcc CPP=$GCC_ROOT/bin/cpp CXX=$GCC_ROOT/bin/g++    CXXFLAGS="-fPIC -DPIC -I$libunwind_release/include   $EXTRA_CXXFLAGS" CFLAGS=$CXXFLAGS    LDFLAGS="-static-libgcc -static-libstdc++ -L$libunwind_release/lib  $EXTRA_LDFLAGS"        $SOURCE_DIR/autogen.sh --enable-autogen --disable-valgrind --enable-stats --enable-prof --enable-prof-libunwind --with-static-libunwind=$libunwind_release/lib/libunwind.a --enable-prof-gcc --enable-prof-libgcc --prefix=$INSTALL_PATH); then
+    if !(CC=$VGRAPH_C_COMPILER CPP="$VGRAPH_C_COMPILER -E" CXX=$VGRAPH_CXX_COMPILER    CXXFLAGS="-fPIC -DPIC    $EXTRA_CXXFLAGS" CFLAGS=$CXXFLAGS    LDFLAGS="-static-libgcc -static-libstdc++     $EXTRA_LDFLAGS"        $SOURCE_DIR/autogen.sh --enable-autogen --disable-valgrind --enable-stats --enable-prof --enable-prof-libunwind --enable-prof-gcc --enable-prof-libgcc --prefix=$INSTALL_PATH); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"

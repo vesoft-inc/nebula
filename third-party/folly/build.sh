@@ -4,10 +4,6 @@ source ../functions.sh
 
 prepareBuild "folly"
 
-boost_release=$TOOLS_ROOT/boost
-openssl_release=$TOOLS_ROOT/openssl
-libunwind_release=$TOOLS_ROOT/libunwind
-
 double_conversion_release=$THIRD_PARTY_DIR/double-conversion/_install
 libevent_release=$THIRD_PARTY_DIR/libevent/_install
 gflags_release=$THIRD_PARTY_DIR/gflags/_install
@@ -30,12 +26,14 @@ echo
 
 cd $SOURCE_DIR
 
-COMPILER_FLAGS="-fPIC -DPIC -DFOLLY_HAVE_LIBDWARF_DWARF_H -DFOLLY_HAVE_LIBZSTD -DFOLLY_HAVE_MEMRCHR -Wno-noexcept-type   $EXTRA_CXXFLAGS"
-EXE_LINKER_FLAGS="-static-libgcc -static-libstdc++ -L$libunwind_release/lib    $EXTRA_LDFLAGS"
+compiler_flags="-fPIC -DPIC -DFOLLY_HAVE_LIBDWARF_DWARF_H -DFOLLY_HAVE_MEMRCHR -Wno-noexcept-type   $EXTRA_CXXFLAGS"
+exe_linker_flags="$EXTRA_LDFLAGS"
+VGRAPH_INCLUDE_DIRS="$double_conversion_release/include;$libevent_release/include;$gflags_release/include;$glog_release/include;$zstd_release/include;$zlib_release/include;$snappy_release/include;$VGRAPH_INCLUDE_DIRS"
+VGRAPH_LIB_DIRS="$double_conversion_release/lib;$libevent_release/lib;$gflags_release/lib;$glog_release/lib;$zstd_release/lib;$zlib_release/lib;$snappy_release/lib;$VGRAPH_LIB_DIRS"
 
 if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !($CMAKE_ROOT/bin/cmake $CMAKE_FLAGS -DCMAKE_C_FLAGS:STRING="$COMPILER_FLAGS" -DCMAKE_CXX_FLAGS:STRING="$COMPILER_FLAGS" -DCMAKE_EXE_LINKER_FLAGS:STRING="$EXE_LINKER_FLAGS" -DOPENSSL_INCLUDE_DIR=$openssl_release/include -DOPENSSL_SSL_LIBRARY=$openssl_release/lib/libssl.a -DOPENSSL_CRYPTO_LIBRARY=$openssl_release/lib/libcrypto.a -DBOOST_ROOT=$boost_release -DBoost_USE_STATIC_LIBS:BOOL=YES -DDOUBLE_CONVERSION_INCLUDE_DIR=$double_conversion_release/include -DDOUBLE_CONVERSION_LIBRARY=$double_conversion_release/lib/libdouble-conversion.a -DLIBEVENT_INCLUDE_DIR=$libevent_release/include -DLIBEVENT_LIB=$libevent_release/lib/libevent.a -DLIBGFLAGS_INCLUDE_DIR=$gflags_release/include -DLIBGFLAGS_LIBRARY_RELEASE=$gflags_release/lib/libgflags.a -DLIBGLOG_INCLUDE_DIR=$glog_release/include -DLIBGLOG_LIBRARY=$glog_release/lib/libglog.a -DZLIB_INCLUDE_DIR=$zlib_release/include -DZLIB_LIBRARY=$zlib_release/lib/libz.a -DZSTD_INCLUDE_DIR=$zstd_release/include -DZSTD_LIBRARY=$zstd_release/lib/libzstd.a -DSNAPPY_INCLUDE_DIR=$snappy_release/include -DSNAPPY_LIBRARY_RELEASE=$snappy_release/lib/libsnappy.a      $SOURCE_DIR); then
+    if !($VGRAPH_CMAKE $CMAKE_FLAGS -DCMAKE_C_FLAGS:STRING="$compiler_flags" -DCMAKE_CXX_FLAGS:STRING="$compiler_flags" -DCMAKE_INCLUDE_PATH="$VGRAPH_INCLUDE_DIRS" -DCMAKE_LIBRARY_PATH="$VGRAPH_LIB_DIRS" -DCMAKE_EXE_LINKER_FLAGS:STRING="$exe_linker_flags" -DBoost_USE_STATIC_LIBS:BOOL=YES     $SOURCE_DIR); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"
