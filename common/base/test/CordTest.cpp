@@ -76,7 +76,7 @@ TEST(Cord, byteStream) {
 
     EXPECT_EQ(sizeof(bytes), str.size());
     const char* p = str.data();
-    for (int i = 0; i < str.size(); i++) {
+    for (auto i = 0UL; i < str.size(); i++) {
         EXPECT_EQ(bytes[i], uint8_t(p[i]));
     }
 }

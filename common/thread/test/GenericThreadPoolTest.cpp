@@ -90,12 +90,6 @@ TEST(GenericThreadPool, addTask) {
     }
 }
 
-static size_t currentMicroSeconds() {
-    struct timeval ts;
-    ::gettimeofday(&ts, nullptr);
-    return ts.tv_sec * 1000000 + ts.tv_usec;
-}
-
 static bool msAboutEqual(size_t target, size_t actual) {
     return std::max(target, actual) - std::min(target, actual) <= 10;
 }

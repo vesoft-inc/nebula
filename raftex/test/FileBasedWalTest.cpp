@@ -39,7 +39,7 @@ TEST(FileBasedWal, AppendLogs) {
     LogID id = 0;
     while (it->valid()) {
         EXPECT_EQ(id, it->logId());
-        EXPECT_EQ(folly::stringPrintf("Test string %02d", id),
+        EXPECT_EQ(folly::stringPrintf("Test string %02ld", id),
                   it->logMsg());
         ++(*it);
         ++id;

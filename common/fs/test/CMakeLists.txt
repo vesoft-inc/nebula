@@ -24,3 +24,17 @@ target_link_libraries(
 )
 add_test(NAME temp_dir_test COMMAND temp_dir_test)
 
+add_executable(temp_file_test TempFileTest.cpp $<TARGET_OBJECTS:fs_obj>)
+target_link_libraries(
+    temp_file_test
+    folly
+    gtest
+    gtest_main
+    glog
+    gflags
+    double-conversion
+    dl
+    -pthread
+)
+add_test(NAME temp_file_test COMMAND temp_file_test)
+

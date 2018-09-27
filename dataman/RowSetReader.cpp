@@ -27,7 +27,7 @@ RowSetReader::Iterator::Iterator(SchemaProviderIf* schema,
 
 
 int32_t RowSetReader::Iterator::prepareReader() {
-    if (offset_ < data_.size()) {
+    if (offset_ < static_cast<int64_t>(data_.size())) {
         try {
             auto begin = reinterpret_cast<const uint8_t*>(data_.begin());
             folly::ByteRange range(begin + offset_, 10);
@@ -66,7 +66,7 @@ RowSetReader::Iterator& RowSetReader::Iterator::operator++() noexcept {
 
 
 RowSetReader::Iterator::operator bool() const noexcept {
-    return offset_ < data_.size();
+    return offset_ < static_cast<int64_t>(data_.size());
 }
 
 

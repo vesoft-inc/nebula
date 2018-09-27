@@ -187,7 +187,7 @@ void readMix(int32_t iters) {
 
 
 #define READ_VALUE(T, SCHEMA, DATA, FN) \
-    for (int i = 0; i < iters; i++) { \
+    for (uint64_t i = 0; i < iters; i++) { \
         RowReader reader(&SCHEMA, DATA); \
         T val; \
         auto it = reader.begin(); \
@@ -198,7 +198,7 @@ void readMix(int32_t iters) {
     }
 
 #define READ_VALUE_RANDOMLY(T, SCHEMA, DATA, FN) \
-    for (int i = 0; i < iters; i++) { \
+    for (uint64_t i = 0; i < iters; i++) { \
         RowReader reader(&SCHEMA, DATA); \
         T val; \
         for (int j = 0; j < 32; j++) { \

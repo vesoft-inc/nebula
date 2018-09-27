@@ -46,7 +46,7 @@ bool ThriftSchemaProvider::ThriftSchemaField::isValid() const {
  **********************************/
 ThriftSchemaProvider::ThriftSchemaProvider(const cpp2::Schema* schema)
         : columns_(&(schema->get_columns())) {
-    for (int i = 0; i < columns_->size(); i++) {
+    for (auto i = 0UL; i < columns_->size(); i++) {
         const std::string& name = (*columns_)[i].get_name();
         nameIndex_.emplace(
             std::make_pair(SpookyHashV2::Hash64(name.data(), name.size(), 0), i)
@@ -78,7 +78,7 @@ int32_t ThriftSchemaProvider::getFieldIndex(const folly::StringPiece name,
 
 const char* ThriftSchemaProvider::getFieldName(int32_t index,
                                               int32_t ver) const {
-    if (index < 0 || index >= columns_->size()) {
+    if (index < 0 || index >= static_cast<int32_t>(columns_->size())) {
         return nullptr;
     }
     return (*columns_)[index].get_name().c_str();
@@ -87,7 +87,7 @@ const char* ThriftSchemaProvider::getFieldName(int32_t index,
 
 const cpp2::ValueType* ThriftSchemaProvider::getFieldType(int32_t index,
                                                          int32_t ver) const {
-    if (index < 0 || index >= columns_->size()) {
+    if (index < 0 || index >= static_cast<int32_t>(columns_->size())) {
         return nullptr;
     }
 
@@ -108,7 +108,7 @@ const cpp2::ValueType* ThriftSchemaProvider::getFieldType(
 
 std::unique_ptr<ThriftSchemaProvider::Field>
 ThriftSchemaProvider::field(int32_t index, int32_t ver) const {
-    if (index < 0 || index >= columns_->size()) {
+    if (index < 0 || index >= static_cast<int32_t>(columns_->size())) {
         return std::unique_ptr<Field>();
     }
     return std::make_unique<ThriftSchemaField>(&((*columns_)[index]));
