@@ -6,6 +6,7 @@
 #ifndef PARSER_EXPRESSIONS_H_
 #define PARSER_EXPRESSIONS_H_
 
+#include "base/Base.h"
 #include <boost/variant.hpp>
 
 namespace vesoft {

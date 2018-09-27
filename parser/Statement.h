@@ -6,6 +6,7 @@
 #ifndef PARSER_STATEMENT_H_
 #define PARSER_STATEMENT_H_
 
+#include "base/Base.h"
 #include "parser/MaintainSentences.h"
 #include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"

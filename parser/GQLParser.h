@@ -6,8 +6,7 @@
 #ifndef PARSER_GQLPARSER_H_
 #define PARSER_GQLPARSER_H_
 
-#include <sstream>
-#include <regex>
+#include "base/Base.h"
 #include "VGraphParser.hpp"
 #include "VGraphScanner.h"
 
