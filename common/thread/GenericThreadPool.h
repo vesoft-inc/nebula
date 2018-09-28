@@ -5,6 +5,7 @@
  */
 #ifndef COMMON_THREAD_GENERICTHREADPOOL_H_
 #define COMMON_THREAD_GENERICTHREADPOOL_H_
+
 #include "thread/GenericWorker.h"
 
 /**

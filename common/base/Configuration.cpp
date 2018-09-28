@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
+#include "base/Base.h"
 #include "base/Configuration.h"
 
 namespace vesoft {
