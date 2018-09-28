@@ -44,7 +44,7 @@ fi
 
 if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !(PATH=$VGRAPH_GPERF_BIN_DIR:$PATH CC=$VGRAPH_C_COMPILER CPP="$VGRAPH_C_COMPILER -E" CXX=$VGRAPH_CXX_COMPILER       CXXFLAGS="-fPIC -DPIC -I$VGRAPH_BOOST_ROOT/include -I$VGRAPH_OPENSSL_ROOT/include -I$double_conversion_release/include -I$libevent_release/include -I$gflags_release/include -I$glog_release/include -I$folly_release/include -I$wangle_release/include -I$zlib_release/include   $EXTRA_CXXFLAGS"  CPPFLAGS=$CXXFLAGS  CFLAGS=$CXXFLAGS        LDFLAGS="-static-libgcc -static-libstdc++ -L$VGRAPH_BOOST_ROOT/lib -L$VGRAPH_OPENSSL_ROOT/lib -L$double_conversion_release/lib -L$libevent_release/lib -L$gflags_release/lib -L$glog_release/lib -L$folly_release/lib -L$wangle_release/lib -L$zlib_release/lib    $EXTRA_LDFLAGS"           LIBS="-lssl -lcrypto -ldl"         $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
+    if !(PATH=$VGRAPH_GPERF_BIN_DIR:$PATH CC=$VGRAPH_C_COMPILER CPP="$VGRAPH_C_COMPILER -E" CXX=$VGRAPH_CXX_COMPILER       CXXFLAGS="-fPIC -DPIC -I$VGRAPH_BOOST_ROOT/include -I$VGRAPH_OPENSSL_ROOT/include -I$double_conversion_release/include -I$libevent_release/include -I$gflags_release/include -I$glog_release/include -I$folly_release/include -I$wangle_release/include -I$zlib_release/include   $EXTRA_CXXFLAGS"  CPPFLAGS=$CXXFLAGS  CFLAGS=$CXXFLAGS        LDFLAGS="-static-libgcc -static-libstdc++ -L$VGRAPH_BOOST_ROOT/lib -L$VGRAPH_OPENSSL_ROOT/lib -L$double_conversion_release/lib -L$libevent_release/lib -L$gflags_release/lib -L$glog_release/lib -L$folly_release/lib -L$wangle_release/lib -L$zlib_release/lib    $EXTRA_LDFLAGS"         LIBS="-lssl -lcrypto -ldl"         $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"
@@ -53,7 +53,7 @@ if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
     fi
 fi
 
-if (PATH=$VGRAPH_GPERF_EXE_DIR:$PATH    make $@); then
+if (PATH=$VGRAPH_GPERF_BIN_DIR:$PATH    make $@); then
     if [[ $SOURCE_DIR/lib/.libs/libproxygenlib.a -nt $INSTALL_PATH/lib/libproxygenlib.a ||
           $SOURCE_DIR/httpserver/.libs/libproxygenhttpserver.a -nt $INSTALL_PATH/lib/libproxygenhttpserver.a ||
           $SOURCE_DIR/httpclient/samples/curl/.libs/libproxygencurl.a -nt $INSTALL_PATH/lib/libproxygencurl.a ]]; then

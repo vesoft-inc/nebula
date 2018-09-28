@@ -1,6 +1,6 @@
 build_external(
     tgt_rocksdb
-    tgt_bzip2 tgt_snappy tgt_zlib tgt_zstd
+    tgt_bzip2 tgt_snappy tgt_zlib tgt_zstd tgt_jemalloc
 )
 
 add_custom_target(
