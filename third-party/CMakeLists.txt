@@ -1,5 +1,23 @@
 set(ADDITIONAL_MAKE_CLEAN_FILES "_build/")
 
+macro(build_external tgtName)
+    add_custom_target(
+        ${tgtName}
+        COMMAND
+            VGRAPH_C_COMPILER=${CMAKE_C_COMPILER}
+            VGRAPH_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+            VGRAPH_CMAKE=${CMAKE_COMMAND}
+            VGRAPH_FLEX=${FLEX_EXECUTABLE}
+            VGRAPH_KRB5_ROOT=${VGRAPH_KRB5_ROOT}
+            VGRAPH_LIBUNWIND_ROOT=${VGRAPH_LIBUNWIND_ROOT}
+            VGRAPH_OPENSSL_ROOT=${VGRAPH_OPENSSL_ROOT}
+            VGRAPH_BOOST_ROOT=${VGRAPH_BOOST_ROOT}
+            VGRAPH_GPERF_BIN_DIR=${VGRAPH_GPERF_BIN_DIR}
+            "./build.sh" "-j2" ">" "./_build.log" "2>&1"
+        DEPENDS ${ARGN}
+    )
+endmacro(build_external)
+
 add_subdirectory(bzip2)
 add_subdirectory(double-conversion)
 add_subdirectory(fatal)

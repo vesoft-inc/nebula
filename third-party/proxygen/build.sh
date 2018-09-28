@@ -8,11 +8,6 @@ prepareBuild "proxygen" "/proxygen"
 cd $SOURCE_DIR/lib/test
 ln -s $CURR_DIR/googletest-release-1.8.0.zip release-1.8.0.zip
 
-boost_release=$TOOLS_ROOT/boost
-openssl_release=$TOOLS_ROOT/openssl
-libunwind_release=$TOOLS_ROOT/libunwind
-gperf_release=$TOOLS_ROOT/gperf
-
 double_conversion_release=$THIRD_PARTY_DIR/double-conversion/_install
 libevent_release=$THIRD_PARTY_DIR/libevent/_install
 gflags_release=$THIRD_PARTY_DIR/gflags/_install
@@ -49,7 +44,7 @@ fi
 
 if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !(PATH=$gperf_release/bin:$PATH CC=$GCC_ROOT/bin/gcc CPP=$GCC_ROOT/bin/cpp CXX=$GCC_ROOT/bin/g++       CXXFLAGS="-fPIC -DPIC -I$boost_release/include -I$openssl_release/include -I$double_conversion_release/include -I$libevent_release/include -I$gflags_release/include -I$glog_release/include -I$folly_release/include -I$wangle_release/include -I$zlib_release/include   $EXTRA_CXXFLAGS"  CPPFLAGS=$CXXFLAGS  CFLAGS=$CXXFLAGS        LDFLAGS="-static-libgcc -static-libstdc++ -L$boost_release/lib -L$openssl_release/lib -L$libunwind_release/lib -L$double_conversion_release/lib -L$libevent_release/lib -L$gflags_release/lib -L$glog_release/lib -L$folly_release/lib -L$wangle_release/lib -L$zlib_release/lib    $EXTRA_LDFLAGS"           LIBS="-ldl"         $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
+    if !(PATH=$VGRAPH_GPERF_BIN_DIR:$PATH CC=$VGRAPH_C_COMPILER CPP="$VGRAPH_C_COMPILER -E" CXX=$VGRAPH_CXX_COMPILER       CXXFLAGS="-fPIC -DPIC -I$VGRAPH_BOOST_ROOT/include -I$VGRAPH_OPENSSL_ROOT/include -I$double_conversion_release/include -I$libevent_release/include -I$gflags_release/include -I$glog_release/include -I$folly_release/include -I$wangle_release/include -I$zlib_release/include   $EXTRA_CXXFLAGS"  CPPFLAGS=$CXXFLAGS  CFLAGS=$CXXFLAGS        LDFLAGS="-static-libgcc -static-libstdc++ -L$VGRAPH_BOOST_ROOT/lib -L$VGRAPH_OPENSSL_ROOT/lib -L$double_conversion_release/lib -L$libevent_release/lib -L$gflags_release/lib -L$glog_release/lib -L$folly_release/lib -L$wangle_release/lib -L$zlib_release/lib    $EXTRA_LDFLAGS"         LIBS="-lssl -lcrypto -ldl"         $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"
@@ -58,7 +53,7 @@ if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
     fi
 fi
 
-if (PATH=$gperf_release/bin:$PATH    make $@); then
+if (PATH=$VGRAPH_GPERF_BIN_DIR:$PATH    make $@); then
     if [[ $SOURCE_DIR/lib/.libs/libproxygenlib.a -nt $INSTALL_PATH/lib/libproxygenlib.a ||
           $SOURCE_DIR/httpserver/.libs/libproxygenhttpserver.a -nt $INSTALL_PATH/lib/libproxygenhttpserver.a ||
           $SOURCE_DIR/httpclient/samples/curl/.libs/libproxygencurl.a -nt $INSTALL_PATH/lib/libproxygencurl.a ]]; then

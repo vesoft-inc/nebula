@@ -1,19 +1,8 @@
 #!/bin/sh
 
 PROJECT_NAME=$1
-CURR_DIR=$2
-THIRD_PARTY_DIR=$3
-TOOLS_ROOT=$4
-SOURCE_DIR=$5
-INSTALL_PATH=$6
-shift 6
-GCC_ROOT=$1
-CMAKE_ROOT=$2
-FLEX_ROOT=$3
-GCC_VER=$4
-EXTRA_CXXFLAGS=$5
-EXTRA_LDFLAGS=$6
-shift 6
+SOURCE_DIR=$2
+shift 2
 
 double_conversion_release=$THIRD_PARTY_DIR/double-conversion/_install
 gflags_release=$THIRD_PARTY_DIR/gflags/_install
@@ -39,7 +28,7 @@ fi
 if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build-gtest.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !(CC=$GCC_ROOT/bin/gcc CPP=$GCC_ROOT/bin/cpp CXX=$GCC_ROOT/bin/g++    CXXFLAGS="-fPIC -DPIC -DHAVE_LIB_GFLAGS -std=c++11 -I$double_conversion/include -I$libevent_release/include -I$gflags_release/include -I$glog_release/include    $EXTRA_CXXFLAGS"      CFLAGS=$CXXFLAGS CPPFLAGS=$CXXFLAGS      LDFLAGS="-static-libgcc -static-libstdc++ -L$double_conversion/lib -L$libevent_release/lib -L$gflags_release/lib -L$glog_release/lib     $EXTRA_LDFLAGS"            $SOURCE_DIR/configure --prefix=$INSTALL_PATH --with-gnu-ld); then
+    if !(CC=$VGRAPH_C_COMPILER CPP="$VGRAPH_C_COMPILER -E" CXX=$VGRAPH_CXX_COMPILER    CXXFLAGS="-fPIC -DPIC -DHAVE_LIB_GFLAGS -std=c++11 -I$double_conversion/include -I$libevent_release/include -I$gflags_release/include -I$glog_release/include    $EXTRA_CXXFLAGS"      CFLAGS=$CXXFLAGS CPPFLAGS=$CXXFLAGS      LDFLAGS="-L$double_conversion/lib -L$libevent_release/lib -L$gflags_release/lib -L$glog_release/lib     $EXTRA_LDFLAGS"            $SOURCE_DIR/configure --prefix=$INSTALL_PATH --with-gnu-ld); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"
