@@ -4,6 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include "base/Base.h"
 #include "console/CmdProcessor.h"
 #include "time/Duration.h"
 #include "dataman/RowSetReader.h"

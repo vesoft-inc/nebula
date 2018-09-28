@@ -4,6 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include "base/Base.h"
 #include "console/CliManager.h"
 #include "client/cpp/GraphDbClient.h"
 
@@ -61,7 +62,7 @@ bool CliManager::connect(const std::string& addr,
     addr_ = addr;
     port_ = port;
     username_ = user;
-    
+
     auto client = std::make_unique<GraphDbClient>(addr_, port_);
     int32_t err = client->connect(user, pass);
     if (!err) {

@@ -5,6 +5,7 @@
  */
 #ifndef COMMON_CONCURRENT_BARRIER_H_
 #define COMMON_CONCURRENT_BARRIER_H_
+
 #include "base/Base.h"
 #include "cpp/helpers.h"
 
