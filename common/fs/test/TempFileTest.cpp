@@ -4,7 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 #include <gtest/gtest.h>
-#include "common/fs/TempFile.h"
+#include "fs/TempFile.h"
 
 namespace vesoft {
 namespace fs {

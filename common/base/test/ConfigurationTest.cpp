@@ -5,8 +5,8 @@
  */
 
 #include <gtest/gtest.h>
-#include "common/base/Configuration.h"
-#include "common/fs/TempFile.h"
+#include "base/Configuration.h"
+#include "fs/TempFile.h"
 
 using vesoft::fs::TempFile;
 

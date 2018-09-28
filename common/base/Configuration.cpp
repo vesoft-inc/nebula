@@ -3,9 +3,7 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#include "common/base/Configuration.h"
-#include <folly/json.h>
-#include <regex>
+#include "base/Configuration.h"
 
 namespace vesoft {
 

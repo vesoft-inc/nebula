@@ -4,12 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 #include <gtest/gtest.h>
-#include <sys/time.h>
-#include <string>
-#include <cstring>
-#include "common/thread/GenericThreadPool.h"
-#include "common/time/Duration.h"
-using namespace std;
+#include "thread/GenericThreadPool.h"
+#include "time/Duration.h"
 
 namespace vesoft {
 namespace thread {

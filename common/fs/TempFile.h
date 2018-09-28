@@ -5,7 +5,7 @@
  */
 #ifndef COMMON_FS_TEMPFILE_H_
 #define COMMON_FS_TEMPFILE_H_
-#include "common/base/Base.h"
+#include "base/Base.h"
 
 /**
  * TempFile is a wrapper on `mkstemp' to create a temporary file.

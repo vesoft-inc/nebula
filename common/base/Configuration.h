@@ -6,9 +6,7 @@
 #ifndef COMMON_BASE_CONFIGURATION_H_
 #define COMMON_BASE_CONFIGURATION_H_
 
-#include <folly/dynamic.h>
-#include <string>
-#include "common/base/Base.h"
+#include "base/Base.h"
 
 /**
  * Configuration loads config infos from a json file or string buffer.

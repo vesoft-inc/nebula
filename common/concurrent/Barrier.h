@@ -5,10 +5,8 @@
  */
 #ifndef COMMON_CONCURRENT_BARRIER_H_
 #define COMMON_CONCURRENT_BARRIER_H_
-#include <mutex>
-#include <condition_variable>
-#include <functional>
-#include "common/cpp/helpers.h"
+#include "base/Base.h"
+#include "cpp/helpers.h"
 
 /**
  * Like `Latch', `Barrier' is a synchronization object, except that

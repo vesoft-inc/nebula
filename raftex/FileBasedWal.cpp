@@ -654,7 +654,7 @@ bool FileBasedWal::appendLogInternal(std::shared_ptr<Buffer>& buffer,
         std::unique_lock<std::mutex> guard(bufferMutex_);
         if (buffers_.size() >= static_cast<uint64_t>(policy_.numBuffers)) {
             // Log appending is way too fast
-            LOG(WARNING) << "Write buffer is exausted,"
+            LOG(WARNING) << "Write buffer is exhausted,"
                             " need to wait for vacancy";
             // TODO: Output a counter here
             // Need to wait for a vacant slot

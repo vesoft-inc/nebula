@@ -5,8 +5,8 @@
  */
 
 #include <gtest/gtest.h>
-#include <folly/Random.h>
-#include "common/base/MurmurHash2.h"
+#include "base/Base.h"
+#include "base/MurmurHash2.h"
 
 namespace vesoft {
 

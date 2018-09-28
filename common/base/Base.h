@@ -13,6 +13,7 @@
 #include <fcntl.h>
 
 #include <thread>
+#include <future>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
@@ -20,6 +21,7 @@
 #include <chrono>
 #include <limits>
 
+#include <functional>
 #include <string>
 #include <memory>
 #include <sstream>
@@ -40,6 +42,7 @@
 #include <cerrno>
 #include <cstring>
 #include <ctime>
+#include <cassert>
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
@@ -54,6 +57,8 @@
 #include <folly/Conv.h>
 #include <folly/ThreadLocal.h>
 #include <folly/Varint.h>
+#include <folly/dynamic.h>
+#include <folly/json.h>
 
 #include "thread/NamedThread.h"
 //#include "base/StringUnorderedMap.h"
