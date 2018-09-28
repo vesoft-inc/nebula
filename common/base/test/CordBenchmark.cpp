@@ -5,7 +5,6 @@
  */
 
 #include "base/Base.h"
-#include "base/Base.h"
 #include <folly/Benchmark.h>
 #include "base/Cord.h"
 
