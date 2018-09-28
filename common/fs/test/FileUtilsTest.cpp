@@ -126,7 +126,7 @@ TEST(FileUtils, removeDirRecursively) {
     ASSERT_NE(mkdtemp(dirTemp), nullptr);
 
     // Create two temp files
-    char fileTemp[64];
+    char fileTemp[128];
     snprintf(fileTemp, sizeof(fileTemp), "%s/tempFile.XXXXXX", dirTemp);
     int fd = mkstemp(fileTemp);
     ASSERT_EQ(close(fd), 0);
