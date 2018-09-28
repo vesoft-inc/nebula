@@ -4,6 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include "base/Base.h"
 #include "base/Cord.h"
 
 namespace vesoft {
@@ -51,7 +52,7 @@ bool Cord::empty() const noexcept {
 void Cord::clear() {
     if (head_) {
         DCHECK(tail_);
-    
+
         // Need to release all blocks
         char* p = head_;
         while (p != tail_) {

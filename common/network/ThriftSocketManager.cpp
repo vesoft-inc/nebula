@@ -4,6 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include "base/Base.h"
 #include "network/ThriftSocketManager.h"
 #include <folly/io/async/EventBaseManager.h>
 #include "network/NetworkUtils.h"

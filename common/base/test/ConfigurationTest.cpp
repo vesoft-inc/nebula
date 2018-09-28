@@ -4,6 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include "base/Base.h"
 #include <gtest/gtest.h>
 #include "base/Configuration.h"
 #include "fs/TempFile.h"
