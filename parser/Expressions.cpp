@@ -79,7 +79,7 @@ Expression::ReturnType PrimaryExpression::eval() const {
         case 3:
             return boost::get<std::string>(operand_);
     }
-    return "Unknown";
+    return std::string("Unknown");
 }
 
 std::string UnaryExpression::toString() const {
