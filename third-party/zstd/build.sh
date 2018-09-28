@@ -18,7 +18,7 @@ echo
 
 cd $SOURCE_DIR
 
-if (CC=$GCC_ROOT/bin/gcc   CFLAGS="-fPIC -DPIC  $EXTRA_CXXFLAGS"  LDFLAGS="-static-libgcc -static-libstdc++"    PREFIX=$INSTALL_PATH      make -e $@); then
+if (CC=$VGRAPH_C_COMPILER   CFLAGS="-fPIC -DPIC  $EXTRA_CXXFLAGS"  LDFLAGS="-static-libgcc -static-libstdc++"    PREFIX=$INSTALL_PATH      make -e $@); then
     if [[ $SOURCE_DIR/lib/libzstd.a -nt $INSTALL_PATH/lib/libzstd.a ]]; then
         if (PREFIX=$INSTALL_PATH   make -e install); then
             cd $CURR_DIR

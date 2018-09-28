@@ -1,8 +1,6 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-find_package(BISON)
-find_package(FLEX)
 bison_target(Parser parser.yy ${CMAKE_CURRENT_BINARY_DIR}/VGraphParser.cpp COMPILE_FLAGS "-Werror")
 flex_target(Scanner scanner.lex ${CMAKE_CURRENT_BINARY_DIR}/VGraphScanner.cpp)
 

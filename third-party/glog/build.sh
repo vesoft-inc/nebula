@@ -26,7 +26,7 @@ fi
 
 if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !(CC=$GCC_ROOT/bin/gcc CPP=$GCC_ROOT/bin/cpp CXX=$GCC_ROOT/bin/g++    CXXFLAGS="-fPIC -DPIC -DHAVE_LIB_GFLAGS -I$double_conversion_release/include -I$gflags_release/include -I$libevent_release/include   $EXTRA_CXXFLAGS"  CFLAGS=$CXXFLAGS  CPPFLAGS=$CXXFLAGS       LDFLAGS="-static-libgcc -static-libstdc++ -L$double_conversion_release/lib -L$gflags_release/lib -L$libevent_release/lib   $EXTRA_LDFLAGS"     LIBS="-lgflags"          $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
+    if !(CC=$VGRAPH_C_COMPILER CPP="$VGRAPH_C_COMPILER -E" CXX=$VGRAPH_CXX_COMPILER   CXXFLAGS="-fPIC -DPIC -DHAVE_LIB_GFLAGS -I$double_conversion_release/include -I$gflags_release/include -I$libevent_release/include     $EXTRA_CXXFLAGS"  CFLAGS=$CXXFLAGS  CPPFLAGS=$CXXFLAGS       LDFLAGS="-L$double_conversion_release/lib -L$gflags_release/lib -L$libevent_release/lib   $EXTRA_LDFLAGS"     LIBS="-lgflags"          $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"

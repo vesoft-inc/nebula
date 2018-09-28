@@ -16,6 +16,8 @@ target_link_libraries(
     boost_context
     ${COMPRESSION_LIBRARIES}
     event
+    ${OPENSSL_SSL_LIBRARY}
+    ${OPENSSL_CRYPTO_LIBRARY}
     double-conversion
     dl
     -pthread
@@ -41,6 +43,8 @@ target_link_libraries(
     boost_context
     ${COMPRESSION_LIBRARIES}
     event
+    ${OPENSSL_SSL_LIBRARY}
+    ${OPENSSL_CRYPTO_LIBRARY}
     double-conversion
     dl
     -pthread
@@ -66,6 +70,8 @@ target_link_libraries(
     boost_context
     ${COMPRESSION_LIBRARIES}
     event
+    ${OPENSSL_SSL_LIBRARY}
+    ${OPENSSL_CRYPTO_LIBRARY}
     double-conversion
     dl
     -pthread
@@ -91,6 +97,8 @@ target_link_libraries(
     boost_context
     ${COMPRESSION_LIBRARIES}
     event
+    ${OPENSSL_SSL_LIBRARY}
+    ${OPENSSL_CRYPTO_LIBRARY}
     double-conversion
     dl
     -pthread
@@ -117,6 +125,8 @@ target_link_libraries(
     boost_context
     ${COMPRESSION_LIBRARIES}
     event
+    ${OPENSSL_SSL_LIBRARY}
+    ${OPENSSL_CRYPTO_LIBRARY}
     double-conversion
     dl
     -pthread
@@ -142,6 +152,8 @@ target_link_libraries(
     boost_context
     ${COMPRESSION_LIBRARIES}
     event
+    ${OPENSSL_SSL_LIBRARY}
+    ${OPENSSL_CRYPTO_LIBRARY}
     double-conversion
     dl
     -pthread

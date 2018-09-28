@@ -1,7 +1,4 @@
-add_custom_target(
-    tgt_jemalloc
-    COMMAND "./build.sh" "-j2" ">" "./_build.log" "2>&1"
-)
+build_external(tgt_jemalloc)
 
 add_custom_target(
     clean-jemalloc

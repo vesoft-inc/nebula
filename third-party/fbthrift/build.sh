@@ -4,11 +4,6 @@ source ../functions.sh
 
 prepareBuild "fbthrift"
 
-boost_release=$TOOLS_ROOT/boost
-openssl_release=$TOOLS_ROOT/openssl
-libunwind_release=$TOOLS_ROOT/libunwind
-krb_release=$TOOLS_ROOT/krb5
-
 double_conversion_release=$THIRD_PARTY_DIR/double-conversion/_install
 gflags_release=$THIRD_PARTY_DIR/gflags/_install
 glog_release=$THIRD_PARTY_DIR/glog/_install
@@ -32,12 +27,16 @@ echo
 
 cd $SOURCE_DIR
 
-COMPILER_FLAGS="-fPIC -DPIC -I$openssl_release/include -I$krb_release/include   $EXTRA_CXXFLAGS"
-LINKER_FLAGS="-static-libgcc -static-libstdc++ -L$krb_release/lib -L$libunwind_release/lib   $EXTRA_LDFLAGS"
+COMPILER_FLAGS="-fPIC -DPIC    $EXTRA_CXXFLAGS"
+LINKER_FLAGS="-static-libgcc -static-libstdc++    $EXTRA_LDFLAGS"
+VGRAPH_PREFIX_DIRS="$double_conversion_release;$gflags_release;$glog_release;$folly_release;$wangle_release;$mstch_release;$zlib_release;$zstd_release;$VGRAPH_PREFIX_DIRS"
+VGRAPH_INCLUDE_DIRS="$double_conversion_release/include;$gflags_release/include;$glog_release/include;$folly_release/include;$wangle_release/include;$mstch_release/include;$zlib_release/include;$zstd_release/include;$VGRAPH_INCLUDE_DIRS"
+VGRAPH_LIB_DIRS="$double_conversion_release/lib;$gflags_release/lib;$glog_release/lib;$folly_release/lib;$wangle_release/lib;$mstch_release/lib;$zlib_release/lib;$zstd_release/lib;$VGRAPH_LIB_DIRS"
 
 if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !($CMAKE_ROOT/bin/cmake $CMAKE_FLAGS -DCMAKE_C_FLAGS:STRING="$COMPILER_FLAGS" -DCMAKE_CXX_FLAGS:STRING="$COMPILER_FLAGS" -DCMAKE_STATIC_LINKER_FLAGS:STRING="" -DCMAKE_EXE_LINKER_FLAGS:STRING="$LINKER_FLAGS"  -DOPENSSL_INCLUDE_DIR=$openssl_release/include -DOPENSSL_SSL_LIBRARY=$openssl_release/lib/libssl.a -DOPENSSL_CRYPTO_LIBRARY=$openssl_release/lib/libcrypto.a -DBOOST_ROOT=$boost_release -DBoost_USE_STATIC_LIBS:BOOL=YES -DMSTCH_INCLUDE_DIRS=$mstch_release/include -DMSTCH_LIBRARIES=$mstch_release/lib/libmstch.a -DDOUBLE_CONVERSION_INCLUDE_DIR=$double_conversion_release/include -DDOUBLE_CONVERSION_LIBRARY=$double_conversion_release/lib -Dfolly_DIR=$folly_release/lib/cmake/folly -DGFLAGS_INCLUDE_DIR=$gflags_release/include -DGFLAGS_LIBRARY=$gflags_release/lib -DGLOG_INCLUDE_DIRS=$glog_release/include -DGLOG_LIBRARIES=$glog_release/lib/libglog.a -Dwangle_DIR=$wangle_release/lib/cmake/wangle -DZLIB_INCLUDE_DIRS=$zlib_release/include -DZLIB_LIBRARIES=$zlib_release/lib/libz.a -DZSTD_INCLUDE_DIRS=$zstd_release/include -DZSTD_LIBRARIES=$zstd_release/lib/libzstd.a -DTHRIFT_HOME=$INSTALL_PATH -DFLEX_EXECUTABLE=$FLEX_ROOT/bin/flex      $SOURCE_DIR); then
+#    if !($VGRAPH_CMAKE $CMAKE_FLAGS -DCMAKE_C_FLAGS:STRING="$COMPILER_FLAGS" -DCMAKE_CXX_FLAGS:STRING="$COMPILER_FLAGS" -DCMAKE_STATIC_LINKER_FLAGS:STRING="" -DCMAKE_EXE_LINKER_FLAGS:STRING="$LINKER_FLAGS" -DCMAKE_PREFIX_PATH="$VGRAPH_PREFIX_DIRS" -DCMAKE_INCLUDE_PATH="$VGRAPH_INCLUDE_DIRS" -DCMAKE_LIBRARY_PATH="$VGRAPH_LIB_DIRS" -DBoost_USE_STATIC_LIBS:BOOL=YES -DTHRIFT_HOME=$INSTALL_PATH -DFLEX_EXECUTABLE=$VGRAPH_FLEX     $SOURCE_DIR); then
+    if !($VGRAPH_CMAKE $CMAKE_FLAGS -DCMAKE_C_FLAGS:STRING="$COMPILER_FLAGS" -DCMAKE_CXX_FLAGS:STRING="$COMPILER_FLAGS" -DCMAKE_STATIC_LINKER_FLAGS:STRING="" -DCMAKE_EXE_LINKER_FLAGS:STRING="$LINKER_FLAGS" -DCMAKE_PREFIX_PATH="$VGRAPH_PREFIX_DIRS" -DCMAKE_INCLUDE_PATH="$VGRAPH_INCLUDE_DIRS" -DCMAKE_LIBRARY_PATH="$VGRAPH_LIB_DIRS" -DTHRIFT_HOME=$INSTALL_PATH -DFLEX_EXECUTABLE=$VGRAPH_FLEX     $SOURCE_DIR); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"

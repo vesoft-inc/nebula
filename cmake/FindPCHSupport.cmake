@@ -19,9 +19,11 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
            gcc_compiler_version ${_compiler_output})
     IF(gcc_compiler_version MATCHES "[4-9]\\.[0-9]\\.[0-9]")
         SET(PCHSupport_FOUND TRUE)
+        MESSAGE("-- Found PCH Support: gcc compiler version is " ${gcc_compiler_version})
     ELSE(gcc_compiler_version MATCHES "[4-9]\\.[0-9]\\.[0-9]")
         IF(gcc_compiler_version MATCHES "3\\.4\\.[0-9]")
             SET(PCHSupport_FOUND TRUE)
+            MESSAGE("-- Found PCH Support: gcc compiler version is " ${gcc_compiler_version})
         ENDIF(gcc_compiler_version MATCHES "3\\.4\\.[0-9]")
     ENDIF(gcc_compiler_version MATCHES "[4-9]\\.[0-9]\\.[0-9]")
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
@@ -44,15 +46,16 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input _dep)
     LIST(APPEND _compiler_FLAGS ${_directory_flags})
 
     SEPARATE_ARGUMENTS(_compiler_FLAGS)
-    message("${CMAKE_CXX_COMPILER} ${_compiler_FLAGS} -x c++-header -o ${_output} ${_source}")
+    MESSAGE("Precompile header file " ${_source} " into " ${_output})
     ADD_CUSTOM_COMMAND(
         OUTPUT ${_output}
         COMMAND ${CMAKE_CXX_COMPILER}
 				${_compiler_FLAGS}
 				-x c++-header
 				-o ${_output} ${_source}
-        DEPENDS ${_source})
-   	ADD_CUSTOM_TARGET(${_targetName}_gch DEPENDS ${_dep} ${_output})
+        MAIN_DEPENDENCY ${_source})
+   	ADD_CUSTOM_TARGET(${_targetName}_gch DEPENDS ${_output})
+    ADD_DEPENDENCIES(${_targetName}_gch ${_dep})
     ADD_DEPENDENCIES(${_targetName} ${_targetName}_gch)
 	
 ENDMACRO(ADD_PRECOMPILED_HEADER)
