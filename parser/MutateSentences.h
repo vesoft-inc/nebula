@@ -6,6 +6,7 @@
 #ifndef PARSER_MUTATESENTENCES_H_
 #define PARSER_MUTATESENTENCES_H_
 
+#include "base/Base.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 

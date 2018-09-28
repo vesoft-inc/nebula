@@ -1,6 +1,25 @@
+# Copyright (c) 2019 - present, VE Software Inc. All rights reserved
+#
+# This source code is licensed under Apache 2.0 License
+# (found in the LICENSE.Apache file in the root directory)
+#
+# The build can be controlled by defining following variables on the
+# <cmake> command line
+#
+#   CMAKE_C_COMPILER        -- Specify the compiler for C language
+#   CMAKE_CXX_COMPILER      -- Specify the compiler for C++ language
+#   FLEX_EXECUTABLE         -- Specify the full path of flex executable
+#   VGRAPH_GPERF_BIN_DIR    -- Specify the full path to the directory
+#                              containing gperf binary
+#
+#   VGRAPH_KRB5_ROOT        -- Specify the root directory for KRB5
+#   VGRAPH_LIBUNWIND_ROOT   -- Specify the root directory for libunwind
+#   VGRAPH_OPENSSL_ROOT     -- Specify the root directory for openssl
+#   VGRAPH_BOOST_ROOT       -- Specify the root directory for boost
+#
 cmake_minimum_required(VERSION 3.0.0)
 
-project("vGraph" CXX)
+project("vGraph" C CXX)
 
 set(CMAKE_SKIP_RPATH TRUE)
 
@@ -31,10 +50,48 @@ set(VGRAPH_HOME ${CMAKE_CURRENT_SOURCE_DIR})
 # To include customized FindXXX.cmake modules
 set(CMAKE_MODULE_PATH "${VGRAPH_HOME}/cmake" ${CMAKE_MODULE_PATH})
 
-find_package(Boost)
-find_package(OpenSSL)
+if(NOT ${VGRAPH_KRB5_ROOT} STREQUAL "")
+    message(STATUS "Specified VGRAPH_KRB5_ROOT: " ${VGRAPH_KRB5_ROOT})
+    list(APPEND CMAKE_INCLUDE_PATH ${VGRAPH_KRB5_ROOT}/include)
+    list(APPEND CMAKE_LIBRARY_PATH ${VGRAPH_KRB5_ROOT}/lib)
+    list(APPEND CMAKE_PROGRAM_PATH ${VGRAPH_KRB5_ROOT}/bin)
+endif()
+
+if(NOT ${VGRAPH_LIBUNWIND_ROOT} STREQUAL "")
+    message(STATUS "Specified VGRAPH_LIBUNWIND_ROOT: " ${VGRAPH_LIBUNWIND_ROOT})
+    list(APPEND CMAKE_INCLUDE_PATH ${VGRAPH_LIBUNWIND_ROOT}/include)
+    list(APPEND CMAKE_LIBRARY_PATH ${VGRAPH_LIBUNWIND_ROOT}/lib)
+endif()
+
+if(NOT ${VGRAPH_OPENSSL_ROOT} STREQUAL "")
+    message(STATUS "Specified VGRAPH_OPENSSL_ROOT: " ${VGRAPH_OPENSSL_ROOT})
+    list(APPEND CMAKE_INCLUDE_PATH ${VGRAPH_OPENSSL_ROOT}/include)
+    list(APPEND CMAKE_LIBRARY_PATH ${VGRAPH_OPENSSL_ROOT}/lib)
+endif()
+
+if(NOT ${VGRAPH_BOOST_ROOT} STREQUAL "")
+    message(STATUS "Specified VGRAPH_BOOST_ROOT: " ${VGRAPH_BOOST_ROOT})
+    list(APPEND CMAKE_INCLUDE_PATH ${VGRAPH_BOOST_ROOT}/include)
+    list(APPEND CMAKE_LIBRARY_PATH ${VGRAPH_BOOST_ROOT}/lib)
+endif()
+
+if(NOT ${VGRAPH_GPERF_BIN_DIR} STREQUAL "")
+    message(STATUS "Specified VGRAPH_GPERF_BIN_DIR: " ${VGRAPH_GPERF_BIN_DIR})
+    list(APPEND CMAKE_PROGRAM_PATH ${VGRAPH_GPERF_BIN_DIR})
+endif()
+
+message(STATUS "CMAKE_INCLUDE_PATH: " ${CMAKE_INCLUDE_PATH})
+message(STATUS "CMAKE_LIBRARY_PATH: " ${CMAKE_LIBRARY_PATH})
+message(STATUS "CMAKE_PROGRAM_PATH: " ${CMAKE_PROGRAM_PATH})
+
+find_package(Boost REQUIRED)
+find_package(OpenSSL REQUIRED)
 find_package(Krb5 REQUIRED gssapi)
 find_package(PCHSupport)
+find_package(GPERF 2.8 REQUIRED)
+find_package(Libunwind REQUIRED)
+find_package(BISON REQUIRED)
+find_package(FLEX REQUIRED)
 
 add_compile_options(-Winvalid-pch)
 add_compile_options(-Wall)
@@ -92,7 +149,6 @@ set(THRIFT_LIBRARIES
     thriftcpp2
     thrift
     thriftprotocol
-    server
     async
     protocol
     transport

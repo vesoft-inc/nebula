@@ -1,4 +1,5 @@
 add_library(base_obj OBJECT Cord.cpp Configuration.cpp)
+add_dependencies(base_obj third-party)
 IF(${PCHSupport_FOUND})
     add_precompiled_header(base_obj Base.h third-party)
 ENDIF(${PCHSupport_FOUND})

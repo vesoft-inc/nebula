@@ -1,7 +1,7 @@
 add_custom_command(
     OUTPUT 
         gen-cpp2/GraphDbService.cpp
-        gen-cpp2/GraphDbService_client.cpp
+        gen-cpp2/GraphDbServiceAsyncClient.cpp
         gen-cpp2/GraphDbService_processmap_binary.cpp
         gen-cpp2/GraphDbService_processmap_compact.cpp
         gen-cpp2/vgraph_constants.cpp
@@ -15,7 +15,7 @@ add_custom_command(
 add_custom_command(
     OUTPUT 
         gen-cpp2/RaftexService.cpp
-        gen-cpp2/RaftexService_client.cpp
+        gen-cpp2/RaftexServiceAsyncClient.cpp
         gen-cpp2/RaftexService_processmap_binary.cpp
         gen-cpp2/RaftexService_processmap_compact.cpp
         gen-cpp2/raftex_constants.cpp
@@ -35,7 +35,7 @@ add_custom_target(
 add_library(
     vgraph_thrift_obj OBJECT
     gen-cpp2/GraphDbService.cpp
-    gen-cpp2/GraphDbService_client.cpp
+    gen-cpp2/GraphDbServiceAsyncClient.cpp
     gen-cpp2/GraphDbService_processmap_binary.cpp
     gen-cpp2/GraphDbService_processmap_compact.cpp
     gen-cpp2/vgraph_constants.cpp
@@ -48,7 +48,7 @@ add_dependencies(vgraph_thrift_obj tgt_fbthrift)
 add_library(
     raftex_thrift_obj OBJECT
     gen-cpp2/RaftexService.cpp
-    gen-cpp2/RaftexService_client.cpp
+    gen-cpp2/RaftexServiceAsyncClient.cpp
     gen-cpp2/RaftexService_processmap_binary.cpp
     gen-cpp2/RaftexService_processmap_compact.cpp
     gen-cpp2/raftex_constants.cpp

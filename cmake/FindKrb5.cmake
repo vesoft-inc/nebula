@@ -4,7 +4,10 @@
 # - Find kerberos 5
 # Find the native Kerberos 5 headers and libraries.
 #  KRB5_INCLUDE_DIRS      - where to find krb5.h, etc.
+#  KRB5_LIBRARY_DIRS      - where to find krb5 libraries.
 #  KRB5_LIBRARIES         - List of libraries when using kerberos 5.
+#  KRB5_CFLAGS            - Required cflags for KRB5, such as -I<krb_headers_dir>
+#  KRB5_LINKFLAGS         - Required link flags for KRB5
 #  KRB5_FOUND             - True if kerberos 5 found.
 # KRB5 modules may be specified as components for this find module.
 # Modules may be listed by running "krb5-config".  Modules include:
@@ -55,6 +58,8 @@ IF(KRB5_FOUND)
 
   # Parse the include flags.
   IF("${KRB5_C_CONFIG_RESULT}" MATCHES "^0$")
+    SET(KRB5_CFLAGS ${KRB5_C_CONFIG_CFLAGS})
+
     # Convert the compile flags to a CMake list.
     STRING(REGEX REPLACE " +" ";"
       KRB5_C_CONFIG_CFLAGS "${KRB5_C_CONFIG_CFLAGS}")
@@ -97,6 +102,8 @@ IF(KRB5_FOUND)
 
   # Parse the library names and directories.
   IF("${KRB5_C_CONFIG_RESULT}" MATCHES "^0$")
+    SET(KRB5_LINKFLAGS ${KRB5_C_CONFIG_LIBS})
+
     STRING(REGEX REPLACE " +" ";"
       KRB5_C_CONFIG_LIBS "${KRB5_C_CONFIG_LIBS}")
 
@@ -118,6 +125,7 @@ IF(KRB5_FOUND)
     #SET(KRB5_LIBRARY_NAMES ${KRB5_LIBRARY_NAMES} "gssapi_krb5")
     # Add krb5support
     SET(KRB5_LIBRARY_NAMES ${KRB5_LIBRARY_NAMES} "krb5support")
+    STRING(CONCAT KRB5_LINKFLAGS ${KRB5_LINKFLAGS} " -lkrb5support")
 
     # Search for each library needed using the directories given.
     FOREACH(name ${KRB5_LIBRARY_NAMES})
