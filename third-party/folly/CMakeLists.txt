@@ -1,7 +1,6 @@
-add_custom_target(
+build_external(
     tgt_folly
-    COMMAND "./build.sh" "-j2" ">" "./_build.log" "2>&1"
-    DEPENDS tgt_gflags tgt_glog tgt_zlib tgt_zstd
+    tgt_gflags tgt_glog tgt_zlib tgt_zstd
 )
 
 add_custom_target(

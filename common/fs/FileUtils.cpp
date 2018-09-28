@@ -24,7 +24,7 @@ bool removeDir(const char* path, bool recursively) {
                        << "\" (" << errno << "): " << strerror(errno);
             return false;
         }
-    
+
         bool succeeded = true;
         struct dirent* dEnt;
         errno = 0;
@@ -51,21 +51,21 @@ bool removeDir(const char* path, bool recursively) {
                 }
             }
         }
-    
+
         if (succeeded && errno) {
             // There is an error
             LOG(ERROR) << "Failed to read the directory \"" << path
                        << "\" (" << errno << "): " << strerror(errno);
             succeeded = false;
         }
-    
+
         if (closedir(dh)) {
             // Failed to close the directory stream
             LOG(ERROR) << "Failed to close the directory stream (" << errno
                        << "): " << strerror(errno);
             return false;
         }
-    
+
         if (!succeeded) {
             LOG(ERROR) << "Failed to remove the content of the directory \""
                        << path << "\"";
@@ -214,7 +214,7 @@ std::string FileUtils::joinPath(const folly::StringPiece dir,
     std::size_t len = dir.size();
     if (len == 0) {
         buf.resize(filename.size() + 2);
-        strncpy(&(buf[0]), "./", 2);
+        strcpy(&(buf[0]), "./");
         strncpy(&(buf[2]), filename.begin(), filename.size());
         return std::move(buf);
     }

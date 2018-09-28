@@ -25,7 +25,7 @@ target_link_libraries(
     -pthread
 )
 
-add_executable(murmurhash2_test MurmurHash2Test.cpp)
+add_executable(murmurhash2_test MurmurHash2Test.cpp $<TARGET_OBJECTS:base_obj>)
 target_link_libraries(
     murmurhash2_test
     gtest
@@ -40,10 +40,10 @@ target_link_libraries(
 add_test(NAME murmurhash2_test COMMAND murmurhash2_test)
 
 add_executable(
-        configuration_test
-        ConfigurationTest.cpp
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:base_obj>
+    configuration_test
+    ConfigurationTest.cpp
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:base_obj>
 )
 target_link_libraries(
     configuration_test
@@ -58,7 +58,7 @@ target_link_libraries(
 )
 add_test(NAME configuration_test COMMAND configuration_test)
 
-add_executable(hash_bm HashBenchmark.cpp)
+add_executable(hash_bm HashBenchmark.cpp $<TARGET_OBJECTS:base_obj>)
 target_link_libraries(
     hash_bm
     follybenchmark

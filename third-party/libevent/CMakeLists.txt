@@ -1,7 +1,4 @@
-add_custom_target(
-    tgt_libevent
-    COMMAND "./build.sh" "-j2" ">" "./_build.log" "2>&1"
-)
+build_external(tgt_libevent)
 
 add_custom_target(
     clean-libevent
