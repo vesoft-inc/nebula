@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include <gtest/gtest.h>
 #include "base/Base.h"
+#include <gtest/gtest.h>
 #include "base/MurmurHash2.h"
 
 namespace vesoft {
