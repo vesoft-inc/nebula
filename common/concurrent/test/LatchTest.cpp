@@ -4,12 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 #include <gtest/gtest.h>
-#include <cstdlib>
-#include <thread>
-#include <mutex>
-#include <atomic>
-#include "common/concurrent/Latch.h"
-#include "common/thread/GenericThreadPool.h"
+#include "concurrent/Latch.h"
+#include "thread/GenericThreadPool.h"
 
 namespace vesoft {
 namespace concurrent {

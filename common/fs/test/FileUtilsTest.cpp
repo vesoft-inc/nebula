@@ -13,7 +13,7 @@ using namespace vesoft::fs;
 
 TEST(FileUtils, getExePath) {
     static const char* kExePath = "common/fs/test/_build/file_utils_test";
-    static const int32_t kExePathLen = strlen(kExePath);
+    static const uint32_t kExePathLen = strlen(kExePath);
 
     auto path = FileUtils::getExePath();
     size_t pos = path.size() > kExePathLen ? path.size() - kExePathLen : 0;

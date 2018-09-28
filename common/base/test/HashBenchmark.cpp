@@ -3,14 +3,9 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#include <ctype.h>
+#include "base/Base.h"
 #include <folly/Benchmark.h>
-#include <folly/Random.h>
-#include <cstdlib>
-#include <functional>
-#include <algorithm>
-#include <thread>
-#include "common/base/MurmurHash2.h"
+#include "base/MurmurHash2.h"
 
 using vesoft::MurmurHash2;
 

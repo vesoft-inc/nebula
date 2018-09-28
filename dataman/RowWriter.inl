@@ -38,7 +38,7 @@ typename std::enable_if<std::is_integral<T>::value>::type
 RowWriter::writeInt(T v) {
     uint8_t buf[10];
     size_t len = folly::encodeVarint(v, buf);
-    DCHECK_GT(len, 0);
+    DCHECK_GT(len, 0UL);
     cord_ << folly::ByteRange(buf, len);
 }
 

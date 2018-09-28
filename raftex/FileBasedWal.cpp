@@ -167,7 +167,7 @@ public:
                         << ", so need to move to file #" << currFile_ + 1;
                 // Need to roll over to next file
                 ++currFile_;
-                if (currFile_ >= fds_.size()) {
+                if (currFile_ >= static_cast<int32_t>(fds_.size())) {
                     // Reached the end of wal files
                     CHECK_EQ(std::numeric_limits<LogID>::max(),
                              firstIdInBuffer_);
@@ -195,7 +195,7 @@ public:
                      sizeof(int32_t));
         } else if (currId_ <= lastId_) {
             // Read from buffer
-            if ((++currIdx_) >= (*currBuffer_)->logs_.size()) {
+            if ((++currIdx_) >= static_cast<int32_t>((*currBuffer_)->logs_.size())) {
                 // Roll over to next buffer
                 ++currBuffer_;
                 CHECK(currBuffer_ != buffers_.end());
@@ -288,7 +288,7 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
     if (!walFiles_.empty()) {
         const WalFileInfoPair& info = walFiles_.back();
         lastLogId_ = info.second.lastLogId;
-        if (info.second.size < maxFileSize_ * 15 / 16) {
+        if (info.second.size < static_cast<uint64_t>(maxFileSize_ * 15 / 16)) {
             // The last log file is small enough, so let's continue to use it
             currFileDesc_ = open(info.second.fullname.c_str(),
                                  O_WRONLY | O_APPEND);
@@ -385,7 +385,7 @@ void FileBasedWal::scanAllWalFiles() {
             close(fd);
             continue;
         }
-        
+
         if (info.firstLogId != startIdFromName) {
             LOG(ERROR) << "The first log id " << info.firstLogId
                        << " does not match the file name \""
@@ -548,7 +548,7 @@ void FileBasedWal::bufferFlushLoop() {
             buffers_.pop_front();
         }
         guard.unlock();
-        
+
         if (buf) {
             // Notify the appendLogs method, if it is waiting for vacanc
             slotReadyCV_.notify_one();
@@ -607,7 +607,7 @@ void FileBasedWal::flushBuffer(std::shared_ptr<Buffer> buffer) {
             + it->size()
             + sizeof(LogID)
             + sizeof(int32_t) * 2
-                > maxFileSize_) {
+                > static_cast<uint64_t>(maxFileSize_)) {
             dumpCord(cord, logId - 1);
             // Reset the cord
             cord.clear();
@@ -642,7 +642,7 @@ bool FileBasedWal::appendLogInternal(std::shared_ptr<Buffer>& buffer,
     }
 
     if (buffer &&
-        (buffer->size() + msg.size() + sizeof(LogID) > maxBufferSize_)) {
+        (buffer->size() + msg.size() + sizeof(LogID) > static_cast<uint64_t>(maxBufferSize_))) {
         // Freeze the current buffer
         buffer->freeze();
         bufferReadyCV_.notify_one();
@@ -652,14 +652,14 @@ bool FileBasedWal::appendLogInternal(std::shared_ptr<Buffer>& buffer,
     // Create a new buffer if needed
     if (!buffer) {
         std::unique_lock<std::mutex> guard(bufferMutex_);
-        if (buffers_.size() >= policy_.numBuffers) {
+        if (buffers_.size() >= static_cast<uint64_t>(policy_.numBuffers)) {
             // Log appending is way too fast
-            LOG(WARNING) << "Write buffer is exausted,"
+            LOG(WARNING) << "Write buffer is exhausted,"
                             " need to wait for vacancy";
             // TODO: Output a counter here
             // Need to wait for a vacant slot
             slotReadyCV_.wait(guard, [this] {
-                return buffers_.size() < policy_.numBuffers;
+                return buffers_.size() < static_cast<uint64_t>(policy_.numBuffers);
             });
         }
 
