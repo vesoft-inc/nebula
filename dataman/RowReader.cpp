@@ -137,7 +137,7 @@ bool RowReader::processHeader(folly::StringPiece row) {
     // schena version. If the number is zero, no schema version
     // presents
     numBytesForOffset_ = (*it & 0x07) + 1;
-    int32_t verBytes = *(it++) >> 5;
+    uint32_t verBytes = *(it++) >> 5;
     schemaVer_ = 0;
     if (verBytes) {
         if (verBytes + 1 > row.size()) {
@@ -146,7 +146,7 @@ bool RowReader::processHeader(folly::StringPiece row) {
             return false;
         }
         // Schema Version is stored in Little Endian
-        for (int32_t i = 0; i < verBytes; i++) {
+        for (uint32_t i = 0; i < verBytes; i++) {
             schemaVer_ |= (uint32_t(*(it++)) << (8 * i));
         }
     }
@@ -155,8 +155,8 @@ bool RowReader::processHeader(folly::StringPiece row) {
     // Block offsets point to the start of every 16 fields, except the
     // first 16 fields
     // Block offsets are stored in Little Endian
-    int32_t numFields = schema_->getNumFields(schemaVer_);
-    int32_t numOffsets = (numFields >> 4);
+    uint32_t numFields = schema_->getNumFields(schemaVer_);
+    uint32_t numOffsets = (numFields >> 4);
     if (numBytesForOffset_ * numOffsets + verBytes + 1 > row.size()) {
         // Data is too short
         LOG(ERROR) << "Rowe data is too short";
@@ -165,7 +165,7 @@ bool RowReader::processHeader(folly::StringPiece row) {
     offsets_.resize(numFields + 1, -1);
     offsets_[0] = 0;
     blockOffsets_.push_back(std::make_pair(0, 0));
-    for (int32_t i = 0; i < numOffsets; i++) {
+    for (uint32_t i = 0; i < numOffsets; i++) {
         int64_t offset = 0;
         for (int32_t j = 0; j < numBytesForOffset_; j++) {
             offset |= (uint64_t(*(it++)) << (8 * j));
@@ -244,7 +244,7 @@ int64_t RowReader::skipToNext(int32_t index, int64_t offset) const noexcept {
         }
     }
 
-    if (offset > data_.size()) {
+    if (offset > static_cast<int64_t>(data_.size())) {
         return static_cast<int64_t>(ResultType::E_DATA_INVALID);
     }
 
@@ -313,7 +313,7 @@ int32_t RowReader::readString(int64_t offset, folly::StringPiece& v)
     int32_t intLen = readInteger(offset, strLen);
     CHECK_GT(intLen, 0) << "Invalid string length";
 
-    if (offset + intLen + strLen > data_.size()) {
+    if (offset + intLen + strLen > static_cast<int64_t>(data_.size())) {
         return static_cast<int32_t>(ResultType::E_DATA_INVALID);
     }
 

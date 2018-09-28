@@ -5,7 +5,7 @@
  */
 #ifndef COMMON_THREAD_GENERICTHREADPOOL_H_
 #define COMMON_THREAD_GENERICTHREADPOOL_H_
-#include "common/thread/GenericWorker.h"
+#include "thread/GenericWorker.h"
 
 /**
  * Based on GenericWorker, GenericThreadPool implements a thread pool that execute tasks asynchronously.

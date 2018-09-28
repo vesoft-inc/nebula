@@ -39,6 +39,25 @@ target_link_libraries(
 )
 add_test(NAME murmurhash2_test COMMAND murmurhash2_test)
 
+add_executable(
+        configuration_test
+        ConfigurationTest.cpp
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:base_obj>
+)
+target_link_libraries(
+    configuration_test
+    gtest
+    gtest_main
+    folly
+    glog
+    gflags
+    double-conversion
+    dl
+    -pthread
+)
+add_test(NAME configuration_test COMMAND configuration_test)
+
 add_executable(hash_bm HashBenchmark.cpp)
 target_link_libraries(
     hash_bm

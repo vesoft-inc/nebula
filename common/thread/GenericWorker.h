@@ -5,15 +5,9 @@
  */
 #ifndef COMMON_THREAD_GENERICWORKER_H_
 #define COMMON_THREAD_GENERICWORKER_H_
-#include <string>
-#include <future>
-#include <vector>
-#include <unordered_map>
-#include <mutex>
-#include <atomic>
-#include "common/cpp/helpers.h"
-#include "common/base/Base.h"
-#include "common/thread/NamedThread.h"
+#include "base/Base.h"
+#include "cpp/helpers.h"
+#include "thread/NamedThread.h"
 
 /**
  * GenericWorker implements a event-based task executor that executes tasks asynchronously

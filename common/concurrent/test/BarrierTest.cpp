@@ -3,13 +3,10 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
+#include "base/Base.h"
 #include <gtest/gtest.h>
-#include <cstdlib>
-#include <thread>
-#include <mutex>
-#include <atomic>
-#include "common/concurrent/Barrier.h"
-#include "common/thread/GenericThreadPool.h"
+#include "concurrent/Barrier.h"
+#include "thread/GenericThreadPool.h"
 
 namespace vesoft {
 namespace concurrent {
