@@ -11,7 +11,7 @@
 using namespace vesoft;
 
 BENCHMARK(sstream_10k_string, iters) {
-    for (int i = 0; i < iters; i++) {
+    for (auto i = 0u; i < iters; i++) {
         std::stringstream ss;
         for (int j = 0; j < 1000; j++) {
             ss << "abcdefghij";
@@ -21,7 +21,7 @@ BENCHMARK(sstream_10k_string, iters) {
     }
 }
 BENCHMARK_RELATIVE(cord_10k_string, iters) {
-    for (int i = 0; i < iters; i++) {
+    for (auto i = 0u; i < iters; i++) {
         Cord cord;
         for (int j = 0; j < 1000; j++) {
             cord << "abcdefghij";
@@ -34,7 +34,7 @@ BENCHMARK_RELATIVE(cord_10k_string, iters) {
 BENCHMARK_DRAW_LINE();
 
 BENCHMARK(sstream_1k_mix, iters) {
-    for (int i = 0; i < iters; i++) {
+    for (auto i = 0u; i < iters; i++) {
         std::stringstream ss;
         for (int j = 0; j < 50; j++) {
             ss << "abcdefg" << 1234567890L << true << 1.23456789;
@@ -44,7 +44,7 @@ BENCHMARK(sstream_1k_mix, iters) {
     }
 }
 BENCHMARK_RELATIVE(cord_1k_mix, iters) {
-    for (int i = 0; i < iters; i++) {
+    for (auto i = 0u; i < iters; i++) {
         Cord cord;
         for (int j = 0; j < 50; j++) {
             cord << "abcdefg"

@@ -37,6 +37,9 @@ find_package(Krb5 REQUIRED gssapi)
 find_package(PCHSupport)
 
 add_compile_options(-Winvalid-pch)
+add_compile_options(-Wall)
+add_compile_options(-Werror)
+add_compile_options(-Wno-error=sign-compare)
 
 include_directories(SYSTEM ${VGRAPH_HOME}/third-party/bzip2/_install/include)
 include_directories(SYSTEM ${VGRAPH_HOME}/third-party/double-conversion/_install/include)

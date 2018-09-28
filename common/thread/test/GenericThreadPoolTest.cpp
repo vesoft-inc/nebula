@@ -4,12 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 #include <gtest/gtest.h>
-#include <sys/time.h>
-#include <string>
-#include <cstring>
-#include "common/thread/GenericThreadPool.h"
-#include "common/time/Duration.h"
-using namespace std;
+#include "thread/GenericThreadPool.h"
+#include "time/Duration.h"
 
 namespace vesoft {
 namespace thread {
@@ -88,12 +84,6 @@ TEST(GenericThreadPool, addTask) {
         ASSERT_EQ("918", pool.addTask(&X::itos, &x, 918).get());
         ASSERT_EQ("918", pool.addTask(&X::itos, std::make_shared<X>(), 918).get());
     }
-}
-
-static size_t currentMicroSeconds() {
-    struct timeval ts;
-    ::gettimeofday(&ts, nullptr);
-    return ts.tv_sec * 1000000 + ts.tv_usec;
 }
 
 static bool msAboutEqual(size_t target, size_t actual) {

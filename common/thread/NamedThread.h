@@ -6,6 +6,7 @@
 #ifndef COMMON_THREAD_NAMEDTHREAD_H_
 #define COMMON_THREAD_NAMEDTHREAD_H_
 
+#include "base/Base.h"
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -13,9 +14,6 @@
 #include <sys/syscall.h>
 
 #include <sys/prctl.h>
-#include <string>
-#include <thread>
-#include <functional>
 
 namespace vesoft {
 namespace thread {

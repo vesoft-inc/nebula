@@ -5,7 +5,6 @@
  */
 
 #include "proc/ProcAccessor.h"
-#include <cassert>
 
 namespace vesoft {
 namespace proc {

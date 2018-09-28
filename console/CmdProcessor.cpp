@@ -46,7 +46,7 @@ std::vector<int16_t> CmdProcessor::calColumnWidths(
                     break;
                 }
                 case cpp2::SupportedType::INT: {
-                    GET_VALUE_WIDTH(int64_t, Int, "%d")
+                    GET_VALUE_WIDTH(int64_t, Int, "%ld")
                     break;
                 }
                 case cpp2::SupportedType::FLOAT: {
@@ -54,13 +54,13 @@ std::vector<int16_t> CmdProcessor::calColumnWidths(
                     break;
                 }
                 case cpp2::SupportedType::DOUBLE: {
-                    GET_VALUE_WIDTH(double, Double, "%f")
+                    GET_VALUE_WIDTH(double, Double, "%lf")
                     break;
                 }
                 case cpp2::SupportedType::STRING: {
                     folly::StringPiece val;
                     if (fieldIt->getString(val) == ResultType::SUCCEEDED) {
-                        if (widths[fieldIdx] < val.size()) {
+                        if (widths[fieldIdx] < static_cast<int64_t>(val.size())) {
                             widths[fieldIdx] = val.size();
                         }
                     }
@@ -137,7 +137,7 @@ std::vector<std::string> CmdProcessor::printHeader(
                 break;
             }
             case cpp2::SupportedType::VID: {
-                formats.emplace_back(folly::stringPrintf(" %%%sX |", widths[i]));
+                formats.emplace_back(folly::stringPrintf(" %%%dX |", widths[i]));
                 break;
             }
             default: {
@@ -235,6 +235,7 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
     if (!res) {
         // Succeeded
         auto* schema = dataReader->schema();
+        UNUSED(schema);
         int32_t numRows = 0;
         if (dataReader->schema()) {
             // Only print when the schema is no empty
