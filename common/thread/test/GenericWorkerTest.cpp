@@ -4,11 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 #include <gtest/gtest.h>
-#include <sys/time.h>
-#include <string>
-#include <cstring>
-#include "common/thread/GenericWorker.h"
-using namespace std;
+#include "thread/GenericWorker.h"
+#include "time/Duration.h"
 
 namespace vesoft {
 namespace thread {
@@ -89,12 +86,6 @@ TEST(GenericWorker, addTask) {
     }
 }
 
-static size_t currentMicroSeconds() {
-    struct timeval ts;
-    ::gettimeofday(&ts, nullptr);
-    return ts.tv_sec * 1000000 + ts.tv_usec;
-}
-
 static bool msAboutEqual(size_t target, size_t actual) {
     return std::max(target, actual) - std::min(target, actual) <= 10;
 }
@@ -107,11 +98,10 @@ TEST(GenericWorker, addDelayTask) {
         auto cb = [shared] () {
             return ++(*shared);
         };
-        auto beg = currentMicroSeconds();
+        time::Duration clock;
         ASSERT_EQ(1, worker.addDelayTask(50, cb).get());
         ASSERT_GE(shared.use_count(), 2);
-        auto now = currentMicroSeconds();
-        ASSERT_TRUE(msAboutEqual(50, (now - beg) / 1000));
+        ASSERT_TRUE(msAboutEqual(50, clock.elapsedInUSec() / 1000));
         ::usleep(5 * 1000); // ensure all internal resources are released
         ASSERT_EQ(2, shared.use_count()); // two ref: `shared' and `cb'
     }

@@ -80,7 +80,6 @@ private:
 
 
 #define RU_GET_TYPE_BY_NAME() \
-    int32_t index; \
     const cpp2::ValueType* type = schema_->getFieldType(name, schemaVer_); \
     if (!type) { \
         return ResultType::E_NAME_NOT_FOUND; \

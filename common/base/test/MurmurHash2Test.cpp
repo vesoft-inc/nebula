@@ -4,9 +4,9 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include "base/Base.h"
 #include <gtest/gtest.h>
-#include <folly/Random.h>
-#include "common/base/MurmurHash2.h"
+#include "base/MurmurHash2.h"
 
 namespace vesoft {
 

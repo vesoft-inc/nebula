@@ -4,7 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 #include <gtest/gtest.h>
-#include "common/thread/NamedThread.h"
+#include "thread/NamedThread.h"
 
 namespace vesoft {
 namespace thread {

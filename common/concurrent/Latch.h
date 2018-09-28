@@ -5,9 +5,8 @@
  */
 #ifndef COMMON_CONCURRENT_LATCH_H_
 #define COMMON_CONCURRENT_LATCH_H_
-#include <mutex>
-#include <condition_variable>
-#include "common/cpp/helpers.h"
+#include "base/Base.h"
+#include "cpp/helpers.h"
 /**
  * Latch is an one-shot synchronization object.
  * It provides an synchronization point for multiple threads.
