@@ -5,6 +5,7 @@
  */
 #ifndef COMMON_THREAD_GENERICWORKER_H_
 #define COMMON_THREAD_GENERICWORKER_H_
+
 #include "base/Base.h"
 #include "cpp/helpers.h"
 #include "thread/NamedThread.h"

@@ -3,6 +3,8 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
+
+#include "base/Base.h"
 #include "parser/Expressions.h"
 
 namespace vesoft {
@@ -77,7 +79,7 @@ Expression::ReturnType PrimaryExpression::eval() const {
         case 3:
             return boost::get<std::string>(operand_);
     }
-    return "Unknown";
+    return std::string("Unknown");
 }
 
 std::string UnaryExpression::toString() const {
