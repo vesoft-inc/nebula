@@ -4,6 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include "base/Base.h"
 #include "client/cpp/GraphDbClient.h"
 #include <thrift/lib/cpp/async/TAsyncSocket.h>
 #include <thrift/lib/cpp2/async/HeaderClientChannel.h>
