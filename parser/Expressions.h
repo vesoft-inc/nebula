@@ -59,8 +59,9 @@ public:
             case 4:
                 return asString(value).empty();
             default:
-                assert(false);
+                DCHECK(false);
         }
+        return false;
     }
 
     static const std::string& asString(const ReturnType &value) {
