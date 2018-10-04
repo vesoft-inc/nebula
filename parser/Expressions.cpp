@@ -238,8 +238,9 @@ Expression::ReturnType ArithmeticExpression::eval() const {
         }
         return asInt(left) % asInt(right);
     default:
-        assert(false);
+        DCHECK(false);
     }
+    return false;
 }
 
 std::string RelationalExpression::toString() const {

@@ -7,5 +7,5 @@ add_executable(
         $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:time_obj>
 )
-target_link_libraries(thread_test ev gtest gtest_main pthread)
+target_link_libraries(thread_test event gtest gtest_main glog gflags pthread)
 add_test(NAME thread_test COMMAND thread_test)
