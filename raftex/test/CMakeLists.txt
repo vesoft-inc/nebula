@@ -16,7 +16,7 @@ target_link_libraries(
     event
     double-conversion
     dl
-    ev
+    event
     -pthread
 )
 add_test(NAME file_based_wal_test COMMAND file_based_wal_test)

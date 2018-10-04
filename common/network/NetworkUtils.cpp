@@ -58,8 +58,8 @@ std::vector<std::string> NetworkUtils::getLocalIPs(bool ipv6) {
             struct sockaddr_in *ipv = (struct sockaddr_in*)p->ai_addr;
             addr = &(ipv->sin_addr);
         } else {
-            struct sockaddr_in6 *ipv6 = (struct sockaddr_in6*)p->ai_addr;
-            addr = (struct in_addr*) &(ipv6->sin6_addr);
+            struct sockaddr_in6 *ipv6_addr = (struct sockaddr_in6*)p->ai_addr;
+            addr = (struct in_addr*) &(ipv6_addr->sin6_addr);
         }
         inet_ntop(p->ai_family, addr, ipStr, addrStrLen);
         if (strcmp(ipStr, "127.0.0.1") != 0) {
