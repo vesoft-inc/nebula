@@ -6,11 +6,8 @@
 
 #include "base/Base.h"
 #include "thread/GenericWorker.h"
-
-#ifndef EV_MULTIPLICITY
-#define EV_MULTIPLICITY 1
-#endif
-#include <ev.h>
+#include <sys/eventfd.h>
+#include <event2/event.h>
 
 namespace vesoft {
 namespace thread {
@@ -22,31 +19,47 @@ GenericWorker::~GenericWorker() {
     stop();
     wait();
     if (notifier_ != nullptr) {
+        event_free(notifier_);
         notifier_ = nullptr;
     }
-    if (evloop_ != nullptr) {
-        ev_loop_destroy(evloop_);
-        evloop_ = nullptr;
+    if (evbase_ != nullptr) {
+        event_base_free(evbase_);
+        evbase_ = nullptr;
     }
 }
 
 bool GenericWorker::start(std::string name) {
-    name_ = std::move(name);
     if (!stopped_.load(std::memory_order_acquire)) {
+        LOG(WARNING) << "GenericWroker already started";
         return false;
     }
-    evloop_ = ev_loop_new(0);
-    ev_set_userdata(evloop_, this);
+    name_ = std::move(name);
 
-    auto cb = [] (struct ev_loop *loop, ev_async *, int) {
-        reinterpret_cast<GenericWorker*>(ev_userdata(loop))->onNotify();
+    // Create an event base
+    evbase_ = event_base_new();
+    DCHECK(evbase_ != nullptr);
+
+    // Create an eventfd for async notification
+    evfd_ = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    if (evfd_ == -1) {
+        LOG(ERROR) << "Create eventfd failed: " << ::strerror(errno);
+        return false;
+    }
+    auto cb = [] (int fd, int16_t, void *arg) {
+        auto val = 0UL;
+        auto len = ::read(fd, &val, sizeof(val));
+        DCHECK(len == sizeof(val));
+        reinterpret_cast<GenericWorker*>(arg)->onNotify();
     };
-    notifier_  = std::make_unique<ev_async>();
-    ev_async_init(notifier_.get(), cb);
-    ev_async_start(evloop_, notifier_.get());
+    auto events = EV_READ | EV_PERSIST;
+    notifier_  = event_new(evbase_, evfd_, events, cb, this);
+    DCHECK(notifier_ != nullptr);
+    event_add(notifier_, nullptr);
 
+    // Launch a new thread to run the event loop
     thread_ = std::make_unique<NamedThread>(name_, &GenericWorker::loop, this);
 
+    // Mark this worker as started
     stopped_.store(false, std::memory_order_release);
 
     return true;
@@ -71,19 +84,22 @@ bool GenericWorker::wait() {
 }
 
 void GenericWorker::loop() {
-    ev_run(evloop_, 0);
+    event_base_dispatch(evbase_);
 }
 
 void GenericWorker::notify() {
     if (notifier_ == nullptr) {
         return;
     }
-    ev_async_send(evloop_, notifier_.get());
+    DCHECK(evfd_ != -1);
+    auto one = 1UL;
+    auto len = ::write(evfd_, &one, sizeof(one));
+    DCHECK(len == sizeof(one));
 }
 
 void GenericWorker::onNotify() {
     if (stopped_.load(std::memory_order_acquire)) {
-        ev_break(evloop_, EVBREAK_ALL);
+        event_base_loopexit(evbase_, NULL);
         // Even been broken, we still fall through to finish the current loop.
     }
     {
@@ -102,24 +118,23 @@ void GenericWorker::onNotify() {
             std::lock_guard<std::mutex> guard(lock_);
             newcomings.swap(pendingTimers_);
         }
-        auto cb = [] (struct ev_loop *loop, ev_timer *w, int) {
-            auto timer = reinterpret_cast<Timer*>(w->data);
-            auto worker = reinterpret_cast<GenericWorker*>(ev_userdata(loop));
+        auto cb = [] (int fd, int16_t, void *arg) {
+            auto timer = reinterpret_cast<Timer*>(arg);
+            auto worker = timer->owner_;
             timer->callback_();
-            if (timer->intervalSec_ == 0.0) {
+            if (timer->intervalMSec_ == 0.0) {
                 worker->purgeTimerInternal(timer->id_);
-            } else {
-                w->repeat = timer->intervalSec_;
-                ev_timer_again(loop, w);
             }
         };
         for (auto &timer : newcomings) {
-            timer->ev_ = std::make_unique<ev_timer>();
-            auto delay = timer->delaySec_;
-            auto interval = timer->intervalSec_;
-            ev_timer_init(timer->ev_.get(), cb, delay, interval);
-            timer->ev_->data = timer.get();
-            ev_timer_start(evloop_, timer->ev_.get());
+            timer->ev_ = event_new(evbase_, -1, EV_PERSIST, cb, timer.get());
+
+            auto delay = timer->delayMSec_;
+            struct timeval tv;
+            tv.tv_sec = delay / 1000;
+            tv.tv_usec = delay % 1000 * 1000;
+            evtimer_add(timer->ev_, &tv);
+
             auto id = timer->id_;
             activeTimers_[id] = std::move(timer);
         }
@@ -141,6 +156,9 @@ GenericWorker::Timer::Timer(std::function<void(void)> cb) {
 }
 
 GenericWorker::Timer::~Timer() {
+    if (ev_ != nullptr) {
+        event_free(ev_);
+    }
 }
 
 void GenericWorker::purgeTimerTask(uint64_t id) {
@@ -154,7 +172,7 @@ void GenericWorker::purgeTimerTask(uint64_t id) {
 void GenericWorker::purgeTimerInternal(uint64_t id) {
     auto iter = activeTimers_.find(id);
     if (iter != activeTimers_.end()) {
-        ev_timer_stop(evloop_, iter->second->ev_.get());
+        evtimer_del(iter->second->ev_);
         activeTimers_.erase(iter);
     }
 }

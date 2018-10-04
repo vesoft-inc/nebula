@@ -21,9 +21,8 @@
  * but not for the performance critical situation.
  */
 
-struct ev_loop;
-struct ev_timer;
-struct ev_async;
+struct event;
+struct event_base;
 
 namespace vesoft {
 namespace thread {
@@ -113,11 +112,12 @@ private:
     struct Timer {
         explicit Timer(std::function<void(void)> cb);
         ~Timer();
-        uint64_t                            id_;
-        double                              delaySec_;
-        double                              intervalSec_;
-        std::function<void(void)>           callback_;
-        std::unique_ptr<struct ev_timer>    ev_;
+        uint64_t                                id_;
+        uint64_t                                delayMSec_;
+        uint64_t                                intervalMSec_;
+        std::function<void(void)>               callback_;
+        struct event                           *ev_{nullptr};
+        GenericWorker                          *owner_{nullptr};
     };
 
 private:
@@ -130,20 +130,21 @@ private:
     }
 
 private:
-    static constexpr uint64_t TIMER_ID_BITS = 6 * 8;
-    static constexpr uint64_t TIMER_ID_MASK = ((~0x0UL) >> (64 - TIMER_ID_BITS));
-    std::string                             name_;
-    std::atomic<bool>                       stopped_{true};
-    volatile uint64_t                       nextTimerId_{0};
-    std::unique_ptr<ev_async>               notifier_;
-    struct ev_loop                         *evloop_ = nullptr;
-    std::mutex                              lock_;
-    std::vector<std::function<void()>>      pendingTasks_;
+    static constexpr uint64_t TIMER_ID_BITS     = 6 * 8;
+    static constexpr uint64_t TIMER_ID_MASK     = ((~0x0UL) >> (64 - TIMER_ID_BITS));
+    std::string                                 name_;
+    std::atomic<bool>                           stopped_{true};
+    volatile uint64_t                           nextTimerId_{0};
+    struct event_base                          *evbase_ = nullptr;
+    int                                         evfd_ = -1;
+    struct event                               *notifier_ = nullptr;
+    std::mutex                                  lock_;
+    std::vector<std::function<void()>>          pendingTasks_;
     using TimerPtr = std::unique_ptr<Timer>;
-    std::vector<TimerPtr>                   pendingTimers_;
-    std::vector<uint64_t>                   purgingingTimers_;
-    std::unordered_map<uint64_t, TimerPtr>  activeTimers_;
-    std::unique_ptr<NamedThread>            thread_;
+    std::vector<TimerPtr>                       pendingTimers_;
+    std::vector<uint64_t>                       purgingingTimers_;
+    std::unordered_map<uint64_t, TimerPtr>      activeTimers_;
+    std::unique_ptr<NamedThread>                thread_;
 };
 
 template <typename F, typename...Args>
@@ -176,8 +177,9 @@ uint64_t GenericWorker::addRepeatTask(size_t ms, F &&f, Args &&...args) {
 template <typename F, typename...Args>
 uint64_t GenericWorker::addTimerTask(size_t delay, size_t interval, F &&f, Args &&...args) {
     auto timer = std::make_unique<Timer>(std::bind(f, args...));
-    timer->delaySec_ = delay / 1000.;
-    timer->intervalSec_ = interval / 1000.;
+    timer->delayMSec_ = delay;
+    timer->intervalMSec_ = interval;
+    timer->owner_ = this;
     auto id = 0UL;
     {
         std::lock_guard<std::mutex> guard(lock_);
