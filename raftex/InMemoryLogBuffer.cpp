@@ -15,7 +15,7 @@ void InMemoryLogBuffer::push(TermID term, std::string&& msg) {
     folly::RWSpinLock::WriteHolder wh(&accessLock_);
 
     totalLen_ += msg.size() + sizeof(TermID) + sizeof(LogID);
-    logs_.emplace_back(std::make_pair(term, std::move(msg)));
+    logs_.emplace_back(term, std::move(msg));
 }
 
 
@@ -62,7 +62,7 @@ TermID InMemoryLogBuffer::getTerm(size_t idx) const {
 }
 
 
-folly::StringPiece InMemoryLogBuffer::getLog(size_t idx) const {
+const folly::StringPiece InMemoryLogBuffer::getLog(size_t idx) const {
     folly::RWSpinLock::ReadHolder rh(&accessLock_);
     CHECK_LT(idx, logs_.size());
     return logs_[idx].second;

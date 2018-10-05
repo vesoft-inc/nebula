@@ -13,7 +13,8 @@ namespace vgraph {
 namespace raftex {
 
 BufferFlusher::BufferFlusher()
-    : flushThread_(std::bind(&BufferFlusher::flushLoop, this)) {
+    : flushThread_("Buffer flusher",
+                   std::bind(&BufferFlusher::flushLoop, this)) {
 }
 
 
@@ -40,7 +41,7 @@ bool BufferFlusher::flushBuffer(std::shared_ptr<FileBasedWal> wal,
             return false;
         }
 
-        buffers_.push(std::make_pair(wal, buffer));
+        buffers_.emplace(std::move(wal), std::move(buffer));
     }
 
     // Notify the loop thread
@@ -68,12 +69,12 @@ void BufferFlusher::flushLoop() {
                     return !buffers_.empty() || stopped_;
                 });
             } else {
-                bufferPair = buffers_.front();
+                bufferPair = std::move(buffers_.front());
                 buffers_.pop();
+
+                bufferPair.first->flushBuffer(bufferPair.second);
             }
         }
-
-        bufferPair.first->flushBuffer(bufferPair.second);
     }
 
     LOG(INFO) << "Buffer flusher loop finished";

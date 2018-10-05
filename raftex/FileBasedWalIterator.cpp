@@ -16,7 +16,7 @@ namespace raftex {
 FileBasedWalIterator::FileBasedWalIterator(std::shared_ptr<FileBasedWal> wal,
                                            LogID startId,
                                            LogID lastId)
-        : wal_(wal)
+        : wal_(std::move(wal))
         , currId_(startId) {
     if (lastId >= 0) {
         lastId_ = lastId;

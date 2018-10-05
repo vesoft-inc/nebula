@@ -33,7 +33,11 @@ public:
     TermID lastLogTerm() const;
 
     TermID getTerm(size_t idx) const;
-    folly::StringPiece getLog(size_t idx) const;
+    // The returned StringPiece value is valid as long as this
+    // InMemoryLogBuffer object is alive. So please make sure
+    // the returned StringPiece object will not outlive this buffer
+    // object
+    const folly::StringPiece getLog(size_t idx) const;
 
     // Iterates through all logs and calls the given functor fn
     // for each log

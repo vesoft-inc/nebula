@@ -49,6 +49,12 @@ public:
         FileBasedWalPolicy policy,
         BufferFlusher* flusher);
 
+    // Callers **SHOULD NEVER** use this constructor directly
+    // Callers should use static method getWal() instead
+    FileBasedWal(const folly::StringPiece dir,
+                 FileBasedWalPolicy policy,
+                 BufferFlusher* flusher);
+
     virtual ~FileBasedWal();
 
     // Signal all WAL holders to stop using this WAL
@@ -118,12 +124,6 @@ private:
      * Private methods
      *
      **************************************/
-    // Private constructor to prevent instantiating the class directly
-    // Callers should use static method getWal() instead
-    FileBasedWal(const folly::StringPiece dir,
-                 FileBasedWalPolicy policy,
-                 BufferFlusher* flusher);
-
     // Scan all WAL files
     void scanAllWalFiles();
 

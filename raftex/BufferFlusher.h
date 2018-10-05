@@ -8,6 +8,7 @@
 #define RAFTEX_BUFFERFLUSHER_H_
 
 #include "base/Base.h"
+#include "thread/NamedThread.h"
 #include "raftex/InMemoryLogBuffer.h"
 
 namespace vesoft {
@@ -35,7 +36,7 @@ private:
     std::mutex buffersLock_;
     std::condition_variable bufferReadyCV_;
 
-    std::thread flushThread_;
+    thread::NamedThread flushThread_;
 };
 
 }  // namespace raftex

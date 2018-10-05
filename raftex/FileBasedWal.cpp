@@ -27,8 +27,7 @@ std::shared_ptr<FileBasedWal> FileBasedWal::getWal(
         const folly::StringPiece dir,
         FileBasedWalPolicy policy,
         BufferFlusher* flusher) {
-    return std::shared_ptr<FileBasedWal>(
-        new FileBasedWal(dir, std::move(policy), flusher));
+    return std::make_shared<FileBasedWal>(dir, std::move(policy), flusher);
 }
 
 
@@ -102,7 +101,7 @@ void FileBasedWal::scanAllWalFiles() {
 
         // Get the size of the file and the mtime
         struct stat st;
-        if (lstat(info->path(), &st)) {
+        if (lstat(info->path(), &st) < 0) {
             LOG(ERROR) << "Failed to get the size and mtime for \""
                        << fn << "\", ignore it";
             continue;
