@@ -25,7 +25,8 @@ public:
     }
 
     virtual LogID logId() const = 0;
-    virtual std::string logMsg() const = 0;
+    virtual TermID logTerm() const = 0;
+    virtual folly::StringPiece logMsg() const = 0;
 };
 
 }  // namespace raftex

@@ -4,12 +4,14 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef RAFTEX_WAL_FILEBASEDWAL_H_
-#define RAFTEX_WAL_FILEBASEDWAL_H_
+#ifndef RAFTEX_FILEBASEDWAL_H_
+#define RAFTEX_FILEBASEDWAL_H_
 
 #include "base/Base.h"
 #include "base/Cord.h"
 #include "raftex/Wal.h"
+#include "raftex/InMemoryLogBuffer.h"
+#include "raftex/WalFileInfo.h"
 
 namespace vesoft {
 namespace vgraph {
@@ -23,164 +25,170 @@ struct FileBasedWalPolicy {
 
     // The maximum size of each log message file (in MB). When the existing
     // log file reaches this size, a new file will be created
-    int32_t fileSize = 128;
+    size_t fileSize = 128;
 
     // Size of each buffer (in MB)
-    int32_t bufferSize = 8;
+    size_t bufferSize = 8;
 
     // Number of buffers allowed. When the number of buffers reach this
     // number, appendLogs() will be blocked until some buffers are flushed
-    int32_t numBuffers = 4;
+    size_t numBuffers = 4;
 };
 
 
-namespace internal {
-    class WalFileLess;
-    class FileBasedWalIterator;
-}  // namespace internal
+class BufferFlusher;
 
 
-class FileBasedWal final : public Wal,
-                           public std::enable_shared_from_this<FileBasedWal> {
-    friend class internal::FileBasedWalIterator;
-
+class FileBasedWal final
+        : public Wal
+        , public std::enable_shared_from_this<FileBasedWal> {
 public:
-    struct WalFileInfo {
-        std::string fullname;
-        LogID firstLogId;
-        LogID lastLogId;
-        time_t mtime;
-        size_t size;
-    };
-    using WalFiles = std::vector<std::pair<LogID, WalFileInfo>>;
+    // A factory method to create a new WAL
+    static std::shared_ptr<FileBasedWal> getWal(
+        const folly::StringPiece dir,
+        FileBasedWalPolicy policy,
+        BufferFlusher* flusher);
 
-    static std::shared_ptr<FileBasedWal> getWal(const folly::StringPiece dir,
-                                                FileBasedWalPolicy policy);
+    // Callers **SHOULD NEVER** use this constructor directly
+    // Callers should use static method getWal() instead
+    FileBasedWal(const folly::StringPiece dir,
+                 FileBasedWalPolicy policy,
+                 BufferFlusher* flusher);
+
     virtual ~FileBasedWal();
+
+    // Signal all WAL holders to stop using this WAL
+    void stop() {
+        stopped_ = true;
+    }
+    bool isStopped() const {
+        return stopped_.load();
+    }
+
+    // Return the ID of the first log message in the WAL
+    LogID firstLogId() const override {
+        return firstLogId_;
+    }
 
     // Return the ID of the last log message in the WAL
     LogID lastLogId() const override {
         return lastLogId_;
     }
 
+    // Return the term when the the last log is received
+    TermID lastLogTerm() const override {
+        return lastLogTerm_;
+    }
+
     // Append one log messages to the WAL
     // This method **IS NOT** thread-safe
-    bool appendLog(LogID id, std::string msg) override;
+    // we **DO NOT** expect multiple threads will append logs simultaneously
+    bool appendLog(LogID id, TermID term, std::string msg) override;
 
     // Append a list of log messages to the WAL
     // This method **IS NOT** thread-safe
+    // we **DO NOT** expect multiple threads will append logs simultaneously
     bool appendLogs(LogIterator& iter) override;
+
+    // Rollback to the given ID, all logs after the ID will be discarded
+    // This method **IS NOT** thread-safe
+    // we **EXPECT** the thread rolling back logs is the same one
+    // appending logs
+    bool rollbackToLog(LogID id) override;
 
     // Scan [firstLogId, lastLogId]
     // This method IS thread-safe
     std::unique_ptr<LogIterator> iterator(LogID firstLogId) override;
 
-private:  // Members
-    class Buffer final {
-        friend class internal::FileBasedWalIterator;
-    public:
-        explicit Buffer(LogID firstLogId) : firstLogId_(firstLogId) {}
+    // Iterates through all wal file info in reversed order
+    // (from the latest to the earliest)
+    // The iteration finishes when the functor returns false or reaches
+    // the end
+    // The method returns the number of wal file info being acessed
+    size_t accessAllWalInfo(std::function<bool (WalFileInfoPtr info)> fn) const;
 
-        void push(std::string&& msg) {
-            totalLen_ += msg.size() + sizeof(LogID);
-            logs_.emplace_back(std::move(msg));
-        }
+    // Iterates through all log buffers in reversed order
+    // (from the latest to the earliest)
+    // The iteration finishes when the functor returns false or reaches
+    // the end
+    // The method returns the number of buffers being acessed
+    size_t accessAllBuffers(std::function<bool (BufferPtr buffer)> fn) const;
 
-        size_t size() const {
-            return totalLen_;
-        }
-
-        bool empty() const {
-            return logs_.empty();
-        }
-
-        LogID firstLogId() const {
-            return firstLogId_;
-        }
-
-        void freeze() {
-            frozen_ = true;
-        }
-
-        bool isFrozen() const {
-            return frozen_;
-        }
-
-        const std::vector<std::string>& logs() const {
-            return logs_;
-        }
-
-    private:
-        std::vector<std::string> logs_;
-        LogID firstLogId_{-1};
-        size_t totalLen_{0};
-
-        // When a buffer is frozen, no futher write will be allowed.
-        // It's ready to be flushed out
-        std::atomic<bool> frozen_{false};
-    };
+    // Dump a buffer into a WAL file
+    void flushBuffer(BufferPtr buffer);
 
 
+private:
     /***************************************
      *
-     * FileBasedWal Member Fields
+     * Private methods
      *
      **************************************/
-    std::atomic<bool> stopped_{false};
-
-    const std::string dir_;
-    const FileBasedWalPolicy policy_;
-    const int64_t maxFileSize_;
-    const int64_t maxBufferSize_;
-    LogID firstLogId_{-1};
-    LogID lastLogId_{-1};
-
-    // firstLogId -> WalInfo
-    // The last entry is the current opened WAL file
-    WalFiles walFiles_;
-    std::mutex walFilesLock_;
-
-    // The current fd for appending new log messages
-    int32_t currFileDesc_{-1};
-
-    // All buffers except the last one are ready to be persisted
-    // The last entry is teh one being appended
-    std::list<std::shared_ptr<Buffer>> buffers_;
-    std::mutex bufferMutex_;
-    std::condition_variable bufferReadyCV_;
-    std::condition_variable slotReadyCV_;
-
-    std::unique_ptr<thread::NamedThread> bufferFlushThread_;
-
-private:  // Methods
-    // Private constructor to prevent instantiating the class directly
-    // Callers should use static method getWal() instead
-    FileBasedWal(const folly::StringPiece dir,
-                 FileBasedWalPolicy policy);
-
-    // The functor for the bufferFlushThread
-    void bufferFlushLoop();
-    // Write buffer into wal files
-    void flushBuffer(std::shared_ptr<Buffer> buffer);
-    // Dump a Cord to the current file
-    void dumpCord(Cord& cord, LogID lastId);
-
     // Scan all WAL files
     void scanAllWalFiles();
+
+    // Dump a Cord to the current file
+    void dumpCord(Cord& cord, LogID lastId, TermID lastTerm);
 
     // Close down the current wal file
     void closeCurrFile();
     // Prepare a new wal file starting from the given log id
     void prepareNewFile(LogID startLogId);
 
+    // Create a new buffer at the end of the buffer list
+    BufferPtr createNewBuffer(LogID firstId,
+                              std::unique_lock<std::mutex>& guard);
+
     // Implementation of appendLog()
-    bool appendLogInternal(std::shared_ptr<Buffer>& buffer,
+    bool appendLogInternal(BufferPtr& buffer,
                            LogID id,
+                           TermID term,
                            std::string msg);
+
+
+private:
+    using WalFiles = std::map<LogID, WalFileInfoPtr>;
+
+    /***************************************
+     *
+     * FileBasedWal Member Fields
+     *
+     **************************************/
+    BufferFlusher* flusher_;
+
+    std::atomic<bool> stopped_{false};
+
+    const std::string dir_;
+    const FileBasedWalPolicy policy_;
+    const size_t maxFileSize_;
+    const size_t maxBufferSize_;
+    LogID firstLogId_{-1};
+    LogID lastLogId_{-1};
+    TermID lastLogTerm_{-1};
+
+    // firstLogId -> WalInfo
+    // The last entry is the current opened WAL file
+    WalFiles walFiles_;
+    mutable std::mutex walFilesMutex_;
+
+    // The current fd (which is the last file in walFiles_)
+    // for appending new log messages
+    // Accessing currFd_ **IS NOT** thread-safe, because only
+    // the buffer-flush thread is expected to access it
+    int32_t currFd_{-1};
+    // The WalFileInfo corresponding to the currFd_
+    WalFileInfoPtr currInfo_;
+
+    // All buffers except the last one are ready to be persisted
+    // The last entry is the one being appended
+    BufferList buffers_;
+    mutable std::mutex buffersMutex_;
+    // There is a vacancy for a new buffer
+    std::condition_variable slotReadyCV_;
 };
 
 }  // namespace raftex
 }  // namespace vgraph
 }  // namespace vesoft
-#endif  // RAFTEX_WAL_FILEBASEDWAL_H_
+#endif  // RAFTEX_FILEBASEDWAL_H_
 
