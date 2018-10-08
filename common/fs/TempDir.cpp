@@ -17,7 +17,7 @@ TempDir::TempDir(const char* pathTemplate, bool deleteOnDestroy)
     strncpy(name.get(), pathTemplate, len);
     name.get()[len] = '\0';
 
-    VLOG(2) << "Trying to create the temp directory \""
+    VLOG(2) << "Trying to create the temp directory with pattern \""
             << name.get() << "\"";
 
     if (!mkdtemp(name.get())) {
@@ -27,6 +27,7 @@ TempDir::TempDir(const char* pathTemplate, bool deleteOnDestroy)
                    << strerror(errno);
     } else {
         dirPath_ = std::move(name);
+        VLOG(2) << "Created temporary directory " << dirPath_.get();
     }
 }
 
