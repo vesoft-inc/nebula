@@ -8,7 +8,7 @@
 #define DATAMAN_SCHEMAPROVIDERIF_H_
 
 #include "base/Base.h"
-#include "interface/gen-cpp2/vgraph_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 
 namespace vesoft {
 namespace vgraph {

@@ -7,89 +7,189 @@
 #include "base/Base.h"
 #include "console/CmdProcessor.h"
 #include "time/Duration.h"
-#include "dataman/RowSetReader.h"
-#include "dataman/RowReader.h"
 
 namespace vesoft {
 namespace vgraph {
 
 #define GET_VALUE_WIDTH(VT, FN, FMT) \
-    VT val; \
-    if (fieldIt->get ## FN (val) == ResultType::SUCCEEDED) { \
-        int32_t len = folly::stringPrintf(FMT, val).size(); \
-        if (widths[fieldIdx] < len) { \
-            widths[fieldIdx] = len; \
-        } \
+    VT val = col.get_ ## FN(); \
+    size_t len = folly::stringPrintf(FMT, val).size(); \
+    if (widths[idx] < len) { \
+        widths[idx] = len; \
+        genFmt = true; \
     }
 
-std::vector<int16_t> CmdProcessor::calColumnWidths(
-        const RowSetReader* dataReader) const {
-    std::vector<int16_t> widths;
+void CmdProcessor::calColumnWidths(
+        const cpp2::ExecutionResponse& resp,
+        std::vector<size_t>& widths,
+        std::vector<std::string>& formats) const {
+    widths.clear();
+    formats.clear();
 
     // Check column names first
-    auto* schema = dataReader->schema();
-    for (int i = 0; i < schema->getNumFields(0); i++) {
-        widths.emplace_back(strlen(schema->getFieldName(i, 0)));
+    if (resp.get_colNames() != nullptr) {
+        for (size_t i = 0; i < resp.get_colNames()->size(); i++) {
+            widths.emplace_back(resp.get_colNames()->at(i).size());
+        }
+    }
+    if (widths.size() == 0) {
+        return;
     }
 
-    // TODO Then check data width
-    auto rowIt = dataReader->begin();
-    while (bool(rowIt)) {
-        int32_t fieldIdx = 0;
-        auto fieldIt = rowIt->begin();
-        while (bool(fieldIt)) {
-            switch (schema->getFieldType(fieldIdx, 0)->get_type()) {
-                case cpp2::SupportedType::BOOL: {
+    std::vector<cpp2::ColumnValue::Type> types(
+        widths.size(), cpp2::ColumnValue::Type::__EMPTY__);
+    formats.resize(widths.size());
+    // Then check data width
+    for (auto& row : *(resp.get_data())) {
+        size_t idx = 0;
+        for (auto& col : row.get_row()) {
+            CHECK(types[idx] == cpp2::ColumnValue::Type::__EMPTY__
+                  || types[idx] == col.getType());
+            bool genFmt = types[idx] == cpp2::ColumnValue::Type::__EMPTY__;
+            if (types[idx] == cpp2::ColumnValue::Type::__EMPTY__) {
+                types[idx] = col.getType();
+            } else {
+                CHECK_EQ(types[idx], col.getType());
+            }
+
+            switch (col.getType()) {
+                case cpp2::ColumnValue::Type::__EMPTY__: {
+                    break;
+                }
+                case cpp2::ColumnValue::Type::boolVal: {
                     // Enough to hold "false"
-                    if (widths[fieldIdx] < 5) {
-                        widths[fieldIdx] = 5;
+                    if (widths[idx] < 5UL) {
+                        widths[idx] = 5UL;
+                        genFmt = true;
+                    }
+                    if (genFmt) {
+                        formats[idx] =
+                            folly::stringPrintf(" %%%lds |", widths[idx]);
                     }
                     break;
                 }
-                case cpp2::SupportedType::INT: {
-                    GET_VALUE_WIDTH(int64_t, Int, "%ld")
-                    break;
-                }
-                case cpp2::SupportedType::FLOAT: {
-                    GET_VALUE_WIDTH(float, Float, "%f")
-                    break;
-                }
-                case cpp2::SupportedType::DOUBLE: {
-                    GET_VALUE_WIDTH(double, Double, "%lf")
-                    break;
-                }
-                case cpp2::SupportedType::STRING: {
-                    folly::StringPiece val;
-                    if (fieldIt->getString(val) == ResultType::SUCCEEDED) {
-                        if (widths[fieldIdx] < static_cast<int64_t>(val.size())) {
-                            widths[fieldIdx] = val.size();
-                        }
+                case cpp2::ColumnValue::Type::intVal: {
+                    GET_VALUE_WIDTH(int64_t, intVal, "%ld")
+                    if (genFmt) {
+                        formats[idx] =
+                            folly::stringPrintf(" %%%ldld |", widths[idx]);
                     }
                     break;
                 }
-                case cpp2::SupportedType::VID: {
+                case cpp2::ColumnValue::Type::idVal: {
                     // Enough to hold "0x{16 letters}"
-                    if (widths[fieldIdx] < 18) {
-                        widths[fieldIdx] = 18;
+                    if (widths[idx] < 18UL) {
+                        widths[idx] = 18UL;
+                        genFmt = true;
+                    }
+                    if (genFmt) {
+                        formats[idx] =
+                            folly::stringPrintf(" %%%ldX |", widths[idx]);
                     }
                     break;
                 }
-                default: {
+                case cpp2::ColumnValue::Type::floatVal: {
+                    GET_VALUE_WIDTH(float, floatVal, "%f")
+                    if (genFmt) {
+                        formats[idx] =
+                            folly::stringPrintf(" %%%ldf |", widths[idx]);
+                    }
+                    break;
+                }
+                case cpp2::ColumnValue::Type::doubleVal: {
+                    GET_VALUE_WIDTH(double, doubleVal, "%lf")
+                    if (genFmt) {
+                        formats[idx] =
+                            folly::stringPrintf(" %%%ldf |", widths[idx]);
+                    }
+                    break;
+                }
+                case cpp2::ColumnValue::Type::strVal: {
+                    size_t len = col.get_strVal().size();
+                    if (widths[idx] < len) {
+                        widths[idx] = len;
+                        genFmt = true;
+                    }
+                    if (genFmt) {
+                        formats[idx] =
+                            folly::stringPrintf(" %%%lds |", widths[idx]);
+                    }
+                    break;
+                }
+                case cpp2::ColumnValue::Type::tsVal: {
+                    GET_VALUE_WIDTH(int64_t, tsVal, "%ld")
+                    if (genFmt) {
+                        formats[idx] =
+                            folly::stringPrintf(" %%%ldld |", widths[idx]);
+                    }
+                    break;
+                }
+                case cpp2::ColumnValue::Type::yearVal: {
+                    if (widths[idx] < 4UL) {
+                        widths[idx] = 4UL;
+                        genFmt = true;
+                    }
+                    if (genFmt) {
+                        formats[idx] = folly::stringPrintf(" %%%ldd |", widths[idx]);
+                    }
+                    break;
+                }
+                case cpp2::ColumnValue::Type::monthVal: {
+                    if (widths[idx] < 7UL) {
+                        widths[idx] = 7UL;
+                        genFmt = true;
+                    }
+                    if (genFmt) {
+                        formats[idx] = folly::stringPrintf(" %%%ldd/%%02d |",
+                                                           widths[idx] - 3);
+                    }
+                    break;
+                }
+                case cpp2::ColumnValue::Type::dateVal: {
+                    if (widths[idx] < 10UL) {
+                        widths[idx] = 10UL;
+                        genFmt = true;
+                    }
+                    if (genFmt) {
+                        formats[idx] =
+                            folly::stringPrintf(" %%%ldd/%%02d/%%02d |",
+                                                widths[idx] - 6);
+                    }
+                    break;
+                }
+                case cpp2::ColumnValue::Type::datetimeVal: {
+                    if (widths[idx] < 26UL) {
+                        widths[idx] = 26UL;
+                        genFmt = true;
+                    }
+                    if (genFmt) {
+                        formats[idx] =
+                            folly::stringPrintf(" %%%ldd/%%02d/%%02d"
+                                                " %%02d:%%02d:%%02d"
+                                                ".%%03d%%03d |",
+                                                widths[idx] - 22);
+                    }
+                    break;
                 }
             }
-            ++fieldIt;
-            ++fieldIdx;
+            ++idx;
         }
-        ++rowIt;
     }
-
-    return std::move(widths);
 }
 #undef GET_VALUE_WIDTH
 
 
-int32_t CmdProcessor::printResult(const RowSetReader* dataReader) const {
-    std::vector<int16_t> widths = calColumnWidths(dataReader);
+void CmdProcessor::printResult(const cpp2::ExecutionResponse& resp) const {
+    std::vector<size_t> widths;
+    std::vector<std::string> formats;
+
+    calColumnWidths(resp, widths, formats);
+
+    if (widths.size() == 0) {
+        return;
+    }
+
+    // Calculate the total width
     int32_t sum = 0;
     for (auto w : widths) {
         sum += w;
@@ -99,117 +199,109 @@ int32_t CmdProcessor::printResult(const RowSetReader* dataReader) const {
     std::string rowLine(sum + 3 * widths.size() + 1, '-');
     std::cout << headerLine << "\n|";
 
-    std::vector<std::string> formats = printHeader(dataReader, widths);
+    printHeader(resp, widths);
     std::cout << headerLine << "\n";
 
-    int32_t numRows = printData(dataReader, rowLine, formats);
-    return numRows;
+    printData(resp, rowLine, widths, formats);
 }
 
 
-std::vector<std::string> CmdProcessor::printHeader(
-        const RowSetReader* dataReader,
-        const std::vector<int16_t>& widths) const {
-    std::vector<std::string> formats;
+void CmdProcessor::printHeader(
+        const cpp2::ExecutionResponse& resp,
+        const std::vector<size_t>& widths) const {
+    size_t idx = 0;
+    if (resp.get_colNames() == nullptr) {
+        return;
+    }
 
-    auto* schema = dataReader->schema();
-    for (int i = 0; i < schema->getNumFields(0); i++) {
-        std::string fmt = folly::stringPrintf(" %%%ds |", widths[i]);
-        std::cout << folly::stringPrintf(fmt.c_str(), schema->getFieldName(i, 0));
-        switch (schema->getFieldType(i, 0)->get_type()) {
-            case cpp2::SupportedType::BOOL: {
-                formats.emplace_back(folly::stringPrintf(" %%%ds |", widths[i]));
-                break;
-            }
-            case cpp2::SupportedType::INT: {
-                formats.emplace_back(folly::stringPrintf(" %%%dld |", widths[i]));
-                break;
-            }
-            case cpp2::SupportedType::FLOAT: {
-                formats.emplace_back(folly::stringPrintf(" %%%df |", widths[i]));
-                break;
-            }
-            case cpp2::SupportedType::DOUBLE: {
-                formats.emplace_back(folly::stringPrintf(" %%%df |", widths[i]));
-                break;
-            }
-            case cpp2::SupportedType::STRING: {
-                formats.emplace_back(folly::stringPrintf(" %%%ds |", widths[i]));
-                break;
-            }
-            case cpp2::SupportedType::VID: {
-                formats.emplace_back(folly::stringPrintf(" %%%dX |", widths[i]));
-                break;
-            }
-            default: {
-                formats.emplace_back(" *ERROR* |");
-            }
-        }
+    for (auto& cname : (*resp.get_colNames())) {
+        std::string fmt = folly::stringPrintf(" %%%lds |", widths[idx]);
+        std::cout << folly::stringPrintf(fmt.c_str(), cname.c_str());
     }
     std::cout << "\n";
-
-    return std::move(formats);
 }
 
 
-#define PRINT_FIELD_VALUE(VT, FN, VAL) \
-    VT val; \
-    if (fIt->get ## FN (val) == ResultType::SUCCEEDED) { \
-        std::cout << folly::stringPrintf(formats[fIdx].c_str(), (VAL)); \
-    } else { \
-        std::cout << " *BAD* |"; \
+#define PRINT_FIELD_VALUE(...) \
+    std::cout << folly::stringPrintf(formats[cIdx].c_str(), __VA_ARGS__)
+
+void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
+                             const std::string& rowLine,
+                             const std::vector<size_t>& widths,
+                             const std::vector<std::string>& formats) const {
+    if (resp.get_data() == nullptr) {
+        return;
     }
 
-int32_t CmdProcessor::printData(const RowSetReader* dataReader,
-                                const std::string& rowLine,
-                                const std::vector<std::string>& formats) const {
-    int32_t numRows = 0;
-
-    auto* schema = dataReader->schema();
-    auto rowIt = dataReader->begin();
-    while (bool(rowIt)) {
-        int32_t fIdx = 0;
-        auto fIt = rowIt->begin();
+    for (auto& row : (*resp.get_data())) {
+        int32_t cIdx = 0;
         std::cout << "|";
-        while (bool(fIt)) {
-            switch (schema->getFieldType(fIdx, 0)->get_type()) {
-                case cpp2::SupportedType::BOOL: {
-                    PRINT_FIELD_VALUE(bool, Bool, (val ? "true" : "false"))
+        for (auto& col : row.get_row()) {
+            switch (col.getType()) {
+                case cpp2::ColumnValue::Type::__EMPTY__: {
+                    std::string fmt = folly::stringPrintf(" %%%ldc |", widths[cIdx]);
+                    std::cout << folly::stringPrintf(fmt.c_str(), ' ');
                     break;
                 }
-                case cpp2::SupportedType::INT: {
-                    PRINT_FIELD_VALUE(int64_t, Int, val)
+                case cpp2::ColumnValue::Type::boolVal: {
+                    PRINT_FIELD_VALUE(col.get_boolVal() ? "true" : "false");
                     break;
                 }
-                case cpp2::SupportedType::FLOAT: {
-                    PRINT_FIELD_VALUE(float, Float, val)
+                case cpp2::ColumnValue::Type::intVal: {
+                    PRINT_FIELD_VALUE(col.get_intVal());
                     break;
                 }
-                case cpp2::SupportedType::DOUBLE: {
-                    PRINT_FIELD_VALUE(double, Double, val)
+                case cpp2::ColumnValue::Type::idVal: {
+                    PRINT_FIELD_VALUE(col.get_idVal());
                     break;
                 }
-                case cpp2::SupportedType::STRING: {
-                    PRINT_FIELD_VALUE(folly::StringPiece, String, val.toString().c_str())
+                case cpp2::ColumnValue::Type::floatVal: {
+                    PRINT_FIELD_VALUE(col.get_floatVal());
                     break;
                 }
-                case cpp2::SupportedType::VID: {
-                    PRINT_FIELD_VALUE(int64_t, Vid, val)
+                case cpp2::ColumnValue::Type::doubleVal: {
+                    PRINT_FIELD_VALUE(col.get_doubleVal());
                     break;
                 }
-                default: {
-                    std::cout << " *ERROR* |";
+                case cpp2::ColumnValue::Type::strVal: {
+                    PRINT_FIELD_VALUE(col.get_strVal().c_str());
+                    break;
+                }
+                case cpp2::ColumnValue::Type::tsVal: {
+                    PRINT_FIELD_VALUE(col.get_tsVal());
+                    break;
+                }
+                case cpp2::ColumnValue::Type::yearVal: {
+                    PRINT_FIELD_VALUE(col.get_yearVal());
+                    break;
+                }
+                case cpp2::ColumnValue::Type::monthVal: {
+                    cpp2::YearMonth month = col.get_monthVal();
+                    PRINT_FIELD_VALUE(month.get_year(), month.get_month());
+                    break;
+                }
+                case cpp2::ColumnValue::Type::dateVal: {
+                    cpp2::Date date = col.get_dateVal();
+                    PRINT_FIELD_VALUE(date.get_year(), date.get_month(), date.get_day());
+                    break;
+                }
+                case cpp2::ColumnValue::Type::datetimeVal: {
+                    cpp2::DateTime dt = col.get_datetimeVal();
+                    PRINT_FIELD_VALUE(dt.get_year(),
+                                      dt.get_month(),
+                                      dt.get_day(),
+                                      dt.get_hour(),
+                                      dt.get_minute(),
+                                      dt.get_second(),
+                                      dt.get_millisec(),
+                                      dt.get_microsec());
+                    break;
                 }
             }
-            ++fIt;
-            ++fIdx;
+            ++cIdx;
         }
         std::cout << "\n" << rowLine << "\n";
-        ++numRows;
-        ++rowIt;
     }
-
-    return numRows;
 }
 #undef PRINT_FIELD_VALUE
 
@@ -231,23 +323,27 @@ bool CmdProcessor::processClientCmd(folly::StringPiece cmd,
 
 void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
     time::Duration dur;
-    std::unique_ptr<RowSetReader> dataReader;
-    int32_t res = client_->execute(cmd, dataReader);
-    if (!res) {
+    cpp2::ExecutionResponse resp;
+    cpp2::ResultCode res = client_->execute(cmd, resp);
+    if (res == cpp2::ResultCode::SUCCEEDED) {
         // Succeeded
-        auto* schema = dataReader->schema();
-        UNUSED(schema);
-        int32_t numRows = 0;
-        if (dataReader->schema()) {
-            // Only print when the schema is no empty
-            numRows = printResult(dataReader.get());
+        printResult(resp);
+        if (resp.get_data() != nullptr) {
+            std::cout << "Got " << resp.get_data()->size()
+                      << " rows (Time spent: "
+                      << resp.get_latencyInMs() << "/"
+                      << dur.elapsedInMSec() << " ms)\n";
+        } else {
+            std::cout << "Execution succeeded (Time spent: "
+                      << resp.get_latencyInMs() << "/"
+                      << dur.elapsedInMSec() << " ms)\n";
         }
-        std::cout << "Got " << numRows << " rows (Time spent: "
-                  << client_->getServerLatency() << "/"
-                  << dur.elapsedInMSec() << " ms)\n";
     } else {
-        std::cout << "[ERROR (" << res << ")]  "
-                  << client_->getErrorStr() << "\n";
+        // TODO(sye) Need to print human-readable error strings
+        auto msg = resp.get_errorMsg();
+        std::cout << "[ERROR (" << static_cast<int32_t>(res)
+                  << ")]: " << (msg != nullptr ? *msg : "")
+                  << "\n";
     }
 }
 

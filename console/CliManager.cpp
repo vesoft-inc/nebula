@@ -64,14 +64,14 @@ bool CliManager::connect(const std::string& addr,
     username_ = user;
 
     auto client = std::make_unique<GraphDbClient>(addr_, port_);
-    int32_t err = client->connect(user, pass);
-    if (!err) {
+    cpp2::ResultCode res = client->connect(user, pass);
+    if (res == cpp2::ResultCode::SUCCEEDED) {
         std::cerr << "\nWelcome to vGraph (Version 0.1)\n\n";
         cmdProcessor_ = std::make_unique<CmdProcessor>(std::move(client));
         return true;
     } else {
         // There is an error
-        std::cout << "Authentication failed: " << client->getErrorStr() << "\n";
+        std::cout << "Authentication failed\n";
         return false;
     }
 }

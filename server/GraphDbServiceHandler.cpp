@@ -7,9 +7,6 @@
 #include "base/Base.h"
 #include "server/GraphDbServiceHandler.h"
 #include "time/Duration.h"
-#include "dataman/RowWriter.h"
-#include "dataman/RowSetWriter.h"
-#include "dataman/ThriftSchemaProvider.h"
 
 namespace vesoft {
 namespace vgraph {
@@ -54,22 +51,61 @@ folly::Future<cpp2::ExecutionResponse> GraphDbServiceHandler::future_execute(
     if (stmt == "version") {
         resp.set_result(cpp2::ResultCode::SUCCEEDED);
 
-        RowWriter row1;
-        row1 << RowWriter::ColName("major") << 1
-             << RowWriter::ColName("minor") << 2
-             << RowWriter::ColName("release") << 1234567890;
-        resp.set_schema(std::move(row1.moveSchema()));
+        std::vector<std::string> headers;
+        headers.emplace_back("major");
+        headers.emplace_back("minor");
+        headers.emplace_back("release");
+        headers.emplace_back("release_date");
+        headers.emplace_back("expiration");
+        resp.set_colNames(std::move(headers));
 
-        ThriftSchemaProvider schema(resp.get_schema());
+        std::vector<cpp2::ColumnValue> cols;
 
-        RowSetWriter rs(&schema);
-        rs.addRow(row1);
+        // Row 1
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_intVal(1);
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_intVal(1);
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_intVal(1);
+        cols.emplace_back(cpp2::ColumnValue());
+        cpp2::Date date;
+        date.year = 2017;
+        date.month = 10;
+        date.day = 8;
+        cols.back().set_dateVal(std::move(date));
+        cols.emplace_back(cpp2::ColumnValue());
+        cpp2::YearMonth month;
+        month.year = 2018;
+        month.month = 4;
+        cols.back().set_monthVal(std::move(month));
 
-        RowWriter row2(&schema);
-        row2 << 2 << 3 << 4;
-        rs.addRow(row2);
+        std::vector<cpp2::RowType> rows;
+        rows.emplace_back();
+        rows.back().set_row(std::move(cols));
 
-        resp.set_data(std::move(rs.data()));
+        // Row 2
+        cols.clear();
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_intVal(2);
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_intVal(2);
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_intVal(2);
+        cols.emplace_back(cpp2::ColumnValue());
+        date.year = 2018;
+        date.month = 10;
+        date.day = 8;
+        cols.back().set_dateVal(std::move(date));
+        cols.emplace_back(cpp2::ColumnValue());
+        month.year = 2019;
+        month.month = 4;
+        cols.back().set_monthVal(std::move(month));
+
+        rows.emplace_back();
+        rows.back().set_row(std::move(cols));
+
+        resp.set_data(std::move(rows));
     } else if (stmt == "select") {
         usleep(2000);
         resp.set_result(cpp2::ResultCode::SUCCEEDED);
