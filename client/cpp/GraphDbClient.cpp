@@ -28,8 +28,8 @@ GraphDbClient::~GraphDbClient() {
 }
 
 
-cpp2::ResultCode GraphDbClient::connect(const std::string& username,
-                                        const std::string& password) {
+cpp2::ErrorCode GraphDbClient::connect(const std::string& username,
+                                       const std::string& password) {
     using namespace apache::thrift;
 
     auto socket = async::TAsyncSocket::newSocket(
@@ -40,7 +40,7 @@ cpp2::ResultCode GraphDbClient::connect(const std::string& username,
     if (!socket) {
         // Bad connection
         LOG(ERROR) << "Failed to connect to " << addr_ << ":" << port_;
-        return cpp2::ResultCode::E_FAIL_TO_CONNECT;
+        return cpp2::ErrorCode::E_FAIL_TO_CONNECT;
     }
 
     // Wait until the socket becomes connected
@@ -55,7 +55,7 @@ cpp2::ResultCode GraphDbClient::connect(const std::string& username,
     }
     if (!socket->good()) {
         LOG(ERROR) << "Timed out when connecting to " << addr_ << ":" << port_;
-        return cpp2::ResultCode::E_FAIL_TO_CONNECT;
+        return cpp2::ErrorCode::E_FAIL_TO_CONNECT;
     }
 
     client_ = std::make_unique<cpp2::GraphDbServiceAsyncClient>(
@@ -64,18 +64,18 @@ cpp2::ResultCode GraphDbClient::connect(const std::string& username,
     cpp2::AuthResponse resp;
     try {
         client_->sync_authenticate(resp, username, password);
-        if (resp.get_result() != cpp2::ResultCode::SUCCEEDED) {
+        if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << "Failed to authenticate \"" << username << "\": "
-                       << resp.get_errorMsg();
-            return resp.get_result();
+                       << resp.get_error_msg();
+            return resp.get_error_code();
         }
     } catch (const std::exception& ex) {
         LOG(ERROR) << "Thrift rpc call failed: " << ex.what();
-        return cpp2::ResultCode::E_RPC_FAILURE;
+        return cpp2::ErrorCode::E_RPC_FAILURE;
     }
 
-    sessionId_ = *(resp.get_sessionId());
-    return cpp2::ResultCode::SUCCEEDED;
+    sessionId_ = *(resp.get_session_id());
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 
@@ -91,21 +91,21 @@ void GraphDbClient::disconnect() {
 }
 
 
-cpp2::ResultCode GraphDbClient::execute(folly::StringPiece stmt,
-                                        cpp2::ExecutionResponse& resp) {
+cpp2::ErrorCode GraphDbClient::execute(folly::StringPiece stmt,
+                                       cpp2::ExecutionResponse& resp) {
     if (!client_) {
         LOG(ERROR) << "Disconnected from the server";
-        return cpp2::ResultCode::E_DISCONNECTED;
+        return cpp2::ErrorCode::E_DISCONNECTED;
     }
 
     try {
         client_->sync_execute(resp, sessionId_, stmt.toString());
     } catch (const std::exception& ex) {
         LOG(ERROR) << "Thrift rpc call failed: " << ex.what();
-        return cpp2::ResultCode::E_RPC_FAILURE;
+        return cpp2::ErrorCode::E_RPC_FAILURE;
     }
 
-    return resp.get_result();
+    return resp.get_error_code();
 }
 
 }  // namespace vgraph

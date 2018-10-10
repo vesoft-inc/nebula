@@ -21,7 +21,7 @@ public:
         virtual ~Field() = default;
 
         virtual const char* getName() const = 0;
-        virtual const cpp2::ValueType* getType() const = 0;
+        virtual const storage::cpp2::ValueType* getType() const = 0;
         virtual bool isValid() const = 0;
     };
 
@@ -60,10 +60,12 @@ public:
     virtual const char* getFieldName(int32_t index, int32_t ver) const = 0;
 
 
-    virtual const cpp2::ValueType* getFieldType(int32_t index,
-                                                int32_t ver) const = 0;
-    virtual const cpp2::ValueType* getFieldType(const folly::StringPiece name,
-                                                int32_t ver) const = 0;
+    virtual const storage::cpp2::ValueType* getFieldType(
+        int32_t index,
+        int32_t ver) const = 0;
+    virtual const storage::cpp2::ValueType* getFieldType(
+        const folly::StringPiece name,
+        int32_t ver) const = 0;
 
     virtual std::unique_ptr<Field> field(int32_t index, int32_t ver) const = 0;
     virtual std::unique_ptr<Field> field(const folly::StringPiece name,

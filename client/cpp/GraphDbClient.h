@@ -19,14 +19,12 @@ public:
     virtual ~GraphDbClient();
 
     // Authenticate the user
-    cpp2::ResultCode connect(const std::string& username,
-                             const std::string& password);
+    cpp2::ErrorCode connect(const std::string& username,
+                            const std::string& password);
     void disconnect();
 
-    // The return value only reflects the RPC result. Please check
-    // resp.get_result() for the execution result
-    cpp2::ResultCode execute(folly::StringPiece stmt,
-                             cpp2::ExecutionResponse& resp);
+    cpp2::ErrorCode execute(folly::StringPiece stmt,
+                            cpp2::ExecutionResponse& resp);
 
 private:
     std::unique_ptr<cpp2::GraphDbServiceAsyncClient> client_;

@@ -14,24 +14,25 @@ namespace vesoft {
 namespace vgraph {
 
 class ResultSchemaProvider : public SchemaProviderIf {
-    using ColumnDefs = std::vector<cpp2::ColumnDef>;
+    using ColumnDefs = std::vector<storage::cpp2::ColumnDef>;
 
 public:
     class ResultSchemaField : public Field {
     public:
-        explicit ResultSchemaField(const cpp2::ColumnDef* col = nullptr);
+        explicit ResultSchemaField(
+            const storage::cpp2::ColumnDef* col = nullptr);
 
         const char* getName() const override;
-        const cpp2::ValueType* getType() const override;
+        const storage::cpp2::ValueType* getType() const override;
         bool isValid() const override;
 
     private:
-        const cpp2::ColumnDef* column_;
+        const storage::cpp2::ColumnDef* column_;
     };
 
 
 public:
-    explicit ResultSchemaProvider(cpp2::Schema&&);
+    explicit ResultSchemaProvider(storage::cpp2::Schema&&);
     virtual ~ResultSchemaProvider() = default;
 
     int32_t getLatestVer() const noexcept override;
@@ -41,10 +42,12 @@ public:
                           int32_t ver) const override;
     const char* getFieldName(int32_t index, int32_t ver) const override;
 
-    const cpp2::ValueType* getFieldType(int32_t index,
-                                        int32_t ver) const override;
-    const cpp2::ValueType* getFieldType(const folly::StringPiece name,
-                                        int32_t ver) const override;
+    const storage::cpp2::ValueType* getFieldType(
+        int32_t index,
+        int32_t ver) const override;
+    const storage::cpp2::ValueType* getFieldType(
+        const folly::StringPiece name,
+        int32_t ver) const override;
 
     std::unique_ptr<Field> field(int32_t index, int32_t ver) const override;
     std::unique_ptr<Field> field(const folly::StringPiece name,

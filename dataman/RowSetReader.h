@@ -55,7 +55,7 @@ public:
     //
     // In this case, the RowSetReader will take the ownership of the schema
     // and the data
-    explicit RowSetReader(cpp2::QueryResponse& resp);
+    explicit RowSetReader(storage::cpp2::QueryResponse& resp);
 
     // Constructor to process the property value
     //

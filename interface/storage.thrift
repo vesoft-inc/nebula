@@ -4,9 +4,9 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-namespace cpp vesoft.vgraph
-namespace java vesoft.vgraph
-namespace go vesoft.vgraph
+namespace cpp vesoft.storage
+namespace java vesoft.storage
+namespace go vesoft.storage
 
 enum ErrorCode {
     SUCCEEDED = 0,
@@ -49,7 +49,7 @@ enum SupportedType {
 struct ValueType {
     1: SupportedType type;
     // vtype only exists when the type is a LIST, SET, or MAP
-    2: optional ValueType vType (cpp.ref = true);
+    2: optional ValueType value_type (cpp.ref = true);
     // When the type is STRUCT, schema defines the struct
     3: optional Schema schema (cpp.ref = true);
 } (cpp.virtual)
@@ -67,8 +67,8 @@ struct Schema {
 
 
 struct QueryResponse {
-    1: required ErrorCode result,
-    2: required i32 latencyInMs,    // Query latency from storage service
+    1: required ErrorCode error_code,
+    2: required i32 latency_in_ms,      // Query latency from storage service
     3: optional Schema schema,
     4: optional binary data,
 }
@@ -78,6 +78,6 @@ service StorageService {
     QueryResponse getOutBound(1: list<i64> ids,
                               2: list<i32> edgeTypes,
                               3: binary filter
-                              4: list<string> returnCols)
+                              4: list<string> returnColumns)
 }
 

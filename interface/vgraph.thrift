@@ -8,7 +8,7 @@ namespace cpp vesoft.vgraph
 namespace java vesoft.vgraph
 namespace go vesoft.vgraph
 
-enum ResultCode {
+enum ErrorCode {
     SUCCEEDED = 0,
 
     // RPC Failure
@@ -53,19 +53,19 @@ struct DateTime {
 
 union ColumnValue {
     // Simple types
-    1: bool boolVal,
-    2: i64 intVal;
-    3: IdType idVal;
-    4: float floatVal;
-    5: double doubleVal;
-    6: binary strVal;
+    1: bool boolean,
+    2: i64 integer;
+    3: IdType id;
+    4: float single_precision;
+    5: double double_precision;
+    6: binary str;
 
     // Date time types
-    7: Timestamp tsVal;
-    8: Year yearVal;
-    9: YearMonth monthVal;
-    10: Date dateVal;
-    11: DateTime datetimeVal;
+    7: Timestamp timestamp;
+    8: Year year;
+    9: YearMonth month;
+    10: Date date;
+    11: DateTime datetime;
 
     // Graph specific
 //    PATH = 41;
@@ -78,24 +78,24 @@ union ColumnValue {
 }
 
 
-struct RowType {
-    1: list<ColumnValue> row;
+struct RowValue {
+    1: list<ColumnValue> columns;
 }
 
 
 struct ExecutionResponse {
-    1: required ResultCode result;
-    2: required i32 latencyInMs;        // Execution time on server
-    3: optional string errorMsg;
-    4: optional list<binary> colNames;  // Column names
-    5: optional list<RowType> data;
+    1: required ErrorCode error_code;
+    2: required i32 latency_in_ms;          // Execution time on server
+    3: optional string error_msg;
+    4: optional list<binary> column_names;  // Column names
+    5: optional list<RowValue> rows;
 }
 
 
 struct AuthResponse {
-    1: required ResultCode result;
-    2: optional i64 sessionId;
-    3: optional string errorMsg;
+    1: required ErrorCode error_code;
+    2: optional i64 session_id;
+    3: optional string error_msg;
 }
 
 

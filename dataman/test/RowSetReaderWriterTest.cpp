@@ -19,7 +19,7 @@ TEST(RowSetReaderWriter, allInts) {
     SchemaWriter schema;
     for (int i = 0; i < 33; i++) {
         schema.appendCol(folly::stringPrintf("col%02d", i),
-                         cpp2::SupportedType::INT);
+                         storage::cpp2::SupportedType::INT);
     }
 
     RowSetWriter rsWriter(&schema);

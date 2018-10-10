@@ -64,8 +64,8 @@ bool CliManager::connect(const std::string& addr,
     username_ = user;
 
     auto client = std::make_unique<GraphDbClient>(addr_, port_);
-    cpp2::ResultCode res = client->connect(user, pass);
-    if (res == cpp2::ResultCode::SUCCEEDED) {
+    cpp2::ErrorCode res = client->connect(user, pass);
+    if (res == cpp2::ErrorCode::SUCCEEDED) {
         std::cerr << "\nWelcome to vGraph (Version 0.1)\n\n";
         cmdProcessor_ = std::make_unique<CmdProcessor>(std::move(client));
         return true;

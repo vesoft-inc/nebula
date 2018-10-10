@@ -27,9 +27,9 @@ void CmdProcessor::calColumnWidths(
     formats.clear();
 
     // Check column names first
-    if (resp.get_colNames() != nullptr) {
-        for (size_t i = 0; i < resp.get_colNames()->size(); i++) {
-            widths.emplace_back(resp.get_colNames()->at(i).size());
+    if (resp.get_column_names() != nullptr) {
+        for (size_t i = 0; i < resp.get_column_names()->size(); i++) {
+            widths.emplace_back(resp.get_column_names()->at(i).size());
         }
     }
     if (widths.size() == 0) {
@@ -40,9 +40,9 @@ void CmdProcessor::calColumnWidths(
         widths.size(), cpp2::ColumnValue::Type::__EMPTY__);
     formats.resize(widths.size());
     // Then check data width
-    for (auto& row : *(resp.get_data())) {
+    for (auto& row : *(resp.get_rows())) {
         size_t idx = 0;
-        for (auto& col : row.get_row()) {
+        for (auto& col : row.get_columns()) {
             CHECK(types[idx] == cpp2::ColumnValue::Type::__EMPTY__
                   || types[idx] == col.getType());
             bool genFmt = types[idx] == cpp2::ColumnValue::Type::__EMPTY__;
@@ -56,7 +56,7 @@ void CmdProcessor::calColumnWidths(
                 case cpp2::ColumnValue::Type::__EMPTY__: {
                     break;
                 }
-                case cpp2::ColumnValue::Type::boolVal: {
+                case cpp2::ColumnValue::Type::boolean: {
                     // Enough to hold "false"
                     if (widths[idx] < 5UL) {
                         widths[idx] = 5UL;
@@ -68,15 +68,15 @@ void CmdProcessor::calColumnWidths(
                     }
                     break;
                 }
-                case cpp2::ColumnValue::Type::intVal: {
-                    GET_VALUE_WIDTH(int64_t, intVal, "%ld")
+                case cpp2::ColumnValue::Type::integer: {
+                    GET_VALUE_WIDTH(int64_t, integer, "%ld")
                     if (genFmt) {
                         formats[idx] =
                             folly::stringPrintf(" %%%ldld |", widths[idx]);
                     }
                     break;
                 }
-                case cpp2::ColumnValue::Type::idVal: {
+                case cpp2::ColumnValue::Type::id: {
                     // Enough to hold "0x{16 letters}"
                     if (widths[idx] < 18UL) {
                         widths[idx] = 18UL;
@@ -88,24 +88,24 @@ void CmdProcessor::calColumnWidths(
                     }
                     break;
                 }
-                case cpp2::ColumnValue::Type::floatVal: {
-                    GET_VALUE_WIDTH(float, floatVal, "%f")
+                case cpp2::ColumnValue::Type::single_precision: {
+                    GET_VALUE_WIDTH(float, single_precision, "%f")
                     if (genFmt) {
                         formats[idx] =
                             folly::stringPrintf(" %%%ldf |", widths[idx]);
                     }
                     break;
                 }
-                case cpp2::ColumnValue::Type::doubleVal: {
-                    GET_VALUE_WIDTH(double, doubleVal, "%lf")
+                case cpp2::ColumnValue::Type::double_precision: {
+                    GET_VALUE_WIDTH(double, double_precision, "%lf")
                     if (genFmt) {
                         formats[idx] =
                             folly::stringPrintf(" %%%ldf |", widths[idx]);
                     }
                     break;
                 }
-                case cpp2::ColumnValue::Type::strVal: {
-                    size_t len = col.get_strVal().size();
+                case cpp2::ColumnValue::Type::str: {
+                    size_t len = col.get_str().size();
                     if (widths[idx] < len) {
                         widths[idx] = len;
                         genFmt = true;
@@ -116,15 +116,15 @@ void CmdProcessor::calColumnWidths(
                     }
                     break;
                 }
-                case cpp2::ColumnValue::Type::tsVal: {
-                    GET_VALUE_WIDTH(int64_t, tsVal, "%ld")
+                case cpp2::ColumnValue::Type::timestamp: {
+                    GET_VALUE_WIDTH(int64_t, timestamp, "%ld")
                     if (genFmt) {
                         formats[idx] =
                             folly::stringPrintf(" %%%ldld |", widths[idx]);
                     }
                     break;
                 }
-                case cpp2::ColumnValue::Type::yearVal: {
+                case cpp2::ColumnValue::Type::year: {
                     if (widths[idx] < 4UL) {
                         widths[idx] = 4UL;
                         genFmt = true;
@@ -134,7 +134,7 @@ void CmdProcessor::calColumnWidths(
                     }
                     break;
                 }
-                case cpp2::ColumnValue::Type::monthVal: {
+                case cpp2::ColumnValue::Type::month: {
                     if (widths[idx] < 7UL) {
                         widths[idx] = 7UL;
                         genFmt = true;
@@ -145,7 +145,7 @@ void CmdProcessor::calColumnWidths(
                     }
                     break;
                 }
-                case cpp2::ColumnValue::Type::dateVal: {
+                case cpp2::ColumnValue::Type::date: {
                     if (widths[idx] < 10UL) {
                         widths[idx] = 10UL;
                         genFmt = true;
@@ -157,7 +157,7 @@ void CmdProcessor::calColumnWidths(
                     }
                     break;
                 }
-                case cpp2::ColumnValue::Type::datetimeVal: {
+                case cpp2::ColumnValue::Type::datetime: {
                     if (widths[idx] < 26UL) {
                         widths[idx] = 26UL;
                         genFmt = true;
@@ -210,11 +210,11 @@ void CmdProcessor::printHeader(
         const cpp2::ExecutionResponse& resp,
         const std::vector<size_t>& widths) const {
     size_t idx = 0;
-    if (resp.get_colNames() == nullptr) {
+    if (resp.get_column_names() == nullptr) {
         return;
     }
 
-    for (auto& cname : (*resp.get_colNames())) {
+    for (auto& cname : (*resp.get_column_names())) {
         std::string fmt = folly::stringPrintf(" %%%lds |", widths[idx]);
         std::cout << folly::stringPrintf(fmt.c_str(), cname.c_str());
     }
@@ -229,64 +229,64 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
                              const std::string& rowLine,
                              const std::vector<size_t>& widths,
                              const std::vector<std::string>& formats) const {
-    if (resp.get_data() == nullptr) {
+    if (resp.get_rows() == nullptr) {
         return;
     }
 
-    for (auto& row : (*resp.get_data())) {
+    for (auto& row : (*resp.get_rows())) {
         int32_t cIdx = 0;
         std::cout << "|";
-        for (auto& col : row.get_row()) {
+        for (auto& col : row.get_columns()) {
             switch (col.getType()) {
                 case cpp2::ColumnValue::Type::__EMPTY__: {
                     std::string fmt = folly::stringPrintf(" %%%ldc |", widths[cIdx]);
                     std::cout << folly::stringPrintf(fmt.c_str(), ' ');
                     break;
                 }
-                case cpp2::ColumnValue::Type::boolVal: {
-                    PRINT_FIELD_VALUE(col.get_boolVal() ? "true" : "false");
+                case cpp2::ColumnValue::Type::boolean: {
+                    PRINT_FIELD_VALUE(col.get_boolean() ? "true" : "false");
                     break;
                 }
-                case cpp2::ColumnValue::Type::intVal: {
-                    PRINT_FIELD_VALUE(col.get_intVal());
+                case cpp2::ColumnValue::Type::integer: {
+                    PRINT_FIELD_VALUE(col.get_integer());
                     break;
                 }
-                case cpp2::ColumnValue::Type::idVal: {
-                    PRINT_FIELD_VALUE(col.get_idVal());
+                case cpp2::ColumnValue::Type::id: {
+                    PRINT_FIELD_VALUE(col.get_id());
                     break;
                 }
-                case cpp2::ColumnValue::Type::floatVal: {
-                    PRINT_FIELD_VALUE(col.get_floatVal());
+                case cpp2::ColumnValue::Type::single_precision: {
+                    PRINT_FIELD_VALUE(col.get_single_precision());
                     break;
                 }
-                case cpp2::ColumnValue::Type::doubleVal: {
-                    PRINT_FIELD_VALUE(col.get_doubleVal());
+                case cpp2::ColumnValue::Type::double_precision: {
+                    PRINT_FIELD_VALUE(col.get_double_precision());
                     break;
                 }
-                case cpp2::ColumnValue::Type::strVal: {
-                    PRINT_FIELD_VALUE(col.get_strVal().c_str());
+                case cpp2::ColumnValue::Type::str: {
+                    PRINT_FIELD_VALUE(col.get_str().c_str());
                     break;
                 }
-                case cpp2::ColumnValue::Type::tsVal: {
-                    PRINT_FIELD_VALUE(col.get_tsVal());
+                case cpp2::ColumnValue::Type::timestamp: {
+                    PRINT_FIELD_VALUE(col.get_timestamp());
                     break;
                 }
-                case cpp2::ColumnValue::Type::yearVal: {
-                    PRINT_FIELD_VALUE(col.get_yearVal());
+                case cpp2::ColumnValue::Type::year: {
+                    PRINT_FIELD_VALUE(col.get_year());
                     break;
                 }
-                case cpp2::ColumnValue::Type::monthVal: {
-                    cpp2::YearMonth month = col.get_monthVal();
+                case cpp2::ColumnValue::Type::month: {
+                    cpp2::YearMonth month = col.get_month();
                     PRINT_FIELD_VALUE(month.get_year(), month.get_month());
                     break;
                 }
-                case cpp2::ColumnValue::Type::dateVal: {
-                    cpp2::Date date = col.get_dateVal();
+                case cpp2::ColumnValue::Type::date: {
+                    cpp2::Date date = col.get_date();
                     PRINT_FIELD_VALUE(date.get_year(), date.get_month(), date.get_day());
                     break;
                 }
-                case cpp2::ColumnValue::Type::datetimeVal: {
-                    cpp2::DateTime dt = col.get_datetimeVal();
+                case cpp2::ColumnValue::Type::datetime: {
+                    cpp2::DateTime dt = col.get_datetime();
                     PRINT_FIELD_VALUE(dt.get_year(),
                                       dt.get_month(),
                                       dt.get_day(),
@@ -324,23 +324,23 @@ bool CmdProcessor::processClientCmd(folly::StringPiece cmd,
 void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
     time::Duration dur;
     cpp2::ExecutionResponse resp;
-    cpp2::ResultCode res = client_->execute(cmd, resp);
-    if (res == cpp2::ResultCode::SUCCEEDED) {
+    cpp2::ErrorCode res = client_->execute(cmd, resp);
+    if (res == cpp2::ErrorCode::SUCCEEDED) {
         // Succeeded
         printResult(resp);
-        if (resp.get_data() != nullptr) {
-            std::cout << "Got " << resp.get_data()->size()
+        if (resp.get_rows() != nullptr) {
+            std::cout << "Got " << resp.get_rows()->size()
                       << " rows (Time spent: "
-                      << resp.get_latencyInMs() << "/"
+                      << resp.get_latency_in_ms() << "/"
                       << dur.elapsedInMSec() << " ms)\n";
         } else {
             std::cout << "Execution succeeded (Time spent: "
-                      << resp.get_latencyInMs() << "/"
+                      << resp.get_latency_in_ms() << "/"
                       << dur.elapsedInMSec() << " ms)\n";
         }
     } else {
         // TODO(sye) Need to print human-readable error strings
-        auto msg = resp.get_errorMsg();
+        auto msg = resp.get_error_msg();
         std::cout << "[ERROR (" << static_cast<int32_t>(res)
                   << ")]: " << (msg != nullptr ? *msg : "")
                   << "\n";

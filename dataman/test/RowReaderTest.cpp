@@ -29,7 +29,7 @@ TEST(RowReader, headerInfo) {
     // Insert 33 fields into schema, so we will get 2 offsets
     for (int i = 0; i < 33; i++) {
         schema.appendCol(folly::stringPrintf("Column%02d", i),
-                         cpp2::SupportedType::INT);
+                         storage::cpp2::SupportedType::INT);
     }
 
     // With schema version and offsets
@@ -61,24 +61,28 @@ TEST(RowReader, encodedData) {
 
     SchemaWriter schema;
     // Col 0: bool_col1 -- BOOL
-    schema.appendCol("bool_col1", cpp2::SupportedType::BOOL);
+    schema.appendCol("bool_col1", storage::cpp2::SupportedType::BOOL);
     // Col 1: str_col1 -- STRING
     schema.appendCol(folly::stringPrintf("str_col1"),
-                     cpp2::SupportedType::STRING);
+                     storage::cpp2::SupportedType::STRING);
     // Col 2: int_col1 -- INT
-    schema.appendCol(colName1, cpp2::SupportedType::INT);
+    schema.appendCol(colName1, storage::cpp2::SupportedType::INT);
     // Col 3: int_col2 -- INT
-    schema.appendCol(colName2, cpp2::SupportedType::INT);
+    schema.appendCol(colName2, storage::cpp2::SupportedType::INT);
     // Col 4: vid_col -- VID
-    schema.appendCol(folly::StringPiece(colName3), cpp2::SupportedType::VID);
+    schema.appendCol(folly::StringPiece(colName3),
+                     storage::cpp2::SupportedType::VID);
     // Col 5: str_col2 -- STRING
-    schema.appendCol("str_col2", cpp2::SupportedType::STRING);
+    schema.appendCol("str_col2", storage::cpp2::SupportedType::STRING);
     // Col 6: bool_col2 -- BOOL
-    schema.appendCol(std::string("bool_col2"), cpp2::SupportedType::BOOL);
+    schema.appendCol(std::string("bool_col2"),
+                     storage::cpp2::SupportedType::BOOL);
     // Col 7: float_col -- FLOAT
-    schema.appendCol(std::string("float_col"), cpp2::SupportedType::FLOAT);
+    schema.appendCol(std::string("float_col"),
+                     storage::cpp2::SupportedType::FLOAT);
     // Col 8: double_col -- DOUBLE
-    schema.appendCol(std::string("double_col"), cpp2::SupportedType::DOUBLE);
+    schema.appendCol(std::string("double_col"),
+                     storage::cpp2::SupportedType::DOUBLE);
 
     std::string encoded;
     // Single byte header (Schema version is 0, no offset)
@@ -159,7 +163,7 @@ TEST(RowReader, encodedData) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader.getString("str_col1", sVal));
     EXPECT_EQ(str1, sVal.toString());
-    
+
     // Col 2
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader.getInt(2, i32Val));
@@ -168,7 +172,7 @@ TEST(RowReader, encodedData) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader.getInt("int_col1", i32Val));
     EXPECT_EQ(100, i32Val);
-    
+
     // Col 3
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader.getInt(3, i32Val));
@@ -181,7 +185,7 @@ TEST(RowReader, encodedData) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader.getInt("int_col2", u64Val));
     EXPECT_EQ(0xFFFFFFFFFFFFFFFFL, u64Val);
-    
+
     // Col 4
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader.getVid(4, i64Val));
@@ -190,7 +194,7 @@ TEST(RowReader, encodedData) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader.getVid("vid_col", i64Val));
     EXPECT_EQ(0x8877665544332211L, i64Val);
-    
+
     // Col 5
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader.getString(5, sVal));
@@ -199,7 +203,7 @@ TEST(RowReader, encodedData) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader.getString("str_col2", sVal));
     EXPECT_EQ(str2, sVal.toString());
-    
+
     // Col 6
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader.getBool(6, bVal));
@@ -246,7 +250,7 @@ TEST(RowReader, iterator) {
     SchemaWriter schema;
     for (int i = 0; i < 64; i++) {
         schema.appendCol(folly::stringPrintf("Col%02d", i),
-                         cpp2::SupportedType::INT);
+                         storage::cpp2::SupportedType::INT);
         encoded.append(1, i + 1);
     }
 
