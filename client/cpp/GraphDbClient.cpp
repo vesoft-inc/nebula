@@ -44,6 +44,8 @@ cpp2::ResultCode GraphDbClient::connect(const std::string& username,
     }
 
     // Wait until the socket becomes connected
+    // TODO Obviously this is not the most efficient way. We need to
+    // change it to async implementation later
     for (int i = 0; i < 4; i++) {
         usleep(1000 * FLAGS_conn_timeout_ms / 4);
         if (socket->good()) {
