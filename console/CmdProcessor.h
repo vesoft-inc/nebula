@@ -34,15 +34,17 @@ private:
 
     void processServerCmd(folly::StringPiece cmd);
 
-    std::vector<int16_t> calColumnWidths(const RowSetReader* dataReader) const;
+    void calColumnWidths(const cpp2::ExecutionResponse& resp,
+                         std::vector<size_t>& widths,
+                         std::vector<std::string>& formats) const;
 
-    int32_t printResult(const RowSetReader* dataReader) const;
-    std::vector<std::string> printHeader(const RowSetReader* dataReader,
-                                         const std::vector<int16_t>& widths) const;
-    // The method returns the total number of rows
-    int32_t printData(const RowSetReader* dataReader,
-                      const std::string& rowLine,
-                      const std::vector<std::string>& formats) const;
+    void printResult(const cpp2::ExecutionResponse& resp) const;
+    void printHeader(const cpp2::ExecutionResponse& resp,
+                     const std::vector<size_t>& widths) const;
+    void printData(const cpp2::ExecutionResponse& resp,
+                   const std::string& rowLine,
+                   const std::vector<size_t>& widths,
+                   const std::vector<std::string>& formats) const;
 };
 
 }  // namespace vgraph

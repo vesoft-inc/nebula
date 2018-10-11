@@ -10,6 +10,8 @@
 namespace vesoft {
 namespace vgraph {
 
+using namespace storage;
+
 cpp2::Schema SchemaWriter::moveSchema() noexcept {
     cpp2::Schema schema;
     schema.set_columns(std::move(columns_));

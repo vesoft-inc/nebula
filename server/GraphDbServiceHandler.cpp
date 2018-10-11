@@ -7,9 +7,6 @@
 #include "base/Base.h"
 #include "server/GraphDbServiceHandler.h"
 #include "time/Duration.h"
-#include "dataman/RowWriter.h"
-#include "dataman/RowSetWriter.h"
-#include "dataman/ThriftSchemaProvider.h"
 
 namespace vesoft {
 namespace vgraph {
@@ -22,11 +19,11 @@ folly::Future<cpp2::AuthResponse> GraphDbServiceHandler::future_authenticate(
     cpp2::AuthResponse resp;
     // TODO(sye) For test purpose, we only allow test/user to pass
     if (username == "test" && password == "user") {
-        resp.set_result(cpp2::ResultCode::SUCCEEDED);
-        resp.set_sessionId(1);
+        resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+        resp.set_session_id(1);
     } else {
-        resp.set_result(cpp2::ResultCode::E_BAD_USERNAME_PASSWORD);
-        resp.set_errorMsg(getErrorStr(cpp2::ResultCode::E_BAD_USERNAME_PASSWORD));
+        resp.set_error_code(cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD);
+        resp.set_error_msg(getErrorStr(cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD));
     }
 
     folly::Promise<cpp2::AuthResponse> promise;
@@ -52,34 +49,73 @@ folly::Future<cpp2::ExecutionResponse> GraphDbServiceHandler::future_execute(
     // TODO For test purpose, we only generate two valid results and
     // return error for all others
     if (stmt == "version") {
-        resp.set_result(cpp2::ResultCode::SUCCEEDED);
+        resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
 
-        RowWriter row1;
-        row1 << RowWriter::ColName("major") << 1
-             << RowWriter::ColName("minor") << 2
-             << RowWriter::ColName("release") << 1234567890;
-        resp.set_schema(std::move(row1.moveSchema()));
+        std::vector<std::string> headers;
+        headers.emplace_back("major");
+        headers.emplace_back("minor");
+        headers.emplace_back("release");
+        headers.emplace_back("release_date");
+        headers.emplace_back("expiration");
+        resp.set_column_names(std::move(headers));
 
-        ThriftSchemaProvider schema(resp.get_schema());
+        std::vector<cpp2::ColumnValue> cols;
 
-        RowSetWriter rs(&schema);
-        rs.addRow(row1);
+        // Row 1
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_integer(1);
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_integer(1);
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_integer(1);
+        cols.emplace_back(cpp2::ColumnValue());
+        cpp2::Date date;
+        date.year = 2017;
+        date.month = 10;
+        date.day = 8;
+        cols.back().set_date(std::move(date));
+        cols.emplace_back(cpp2::ColumnValue());
+        cpp2::YearMonth month;
+        month.year = 2018;
+        month.month = 4;
+        cols.back().set_month(std::move(month));
 
-        RowWriter row2(&schema);
-        row2 << 2 << 3 << 4;
-        rs.addRow(row2);
+        std::vector<cpp2::RowValue> rows;
+        rows.emplace_back();
+        rows.back().set_columns(std::move(cols));
 
-        resp.set_data(std::move(rs.data()));
+        // Row 2
+        cols.clear();
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_integer(2);
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_integer(2);
+        cols.emplace_back(cpp2::ColumnValue());
+        cols.back().set_integer(2);
+        cols.emplace_back(cpp2::ColumnValue());
+        date.year = 2018;
+        date.month = 10;
+        date.day = 8;
+        cols.back().set_date(std::move(date));
+        cols.emplace_back(cpp2::ColumnValue());
+        month.year = 2019;
+        month.month = 4;
+        cols.back().set_month(std::move(month));
+
+        rows.emplace_back();
+        rows.back().set_columns(std::move(cols));
+
+        resp.set_rows(std::move(rows));
     } else if (stmt == "select") {
         usleep(2000);
-        resp.set_result(cpp2::ResultCode::SUCCEEDED);
+        resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
     } else {
         // TODO otherwuse, return error
-        resp.set_result(cpp2::ResultCode::E_SYNTAX_ERROR);
-        resp.set_errorMsg("Syntax error: Unknown statement");
+        resp.set_error_code(cpp2::ErrorCode::E_SYNTAX_ERROR);
+        resp.set_error_msg("Syntax error: Unknown statement");
     }
 
-    resp.set_latencyInMs(dur.elapsedInMSec());
+    resp.set_latency_in_ms(dur.elapsedInMSec());
 
     folly::Promise<cpp2::ExecutionResponse> promise;
     promise.setValue(std::move(resp));
@@ -87,20 +123,20 @@ folly::Future<cpp2::ExecutionResponse> GraphDbServiceHandler::future_execute(
 }
 
 
-const char* GraphDbServiceHandler::getErrorStr(cpp2::ResultCode result) {
+const char* GraphDbServiceHandler::getErrorStr(cpp2::ErrorCode result) {
     switch (result) {
-    case cpp2::ResultCode::SUCCEEDED:
+    case cpp2::ErrorCode::SUCCEEDED:
         return "Succeeded";
     /**********************
      * Server side errors
      **********************/
-    case cpp2::ResultCode::E_BAD_USERNAME_PASSWORD:
+    case cpp2::ErrorCode::E_BAD_USERNAME_PASSWORD:
         return "Bad username/password";
-    case cpp2::ResultCode::E_SESSION_INVALID:
+    case cpp2::ErrorCode::E_SESSION_INVALID:
         return "The session is invalid";
-    case cpp2::ResultCode::E_SESSION_TIMEOUT:
+    case cpp2::ErrorCode::E_SESSION_TIMEOUT:
         return "The session timed out";
-    case cpp2::ResultCode::E_SYNTAX_ERROR:
+    case cpp2::ErrorCode::E_SYNTAX_ERROR:
         return "Syntax error";
     /**********************
      * Unknown error

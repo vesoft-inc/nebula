@@ -1,5 +1,5 @@
 add_custom_command(
-    OUTPUT 
+    OUTPUT
         gen-cpp2/GraphDbService.cpp
         gen-cpp2/GraphDbServiceAsyncClient.cpp
         gen-cpp2/GraphDbService_processmap_binary.cpp
@@ -7,13 +7,13 @@ add_custom_command(
         gen-cpp2/vgraph_constants.cpp
         gen-cpp2/vgraph_data.cpp
         gen-cpp2/vgraph_types.cpp
-    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go" "--gen" "py:new_style"   "-o" "." "./vgraph.thrift"
+    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./vgraph.thrift"
     DEPENDS vgraph.thrift
 )
 
 
 add_custom_command(
-    OUTPUT 
+    OUTPUT
         gen-cpp2/RaftexService.cpp
         gen-cpp2/RaftexServiceAsyncClient.cpp
         gen-cpp2/RaftexService_processmap_binary.cpp
@@ -21,8 +21,22 @@ add_custom_command(
         gen-cpp2/raftex_constants.cpp
         gen-cpp2/raftex_data.cpp
         gen-cpp2/raftex_types.cpp
-    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go" "--gen" "py:new_style"   "-o" "." "./raftex.thrift"
+    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./raftex.thrift"
     DEPENDS raftex.thrift
+)
+
+
+add_custom_command(
+    OUTPUT
+        gen-cpp2/StorageService.cpp
+        gen-cpp2/StorageServiceAsyncClient.cpp
+        gen-cpp2/StorageService_processmap_binary.cpp
+        gen-cpp2/StorageService_processmap_compact.cpp
+        gen-cpp2/storage_constants.cpp
+        gen-cpp2/storage_data.cpp
+        gen-cpp2/storage_types.cpp
+    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./storage.thrift"
+    DEPENDS storage.thrift
 )
 
 
@@ -56,3 +70,16 @@ add_library(
     gen-cpp2/raftex_types.cpp
 )
 add_dependencies(raftex_thrift_obj tgt_fbthrift)
+
+
+add_library(
+    storage_thrift_obj OBJECT
+    gen-cpp2/StorageService.cpp
+    gen-cpp2/StorageServiceAsyncClient.cpp
+    gen-cpp2/StorageService_processmap_binary.cpp
+    gen-cpp2/StorageService_processmap_compact.cpp
+    gen-cpp2/storage_constants.cpp
+    gen-cpp2/storage_data.cpp
+    gen-cpp2/storage_types.cpp
+)
+add_dependencies(storage_thrift_obj tgt_fbthrift)

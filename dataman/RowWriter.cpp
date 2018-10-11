@@ -10,6 +10,8 @@
 namespace vesoft {
 namespace vgraph {
 
+using namespace storage;
+
 RowWriter::RowWriter(SchemaProviderIf* schema, int32_t schemaVer)
         : schema_(schema)
         , schemaVer_(schemaVer) {

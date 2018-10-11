@@ -25,7 +25,7 @@ public:
         int64_t sessionId,
         const std::string& stmt) override;
 
-    const char* getErrorStr(cpp2::ResultCode result);
+    const char* getErrorStr(cpp2::ErrorCode result);
 
 private:
 };
