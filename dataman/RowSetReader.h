@@ -8,7 +8,7 @@
 #define DATAMAN_ROWSETREADER_H_
 
 #include "base/Base.h"
-#include "interface/gen-cpp2/vgraph_types.h"
+#include "interface/gen-cpp2/storage_types.h"
 #include "dataman/SchemaProviderIf.h"
 
 namespace vesoft {
@@ -55,7 +55,7 @@ public:
     //
     // In this case, the RowSetReader will take the ownership of the schema
     // and the data
-    explicit RowSetReader(cpp2::ExecutionResponse& resp);
+    explicit RowSetReader(storage::cpp2::QueryResponse& resp);
 
     // Constructor to process the property value
     //

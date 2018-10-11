@@ -29,50 +29,55 @@ std::string dataMix;
 
 void prepareSchema() {
     for (int i = 0; i < 32; i++) {
-        schemaAllInts.appendCol(folly::stringPrintf("col%02d", i),
-                                cpp2::SupportedType::INT);
-        schemaAllBools.appendCol(folly::stringPrintf("col%02d", i),
-                                 cpp2::SupportedType::BOOL);
-        schemaAllStrings.appendCol(folly::stringPrintf("col%02d", i),
-                                   cpp2::SupportedType::STRING);
-        schemaAllDoubles.appendCol(folly::stringPrintf("col%02d", i),
-                                   cpp2::SupportedType::DOUBLE);
-        schemaAllVids.appendCol(folly::stringPrintf("col%02d", i),
-                                cpp2::SupportedType::VID);
+        schemaAllInts.appendCol(
+            folly::stringPrintf("col%02d", i),
+            vesoft::storage::cpp2::SupportedType::INT);
+        schemaAllBools.appendCol(
+            folly::stringPrintf("col%02d", i),
+            vesoft::storage::cpp2::SupportedType::BOOL);
+        schemaAllStrings.appendCol(
+            folly::stringPrintf("col%02d", i),
+            vesoft::storage::cpp2::SupportedType::STRING);
+        schemaAllDoubles.appendCol(
+            folly::stringPrintf("col%02d", i),
+            vesoft::storage::cpp2::SupportedType::DOUBLE);
+        schemaAllVids.appendCol(
+            folly::stringPrintf("col%02d", i),
+            vesoft::storage::cpp2::SupportedType::VID);
     }
 
-    schemaMix.appendCol("col01", cpp2::SupportedType::BOOL)
-             .appendCol("col02", cpp2::SupportedType::BOOL)
-             .appendCol("col03", cpp2::SupportedType::BOOL)
-             .appendCol("col04", cpp2::SupportedType::BOOL)
-             .appendCol("col05", cpp2::SupportedType::INT)
-             .appendCol("col06", cpp2::SupportedType::INT)
-             .appendCol("col07", cpp2::SupportedType::INT)
-             .appendCol("col08", cpp2::SupportedType::INT)
-             .appendCol("col09", cpp2::SupportedType::STRING)
-             .appendCol("col10", cpp2::SupportedType::STRING)
-             .appendCol("col11", cpp2::SupportedType::STRING)
-             .appendCol("col12", cpp2::SupportedType::STRING)
-             .appendCol("col13", cpp2::SupportedType::FLOAT)
-             .appendCol("col14", cpp2::SupportedType::FLOAT)
-             .appendCol("col15", cpp2::SupportedType::FLOAT)
-             .appendCol("col16", cpp2::SupportedType::FLOAT)
-             .appendCol("col17", cpp2::SupportedType::DOUBLE)
-             .appendCol("col18", cpp2::SupportedType::DOUBLE)
-             .appendCol("col19", cpp2::SupportedType::DOUBLE)
-             .appendCol("col20", cpp2::SupportedType::DOUBLE)
-             .appendCol("col21", cpp2::SupportedType::VID)
-             .appendCol("col22", cpp2::SupportedType::VID)
-             .appendCol("col23", cpp2::SupportedType::VID)
-             .appendCol("col24", cpp2::SupportedType::VID)
-             .appendCol("col25", cpp2::SupportedType::INT)
-             .appendCol("col26", cpp2::SupportedType::INT)
-             .appendCol("col27", cpp2::SupportedType::INT)
-             .appendCol("col28", cpp2::SupportedType::INT)
-             .appendCol("col29", cpp2::SupportedType::INT)
-             .appendCol("col30", cpp2::SupportedType::INT)
-             .appendCol("col31", cpp2::SupportedType::INT)
-             .appendCol("col32", cpp2::SupportedType::INT);
+    schemaMix.appendCol("col01",vesoft::storage::cpp2::SupportedType::BOOL)
+             .appendCol("col02",vesoft::storage::cpp2::SupportedType::BOOL)
+             .appendCol("col03",vesoft::storage::cpp2::SupportedType::BOOL)
+             .appendCol("col04",vesoft::storage::cpp2::SupportedType::BOOL)
+             .appendCol("col05",vesoft::storage::cpp2::SupportedType::INT)
+             .appendCol("col06",vesoft::storage::cpp2::SupportedType::INT)
+             .appendCol("col07",vesoft::storage::cpp2::SupportedType::INT)
+             .appendCol("col08",vesoft::storage::cpp2::SupportedType::INT)
+             .appendCol("col09",vesoft::storage::cpp2::SupportedType::STRING)
+             .appendCol("col10",vesoft::storage::cpp2::SupportedType::STRING)
+             .appendCol("col11",vesoft::storage::cpp2::SupportedType::STRING)
+             .appendCol("col12",vesoft::storage::cpp2::SupportedType::STRING)
+             .appendCol("col13",vesoft::storage::cpp2::SupportedType::FLOAT)
+             .appendCol("col14",vesoft::storage::cpp2::SupportedType::FLOAT)
+             .appendCol("col15",vesoft::storage::cpp2::SupportedType::FLOAT)
+             .appendCol("col16",vesoft::storage::cpp2::SupportedType::FLOAT)
+             .appendCol("col17",vesoft::storage::cpp2::SupportedType::DOUBLE)
+             .appendCol("col18",vesoft::storage::cpp2::SupportedType::DOUBLE)
+             .appendCol("col19",vesoft::storage::cpp2::SupportedType::DOUBLE)
+             .appendCol("col20",vesoft::storage::cpp2::SupportedType::DOUBLE)
+             .appendCol("col21",vesoft::storage::cpp2::SupportedType::VID)
+             .appendCol("col22",vesoft::storage::cpp2::SupportedType::VID)
+             .appendCol("col23",vesoft::storage::cpp2::SupportedType::VID)
+             .appendCol("col24",vesoft::storage::cpp2::SupportedType::VID)
+             .appendCol("col25",vesoft::storage::cpp2::SupportedType::INT)
+             .appendCol("col26",vesoft::storage::cpp2::SupportedType::INT)
+             .appendCol("col27",vesoft::storage::cpp2::SupportedType::INT)
+             .appendCol("col28",vesoft::storage::cpp2::SupportedType::INT)
+             .appendCol("col29",vesoft::storage::cpp2::SupportedType::INT)
+             .appendCol("col30",vesoft::storage::cpp2::SupportedType::INT)
+             .appendCol("col31",vesoft::storage::cpp2::SupportedType::INT)
+             .appendCol("col32",vesoft::storage::cpp2::SupportedType::INT);
 }
 
 

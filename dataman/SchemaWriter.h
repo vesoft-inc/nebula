@@ -18,21 +18,21 @@ public:
     SchemaWriter() = default;
 
     // Move the schema out of the writer
-    cpp2::Schema moveSchema() noexcept;
+    storage::cpp2::Schema moveSchema() noexcept;
 
     SchemaWriter& appendCol(const char* name,
-                            cpp2::SupportedType type) noexcept;
+                            storage::cpp2::SupportedType type) noexcept;
     SchemaWriter& appendCol(const folly::StringPiece name,
-                            cpp2::SupportedType type) noexcept;
+                            storage::cpp2::SupportedType type) noexcept;
     SchemaWriter& appendCol(std::string&& name,
-                            cpp2::SupportedType type) noexcept;
+                            storage::cpp2::SupportedType type) noexcept;
 
     SchemaWriter& appendCol(const char* name,
-                            cpp2::ValueType&& type)noexcept;
+                            storage::cpp2::ValueType&& type)noexcept;
     SchemaWriter& appendCol(const folly::StringPiece name,
-                            cpp2::ValueType&& type)noexcept;
+                            storage::cpp2::ValueType&& type)noexcept;
     SchemaWriter& appendCol(std::string&& name,
-                            cpp2::ValueType&& type)noexcept;
+                            storage::cpp2::ValueType&& type)noexcept;
 
 private:
 };

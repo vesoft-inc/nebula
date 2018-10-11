@@ -6,7 +6,6 @@ add_executable(
     GraphDbConsole.cpp
     $<TARGET_OBJECTS:console_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
-    $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:vgraph_thrift_obj>
     $<TARGET_OBJECTS:time_obj>
