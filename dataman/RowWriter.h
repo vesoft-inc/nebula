@@ -46,12 +46,12 @@ public:
         friend class RowWriter;
         template<class VType>
         explicit ColType(VType&& type) : type_(std::forward(type)) {}
-        explicit ColType(cpp2::SupportedType type) {
+        explicit ColType(storage::cpp2::SupportedType type) {
             type_.set_type(type);
         }
         ColType(ColType&& rhs) : type_(std::move(rhs.type_)) {}
     private:
-        cpp2::ValueType type_;
+        storage::cpp2::ValueType type_;
     };
 
     // Skip next few columns. Default values will be written for those
@@ -84,7 +84,7 @@ public:
 
     // Move the schema out of the writer
     // After the schema being moved, **NO MORE** write should happen
-    cpp2::Schema moveSchema();
+    storage::cpp2::Schema moveSchema();
 
     // Data stream
     RowWriter& operator<<(bool v) noexcept;
@@ -130,11 +130,11 @@ private:
 
 
 #define RW_GET_COLUMN_TYPE(STYPE) \
-    const cpp2::ValueType* type; \
+    const storage::cpp2::ValueType* type; \
     if (colNum_ >= schema_->getNumFields(schemaVer_)) { \
         CHECK(!!schemaWriter_) << "SchemaWriter cannot be NULL"; \
         if (!colType_) { \
-            colType_.reset(new ColType(cpp2::SupportedType::STYPE)); \
+            colType_.reset(new ColType(storage::cpp2::SupportedType::STYPE)); \
         } \
         type = &(colType_->type_); \
     } else { \

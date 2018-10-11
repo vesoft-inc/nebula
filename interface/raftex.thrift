@@ -4,12 +4,12 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-namespace cpp vesoft.vgraph.raftex
-namespace java vesoft.vgraph.raftex
-namespace go vesoft.vgraph.raftex
+namespace cpp vesoft.raftex
+namespace java vesoft.raftex
+namespace go vesoft.raftex
 
 
-enum ResultCode {
+enum ErrorCode {
     SUCCEEDED = 0;
     E_LOG_GAP = -1;
     E_LOG_STALE = -2;
@@ -41,25 +41,25 @@ typedef i32 Port
 
 // A request to ask for vote
 struct AskForVoteRequest {
-    1: GraphSpaceID space;           // My graph space id
-    2: PartitionID  partition;       // The data partition
-    3: IPv4         candidateIp;     // My IP
-    4: Port         candidatePort;   // My port
-    5: TermID       term;            // Proposed term (current term + 1)
-    6: LogID        committedLogId;  // My last committed log id
-    7: LogID        lastLogId;       // My last received log id
+    1: GraphSpaceID space;              // My graph space id
+    2: PartitionID  partition;          // The data partition
+    3: IPv4         candidate_ip;       // My IP
+    4: Port         candidate_port;     // My port
+    5: TermID       term;               // Proposed term (current term + 1)
+    6: LogID        committed_log_id;   // My last committed log id
+    7: LogID        last_log_id;        // My last received log id
 }
 
 
 // Response message for the vote call
 struct AskForVoteResponse {
-    1: ResultCode result;
+    1: ErrorCode error_code;
 }
 
 
 struct LogEntry {
-    1: bool sendToListenersToo;
-    2: binary logStr;
+    1: bool send_to_listeners_too;
+    2: binary log_str;
 }
 
 
@@ -67,43 +67,43 @@ struct LogEntry {
   AppendLogRequest serves two purposes:
 
   1) Send a log message to followers and listeners
-  2) Or, when logId == 0 and len(logStr) == 0, it serves as a heartbeat
+  2) Or, when log_id == 0 and len(log_str) == 0, it serves as a heartbeat
 */
 struct AppendLogRequest {
     // Fields 1 - 7 are common for both log appendent and heartbeat
     1: GraphSpaceID space;
     2: PartitionID  partition;
     3: TermID       term;
-    4: IPv4         leaderIp;
-    5: Port         leaderPort;
-    6: LogID        committedLogId;
+    4: IPv4         leader_ip;
+    5: Port         leader_port;
+    6: LogID        committed_log_id;
 
     // This is the id of the first log in the current term
-    7: LogID firstLogInTerm;
+    7: LogID first_log_in_term;
 
     // Fields 8 and 9 are used for LogAppend.
     //
-    // In the case of heartbeat, firstLogId will be set zero and
-    // the logStrList will be empty
+    // In the case of heartbeat, first_log_id will be set zero and
+    // the log_str_list will be empty
     //
-    // In the case of LogAppend, firstLogId is the id for the first log
-    // in logStrList
-    8: LogID firstLogId;
-    9: list<LogEntry> logStrList;
+    // In the case of LogAppend, first_log_id is the id for the first log
+    // in log_str_list
+    8: LogID first_log_id;
+    9: list<LogEntry> log_str_list;
 
     // URI for snapshot
-    10: binary snapshotURI;
+    10: binary snapshot_uri;
 }
 
 
 struct AppendLogResponse {
-    1: ResultCode   result;
+    1: ErrorCode    error_code;
     2: TermID       term;
-    3: IPv4         leaderIp;
-    4: Port         leaderPort;
-    5: LogID        committedLogId;
-    6: LogID        lastLogId;
-    7: bool         pullingSnapshot;
+    3: IPv4         leader_ip;
+    4: Port         leader_port;
+    5: LogID        committed_log_id;
+    6: LogID        last_log_id;
+    7: bool         pulling_snapshot;
 }
 
 

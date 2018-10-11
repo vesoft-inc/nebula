@@ -8,84 +8,94 @@ namespace cpp vesoft.vgraph
 namespace java vesoft.vgraph
 namespace go vesoft.vgraph
 
-
-enum ResultCode {
+enum ErrorCode {
     SUCCEEDED = 0,
 
+    // RPC Failure
+    E_DISCONNECTED = -1,
+    E_FAIL_TO_CONNECT = -2,
+    E_RPC_FAILURE = -3,
+
     // Authentication error
-    E_BAD_USERNAME_PASSWORD = -1,
+    E_BAD_USERNAME_PASSWORD = -4,
 
     // Execution errors
-    E_SESSION_INVALID = -2,
-    E_SESSION_TIMEOUT = -3,
+    E_SESSION_INVALID = -5,
+    E_SESSION_TIMEOUT = -6,
 
-    E_SYNTAX_ERROR = -4,
+    E_SYNTAX_ERROR = -7,
 } (cpp.enum_strict)
 
 
-// These are all data types supported in the graph properties
-enum SupportedType {
-    // Simple types
-    BOOL = 1,
-    INT = 2,
-    FLOAT = 3,
-    DOUBLE = 4,
-    STRING = 5,
-    VID = 6,
-
-    // Date time
-    TIMESTAMP = 21,
-    DATE = 22,
-    TIME = 23,
-    DATETIME = 24,
-    YEAR = 25,
-
-    // Graph specific
-    PATH = 41,
-
-    // Container types
-    LIST = 101,
-    SET = 102,
-    MAP = 103,      // The key type is always a STRING
-    STRUCT = 104,
-} (cpp.enum_strict)
-
-
-struct ValueType {
-    1: SupportedType type;
-    // vtype only exists when the type is a LIST, SET, or MAP
-    2: optional ValueType vType (cpp.ref = true);
-    // When the type is STRUCT, schema defines the struct
-    3: optional Schema schema (cpp.ref = true);
-} (cpp.virtual)
-
-
-struct ColumnDef {
-    1: required string name,
-    2: required ValueType type,
+typedef i64 IdType
+typedef i64 Timestamp
+typedef i16 Year
+struct YearMonth {
+    1: i16 year;
+    2: byte month;
+}
+struct Date {
+    1: i16 year;
+    2: byte month;
+    3: byte day;
+}
+struct DateTime {
+    1: i16 year;
+    2: byte month;
+    3: byte day;
+    4: byte hour;
+    5: byte minute;
+    6: byte second;
+    7: i16 millisec;
+    8: i16 microsec;
 }
 
 
-struct Schema {
-    1: list<ColumnDef> columns,
+union ColumnValue {
+    // Simple types
+    1: bool boolean,
+    2: i64 integer;
+    3: IdType id;
+    4: float single_precision;
+    5: double double_precision;
+    6: binary str;
+
+    // Date time types
+    7: Timestamp timestamp;
+    8: Year year;
+    9: YearMonth month;
+    10: Date date;
+    11: DateTime datetime;
+
+    // Graph specific
+//    PATH = 41;
+
+    // Container types
+//    LIST = 101;
+//    SET = 102;
+//    MAP = 103;
+//    STRUCT = 104;
+}
+
+
+struct RowValue {
+    1: list<ColumnValue> columns;
 }
 
 
 struct ExecutionResponse {
-    1: required ResultCode result,
-    2: required i32 latencyInMs,
-    3: optional string errorMsg,
-    4: optional Schema schema,
-    // The returned data is encoded and will be decoded when it's read
-    5: optional binary data,
-    // The query latency on the server side
+    1: required ErrorCode error_code;
+    2: required i32 latency_in_ms;          // Execution time on server
+    3: optional string error_msg;
+    4: optional list<binary> column_names;  // Column names
+    5: optional list<RowValue> rows;
 }
 
 
 struct AuthResponse {
-    1: required ResultCode result,
-    2: optional i64 sessionId,
-    3: optional string errorMsg,
+    1: required ErrorCode error_code;
+    2: optional i64 session_id;
+    3: optional string error_msg;
 }
 
 

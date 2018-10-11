@@ -10,6 +10,7 @@
 #include "dataman/RowWriter.h"
 
 using namespace vesoft::vgraph;
+using namespace vesoft::storage;
 
 SchemaWriter schemaAllInts;
 SchemaWriter schemaAllBools;

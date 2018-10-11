@@ -11,6 +11,7 @@ namespace vesoft {
 namespace vgraph {
 
 using namespace folly::hash;
+using namespace storage;
 
 /***********************************
  *

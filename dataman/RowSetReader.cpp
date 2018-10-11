@@ -83,7 +83,7 @@ bool RowSetReader::Iterator::operator==(const Iterator& rhs) {
  * RowSetReader class
  *
  **********************************/
-RowSetReader::RowSetReader(cpp2::ExecutionResponse& resp)
+RowSetReader::RowSetReader(storage::cpp2::QueryResponse& resp)
         : takeOwnership_(true) {
     auto schema = resp.get_schema();
     if (schema) {

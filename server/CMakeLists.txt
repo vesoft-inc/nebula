@@ -5,7 +5,6 @@ add_executable(
     vgraphd
     GraphDbDaemon.cpp
     $<TARGET_OBJECTS:graph_db_handler>
-    $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:vgraph_thrift_obj>
     $<TARGET_OBJECTS:time_obj>

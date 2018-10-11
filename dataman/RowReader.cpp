@@ -194,19 +194,19 @@ int32_t RowReader::schemaVer() const noexcept {
 
 
 int64_t RowReader::skipToNext(int32_t index, int64_t offset) const noexcept {
-    const cpp2::ValueType* vType = schema_->getFieldType(index, schemaVer_);
+    const storage::cpp2::ValueType* vType = schema_->getFieldType(index, schemaVer_);
     CHECK(vType) << "No schema for the index " << index;
     if (offsets_[index + 1] >= 0) {
         return offsets_[index + 1];
     }
 
     switch (vType->get_type()) {
-        case cpp2::SupportedType::BOOL: {
+        case storage::cpp2::SupportedType::BOOL: {
             // One byte
             offset++;
             break;
         }
-        case cpp2::SupportedType::INT: {
+        case storage::cpp2::SupportedType::INT: {
             int64_t v;
             int32_t len = readInteger(offset, v);
             if (len <= 0) {
@@ -215,17 +215,17 @@ int64_t RowReader::skipToNext(int32_t index, int64_t offset) const noexcept {
             offset += len;
             break;
         }
-        case cpp2::SupportedType::FLOAT: {
+        case storage::cpp2::SupportedType::FLOAT: {
             // Eight bytes
             offset += sizeof(float);
             break;
         }
-        case cpp2::SupportedType::DOUBLE: {
+        case storage::cpp2::SupportedType::DOUBLE: {
             // Eight bytes
             offset += sizeof(double);
             break;
         }
-        case cpp2::SupportedType::STRING: {
+        case storage::cpp2::SupportedType::STRING: {
             int64_t strLen;
             int32_t intLen = readInteger(offset, strLen);
             if (intLen <= 0) {
@@ -234,7 +234,7 @@ int64_t RowReader::skipToNext(int32_t index, int64_t offset) const noexcept {
             offset += intLen + strLen;
             break;
         }
-        case cpp2::SupportedType::VID: {
+        case storage::cpp2::SupportedType::VID: {
             // Eight bytes
             offset += sizeof(int64_t);
             break;
@@ -338,12 +338,12 @@ int32_t RowReader::readVid(int64_t offset, int64_t& v) const noexcept {
 ResultType RowReader::getBool(int32_t index, int64_t& offset, bool& v)
         const noexcept {
     switch (schema_->getFieldType(index, schemaVer_)->get_type()) {
-        case cpp2::SupportedType::BOOL: {
+        case storage::cpp2::SupportedType::BOOL: {
             v = intToBool(data_[offset]);
             offset++;
             break;
         }
-        case cpp2::SupportedType::INT: {
+        case storage::cpp2::SupportedType::INT: {
             int64_t intV;
             int32_t numBytes = readInteger(offset, intV);
             if (numBytes > 0) {
@@ -354,7 +354,7 @@ ResultType RowReader::getBool(int32_t index, int64_t& offset, bool& v)
             }
             break;
         }
-        case cpp2::SupportedType::STRING: {
+        case storage::cpp2::SupportedType::STRING: {
             folly::StringPiece strV;
             int32_t numBytes = readString(offset, strV);
             if (numBytes > 0) {
@@ -377,7 +377,7 @@ ResultType RowReader::getBool(int32_t index, int64_t& offset, bool& v)
 ResultType RowReader::getFloat(int32_t index, int64_t& offset, float& v)
         const noexcept {
     switch (schema_->getFieldType(index, schemaVer_)->get_type()) {
-        case cpp2::SupportedType::FLOAT: {
+        case storage::cpp2::SupportedType::FLOAT: {
             int32_t numBytes = readFloat(offset, v);
             if (numBytes < 0) {
                 return static_cast<ResultType>(numBytes);
@@ -385,7 +385,7 @@ ResultType RowReader::getFloat(int32_t index, int64_t& offset, float& v)
             offset += numBytes;
             break;
         }
-        case cpp2::SupportedType::DOUBLE: {
+        case storage::cpp2::SupportedType::DOUBLE: {
             double d;
             int32_t numBytes = readDouble(offset, d);
             if (numBytes < 0) {
@@ -407,7 +407,7 @@ ResultType RowReader::getFloat(int32_t index, int64_t& offset, float& v)
 ResultType RowReader::getDouble(int32_t index, int64_t& offset, double& v)
         const noexcept {
     switch (schema_->getFieldType(index, schemaVer_)->get_type()) {
-        case cpp2::SupportedType::FLOAT: {
+        case storage::cpp2::SupportedType::FLOAT: {
             float f;
             int32_t numBytes = readFloat(offset, f);
             if (numBytes < 0) {
@@ -417,7 +417,7 @@ ResultType RowReader::getDouble(int32_t index, int64_t& offset, double& v)
             offset += numBytes;
             break;
         }
-        case cpp2::SupportedType::DOUBLE: {
+        case storage::cpp2::SupportedType::DOUBLE: {
             int32_t numBytes = readDouble(offset, v);
             if (numBytes < 0) {
                 return static_cast<ResultType>(numBytes);
@@ -438,7 +438,7 @@ ResultType RowReader::getString(int32_t index,
                                 int64_t& offset,
                                 folly::StringPiece& v) const noexcept {
     switch (schema_->getFieldType(index, schemaVer_)->get_type()) {
-        case cpp2::SupportedType::STRING: {
+        case storage::cpp2::SupportedType::STRING: {
             int32_t numBytes = readString(offset, v);
             if (numBytes < 0) {
                 return static_cast<ResultType>(numBytes);
@@ -458,7 +458,7 @@ ResultType RowReader::getString(int32_t index,
 ResultType RowReader::getVid(int32_t index, int64_t& offset, int64_t& v)
         const noexcept {
     switch (schema_->getFieldType(index, schemaVer_)->get_type()) {
-        case cpp2::SupportedType::INT: {
+        case storage::cpp2::SupportedType::INT: {
             int32_t numBytes = readInteger(offset, v);
             if (numBytes < 0) {
                 return static_cast<ResultType>(numBytes);
@@ -466,7 +466,7 @@ ResultType RowReader::getVid(int32_t index, int64_t& offset, int64_t& v)
             offset += numBytes;
             break;
         }
-        case cpp2::SupportedType::VID: {
+        case storage::cpp2::SupportedType::VID: {
             int32_t numBytes = readVid(offset, v);
             if (numBytes < 0) {
                 return static_cast<ResultType>(numBytes);
