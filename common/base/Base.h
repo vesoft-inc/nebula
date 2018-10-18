@@ -84,6 +84,16 @@
 #endif  // COMPILER_BARRIER
 
 #include "base/ThriftTypes.h"
+// Formated logging
+#define FLOG_FATAL(...) LOG(FATAL) << folly::stringPrintf(__VA_ARGS__)
+#define FLOG_ERROR(...) LOG(ERROR) << folly::stringPrintf(__VA_ARGS__)
+#define FLOG_WARN(...) LOG(WARNING) << folly::stringPrintf(__VA_ARGS__)
+#define FLOG_INFO(...) LOG(INFO) << folly::stringPrintf(__VA_ARGS__)
+#define VFLOG1(...) VLOG(1) << folly::stringPrintf(__VA_ARGS__)
+#define VFLOG2(...) VLOG(2) << folly::stringPrintf(__VA_ARGS__)
+#define VFLOG3(...) VLOG(3) << folly::stringPrintf(__VA_ARGS__)
+#define VFLOG4(...) VLOG(4) << folly::stringPrintf(__VA_ARGS__)
+
 
 namespace vesoft {
 

@@ -112,6 +112,35 @@ std::string FileUtils::getExeCWD() {
 }
 
 
+std::string FileUtils::dirname(const char *path) {
+    DCHECK(path != nullptr && *path != '\0');
+    if (::strcmp("/", path) == 0) { // root only
+        return "/";
+    }
+    static const std::regex pattern("(.*)/([^/]+)/?");
+    std::cmatch result;
+    if (std::regex_match(path, result, pattern)) {
+        if (result[1].first == result[1].second) {    // "/path" or "/path/"
+            return "/";
+        }
+        return result[1].str();     // "/path/to", "path/to", or "path/to/"
+    }
+    return ".";
+}
+
+
+std::string FileUtils::basename(const char *path) {
+    DCHECK(path != nullptr && *path != '\0');
+    if (::strcmp("/", path) == 0) {
+        return "";
+    }
+    static const std::regex pattern("(/*([^/]+/+)*)([^/]+)/?");
+    std::cmatch result;
+    std::regex_match(path, result, pattern);
+    return result[3].str();
+}
+
+
 const char* FileUtils::getFileTypeName(FileType type) {
     static const char* kTypeNames[] = {
         "Unknown",

@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#ifndef PARSER_STATEMENT_H_
-#define PARSER_STATEMENT_H_
+#ifndef PARSER_COMPOUNDSENTENCE_H_
+#define PARSER_COMPOUNDSENTENCE_H_
 
 #include "base/Base.h"
 #include "parser/MaintainSentences.h"
@@ -13,9 +13,13 @@
 
 namespace vesoft {
 
-class Statement final {
+namespace vgraph {
+class CompoundExecutor;
+}
+
+class CompoundSentence final {
 public:
-    explicit Statement(Sentence *sentence) {
+    explicit CompoundSentence(Sentence *sentence) {
         sentences_.emplace_back(sentence);
     }
 
@@ -26,10 +30,11 @@ public:
     std::string toString() const;
 
 private:
+    friend class vesoft::vgraph::CompoundExecutor;
     std::vector<std::unique_ptr<Sentence>>        sentences_;
 };
 
 
 }   // namespace vesoft
 
-#endif  // PARSER_STATEMENT_H_
+#endif  // PARSER_COMPOUNDSENTENCE_H_

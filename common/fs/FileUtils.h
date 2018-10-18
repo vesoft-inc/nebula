@@ -33,6 +33,10 @@ public:
     static std::string getExePath();
     // Get the running executable's current working direcotry
     static std::string getExeCWD();
+    // Get the directory part of a path
+    static std::string dirname(const char *path);
+    // Get the base part of a path
+    static std::string basename(const char *path);
 
     // return the size of the given file
     static size_t fileSize(const char* path);

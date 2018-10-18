@@ -9,6 +9,7 @@ add_executable(
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:vgraph_thrift_obj>
     $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:thread_obj>
 )
 target_link_libraries(
     vgraph
@@ -37,6 +38,8 @@ target_link_libraries(
     gflags
     resolv
     double-conversion
+    ${Readline_LIBRARY}
+    ncurses
     dl
     -pthread
 )
