@@ -1,4 +1,4 @@
-## VEGraph
+## Nebula Graph
 
-A scalable, distributed graph database
+A high performance distributed graph database
 
