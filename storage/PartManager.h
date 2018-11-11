@@ -47,6 +47,7 @@ public:
 
 protected:
     PartManager() = default;
+    static PartManager* instance_;
 };
 
 /**
