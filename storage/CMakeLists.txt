@@ -1,7 +1,9 @@
 add_library(
     storage_obj OBJECT
-    Shard.cpp
+    Part.cpp
     RocksdbEngine.cpp
+	PartManager.cpp
+	KVStoreImpl.cpp
 )
 add_dependencies(storage_obj common)
 

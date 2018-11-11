@@ -6,23 +6,34 @@
 
 #include "storage/RocksdbEngine.h"
 #include <folly/String.h>
+#include "fs/FileUtils.h"
 
 DEFINE_uint32(batch_reserved_bytes, 4 * 1024, "default reserved bytes for one batch operation");
 
-#define CHECK_PART_EXIST(partId) \
-    auto it = dbs_.find(partId); \
-    if (it == dbs_.end()) { \
-        return ResultCode::ERR_SHARD_NOT_FOUND; \
-    }
     
 namespace vesoft {
 namespace vgraph {
 namespace storage {
 
-RocksdbEngine::~RocksdbEngine() {
-    cleanup();
+RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath)
+	: StorageEngine(spaceId)
+	, dataPath_(dataPath) {
+	LOG(INFO) << "open rocksdb on " << dataPath;
+	if (vesoft::fs::FileUtils::fileType(dataPath.c_str()) == vesoft::fs::FileType::NOTEXIST) {
+		vesoft::fs::FileUtils::makeDir(dataPath);
+	}
+	rocksdb::Options options;
+	options.create_if_missing = true;
+	rocksdb::DB* db = nullptr;
+	rocksdb::Status status = rocksdb::DB::Open(options, dataPath_, &db);
+	CHECK(status.ok());
+	db_.reset(db);
 }
 
+RocksdbEngine::~RocksdbEngine() {
+}
+
+/*
 void RocksdbEngine::registerParts(const std::vector<PartitionID>& ids) {
     std::vector<std::string> paths;
     folly::split(",", dataPath_, paths, true);
@@ -50,13 +61,12 @@ void RocksdbEngine::cleanup() {
     instances_.clear();
     dbs_.clear();
 }
+*/
 
-ResultCode RocksdbEngine::get(PartitionID partId, 
-                              const std::string& key,
+ResultCode RocksdbEngine::get(const std::string& key,
                               std::string& value) {
-    CHECK_PART_EXIST(partId);
     rocksdb::ReadOptions options;
-    rocksdb::Status status = it->second->Get(options, rocksdb::Slice(key), &value);
+    rocksdb::Status status = db_->Get(options, rocksdb::Slice(key), &value);
     if (status.ok()) {
         return ResultCode::SUCCESSED;
     } else if (status.IsNotFound()) {
@@ -65,59 +75,49 @@ ResultCode RocksdbEngine::get(PartitionID partId,
     return ResultCode::ERR_UNKNOWN;
 }
 
-ResultCode RocksdbEngine::put(PartitionID partId,
-                              std::string key,
+ResultCode RocksdbEngine::put(std::string key,
                               std::string value) {
-    CHECK_PART_EXIST(partId);
     rocksdb::WriteOptions options;
-    rocksdb::Status status = it->second->Put(options, rocksdb::Slice(key), rocksdb::Slice(value));
+    rocksdb::Status status = db_->Put(options, rocksdb::Slice(key), rocksdb::Slice(value));
     if (status.ok()) {
         return ResultCode::SUCCESSED;
     }
     return ResultCode::ERR_UNKNOWN;
 }
 
-ResultCode RocksdbEngine::multiPut(PartitionID partId, std::vector<KV> keyValues) {
-    CHECK_PART_EXIST(partId);
+ResultCode RocksdbEngine::multiPut(std::vector<KV> keyValues) {
     rocksdb::WriteBatch updates(FLAGS_batch_reserved_bytes);
     for (size_t i = 0; i < keyValues.size(); i++) {
         updates.Put(rocksdb::Slice(keyValues[i].first), rocksdb::Slice(keyValues[i].second));
     }
     rocksdb::WriteOptions options;
-    rocksdb::Status status = it->second->Write(options, &updates);
+    rocksdb::Status status = db_->Write(options, &updates);
     if (status.ok()) {
         return ResultCode::SUCCESSED;
     }
     return ResultCode::ERR_UNKNOWN;
 }
 
-ResultCode RocksdbEngine::range(PartitionID partId,
-                                const std::string& start,
+ResultCode RocksdbEngine::range(const std::string& start,
                                 const std::string& end,
-                                std::shared_ptr<StorageIter>& storageIter) {
-    CHECK_PART_EXIST(partId);
+                                std::unique_ptr<StorageIter>& storageIter) {
     rocksdb::ReadOptions options;
-    rocksdb::Iterator* iter = it->second->NewIterator(options);
+    rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
-    } else {
-        return ResultCode::ERR_KEY_NOT_FOUND;
     }
-    storageIter.reset(new RocksdbRangeIter(iter, start, end));
+	storageIter.reset(new RocksdbRangeIter(iter, start, end));
     return ResultCode::SUCCESSED;
 }
 
-ResultCode RocksdbEngine::prefix(PartitionID partId,
-                                 const std::string& prefix,
-                                 std::shared_ptr<StorageIter>& storageIter) {
-    CHECK_PART_EXIST(partId);
+ResultCode RocksdbEngine::prefix(const std::string& prefix,
+                                 std::unique_ptr<StorageIter>& storageIter) {
     rocksdb::ReadOptions options;
-    rocksdb::Iterator* iter = it->second->NewIterator(options);
+    rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(prefix));
     }
     storageIter.reset(new RocksdbPrefixIter(iter, prefix));
-
     return ResultCode::SUCCESSED;
 }
 

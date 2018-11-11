@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef STORAGE_RESULTCODE_H_
-#define STORAGE_RESULTCODE_H_
+#ifndef STORAGE_INCLUDE_ITERATOR_H_
+#define STORAGE_INCLUDE_ITERATOR_H_
 
 #include "base/Base.h"
 
@@ -13,17 +13,23 @@ namespace vesoft {
 namespace vgraph {
 namespace storage {
 
-using KV = std::pair<std::string, std::string>;
+class StorageIter {
+public:
+    virtual ~StorageIter()  = default;
 
-enum ResultCode {
-    SUCCESSED           =   0,
-    ERR_UNKNOWN         =  -1,
-    ERR_SHARD_NOT_FOUND =  -2,
-    ERR_KEY_NOT_FOUND   =  -3,
+    virtual bool valid() = 0;
+
+    virtual void next() = 0;
+
+    virtual void prev() = 0;
+
+    virtual folly::StringPiece key() = 0;
+
+    virtual folly::StringPiece val() = 0;
 };
 
 }  // namespace storage
 }  // namespace vgraph
 }  // namespace vesoft
-#endif  // STORAGE_RESULTCODE_H_
+#endif  // STORAGE_INCLUDE_ITERATOR_H_
 
