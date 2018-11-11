@@ -55,12 +55,10 @@ TEST(PartTest, RocksdbTest) {
 }  // namespace vgraph
 }  // namespace vesoft
 
-
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
 

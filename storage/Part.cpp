@@ -11,10 +11,10 @@ namespace vgraph {
 namespace storage {
 
 ResultCode SimplePart::asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) {
-	CHECK_NOTNULL(engine_);
-	auto ret = engine_->multiPut(std::move(keyValues));
-	cb(ret, HostAddr(0, 0));
-	return ret;
+    CHECK_NOTNULL(engine_);
+    auto ret = engine_->multiPut(std::move(keyValues));
+    cb(ret, HostAddr(0, 0));
+    return ret;
 }
 
 }  // namespace storage

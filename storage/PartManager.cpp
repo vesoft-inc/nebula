@@ -15,24 +15,24 @@ namespace storage {
 PartManager* PartManager::instance_;
 static std::once_flag initPartManFlag;
 PartManager* PartManager::instance() {
-	std::call_once(initPartManFlag, [&]() {
-		if (FLAGS_part_man_type == 0) {
-			PartManager::instance_ = new MemPartManager();
-		}
-	});
-	return PartManager::instance_;
+    std::call_once(initPartManFlag, [&]() {
+        if (FLAGS_part_man_type == 0) {
+            PartManager::instance_ = new MemPartManager();
+        }
+    });
+    return PartManager::instance_;
 }
 
 PartsMap MemPartManager::parts(HostAddr hostAddr) {
-	return partsMap_;
+    return partsMap_;
 }
 
 PartMeta MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
-	auto it = partsMap_.find(spaceId);
-	CHECK(it != partsMap_.end());
-	auto partIt = it->second.find(partId);
-	CHECK(partIt != it->second.end());
-	return partIt->second;
+    auto it = partsMap_.find(spaceId);
+    CHECK(it != partsMap_.end());
+    auto partIt = it->second.find(partId);
+    CHECK(partIt != it->second.end());
+    return partIt->second;
 }
 
 

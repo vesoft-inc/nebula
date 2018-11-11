@@ -20,19 +20,19 @@ using KVCallback = std::function<void(ResultCode code, HostAddr hostAddr)>;
 
 class KVStore {
 public:
-	static KVStore* instance(HostAddr local, std::vector<std::string> paths);
+    static KVStore* instance(HostAddr local, std::vector<std::string> paths);
 
     virtual ~KVStore() = default;
- 
+
     virtual ResultCode get(GraphSpaceID spaceId,
-				   		   PartitionID  partId,
+                           PartitionID  partId,
                            const std::string& key,
                            std::string& value) = 0;
     /**
      * Get all results in range [start, end)
      * */
     virtual ResultCode range(GraphSpaceID spaceId,
-				   			 PartitionID  partId,
+                             PartitionID  partId,
                              const std::string& start,
                              const std::string& end,
                              std::unique_ptr<StorageIter>& iter) = 0;
@@ -41,21 +41,21 @@ public:
      * Get all results with prefix.
      * */
     virtual ResultCode prefix(GraphSpaceID spaceId,
-				   			  PartitionID  partId,
+                              PartitionID  partId,
                               const std::string& prefix,
                               std::unique_ptr<StorageIter>& iter) = 0;
 
 
     virtual ResultCode asyncMultiPut(GraphSpaceID spaceId,
-				   				     PartitionID  partId,
-									 std::vector<KV> keyValues,
-									 KVCallback cb) = 0;
+                                     PartitionID  partId,
+                                     std::vector<KV> keyValues,
+                                     KVCallback cb) = 0;
 
 protected:
-	KVStore() = default;
+    KVStore() = default;
 
 private:
-	static KVStore* instance_;
+    static KVStore* instance_;
 };
 
 }  // namespace storage

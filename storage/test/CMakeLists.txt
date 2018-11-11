@@ -56,7 +56,7 @@ add_test(NAME rocksdb_engine_test COMMAND rocksdb_engine_test)
 
 add_executable(
     kvstore_test
-	KVStoreTest.cpp
+    KVStoreTest.cpp
     $<TARGET_OBJECTS:storage_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>

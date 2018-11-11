@@ -89,8 +89,8 @@ class RocksdbEngine : public StorageEngine {
 public:
     RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath);
 
-	~RocksdbEngine();
- 
+    ~RocksdbEngine();
+
     ResultCode get(const std::string& key,
                    std::string& value) override;
 

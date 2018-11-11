@@ -17,9 +17,9 @@ namespace storage {
 using MachineID = uint32_t;
 
 struct PartMeta {
-	GraphSpaceID           spaceId_;
-	PartitionID            partId_;
-	std::vector<MachineID> peers_;
+    GraphSpaceID           spaceId_;
+    PartitionID            partId_;
+    std::vector<MachineID> peers_;
 };
 
 using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
@@ -28,41 +28,41 @@ using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionI
  * */
 class PartManager {
 public:
-	static PartManager* instance();
+    static PartManager* instance();
 
-	virtual ~PartManager() = default;
+    virtual ~PartManager() = default;
 
-	/**
-	 * return PartsMap for machineId
-	 * */
-	virtual PartsMap parts(HostAddr hostAddr) = 0;
+    /**
+     * return PartsMap for machineId
+     * */
+    virtual PartsMap parts(HostAddr hostAddr) = 0;
 
-	/**
-	 * return PartMeta for <spaceId, partId>
-	 * */
-	virtual PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) = 0;
+    /**
+     * return PartMeta for <spaceId, partId>
+     * */
+    virtual PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) = 0;
 
 protected:
-	PartManager() = default;
-	static PartManager*  instance_;
+    PartManager() = default;
+    static PartManager*  instance_;
 };
 
 /**
 : * Memory based PartManager, it is used in UTs now.
  * */
 class MemPartManager final : public PartManager {
-	FRIEND_TEST(KVStoreTest, SimpleTest);
+    FRIEND_TEST(KVStoreTest, SimpleTest);
 public:
-	MemPartManager() = default;
+    MemPartManager() = default;
 
-	~MemPartManager() = default;
+    ~MemPartManager() = default;
 
-	PartsMap parts(HostAddr hostAddr) override;
+    PartsMap parts(HostAddr hostAddr) override;
 
-	PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
+    PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
 private:
-	PartsMap partsMap_;
+    PartsMap partsMap_;
 };
 
 }  // namespace storage

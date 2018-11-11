@@ -20,19 +20,19 @@ public:
     Part(GraphSpaceID spaceId,
          PartitionID partId,
          const std::string& walPath,
-		 StorageEngine* engine)
+         StorageEngine* engine)
         : spaceId_(spaceId)
         , partId_(partId)
         , walPath_(walPath)
-		, engine_(engine) {}
+        , engine_(engine) {}
 
-	virtual ~Part() = default;
+    virtual ~Part() = default;
 
-	StorageEngine* engine() {
-		return engine_;
-	}
+    StorageEngine* engine() {
+        return engine_;
+    }
 
-	virtual ResultCode asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) = 0;
+    virtual ResultCode asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) = 0;
 
 protected:
     GraphSpaceID spaceId_;
@@ -46,11 +46,11 @@ protected:
  * */
 class SimplePart final : public Part {
 public:
-	SimplePart(GraphSpaceID spaceId, PartitionID partId,
-			   const std::string& walPath, StorageEngine* engine) 
-		: Part(spaceId, partId, walPath, engine) {}
+    SimplePart(GraphSpaceID spaceId, PartitionID partId,
+               const std::string& walPath, StorageEngine* engine) 
+        : Part(spaceId, partId, walPath, engine) {}
 
-	ResultCode asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) override;
+    ResultCode asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) override;
 };
 
 

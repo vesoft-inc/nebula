@@ -19,9 +19,9 @@ TEST(RocksdbEngineTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
     std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCESSED, engine->put("key", "val"));
-	std::string val;
-	EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", val));
-	EXPECT_EQ(val, "val");
+    std::string val;
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", val));
+    EXPECT_EQ(val, "val");
 }
 
 TEST(RocksdbEngineTest, RangeTest) {
@@ -33,7 +33,6 @@ TEST(RocksdbEngineTest, RangeTest) {
                           folly::stringPrintf("val_%d", i));
     }
     EXPECT_EQ(ResultCode::SUCCESSED, engine->multiPut(std::move(data)));
-    
     auto checkRange = [&](int32_t start, int32_t end,
                           int32_t expectedFrom, int32_t expectedTotal) {
         LOG(INFO) << "start " << start << ", end " << end
@@ -80,7 +79,6 @@ TEST(RocksdbEngineTest, PrefixTest) {
                           folly::stringPrintf("val_%d", i));
     }
     EXPECT_EQ(ResultCode::SUCCESSED, engine->multiPut(std::move(data)));
-    
     auto checkPrefix = [&](const std::string& prefix,
                           int32_t expectedFrom, int32_t expectedTotal) {
         LOG(INFO) << "prefix " << prefix
@@ -108,12 +106,10 @@ TEST(RocksdbEngineTest, PrefixTest) {
 }  // namespace vgraph
 }  // namespace vesoft
 
-
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
 

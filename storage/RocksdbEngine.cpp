@@ -10,58 +10,27 @@
 
 DEFINE_uint32(batch_reserved_bytes, 4 * 1024, "default reserved bytes for one batch operation");
 
-    
 namespace vesoft {
 namespace vgraph {
 namespace storage {
 
 RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath)
-	: StorageEngine(spaceId)
-	, dataPath_(dataPath) {
-	LOG(INFO) << "open rocksdb on " << dataPath;
-	if (vesoft::fs::FileUtils::fileType(dataPath.c_str()) == vesoft::fs::FileType::NOTEXIST) {
-		vesoft::fs::FileUtils::makeDir(dataPath);
-	}
-	rocksdb::Options options;
-	options.create_if_missing = true;
-	rocksdb::DB* db = nullptr;
-	rocksdb::Status status = rocksdb::DB::Open(options, dataPath_, &db);
-	CHECK(status.ok());
-	db_.reset(db);
+    : StorageEngine(spaceId)
+    , dataPath_(dataPath) {
+    LOG(INFO) << "open rocksdb on " << dataPath;
+    if (vesoft::fs::FileUtils::fileType(dataPath.c_str()) == vesoft::fs::FileType::NOTEXIST) {
+        vesoft::fs::FileUtils::makeDir(dataPath);
+    }
+    rocksdb::Options options;
+    options.create_if_missing = true;
+    rocksdb::DB* db = nullptr;
+    rocksdb::Status status = rocksdb::DB::Open(options, dataPath_, &db);
+    CHECK(status.ok());
+    db_.reset(db);
 }
 
 RocksdbEngine::~RocksdbEngine() {
 }
-
-/*
-void RocksdbEngine::registerParts(const std::vector<PartitionID>& ids) {
-    std::vector<std::string> paths;
-    folly::split(",", dataPath_, paths, true);
-    for (auto& path : paths) {
-        LOG(INFO) << "init rocksdb on " << path;
-        rocksdb::Options options;
-        options.create_if_missing = true;
-        rocksdb::DB* db = nullptr;
-        rocksdb::Status status = rocksdb::DB::Open(options, path, &db);
-        CHECK(status.ok());
-        instances_.push_back(db);
-    }
-    std::vector<PartitionID> sortedPartIds(ids);
-    std::sort(sortedPartIds.begin(), sortedPartIds.end());
-    uint32_t index = 0;
-    for (auto& id : sortedPartIds) {
-        dbs_.emplace(id, instances_[index++ % instances_.size()]);
-    }
-}
-
-void RocksdbEngine::cleanup() {
-    for (auto it = instances_.begin(); it != instances_.end(); it++) {
-        delete *it;
-    }
-    instances_.clear();
-    dbs_.clear();
-}
-*/
 
 ResultCode RocksdbEngine::get(const std::string& key,
                               std::string& value) {
@@ -106,7 +75,7 @@ ResultCode RocksdbEngine::range(const std::string& start,
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
     }
-	storageIter.reset(new RocksdbRangeIter(iter, start, end));
+    storageIter.reset(new RocksdbRangeIter(iter, start, end));
     return ResultCode::SUCCESSED;
 }
 
