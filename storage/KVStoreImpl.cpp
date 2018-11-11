@@ -38,7 +38,6 @@ DEFINE_string(part_type, "simple", "simple, consensus...");
     } while (false)
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 // static
@@ -129,6 +128,5 @@ ResultCode KVStoreImpl::asyncMultiPut(GraphSpaceID spaceId, PartitionID partId,
 }
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 

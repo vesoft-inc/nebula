@@ -12,7 +12,6 @@
 #include "storage/include/KVStore.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 class Part {
@@ -56,7 +55,6 @@ public:
 
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // STORAGE_PART_H_
 

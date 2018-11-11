@@ -11,7 +11,6 @@
 #include "storage/Part.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 TEST(PartTest, SimpleTest) {
@@ -52,7 +51,6 @@ TEST(PartTest, RocksdbTest) {
 }
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 
 int main(int argc, char** argv) {

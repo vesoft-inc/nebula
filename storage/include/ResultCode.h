@@ -10,7 +10,6 @@
 #include "base/Base.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 using KV = std::pair<std::string, std::string>;
@@ -24,7 +23,6 @@ enum ResultCode {
 };
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // STORAGE_RESULTCODE_H_
 

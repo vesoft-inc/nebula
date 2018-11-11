@@ -12,7 +12,6 @@
 #include "storage/include/ResultCode.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 class StorageEngine {
@@ -47,7 +46,6 @@ protected:
 };
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // STORAGE_STORAGEENGINE_H_
 

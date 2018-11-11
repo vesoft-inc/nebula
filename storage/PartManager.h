@@ -11,7 +11,6 @@
 #include "base/Base.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 using MachineID = uint32_t;
@@ -29,7 +28,7 @@ using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionI
 class PartManager {
 public:
     /**
-     * Create one instance each time. Be careful, each process should have only one instance.
+     *  Singleton instance will be returned
      * */
     static PartManager* instance();
 
@@ -69,7 +68,6 @@ private:
 };
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // STORAGE_PARTMANAGER_H_
 

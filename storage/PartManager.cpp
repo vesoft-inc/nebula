@@ -8,7 +8,6 @@
 DEFINE_string(part_man_type, "memory", "memory, meta");
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 //static
@@ -39,6 +38,5 @@ PartMeta MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
 
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 

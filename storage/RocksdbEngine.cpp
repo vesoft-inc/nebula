@@ -11,7 +11,6 @@
 DEFINE_uint32(batch_reserved_bytes, 4 * 1024, "default reserved bytes for one batch operation");
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath)
@@ -91,6 +90,5 @@ ResultCode RocksdbEngine::prefix(const std::string& prefix,
 }
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 

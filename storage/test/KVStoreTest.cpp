@@ -15,7 +15,6 @@
 DECLARE_string(part_man_type);
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 TEST(KVStoreTest, SimpleTest) {
@@ -91,7 +90,6 @@ TEST(KVStoreTest, SimpleTest) {
 }
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 
 

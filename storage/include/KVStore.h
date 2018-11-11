@@ -12,7 +12,6 @@
 #include "storage/include/Iterator.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 
@@ -61,7 +60,6 @@ protected:
 };
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // STORAGE_INCLUDE_KVSTORE_H_
 

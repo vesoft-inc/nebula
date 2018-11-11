@@ -7,7 +7,6 @@
 #include "storage/Part.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 ResultCode SimplePart::asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) {
@@ -18,6 +17,5 @@ ResultCode SimplePart::asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) {
 }
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 

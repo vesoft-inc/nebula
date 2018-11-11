@@ -10,7 +10,6 @@
 #include "base/Base.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 class StorageIter {
@@ -29,7 +28,6 @@ public:
 };
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // STORAGE_INCLUDE_ITERATOR_H_
 

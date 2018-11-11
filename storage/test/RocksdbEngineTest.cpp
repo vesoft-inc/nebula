@@ -12,7 +12,6 @@
 #include "storage/RocksdbEngine.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 TEST(RocksdbEngineTest, SimpleTest) {
@@ -103,7 +102,6 @@ TEST(RocksdbEngineTest, PrefixTest) {
 }
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 
 int main(int argc, char** argv) {

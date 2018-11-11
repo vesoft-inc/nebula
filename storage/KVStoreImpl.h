@@ -15,7 +15,6 @@
 #include "storage/StorageEngine.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 // <engine pointer, path>
@@ -82,7 +81,6 @@ private:
 };
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // STORAGE_KVSTOREIMPL_H_
 

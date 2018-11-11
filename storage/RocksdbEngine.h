@@ -13,7 +13,6 @@
 #include "storage/StorageEngine.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 class RocksdbRangeIter : public StorageIter {
@@ -112,7 +111,6 @@ private:
 };
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // STORAGE_ROCKSDBENGINE_H_
 
