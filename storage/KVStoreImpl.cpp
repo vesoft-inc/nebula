@@ -35,7 +35,7 @@ DEFINE_int32(part_type, 0, "0 => SimplePart, 1 => ConsensusPart");
         CHECK_SPACE_AND_PART(spaceId, partId); \
         engine = partIt->second->engine(); \
         CHECK_NOTNULL(engine); \
-    } while (false)    
+    } while (false)
 
 namespace vesoft {
 namespace vgraph {
@@ -90,9 +90,9 @@ void KVStoreImpl::init() {
                 parts.emplace(partId, new SimplePart(
                                             spaceId,
                                             partId,
-                                               folly::stringPrintf("%s/vgraph/%d/wals/%d",
-                                                                   path.c_str(), spaceId, partId),
-                                              enginePtr.get()));
+                                            folly::stringPrintf("%s/vgraph/%d/wals/%d",
+                                                                path.c_str(), spaceId, partId),
+                                            enginePtr.get()));
             }
         });
         this->kvs_[spaceId]->parts_ = std::move(parts);
@@ -100,7 +100,7 @@ void KVStoreImpl::init() {
 }
 
 ResultCode KVStoreImpl::get(GraphSpaceID spaceId, PartitionID partId,
-                               const std::string& key,
+                            const std::string& key,
                             std::string& value) {
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->get(key, value);
@@ -108,23 +108,23 @@ ResultCode KVStoreImpl::get(GraphSpaceID spaceId, PartitionID partId,
 
 
 ResultCode KVStoreImpl::range(GraphSpaceID spaceId, PartitionID partId,
-                                const std::string& start,
-                                const std::string& end,
+                              const std::string& start,
+                              const std::string& end,
                               std::unique_ptr<StorageIter>& iter) {
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->range(start, end, iter);
 }
 
 ResultCode KVStoreImpl::prefix(GraphSpaceID spaceId, PartitionID partId,
-                                 const std::string& prefix,
-                                 std::unique_ptr<StorageIter>& iter) {
+                               const std::string& prefix,
+                               std::unique_ptr<StorageIter>& iter) {
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->prefix(prefix, iter);
 }
 
 ResultCode KVStoreImpl::asyncMultiPut(GraphSpaceID spaceId, PartitionID partId,
-                                         std::vector<KV> keyValues,
-                                       KVCallback cb) {
+                                      std::vector<KV> keyValues,
+                                      KVCallback cb) {
     CHECK_SPACE_AND_PART(spaceId, partId);
     return partIt->second->asyncMultiPut(std::move(keyValues), cb);
 }
