@@ -12,17 +12,12 @@ namespace vgraph {
 namespace storage {
 
 //static
-PartManager* PartManager::instance_;
-static std::once_flag initPartManFlag;
 PartManager* PartManager::instance() {
-    std::call_once(initPartManFlag, [&]() {
-        if (FLAGS_part_man_type == "memory") {
-            PartManager::instance_ = new MemPartManager();
-        } else {
-            LOG(FATAL) << "Unknown partManager type " << FLAGS_part_man_type;
-        }
-    });
-    return PartManager::instance_;
+    if (FLAGS_part_man_type == "memory") {
+        return new MemPartManager();
+    } else {
+        LOG(FATAL) << "Unknown partManager type " << FLAGS_part_man_type;
+    }
 }
 
 PartsMap MemPartManager::parts(HostAddr hostAddr) {

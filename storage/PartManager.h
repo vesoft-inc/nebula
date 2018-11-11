@@ -28,6 +28,9 @@ using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionI
  * */
 class PartManager {
 public:
+    /**
+     * Create one instance each time. Be careful, each process should have only one instance.
+     * */
     static PartManager* instance();
 
     virtual ~PartManager() = default;
@@ -44,7 +47,6 @@ public:
 
 protected:
     PartManager() = default;
-    static PartManager*  instance_;
 };
 
 /**

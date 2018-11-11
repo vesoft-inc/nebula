@@ -20,6 +20,11 @@ using KVCallback = std::function<void(ResultCode code, HostAddr hostAddr)>;
 
 class KVStore {
 public:
+    /**
+     * Create one new instance each time.
+     * Be careful! We should ensure each "paths" has only one instance, otherwise
+     * it would mix up the data on disk.
+     * */
     static KVStore* instance(HostAddr local, std::vector<std::string> paths);
 
     virtual ~KVStore() = default;
@@ -53,9 +58,6 @@ public:
 
 protected:
     KVStore() = default;
-
-private:
-    static KVStore* instance_;
 };
 
 }  // namespace storage

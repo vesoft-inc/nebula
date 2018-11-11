@@ -41,16 +41,11 @@ namespace vesoft {
 namespace vgraph {
 namespace storage {
 
-static std::once_flag initKVFlag;
-//static
-KVStore* KVStore::instance_;
-
+// static
 KVStore* KVStore::instance(HostAddr local, std::vector<std::string> paths) {
-    std::call_once(initKVFlag, [&]() {
-        KVStore::instance_ = new KVStoreImpl(local, std::move(paths));
-        reinterpret_cast<KVStoreImpl*>(KVStore::instance_)->init();
-    });
-    return KVStore::instance_;
+    auto* instance = new KVStoreImpl(local, std::move(paths));
+    reinterpret_cast<KVStoreImpl*>(instance)->init();
+    return instance;
 }
 
 std::vector<Engine> KVStoreImpl::initEngines(GraphSpaceID spaceId) {
