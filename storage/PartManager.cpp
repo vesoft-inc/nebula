@@ -5,7 +5,7 @@
  */
 #include "storage/PartManager.h"
 
-DEFINE_int32(part_man_type, 0, "0 => MemPartManager");
+DEFINE_string(part_man_type, "memory", "memory, meta");
 
 namespace vesoft {
 namespace vgraph {
@@ -16,8 +16,10 @@ PartManager* PartManager::instance_;
 static std::once_flag initPartManFlag;
 PartManager* PartManager::instance() {
     std::call_once(initPartManFlag, [&]() {
-        if (FLAGS_part_man_type == 0) {
+        if (FLAGS_part_man_type == "memory") {
             PartManager::instance_ = new MemPartManager();
+        } else {
+            LOG(FATAL) << "Unknown partManager type " << FLAGS_part_man_type;
         }
     });
     return PartManager::instance_;

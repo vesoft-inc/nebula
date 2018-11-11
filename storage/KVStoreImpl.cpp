@@ -10,8 +10,8 @@
 #include <algorithm>
 #include <folly/Likely.h>
 
-DEFINE_int32(engine_type, 0, "0 => RocksdbEngine");
-DEFINE_int32(part_type, 0, "0 => SimplePart, 1 => ConsensusPart");
+DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
+DEFINE_string(part_type, "simple", "simple, consensus...");
 
 /**
  * Check spaceId, partId exists or not.
@@ -56,12 +56,14 @@ KVStore* KVStore::instance(HostAddr local, std::vector<std::string> paths) {
 std::vector<Engine> KVStoreImpl::initEngines(GraphSpaceID spaceId) {
     decltype(kvs_[spaceId]->engines_) engines;
     for (auto& path : paths_) {
-        if (FLAGS_engine_type == 0) {
+        if (FLAGS_engine_type == "rocksdb") {
             engines.emplace_back(
                 new RocksdbEngine(spaceId,
                                   folly::stringPrintf("%s/vgraph/%d/data",
                                                       path.c_str(), spaceId)),
                 path);
+        } else {
+            LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
         }
     }
     return engines;
@@ -86,13 +88,15 @@ void KVStoreImpl::init() {
                 = this->kvs_[spaceId]->engines_[idx++ % this->kvs_[spaceId]->engines_.size()];
             auto& enginePtr = engine.first;
             auto& path = engine.second;
-            if (FLAGS_part_type == 0) {
+            if (FLAGS_part_type == "simple") {
                 parts.emplace(partId, new SimplePart(
                                             spaceId,
                                             partId,
                                             folly::stringPrintf("%s/vgraph/%d/wals/%d",
                                                                 path.c_str(), spaceId, partId),
                                             enginePtr.get()));
+            } else {
+                LOG(FATAL) << "Unknown Part type " << FLAGS_part_type;
             }
         });
         this->kvs_[spaceId]->parts_ = std::move(parts);
@@ -126,7 +130,7 @@ ResultCode KVStoreImpl::asyncMultiPut(GraphSpaceID spaceId, PartitionID partId,
                                       std::vector<KV> keyValues,
                                       KVCallback cb) {
     CHECK_SPACE_AND_PART(spaceId, partId);
-    return partIt->second->asyncMultiPut(std::move(keyValues), cb);
+    return partIt->second->asyncMultiPut(std::move(keyValues), std::move(cb));
 }
 
 }  // namespace storage

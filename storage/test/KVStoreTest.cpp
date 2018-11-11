@@ -12,14 +12,14 @@
 #include "storage/PartManager.h"
 #include "storage/KVStoreImpl.h"
 
-DECLARE_int32(part_man_type);
+DECLARE_string(part_man_type);
 
 namespace vesoft {
 namespace vgraph {
 namespace storage {
 
 TEST(KVStoreTest, SimpleTest) {
-    FLAGS_part_man_type = 0;  // Use MemPartManager.
+    FLAGS_part_man_type = "memory";  // Use MemPartManager.
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
     MemPartManager* partMan = reinterpret_cast<MemPartManager*>(PartManager::instance());
     // GraphSpaceID =>  {PartitionIDs}
@@ -27,7 +27,7 @@ TEST(KVStoreTest, SimpleTest) {
     // 2 => {0, 1, 2, 3, 4, 5}
     for (auto spaceId = 1; spaceId <=2; spaceId++) {
         for (auto partId = 0; partId < 6; partId++) {
-            partMan->partsMap_[spaceId][partId] = PartMeta();    
+            partMan->partsMap_[spaceId][partId] = PartMeta();
         }
     }
 
