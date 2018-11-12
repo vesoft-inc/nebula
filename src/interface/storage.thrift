@@ -142,9 +142,9 @@ struct Vertex {
 
 struct EdgeKey {
     1: i64 src,
-    2: i64 dst,
     // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
-    3: i32 edge_type,
+    2: i32 edge_type,
+    3: i64 dst,
     4: i64 ranking,
 }
 

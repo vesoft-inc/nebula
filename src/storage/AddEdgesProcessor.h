@@ -24,15 +24,18 @@ public:
         return new AddEdgesProcessor(kvstore);
     }
 
-    void process(const cpp2::AddEdgesRequest& req) override {
-        VLOG(1) << req.get_space_id();
-    }
+    void process(const cpp2::AddEdgesRequest& req) override;
 
 private:
     AddEdgesProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::AddEdgesRequest, cpp2::ExecResponse>(kvstore) {}
-};
 
+private:
+    std::vector<cpp2::ResultCode> codes_;
+    folly::SpinLock lock_;
+    int64_t startMs_;
+    int32_t callingNum_;
+};
 
 }  // namespace storage
 }  // namespace nebula

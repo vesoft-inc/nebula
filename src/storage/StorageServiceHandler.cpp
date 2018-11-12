@@ -9,6 +9,7 @@
 #include "storage/AddVerticesProcessor.h"
 #include "storage/AddEdgesProcessor.h"
 #include "storage/QueryProcessor.h"
+#include "storage/QueryBoundProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -20,13 +21,13 @@ namespace storage {
 
 folly::Future<cpp2::QueryResponse>
 StorageServiceHandler::future_getOutBound(const cpp2::GetNeighborsRequest& req) {
-    auto* processor = QueryBoundProcessor::instance(kvstore_);
+    auto* processor = QueryBoundProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::QueryResponse>
 StorageServiceHandler::future_getInBound(const cpp2::GetNeighborsRequest& req) {
-    auto* processor = QueryBoundProcessor::instance(kvstore_);
+    auto* processor = QueryBoundProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 

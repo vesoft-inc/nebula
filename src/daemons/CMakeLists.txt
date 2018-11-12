@@ -41,10 +41,15 @@ add_executable(
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:proc_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 target_link_libraries(
     storaged

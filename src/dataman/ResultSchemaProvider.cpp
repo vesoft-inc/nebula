@@ -45,7 +45,7 @@ bool ResultSchemaProvider::ResultSchemaField::isValid() const {
  * ResultSchemaProvider
  *
  **********************************/
-ResultSchemaProvider::ResultSchemaProvider(cpp2::Schema&& schema)
+ResultSchemaProvider::ResultSchemaProvider(cpp2::Schema schema)
         : columns_(std::move(schema.get_columns())) {
     for (auto i = 0UL; i< columns_.size(); i++) {
         const std::string& name = columns_[i].get_name();

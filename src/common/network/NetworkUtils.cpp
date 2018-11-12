@@ -82,6 +82,18 @@ StatusOr<std::unordered_map<std::string, std::string>> NetworkUtils::listDeviceA
     return dev2ipv4s;
 }
 
+StatusOr<std::string> NetworkUtils::getLocalIP() {
+    auto result = listDeviceAndIPv4s();
+    if (!result.ok()) {
+        return std::move(result).status();
+    }
+    for (auto& deviceIP : result.value()) {
+        if (deviceIP.second != "127.0.0.1") {
+            return deviceIP.first;
+        }
+    }
+    return Status::Error("No IPv4 address found!");
+}
 
 bool NetworkUtils::getDynamicPortRange(uint16_t& low, uint16_t& high) {
     FILE* pipe = popen("cat /proc/sys/net/ipv4/ip_local_port_range", "r");

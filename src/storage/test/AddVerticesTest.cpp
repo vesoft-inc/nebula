@@ -12,7 +12,6 @@
 #include "storage/AddVerticesProcessor.h"
 #include "storage/KeyUtils.h"
 
-
 namespace nebula {
 namespace storage {
 
