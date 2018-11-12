@@ -18,21 +18,6 @@
 namespace nebula {
 namespace storage {
 
-class QueryBoundProcessor : public BaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse> {
-public:
-    static QueryBoundProcessor* instance(kvstore::KVStore* kvstore) {
-        return new QueryBoundProcessor(kvstore);
-    }
-
-    void process(const cpp2::GetNeighborsRequest& req) override {
-        VLOG(1) << req.get_space_id();
-    }
-
-private:
-    QueryBoundProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse>(kvstore) {}
-};
-
 class QueryStatsProcessor : public BaseProcessor<cpp2::NeighborsStatsRequest, cpp2::QueryResponse> {
 public:
     static QueryStatsProcessor* instance(kvstore::KVStore* kvstore) {

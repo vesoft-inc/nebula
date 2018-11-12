@@ -3,8 +3,7 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-
-#include "storage/AddVerticesProcessor.h"
+#include "storage/AddEdgesProcessor.h"
 #include <algorithm>
 #include "time/TimeUtils.h"
 #include "storage/KeyUtils.h"
@@ -12,23 +11,18 @@
 namespace nebula {
 namespace storage {
 
-void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
-    auto now = startMs_ = time::TimeUtils::nowInMSeconds();
-    const auto& partVertices = req.get_vertices();
+void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     auto spaceId = req.get_space_id();
-    callingNum_ = partVertices.size();
+    auto now = startMs_ = time::TimeUtils::nowInMSeconds();
+    callingNum_ = req.edges.size();
     CHECK_NOTNULL(kvstore_);
-    std::for_each(partVertices.begin(), partVertices.end(), [&](auto& pv) {
-        auto partId = pv.first;
-        const auto& vertices = pv.second;
+    std::for_each(req.edges.begin(), req.edges.end(), [&](auto& partEdges){
+        auto partId = partEdges.first;
         std::vector<kvstore::KV> data;
-        std::for_each(vertices.begin(), vertices.end(), [&](auto& v){
-            const auto& tags = v.get_tags();
-            std::for_each(tags.begin(), tags.end(), [&](auto& tag) {
-                auto key = KeyUtils::vertexKey(partId, v.get_id(),
-                                               tag.get_tag_id(), now);
-                data.emplace_back(std::move(key), std::move(tag.get_props()));
-            });
+        std::for_each(partEdges.second.begin(), partEdges.second.end(), [&](auto& edge){
+            auto key = KeyUtils::edgeKey(partId, edge.key.src, edge.key.edge_type,
+                                         edge.key.dst, edge.key.ranking, now);
+            data.emplace_back(std::move(key), std::move(edge.get_props()));
         });
         kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
                                 [partId, this](kvstore::ResultCode code, HostAddr addr) {
@@ -48,7 +42,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                 this->onFinished();
             }
         });
-     });
+    });
 }
 
 }  // namespace storage

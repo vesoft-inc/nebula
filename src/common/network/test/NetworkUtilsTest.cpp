@@ -62,6 +62,11 @@ TEST(NetworkUtils, listDeviceAndIPv4s) {
     ASSERT_NE(result.value().end(), result.value().find("lo"));
 }
 
+TEST(NetworkUtils, getLocalIP) {
+    auto result = NetworkUtils::getLocalIP();
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_TRUE(result.value() != "127.0.0.1");
+}
 
 TEST(NetworkUtils, intIPv4Conversion) {
     uint32_t ip;

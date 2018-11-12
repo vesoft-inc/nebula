@@ -23,7 +23,7 @@ std::string KeyUtils::vertexKey(PartitionID partId, VertexID vId,
 
 // static
 std::string KeyUtils::edgeKey(PartitionID partId, VertexID srcId,
-                              VertexID dstId, EdgeType type,
+                              EdgeType type, VertexID dstId,
                               EdgeRanking rank, EdgeVersion ts) {
     std::string key;
     key.reserve(kEdgeLen);

@@ -8,6 +8,8 @@
 #include "kvstore/include/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/KVStoreImpl.h"
+#include "meta/SchemaManager.h"
+#include "dataman/ResultSchemaProvider.h"
 
 DECLARE_string(part_man_type);
 
@@ -33,6 +35,49 @@ public:
         KVStoreImpl* kv = reinterpret_cast<KVStoreImpl*>(KVStore::instance(HostAddr(0, 0),
                                                                        std::move(paths)));
         return kv;
+    }
+
+    /**
+     * It will generate SchemaProvider with some int fields and string fields
+     * */
+    static SchemaProviderIf* genEdgeSchemaProvider(int32_t intFieldsNum,
+                                                   int32_t stringFieldsNum) {
+        cpp2::Schema schema;
+        for (auto i = 0; i < intFieldsNum; i++) {
+            cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("col_%d", i);
+            column.type.type = cpp2::SupportedType::INT;
+            schema.columns.emplace_back(std::move(column));
+        }
+        for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
+            cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("col_%d", i);
+            column.type.type = cpp2::SupportedType::STRING;
+            schema.columns.emplace_back(std::move(column));
+        }
+        return new ResultSchemaProvider(std::move(schema));
+    }
+
+    /**
+     * It will generate tag SchemaProvider with some int fields and string fields
+     * */
+    static SchemaProviderIf* genTagSchemaProvider(TagID tagId, 
+                                                  int32_t intFieldsNum,
+                                                  int32_t stringFieldsNum) {
+        cpp2::Schema schema;
+        for (auto i = 0; i < intFieldsNum; i++) {
+            cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+            column.type.type = cpp2::SupportedType::INT;
+            schema.columns.emplace_back(std::move(column));
+        }
+        for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
+            cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+            column.type.type = cpp2::SupportedType::STRING;
+            schema.columns.emplace_back(std::move(column));
+        }
+        return new ResultSchemaProvider(std::move(schema));
     }
 };
 
