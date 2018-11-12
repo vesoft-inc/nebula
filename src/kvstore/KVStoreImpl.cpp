@@ -4,9 +4,9 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "storage/KVStoreImpl.h"
+#include "kvstore/KVStoreImpl.h"
 #include "network/NetworkUtils.h"
-#include "storage/RocksdbEngine.h"
+#include "kvstore/RocksdbEngine.h"
 #include <algorithm>
 #include <folly/Likely.h>
 
@@ -38,7 +38,7 @@ DEFINE_string(part_type, "simple", "simple, consensus...");
     } while (false)
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 // static
 KVStore* KVStore::instance(HostAddr local, std::vector<std::string> paths) {
@@ -127,6 +127,6 @@ ResultCode KVStoreImpl::asyncMultiPut(GraphSpaceID spaceId, PartitionID partId,
     return partIt->second->asyncMultiPut(std::move(keyValues), std::move(cb));
 }
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
 
