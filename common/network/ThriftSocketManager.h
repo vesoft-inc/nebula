@@ -20,7 +20,7 @@ public:
     static std::shared_ptr<apache::thrift::async::TAsyncSocket> getSocket(
         const HostAddr& host);
 
-    static void disconnectOnCurrThread();
+    static void disconnectOnThread();
 
 private:
     using SocketMap = std::unordered_map<

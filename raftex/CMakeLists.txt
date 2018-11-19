@@ -6,8 +6,8 @@ add_library(
     FileBasedWal.cpp
     LogStrListIterator.cpp
     RaftPart.cpp
-    Host.cpp
     RaftexService.cpp
+    Host.cpp
 )
 add_dependencies(raftex_obj common)
 

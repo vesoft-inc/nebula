@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "raftex/test/TestShard.h"
+#include "raftex/RaftexService.h"
 #include "raftex/FileBasedWal.h"
 #include "raftex/BufferFlusher.h"
 
@@ -13,13 +14,19 @@ namespace vesoft {
 namespace raftex {
 namespace test {
 
-TestShard::TestShard(PartitionID partId,
+TestShard::TestShard(size_t idx,
+                     std::shared_ptr<RaftexService> svc,
+                     PartitionID partId,
                      HostAddr addr,
                      std::vector<HostAddr>&& peers,
                      const folly::StringPiece walRoot,
                      BufferFlusher* flusher,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
-                     std::shared_ptr<thread::GenericThreadPool> workers)
+                     std::shared_ptr<thread::GenericThreadPool> workers,
+                     std::function<void (size_t idx, const char*, TermID)>
+                        leadershipLostCB,
+                     std::function<void (size_t idx, const char*, TermID)>
+                        becomeLeaderCB)
         : RaftPart(1,   // clusterId
                    1,   // spaceId
                    partId,
@@ -28,19 +35,25 @@ TestShard::TestShard(PartitionID partId,
                    walRoot,
                    flusher,
                    ioPool,
-                   workers) {
+                   workers)
+        , idx_(idx)
+        , service_(svc)
+        , leadershipLostCB_(leadershipLostCB)
+        , becomeLeaderCB_(becomeLeaderCB) {
 }
 
 
 void TestShard::onLostLeadership(TermID term) {
-    LOG(INFO) << idStr() << "Term " << term
-              << " is passed. I'm not the leader any more";
+    if (leadershipLostCB_) {
+        leadershipLostCB_(idx_, idStr(), term);
+    }
 }
 
 
 void TestShard::onElected(TermID term) {
-    LOG(INFO) << idStr() << "I'm elected as the leader for the term "
-              << term;
+    if (becomeLeaderCB_) {
+        becomeLeaderCB_(idx_, idStr(), term);
+    }
 }
 
 

@@ -26,7 +26,7 @@ class FileBasedWal;
 class BufferFlusher;
 class Host;
 
-class RaftPart : std::enable_shared_from_this<RaftPart> {
+class RaftPart : public std::enable_shared_from_this<RaftPart> {
 public:
     enum class AppendLogResult {
         SUCCEEDED = 0,
@@ -76,9 +76,22 @@ public:
         return addr_;
     }
 
+    HostAddr leader() const {
+        std::lock_guard<std::mutex> g(raftLock_);
+        return leader_;
+    }
+
     std::shared_ptr<FileBasedWal> wal() const {
         return wal_;
     }
+
+    // Change the partition status to RUNNING. This is called
+    // by the inherited class, when it's ready to server
+    virtual void start();
+
+    // Change the partition status to STOPPED. This is called
+    // by the inherited class, when it's about to stop
+    virtual void stop();
 
 
     /*****************************************************************
@@ -127,20 +140,6 @@ protected:
              std::shared_ptr<folly::IOThreadPoolExecutor> pool,
              std::shared_ptr<thread::GenericThreadPool> workers);
 
-    // Change the partition status to RUNNING. This is called
-    // by the inherited class, when it's ready to server
-    void start() {
-        std::lock_guard<std::mutex> g(raftLock_);
-        status_ = Status::RUNNING;
-    }
-
-    // Change the partition status to STOPPED. This is called
-    // by the inherited class, when it's about to stop
-    void stop() {
-        std::lock_guard<std::mutex> g(raftLock_);
-        status_ = Status::STOPPED;
-    }
-
     const char* idStr() const {
         return idStr_.c_str();
     }
@@ -175,13 +174,11 @@ private:
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AskForVoteResponse
-    using ElectionResponses =
-        std::vector<std::pair<size_t, cpp2::AskForVoteResponse>>;
+    using ElectionResponses = std::vector<cpp2::AskForVoteResponse>;
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AppendLogResponse
-    using AppendLogResponses =
-        std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
+    using AppendLogResponses = std::vector<cpp2::AppendLogResponse>;
 
 
     /****************************************************
@@ -266,7 +263,9 @@ private:
     const PartitionID partId_;
     const HostAddr addr_;
     std::vector<HostAddr> peerAddresses_;
-    std::unordered_map<HostAddr, std::shared_ptr<Host>> peerHosts_;
+    std::unordered_map<HostAddr, std::shared_ptr<Host>>
+        peerHosts_;
+    const size_t quorum_;
 
     // The lock to protect appendLog call
     std::mutex appendLogLock_;
@@ -322,9 +321,11 @@ private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     // Shared worker thread pool
     std::shared_ptr<thread::GenericThreadPool> workers_;
+    std::future<void> statusPollingFuture_;
+    std::future<void> lostLeadershipFuture_;
+    std::future<void> electedFuture_;
 };
 
 }  // namespace raftex
 }  // namespace vesoft
-
 #endif  // RAFTEX_RAFTPART_H_

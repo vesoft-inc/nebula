@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "network/ThriftSocketManager.h"
 #include <folly/io/async/EventBaseManager.h>
+#include <folly/system/ThreadName.h>
 #include "network/NetworkUtils.h"
 
 DEFINE_int32(conn_timeout_ms, 1000,
@@ -59,8 +60,10 @@ ThriftSocketManager::getSocket(const HostAddr& host) {
 }
 
 
-void ThriftSocketManager::disconnectOnCurrThread() {
-    VLOG(1) << "Disconnecting all sockets on the current thread";
+void ThriftSocketManager::disconnectOnThread() {
+    VLOG(1) << "Disconnecting all sockets on the thread \""
+            << folly::getThreadName(std::this_thread::get_id()).value_or("")
+            << "[" << std::this_thread::get_id() << "]\"";
     socketMap_->clear();
 }
 

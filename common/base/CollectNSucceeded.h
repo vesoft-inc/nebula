@@ -50,8 +50,7 @@ using FutureReturnType =
     typename std::iterator_traits<FutureIter>::value_type::value_type;
 
 template<typename FutureIter>
-using SucceededResultList =
-    std::vector<std::pair<size_t, FutureReturnType<FutureIter>>>;
+using SucceededResultList = std::vector<FutureReturnType<FutureIter>>;
 
 
 template <class FutureIter, typename ResultEval>

@@ -17,6 +17,8 @@ namespace vesoft {
 namespace raftex {
 
 class RaftPart;
+class IOThreadPoolObserver;
+
 
 class RaftexService : public cpp2::RaftexServiceSvIf {
 public:
@@ -24,6 +26,9 @@ public:
         std::shared_ptr<folly::IOThreadPoolExecutor> pool,
         uint16_t port = 0);
     virtual ~RaftexService();
+
+    // Block until the service is ready to serve
+    void waitUntilReady();
 
     uint32_t getServerPort() const {
         return serverPort_;
@@ -53,6 +58,11 @@ private:
     std::unique_ptr<std::thread> serverThread_;
     uint32_t serverPort_;
 
+    std::mutex readyMutex_;
+    std::condition_variable readyCV_;
+    bool ready_{false};
+    std::atomic<bool> stopped_{false};
+
     folly::RWSpinLock partsLock_;
     std::unordered_map<std::pair<GraphSpaceID, PartitionID>,
                        std::shared_ptr<RaftPart>> parts_;
@@ -60,5 +70,6 @@ private:
 
 }  // namespace raftex
 }  // namespace vesoft
+
 #endif  // RAFTEX_RAFTEXSERVICE_H_
 

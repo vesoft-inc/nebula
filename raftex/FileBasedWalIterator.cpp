@@ -74,7 +74,7 @@ FileBasedWalIterator::FileBasedWalIterator(
             }
         });
 
-        if (idRanges_.front().first > currId_) {
+        if (idRanges_.empty() || idRanges_.front().first > currId_) {
             LOG(ERROR) << "LogID " << currId_
                        << " is out of the wal files range";
             currId_ = lastId_ + 1;

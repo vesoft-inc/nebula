@@ -26,8 +26,11 @@ public:
     Host(const HostAddr& addr, std::shared_ptr<RaftPart> part);
 
     void stop() {
-        stopped_.store(true);
+        std::lock_guard<std::mutex> g(lock_);
+        stopped_ = true;
     }
+
+    void waitForStop();
 
     folly::Future<cpp2::AppendLogResponse> appendLogs(
         folly::EventBase* eb,
@@ -40,27 +43,29 @@ public:
 
 private:
     folly::Future<cpp2::AppendLogResponse> sendAppendLogRequest(
-        const cpp2::AppendLogRequest& req);
+        std::shared_ptr<cpp2::AppendLogRequest> req);
 
     folly::Future<cpp2::AppendLogResponse> appendLogsInternal(
         folly::EventBase* eb,
-        cpp2::AppendLogRequest&& req);
+        std::shared_ptr<cpp2::AppendLogRequest> req);
 
-    cpp2::AppendLogRequest&& prepareAppendLogRequest() const;
+    std::shared_ptr<cpp2::AppendLogRequest> prepareAppendLogRequest()
+        const;
 
 
 private:
-    std::atomic<bool> stopped_{false};
-
     std::shared_ptr<RaftPart> part_;
     const HostAddr addr_;
     const std::string idStr_;
 
     mutable std::mutex lock_;
 
+    bool stopped_{false};
+
     bool requestOnGoing_{false};
-    std::unique_ptr<folly::Promise<cpp2::AppendLogResponse>> promise_;
-    std::unique_ptr<folly::Future<cpp2::AppendLogResponse>> future_;
+    std::condition_variable noMoreRequestCV_;
+    folly::Promise<cpp2::AppendLogResponse> promise_;
+    folly::Future<cpp2::AppendLogResponse> future_;
 
     // These logId and term pointing to the latest log we need to send
     LogID logIdToSend_{0};
@@ -79,5 +84,6 @@ private:
 
 }  // namespace raftex
 }  // namespace vesoft
+
 #endif  // RAFTEX_HOST_H_
 

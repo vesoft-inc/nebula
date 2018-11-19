@@ -26,8 +26,8 @@ std::shared_ptr<FileBasedWal> FileBasedWal::getWal(
         const folly::StringPiece dir,
         FileBasedWalPolicy policy,
         BufferFlusher* flusher) {
-    return (new FileBasedWal(dir, std::move(policy), flusher))
-        ->shared_from_this();
+    return std::shared_ptr<FileBasedWal>(
+        new FileBasedWal(dir, std::move(policy), flusher));
 }
 
 
@@ -44,17 +44,9 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         auto& info = walFiles_.rbegin()->second;
         lastLogId_ = info->lastId();
         lastLogTerm_ = info->lastTerm();
-        if (info->size() < maxFileSize_ * 15 / 16) {
-            // The last log file is small enough, so continue to use it
-            currFd_ = open(info->path(), O_WRONLY | O_APPEND);
-            currInfo_ = info;
-            CHECK_GE(currFd_, 0);
-        }
-    }
-
-    if (currFd_ < 0) {
-        // prepareNewFile() expect the caller to hold the lock
-        prepareNewFile(lastLogId_ + 1);
+        currFd_ = open(info->path(), O_WRONLY | O_APPEND);
+        currInfo_ = info;
+        CHECK_GE(currFd_, 0);
     }
 }
 
@@ -310,9 +302,17 @@ void FileBasedWal::prepareNewFile(LogID startLogId) {
 }
 
 
-void FileBasedWal::dumpCord(Cord& cord, LogID lastId, TermID lastTerm) {
+void FileBasedWal::dumpCord(Cord& cord,
+                            LogID firstId,
+                            LogID lastId,
+                            TermID lastTerm) {
     if (cord.size() <= 0) {
         return;
+    }
+
+    if (currFd_ < 0) {
+        // Need to prepare a new file
+        prepareNewFile(firstId);
     }
 
     auto cb = [this](const char* p, int32_t s) -> bool {
@@ -349,37 +349,41 @@ void FileBasedWal::flushBuffer(BufferPtr buffer) {
     // Rollover if required
     if (buffer->needToRollover()) {
         closeCurrFile();
-        prepareNewFile(buffer->firstLogId());
     }
 
     Cord cord;
-    auto accessFn = [&cord, this] (LogID id,
-                                   TermID term,
-                                   ClusterID cluster,
-                                   const std::string& log) {
+    LogID firstIdInCord = buffer->firstLogId();
+    auto accessFn = [&cord, &firstIdInCord, this] (
+            LogID id,
+            TermID term,
+            ClusterID cluster,
+            const std::string& log) {
         cord << id << term << int32_t(log.size()) << cluster;
         cord.write(log.data(), log.size());
         cord << int32_t(log.size());
 
-        if (currInfo_->size() + cord.size() > maxFileSize_) {
-            dumpCord(cord, id, term);
+        size_t currSize = currFd_ >= 0 ? currInfo_->size() : 0;
+        if (currSize + cord.size() > maxFileSize_) {
+            dumpCord(cord, firstIdInCord, id, term);
             // Reset the cord
             cord.clear();
+            firstIdInCord = id + 1;
 
             // Need to close the current file and create a new file
             closeCurrFile();
-            prepareNewFile(id + 1);
         }
     };
     auto lastLog = buffer->accessAllLogs(accessFn);
 
     // Dump the rest if any
     if (!cord.empty()) {
-        dumpCord(cord, lastLog.first, lastLog.second);
+        dumpCord(cord, firstIdInCord, lastLog.first, lastLog.second);
     }
 
     // Flush the wal file
-    CHECK_EQ(fsync(currFd_), 0);
+    if (currFd_ >= 0) {
+        CHECK_EQ(fsync(currFd_), 0);
+    }
 
     // Remove the buffer from the list
     {
@@ -401,8 +405,8 @@ BufferPtr FileBasedWal::createNewBuffer(
                         " need to wait for vacancy";
         // TODO: Output a counter here
         // Need to wait for a vacant slot
-        slotReadyCV_.wait(guard, [this] {
-            return buffers_.size() < policy_.numBuffers;
+        slotReadyCV_.wait(guard, [self = shared_from_this()] {
+            return self->buffers_.size() < self->policy_.numBuffers;
         });
     }
 

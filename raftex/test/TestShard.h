@@ -12,17 +12,35 @@
 
 namespace vesoft {
 namespace raftex {
+
+class RaftexService;
+
 namespace test {
 
 class TestShard : public RaftPart {
 public:
-    TestShard(PartitionID partId,
-              HostAddr addr,
-              std::vector<HostAddr>&& peers,
-              const folly::StringPiece walRoot,
-              BufferFlusher* flusher,
-              std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
-              std::shared_ptr<thread::GenericThreadPool> workers);
+    TestShard(
+        size_t idx,
+        std::shared_ptr<RaftexService> svc,
+        PartitionID partId,
+        HostAddr addr,
+        std::vector<HostAddr>&& peers,
+        const folly::StringPiece walRoot,
+        BufferFlusher* flusher,
+        std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
+        std::shared_ptr<thread::GenericThreadPool> workers,
+        std::function<void (size_t idx, const char*, TermID)>
+            leadershipLostCB,
+        std::function<void (size_t idx, const char*, TermID)>
+            becomeLeaderCB);
+
+    std::shared_ptr<RaftexService> getService() const {
+        return service_;
+    }
+
+    size_t index() const {
+        return idx_;
+    }
 
     void onLostLeadership(TermID term) override;
     void onElected(TermID term) override;
@@ -30,6 +48,13 @@ public:
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
 private:
+    const size_t idx_;
+    std::shared_ptr<RaftexService> service_;
+
+    std::function<void (size_t idx, const char*, TermID)>
+        leadershipLostCB_;
+    std::function<void (size_t idx, const char*, TermID)>
+        becomeLeaderCB_;
 };
 
 }  // namespace test

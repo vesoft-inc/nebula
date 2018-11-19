@@ -7,11 +7,20 @@
 #include "base/Base.h"
 #include "raftex/RaftexService.h"
 #include <folly/ScopeGuard.h>
+#include "network/ThriftSocketManager.h"
 #include "raftex/RaftPart.h"
 
 namespace vesoft {
 namespace raftex {
 
+using namespace folly;
+using namespace network;
+
+/*******************************************************
+ *
+ * Implementation of RaftexService
+ *
+ ******************************************************/
 std::shared_ptr<RaftexService> RaftexService::createService(
         std::shared_ptr<folly::IOThreadPoolExecutor> pool,
         uint16_t port) {
@@ -34,10 +43,22 @@ std::shared_ptr<RaftexService> RaftexService::createService(
         SCOPE_EXIT {
             svc->server_->cleanUp();
         };
+
+        {
+            std::lock_guard<std::mutex> g(svc->readyMutex_);
+            svc->ready_ = true;
+        }
+        svc->readyCV_.notify_all();
+
         svc->server_
            ->getEventBaseManager()
            ->getEventBase()
            ->loopForever();
+
+        {
+            std::lock_guard<std::mutex> g(svc->readyMutex_);
+            svc->ready_ = false;
+        }
 
         LOG(INFO) << "The Raftex Service stopped";
     }));
@@ -47,8 +68,17 @@ std::shared_ptr<RaftexService> RaftexService::createService(
 
 
 RaftexService::~RaftexService() {
-    server_->stop();
-    serverThread_->join();
+    CHECK(stopped_);
+}
+
+
+void RaftexService::waitUntilReady() {
+    std::unique_lock<std::mutex> lock(readyMutex_);
+    if (!ready_) {
+        readyCV_.wait(lock, [this] {
+            return ready_;
+        });
+    }
 }
 
 
@@ -59,7 +89,20 @@ RaftexService::getIOThreadPool() const {
 
 
 void RaftexService::stop() {
+    LOG(INFO) << "Stopping the raftex service on port " << serverPort_;
+    {
+        folly::RWSpinLock::WriteHolder wh(partsLock_);
+        for (auto& p : parts_) {
+            p.second->stop();
+        }
+        parts_.clear();
+        LOG(INFO) << "All partitions have stopped";
+    }
     server_->stop();
+    serverThread_->join();
+    VLOG(2) << "Server thread has stopped. Service on port "
+            << serverPort_ << " is about to be destroyed";
+    stopped_ = true;
 }
 
 
@@ -73,11 +116,14 @@ void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {
 void RaftexService::removePartition(std::shared_ptr<RaftPart> part) {
     folly::RWSpinLock::WriteHolder wh(partsLock_);
     parts_.erase(std::make_pair(part->spaceId(), part->partitionId()));
+    // Stop the partition
+    part->stop();
 }
 
 
-std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId,
-                                                  PartitionID partId) {
+std::shared_ptr<RaftPart> RaftexService::findPart(
+        GraphSpaceID spaceId,
+        PartitionID partId) {
     folly::RWSpinLock::ReadHolder rh(partsLock_);
     auto it = parts_.find(std::make_pair(spaceId, partId));
     if (it == parts_.end()) {
@@ -92,8 +138,9 @@ std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId,
 }
 
 
-void RaftexService::askForVote(cpp2::AskForVoteResponse& resp,
-                               const cpp2::AskForVoteRequest& req) {
+void RaftexService::askForVote(
+        cpp2::AskForVoteResponse& resp,
+        const cpp2::AskForVoteRequest& req) {
     auto part = findPart(req.get_space(), req.get_part());
     if (!part) {
         // Not found
@@ -105,8 +152,9 @@ void RaftexService::askForVote(cpp2::AskForVoteResponse& resp,
 }
 
 
-void RaftexService::appendLog(cpp2::AppendLogResponse& resp,
-                              const cpp2::AppendLogRequest& req) {
+void RaftexService::appendLog(
+        cpp2::AppendLogResponse& resp,
+        const cpp2::AppendLogRequest& req) {
     auto part = findPart(req.get_space(), req.get_part());
     if (!part) {
         // Not found

@@ -83,7 +83,8 @@ public:
 
     // Append a list of log messages to the WAL
     // This method **IS NOT** thread-safe
-    // we **DO NOT** expect multiple threads will append logs simultaneously
+    // we **DO NOT** expect multiple threads will append logs
+    // simultaneously
     bool appendLogs(LogIterator& iter) override;
 
     // Rollback to the given ID, all logs after the ID will be discarded
@@ -102,14 +103,16 @@ public:
     // The iteration finishes when the functor returns false or reaches
     // the end
     // The method returns the number of wal file info being acessed
-    size_t accessAllWalInfo(std::function<bool (WalFileInfoPtr info)> fn) const;
+    size_t accessAllWalInfo(std::function<bool (WalFileInfoPtr info)> fn)
+        const;
 
     // Iterates through all log buffers in reversed order
     // (from the latest to the earliest)
     // The iteration finishes when the functor returns false or reaches
     // the end
     // The method returns the number of buffers being acessed
-    size_t accessAllBuffers(std::function<bool (BufferPtr buffer)> fn) const;
+    size_t accessAllBuffers(std::function<bool (BufferPtr buffer)> fn)
+        const;
 
     // Dump a buffer into a WAL file
     void flushBuffer(BufferPtr buffer);
@@ -131,7 +134,10 @@ private:
     void scanAllWalFiles();
 
     // Dump a Cord to the current file
-    void dumpCord(Cord& cord, LogID lastId, TermID lastTerm);
+    void dumpCord(Cord& cord,
+                  LogID firstId,
+                  LogID lastId,
+                  TermID lastTerm);
 
     // Close down the current wal file
     void closeCurrFile();

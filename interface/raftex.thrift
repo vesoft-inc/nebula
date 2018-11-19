@@ -96,9 +96,9 @@ struct AppendLogRequest {
     //
     // All logs in the list must belong to the same term
     //
-    9: TermID           log_term;       // The term to receive these logs
-    10: LogID           first_log_id;   // The first log id in the list
-    11: list<LogEntry>  log_str_list;   // A list of logs
+    9: TermID log_term;       // The term to receive these logs
+    10: LogID first_log_id;   // The first log id in the list
+    11: optional list<LogEntry> log_str_list;   // A list of logs
 
     12: optional binary snapshot_uri;   // Snapshot URL
 }
