@@ -47,9 +47,13 @@ public:
 
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
+    bool getLogMsg(LogID id, folly::StringPiece& msg) const;
+
 private:
     const size_t idx_;
     std::shared_ptr<RaftexService> service_;
+
+    std::unordered_map<LogID, std::string> data_;
 
     std::function<void (size_t idx, const char*, TermID)>
         leadershipLostCB_;

@@ -58,6 +58,22 @@ void TestShard::onElected(TermID term) {
 
 
 bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
+    while (iter->valid()) {
+        data_.emplace(iter->logId(), iter->logMsg().toString());
+        ++(*iter);
+    }
+    return true;
+}
+
+
+bool TestShard::getLogMsg(LogID id, folly::StringPiece& msg) const {
+    auto it = data_.find(id);
+    if (it == data_.end()) {
+        // Not found
+        return false;
+    }
+
+    msg = it->second;
     return true;
 }
 

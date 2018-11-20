@@ -24,6 +24,7 @@ target_link_libraries(
     ${KRB5_LIBRARIES}
     event
     ${COMPRESSION_LIBRARIES}
+    resolv
     double-conversion
     dl
     event
@@ -35,6 +36,7 @@ add_test(NAME file_based_wal_test COMMAND file_based_wal_test)
 add_executable(
     leader_election_test
     LeaderElectionTest.cpp
+    RaftexTestBase.cpp
     TestShard.cpp
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
@@ -59,6 +61,7 @@ target_link_libraries(
     ${KRB5_LIBRARIES}
     event
     ${COMPRESSION_LIBRARIES}
+    resolv
     double-conversion
     dl
     event
