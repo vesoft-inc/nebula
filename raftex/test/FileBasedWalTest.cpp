@@ -42,23 +42,23 @@ TEST(FileBasedWal, AppendLogs) {
 
     // Create a new WAL, add one log and close it
     auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
-    EXPECT_EQ(-1, wal->lastLogId());
+    EXPECT_EQ(0, wal->lastLogId());
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 1; i <= 10; i++) {
         EXPECT_TRUE(
             wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
                            folly::stringPrintf("Test string %02d", i)));
     }
-    EXPECT_EQ(9, wal->lastLogId());
+    EXPECT_EQ(10, wal->lastLogId());
     // Close the wal
     wal.reset();
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
-    EXPECT_EQ(9, wal->lastLogId());
+    EXPECT_EQ(10, wal->lastLogId());
 
-    auto it = wal->iterator(0, 9);
-    LogID id = 0;
+    auto it = wal->iterator(1, 10);
+    LogID id = 1;
     while (it->valid()) {
         EXPECT_EQ(id, it->logId());
         EXPECT_EQ(folly::stringPrintf("Test string %02ld", id),
@@ -66,7 +66,7 @@ TEST(FileBasedWal, AppendLogs) {
         ++(*it);
         ++id;
     }
-    EXPECT_EQ(10, id);
+    EXPECT_EQ(11, id);
 }
 
 
@@ -82,14 +82,14 @@ TEST(FileBasedWal, CacheOverflow) {
 
     // Create a new WAL, add one log and close it
     auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
-    EXPECT_EQ(-1, wal->lastLogId());
+    EXPECT_EQ(0, wal->lastLogId());
 
     // Append > 10MB logs in total
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 1; i <= 10000; i++) {
         ASSERT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
                                    folly::stringPrintf(kLongMsg, i)));
     }
-    ASSERT_EQ(9999, wal->lastLogId());
+    ASSERT_EQ(10000, wal->lastLogId());
 
     // Wait one second to make sure all buffers have been flushed
     sleep(1);
@@ -104,17 +104,17 @@ TEST(FileBasedWal, CacheOverflow) {
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
-    EXPECT_EQ(9999, wal->lastLogId());
+    EXPECT_EQ(10000, wal->lastLogId());
 
-    auto it = wal->iterator(0, 9999);
-    LogID id = 0;
+    auto it = wal->iterator(1, 10000);
+    LogID id = 1;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
         ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
         ++(*it);
         ++id;
     }
-    EXPECT_EQ(10000, id);
+    EXPECT_EQ(10001, id);
 }
 
 
@@ -130,63 +130,63 @@ TEST(FileBasedWal, Rollback) {
 
     // Create a new WAL, add one log and close it
     auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
-    EXPECT_EQ(-1, wal->lastLogId());
+    EXPECT_EQ(0, wal->lastLogId());
 
     // Append > 10MB logs in total
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 1; i <= 10000; i++) {
         ASSERT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
                                    folly::stringPrintf(kLongMsg, i)));
     }
-    ASSERT_EQ(9999, wal->lastLogId());
+    ASSERT_EQ(10000, wal->lastLogId());
 
     // Rollback 100 logs
-    wal->rollbackToLog(9899);
-    ASSERT_EQ(9899, wal->lastLogId());
+    wal->rollbackToLog(9900);
+    ASSERT_EQ(9900, wal->lastLogId());
 
     // Try to read the last 10 logs
-    auto it = wal->iterator(9890, 9899);
-    LogID id = 9890;
+    auto it = wal->iterator(9891, 9900);
+    LogID id = 9891;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
         ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
         ++(*it);
         ++id;
     }
-    EXPECT_EQ(9900, id);
+    EXPECT_EQ(9901, id);
 
     // Now let's rollback even more
-    wal->rollbackToLog(4999);
-    ASSERT_EQ(4999, wal->lastLogId());
+    wal->rollbackToLog(5000);
+    ASSERT_EQ(5000, wal->lastLogId());
 
     // Let's verify the last 10 logs
-    it = wal->iterator(4990, 4999);
-    id = 4990;
+    it = wal->iterator(4991, 5000);
+    id = 4991;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
         ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
         ++(*it);
         ++id;
     }
-    EXPECT_EQ(5000, id);
+    EXPECT_EQ(5001, id);
 
     // Now let's append 1000 more logs
-    for (int i = 5000; i < 6000; i++) {
+    for (int i = 5001; i <= 6000; i++) {
         ASSERT_TRUE(
             wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
                            folly::stringPrintf(kLongMsg, i + 1000)));
     }
-    ASSERT_EQ(5999, wal->lastLogId());
+    ASSERT_EQ(6000, wal->lastLogId());
 
     // Let's verify the last 10 logs
-    it = wal->iterator(5990, 5999);
-    id = 5990;
+    it = wal->iterator(5991, 6000);
+    id = 5991;
     while (it->valid()) {
         ASSERT_EQ(id, it->logId());
         ASSERT_EQ(folly::stringPrintf(kLongMsg, id + 1000), it->logMsg());
         ++(*it);
         ++id;
     }
-    EXPECT_EQ(6000, id);
+    EXPECT_EQ(6001, id);
 
     // Wait one second to make sure all buffers being flushed
     sleep(1);

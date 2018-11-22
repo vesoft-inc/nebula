@@ -172,9 +172,9 @@ private:
     const FileBasedWalPolicy policy_;
     const size_t maxFileSize_;
     const size_t maxBufferSize_;
-    LogID firstLogId_{-1};
-    LogID lastLogId_{-1};
-    TermID lastLogTerm_{-1};
+    LogID firstLogId_{0};
+    LogID lastLogId_{0};
+    TermID lastLogTerm_{0};
 
     // firstLogId -> WalInfo
     // The last entry is the current opened WAL file

@@ -28,8 +28,9 @@ enum ErrorCode {
 
     // Local errors
     E_HOST_STOPPED = -12;
-    E_HOST_DISCONNECTED = -13;
-    E_REQUEST_ONGOING = -14;
+    E_NOT_A_LEADER = -13;
+    E_HOST_DISCONNECTED = -14;
+    E_TOO_MANY_REQUESTS = -15;
 
     E_EXCEPTION = -20;          // An thrift internal exception was thrown
 }
@@ -75,30 +76,35 @@ struct LogEntry {
 */
 struct AppendLogRequest {
     //
-    // Fields 1 - 8 are common for both log appendent and heartbeat
+    // Fields 1 - 9 are common for both log appendent and heartbeat
+    //
+    // last_log_term_sent and last_log_id_sent are the term and log id
+    // for the last log being sent
     //
     1: GraphSpaceID space;              // Graphspace ID
     2: PartitionID  part;               // Partition ID
-    3: TermID       term;               // Current term
-    4: IPv4         leader_ip;          // The leader's IP
-    5: Port         leader_port;        // The leader's Port
-    6: LogID        committed_log_id;   // Last committed Log ID
-    7: TermID       previous_log_term;  // The previous log term
-    8: LogID        previous_log_id;    // The previous log id
+    3: TermID       current_term;       // Current term
+    4: LogID        last_log_id;        // Last received log id
+    5: LogID        committed_log_id;   // Last committed Log ID
+    6: IPv4         leader_ip;          // The leader's IP
+    7: Port         leader_port;        // The leader's Port
+    8: TermID       last_log_term_sent;
+    9: LogID        last_log_id_sent;
 
     //
-    // Fields 9 to 11 are used for LogAppend.
+    // Fields 10 to 11 are used for LogAppend.
     //
-    // In the case of heartbeat, the log_str_list will be empty
+    // In the case of heartbeat, the log_str_list will be empty,
+    // and log_term == 0
     //
-    // In the case of LogAppend, the id of the first log in the list is
-    //   last_log_id + 1
+    // In the case of LogAppend, the id of the first log is the
+    //      last_log_id_sent + 1
     //
-    // All logs in the list must belong to the same term
+    // All logs in the log_str_list must belong to the same term,
+    // which specified by log_term
     //
-    9: TermID log_term;       // The term to receive these logs
-    10: LogID first_log_id;   // The first log id in the list
-    11: optional list<LogEntry> log_str_list;   // A list of logs
+    10: TermID log_term;
+    11: list<LogEntry> log_str_list;
 
     12: optional binary snapshot_uri;   // Snapshot URL
 }
@@ -106,12 +112,13 @@ struct AppendLogRequest {
 
 struct AppendLogResponse {
     1: ErrorCode    error_code;
-    2: TermID       term;
+    2: TermID       current_term;
     3: IPv4         leader_ip;
     4: Port         leader_port;
     5: LogID        committed_log_id;
     6: LogID        last_log_id;
-    7: bool         pulling_snapshot;
+    7: TermID       last_log_term;
+    8: bool         pulling_snapshot;
 }
 
 

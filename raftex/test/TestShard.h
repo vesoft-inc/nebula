@@ -24,7 +24,6 @@ public:
         std::shared_ptr<RaftexService> svc,
         PartitionID partId,
         HostAddr addr,
-        std::vector<HostAddr>&& peers,
         const folly::StringPiece walRoot,
         BufferFlusher* flusher,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
@@ -47,6 +46,7 @@ public:
 
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
+    size_t getNumLogs() const;
     bool getLogMsg(LogID id, folly::StringPiece& msg) const;
 
 private:

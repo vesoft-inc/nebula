@@ -68,7 +68,6 @@ TEST(LeaderElection, LeaderCrash) {
         services[idx],
         1,  // Shard ID
         allHosts[idx],
-        getPeers(allHosts, allHosts[idx]),
         wals[3],
         flusher.get(),
         services[idx]->getIOThreadPool(),
@@ -86,7 +85,7 @@ TEST(LeaderElection, LeaderCrash) {
                   std::placeholders::_2,
                   std::placeholders::_3)));
     services[idx]->addPartition(copies.back());
-    copies.back()->start();
+    copies.back()->start(getPeers(allHosts, allHosts[idx]));
 
     // Wait untill all copies agree on the same leader
     waitUntilLeaderElected(copies, leader);

@@ -23,7 +23,10 @@ FileBasedWalIterator::FileBasedWalIterator(
     } else {
         lastId_ = wal_->lastLogId();
     }
-    CHECK_LE(currId_, lastId_);
+
+    if (currId_ > lastId_) {
+        return;
+    }
 
     if (startId < wal_->firstLogId()) {
         LOG(ERROR) << "The given log id " << startId

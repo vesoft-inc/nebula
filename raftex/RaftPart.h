@@ -87,7 +87,7 @@ public:
 
     // Change the partition status to RUNNING. This is called
     // by the inherited class, when it's ready to server
-    virtual void start();
+    virtual void start(std::vector<HostAddr>&& peers);
 
     // Change the partition status to STOPPED. This is called
     // by the inherited class, when it's about to stop
@@ -134,7 +134,6 @@ protected:
              GraphSpaceID spaceId,
              PartitionID partId,
              HostAddr localAddr,
-             std::vector<HostAddr>&& peers,
              const folly::StringPiece walRoot,
              BufferFlusher* flusher,
              std::shared_ptr<folly::IOThreadPoolExecutor> pool,
@@ -189,7 +188,7 @@ private:
     const char* roleStr(Role role) const;
 
     cpp2::ErrorCode verifyLeader(const cpp2::AppendLogRequest& req,
-                                 Role currRole);
+                                 std::lock_guard<std::mutex>& lck);
 
     /*****************************************************************
      * Asynchronously send a heartbeat (An empty log entry)
@@ -208,17 +207,11 @@ private:
 
     bool needToStartElection() const;
 
-    void startElection();
-
     void statusPolling();
 
-    // The election thread to hold a shared pointer, so that
-    // the RaftPart instance will not be destroyed before the
-    // election thread exits
-    //
     // The thread keep sending out AskForVote request until a
     // leader is elected. Then the thread exits
-    void leaderElection(std::shared_ptr<RaftPart> self);
+    void leaderElection();
 
     // The methed will fill up the request object and return TRUE
     // if the election should continue. Otherwise the method will
@@ -228,9 +221,9 @@ private:
     // The method returns the partition's role after the election
     Role processElectionResponses(const ElectionResponses& results);
 
-    // Check whether new logs can be appended. If it's ok to append
-    // new logs, the current term will be returned as well
-    AppendLogResult canAppendLogs(TermID& term);
+    // Check whether new logs can be appended
+    // Pre-condition: The caller needs to hold the raftLock_
+    AppendLogResult canAppendLogs(std::lock_guard<std::mutex>& lck);
 
     void appendLogsInternal(
         std::vector<std::tuple<ClusterID, TermID, std::string>>&& logs);
@@ -238,21 +231,19 @@ private:
     folly::Future<AppendLogResponses> replicateLogs(
         folly::EventBase* eb,
         TermID currTerm,
-        LogID committedId,
-        LogID prevLogId,
-        TermID prevLogTerm,
         LogID lastLogId,
-        TermID lastLogTerm);
+        LogID committedId,
+        TermID prevLogTerm,
+        LogID prevLogId);
 
     void processAppendLogResponses(
         const AppendLogResponses& resps,
         folly::EventBase* eb,
         TermID currTerm,
-        LogID committedId,
-        LogID prevLogId,
-        TermID prevLogTerm,
         LogID lastLogId,
-        TermID lastLogTerm);
+        LogID committedId,
+        TermID prevLogTerm,
+        LogID prevLogId);
 
 
 private:
@@ -262,22 +253,17 @@ private:
     const GraphSpaceID spaceId_;
     const PartitionID partId_;
     const HostAddr addr_;
-    std::vector<HostAddr> peerAddresses_;
-    std::unordered_map<HostAddr, std::shared_ptr<Host>>
+    std::shared_ptr<std::unordered_map<HostAddr, std::shared_ptr<Host>>>
         peerHosts_;
-    const size_t quorum_;
+    size_t quorum_{0};
 
-    // The lock to protect appendLog call
-    std::mutex appendLogLock_;
+    // Partition level lock to synchronize the access of the partition
+    mutable std::mutex raftLock_;
 
     bool replicatingLogs_{false};
     folly::SharedPromise<AppendLogResult> cachingPromise_;
     folly::SharedPromise<AppendLogResult> sendingPromise_;
-    folly::Future<AppendLogResponses> appendLogFuture_;
     std::vector<std::tuple<ClusterID, TermID, std::string>> logs_;
-
-    // Partition level lock to synchronize the access of the partition
-    mutable std::mutex raftLock_;
 
     Status status_;
     Role role_;
@@ -293,20 +279,11 @@ private:
     // the term id proposed by that candidate
     TermID term_{0};
 
-    // The id and term of the last received log
+    // The id and term of the last-sent log
     LogID lastLogId_{0};
     TermID lastLogTerm_{0};
-    // The id and term of the previous log
-    // For the leader, this is the last log in the previous committed
-    // bactch
-    // For the follower, this is the last log received before the
-    // current request
-    LogID prevLogId_{0};
-    TermID prevLogTerm_{0};
     // The id for the last globally committed log (from the leader)
     LogID committedLogId_{0};
-    // The id for the last locally committed log
-    LogID myLastCommittedLogId_{0};
 
     // To record how long ago when the last leader message received
     time::Duration lastMsgRecvDur_;
@@ -321,9 +298,15 @@ private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     // Shared worker thread pool
     std::shared_ptr<thread::GenericThreadPool> workers_;
-    std::future<void> statusPollingFuture_;
-    std::future<void> lostLeadershipFuture_;
-    std::future<void> electedFuture_;
+
+    bool statusPollingStopped_{true};
+    std::condition_variable statusPollingCV_;
+
+    bool lostLeadershipCBing_{false};
+    std::condition_variable lostLeadershipCV_;
+
+    bool electedCBing_{false};
+    std::condition_variable electedCV_;
 };
 
 }  // namespace raftex

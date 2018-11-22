@@ -7,14 +7,12 @@
 #include "base/Base.h"
 #include "raftex/RaftexService.h"
 #include <folly/ScopeGuard.h>
-#include "network/ThriftSocketManager.h"
 #include "raftex/RaftPart.h"
 
 namespace vesoft {
 namespace raftex {
 
 using namespace folly;
-using namespace network;
 
 /*******************************************************
  *

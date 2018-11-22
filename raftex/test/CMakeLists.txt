@@ -7,6 +7,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:proc_obj>
 )
@@ -44,6 +45,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:proc_obj>
 )
@@ -68,4 +70,42 @@ target_link_libraries(
     -pthread
 )
 add_test(NAME leader_election_test COMMAND leader_election_test)
+
+
+add_executable(
+    log_append_test
+    LogAppendTest.cpp
+    RaftexTestBase.cpp
+    TestShard.cpp
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:proc_obj>
+)
+target_link_libraries(
+    log_append_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    gtest
+    glog
+    gflags
+    boost_context
+    boost_system
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    event
+    -pthread
+)
+add_test(NAME log_append_test COMMAND log_append_test)
 

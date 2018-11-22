@@ -18,7 +18,6 @@ TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
                      HostAddr addr,
-                     std::vector<HostAddr>&& peers,
                      const folly::StringPiece walRoot,
                      BufferFlusher* flusher,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
@@ -31,7 +30,6 @@ TestShard::TestShard(size_t idx,
                    1,   // spaceId
                    partId,
                    addr,
-                   std::move(peers),
                    walRoot,
                    flusher,
                    ioPool,
@@ -58,11 +56,24 @@ void TestShard::onElected(TermID term) {
 
 
 bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
+    VLOG(2) << "TestShard: Committing logs";
+    LogID firstId = -1;
+    LogID lastId = -1;
     while (iter->valid()) {
+        if (firstId < 0) {
+            firstId = iter->logId();
+        }
+        lastId = iter->logId();
         data_.emplace(iter->logId(), iter->logMsg().toString());
         ++(*iter);
     }
+    VLOG(2) << "TestShard: Committed log " << firstId << " to " << lastId;
     return true;
+}
+
+
+size_t TestShard::getNumLogs() const {
+    return data_.size();
 }
 
 

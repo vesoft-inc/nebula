@@ -145,7 +145,6 @@ void setupRaft(
             services[i],
             1,  // Shard ID
             allHosts[i],
-            getPeers(allHosts, allHosts[i]),
             wals[i],
             flusher.get(),
             services[i]->getIOThreadPool(),
@@ -163,7 +162,7 @@ void setupRaft(
                       std::placeholders::_2,
                       std::placeholders::_3)));
         services[i]->addPartition(copies.back());
-        copies.back()->start();
+        copies.back()->start(getPeers(allHosts, allHosts[i]));
     }
 
     // Wait untill all copies agree on the same leader
