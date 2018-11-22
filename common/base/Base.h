@@ -13,7 +13,6 @@
 #include <fcntl.h>
 
 #include <thread>
-#include <future>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
