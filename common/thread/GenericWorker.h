@@ -7,6 +7,8 @@
 #define COMMON_THREAD_GENERICWORKER_H_
 
 #include "base/Base.h"
+#include <folly/futures/Future.h>
+#include <folly/Unit.h>
 #include "cpp/helpers.h"
 #include "thread/NamedThread.h"
 
@@ -30,6 +32,7 @@ namespace thread {
 class GenericWorker final : public vesoft::cpp::NonCopyable, public vesoft::cpp::NonMovable {
 public:
     friend class GenericThreadPool;
+
     GenericWorker();
     ~GenericWorker();
 
@@ -65,26 +68,49 @@ public:
     template <typename F, typename...Args>
     using ReturnType = typename std::result_of<F(Args...)>::type;
     template <typename F, typename...Args>
-    using FutureType = std::future<ReturnType<F, Args...>>;
+    using FutureType = folly::SemiFuture<ReturnType<F, Args...>>;
+    using UnitFutureType = folly::SemiFuture<folly::Unit>;
 
     /**
      * To add a normal task.
      * @task    a callable object
      * @args    variadic arguments
-     * @return  an instance of `std::future' you could wait upon for the result of `task'
+     * @return  an instance of `folly::SemiFuture' you could wait upon
+     *          for the result of `task'
      */
     template <typename F, typename...Args>
-    auto addTask(F &&task, Args &&...args) -> FutureType<F, Args...>;
+    auto addTask(F &&task, Args &&...args)
+        -> typename std::enable_if<
+            std::is_void<ReturnType<F, Args...>>::value,
+            UnitFutureType
+           >::type;
+    template <typename F, typename...Args>
+    auto addTask(F &&task, Args &&...args)
+        -> typename std::enable_if<
+            !std::is_void<ReturnType<F, Args...>>::value,
+            FutureType<F, Args...>
+           >::type;
 
     /**
      * To add a oneshot timer task which will be executed after a while.
      * @ms      milliseconds from now when the task get executed
      * @task    a callable object
      * @args    variadic arguments
-     * @return  an instance of `std::future' you could wait upon for the result of `task'
+     * @return  an instance of `folly::SemiFuture' you could wait upon
+     *          for the result of `task'
      */
     template <typename F, typename...Args>
-    auto addDelayTask(size_t ms, F &&task, Args &&...args) -> FutureType<F, Args...>;
+    auto addDelayTask(size_t ms, F &&task, Args &&...args)
+        -> typename std::enable_if<
+            std::is_void<ReturnType<F, Args...>>::value,
+            UnitFutureType
+           >::type;
+    template <typename F, typename...Args>
+    auto addDelayTask(size_t ms, F &&task, Args &&...args)
+        -> typename std::enable_if<
+            !std::is_void<ReturnType<F, Args...>>::value,
+            FutureType<F, Args...>
+           >::type;
 
     /**
      * To add a repeated timer task which will be executed in each period.
@@ -147,36 +173,109 @@ private:
     std::unique_ptr<NamedThread>                thread_;
 };
 
+
 template <typename F, typename...Args>
-auto GenericWorker::addTask(F &&f, Args &&...args) -> FutureType<F, Args...> {
-    using TaskType = std::packaged_task<ReturnType<F, Args...>()>;
-    auto task = std::make_shared<TaskType>(std::bind(f, args...));
-    auto future = task->get_future();
+auto GenericWorker::addTask(F &&f, Args &&...args)
+        -> typename std::enable_if<
+            std::is_void<ReturnType<F, Args...>>::value,
+            UnitFutureType
+           >::type {
+    auto promise = std::make_shared<folly::Promise<folly::Unit>>();
+    auto task = std::make_shared<std::function<ReturnType<F, Args...> ()>>(
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+    auto future = promise->getSemiFuture();
     {
         std::lock_guard<std::mutex> guard(lock_);
-        pendingTasks_.emplace_back([=](){ (*task)(); });
+        pendingTasks_.emplace_back([=] {
+            try {
+                (*task)();
+                promise->setValue(folly::unit);
+            } catch (const std::exception& ex) {
+                promise->setException(ex);
+            }
+        });
     }
     notify();
     return future;
 }
 
+
 template <typename F, typename...Args>
-auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&...args) -> FutureType<F, Args...> {
-    using TaskType = std::packaged_task<ReturnType<F, Args...>()>;
-    auto task = std::make_shared<TaskType>(std::bind(f, args...));
-    auto future = task->get_future();
-    addTimerTask(ms, 0, [=](){ (*task)(); });
+auto GenericWorker::addTask(F &&f, Args &&...args)
+        -> typename std::enable_if<
+            !std::is_void<ReturnType<F, Args...>>::value,
+            FutureType<F, Args...>
+           >::type {
+    auto promise = std::make_shared<folly::Promise<ReturnType<F, Args...>>>();
+    auto task = std::make_shared<std::function<ReturnType<F, Args...> ()>>(
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+    auto future = promise->getSemiFuture();
+    {
+        std::lock_guard<std::mutex> guard(lock_);
+        pendingTasks_.emplace_back([=] {
+            promise->setWith(*task);
+        });
+    }
+    notify();
     return future;
 }
 
-template <typename F, typename...Args>
-uint64_t GenericWorker::addRepeatTask(size_t ms, F &&f, Args &&...args) {
-    return addTimerTask(ms, ms, std::forward<F>(f), std::forward<Args>(args)...);
-}
 
 template <typename F, typename...Args>
-uint64_t GenericWorker::addTimerTask(size_t delay, size_t interval, F &&f, Args &&...args) {
-    auto timer = std::make_unique<Timer>(std::bind(f, args...));
+auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&...args)
+        -> typename std::enable_if<
+            std::is_void<ReturnType<F, Args...>>::value,
+            UnitFutureType
+           >::type {
+    auto promise = std::make_shared<folly::Promise<folly::Unit>>();
+    auto task = std::make_shared<std::function<ReturnType<F, Args...> ()>>(
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+    auto future = promise->getSemiFuture();
+    addTimerTask(ms, 0, [=] {
+        try {
+            (*task)();
+            promise->setValue(folly::unit);
+        } catch (const std::exception& ex) {
+            promise->setException(ex);
+        }
+    });
+    return future;
+}
+
+
+template <typename F, typename...Args>
+auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&...args)
+        -> typename std::enable_if<
+            !std::is_void<ReturnType<F, Args...>>::value,
+            FutureType<F, Args...>
+           >::type {
+    auto promise = std::make_shared<folly::Promise<ReturnType<F, Args...>>>();
+    auto task = std::make_shared<std::function<ReturnType<F, Args...> ()>>(
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+    auto future = promise->getSemiFuture();
+    addTimerTask(ms, 0, [=] {
+        promise->setWith(*task);
+    });
+    return future;
+}
+
+
+template <typename F, typename...Args>
+uint64_t GenericWorker::addRepeatTask(size_t ms, F &&f, Args &&...args) {
+    return addTimerTask(ms,
+                        ms,
+                        std::forward<F>(f),
+                        std::forward<Args>(args)...);
+}
+
+
+template <typename F, typename...Args>
+uint64_t GenericWorker::addTimerTask(size_t delay,
+                                     size_t interval,
+                                     F &&f,
+                                     Args &&...args) {
+    auto timer = std::make_unique<Timer>(
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
     timer->delayMSec_ = delay;
     timer->intervalMSec_ = interval;
     timer->owner_ = this;
