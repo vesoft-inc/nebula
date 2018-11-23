@@ -182,7 +182,7 @@ auto GenericWorker::addTask(F &&f, Args &&...args)
            >::type {
     auto promise = std::make_shared<folly::Promise<folly::Unit>>();
     auto task = std::make_shared<std::function<ReturnType<F, Args...> ()>>(
-        std::bind(f, args...));
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
     auto future = promise->getSemiFuture();
     {
         std::lock_guard<std::mutex> guard(lock_);
@@ -208,7 +208,7 @@ auto GenericWorker::addTask(F &&f, Args &&...args)
            >::type {
     auto promise = std::make_shared<folly::Promise<ReturnType<F, Args...>>>();
     auto task = std::make_shared<std::function<ReturnType<F, Args...> ()>>(
-        std::bind(f, args...));
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
     auto future = promise->getSemiFuture();
     {
         std::lock_guard<std::mutex> guard(lock_);
@@ -229,7 +229,7 @@ auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&...args)
            >::type {
     auto promise = std::make_shared<folly::Promise<folly::Unit>>();
     auto task = std::make_shared<std::function<ReturnType<F, Args...> ()>>(
-        std::bind(f, args...));
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
     auto future = promise->getSemiFuture();
     addTimerTask(ms, 0, [=] {
         try {
@@ -251,7 +251,7 @@ auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&...args)
            >::type {
     auto promise = std::make_shared<folly::Promise<ReturnType<F, Args...>>>();
     auto task = std::make_shared<std::function<ReturnType<F, Args...> ()>>(
-        std::bind(f, args...));
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
     auto future = promise->getSemiFuture();
     addTimerTask(ms, 0, [=] {
         promise->setWith(*task);
@@ -274,7 +274,8 @@ uint64_t GenericWorker::addTimerTask(size_t delay,
                                      size_t interval,
                                      F &&f,
                                      Args &&...args) {
-    auto timer = std::make_unique<Timer>(std::bind(f, args...));
+    auto timer = std::make_unique<Timer>(
+        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
     timer->delayMSec_ = delay;
     timer->intervalMSec_ = interval;
     timer->owner_ = this;
