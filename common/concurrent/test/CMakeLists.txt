@@ -8,11 +8,15 @@ add_executable(
 )
 target_link_libraries(
     concurrent_test
+    folly
     event
     gtest
     gtest_main
     glog
     gflags
+    boost_context
+    double-conversion
     pthread
+    dl
 )
 add_test(NAME concurrent_test COMMAND concurrent_test)
