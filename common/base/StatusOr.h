@@ -21,22 +21,6 @@ public:
 
     // Convenience type traits
     template <typename U>
-    static constexpr auto is_copy_constructible_v = std::is_copy_constructible<U>::value;
-
-    template <typename U>
-    static constexpr auto is_move_constructible_v = std::is_move_constructible<U>::value;
-
-    template <typename U>
-    static constexpr auto is_copy_or_move_constructible_v = is_copy_constructible_v<U> ||
-                                                            is_move_constructible_v<U>;
-
-    template <typename U>
-    static constexpr auto is_constructible_v = std::is_constructible<T, U>::value;
-
-    template <typename U>
-    static constexpr auto is_convertible_v = std::is_convertible<U, T>::value;
-
-    template <typename U>
     static constexpr auto is_status_v = std::is_same<Status, std::decay_t<U>>::value;
 
     // Tell if `U' is of type `StatusOr<V>'
@@ -59,7 +43,7 @@ public:
     // TODO(dutor) we may take other cases into account in future,
     // e.g. convertible but not constructible.
     template <typename U>
-    static constexpr auto is_initializable_v = is_constructible_v<U> &&
+    static constexpr auto is_initializable_v = is_constructible_v<T, U> &&
                                                !is_status_or_v<U> &&
                                                !is_status_v<U>;
 
