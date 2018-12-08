@@ -86,12 +86,7 @@ public:
 
     // Destruct the `Status' or value if it's holding one.
     ~StatusOr() {
-        // Only to destruct but not to reset in release mode, for the sake of efficiency.
-#ifndef NDEBUG
-        reset();
-#else
         destruct();
-#endif
     }
 
     // Copy/move construct from `Status'

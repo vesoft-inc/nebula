@@ -1,6 +1,5 @@
 add_library(
-    base_obj
-    OBJECT
+    base_obj OBJECT
     Cord.cpp
     Configuration.cpp
     Status.cpp

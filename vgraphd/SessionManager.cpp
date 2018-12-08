@@ -86,7 +86,7 @@ void SessionManager::reclaimExpiredSessions() {
         return;
     }
 
-    VFLOG3("Try to reclaim expired sessions out of %lu ones", activeSessions_.size());
+    FVLOG3("Try to reclaim expired sessions out of %lu ones", activeSessions_.size());
     auto iter = activeSessions_.begin();
     auto end = activeSessions_.end();
     while (iter != end) {
