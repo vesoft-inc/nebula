@@ -607,7 +607,7 @@ std::string UnaryExpression::toString() const {
         case PLUS:
             buf += '+';
             break;
-        case MINUS:
+        case NEGATE:
             buf += '-';
             break;
         case NOT:
@@ -625,7 +625,7 @@ VariantType UnaryExpression::eval() const {
     auto value = operand_->eval();
     if (op_ == PLUS) {
         return value;
-    } else if (op_ == MINUS) {
+    } else if (op_ == NEGATE) {
         if (isInt(value)) {
             return -asInt(value);
         } else if (isUInt(value)) {
@@ -803,23 +803,19 @@ std::string RelationalExpression::toString() const {
             buf += '<';
             break;
         case LE:
-            buf += '<';
-            buf += '=';
+            buf += "<=";
             break;
         case GT:
             buf += '>';
             break;
         case GE:
-            buf += '>';
-            buf += '=';
+            buf += ">=";
             break;
         case EQ:
-            buf += '=';
-            buf += '=';
+            buf += "==";
             break;
         case NE:
-            buf += '!';
-            buf += '=';
+            buf += "!=";
             break;
     }
     buf.append(right_->toString());
@@ -870,12 +866,10 @@ std::string LogicalExpression::toString() const {
     buf.append(left_->toString());
     switch (op_) {
         case AND:
-            buf += '&';
-            buf += '&';
+            buf += "&&";
             break;
         case OR:
-            buf += '|';
-            buf += '|';
+            buf += "||";
             break;
     }
     buf.append(right_->toString());

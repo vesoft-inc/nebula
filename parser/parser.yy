@@ -240,7 +240,7 @@ unary_expression
         $$ = new UnaryExpression(UnaryExpression::PLUS, $2);
     }
     | SUB primary_expression {
-        $$ = new UnaryExpression(UnaryExpression::MINUS, $2);
+        $$ = new UnaryExpression(UnaryExpression::NEGATE, $2);
     }
     | L_PAREN type_spec R_PAREN primary_expression {
         $$ = new TypeCastingExpression($2, $4);

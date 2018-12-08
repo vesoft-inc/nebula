@@ -54,7 +54,7 @@ void VGraphService::signout(int64_t sessionId) {
 
 
 folly::Future<cpp2::ExecutionResponse>
-VGraphService::future_execute( int64_t sessionId, const std::string& query) {
+VGraphService::future_execute(int64_t sessionId, const std::string& query) {
     auto ctx = std::make_unique<RequestContext<cpp2::ExecutionResponse>>();
     ctx->setQuery(query);
     ctx->setRunner(getThreadManager());

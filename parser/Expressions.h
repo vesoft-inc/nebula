@@ -51,6 +51,7 @@ public:
 
     Status addAliasProp(const std::string &alias, const std::string &prop);
 
+    // TODO(dutor) check duplications on aliases
     void addAlias(const std::string &alias, AliasKind kind) {
         aliasInfo_[alias].kind_ = kind;
     }
@@ -653,7 +654,7 @@ private:
 class UnaryExpression final : public Expression {
 public:
     enum Operator {
-        PLUS, MINUS, NOT
+        PLUS, NEGATE, NOT
     };
 
     UnaryExpression(Operator op, Expression *operand) {
