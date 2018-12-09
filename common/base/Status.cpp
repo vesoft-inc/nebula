@@ -27,9 +27,6 @@ std::string Status::toString() const {
     char tmp[64];
     const char *str;
     switch (code()) {
-        case kOk:
-            str = "OK";
-            break;
         case kError:
             str = "";
             break;
