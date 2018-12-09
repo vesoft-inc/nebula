@@ -1,23 +1,25 @@
-find_file(
-    thrift_reconnecting_channel_cpp
-    ReconnectingRequestChannel.cpp
-    PATHS ${VGRAPH_HOME}/third-party/fbthrift/_build
-    PATH_SUFFIXES *
-    NO_DEFAULT_PATH
+get_property(
+    thrift_channel
+    GLOBAL
+    PROPERTY fbthrift_src_file
 )
-if (${thrift_reconnecting_channel_cpp}
-    STREQUAL
-    "thrift_reconnecting_channel_cpp-NOTFOUND")
+
+if ("${thrift_channel}" STREQUAL "")
     message(
         FATAL_ERROR
         "Cannot find ReconnectingRequestChannel.cpp in fbthrift"
     )
 endif()
 
+set_property(
+    SOURCE ${thrift_channel}
+    PROPERTY GENERATED true
+)
+
 add_library(
     thrift_obj OBJECT
     ThriftClientManager.cpp
-    ${thrift_reconnecting_channel_cpp}
+    ${thrift_channel}
 )
 
 add_dependencies(thrift_obj base_obj)
