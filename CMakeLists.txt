@@ -160,6 +160,8 @@ set(THRIFT_LIBRARIES
     thrift-core
 )
 
+set(ROCKSDB_LIBRARIES ${VGRAPH_HOME}/third-party/rocksdb/_install/lib64/librocksdb.a)
+
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
 
