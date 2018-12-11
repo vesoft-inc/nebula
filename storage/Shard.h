@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "storage/ResultCode.h"
+#include "storage/StorageEngine.h"
 
 namespace vesoft {
 namespace vgraph {
@@ -16,13 +17,11 @@ namespace storage {
 
 class Shard final {
 public:
-    Shard(const std::string& group,
-          int32_t shardId,
-          const std::string& dataPath,
+    Shard(GraphSpaceID spaceId,
+          PartitionID partId,
           const std::string& walPath)
-        : group_(group)
-        , shardId_(shardId)
-        , dataPath_(dataPath)
+        : spaceId_(spaceId)
+        , partId_(partId)
         , walPath_(walPath)  {}
 
     ResultCode get(const std::string& key, std::string& value);
@@ -30,10 +29,10 @@ public:
     ResultCode put(std::string key, std::string value);
 
 private:
-    std::string group_;
-    int32_t shardId_;
-    std::string dataPath_;
+    GraphSpaceID spaceId_;
+    PartitionID partId_;
     std::string walPath_;
+    StorageEngine* engine_ = nullptr;
 };
 
 }  // namespace storage
