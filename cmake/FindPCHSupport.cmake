@@ -29,6 +29,7 @@ IF(CMAKE_COMPILER_IS_GNUCXX)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
 
+
 MACRO(ADD_PRECOMPILED_HEADER _targetName _input _dep)
 
     GET_FILENAME_COMPONENT(_name ${_input} NAME)
@@ -38,7 +39,14 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input _dep)
     SET(_compiler_FLAGS ${${_flags_var_name}})
 
     GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
+    SET(_system_INCLUDE_DIRS "/usr/include" "/usr/local/include")
     FOREACH(item ${_directory_flags})
+        # Exclude standard paths
+        LIST(FIND _system_INCLUDE_DIRS ${item} _index)
+        IF(NOT ${_index} EQUAL -1)
+            continue()
+        ENDIF(NOT ${_index} EQUAL -1)
+
         IF(item MATCHES "^${PROJECT_SOURCE_DIR}.*")
             # Directories in this project
             IF(item MATCHES "^${PROJECT_SOURCE_DIR}/third-party.*")
