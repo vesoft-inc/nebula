@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
+#include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/Shard.h"
 
@@ -15,11 +16,44 @@ namespace storage {
 
 TEST(ShardTest, SimpleTest) {
     LOG(INFO) << "Simple test for shard class...";
-    Shard shard("default", 1, "", "");
+    Shard shard(1, 1, "");
     EXPECT_EQ(ResultCode::SUCCESSED, shard.put("k1", "v1"));
 
     std::string value;
     EXPECT_EQ(ResultCode::SUCCESSED, shard.get("k1", value));
+}
+
+TEST(ShardTest, RocksdbTest) {
+    fs::TempDir dataPath("/tmp/rocksdb_test.XXXXXX");
+    rocksdb::Options options;
+    options.create_if_missing = true;
+    rocksdb::DB* db = nullptr;
+    rocksdb::Status status = rocksdb::DB::Open(options, dataPath.path(), &db);
+    CHECK(status.ok());
+    LOG(INFO) << "Write data into rocksdb...";
+    rocksdb::WriteBatch updates;
+    std::vector<KV> kvs;
+    for (uint32_t i = 0; i < 1000; i++) {
+        kvs.emplace_back(folly::stringPrintf("key%d", i), folly::stringPrintf("val%d", i));
+    }
+    for (auto& kv : kvs) {
+        updates.Put(rocksdb::Slice(kv.first), rocksdb::Slice(kv.second));
+    }
+    rocksdb::WriteOptions woptions;
+    status = db->Write(woptions, &updates);
+    CHECK(status.ok());
+    
+    LOG(INFO) << "Read data from rocksdb...";
+    rocksdb::ReadOptions roptions;
+    for (uint32_t i = 0; i < 1000; i++) {
+        std::string val;
+        status = db->Get(roptions, rocksdb::Slice(folly::stringPrintf("key%d", i)), &val);
+        CHECK(status.ok());
+        EXPECT_EQ(folly::stringPrintf("val%d", i), val);
+    }
+
+    LOG(INFO) << "Test finished...";
+    delete db;
 }
 
 }  // namespace storage

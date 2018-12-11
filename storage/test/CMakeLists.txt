@@ -8,6 +8,10 @@ add_executable(
 )
 target_link_libraries(
     shard_test
+    ${ROCKSDB_LIBRARIES}
+    jemalloc
+    zstd
+    snappy
     folly
     gtest
     glog
@@ -17,7 +21,36 @@ target_link_libraries(
     double-conversion
     dl
     event
+    z
     -pthread
 )
 add_test(NAME shard_test COMMAND shard_test)
+
+add_executable(
+    rocksdb_engine_test
+    RocksdbEngineTest.cpp
+    $<TARGET_OBJECTS:storage_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+target_link_libraries(
+    rocksdb_engine_test
+    ${ROCKSDB_LIBRARIES}
+    jemalloc
+    zstd
+    snappy
+    folly
+    gtest
+    glog
+    gflags
+    boost_context
+    event
+    double-conversion
+    dl
+    event
+    z
+    -pthread
+)
+add_test(NAME rocksdb_engine_test COMMAND rocksdb_engine_test)
 

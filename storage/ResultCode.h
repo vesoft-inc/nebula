@@ -13,10 +13,13 @@ namespace vesoft {
 namespace vgraph {
 namespace storage {
 
+using KV = std::pair<std::string, std::string>;
+
 enum ResultCode {
-    SUCCESSED       =   0,
-    UNKNOWN         =  -1,
-    SHARD_NOT_FOUND =  -2,
+    SUCCESSED           =   0,
+    ERR_UNKNOWN         =  -1,
+    ERR_SHARD_NOT_FOUND =  -2,
+    ERR_KEY_NOT_FOUND   =  -3,
 };
 
 }  // namespace storage
