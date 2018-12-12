@@ -112,7 +112,7 @@ RaftPart::RaftPart(ClusterID clusterId,
     // TODO Configure the wal policy
     wal_ = FileBasedWal::getWal(walRoot, FileBasedWalPolicy(), flusher);
     lastLogId_ = wal_->lastLogId();
-    term_ = lastLogTerm_ = wal_->lastLogTerm();
+    term_ = proposedTerm_ = lastLogTerm_ = wal_->lastLogTerm();
 }
 
 
@@ -545,7 +545,7 @@ bool RaftPart::prepareElectionRequest(
     req.set_part(partId_);
     req.set_candidate_ip(addr_.first);
     req.set_candidate_port(addr_.second);
-    req.set_term(++term_);  // Bump up the term
+    req.set_term(++proposedTerm_);  // Bump up the proposed term
     req.set_last_log_id(lastLogId_);
     req.set_last_log_term(lastLogTerm_);
 
@@ -582,7 +582,8 @@ typename RaftPart::Role RaftPart::processElectionResponses(
     if (numSucceeded >= quorum_) {
         LOG(INFO) << idStr_
                   << "Partition is elected as the new leader for term "
-                  << term_;
+                  << proposedTerm_;
+        term_ = proposedTerm_;
         role_ = Role::LEADER;
     }
 
@@ -738,9 +739,13 @@ void RaftPart::processAskForVoteRequest(
             << roleStr(role_);
 
     // Check term id
-    if (req.get_term() <= term_) {
+    auto term = role_ == Role::CANDIDATE ? proposedTerm_ : term_;
+    if (req.get_term() <= term) {
         VLOG(2) << idStr_
-                << "The partition currently is on term " << term_
+                << (role_ == Role::CANDIDATE
+                    ? "The partition is currently proposing term "
+                    : "The partition currently is on term ")
+                << term
                 << ". The term proposed by the candidate is"
                    " no greater, so it will be rejected";
         resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
@@ -777,7 +782,7 @@ void RaftPart::processAskForVoteRequest(
     Role oldRole = role_;
     TermID oldTerm = term_;
     role_ = Role::FOLLOWER;
-    term_ = req.get_term();
+    term_ = proposedTerm_ = req.get_term();
     leader_ = std::make_pair(req.get_candidate_ip(),
                              req.get_candidate_port());
 
@@ -1009,7 +1014,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     role_ = Role::FOLLOWER;
     leader_ = std::make_pair(req.get_leader_ip(),
                              req.get_leader_port());
-    term_ = req.get_current_term();
+    term_ = proposedTerm_ = req.get_current_term();
 
     return cpp2::ErrorCode::SUCCEEDED;
 }
