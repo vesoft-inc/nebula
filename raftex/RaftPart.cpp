@@ -111,6 +111,8 @@ RaftPart::RaftPart(ClusterID clusterId,
         , workers_{workers} {
     // TODO Configure the wal policy
     wal_ = FileBasedWal::getWal(walRoot, FileBasedWalPolicy(), flusher);
+    lastLogId_ = wal_->lastLogId();
+    term_ = lastLogTerm_ = wal_->lastLogTerm();
 }
 
 
@@ -147,6 +149,8 @@ void RaftPart::start(std::vector<HostAddr>&& peers) {
                       << " peer hosts, and total "
                       << peers.size() + 1
                       << " copies. The quorum is " << quorum_ + 1;
+
+    committedLogId_ = lastCommittedLogId();
 
     // Start all peer hosts
     peerHosts_ = std::make_shared<
