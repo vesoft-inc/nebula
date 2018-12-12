@@ -85,18 +85,13 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
         std::lock_guard<std::mutex> g(lock_);
 
         auto res = checkStatus(g);
-        if (res != cpp2::ErrorCode::SUCCEEDED) {
-            VLOG(2) << idStr_
-                    << "The host is not in a proper status, just return";
-            cpp2::AppendLogResponse r;
-            r.set_error_code(res);
-            return r;
-        }
 
         if (logId == 0 || logId == logIdToSend_) {
             // This is a re-send or a heartbeat. If there is an
             // ongoing request, we will just return SUCCEEDED
             if (requestOnGoing_) {
+                VLOG(2) << idStr_ << "Another request is onging,"
+                                     "ignore the re-send/heartbeat request";
                 cpp2::AppendLogResponse r;
                 r.set_error_code(cpp2::ErrorCode::SUCCEEDED);
                 return r;
@@ -106,7 +101,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
             CHECK_GT(logId, logIdToSend_);
         }
 
-        if (requestOnGoing_) {
+        if (requestOnGoing_ && res == cpp2::ErrorCode::SUCCEEDED) {
             // Another request is ongoing
             if (requests_.size() <= FLAGS_max_outstanding_requests) {
                 VLOG(2) << idStr_
@@ -127,6 +122,16 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
                 return r;
             }
         }
+
+        if (res != cpp2::ErrorCode::SUCCEEDED) {
+            VLOG(2) << idStr_
+                    << "The host is not in a proper status, just return";
+            cpp2::AppendLogResponse r;
+            r.set_error_code(res);
+            return r;
+        }
+
+        VLOG(2) << idStr_ << "About to send the AppendLog request";
 
         // No request is ongoing, let's send a new request
         CHECK_GE(lastLogTermSent, lastLogTermSent_);
@@ -187,6 +192,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogsInternal(
                         << "AppendLog request sent successfully";
 
                 std::shared_ptr<cpp2::AppendLogRequest> newReq;
+                cpp2::AppendLogResponse r;
                 {
                     std::lock_guard<std::mutex> g(self->lock_);
 
@@ -195,42 +201,47 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogsInternal(
                         VLOG(2) << self->idStr_
                                 << "The host is not in a proper status,"
                                    " just return";
-                        cpp2::AppendLogResponse r;
                         r.set_error_code(res);
                         self->promise_.setValue(r);
                         self->requestOnGoing_ = false;
-                        // TODO clean the requests_
-                        return r;
-                    }
 
-                    self->lastLogIdSent_ = resp.get_last_log_id();
-                    self->lastLogTermSent_ = resp.get_last_log_term();
-                    if (self->lastLogIdSent_ < self->logIdToSend_) {
-                        // More to send
-                        VLOG(2) << self->idStr_
-                                << "There are more logs to send";
-                        newReq = self->prepareAppendLogRequest(g);
-                    } else {
-                        // Fulfill the promise
-                        self->promise_.setValue(resp);
-
-                        if (self->requests_.empty()) {
-                            self->requestOnGoing_ = false;
-                        } else {
-                            VLOG(2) << self->idStr_
-                                    << "Sending next request in the queue";
-                            auto& tup = self->requests_.front().second;
-                            self->logTermToSend_ = std::get<0>(tup);
-                            self->logIdToSend_ = std::get<1>(tup);
-                            self->committedLogId_ = std::get<2>(tup);
-                            newReq = self->prepareAppendLogRequest(g);
-
-                            self->promise_ =
-                                std::move(self->requests_.front().first);
-
-                            // Remove the first request from the queue
+                        // Remove all requests in the queue
+                        while (!self->requests_.empty()) {
+                            self->requests_.front().first.setValue(r);
                             self->requests_.pop();
                         }
+                    } else {
+                        self->lastLogIdSent_ = resp.get_last_log_id();
+                        self->lastLogTermSent_ = resp.get_last_log_term();
+                        if (self->lastLogIdSent_ < self->logIdToSend_) {
+                            // More to send
+                            VLOG(2) << self->idStr_
+                                    << "There are more logs to send";
+                            newReq = self->prepareAppendLogRequest(g);
+                        } else {
+                            // Fulfill the promise
+                            self->promise_.setValue(resp);
+
+                            if (self->requests_.empty()) {
+                                self->requestOnGoing_ = false;
+                            } else {
+                                VLOG(2) << self->idStr_
+                                        << "Sending next request in the queue";
+                                auto& tup = self->requests_.front().second;
+                                self->logTermToSend_ = std::get<0>(tup);
+                                self->logIdToSend_ = std::get<1>(tup);
+                                self->committedLogId_ = std::get<2>(tup);
+                                newReq = self->prepareAppendLogRequest(g);
+
+                                self->promise_ =
+                                    std::move(self->requests_.front().first);
+
+                                // Remove the first request from the queue
+                                self->requests_.pop();
+                            }
+                        }
+
+                        r = std::move(resp);
                     }
                 }
 
@@ -239,20 +250,42 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogsInternal(
                 } else {
                     self->noMoreRequestCV_.notify_all();
                 }
-                return resp;
+                return r;
             }
             case cpp2::ErrorCode::E_LOG_GAP: {
                 VLOG(2) << self->idStr_
                         << "The host's log is behind, need to catch up";
                 std::shared_ptr<cpp2::AppendLogRequest> newReq;
+                cpp2::AppendLogResponse r;
                 {
                     std::lock_guard<std::mutex> g(self->lock_);
-                    self->lastLogIdSent_ = resp.get_last_log_id();
-                    self->lastLogTermSent_ = resp.get_last_log_term();
-                    newReq = self->prepareAppendLogRequest(g);
+                    auto res = self->checkStatus(g);
+                    if (res != cpp2::ErrorCode::SUCCEEDED) {
+                        VLOG(2) << self->idStr_
+                                << "The host is not in a proper status,"
+                                   " skip catching up the gap";
+                        r.set_error_code(res);
+                        self->promise_.setValue(r);
+                        self->requestOnGoing_ = false;
+
+                        // Remove all requests in the queue
+                        while (!self->requests_.empty()) {
+                            self->requests_.front().first.setValue(r);
+                            self->requests_.pop();
+                        }
+                    } else {
+                        self->lastLogIdSent_ = resp.get_last_log_id();
+                        self->lastLogTermSent_ = resp.get_last_log_term();
+                        newReq = self->prepareAppendLogRequest(g);
+                        r = std::move(resp);
+                    }
                 }
-                self->appendLogsInternal(eb, newReq);
-                return resp;
+                if (newReq) {
+                    self->appendLogsInternal(eb, newReq);
+                } else {
+                    self->noMoreRequestCV_.notify_all();
+                }
+                return r;
             }
             default: {
                 LOG(ERROR) << self->idStr_

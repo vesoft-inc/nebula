@@ -25,6 +25,10 @@ class Host final : public std::enable_shared_from_this<Host> {
 public:
     Host(const HostAddr& addr, std::shared_ptr<RaftPart> part);
 
+    const char* idStr() const {
+        return idStr_.c_str();
+    }
+
     // This will be called when the shard lost its leadership
     void pause() {
         std::lock_guard<std::mutex> g(lock_);

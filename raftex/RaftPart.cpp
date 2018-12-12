@@ -162,7 +162,6 @@ void RaftPart::start(std::vector<HostAddr>&& peers) {
     status_ = Status::RUNNING;
 
     // Set up a leader election task
-    statusPollingStopped_ = false;
     size_t delayMS = 100 + folly::Random::rand32(900);
     workers_->addDelayTask(delayMS, [self = shared_from_this()] {
         self->statusPolling();
@@ -183,25 +182,12 @@ void RaftPart::stop() {
             h.second->stop();
         }
         VLOG(2) << idStr_ << "Invoked stop() on all peer hosts";
-
-        statusPollingCV_.wait(lck, [this] {
-            return statusPollingStopped_;
-        });
-        VLOG(2) << idStr_ << "Status polling task is stopped";
-
-        lostLeadershipCV_.wait(lck, [this] {
-            return !lostLeadershipCBing_;
-        });
-        VLOG(2) << idStr_ << "onLostLeadership callback is stopped";
-
-        electedCV_.wait(lck, [this] {
-            return !electedCBing_;
-        });
-        VLOG(2) << idStr_ << "onElected callback is stopped";
     }
 
     for (auto& h: *hosts) {
+        VLOG(2) << idStr_ << "Waiting " << h.second->idStr() << " to stop";
         h.second->waitForStop();
+        VLOG(2) << idStr_ << h.second->idStr() << "has stopped";
     }
     hosts->clear();
     VLOG(2) << idStr_ << "All hosts are stopped";
@@ -514,20 +500,24 @@ void RaftPart::processAppendLogResponses(
 }
 
 
-bool RaftPart::needToSendHeartbeat() const {
+bool RaftPart::needToSendHeartbeat() {
     std::lock_guard<std::mutex> g(raftLock_);
     return status_ == Status::RUNNING &&
            role_ == Role::LEADER &&
-           lastMsgSentDur_.elapsedInSec() >= FLAGS_heartbeat_interval / 2;
+           lastMsgSentDur_.elapsedInSec() >= FLAGS_heartbeat_interval * 2 / 5;
 }
 
 
-bool RaftPart::needToStartElection() const {
+bool RaftPart::needToStartElection() {
     std::lock_guard<std::mutex> g(raftLock_);
-    return status_ == Status::RUNNING &&
-           role_ == Role::FOLLOWER &&
-           (lastMsgRecvDur_.elapsedInSec() >= FLAGS_heartbeat_interval ||
-            term_ == 0);
+    if (status_ == Status::RUNNING &&
+        role_ == Role::FOLLOWER &&
+        (lastMsgRecvDur_.elapsedInSec() >= FLAGS_heartbeat_interval ||
+         term_ == 0)) {
+        role_ = Role::CANDIDATE;
+    }
+
+    return role_ == Role::CANDIDATE;
 }
 
 
@@ -596,153 +586,123 @@ typename RaftPart::Role RaftPart::processElectionResponses(
 }
 
 
-void RaftPart::leaderElection() {
+bool RaftPart::leaderElection() {
     VLOG(2) << idStr_ << "Start leader election...";
     using namespace apache::thrift;
     using namespace folly;
 
-    {
-        std::lock_guard<std::mutex> g(raftLock_);
-
-        if (role_ == Role::FOLLOWER) {
-            // During the entire election, the role will be kept as
-            // CANDIDATE, until a leader is elected
-            role_ = Role::CANDIDATE;
-        } else {
-            VLOG(2) << idStr_
-                    << "Not a follower any more, finish the election";
-            return;
-        }
+    cpp2::AskForVoteRequest voteReq;
+    if (!prepareElectionRequest(voteReq)) {
+        return false;
     }
 
-    // Loop until a leader is elected
-    while (true) {
-        cpp2::AskForVoteRequest voteReq;
-        if (!prepareElectionRequest(voteReq)) {
-            break;
-        }
+    // Send out the AskForVoteRequest
+    VLOG(2) << idStr_ << "Sending out an election request "
+            << "(space = " << voteReq.get_space()
+            << ", part = " << voteReq.get_part()
+            << ", term = " << voteReq.get_term()
+            << ", lastLogId = " << voteReq.get_last_log_id()
+            << ", lastLogTerm = " << voteReq.get_last_log_term()
+            << ", candidateIP = "
+            << NetworkUtils::intToIPv4(voteReq.get_candidate_ip())
+            << ", candidatePort = " << voteReq.get_candidate_port()
+            << ")";
 
-        // Send out the AskForVoteRequest
-        VLOG(2) << idStr_ << "Sending out an election request "
-                << "(space = " << voteReq.get_space()
-                << ", part = " << voteReq.get_part()
-                << ", term = " << voteReq.get_term()
-                << ", lastLogId = " << voteReq.get_last_log_id()
-                << ", lastLogTerm = " << voteReq.get_last_log_term()
-                << ", candidateIP = "
-                << NetworkUtils::intToIPv4(voteReq.get_candidate_ip())
-                << ", candidatePort = " << voteReq.get_candidate_port()
-                << ")";
+    auto eb = ioThreadPool_->getEventBase();
+    auto futures = collectNSucceeded(
+        gen::from(*peerHosts_)
+        | gen::map([eb, self = shared_from_this(), &voteReq] (
+                decltype(peerHosts_)::element_type::value_type& host) {
+            VLOG(2) << self->idStr_
+                    << "Sending AskForVoteRequest to "
+                    << NetworkUtils::intToIPv4(host.first.first)
+                    << ":" << host.first.second;
+            return via(
+                eb,
+                [&voteReq, &host] ()
+                        -> Future<cpp2::AskForVoteResponse> {
+                    return host.second->askForVote(voteReq);
+                });
+        })
+        | gen::as<std::vector>(),
+        // Number of succeeded required
+        quorum_,
+        // Result evaluator
+        [](cpp2::AskForVoteResponse& resp) {
+            return resp.get_error_code()
+                == cpp2::ErrorCode::SUCCEEDED;
+        });
 
-        auto eb = ioThreadPool_->getEventBase();
-        auto futures = collectNSucceeded(
-            gen::from(*peerHosts_)
-            | gen::map([eb, self = shared_from_this(), &voteReq] (
-                    decltype(peerHosts_)::element_type::value_type& host) {
-                VLOG(2) << self->idStr_
-                        << "Sending AskForVoteRequest to "
-                        << NetworkUtils::intToIPv4(host.first.first)
-                        << ":" << host.first.second;
-                return via(
-                    eb,
-                    [&voteReq, &host] ()
-                            -> Future<cpp2::AskForVoteResponse> {
-                        return host.second->askForVote(voteReq);
+    VLOG(2) << idStr_
+            << "AskForVoteRequest has been sent to all peers"
+               ", waiting for responses";
+    futures.wait();
+    CHECK(!futures.hasException())
+        << "Got exception -- "
+        << futures.result().exception().what().toStdString();
+    VLOG(2) << idStr_ << "Got AskForVote response back";
+
+    // Process the responses
+    switch (processElectionResponses(std::move(futures).get())) {
+        case Role::LEADER: {
+            // Elected
+            LOG(INFO) << idStr_
+                      << "The partition is elected as the leader";
+            {
+                std::lock_guard<std::mutex> g(raftLock_);
+                if (status_ == Status::RUNNING) {
+                    workers_->addTask([self = shared_from_this(),
+                                       term = voteReq.get_term()] {
+                        self->onElected(term);
                     });
-            })
-            | gen::as<std::vector>(),
-            // Number of succeeded required
-            quorum_,
-            // Result evaluator
-            [](cpp2::AskForVoteResponse& resp) {
-                return resp.get_error_code()
-                    == cpp2::ErrorCode::SUCCEEDED;
-            });
-
-        VLOG(2) << idStr_
-                << "AskForVoteRequest has been sent to all peers"
-                   ", waiting for responses";
-        futures.wait();
-        CHECK(!futures.hasException())
-            << "Got exception -- "
-            << futures.result().exception().what().toStdString();
-
-        // Process the responses
-        bool stopElection = true;
-        switch (processElectionResponses(std::move(futures).get())) {
-            case Role::LEADER: {
-                // Elected
-                LOG(INFO) << idStr_
-                          << "The partition is elected as the leader";
-                {
-                    std::lock_guard<std::mutex> g(raftLock_);
-                    if (status_ == Status::RUNNING) {
-                        electedCBing_ = true;
-                        workers_->addTask([self = shared_from_this(),
-                                           term = voteReq.get_term()] {
-                            self->onElected(term);
-                            {
-                                std::lock_guard<std::mutex>
-                                    lck(self->raftLock_);
-                                self->electedCBing_ = false;
-                            }
-                            self->electedCV_.notify_all();
-                        });
-                    }
                 }
-                sendHeartbeat();
-                break;
             }
-            case Role::FOLLOWER: {
-                // Someone was elected
-                VLOG(2) << idStr_ << "Someone else was elected";
-                break;
-            }
-            case Role::CANDIDATE: {
-                // No one has been elected
-                VLOG(2) << idStr_
-                        << "No one is elected, continue the election";
-                stopElection = false;
-                break;
-            }
+            sendHeartbeat();
+            return true;
         }
-        if (stopElection) {
-            break;
+        case Role::FOLLOWER: {
+            // Someone was elected
+            VLOG(2) << idStr_ << "Someone else was elected";
+            return true;
         }
-
-        // No leader has been elected, need to continue
-        // (After sleeping a random period betwen [500ms, 3s])
-        usleep(folly::Random::rand32(2500) * 1000 + 500000);
+        case Role::CANDIDATE: {
+            // No one has been elected
+            VLOG(2) << idStr_
+                    << "No one is elected, continue the election";
+            return false;
+        }
     }
 
-    VLOG(2) << idStr_ << "Stop the election";
+    LOG(FATAL) << "Should not reach here";
 }
 
 
 void RaftPart::statusPolling() {
+    size_t delay = FLAGS_heartbeat_interval * 1000 / 3;
     if (needToStartElection()) {
-        leaderElection();
+        VLOG(2) << idStr_ << "Need to start leader election";
+        if (leaderElection()) {
+            VLOG(2) << idStr_ << "Stop the election";
+        } else {
+            // No leader has been elected, need to continue
+            // (After sleeping a random period betwen [500ms, 2s])
+            VLOG(2) << idStr_ << "Wait for a while and continue the leader election";
+            delay = folly::Random::rand32(1500) + 500;
+        }
     } else if (needToSendHeartbeat()) {
+        VLOG(2) << idStr_ << "Need to send heartbeat";
         sendHeartbeat();
     }
 
-    bool needToNofity = false;
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING) {
             workers_->addDelayTask(
-                FLAGS_heartbeat_interval * 1000 / 3,
+                delay,
                 [self = shared_from_this()] {
                     self->statusPolling();
                 });
-        } else {
-            statusPollingStopped_ = true;
-            needToNofity = true;
         }
-    }
-
-    if (needToNofity) {
-        statusPollingCV_.notify_all();
     }
 }
 
@@ -824,15 +784,9 @@ void RaftPart::processAskForVoteRequest(
     if (oldRole == Role::LEADER) {
         // Need to invoke the onLostLeadership callback
         VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
-        lostLeadershipCBing_ = true;
         workers_->addTask(
             [self = shared_from_this(), oldTerm] {
                 self->onLostLeadership(oldTerm);
-                {
-                    std::lock_guard<std::mutex> lck(self->raftLock_);
-                    self->lostLeadershipCBing_ = false;
-                }
-                self->lostLeadershipCV_.notify_all();
             });
     }
 
@@ -999,14 +953,8 @@ void RaftPart::processAppendLogRequest(
     if (oldRole == Role::LEADER) {
         // Need to invoke onLostLeadership callback
         VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
-        lostLeadershipCBing_ = true;
         workers_->addTask([self = shared_from_this(), oldTerm] {
             self->onLostLeadership(oldTerm);
-            {
-                std::lock_guard<std::mutex> lck(self->raftLock_);
-                self->lostLeadershipCBing_ = false;
-            }
-            self->lostLeadershipCV_.notify_all();
         });
     }
 }

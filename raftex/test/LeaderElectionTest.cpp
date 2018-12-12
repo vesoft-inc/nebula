@@ -20,6 +20,7 @@ namespace vesoft {
 namespace raftex {
 
 TEST(LeaderElection, ElectionAfterBoot) {
+    LOG(INFO) << "=====> Start ElectionAfterBoot test";
     fs::TempDir walRoot("/tmp/election_after_boot.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
@@ -33,11 +34,15 @@ TEST(LeaderElection, ElectionAfterBoot) {
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
-    finishRaft(services);
+    finishRaft(services, copies, workers, leader);
+
+    LOG(INFO) << "<===== Done ElectionAfterBoot test";
 }
 
 
 TEST(LeaderElection, LeaderCrash) {
+    LOG(INFO) << "=====> Start LeaderCrash test";
+
     fs::TempDir walRoot("/tmp/leader_election.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
@@ -93,7 +98,9 @@ TEST(LeaderElection, LeaderCrash) {
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
-    finishRaft(services);
+    finishRaft(services, copies, workers, leader);
+
+    LOG(INFO) << "<===== Done LeaderCrash test";
 }
 
 }  // namespace raftex

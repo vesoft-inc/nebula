@@ -203,15 +203,15 @@ private:
      * Methods used by the status polling logic
      *
      ***************************************************/
-    bool needToSendHeartbeat() const;
+    bool needToSendHeartbeat();
 
-    bool needToStartElection() const;
+    bool needToStartElection();
 
     void statusPolling();
 
-    // The thread keep sending out AskForVote request until a
-    // leader is elected. Then the thread exits
-    void leaderElection();
+    // The method sends out AskForVote request
+    // It return true if a leader is elected, otherwise returns false
+    bool leaderElection();
 
     // The methed will fill up the request object and return TRUE
     // if the election should continue. Otherwise the method will
@@ -298,15 +298,6 @@ private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     // Shared worker thread pool
     std::shared_ptr<thread::GenericThreadPool> workers_;
-
-    bool statusPollingStopped_{true};
-    std::condition_variable statusPollingCV_;
-
-    bool lostLeadershipCBing_{false};
-    std::condition_variable lostLeadershipCV_;
-
-    bool electedCBing_{false};
-    std::condition_variable electedCV_;
 };
 
 }  // namespace raftex

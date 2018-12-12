@@ -66,7 +66,7 @@ TEST(LogAppend, SimpleAppend) {
         }
     }
 
-    finishRaft(services);
+    finishRaft(services, copies, workers, leader);
 }
 
 
@@ -140,7 +140,7 @@ TEST(LogAppend, MultiThreadAppend) {
         }
     }
 
-    finishRaft(services);
+    finishRaft(services, copies, workers, leader);
 }
 }  // namespace raftex
 }  // namespace vesoft

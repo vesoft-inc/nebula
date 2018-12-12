@@ -62,7 +62,10 @@ void setupRaft(
         std::vector<std::shared_ptr<test::TestShard>>& copies,
         std::shared_ptr<test::TestShard>& leader);
 
-void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services);
+void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
+                std::vector<std::shared_ptr<test::TestShard>>& copies,
+                std::shared_ptr<thread::GenericThreadPool>& workers,
+                std::shared_ptr<test::TestShard>& leader);
 
 void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      std::shared_ptr<test::TestShard>& leader);

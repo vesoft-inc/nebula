@@ -37,6 +37,7 @@ public:
     std::shared_ptr<folly::IOThreadPoolExecutor> getIOThreadPool() const;
 
     void stop();
+    void waitUntilStop();
 
     void askForVote(cpp2::AskForVoteResponse& resp,
                     const cpp2::AskForVoteRequest& req) override;
@@ -61,7 +62,6 @@ private:
     std::mutex readyMutex_;
     std::condition_variable readyCV_;
     bool ready_{false};
-    std::atomic<bool> stopped_{false};
 
     folly::RWSpinLock partsLock_;
     std::unordered_map<std::pair<GraphSpaceID, PartitionID>,

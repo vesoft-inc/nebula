@@ -66,7 +66,6 @@ std::shared_ptr<RaftexService> RaftexService::createService(
 
 
 RaftexService::~RaftexService() {
-    CHECK(stopped_);
 }
 
 
@@ -97,10 +96,13 @@ void RaftexService::stop() {
         LOG(INFO) << "All partitions have stopped";
     }
     server_->stop();
+}
+
+
+void RaftexService::waitUntilStop() {
     serverThread_->join();
-    VLOG(2) << "Server thread has stopped. Service on port "
-            << serverPort_ << " is about to be destroyed";
-    stopped_ = true;
+    LOG(INFO) << "Server thread has stopped. Service on port "
+              << serverPort_ << " is ready to be destroyed";
 }
 
 
