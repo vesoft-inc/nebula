@@ -1,4 +1,4 @@
-add_library(network_obj OBJECT NetworkUtils.cpp ThriftSocketManager.cpp)
+add_library(network_obj OBJECT NetworkUtils.cpp)
 
 add_dependencies(network_obj base_obj)
 

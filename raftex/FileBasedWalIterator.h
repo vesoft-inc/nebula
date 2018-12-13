@@ -12,7 +12,6 @@
 #include "raftex/InMemoryLogBuffer.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
 class FileBasedWal;
@@ -42,6 +41,8 @@ public:
     LogID logId() const override;
 
     TermID logTerm() const override;
+
+    ClusterID logSource() const override;
 
     folly::StringPiece logMsg() const override;
 
@@ -73,7 +74,6 @@ private:
 };
 
 }  // namespace raftex
-}  // namespace vgraph
 }  // namespace vesoft
 
 #endif  // RAFTEX_FILEBASEDWALITERATOR_H_
