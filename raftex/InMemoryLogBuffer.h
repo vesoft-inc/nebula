@@ -10,7 +10,6 @@
 #include "base/Base.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
 //
@@ -22,7 +21,7 @@ public:
         : firstLogId_(firstLogId) {}
 
     // Push a new message to the end of the buffrt
-    void push(TermID term, std::string&& msg);
+    void push(TermID term, ClusterID cluster, std::string&& msg);
 
     size_t size() const;
     size_t numLogs() const;
@@ -33,6 +32,7 @@ public:
     TermID lastLogTerm() const;
 
     TermID getTerm(size_t idx) const;
+    ClusterID getCluster(size_t idx) const;
     // The returned StringPiece value is valid as long as this
     // InMemoryLogBuffer object is alive. So please make sure
     // the returned StringPiece object will not outlive this buffer
@@ -43,7 +43,10 @@ public:
     // for each log
     // Returns the LogID and TermID for the last log
     std::pair<LogID, TermID> accessAllLogs(
-        std::function<void (LogID, TermID, const std::string&)> fn) const;
+        std::function<void (LogID,
+                            TermID,
+                            ClusterID,
+                            const std::string&)> fn) const;
 
     // Mark the buffer ready for persistence
     void freeze();
@@ -55,7 +58,7 @@ public:
 private:
     mutable folly::RWSpinLock accessLock_;
 
-    std::vector<std::pair<TermID, std::string>> logs_;
+    std::vector<std::tuple<TermID, ClusterID, std::string>> logs_;
     LogID firstLogId_{-1};
     size_t totalLen_{0};
 
@@ -73,7 +76,6 @@ using BufferPtr = std::shared_ptr<InMemoryLogBuffer>;
 using BufferList = std::list<BufferPtr>;
 
 }  // namespace raftex
-}  // namespace vgraph
 }  // namespace raftex
 
 #endif  // RAFTEX_INMEMORYLOGBUFFER_H_

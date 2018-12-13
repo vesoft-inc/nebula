@@ -8,14 +8,18 @@
 #include "raftex/InMemoryLogBuffer.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
-void InMemoryLogBuffer::push(TermID term, std::string&& msg) {
+void InMemoryLogBuffer::push(TermID term,
+                             ClusterID cluster,
+                             std::string&& msg) {
     folly::RWSpinLock::WriteHolder wh(&accessLock_);
 
-    totalLen_ += msg.size() + sizeof(TermID) + sizeof(LogID);
-    logs_.emplace_back(term, std::move(msg));
+    totalLen_ += msg.size()
+                 + sizeof(TermID)
+                 + sizeof(ClusterID)
+                 + sizeof(LogID);
+    logs_.emplace_back(term, cluster, std::move(msg));
 }
 
 
@@ -51,21 +55,28 @@ LogID InMemoryLogBuffer::lastLogId() const {
 
 TermID InMemoryLogBuffer::lastLogTerm() const {
     folly::RWSpinLock::ReadHolder rh(&accessLock_);
-    return logs_.back().first;
+    return std::get<0>(logs_.back());
 }
 
 
 TermID InMemoryLogBuffer::getTerm(size_t idx) const {
     folly::RWSpinLock::ReadHolder rh(&accessLock_);
     CHECK_LT(idx, logs_.size());
-    return logs_[idx].first;
+    return std::get<0>(logs_[idx]);
+}
+
+
+ClusterID InMemoryLogBuffer::getCluster(size_t idx) const {
+    folly::RWSpinLock::ReadHolder rh(&accessLock_);
+    CHECK_LT(idx, logs_.size());
+    return std::get<1>(logs_[idx]);
 }
 
 
 const folly::StringPiece InMemoryLogBuffer::getLog(size_t idx) const {
     folly::RWSpinLock::ReadHolder rh(&accessLock_);
     CHECK_LT(idx, logs_.size());
-    return logs_[idx].second;
+    return std::get<2>(logs_[idx]);
 }
 
 
@@ -90,20 +101,21 @@ bool InMemoryLogBuffer::needToRollover() const {
 
 
 std::pair<LogID, TermID> InMemoryLogBuffer::accessAllLogs(
-        std::function<void (LogID, TermID, const std::string&)> fn) const {
+        std::function<void (LogID,
+                            TermID,
+                            ClusterID,
+                            const std::string&)> fn) const {
     folly::RWSpinLock::ReadHolder rh(&accessLock_);
     LogID id = firstLogId_ - 1;
     TermID term = -1;
     for (auto& log : logs_) {
         ++id;
-        term = log.first;
-        fn(id, term, log.second);
+        fn(id, std::get<0>(log), std::get<1>(log), std::get<2>(log));
     }
 
     return std::make_pair(id, term);
 }
 
 }  // namespace raftex
-}  // namespace vgraph
 }  // namespace vesoft
 
