@@ -11,7 +11,6 @@
 #include "raftex/LogIterator.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
 /**
@@ -31,7 +30,10 @@ public:
     virtual TermID lastLogTerm() const = 0;
 
     // Append one log message to the WAL
-    virtual bool appendLog(LogID id, TermID term, std::string msg) = 0;
+    virtual bool appendLog(LogID id,
+                           TermID term,
+                           ClusterID cluster,
+                           std::string msg) = 0;
 
     // Append a list of log messages to the WAL
     virtual bool appendLogs(LogIterator& iter) = 0;
@@ -40,11 +42,11 @@ public:
     virtual bool rollbackToLog(LogID id) = 0;
 
     // Scan [firstLogId, lastLogId]
-    virtual std::unique_ptr<LogIterator> iterator(int64_t firstLogId) = 0;
+    virtual std::unique_ptr<LogIterator> iterator(LogID firstLogId,
+                                                  LogID lastLogId) = 0;
 };
 
 }  // namespace raftex
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // RAFTEX_WAL_H_
 

@@ -35,6 +35,7 @@
 #include <unordered_set>
 #include <queue>
 #include <deque>
+#include <tuple>
 
 #include <cstdio>
 #include <cstdlib>
@@ -82,14 +83,9 @@
 #define COMPILER_BARRIER()              asm volatile ("":::"memory")
 #endif  // COMPILER_BARRIER
 
-namespace vesoft {
+#include "base/ThriftTypes.h"
 
-using GraphSpaceID = int32_t;
-using PartitionID = int32_t;
-using TermID = int64_t;
-using LogID = int64_t;
-using IPv4 = int32_t;
-using Port = int32_t;
+namespace vesoft {
 
 template<typename Key, typename T>
 using UnorderedMap = typename std::conditional<

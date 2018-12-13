@@ -8,17 +8,19 @@ namespace cpp vesoft.raftex
 namespace java vesoft.raftex
 namespace go vesoft.raftex
 
+cpp_include "base/ThriftTypes.h"
 
 enum ErrorCode {
     SUCCEEDED = 0;
+
     E_LOG_GAP = -1;
     E_LOG_STALE = -2;
     E_MISSING_COMMIT = -3;
     E_PULLING_SNAPSHOT = -4;    // The follower is pulling a snapshot
 
-    E_BAD_GROUP_ID = -5;
-    E_BAD_PART_ID = -6;
-    E_TERM_OUT_OF_DATE = -7;
+    E_UNKNOWN_PART = -5;
+    E_TERM_OUT_OF_DATE = -6;
+    E_LAST_LOG_TERM_TOO_OLD = -7;
     E_BAD_STATE = -8;
     E_WRONG_LEADER = -9;
     E_WAL_FAIL = -10;
@@ -26,28 +28,31 @@ enum ErrorCode {
 
     // Local errors
     E_HOST_STOPPED = -12;
-    E_HOST_DISCONNECTED = -13;
+    E_NOT_A_LEADER = -13;
+    E_HOST_DISCONNECTED = -14;
+    E_TOO_MANY_REQUESTS = -15;
 
     E_EXCEPTION = -20;          // An thrift internal exception was thrown
 }
 
-typedef i32 GraphSpaceID
-typedef i32 PartitionID
-typedef i64 TermID
-typedef i64 LogID
-typedef i32 IPv4
-typedef i32 Port
+typedef byte (cpp.type = "vesoft::ClusterID") ClusterID
+typedef i32 (cpp.type = "vesoft::GraphSpaceID") GraphSpaceID
+typedef i32 (cpp.type = "vesoft::PartitionID") PartitionID
+typedef i64 (cpp.type = "vesoft::TermID") TermID
+typedef i64 (cpp.type = "vesoft::LogID") LogID
+typedef i32 (cpp.type = "vesoft::IPv4") IPv4
+typedef i32 (cpp.type = "vesoft::Port") Port
 
 
 // A request to ask for vote
 struct AskForVoteRequest {
-    1: GraphSpaceID space;              // My graph space id
-    2: PartitionID  partition;          // The data partition
+    1: GraphSpaceID space;              // The graph space id
+    2: PartitionID  part;               // The data partition
     3: IPv4         candidate_ip;       // My IP
     4: Port         candidate_port;     // My port
-    5: TermID       term;               // Proposed term (current term + 1)
-    6: LogID        committed_log_id;   // My last committed log id
-    7: LogID        last_log_id;        // My last received log id
+    5: TermID       term;               // Proposed term
+    6: LogID        last_log_id;        // The last received log id
+    7: TermID       last_log_term;      // The term receiving the last log
 }
 
 
@@ -58,7 +63,7 @@ struct AskForVoteResponse {
 
 
 struct LogEntry {
-    1: bool send_to_listeners_too;
+    1: ClusterID cluster;
     2: binary log_str;
 }
 
@@ -70,40 +75,50 @@ struct LogEntry {
   2) Or, when log_id == 0 and len(log_str) == 0, it serves as a heartbeat
 */
 struct AppendLogRequest {
-    // Fields 1 - 7 are common for both log appendent and heartbeat
-    1: GraphSpaceID space;
-    2: PartitionID  partition;
-    3: TermID       term;
-    4: IPv4         leader_ip;
-    5: Port         leader_port;
-    6: LogID        committed_log_id;
-
-    // This is the id of the first log in the current term
-    7: LogID first_log_in_term;
-
-    // Fields 8 and 9 are used for LogAppend.
     //
-    // In the case of heartbeat, first_log_id will be set zero and
-    // the log_str_list will be empty
+    // Fields 1 - 9 are common for both log appendent and heartbeat
     //
-    // In the case of LogAppend, first_log_id is the id for the first log
-    // in log_str_list
-    8: LogID first_log_id;
-    9: list<LogEntry> log_str_list;
+    // last_log_term_sent and last_log_id_sent are the term and log id
+    // for the last log being sent
+    //
+    1: GraphSpaceID space;              // Graphspace ID
+    2: PartitionID  part;               // Partition ID
+    3: TermID       current_term;       // Current term
+    4: LogID        last_log_id;        // Last received log id
+    5: LogID        committed_log_id;   // Last committed Log ID
+    6: IPv4         leader_ip;          // The leader's IP
+    7: Port         leader_port;        // The leader's Port
+    8: TermID       last_log_term_sent;
+    9: LogID        last_log_id_sent;
 
-    // URI for snapshot
-    10: binary snapshot_uri;
+    //
+    // Fields 10 to 11 are used for LogAppend.
+    //
+    // In the case of heartbeat, the log_str_list will be empty,
+    // and log_term == 0
+    //
+    // In the case of LogAppend, the id of the first log is the
+    //      last_log_id_sent + 1
+    //
+    // All logs in the log_str_list must belong to the same term,
+    // which specified by log_term
+    //
+    10: TermID log_term;
+    11: list<LogEntry> log_str_list;
+
+    12: optional binary snapshot_uri;   // Snapshot URL
 }
 
 
 struct AppendLogResponse {
     1: ErrorCode    error_code;
-    2: TermID       term;
+    2: TermID       current_term;
     3: IPv4         leader_ip;
     4: Port         leader_port;
     5: LogID        committed_log_id;
     6: LogID        last_log_id;
-    7: bool         pulling_snapshot;
+    7: TermID       last_log_term;
+    8: bool         pulling_snapshot;
 }
 
 

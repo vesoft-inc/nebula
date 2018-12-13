@@ -10,7 +10,6 @@
 #include "base/Base.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
 class LogIterator {
@@ -26,11 +25,11 @@ public:
 
     virtual LogID logId() const = 0;
     virtual TermID logTerm() const = 0;
+    virtual ClusterID logSource() const = 0;
     virtual folly::StringPiece logMsg() const = 0;
 };
 
 }  // namespace raftex
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // RAFTEX_LOGITERATOR_H_
 

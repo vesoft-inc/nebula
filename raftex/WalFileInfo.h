@@ -13,7 +13,6 @@
 #include "raftex/InMemoryLogBuffer.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
 class WalFileInfo final {
@@ -75,7 +74,6 @@ private:
 using WalFileInfoPtr = std::shared_ptr<WalFileInfo>;
 
 }  // namespace raftex
-}  // namespace vgraph
 }  // namespace vesoft
 
 #endif  // RAFTEX_WALFILEINFO_H_

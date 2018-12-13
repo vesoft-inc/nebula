@@ -10,12 +10,12 @@
 #include "raftex/WalFileInfo.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
-FileBasedWalIterator::FileBasedWalIterator(std::shared_ptr<FileBasedWal> wal,
-                                           LogID startId,
-                                           LogID lastId)
+FileBasedWalIterator::FileBasedWalIterator(
+    std::shared_ptr<FileBasedWal> wal,
+    LogID startId,
+    LogID lastId)
         : wal_(std::move(wal))
         , currId_(startId) {
     if (lastId >= 0) {
@@ -23,7 +23,10 @@ FileBasedWalIterator::FileBasedWalIterator(std::shared_ptr<FileBasedWal> wal,
     } else {
         lastId_ = wal_->lastLogId();
     }
-    CHECK_LE(currId_, lastId_);
+
+    if (currId_ > lastId_) {
+        return;
+    }
 
     if (startId < wal_->firstLogId()) {
         LOG(ERROR) << "The given log id " << startId
@@ -74,7 +77,7 @@ FileBasedWalIterator::FileBasedWalIterator(std::shared_ptr<FileBasedWal> wal,
             }
         });
 
-        if (idRanges_.front().first > currId_) {
+        if (idRanges_.empty() || idRanges_.front().first > currId_) {
             LOG(ERROR) << "LogID " << currId_
                        << " is out of the wal files range";
             currId_ = lastId_ + 1;
@@ -115,7 +118,8 @@ FileBasedWalIterator::FileBasedWalIterator(std::shared_ptr<FileBasedWal> wal,
             currPos_ += sizeof(LogID)
                         + sizeof(TermID)
                         + sizeof(int32_t) * 2
-                        + currMsgLen_;
+                        + currMsgLen_
+                        + sizeof(ClusterID);
         }
     }
 }
@@ -160,7 +164,8 @@ LogIterator& FileBasedWalIterator::operator++() {
             currPos_ += sizeof(LogID)
                         + sizeof(TermID)
                         + sizeof(int32_t) * 2
-                        + currMsgLen_;
+                        + currMsgLen_
+                        + sizeof(ClusterID);
         }
 
         LogID logId;
@@ -226,6 +231,33 @@ TermID FileBasedWalIterator::logTerm() const {
 }
 
 
+ClusterID FileBasedWalIterator::logSource() const {
+    if (currId_ >= firstIdInBuffer_) {
+        // Retrieve from the buffer
+        DCHECK(!buffers_.empty());
+        return buffers_.front()->getCluster(currIdx_);
+    } else {
+        // Retrieve from the file
+        DCHECK(!fds_.empty());
+
+        ClusterID cluster = 0;
+        CHECK_EQ(pread(fds_.front(),
+                       &(cluster),
+                       sizeof(ClusterID),
+                       currPos_
+                        + sizeof(LogID)
+                        + sizeof(TermID)
+                        + sizeof(int32_t)),
+                 static_cast<ssize_t>(sizeof(ClusterID)))
+            << "Failed to read. Curr position is " << currPos_
+            << ", expected read length is " << sizeof(ClusterID)
+            << " (errno: " << errno << "): " << strerror(errno);
+
+        return cluster;
+    }
+}
+
+
 folly::StringPiece FileBasedWalIterator::logMsg() const {
     if (currId_ >= firstIdInBuffer_) {
         // Retrieve from the buffer
@@ -242,7 +274,8 @@ folly::StringPiece FileBasedWalIterator::logMsg() const {
                        currPos_
                         + sizeof(LogID)
                         + sizeof(TermID)
-                        + sizeof(int32_t)),
+                        + sizeof(int32_t)
+                        + sizeof(ClusterID)),
                  static_cast<ssize_t>(currMsgLen_))
             << "Failed to read. Curr position is " << currPos_
             << ", expected read length is " << currMsgLen_
@@ -275,7 +308,6 @@ LogID FileBasedWalIterator::getFirstIdInNextFile() const {
 }
 
 }  // namespace raftex
-}  // namespace vgraph
 }  // namespace vesoft
 
 
