@@ -12,7 +12,6 @@
 #include "raftex/InMemoryLogBuffer.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace raftex {
 
 class FileBasedWal;
@@ -40,7 +39,6 @@ private:
 };
 
 }  // namespace raftex
-}  // namespace vgraph
 }  // namespace vesoft
 
 #endif  // RAFTEX_BUFFERFLUSHER_H_
