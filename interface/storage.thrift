@@ -125,42 +125,64 @@ struct Vertex {
 }
 
 
-struct Edge {
+struct EdgeKey {
     1: i64 src,
     2: i64 dst,
+    // When edgeType > 0, it's an out-edge, otherwise, it's an in-edge
     3: i32 edgeType,
     4: i64 ranking,
-    5: binary props,
+}
+
+
+struct Edge {
+    1: EdgeKey key,
+    2: binary props,
+}
+
+
+struct GetNeighborsRequest {
+    // shard_id => ids
+    1: map<i32, list<i64>> ids,
+    // When edgeType > 0, going along the out-edge, otherwise, along the in-edge
+    2: i32 edgeType,
+    3: binary filter,
+    4: list<PropDef> returnColumnn,
+}
+
+
+struct NeighborsStatsRequest {
+    // shard_id => ids
+    1: map<i32, list<i64>> ids,
+    // When edgeType > 0, going along the out-edge, otherwise, along the in-edge
+    2: i32 edgeType,
+    3: binary filter,
+    4: list<PropStat> returnColumnn,
+}
+
+
+struct VertexPropRequest {
+    1: map<i32, list<i64>> ids,
+    2: list<PropDef> returnColumns,
+}
+
+
+struct EdgePropRequest {
+    // shard_id => edges
+    1: map<i32, list<EdgeKey>> edges
+    5: list<PropDef> returnColumns,
 }
 
 
 service StorageService {
-    QueryResponse getOutBound(1: list<i64> ids,
-                              2: i32 edgeType,
-                              3: binary filter
-                              4: list<PropDef> returnColumns)
-    QueryResponse getInBound(1: list<i64> ids,
-                             2: i32 edgeType,
-                             3: binary filter
-                             4: list<PropDef> returnColumns)
+    QueryResponse getOutBound(1: GetNeighborsRequest req)
+    QueryResponse getInBound(1: GetNeighborsRequest req)
 
-    QueryResponse outBoundStats(1: list<i64> ids,
-                                2: i32 edgeType,
-                                3: binary filter
-                                4: list<PropStat> returnColumns)
-    QueryResponse inBoundStats(1: list<i64> ids,
-                               2: i32 edgeType,
-                               3: binary filter
-                               4: list<PropStat> returnColumns)
+    QueryResponse outBoundStats(1: NeighborsStatsRequest req)
+    QueryResponse inBoundStats(1: NeighborsStatsRequest req)
 
     // When returnColumns is empty, return all properties
-    QueryResponse getProps(1: list<i64> ids,
-                           2: list<PropDef> returnColumns)
-    QueryResponse getEdgeProps(1: i64 src,
-                               2: i64 dst,
-                               3: i32 edgeType,
-                               4: i64 ranking,
-                               5: list<PropDef> returnColumns)
+    QueryResponse getProps(1: VertexPropRequest req);
+    QueryResponse getEdgeProps(1: EdgePropRequest req)
 
     ExecResponseList addVertices(1: list<Vertex> vertices);
     ExecResponse addEdges(1: list<Edge> edges);

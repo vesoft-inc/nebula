@@ -13,29 +13,51 @@ namespace vesoft {
 namespace meta {
 
 class ShardManager final {
+    friend class HostManager;
 public:
     static const ShardManager& get();
 
     // Return the total number of shards
-    int32_t numShards() const;
+    size_t numShards(GraphSpaceID space) const;
 
     // Calculate the shard id for the given vertex id
-    int32_t shardId(int64_t id) const;
+    PartitionID shardId(GraphSpaceID space, int64_t id) const;
 
     // Figure out which host that the given shard belongs to
-    HostAddr hostAddr(int32_t shard) const;
+    const std::vector<HostAddr>& hostsForShard(GraphSpaceID space,
+                                               PartitionID shard) const;
+
+    const std::vector<PartitionID>& shardsOnHost(GraphSpaceID space,
+                                                 HostAddr host) const;
+
+    std::vector<GraphSpaceID> allGraphSpaces() const;
+
+    std::vector<GraphSpaceID> graphSpacesOnHost(HostAddr host) const;
 
     // Cluster given ids into the shard they belong to
     // The method returns a map
     //  shard_id => [ids that belong to the shard]
-    std::unordered_map<int32_t, std::vector<int64_t>> clusterIdsToShards(
-        std::vector<int64_t> ids) const;
+    std::unordered_map<PartitionID, std::vector<int64_t>> clusterIdsToShards(
+        GraphSpaceID space, std::vector<int64_t>& ids) const;
 
 private:
     ShardManager() = default;
 
 private:
-    std::unordered_map<int32_t, HostAddr> shardHostMap_;
+    // A map from space => host
+    std::unordered_map<GraphSpaceID, std::vector<HostAddr>> spaceHostMap_;
+
+    // A map from space/shard => host
+    std::unordered_map<
+        GraphSpaceID,
+        std::unordered_map<PartitionID, std::vector<HostAddr>>
+    > shardHostMap_;
+
+    // A reversed map from host => space/shard
+    std::unordered_map<
+        HostAddr,
+        std::unordered_map<GraphSpaceID, std::vector<PartitionID>>
+    > hostShardMap_;
 };
 
 }  // namespace meta

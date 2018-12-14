@@ -14,10 +14,15 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
         FutureIter first,
         FutureIter last,
         size_t n,
-        ResultEval eval) {
+        ResultEval&& eval) {
     using Result = SucceededResultList<FutureIter>;
 
     struct Context {
+        Context(size_t total, ResultEval&& e)
+            : eval(std::forward<ResultEval>(e))
+            , nTotal(total) {}
+
+        ResultEval eval;
         Result results;
         std::atomic<size_t> numCompleted = {0};
         folly::Promise<Result> promise;
@@ -34,11 +39,11 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
                 std::runtime_error("Not enough futures")));
     }
 
-    auto ctx = std::make_shared<Context>();
-    ctx->nTotal = total;
+    auto ctx = std::make_shared<Context>(
+        total, std::forward<ResultEval>(eval));
 
     // for each succeeded Future, add to the result list, until
-    // we have rquired number of futures, at which point we fulfil
+    // we have required number of futures, at which point we fulfil
     // the promise with the result list
     for (; first != last; ++first) {
         first->setCallback_([n, ctx, eval] (

@@ -18,38 +18,59 @@ const HostManager& HostManager::get() {
 }
 
 
-int32_t HostManager::numHosts() const {
-    return hosts_.size();
-}
-
-
-const std::vector<HostAddr>& HostManager::allHosts() const {
-    return hosts_;
-}
-
-
-HostAddr HostManager::host(int64_t id) const {
+size_t HostManager::numHosts(GraphSpaceID space) const {
     auto sm = ShardManager::get();
-    return sm.hostAddr(sm.shardId(id));
+    auto it = sm.spaceHostMap_.find(space);
+    if (it == sm.spaceHostMap_.end()) {
+        return 0;
+    } else {
+        return it->second.size();
+    }
 }
 
 
-std::unordered_map<HostAddr, std::vector<int64_t>>
-HostManager::clusterIdsToHosts(std::vector<int64_t> ids) const {
-    std::unordered_map<HostAddr, std::vector<int64_t>> clusters;
+const std::vector<HostAddr>& HostManager::allHosts(GraphSpaceID space) const {
+    static const std::vector<HostAddr> emptyHostList;
+
+    auto sm = ShardManager::get();
+    auto it = sm.spaceHostMap_.find(space);
+    if (it == sm.spaceHostMap_.end()) {
+        return emptyHostList;
+    } else {
+        return it->second;
+    }
+}
+
+
+HostAddr HostManager::hostForId(GraphSpaceID space,
+                                int64_t id,
+                                PartitionID& shard) const {
+    // TODO Now always return the first host. We need to return the leader
+    // when we know it
+    auto sm = ShardManager::get();
+    shard = sm.shardId(space, id);
+    auto hosts = sm.hostsForShard(space, shard);
+    CHECK_GT(hosts.size(), 0L);
+    return hosts.front();
+}
+
+
+std::unordered_map<HostAddr, std::unordered_map<PartitionID, std::vector<int64_t>>>
+HostManager::clusterIdsToHosts(GraphSpaceID space,
+                               std::vector<int64_t>& ids) const {
+    std::unordered_map<HostAddr, std::unordered_map<PartitionID, std::vector<int64_t>>>
+        clusters;
+
     auto sm = ShardManager::get();
     for (auto id : ids) {
-        auto host = sm.hostAddr(sm.shardId(id));
-        auto it = clusters.find(host);
-        if (it == clusters.end()) {
-            clusters.insert(
-                std::make_pair(host, std::vector<int64_t>(1, id)));
-        } else {
-            it->second.push_back(id);
-        }
+        PartitionID shard = sm.shardId(space, id);
+        auto hosts = sm.hostsForShard(space, shard);
+        CHECK_GT(hosts.size(), 0L);
+        // TODO We need to use the leader here
+        clusters[hosts.front()][shard].push_back(id);
     }
 
-    return std::move(clusters);
+    return clusters;
 }
 
 }  // namespace meta
