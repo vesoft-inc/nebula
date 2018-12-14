@@ -12,70 +12,34 @@
 #include "storage/RocksdbEngine.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 TEST(RocksdbEngineTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::string dataPath = folly::stringPrintf("%s/1,%s/2,%s/3",
-                                               rootPath.path(),
-                                               rootPath.path(),
-                                               rootPath.path());
-    std::vector<PartitionID> ids;
-    for (uint32_t id = 0; id < 9; id++) {
-        ids.push_back(id);
-    }
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, dataPath);
-    engine->registerParts(ids);
-    for (auto* db : engine->instances_) {
-        uint32_t num = 0;
-        for (auto it = engine->dbs_.begin(); it != engine->dbs_.end(); it++) {
-            if (it->second == db) {
-                num++;
-            }
-        }
-        // We hope each instance carry 3 parts exactly
-        EXPECT_EQ(num, 3);
-    }
-    LOG(INFO) << "Write some data to each partition, then read them one by one...";
-    for (auto id : ids) {
-        EXPECT_EQ(ResultCode::SUCCESSED,
-                  engine->put(id,
-                              folly::stringPrintf("%d_key", id),
-                              folly::stringPrintf("%d_val", id)));
-    }
-    for (auto id : ids) {
-        std::string val;
-        EXPECT_EQ(ResultCode::SUCCESSED, engine->get(id, folly::stringPrintf("%d_key", id), val));
-        EXPECT_EQ(val, folly::stringPrintf("%d_val", id));
-    }
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->put("key", "val"));
+    std::string val;
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", val));
+    EXPECT_EQ(val, "val");
 }
 
 TEST(RocksdbEngineTest, RangeTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::string dataPath = folly::stringPrintf("%s/1,%s/2,%s/3",
-                                               rootPath.path(),
-                                               rootPath.path(),
-                                               rootPath.path());
-    
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, dataPath);
-    engine->registerParts(std::vector<PartitionID>(1, 0));
-    LOG(INFO) << "Write data in batch and scan them...";
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
     std::vector<KV> data;
     for (int32_t i = 10; i < 20;  i++) {
         data.emplace_back(std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
                           folly::stringPrintf("val_%d", i));
     }
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->multiPut(0, std::move(data)));
-    
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->multiPut(std::move(data)));
     auto checkRange = [&](int32_t start, int32_t end,
                           int32_t expectedFrom, int32_t expectedTotal) {
         LOG(INFO) << "start " << start << ", end " << end
                   << ", expectedFrom " << expectedFrom << ", expectedTotal " << expectedTotal;
         std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
         std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
-        std::shared_ptr<StorageIter> iter;
-        EXPECT_EQ(ResultCode::SUCCESSED, engine->range(0, s, e, iter));
+        std::unique_ptr<StorageIter> iter;
+        EXPECT_EQ(ResultCode::SUCCESSED, engine->range(s, e, iter));
         int num = 0;
         while (iter->valid()) {
             num++;
@@ -98,13 +62,7 @@ TEST(RocksdbEngineTest, RangeTest) {
 
 TEST(RocksdbEngineTest, PrefixTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::string dataPath = folly::stringPrintf("%s/1,%s/2,%s/3",
-                                               rootPath.path(),
-                                               rootPath.path(),
-                                               rootPath.path());
-    
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, dataPath);
-    engine->registerParts(std::vector<PartitionID>(1, 0));
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
     LOG(INFO) << "Write data in batch and scan them...";
     std::vector<KV> data;
     for (int32_t i = 0; i < 10;  i++) {
@@ -119,14 +77,13 @@ TEST(RocksdbEngineTest, PrefixTest) {
         data.emplace_back(folly::stringPrintf("c_%d", i),
                           folly::stringPrintf("val_%d", i));
     }
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->multiPut(0, std::move(data)));
-    
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->multiPut(std::move(data)));
     auto checkPrefix = [&](const std::string& prefix,
                           int32_t expectedFrom, int32_t expectedTotal) {
         LOG(INFO) << "prefix " << prefix
                   << ", expectedFrom " << expectedFrom << ", expectedTotal " << expectedTotal;
-        std::shared_ptr<StorageIter> iter;
-        EXPECT_EQ(ResultCode::SUCCESSED, engine->prefix(0, prefix, iter));
+        std::unique_ptr<StorageIter> iter;
+        EXPECT_EQ(ResultCode::SUCCESSED, engine->prefix(prefix, iter));
         int num = 0;
         while (iter->valid()) {
             num++;
@@ -145,9 +102,7 @@ TEST(RocksdbEngineTest, PrefixTest) {
 }
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
-
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
@@ -155,5 +110,4 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
 
