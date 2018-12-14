@@ -8,22 +8,16 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
-#include "storage/Shard.h"
+#include "storage/Part.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
-TEST(ShardTest, SimpleTest) {
+TEST(PartTest, SimpleTest) {
     LOG(INFO) << "Simple test for shard class...";
-    Shard shard(1, 1, "");
-    EXPECT_EQ(ResultCode::SUCCESSED, shard.put("k1", "v1"));
-
-    std::string value;
-    EXPECT_EQ(ResultCode::SUCCESSED, shard.get("k1", value));
 }
 
-TEST(ShardTest, RocksdbTest) {
+TEST(PartTest, RocksdbTest) {
     fs::TempDir dataPath("/tmp/rocksdb_test.XXXXXX");
     rocksdb::Options options;
     options.create_if_missing = true;
@@ -57,9 +51,7 @@ TEST(ShardTest, RocksdbTest) {
 }
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
-
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
@@ -67,5 +59,4 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
 
