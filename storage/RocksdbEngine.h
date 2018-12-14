@@ -10,11 +10,9 @@
 #include <gtest/gtest_prod.h>
 #include <rocksdb/db.h>
 #include "base/Base.h"
-#include "storage/ResultCode.h"
 #include "storage/StorageEngine.h"
 
 namespace vesoft {
-namespace vgraph {
 namespace storage {
 
 class RocksdbRangeIter : public StorageIter {
@@ -88,47 +86,31 @@ private:
 class RocksdbEngine : public StorageEngine {
     FRIEND_TEST(RocksdbEngineTest, SimpleTest);
 public:
-    /**
-     * dataPath could be either one single path or a list of paths split by comma.
-     * */
-    RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath)
-        : StorageEngine(spaceId)
-        , dataPath_(dataPath) {}
+    RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath);
 
     ~RocksdbEngine();
 
-    void registerParts(const std::vector<PartitionID>& ids) override;
-
-    void cleanup() override;
- 
-    ResultCode get(PartitionID partId,
-                   const std::string& key,
+    ResultCode get(const std::string& key,
                    std::string& value) override;
 
-    ResultCode put(PartitionID partId,
-                   std::string key,
+    ResultCode put(std::string key,
                    std::string value) override;
 
-    ResultCode multiPut(PartitionID partId, std::vector<KV> keyValues) override;
+    ResultCode multiPut(std::vector<KV> keyValues) override;
 
-    ResultCode range(PartitionID partId,
-                     const std::string& start,
+    ResultCode range(const std::string& start,
                      const std::string& end,
-                     std::shared_ptr<StorageIter>& iter) override;
+                     std::unique_ptr<StorageIter>& iter) override;
 
-    ResultCode prefix(PartitionID partId,
-                      const std::string& prefix,
-                      std::shared_ptr<StorageIter>& iter) override;
+    ResultCode prefix(const std::string& prefix,
+                      std::unique_ptr<StorageIter>& iter) override;
 
 private:
-    GraphSpaceID spaceId_;
     std::string  dataPath_;
-    std::unordered_map<PartitionID, rocksdb::DB*> dbs_;
-    std::vector<rocksdb::DB*> instances_;
+    std::unique_ptr<rocksdb::DB> db_{nullptr};
 };
 
 }  // namespace storage
-}  // namespace vgraph
 }  // namespace vesoft
 #endif  // STORAGE_ROCKSDBENGINE_H_
 
