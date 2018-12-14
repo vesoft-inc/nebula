@@ -23,10 +23,10 @@ enum SupportedType {
     // Simple types
     BOOL = 1,
     INT = 2,
-    FLOAT = 3,
-    DOUBLE = 4,
-    STRING = 5,
-    VID = 6,
+    VID = 3,
+    FLOAT = 4,
+    DOUBLE = 5,
+    STRING = 6,
 
     // Date time
     TIMESTAMP = 21,
@@ -39,10 +39,10 @@ enum SupportedType {
     PATH = 41,
 
     // Container types
-    LIST = 101,
-    SET = 102,
-    MAP = 103,      // The key type is always a STRING
-    STRUCT = 104,
+//    LIST = 101,
+//    SET = 102,
+//    MAP = 103,      // The key type is always a STRING
+//    STRUCT = 104,
 } (cpp.enum_strict)
 
 
@@ -66,18 +66,106 @@ struct Schema {
 }
 
 
+enum PropOwner {
+    SOURCE = 1,
+    DEST = 2,
+    EDGE = 3,
+} (cpp.enum_strict)
+
+
+struct PropDef {
+    1: PropOwner owner,
+    2: i32 tagId,       // Only valid when owner is SOURCE or DEST
+    3: string name,     // Property name
+}
+
+
+enum StatType {
+    SUM = 1,
+    COUNT = 2,
+    AVG = 3,
+} (cpp.enum_strict)
+
+
+struct PropStat {
+    1: StatType stat,
+    2: PropDef prop,
+}
+
+
 struct QueryResponse {
     1: required ErrorCode error_code,
     2: required i32 latency_in_ms,      // Query latency from storage service
     3: optional Schema schema,
-    4: optional binary data,
+    4: optional binary data,            // Encoded data
+}
+
+
+struct ExecResponse {
+    1: required ErrorCode error_code,
+    2: required i32 latency_in_ms,      // Execution latency
+}
+
+
+struct ExecResponseList {
+    1: required list<ErrorCode> error_codes,
+    2: required i32 latency_in_ms,              // Execution latency
+}
+
+
+struct VertexProps {
+    1: i32 tagId,
+    2: binary props,
+}
+
+
+struct Vertex {
+    1: i64 id,
+    2: list<VertexProps> props,
+}
+
+
+struct Edge {
+    1: i64 src,
+    2: i64 dst,
+    3: i32 edgeType,
+    4: i64 ranking,
+    5: binary props,
 }
 
 
 service StorageService {
     QueryResponse getOutBound(1: list<i64> ids,
-                              2: list<i32> edgeTypes,
+                              2: i32 edgeType,
                               3: binary filter
-                              4: list<string> returnColumns)
+                              4: list<PropDef> returnColumns)
+    QueryResponse getInBound(1: list<i64> ids,
+                             2: i32 edgeType,
+                             3: binary filter
+                             4: list<PropDef> returnColumns)
+
+    QueryResponse outBoundStats(1: list<i64> ids,
+                                2: i32 edgeType,
+                                3: binary filter
+                                4: list<PropStat> returnColumns)
+    QueryResponse inBoundStats(1: list<i64> ids,
+                               2: i32 edgeType,
+                               3: binary filter
+                               4: list<PropStat> returnColumns)
+
+    // When returnColumns is empty, return all properties
+    QueryResponse getProps(1: list<i64> ids,
+                           2: list<PropDef> returnColumns)
+    QueryResponse getEdgeProps(1: i64 src,
+                               2: i64 dst,
+                               3: i32 edgeType,
+                               4: i64 ranking,
+                               5: list<PropDef> returnColumns)
+
+    ExecResponseList addVertices(1: list<Vertex> vertices);
+    ExecResponse addEdges(1: list<Edge> edges);
+
+    ExecResponseList updateVertices(1: list<Vertex> vertices);
+    ExecResponse updateEdges(1: list<Edge> edges);
 }
 
