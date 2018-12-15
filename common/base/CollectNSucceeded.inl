@@ -46,10 +46,10 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
     // we have required number of futures, at which point we fulfil
     // the promise with the result list
     for (; first != last; ++first) {
-        first->setCallback_([n, ctx, eval] (
+        first->setCallback_([n, ctx] (
                 folly::Try<FutureReturnType<FutureIter>>&& t) {
             if (!ctx->promise.isFulfilled()) {
-                if (!t.hasException() && eval(t.value())) {
+                if (!t.hasException() && ctx->eval(t.value())) {
                     ctx->results.emplace_back(std::move(t.value()));
                 }
                 if ((++ctx->numCompleted) == ctx->nTotal ||
