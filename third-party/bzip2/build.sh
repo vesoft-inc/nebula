@@ -21,7 +21,7 @@ echo
 
 cd $SOURCE_DIR
 
-if (CC=$VGRAPH_C_COMPILER   make -e $@); then
+if (CC=$NEBULA_C_COMPILER   make -e $@); then
     if [[ $SOURCE_DIR/libbz2.a -nt $INSTALL_PATH/lib/libbz2.a ]]; then
         if (make install PREFIX=$INSTALL_PATH); then
             cd $CURR_DIR

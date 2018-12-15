@@ -9,17 +9,17 @@
 #   CMAKE_C_COMPILER        -- Specify the compiler for C language
 #   CMAKE_CXX_COMPILER      -- Specify the compiler for C++ language
 #   FLEX_EXECUTABLE         -- Specify the full path of flex executable
-#   VGRAPH_GPERF_BIN_DIR    -- Specify the full path to the directory
+#   NEBULA_GPERF_BIN_DIR    -- Specify the full path to the directory
 #                              containing gperf binary
 #
-#   VGRAPH_KRB5_ROOT        -- Specify the root directory for KRB5
-#   VGRAPH_LIBUNWIND_ROOT   -- Specify the root directory for libunwind
-#   VGRAPH_OPENSSL_ROOT     -- Specify the root directory for openssl
-#   VGRAPH_BOOST_ROOT       -- Specify the root directory for boost
+#   NEBULA_KRB5_ROOT        -- Specify the root directory for KRB5
+#   NEBULA_LIBUNWIND_ROOT   -- Specify the root directory for libunwind
+#   NEBULA_OPENSSL_ROOT     -- Specify the root directory for openssl
+#   NEBULA_BOOST_ROOT       -- Specify the root directory for boost
 #
 cmake_minimum_required(VERSION 3.0.0)
 
-project("vGraph" C CXX)
+project("Nebula Graph" C CXX)
 
 set(CMAKE_SKIP_RPATH TRUE)
 
@@ -35,6 +35,10 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++")
 
+if (NOT THIRD_PARTY_JOBS)
+    set(THIRD_PARTY_JOBS 2)
+endif(NOT THIRD_PARTY_JOBS)
+
 # Possible values are Debug, Release, RelWithDebInfo, MinSizeRel
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
@@ -46,39 +50,39 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "_build")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "_build")
 
 # Set the project home dir
-set(VGRAPH_HOME ${CMAKE_CURRENT_SOURCE_DIR})
+set(NEBULA_HOME ${CMAKE_CURRENT_SOURCE_DIR})
 
 # To include customized FindXXX.cmake modules
-set(CMAKE_MODULE_PATH "${VGRAPH_HOME}/cmake" ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
 
-if(NOT ${VGRAPH_KRB5_ROOT} STREQUAL "")
-    message(STATUS "Specified VGRAPH_KRB5_ROOT: " ${VGRAPH_KRB5_ROOT})
-    list(APPEND CMAKE_INCLUDE_PATH ${VGRAPH_KRB5_ROOT}/include)
-    list(APPEND CMAKE_LIBRARY_PATH ${VGRAPH_KRB5_ROOT}/lib)
-    list(APPEND CMAKE_PROGRAM_PATH ${VGRAPH_KRB5_ROOT}/bin)
+if(NOT ${NEBULA_KRB5_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_KRB5_ROOT: " ${NEBULA_KRB5_ROOT})
+    list(APPEND CMAKE_INCLUDE_PATH ${NEBULA_KRB5_ROOT}/include)
+    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_KRB5_ROOT}/lib)
+    list(APPEND CMAKE_PROGRAM_PATH ${NEBULA_KRB5_ROOT}/bin)
 endif()
 
-if(NOT ${VGRAPH_LIBUNWIND_ROOT} STREQUAL "")
-    message(STATUS "Specified VGRAPH_LIBUNWIND_ROOT: " ${VGRAPH_LIBUNWIND_ROOT})
-    list(APPEND CMAKE_INCLUDE_PATH ${VGRAPH_LIBUNWIND_ROOT}/include)
-    list(APPEND CMAKE_LIBRARY_PATH ${VGRAPH_LIBUNWIND_ROOT}/lib)
+if(NOT ${NEBULA_LIBUNWIND_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_LIBUNWIND_ROOT: " ${NEBULA_LIBUNWIND_ROOT})
+    list(APPEND CMAKE_INCLUDE_PATH ${NEBULA_LIBUNWIND_ROOT}/include)
+    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_LIBUNWIND_ROOT}/lib)
 endif()
 
-if(NOT ${VGRAPH_OPENSSL_ROOT} STREQUAL "")
-    message(STATUS "Specified VGRAPH_OPENSSL_ROOT: " ${VGRAPH_OPENSSL_ROOT})
-    list(APPEND CMAKE_INCLUDE_PATH ${VGRAPH_OPENSSL_ROOT}/include)
-    list(APPEND CMAKE_LIBRARY_PATH ${VGRAPH_OPENSSL_ROOT}/lib)
+if(NOT ${NEBULA_OPENSSL_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_OPENSSL_ROOT: " ${NEBULA_OPENSSL_ROOT})
+    list(APPEND CMAKE_INCLUDE_PATH ${NEBULA_OPENSSL_ROOT}/include)
+    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_OPENSSL_ROOT}/lib)
 endif()
 
-if(NOT ${VGRAPH_BOOST_ROOT} STREQUAL "")
-    message(STATUS "Specified VGRAPH_BOOST_ROOT: " ${VGRAPH_BOOST_ROOT})
-    list(APPEND CMAKE_INCLUDE_PATH ${VGRAPH_BOOST_ROOT}/include)
-    list(APPEND CMAKE_LIBRARY_PATH ${VGRAPH_BOOST_ROOT}/lib)
+if(NOT ${NEBULA_BOOST_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_BOOST_ROOT: " ${NEBULA_BOOST_ROOT})
+    list(APPEND CMAKE_INCLUDE_PATH ${NEBULA_BOOST_ROOT}/include)
+    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_BOOST_ROOT}/lib)
 endif()
 
-if(NOT ${VGRAPH_GPERF_BIN_DIR} STREQUAL "")
-    message(STATUS "Specified VGRAPH_GPERF_BIN_DIR: " ${VGRAPH_GPERF_BIN_DIR})
-    list(APPEND CMAKE_PROGRAM_PATH ${VGRAPH_GPERF_BIN_DIR})
+if(NOT ${NEBULA_GPERF_BIN_DIR} STREQUAL "")
+    message(STATUS "Specified NEBULA_GPERF_BIN_DIR: " ${NEBULA_GPERF_BIN_DIR})
+    list(APPEND CMAKE_PROGRAM_PATH ${NEBULA_GPERF_BIN_DIR})
 endif()
 
 message(STATUS "CMAKE_INCLUDE_PATH: " ${CMAKE_INCLUDE_PATH})
@@ -98,53 +102,53 @@ find_package(Readline REQUIRED)
 add_compile_options(-Winvalid-pch)
 add_compile_options(-Wall)
 add_compile_options(-Werror)
-add_compile_options(-Wno-error=sign-compare)
+add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
 
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/bzip2/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/double-conversion/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/fatal/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/fbthrift/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/folly/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/gflags/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/glog/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/googletest/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/jemalloc/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/libevent/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/mstch/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/proxygen/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/rocksdb/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/snappy/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/wangle/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/zlib/_install/include)
-include_directories(SYSTEM ${VGRAPH_HOME}/third-party/zstd/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/bzip2/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/double-conversion/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/fatal/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/fbthrift/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/folly/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/gflags/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/glog/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/googletest/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/jemalloc/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/libevent/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/mstch/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/proxygen/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/rocksdb/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/snappy/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/wangle/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/zlib/_install/include)
+include_directories(SYSTEM ${NEBULA_HOME}/third-party/zstd/_install/include)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
 include_directories(SYSTEM ${KRB5_INCLUDE_DIRS})
 include_directories(SYSTEM ${FLEX_INCLUDE_DIRS})
 include_directories(SYSTEM ${Readline_INCLUDE_DIR})
-include_directories(AFTER common)
-include_directories(AFTER interface)
-include_directories(AFTER ${VGRAPH_HOME})
+include_directories(AFTER ${NEBULA_HOME}/src)
+include_directories(AFTER src/common)
+include_directories(AFTER src/interface)
 
 link_directories(
-    ${VGRAPH_HOME}/third-party/bzip2/_install/lib
-    ${VGRAPH_HOME}/third-party/double-conversion/_install/lib
-    ${VGRAPH_HOME}/third-party/fatal/_install/lib
-    ${VGRAPH_HOME}/third-party/fbthrift/_install/lib
-    ${VGRAPH_HOME}/third-party/folly/_install/lib
-    ${VGRAPH_HOME}/third-party/gflags/_install/lib
-    ${VGRAPH_HOME}/third-party/glog/_install/lib
-    ${VGRAPH_HOME}/third-party/googletest/_install/lib
-    ${VGRAPH_HOME}/third-party/jemalloc/_install/lib
-    ${VGRAPH_HOME}/third-party/libevent/_install/lib
-    ${VGRAPH_HOME}/third-party/mstch/_install/lib
-    ${VGRAPH_HOME}/third-party/proxygen/_install/lib
-    ${VGRAPH_HOME}/third-party/rocksdb/_install/lib64
-    ${VGRAPH_HOME}/third-party/snappy/_install/lib
-    ${VGRAPH_HOME}/third-party/wangle/_install/lib
-    ${VGRAPH_HOME}/third-party/zlib/_install/lib
-    ${VGRAPH_HOME}/third-party/zstd/_install/lib
+    ${NEBULA_HOME}/third-party/bzip2/_install/lib
+    ${NEBULA_HOME}/third-party/double-conversion/_install/lib
+    ${NEBULA_HOME}/third-party/fatal/_install/lib
+    ${NEBULA_HOME}/third-party/fbthrift/_install/lib
+    ${NEBULA_HOME}/third-party/folly/_install/lib
+    ${NEBULA_HOME}/third-party/gflags/_install/lib
+    ${NEBULA_HOME}/third-party/glog/_install/lib
+    ${NEBULA_HOME}/third-party/googletest/_install/lib
+    ${NEBULA_HOME}/third-party/jemalloc/_install/lib
+    ${NEBULA_HOME}/third-party/libevent/_install/lib
+    ${NEBULA_HOME}/third-party/mstch/_install/lib
+    ${NEBULA_HOME}/third-party/proxygen/_install/lib
+    ${NEBULA_HOME}/third-party/rocksdb/_install/lib64
+    ${NEBULA_HOME}/third-party/snappy/_install/lib
+    ${NEBULA_HOME}/third-party/wangle/_install/lib
+    ${NEBULA_HOME}/third-party/zlib/_install/lib
+    ${NEBULA_HOME}/third-party/zstd/_install/lib
     ${Boost_LIBRARY_DIRS}
     ${KRB5_LIBRARY_DIRS}
 )
@@ -163,22 +167,15 @@ set(THRIFT_LIBRARIES
     thrift-core
 )
 
-set(ROCKSDB_LIBRARIES ${VGRAPH_HOME}/third-party/rocksdb/_install/lib64/librocksdb.a)
+set(ROCKSDB_LIBRARIES ${NEBULA_HOME}/third-party/rocksdb/_install/lib64/librocksdb.a)
 
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
 
 add_subdirectory(third-party)
-add_subdirectory(interface)
-add_subdirectory(common)
-add_subdirectory(meta)
-add_subdirectory(dataman)
-add_subdirectory(client)
-add_subdirectory(vgraphd)
-add_subdirectory(console)
-add_subdirectory(raftex)
-add_subdirectory(storage)
-add_subdirectory(parser)
+add_subdirectory(src)
+add_subdirectory(etc)
+add_subdirectory(scripts)
 
 add_dependencies(common third-party)
 #add_dependencies(storage_engines common)
