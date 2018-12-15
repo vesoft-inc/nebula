@@ -37,26 +37,6 @@ cpp2::ErrorCode GraphDbClient::connect(const std::string& username,
         addr_,
         port_,
         FLAGS_conn_timeout_ms);
-    if (!socket) {
-        // Bad connection
-        LOG(ERROR) << "Failed to connect to " << addr_ << ":" << port_;
-        return cpp2::ErrorCode::E_FAIL_TO_CONNECT;
-    }
-
-    // Wait until the socket becomes connected
-    // TODO Obviously this is not the most efficient way. We need to
-    // change it to async implementation later
-    for (int i = 0; i < 4; i++) {
-        usleep(1000 * FLAGS_conn_timeout_ms / 4);
-        if (socket->good()) {
-            VLOG(2) << "Connected to " << addr_ << ":" << port_;
-            break;
-        }
-    }
-    if (!socket->good()) {
-        LOG(ERROR) << "Timed out when connecting to " << addr_ << ":" << port_;
-        return cpp2::ErrorCode::E_FAIL_TO_CONNECT;
-    }
 
     client_ = std::make_unique<cpp2::GraphDbServiceAsyncClient>(
         HeaderClientChannel::newChannel(socket));

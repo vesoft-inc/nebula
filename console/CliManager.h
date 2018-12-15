@@ -27,6 +27,14 @@ public:
 
     void loop();
 
+    bool readLine(std::string &line);
+
+    void updateHistory(const char *line);
+
+    void saveHistory();
+
+    void loadHistory();
+
 private:
     std::string addr_;
     uint16_t port_;

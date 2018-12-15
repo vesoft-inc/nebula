@@ -21,6 +21,26 @@ TEST(FileUtils, getExePath) {
 }
 
 
+TEST(FileUtils, dirname) {
+    ASSERT_EQ("/", FileUtils::dirname("/"));
+    ASSERT_EQ("/", FileUtils::dirname("/var"));
+    ASSERT_EQ("/", FileUtils::dirname("/var/"));
+    ASSERT_EQ("/var", FileUtils::dirname("/var/log"));
+    ASSERT_EQ("var", FileUtils::dirname("var/log"));
+    ASSERT_EQ(".", FileUtils::dirname("var"));
+    ASSERT_EQ(".", FileUtils::dirname("var/"));
+}
+
+
+TEST(FileUtils, basename) {
+    ASSERT_EQ("", FileUtils::basename("/"));
+    ASSERT_EQ("var", FileUtils::basename("/var"));
+    ASSERT_EQ("log", FileUtils::basename("/var/log"));
+    ASSERT_EQ("var", FileUtils::basename("var"));
+    ASSERT_EQ("var", FileUtils::basename("var/"));
+}
+
+
 TEST(FileUtils, joinPath) {
     EXPECT_EQ(std::string("./test.log"), FileUtils::joinPath("", "test.log"));
     EXPECT_EQ(std::string("/test.log"), FileUtils::joinPath("/", "test.log"));

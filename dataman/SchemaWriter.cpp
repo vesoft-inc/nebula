@@ -21,47 +21,23 @@ cpp2::Schema SchemaWriter::moveSchema() noexcept {
 }
 
 
-SchemaWriter& SchemaWriter::appendCol(const char* name,
-                                      cpp2::SupportedType type) noexcept {
-    return appendCol(std::string(name), type);
-}
-
-
-SchemaWriter& SchemaWriter::appendCol(const folly::StringPiece name,
-                                      cpp2::SupportedType type) noexcept {
-    return appendCol(name.toString(), type);
-}
-
-
-SchemaWriter& SchemaWriter::appendCol(std::string&& name,
+SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
                                       cpp2::SupportedType type) noexcept {
     cpp2::ValueType vt;
     vt.set_type(type);
 
-    return appendCol(std::move(name), std::move(vt));
+    return appendCol(name, std::move(vt));
 }
 
 
-SchemaWriter& SchemaWriter::appendCol(const char* name,
-                                      cpp2::ValueType&& type) noexcept {
-    return appendCol(std::string(name), std::move(type));
-}
-
-
-SchemaWriter& SchemaWriter::appendCol(const folly::StringPiece name,
-                                      cpp2::ValueType&& type) noexcept {
-    return appendCol(name.toString(), std::move(type));
-}
-
-
-SchemaWriter& SchemaWriter::appendCol(std::string&& name,
+SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
                                       cpp2::ValueType&& type) noexcept {
     using namespace folly::hash;
     uint64_t hash = SpookyHashV2::Hash64(name.data(), name.size(), 0);
     DCHECK(nameIndex_.find(hash) == nameIndex_.end());
 
     cpp2::ColumnDef col;
-    col.set_name(std::move(name));
+    col.set_name(name.toString());
     col.set_type(std::move(type));
 
     columns_.emplace_back(std::move(col));

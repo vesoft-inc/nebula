@@ -84,7 +84,7 @@ void CmdProcessor::calColumnWidths(
                     }
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldX |", widths[idx]);
+                            folly::stringPrintf(" %%%ldLX |", widths[idx]);
                     }
                     break;
                 }
@@ -100,7 +100,7 @@ void CmdProcessor::calColumnWidths(
                     GET_VALUE_WIDTH(double, double_precision, "%lf")
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldf |", widths[idx]);
+                            folly::stringPrintf(" %%%ldlf |", widths[idx]);
                     }
                     break;
                 }
@@ -209,13 +209,13 @@ void CmdProcessor::printResult(const cpp2::ExecutionResponse& resp) const {
 void CmdProcessor::printHeader(
         const cpp2::ExecutionResponse& resp,
         const std::vector<size_t>& widths) const {
-    size_t idx = 0;
     if (resp.get_column_names() == nullptr) {
         return;
     }
 
+    size_t idx = 0;
     for (auto& cname : (*resp.get_column_names())) {
-        std::string fmt = folly::stringPrintf(" %%%lds |", widths[idx]);
+        std::string fmt = folly::stringPrintf(" %%%lds |", widths[idx++]);
         std::cout << folly::stringPrintf(fmt.c_str(), cname.c_str());
     }
     std::cout << "\n";
@@ -338,6 +338,24 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
                       << resp.get_latency_in_ms() << "/"
                       << dur.elapsedInMSec() << " ms)\n";
         }
+    } else if (res == cpp2::ErrorCode::E_SYNTAX_ERROR) {
+        static const std::regex range("syntax error at 1.([0-9]+)-([0-9]+)");
+        static const std::regex single("syntax error at 1.([0-9]+)");
+        std::smatch result;
+        auto *msg = resp.get_error_msg();
+        auto verbose = *msg;
+        if (std::regex_search(*msg, result, range)) {
+            auto start = folly::to<size_t>(result[1].str());
+            auto end = folly::to<size_t>(result[2].str());
+            verbose = "syntax error near `" + std::string(&cmd[start-1], &cmd[end]) + "'";
+        } else if (std::regex_search(*msg, result, single)) {
+            auto start = folly::to<size_t>(result[1].str());
+            auto end = start + 8;
+            end = end > cmd.size() ? cmd.size() : end;
+            verbose = "syntax error near `" + std::string(&cmd[start-1], &cmd[end]) + "'";
+        }
+        std::cout << "[ERROR (" << static_cast<int32_t>(res)
+                  << ")]: " << verbose << "\n";
     } else {
         // TODO(sye) Need to print human-readable error strings
         auto msg = resp.get_error_msg();

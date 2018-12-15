@@ -58,6 +58,44 @@ target_link_libraries(
 )
 add_test(NAME configuration_test COMMAND configuration_test)
 
+add_executable(
+    status_test
+    StatusTest.cpp
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:base_obj>
+)
+target_link_libraries(
+    status_test
+    gtest
+    gtest_main
+    folly
+    glog
+    gflags
+    double-conversion
+    dl
+    -pthread
+)
+add_test(NAME status_test COMMAND status_test)
+
+add_executable(
+    status_or_test
+    StatusOrTest.cpp
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:base_obj>
+)
+target_link_libraries(
+    status_or_test
+    gtest
+    gtest_main
+    folly
+    glog
+    gflags
+    double-conversion
+    dl
+    -pthread
+)
+add_test(NAME status_or_test COMMAND status_or_test)
+
 add_executable(hash_bm HashBenchmark.cpp $<TARGET_OBJECTS:base_obj>)
 target_link_libraries(
     hash_bm

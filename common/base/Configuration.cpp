@@ -16,8 +16,8 @@ const Status Status::NO_PERM{kNoPermission, "No permission"};
 const Status Status::ILL_FORMAT{kIllFormat, "Illegal format"};
 const Status Status::WRONG_TYPE{kWrongType, "Wrong value type"};
 const Status Status::EMPTY_FILE{kEmptyFile, "File is empty"};
-const Status Status::ITEM_NOT_FOUND{kEmptyFile, "File is empty"};
-const Status Status::TYPE_NOT_MATCH{kEmptyFile, "File is empty"};
+const Status Status::ITEM_NOT_FOUND{kEmptyFile, "Item not found"};
+const Status Status::TYPE_NOT_MATCH{kEmptyFile, "Type not match"};
 const Status Status::UNKNOWN{kUnknown, "Unknown error"};
 
 Status::Status() : Status(kOk, "OK") {

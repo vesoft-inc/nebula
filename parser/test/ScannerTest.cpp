@@ -12,179 +12,230 @@
 #include "parser/VGraphParser.hpp"
 #include "parser/VGraphScanner.h"
 
+using namespace ::testing;
 // TODO(dutor) Check on the sematic value of tokens
 
 namespace vesoft {
 
+using semantic_type = vesoft::VGraphParser::semantic_type;
+static auto checkSemanticValue(const char *expected, semantic_type *sv) {
+    auto &actual = *sv->strval;
+    if (expected != actual) {
+        return AssertionFailure() << "Semantic value not match, "
+                                  << "expected: " << expected
+                                  << ", actual: " << actual;
+    }
+    return AssertionSuccess();
+}
+
+
+static auto checkSemanticValue(bool expected, semantic_type *sv) {
+    auto actual = sv->boolval;
+    if (expected != actual) {
+        return AssertionFailure() << "Semantic value not match, "
+                                  << "expected: " << expected
+                                  << ", actual: " << actual;
+    }
+    return AssertionSuccess();
+}
+
+
+template <typename T>
+static std::enable_if_t<std::is_integral<T>::value, AssertionResult>
+checkSemanticValue(T expected, semantic_type *sv) {
+    auto actual = static_cast<T>(sv->intval);
+    if (expected != actual) {
+        return AssertionFailure() << "Semantic value not match, "
+                                  << "expected: " << expected
+                                  << ", actual: " << actual;
+    }
+    return AssertionSuccess();
+}
+
+
+template <typename T>
+static std::enable_if_t<std::is_floating_point<T>::value, AssertionResult>
+checkSemanticValue(T expected, semantic_type *sv) {
+    auto actual = static_cast<T>(sv->doubleval);
+    if (expected != actual) {
+        return AssertionFailure() << "Semantic value not match, "
+                                  << "expected: " << expected
+                                  << ", actual: " << actual;
+    }
+    return AssertionSuccess();
+}
+
+
 TEST(Scanner, Basic) {
-    using TokenType = vesoft::VGraphParser::token::yytokentype;
-    VGraphScanner scanner;
+    using TokenType = vesoft::VGraphParser::token_type;
+    using Validator = std::function<::testing::AssertionResult()>;
     vesoft::VGraphParser::semantic_type yylval;
     vesoft::VGraphParser::location_type yyloc;
-    std::vector<std::pair<std::string, TokenType>> token_mappings = {
-        {" . ",             TokenType::DOT},
-        {" , ",             TokenType::COMMA},
-        {" : ",             TokenType::COLON},
-        {" ; ",             TokenType::SEMICOLON},
-        {" + ",             TokenType::ADD},
-        {" - ",             TokenType::SUB},
-        {" * ",             TokenType::MUL},
-        {" / ",             TokenType::DIV},
-        {" % ",             TokenType::MOD},
-        {" @ ",             TokenType::AT},
+    VGraphScanner scanner;
+    std::string stream;
 
-        {" < ",             TokenType::LT},
-        {" <= ",            TokenType::LE},
-        {" > ",             TokenType::GT},
-        {" >= ",            TokenType::GE},
-        {" == ",            TokenType::EQ},
-        {" != ",            TokenType::NE},
+#define CHECK_SEMANTIC_TYPE(STR, TYPE)                                      \
+    (stream += " ", stream += STR, [&] () {                                 \
+        auto actual = scanner.yylex(&yylval, &yyloc);                       \
+        if (actual != TYPE) {                                               \
+            return AssertionFailure() << "Token type not match for `"       \
+                                      << STR << "', expected: "             \
+                                      << static_cast<int>(TYPE)             \
+                                      << ", actual: "                       \
+                                      << static_cast<int>(actual);          \
+        } else {                                                            \
+            return AssertionSuccess();                                      \
+        }                                                                   \
+    })
 
-        {" || ",            TokenType::OR},
-        {" && ",            TokenType::AND},
-        {" | ",             TokenType::PIPE},
+#define CHECK_SEMANTIC_VALUE(STR, TYPE, value)                              \
+    (stream += " ", stream += STR, [&] () {                                 \
+        auto actual = scanner.yylex(&yylval, &yyloc);                       \
+        if (actual != TYPE) {                                               \
+            return AssertionFailure() << "Token type not match for `"       \
+                                      << STR << "', expected: "             \
+                                      << static_cast<int>(TYPE)             \
+                                      << ", actual: "                       \
+                                      << static_cast<int>(actual);          \
+        } else {                                                            \
+            return checkSemanticValue(value, &yylval);                      \
+        }                                                                   \
+    })
 
-        {" = ",             TokenType::ASSIGN},
+    std::vector<Validator> validators = {
+        CHECK_SEMANTIC_TYPE(".", TokenType::DOT),
+        CHECK_SEMANTIC_TYPE(",", TokenType::COMMA),
+        CHECK_SEMANTIC_TYPE(":", TokenType::COLON),
+        CHECK_SEMANTIC_TYPE(";", TokenType::SEMICOLON),
+        CHECK_SEMANTIC_TYPE("+", TokenType::ADD),
+        CHECK_SEMANTIC_TYPE("-", TokenType::SUB),
+        CHECK_SEMANTIC_TYPE("*", TokenType::MUL),
+        CHECK_SEMANTIC_TYPE("/", TokenType::DIV),
+        CHECK_SEMANTIC_TYPE("%", TokenType::MOD),
+        CHECK_SEMANTIC_TYPE("@", TokenType::AT),
 
-        {" ( ",             TokenType::L_PAREN},
-        {" ) ",             TokenType::R_PAREN},
-        {" [ ",             TokenType::L_BRACKET},
-        {" ] ",             TokenType::R_BRACKET},
-        {" { ",             TokenType::L_BRACE},
-        {" } ",             TokenType::R_BRACE},
+        CHECK_SEMANTIC_TYPE("<", TokenType::LT),
+        CHECK_SEMANTIC_TYPE("<=", TokenType::LE),
+        CHECK_SEMANTIC_TYPE(">", TokenType::GT),
+        CHECK_SEMANTIC_TYPE(">=", TokenType::GE),
+        CHECK_SEMANTIC_TYPE("==", TokenType::EQ),
+        CHECK_SEMANTIC_TYPE("!=", TokenType::NE),
 
-        {" <- ",             TokenType::L_ARROW},
-        {" -> ",             TokenType::R_ARROW},
+        CHECK_SEMANTIC_TYPE("||", TokenType::OR),
+        CHECK_SEMANTIC_TYPE("&&", TokenType::AND),
+        CHECK_SEMANTIC_TYPE("|", TokenType::PIPE),
+        CHECK_SEMANTIC_TYPE("=", TokenType::ASSIGN),
+        CHECK_SEMANTIC_TYPE("(", TokenType::L_PAREN),
+        CHECK_SEMANTIC_TYPE(")", TokenType::R_PAREN),
+        CHECK_SEMANTIC_TYPE("[", TokenType::L_BRACKET),
+        CHECK_SEMANTIC_TYPE("]", TokenType::R_BRACKET),
+        CHECK_SEMANTIC_TYPE("{", TokenType::L_BRACE),
+        CHECK_SEMANTIC_TYPE("}", TokenType::R_BRACE),
 
-        {" GO ",            TokenType::KW_GO},
-        {" go ",            TokenType::KW_GO},
-        {" AS ",            TokenType::KW_AS},
-        {" as ",            TokenType::KW_AS},
-        {" TO ",            TokenType::KW_TO},
-        {" to ",            TokenType::KW_TO},
-        {" OR ",            TokenType::KW_OR},
-        {" or ",            TokenType::KW_OR},
-        {" USE ",           TokenType::KW_USE},
-        {" use ",           TokenType::KW_USE},
-        {" SET ",           TokenType::KW_SET},
-        {" set ",           TokenType::KW_SET},
-        {" FROM ",          TokenType::KW_FROM},
-        {" from ",          TokenType::KW_FROM},
-        {" WHERE ",         TokenType::KW_WHERE},
-        {" where ",         TokenType::KW_WHERE},
-        {" MATCH ",         TokenType::KW_MATCH},
-        {" match ",         TokenType::KW_MATCH},
-        {" INSERT ",        TokenType::KW_INSERT},
-        {" insert ",        TokenType::KW_INSERT},
-        {" VALUES ",        TokenType::KW_VALUES},
-        {" values ",        TokenType::KW_VALUES},
-        {" RETURN ",        TokenType::KW_RETURN},
-        {" return ",        TokenType::KW_RETURN},
-        {" DEFINE ",        TokenType::KW_DEFINE},
-        {" define ",        TokenType::KW_DEFINE},
-        {" VERTEX ",        TokenType::KW_VERTEX},
-        {" vertex ",        TokenType::KW_VERTEX},
-        {" EDGE ",          TokenType::KW_EDGE},
-        {" edge ",          TokenType::KW_EDGE},
-        {" UPDATE ",        TokenType::KW_UPDATE},
-        {" update ",        TokenType::KW_UPDATE},
-        {" ALTER ",         TokenType::KW_ALTER},
-        {" alter ",         TokenType::KW_ALTER},
-        {" STEPS ",         TokenType::KW_STEPS},
-        {" steps ",         TokenType::KW_STEPS},
-        {" OVER ",          TokenType::KW_OVER},
-        {" over ",          TokenType::KW_OVER},
-        {" UPTO ",          TokenType::KW_UPTO},
-        {" upto ",          TokenType::KW_UPTO},
-        {" REVERSELY ",     TokenType::KW_REVERSELY},
-        {" reversely ",     TokenType::KW_REVERSELY},
-        {" NAMESPACE ",     TokenType::KW_NAMESPACE},
-        {" namespace ",     TokenType::KW_NAMESPACE},
-        {" TTL ",           TokenType::KW_TTL},
-        {" ttl ",           TokenType::KW_TTL},
-        {" INT8 ",          TokenType::KW_INT8},
-        {" int8 ",          TokenType::KW_INT8},
-        {" INT16 ",         TokenType::KW_INT16},
-        {" int16 ",         TokenType::KW_INT16},
-        {" INT32 ",         TokenType::KW_INT32},
-        {" int32 ",         TokenType::KW_INT32},
-        {" INT64 ",         TokenType::KW_INT64},
-        {" int64 ",         TokenType::KW_INT64},
-        {" UINT8 ",         TokenType::KW_UINT8},
-        {" uint8 ",         TokenType::KW_UINT8},
-        {" UINT16 ",        TokenType::KW_UINT16},
-        {" uint16 ",        TokenType::KW_UINT16},
-        {" UINT32 ",        TokenType::KW_UINT32},
-        {" uint32 ",        TokenType::KW_UINT32},
-        {" UINT64 ",        TokenType::KW_UINT64},
-        {" uint64 ",        TokenType::KW_UINT64},
-        {" BIGINT ",        TokenType::KW_BIGINT},
-        {" bigint ",        TokenType::KW_BIGINT},
-        {" DOUBLE ",        TokenType::KW_DOUBLE},
-        {" double ",        TokenType::KW_DOUBLE},
-        {" STRING ",        TokenType::KW_STRING},
-        {" string ",        TokenType::KW_STRING},
-        {" BOOL ",          TokenType::KW_BOOL},
-        {" bool ",          TokenType::KW_BOOL},
-        {" TAG ",           TokenType::KW_TAG},
-        {" tag ",           TokenType::KW_TAG},
-        {" UNION ",         TokenType::KW_UNION},
-        {" union ",         TokenType::KW_UNION},
-        {" INTERSECT ",     TokenType::KW_INTERSECT},
-        {" intersect ",     TokenType::KW_INTERSECT},
-        {" MINUS ",         TokenType::KW_MINUS},
-        {" minus ",         TokenType::KW_MINUS},
+        CHECK_SEMANTIC_TYPE("<-", TokenType::L_ARROW),
+        CHECK_SEMANTIC_TYPE("->", TokenType::R_ARROW),
 
-        {" v ",             TokenType::SYMBOL},
-        {" v1 ",            TokenType::SYMBOL},
-        {" var ",           TokenType::SYMBOL},
-        {" _var ",          TokenType::SYMBOL},
-        {" var123 ",        TokenType::SYMBOL},
-        {" _var123 ",       TokenType::SYMBOL},
+        CHECK_SEMANTIC_TYPE("$_", TokenType::INPUT_REF),
+        CHECK_SEMANTIC_TYPE("$$", TokenType::DST_REF),
 
-        {" 123 ",           TokenType::INTEGER},
-        {" 0x123 ",         TokenType::INTEGER},
-        {" 0Xdeadbeef ",    TokenType::INTEGER},
-        {" 0123 ",          TokenType::INTEGER},
-        {" 123u ",          TokenType::UINTEGER},
-        {" 123UL ",         TokenType::UINTEGER},
+        CHECK_SEMANTIC_TYPE("GO", TokenType::KW_GO),
+        CHECK_SEMANTIC_TYPE("go", TokenType::KW_GO),
+        CHECK_SEMANTIC_TYPE("AS", TokenType::KW_AS),
+        CHECK_SEMANTIC_TYPE("as", TokenType::KW_AS),
+        CHECK_SEMANTIC_TYPE("TO", TokenType::KW_TO),
+        CHECK_SEMANTIC_TYPE("to", TokenType::KW_TO),
+        CHECK_SEMANTIC_TYPE("USE", TokenType::KW_USE),
+        CHECK_SEMANTIC_TYPE("use", TokenType::KW_USE),
+        CHECK_SEMANTIC_TYPE("SET", TokenType::KW_SET),
+        CHECK_SEMANTIC_TYPE("set", TokenType::KW_SET),
+        CHECK_SEMANTIC_TYPE("FROM", TokenType::KW_FROM),
+        CHECK_SEMANTIC_TYPE("from", TokenType::KW_FROM),
+        CHECK_SEMANTIC_TYPE("WHERE", TokenType::KW_WHERE),
+        CHECK_SEMANTIC_TYPE("where", TokenType::KW_WHERE),
+        CHECK_SEMANTIC_TYPE("MATCH", TokenType::KW_MATCH),
+        CHECK_SEMANTIC_TYPE("match", TokenType::KW_MATCH),
+        CHECK_SEMANTIC_TYPE("INSERT", TokenType::KW_INSERT),
+        CHECK_SEMANTIC_TYPE("insert", TokenType::KW_INSERT),
+        CHECK_SEMANTIC_TYPE("VALUES", TokenType::KW_VALUES),
+        CHECK_SEMANTIC_TYPE("values", TokenType::KW_VALUES),
+        CHECK_SEMANTIC_TYPE("YIELD", TokenType::KW_YIELD),
+        CHECK_SEMANTIC_TYPE("yield", TokenType::KW_YIELD),
+        CHECK_SEMANTIC_TYPE("RETURN", TokenType::KW_RETURN),
+        CHECK_SEMANTIC_TYPE("return", TokenType::KW_RETURN),
+        CHECK_SEMANTIC_TYPE("DEFINE", TokenType::KW_DEFINE),
+        CHECK_SEMANTIC_TYPE("define", TokenType::KW_DEFINE),
+        CHECK_SEMANTIC_TYPE("VERTEX", TokenType::KW_VERTEX),
+        CHECK_SEMANTIC_TYPE("vertex", TokenType::KW_VERTEX),
+        CHECK_SEMANTIC_TYPE("EDGE", TokenType::KW_EDGE),
+        CHECK_SEMANTIC_TYPE("edge", TokenType::KW_EDGE),
+        CHECK_SEMANTIC_TYPE("UPDATE", TokenType::KW_UPDATE),
+        CHECK_SEMANTIC_TYPE("update", TokenType::KW_UPDATE),
+        CHECK_SEMANTIC_TYPE("ALTER", TokenType::KW_ALTER),
+        CHECK_SEMANTIC_TYPE("alter", TokenType::KW_ALTER),
+        CHECK_SEMANTIC_TYPE("STEPS", TokenType::KW_STEPS),
+        CHECK_SEMANTIC_TYPE("steps", TokenType::KW_STEPS),
+        CHECK_SEMANTIC_TYPE("OVER", TokenType::KW_OVER),
+        CHECK_SEMANTIC_TYPE("over", TokenType::KW_OVER),
+        CHECK_SEMANTIC_TYPE("UPTO", TokenType::KW_UPTO),
+        CHECK_SEMANTIC_TYPE("upto", TokenType::KW_UPTO),
+        CHECK_SEMANTIC_TYPE("REVERSELY", TokenType::KW_REVERSELY),
+        CHECK_SEMANTIC_TYPE("reversely", TokenType::KW_REVERSELY),
+        CHECK_SEMANTIC_TYPE("SPACE", TokenType::KW_SPACE),
+        CHECK_SEMANTIC_TYPE("space", TokenType::KW_SPACE),
+        CHECK_SEMANTIC_TYPE("TTL", TokenType::KW_TTL),
+        CHECK_SEMANTIC_TYPE("ttl", TokenType::KW_TTL),
+        CHECK_SEMANTIC_TYPE("BIGINT", TokenType::KW_BIGINT),
+        CHECK_SEMANTIC_TYPE("bigint", TokenType::KW_BIGINT),
+        CHECK_SEMANTIC_TYPE("DOUBLE", TokenType::KW_DOUBLE),
+        CHECK_SEMANTIC_TYPE("double", TokenType::KW_DOUBLE),
+        CHECK_SEMANTIC_TYPE("STRING", TokenType::KW_STRING),
+        CHECK_SEMANTIC_TYPE("string", TokenType::KW_STRING),
+        CHECK_SEMANTIC_TYPE("BOOL", TokenType::KW_BOOL),
+        CHECK_SEMANTIC_TYPE("bool", TokenType::KW_BOOL),
+        CHECK_SEMANTIC_TYPE("TAG", TokenType::KW_TAG),
+        CHECK_SEMANTIC_TYPE("tag", TokenType::KW_TAG),
+        CHECK_SEMANTIC_TYPE("UNION", TokenType::KW_UNION),
+        CHECK_SEMANTIC_TYPE("union", TokenType::KW_UNION),
+        CHECK_SEMANTIC_TYPE("INTERSECT", TokenType::KW_INTERSECT),
+        CHECK_SEMANTIC_TYPE("intersect", TokenType::KW_INTERSECT),
+        CHECK_SEMANTIC_TYPE("MINUS", TokenType::KW_MINUS),
+        CHECK_SEMANTIC_TYPE("minus", TokenType::KW_MINUS),
 
-        {" .456 ",          TokenType::DOUBLE},
-        {" 123.",           TokenType::DOUBLE},
-        {" 123.456 ",       TokenType::DOUBLE},
+        CHECK_SEMANTIC_VALUE("TRUE", TokenType::BOOL, true),
+        CHECK_SEMANTIC_VALUE("true", TokenType::BOOL, true),
+        CHECK_SEMANTIC_VALUE("FALSE", TokenType::BOOL, false),
+        CHECK_SEMANTIC_VALUE("false", TokenType::BOOL, false),
 
-        {" $1 ",            TokenType::COL_REF_ID},
-        {" $123 ",            TokenType::COL_REF_ID},
+        CHECK_SEMANTIC_VALUE("$var", TokenType::VARIABLE, "var"),
+        CHECK_SEMANTIC_VALUE("$var123", TokenType::VARIABLE, "var123"),
 
-        {" $_ ",            TokenType::VARIABLE},
-        {" $var ",            TokenType::VARIABLE},
+        CHECK_SEMANTIC_VALUE("label", TokenType::LABEL, "label"),
+        CHECK_SEMANTIC_VALUE("label123", TokenType::LABEL, "label123"),
 
-        {"\"Hello\"",       TokenType::STRING},     // "Hello"   ==> Hello
-        {"\"He\\nllo\"",    TokenType::STRING},     // "He\nllo" ==> He
-                                                    //               llo
-        {"\"He\\\nllo\"",    TokenType::STRING},    // "He\nllo" ==> He
-                                                    //               llo
-        {"\"Hell\\o\"",     TokenType::STRING},     // "Hello"   ==> Hello
-        {"\"Hello\\\\\"",   TokenType::STRING},     // "Hello\\" ==> Hello\     //
-        {"\"\\110ello\"",   TokenType::STRING},     // "Hello"   ==> Hello
-        {"\"\\\"Hello\\\"\"",   TokenType::STRING}, // "\"Hello\""   ==> "Hello"
+        CHECK_SEMANTIC_VALUE("123", TokenType::INTEGER, 123),
+        CHECK_SEMANTIC_VALUE("0x123", TokenType::INTEGER, 0x123),
+        CHECK_SEMANTIC_VALUE("0xdeadbeef", TokenType::INTEGER, 0xdeadbeef),
+        CHECK_SEMANTIC_VALUE("0123", TokenType::INTEGER, 0123),
+        CHECK_SEMANTIC_VALUE("123.", TokenType::DOUBLE, 123.),
+        CHECK_SEMANTIC_VALUE(".123", TokenType::DOUBLE, 0.123),
+        CHECK_SEMANTIC_VALUE("123.456", TokenType::DOUBLE, 123.456),
+
+        CHECK_SEMANTIC_VALUE("\"Hello\"", TokenType::STRING, "Hello"),
+        CHECK_SEMANTIC_VALUE("\"Hello\\\\\"", TokenType::STRING, "Hello\\"),
+        CHECK_SEMANTIC_VALUE("\"Hell\\o\"", TokenType::STRING, "Hello"),
+        CHECK_SEMANTIC_VALUE("\"He\\nllo\"", TokenType::STRING, "He\nllo"),
+        CHECK_SEMANTIC_VALUE("\"He\\\nllo\"", TokenType::STRING, "He\nllo"),
+        CHECK_SEMANTIC_VALUE("\"\\\"Hello\\\"\"", TokenType::STRING, "\"Hello\""),
+        CHECK_SEMANTIC_VALUE("\"\\110ello\"", TokenType::STRING, "Hello"),
     };
+#undef CHECK_SEMANTIC_TYPE
+#undef CHECK_SEMANTIC_VALUE
 
-    std::string token_stream;
-    for (auto &pair : token_mappings) {
-        token_stream += pair.first;
-    }
-
-    std::istringstream is(token_stream);
-
+    std::istringstream is(stream);
     scanner.switch_streams(&is, nullptr);
 
-    for (auto &pair : token_mappings) {
-        auto &token = pair.first;
-        auto expected_type = static_cast<int>(pair.second);
-        auto actual_type = scanner.yylex(&yylval, &yyloc);
-
-        ASSERT_EQ(expected_type, actual_type) << "Lex error for `" << token <<"'";
+    for (auto &item : validators) {
+        ASSERT_TRUE(item());
     }
 }
 

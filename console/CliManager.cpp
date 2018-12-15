@@ -5,12 +5,10 @@
  */
 
 #include "base/Base.h"
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "console/CliManager.h"
 #include "client/cpp/GraphDbClient.h"
-
-DEFINE_string(prompt, "vGraph >",
-              "Default prompt for the command line interface");
-
 
 namespace vesoft {
 namespace vgraph {
@@ -82,21 +80,114 @@ void CliManager::batch(const std::string& filename) {
 
 
 void CliManager::loop() {
-    char cmd[kMaxCommandLineLen + 1];
-
+    // TODO(dutor) Detect if `stdin' is being attached to a TTY
+    std::string cmd;
+    loadHistory();
     while (true) {
-        // Print out prompt
-        std::cout << FLAGS_prompt << " ";
-        std::cin.getline(cmd, kMaxCommandLineLen);
-        cmd[kMaxCommandLineLen] = '\0';
-
-        auto trimmedCmd = folly::trimWhitespace(cmd);
-        if (!trimmedCmd.empty() && !cmdProcessor_->process(trimmedCmd)) {
+        if (!readLine(cmd)) {
+            break;
+        }
+        if (cmd.empty()) {
+            continue;
+        }
+        if (!cmdProcessor_->process(cmd)) {
             break;
         }
     }
+    saveHistory();
+}
 
-    std::cout << "\nBye!\n\n";
+
+bool CliManager::readLine(std::string &line) {
+    auto ok = true;
+    char prompt[256];
+    static auto color = 0u;
+    ::snprintf(prompt, sizeof(prompt), "\033[1;%umnebula> \033[0m", color++ % 6 + 31);
+    auto *input = ::readline(prompt);
+
+    do {
+        // EOF
+        if (input == nullptr) {
+            fprintf(stdout, "\n");
+            ok = false;
+            break;
+        }
+        // Empty line
+        if (input[0] == '\0') {
+            line.clear();
+            break;
+        }
+        line = folly::trimWhitespace(input).str();
+        if (!line.empty()) {
+            // Update command history
+            updateHistory(input);
+        }
+    } while (false);
+
+    ::free(input);
+
+    return ok;
+}
+
+
+void CliManager::updateHistory(const char *line) {
+    auto **hists = ::history_list();
+    auto i = 0;
+    // Search in history
+    for (; i < ::history_length; i++) {
+        auto *hist = hists[i];
+        if (::strcmp(line, hist->line) == 0) {
+            break;
+        }
+    }
+    // New command
+    if (i == ::history_length) {
+        ::add_history(line);
+        return;
+    }
+    // Found in history, make it lastest
+    auto *hist = hists[i];
+    for (; i < ::history_length - 1; i++) {
+        hists[i] = hists[i + 1];
+    }
+    hists[i] = hist;
+}
+
+
+void CliManager::saveHistory() {
+    std::string histfile;
+    histfile += ::getenv("HOME");
+    histfile += "/.nebula_history";
+    auto *file = ::fopen(histfile.c_str(), "w+");
+    if (file == nullptr) {
+        return;     // fail silently
+    }
+    auto **hists = ::history_list();
+    for (auto i = 0; i < ::history_length; i++) {
+        fprintf(file, "%s\n", hists[i]->line);
+    }
+    ::fflush(file);
+    ::fclose(file);
+}
+
+
+void CliManager::loadHistory() {
+    std::string histfile;
+    histfile += ::getenv("HOME");
+    histfile += "/.nebula_history";
+    auto *file = ::fopen(histfile.c_str(), "r");
+    if (file == nullptr) {
+        return;     // fail silently
+    }
+    char *line = nullptr;
+    size_t size = 0;
+    ssize_t read = 0;
+    while ((read = ::getline(&line, &size, file)) != -1) {
+        line[read - 1] = '\0';  // remove the trailing newline
+        updateHistory(line);
+    }
+    ::free(line);
+    ::fclose(file);
 }
 
 }  // namespace vgraph
