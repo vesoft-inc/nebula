@@ -1,0 +1,75 @@
+/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+ *
+ * This source code is licensed under Apache 2.0 License
+ *  (found in the LICENSE.Apache file in the root directory)
+ */
+
+#include "base/Base.h"
+#include "vgraphd/Executor.h"
+#include "parser/TraverseSentences.h"
+#include "parser/MutateSentences.h"
+#include "parser/MaintainSentences.h"
+#include "vgraphd/GoExecutor.h"
+#include "vgraphd/UseExecutor.h"
+#include "vgraphd/PipeExecutor.h"
+#include "vgraphd/DefineTagExecutor.h"
+#include "vgraphd/DefineEdgeExecutor.h"
+#include "vgraphd/AlterTagExecutor.h"
+#include "vgraphd/AlterEdgeExecutor.h"
+#include "vgraphd/DescribeTagExecutor.h"
+#include "vgraphd/DescribeEdgeExecutor.h"
+#include "vgraphd/InsertVertexExecutor.h"
+#include "vgraphd/InsertEdgeExecutor.h"
+
+namespace vesoft {
+namespace vgraph {
+
+std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
+    auto kind = sentence->kind();
+    std::unique_ptr<Executor> executor;
+    switch (kind) {
+        case Sentence::Kind::kGo:
+            executor = std::make_unique<GoExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kUse:
+            executor = std::make_unique<UseExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kPipe:
+            executor = std::make_unique<PipeExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDefineTag:
+            executor = std::make_unique<DefineTagExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDefineEdge:
+            executor = std::make_unique<DefineEdgeExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAlterTag:
+            executor = std::make_unique<AlterTagExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAlterEdge:
+            executor = std::make_unique<AlterEdgeExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDescribeTag:
+            executor = std::make_unique<DescribeTagExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDescribeEdge:
+            executor = std::make_unique<DescribeEdgeExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kInsertVertex:
+            executor = std::make_unique<InsertVertexExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kInsertEdge:
+            executor = std::make_unique<InsertEdgeExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kUnknown:
+            LOG(FATAL) << "Sentence kind unknown";
+            break;
+        default:
+            LOG(FATAL) << "Sentence kind illegal: " << kind;
+            break;
+    }
+    return executor;
+}
+
+}   // namespace vgraph
+}   // namespace vesoft

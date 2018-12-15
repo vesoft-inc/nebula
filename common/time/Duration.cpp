@@ -5,7 +5,8 @@
  */
 
 #include "base/Base.h"
-#include "Duration.h"
+#include "time/Duration.h"
+#include "thread/NamedThread.h"
 
 namespace vesoft {
 namespace time {
@@ -40,7 +41,7 @@ uint64_t calibrateTicksPerUSec() {
 
 volatile std::atomic<uint64_t> ticksPerUSec{
     []() -> uint64_t {
-        std::thread t(
+        thread::NamedThread t("tick-tock",
             []() {
                 while (true) {
                     sleep(3);

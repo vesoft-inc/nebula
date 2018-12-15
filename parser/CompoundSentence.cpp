@@ -5,11 +5,11 @@
  */
 
 #include "base/Base.h"
-#include "parser/Statement.h"
+#include "parser/CompoundSentence.h"
 
 namespace vesoft {
 
-std::string Statement::toString() const {
+std::string CompoundSentence::toString() const {
     std::string buf;
     buf.reserve(1024);
     auto i = 0UL;

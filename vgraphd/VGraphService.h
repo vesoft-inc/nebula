@@ -4,17 +4,22 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef SERVER_GRAPHDBSERVICEHANDLER_H_
-#define SERVER_GRAPHDBSERVICEHANDLER_H_
+#ifndef VGRAPHD_VGRAPHSERVICE_H_
+#define VGRAPHD_VGRAPHSERVICE_H_
 
 #include "base/Base.h"
 #include "interface/gen-cpp2/GraphDbService.h"
+#include "vgraphd/SessionManager.h"
+#include "vgraphd/ExecutionEngine.h"
+#include "vgraphd/Authenticator.h"
 
 namespace vesoft {
 namespace vgraph {
 
-class GraphDbServiceHandler final : public cpp2::GraphDbServiceSvIf {
+class VGraphService final : public cpp2::GraphDbServiceSvIf {
 public:
+    VGraphService();
+    ~VGraphService();
     folly::Future<cpp2::AuthResponse> future_authenticate(
         const std::string& username,
         const std::string& password) override;
@@ -28,8 +33,11 @@ public:
     const char* getErrorStr(cpp2::ErrorCode result);
 
 private:
+    std::unique_ptr<SessionManager>             sessionManager_;
+    std::unique_ptr<ExecutionEngine>            executionEngine_;
+    std::unique_ptr<Authenticator>              authenticator_;
 };
 
 }  // namespace vgraph
 }  // namespace vesoft
-#endif  // SERVER_GRAPHDBSERVICEHANDLER_H_
+#endif  // VGRAPHD_VGRAPHSERVICE_H_

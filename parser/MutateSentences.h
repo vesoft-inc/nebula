@@ -20,6 +20,14 @@ public:
 
     std::string toString() const;
 
+    std::vector<std::string*> properties() const {
+        std::vector<std::string*> result;
+        result.resize(properties_.size());
+        auto get = [] (const auto &ptr) { return ptr.get(); };
+        std::transform(properties_.begin(), properties_.end(), result.begin(), get);
+        return result;
+    }
+
 private:
     std::vector<std::unique_ptr<std::string>>   properties_;
 };
@@ -31,6 +39,14 @@ public:
     }
 
     std::string toString() const;
+
+    std::vector<Expression*> values() const {
+        std::vector<Expression*> result;
+        result.resize(values_.size());
+        auto get = [] (const auto &ptr) { return ptr.get(); };
+        std::transform(values_.begin(), values_.end(), result.begin(), get);
+        return result;
+    }
 
 private:
     std::vector<std::unique_ptr<Expression>>    values_;
@@ -45,6 +61,27 @@ public:
         properties_.reset(props);
         values_.reset(values);
         overwritable_ = overwritable;
+        kind_ = Kind::kInsertVertex;
+    }
+
+    bool overwritable() const {
+        return overwritable_;
+    }
+
+    int64_t id() const {
+        return id_;
+    }
+
+    std::string* vertex() const {
+        return vertex_.get();
+    }
+
+    std::vector<std::string*> properties() const {
+        return properties_->properties();
+    }
+
+    std::vector<Expression*> values() const {
+        return values_->values();
     }
 
     std::string toString() const override;
@@ -59,32 +96,63 @@ private:
 
 class InsertEdgeSentence final : public Sentence {
 public:
+    InsertEdgeSentence() {
+        kind_ = Kind::kInsertEdge;
+    }
     void setOverwrite(bool overwritable) {
         overwritable_ = overwritable;
+    }
+
+    bool overwritable() const {
+        return overwritable_;
     }
 
     void setSrcId(int64_t srcid) {
         srcid_ = srcid;
     }
 
+    int64_t srcid() const {
+        return srcid_;
+    }
+
     void setDstId(int64_t dstid) {
         dstid_ = dstid;
+    }
+
+    int64_t dstid() const {
+        return dstid_;
     }
 
     void setRank(int64_t rank) {
         rank_ = rank;
     }
 
+    int64_t rank() const {
+        return rank_;
+    }
+
     void setEdge(std::string *edge) {
         edge_.reset(edge);
+    }
+
+    std::string* edge() const {
+        return edge_.get();
     }
 
     void setProps(PropertyList *props) {
         properties_.reset(props);
     }
 
+    std::vector<std::string*> properties() const {
+        return properties_->properties();
+    }
+
     void setValues(ValueList *values) {
         values_.reset(values);
+    }
+
+    std::vector<Expression*> values() const {
+        return values_->values();
     }
 
     std::string toString() const override;
@@ -143,8 +211,8 @@ public:
         whereClause_.reset(clause);
     }
 
-    void setReturnClause(ReturnClause *clause) {
-        returnClause_.reset(clause);
+    void setYieldClause(YieldClause *clause) {
+        yieldClause_.reset(clause);
     }
 
     std::string toString() const override;
@@ -154,7 +222,7 @@ private:
     int64_t                                     vid_{0};
     std::unique_ptr<UpdateList>                 updateItems_;
     std::unique_ptr<WhereClause>                whereClause_;
-    std::unique_ptr<ReturnClause>               returnClause_;
+    std::unique_ptr<YieldClause>                yieldClause_;
 };
 
 class UpdateEdgeSentence final : public Sentence {
@@ -183,8 +251,8 @@ public:
         whereClause_.reset(clause);
     }
 
-    void setReturnClause(ReturnClause *clause) {
-        returnClause_.reset(clause);
+    void setYieldClause(YieldClause *clause) {
+        yieldClause_.reset(clause);
     }
 
     std::string toString() const override;
@@ -196,7 +264,7 @@ private:
     int64_t                                     rank_{0};
     std::unique_ptr<UpdateList>                 updateItems_;
     std::unique_ptr<WhereClause>                whereClause_;
-    std::unique_ptr<ReturnClause>               returnClause_;
+    std::unique_ptr<YieldClause>                yieldClause_;
 };
 
 }   // namespace vesoft

@@ -9,7 +9,62 @@
 
 namespace vesoft {
 
-void Expression::print(const ReturnType &value) {
+void ExpressionContext::print() const {
+    for (auto &entry : aliasInfo_) {
+        FLOG_INFO("Alias `%s': kind of `%s'",
+                entry.first.c_str(), aliasKindToString(entry.second.kind_).c_str());
+    }
+    if (!srcNodePropNames_.empty()) {
+    auto srclist = std::accumulate(std::next(srcNodePropNames_.begin()), srcNodePropNames_.end(),
+                                   *srcNodePropNames_.begin(), [] (auto &a, auto &b) { return a + ", " + b; });
+    FLOG_INFO("Referred source node's properties: %s", srclist.c_str());
+    }
+    if (!dstNodePropNames_.empty()) {
+    auto dstlist = std::accumulate(std::next(dstNodePropNames_.begin()), dstNodePropNames_.end(),
+                                   *dstNodePropNames_.begin(), [] (auto &a, auto &b) { return a + ", " + b; });
+    FLOG_INFO("Referred destination node's properties: %s", dstlist.c_str());
+    }
+    if (!edgePropNames_.empty()) {
+    auto edgelist = std::accumulate(std::next(edgePropNames_.begin()), edgePropNames_.end(),
+                                   *edgePropNames_.begin(), [] (auto &a, auto &b) { return a + ", " + b; });
+    FLOG_INFO("Referred edge's properties: %s", edgelist.c_str());
+    }
+}
+
+
+Status ExpressionContext::addAliasProp(const std::string &alias, const std::string &prop) {
+    auto kind = aliasKind(alias);
+    if (kind == AliasKind::Unknown) {
+        return Status::Error("Alias `%s' not defined", alias.c_str());
+    }
+    if (kind == AliasKind::SourceNode) {
+        addSrcNodeProp(prop);
+        return Status::OK();
+    }
+    if (kind == AliasKind::Edge) {
+        addEdgeProp(prop);
+        return Status::OK();
+    }
+    return Status::Error("Illegal alias `%s'", alias.c_str());
+}
+
+
+std::string aliasKindToString(AliasKind kind) {
+    switch (kind) {
+        case AliasKind::Unknown:
+            return "Unknown";
+        case AliasKind::SourceNode:
+            return "SourceNode";
+        case AliasKind::Edge:
+            return "Edge";
+        default:
+            FLOG_FATAL("Illegal AliasKind");
+    }
+    return "Unknown";
+}
+
+
+void Expression::print(const VariantType &value) {
     switch (value.which()) {
         case 0:
             fprintf(stderr, "%ld\n", asInt(value));
@@ -29,6 +84,7 @@ void Expression::print(const ReturnType &value) {
     }
 }
 
+
 std::string PropertyExpression::toString() const {
     if (majorPropName_ != nullptr) {
         if (tag_ != nullptr) {
@@ -40,10 +96,461 @@ std::string PropertyExpression::toString() const {
     }
 }
 
-Expression::ReturnType PropertyExpression::eval() const {
+
+VariantType PropertyExpression::eval() const {
     // TODO evaluate property's value
     return toString();
 }
+
+
+std::string InputPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += "$_.";
+    buf += *prop_;
+    return buf;
+}
+
+
+VariantType InputPropertyExpression::eval() const {
+    return toString();
+}
+
+
+std::string InputIdPropertyExpression::toString() const {
+    return "$_._id";
+}
+
+
+VariantType InputIdPropertyExpression::eval() const {
+    return toString();
+}
+
+
+std::string InputTypePropertyExpression::toString() const {
+    return "$_._type";
+}
+
+
+VariantType InputTypePropertyExpression::eval() const {
+    return toString();
+}
+
+
+std::string InputTaggedPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += "$_[";
+    buf += *tag_;
+    buf += "].";
+    buf += *prop_;
+    return buf;
+}
+
+
+VariantType InputTaggedPropertyExpression::eval() const {
+    return toString();
+}
+
+
+std::string DestPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += "$$.";
+    buf += *prop_;
+    return buf;
+}
+
+
+VariantType DestPropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status DestPropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    context->addDstNodeProp(*prop_);
+    return Status::OK();
+}
+
+
+std::string DestIdPropertyExpression::toString() const {
+    return "$$._id";
+}
+
+
+VariantType DestIdPropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status DestIdPropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    context_->addDstNodeProp("_id");
+    return Status::OK();
+}
+
+
+std::string DestTypePropertyExpression::toString() const {
+    return "$$._type";
+}
+
+
+VariantType DestTypePropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status DestTypePropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    context_->addDstNodeProp("_type");
+    return Status::OK();
+}
+
+
+std::string DestTaggedPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += "$$[";
+    buf += *tag_;
+    buf += "].";
+    buf += *prop_;
+    return buf;
+}
+
+
+VariantType DestTaggedPropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status DestTaggedPropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return Status::NotSupported("Tagged property not supported yet");
+}
+
+
+std::string VariablePropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += "$";
+    buf += *var_;
+    buf += ".";
+    buf += *prop_;
+    return buf;
+}
+
+
+VariantType VariablePropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status VariablePropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return Status::OK();
+}
+
+
+std::string VariableIdPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += "$";
+    buf += *var_;
+    buf += "._id";
+    return buf;
+}
+
+
+VariantType VariableIdPropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status VariableIdPropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return Status::OK();
+}
+
+
+std::string VariableTypePropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += "$";
+    buf += *var_;
+    buf += "._type";
+    return buf;
+}
+
+
+VariantType VariableTypePropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status VariableTypePropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return Status::OK();
+}
+
+
+std::string VariableTaggedPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += "$";
+    buf += *var_;
+    buf + "[";
+    buf += *tag_;
+    buf += "].";
+    buf += *prop_;
+    return buf;
+}
+
+
+VariantType VariableTaggedPropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status VariableTaggedPropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return Status::NotSupported("Tagged property not supported yet");
+}
+
+
+std::string VariableTaggedIdPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += "$";
+    buf += *var_;
+    buf + "[";
+    buf += *tag_;
+    buf += "]._id";
+    return buf;
+}
+
+
+VariantType VariableTaggedIdPropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status VariableTaggedIdPropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return Status::NotSupported("Tagged property not supported yet");
+}
+
+
+std::string VariableTaggedTypePropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += "$";
+    buf += *var_;
+    buf + "[";
+    buf += *tag_;
+    buf += "]._type";
+    return buf;
+}
+
+
+VariantType VariableTaggedTypePropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status VariableTaggedTypePropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return Status::NotSupported("Tagged property not supported yet");
+}
+
+
+std::string AliasPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += *alias_;
+    buf += ".";
+    buf += *prop_;
+    return buf;
+}
+
+
+VariantType AliasPropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status AliasPropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return context_->addAliasProp(*alias_, *prop_);
+}
+
+
+std::string AliasIdPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += *alias_;
+    buf += "._id";
+    return buf;
+}
+
+
+VariantType AliasIdPropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status AliasIdPropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return context_->addAliasProp(*alias_, "_id");
+}
+
+
+std::string AliasTypePropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += *alias_;
+    buf += "._type";
+    return buf;
+}
+
+
+VariantType AliasTypePropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status AliasTypePropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return context_->addAliasProp(*alias_, "_type");
+}
+
+
+std::string EdgeSrcIdExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += *alias_;
+    buf += "._src";
+    return buf;
+}
+
+
+VariantType EdgeSrcIdExpression::eval() const {
+    return toString();
+}
+
+
+Status EdgeSrcIdExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return context_->addAliasProp(*alias_, "_src");
+}
+
+
+std::string EdgeDstIdExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += *alias_;
+    buf += "._dst";
+    return buf;
+}
+
+
+VariantType EdgeDstIdExpression::eval() const {
+    return toString();
+}
+
+
+Status EdgeDstIdExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return context_->addAliasProp(*alias_, "_dst");
+}
+
+
+std::string EdgeRankExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += *alias_;
+    buf += "._rank";
+    return buf;
+}
+
+
+VariantType EdgeRankExpression::eval() const {
+    return toString();
+}
+
+
+Status EdgeRankExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return context_->addAliasProp(*alias_, "_rank");
+}
+
+
+std::string AliasTaggedPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += *alias_;
+    buf += "[";
+    buf += *tag_;
+    buf += "].";
+    buf += *prop_;
+    return buf;
+}
+
+
+VariantType AliasTaggedPropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status AliasTaggedPropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return Status::NotSupported("Tagged property not supported yet");
+}
+
+
+std::string AliasTaggedIdPropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += *alias_;
+    buf += "[";
+    buf += *tag_;
+    buf += "]._id";
+    return buf;
+}
+
+
+VariantType AliasTaggedIdPropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status AliasTaggedIdPropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return Status::NotSupported("Tagged property not supported yet");
+}
+
+
+std::string AliasTaggedTypePropertyExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += *alias_;
+    buf += "[";
+    buf += *tag_;
+    buf += "]._type";
+    return buf;
+}
+
+
+VariantType AliasTaggedTypePropertyExpression::eval() const {
+    return toString();
+}
+
+
+Status AliasTaggedTypePropertyExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return Status::NotSupported("Tagged property not supported yet");
+}
+
 
 std::string PrimaryExpression::toString() const {
     char buf[1024];
@@ -65,22 +572,33 @@ std::string PrimaryExpression::toString() const {
     return buf;
 }
 
-Expression::ReturnType PrimaryExpression::eval() const {
+
+VariantType PrimaryExpression::eval() const {
     switch (operand_.which()) {
         case 0:
-            return boost::get<int64_t>(operand_);
+            return boost::get<bool>(operand_);
             break;
         case 1:
-            return boost::get<uint64_t>(operand_);
+            return boost::get<int64_t>(operand_);
             break;
         case 2:
-            return boost::get<double>(operand_);
+            return boost::get<uint64_t>(operand_);
             break;
         case 3:
+            return boost::get<double>(operand_);
+            break;
+        case 4:
             return boost::get<std::string>(operand_);
     }
     return std::string("Unknown");
 }
+
+
+Status PrimaryExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return Status::OK();
+}
+
 
 std::string UnaryExpression::toString() const {
     std::string buf;
@@ -89,7 +607,7 @@ std::string UnaryExpression::toString() const {
         case PLUS:
             buf += '+';
             break;
-        case MINUS:
+        case NEGATE:
             buf += '-';
             break;
         case NOT:
@@ -102,12 +620,12 @@ std::string UnaryExpression::toString() const {
     return buf;
 }
 
-Expression::ReturnType UnaryExpression::eval() const {
-    // TODO
+
+VariantType UnaryExpression::eval() const {
     auto value = operand_->eval();
     if (op_ == PLUS) {
         return value;
-    } else if (op_ == MINUS) {
+    } else if (op_ == NEGATE) {
         if (isInt(value)) {
             return -asInt(value);
         } else if (isUInt(value)) {
@@ -120,6 +638,13 @@ Expression::ReturnType UnaryExpression::eval() const {
     }
     return value;
 }
+
+
+Status UnaryExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return operand_->prepare(context);
+}
+
 
 std::string columnTypeToString(ColumnType type) {
     switch (type) {
@@ -152,13 +677,22 @@ std::string columnTypeToString(ColumnType type) {
     }
 }
 
+
 std::string TypeCastingExpression::toString() const {
     return "";
 }
 
-Expression::ReturnType TypeCastingExpression::eval() const {
-    return ReturnType(0UL);
+
+VariantType TypeCastingExpression::eval() const {
+    return VariantType(0UL);
 }
+
+
+Status TypeCastingExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    return operand_->prepare(context);
+}
+
 
 std::string ArithmeticExpression::toString() const {
     std::string buf;
@@ -187,7 +721,8 @@ std::string ArithmeticExpression::toString() const {
     return buf;
 }
 
-Expression::ReturnType ArithmeticExpression::eval() const {
+
+VariantType ArithmeticExpression::eval() const {
     auto left = left_->eval();
     auto right = right_->eval();
     switch (op_) {
@@ -243,6 +778,21 @@ Expression::ReturnType ArithmeticExpression::eval() const {
     return false;
 }
 
+
+Status ArithmeticExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    auto status = left_->prepare(context);
+    if (!status.ok()) {
+        return status;
+    }
+    status = right_->prepare(context);
+    if (!status.ok()) {
+        return status;
+    }
+    return Status::OK();
+}
+
+
 std::string RelationalExpression::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -253,23 +803,19 @@ std::string RelationalExpression::toString() const {
             buf += '<';
             break;
         case LE:
-            buf += '<';
-            buf += '=';
+            buf += "<=";
             break;
         case GT:
             buf += '>';
             break;
         case GE:
-            buf += '>';
-            buf += '=';
+            buf += ">=";
             break;
         case EQ:
-            buf += '=';
-            buf += '=';
+            buf += "==";
             break;
         case NE:
-            buf += '!';
-            buf += '=';
+            buf += "!=";
             break;
     }
     buf.append(right_->toString());
@@ -277,7 +823,8 @@ std::string RelationalExpression::toString() const {
     return buf;
 }
 
-Expression::ReturnType RelationalExpression::eval() const {
+
+VariantType RelationalExpression::eval() const {
     auto left = left_->eval();
     auto right = right_->eval();
     switch (op_) {
@@ -297,6 +844,21 @@ Expression::ReturnType RelationalExpression::eval() const {
     return false;
 }
 
+
+Status RelationalExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    auto status = left_->prepare(context);
+    if (!status.ok()) {
+        return status;
+    }
+    status = right_->prepare(context);
+    if (!status.ok()) {
+        return status;
+    }
+    return Status::OK();
+}
+
+
 std::string LogicalExpression::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -304,12 +866,10 @@ std::string LogicalExpression::toString() const {
     buf.append(left_->toString());
     switch (op_) {
         case AND:
-            buf += '&';
-            buf += '&';
+            buf += "&&";
             break;
         case OR:
-            buf += '|';
-            buf += '|';
+            buf += "||";
             break;
     }
     buf.append(right_->toString());
@@ -317,8 +877,8 @@ std::string LogicalExpression::toString() const {
     return buf;
 }
 
-Expression::ReturnType LogicalExpression::eval() const {
-    // TODO
+
+VariantType LogicalExpression::eval() const {
     auto left = left_->eval();
     auto right = right_->eval();
     if (op_ == AND) {
@@ -326,6 +886,17 @@ Expression::ReturnType LogicalExpression::eval() const {
     } else {
         return asBool(left) || asBool(right);
     }
+}
+
+
+Status LogicalExpression::prepare(ExpressionContext *context) {
+    context_ = context;
+    auto status = left_->prepare(context);
+    if (!status.ok()) {
+        return status;
+    }
+    status = right_->prepare(context);
+    return Status::OK();
 }
 
 }   // namespace vesoft

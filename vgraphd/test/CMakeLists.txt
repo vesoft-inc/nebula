@@ -1,0 +1,71 @@
+add_executable(
+    session_manager_test
+    SessionManagerTest.cpp
+    $<TARGET_OBJECTS:vgraph_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:vgraph_thrift_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:parser_obj>
+)
+target_link_libraries(
+    session_manager_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    gtest
+    gtest_main
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    -pthread
+)
+
+add_test(NAME session_manager_test COMMAND session_manager_test)
+
+
+add_executable(
+    query_engine_test
+    TestMain.cpp
+    TestEnv.cpp
+    TestBase.cpp
+    DefineSchemaTest.cpp
+    $<TARGET_OBJECTS:vgraph_obj>
+    $<TARGET_OBJECTS:client_cpp_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:vgraph_thrift_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:parser_obj>
+)
+target_link_libraries(
+    query_engine_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    gtest
+    gtest_main
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    -pthread
+)
+add_test(NAME query_engine_test COMMAND query_engine_test)

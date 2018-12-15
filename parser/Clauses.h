@@ -18,6 +18,10 @@ public:
         isUpto_ = isUpto;
     }
 
+    uint32_t steps() const {
+        return steps_;
+    }
+
     bool isUpto() const {
         return isUpto_;
     }
@@ -25,44 +29,56 @@ public:
     std::string toString() const;
 
 private:
-    uint64_t                                    steps_{1};
+    uint32_t                                    steps_{1};
     bool                                        isUpto_{false};
 };
 
+
 class SourceNodeList final {
 public:
-    void addNodeId(uint64_t id) {
+    void addNodeId(int64_t id) {
         nodes_.push_back(id);
     }
 
-    const std::vector<uint64_t>& nodeIds() const {
+    const std::vector<int64_t>& nodeIds() const {
         return nodes_;
     }
 
-    std::string toString(bool isRef) const;
+    std::string toString() const;
 
 private:
-    std::vector<uint64_t>                       nodes_;
+    std::vector<int64_t>                        nodes_;
 };
+
 
 class FromClause final {
 public:
-    FromClause(SourceNodeList *srcNodeList, std::string *alias, bool isRef = false) {
+    explicit FromClause(SourceNodeList *srcNodeList, std::string *alias = nullptr) {
         srcNodeList_.reset(srcNodeList);
         alias_.reset(alias);
-        isRef_ = isRef;
+        isRef_ = false;
     }
 
-    void setSourceNodeList(SourceNodeList *clause) {
-        srcNodeList_.reset(clause);
+    explicit FromClause(Expression *expr, std::string *alias = nullptr) {
+        ref_.reset(expr);
+        alias_.reset(alias);
+        isRef_ = true;
+    }
+
+    void setSourceNodeList(SourceNodeList *srcNodeList) {
+        srcNodeList_.reset(srcNodeList);
     }
 
     SourceNodeList* srcNodeList() const {
         return srcNodeList_.get();
     }
 
-    const std::string& alias() const {
-        return *alias_;
+    Expression* ref() const {
+        return ref_.get();
+    }
+
+    std::string* alias() const {
+        return alias_.get();
     }
 
     bool isRef() const {
@@ -73,28 +89,90 @@ public:
 
 private:
     std::unique_ptr<SourceNodeList>             srcNodeList_;
+    std::unique_ptr<Expression>                 ref_;
     std::unique_ptr<std::string>                alias_;
     bool                                        isRef_{false};
 };
 
-class OverClause final {
+
+class EdgeItem final {
 public:
-    explicit OverClause(std::string *edge, bool isReversely = false) {
+    explicit EdgeItem(std::string *edge) {
         edge_.reset(edge);
-        isReversely_ = isReversely;
+        alias_.reset(new std::string(*edge));
+    }
+
+    EdgeItem(std::string *edge, std::string *alias) {
+        edge_.reset(edge);
+        alias_.reset(alias);
+    }
+
+    std::string* edge() const {
+        return edge_.get();
+    }
+
+    std::string* alias() const {
+        return alias_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                edge_;
+    std::unique_ptr<std::string>                alias_;
+};
+
+
+class EdgeList final {
+public:
+    void add(EdgeItem *edge) {
+        edges_.emplace_back(edge);
+    }
+
+    std::vector<EdgeItem*> edges() const {
+        std::vector<EdgeItem*> result;
+        result.resize(edges_.size());
+        auto get = [] (auto &item) { return item.get(); };
+        std::transform(edges_.begin(), edges_.end(), result.begin(), get);
+        return result;
     }
 
     std::string toString() const;
 
 private:
-    std::unique_ptr<std::string>                edge_;
-    bool                                        isReversely_{false};
+    std::vector<std::unique_ptr<EdgeItem>>      edges_;
 };
+
+
+class OverClause final {
+public:
+    explicit OverClause(EdgeList *edges, bool isReversely = false) {
+        edges_.reset(edges);
+        isReversely_ = isReversely;
+    }
+
+    std::vector<EdgeItem*> edges() const {
+        return edges_->edges();
+    }
+
+    bool isReversely() const {
+        return isReversely_;
+    }
+
+    std::string toString() const;
+
+private:
+    bool                                        isReversely_{false};
+    std::unique_ptr<EdgeList>                   edges_;
+};
+
 
 class WhereClause final {
 public:
     explicit WhereClause(Expression *filter) {
         filter_.reset(filter);
+    }
+
+    Expression* filter() const {
+        return filter_.get();
     }
 
     std::string toString() const;
@@ -103,28 +181,63 @@ private:
     std::unique_ptr<Expression>                 filter_;
 };
 
-class ReturnFields final {
+
+class YieldColumn final {
 public:
-    void addColumn(Expression *field) {
-        fields_.emplace_back(field);
+    explicit YieldColumn(Expression *expr, std::string *alias = nullptr) {
+        expr_.reset(expr);
+        alias_.reset(alias);
     }
 
-    std::string toString() const;
+    Expression* expr() const {
+        return expr_.get();
+    }
+
+    std::string* alias() const {
+        return alias_.get();
+    }
 
 private:
-    std::vector<std::unique_ptr<Expression>>    fields_;
+    std::unique_ptr<Expression>                 expr_;
+    std::unique_ptr<std::string>                alias_;
 };
 
-class ReturnClause final {
+
+class YieldColumns final {
 public:
-    explicit ReturnClause(ReturnFields *fields) {
-        returnFields_.reset(fields);
+    void addColumn(YieldColumn *field) {
+        columns_.emplace_back(field);
+    }
+
+    std::vector<YieldColumn*> columns() const {
+        std::vector<YieldColumn*> result;
+        result.resize(columns_.size());
+        auto get = [] (auto &column) { return column.get(); };
+        std::transform(columns_.begin(), columns_.end(), result.begin(), get);
+        return result;
     }
 
     std::string toString() const;
 
 private:
-    std::unique_ptr<ReturnFields>               returnFields_;
+    std::vector<std::unique_ptr<YieldColumn>>   columns_;
+};
+
+
+class YieldClause final {
+public:
+    explicit YieldClause(YieldColumns *fields) {
+        yieldColumns_.reset(fields);
+    }
+
+    std::vector<YieldColumn*> columns() const {
+        return yieldColumns_->columns();
+    }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<YieldColumns>               yieldColumns_;
 };
 
 }
