@@ -88,8 +88,12 @@ TEST(GenericThreadPool, addTask) {
     }
 }
 
-static bool msAboutEqual(size_t target, size_t actual) {
-    return std::max(target, actual) - std::min(target, actual) <= 10;
+static testing::AssertionResult msAboutEqual(size_t expected, size_t actual) {
+    if (std::max(expected, actual) - std::min(expected, actual) <= 10) {
+        return testing::AssertionSuccess();
+    }
+    return testing::AssertionFailure() << "actual: " << actual
+                                       << ", expected: " << expected;
 }
 
 TEST(GenericThreadPool, addDelayTask) {

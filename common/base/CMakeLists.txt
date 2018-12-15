@@ -1,4 +1,9 @@
-add_library(base_obj OBJECT Cord.cpp Configuration.cpp)
+add_library(
+    base_obj OBJECT
+    Cord.cpp
+    Configuration.cpp
+    Status.cpp
+)
 add_dependencies(base_obj third-party)
 IF(${PCHSupport_FOUND})
     add_precompiled_header(base_obj Base.h third-party)
