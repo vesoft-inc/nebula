@@ -58,16 +58,19 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
     FutureIter first,
     FutureIter last,
     size_t n,  // NUmber of succeeded futures required
-    ResultEval eval);
+    ResultEval&& eval);
 
 
 // A convenient form of ##collectNSucceeded##
 template <class Collection, typename ResultEval>
 auto collectNSucceeded(Collection&& c,
                        size_t n,
-                       ResultEval eval)
+                       ResultEval&& eval)
     -> decltype(collectNSucceeded(c.begin(), c.end(), n, eval)) {
-    return collectNSucceeded(c.begin(), c.end(), n, eval);
+    return collectNSucceeded(c.begin(),
+                             c.end(),
+                             n,
+                             std::forward<ResultEval>(eval));
 }
 
 }  // namespace vesoft
