@@ -106,9 +106,9 @@ std::string UpdateVertexSentence::toString() const {
         buf += " ";
         buf += whereClause_->toString();
     }
-    if (returnClause_ != nullptr) {
+    if (yieldClause_ != nullptr) {
         buf += " ";
-        buf += returnClause_->toString();
+        buf += yieldClause_->toString();
     }
 
     return buf;
@@ -131,9 +131,9 @@ std::string UpdateEdgeSentence::toString() const {
         buf += " ";
         buf += whereClause_->toString();
     }
-    if (returnClause_ != nullptr) {
+    if (yieldClause_ != nullptr) {
         buf += " ";
-        buf += returnClause_->toString();
+        buf += yieldClause_->toString();
     }
 
     return buf;

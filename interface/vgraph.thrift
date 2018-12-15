@@ -24,6 +24,7 @@ enum ErrorCode {
     E_SESSION_TIMEOUT = -6,
 
     E_SYNTAX_ERROR = -7,
+    E_EXECUTION_ERROR = -8,
 } (cpp.enum_strict)
 
 

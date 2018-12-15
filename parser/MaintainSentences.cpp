@@ -15,13 +15,13 @@ std::string DefineTagSentence::toString() const {
     buf += "DEFINE TAG ";
     buf += *name_;
     buf += " (";
-    for (auto &col : columns_->columns_) {
-        buf += *col->name_;
+    for (auto *col : columns_->columnSpecs()) {
+        buf += *col->name();
         buf += " ";
-        buf += columnTypeToString(col->type_);
-        if (col->hasTTL_) {
+        buf += columnTypeToString(col->type());
+        if (col->hasTTL()) {
             buf += " TTL = ";
-            buf += std::to_string(col->ttl_);
+            buf += std::to_string(col->ttl());
         }
         buf += ",";
     }
@@ -29,6 +29,7 @@ std::string DefineTagSentence::toString() const {
     buf += ")";
     return buf;
 }
+
 
 std::string DefineEdgeSentence::toString() const {
     std::string buf;
@@ -36,13 +37,13 @@ std::string DefineEdgeSentence::toString() const {
     buf += "DEFINE EDGE ";
     buf += *name_;
     buf += " (";
-    for (auto &col : columns_->columns_) {
-        buf += *col->name_;
+    for (auto &col : columns_->columnSpecs()) {
+        buf += *col->name();
         buf += " ";
-        buf += columnTypeToString(col->type_);
-        if (col->hasTTL_) {
+        buf += columnTypeToString(col->type());
+        if (col->hasTTL()) {
             buf += " TTL = ";
-            buf += std::to_string(col->ttl_);
+            buf += std::to_string(col->ttl());
         }
         buf += ",";
     }
@@ -50,6 +51,7 @@ std::string DefineEdgeSentence::toString() const {
     buf += ")";
     return buf;
 }
+
 
 std::string AlterTagSentence::toString() const {
     std::string buf;
@@ -57,13 +59,13 @@ std::string AlterTagSentence::toString() const {
     buf += "ALTER TAG ";
     buf += *name_;
     buf += "(";
-    for (auto &col : columns_->columns_) {
-        buf += *col->name_;
+    for (auto &col : columns_->columnSpecs()) {
+        buf += *col->name();
         buf += " ";
-        buf += columnTypeToString(col->type_);
-        if (col->hasTTL_) {
+        buf += columnTypeToString(col->type());
+        if (col->hasTTL()) {
             buf += " TTL = ";
-            buf += std::to_string(col->ttl_);
+            buf += std::to_string(col->ttl());
         }
         buf += ",";
     }
@@ -72,24 +74,39 @@ std::string AlterTagSentence::toString() const {
     return buf;
 }
 
+
 std::string AlterEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "ALTER EDGE ";
     buf += *name_;
     buf += "(";
-    for (auto &col : columns_->columns_) {
-        buf += *col->name_;
+    for (auto &col : columns_->columnSpecs()) {
+        buf += *col->name();
         buf += " ";
-        buf += columnTypeToString(col->type_);
-        if (col->hasTTL_) {
+        buf += columnTypeToString(col->type());
+        if (col->hasTTL()) {
             buf += " TTL = ";
-            buf += std::to_string(col->ttl_);
+            buf += std::to_string(col->ttl());
         }
         buf += ",";
     }
     buf.resize(buf.size() - 1);
     buf += ")";
+    return buf;
+}
+
+
+std::string DescribeTagSentence::toString() const {
+    std::string buf = "DESCRIBE TAG ";
+    buf += *name_;
+    return buf;
+}
+
+
+std::string DescribeEdgeSentence::toString() const {
+    std::string buf = "DESCRIBE EDGE ";
+    buf += *name_;
     return buf;
 }
 

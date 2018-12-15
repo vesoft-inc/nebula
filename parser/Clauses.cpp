@@ -21,23 +21,14 @@ std::string StepClause::toString() const {
     return buf;
 }
 
-std::string SourceNodeList::toString(bool isRef) const {
+std::string SourceNodeList::toString() const {
     std::string buf;
     buf.reserve(256);
-    if (isRef) {
-        buf += "[";
-    }
     for (auto id : nodes_) {
-        if (isRef) {
-            buf += "$";
-        }
         buf += std::to_string(id);
         buf += ",";
     }
     buf.resize(buf.size() - 1);
-    if (isRef) {
-        buf += "]";
-    }
     return buf;
 }
 
@@ -45,17 +36,42 @@ std::string FromClause::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "FROM ";
-    buf += srcNodeList_->toString(isRef_);
-    buf += " AS ";
-    buf += *alias_;
+    if (!isRef_) {
+        buf += srcNodeList_->toString();
+    } else {
+        buf += ref_->toString();
+    }
+    if (alias_ != nullptr) {
+        buf += " AS ";
+        buf += *alias_;
+    }
     return buf;
 }
+
+
+std::string EdgeList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+
+    for (auto &item : edges_) {
+        buf += *item->edge();
+        if (item->alias() != nullptr) {
+            buf += " AS ";
+            buf += *item->alias();
+        }
+        buf += ",";
+    }
+    buf.resize(buf.size() - 1);
+
+    return buf;
+}
+
 
 std::string OverClause::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "OVER ";
-    buf += *edge_;
+    buf += edges_->toString();
     if (isReversely_) {
         buf += " REVERSELY";
     }
@@ -70,22 +86,27 @@ std::string WhereClause::toString() const {
     return buf;
 }
 
-std::string ReturnFields::toString() const {
+std::string YieldColumns::toString() const {
     std::string buf;
     buf.reserve(256);
-    for (auto &expr : fields_) {
+    for (auto &col : columns_) {
+        auto *expr = col->expr();
         buf += expr->toString();
+        if (col->alias() != nullptr) {
+            buf += " AS ";
+            buf += *col->alias();
+        }
         buf += ",";
     }
     buf.resize(buf.size() -1 );
     return buf;
 }
 
-std::string ReturnClause::toString() const {
+std::string YieldClause::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "RETURN ";
-    buf += returnFields_->toString();
+    buf += "YIELD ";
+    buf += yieldColumns_->toString();
     return buf;
 }
 

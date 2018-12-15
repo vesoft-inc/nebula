@@ -15,7 +15,36 @@ class Sentence {
 public:
     virtual ~Sentence() {}
     virtual std::string toString() const = 0;
+
+    enum class Kind : uint32_t {
+        kUnknown,
+        kGo,
+        kSet,
+        kPipe,
+        kUse,
+        kMatch,
+        kAssignment,
+        kDefineTag,
+        kAlterTag,
+        kDefineEdge,
+        kAlterEdge,
+        kDescribeTag,
+        kDescribeEdge,
+        kInsertVertex,
+        kInsertEdge,
+    };
+
+    Kind kind() const {
+        return kind_;
+    }
+
+protected:
+    Kind                kind_{Kind::kUnknown};
 };
+
+inline std::ostream& operator<<(std::ostream &os, Sentence::Kind kind) {
+    return os << static_cast<uint32_t>(kind);
+}
 
 }   // namespace vesoft
 

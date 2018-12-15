@@ -84,6 +84,16 @@
 #endif  // COMPILER_BARRIER
 
 #include "base/ThriftTypes.h"
+// Formated logging
+#define FLOG_FATAL(...) LOG(FATAL) << folly::stringPrintf(__VA_ARGS__)
+#define FLOG_ERROR(...) LOG(ERROR) << folly::stringPrintf(__VA_ARGS__)
+#define FLOG_WARN(...) LOG(WARNING) << folly::stringPrintf(__VA_ARGS__)
+#define FLOG_INFO(...) LOG(INFO) << folly::stringPrintf(__VA_ARGS__)
+#define FVLOG1(...) VLOG(1) << folly::stringPrintf(__VA_ARGS__)
+#define FVLOG2(...) VLOG(2) << folly::stringPrintf(__VA_ARGS__)
+#define FVLOG3(...) VLOG(3) << folly::stringPrintf(__VA_ARGS__)
+#define FVLOG4(...) VLOG(4) << folly::stringPrintf(__VA_ARGS__)
+
 
 namespace vesoft {
 
@@ -94,6 +104,29 @@ using UnorderedMap = typename std::conditional<
     std::unordered_map<std::string, T>,
     std::unordered_map<Key, T>
 >::type;
+
+// Useful type traits
+
+// Tell if `T' is copy-constructible
+template <typename T>
+static constexpr auto is_copy_constructible_v = std::is_copy_constructible<T>::value;
+
+// Tell if `T' is move-constructible
+template <typename T>
+static constexpr auto is_move_constructible_v = std::is_move_constructible<T>::value;
+
+// Tell if `T' is copy or move constructible
+template <typename T>
+static constexpr auto is_copy_or_move_constructible_v = is_copy_constructible_v<T> ||
+                                                        is_move_constructible_v<T>;
+
+// Tell if `T' is constructible from `Args'
+template <typename T, typename...Args>
+static constexpr auto is_constructible_v = std::is_constructible<T, Args...>::value;
+
+// Tell if `U' could be convertible to `T'
+template <typename U, typename T>
+static constexpr auto is_convertible_v = std::is_constructible<U, T>::value;
 
 }  // namespace vesoft
 #endif  // COMMON_BASE_BASE_H_

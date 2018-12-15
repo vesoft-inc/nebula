@@ -31,8 +31,10 @@ WHERE                       ([Ww][Hh][Ee][Rr][Ee])
 MATCH                       ([Mm][Aa][Tt][Cc][Hh])
 INSERT                      ([Ii][Nn][Ss][Ee][Rr][Tt])
 VALUES                      ([Vv][Aa][Ll][Uu][Ee][Ss])
+YIELD                       ([Yy][Ii][Ee][Ll][Dd])
 RETURN                      ([Rr][Ee][Tt][Uu][Rr][Nn])
 DEFINE                      ([Dd][Ee][Ff][Ii][Nn][Ee])
+DESCRIBE                    ([Dd][Ee][Ss][Cc][Rr][Ii][Bb][Ee])
 VERTEX                      ([Vv][Ee][Rr][Tt][Ee][Xx])
 EDGE                        ([Ee][Dd][Gg][Ee])
 UPDATE                      ([Uu][Pp][Dd][Aa][Tt][Ee])
@@ -41,7 +43,7 @@ STEPS                       ([Ss][Tt][Ee][Pp][Ss])
 OVER                        ([Oo][Vv][Ee][Rr])
 UPTO                        ([Uu][Pp][Tt][Oo])
 REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
-NAMESPACE                   ([Nn][Aa][Mm][Ee][Ss][Pp][Aa][Cc][Ee])
+SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 TTL                         ([Tt][Tt][Ll])
 INT                         ([Ii][Nn][Tt])
 INT8                        ({INT}8)
@@ -66,7 +68,7 @@ OVERWRITE                   ([Oo][Vv][Ee][Rr][Ww][Rr][Ii][Tt][Ee])
 TRUE                        ([Tt][Rr][Uu][Ee])
 FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 
-ID                          ([_a-zA-Z][_a-zA-Z0-9]*)
+LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
 HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
@@ -88,8 +90,10 @@ OCT                         ([0-7])
 {MATCH}                     { return TokenType::KW_MATCH; }
 {INSERT}                    { return TokenType::KW_INSERT; }
 {VALUES}                    { return TokenType::KW_VALUES; }
+{YIELD}                     { return TokenType::KW_YIELD; }
 {RETURN}                    { return TokenType::KW_RETURN; }
 {DEFINE}                    { return TokenType::KW_DEFINE; }
+{DESCRIBE}                  { return TokenType::KW_DESCRIBE; }
 {VERTEX}                    { return TokenType::KW_VERTEX; }
 {EDGE}                      { return TokenType::KW_EDGE; }
 {UPDATE}                    { return TokenType::KW_UPDATE; }
@@ -98,7 +102,7 @@ OCT                         ([0-7])
 {OVER}                      { return TokenType::KW_OVER; }
 {UPTO}                      { return TokenType::KW_UPTO; }
 {REVERSELY}                 { return TokenType::KW_REVERSELY; }
-{NAMESPACE}                 { return TokenType::KW_NAMESPACE; }
+{SPACE}                     { return TokenType::KW_SPACE; }
 {TTL}                       { return TokenType::KW_TTL; }
 {INT8}                      { return TokenType::KW_INT8; }
 {INT16}                     { return TokenType::KW_INT16; }
@@ -155,14 +159,18 @@ OCT                         ([0-7])
 
 "<-"                        { return TokenType::L_ARROW; }
 "->"                        { return TokenType::R_ARROW; }
+"_id"                       { return TokenType::ID_PROP; }
+"_type"                     { return TokenType::TYPE_PROP; }
+"_src"                      { return TokenType::SRC_ID_PROP; }
+"_dst"                      { return TokenType::DST_ID_PROP; }
+"_rank"                     { return TokenType::RANK_PROP; }
+"$_"                        { return TokenType::INPUT_REF; }
+"$$"                        { return TokenType::DST_REF; }
 
-{ID}                        {
-                                // TODO(dutor) Whether to forbid the ID format that simply consists of `_'
+{LABEL}                     {
                                 yylval->strval = new std::string(yytext, yyleng);
-                                return TokenType::SYMBOL;
+                                return TokenType::LABEL;
                             }
-
-{DEC}+                      { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
 0[Xx]{HEX}+                 {
                                 int64_t val = 0;
                                 sscanf(yytext, "%lx", &val);
@@ -175,12 +183,13 @@ OCT                         ([0-7])
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
+{DEC}+                      { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
 {DEC}+[Uu][Ll]?             { yylval->intval = ::atoll(yytext); return TokenType::UINTEGER; }
 {DEC}+\.{DEC}*              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
 {DEC}*\.{DEC}+              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
 
 \${DEC}+                    { yylval->intval = ::atoll(yytext + 1); return TokenType::COL_REF_ID; }
-\${ID}                      { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
+\${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 
 
 \"                          { BEGIN(STR); pos = 0; }
@@ -210,8 +219,13 @@ OCT                         ([0-7])
 <STR>\\b                    { sbuf[pos] = '\b'; pos++; }
 <STR>\\f                    { sbuf[pos] = '\f'; pos++; }
 <STR>\\(.|\n)               { sbuf[pos] = yytext[1]; pos++; }
+<STR>\\                     {
+                                // This rule should have never been matched,
+                                // but without this, it somehow triggers the `nodefault' warning of flex.
+                                yyterminate();
+                            }
 
-[ \r\t]                       { yylloc->step(); }
+[ \r\t]                     { yylloc->step(); }
 \n                          {
                                 yylineno++;
                                 yylloc->lines(yyleng);
