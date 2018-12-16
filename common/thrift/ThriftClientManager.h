@@ -8,6 +8,7 @@
 #define COMMON_THRIFT_THRIFTCLIENTMANAGER_H_
 
 #include "base/Base.h"
+#include <folly/io/async/EventBaseManager.h>
 
 namespace vesoft {
 namespace thrift {
@@ -16,15 +17,16 @@ template<class ClientType>
 class ThriftClientManager final {
 public:
     // Get the thrift client for the current thread
-    static std::shared_ptr<ClientType> getClient(const HostAddr& host);
+    static std::shared_ptr<ClientType> getClient(const HostAddr& host,
+                                                 folly::EventBase* evb = nullptr);
 
 private:
     ThriftClientManager() = default;
 
 private:
     using ClientMap = std::unordered_map<
-        HostAddr,  // <ip, port> pair
-        std::shared_ptr<ClientType>  // Async thrift client
+        std::pair<HostAddr, folly::EventBase*>,     // <ip, port> pair
+        std::shared_ptr<ClientType>                 // Async thrift client
     >;
 
     folly::ThreadLocal<ClientMap> clientMap_;
