@@ -29,7 +29,7 @@ fi
 if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build-gmock.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !(CC=$VGRAPH_C_COMPILER CPP="$VGRAPH_C_COMPILER -E" CXX=$VGRAPH_CXX_COMPILER    CXXFLAGS="-fPIC -DPIC -DHAVE_LIB_GFLAGS -std=c++11  -I$double_conversion_release/include -I$gflags_release/include -I$glog_release/include -I$gtest_release/include -I$libevent_release/include   $EXTRA_CXXFLAGS"      CFLAGS=$CXXFLAGS CPPFLAGS=$CXXFLAGS      LDFLAGS="-L$double_conversion_release/lib -L$gflags_release/lib -L$glog_release/lib -L$gtest_release/lib -L$libevent_release/lib    $EXTRA_LDFLAGS"          $SOURCE_DIR/configure --prefix=$INSTALL_PATH --with-gnu-ld); then
+    if !(CC=$NEBULA_C_COMPILER CPP="$NEBULA_C_COMPILER -E" CXX=$NEBULA_CXX_COMPILER    CXXFLAGS="-fPIC -DPIC -DHAVE_LIB_GFLAGS -std=c++11  -I$double_conversion_release/include -I$gflags_release/include -I$glog_release/include -I$gtest_release/include -I$libevent_release/include   $EXTRA_CXXFLAGS"      CFLAGS=$CXXFLAGS CPPFLAGS=$CXXFLAGS      LDFLAGS="-L$double_conversion_release/lib -L$gflags_release/lib -L$glog_release/lib -L$gtest_release/lib -L$libevent_release/lib    $EXTRA_LDFLAGS"          $SOURCE_DIR/configure --prefix=$INSTALL_PATH --with-gnu-ld); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"

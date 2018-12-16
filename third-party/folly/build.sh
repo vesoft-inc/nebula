@@ -28,12 +28,12 @@ cd $SOURCE_DIR
 
 compiler_flags="-fPIC -DPIC -DFOLLY_HAVE_LIBDWARF_DWARF_H -DFOLLY_HAVE_MEMRCHR -Wno-noexcept-type   $EXTRA_CXXFLAGS"
 exe_linker_flags="-static-libgcc -static-libstdc++ $EXTRA_LDFLAGS"
-VGRAPH_INCLUDE_DIRS="$double_conversion_release/include;$libevent_release/include;$gflags_release/include;$glog_release/include;$zstd_release/include;$zlib_release/include;$snappy_release/include;$VGRAPH_INCLUDE_DIRS"
-VGRAPH_LIB_DIRS="$double_conversion_release/lib;$libevent_release/lib;$gflags_release/lib;$glog_release/lib;$zstd_release/lib;$zlib_release/lib;$snappy_release/lib;$VGRAPH_LIB_DIRS"
+NEBULA_INCLUDE_DIRS="$double_conversion_release/include;$libevent_release/include;$gflags_release/include;$glog_release/include;$zstd_release/include;$zlib_release/include;$snappy_release/include;$NEBULA_INCLUDE_DIRS"
+NEBULA_LIB_DIRS="$double_conversion_release/lib;$libevent_release/lib;$gflags_release/lib;$glog_release/lib;$zstd_release/lib;$zlib_release/lib;$snappy_release/lib;$NEBULA_LIB_DIRS"
 
 if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !($VGRAPH_CMAKE $CMAKE_FLAGS -DCMAKE_C_FLAGS:STRING="$compiler_flags" -DCMAKE_CXX_FLAGS:STRING="$compiler_flags" -DCMAKE_INCLUDE_PATH="$VGRAPH_INCLUDE_DIRS" -DCMAKE_LIBRARY_PATH="$VGRAPH_LIB_DIRS" -DCMAKE_EXE_LINKER_FLAGS:STRING="$exe_linker_flags" -DBoost_USE_STATIC_LIBS:BOOL=YES     $SOURCE_DIR); then
+    if !($NEBULA_CMAKE $CMAKE_FLAGS -DCMAKE_C_FLAGS:STRING="$compiler_flags" -DCMAKE_CXX_FLAGS:STRING="$compiler_flags" -DCMAKE_INCLUDE_PATH="$NEBULA_INCLUDE_DIRS" -DCMAKE_LIBRARY_PATH="$NEBULA_LIB_DIRS" -DCMAKE_EXE_LINKER_FLAGS:STRING="$exe_linker_flags" -DBoost_USE_STATIC_LIBS:BOOL=YES     $SOURCE_DIR); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"
