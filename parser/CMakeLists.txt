@@ -13,13 +13,11 @@ add_library(
         ${BISON_Parser_OUTPUTS}
         Expressions.cpp
         Clauses.cpp
-        Statement.cpp
+        CompoundSentence.cpp
         MaintainSentences.cpp
         MutateSentences.cpp
         TraverseSentences.cpp
 )
-
-target_include_directories(parser_obj SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
 
 add_dependencies(parser_obj base_obj)
 

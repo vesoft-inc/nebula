@@ -28,9 +28,9 @@ std::string GoSentence::toString() const {
         buf += " ";
         buf += whereClause_->toString();
     }
-    if (returnClause_ != nullptr) {
+    if (yieldClause_ != nullptr) {
         buf += " ";
-        buf += returnClause_->toString();
+        buf += yieldClause_->toString();
     }
 
     return buf;
@@ -41,7 +41,7 @@ std::string MatchSentence::toString() const {
 }
 
 std::string UseSentence::toString() const {
-    return "USE NAMESPACE " + *ns_;
+    return "USE SPACE " + *space_;
 }
 
 std::string SetSentence::toString() const {

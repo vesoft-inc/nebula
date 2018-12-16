@@ -7,6 +7,7 @@
 #define PARSER_GQLPARSER_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
 #include "VGraphParser.hpp"
 #include "VGraphScanner.h"
 
@@ -14,30 +15,32 @@ namespace vesoft {
 
 class GQLParser {
 public:
-    GQLParser() : parser_(scanner_, error_, &statement_) {
+    GQLParser() : parser_(scanner_, error_, &compound_) {
     }
 
-    bool parse(const std::string &query) {
+    ~GQLParser() {
+        if (compound_ != nullptr) {
+            delete compound_;
+        }
+    }
+
+    StatusOr<std::unique_ptr<CompoundSentence>> parse(const std::string &query) {
         std::istringstream is(query);
         scanner_.switch_streams(&is, nullptr);
-        return parser_.parse() == 0;
-    }
-
-    auto statement() {
-        std::unique_ptr<Statement> statement(statement_);
-        statement_ = nullptr;
-        return statement;
-    }
-
-    const std::string& error() const {
-        return error_;
+        auto ok = parser_.parse() == 0;
+        if (!ok) {
+            return Status::SyntaxError(error_);
+        }
+        auto *compound = compound_;
+        compound_ = nullptr;
+        return compound;
     }
 
 private:
     vesoft::VGraphScanner           scanner_;
     vesoft::VGraphParser            parser_;
     std::string                     error_;
-    Statement                      *statement_ = nullptr;
+    CompoundSentence               *compound_ = nullptr;
 };
 
 }   // namespace vesoft
