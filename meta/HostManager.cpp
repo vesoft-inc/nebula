@@ -50,7 +50,7 @@ HostAddr HostManager::hostForId(GraphSpaceID space,
     auto sm = ShardManager::get();
     shard = sm.shardId(space, id);
     auto hosts = sm.hostsForShard(space, shard);
-    CHECK_GT(hosts.size(), 0L);
+    CHECK_GT(hosts.size(), 0U);
     return hosts.front();
 }
 
@@ -65,7 +65,7 @@ HostManager::clusterIdsToHosts(GraphSpaceID space,
     for (auto id : ids) {
         PartitionID shard = sm.shardId(space, id);
         auto hosts = sm.hostsForShard(space, shard);
-        CHECK_GT(hosts.size(), 0L);
+        CHECK_GT(hosts.size(), 0U);
         // TODO We need to use the leader here
         clusters[hosts.front()][shard].push_back(id);
     }
