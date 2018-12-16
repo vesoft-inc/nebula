@@ -3,8 +3,9 @@
 _build
 _build.log
 _install
+install_manifest.txt
 
-common/base/Base.h.gch
+src/common/base/Base.h.gch
 
 CMakeCache.txt
 Makefile

@@ -26,12 +26,12 @@ cd $SOURCE_DIR
 
 CXXFLAGS="-fPIC -DPIC  $EXTRA_CXXFLAGS"
 LDFLAGS="$EXTRA_LDFLAGS -lboost_context -lboost_chrono -lboost_thread -lboost_system -lboost_regex -lssl -lstdc++ -levent -lunwind -ldl -lrt"
-VGRAPH_INCLUDE_DIRS="$double_conversion_release/include;$gflags_release/include;$glog_release/include;$folly_release/include;$libevent_release/include;$VGRAPH_INCLUDE_DIRS"
-VGRAPH_LIB_DIRS="$double_conversion_release/lib;$gflags_release/lib;$glog_release/lib;$folly_release/lib;$libevent_release/lib;$VGRAPH_LIB_DIRS"
+NEBULA_INCLUDE_DIRS="$double_conversion_release/include;$gflags_release/include;$glog_release/include;$folly_release/include;$libevent_release/include;$NEBULA_INCLUDE_DIRS"
+NEBULA_LIB_DIRS="$double_conversion_release/lib;$gflags_release/lib;$glog_release/lib;$folly_release/lib;$libevent_release/lib;$NEBULA_LIB_DIRS"
 
 if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !($VGRAPH_CMAKE $CMAKE_FLAGS -DCMAKE_CXX_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CC_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CPP_FLAGS:STRING="$CXXFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_INCLUDE_PATH="$VGRAPH_INCLUDE_DIRS" -DCMAKE_LIBRARY_PATH="$VGRAPH_LIB_DIRS" -DBoost_NO_SYSTEM_PATHS=OFF -DBUILD_TESTS=OFF     $SOURCE_DIR/.); then
+    if !($NEBULA_CMAKE $CMAKE_FLAGS -DCMAKE_CXX_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CC_FLAGS:STRING="$CXXFLAGS" -DCMAKE_CPP_FLAGS:STRING="$CXXFLAGS" -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS" -DCMAKE_INCLUDE_PATH="$NEBULA_INCLUDE_DIRS" -DCMAKE_LIBRARY_PATH="$NEBULA_LIB_DIRS" -DBoost_NO_SYSTEM_PATHS=OFF -DBUILD_TESTS=OFF     $SOURCE_DIR/.); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"
