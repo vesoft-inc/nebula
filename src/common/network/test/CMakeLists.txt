@@ -1,4 +1,10 @@
-add_executable(network_utils_test NetworkUtilsTest.cpp $<TARGET_OBJECTS:network_obj> $<TARGET_OBJECTS:proc_obj>)
+add_executable(
+    network_utils_test
+    NetworkUtilsTest.cpp
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:proc_obj>
+)
 target_link_libraries(
     network_utils_test
     ${THRIFT_LIBRARIES}
@@ -15,7 +21,13 @@ target_link_libraries(
 )
 add_test(NAME network_utils_test COMMAND network_utils_test)
 
-add_executable(network_utils_bm NetworkUtilsBenchmark.cpp $<TARGET_OBJECTS:network_obj> $<TARGET_OBJECTS:proc_obj>)
+add_executable(
+    network_utils_bm
+    NetworkUtilsBenchmark.cpp
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:proc_obj>
+)
 target_link_libraries(
     network_utils_bm
     ${THRIFT_LIBRARIES}
