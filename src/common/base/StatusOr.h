@@ -62,8 +62,7 @@ public:
     // `StatusOr<T>' contains neither a Status nor a value
     // in the default-constructed case.
     // From the semantics aspect, it must have been associated with
-    // a Status or value eventualy before being used, or `status()'
-    // would return with `Status::VoidStatusOr()'
+    // a Status or value eventualy before being used.
     StatusOr() {
         state_ = kVoid;
     }
@@ -128,12 +127,10 @@ public:
     StatusOr(StatusOr &&rhs) noexcept : state_(rhs.state_) {
         if (hasValue()) {
             new (&variant_) Variant(std::move(rhs.variant_.value_));
-            rhs.variant_.value_.~T();
-            rhs.state_ = kVoid;
+            rhs.resetValue();
         } else if (rhs.hasStatus()) {
             new (&variant_) Variant(std::move(rhs.variant_.status_));
-            rhs.variant_.status_.~Status();
-            rhs.state_ = kVoid;
+            rhs.resetStatus();
         }
     }
 
@@ -224,27 +221,18 @@ public:
         return ok();
     }
 
-    // Return the associated `Status' if it has one,
-    // or Status::OK() if `ok()' is true,
-    // or Status::VoidStatusOr() if this object was default constructed or has been moved out.
+    // Return the associated `Status' if and only if it has one,
     //
-    // TODO(dutor) Shall we disallow to obtain the status if it has none,
-    //             like the way `value()' does?
     Status status() const & {
-        return hasValue() ? Status::OK() :
-                            (hasStatus() ? variant_.status_ : Status::VoidStatusOr());
+        CHECK(hasStatus());
+        return variant_.status_;
     }
 
     Status status() && {
-        if (hasValue()) {
-            return Status::OK();
-        }
-        if (hasStatus()) {
-            auto status = std::move(variant_.status_);
-            resetStatus();
-            return status;
-        }
-        return Status::VoidStatusOr();
+        CHECK(hasStatus());
+        auto status = std::move(variant_.status_);
+        resetStatus();
+        return status;
     }
 
     // Return the non-const lvalue reference to the associated value
@@ -264,9 +252,9 @@ public:
     // `*this' must be a rvalue
     T value() && {
         DCHECK(ok());
-        T tmp(std::move(variant_.value_));
+        auto value = std::move(variant_.value_);
         resetValue();
-        return tmp;
+        return value;
     }
 
 private:
