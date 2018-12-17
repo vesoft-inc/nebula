@@ -8,6 +8,7 @@
 #define COMMON_NETWORK_NETWORKUTILS_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
 
 namespace nebula {
 namespace network {
@@ -18,7 +19,13 @@ public:
 
     static std::string getHostname();
 
-    static std::vector<std::string> getLocalIPs(bool ipv6 = false);
+    // Get the Ipv4 address bound to a specific net device.
+    // If given "any", it returns "0.0.0.0".
+    static StatusOr<std::string> getIPv4FromDevice(const std::string &device);
+    // List out all Ipv4 addresses, including the loopback one.
+    static StatusOr<std::vector<std::string>> listIPv4s();
+    // List out all network devices and its cooresponding Ipv4 address.
+    static StatusOr<std::unordered_map<std::string, std::string>> listDeviceAndIPv4s();
 
     // Get the local dynamic port range [low, high], only works for IPv4
     static bool getDynamicPortRange(uint16_t& low, uint16_t& high);

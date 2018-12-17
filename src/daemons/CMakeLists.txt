@@ -9,6 +9,8 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:proc_obj>
 )
 
 target_link_libraries(
