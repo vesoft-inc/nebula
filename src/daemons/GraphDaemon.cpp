@@ -4,8 +4,9 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include <signal.h>
 #include "base/Base.h"
+#include "network/NetworkUtils.h"
+#include <signal.h>
 #include "base/Status.h"
 #include "fs/FileUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
@@ -15,6 +16,7 @@
 using namespace nebula;
 using namespace nebula::graph;
 using namespace nebula::fs;
+using namespace nebula::network;
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
@@ -37,11 +39,21 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    std::string localIP;
+    {
+        auto result = NetworkUtils::getIPv4FromDev(FLAGS_listen_netdev);
+        if (!result.ok()) {
+            LOG(ERROR) << result.status();
+            return EXIT_FAILURE;
+        }
+        localIP = std::move(result).value();
+    }
+
     auto interface = std::make_shared<GraphService>();
     gServer = std::make_unique<apache::thrift::ThriftServer>();
 
     gServer->setInterface(interface);
-    gServer->setPort(FLAGS_port);
+    gServer->setAddress(localIP, FLAGS_port);
     gServer->setReusePort(FLAGS_reuse_port);
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
 
