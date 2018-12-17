@@ -23,19 +23,19 @@ TEST(NetworkUtils, getHostname) {
 }
 
 
-TEST(NetworkUtils, getIPv4FromDev) {
+TEST(NetworkUtils, getIPv4FromDevice) {
     {
-        auto result = NetworkUtils::getIPv4FromDev("lo");
+        auto result = NetworkUtils::getIPv4FromDevice("lo");
         ASSERT_TRUE(result.ok()) << result.status();
         ASSERT_EQ("127.0.0.1", result.value());
     }
     {
-        auto result = NetworkUtils::getIPv4FromDev("any");
+        auto result = NetworkUtils::getIPv4FromDevice("any");
         ASSERT_TRUE(result.ok()) << result.status();
         ASSERT_EQ("0.0.0.0", result.value());
     }
     {
-        auto result = NetworkUtils::getIPv4FromDev("non-existence");
+        auto result = NetworkUtils::getIPv4FromDevice("non-existence");
         ASSERT_FALSE(result.ok()) << result.status();
     }
 }
@@ -55,8 +55,8 @@ TEST(NetworkUtils, listIPv4s) {
 }
 
 
-TEST(NetworkUtils, listDevAndIPv4s) {
-    auto result = NetworkUtils::listDevAndIPv4s();
+TEST(NetworkUtils, listDeviceAndIPv4s) {
+    auto result = NetworkUtils::listDeviceAndIPv4s();
     ASSERT_TRUE(result.ok()) << result.status();
     ASSERT_FALSE(result.value().empty());
     ASSERT_NE(result.value().end(), result.value().find("lo"));

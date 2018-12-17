@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
 
     std::string localIP;
     {
-        auto result = NetworkUtils::getIPv4FromDev(FLAGS_listen_netdev);
+        auto result = NetworkUtils::getIPv4FromDevice(FLAGS_listen_netdev);
         if (!result.ok()) {
             LOG(ERROR) << result.status();
             return EXIT_FAILURE;

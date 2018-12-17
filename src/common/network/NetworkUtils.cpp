@@ -28,24 +28,24 @@ std::string NetworkUtils::getHostname() {
 }
 
 
-StatusOr<std::string> NetworkUtils::getIPv4FromDev(const std::string &dev) {
-    if (dev == "any") {
+StatusOr<std::string> NetworkUtils::getIPv4FromDevice(const std::string &device) {
+    if (device == "any") {
         return "0.0.0.0";
     }
-    auto result = listDevAndIPv4s();
+    auto result = listDeviceAndIPv4s();
     if (!result.ok()) {
         return std::move(result).status();
     }
-    auto iter = result.value().find(dev);
+    auto iter = result.value().find(device);
     if (iter == result.value().end()) {
-        return Status::Error("No IPv4 address found for `%s'", dev.c_str());
+        return Status::Error("No IPv4 address found for `%s'", device.c_str());
     }
     return iter->second;
 }
 
 
 StatusOr<std::vector<std::string>> NetworkUtils::listIPv4s() {
-    auto result = listDevAndIPv4s();
+    auto result = listDeviceAndIPv4s();
     if (!result.ok()) {
         return std::move(result).status();
     }
@@ -59,7 +59,7 @@ StatusOr<std::vector<std::string>> NetworkUtils::listIPv4s() {
 }
 
 
-StatusOr<std::unordered_map<std::string, std::string>> NetworkUtils::listDevAndIPv4s() {
+StatusOr<std::unordered_map<std::string, std::string>> NetworkUtils::listDeviceAndIPv4s() {
     struct ifaddrs *iflist;
     std::unordered_map<std::string, std::string> dev2ipv4s;
     if (::getifaddrs(&iflist) != 0) {
