@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "network/NetworkUtils.h"
 #include <netdb.h>
+#include <ifaddrs.h>
 #include <arpa/inet.h>
 #include "proc/ProcAccessor.h"
 
@@ -27,48 +28,57 @@ std::string NetworkUtils::getHostname() {
 }
 
 
-std::vector<std::string> NetworkUtils::getLocalIPs(bool ipv6) {
-    std::vector<std::string> ipList;
-
-    struct addrinfo hints;
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = ipv6 ? AF_INET6 : AF_INET;
-    hints.ai_socktype = SOCK_STREAM;    // TCP socket
-    hints.ai_flags = AI_PASSIVE || AI_NUMERICHOST;
-
-    std::string hostname = getHostname();
-    if (hostname == "") {
-        LOG(ERROR) << "getLocalIPs failed: Failed to get the hostname";
-        return ipList;
+StatusOr<std::string> NetworkUtils::getIPv4FromDevice(const std::string &device) {
+    if (device == "any") {
+        return "0.0.0.0";
     }
-
-    struct addrinfo* servInfo;
-    int status = getaddrinfo(hostname.data(), NULL, &hints, &servInfo);
-    if (status != 0) {
-        LOG(ERROR) << "getaddrinfo error: " << gai_strerror(status);
-        return ipList;
+    auto result = listDeviceAndIPv4s();
+    if (!result.ok()) {
+        return std::move(result).status();
     }
+    auto iter = result.value().find(device);
+    if (iter == result.value().end()) {
+        return Status::Error("No IPv4 address found for `%s'", device.c_str());
+    }
+    return iter->second;
+}
 
-    int addrStrLen = ipv6 ? INET6_ADDRSTRLEN : INET_ADDRSTRLEN;
-    char ipStr[addrStrLen];
-    const char* pIpStr = ipStr;
-    for (struct addrinfo* p = servInfo; p != NULL; p = p->ai_next) {
-        struct in_addr *addr;
-        if (p->ai_family == AF_INET) {
-            struct sockaddr_in *ipv = (struct sockaddr_in*)p->ai_addr;
-            addr = &(ipv->sin_addr);
-        } else {
-            struct sockaddr_in6 *ipv6_addr = (struct sockaddr_in6*)p->ai_addr;
-            addr = (struct in_addr*) &(ipv6_addr->sin6_addr);
+
+StatusOr<std::vector<std::string>> NetworkUtils::listIPv4s() {
+    auto result = listDeviceAndIPv4s();
+    if (!result.ok()) {
+        return std::move(result).status();
+    }
+    auto getval = [] (const auto &entry) {
+        return entry.second;
+    };
+    std::vector<std::string> ipv4s;
+    ipv4s.resize(result.value().size());
+    std::transform(result.value().begin(), result.value().end(), ipv4s.begin(), getval);
+    return ipv4s;
+}
+
+
+StatusOr<std::unordered_map<std::string, std::string>> NetworkUtils::listDeviceAndIPv4s() {
+    struct ifaddrs *iflist;
+    std::unordered_map<std::string, std::string> dev2ipv4s;
+    if (::getifaddrs(&iflist) != 0) {
+        return Status::Error("%s", ::strerror(errno));
+    }
+    for (auto *ifa = iflist; ifa != nullptr; ifa = ifa->ifa_next) {
+        // Skip non-IPv4 devices
+        if (ifa->ifa_addr->sa_family != AF_INET) {
+            continue;
         }
-        inet_ntop(p->ai_family, addr, ipStr, addrStrLen);
-        if (strcmp(ipStr, "127.0.0.1") != 0) {
-            ipList.emplace_back(pIpStr);
-        }
+        auto *addr = reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
+        // inet_ntoa is thread safe but not re-entrant,
+        // we could use inet_ntop instead when we need support for IPv6
+        dev2ipv4s[ifa->ifa_name] = ::inet_ntoa(addr->sin_addr);
     }
-
-    freeaddrinfo(servInfo);
-    return std::move(ipList);
+    if (dev2ipv4s.empty()) {
+        return Status::Error("No IPv4 devices found");
+    }
+    return dev2ipv4s;
 }
 
 
