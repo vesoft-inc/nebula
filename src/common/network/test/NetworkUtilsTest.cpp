@@ -23,15 +23,43 @@ TEST(NetworkUtils, getHostname) {
 }
 
 
-TEST(NetworkUtils, getLocalIPs) {
-    std::vector<std::string> ipList = NetworkUtils::getLocalIPs(false);
-    // We expect to have at least one real ip
-    EXPECT_LE(1, ipList.size());
-
-    for (auto& ip : ipList) {
-        EXPECT_NE(ip, "127.0.0.1");
-        LOG(INFO) << "ip: " << ip;
+TEST(NetworkUtils, getIPv4FromDevice) {
+    {
+        auto result = NetworkUtils::getIPv4FromDevice("lo");
+        ASSERT_TRUE(result.ok()) << result.status();
+        ASSERT_EQ("127.0.0.1", result.value());
     }
+    {
+        auto result = NetworkUtils::getIPv4FromDevice("any");
+        ASSERT_TRUE(result.ok()) << result.status();
+        ASSERT_EQ("0.0.0.0", result.value());
+    }
+    {
+        auto result = NetworkUtils::getIPv4FromDevice("non-existence");
+        ASSERT_FALSE(result.ok()) << result.status();
+    }
+}
+
+
+TEST(NetworkUtils, listIPv4s) {
+    auto result = NetworkUtils::listIPv4s();
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_FALSE(result.value().empty());
+    auto found = false;
+    for (auto &ip : result.value()) {
+        if (ip == "127.0.0.1") {
+            found = true;
+        }
+    }
+    ASSERT_TRUE(found);
+}
+
+
+TEST(NetworkUtils, listDeviceAndIPv4s) {
+    auto result = NetworkUtils::listDeviceAndIPv4s();
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_FALSE(result.value().empty());
+    ASSERT_NE(result.value().end(), result.value().find("lo"));
 }
 
 
