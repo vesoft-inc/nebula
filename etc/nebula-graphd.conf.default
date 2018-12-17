@@ -13,6 +13,9 @@
 --stderr_log_file=stderr.log
 
 ########## networking ##########
+# Network device to listen on
+--listen_netdev=any
+# Port to listen on
 --port=3699
 # seconds before we close the idle connections, 0 for infinite
 --client_idle_timeout_secs=0
