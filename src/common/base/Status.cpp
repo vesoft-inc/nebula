@@ -30,9 +30,6 @@ std::string Status::toString() const {
         case kError:
             str = "";
             break;
-        case kVoidStatusOr:
-            str = "VoidStatusOr: ";
-            break;
         case kSyntaxError:
             str = "SyntaxError: ";
             break;
