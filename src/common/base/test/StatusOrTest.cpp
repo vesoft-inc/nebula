@@ -14,8 +14,6 @@ namespace nebula {
 TEST(StatusOr, ConstructFromDefault) {
     StatusOr<std::string> result;
     ASSERT_FALSE(result.ok());
-    ASSERT_FALSE(result.status().ok());
-    ASSERT_EQ(Status::VoidStatusOr(), result.status());
 }
 
 
@@ -38,7 +36,6 @@ TEST(StatusOr, ConstructFromStatus) {
 TEST(StatusOr, ConstructFromValue) {
     StatusOr<std::string> result("SomeValue");
     ASSERT_TRUE(result.ok());
-    ASSERT_TRUE(result.status().ok());
     ASSERT_EQ("SomeValue", result.value());
 }
 
@@ -74,8 +71,46 @@ TEST(StatusOr, ReturnFromValue) {
     };
     auto result = foo();
     ASSERT_TRUE(result.ok());
-    ASSERT_TRUE(result.status().ok());
     ASSERT_EQ("SomeValue", result.value());
+}
+
+
+TEST(StatusOr, ReturnFromMoveOnlyValue) {
+    // return move only from anonymous value
+    {
+        auto foo = [] () -> StatusOr<std::unique_ptr<std::string>> {
+            return std::make_unique<std::string>("SomeValue");
+        };
+        auto result = foo();
+        ASSERT_TRUE(result.ok());
+        ASSERT_EQ("SomeValue", *result.value());
+    }
+    // return move only from named value
+    {
+        auto foo = [] () -> StatusOr<std::unique_ptr<std::string>> {
+            // TODO(dutor) It seems that GCC before 8.0 has some issues to compile
+            // the following code, in the combination of NVRO and implicit conversion.
+            // We use `std::move' explicitly for now
+            auto ptr = std::make_unique<std::string>("SomeValue");
+            return std::move(ptr);
+        };
+        auto result = foo();
+        ASSERT_TRUE(result.ok());
+        ASSERT_EQ("SomeValue", *result.value());
+    }
+    // return move only from compatible named value
+    {
+        auto foo = [] () -> StatusOr<std::shared_ptr<std::string>> {
+            auto ptr = std::make_unique<std::string>("SomeValue");
+            // TODO(dutor) It seems that GCC before 8.0 has some issues to compile
+            // the following code, in the combination of NVRO and implicit conversion.
+            // We use `std::move' explicitly for now
+            return std::move(ptr);
+        };
+        auto result = foo();
+        ASSERT_TRUE(result.ok());
+        ASSERT_EQ("SomeValue", *result.value());
+    }
 }
 
 
@@ -83,9 +118,6 @@ TEST(StatusOr, CopyConstructFromDefault) {
     StatusOr<std::string> result1;
     auto result2 = result1;
     ASSERT_FALSE(result2.ok());
-    ASSERT_FALSE(result2.status().ok());
-    ASSERT_EQ(Status::VoidStatusOr(), result1.status());
-    ASSERT_EQ(result1.status(), result2.status());
 }
 
 
@@ -105,9 +137,7 @@ TEST(StatusOr, CopyConstructFromValue) {
     StatusOr<std::string> result1("SomeValue");
     auto result2 = result1;
     ASSERT_TRUE(result1.ok());
-    ASSERT_TRUE(result1.status().ok());
     ASSERT_TRUE(result2.ok());
-    ASSERT_TRUE(result2.status().ok());
     ASSERT_EQ("SomeValue", result1.value());
     ASSERT_EQ("SomeValue", result2.value());
 }
@@ -118,8 +148,6 @@ TEST(StatusOr, CopyAssignFromDefault) {
     decltype(result1) result2;
     result2 = result1;
     ASSERT_FALSE(result2.ok());
-    ASSERT_FALSE(result2.status().ok());
-    ASSERT_EQ(Status::VoidStatusOr(), result2.status());
 }
 
 
@@ -141,9 +169,7 @@ TEST(StatusOr, CopyAssignFromValue) {
     decltype(result1) result2;
     result2 = result1;
     ASSERT_TRUE(result1.ok());
-    ASSERT_TRUE(result1.status().ok());
     ASSERT_TRUE(result2.ok());
-    ASSERT_TRUE(result2.status().ok());
     ASSERT_EQ("SomeValue", result1.value());
     ASSERT_EQ("SomeValue", result2.value());
 }
@@ -153,8 +179,6 @@ TEST(StatusOr, MoveConstructFromDefault) {
     StatusOr<std::string> result1;
     auto result2 = std::move(result1);
     ASSERT_FALSE(result2.ok());
-    ASSERT_FALSE(result2.status().ok());
-    ASSERT_EQ(Status::VoidStatusOr(), result2.status());
 }
 
 
@@ -162,8 +186,6 @@ TEST(StatusOr, MoveConstructFromStatus) {
     StatusOr<std::string> result1(Status::Error("SomeError"));
     auto result2 = std::move(result1);
     ASSERT_FALSE(result1.ok());
-    ASSERT_FALSE(result1.status().ok());
-    ASSERT_EQ(Status::VoidStatusOr(), result1.status());
     ASSERT_FALSE(result2.ok());
     ASSERT_FALSE(result2.status().ok());
     ASSERT_EQ("SomeError", result2.status().toString());
@@ -174,10 +196,7 @@ TEST(StatusOr, MoveConstructFromValue) {
     StatusOr<std::string> result1("SomeValue");
     auto result2 = std::move(result1);
     ASSERT_FALSE(result1.ok());
-    ASSERT_FALSE(result1.status().ok());
-    ASSERT_EQ(Status::VoidStatusOr(), result1.status());
     ASSERT_TRUE(result2.ok());
-    ASSERT_TRUE(result2.status().ok());
     ASSERT_EQ("SomeValue", result2.value());
 }
 
@@ -187,8 +206,6 @@ TEST(StatusOr, MoveAssignFromDefault) {
     decltype(result1) result2;
     result2 = std::move(result1);
     ASSERT_FALSE(result2.ok());
-    ASSERT_FALSE(result2.status().ok());
-    ASSERT_EQ(Status::VoidStatusOr(), result2.status());
 }
 
 
@@ -197,8 +214,6 @@ TEST(StatusOr, MoveAssignFromStatus) {
     decltype(result1) result2;
     result2 = std::move(result1);
     ASSERT_FALSE(result1.ok());
-    ASSERT_FALSE(result1.status().ok());
-    ASSERT_EQ(Status::VoidStatusOr(), result1.status());
     ASSERT_FALSE(result2.ok());
     ASSERT_FALSE(result2.status().ok());
     ASSERT_EQ("SomeError", result2.status().toString());
@@ -210,10 +225,7 @@ TEST(StatusOr, MoveAssignFromValue) {
     decltype(result1) result2;
     result2 = std::move(result1);
     ASSERT_FALSE(result1.ok());
-    ASSERT_FALSE(result1.status().ok());
-    ASSERT_EQ(Status::VoidStatusOr(), result1.status());
     ASSERT_TRUE(result2.ok());
-    ASSERT_TRUE(result2.status().ok());
     ASSERT_EQ("SomeValue", result2.value());
 }
 
@@ -266,12 +278,10 @@ TEST(StatusOr, AssignFromValue) {
         StatusOr<std::string> result;
         result = "SomeValue";
         ASSERT_TRUE(result.ok());
-        ASSERT_TRUE(result.status().ok());
         ASSERT_EQ("SomeValue", result.value());
 
         result = "SomeOtherValue";
         ASSERT_TRUE(result.ok());
-        ASSERT_TRUE(result.status().ok());
         ASSERT_EQ("SomeOtherValue", result.value());
     }
     {
@@ -279,13 +289,11 @@ TEST(StatusOr, AssignFromValue) {
         std::string value = "SomeValue";
         result = value;
         ASSERT_TRUE(result.ok());
-        ASSERT_TRUE(result.status().ok());
         ASSERT_EQ("SomeValue", result.value());
 
         value = "SomeOtherValue";
         result = value;
         ASSERT_TRUE(result.ok());
-        ASSERT_TRUE(result.status().ok());
         ASSERT_EQ("SomeOtherValue", result.value());
     }
 }
@@ -343,7 +351,6 @@ TEST(StatusOr, MoveConstructFromCompatibleTypes) {
 
     StatusOr<std::shared_ptr<std::string>> to(std::move(from));
     ASSERT_FALSE(from.ok());
-    ASSERT_EQ(Status::VoidStatusOr(), from.status());
     ASSERT_TRUE(to.ok());
     ASSERT_EQ("SomeValue", *to.value());
 }
@@ -360,7 +367,6 @@ TEST(StatusOr, MoveAssignFromCompatibleTypes) {
 
     to = std::move(from);
     ASSERT_FALSE(from.ok());
-    ASSERT_EQ(Status::VoidStatusOr(), from.status());
     ASSERT_TRUE(to.ok());
     ASSERT_EQ("SomeValue", *to.value());
 }
@@ -371,26 +377,19 @@ TEST(StatusOr, MoveOnlyValue) {
         StatusOr<std::unique_ptr<std::string>> result1(std::make_unique<std::string>("SomeValue"));
         auto result2 = std::move(result1);
         ASSERT_FALSE(result1.ok());
-        ASSERT_FALSE(result1.status().ok());
-        ASSERT_EQ(Status::VoidStatusOr(), result1.status());
         ASSERT_TRUE(result2.ok());
-        ASSERT_TRUE(result2.status().ok());
         auto ptr = std::move(result2).value();
-        ASSERT_EQ(Status::VoidStatusOr(), result2.status());
         ASSERT_NE(nullptr, ptr.get());
         ASSERT_EQ("SomeValue", *ptr);
+        ASSERT_FALSE(result2.ok());
     }
     {
         StatusOr<std::unique_ptr<std::string>> result1(std::make_unique<std::string>("SomeValue"));
         decltype(result1) result2;
         result2 = std::move(result1);
         ASSERT_FALSE(result1.ok());
-        ASSERT_FALSE(result1.status().ok());
-        ASSERT_EQ(Status::VoidStatusOr(), result1.status());
         ASSERT_TRUE(result2.ok());
-        ASSERT_TRUE(result2.status().ok());
         auto ptr = std::move(result2).value();
-        ASSERT_EQ(Status::VoidStatusOr(), result1.status());
         ASSERT_NE(nullptr, ptr.get());
         ASSERT_EQ("SomeValue", *ptr);
         ASSERT_FALSE(result2.ok());
@@ -405,7 +404,6 @@ TEST(StatusOr, MoveOutStatus) {
     ASSERT_EQ(Status::Error("SomeError"), result.status());
     auto status = std::move(result).status();
     ASSERT_FALSE(result.ok());
-    ASSERT_EQ(Status::VoidStatusOr(), result.status());
     ASSERT_EQ(Status::Error("SomeError"), status);
 }
 

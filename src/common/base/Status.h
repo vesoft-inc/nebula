@@ -68,10 +68,6 @@ public:
         return Status();
     }
 
-    static Status VoidStatusOr() {
-        return Status(kVoidStatusOr, "StatusOr contains neither Status nor value");
-    }
-
 #define STATUS_GENGERATOR(ERROR)                        \
     static Status ERROR(folly::StringPiece msg) {       \
         return Status(k##ERROR, msg);                   \
@@ -108,8 +104,7 @@ private:
         kOk                     = 0,
         // 10xx, for general errors
         kError                  = 101,
-        kVoidStatusOr           = 102,
-        kNotSupported           = 103,
+        kNotSupported           = 102,
         // 2xx, for graph engine errors
         kSyntaxError            = 201,
         // 3xx, for storage engine errors
