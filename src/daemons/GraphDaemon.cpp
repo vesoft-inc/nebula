@@ -9,6 +9,7 @@
 #include <signal.h>
 #include "base/Status.h"
 #include "fs/FileUtils.h"
+#include "process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "graph/GraphService.h"
 #include "graph/GraphFlags.h"
@@ -27,18 +28,36 @@ static Status setupLogging();
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
 
+    // Setup logging
     auto status = setupLogging();
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
     }
 
+    // Detect if the server has already been started
+    auto pidPath = FLAGS_log_dir + "/" + FLAGS_pid_file;
+    status = ProcessUtils::isPidAvailable(pidPath);
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
+
+    // Write the current pid into the pid file
+    status = ProcessUtils::makePidFile(pidPath);
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
+
+    // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
     }
 
+    // Get the IPv4 address the server will listen on
     std::string localIP;
     {
         auto result = NetworkUtils::getIPv4FromDevice(FLAGS_listen_netdev);
