@@ -18,6 +18,7 @@ DECLARE_int32(num_accept_threads);
 DECLARE_bool(reuse_port);
 DECLARE_int32(listen_backlog);
 DECLARE_string(listen_netdev);
+DECLARE_string(pid_file);
 
 DECLARE_bool(redirect_stdout);
 DECLARE_string(stdout_log_file);
