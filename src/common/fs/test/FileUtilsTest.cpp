@@ -10,14 +10,16 @@
 
 using namespace nebula::fs;
 
-
-TEST(FileUtils, getExePath) {
-    static const char* kExePath = "common/fs/test/_build/file_utils_test";
-    static const uint32_t kExePathLen = strlen(kExePath);
-
-    auto path = FileUtils::getExePath();
-    size_t pos = path.size() > kExePathLen ? path.size() - kExePathLen : 0;
-    EXPECT_STREQ(kExePath, path.substr(pos).c_str());
+TEST(FileUtils, readLink) {
+    {
+        auto result = FileUtils::readLink("/proc/self/exe");
+        ASSERT_TRUE(result.ok()) << result.status();
+        ASSERT_NE(std::string::npos, result.value().find("file_utils_test")) << result.value();
+    }
+    {
+        auto result = FileUtils::readLink("/proc/1/exe");
+        ASSERT_FALSE(result.ok());
+    }
 }
 
 
