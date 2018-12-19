@@ -86,29 +86,13 @@ bool removeDir(const char* path, bool recursively) {
 }  // namespace detail
 
 
-std::string FileUtils::getExePath() {
-    pid_t pid = getpid();
-    char symLink[kMaxPathLen];
-    snprintf(symLink, kMaxPathLen, "/proc/%d/exe", pid);
-
-    char path[kMaxPathLen];
-    ssize_t len = readlink(symLink, path, kMaxPathLen);
-    path[len == kMaxPathLen ? len - 1 : len] = '\0';
-
-    return path;
-}
-
-
-std::string FileUtils::getExeCWD() {
-    pid_t pid = getpid();
-    char symLink[kMaxPathLen];
-    snprintf(symLink, kMaxPathLen, "/proc/%d/cwd", pid);
-
-    char path[kMaxPathLen];
-    ssize_t len = readlink(symLink, path, kMaxPathLen);
-    path[len == kMaxPathLen ? len - 1 : len] = '\0';
-
-    return path;
+StatusOr<std::string> FileUtils::readLink(const char *path) {
+    char buffer[kMaxPathLen];
+    auto len = ::readlink(path, buffer, kMaxPathLen);
+    if (len == -1) {
+        return Status::Error("readlink %s: %s", path, ::strerror(errno));
+    }
+    return std::string(buffer, len);
 }
 
 
