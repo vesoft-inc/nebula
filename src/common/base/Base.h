@@ -97,6 +97,8 @@
 
 namespace nebula {
 
+// Types using in a graph
+// Partition ID is defined as PartitionID in Raftex
 using VertexID = int64_t;
 using TagID = int32_t;
 using TagVersion = int64_t;
