@@ -1,5 +1,6 @@
 ########## logging ##########
---log_dir=/tmp/nebula-graphd
+# Directory to host logging files, which must already exist
+--log_dir=logs
 # 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
 --minloglevel=0
 # verbose loging level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
@@ -11,6 +12,8 @@
 # Destination filename of stdout and stderr, which will also reside in log_dir.
 --stdout_log_file=stdout.log
 --stderr_log_file=stderr.log
+# File to host the process id, which also resides in log_dir
+--pid_file=nebula-graphd.pid
 
 ########## networking ##########
 # Network device to listen on
