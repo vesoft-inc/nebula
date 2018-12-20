@@ -97,6 +97,15 @@
 
 namespace nebula {
 
+// Types using in a graph
+// Partition ID is defined as PartitionID in Raftex
+using VertexID = int64_t;
+using TagID = int32_t;
+using TagVersion = int64_t;
+using EdgeType = int32_t;
+using EdgeRanking = int64_t;
+using EdgeVersion = int64_t;
+
 template<typename Key, typename T>
 using UnorderedMap = typename std::conditional<
     std::is_same<Key, std::string>::value,
