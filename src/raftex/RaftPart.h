@@ -30,16 +30,19 @@ class BufferFlusher;
 namespace raftex {
 
 class Host;
+class AppendLogsIterator;
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
+    friend class AppendLogsIterator;
 public:
     enum class AppendLogResult {
         SUCCEEDED = 0,
-        E_NOT_A_LEADER = -1,
-        E_STOPPED = -2,
-        E_NOT_READY = -3,
-        E_BUFFER_OVERFLOW = -4,
-        E_WAL_FAILURE = -5,
+        E_CAS_FAILURE = -1,
+        E_NOT_A_LEADER = -2,
+        E_STOPPED = -3,
+        E_NOT_READY = -4,
+        E_BUFFER_OVERFLOW = -5,
+        E_WAL_FAILURE = -6,
     };
 
 
@@ -113,9 +116,12 @@ public:
      *
      * If the source == -1, the current clusterId will be used
      ****************************************************************/
-    folly::Future<AppendLogResult> appendLogsAsync(
-        ClusterID source,
-        std::vector<std::string>&& logMsgs);
+    folly::Future<AppendLogResult> appendAsync(ClusterID source, std::string log);
+
+    /****************************************************************
+     * Asynchronously compare and set
+     ***************************************************************/
+    folly::Future<AppendLogResult> casAsync(std::string log);
 
     /*****************************************************
      *
@@ -165,6 +171,18 @@ protected:
     // a new leader
     virtual void onElected(TermID term) = 0;
 
+    // This method is invoked when handling a CAS log. The inherited
+    // class uses this method to do the comparison and decide whether
+    // a log should be inserted
+    //
+    // The method will be guaranteed to execute in a single-threaded
+    // manner, so no need for locks
+    //
+    // If CAS succeeded, the method should return the correct log content
+    // that will be applied to the storage. Otherwise it returns an empty
+    // string
+    virtual std::string compareAndSet(std::string log) = 0;
+
     // The inherited classes need to implement this method to commit
     // a batch of log messages
     virtual bool commitLogs(std::unique_ptr<LogIterator> iter) = 0;
@@ -191,6 +209,13 @@ private:
     // idx  -- the index of the peer
     // resp -- AppendLogResponse
     using AppendLogResponses = std::vector<cpp2::AppendLogResponse>;
+
+    // <source, term, isCAS, log>
+    using LogCache = std::vector<
+        std::tuple<ClusterID,
+                   TermID,
+                   bool,
+                   std::string>>;
 
 
     /****************************************************
@@ -238,11 +263,15 @@ private:
     // Pre-condition: The caller needs to hold the raftLock_
     AppendLogResult canAppendLogs(std::lock_guard<std::mutex>& lck);
 
-    void appendLogsInternal(
-        std::vector<std::tuple<ClusterID, TermID, std::string>>&& logs);
+    folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
+                                                  bool isCAS,
+                                                  std::string log);
+
+    void appendLogsInternal(AppendLogsIterator iter);
 
     folly::Future<AppendLogResponses> replicateLogs(
         folly::EventBase* eb,
+        AppendLogsIterator iter,
         TermID currTerm,
         LogID lastLogId,
         LogID committedId,
@@ -252,6 +281,7 @@ private:
     void processAppendLogResponses(
         const AppendLogResponses& resps,
         folly::EventBase* eb,
+        AppendLogsIterator iter,
         TermID currTerm,
         LogID lastLogId,
         LogID committedId,
@@ -260,6 +290,83 @@ private:
 
 
 private:
+    template<class ValueType>
+    class PromiseSet final {
+    public:
+        PromiseSet() = default;
+        PromiseSet(const PromiseSet&) = delete;
+        PromiseSet(PromiseSet&&) = default;
+
+        ~PromiseSet()  = default;
+
+        PromiseSet& operator=(const PromiseSet&) = delete;
+        PromiseSet& operator=(PromiseSet&& right) = default;
+
+        void reset() {
+            sharedPromises_.clear();
+            singlePromises_.clear();
+            isLastShared_ = false;
+        }
+
+        folly::Future<ValueType> getSharedFuture() {
+            if (!isLastShared_) {
+                sharedPromises_.emplace_back();
+                isLastShared_ = true;
+            }
+
+            return sharedPromises_.back().getFuture();
+        }
+
+        folly::Future<ValueType> getSingleFuture() {
+            singlePromises_.emplace_back();
+            isLastShared_ = false;
+
+            return singlePromises_.back().getFuture();
+        }
+
+        template<class VT>
+        void setOneSharedValue(VT&& val) {
+            CHECK(!sharedPromises_.empty());
+            sharedPromises_.front().setValue(std::forward<VT>(val));
+            sharedPromises_.pop_front();
+        }
+
+        template<class VT>
+        void setOneSingleValue(VT&& val) {
+            CHECK(!singlePromises_.empty());
+            singlePromises_.front().setValue(std::forward<VT>(val));
+            singlePromises_.pop_front();
+        }
+
+        void setValue(ValueType val) {
+            for (auto& p : sharedPromises_) {
+                p.setValue(val);
+            }
+            for (auto& p : singlePromises_) {
+                p.setValue(val);
+            }
+        }
+
+        void setvalue(const ValueType& val) {
+            for (auto& p : sharedPromises_) {
+                p.setValue(val);
+            }
+            for (auto& p : singlePromises_) {
+                p.setValue(val);
+            }
+        }
+
+    private:
+        // Whether the last future was returned from a shared promise
+        bool isLastShared_{false};
+
+        // Promises shared by continuous non-CAS logs
+        std::list<folly::SharedPromise<ValueType>> sharedPromises_;
+        // A list of promises for CAS logs
+        std::list<folly::Promise<ValueType>> singlePromises_;
+    };
+
+
     const std::string idStr_;
 
     const ClusterID clusterId_;
@@ -274,9 +381,9 @@ private:
     mutable std::mutex raftLock_;
 
     bool replicatingLogs_{false};
-    folly::SharedPromise<AppendLogResult> cachingPromise_;
-    folly::SharedPromise<AppendLogResult> sendingPromise_;
-    std::vector<std::tuple<ClusterID, TermID, std::string>> logs_;
+    PromiseSet<AppendLogResult> cachingPromise_;
+    PromiseSet<AppendLogResult> sendingPromise_;
+    LogCache logs_;
 
     Status status_;
     Role role_;

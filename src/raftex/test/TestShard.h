@@ -44,6 +44,7 @@ public:
     void onLostLeadership(TermID term) override;
     void onElected(TermID term) override;
 
+    std::string compareAndSet(std::string log) override;
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
     size_t getNumLogs() const;

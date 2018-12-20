@@ -23,7 +23,7 @@ namespace nebula {
 namespace raftex {
 
 TEST(LogAppend, SimpleAppend) {
-    fs::TempDir walRoot("/tmp/election_after_boot.XXXXXX");
+    fs::TempDir walRoot("/tmp/simple_append.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
     std::vector<HostAddr> allHosts;
@@ -42,13 +42,13 @@ TEST(LogAppend, SimpleAppend) {
     for (int i = 1; i <= 100; ++i) {
         msgs.emplace_back(
             folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader->appendLogsAsync(0, {msgs.back()});
+        auto fut = leader->appendAsync(0, msgs.back());
         ASSERT_EQ(RaftPart::AppendLogResult::SUCCEEDED,
                   std::move(fut).get());
     }
     LOG(INFO) << "<===== Finish appending logs";
 
-    // Sleep a while to make sure the lat log has been committed on
+    // Sleep a while to make sure the last log has been committed on
     // followers
     sleep(FLAGS_heartbeat_interval);
 
@@ -71,7 +71,7 @@ TEST(LogAppend, SimpleAppend) {
 
 
 TEST(LogAppend, MultiThreadAppend) {
-    fs::TempDir walRoot("/tmp/election_after_boot.XXXXXX");
+    fs::TempDir walRoot("/tmp/multi_thread_append.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
     std::vector<HostAddr> allHosts;
@@ -93,8 +93,8 @@ TEST(LogAppend, MultiThreadAppend) {
         threads.emplace_back(std::thread([i, numLogs, leader] {
             for (int j = 1; j <= numLogs; ++j) {
                 do {
-                    auto fut = leader->appendLogsAsync(
-                        0, {folly::stringPrintf("Log %03d for t%d", j, i)});
+                    auto fut = leader->appendAsync(
+                        0, folly::stringPrintf("Log %03d for t%d", j, i));
                     if (fut.isReady() &&
                         fut.value() == RaftPart::AppendLogResult::E_BUFFER_OVERFLOW) {
                         // Buffer overflow, while a little
@@ -142,6 +142,7 @@ TEST(LogAppend, MultiThreadAppend) {
 
     finishRaft(services, copies, workers, leader);
 }
+
 }  // namespace raftex
 }  // namespace nebula
 
