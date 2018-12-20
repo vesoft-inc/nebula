@@ -111,11 +111,18 @@ struct ResultCode {
     3: optional HostAddr  leader,
 }
 
+struct VertexResponse {
+    1: i64 vertex_id,
+    2: binary vertex_data, // decode according to vertex_schema.
+    3: binary edge_data,   // decode according to edge_schema.
+}
+
 struct QueryResponse {
     1: required list<ResultCode> codes,
     2: required i32 latency_in_ms,      // Query latency from storage service
-    3: optional Schema schema,
-    4: optional binary data,            // Encoded data
+    3: optional Schema vertex_schema,   // vertex related props
+    4: optional Schema edge_schema,     // edge related props
+    5: optional list<VertexResponse> vertices,
 }
 
 struct ExecResponse {

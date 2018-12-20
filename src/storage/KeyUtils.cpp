@@ -11,28 +11,28 @@ namespace storage {
 
 // static
 std::string KeyUtils::vertexKey(PartitionID partId, VertexID vId,
-                                TagID tagId, Timestamp ts) {
+                                TagID tagId, TagVersion ts) {
     std::string key;
     key.reserve(kVertexLen);
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
        .append(reinterpret_cast<const char*>(&vId), sizeof(VertexID))
        .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID))
-       .append(reinterpret_cast<const char*>(&ts), sizeof(Timestamp));
+       .append(reinterpret_cast<const char*>(&ts), sizeof(TagVersion));
     return key;
 }
 
 // static
 std::string KeyUtils::edgeKey(PartitionID partId, VertexID srcId,
                               VertexID dstId, EdgeType type,
-                              EdgeRank rank, Timestamp ts) {
+                              EdgeRanking rank, EdgeVersion ts) {
     std::string key;
     key.reserve(kEdgeLen);
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
        .append(reinterpret_cast<const char*>(&srcId), sizeof(VertexID))
        .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType))
        .append(reinterpret_cast<const char*>(&dstId), sizeof(VertexID))
-       .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRank))
-       .append(reinterpret_cast<const char*>(&ts), sizeof(Timestamp));
+       .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRanking))
+       .append(reinterpret_cast<const char*>(&ts), sizeof(EdgeVersion));
     return key;
 }
 

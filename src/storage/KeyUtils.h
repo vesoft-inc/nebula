@@ -21,15 +21,10 @@ namespace storage {
  *
  * */
 
-using TagID     = int32_t;
-using VertexID  = int64_t;
-using EdgeRank  = int32_t;
-using EdgeType  = int32_t;
-using Timestamp = int64_t;
 
 using Vertex = std::tuple<VertexID, TagID>;
 
-using Edge = std::tuple<VertexID, EdgeType, VertexID, EdgeRank>;
+using Edge = std::tuple<VertexID, EdgeType, VertexID, EdgeRanking>;
 
 /**
  * This class supply some utils for transition between Vertex/Edge and key in kvstore.
@@ -41,14 +36,14 @@ public:
      * Generate vertex key for kv store
      * */
     static std::string vertexKey(PartitionID partId, VertexID vId,
-                                 TagID tagId, Timestamp ts);
+                                 TagID tagId, TagVersion ts);
 
     /**
      * Generate edge key for kv store
      * */
     static std::string edgeKey(PartitionID partId, VertexID srcId,
                                VertexID dstId, EdgeType type,
-                               EdgeRank rank, Timestamp ts);
+                               EdgeRanking rank, EdgeVersion ts);
 
     /**
      * Prefix for srcId edges with some edgeType
@@ -83,9 +78,9 @@ private:
 
 private:
     static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(VertexID)
-                                        + sizeof(TagID) + sizeof(Timestamp);
+                                        + sizeof(TagID) + sizeof(TagVersion);
     static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType)
-                                      + sizeof(VertexID) + sizeof(EdgeRank) + sizeof(Timestamp);
+                                      + sizeof(VertexID) + sizeof(EdgeRanking) + sizeof(EdgeVersion);
 };
 
 }  // namespace storage
