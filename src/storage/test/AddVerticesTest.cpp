@@ -26,19 +26,19 @@ TEST(AddVerticesTest, SimpleTest) {
     req.overwritable = true;
     // partId => List<Vertex>
     // Vertex => {Id, List<VertexProp>}
-    // VertexProp => {tagId, props}
+    // VertexProp => {tagId, tags}
     for (auto partId = 0; partId < 3; partId++) {
         std::vector<cpp2::Vertex> vertices;
         for (auto vertexId = partId * 10; vertexId < 10 * (partId + 1); vertexId++) {
-            std::vector<cpp2::VertexProps> props;
+            std::vector<cpp2::Tag> tags;
             for (auto tagId = 0; tagId < 10; tagId++) {
-                props.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                    tagId,
                                    folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
             }
             vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                   vertexId,
-                                  std::move(props));
+                                  std::move(tags));
         }
         req.vertices.emplace(partId, std::move(vertices));
     }

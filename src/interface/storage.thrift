@@ -123,14 +123,14 @@ struct ExecResponse {
     2: required i32 latency_in_ms,      // Execution latency
 }
 
-struct VertexProps {
+struct Tag {
     1: i32 tag_id,
     2: binary props,
 }
 
 struct Vertex {
     1: i64 id,
-    2: list<VertexProps> props,
+    2: list<Tag> tags,
 }
 
 struct EdgeKey {
@@ -149,7 +149,7 @@ struct Edge {
 struct GetNeighborsRequest {
     1: GraphSpaceID space_id,
     // partId => ids
-    2: map<PartitionID, list<i64>> ids,
+    2: map<PartitionID, list<i64>>(cpp.template = "std::unordered_map") ids,
     // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
     3: i32 edge_type,
     4: binary filter,
@@ -159,7 +159,7 @@ struct GetNeighborsRequest {
 struct NeighborsStatsRequest {
     1: GraphSpaceID space_id,
     // partId => ids
-    2: map<PartitionID, list<i64>> ids,
+    2: map<PartitionID, list<i64>>(cpp.template = "std::unordered_map") ids,
     // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
     3: i32 edge_type,
     4: binary filter,
@@ -168,21 +168,21 @@ struct NeighborsStatsRequest {
 
 struct VertexPropRequest {
     1: GraphSpaceID space_id,
-    2: map<PartitionID, list<i64>> ids,
+    2: map<PartitionID, list<i64>>(cpp.template = "std::unordered_map") ids,
     3: list<PropDef> return_columns,
 }
 
 struct EdgePropRequest {
     1: GraphSpaceID space_id,
     // partId => edges
-    2: map<PartitionID, list<EdgeKey>> edges,
+    2: map<PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") edges,
     3: list<PropDef> return_columns,
 }
 
 struct AddVerticesRequest {
     1: GraphSpaceID space_id,
     // partId => vertices
-    2: map<PartitionID, list<Vertex>> vertices,
+    2: map<PartitionID, list<Vertex>>(cpp.template = "std::unordered_map") vertices,
     // If true, it equals an upsert operation.
     3: bool overwritable,
 }
@@ -190,7 +190,7 @@ struct AddVerticesRequest {
 struct AddEdgesRequest {
     1: GraphSpaceID space_id,
     // partId => edges
-    2: map<PartitionID, list<Edge>> edges,
+    2: map<PartitionID, list<Edge>>(cpp.template = "std::unordered_map") edges,
     // If true, it equals an upsert operation.
     3: bool overwritable,
 }

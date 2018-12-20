@@ -23,12 +23,11 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
         const auto& vertices = pv.second;
         std::vector<kvstore::KV> data;
         std::for_each(vertices.begin(), vertices.end(), [&](auto& v){
-            const auto& props = v.get_props();
-            std::for_each(props.begin(), props.end(), [&](auto& prop) {
+            const auto& tags = v.get_tags();
+            std::for_each(tags.begin(), tags.end(), [&](auto& tag) {
                 auto key = KeyUtils::vertexKey(partId, v.get_id(),
-                                               prop.get_tag_id(), now);
-                auto val = std::move(prop.get_props());
-                data.emplace_back(std::move(key), std::move(val));
+                                               tag.get_tag_id(), now);
+                data.emplace_back(std::move(key), std::move(tag.get_props()));
             });
         });
         CHECK_NOTNULL(kvstore_);
