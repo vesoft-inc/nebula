@@ -6,71 +6,58 @@
 
 #include "base/Base.h"
 #include "meta/HostManager.h"
-#include "meta/ShardManager.h"
 
 namespace nebula {
 namespace meta {
 
+std::unordered_map<GraphSpaceID, std::shared_ptr<HostManager>> HostManager::hostManagers_;
+
+
 // static
-const HostManager& HostManager::get() {
-    static HostManager hostMgr;
-    return hostMgr;
+std::shared_ptr<const HostManager> HostManager::get(GraphSpaceID space) {
+    auto it = hostManagers_.find(space);
+    if (it != hostManagers_.end()) {
+        return it->second;
+    } else {
+        return std::shared_ptr<const HostManager>();
+    }
 }
 
 
-size_t HostManager::numHosts(GraphSpaceID space) const {
-    auto sm = ShardManager::get();
-    auto it = sm.spaceHostMap_.find(space);
-    if (it == sm.spaceHostMap_.end()) {
+size_t HostManager::numHosts() const {
+    auto sm = PartManager::get(space_);
+    if (!sm) {
+        LOG(ERROR) << "Cannot find PartManager for the graph space " << space_;
         return 0;
     } else {
-        return it->second.size();
+        return sm->numHosts();
     }
 }
 
 
-const std::vector<HostAddr>& HostManager::allHosts(GraphSpaceID space) const {
+const std::vector<HostAddr>& HostManager::allHosts() const {
     static const std::vector<HostAddr> emptyHostList;
 
-    auto sm = ShardManager::get();
-    auto it = sm.spaceHostMap_.find(space);
-    if (it == sm.spaceHostMap_.end()) {
+    auto sm = PartManager::get(space_);
+    if (!sm) {
+        LOG(ERROR) << "Cannot find PartManager for the graph space " << space_;
         return emptyHostList;
     } else {
-        return it->second;
+        return sm->allHosts();
     }
 }
 
 
-HostAddr HostManager::hostForId(GraphSpaceID space,
-                                int64_t id,
-                                PartitionID& shard) const {
+HostAddr HostManager::hostForId(int64_t id, PartitionID& part) const {
     // TODO Now always return the first host. We need to return the leader
     // when we know it
-    auto sm = ShardManager::get();
-    shard = sm.shardId(space, id);
-    auto hosts = sm.hostsForShard(space, shard);
+    auto sm = PartManager::get(space_);
+    CHECK_NE(!sm, true);
+    part = sm->partId(id);
+    auto hosts = sm->hostsForPart(part);
     CHECK_GT(hosts.size(), 0U);
+    // TODO We need to use the leader here
     return hosts.front();
-}
-
-
-std::unordered_map<HostAddr, std::unordered_map<PartitionID, std::vector<int64_t>>>
-HostManager::clusterIdsToHosts(GraphSpaceID space,
-                               std::vector<int64_t>& ids) const {
-    std::unordered_map<HostAddr, std::unordered_map<PartitionID, std::vector<int64_t>>>
-        clusters;
-
-    auto sm = ShardManager::get();
-    for (auto id : ids) {
-        PartitionID shard = sm.shardId(space, id);
-        auto hosts = sm.hostsForShard(space, shard);
-        CHECK_GT(hosts.size(), 0U);
-        // TODO We need to use the leader here
-        clusters[hosts.front()][shard].push_back(id);
-    }
-
-    return clusters;
 }
 
 }  // namespace meta
