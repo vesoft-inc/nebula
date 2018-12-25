@@ -18,17 +18,17 @@
 namespace nebula {
 namespace storage {
 
-class AddVerticesProcessor : public BaseProcessor<cpp2::AddVerticesRequest, cpp2::ExecResponse> {
+class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
     static AddVerticesProcessor* instance(kvstore::KVStore* kvstore) {
         return new AddVerticesProcessor(kvstore);
     }
 
-    void process(const cpp2::AddVerticesRequest& req) override;
+    void process(const cpp2::AddVerticesRequest& req);
 
 private:
     AddVerticesProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::AddVerticesRequest, cpp2::ExecResponse>(kvstore) {}
+        : BaseProcessor<cpp2::ExecResponse>(kvstore) {}
 
 private:
     std::vector<cpp2::ResultCode> codes_;

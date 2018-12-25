@@ -68,9 +68,8 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     // Return edge props col_0, col_2, col_4 ... col_18
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 10; i++) {
-        tmpColumns.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                cpp2::PropOwner::EDGE, 0,
-                                folly::stringPrintf("col_%d", i*2));
+        tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
+                                                   folly::stringPrintf("col_%d", i*2)));
     }
     req.set_return_columns(std::move(tmpColumns));
     LOG(INFO) << "Test QueryEdgePropsRequest...";

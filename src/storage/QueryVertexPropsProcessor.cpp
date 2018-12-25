@@ -16,9 +16,14 @@ namespace storage {
 
 void QueryVertexPropsProcessor::process(const cpp2::VertexPropRequest& vertexReq) {
     cpp2::GetNeighborsRequest req;
-    req.space_id = vertexReq.get_space_id();
-    req.ids = std::move(vertexReq.get_ids());
-    req.return_columns = std::move(vertexReq.get_return_columns());
+    req.set_space_id(vertexReq.get_space_id());
+    req.set_ids(std::move(vertexReq.get_ids()));
+    decltype(req.return_columns) tmpColumns;
+    tmpColumns.reserve(vertexReq.get_return_columns().size());
+    for (auto& col : vertexReq.get_return_columns()) {
+        tmpColumns.emplace_back(std::move(col));
+    }
+    req.set_return_columns(std::move(tmpColumns));
     QueryBoundProcessor::process(req);
 }
 

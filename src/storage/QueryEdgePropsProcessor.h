@@ -7,49 +7,51 @@
 #ifndef STORAGE_QUERYEDGEPROPSROCESSOR_H_
 #define STORAGE_QUERYEDGEPROPSROCESSOR_H_
 
-#include "base/Base.h"
-#include <folly/SpinLock.h>
-#include <folly/futures/Promise.h>
-#include <folly/futures/Future.h>
-#include "kvstore/include/KVStore.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "storage/BaseProcessor.h"
-#include "meta/SchemaManager.h"
-#include "dataman/RowSetWriter.h"
+#include "storage/QueryBaseProcessor.h"
 
 namespace nebula {
 namespace storage {
 
 class QueryEdgePropsProcessor
-    : public BaseProcessor<cpp2::EdgePropRequest, cpp2::EdgePropResponse> {
+    : public QueryBaseProcessor<cpp2::EdgePropRequest, cpp2::EdgePropResponse> {
 public:
     static QueryEdgePropsProcessor* instance(kvstore::KVStore* kvstore,
-                                         meta::SchemaManager* schemaMan) {
+                                             meta::SchemaManager* schemaMan) {
         return new QueryEdgePropsProcessor(kvstore, schemaMan);
     }
 
-    void process(const cpp2::EdgePropRequest& req) override;
+    // It is one new method for QueryBaseProcessor.process.
+    void process(const cpp2::EdgePropRequest& req);
 
 private:
     QueryEdgePropsProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
-        : BaseProcessor<cpp2::EdgePropRequest, cpp2::EdgePropResponse>(kvstore)
-        , schemaMan_(schemaMan) {}
-
-    void prepareSchemata(const std::vector<cpp2::PropDef>& props,
-                         EdgeType edgeType,
-                         SchemaProviderIf*& edgeSchema,
-                         cpp2::Schema& respEdge,
-                         int32_t& schemaVer);
+        : QueryBaseProcessor<cpp2::EdgePropRequest, cpp2::EdgePropResponse>(kvstore, schemaMan) {}
 
     kvstore::ResultCode collectEdgesProps(PartitionID partId,
                                           const cpp2::EdgeKey& edgeKey,
                                           SchemaProviderIf* edgeSchema,
-                                          SchemaProviderIf* respEdgeSchema,
+                                          std::vector<PropContext>& props,
                                           RowSetWriter& rsWriter);
 
-private:
-    meta::SchemaManager* schemaMan_ = nullptr;
-    GraphSpaceID  spaceId_;
+    kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
+                                      std::vector<TagContext>& tagContexts,
+                                      EdgeContext& edgeContext) {
+        UNUSED(partID);
+        UNUSED(vId);
+        UNUSED(tagContexts);
+        UNUSED(edgeContext);
+        LOG(FATAL) << "Unimplement!";
+        return kvstore::ResultCode::SUCCESSED;
+    }
+
+    void onProcessed(std::vector<TagContext>& tagContexts,
+                     EdgeContext& edgeContext, int32_t retNum) {
+        UNUSED(tagContexts);
+        UNUSED(edgeContext);
+        UNUSED(retNum);
+        LOG(FATAL) << "Unimplement!";
+    }
+
 };
 
 }  // namespace storage

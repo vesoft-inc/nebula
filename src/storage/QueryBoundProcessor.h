@@ -8,59 +8,47 @@
 #define STORAGE_QUERYBOUNDPROCESSOR_H_
 
 #include "base/Base.h"
-#include "kvstore/include/KVStore.h"
-#include "storage/BaseProcessor.h"
+#include "storage/QueryBaseProcessor.h"
 
 namespace nebula {
 namespace storage {
 
-class QueryBoundProcessor : public BaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse> {
+
+class QueryBoundProcessor
+    : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse> {
 public:
     static QueryBoundProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan) {
         return new QueryBoundProcessor(kvstore, schemaMan);
     }
 
-    void process(const cpp2::GetNeighborsRequest& req) override;
-
 protected:
     QueryBoundProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
-        : BaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse>(kvstore)
-        , schemaMan_(schemaMan) {}
+        : QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse>(kvstore, schemaMan) {}
 
-    /**
-     * Scan props passed-in, and generate all Schema objects current request needed
-     * */
-    void prepareSchemata(const cpp2::GetNeighborsRequest& req,
-                         SchemaProviderIf*& edgeSchema,
-                         std::vector<std::pair<TagID, SchemaProviderIf*>>& tagSchemata,
-                         cpp2::Schema& respEdge,
-                         cpp2::Schema& respTag,
-                         int32_t& schemaVer);
+    kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
+                                      std::vector<TagContext>& tagContexts,
+                                      EdgeContext& edgeContext) override;
 
-    /**
-     * Collect vertex props as respTagSchema
-     * */
+    void onProcessed(std::vector<TagContext>& tagContexts,
+                     EdgeContext& edgeContext,
+                     int32_t retNum) override;
+
     kvstore::ResultCode collectVertexProps(
-                       PartitionID partId, VertexID vId,
-                       std::vector<std::pair<TagID, SchemaProviderIf*>> tagSchemata,
-                       SchemaProviderIf* respTagSchema,
-                       cpp2::VertexResponse& vResp);
+                            PartitionID partId,
+                            VertexID vId,
+                            TagID tagId,
+                            SchemaProviderIf* tagSchema,
+                            std::vector<PropContext>& props,
+                            RowWriter& writer);
 
-    /**
-     * Collect edges props as respEdgeSchema.
-     * */
-    kvstore::ResultCode collectEdgesProps(PartitionID partId,
-                                          VertexID vId,
-                                          EdgeType edgeType,
-                                          SchemaProviderIf* edgeSchema,
-                                          SchemaProviderIf* respEdgeSchema,
-                                          cpp2::VertexResponse& vResp);
-
-
-private:
-    meta::SchemaManager* schemaMan_ = nullptr;
-    GraphSpaceID  spaceId_;
+    kvstore::ResultCode collectEdgeProps(
+                                       PartitionID partId,
+                                       VertexID vId,
+                                       EdgeType edgeType,
+                                       SchemaProviderIf* schema,
+                                       std::vector<PropContext>& props,
+                                       RowSetWriter& writer);
 };
 
 }  // namespace storage

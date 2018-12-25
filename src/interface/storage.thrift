@@ -29,6 +29,11 @@ enum ErrorCode {
     E_SPACE_NOT_FOUND = -13,
     E_PART_NOT_FOUND = -14,
 
+    // meta failures
+    E_EDGE_PROP_NOT_FOUND = -21,
+    E_TAG_PROP_NOT_FOUND = -22,
+    E_IMPROPER_DATA_TYPE = -23,
+
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -85,7 +90,8 @@ enum PropOwner {
 struct PropDef {
     1: PropOwner owner,
     2: i32 tag_id,       // Only valid when owner is SOURCE or DEST
-    3: string name,     // Property name
+    3: string name,      // Property name
+    4: StatType stat,    // calc stats when setted.
 }
 
 enum StatType {
@@ -93,11 +99,6 @@ enum StatType {
     COUNT = 2,
     AVG = 3,
 } (cpp.enum_strict)
-
-struct PropStat {
-    1: StatType stat,
-    2: PropDef prop,
-}
 
 struct HostAddr {
     1: IPv4  ip,
@@ -137,6 +138,15 @@ struct EdgePropResponse {
     4: optional binary data,
 }
 
+struct QueryStatsResponse {
+    // If error for the whole request, the codes would have only one element and 
+    // related part_id equals -1
+    1: required list<ResultCode> codes,
+    2: required i32 latency_in_ms,      // Query latency from storage service
+    3: optional Schema schema,
+    4: optional binary data,
+}
+
 struct Tag {
     1: i32 tag_id,
     2: binary props,
@@ -169,16 +179,6 @@ struct GetNeighborsRequest {
     3: i32 edge_type,
     4: binary filter,
     5: list<PropDef> return_columns,
-}
-
-struct NeighborsStatsRequest {
-    1: GraphSpaceID space_id,
-    // partId => ids
-    2: map<PartitionID, list<i64>>(cpp.template = "std::unordered_map") ids,
-    // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
-    3: i32 edge_type,
-    4: binary filter,
-    5: list<PropStat> return_columns,
 }
 
 struct VertexPropRequest {
@@ -215,8 +215,8 @@ service StorageService {
     QueryResponse getOutBound(1: GetNeighborsRequest req)
     QueryResponse getInBound(1: GetNeighborsRequest req)
 
-    QueryResponse outBoundStats(1: NeighborsStatsRequest req)
-    QueryResponse inBoundStats(1: NeighborsStatsRequest req)
+    QueryStatsResponse outBoundStats(1: GetNeighborsRequest req)
+    QueryStatsResponse inBoundStats(1: GetNeighborsRequest req)
 
     // When return_columns is empty, return all properties
     QueryResponse getProps(1: VertexPropRequest req);

@@ -102,6 +102,22 @@ public:
         }
         return new ResultSchemaProvider(std::move(schema));
     }
+
+    static cpp2::PropDef propDef(cpp2::PropOwner owner, std::string name, TagID tagId = -1) {
+        cpp2::PropDef prop;
+        prop.set_name(std::move(name));
+        prop.set_owner(owner);
+        if (tagId != -1) {
+            prop.set_tag_id(tagId);
+        }
+        return prop;
+    }
+
+    static cpp2::PropDef propDef(cpp2::PropOwner owner, std::string name, cpp2::StatType type, TagID tagId = -1) {
+        auto prop = TestUtils::propDef(owner, name, tagId);
+        prop.set_stat(type);
+        return prop;
+    }
 };
 
 }  // namespace storage

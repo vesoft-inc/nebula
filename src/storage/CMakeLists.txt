@@ -8,6 +8,7 @@ add_library(
     QueryBoundProcessor.cpp
     QueryVertexPropsProcessor.cpp
     QueryEdgePropsProcessor.cpp
+    QueryStatsProcessor.cpp
 )
 
 add_dependencies(storage_service_handler common storage_thrift_obj kvstore_obj dataman_obj meta_obj)
