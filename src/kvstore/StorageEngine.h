@@ -4,15 +4,15 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef STORAGE_STORAGEENGINE_H_
-#define STORAGE_STORAGEENGINE_H_
+#ifndef KVSTORE_STORAGEENGINE_H_
+#define KVSTORE_STORAGEENGINE_H_
 
 #include "base/Base.h"
-#include "storage/include/Iterator.h"
-#include "storage/include/ResultCode.h"
+#include "kvstore/include/Iterator.h"
+#include "kvstore/include/ResultCode.h"
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 class StorageEngine {
 public:
@@ -45,7 +45,7 @@ protected:
     GraphSpaceID spaceId_;
 };
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
-#endif  // STORAGE_STORAGEENGINE_H_
+#endif  // KVSTORE_STORAGEENGINE_H_
 

@@ -1,84 +1,36 @@
 add_executable(
-    part_test
-    PartTest.cpp
-    $<TARGET_OBJECTS:storage_obj>
+    add_vertices_test
+    AddVerticesTest.cpp
+    $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
 target_link_libraries(
-    part_test
+    add_vertices_test
     ${ROCKSDB_LIBRARIES}
-    jemalloc
-    zstd
-    snappy
+    ${THRIFT_LIBRARIES}
+    wangle
     folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
     gtest
     glog
     gflags
-    boost_context
     event
+    ${COMPRESSION_LIBRARIES}
+    resolv
     double-conversion
     dl
-    event
-    z
+    jemalloc
     -pthread
 )
-add_test(NAME part_test COMMAND part_test)
 
-add_executable(
-    rocksdb_engine_test
-    RocksdbEngineTest.cpp
-    $<TARGET_OBJECTS:storage_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
-)
-target_link_libraries(
-    rocksdb_engine_test
-    ${ROCKSDB_LIBRARIES}
-    jemalloc
-    zstd
-    snappy
-    folly
-    gtest
-    glog
-    gflags
-    boost_context
-    event
-    double-conversion
-    dl
-    event
-    z
-    -pthread
-)
-add_test(NAME rocksdb_engine_test COMMAND rocksdb_engine_test)
+add_test(NAME add_vertices_test COMMAND add_vertices_test)
 
-add_executable(
-    kvstore_test
-    KVStoreTest.cpp
-    $<TARGET_OBJECTS:storage_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
-)
-target_link_libraries(
-    kvstore_test
-    ${ROCKSDB_LIBRARIES}
-    jemalloc
-    zstd
-    snappy
-    folly
-    gtest
-    glog
-    gflags
-    boost_context
-    event
-    double-conversion
-    dl
-    event
-    z
-    -pthread
-)
-add_test(NAME kvstore_test COMMAND kvstore_test)
 
