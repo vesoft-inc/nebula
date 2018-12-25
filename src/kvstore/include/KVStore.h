@@ -4,15 +4,15 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef STORAGE_INCLUDE_KVSTORE_H_
-#define STORAGE_INCLUDE_KVSTORE_H_
+#ifndef KVSTORE_INCLUDE_KVSTORE_H_
+#define KVSTORE_INCLUDE_KVSTORE_H_
 
 #include "base/Base.h"
-#include "storage/include/ResultCode.h"
-#include "storage/include/Iterator.h"
+#include "kvstore/include/ResultCode.h"
+#include "kvstore/include/Iterator.h"
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 
 using KVCallback = std::function<void(ResultCode code, HostAddr hostAddr)>;
@@ -59,7 +59,7 @@ protected:
     KVStore() = default;
 };
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
-#endif  // STORAGE_INCLUDE_KVSTORE_H_
+#endif  // KVSTORE_INCLUDE_KVSTORE_H_
 

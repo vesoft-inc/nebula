@@ -4,14 +4,14 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef STORAGE_PARTMANAGER_H_
-#define STORAGE_PARTMANAGER_H_
+#ifndef KVSTORE_PARTMANAGER_H_
+#define KVSTORE_PARTMANAGER_H_
 
 #include <gtest/gtest_prod.h>
 #include "base/Base.h"
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 using MachineID = uint32_t;
 
@@ -63,11 +63,15 @@ public:
 
     PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
+    PartsMap& partsMap() {
+        return partsMap_;
+    }
+
 private:
     PartsMap partsMap_;
 };
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
-#endif  // STORAGE_PARTMANAGER_H_
+#endif  // KVSTORE_PARTMANAGER_H_
 

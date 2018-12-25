@@ -4,18 +4,18 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef STORAGE_KVSTOREIMPL_H_
-#define STORAGE_KVSTOREIMPL_H_
+#ifndef KVSTORE_KVSTOREIMPL_H_
+#define KVSTORE_KVSTOREIMPL_H_
 
 #include <gtest/gtest_prod.h>
 #include "base/Base.h"
-#include "storage/include/KVStore.h"
-#include "storage/PartManager.h"
-#include "storage/Part.h"
-#include "storage/StorageEngine.h"
+#include "kvstore/include/KVStore.h"
+#include "kvstore/PartManager.h"
+#include "kvstore/Part.h"
+#include "kvstore/StorageEngine.h"
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 // <engine pointer, path>
 using Engine = std::pair<std::unique_ptr<StorageEngine>, std::string>;
@@ -80,7 +80,7 @@ private:
     std::vector<std::string> paths_;
 };
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
-#endif  // STORAGE_KVSTOREIMPL_H_
+#endif  // KVSTORE_KVSTOREIMPL_H_
 

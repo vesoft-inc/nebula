@@ -4,15 +4,15 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef STORAGE_PART_H_
-#define STORAGE_PART_H_
+#ifndef KVSTORE_PART_H_
+#define KVSTORE_PART_H_
 
 #include "base/Base.h"
-#include "storage/StorageEngine.h"
-#include "storage/include/KVStore.h"
+#include "kvstore/StorageEngine.h"
+#include "kvstore/include/KVStore.h"
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 class Part {
 public:
@@ -54,7 +54,7 @@ public:
 
 
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
-#endif  // STORAGE_PART_H_
+#endif  // KVSTORE_PART_H_
 

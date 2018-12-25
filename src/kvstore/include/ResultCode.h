@@ -4,13 +4,13 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef STORAGE_RESULTCODE_H_
-#define STORAGE_RESULTCODE_H_
+#ifndef KVSTORE_RESULTCODE_H_
+#define KVSTORE_RESULTCODE_H_
 
 #include "base/Base.h"
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 using KV = std::pair<std::string, std::string>;
 
@@ -20,9 +20,10 @@ enum ResultCode {
     ERR_PART_NOT_FOUND =  -2,
     ERR_KEY_NOT_FOUND   =  -3,
     ERR_SPACE_NOT_FOUND =  -4,
+    ERR_LEADER_CHANAGED = -5,
 };
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
-#endif  // STORAGE_RESULTCODE_H_
+#endif  // KVSTORE_RESULTCODE_H_
 
