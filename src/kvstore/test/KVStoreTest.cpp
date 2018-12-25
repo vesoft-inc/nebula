@@ -8,14 +8,14 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
-#include "storage/include/KVStore.h"
-#include "storage/PartManager.h"
-#include "storage/KVStoreImpl.h"
+#include "kvstore/include/KVStore.h"
+#include "kvstore/PartManager.h"
+#include "kvstore/KVStoreImpl.h"
 
 DECLARE_string(part_man_type);
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 TEST(KVStoreTest, SimpleTest) {
     FLAGS_part_man_type = "memory";  // Use MemPartManager.
@@ -92,7 +92,7 @@ TEST(KVStoreTest, SimpleTest) {
     EXPECT_EQ(100, num);
 }
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
 
 

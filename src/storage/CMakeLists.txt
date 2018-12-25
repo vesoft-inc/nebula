@@ -1,11 +1,12 @@
+
 add_library(
-    storage_obj OBJECT
-    Part.cpp
-    RocksdbEngine.cpp
-    PartManager.cpp
-    KVStoreImpl.cpp
+    storage_service_handler OBJECT
+    StorageServiceHandler.cpp
+    KeyUtils.cpp
+    AddVerticesProcessor.cpp
 )
-add_dependencies(storage_obj common)
+
+add_dependencies(storage_service_handler common storage_thrift_obj kvstore_obj)
 
 add_subdirectory(test)
 

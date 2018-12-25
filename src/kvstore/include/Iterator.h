@@ -4,13 +4,13 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef STORAGE_INCLUDE_ITERATOR_H_
-#define STORAGE_INCLUDE_ITERATOR_H_
+#ifndef KVSTORE_INCLUDE_ITERATOR_H_
+#define KVSTORE_INCLUDE_ITERATOR_H_
 
 #include "base/Base.h"
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 class StorageIter {
 public:
@@ -27,7 +27,7 @@ public:
     virtual folly::StringPiece val() = 0;
 };
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
-#endif  // STORAGE_INCLUDE_ITERATOR_H_
+#endif  // KVSTORE_INCLUDE_ITERATOR_H_
 

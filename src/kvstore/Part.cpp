@@ -4,10 +4,10 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "storage/Part.h"
+#include "kvstore/Part.h"
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 ResultCode SimplePart::asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) {
     CHECK_NOTNULL(engine_);
@@ -16,6 +16,6 @@ ResultCode SimplePart::asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) {
     return ret;
 }
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
 
