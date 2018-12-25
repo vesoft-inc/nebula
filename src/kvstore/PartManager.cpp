@@ -3,12 +3,12 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-#include "storage/PartManager.h"
+#include "kvstore/PartManager.h"
 
 DEFINE_string(part_man_type, "memory", "memory, meta");
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 //static
 PartManager* PartManager::instance_;
@@ -38,6 +38,6 @@ PartMeta MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
 }
 
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
 

@@ -82,21 +82,6 @@ bool RowSetReader::Iterator::operator==(const Iterator& rhs) {
  * RowSetReader class
  *
  **********************************/
-RowSetReader::RowSetReader(storage::cpp2::QueryResponse& resp)
-        : takeOwnership_(true) {
-    auto schema = resp.get_schema();
-    if (schema) {
-        // There is a schema provided in the response
-        schema_.reset(new ResultSchemaProvider(std::move(*schema)));
-    }
-
-    // If no schema, we cannot decode the data
-    if (schema_ && resp.get_data()) {
-        dataStore_ = std::move(*resp.get_data());
-        data_ = dataStore_;
-    }
-}
-
 
 RowSetReader::RowSetReader(SchemaProviderIf* schema,
                            folly::StringPiece data)

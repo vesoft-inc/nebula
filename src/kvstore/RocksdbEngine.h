@@ -4,16 +4,16 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef STORAGE_ROCKSDBENGINE_H_
-#define STORAGE_ROCKSDBENGINE_H_
+#ifndef KVSTORE_ROCKSDBENGINE_H_
+#define KVSTORE_ROCKSDBENGINE_H_
 
 #include <gtest/gtest_prod.h>
 #include <rocksdb/db.h>
 #include "base/Base.h"
-#include "storage/StorageEngine.h"
+#include "kvstore/StorageEngine.h"
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 class RocksdbRangeIter : public StorageIter {
 public:
@@ -110,7 +110,7 @@ private:
     std::unique_ptr<rocksdb::DB> db_{nullptr};
 };
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
-#endif  // STORAGE_ROCKSDBENGINE_H_
+#endif  // KVSTORE_ROCKSDBENGINE_H_
 

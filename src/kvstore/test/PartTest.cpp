@@ -8,10 +8,10 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
-#include "storage/Part.h"
+#include "kvstore/Part.h"
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 TEST(PartTest, SimpleTest) {
     LOG(INFO) << "Simple test for shard class...";
@@ -50,7 +50,7 @@ TEST(PartTest, RocksdbTest) {
     delete db;
 }
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
 
 int main(int argc, char** argv) {

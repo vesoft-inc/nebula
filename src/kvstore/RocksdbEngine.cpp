@@ -4,14 +4,14 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "storage/RocksdbEngine.h"
+#include "kvstore/RocksdbEngine.h"
 #include <folly/String.h>
 #include "fs/FileUtils.h"
 
 DEFINE_uint32(batch_reserved_bytes, 4 * 1024, "default reserved bytes for one batch operation");
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath)
     : StorageEngine(spaceId)
@@ -89,6 +89,6 @@ ResultCode RocksdbEngine::prefix(const std::string& prefix,
     return ResultCode::SUCCESSED;
 }
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
 

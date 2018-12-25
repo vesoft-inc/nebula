@@ -9,10 +9,10 @@
 #include <rocksdb/db.h>
 #include <folly/lang/Bits.h>
 #include "fs/TempDir.h"
-#include "storage/RocksdbEngine.h"
+#include "kvstore/RocksdbEngine.h"
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
 TEST(RocksdbEngineTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
@@ -101,7 +101,7 @@ TEST(RocksdbEngineTest, PrefixTest) {
     checkPrefix("c", 20, 20);
 }
 
-}  // namespace storage
+}  // namespace kvstore
 }  // namespace nebula
 
 int main(int argc, char** argv) {
