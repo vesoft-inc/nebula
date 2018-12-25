@@ -33,39 +33,6 @@ private:
         : BaseProcessor<cpp2::NeighborsStatsRequest, cpp2::QueryResponse>(kvstore) {}
 };
 
-class QueryVertexPropsProcessor
-    : public BaseProcessor<cpp2::VertexPropRequest, cpp2::QueryResponse> {
-public:
-    static QueryVertexPropsProcessor* instance(kvstore::KVStore* kvstore) {
-        return new QueryVertexPropsProcessor(kvstore);
-    }
-
-    void process(const cpp2::VertexPropRequest& req) override {
-        VLOG(1) << req.get_space_id();
-        // TODO
-    }
-
-private:
-    QueryVertexPropsProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::VertexPropRequest, cpp2::QueryResponse>(kvstore) {}
-};
-
-class QueryEdgePropsProcessor : public BaseProcessor<cpp2::EdgePropRequest, cpp2::QueryResponse> {
-public:
-    static QueryEdgePropsProcessor* instance(kvstore::KVStore* kvstore) {
-        return new QueryEdgePropsProcessor(kvstore);
-    }
-
-    void process(const cpp2::EdgePropRequest& req) override {
-        VLOG(1) << req.get_space_id();
-        // TODO
-    }
-
-private:
-    QueryEdgePropsProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::EdgePropRequest, cpp2::QueryResponse>(kvstore) {}
-};
-
 }  // namespace storage
 }  // namespace nebula
 #endif  // STORAGE_QUERYPROCESSOR_H_

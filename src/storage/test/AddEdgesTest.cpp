@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
-#include "storage/test/StorageTestBase.h"
+#include "storage/test/TestUtils.h"
 #include "storage/AddEdgesProcessor.h"
 #include "storage/KeyUtils.h"
 

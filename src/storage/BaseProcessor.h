@@ -10,7 +10,19 @@
 #include "base/Base.h"
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
+#include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/include/KVStore.h"
+#include "meta/SchemaManager.h"
+#include "dataman/RowSetWriter.h"
+#include "dataman/RowReader.h"
+#include "dataman/RowWriter.h"
+
+#ifndef CHECK_AND_WRITE
+#define CHECK_AND_WRITE(ret) \
+    if (ResultType::SUCCEEDED == ret) { \
+        writer << v; \
+    }
+#endif
 
 namespace nebula {
 namespace storage {
@@ -51,6 +63,75 @@ protected:
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
         }
+    }
+
+    cpp2::ColumnDef columnDef(std::string name, cpp2::SupportedType type) {
+        cpp2::ColumnDef column;
+        column.name = std::move(name);
+        column.type.type = type;
+        return column;
+    }
+    /**
+     * It will parse inputRow as inputSchema, and output data into rowWriter.
+     * */
+    void output(SchemaProviderIf* inputSchema, folly::StringPiece inputRow,
+                int32_t ver, SchemaProviderIf* outputSchema, RowWriter& writer) {
+        CHECK_NOTNULL(inputSchema);
+        CHECK_NOTNULL(outputSchema);
+        for (auto i = 0; i < inputSchema->getNumFields(ver); i++) {
+            const auto* name = inputSchema->getFieldName(i, ver);
+            VLOG(3) << "input schema: name = " << name;
+        }
+        RowReader reader(inputSchema, inputRow);
+        auto numFields = outputSchema->getNumFields(ver);
+        VLOG(3) << "Total output columns is " << numFields;
+        for (auto i = 0; i < numFields; i++) {
+            const auto* name = outputSchema->getFieldName(i, ver);
+            const auto* type = outputSchema->getFieldType(i, ver);
+            VLOG(3) << "output schema " << name;
+            switch (type->type) {
+                case cpp2::SupportedType::BOOL: {
+                    bool v;
+                    auto ret = reader.getBool(name, v);
+                    CHECK_AND_WRITE(ret);
+                    break;
+                }
+                case cpp2::SupportedType::INT: {
+                    int32_t v;
+                    auto ret = reader.getInt<int32_t>(name, v);
+                    CHECK_AND_WRITE(ret);
+                    break;
+                }
+                case cpp2::SupportedType::VID: {
+                    int64_t v;
+                    auto ret = reader.getVid(name, v);
+                    CHECK_AND_WRITE(ret);
+                    break;
+                }
+                case cpp2::SupportedType::FLOAT: {
+                    float v;
+                    auto ret = reader.getFloat(name, v);
+                    CHECK_AND_WRITE(ret);
+                    break;
+                }
+                case cpp2::SupportedType::DOUBLE: {
+                    double v;
+                    auto ret = reader.getDouble(name, v);
+                    CHECK_AND_WRITE(ret);
+                    break;
+                }
+                case cpp2::SupportedType::STRING: {
+                    folly::StringPiece v;
+                    auto ret = reader.getString(name, v);
+                    CHECK_AND_WRITE(ret);
+                    break;
+                }
+                default: {
+                    LOG(FATAL) << "Unsupport type!";
+                    break;
+                }
+            } // switch
+        } // for
     }
 
 protected:

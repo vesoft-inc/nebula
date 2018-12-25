@@ -55,6 +55,9 @@ public:
      * */
     static std::string prefix(PartitionID partId, VertexID vId);
 
+    static std::string prefix(PartitionID partId, VertexID src, EdgeType type,
+                              VertexID dst, EdgeRanking ranking);
+
     static bool isVertex(const std::string& rawKey) {
         return rawKey.size() == kVertexLen;
     }

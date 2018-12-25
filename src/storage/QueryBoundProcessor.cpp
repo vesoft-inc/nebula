@@ -11,33 +11,26 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 
-#define CHECK_AND_WRITE(ret) \
-    if (ResultType::SUCCEEDED == ret) { \
-        LOG(INFO) << name << "," << v; \
-        writer << v; \
-    }
 
 namespace nebula {
 namespace storage {
 
-cpp2::ColumnDef QueryBoundProcessor::columnDef(std::string name, cpp2::SupportedType type) {
-    cpp2::ColumnDef column;
-    column.name = std::move(name);
-    column.type.type = type;
-    return column;
-}
+void QueryBoundProcessor::prepareSchemata(
+                                  const cpp2::GetNeighborsRequest& req,
+                                  SchemaProviderIf*& edgeSchema,
+                                  std::vector<std::pair<TagID, SchemaProviderIf*>>& tagSchemata,
+                                  cpp2::Schema& respTag,
+                                  cpp2::Schema& respEdge,
+                                  int32_t& schemaVer) {
 
-void
-QueryBoundProcessor::prepareSchemata(const std::vector<cpp2::PropDef>& props,
-                                     EdgeType edgeType,
-                                     SchemaProviderIf*& edgeSchema,
-                                     std::vector<std::pair<TagID, SchemaProviderIf*>>& tagSchemata,
-                                     cpp2::Schema& respTag,
-                                     cpp2::Schema& respEdge,
-                                     int32_t& schemaVer) {
-    edgeSchema = schemaMan_->edgeSchema(spaceId_, edgeType);
+    VLOG(3) << "req.__isset " << req.__isset.edge_type << "," << req.__isset.ids;
+    auto& props = req.get_return_columns();
     schemaVer = schemaMan_->version();
-    respEdge.columns.reserve(props.size());
+    edgeSchema = nullptr;
+    if (req.__isset.edge_type) {
+        edgeSchema = schemaMan_->edgeSchema(spaceId_, req.edge_type);
+        respEdge.columns.reserve(props.size());
+    }
     respTag.columns.reserve(props.size());
     std::unordered_map<TagID, SchemaProviderIf*> tagSchemaMap;
     for (auto& prop : props) {
@@ -63,10 +56,12 @@ QueryBoundProcessor::prepareSchemata(const std::vector<cpp2::PropDef>& props,
                 break;
             }
             case cpp2::PropOwner::EDGE: {
-                const auto* ftype = edgeSchema->getFieldType(prop.name, schemaVer);
-                if (ftype != nullptr) {
-                    respEdge.columns.emplace_back(
-                            columnDef(std::move(prop.get_name()), ftype->type));
+                if (edgeSchema != nullptr) {
+                    const auto* ftype = edgeSchema->getFieldType(prop.name, schemaVer);
+                    if (ftype != nullptr) {
+                        respEdge.columns.emplace_back(
+                                columnDef(std::move(prop.get_name()), ftype->type));
+                    }
                 }
                 break;
             }
@@ -74,77 +69,12 @@ QueryBoundProcessor::prepareSchemata(const std::vector<cpp2::PropDef>& props,
     };
 }
 
-void QueryBoundProcessor::output(SchemaProviderIf* inputSchema,
-                                 folly::StringPiece inputRow,
-                                 int32_t ver,
-                                 SchemaProviderIf* outputSchema,
-                                 RowWriter& writer) {
-    CHECK_NOTNULL(inputSchema);
-    CHECK_NOTNULL(outputSchema);
-    for (auto i = 0; i < inputSchema->getNumFields(ver); i++) {
-        const auto* name = inputSchema->getFieldName(i, ver);
-        VLOG(3) << "input schema: name = " << name;
-    }
-    RowReader reader(inputSchema, inputRow);
-    auto numFields = outputSchema->getNumFields(ver);
-    VLOG(3) << "Total output columns is " << numFields;
-    for (auto i = 0; i < numFields; i++) {
-        const auto* name = outputSchema->getFieldName(i, ver);
-        const auto* type = outputSchema->getFieldType(i, ver);
-        VLOG(3) << "output schema " << name;
-        switch (type->type) {
-            case cpp2::SupportedType::BOOL: {
-                bool v;
-                auto ret = reader.getBool(name, v);
-                CHECK_AND_WRITE(ret);
-                break;
-            }
-            case cpp2::SupportedType::INT: {
-                int32_t v;
-                auto ret = reader.getInt<int32_t>(name, v);
-                CHECK_AND_WRITE(ret);
-                break;
-            }
-            case cpp2::SupportedType::VID: {
-                int64_t v;
-                auto ret = reader.getVid(name, v);
-                CHECK_AND_WRITE(ret);
-                break;
-            }
-            case cpp2::SupportedType::FLOAT: {
-                float v;
-                auto ret = reader.getFloat(name, v);
-                CHECK_AND_WRITE(ret);
-                break;
-            }
-            case cpp2::SupportedType::DOUBLE: {
-                double v;
-                auto ret = reader.getDouble(name, v);
-                CHECK_AND_WRITE(ret);
-                break;
-            }
-            case cpp2::SupportedType::STRING: {
-                folly::StringPiece v;
-                auto ret = reader.getString(name, v);
-                CHECK_AND_WRITE(ret);
-                break;
-            }
-            default: {
-                LOG(FATAL) << "Unsupport type!";
-                break;
-            }
-        }
-    };
-}
-
-kvstore::ResultCode
-QueryBoundProcessor::collectVertexProps(PartitionID partId, VertexID vId,
-                                        std::vector<std::pair<TagID, SchemaProviderIf*>> tagSchemata,
-                                        SchemaProviderIf* respTagSchema,
-                                        cpp2::VertexResponse& vResp) {
-    if (tagSchemata.empty()) {
-        return kvstore::ResultCode::SUCCESSED;
-    }
+kvstore::ResultCode QueryBoundProcessor::collectVertexProps(
+                            PartitionID partId,
+                            VertexID vId,
+                            std::vector<std::pair<TagID, SchemaProviderIf*>> tagSchemata,
+                            SchemaProviderIf* respTagSchema,
+                            cpp2::VertexResponse& vResp) {
     RowWriter writer;
     kvstore::ResultCode ret;
     VLOG(1) << "collectVertexProps, tag schema number " << tagSchemata.size();
@@ -167,13 +97,13 @@ QueryBoundProcessor::collectVertexProps(PartitionID partId, VertexID vId,
 }
 
 
-kvstore::ResultCode
-QueryBoundProcessor::collectEdgesProps(PartitionID partId,
-                                       VertexID vId,
-                                       EdgeType edgeType,
-                                       SchemaProviderIf* edgeSchema,
-                                       SchemaProviderIf* respEdgeSchema,
-                                       cpp2::VertexResponse& vResp) {
+kvstore::ResultCode QueryBoundProcessor::collectEdgesProps(
+                                               PartitionID partId,
+                                               VertexID vId,
+                                               EdgeType edgeType,
+                                               SchemaProviderIf* edgeSchema,
+                                               SchemaProviderIf* respEdgeSchema,
+                                               cpp2::VertexResponse& vResp) {
     VLOG(1) << "collectEdgesProps...";
     auto prefix = KeyUtils::prefix(partId, vId, edgeType);
     std::unique_ptr<kvstore::StorageIter> iter;
@@ -201,18 +131,24 @@ QueryBoundProcessor::collectEdgesProps(PartitionID partId,
 void QueryBoundProcessor::process(const cpp2::GetNeighborsRequest& req) {
     time::Duration dur;
     spaceId_ = req.get_space_id();
-    auto edgeType = req.get_edge_type();
 
     int32_t schemaVer = 0;
-    SchemaProviderIf* edgeSchema;
+    SchemaProviderIf* edgeSchema = nullptr;
     cpp2::Schema respTag, respEdge;
     std::vector<std::pair<TagID, SchemaProviderIf*>> tagSchemata;
-    prepareSchemata(req.get_return_columns(), edgeType,
-                    edgeSchema, tagSchemata,
+    prepareSchemata(req, edgeSchema, tagSchemata,
                     respTag, respEdge, schemaVer);
 
-    std::unique_ptr<SchemaProviderIf> respTagSchema(new ResultSchemaProvider(respTag));
-    std::unique_ptr<SchemaProviderIf> respEdgeSchema(new ResultSchemaProvider(respEdge));
+    std::unique_ptr<SchemaProviderIf> respTagSchema;
+    if (tagSchemata.size() > 0) {
+        CHECK_GT(respTag.columns.size(), 0);
+        respTagSchema.reset(new ResultSchemaProvider(respTag));
+    }
+
+    std::unique_ptr<SchemaProviderIf> respEdgeSchema;
+    if (edgeSchema != nullptr) {
+        respEdgeSchema.reset(new ResultSchemaProvider(respEdge));
+    }
 
 //    const auto& filter = req.get_filter();
     std::for_each(req.get_ids().begin(), req.get_ids().end(), [&](auto& partV) {
@@ -222,10 +158,16 @@ void QueryBoundProcessor::process(const cpp2::GetNeighborsRequest& req) {
             VLOG(3) << "Process part " << partId << ", vertex " << vId;
             cpp2::VertexResponse vResp;
             vResp.vertex_id = vId;
-            ret = collectVertexProps(partId, vId, tagSchemata,
-                                     respTagSchema.get(), vResp);
-            ret = collectEdgesProps(partId, vId, edgeType, edgeSchema,
-                                    respEdgeSchema.get(), vResp);
+            if (respTagSchema != nullptr) {
+                VLOG(1) << "Query some tag/vertex props...";
+                ret = collectVertexProps(partId, vId, tagSchemata,
+                                         respTagSchema.get(), vResp);
+            }
+            if (respEdgeSchema != nullptr) {
+                VLOG(1) << "Query some edge props...";
+                ret = collectEdgesProps(partId, vId, req.edge_type, edgeSchema,
+                                        respEdgeSchema.get(), vResp);
+            }
             resp_.vertices.emplace_back(std::move(vResp));
         });
         // TODO handle failures

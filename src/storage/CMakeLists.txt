@@ -6,9 +6,10 @@ add_library(
     AddVerticesProcessor.cpp
     AddEdgesProcessor.cpp
     QueryBoundProcessor.cpp
+    QueryVertexPropsProcessor.cpp
+    QueryEdgePropsProcessor.cpp
 )
 
 add_dependencies(storage_service_handler common storage_thrift_obj kvstore_obj dataman_obj meta_obj)
-
 add_subdirectory(test)
 

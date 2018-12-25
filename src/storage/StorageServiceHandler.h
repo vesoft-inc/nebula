@@ -39,7 +39,7 @@ public:
     folly::Future<cpp2::QueryResponse>
     future_getProps(const cpp2::VertexPropRequest& req) override;
 
-    folly::Future<cpp2::QueryResponse>
+    folly::Future<cpp2::EdgePropResponse>
     future_getEdgeProps(const cpp2::EdgePropRequest& req) override;
 
     folly::Future<cpp2::ExecResponse>
