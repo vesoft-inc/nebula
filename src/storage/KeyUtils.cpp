@@ -55,6 +55,20 @@ std::string KeyUtils::prefix(PartitionID partId, VertexID vId) {
     return key;
 }
 
+//static
+std::string KeyUtils::prefix(PartitionID partId, VertexID src, EdgeType type,
+                             VertexID dst, EdgeRanking ranking) {
+    std::string key;
+    key.reserve(sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType)
+                + sizeof(VertexID) + sizeof(EdgeRanking));
+    key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
+       .append(reinterpret_cast<const char*>(&src), sizeof(VertexID))
+       .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType))
+       .append(reinterpret_cast<const char*>(&dst), sizeof(VertexID))
+       .append(reinterpret_cast<const char*>(&ranking), sizeof(EdgeRanking));
+    return key;
+}
+
 }  // namespace storage
 }  // namespace nebula
 

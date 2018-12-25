@@ -10,6 +10,8 @@
 #include "storage/AddEdgesProcessor.h"
 #include "storage/QueryProcessor.h"
 #include "storage/QueryBoundProcessor.h"
+#include "storage/QueryVertexPropsProcessor.h"
+#include "storage/QueryEdgePropsProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -45,13 +47,13 @@ StorageServiceHandler::future_inBoundStats(const cpp2::NeighborsStatsRequest& re
 
 folly::Future<cpp2::QueryResponse>
 StorageServiceHandler::future_getProps(const cpp2::VertexPropRequest& req) {
-    auto* processor = QueryVertexPropsProcessor::instance(kvstore_);
+    auto* processor = QueryVertexPropsProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::QueryResponse>
+folly::Future<cpp2::EdgePropResponse>
 StorageServiceHandler::future_getEdgeProps(const cpp2::EdgePropRequest& req) {
-    auto* processor = QueryEdgePropsProcessor::instance(kvstore_);
+    auto* processor = QueryEdgePropsProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 

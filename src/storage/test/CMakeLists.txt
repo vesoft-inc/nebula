@@ -110,3 +110,77 @@ target_link_libraries(
 
 add_test(NAME query_bound_test COMMAND query_bound_test)
 
+add_executable(
+    vertex_props_test
+    QueryVertexPropsTest.cpp
+    $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+target_link_libraries(
+    vertex_props_test
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    gtest
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    jemalloc
+    -pthread
+)
+
+add_test(NAME vertex_props_test COMMAND vertex_props_test)
+
+add_executable(
+    edge_props_test
+    QueryEdgePropsTest.cpp
+    $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+target_link_libraries(
+    edge_props_test
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    gtest
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    jemalloc
+    -pthread
+)
+
+add_test(NAME edge_props_test COMMAND edge_props_test)
+

@@ -130,6 +130,13 @@ struct ExecResponse {
     2: required i32 latency_in_ms,      // Execution latency
 }
 
+struct EdgePropResponse {
+    1: required list<ResultCode> codes,
+    2: required i32 latency_in_ms,      // Query latency from storage service
+    3: optional Schema schema,          // edge related props
+    4: optional binary data,
+}
+
 struct Tag {
     1: i32 tag_id,
     2: binary props,
@@ -143,6 +150,7 @@ struct Vertex {
 struct EdgeKey {
     1: i64 src,
     // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
+    // When query edge props, the field could be unset.
     2: i32 edge_type,
     3: i64 dst,
     4: i64 ranking,
@@ -183,7 +191,8 @@ struct EdgePropRequest {
     1: GraphSpaceID space_id,
     // partId => edges
     2: map<PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") edges,
-    3: list<PropDef> return_columns,
+    3: i32 edge_type,
+    4: list<PropDef> return_columns,
 }
 
 struct AddVerticesRequest {
@@ -211,7 +220,7 @@ service StorageService {
 
     // When return_columns is empty, return all properties
     QueryResponse getProps(1: VertexPropRequest req);
-    QueryResponse getEdgeProps(1: EdgePropRequest req)
+    EdgePropResponse getEdgeProps(1: EdgePropRequest req)
 
     ExecResponse addVertices(1: AddVerticesRequest req);
     ExecResponse addEdges(1: AddEdgesRequest req);
