@@ -1,6 +1,6 @@
 add_library(
     meta_obj OBJECT
-    ShardManager.cpp
+    PartManager.cpp
     HostManager.cpp
     SchemaManager.cpp
 )
