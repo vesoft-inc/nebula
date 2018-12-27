@@ -55,21 +55,21 @@ QueryStatsProcessor::collectEdgesStats(PartitionID partId, VertexID vId, EdgeTyp
 void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
     RowWriter writer;
     for (auto& prop : props) {
-        LOG(INFO) << prop.sum_.i_ << "," << prop.sum_.d_ << "," << prop.count_;
         switch(prop.prop_.stat) {
             case cpp2::StatType::SUM: {
-                if (prop.isInteger()) {
-                    writer << prop.sum_.i_;
-                    resp_.schema.columns.emplace_back(
-                            columnDef(std::move(prop.prop_.name),
-                                      cpp2::SupportedType::INT));
-                } else if (prop.isFloat()) {
-                    writer << prop.sum_.d_;
-                    resp_.schema.columns.emplace_back(
-                            columnDef(std::move(prop.prop_.name),
-                                      cpp2::SupportedType::FLOAT));
-                } else {
-                    LOG(FATAL) << "Should not reach here!!";
+                switch (prop.sum_.which()) {
+                    case 0:
+                        writer << boost::get<int64_t>(prop.sum_);
+                        resp_.schema.columns.emplace_back(
+                                columnDef(std::move(prop.prop_.name),
+                                          cpp2::SupportedType::INT));
+                        break;
+                    case 1:
+                        writer << boost::get<double>(prop.sum_);
+                        resp_.schema.columns.emplace_back(
+                                columnDef(std::move(prop.prop_.name),
+                                          cpp2::SupportedType::DOUBLE));
+                        break;
                 }
                 break;
             }
@@ -81,19 +81,17 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
                 break;
             }
             case cpp2::StatType::AVG: {
-                if (prop.isInteger()) {
-                    writer << (float)prop.sum_.i_ / prop.count_;
-                    resp_.schema.columns.emplace_back(
-                            columnDef(std::move(prop.prop_.name),
-                                      cpp2::SupportedType::FLOAT));
-                } else if (prop.isFloat()) {
-                    writer << prop.sum_.d_ / prop.count_;
-                    resp_.schema.columns.emplace_back(
-                            columnDef(std::move(prop.prop_.name),
-                                      cpp2::SupportedType::FLOAT));
-                } else {
-                    LOG(FATAL) << "Should not reach here!!";
+                switch (prop.sum_.which()) {
+                    case 0:
+                        writer << (double)boost::get<int64_t>(prop.sum_) / prop.count_;
+                        break;
+                    case 1:
+                        writer << boost::get<double>(prop.sum_) / prop.count_;
+                        break;
                 }
+                resp_.schema.columns.emplace_back(
+                        columnDef(std::move(prop.prop_.name),
+                                  cpp2::SupportedType::DOUBLE));
                 break;
             }
         }

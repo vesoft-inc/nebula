@@ -9,31 +9,17 @@
 
 #include "base/Base.h"
 #include "dataman/RowWriter.h"
+#include <boost/variant.hpp>
 
 namespace nebula {
 namespace storage {
 
-union Sum {
-    double  d_;
-    int64_t i_;
-};
-
 struct PropContext {
     cpp2::PropDef prop_;
     cpp2::ValueType type_;
-    Sum sum_{0};
+    boost::variant<int64_t, double> sum_ = 0L;
     int32_t count_    = 0;
     int32_t retIndex_ = -1;
-
-    bool isInteger() const {
-        return type_.type == cpp2::SupportedType::INT
-                || type_.type == cpp2::SupportedType::VID;
-    }
-
-    bool isFloat() const {
-        return type_.type == cpp2::SupportedType::FLOAT
-                || type_.type == cpp2::SupportedType::DOUBLE;
-    }
 };
 
 struct TagContext {
@@ -108,28 +94,28 @@ public:
 
     void collectInt32(ResultType ret, int32_t v, PropContext& prop) override {
         if (ret == ResultType::SUCCEEDED) {
-            prop.sum_.i_ += v;
+            prop.sum_ = boost::get<int64_t>(prop.sum_) + v;
             prop.count_++;
         }
     }
 
     void collectInt64(ResultType ret, int64_t v, PropContext& prop) override {
         if (ret == ResultType::SUCCEEDED) {
-            prop.sum_.i_ += v;
+            prop.sum_ = boost::get<int64_t>(prop.sum_) + v;
             prop.count_++;
         }
     }
 
     void collectFloat(ResultType ret, float v, PropContext& prop) override {
         if (ret == ResultType::SUCCEEDED) {
-            prop.sum_.d_ += v;
+            prop.sum_ = boost::get<double>(prop.sum_) + v;
             prop.count_++;
         }
     }
 
     void collectDouble(ResultType ret, double v, PropContext& prop) override {
         if (ret == ResultType::SUCCEEDED) {
-            prop.sum_.d_ += v;
+            prop.sum_ = boost::get<double>(prop.sum_) + v;
             prop.count_++;
         }
     }

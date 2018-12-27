@@ -95,8 +95,8 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
     LOG(INFO) << "Check edge props...";
 
     std::vector<std::tuple<std::string, cpp2::SupportedType, int32_t>> expected;
-    expected.emplace_back("tag_3001_col_0", cpp2::SupportedType::FLOAT, 0);
-    expected.emplace_back("tag_3003_col_2", cpp2::SupportedType::FLOAT, 2);
+    expected.emplace_back("tag_3001_col_0", cpp2::SupportedType::DOUBLE, 0);
+    expected.emplace_back("tag_3003_col_2", cpp2::SupportedType::DOUBLE, 2);
     expected.emplace_back("col_0", cpp2::SupportedType::INT, 0);
     expected.emplace_back("col_2", cpp2::SupportedType::INT, 2);
     expected.emplace_back("col_4", cpp2::SupportedType::INT, 4);
@@ -118,7 +118,7 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
                 EXPECT_EQ(std::get<2>(expected[i]) * 210 , v);
                 break;
             }
-            case cpp2::SupportedType::FLOAT: {
+            case cpp2::SupportedType::DOUBLE: {
                 float v;
                 auto ret = reader.getFloat(i, v);
                 EXPECT_EQ(ret, ResultType::SUCCEEDED);
