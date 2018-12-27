@@ -5,7 +5,6 @@
  */
 #include "storage/QueryBaseProcessor.h"
 #include <algorithm>
-#include "time/Duration.h"
 #include "storage/KeyUtils.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
@@ -46,9 +45,9 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(
         VLOG(3) << "collect " << name;
         switch(prop.type_.type) {
             case cpp2::SupportedType::INT: {
-                int32_t v;
-                auto ret = reader.getInt<int32_t>(name, v);
-                collector->collectInt32(ret, v, prop);
+                int64_t v;
+                auto ret = reader.getInt<int64_t>(name, v);
+                collector->collectInt64(ret, v, prop);
                 break;
             }
             case cpp2::SupportedType::VID: {
@@ -99,7 +98,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
     std::unordered_map<TagID, int32_t> tagIndex;
     for (auto& col : req.get_return_columns()) {
         PropContext prop;
-        prop.sum_.i_ = prop.sum_.f_ = 0;
         switch (col.owner) {
             case cpp2::PropOwner::SOURCE:
             case cpp2::PropOwner::DEST: {
@@ -125,7 +123,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                     tagContexts.emplace_back(std::move(tc));
                     tagIndex.emplace(tagId, tagContexts.size() - 1);
                 } else {
-                    tagContexts[tagIndex[tagId]].props_.emplace_back(std::move(prop));
+                    tagContexts[it->second].props_.emplace_back(std::move(prop));
                 }
                 break;
             }
@@ -150,7 +148,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
 
 template<typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req) {
-    time::Duration dur;
     spaceId_ = req.get_space_id();
     int32_t returnColumnsNum = req.get_return_columns().size();
     std::vector<TagContext> tagContexts;
@@ -158,7 +155,7 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     auto retCode = checkAndBuildContexts(req, tagContexts, edgeContext);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         this->pushResultCode(retCode, -1);
-        this->resp_.latency_in_ms = dur.elapsedInMSec();
+        this->resp_.latency_in_ms = this->duration_.elapsedInMSec();
         this->onFinished();
         return;
     }
@@ -178,7 +175,7 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     });
 
     onProcessed(tagContexts, edgeContext, returnColumnsNum);
-    this->resp_.latency_in_ms = dur.elapsedInMSec();
+    this->resp_.latency_in_ms = this->duration_.elapsedInMSec();
     this->onFinished();
 }
 

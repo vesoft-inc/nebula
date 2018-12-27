@@ -13,7 +13,7 @@ namespace storage {
 
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     auto spaceId = req.get_space_id();
-    auto now = startMs_ = time::TimeUtils::nowInMSeconds();
+    auto now = time::TimeUtils::nowInMSeconds();
     callingNum_ = req.edges.size();
     CHECK_NOTNULL(kvstore_);
     std::for_each(req.edges.begin(), req.edges.end(), [&](auto& partEdges){
@@ -24,24 +24,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
                                          edge.key.dst, edge.key.ranking, now);
             data.emplace_back(std::move(key), std::move(edge.get_props()));
         });
-        kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
-                                [partId, this](kvstore::ResultCode code, HostAddr addr) {
-            cpp2::ResultCode thriftResult;
-            thriftResult.code = to(code);
-            thriftResult.part_id = partId;
-            if (code == kvstore::ResultCode::ERR_LEADER_CHANAGED) {
-                thriftResult.get_leader()->ip = addr.first;
-                thriftResult.get_leader()->port = addr.second;
-            }
-            std::lock_guard<folly::SpinLock> lg(this->lock_);
-            this->codes_.emplace_back(std::move(thriftResult));
-            this->callingNum_--;
-            if (this->callingNum_ == 0) {
-                this->resp_.set_codes(std::move(this->codes_));
-                this->resp_.set_latency_in_ms(time::TimeUtils::nowInMSeconds() - this->startMs_);
-                this->onFinished();
-            }
-        });
+        doPut(spaceId, partId, std::move(data));
     });
 }
 

@@ -28,7 +28,7 @@ QueryStatsProcessor::collectVertexStats(PartitionID partId, VertexID vId, TagID 
     if (iter && iter->valid()) {
         auto key = iter->val();
         auto val = iter->val();
-        collectProps(tagSchema, key, val, props, &collector);
+        collectProps(tagSchema, key, val, props, &collector_);
     }
     return ret;
 }
@@ -40,13 +40,13 @@ QueryStatsProcessor::collectEdgesStats(PartitionID partId, VertexID vId, EdgeTyp
     auto prefix = KeyUtils::prefix(partId, vId, edgeType);
     std::unique_ptr<kvstore::StorageIter> iter;
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, iter);
-    if (ret != kvstore::ResultCode::SUCCESSED) {
+    if (ret != kvstore::ResultCode::SUCCESSED || !iter) {
         return ret;
     }
-    while(iter && iter->valid()) {
+    while(iter->valid()) {
         auto key = iter->key();
         auto val = iter->val();
-        collectProps(edgeSchema, key, val, props, &collector);
+        collectProps(edgeSchema, key, val, props, &collector_);
         iter->next();
     }
     return ret;
@@ -55,7 +55,7 @@ QueryStatsProcessor::collectEdgesStats(PartitionID partId, VertexID vId, EdgeTyp
 void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
     RowWriter writer;
     for (auto& prop : props) {
-        LOG(INFO) << prop.sum_.i_ << "," << prop.sum_.f_ << "," << prop.count_;
+        LOG(INFO) << prop.sum_.i_ << "," << prop.sum_.d_ << "," << prop.count_;
         switch(prop.prop_.stat) {
             case cpp2::StatType::SUM: {
                 if (prop.isInteger()) {
@@ -64,7 +64,7 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
                             columnDef(std::move(prop.prop_.name),
                                       cpp2::SupportedType::INT));
                 } else if (prop.isFloat()) {
-                    writer << prop.sum_.f_;
+                    writer << prop.sum_.d_;
                     resp_.schema.columns.emplace_back(
                             columnDef(std::move(prop.prop_.name),
                                       cpp2::SupportedType::FLOAT));
@@ -87,7 +87,7 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
                             columnDef(std::move(prop.prop_.name),
                                       cpp2::SupportedType::FLOAT));
                 } else if (prop.isFloat()) {
-                    writer << prop.sum_.f_ / prop.count_;
+                    writer << prop.sum_.d_ / prop.count_;
                     resp_.schema.columns.emplace_back(
                             columnDef(std::move(prop.prop_.name),
                                       cpp2::SupportedType::FLOAT));

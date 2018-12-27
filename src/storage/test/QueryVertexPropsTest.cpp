@@ -19,9 +19,9 @@ namespace storage {
 
 TEST(QueryVertexPropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
-    auto* kv = TestUtils::initKV(rootPath.path());
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     LOG(INFO) << "Prepare meta...";
-    auto* schemaMan = new meta::MemorySchemaManager();
+    std::unique_ptr<meta::MemorySchemaManager> schemaMan(new meta::MemorySchemaManager());
     auto& tagSchema = schemaMan->tagSchema();
     for (auto tagId = 3001; tagId < 3010; tagId++) {
         tagSchema[0][tagId] = TestUtils::genTagSchemaProvider(tagId, 3, 3);
@@ -34,7 +34,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
             for (auto tagId = 3001; tagId < 3010; tagId++) {
                 auto key = KeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
-                for (auto numInt = 0; numInt < 3; numInt++) {
+                for (int64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;
                 }
                 for (auto numString = 3; numString < 6; numString++) {
@@ -70,7 +70,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     req.set_return_columns(std::move(tmpColumns));
 
     LOG(INFO) << "Test QueryVertexPropsRequest...";
-    auto* processor = QueryVertexPropsProcessor::instance(kv, schemaMan);
+    auto* processor = QueryVertexPropsProcessor::instance(kv.get(), schemaMan.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -87,11 +87,11 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     for (auto& vp : resp.vertices) {
         RowReader tagReader(tagProvider.get(), vp.vertex_data);
         EXPECT_EQ(3, tagReader.numFields());
-        int32_t col1;
+        int64_t col1;
         EXPECT_EQ(ResultType::SUCCEEDED, tagReader.getInt("tag_3001_col_0", col1));
         EXPECT_EQ(col1, 0);
 
-        int32_t col2;
+        int64_t col2;
         EXPECT_EQ(ResultType::SUCCEEDED, tagReader.getInt("tag_3003_col_2", col2));
         EXPECT_EQ(col2, 2);
 

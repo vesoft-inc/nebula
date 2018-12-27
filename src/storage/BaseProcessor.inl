@@ -26,6 +26,36 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
     }
 }
 
+template<typename RESP>
+void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                std::vector<kvstore::KV> data) {
+    this->kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
+                                  [partId, this](kvstore::ResultCode code, HostAddr addr) {
+        cpp2::ResultCode thriftResult;
+        thriftResult.code = to(code);
+        thriftResult.part_id = partId;
+        if (code == kvstore::ResultCode::ERR_LEADER_CHANAGED) {
+            thriftResult.get_leader()->ip = addr.first;
+            thriftResult.get_leader()->port = addr.second;
+        }
+        bool finished = false;
+        {
+            std::lock_guard<folly::SpinLock> lg(this->lock_);
+            this->codes_.emplace_back(std::move(thriftResult));
+            this->callingNum_--;
+            if (this->callingNum_ == 0) {
+                this->resp_.set_codes(std::move(this->codes_));
+                this->resp_.set_latency_in_ms(this->duration_.elapsedInMSec());
+                finished = true;
+            }
+        }
+        if (finished) {
+            this->onFinished();
+        }
+    });
+}
+
 
 }  // namespace storage
 }  // namespace nebula

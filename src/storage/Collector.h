@@ -14,7 +14,7 @@ namespace nebula {
 namespace storage {
 
 union Sum {
-    float   f_;
+    double  d_;
     int64_t i_;
 };
 
@@ -25,12 +25,12 @@ struct PropContext {
     int32_t count_    = 0;
     int32_t retIndex_ = -1;
 
-    bool isInteger() {
+    bool isInteger() const {
         return type_.type == cpp2::SupportedType::INT
                 || type_.type == cpp2::SupportedType::VID;
     }
 
-    bool isFloat() {
+    bool isFloat() const {
         return type_.type == cpp2::SupportedType::FLOAT
                 || type_.type == cpp2::SupportedType::DOUBLE;
     }
@@ -122,14 +122,14 @@ public:
 
     void collectFloat(ResultType ret, float v, PropContext& prop) override {
         if (ret == ResultType::SUCCEEDED) {
-            prop.sum_.f_ += v;
+            prop.sum_.d_ += v;
             prop.count_++;
         }
     }
 
     void collectDouble(ResultType ret, double v, PropContext& prop) override {
         if (ret == ResultType::SUCCEEDED) {
-            prop.sum_.f_ += v;
+            prop.sum_.d_ += v;
             prop.count_++;
         }
     }

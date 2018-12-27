@@ -27,7 +27,8 @@ public:
     // List out all network devices and its cooresponding Ipv4 address.
     static StatusOr<std::unordered_map<std::string, std::string>> listDeviceAndIPv4s();
 
-    // Get local IPv4 address
+    // Get local IPv4 address. You could specify it by set FLAGS_local_ip, otherwise
+    // it will use the first ip exclude "127.0.0.1"
     static StatusOr<std::string> getLocalIP();
 
     // Get the local dynamic port range [low, high], only works for IPv4

@@ -19,9 +19,9 @@ namespace storage {
 
 TEST(QueryBoundTest, OutBoundSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
-    auto* kv = TestUtils::initKV(rootPath.path());
     LOG(INFO) << "Prepare meta...";
-    auto* schemaMan = new meta::MemorySchemaManager();
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<meta::MemorySchemaManager> schemaMan(new meta::MemorySchemaManager());
     auto& edgeSchema = schemaMan->edgeSchema();
     edgeSchema[0][101] = TestUtils::genEdgeSchemaProvider(10, 10);
     auto& tagSchema = schemaMan->tagSchema();
@@ -37,7 +37,7 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
             for (auto tagId = 3001; tagId < 3010; tagId++) {
                 auto key = KeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
-                for (auto numInt = 0; numInt < 3; numInt++) {
+                for (uint64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;
                 }
                 for (auto numString = 3; numString < 6; numString++) {
@@ -51,7 +51,7 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = KeyUtils::edgeKey(partId, vertexId, 101, dstId, dstId - 10001, 0);
                 RowWriter writer(nullptr);
-                for (auto numInt = 0; numInt < 10; numInt++) {
+                for (uint64_t numInt = 0; numInt < 10; numInt++) {
                     writer << numInt;
                 }
                 for (auto numString = 10; numString < 20; numString++) {
@@ -96,7 +96,7 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     req.set_return_columns(std::move(tmpColumns));
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
-    auto* processor = QueryBoundProcessor::instance(kv, schemaMan);
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -116,12 +116,12 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
         LOG(INFO) << "Check vertex props...";
         RowReader tagReader(tagProvider.get(), vp.vertex_data);
         EXPECT_EQ(3, tagReader.numFields());
-        int32_t col1;
-        EXPECT_EQ(ResultType::SUCCEEDED, tagReader.getInt("tag_3001_col_0", col1));
+        int64_t col1;
+        EXPECT_EQ(ResultType::SUCCEEDED, tagReader.getInt<int64_t>("tag_3001_col_0", col1));
         EXPECT_EQ(col1, 0);
 
-        int32_t col2;
-        EXPECT_EQ(ResultType::SUCCEEDED, tagReader.getInt("tag_3003_col_2", col2));
+        int64_t col2;
+        EXPECT_EQ(ResultType::SUCCEEDED, tagReader.getInt<int64_t>("tag_3003_col_2", col2));
         EXPECT_EQ(col2, 2);
 
         folly::StringPiece col3;
@@ -138,8 +138,8 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
             std::stringstream ss;
             while (bool(fieldIt)) {
                 if (i < 5) {
-                    int32_t v;
-                    EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getInt(v));
+                    int64_t v;
+                    EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getInt<int64_t>(v));
                     CHECK_EQ(i*2, v);
                     ss << v << ",";
                 } else {

@@ -37,7 +37,6 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
 }
 
 void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
-    time::Duration dur;
     spaceId_ = req.get_space_id();
     int32_t returnColumnsNum = req.get_return_columns().size();
     EdgeContext edgeContext;
@@ -45,7 +44,7 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     auto retCode = this->checkAndBuildContexts(req, tagContexts, edgeContext);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         this->pushResultCode(retCode, -1);
-        this->resp_.latency_in_ms = dur.elapsedInMSec();
+        this->resp_.latency_in_ms = duration_.elapsedInMSec();
         this->onFinished();
         return;
     }
@@ -79,7 +78,7 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
                 columnDef(std::move(prop.prop_.name),
                           prop.type_.type));
     }
-    resp_.latency_in_ms = dur.elapsedInMSec();
+    resp_.latency_in_ms = duration_.elapsedInMSec();
     this->onFinished();
 }
 

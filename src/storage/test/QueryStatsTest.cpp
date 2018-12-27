@@ -24,7 +24,7 @@ void mockData(kvstore::KVStore* kv) {
             for (auto tagId = 3001; tagId < 3010; tagId++) {
                 auto key = KeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
-                for (auto numInt = 0; numInt < 3; numInt++) {
+                for (int64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;
                 }
                 for (auto numString = 3; numString < 6; numString++) {
@@ -38,7 +38,7 @@ void mockData(kvstore::KVStore* kv) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = KeyUtils::edgeKey(partId, vertexId, 101, dstId, dstId - 10001, 0);
                 RowWriter writer(nullptr);
-                for (auto numInt = 0; numInt < 10; numInt++) {
+                for (int64_t numInt = 0; numInt < 10; numInt++) {
                     writer << numInt;
                 }
                 for (auto numString = 10; numString < 20; numString++) {
@@ -136,8 +136,9 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
 
 TEST(QueryStatsTest, StatsSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryStatsTest.XXXXXX");
-    auto* kv = TestUtils::initKV(rootPath.path());
-    auto* schemaMan = new meta::MemorySchemaManager();
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    LOG(INFO) << "Prepare meta...";
+    std::unique_ptr<meta::MemorySchemaManager> schemaMan(new meta::MemorySchemaManager());
     auto& edgeSchema = schemaMan->edgeSchema();
     edgeSchema[0][101] = TestUtils::genEdgeSchemaProvider(10, 10);
     auto& tagSchema = schemaMan->tagSchema();
@@ -145,12 +146,12 @@ TEST(QueryStatsTest, StatsSimpleTest) {
         tagSchema[0][tagId] = TestUtils::genTagSchemaProvider(tagId, 3, 3);
     }
     CHECK_NOTNULL(edgeSchema[0][101]);
-    mockData(kv);
+    mockData(kv.get());
 
     cpp2::GetNeighborsRequest req;
     buildRequest(req);
 
-    auto* processor = QueryStatsProcessor::instance(kv, schemaMan);
+    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

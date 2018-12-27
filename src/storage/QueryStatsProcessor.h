@@ -47,7 +47,7 @@ private:
     void calcResult(std::vector<PropContext>&& props);
 
 private:
-    StatsCollector collector;
+    StatsCollector collector_;
 };
 
 }  // namespace storage

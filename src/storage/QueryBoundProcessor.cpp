@@ -50,7 +50,10 @@ kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
     auto prefix = KeyUtils::prefix(partId, vId, edgeType);
     std::unique_ptr<kvstore::StorageIter> iter;
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, iter);
-    while(iter && iter->valid()) {
+    if (ret != kvstore::ResultCode::SUCCESSED || !iter) {
+        return ret;
+    }
+    while(iter->valid()) {
         RowWriter writer;
         auto key = iter->key();
         auto val = iter->val();
@@ -67,7 +70,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
                                                        EdgeContext& edgeContext) {
     cpp2::VertexResponse vResp;
     vResp.vertex_id = vId;
-    if (tagContexts.size() > 0) {
+    if (!tagContexts.empty()) {
         RowWriter writer;
         for (auto& tc : tagContexts) {
             VLOG(3) << "partId " << partId << ", vId " << vId
@@ -77,7 +80,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
                 return ret;
             }
         }
-        vResp.vertex_data = std::move(writer.encode());
+        vResp.vertex_data = writer.encode();
     }
     if (edgeContext.schema_ != nullptr) {
         RowSetWriter rsWriter;
@@ -94,7 +97,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
 
 void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
                                       EdgeContext& edgeContext, int32_t retNum) {
-    if (tagContexts.size() > 0) {
+    if (!tagContexts.empty()) {
         cpp2::Schema respTag;
         respTag.columns.reserve(retNum - edgeContext.props_.size());
         for (auto& tc : tagContexts) {

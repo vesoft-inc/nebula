@@ -8,11 +8,6 @@
 #define STORAGE_ADDEDGESPROCESSOR_H_
 
 #include "base/Base.h"
-#include <folly/SpinLock.h>
-#include <folly/futures/Promise.h>
-#include <folly/futures/Future.h>
-#include "kvstore/include/KVStore.h"
-#include "interface/gen-cpp2/storage_types.h"
 #include "storage/BaseProcessor.h"
 
 namespace nebula {
@@ -30,11 +25,6 @@ private:
     AddEdgesProcessor(kvstore::KVStore* kvstore)
         : BaseProcessor<cpp2::ExecResponse>(kvstore) {}
 
-private:
-    std::vector<cpp2::ResultCode> codes_;
-    folly::SpinLock lock_;
-    int64_t startMs_;
-    int32_t callingNum_;
 };
 
 }  // namespace storage

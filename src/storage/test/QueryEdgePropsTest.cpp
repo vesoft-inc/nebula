@@ -19,9 +19,9 @@ namespace storage {
 
 TEST(QueryEdgePropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
-    auto* kv = TestUtils::initKV(rootPath.path());
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     LOG(INFO) << "Prepare meta...";
-    auto* schemaMan = new meta::MemorySchemaManager();
+    std::unique_ptr<meta::MemorySchemaManager> schemaMan(new meta::MemorySchemaManager());
     auto& edgeSchema = schemaMan->edgeSchema();
     edgeSchema[0][101] = TestUtils::genEdgeSchemaProvider(10, 10);
     CHECK_NOTNULL(edgeSchema[0][101]);
@@ -35,7 +35,7 @@ TEST(QueryEdgePropsTest, SimpleTest) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = KeyUtils::edgeKey(partId, vertexId, 101, dstId, dstId - 10001, 0);
                 RowWriter writer(nullptr);
-                for (auto numInt = 0; numInt < 10; numInt++) {
+                for (int64_t numInt = 0; numInt < 10; numInt++) {
                     writer << numInt;
                 }
                 for (auto numString = 10; numString < 20; numString++) {
@@ -73,7 +73,7 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     }
     req.set_return_columns(std::move(tmpColumns));
     LOG(INFO) << "Test QueryEdgePropsRequest...";
-    auto* processor = QueryEdgePropsProcessor::instance(kv, schemaMan);
+    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMan.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -96,8 +96,8 @@ TEST(QueryEdgePropsTest, SimpleTest) {
         std::stringstream ss;
         while (bool(fieldIt)) {
             if (i < 5) {
-                int32_t v;
-                EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getInt(v));
+                int64_t v;
+                EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getInt<int64_t>(v));
                 CHECK_EQ(i*2, v);
                 ss << v << ",";
             } else {

@@ -8,6 +8,7 @@
 #define STORAGE_BASEPROCESSOR_H_
 
 #include "base/Base.h"
+#include <folly/SpinLock.h>
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 #include "interface/gen-cpp2/storage_types.h"
@@ -17,6 +18,7 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 #include "storage/Collector.h"
+#include "time/Duration.h"
 
 namespace nebula {
 namespace storage {
@@ -42,6 +44,8 @@ protected:
         delete this;
     }
 
+    void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);
+
     cpp2::ColumnDef columnDef(std::string name, cpp2::SupportedType type) {
         cpp2::ColumnDef column;
         column.name = std::move(name);
@@ -62,6 +66,11 @@ protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
+
+    time::Duration duration_;
+    std::vector<cpp2::ResultCode> codes_;
+    folly::SpinLock lock_;
+    int32_t callingNum_;
 };
 
 }  // namespace storage

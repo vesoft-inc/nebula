@@ -11,6 +11,8 @@
 #include <ifaddrs.h>
 #include <arpa/inet.h>
 
+DEFINE_string(local_ip, "", "local ip");
+
 namespace nebula {
 namespace network {
 
@@ -83,6 +85,9 @@ StatusOr<std::unordered_map<std::string, std::string>> NetworkUtils::listDeviceA
 }
 
 StatusOr<std::string> NetworkUtils::getLocalIP() {
+    if (!FLAGS_local_ip.empty()) {
+        return FLAGS_local_ip;
+    }
     auto result = listDeviceAndIPv4s();
     if (!result.ok()) {
         return std::move(result).status();
