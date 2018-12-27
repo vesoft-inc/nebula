@@ -38,10 +38,11 @@ add_test(NAME add_vertices_test COMMAND add_vertices_test)
 add_executable(
     storage_service_handler_test
     StorageServiceHandlerTest.cpp
-    StorageTestBase.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
