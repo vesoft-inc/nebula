@@ -15,7 +15,6 @@ namespace meta {
 
 class SchemaManager {
 public:
-    // Return singleton instance.
     static SchemaManager* instance();
 
     virtual SchemaProviderIf* edgeSchema(GraphSpaceID spaceId, EdgeType edgeType) = 0;
@@ -28,7 +27,6 @@ public:
 
 protected:
     SchemaManager() = default;
-    static SchemaManager* instance_;
 };
 
 class MemorySchemaManager : public SchemaManager {

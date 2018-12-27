@@ -9,15 +9,9 @@
 namespace nebula {
 namespace meta {
 
-
-SchemaManager* SchemaManager::instance_;
-static std::once_flag initSchemaFlag;
 // static
 SchemaManager* SchemaManager::instance() {
-    std::call_once(initSchemaFlag, [](){
-        instance_ = new MemorySchemaManager();
-    });
-    return instance_;
+    return new MemorySchemaManager();
 }
 
 

@@ -12,8 +12,31 @@
 #include "meta/SchemaManager.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
-DEFINE_string(dataPath, "", "multi paths should be split by comma");
+DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
+                             "For rocksdb engine, one path one instance.");
+DEFINE_string(local_ip, "", "Local ip");
 
+// Get local IPv4 address. You could specify it by set FLAGS_local_ip, otherwise
+// it will use the first ip exclude "127.0.0.1"
+namespace nebula {
+
+StatusOr<std::string> getLocalIP() {
+    if (!FLAGS_local_ip.empty()) {
+        return FLAGS_local_ip;
+    }
+    auto result = network::NetworkUtils::listDeviceAndIPv4s();
+    if (!result.ok()) {
+        return std::move(result).status();
+    }
+    for (auto& deviceIP : result.value()) {
+        if (deviceIP.second != "127.0.0.1") {
+            return deviceIP.first;
+        }
+    }
+    return Status::Error("No IPv4 address found!");
+}
+
+}  // namespace nebula
 
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
@@ -22,14 +45,14 @@ int main(int argc, char *argv[]) {
     using namespace nebula::storage;
 
     LOG(INFO) << "Starting the storage Daemon on port " << FLAGS_port
-              << ", dataPath " << FLAGS_dataPath;
+              << ", dataPath " << FLAGS_data_path;
 
     std::vector<std::string> paths;
-    folly::split(",", FLAGS_dataPath, paths, true);
+    folly::split(",", FLAGS_data_path, paths, true);
     std::transform(paths.begin(), paths.end(), paths.begin(), [](auto& p) {
         return folly::trimWhitespace(p).str();
     });
-    auto result = network::NetworkUtils::getLocalIP();
+    auto result = getLocalIP();
     CHECK(result.ok()) << result.status();
     uint32_t localIP;
     CHECK(network::NetworkUtils::ipv4ToInt(result.value(), localIP));

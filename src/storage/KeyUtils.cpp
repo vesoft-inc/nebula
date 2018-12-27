@@ -30,8 +30,8 @@ std::string KeyUtils::edgeKey(PartitionID partId, VertexID srcId,
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
        .append(reinterpret_cast<const char*>(&srcId), sizeof(VertexID))
        .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType))
-       .append(reinterpret_cast<const char*>(&dstId), sizeof(VertexID))
        .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRanking))
+       .append(reinterpret_cast<const char*>(&dstId), sizeof(VertexID))
        .append(reinterpret_cast<const char*>(&ts), sizeof(EdgeVersion));
     return key;
 }
@@ -64,8 +64,8 @@ std::string KeyUtils::prefix(PartitionID partId, VertexID src, EdgeType type,
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
        .append(reinterpret_cast<const char*>(&src), sizeof(VertexID))
        .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType))
-       .append(reinterpret_cast<const char*>(&dst), sizeof(VertexID))
-       .append(reinterpret_cast<const char*>(&ranking), sizeof(EdgeRanking));
+       .append(reinterpret_cast<const char*>(&ranking), sizeof(EdgeRanking))
+       .append(reinterpret_cast<const char*>(&dst), sizeof(VertexID));
     return key;
 }
 
