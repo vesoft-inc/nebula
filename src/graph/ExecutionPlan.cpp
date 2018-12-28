@@ -22,8 +22,8 @@ void ExecutionPlan::execute() {
             break;
         }
 
-        compound_ = std::move(result).value();
-        executor_ = std::make_unique<CompoundExecutor>(compound_.get(), ectx());
+        sentences_ = std::move(result).value();
+        executor_ = std::make_unique<SequentialExecutor>(sentences_.get(), ectx());
         status = executor_->prepare();
         if (!status.ok()) {
             break;

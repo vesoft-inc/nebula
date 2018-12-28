@@ -5,7 +5,18 @@
  */
 
 #include "base/Base.h"
+#include "base/Cord.h"
 #include "parser/Expressions.h"
+
+
+#define THROW_IF_NO_SPACE(POS, END, REQUIRE)                                        \
+    do {                                                                            \
+        if ((POS) + (REQUIRE) > (END)) {                                            \
+            throw Status::Error("Not enough space left, left: %lu bytes, "          \
+                                "require: %lu bytes, at: %s:%d", (END) - (POS),     \
+                                (REQUIRE), __FILE__, __LINE__);                     \
+        }                                                                           \
+    } while (false)
 
 namespace nebula {
 
@@ -70,36 +81,84 @@ void Expression::print(const VariantType &value) {
             fprintf(stderr, "%ld\n", asInt(value));
             break;
         case 1:
-            fprintf(stderr, "%luUL\n", asUInt(value));
-            break;
-        case 2:
             fprintf(stderr, "%lf\n", asDouble(value));
             break;
-        case 3:
+        case 2:
             fprintf(stderr, "%d\n", asBool(value));
             break;
-        case 4:
+        case 3:
             fprintf(stderr, "%s\n", asString(value).c_str());
             break;
     }
 }
 
 
-std::string PropertyExpression::toString() const {
-    if (majorPropName_ != nullptr) {
-        if (tag_ != nullptr) {
-            return *majorPropName_ + "[" + *tag_ + "]" + "." + *minorPropName_;
-        }
-        return *majorPropName_ + "." + *minorPropName_;
-    } else {
-        return *minorPropName_;
+std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
+    switch (intToKind(kind)) {
+        case kPrimary:
+            return std::make_unique<PrimaryExpression>();
+        case kUnary:
+            return std::make_unique<UnaryExpression>();
+        case kTypeCasting:
+            return std::make_unique<TypeCastingExpression>();
+        case kArithmetic:
+            return std::make_unique<ArithmeticExpression>();
+        case kRelational:
+            return std::make_unique<RelationalExpression>();
+        case kLogical:
+            return std::make_unique<LogicalExpression>();
+        case kSourceId:
+            return std::make_unique<SourceIdExpression>();
+        case kSourceProp:
+            return std::make_unique<SourcePropertyExpression>();
+        case kEdgeRank:
+            return std::make_unique<EdgeRankExpression>();
+        case kEdgeDstId:
+            return std::make_unique<EdgeDstIdExpression>();
+        case kEdgeSrcId:
+            return std::make_unique<EdgeSrcIdExpression>();
+        case kEdgeType:
+            return std::make_unique<EdgeTypeExpression>();
+        case kEdgeProp:
+            return std::make_unique<EdgePropertyExpression>();
+        case kVariableProp:
+            return std::make_unique<VariablePropertyExpression>();
+        case kDestId:
+            return std::make_unique<DestIdExpression>();
+        case kDestProp:
+            return std::make_unique<DestPropertyExpression>();
+        case kInputProp:
+            return std::make_unique<InputPropertyExpression>();
+        default:
+            throw Status::Error("Illegal expression kind: %u", kind);
     }
 }
 
 
-VariantType PropertyExpression::eval() const {
-    // TODO evaluate property's value
-    return toString();
+// static
+std::string Expression::encode(Expression *expr) noexcept {
+    Cord cord(1024);
+    expr->encode(cord);
+    return cord.str();
+}
+
+
+// static
+StatusOr<std::unique_ptr<Expression>>
+Expression::decode(folly::StringPiece buffer) noexcept {
+    auto *pos = buffer.data();
+    auto *end = pos + buffer.size();
+    try {
+        THROW_IF_NO_SPACE(pos, end, 1UL);
+        auto expr = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+        pos = expr->decode(pos, end);
+        if (pos != end) {
+            return Status::Error("Buffer not consumed up, end: %p, used upto: %p", end, pos);
+        }
+        return std::move(expr);
+    } catch (const Status &status) {
+        return status;
+    }
 }
 
 
@@ -113,102 +172,31 @@ std::string InputPropertyExpression::toString() const {
 
 
 VariantType InputPropertyExpression::eval() const {
-    return toString();
+    return context_->getters().getInputProp(*prop_);
 }
 
 
-std::string InputIdPropertyExpression::toString() const {
-    return "$_._id";
+void InputPropertyExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(prop_->size());
+    cord << *prop_;
 }
 
 
-VariantType InputIdPropertyExpression::eval() const {
-    return toString();
-}
+const char* InputPropertyExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    auto size = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
 
+    THROW_IF_NO_SPACE(pos, end, size);
+    prop_ = std::make_unique<std::string>(pos, size);
+    pos += size;
 
-std::string InputTypePropertyExpression::toString() const {
-    return "$_._type";
-}
-
-
-VariantType InputTypePropertyExpression::eval() const {
-    return toString();
-}
-
-
-std::string InputTaggedPropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$_[";
-    buf += *tag_;
-    buf += "].";
-    buf += *prop_;
-    return buf;
-}
-
-
-VariantType InputTaggedPropertyExpression::eval() const {
-    return toString();
+    return pos;
 }
 
 
 std::string DestPropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$$.";
-    buf += *prop_;
-    return buf;
-}
-
-
-VariantType DestPropertyExpression::eval() const {
-    return toString();
-}
-
-
-Status DestPropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    context->addDstNodeProp(*prop_);
-    return Status::OK();
-}
-
-
-std::string DestIdPropertyExpression::toString() const {
-    return "$$._id";
-}
-
-
-VariantType DestIdPropertyExpression::eval() const {
-    return toString();
-}
-
-
-Status DestIdPropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    context_->addDstNodeProp("_id");
-    return Status::OK();
-}
-
-
-std::string DestTypePropertyExpression::toString() const {
-    return "$$._type";
-}
-
-
-VariantType DestTypePropertyExpression::eval() const {
-    return toString();
-}
-
-
-Status DestTypePropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    context_->addDstNodeProp("_type");
-    return Status::OK();
-}
-
-
-std::string DestTaggedPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
     buf += "$$[";
@@ -219,14 +207,86 @@ std::string DestTaggedPropertyExpression::toString() const {
 }
 
 
-VariantType DestTaggedPropertyExpression::eval() const {
-    return toString();
+VariantType DestPropertyExpression::eval() const {
+    return context_->getters().getDstTagProp(*tag_, *prop_);
 }
 
 
-Status DestTaggedPropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return Status::NotSupported("Tagged property not supported yet");
+Status DestPropertyExpression::prepare() {
+    return Status::OK();
+}
+
+
+void DestPropertyExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(tag_->size());
+    cord << *tag_;
+    cord << static_cast<uint16_t>(prop_->size());
+    cord << *prop_;
+}
+
+
+const char* DestPropertyExpression::decode(const char *pos, const char *end) {
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        tag_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        prop_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+
+    return pos;
+}
+
+
+std::string DestIdExpression::toString() const {
+    std::string buf;
+    buf.reserve(64);
+    buf += "$$[";
+    buf += *tag_;
+    buf += "]._id";
+    return buf;
+}
+
+
+VariantType DestIdExpression::eval() const {
+    return context_->getters().getDstTagId();
+}
+
+
+Status DestIdExpression::prepare() {
+    return Status::OK();
+}
+
+
+void DestIdExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(tag_->size());
+    cord << *tag_;
+}
+
+
+const char* DestIdExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    auto size = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
+
+    THROW_IF_NO_SPACE(pos, end, size);
+    tag_ = std::make_unique<std::string>(pos, size);
+    pos += size;
+
+    return pos;
 }
 
 
@@ -242,129 +302,51 @@ std::string VariablePropertyExpression::toString() const {
 
 
 VariantType VariablePropertyExpression::eval() const {
+    // TODO(dutor)
     return toString();
 }
 
 
-Status VariablePropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
+Status VariablePropertyExpression::prepare() {
+    // TODO(dutor)
     return Status::OK();
 }
 
 
-std::string VariableIdPropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$";
-    buf += *var_;
-    buf += "._id";
-    return buf;
+void VariablePropertyExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(var_->size());
+    cord << *var_;
+    cord << static_cast<uint16_t>(prop_->size());
+    cord << *prop_;
 }
 
 
-VariantType VariableIdPropertyExpression::eval() const {
-    return toString();
+const char* VariablePropertyExpression::decode(const char *pos, const char *end) {
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        var_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        prop_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+
+    return pos;
 }
 
 
-Status VariableIdPropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return Status::OK();
-}
-
-
-std::string VariableTypePropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$";
-    buf += *var_;
-    buf += "._type";
-    return buf;
-}
-
-
-VariantType VariableTypePropertyExpression::eval() const {
-    return toString();
-}
-
-
-Status VariableTypePropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return Status::OK();
-}
-
-
-std::string VariableTaggedPropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$";
-    buf += *var_;
-    buf + "[";
-    buf += *tag_;
-    buf += "].";
-    buf += *prop_;
-    return buf;
-}
-
-
-VariantType VariableTaggedPropertyExpression::eval() const {
-    return toString();
-}
-
-
-Status VariableTaggedPropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return Status::NotSupported("Tagged property not supported yet");
-}
-
-
-std::string VariableTaggedIdPropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$";
-    buf += *var_;
-    buf + "[";
-    buf += *tag_;
-    buf += "]._id";
-    return buf;
-}
-
-
-VariantType VariableTaggedIdPropertyExpression::eval() const {
-    return toString();
-}
-
-
-Status VariableTaggedIdPropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return Status::NotSupported("Tagged property not supported yet");
-}
-
-
-std::string VariableTaggedTypePropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$";
-    buf += *var_;
-    buf + "[";
-    buf += *tag_;
-    buf += "]._type";
-    return buf;
-}
-
-
-VariantType VariableTaggedTypePropertyExpression::eval() const {
-    return toString();
-}
-
-
-Status VariableTaggedTypePropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return Status::NotSupported("Tagged property not supported yet");
-}
-
-
-std::string AliasPropertyExpression::toString() const {
+std::string EdgePropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
     buf += *alias_;
@@ -374,38 +356,51 @@ std::string AliasPropertyExpression::toString() const {
 }
 
 
-VariantType AliasPropertyExpression::eval() const {
-    return toString();
+VariantType EdgePropertyExpression::eval() const {
+    return context_->getters().getEdgeProp(*prop_);
 }
 
 
-Status AliasPropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
+Status EdgePropertyExpression::prepare() {
     return context_->addAliasProp(*alias_, *prop_);
 }
 
 
-std::string AliasIdPropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "._id";
-    return buf;
+void EdgePropertyExpression::encode(Cord &cord) const {
+    // TODO(dutor) We better replace `alias_' with integral edge type
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(alias_->size());
+    cord << *alias_;
+    cord << static_cast<uint16_t>(prop_->size());
+    cord << *prop_;
 }
 
 
-VariantType AliasIdPropertyExpression::eval() const {
-    return toString();
+const char* EdgePropertyExpression::decode(const char *pos, const char *end) {
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        alias_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        prop_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+
+    return pos;
 }
 
 
-Status AliasIdPropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return context_->addAliasProp(*alias_, "_id");
-}
-
-
-std::string AliasTypePropertyExpression::toString() const {
+std::string EdgeTypeExpression::toString() const {
     std::string buf;
     buf.reserve(64);
     buf += *alias_;
@@ -414,14 +409,33 @@ std::string AliasTypePropertyExpression::toString() const {
 }
 
 
-VariantType AliasTypePropertyExpression::eval() const {
-    return toString();
+VariantType EdgeTypeExpression::eval() const {
+    return *alias_;
 }
 
 
-Status AliasTypePropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
+Status EdgeTypeExpression::prepare() {
     return context_->addAliasProp(*alias_, "_type");
+}
+
+
+void EdgeTypeExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(alias_->size());
+    cord << *alias_;
+}
+
+
+const char* EdgeTypeExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    auto size = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
+
+    THROW_IF_NO_SPACE(pos, end, size);
+    alias_ = std::make_unique<std::string>(pos, size);
+    pos += size;
+
+    return pos;
 }
 
 
@@ -435,13 +449,32 @@ std::string EdgeSrcIdExpression::toString() const {
 
 
 VariantType EdgeSrcIdExpression::eval() const {
-    return toString();
+    return context_->getters().getSrcTagId();
 }
 
 
-Status EdgeSrcIdExpression::prepare(ExpressionContext *context) {
-    context_ = context;
+Status EdgeSrcIdExpression::prepare() {
     return context_->addAliasProp(*alias_, "_src");
+}
+
+
+void EdgeSrcIdExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(alias_->size());
+    cord << *alias_;
+}
+
+
+const char* EdgeSrcIdExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    auto size = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
+
+    THROW_IF_NO_SPACE(pos, end, size);
+    alias_ = std::make_unique<std::string>(pos, size);
+    pos += size;
+
+    return pos;
 }
 
 
@@ -455,13 +488,32 @@ std::string EdgeDstIdExpression::toString() const {
 
 
 VariantType EdgeDstIdExpression::eval() const {
-    return toString();
+    return context_->getters().getDstTagId();
 }
 
 
-Status EdgeDstIdExpression::prepare(ExpressionContext *context) {
-    context_ = context;
+Status EdgeDstIdExpression::prepare() {
     return context_->addAliasProp(*alias_, "_dst");
+}
+
+
+void EdgeDstIdExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(alias_->size());
+    cord << *alias_;
+}
+
+
+const char* EdgeDstIdExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    auto size = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
+
+    THROW_IF_NO_SPACE(pos, end, size);
+    alias_ = std::make_unique<std::string>(pos, size);
+    pos += size;
+
+    return pos;
 }
 
 
@@ -475,17 +527,36 @@ std::string EdgeRankExpression::toString() const {
 
 
 VariantType EdgeRankExpression::eval() const {
-    return toString();
+    return context_->getters().getEdgeRank();
 }
 
 
-Status EdgeRankExpression::prepare(ExpressionContext *context) {
-    context_ = context;
+Status EdgeRankExpression::prepare() {
     return context_->addAliasProp(*alias_, "_rank");
 }
 
 
-std::string AliasTaggedPropertyExpression::toString() const {
+void EdgeRankExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(alias_->size());
+    cord << *alias_;
+}
+
+
+const char* EdgeRankExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    auto size = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
+
+    THROW_IF_NO_SPACE(pos, end, size);
+    alias_ = std::make_unique<std::string>(pos, size);
+    pos += size;
+
+    return pos;
+}
+
+
+std::string SourcePropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
     buf += *alias_;
@@ -497,18 +568,50 @@ std::string AliasTaggedPropertyExpression::toString() const {
 }
 
 
-VariantType AliasTaggedPropertyExpression::eval() const {
-    return toString();
+VariantType SourcePropertyExpression::eval() const {
+    return context_->getters().getSrcTagProp(*tag_, *prop_);
 }
 
 
-Status AliasTaggedPropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return Status::NotSupported("Tagged property not supported yet");
+Status SourcePropertyExpression::prepare() {
+    return Status::OK();
 }
 
 
-std::string AliasTaggedIdPropertyExpression::toString() const {
+void SourcePropertyExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(tag_->size());
+    cord << *tag_;
+    cord << static_cast<uint16_t>(prop_->size());
+    cord << *prop_;
+}
+
+
+const char* SourcePropertyExpression::decode(const char *pos, const char *end) {
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        tag_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        prop_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+
+    return pos;
+}
+
+
+std::string SourceIdExpression::toString() const {
     std::string buf;
     buf.reserve(64);
     buf += *alias_;
@@ -519,36 +622,33 @@ std::string AliasTaggedIdPropertyExpression::toString() const {
 }
 
 
-VariantType AliasTaggedIdPropertyExpression::eval() const {
-    return toString();
+VariantType SourceIdExpression::eval() const {
+    return context_->getters().getSrcTagId();
 }
 
 
-Status AliasTaggedIdPropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return Status::NotSupported("Tagged property not supported yet");
+Status SourceIdExpression::prepare() {
+    return Status::OK();
 }
 
 
-std::string AliasTaggedTypePropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "[";
-    buf += *tag_;
-    buf += "]._type";
-    return buf;
+void SourceIdExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(tag_->size());
+    cord << *tag_;
 }
 
 
-VariantType AliasTaggedTypePropertyExpression::eval() const {
-    return toString();
-}
+const char* SourceIdExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    auto size = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
 
+    THROW_IF_NO_SPACE(pos, end, size);
+    tag_ = std::make_unique<std::string>(pos, size);
+    pos += size;
 
-Status AliasTaggedTypePropertyExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return Status::NotSupported("Tagged property not supported yet");
+    return pos;
 }
 
 
@@ -562,11 +662,8 @@ std::string PrimaryExpression::toString() const {
             snprintf(buf, sizeof(buf), "%ld", boost::get<int64_t>(operand_));
             break;
         case 2:
-            snprintf(buf, sizeof(buf), "%luUL", boost::get<uint64_t>(operand_));
-            break;
-        case 3:
             return std::to_string(boost::get<double>(operand_));
-        case 4:
+        case 3:
             return "\"" + boost::get<std::string>(operand_) + "\"";
     }
     return buf;
@@ -582,21 +679,77 @@ VariantType PrimaryExpression::eval() const {
             return boost::get<int64_t>(operand_);
             break;
         case 2:
-            return boost::get<uint64_t>(operand_);
-            break;
-        case 3:
             return boost::get<double>(operand_);
             break;
-        case 4:
+        case 3:
             return boost::get<std::string>(operand_);
     }
     return std::string("Unknown");
 }
 
 
-Status PrimaryExpression::prepare(ExpressionContext *context) {
-    context_ = context;
+Status PrimaryExpression::prepare() {
     return Status::OK();
+}
+
+
+void PrimaryExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    uint8_t which = operand_.which();
+    cord << which;
+    switch (which) {
+        case 0:
+            cord << static_cast<uint8_t>(boost::get<bool>(operand_));
+            break;
+        case 1:
+            cord << boost::get<int64_t>(operand_);
+            break;
+        case 2:
+            cord << boost::get<double>(operand_);
+            break;
+        case 3: {
+            auto &str = boost::get<std::string>(operand_);
+            cord << static_cast<uint16_t>(str.size());
+            cord << str;
+            break;
+        }
+        default:
+            DCHECK(false);
+    }
+}
+
+
+const char* PrimaryExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 1);
+    auto which = *reinterpret_cast<const uint8_t*>(pos++);
+    switch (which) {
+        case 0:
+            THROW_IF_NO_SPACE(pos, end, 1UL);
+            operand_ = *reinterpret_cast<const bool*>(pos++);
+            break;
+        case 1:
+            THROW_IF_NO_SPACE(pos, end, 8UL);
+            operand_ = *reinterpret_cast<const int64_t*>(pos);
+            pos += 8;
+            break;
+        case 2:
+            THROW_IF_NO_SPACE(pos, end, 8UL);
+            operand_ = *reinterpret_cast<const double*>(pos);
+            pos += 8;
+            break;
+        case 3: {
+            THROW_IF_NO_SPACE(pos, end, 2UL);
+            auto size = *reinterpret_cast<const uint16_t*>(pos);
+            pos += 2;
+            THROW_IF_NO_SPACE(pos, end, size);
+            operand_ = std::string(pos, size);
+            pos += size;
+            break;
+        }
+        default:
+            throw Status::Error("Unknown variant type");
+    }
+    return pos;
 }
 
 
@@ -628,8 +781,6 @@ VariantType UnaryExpression::eval() const {
     } else if (op_ == NEGATE) {
         if (isInt(value)) {
             return -asInt(value);
-        } else if (isUInt(value)) {
-            return -asUInt(value);
         } else if (isDouble(value)) {
             return -asDouble(value);
         }
@@ -640,30 +791,32 @@ VariantType UnaryExpression::eval() const {
 }
 
 
-Status UnaryExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return operand_->prepare(context);
+Status UnaryExpression::prepare() {
+    return operand_->prepare();
+}
+
+
+void UnaryExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint8_t>(op_);
+    operand_->encode(cord);
+}
+
+
+const char* UnaryExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    op_ = *reinterpret_cast<const Operator*>(pos++);
+    DCHECK(op_ == PLUS || op_ == NEGATE || op_ == NOT);
+
+    operand_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    return operand_->decode(pos, end);
 }
 
 
 std::string columnTypeToString(ColumnType type) {
     switch (type) {
-        case INT8:
-            return "int8";
-        case INT16:
-            return "int16";
-        case INT32:
-            return "int32";
-        case INT64:
-            return "int64";
-        case UINT8:
-            return "uint8";
-        case UINT16:
-            return "uint16";
-        case UINT32:
-            return "uint32";
-        case UINT64:
-            return "uint64";
+        case INT:
+            return "int";
         case STRING:
             return "string";
         case DOUBLE:
@@ -684,13 +837,17 @@ std::string TypeCastingExpression::toString() const {
 
 
 VariantType TypeCastingExpression::eval() const {
-    return VariantType(0UL);
+    return toString();
 }
 
 
-Status TypeCastingExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    return operand_->prepare(context);
+Status TypeCastingExpression::prepare() {
+    return operand_->prepare();
+}
+
+
+void TypeCastingExpression::encode(Cord &cord) const {
+    UNUSED(cord);
 }
 
 
@@ -733,10 +890,7 @@ VariantType ArithmeticExpression::eval() const {
             if (isDouble(left) || isDouble(right)) {
                 return asDouble(left) + asDouble(right);
             }
-            if (isInt(left) && isInt(right)) {
-                return asInt(left) + asInt(right);
-            }
-            return asUInt(left) + asUInt(right);
+            return asInt(left) + asInt(right);
         }
         return asString(left) + asString(right);
     case SUB:
@@ -744,33 +898,21 @@ VariantType ArithmeticExpression::eval() const {
         if (isDouble(left) || isDouble(right)) {
             return asDouble(left) - asDouble(right);
         }
-        if (isInt(left) && isInt(right)) {
-            return asInt(left) - asInt(right);
-        }
-        return asUInt(left) - asUInt(right);
+        return asInt(left) - asInt(right);
     case MUL:
         assert(isArithmetic(left) && isArithmetic(right));
         if (isDouble(left) || isDouble(right)) {
             return asDouble(left) * asDouble(right);
         }
-        if (isInt(left) && isInt(right)) {
-            return asInt(left) * asInt(right);
-        }
-        return asUInt(left) * asUInt(right);
+        return asInt(left) * asInt(right);
     case DIV:
         assert(isArithmetic(left) && isArithmetic(right));
         if (isDouble(left) || isDouble(right)) {
             return asDouble(left) / asDouble(right);
         }
-        if (isInt(left) && isInt(right)) {
-            return asInt(left) / asInt(right);
-        }
-        return asUInt(left) / asUInt(right);
+        return asInt(left) / asInt(right);
     case MOD:
         assert(isInt(left) && isInt(right));
-        if (isUInt(left) || isUInt(right)) {
-            return asUInt(left) / asUInt(right);
-        }
         return asInt(left) % asInt(right);
     default:
         DCHECK(false);
@@ -779,17 +921,38 @@ VariantType ArithmeticExpression::eval() const {
 }
 
 
-Status ArithmeticExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    auto status = left_->prepare(context);
+Status ArithmeticExpression::prepare() {
+    auto status = left_->prepare();
     if (!status.ok()) {
         return status;
     }
-    status = right_->prepare(context);
+    status = right_->prepare();
     if (!status.ok()) {
         return status;
     }
     return Status::OK();
+}
+
+
+void ArithmeticExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint8_t>(op_);
+    left_->encode(cord);
+    right_->encode(cord);
+}
+
+
+const char* ArithmeticExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    op_ = *reinterpret_cast<const Operator*>(pos++);
+    DCHECK(op_ == ADD || op_ == SUB || op_ == MUL || op_ == DIV || op_ == MOD);
+
+    left_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    pos = left_->decode(pos, end);
+
+    THROW_IF_NO_SPACE(pos, end, 1UL);
+    right_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    return right_->decode(pos, end);
 }
 
 
@@ -837,25 +1000,52 @@ VariantType RelationalExpression::eval() const {
         case GE:
             return left >= right;
         case EQ:
+            if (isDouble(left) || isDouble(right)) {
+                return almostEqual(asDouble(left), asDouble(right));
+            }
             return left == right;
         case NE:
+            if (isDouble(left) || isDouble(right)) {
+                return !almostEqual(asDouble(left), asDouble(right));
+            }
             return left != right;
     }
     return false;
 }
 
 
-Status RelationalExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    auto status = left_->prepare(context);
+Status RelationalExpression::prepare() {
+    auto status = left_->prepare();
     if (!status.ok()) {
         return status;
     }
-    status = right_->prepare(context);
+    status = right_->prepare();
     if (!status.ok()) {
         return status;
     }
     return Status::OK();
+}
+
+
+void RelationalExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint8_t>(op_);
+    left_->encode(cord);
+    right_->encode(cord);
+}
+
+
+const char* RelationalExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    op_ = *reinterpret_cast<const Operator*>(pos++);
+    DCHECK(op_ == LT || op_ == LE || op_ == GT || op_ == GE || op_ == EQ || op_ == NE);
+
+    left_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    pos = left_->decode(pos, end);
+
+    THROW_IF_NO_SPACE(pos, end, 1UL);
+    right_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    return right_->decode(pos, end);
 }
 
 
@@ -889,14 +1079,38 @@ VariantType LogicalExpression::eval() const {
 }
 
 
-Status LogicalExpression::prepare(ExpressionContext *context) {
-    context_ = context;
-    auto status = left_->prepare(context);
+Status LogicalExpression::prepare() {
+    auto status = left_->prepare();
     if (!status.ok()) {
         return status;
     }
-    status = right_->prepare(context);
+    status = right_->prepare();
     return Status::OK();
 }
+
+
+void LogicalExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint8_t>(op_);
+    left_->encode(cord);
+    right_->encode(cord);
+}
+
+
+const char* LogicalExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    op_ = *reinterpret_cast<const Operator*>(pos++);
+    DCHECK(op_ == AND || op_ == OR);
+
+    left_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    pos = left_->decode(pos, end);
+
+    THROW_IF_NO_SPACE(pos, end, 1UL);
+    right_ = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+    return right_->decode(pos, end);
+}
+
+
+#undef THROW_IF_NO_SPACE
 
 }   // namespace nebula

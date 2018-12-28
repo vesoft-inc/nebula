@@ -46,15 +46,6 @@ REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
 SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 TTL                         ([Tt][Tt][Ll])
 INT                         ([Ii][Nn][Tt])
-INT8                        ({INT}8)
-INT16                       ({INT}16)
-INT32                       ({INT}32)
-INT64                       ({INT}64)
-UINT                        ([Uu][Ii][Nn][Tt])
-UINT8                       ({UINT}8)
-UINT16                      ({UINT}16)
-UINT32                      ({UINT}32)
-UINT64                      ({UINT}64)
 BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
 STRING                      ([Ss][Tt][Rr][Ii][Nn][Gg])
@@ -104,14 +95,7 @@ OCT                         ([0-7])
 {REVERSELY}                 { return TokenType::KW_REVERSELY; }
 {SPACE}                     { return TokenType::KW_SPACE; }
 {TTL}                       { return TokenType::KW_TTL; }
-{INT8}                      { return TokenType::KW_INT8; }
-{INT16}                     { return TokenType::KW_INT16; }
-{INT32}                     { return TokenType::KW_INT32; }
-{INT64}                     { return TokenType::KW_INT64; }
-{UINT8}                     { return TokenType::KW_UINT8; }
-{UINT16}                    { return TokenType::KW_UINT16; }
-{UINT32}                    { return TokenType::KW_UINT32; }
-{UINT64}                    { return TokenType::KW_UINT64; }
+{INT}                       { return TokenType::KW_INT; }
 {BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
 {STRING}                    { return TokenType::KW_STRING; }
@@ -136,6 +120,7 @@ OCT                         ([0-7])
 "*"                         { return TokenType::MUL; }
 "/"                         { return TokenType::DIV; }
 "%"                         { return TokenType::MOD; }
+"!"                         { return TokenType::NOT; }
 
 "<"                         { return TokenType::LT; }
 "<="                        { return TokenType::LE; }
@@ -184,11 +169,9 @@ OCT                         ([0-7])
                                 return TokenType::INTEGER;
                             }
 {DEC}+                      { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
-{DEC}+[Uu][Ll]?             { yylval->intval = ::atoll(yytext); return TokenType::UINTEGER; }
 {DEC}+\.{DEC}*              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
 {DEC}*\.{DEC}+              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
 
-\${DEC}+                    { yylval->intval = ::atoll(yytext + 1); return TokenType::COL_REF_ID; }
 \${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 
 

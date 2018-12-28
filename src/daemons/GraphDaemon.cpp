@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
         gServer->setNumIOWorkerThreads(FLAGS_num_netio_threads);
     }
 
-    FLOG_INFO("Starting nebula-graphd on port %d\n", FLAGS_port);
+    FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);
     try {
         gServer->serve();  // Blocking wait until shut down via gServer->stop()
     } catch (const std::exception &e) {
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    FLOG_INFO("nebula-graphd on port %d has been stopped", FLAGS_port);
+    FLOG_INFO("nebula-graphd on %s:%d has been stopped", localIP.c_str(), FLAGS_port);
 
     return EXIT_SUCCESS;
 }

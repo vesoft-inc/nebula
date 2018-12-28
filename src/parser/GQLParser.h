@@ -15,32 +15,32 @@ namespace nebula {
 
 class GQLParser {
 public:
-    GQLParser() : parser_(scanner_, error_, &compound_) {
+    GQLParser() : parser_(scanner_, error_, &sentences_) {
     }
 
     ~GQLParser() {
-        if (compound_ != nullptr) {
-            delete compound_;
+        if (sentences_ != nullptr) {
+            delete sentences_;
         }
     }
 
-    StatusOr<std::unique_ptr<CompoundSentence>> parse(const std::string &query) {
+    StatusOr<std::unique_ptr<SequentialSentences>> parse(const std::string &query) {
         std::istringstream is(query);
         scanner_.switch_streams(&is, nullptr);
         auto ok = parser_.parse() == 0;
         if (!ok) {
             return Status::SyntaxError(error_);
         }
-        auto *compound = compound_;
-        compound_ = nullptr;
-        return compound;
+        auto *sentences = sentences_;
+        sentences_ = nullptr;
+        return sentences;
     }
 
 private:
     nebula::GraphScanner            scanner_;
     nebula::GraphParser             parser_;
     std::string                     error_;
-    CompoundSentence               *compound_ = nullptr;
+    SequentialSentences            *sentences_ = nullptr;
 };
 
 }   // namespace nebula
