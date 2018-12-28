@@ -40,8 +40,10 @@ TEST(KVStoreTest, SimpleTest) {
     paths.push_back(folly::stringPrintf("%s/disk2", rootPath.path()));
 
     std::unique_ptr<KVStoreImpl> kv;
-    kv.reset(reinterpret_cast<KVStoreImpl*>(KVStore::instance(HostAddr(0, 0),
-                                                              std::move(paths))));
+    KVOptions options;
+    options.local_ = HostAddr(0, 0);
+    options.dataPaths_ = std::move(paths);
+    kv.reset(static_cast<KVStoreImpl*>(KVStore::instance(std::move(options))));
     EXPECT_EQ(2, kv->kvs_.size());
 
     EXPECT_EQ(6, kv->kvs_[1]->parts_.size());

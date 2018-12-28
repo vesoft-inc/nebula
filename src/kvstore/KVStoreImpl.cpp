@@ -41,20 +41,22 @@ namespace nebula {
 namespace kvstore {
 
 // static
-KVStore* KVStore::instance(HostAddr local, std::vector<std::string> paths) {
-    auto* instance = new KVStoreImpl(local, std::move(paths));
+KVStore* KVStore::instance(KVOptions options) {
+    auto* instance = new KVStoreImpl(options);
     reinterpret_cast<KVStoreImpl*>(instance)->init();
     return instance;
 }
 
 std::vector<Engine> KVStoreImpl::initEngines(GraphSpaceID spaceId) {
     decltype(kvs_[spaceId]->engines_) engines;
-    for (auto& path : paths_) {
+    for (auto& path : options_.dataPaths_) {
         if (FLAGS_engine_type == "rocksdb") {
             engines.emplace_back(
                 new RocksdbEngine(spaceId,
                                   folly::stringPrintf("%s/nebula/%d/data",
-                                                      path.c_str(), spaceId)),
+                                                      path.c_str(), spaceId),
+                                  options_.mergeOp_,
+                                  options_.cfFactory_),
                 path);
         } else {
             LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
@@ -64,7 +66,7 @@ std::vector<Engine> KVStoreImpl::initEngines(GraphSpaceID spaceId) {
 }
 
 void KVStoreImpl::init() {
-    auto partsMap = partMan_->parts(local_);
+    auto partsMap = partMan_->parts(options_.local_);
     LOG(INFO) << "Init all parts, total graph space " << partsMap.size();
     std::for_each(partsMap.begin(), partsMap.end(), [this](auto& idPart) {
         auto spaceId = idPart.first;
