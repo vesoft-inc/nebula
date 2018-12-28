@@ -19,7 +19,8 @@ namespace nebula {
 
 using semantic_type = nebula::GraphParser::semantic_type;
 static auto checkSemanticValue(const char *expected, semantic_type *sv) {
-    auto &actual = *sv->strval;
+    auto actual = *sv->strval;
+    delete sv->strval;
     if (expected != actual) {
         return AssertionFailure() << "Semantic value not match, "
                                   << "expected: " << expected
