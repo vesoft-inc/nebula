@@ -23,6 +23,7 @@ DECLARE_string(pid_file);
 DECLARE_bool(redirect_stdout);
 DECLARE_string(stdout_log_file);
 DECLARE_string(stderr_log_file);
+DECLARE_bool(daemonize);
 
 
 #endif  // GRAPH_GRAPHFLAGS_H_

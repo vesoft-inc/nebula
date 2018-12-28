@@ -24,8 +24,31 @@ static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 static Status setupLogging();
+static void printHelp(const char *prog);
+static void printVersion();
+
+DECLARE_string(flagfile);
 
 int main(int argc, char *argv[]) {
+    if (argc == 1) {
+        printHelp(argv[0]);
+        return EXIT_FAILURE;
+    }
+    if (argc == 2) {
+        if (::strcmp(argv[1], "-h") == 0) {
+            printHelp(argv[0]);
+            return EXIT_SUCCESS;
+        }
+        if (::strcmp(argv[1], "-v") == 0) {
+            printVersion();
+            return EXIT_SUCCESS;
+        }
+    }
+    if (FLAGS_flagfile.empty()) {
+        printHelp(argv[0]);
+        return EXIT_FAILURE;
+    }
+
     folly::init(&argc, &argv, true);
 
     // Setup logging
@@ -43,11 +66,19 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    // Write the current pid into the pid file
-    status = ProcessUtils::makePidFile(pidPath);
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        return EXIT_FAILURE;
+    if (FLAGS_daemonize) {
+        status = ProcessUtils::daemonize(pidPath);
+        if (!status.ok()) {
+            LOG(ERROR) << status;
+            return EXIT_FAILURE;
+        }
+    } else {
+        // Write the current pid into the pid file
+        status = ProcessUtils::makePidFile(pidPath);
+        if (!status.ok()) {
+            LOG(ERROR) << status;
+            return EXIT_FAILURE;
+        }
     }
 
     // Setup the signal handlers
@@ -123,6 +154,10 @@ void signalHandler(int sig) {
 
 
 Status setupLogging() {
+    if (!FLAGS_redirect_stdout) {
+        return Status::OK();
+    }
+
     auto dup = [] (const std::string &filename, FILE *stream) -> Status {
         auto path = FLAGS_log_dir + "/" + filename;
         auto fd = ::open(path.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644);
@@ -151,4 +186,16 @@ Status setupLogging() {
     } while (false);
 
     return status;
+}
+
+
+void printHelp(const char *prog) {
+    fprintf(stderr, "%s -flagfile config_file\n", prog);
+    fprintf(stderr, "%s -h\n", prog);
+    fprintf(stderr, "%s -v\n", prog);
+}
+
+
+void printVersion() {
+    // TODO(dutor)
 }

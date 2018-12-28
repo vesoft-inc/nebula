@@ -1,3 +1,7 @@
+########## basics ##########
+# Whether run as a daemon process
+--daemonize=true
+
 ########## logging ##########
 # Directory to host logging files, which must already exist
 --log_dir=logs
