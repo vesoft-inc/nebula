@@ -8,11 +8,17 @@
 #include "kvstore/include/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/KVStoreImpl.h"
+#include "storage/AddVerticesProcessor.h"       
 
 DECLARE_string(part_man_type);
 
 namespace nebula {
 namespace storage {
+
+std::vector<cpp2::Vertex> setupVertices(
+    const PartitionID partitionID,
+    const int64_t vertexSize,
+    const int32_t tagSize);
 
 class TestUtils {
 public:
