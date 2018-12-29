@@ -25,7 +25,7 @@ public:
     ~RocksdbRangeIter()  = default;
 
     bool valid() override {
-        return !!iter_ && iter_->Valid() && (iter_->key().compare(end_) < 0); 
+        return !!iter_ && iter_->Valid() && (iter_->key().compare(end_) < 0);
     }
 
     void next() override {
@@ -59,7 +59,7 @@ public:
     ~RocksdbPrefixIter()  = default;
 
     bool valid() override {
-        return !!iter_ && iter_->Valid() && (iter_->key().starts_with(prefix_)); 
+        return !!iter_ && iter_->Valid() && (iter_->key().starts_with(prefix_));
     }
 
     void next() override {
@@ -85,13 +85,14 @@ private:
 
 class RocksdbEngine : public StorageEngine {
     FRIEND_TEST(RocksdbEngineTest, SimpleTest);
+
 public:
     RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath);
 
     ~RocksdbEngine();
 
     ResultCode get(const std::string& key,
-                   std::string& value) override;
+                   std::string* value) override;
 
     ResultCode put(std::string key,
                    std::string value) override;
@@ -100,10 +101,10 @@ public:
 
     ResultCode range(const std::string& start,
                      const std::string& end,
-                     std::unique_ptr<StorageIter>& iter) override;
+                     std::unique_ptr<StorageIter>* iter) override;
 
     ResultCode prefix(const std::string& prefix,
-                      std::unique_ptr<StorageIter>& iter) override;
+                      std::unique_ptr<StorageIter>* iter) override;
 
     ResultCode ingest(const std::vector<std::string>& files);
 
