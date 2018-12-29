@@ -90,11 +90,11 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     RowSetReader rsReader(provider.get(), resp.data);
     auto it = rsReader.begin();
     int32_t rowNum = 0;
-    while (bool(it)) {
+    while (static_cast<bool>(it)) {
         auto fieldIt = it->begin();
         int32_t i = 0;
         std::stringstream ss;
-        while (bool(fieldIt)) {
+        while (static_cast<bool>(fieldIt)) {
             if (i < 5) {
                 int64_t v;
                 EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getInt<int64_t>(v));
