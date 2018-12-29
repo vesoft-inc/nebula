@@ -14,6 +14,15 @@
 namespace nebula {
 namespace storage {
 
+
+const std::unordered_map<std::string, PropContext::PropInKeyType> kPropsInKey_ = {
+    {"_src", PropContext::PropInKeyType::SRC},
+    {"_dst", PropContext::PropInKeyType::DST},
+    {"_type", PropContext::PropInKeyType::TYPE},
+    {"_rank", PropContext::PropInKeyType::RANK}
+};
+
+
 template<typename REQ, typename RESP>
 class QueryBaseProcessor : public BaseProcessor<RESP> {
 public:
@@ -39,6 +48,7 @@ protected:
      * collect props in one row, you could define custom behavior by implement your own collector.
      * */
     void collectProps(RowReader* reader,
+                      folly::StringPiece key,
                       std::vector<PropContext>& props,
                       Collector* collector);
 

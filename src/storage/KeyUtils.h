@@ -17,7 +17,7 @@ namespace storage {
  * partId(4) + vertexId(8) + tagId(4) + version(8)
  *
  * EdgeKeyUtils:
- * partId(4) + srcId(8) + edgeType(4) + dstId(8) + edgeRank(8) + version(8)
+ * partId(4) + srcId(8) + edgeType(4) + edgeRank(8) + dstId(8) + version(8)
  *
  * */
 
@@ -42,8 +42,8 @@ public:
      * Generate edge key for kv store
      * */
     static std::string edgeKey(PartitionID partId, VertexID srcId,
-                               EdgeType type, VertexID dstId,
-                               EdgeRanking rank, EdgeVersion ts);
+                               EdgeType type, EdgeRanking rank,
+                               VertexID dstId, EdgeVersion ts);
 
     /**
      * Prefix for srcId edges with some edgeType
@@ -56,7 +56,7 @@ public:
     static std::string prefix(PartitionID partId, VertexID vId);
 
     static std::string prefix(PartitionID partId, VertexID src, EdgeType type,
-                              VertexID dst, EdgeRanking ranking);
+                              EdgeRanking ranking, VertexID dst);
 
     static bool isVertex(const std::string& rawKey) {
         return rawKey.size() == kVertexLen;
@@ -66,15 +66,40 @@ public:
         return rawKey.size() == kEdgeLen;
     }
 
-    /**
-     * Parse vertex from rawKey, return false if failed.
-     * */
-//    static bool parseVertex(const std::string& rawKey, Vertex& vertex);
+    static int64_t getSrcId(folly::StringPiece rawKey) {
+        CHECK_EQ(rawKey.size(), kEdgeLen);
+        return readInt<int64_t>(rawKey.data() + sizeof(PartitionID),
+                                rawKey.size() - sizeof(PartitionID));
+    }
 
-    /**
-     * Parse edge from rawkey, return false if failed.
-     **/
-//    static bool parseEdge(const std::string& rawKey, Edge& edge);
+
+    static int64_t getDstId(folly::StringPiece rawKey) {
+        CHECK_EQ(rawKey.size(), kEdgeLen);
+        auto offset = kEdgeLen - sizeof(EdgeVersion) - sizeof(VertexID);
+        return readInt<int64_t>(rawKey.data() + offset,
+                                rawKey.size() - offset);
+    }
+
+    static int32_t getEdgeType(folly::StringPiece rawKey) {
+        CHECK_EQ(rawKey.size(), kEdgeLen);
+        auto offset = sizeof(PartitionID) + sizeof(VertexID);
+        return readInt<int32_t>(rawKey.data() + offset,
+                                rawKey.size() - offset);
+    }
+
+    static int64_t getRank(folly::StringPiece rawKey) {
+        CHECK_EQ(rawKey.size(), kEdgeLen);
+        auto offset = sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType);
+        return readInt<int64_t>(rawKey.data() + offset,
+                                rawKey.size() - offset);
+    }
+
+    template<typename T>
+    static typename std::enable_if<std::is_integral<T>::value, T>::type
+    readInt(const char* data, int32_t len) {
+        CHECK_GT(len, sizeof(T));
+        return *reinterpret_cast<const T*>(data);
+    }
 
 private:
     KeyUtils() = delete;

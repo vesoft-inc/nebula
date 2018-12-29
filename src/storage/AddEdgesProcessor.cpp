@@ -21,7 +21,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
         std::vector<kvstore::KV> data;
         std::for_each(partEdges.second.begin(), partEdges.second.end(), [&](auto& edge){
             auto key = KeyUtils::edgeKey(partId, edge.key.src, edge.key.edge_type,
-                                         edge.key.dst, edge.key.ranking, now);
+                                         edge.key.ranking, edge.key.dst, now);
             data.emplace_back(std::move(key), std::move(edge.get_props()));
         });
         doPut(spaceId, partId, std::move(data));
