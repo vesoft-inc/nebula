@@ -8,6 +8,7 @@
 #define COMMON_FS_FILEUTILS_H_
 
 #include "base/Base.h"
+#include <dirent.h>
 #include "base/StatusOr.h"
 
 namespace nebula {
@@ -138,6 +139,95 @@ public:
         const char* dirpath,
         bool returnFullPath = false,
         const char* namePattern = nullptr);
+
+    /**
+     * class Iterator works like other iterators,
+     * which iterates over lines in a file or entries in a directory.
+     * Additionally, if offered a pattern, Iterator filters out lines or entry names
+     * that matches the pattern.
+     *
+     * NOTE Iterator is not designed to be used in the performance critical situations.
+     */
+    class Iterator;
+    using DirEntryIterator = Iterator;
+    using FileLineIterator = Iterator;
+    class Iterator final {
+    public:
+        /**
+         * @path    path to a regular file or directory
+         * @pattern optional regex pattern
+         */
+        explicit Iterator(std::string path, const std::regex *pattern = nullptr);
+        ~Iterator();
+
+        // Whether this iterator is valid
+        bool valid() const {
+            return status_.ok();
+        }
+
+        // Step to the next line or entry
+        void next();
+        // Step to the next line or entry
+        // Overload the prefix-increment operator
+        Iterator& operator++() {
+            next();
+            return *this;
+        }
+
+        // Forbid the overload of postfix-increment operator
+        Iterator operator++(int) = delete;
+
+        // Line or directory entry
+        // REQUIRES:    valid() == true
+        std::string& entry() {
+            CHECK(valid());
+            return entry_;
+        }
+
+        // Line or directory entry
+        // REQUIRES:    valid() == true
+        const std::string& entry() const {
+            CHECK(valid());
+            return entry_;
+        }
+
+        // The matched result of the pattern
+        // REQUIRES:    valid() == true && pattern != nullptr
+        std::smatch& matched() {
+            CHECK(valid());
+            CHECK(pattern_ != nullptr);
+            return matched_;
+        }
+
+        // The matched result of the pattern
+        // REQUIRES:    valid() == true && pattern != nullptr
+        const std::smatch& matched() const {
+            CHECK(valid());
+            CHECK(pattern_ != nullptr);
+            return matched_;
+        }
+
+        // Status to indicates the error
+        const Status& status() const {
+            return status_;
+        }
+
+    private:
+
+        void openFileOrDirectory();
+        void dirNext();
+        void fileNext();
+
+    private:
+        std::string                         path_;
+        FileType                            type_{FileType::UNKNOWN};
+        std::unique_ptr<std::ifstream>      fstream_;
+        DIR                                *dir_{nullptr};
+        const std::regex                   *pattern_{nullptr};
+        std::string                         entry_;
+        std::smatch                         matched_;
+        Status                              status_;
+    };
 };
 
 }  // namespace fs
