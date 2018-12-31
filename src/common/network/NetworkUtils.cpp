@@ -6,10 +6,10 @@
 
 #include "base/Base.h"
 #include "network/NetworkUtils.h"
+#include "fs/FileUtils.h"
 #include <netdb.h>
 #include <ifaddrs.h>
 #include <arpa/inet.h>
-#include "proc/ProcAccessor.h"
 
 namespace nebula {
 namespace network {
@@ -103,10 +103,10 @@ bool NetworkUtils::getDynamicPortRange(uint16_t& low, uint16_t& high) {
 
 std::unordered_set<uint16_t> NetworkUtils::getPortsInUse() {
     static const std::regex regex("[^:]+:[^:]+:([0-9A-F]+).+");
-    proc::ProcAccessor accessor("/proc/net/tcp");
+    fs::FileUtils::FileLineIterator iter("/proc/net/tcp", &regex);
     std::unordered_set<uint16_t> inUse;
-    std::smatch sm;
-    while (accessor.next(regex, sm)) {
+    while (iter.valid()) {
+        auto &sm = iter.matched();
         inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
     }
     return std::move(inUse);
