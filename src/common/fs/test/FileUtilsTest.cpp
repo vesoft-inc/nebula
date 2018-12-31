@@ -278,6 +278,54 @@ TEST(FileUtils, listContentInDir) {
 }
 
 
+TEST(FileUtilsIterator, Directory) {
+    auto stopped = false;
+    std::thread t([&] () {
+        while (!stopped) {
+            usleep(1000);
+        }
+    });
+
+    FileUtils::DirEntryIterator iter("/proc/self/task");
+    EXPECT_TRUE(iter.valid()) << iter.status();
+    size_t nTh = 0;
+    std::string tid;
+    while (iter.valid()) {
+        nTh++;
+        ++iter;
+    }
+    EXPECT_EQ(2, nTh);
+
+    stopped = true;
+    t.join();
+}
+
+
+TEST(FileUtilsIterator, File) {
+    std::regex regex("([0-9]+\\.[0-9]{2})[ \\t]+"
+                     "([0-9]+\\.[0-9]{2})[ \\t]+"
+                     "([0-9]+\\.[0-9]{2})[ \\t]+"
+                     "([0-9]+)/[0-9]+");
+    FileUtils::FileLineIterator iter("/proc/loadavg", &regex);
+
+    ASSERT_TRUE(iter.valid());
+    auto &sm = iter.matched();
+
+    double load1 = atof(sm[1].str().c_str());
+    double load5 = atof(sm[2].str().c_str());
+    double load15 = atof(sm[3].str().c_str());
+    int running = atoi(sm[4].str().c_str());
+
+    EXPECT_GE(load1, 0.0);
+    EXPECT_GE(load5, 0.0);
+    EXPECT_GE(load15, 0.0);
+    EXPECT_GE(running, 1);
+
+    ++iter;
+    ASSERT_FALSE(iter.valid());
+}
+
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);

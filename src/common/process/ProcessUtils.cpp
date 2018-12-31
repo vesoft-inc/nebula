@@ -8,7 +8,6 @@
 #include <signal.h>
 #include "fs/FileUtils.h"
 #include "process/ProcessUtils.h"
-#include "proc/ProcAccessor.h"
 
 namespace nebula {
 
@@ -38,14 +37,13 @@ Status ProcessUtils::isPidAvailable(const std::string &pidFile) {
     }
     // Pidfile is readable
     static const std::regex pattern("([0-9]+)");
-    std::smatch result;
-    proc::ProcAccessor accessor(pidFile);
-    if (!accessor.next(pattern, result)) {
+    fs::FileUtils::FileLineIterator iter(pidFile, &pattern);
+    if (!iter.valid()) {
         // Pidfile is readable but has no valid pid
         return Status::OK();
     }
     // Now we have a valid pid
-    return isPidAvailable(folly::to<uint32_t>(result[1].str()));
+    return isPidAvailable(folly::to<uint32_t>(iter.matched()[1].str()));
 }
 
 
@@ -91,22 +89,19 @@ StatusOr<std::string> ProcessUtils::getProcessName(uint32_t pid) {
     }
     char path[PATH_MAX];
     snprintf(path, sizeof(path), "/proc/%u/comm", pid);
-    proc::ProcAccessor accessor(path);
-    std::string name;
-    if (!accessor.next(name)) {
-        return Status::Error("Failed to read from `%s'", path);
+    fs::FileUtils::FileLineIterator iter(path);
+    if (!iter.valid()) {
+        return iter.status();
     }
-    return name;
+    return iter.entry();
 }
 
 
 uint32_t ProcessUtils::maxPid() {
-    proc::ProcAccessor accessor("/proc/sys/kernel/pid_max");
     static const std::regex pattern("([0-9]+)");
-    std::smatch result;
-    auto ok = accessor.next(pattern, result);
-    CHECK(ok);
-    return folly::to<uint32_t>(result[1].str());
+    fs::FileUtils::FileLineIterator iter("/proc/sys/kernel/pid_max", &pattern);
+    CHECK(iter.valid());
+    return folly::to<uint32_t>(iter.matched()[1].str());
 }
 
 }   // namespace nebula

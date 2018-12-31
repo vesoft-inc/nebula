@@ -3,7 +3,6 @@ add_executable(
     ProcessTest.cpp
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:proc_obj>
     $<TARGET_OBJECTS:base_obj>
 )
 target_link_libraries(
