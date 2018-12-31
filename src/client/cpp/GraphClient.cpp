@@ -9,7 +9,7 @@
 #include <thrift/lib/cpp/async/TAsyncSocket.h>
 #include <thrift/lib/cpp2/async/HeaderClientChannel.h>
 
-DEFINE_int32(conn_timeout_ms, 1000,
+DEFINE_int32(server_conn_timeout_ms, 1000,
              "Connection timeout in milliseconds");
 
 
@@ -37,7 +37,7 @@ cpp2::ErrorCode GraphClient::connect(const std::string& username,
         folly::EventBaseManager::get()->getEventBase(),
         addr_,
         port_,
-        FLAGS_conn_timeout_ms);
+        FLAGS_server_conn_timeout_ms);
 
     client_ = std::make_unique<cpp2::GraphServiceAsyncClient>(
         HeaderClientChannel::newChannel(socket));

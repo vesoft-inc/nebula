@@ -7,8 +7,12 @@ add_executable(
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:proc_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:meta_obj>
 )
 target_link_libraries(
     session_manager_test
@@ -46,9 +50,13 @@ add_executable(
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:proc_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:meta_obj>
 )
 target_link_libraries(
     query_engine_test
