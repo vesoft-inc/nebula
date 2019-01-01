@@ -46,15 +46,10 @@ folly::SemiFuture<cpp2::ExecResponse> StorageClient::addVertices(
            const cpp2::AddVerticesRequest& r) {
             return client->future_addVertices(r);
         },
-        [](HostAddr h,
-           const cpp2::AddVerticesRequest& r,
-           std::vector<cpp2::ResultCode>& results) {
-            UNUSED(h);
+        [](const cpp2::AddVerticesRequest& r,
+           std::function<void(PartitionID)>&& processor) {
             for (auto& part : r.get_vertices()) {
-                cpp2::ResultCode result;
-                result.set_code(cpp2::ErrorCode::E_RPC_FAILURE);
-                result.set_part_id(part.first);
-                results.emplace_back(std::move(result));
+                processor(part.first);
             }
         });
 }
@@ -87,15 +82,10 @@ folly::SemiFuture<cpp2::ExecResponse> StorageClient::addEdges(
            const cpp2::AddEdgesRequest& r) {
             return client->future_addEdges(r);
         },
-        [](HostAddr h,
-           const cpp2::AddEdgesRequest& r,
-           std::vector<cpp2::ResultCode>& results) {
-            UNUSED(h);
+        [](const cpp2::AddEdgesRequest& r,
+           std::function<void(PartitionID)>&& processor) {
             for (auto& edge : r.get_edges()) {
-                cpp2::ResultCode result;
-                result.set_code(cpp2::ErrorCode::E_RPC_FAILURE);
-                result.set_part_id(edge.first);
-                results.emplace_back(std::move(result));
+                processor(edge.first);
             }
         });
 }
@@ -138,15 +128,10 @@ folly::SemiFuture<storage::cpp2::QueryResponse> StorageClient::getNeighbors(
                 return client->future_getInBound(r);
             }
         },
-        [](HostAddr h,
-           const cpp2::GetNeighborsRequest& r,
-           std::vector<cpp2::ResultCode>& results) {
-            UNUSED(h);
+        [](const cpp2::GetNeighborsRequest& r,
+           std::function<void(PartitionID)>&& processor) {
             for (auto& id : r.get_ids()) {
-                cpp2::ResultCode result;
-                result.set_code(cpp2::ErrorCode::E_RPC_FAILURE);
-                result.set_part_id(id.first);
-                results.emplace_back(std::move(result));
+                processor(id.first);
             }
         });
 }
@@ -189,15 +174,10 @@ folly::SemiFuture<storage::cpp2::QueryResponse> StorageClient::neighborStats(
                 return client->future_inBoundStats(r);
             }
         },
-        [](HostAddr h,
-           const cpp2::NeighborsStatsRequest& r,
-           std::vector<cpp2::ResultCode>& results) {
-            UNUSED(h);
+        [](const cpp2::NeighborsStatsRequest& r,
+           std::function<void(PartitionID)>&& processor) {
             for (auto& id : r.get_ids()) {
-                cpp2::ResultCode result;
-                result.set_code(cpp2::ErrorCode::E_RPC_FAILURE);
-                result.set_part_id(id.first);
-                results.emplace_back(std::move(result));
+                processor(id.first);
             }
         });
 }
@@ -230,15 +210,10 @@ folly::SemiFuture<storage::cpp2::QueryResponse> StorageClient::getVertexProps(
            const cpp2::VertexPropRequest& r) {
             return client->future_getProps(r);
         },
-        [](HostAddr h,
-           const cpp2::VertexPropRequest& r,
-           std::vector<cpp2::ResultCode>& results) {
-            UNUSED(h);
+        [](const cpp2::VertexPropRequest& r,
+           std::function<void(PartitionID)>&& processor) {
             for (auto& id : r.get_ids()) {
-                cpp2::ResultCode result;
-                result.set_code(cpp2::ErrorCode::E_RPC_FAILURE);
-                result.set_part_id(id.first);
-                results.emplace_back(std::move(result));
+                processor(id.first);
             }
         });
 }
@@ -271,15 +246,10 @@ folly::SemiFuture<storage::cpp2::QueryResponse> StorageClient::getEdgeProps(
            const cpp2::EdgePropRequest& r) {
             return client->future_getEdgeProps(r);
         },
-        [](HostAddr h,
-           const cpp2::EdgePropRequest& r,
-           std::vector<cpp2::ResultCode>& results) {
-            UNUSED(h);
+        [](const cpp2::EdgePropRequest& r,
+           std::function<void(PartitionID)>&& processor) {
             for (auto& e : r.get_edges()) {
-                cpp2::ResultCode result;
-                result.set_code(cpp2::ErrorCode::E_RPC_FAILURE);
-                result.set_part_id(e.first);
-                results.emplace_back(std::move(result));
+                processor(e.first);
             }
         });
 }

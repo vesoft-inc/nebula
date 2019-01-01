@@ -70,19 +70,30 @@ public:
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
 
-    template<class Request, class RemoteFunc, class RPCFailureHandler>
+    template<class Request,
+             class Context,
+             class SingleResponseHandler,
+             class AllDoneHandler>
+    folly::SemiFuture<typename Context::ResponseType> collectResponse(
+        folly::EventBase* evb,
+        std::shared_ptr<Context> context,
+        std::unordered_map<HostAddr, Request> requests,
+        SingleResponseHandler&& singleRespHandler,
+        AllDoneHandler&& allDoneHandler);
+
+    template<class Request, class RemoteFunc, class RequestPartAccessor>
     folly::SemiFuture<storage::cpp2::ExecResponse> collectExecResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc,
-        RPCFailureHandler&& rpcFailureHandler);
+        RequestPartAccessor&& partAccessor);
 
-    template<class Request, class RemoteFunc, class RPCFailureHandler>
+    template<class Request, class RemoteFunc, class RequestPartAccessor>
     folly::SemiFuture<storage::cpp2::QueryResponse> collectQueryResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc,
-        RPCFailureHandler&& rpcFailureHandler);
+        RequestPartAccessor&& partAccessor);
 };
 
 }   // namespace graph

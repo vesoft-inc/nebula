@@ -8,7 +8,6 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:proc_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:parser_obj>
@@ -52,7 +51,6 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:proc_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:parser_obj>
