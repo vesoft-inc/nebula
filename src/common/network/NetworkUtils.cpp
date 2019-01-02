@@ -75,6 +75,7 @@ StatusOr<std::unordered_map<std::string, std::string>> NetworkUtils::listDeviceA
         // we could use inet_ntop instead when we need support for IPv6
         dev2ipv4s[ifa->ifa_name] = ::inet_ntoa(addr->sin_addr);
     }
+    ::freeifaddrs(iflist);
     if (dev2ipv4s.empty()) {
         return Status::Error("No IPv4 devices found");
     }
