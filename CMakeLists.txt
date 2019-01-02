@@ -92,6 +92,9 @@ if(NOT ${NEBULA_GPERF_BIN_DIR} STREQUAL "")
 endif()
 
 
+option(sanitize "Whether to turn AddressSanitizer ON or OFF" OFF)
+
+
 message(STATUS "CMAKE_INCLUDE_PATH: " ${CMAKE_INCLUDE_PATH})
 message(STATUS "CMAKE_LIBRARY_PATH: " ${CMAKE_LIBRARY_PATH})
 message(STATUS "CMAKE_PROGRAM_PATH: " ${CMAKE_PROGRAM_PATH})
@@ -99,18 +102,28 @@ message(STATUS "CMAKE_PROGRAM_PATH: " ${CMAKE_PROGRAM_PATH})
 find_package(Boost REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Krb5 REQUIRED gssapi)
-find_package(PCHSupport)
 find_package(GPERF 2.8 REQUIRED)
 find_package(Libunwind REQUIRED)
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
+if(NOT sanitize)
+    find_package(PCHSupport)
+    add_compile_options(-Winvalid-pch)
+endif()
 
-add_compile_options(-Winvalid-pch)
+
 add_compile_options(-Wall)
 add_compile_options(-Werror)
 add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
+
+if(sanitize)
+    add_compile_options(-fsanitize=address)
+    add_compile_options(-g)
+    add_compile_options(-fno-omit-frame-pointer)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+endif()
 
 include_directories(SYSTEM ${NEBULA_HOME}/third-party/bzip2/_install/include)
 include_directories(SYSTEM ${NEBULA_HOME}/third-party/double-conversion/_install/include)
