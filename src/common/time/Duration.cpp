@@ -39,20 +39,27 @@ uint64_t calibrateTicksPerUSec() {
 }
 
 
+static void launchTickTockThread();
+
 volatile std::atomic<uint64_t> ticksPerUSec{
     []() -> uint64_t {
-        thread::NamedThread t("tick-tock",
-            []() {
-                while (true) {
-                    sleep(3);
-                    ticksPerUSec.store(calibrateTicksPerUSec());
-                }  // while
-            });
-        t.detach();
-
+        launchTickTockThread();
+        // re-launch tick-tock thread after forking
+        ::pthread_atfork(nullptr, nullptr, &launchTickTockThread);
         return calibrateTicksPerUSec();
     }()
 };
+
+void launchTickTockThread() {
+    thread::NamedThread t("tick-tock",
+        []() {
+            while (true) {
+                sleep(3);
+                ticksPerUSec.store(calibrateTicksPerUSec());
+            }  // while
+        });
+    t.detach();
+}
 
 }  // namespace detail
 

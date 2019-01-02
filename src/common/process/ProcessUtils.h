@@ -26,7 +26,14 @@ public:
      *      The pidFile contains a valid pid and no such process exists.
      */
     static Status isPidAvailable(const std::string &pidFile);
+    /**
+     * Write pid into file, create if not exist.
+     */
     static Status makePidFile(const std::string &path, uint32_t pid = 0);
+    /**
+     * Make current process a daemon and write the daemon's pid into pidFile
+     */
+    static Status daemonize(const std::string &pidFile);
     /**
      * Get the absolute path to the target process's executable.
      * Use the current process if pid == 0.
