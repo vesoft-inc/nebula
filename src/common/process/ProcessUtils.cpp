@@ -63,6 +63,26 @@ Status ProcessUtils::makePidFile(const std::string &pidFile, uint32_t pid) {
 }
 
 
+Status ProcessUtils::daemonize(const std::string &pidFile) {
+    auto pid = ::fork();
+    if (pid == -1) {
+        return Status::Error("fork: %s", ::strerror(errno));
+    }
+    if (pid > 0) {  // parent process
+        ::exit(0);
+    }
+
+    // Make the child process as the session leader and detach with the controlling terminal
+    ::setsid();
+    // Set `/dev/null' as standard input
+    auto fd = ::open("/dev/null", O_RDWR);
+    ::dup2(fd, 0);
+    ::close(fd);
+
+    return makePidFile(pidFile);
+}
+
+
 StatusOr<std::string> ProcessUtils::getExePath(uint32_t pid) {
     if (pid == 0) {
         pid = ::getpid();
