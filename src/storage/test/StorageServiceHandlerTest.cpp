@@ -20,39 +20,40 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
 
     fs::TempDir rootPath("/tmp/FutureAddVerticesTest.XXXXXX");
     cpp2::AddVerticesRequest req;
+    std::unique_ptr<StorageServiceHandler> storageServiceHandler;
     req.space_id = 0;
     req.overwritable = true;
 
     LOG(INFO) << "Build FutureAddVerticesTest...";
-    req.vertices.emplace(0, setupVertices(0,10,10));
-    req.vertices.emplace(1, setupVertices(1,20,30));
+    req.vertices.emplace(0, TestUtils::setupVertices(0,10,10));
+    req.vertices.emplace(1, TestUtils::setupVertices(1,20,30));
 
     LOG(INFO) << "Test FutureAddVerticesTest...";
-    StorageServiceHandler *storageServiceHandler = new StorageServiceHandler();
+    storageServiceHandler = std::make_unique<StorageServiceHandler>();
     auto *kvstore = TestUtils::initKV(rootPath.path());
     storageServiceHandler->kvstore_ = kvstore;
     auto resp = storageServiceHandler->future_addVertices(req).get();
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());
 
     LOG(INFO) << "Check ErrorCode of AddVerticesProcessor...";
-    EXPECT_EQ(2, resp.codes.size());
-    EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.codes[0].code);
-    EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.codes[1].code);
-    EXPECT_EQ(true,
+    ASSERT_EQ(2, resp.codes.size());
+    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.codes[0].code);
+    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.codes[1].code);
+    ASSERT_EQ(true,
             (resp.codes[0].part_id == 0 && resp.codes[1].part_id == 1) ||
             (resp.codes[1].part_id == 0 && resp.codes[0].part_id == 1));
 
     LOG(INFO) << "Verify the vertices data...";
     auto prefix = KeyUtils::prefix(1, 19);
     std::unique_ptr<kvstore::StorageIter> iter;
-    EXPECT_EQ(kvstore::ResultCode::SUCCESSED, kvstore->prefix(0, 1, prefix, iter));
+    ASSERT_EQ(kvstore::ResultCode::SUCCESSED, kvstore->prefix(0, 1, prefix, iter));
     TagID tagId = 0;
     while (iter->valid()) {
-        EXPECT_EQ(folly::stringPrintf("%d_%d_%d", 1, 19, tagId), iter->val());
+        ASSERT_EQ(folly::stringPrintf("%d_%d_%d", 1, 19, tagId), iter->val());
         tagId++;
         iter->next();
     }
-    EXPECT_EQ(30, tagId);
+    ASSERT_EQ(30, tagId);
 
 
     LOG(INFO) << "Test FutureAddVerticesTest...";
