@@ -3,7 +3,7 @@ add_executable(
     NetworkUtilsTest.cpp
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:proc_obj>
+    $<TARGET_OBJECTS:fs_obj>
 )
 target_link_libraries(
     network_utils_test
@@ -26,7 +26,7 @@ add_executable(
     NetworkUtilsBenchmark.cpp
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:proc_obj>
+    $<TARGET_OBJECTS:fs_obj>
 )
 target_link_libraries(
     network_utils_bm

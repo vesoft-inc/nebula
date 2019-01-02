@@ -418,6 +418,99 @@ std::vector<std::string> FileUtils::listAllDirsInDir(
                                      namePattern);
 }
 
+
+FileUtils::Iterator::Iterator(std::string path, const std::regex *pattern)
+    : path_(std::move(path)) {
+    pattern_ = pattern;
+    openFileOrDirectory();
+    if (status_.ok()) {
+        next();
+    }
+}
+
+
+FileUtils::Iterator::~Iterator() {
+    if (fstream_ != nullptr && fstream_->is_open()) {
+        fstream_->close();
+    }
+    if (dir_ != nullptr) {
+        ::closedir(dir_);
+        dir_ = nullptr;
+    }
+}
+
+
+void FileUtils::Iterator::next() {
+    CHECK(valid());
+    CHECK(type_ != FileType::UNKNOWN);
+    while (true) {
+        if (type_ == FileType::DIRECTORY) {
+            dirNext();
+        } else {
+            fileNext();
+        }
+        if (!status_.ok()) {
+            return;
+        }
+        if (pattern_ != nullptr) {
+            if (!std::regex_search(entry_, matched_, *pattern_)) {
+                continue;
+            }
+        }
+        break;
+    }
+}
+
+
+void FileUtils::Iterator::dirNext() {
+    CHECK(type_ == FileType::DIRECTORY);
+    CHECK(dir_ != nullptr);
+    struct dirent *dent;
+    while ((dent = ::readdir(dir_)) != NULL) {
+        if (dent->d_name[0] == '.') {
+            continue;
+        }
+        break;
+    }
+    if (dent == nullptr) {
+        status_ = Status::Error("EOF");
+        return;
+    }
+    entry_ = dent->d_name;
+}
+
+
+void FileUtils::Iterator::fileNext() {
+    CHECK(type_ == FileType::REGULAR);
+    CHECK(fstream_ != nullptr);
+    if (!std::getline(*fstream_, entry_)) {
+        status_ = Status::Error("EOF");
+    }
+}
+
+
+void FileUtils::Iterator::openFileOrDirectory() {
+    type_ = FileUtils::fileType(path_.c_str());
+    if (type_ == FileType::DIRECTORY) {
+        if ((dir_ = ::opendir(path_.c_str())) == nullptr) {
+            status_ = Status::Error("opendir `%s': %s", path_.c_str(), ::strerror(errno));
+            return;
+        }
+    } else if (type_ == FileType::REGULAR) {
+        fstream_ = std::make_unique<std::ifstream>();
+        fstream_->open(path_);
+        if (!fstream_->is_open()) {
+            status_ = Status::Error("open `%s': %s", path_.c_str(), ::strerror(errno));
+            return;
+        }
+    } else {
+        status_ = Status::Error("Filetype not supported `%s': %s",
+                                path_.c_str(), FileUtils::getFileTypeName(type_));
+        return;
+    }
+    status_ = Status::OK();
+}
+
 }  // namespace fs
 }  // namespace nebula
 

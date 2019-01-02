@@ -1,11 +1,10 @@
 add_custom_target(
     common ALL
-    DEPENDS base_obj time proc network fs concurrent thread
+    DEPENDS base_obj time network fs concurrent thread
 )
 
 add_subdirectory(base)
 add_subdirectory(time)
-add_subdirectory(proc)
 add_subdirectory(network)
 add_subdirectory(thrift)
 add_subdirectory(fs)
