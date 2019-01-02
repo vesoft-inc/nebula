@@ -21,3 +21,4 @@ DEFINE_string(pid_file, "nebula-graphd.pid", "File to hold the process id");
 DEFINE_bool(redirect_stdout, true, "Whether to redirect stdout and stderr to separate files");
 DEFINE_string(stdout_log_file, "graphd-stdout.log", "Destination filename of stdout");
 DEFINE_string(stderr_log_file, "graphd-stderr.log", "Destination filename of stderr");
+DEFINE_bool(daemonize, true, "Whether run as a daemon process");
