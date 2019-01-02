@@ -9,7 +9,6 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:proc_obj>
 )
 target_link_libraries(
     file_based_wal_test
@@ -47,7 +46,6 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:proc_obj>
 )
 target_link_libraries(
     leader_election_test
@@ -85,7 +83,6 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:proc_obj>
 )
 target_link_libraries(
     log_append_test
