@@ -655,15 +655,15 @@ const char* SourceIdExpression::decode(const char *pos, const char *end) {
 std::string PrimaryExpression::toString() const {
     char buf[1024];
     switch (operand_.which()) {
-        case 0:
+        case kBool:
             snprintf(buf, sizeof(buf), "%s", boost::get<bool>(operand_) ? "true" : "false");
             break;
-        case 1:
+        case kInt:
             snprintf(buf, sizeof(buf), "%ld", boost::get<int64_t>(operand_));
             break;
-        case 2:
+        case kDouble:
             return std::to_string(boost::get<double>(operand_));
-        case 3:
+        case kString:
             return "\"" + boost::get<std::string>(operand_) + "\"";
     }
     return buf;
@@ -672,16 +672,16 @@ std::string PrimaryExpression::toString() const {
 
 VariantType PrimaryExpression::eval() const {
     switch (operand_.which()) {
-        case 0:
+        case kBool:
             return boost::get<bool>(operand_);
             break;
-        case 1:
+        case kInt:
             return boost::get<int64_t>(operand_);
             break;
-        case 2:
+        case kDouble:
             return boost::get<double>(operand_);
             break;
-        case 3:
+        case kString:
             return boost::get<std::string>(operand_);
     }
     return std::string("Unknown");
@@ -698,16 +698,16 @@ void PrimaryExpression::encode(Cord &cord) const {
     uint8_t which = operand_.which();
     cord << which;
     switch (which) {
-        case 0:
+        case kBool:
             cord << static_cast<uint8_t>(boost::get<bool>(operand_));
             break;
-        case 1:
+        case kInt:
             cord << boost::get<int64_t>(operand_);
             break;
-        case 2:
+        case kDouble:
             cord << boost::get<double>(operand_);
             break;
-        case 3: {
+        case kString: {
             auto &str = boost::get<std::string>(operand_);
             cord << static_cast<uint16_t>(str.size());
             cord << str;
@@ -722,22 +722,22 @@ void PrimaryExpression::encode(Cord &cord) const {
 const char* PrimaryExpression::decode(const char *pos, const char *end) {
     THROW_IF_NO_SPACE(pos, end, 1);
     auto which = *reinterpret_cast<const uint8_t*>(pos++);
-    switch (which) {
-        case 0:
+    switch (static_cast<Which>(which)) {
+        case kBool:
             THROW_IF_NO_SPACE(pos, end, 1UL);
             operand_ = *reinterpret_cast<const bool*>(pos++);
             break;
-        case 1:
+        case kInt:
             THROW_IF_NO_SPACE(pos, end, 8UL);
             operand_ = *reinterpret_cast<const int64_t*>(pos);
             pos += 8;
             break;
-        case 2:
+        case kDouble:
             THROW_IF_NO_SPACE(pos, end, 8UL);
             operand_ = *reinterpret_cast<const double*>(pos);
             pos += 8;
             break;
-        case 3: {
+        case kString: {
             THROW_IF_NO_SPACE(pos, end, 2UL);
             auto size = *reinterpret_cast<const uint16_t*>(pos);
             pos += 2;

@@ -597,6 +597,12 @@ private:
 class PrimaryExpression final : public Expression {
 public:
     using Operand = boost::variant<bool, int64_t, double, std::string>;
+    enum Which {
+        kBool = 0,
+        kInt = 1,
+        kDouble = 2,
+        kString = 3,
+    };
     PrimaryExpression() {
         kind_ = kPrimary;
     }

@@ -154,6 +154,9 @@ OCT                         ([0-7])
 
 {LABEL}                     {
                                 yylval->strval = new std::string(yytext, yyleng);
+                                if (yylval->strval->size() > MAX_STRING) {
+                                    yyterminate();
+                                }
                                 return TokenType::LABEL;
                             }
 0[Xx]{HEX}+                 {
@@ -179,6 +182,9 @@ OCT                         ([0-7])
 <STR>\"                     {
                                 yylval->strval = new std::string(sbuf, pos);
                                 BEGIN(INITIAL);
+                                if (yylval->strval->size() > MAX_STRING) {
+                                    yyterminate();
+                                }
                                 return TokenType::STRING;
                             }
 <STR>\n                     { yyterminate(); }
