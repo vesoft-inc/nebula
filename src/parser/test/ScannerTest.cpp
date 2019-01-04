@@ -13,7 +13,6 @@
 #include "parser/GraphScanner.h"
 
 using namespace ::testing;
-// TODO(dutor) Check on the sematic value of tokens
 
 namespace nebula {
 
@@ -113,6 +112,7 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("*", TokenType::MUL),
         CHECK_SEMANTIC_TYPE("/", TokenType::DIV),
         CHECK_SEMANTIC_TYPE("%", TokenType::MOD),
+        CHECK_SEMANTIC_TYPE("!", TokenType::NOT),
         CHECK_SEMANTIC_TYPE("@", TokenType::AT),
 
         CHECK_SEMANTIC_TYPE("<", TokenType::LT),
@@ -201,6 +201,14 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("intersect", TokenType::KW_INTERSECT),
         CHECK_SEMANTIC_TYPE("MINUS", TokenType::KW_MINUS),
         CHECK_SEMANTIC_TYPE("minus", TokenType::KW_MINUS),
+
+        CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
+        CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
+        CHECK_SEMANTIC_TYPE("_src", TokenType::SRC_ID_PROP),
+        CHECK_SEMANTIC_TYPE("_dst", TokenType::DST_ID_PROP),
+        CHECK_SEMANTIC_TYPE("_rank", TokenType::RANK_PROP),
+        CHECK_SEMANTIC_TYPE("$_", TokenType::INPUT_REF),
+        CHECK_SEMANTIC_TYPE("$$", TokenType::DST_REF),
 
         CHECK_SEMANTIC_VALUE("TRUE", TokenType::BOOL, true),
         CHECK_SEMANTIC_VALUE("true", TokenType::BOOL, true),

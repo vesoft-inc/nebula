@@ -15,7 +15,7 @@ add_library(
         ${BISON_Parser_OUTPUTS}
         Expressions.cpp
         Clauses.cpp
-        CompoundSentence.cpp
+        SequentialSentences.cpp
         MaintainSentences.cpp
         MutateSentences.cpp
         TraverseSentences.cpp

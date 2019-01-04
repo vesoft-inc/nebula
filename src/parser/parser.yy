@@ -7,13 +7,13 @@
 %lex-param { nebula::GraphScanner& scanner }
 %parse-param { nebula::GraphScanner& scanner }
 %parse-param { std::string &errmsg }
-%parse-param { nebula::CompoundSentence** compound }
+%parse-param { nebula::SequentialSentences** sentences }
 
 %code requires {
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "parser/CompoundSentence.h"
+#include "parser/SequentialSentences.h"
 
 namespace nebula {
 
@@ -25,18 +25,18 @@ class GraphScanner;
 
 %code {
     static int yylex(nebula::GraphParser::semantic_type* yylval,
-            nebula::GraphParser::location_type *yylloc,
-            nebula::GraphScanner& scanner);
+                     nebula::GraphParser::location_type *yylloc,
+                     nebula::GraphScanner& scanner);
 }
 
 %union {
     bool                                    boolval;
-    uint64_t                                intval;
+    int64_t                                 intval;
     double                                  doubleval;
     std::string                            *strval;
     nebula::Expression                     *expr;
     nebula::Sentence                       *sentence;
-    nebula::CompoundSentence               *compound;
+    nebula::SequentialSentences            *sentences;
     nebula::ColumnSpecification            *colspec;
     nebula::ColumnSpecificationList        *colspeclist;
     nebula::ColumnType                      type;
@@ -44,8 +44,6 @@ class GraphScanner;
     nebula::FromClause                     *from_clause;
     nebula::SourceNodeList                 *src_node_list;
     nebula::OverClause                     *over_clause;
-    nebula::EdgeList                       *edge_list;
-    nebula::EdgeItem                       *edge_item;
     nebula::WhereClause                    *where_clause;
     nebula::YieldClause                    *yield_clause;
     nebula::YieldColumns                   *yield_columns;
@@ -59,8 +57,7 @@ class GraphScanner;
 %token KW_GO KW_AS KW_TO KW_OR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_DEFINE KW_VERTEX KW_TTL
 %token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE
-%token KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_UINT8 KW_UINT16 KW_UINT32 KW_UINT64
-%token KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
+%token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -70,22 +67,20 @@ class GraphScanner;
 
 /* token type specification */
 %token <boolval> BOOL
-%token <intval> INTEGER UINTEGER COL_REF_ID
+%token <intval> INTEGER
 %token <doubleval> DOUBLE
 %token <strval> STRING VARIABLE LABEL
 
 %type <expr> expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression
 %type <expr> unary_expression primary_expression equality_expression
-%type <expr> ref_expression src_ref_expression dst_ref_expression var_ref_expression
+%type <expr> ref_expression input_ref_expression dst_ref_expression var_ref_expression
 %type <expr> alias_ref_expression
 %type <type> type_spec
 %type <step_clause> step_clause
 %type <from_clause> from_clause
 %type <src_node_list> id_list
 %type <over_clause> over_clause
-%type <edge_list> edge_list
-%type <edge_item> edge_item
 %type <where_clause> where_clause
 %type <yield_clause> yield_clause
 %type <yield_columns> yield_columns
@@ -108,18 +103,15 @@ class GraphScanner;
 %type <sentence> maintainance_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence
 %type <sentence> sentence
-%type <compound> compound
+%type <sentences> sentences
 
-%start compound
+%start sentences
 
 %%
 
 primary_expression
     : INTEGER {
-        $$ = new PrimaryExpression((int64_t)$1);
-    }
-    | UINTEGER {
-        $$ = new PrimaryExpression((uint64_t)$1);
+        $$ = new PrimaryExpression($1);
     }
     | DOUBLE {
         $$ = new PrimaryExpression($1);
@@ -135,7 +127,7 @@ primary_expression
         $$ = new PrimaryExpression(*$1);
         delete $1;
     }
-    | src_ref_expression {
+    | input_ref_expression {
         $$ = $1;
     }
     | dst_ref_expression {
@@ -147,39 +139,23 @@ primary_expression
     | alias_ref_expression {
         $$ = $1;
     }
-
     | L_PAREN expression R_PAREN {
         $$ = $2;
     }
     ;
 
-src_ref_expression
+input_ref_expression
     : INPUT_REF DOT LABEL {
         $$ = new InputPropertyExpression($3);
-    }
-    | INPUT_REF DOT ID_PROP {
-        $$ = new InputIdPropertyExpression();
-    }
-    | INPUT_REF DOT TYPE_PROP {
-        $$ = new InputTypePropertyExpression();
-    }
-    | INPUT_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new InputTaggedPropertyExpression($3, $6);
     }
     ;
 
 dst_ref_expression
-    : DST_REF DOT LABEL {
-        $$ = new DestPropertyExpression($3);
-    }
-    | DST_REF DOT ID_PROP {
-        $$ = new DestIdPropertyExpression();
-    }
-    | DST_REF DOT TYPE_PROP {
-        $$ = new DestTypePropertyExpression();
+    : DST_REF L_BRACKET LABEL R_BRACKET DOT ID_PROP {
+        $$ = new DestIdExpression($3);
     }
     | DST_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new DestTaggedPropertyExpression($3, $6);
+        $$ = new DestPropertyExpression($3, $6);
     }
     ;
 
@@ -187,32 +163,14 @@ var_ref_expression
     : VARIABLE DOT LABEL {
         $$ = new VariablePropertyExpression($1, $3);
     }
-    | VARIABLE DOT ID_PROP {
-        $$ = new VariableIdPropertyExpression($1);
-    }
-    | VARIABLE DOT TYPE_PROP {
-        $$ = new VariableTypePropertyExpression($1);
-    }
-    | VARIABLE L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new VariableTaggedPropertyExpression($1, $3, $6);
-    }
-    | VARIABLE L_BRACKET LABEL R_BRACKET DOT ID_PROP {
-        $$ = new VariableTaggedIdPropertyExpression($1, $3);
-    }
-    | VARIABLE L_BRACKET LABEL R_BRACKET DOT TYPE_PROP {
-        $$ = new VariableTaggedTypePropertyExpression($1, $3);
-    }
     ;
 
 alias_ref_expression
     : LABEL DOT LABEL {
-        $$ = new AliasPropertyExpression($1, $3);
-    }
-    | LABEL DOT ID_PROP {
-        $$ = new AliasIdPropertyExpression($1);
+        $$ = new EdgePropertyExpression($1, $3);
     }
     | LABEL DOT TYPE_PROP {
-        $$ = new AliasTypePropertyExpression($1);
+        $$ = new EdgeTypeExpression($1);
     }
     | LABEL DOT SRC_ID_PROP {
         $$ = new EdgeSrcIdExpression($1);
@@ -224,13 +182,10 @@ alias_ref_expression
         $$ = new EdgeRankExpression($1);
     }
     | LABEL L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new AliasTaggedPropertyExpression($1, $3, $6);
+        $$ = new SourcePropertyExpression($1, $3, $6);
     }
     | LABEL L_BRACKET LABEL R_BRACKET DOT ID_PROP {
-        $$ = new AliasTaggedIdPropertyExpression($1, $3);
-    }
-    | LABEL L_BRACKET LABEL R_BRACKET DOT TYPE_PROP {
-        $$ = new AliasTaggedTypePropertyExpression($1, $3);
+        $$ = new SourceIdExpression($1, $3);
     }
     ;
 
@@ -242,20 +197,16 @@ unary_expression
     | SUB primary_expression {
         $$ = new UnaryExpression(UnaryExpression::NEGATE, $2);
     }
+    | NOT primary_expression {
+        $$ = new UnaryExpression(UnaryExpression::NOT, $2);
+    }
     | L_PAREN type_spec R_PAREN primary_expression {
         $$ = new TypeCastingExpression($2, $4);
     }
     ;
 
 type_spec
-    : KW_INT8 { $$ = ColumnType::INT8; }
-    | KW_INT16 { $$ = ColumnType::INT16; }
-    | KW_INT32 { $$ = ColumnType::INT32; }
-    | KW_INT64 { $$ = ColumnType::INT64; }
-    | KW_UINT8 { $$ = ColumnType::UINT8; }
-    | KW_UINT16 { $$ = ColumnType::UINT16; }
-    | KW_UINT32 { $$ = ColumnType::UINT32; }
-    | KW_UINT64 { $$ = ColumnType::UINT64; }
+    : KW_INT { $$ = ColumnType::INT; }
     | KW_DOUBLE { $$ = ColumnType::DOUBLE; }
     | KW_STRING { $$ = ColumnType::STRING; }
     | KW_BOOL { $$ = ColumnType::BOOL; }
@@ -331,9 +282,6 @@ expression
 
 go_sentence
     : KW_GO step_clause from_clause over_clause where_clause yield_clause {
-        //fprintf(stderr, "primary: %s\n", $5->toString().c_str());
-        //fprintf(stderr, "result: ");
-        //Expression::print($5->eval());
         auto go = new GoSentence();
         go->setStepClause($2);
         go->setFromClause($3);
@@ -370,7 +318,7 @@ from_clause
     ;
 
 ref_expression
-    : src_ref_expression {
+    : input_ref_expression {
         $$ = $1;
     }
     | var_ref_expression {
@@ -390,31 +338,17 @@ id_list
     ;
 
 over_clause
-    : %empty { $$ = nullptr; }
-    | KW_OVER edge_list {
+    : KW_OVER LABEL {
         $$ = new OverClause($2);
     }
-    | KW_OVER edge_list KW_REVERSELY { $$ = new OverClause($2, true); }
-    ;
-
-edge_list
-    : edge_item {
-        auto *list = new EdgeList();
-        list->add($1);
-        $$ = list;
+    | KW_OVER LABEL KW_REVERSELY {
+        $$ = new OverClause($2, nullptr, true);
     }
-    | edge_list COMMA edge_item {
-        $1->add($3);
-        $$ = $1;
+    | KW_OVER LABEL KW_AS LABEL {
+        $$ = new OverClause($2, $4);
     }
-    ;
-
-edge_item
-    : LABEL {
-        $$ = new EdgeItem($1);
-    }
-    | LABEL KW_AS LABEL {
-        $$ = new EdgeItem($1, $3);
+    | KW_OVER LABEL KW_AS LABEL KW_REVERSELY {
+        $$ = new OverClause($2, $4, true);
     }
     ;
 
@@ -753,16 +687,16 @@ sentence
     | mutate_sentence {}
     ;
 
-compound
+sentences
     : sentence {
-        $$ = new CompoundSentence($1);
-        *compound = $$;
+        $$ = new SequentialSentences($1);
+        *sentences = $$;
     }
-    | compound SEMICOLON sentence {
+    | sentences SEMICOLON sentence {
         $$ = $1;
         $1->addSentence($3);
     }
-    | compound SEMICOLON {
+    | sentences SEMICOLON {
         $$ = $1;
     }
     ;
