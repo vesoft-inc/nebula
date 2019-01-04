@@ -39,20 +39,35 @@ uint64_t calibrateTicksPerUSec() {
 }
 
 
+static void launchTickTockThread();
+
 volatile std::atomic<uint64_t> ticksPerUSec{
     []() -> uint64_t {
-        thread::NamedThread t("tick-tock",
-            []() {
-                while (true) {
-                    sleep(3);
-                    ticksPerUSec.store(calibrateTicksPerUSec());
-                }  // while
-            });
-        t.detach();
-
+        launchTickTockThread();
+        // re-launch tick-tock thread after forking
+        ::pthread_atfork(nullptr, nullptr, &launchTickTockThread);
         return calibrateTicksPerUSec();
     }()
 };
+
+void launchTickTockThread() {
+    thread::NamedThread t("tick-tock",
+        []() {
+            while (true) {
+                sleep(3);
+                ticksPerUSec.store(calibrateTicksPerUSec());
+            }  // while
+        });
+
+    // Since `t' would be destructed instantly when this function returns.
+    // We have to make sure that the thread function has been invoked.
+    // Otherwise, accessing `NamedThread::tid_' in the the `NamedThread::hook' might
+    // cause a `stack-buffer-overflow' error under ASAN.
+    // See `src/common/thread/NamedThread.h' for details.
+    t.waitForRunning();
+
+    t.detach();
+}
 
 }  // namespace detail
 
