@@ -6,7 +6,6 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
-#include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/StorageTestBase.h"
 #include "storage/AddVerticesProcessor.h"
@@ -21,7 +20,7 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     fs::TempDir rootPath("/tmp/FutureAddVerticesTest.XXXXXX");
     cpp2::AddVerticesRequest req;
     std::unique_ptr<StorageServiceHandler> storageServiceHandler;
-    req.space_id = 0;
+    req.set_space_id(0);
     req.overwritable = true;
 
     LOG(INFO) << "Build FutureAddVerticesTest...";
@@ -30,8 +29,8 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
 
     LOG(INFO) << "Test FutureAddVerticesTest...";
     storageServiceHandler = std::make_unique<StorageServiceHandler>();
-    auto *kvstore = TestUtils::initKV(rootPath.path());
-    storageServiceHandler->kvstore_ = kvstore;
+    std::unique_ptr<kvstore::KVStore> kvstore(TestUtils::initKV(rootPath.path()));
+    storageServiceHandler->kvstore_ = kvstore.get();
     auto resp = storageServiceHandler->future_addVertices(req).get();
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());
 
@@ -54,8 +53,6 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
         iter->next();
     }
     ASSERT_EQ(30, tagId);
-
-
     LOG(INFO) << "Test FutureAddVerticesTest...";
 
 }

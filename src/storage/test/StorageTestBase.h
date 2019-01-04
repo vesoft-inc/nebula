@@ -38,7 +38,7 @@ public:
 
     static std::vector<cpp2::Vertex> setupVertices(
             const PartitionID partitionID,
-                const int64_t verticesNum,
+            const int64_t verticesNum,
             const int32_t tagsNum) {
 
             // partId => List<Vertex>
@@ -47,18 +47,18 @@ public:
             std::vector<cpp2::Vertex> vertices;
             VertexID vertexID = 0;
             while (vertexID < verticesNum){
-                    TagID tagID = 0;
-                    std::vector<cpp2::Tag> tags;
-                    while (tagID < tagsNum){
-                            tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                              tagID,
-                                              folly::stringPrintf("%d_%ld_%d", partitionID, vertexID, tagID++));
-                    }
-                    vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                          vertexID++,
-                                          std::move(tags));
+                  TagID tagID = 0;
+                  std::vector<cpp2::Tag> tags;
+                  while (tagID < tagsNum){
+                        tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                          tagID,
+                                          folly::stringPrintf("%d_%ld_%d", partitionID, vertexID, tagID++));
+                   }
+                   vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                         vertexID++,
+                                         std::move(tags));
             }
-            return std::move(vertices);
+            return vertices;
     }
 };
 
