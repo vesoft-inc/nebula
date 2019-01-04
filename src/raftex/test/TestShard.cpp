@@ -55,7 +55,7 @@ void TestShard::onElected(TermID term) {
 }
 
 
-std::string TestShard::compareAndSet(std::string log) {
+std::string TestShard::compareAndSet(const std::string& log) {
     switch (log[0]) {
         case 'T':
             return log.substr(1);

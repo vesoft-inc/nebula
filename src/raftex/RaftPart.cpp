@@ -41,7 +41,7 @@ class AppendLogsIterator final : public LogIterator {
 public:
     AppendLogsIterator(LogID firstLogId,
                        RaftPart::LogCache logs,
-                       std::function<std::string (std::string)> casCB)
+                       std::function<std::string (const std::string&)> casCB)
             : firstLogId_(firstLogId)
             , logId_(firstLogId)
             , logs_(std::move(logs))
@@ -74,7 +74,6 @@ public:
         while (idx_ < logs_.size()) {
             auto& tup = logs_.at(idx_);
             bool isCAS = std::get<2>(tup);
-            currLog_ = std::get<3>(tup);
             if (!isCAS) {
                 // Not a CAS
                 return false;
@@ -82,8 +81,8 @@ public:
 
             // Process CAS log
             CHECK(!!casCB_);
-            currLog_ = casCB_(std::move(currLog_));
-            if (currLog_.size() > 0) {
+            casResult_ = casCB_(std::get<3>(tup));
+            if (casResult_.size() > 0) {
                 // CAS Succeeded
                 return true;
             } else {
@@ -101,7 +100,6 @@ public:
         ++logId_;
         valid_ = (idx_ < logs_.size()) && !isCAS();
         if (valid_) {
-            currLog_ = std::get<3>(logs_.at(idx_));
             hasLogs_ = true;
         }
         return *this;
@@ -130,7 +128,11 @@ public:
 
     folly::StringPiece logMsg() const override {
         DCHECK(valid());
-        return currLog_;
+        if (isCAS()) {
+            return casResult_;
+        } else {
+            return std::get<3>(logs_.at(idx_));
+        }
     }
 
     // Return true when there is no more log left for processing
@@ -158,11 +160,11 @@ private:
     bool leadByCAS_{false};
     bool hasLogs_{false};
     bool valid_{true};
-    std::string currLog_;
+    std::string casResult_;
     LogID firstLogId_;
     LogID logId_;
     RaftPart::LogCache logs_;
-    std::function<std::string (std::string)> casCB_;
+    std::function<std::string (const std::string&)> casCB_;
 };
 
 
@@ -329,7 +331,7 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::appendLogAsync(ClusterID sour
         if (res != AppendLogResult::SUCCEEDED) {
             LOG(ERROR) << idStr_
                        << "Cannot append logs, clean the buffer";
-            cachingPromise_.setValue(res);
+            cachingPromise_.setValue(std::move(res));
             cachingPromise_.reset();
             logs_.clear();
             return res;
@@ -381,8 +383,8 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::appendLogAsync(ClusterID sour
     AppendLogsIterator it(
         firstId,
         std::move(swappedOutLogs),
-        [this] (std::string msg) -> std::string {
-            auto res = compareAndSet(std::move(msg));
+        [this] (const std::string& msg) -> std::string {
+            auto res = compareAndSet(msg);
             if (res.empty()) {
                 // Failed
                 sendingPromise_.setOneSingleValue(AppendLogResult::E_CAS_FAILURE);
@@ -598,8 +600,8 @@ void RaftPart::processAppendLogResponses(
                     iter = AppendLogsIterator(
                         lastLogId_ + 1,
                         std::move(logs_),
-                        [this] (std::string log) -> std::string {
-                            auto res = compareAndSet(std::move(log));
+                        [this] (const std::string& log) -> std::string {
+                            auto res = compareAndSet(log);
                             if (res.empty()) {
                                 // Failed
                                 sendingPromise_.setOneSingleValue(
@@ -1247,8 +1249,8 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::sendHeartbeat() {
                 AppendLogsIterator it(
                     firstId,
                     std::move(swappedOutLogs),
-                    [this] (std::string msg) -> std::string {
-                        auto res = compareAndSet(std::move(msg));
+                    [this] (const std::string& msg) -> std::string {
+                        auto res = compareAndSet(msg);
                         if (res.empty()) {
                             // Failed
                             sendingPromise_.setOneSingleValue(

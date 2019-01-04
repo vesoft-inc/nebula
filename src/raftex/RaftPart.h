@@ -181,7 +181,7 @@ protected:
     // If CAS succeeded, the method should return the correct log content
     // that will be applied to the storage. Otherwise it returns an empty
     // string
-    virtual std::string compareAndSet(std::string log) = 0;
+    virtual std::string compareAndSet(const std::string& log) = 0;
 
     // The inherited classes need to implement this method to commit
     // a batch of log messages
@@ -305,13 +305,13 @@ private:
         void reset() {
             sharedPromises_.clear();
             singlePromises_.clear();
-            isLastShared_ = false;
+            rollSharedPromise_ = true;
         }
 
         folly::Future<ValueType> getSharedFuture() {
-            if (!isLastShared_) {
+            if (rollSharedPromise_) {
                 sharedPromises_.emplace_back();
-                isLastShared_ = true;
+                rollSharedPromise_ = false;
             }
 
             return sharedPromises_.back().getFuture();
@@ -319,7 +319,7 @@ private:
 
         folly::Future<ValueType> getSingleFuture() {
             singlePromises_.emplace_back();
-            isLastShared_ = false;
+            rollSharedPromise_ = true;
 
             return singlePromises_.back().getFuture();
         }
@@ -347,18 +347,10 @@ private:
             }
         }
 
-        void setvalue(const ValueType& val) {
-            for (auto& p : sharedPromises_) {
-                p.setValue(val);
-            }
-            for (auto& p : singlePromises_) {
-                p.setValue(val);
-            }
-        }
 
     private:
         // Whether the last future was returned from a shared promise
-        bool isLastShared_{false};
+        bool rollSharedPromise_{true};
 
         // Promises shared by continuous non-CAS logs
         std::list<folly::SharedPromise<ValueType>> sharedPromises_;
