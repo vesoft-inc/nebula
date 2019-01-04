@@ -32,9 +32,15 @@ public:
 
     pid_t tid() const {
         while (tid_ == 0) {
-            // `tid' is unavailable until the thread function is called.
+            // `tid_' is unavailable until the thread function is called.
         }
         return tid_;
+    }
+
+    // Busy waiting for the thread to enter the thread function
+    void waitForRunning() const {
+        // Use `tid()' for our purpose
+        tid();
     }
 
 public:
@@ -75,7 +81,8 @@ private:
     }
 
 private:
-    pid_t                           tid_{0};
+    // `volatile' to make the change visible in `tid()'
+    volatile pid_t                      tid_{0};
 };
 
 template <typename F, typename...Args>
