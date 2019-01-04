@@ -49,29 +49,15 @@ std::string FromClause::toString() const {
 }
 
 
-std::string EdgeList::toString() const {
-    std::string buf;
-    buf.reserve(256);
-
-    for (auto &item : edges_) {
-        buf += *item->edge();
-        if (item->alias() != nullptr) {
-            buf += " AS ";
-            buf += *item->alias();
-        }
-        buf += ",";
-    }
-    buf.resize(buf.size() - 1);
-
-    return buf;
-}
-
-
 std::string OverClause::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "OVER ";
-    buf += edges_->toString();
+    buf += *edge_;
+    if (alias_ != nullptr) {
+        buf += " AS ";
+        buf += *alias_;
+    }
     if (isReversely_) {
         buf += " REVERSELY";
     }

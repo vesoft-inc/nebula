@@ -15,8 +15,8 @@ namespace graph {
 
 class SimpleAuthenticator final : public Authenticator {
 public:
-    bool VE_MUST_USE_RESULT auth(const std::string &user,
-                                 const std::string &password) override {
+    bool MUST_USE_RESULT auth(const std::string &user,
+                              const std::string &password) override {
         if (user == "user" && password == "password") {
             return true;
         }

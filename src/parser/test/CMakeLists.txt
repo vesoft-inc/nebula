@@ -35,8 +35,6 @@ target_link_libraries(
     scanner_test
     gtest
     gtest_main
-    glog
-    gflags
     folly
     boost_system
     boost_context
@@ -53,3 +51,57 @@ target_link_libraries(
 )
 target_include_directories(scanner_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
 add_test(NAME scanner_test COMMAND scanner_test)
+
+add_compile_options(-Wno-parentheses)
+
+add_executable(
+    expression_test
+    ExpressionTest.cpp
+    $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:base_obj>
+)
+target_link_libraries(
+    expression_test
+    gtest
+    gtest_main
+    folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    -pthread
+)
+target_include_directories(expression_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
+add_test(NAME expression_test COMMAND expression_test)
+
+add_executable(
+    expression_encode_decode_bm
+    ExpressionEncodeDecodeBenchmark.cpp
+    $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:base_obj>
+)
+target_link_libraries(
+    expression_encode_decode_bm
+    follybenchmark
+    folly
+    boost_system
+    boost_context
+    boost_regex
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    -pthread
+)

@@ -74,8 +74,7 @@ void GoExecutor::execute() {
     using Result = StatusOr<storage::cpp2::QueryResponse>;
     auto eprops = expctx_->edgePropNames();
     auto vprops = expctx_->srcNodePropNames();
-    auto *edge = edges_[0]->edge();
-    auto future = ectx()->storage()->getOutBound(starts_, edge, eprops, vprops);
+    auto future = ectx()->storage()->getOutBound(starts_, edge_, eprops, vprops);
     auto *runner = ectx()->rctx()->runner();
     std::move(future).via(runner).then([this] (Result result) {
         if (!result.ok()) {
@@ -143,14 +142,10 @@ Status GoExecutor::prepareOver() {
         if (clause == nullptr) {
             break;
         }
-        edges_ = clause->edges();
+        edge_ = clause->edge();
         reversely_ = clause->isReversely();
-        if (edges_.empty()) {
-            break;
-        }
-        for (auto *item : edges_) {
-            expctx_->addAlias(*item->alias(), AliasKind::Edge, *item->edge());
-
+        if (clause->alias() != nullptr) {
+            expctx_->addAlias(*clause->alias(), AliasKind::Edge, *clause->edge());
         }
     } while (false);
     return status;
@@ -179,7 +174,8 @@ Status GoExecutor::prepareNeededProps() {
     auto status = Status::OK();
     do {
         if (filter_ != nullptr) {
-            status = filter_->prepare(expctx_.get());
+            filter_->setContext(expctx_.get());
+            status = filter_->prepare();
             if (!status.ok()) {
                 break;
             }
@@ -188,7 +184,8 @@ Status GoExecutor::prepareNeededProps() {
             break;
         }
         for (auto *col : yields_) {
-            status = col->expr()->prepare(expctx_.get());
+            col->expr()->setContext(expctx_.get());
+            status = col->expr()->prepare();
             if (!status.ok()) {
                 break;
             }

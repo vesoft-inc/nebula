@@ -35,7 +35,7 @@ public:
      * `prepare' works in a synchronous way, once the executor is prepared, it will
      * be executed.
      */
-    virtual Status VE_MUST_USE_RESULT prepare() = 0;
+    virtual Status MUST_USE_RESULT prepare() = 0;
 
     virtual void execute() = 0;
 

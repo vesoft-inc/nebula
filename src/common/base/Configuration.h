@@ -25,21 +25,21 @@ public:
     /**
      * Parse from a file
      */
-    Status VE_MUST_USE_RESULT parseFromFile(const std::string &filename);
+    Status MUST_USE_RESULT parseFromFile(const std::string &filename);
     /**
      * Parse from a string buffer
      */
-    Status VE_MUST_USE_RESULT parseFromString(const std::string &content);
+    Status MUST_USE_RESULT parseFromString(const std::string &content);
     /**
      * Fetch the config item.
      * @key     item key
      * @val     to hold the item value.
      */
-    Status VE_MUST_USE_RESULT fetchAsInt(const char *key, int64_t &val) const;
-    Status VE_MUST_USE_RESULT fetchAsDouble(const char *key, double &val) const;
-    Status VE_MUST_USE_RESULT fetchAsBool(const char *key, bool &val) const;
-    Status VE_MUST_USE_RESULT fetchAsString(const char *key, std::string &val) const;
-    Status VE_MUST_USE_RESULT fetchAsSubConf(const char *key, Configuration &val) const;
+    Status MUST_USE_RESULT fetchAsInt(const char *key, int64_t &val) const;
+    Status MUST_USE_RESULT fetchAsDouble(const char *key, double &val) const;
+    Status MUST_USE_RESULT fetchAsBool(const char *key, bool &val) const;
+    Status MUST_USE_RESULT fetchAsString(const char *key, std::string &val) const;
+    Status MUST_USE_RESULT fetchAsSubConf(const char *key, Configuration &val) const;
     // TODO(dutor) add support for array
     /**
      * Status to indicate whether a operation was successful.

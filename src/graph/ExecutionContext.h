@@ -10,7 +10,7 @@
 #include "base/Base.h"
 #include "cpp/helpers.h"
 #include "graph/RequestContext.h"
-#include "parser/CompoundSentence.h"
+#include "parser/SequentialSentences.h"
 #include "graph/mock/SchemaManager.h"
 #include "graph/mock/StorageService.h"
 
