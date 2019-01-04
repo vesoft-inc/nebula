@@ -21,7 +21,7 @@ public:
         return "AlterEdgeExecutor";
     }
 
-    Status VE_MUST_USE_RESULT prepare() override;
+    Status MUST_USE_RESULT prepare() override;
 
     void execute() override;
 

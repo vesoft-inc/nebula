@@ -49,7 +49,7 @@ public:
      * A GenericWorker MUST be `start'ed successfully before invoking
      * any other interfaces.
      */
-    bool VE_MUST_USE_RESULT start(std::string name = "");
+    bool MUST_USE_RESULT start(std::string name = "");
 
     /**
      * Asynchronouly to notify the worker to stop handling further new tasks.

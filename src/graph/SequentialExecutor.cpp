@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "graph/CompoundExecutor.h"
+#include "graph/SequentialExecutor.h"
 #include "graph/GoExecutor.h"
 #include "graph/PipeExecutor.h"
 #include "graph/UseExecutor.h"
@@ -13,15 +13,15 @@
 namespace nebula {
 namespace graph {
 
-CompoundExecutor::CompoundExecutor(CompoundSentence *compound,
-                                   ExecutionContext *ectx) : Executor(ectx) {
-    compound_ = compound;
+SequentialExecutor::SequentialExecutor(SequentialSentences *sentences,
+                                       ExecutionContext *ectx) : Executor(ectx) {
+    sentences_ = sentences;
 }
 
 
-Status CompoundExecutor::prepare() {
-    for (auto i = 0U; i < compound_->sentences_.size(); i++) {
-        auto *sentence = compound_->sentences_[i].get();
+Status SequentialExecutor::prepare() {
+    for (auto i = 0U; i < sentences_->sentences_.size(); i++) {
+        auto *sentence = sentences_->sentences_[i].get();
         auto executor = makeExecutor(sentence);
         DCHECK(executor != nullptr);
         auto status = executor->prepare();
@@ -61,12 +61,12 @@ Status CompoundExecutor::prepare() {
 }
 
 
-void CompoundExecutor::execute() {
+void SequentialExecutor::execute() {
     executors_.front()->execute();
 }
 
 
-void CompoundExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
+void SequentialExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     executors_.back()->setupResponse(resp);
 }
 

@@ -12,7 +12,7 @@
 #include "cpp/helpers.h"
 #include "parser/GQLParser.h"
 #include "graph/ExecutionContext.h"
-#include "graph/CompoundExecutor.h"
+#include "graph/SequentialExecutor.h"
 
 /**
  * ExecutionPlan coordinates the execution process,
@@ -51,9 +51,9 @@ public:
     }
 
 private:
-    std::unique_ptr<CompoundSentence>           compound_;
+    std::unique_ptr<SequentialSentences>        sentences_;
     std::unique_ptr<ExecutionContext>           ectx_;
-    std::unique_ptr<CompoundExecutor>           executor_;
+    std::unique_ptr<SequentialExecutor>         executor_;
 };
 
 }   // namespace graph

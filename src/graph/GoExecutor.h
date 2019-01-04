@@ -21,7 +21,7 @@ public:
         return "GoExecutor";
     }
 
-    Status VE_MUST_USE_RESULT prepare() override;
+    Status MUST_USE_RESULT prepare() override;
 
     void execute() override;
 
@@ -51,7 +51,7 @@ private:
     uint32_t                                    steps_{1};
     bool                                        upto_{false};
     bool                                        reversely_{false};
-    std::vector<EdgeItem*>                      edges_;
+    std::string                                *edge_;
     Expression                                 *filter_{nullptr};
     std::vector<YieldColumn*>                   yields_;
     TraverseRecords                             inputs_;
