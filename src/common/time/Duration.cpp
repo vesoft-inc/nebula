@@ -58,6 +58,14 @@ void launchTickTockThread() {
                 ticksPerUSec.store(calibrateTicksPerUSec());
             }  // while
         });
+
+    // Since `t' would be destructed instantly when this function returns.
+    // We have to make sure that the thread function has been invoked.
+    // Otherwise, accessing `NamedThread::tid_' in the the `NamedThread::hook' might
+    // cause a `stack-buffer-overflow' error under ASAN.
+    // See `src/common/thread/NamedThread.h' for details.
+    t.waitForRunning();
+
     t.detach();
 }
 

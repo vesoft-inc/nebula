@@ -92,7 +92,9 @@ if(NOT ${NEBULA_GPERF_BIN_DIR} STREQUAL "")
 endif()
 
 
-option(sanitize "Whether to turn AddressSanitizer ON or OFF" OFF)
+option(asan "Whether to turn AddressSanitizer ON or OFF" OFF)
+
+message(STATUS "ASAN: ${asan}")
 
 
 message(STATUS "CMAKE_INCLUDE_PATH: " ${CMAKE_INCLUDE_PATH})
@@ -107,7 +109,7 @@ find_package(Libunwind REQUIRED)
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
-if(NOT sanitize)
+if(NOT asan)
     find_package(PCHSupport)
     add_compile_options(-Winvalid-pch)
 endif()
@@ -118,7 +120,7 @@ add_compile_options(-Werror)
 add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
 
-if(sanitize)
+if(asan)
     add_compile_options(-fsanitize=address)
     add_compile_options(-g)
     add_compile_options(-fno-omit-frame-pointer)
