@@ -32,7 +32,7 @@ TEST_F(DefineSchemaTest, Simple) {
     ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DEFINE TAG person(name string, email string, age int16, gender string)";
+        std::string query = "DEFINE TAG person(name string, email string, age int, gender string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -43,14 +43,14 @@ TEST_F(DefineSchemaTest, Simple) {
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"email", "string"},
             {"name", "string"},
-            {"age", "int16"},
+            {"age", "int"},
             {"gender", "string"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DEFINE TAG account(id int64, balance double)";
+        std::string query = "DEFINE TAG account(id int, balance double)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -59,7 +59,7 @@ TEST_F(DefineSchemaTest, Simple) {
         std::string query = "DESCRIBE TAG account";
         client->execute(query, resp);
         std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"id", "int64"},
+            {"id", "int"},
             {"balance", "double"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -82,7 +82,7 @@ TEST_F(DefineSchemaTest, Simple) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DEFINE EDGE transfer "
-                            "account -> account(amount double, time int64)";
+                            "account -> account(amount double, time int)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -92,7 +92,7 @@ TEST_F(DefineSchemaTest, Simple) {
         client->execute(query, resp);
         std::vector<uniform_tuple_t<std::string, 4>> expected{
             {"account", "account", "amount", "double"},
-            {"account", "account", "time", "int64"},
+            {"account", "account", "time", "int"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -103,7 +103,7 @@ TEST_F(DefineSchemaTest, Simple) {
         client->execute(query, resp);
         std::vector<uniform_tuple_t<std::string, 4>> expected{
             {"account", "account", "amount", "double"},
-            {"account", "account", "time", "int64"},
+            {"account", "account", "time", "int"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

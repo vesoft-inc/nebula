@@ -95,16 +95,18 @@ private:
 };
 
 
-class EdgeItem final {
+class OverClause final {
 public:
-    explicit EdgeItem(std::string *edge) {
-        edge_.reset(edge);
-        alias_.reset(new std::string(*edge));
-    }
-
-    EdgeItem(std::string *edge, std::string *alias) {
+    explicit OverClause(std::string *edge,
+                        std::string *alias = nullptr,
+                        bool isReversely = false) {
         edge_.reset(edge);
         alias_.reset(alias);
+        isReversely_ = isReversely;
+    }
+
+    bool isReversely() const {
+        return isReversely_;
     }
 
     std::string* edge() const {
@@ -115,53 +117,12 @@ public:
         return alias_.get();
     }
 
-private:
-    std::unique_ptr<std::string>                edge_;
-    std::unique_ptr<std::string>                alias_;
-};
-
-
-class EdgeList final {
-public:
-    void add(EdgeItem *edge) {
-        edges_.emplace_back(edge);
-    }
-
-    std::vector<EdgeItem*> edges() const {
-        std::vector<EdgeItem*> result;
-        result.resize(edges_.size());
-        auto get = [] (auto &item) { return item.get(); };
-        std::transform(edges_.begin(), edges_.end(), result.begin(), get);
-        return result;
-    }
-
-    std::string toString() const;
-
-private:
-    std::vector<std::unique_ptr<EdgeItem>>      edges_;
-};
-
-
-class OverClause final {
-public:
-    explicit OverClause(EdgeList *edges, bool isReversely = false) {
-        edges_.reset(edges);
-        isReversely_ = isReversely;
-    }
-
-    std::vector<EdgeItem*> edges() const {
-        return edges_->edges();
-    }
-
-    bool isReversely() const {
-        return isReversely_;
-    }
-
     std::string toString() const;
 
 private:
     bool                                        isReversely_{false};
-    std::unique_ptr<EdgeList>                   edges_;
+    std::unique_ptr<std::string>                edge_;
+    std::unique_ptr<std::string>                alias_;
 };
 
 

@@ -10,7 +10,7 @@ add_library(
     ExecutionPlan.cpp
     Executor.cpp
     TraverseExecutor.cpp
-    CompoundExecutor.cpp
+    SequentialExecutor.cpp
     UseExecutor.cpp
     GoExecutor.cpp
     PipeExecutor.cpp

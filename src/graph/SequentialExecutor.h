@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef GRAPH_COMPOUNDEXECUTOR_H_
-#define GRAPH_COMPOUNDEXECUTOR_H_
+#ifndef GRAPH_SEQUENTIALEXECUTOR_H_
+#define GRAPH_SEQUENTIALEXECUTOR_H_
 
 #include "base/Base.h"
 #include "graph/Executor.h"
@@ -14,22 +14,22 @@
 namespace nebula {
 namespace graph {
 
-class CompoundExecutor final : public Executor {
+class SequentialExecutor final : public Executor {
 public:
-    CompoundExecutor(CompoundSentence *compound, ExecutionContext *ectx);
+    SequentialExecutor(SequentialSentences *sentences, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "CompoundExecutor";
+        return "SequentialExecutor";
     }
 
-    Status VE_MUST_USE_RESULT prepare() override;
+    Status MUST_USE_RESULT prepare() override;
 
     void execute() override;
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-    CompoundSentence                           *compound_{nullptr};
+    SequentialSentences                        *sentences_{nullptr};
     std::vector<std::unique_ptr<Executor>>      executors_;
 };
 
@@ -38,4 +38,4 @@ private:
 }   // namespace nebula
 
 
-#endif  // GRAPH_COMPOUNDEXECUTOR_H_
+#endif  // GRAPH_SEQUENTIALEXECUTOR_H_
