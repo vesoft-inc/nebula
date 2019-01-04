@@ -7,6 +7,7 @@
 #ifndef STORAGE_STORAGESERVICEHANDLER_H_
 #define STORAGE_STORAGESERVICEHANDLER_H_
 
+#include <gtest/gtest_prod.h>
 #include "base/Base.h"
 #include "interface/gen-cpp2/StorageService.h"
 #include "kvstore/include/KVStore.h"
@@ -15,6 +16,7 @@ namespace nebula {
 namespace storage {
 
 class StorageServiceHandler final : public cpp2::StorageServiceSvIf {
+FRIEND_TEST(StorageServiceHandlerTest, FutureAddVerticesTest);
 public:
     folly::Future<cpp2::QueryResponse>
     future_getOutBound(const cpp2::GetNeighborsRequest& req) override;
