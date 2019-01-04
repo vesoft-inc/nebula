@@ -8,6 +8,7 @@
 #include "kvstore/include/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/KVStoreImpl.h"
+#include "storage/AddVerticesProcessor.h"       
 
 DECLARE_string(part_man_type);
 
@@ -33,6 +34,31 @@ public:
         KVStoreImpl* kv = reinterpret_cast<KVStoreImpl*>(KVStore::instance(HostAddr(0, 0),
                                                                        std::move(paths)));
         return kv;
+    }
+
+    static std::vector<cpp2::Vertex> setupVertices(
+            const PartitionID partitionID,
+            const int64_t verticesNum,
+            const int32_t tagsNum) {
+
+            // partId => List<Vertex>
+            // Vertex => {Id, List<VertexProp>}
+            // VertexProp => {tagId, tags}
+            std::vector<cpp2::Vertex> vertices;
+            VertexID vertexID = 0;
+            while (vertexID < verticesNum){
+                  TagID tagID = 0;
+                  std::vector<cpp2::Tag> tags;
+                  while (tagID < tagsNum){
+                        tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                          tagID,
+                                          folly::stringPrintf("%d_%ld_%d", partitionID, vertexID, tagID++));
+                   }
+                   vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                         vertexID++,
+                                         std::move(tags));
+            }
+            return vertices;
     }
 };
 
