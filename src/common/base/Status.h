@@ -68,7 +68,7 @@ public:
         return Status();
     }
 
-#define STATUS_GENGERATOR(ERROR)                        \
+#define STATUS_GENERATOR(ERROR)                        \
     static Status ERROR(folly::StringPiece msg) {       \
         return Status(k##ERROR, msg);                   \
     }                                                   \
@@ -85,11 +85,15 @@ public:
         return code() == k##ERROR;                      \
     }
 
-    STATUS_GENGERATOR(Error);
-    STATUS_GENGERATOR(SyntaxError);
-    STATUS_GENGERATOR(NotSupported);
+    // General errors
+    STATUS_GENERATOR(Error);
+    STATUS_GENERATOR(NoSuchFile);
+    STATUS_GENERATOR(NotSupported);
 
-#undef STATUS_GENGERATOR
+    // Graph engine errors
+    STATUS_GENERATOR(SyntaxError);
+
+#undef STATUS_GENERATOR
 
     std::string toString() const;
 
@@ -102,11 +106,12 @@ private:
     enum Code : uint16_t {
         // OK
         kOk                     = 0,
-        // 10xx, for general errors
+        // 1xx, for general errors
         kError                  = 101,
-        kNotSupported           = 102,
+        kNoSuchFile             = 102,
+        kNotSupported           = 103,
         // 2xx, for graph engine errors
-        kSyntaxError            = 201,
+        kSyntaxError            = 301,
         // 3xx, for storage engine errors
         // ...
         // 4xx, for meta service errors
@@ -135,8 +140,7 @@ private:
         uint16_t                    size_;
         Code                        code_;
     };
-    static constexpr auto kHeaderSize = 4;
-    static_assert(sizeof(Header) == kHeaderSize, "");
+    static constexpr auto kHeaderSize = sizeof(Header);
     // state_ == nullptr indicates OK
     // otherwise, the buffer layout is:
     // state_[0..1]                 length of the error msg, i.e. size() - kHeaderSize
