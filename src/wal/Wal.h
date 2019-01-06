@@ -4,14 +4,14 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef RAFTEX_WAL_H_
-#define RAFTEX_WAL_H_
+#ifndef WAL_WAL_H_
+#define WAL_WAL_H_
 
 #include "base/Base.h"
-#include "raftex/LogIterator.h"
+#include "base/LogIterator.h"
 
 namespace nebula {
-namespace raftex {
+namespace wal {
 
 /**
  * Base class for all WAL implementations
@@ -46,7 +46,7 @@ public:
                                                   LogID lastLogId) = 0;
 };
 
-}  // namespace raftex
+}  // namespace wal
 }  // namespace nebula
-#endif  // RAFTEX_WAL_H_
+#endif  // WAL_WAL_H_
 

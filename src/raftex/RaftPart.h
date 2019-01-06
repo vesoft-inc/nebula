@@ -12,7 +12,7 @@
 #include "gen-cpp2/raftex_types.h"
 #include "time/Duration.h"
 #include "thread/GenericThreadPool.h"
-#include "raftex/LogIterator.h"
+#include "base/LogIterator.h"
 
 namespace folly {
 class IOThreadPoolExecutor;
@@ -20,10 +20,15 @@ class EventBase;
 }  // namespace folly;
 
 namespace nebula {
-namespace raftex {
 
+namespace wal {
 class FileBasedWal;
 class BufferFlusher;
+}  // namespace wal
+
+
+namespace raftex {
+
 class Host;
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
@@ -81,7 +86,7 @@ public:
         return leader_;
     }
 
-    std::shared_ptr<FileBasedWal> wal() const {
+    std::shared_ptr<wal::FileBasedWal> wal() const {
         return wal_;
     }
 
@@ -135,7 +140,7 @@ protected:
              PartitionID partId,
              HostAddr localAddr,
              const folly::StringPiece walRoot,
-             BufferFlusher* flusher,
+             wal::BufferFlusher* flusher,
              std::shared_ptr<folly::IOThreadPoolExecutor> pool,
              std::shared_ptr<thread::GenericThreadPool> workers);
 
@@ -303,7 +308,7 @@ private:
     time::Duration lastMsgSentDur_;
 
     // Write-ahead Log
-    std::shared_ptr<FileBasedWal> wal_;
+    std::shared_ptr<wal::FileBasedWal> wal_;
 
     // IO Thread pool
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;

@@ -6,7 +6,7 @@
 
 #include "base/Base.h"
 #include "raftex/test/RaftexTestBase.h"
-#include "raftex/BufferFlusher.h"
+#include "wal/BufferFlusher.h"
 #include "raftex/RaftexService.h"
 #include "raftex/test/TestShard.h"
 
@@ -15,6 +15,7 @@ namespace raftex {
 
 using namespace network;
 using namespace fs;
+using namespace wal;
 
 std::unique_ptr<BufferFlusher> flusher;
 
