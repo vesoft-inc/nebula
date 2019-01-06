@@ -7,8 +7,8 @@
 #include "base/Base.h"
 #include "raftex/test/TestShard.h"
 #include "raftex/RaftexService.h"
-#include "raftex/FileBasedWal.h"
-#include "raftex/BufferFlusher.h"
+#include "wal/FileBasedWal.h"
+#include "wal/BufferFlusher.h"
 
 namespace nebula {
 namespace raftex {
@@ -19,7 +19,7 @@ TestShard::TestShard(size_t idx,
                      PartitionID partId,
                      HostAddr addr,
                      const folly::StringPiece walRoot,
-                     BufferFlusher* flusher,
+                     wal::BufferFlusher* flusher,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,
                      std::function<void (size_t idx, const char*, TermID)>

@@ -5,13 +5,13 @@
  */
 
 #include "base/Base.h"
-#include "raftex/FileBasedWal.h"
-#include "raftex/FileBasedWalIterator.h"
-#include "raftex/BufferFlusher.h"
+#include "wal/FileBasedWal.h"
+#include "wal/FileBasedWalIterator.h"
+#include "wal/BufferFlusher.h"
 #include "fs/FileUtils.h"
 
 namespace nebula {
-namespace raftex {
+namespace wal {
 
 using namespace nebula::fs;
 using namespace nebula::thread;
@@ -661,6 +661,6 @@ size_t FileBasedWal::accessAllBuffers(
     return count;
 }
 
-}  // namespace raftex
+}  // namespace wal
 }  // namespace nebula
 
