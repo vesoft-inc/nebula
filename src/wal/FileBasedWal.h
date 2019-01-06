@@ -4,17 +4,17 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef RAFTEX_FILEBASEDWAL_H_
-#define RAFTEX_FILEBASEDWAL_H_
+#ifndef WAL_FILEBASEDWAL_H_
+#define WAL_FILEBASEDWAL_H_
 
 #include "base/Base.h"
 #include "base/Cord.h"
-#include "raftex/Wal.h"
-#include "raftex/InMemoryLogBuffer.h"
-#include "raftex/WalFileInfo.h"
+#include "wal/Wal.h"
+#include "wal/InMemoryLogBuffer.h"
+#include "wal/WalFileInfo.h"
 
 namespace nebula {
-namespace raftex {
+namespace wal {
 
 struct FileBasedWalPolicy {
     // The life span of the log messages (number of seconds)
@@ -197,7 +197,7 @@ private:
     std::condition_variable slotReadyCV_;
 };
 
-}  // namespace raftex
+}  // namespace wal
 }  // namespace nebula
-#endif  // RAFTEX_FILEBASEDWAL_H_
+#endif  // WAL_FILEBASEDWAL_H_
 

@@ -5,12 +5,12 @@
  */
 
 #include "base/Base.h"
-#include "raftex/FileBasedWalIterator.h"
-#include "raftex/FileBasedWal.h"
-#include "raftex/WalFileInfo.h"
+#include "wal/FileBasedWalIterator.h"
+#include "wal/FileBasedWal.h"
+#include "wal/WalFileInfo.h"
 
 namespace nebula {
-namespace raftex {
+namespace wal {
 
 FileBasedWalIterator::FileBasedWalIterator(
     std::shared_ptr<FileBasedWal> wal,
@@ -307,7 +307,7 @@ LogID FileBasedWalIterator::getFirstIdInNextFile() const {
     }
 }
 
-}  // namespace raftex
+}  // namespace wal
 }  // namespace nebula
 
 

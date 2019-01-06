@@ -5,10 +5,10 @@
  */
 
 #include "base/Base.h"
-#include "raftex/InMemoryLogBuffer.h"
+#include "wal/InMemoryLogBuffer.h"
 
 namespace nebula {
-namespace raftex {
+namespace wal {
 
 void InMemoryLogBuffer::push(TermID term,
                              ClusterID cluster,
@@ -116,6 +116,6 @@ std::pair<LogID, TermID> InMemoryLogBuffer::accessAllLogs(
     return std::make_pair(id, term);
 }
 
-}  // namespace raftex
+}  // namespace wal
 }  // namespace nebula
 
