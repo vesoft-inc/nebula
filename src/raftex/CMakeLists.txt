@@ -1,9 +1,5 @@
 add_library(
     raftex_obj OBJECT
-    BufferFlusher.cpp
-    InMemoryLogBuffer.cpp
-    FileBasedWalIterator.cpp
-    FileBasedWal.cpp
     LogStrListIterator.cpp
     RaftPart.cpp
     RaftexService.cpp

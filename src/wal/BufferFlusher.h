@@ -4,15 +4,15 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef RAFTEX_BUFFERFLUSHER_H_
-#define RAFTEX_BUFFERFLUSHER_H_
+#ifndef WAL_BUFFERFLUSHER_H_
+#define WAL_BUFFERFLUSHER_H_
 
 #include "base/Base.h"
 #include "thread/NamedThread.h"
-#include "raftex/InMemoryLogBuffer.h"
+#include "wal/InMemoryLogBuffer.h"
 
 namespace nebula {
-namespace raftex {
+namespace wal {
 
 class FileBasedWal;
 
@@ -38,8 +38,8 @@ private:
     thread::NamedThread flushThread_;
 };
 
-}  // namespace raftex
+}  // namespace wal
 }  // namespace nebula
 
-#endif  // RAFTEX_BUFFERFLUSHER_H_
+#endif  // WAL_BUFFERFLUSHER_H_
 

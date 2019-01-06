@@ -5,11 +5,11 @@
  */
 
 #include "base/Base.h"
-#include "raftex/BufferFlusher.h"
-#include "raftex/FileBasedWal.h"
+#include "wal/BufferFlusher.h"
+#include "wal/FileBasedWal.h"
 
 namespace nebula {
-namespace raftex {
+namespace wal {
 
 BufferFlusher::BufferFlusher()
     : flushThread_("Buffer flusher",
@@ -79,6 +79,6 @@ void BufferFlusher::flushLoop() {
     LOG(INFO) << "Buffer flusher loop finished";
 }
 
-}  // namespace raftex
+}  // namespace wal
 }  // namespace nebula
 

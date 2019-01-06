@@ -4,15 +4,15 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef RAFTEX_FILEBASEDWALITERATOR_H_
-#define RAFTEX_FILEBASEDWALITERATOR_H_
+#ifndef WAL_FILEBASEDWALITERATOR_H_
+#define WAL_FILEBASEDWALITERATOR_H_
 
 #include "base/Base.h"
-#include "raftex/LogIterator.h"
-#include "raftex/InMemoryLogBuffer.h"
+#include "base/LogIterator.h"
+#include "wal/InMemoryLogBuffer.h"
 
 namespace nebula {
-namespace raftex {
+namespace wal {
 
 class FileBasedWal;
 
@@ -73,7 +73,7 @@ private:
     mutable std::string currLog_;
 };
 
-}  // namespace raftex
+}  // namespace wal
 }  // namespace nebula
 
-#endif  // RAFTEX_FILEBASEDWALITERATOR_H_
+#endif  // WAL_FILEBASEDWALITERATOR_H_
