@@ -85,18 +85,10 @@ public:
         return code() == k##ERROR;                      \
     }
 
-    // Genral errors
+    // General errors
     STATUS_GENERATOR(Error);
-    STATUS_GENERATOR(NotSupported);
-
-    // Configuration errors
     STATUS_GENERATOR(NoSuchFile);
-    STATUS_GENERATOR(NoPermission);
-    STATUS_GENERATOR(IllFormat);
-    STATUS_GENERATOR(WrongType);
-    STATUS_GENERATOR(EmptyFile);
-    STATUS_GENERATOR(ItemNotFound);
-    STATUS_GENERATOR(TypeNotMatch);
+    STATUS_GENERATOR(NotSupported);
 
     // Graph engine errors
     STATUS_GENERATOR(SyntaxError);
@@ -116,20 +108,13 @@ private:
         kOk                     = 0,
         // 1xx, for general errors
         kError                  = 101,
-        kNotSupported           = 102,
-        // 2xx, for configuration errors
-        kNoSuchFile             = 201,
-        kNoPermission           = 202,
-        kIllFormat              = 203,
-        kWrongType              = 204,
-        kEmptyFile              = 205,
-        kItemNotFound           = 206,
-        kTypeNotMatch           = 207,
-        // 3xx, for graph engine errors
+        kNoSuchFile             = 102,
+        kNotSupported           = 103,
+        // 2xx, for graph engine errors
         kSyntaxError            = 301,
-        // 4xx, for storage engine errors
+        // 3xx, for storage engine errors
         // ...
-        // 5xx, for meta service errors
+        // 4xx, for meta service errors
         // ...
     };
 

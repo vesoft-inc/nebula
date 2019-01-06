@@ -25,8 +25,8 @@ Status Configuration::parseFromFile(const std::string &filename) {
                 break;
             }
             if (errno == EPERM) {
-                status = Status::NoPermission("No permission to read file \"%s\"",
-                                              filename.c_str());
+                status = Status::Error("No permission to read file \"%s\"",
+                                       filename.c_str());
                 break;
             }
             status = Status::Error("Unknown error");
@@ -35,7 +35,7 @@ Status Configuration::parseFromFile(const std::string &filename) {
         // get the file size
         auto len = ::lseek(fd, 0, SEEK_END);
         if (len == 0) {
-            status = Status::EmptyFile("File \"%s\"is empty", filename.c_str());
+            status = Status::Error("File \"%s\"is empty", filename.c_str());
             break;
         }
         ::lseek(fd, 0, SEEK_SET);
@@ -67,7 +67,7 @@ Status Configuration::parseFromString(const std::string &content) {
         content_ = std::make_unique<folly::dynamic>(std::move(json));
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
-        return Status::IllFormat("Illegal format (%s)", e.what());
+        return Status::Error("Illegal format (%s)", e.what());
     }
     return Status::OK();
 }
@@ -77,10 +77,10 @@ Status Configuration::fetchAsInt(const char *key, int64_t &val) const {
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ItemNotFound("Item \"%s\" not found", key);
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isInt()) {
-        return Status::TypeNotMatch("Item \"%s\" is not an integer", key);
+        return Status::Error("Item \"%s\" is not an integer", key);
     }
     val = iter->second.getInt();
     return Status::OK();
@@ -91,10 +91,10 @@ Status Configuration::fetchAsDouble(const char *key, double &val) const {
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ItemNotFound("Item \"%s\" not found", key);
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isDouble()) {
-        return Status::TypeNotMatch("Item \"%s\" is not a double", key);
+        return Status::Error("Item \"%s\" is not a double", key);
     }
     val = iter->second.getDouble();
     return Status::OK();
@@ -105,10 +105,10 @@ Status Configuration::fetchAsBool(const char *key, bool &val) const {
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ItemNotFound("Item \"%s\" not found", key);
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isBool()) {
-        return Status::TypeNotMatch("Item \"%s\" is not a boolean", key);
+        return Status::Error("Item \"%s\" is not a boolean", key);
     }
     val = iter->second.getBool();
     return Status::OK();
@@ -119,10 +119,10 @@ Status Configuration::fetchAsString(const char *key, std::string &val) const {
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ItemNotFound("Item \"%s\" not found", key);
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isString()) {
-        return Status::TypeNotMatch("Item \"%s\" is not a string", key);
+        return Status::Error("Item \"%s\" is not a string", key);
     }
     val = iter->second.getString();
     return Status::OK();
@@ -133,10 +133,10 @@ Status Configuration::fetchAsSubConf(const char *key, Configuration &subconf) co
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ItemNotFound("Item \"%s\" not found", key);
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isObject()) {
-        return Status::TypeNotMatch("Item \"%s\" is not an JSON object", key);
+        return Status::Error("Item \"%s\" is not an JSON object", key);
     }
     subconf.content_ = std::make_unique<folly::dynamic>(iter->second);
     return Status::OK();
@@ -149,17 +149,17 @@ Status Configuration::fetchAsIntArray(
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ItemNotFound("Item \"%s\" not found", key);
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isArray()) {
-        return Status::TypeNotMatch("Item \"%s\" is not an array", key);
+        return Status::Error("Item \"%s\" is not an array", key);
     }
 
     for (auto& entry : iter->second) {
         try {
             val.emplace_back(entry.asInt());
         } catch (const std::exception& ex) {
-            return Status::TypeNotMatch(ex.what());
+            return Status::Error(ex.what());
         }
     }
     return Status::OK();
@@ -172,17 +172,17 @@ Status Configuration::fetchAsDoubleArray(
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ItemNotFound("Item \"%s\" not found", key);
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isArray()) {
-        return Status::TypeNotMatch("Item \"%s\" is not an array", key);
+        return Status::Error("Item \"%s\" is not an array", key);
     }
 
     for (auto& entry : iter->second) {
         try {
             val.emplace_back(entry.asDouble());
         } catch (const std::exception& ex) {
-            return Status::TypeNotMatch(ex.what());
+            return Status::Error(ex.what());
         }
     }
     return Status::OK();
@@ -195,17 +195,17 @@ Status Configuration::fetchAsBoolArray(
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ItemNotFound("Item \"%s\" not found", key);
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isArray()) {
-        return Status::TypeNotMatch("Item \"%s\" is not an array", key);
+        return Status::Error("Item \"%s\" is not an array", key);
     }
 
     for (auto& entry : iter->second) {
         try {
             val.emplace_back(entry.asBool());
         } catch (const std::exception& ex) {
-            return Status::TypeNotMatch(ex.what());
+            return Status::Error(ex.what());
         }
     }
     return Status::OK();
@@ -218,17 +218,17 @@ Status Configuration::fetchAsStringArray(
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ItemNotFound("Item \"%s\" not found", key);
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isArray()) {
-        return Status::TypeNotMatch("Item \"%s\" is not an array", key);
+        return Status::Error("Item \"%s\" is not an array", key);
     }
 
     for (auto& entry : iter->second) {
         try {
             val.emplace_back(entry.asString());
         } catch (const std::exception& ex) {
-            return Status::TypeNotMatch(ex.what());
+            return Status::Error(ex.what());
         }
     }
     return Status::OK();
