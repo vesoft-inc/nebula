@@ -8,67 +8,34 @@
 
 namespace nebula {
 
-using Status = Configuration::Status;
-
-const Status Status::OK{kOk, "OK"};
-const Status Status::NO_FILE{kNoSuchFile, "File not found"};
-const Status Status::NO_PERM{kNoPermission, "No permission"};
-const Status Status::ILL_FORMAT{kIllFormat, "Illegal format"};
-const Status Status::WRONG_TYPE{kWrongType, "Wrong value type"};
-const Status Status::EMPTY_FILE{kEmptyFile, "File is empty"};
-const Status Status::ITEM_NOT_FOUND{kEmptyFile, "Item not found"};
-const Status Status::TYPE_NOT_MATCH{kEmptyFile, "Type not match"};
-const Status Status::UNKNOWN{kUnknown, "Unknown error"};
-
-Status::Status() : Status(kOk, "OK") {
+Configuration::Configuration(folly::dynamic content) {
+    CHECK(content.isObject()) << "The content is not a valid configuration";
+    content_ = std::make_unique<folly::dynamic>(std::move(content));
 }
 
-Status::Status(Code code, const char *msg) {
-    code_ = code;
-    msg_ = msg;
-}
-
-Status& Status::operator=(const Status &rhs) {
-    if (this != &rhs) {
-        code_ = rhs.code_;
-        msg_ = rhs.msg_;
-    }
-    return *this;
-}
-
-bool Status::operator==(const Status &rhs) const {
-    return code_ == rhs.code_;
-}
-
-bool Status::ok() const {
-    return *this == Status::OK;
-}
-
-const char* Status::msg() const {
-    return msg_;
-}
 
 Status Configuration::parseFromFile(const std::string &filename) {
     auto fd = ::open(filename.c_str(), O_RDONLY);
-    auto status = Status::OK;
+    auto status = Status::OK();
     std::string content;
     do {
         if (fd == -1) {
             if (errno == ENOENT) {
-                status = Status::NO_FILE;
+                status = Status::NoSuchFile("File \"%s\" found", filename.c_str());
                 break;
             }
             if (errno == EPERM) {
-                status = Status::NO_PERM;
+                status = Status::Error("No permission to read file \"%s\"",
+                                       filename.c_str());
                 break;
             }
-            status = Status::UNKNOWN;
+            status = Status::Error("Unknown error");
             break;
         }
         // get the file size
         auto len = ::lseek(fd, 0, SEEK_END);
         if (len == 0) {
-            status = Status::EMPTY_FILE;
+            status = Status::Error("File \"%s\"is empty", filename.c_str());
             break;
         }
         ::lseek(fd, 0, SEEK_SET);
@@ -93,80 +60,205 @@ Status Configuration::parseFromFile(const std::string &filename) {
     return parseFromString(content);
 }
 
+
 Status Configuration::parseFromString(const std::string &content) {
     try {
         auto json = folly::parseJson(content);
         content_ = std::make_unique<folly::dynamic>(std::move(json));
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
-        return Status::ILL_FORMAT;
+        return Status::Error("Illegal format (%s)", e.what());
     }
-    return Status::OK;
+    return Status::OK();
 }
+
 
 Status Configuration::fetchAsInt(const char *key, int64_t &val) const {
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ITEM_NOT_FOUND;
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isInt()) {
-        return Status::TYPE_NOT_MATCH;
+        return Status::Error("Item \"%s\" is not an integer", key);
     }
     val = iter->second.getInt();
-    return Status::OK;
+    return Status::OK();
 }
+
 
 Status Configuration::fetchAsDouble(const char *key, double &val) const {
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ITEM_NOT_FOUND;
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isDouble()) {
-        return Status::TYPE_NOT_MATCH;
+        return Status::Error("Item \"%s\" is not a double", key);
     }
     val = iter->second.getDouble();
-    return Status::OK;
+    return Status::OK();
 }
+
 
 Status Configuration::fetchAsBool(const char *key, bool &val) const {
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ITEM_NOT_FOUND;
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isBool()) {
-        return Status::TYPE_NOT_MATCH;
+        return Status::Error("Item \"%s\" is not a boolean", key);
     }
     val = iter->second.getBool();
-    return Status::OK;
+    return Status::OK();
 }
+
 
 Status Configuration::fetchAsString(const char *key, std::string &val) const {
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ITEM_NOT_FOUND;
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isString()) {
-        return Status::TYPE_NOT_MATCH;
+        return Status::Error("Item \"%s\" is not a string", key);
     }
     val = iter->second.getString();
-    return Status::OK;
+    return Status::OK();
 }
+
 
 Status Configuration::fetchAsSubConf(const char *key, Configuration &subconf) const {
     DCHECK(content_ != nullptr);
     auto iter = content_->find(key);
     if (iter == content_->items().end()) {
-        return Status::ITEM_NOT_FOUND;
+        return Status::Error("Item \"%s\" not found", key);
     }
     if (!iter->second.isObject()) {
-        return Status::TYPE_NOT_MATCH;
+        return Status::Error("Item \"%s\" is not an JSON object", key);
     }
     subconf.content_ = std::make_unique<folly::dynamic>(iter->second);
-    return Status::OK;
+    return Status::OK();
+}
+
+
+Status Configuration::fetchAsIntArray(
+        const char *key,
+        std::vector<int64_t> &val) const {
+    DCHECK(content_ != nullptr);
+    auto iter = content_->find(key);
+    if (iter == content_->items().end()) {
+        return Status::Error("Item \"%s\" not found", key);
+    }
+    if (!iter->second.isArray()) {
+        return Status::Error("Item \"%s\" is not an array", key);
+    }
+
+    for (auto& entry : iter->second) {
+        try {
+            val.emplace_back(entry.asInt());
+        } catch (const std::exception& ex) {
+            return Status::Error(ex.what());
+        }
+    }
+    return Status::OK();
+}
+
+
+Status Configuration::fetchAsDoubleArray(
+        const char *key,
+        std::vector<double> &val) const {
+    DCHECK(content_ != nullptr);
+    auto iter = content_->find(key);
+    if (iter == content_->items().end()) {
+        return Status::Error("Item \"%s\" not found", key);
+    }
+    if (!iter->second.isArray()) {
+        return Status::Error("Item \"%s\" is not an array", key);
+    }
+
+    for (auto& entry : iter->second) {
+        try {
+            val.emplace_back(entry.asDouble());
+        } catch (const std::exception& ex) {
+            return Status::Error(ex.what());
+        }
+    }
+    return Status::OK();
+}
+
+
+Status Configuration::fetchAsBoolArray(
+        const char *key,
+        std::vector<bool> &val) const {
+    DCHECK(content_ != nullptr);
+    auto iter = content_->find(key);
+    if (iter == content_->items().end()) {
+        return Status::Error("Item \"%s\" not found", key);
+    }
+    if (!iter->second.isArray()) {
+        return Status::Error("Item \"%s\" is not an array", key);
+    }
+
+    for (auto& entry : iter->second) {
+        try {
+            val.emplace_back(entry.asBool());
+        } catch (const std::exception& ex) {
+            return Status::Error(ex.what());
+        }
+    }
+    return Status::OK();
+}
+
+
+Status Configuration::fetchAsStringArray(
+        const char *key,
+        std::vector<std::string> &val) const {
+    DCHECK(content_ != nullptr);
+    auto iter = content_->find(key);
+    if (iter == content_->items().end()) {
+        return Status::Error("Item \"%s\" not found", key);
+    }
+    if (!iter->second.isArray()) {
+        return Status::Error("Item \"%s\" is not an array", key);
+    }
+
+    for (auto& entry : iter->second) {
+        try {
+            val.emplace_back(entry.asString());
+        } catch (const std::exception& ex) {
+            return Status::Error(ex.what());
+        }
+    }
+    return Status::OK();
+}
+
+
+Status Configuration::forEachKey(std::function<void(const std::string&)> processor) const {
+    DCHECK(content_ != nullptr);
+    for (auto& key : content_->keys()) {
+        try {
+            processor(key.asString());
+        } catch (const std::exception& ex) {
+            return Status::Error(ex.what());
+        }
+    }
+    return Status::OK();
+}
+
+
+Status Configuration::forEachItem(
+        std::function<void(const std::string&, const folly::dynamic&)> processor) const {
+    DCHECK(content_ != nullptr);
+    for (auto& item : content_->items()) {
+        try {
+            processor(item.first.asString(), item.second);
+        } catch (const std::exception& ex) {
+            return Status::Error(ex.what());
+        }
+    }
+    return Status::OK();
 }
 
 }   // namespace nebula
