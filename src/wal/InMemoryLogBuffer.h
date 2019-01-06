@@ -4,13 +4,13 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef RAFTEX_INMEMORYLOGBUFFER_H_
-#define RAFTEX_INMEMORYLOGBUFFER_H_
+#ifndef WAL_INMEMORYLOGBUFFER_H_
+#define WAL_INMEMORYLOGBUFFER_H_
 
 #include "base/Base.h"
 
 namespace nebula {
-namespace raftex {
+namespace wal {
 
 //
 // In-memory buffer (thread-safe)
@@ -75,7 +75,7 @@ private:
 using BufferPtr = std::shared_ptr<InMemoryLogBuffer>;
 using BufferList = std::list<BufferPtr>;
 
-}  // namespace raftex
+}  // namespace wal
 }  // namespace raftex
 
-#endif  // RAFTEX_INMEMORYLOGBUFFER_H_
+#endif  // WAL_INMEMORYLOGBUFFER_H_
