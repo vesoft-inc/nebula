@@ -143,7 +143,7 @@ Status Configuration::fetchAsSubConf(const char *key, Configuration &subconf) co
 }
 
 
-Status MUST_USE_RESULT Configuration::fetchAsIntArray(
+Status Configuration::fetchAsIntArray(
         const char *key,
         std::vector<int64_t> &val) const {
     DCHECK(content_ != nullptr);
@@ -166,7 +166,7 @@ Status MUST_USE_RESULT Configuration::fetchAsIntArray(
 }
 
 
-Status MUST_USE_RESULT Configuration::fetchAsDoubleArray(
+Status Configuration::fetchAsDoubleArray(
         const char *key,
         std::vector<double> &val) const {
     DCHECK(content_ != nullptr);
@@ -189,7 +189,7 @@ Status MUST_USE_RESULT Configuration::fetchAsDoubleArray(
 }
 
 
-Status MUST_USE_RESULT Configuration::fetchAsBoolArray(
+Status Configuration::fetchAsBoolArray(
         const char *key,
         std::vector<bool> &val) const {
     DCHECK(content_ != nullptr);
@@ -212,7 +212,7 @@ Status MUST_USE_RESULT Configuration::fetchAsBoolArray(
 }
 
 
-Status MUST_USE_RESULT Configuration::fetchAsStringArray(
+Status Configuration::fetchAsStringArray(
         const char *key,
         std::vector<std::string> &val) const {
     DCHECK(content_ != nullptr);
