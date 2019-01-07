@@ -14,8 +14,8 @@
 #include "thrift/ThriftClientManager.h"
 #include "network/NetworkUtils.h"
 #include "thread/NamedThread.h"
-#include "raftex/FileBasedWal.h"
-#include "raftex/BufferFlusher.h"
+#include "wal/FileBasedWal.h"
+#include "wal/BufferFlusher.h"
 #include "raftex/LogStrListIterator.h"
 #include "raftex/Host.h"
 
@@ -35,6 +35,7 @@ namespace raftex {
 using namespace nebula::network;
 using namespace nebula::thrift;
 using namespace nebula::thread;
+using namespace nebula::wal;
 
 class AppendLogsIterator final : public LogIterator {
 public:

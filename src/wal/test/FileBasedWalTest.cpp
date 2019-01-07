@@ -6,12 +6,12 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
-#include "raftex/FileBasedWal.h"
-#include "raftex/BufferFlusher.h"
+#include "wal/FileBasedWal.h"
+#include "wal/BufferFlusher.h"
 #include "fs/TempDir.h"
 
 namespace nebula {
-namespace raftex {
+namespace wal {
 
 using namespace nebula::fs;
 
@@ -192,7 +192,7 @@ TEST(FileBasedWal, Rollback) {
     sleep(1);
 }
 
-}  // namespace raftex
+}  // namespace wal
 }  // namespace nebula
 
 
@@ -201,7 +201,7 @@ int main(int argc, char** argv) {
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
 
-    using namespace nebula::raftex;
+    using namespace nebula::wal;
     flusher.reset(new BufferFlusher());
 
     return RUN_ALL_TESTS();

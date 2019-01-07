@@ -7,7 +7,7 @@
 #include "base/Base.h"
 #include "raftex/Host.h"
 #include "raftex/RaftPart.h"
-#include "raftex/FileBasedWal.h"
+#include "wal/FileBasedWal.h"
 #include <folly/io/async/EventBase.h>
 #include "gen-cpp2/RaftexServiceAsyncClient.h"
 #include "thrift/ThriftClientManager.h"

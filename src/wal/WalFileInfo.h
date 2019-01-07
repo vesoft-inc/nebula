@@ -4,16 +4,16 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef RAFTEX_WALFILEINFO_H_
-#define RAFTEX_WALFILEINFO_H_
+#ifndef WAL_WALFILEINFO_H_
+#define WAL_WALFILEINFO_H_
 
 #include "base/Base.h"
 #include "base/Cord.h"
-#include "raftex/Wal.h"
-#include "raftex/InMemoryLogBuffer.h"
+#include "wal/Wal.h"
+#include "wal/InMemoryLogBuffer.h"
 
 namespace nebula {
-namespace raftex {
+namespace wal {
 
 class WalFileInfo final {
 public:
@@ -73,8 +73,8 @@ private:
 
 using WalFileInfoPtr = std::shared_ptr<WalFileInfo>;
 
-}  // namespace raftex
+}  // namespace wal
 }  // namespace nebula
 
-#endif  // RAFTEX_WALFILEINFO_H_
+#endif  // WAL_WALFILEINFO_H_
 

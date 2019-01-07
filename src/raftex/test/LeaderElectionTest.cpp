@@ -11,7 +11,7 @@
 #include "fs/FileUtils.h"
 #include "thread/GenericThreadPool.h"
 #include "network/NetworkUtils.h"
-#include "raftex/BufferFlusher.h"
+#include "wal/BufferFlusher.h"
 #include "raftex/RaftexService.h"
 #include "raftex/test/RaftexTestBase.h"
 #include "raftex/test/TestShard.h"
@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
 
     using namespace nebula::raftex;
-    flusher = std::make_unique<BufferFlusher>();
+    flusher = std::make_unique<nebula::wal::BufferFlusher>();
 
     return RUN_ALL_TESTS();
 }

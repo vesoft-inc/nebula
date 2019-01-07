@@ -4,13 +4,12 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef RAFTEX_LOGITERATOR_H_
-#define RAFTEX_LOGITERATOR_H_
+#ifndef COMMON_BASE_LOGITERATOR_H_
+#define COMMON_BASE_LOGITERATOR_H_
 
 #include "base/Base.h"
 
 namespace nebula {
-namespace raftex {
 
 class LogIterator {
 public:
@@ -29,7 +28,6 @@ public:
     virtual folly::StringPiece logMsg() const = 0;
 };
 
-}  // namespace raftex
 }  // namespace nebula
-#endif  // RAFTEX_LOGITERATOR_H_
+#endif  // COMMON_BASE_LOGITERATOR_H_
 

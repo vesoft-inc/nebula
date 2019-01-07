@@ -39,7 +39,7 @@ std::string Status::toString() const {
             break;
     }
     std::string result(str);
-    result.append(&state_[4], size());
+    result.append(&state_[kHeaderSize], size());
     return result;
 }
 
