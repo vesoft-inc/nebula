@@ -6,8 +6,11 @@
 
 #include "base/Base.h"
 #include "dataman/RowReader.h"
+#include "meta/SchemaManager.h"
 
 namespace nebula {
+
+using namespace nebula::meta;
 
 /*********************************************
  *
@@ -45,8 +48,8 @@ ResultType RowReader::Cell::getVid(int64_t& v) const noexcept {
  *
  ********************************************/
 RowReader::Iterator::Iterator(const RowReader* reader,
-                              int32_t numFields,
-                              int32_t index)
+                              size_t numFields,
+                              int64_t index)
         : reader_(reader)
         , numFields_(numFields)
         , index_(index) {
@@ -102,7 +105,7 @@ bool RowReader::Iterator::operator==(const Iterator& rhs) const noexcept {
 
 
 RowReader::Iterator::operator bool() const {
-    return index_ != numFields_;
+    return index_ != static_cast<int64_t>(numFields_);
 }
 
 
@@ -111,10 +114,84 @@ RowReader::Iterator::operator bool() const {
  * class RowReader
  *
  ********************************************/
-RowReader::RowReader(const SchemaProviderIf* schema,
-                     folly::StringPiece row)
-        : schema_(schema) {
-    CHECK(schema_) << "RowReader needs a schema to work";
+// static
+RowReader* RowReader::getTagPropReader(folly::StringPiece row,
+                                       GraphSpaceID space,
+                                       TagID tag) {
+    int32_t ver = getSchemaVer(row);
+    if (ver > 0) {
+        return new RowReader(
+            row,
+            meta::SchemaManager::getTagSchema(space, tag, ver));
+    } else {
+        // Invalid data
+        // TODO We need a better error handler here
+        LOG(FATAL) << "Invalid schema version in the row data!";
+    }
+}
+
+
+// static
+RowReader* RowReader::getEdgePropReader(folly::StringPiece row,
+                                        GraphSpaceID space,
+                                        EdgeType edge) {
+    int32_t ver = getSchemaVer(row);
+    if (ver > 0) {
+        return new RowReader(
+            row,
+            meta::SchemaManager::getEdgeSchema(space, edge, ver));
+    } else {
+        // Invalid data
+        // TODO We need a better error handler here
+        LOG(FATAL) << "Invalid schema version in the row data!";
+    }
+}
+
+
+// static
+RowReader* RowReader::getRowReader(
+        folly::StringPiece row,
+        std::shared_ptr<const meta::SchemaProviderIf> schema) {
+    int32_t ver = getSchemaVer(row);
+    CHECK_EQ(ver, schema->getVersion());
+    return new RowReader(row, schema);
+}
+
+
+// static
+int32_t RowReader::getSchemaVer(folly::StringPiece row) {
+    const uint8_t* it = reinterpret_cast<const uint8_t*>(row.begin());
+    if (reinterpret_cast<const char*>(it) == row.end()) {
+        LOG(ERROR) << "Row data is empty, so there is no schema version";
+        return 0;
+    }
+
+    // The first three bits indicate the number of bytes for the
+    // schena version. If the number is zero, no schema version
+    // presents
+    size_t verBytes = *(it++) >> 5;
+    int32_t ver = 0;
+    if (verBytes > 0) {
+        if (verBytes + 1 > row.size()) {
+            // Data is too short
+            LOG(ERROR) << "Row data is too short";
+            return 0;
+        }
+        // Schema Version is stored in Little Endian
+        for (size_t i = 0; i < verBytes; i++) {
+            ver |= (uint32_t(*(it++)) << (8 * i));
+        }
+    }
+
+    return ver;
+}
+
+
+RowReader::RowReader(folly::StringPiece row,
+                     std::shared_ptr<const meta::SchemaProviderIf> schema)
+        : schema_{schema} {
+    CHECK(!!schema) << "A schema much be provided";
+
     if (processHeader(row)) {
         // data_.begin() points to the first field
         data_.reset(row.begin() + headerLen_, row.size() - headerLen_);
@@ -132,30 +209,21 @@ bool RowReader::processHeader(folly::StringPiece row) {
         return false;
     }
 
+    DCHECK(!!schema_) << "A schema must be provided";
+
     // The last three bits indicate the number of bytes for offsets
     // The first three bits indicate the number of bytes for the
     // schena version. If the number is zero, no schema version
     // presents
     numBytesForOffset_ = (*it & 0x07) + 1;
-    uint32_t verBytes = *(it++) >> 5;
-    schemaVer_ = 0;
-    if (verBytes) {
-        if (verBytes + 1 > row.size()) {
-            // Data is too short
-            LOG(ERROR) << "Rowe data is too short";
-            return false;
-        }
-        // Schema Version is stored in Little Endian
-        for (uint32_t i = 0; i < verBytes; i++) {
-            schemaVer_ |= (uint32_t(*(it++)) << (8 * i));
-        }
-    }
+    int32_t verBytes = *(it++) >> 5;
+    it += verBytes;
 
     // Process the block offsets
     // Block offsets point to the start of every 16 fields, except the
     // first 16 fields
     // Block offsets are stored in Little Endian
-    uint32_t numFields = schema_->getNumFields(schemaVer_);
+    uint32_t numFields = schema_->getNumFields();
     uint32_t numOffsets = (numFields >> 4);
     if (numBytesForOffset_ * numOffsets + verBytes + 1 > row.size()) {
         // Data is too short
@@ -183,23 +251,24 @@ bool RowReader::processHeader(folly::StringPiece row) {
 
 
 int32_t RowReader::numFields() const noexcept {
-    return schema_->getNumFields(schemaVer_);
+    return schema_->getNumFields();
 }
 
 
 int32_t RowReader::schemaVer() const noexcept {
-    return schemaVer_;
+    return schema_->getVersion();
 }
 
 
-int64_t RowReader::skipToNext(int32_t index, int64_t offset) const noexcept {
-    const storage::cpp2::ValueType* vType = schema_->getFieldType(index, schemaVer_);
-    CHECK(vType) << "No schema for the index " << index;
+int64_t RowReader::skipToNext(int64_t index, int64_t offset) const noexcept {
+    const storage::cpp2::ValueType& vType = schema_->getFieldType(index);
+    CHECK(vType != StorageConstants::kInvalidValueType())
+        << "No schema for the index " << index;
     if (offsets_[index + 1] >= 0) {
         return offsets_[index + 1];
     }
 
-    switch (vType->get_type()) {
+    switch (vType.get_type()) {
         case storage::cpp2::SupportedType::BOOL: {
             // One byte
             offset++;
@@ -258,9 +327,9 @@ int64_t RowReader::skipToNext(int32_t index, int64_t offset) const noexcept {
 }
 
 
-int64_t RowReader::skipToField(int32_t index) const noexcept {
+int64_t RowReader::skipToField(int64_t index) const noexcept {
     DCHECK_GE(index, 0);
-    if (index >= schema_->getNumFields(schemaVer_)) {
+    if (index >= static_cast<int64_t>(schema_->getNumFields())) {
         // Index is out of range
         return static_cast<int64_t>(ResultType::E_INDEX_OUT_OF_RANGE);
     }
@@ -268,13 +337,13 @@ int64_t RowReader::skipToField(int32_t index) const noexcept {
     int64_t base = index >> 4;
     const auto& blockOffset = blockOffsets_[base];
     base <<= 4;
-    int32_t maxVisitedIndex = base + blockOffset.second;
+    int64_t maxVisitedIndex = base + blockOffset.second;
     if (index <= maxVisitedIndex) {
         return offsets_[index];
     }
 
     int64_t offset = offsets_[maxVisitedIndex];
-    for (int i = maxVisitedIndex; i < base + (index & 0x0000000f); i++) {
+    for (int64_t i = maxVisitedIndex; i < base + (index & 0x0000000f); i++) {
         offset = skipToNext(i, offset);
         if (offset < 0) {
             return static_cast<int64_t>(ResultType::E_DATA_INVALID);
@@ -334,9 +403,9 @@ int32_t RowReader::readVid(int64_t offset, int64_t& v) const noexcept {
 }
 
 
-ResultType RowReader::getBool(int32_t index, int64_t& offset, bool& v)
+ResultType RowReader::getBool(int64_t index, int64_t& offset, bool& v)
         const noexcept {
-    switch (schema_->getFieldType(index, schemaVer_)->get_type()) {
+    switch (schema_->getFieldType(index).get_type()) {
         case storage::cpp2::SupportedType::BOOL: {
             v = intToBool(data_[offset]);
             offset++;
@@ -373,9 +442,9 @@ ResultType RowReader::getBool(int32_t index, int64_t& offset, bool& v)
 }
 
 
-ResultType RowReader::getFloat(int32_t index, int64_t& offset, float& v)
+ResultType RowReader::getFloat(int64_t index, int64_t& offset, float& v)
         const noexcept {
-    switch (schema_->getFieldType(index, schemaVer_)->get_type()) {
+    switch (schema_->getFieldType(index).get_type()) {
         case storage::cpp2::SupportedType::FLOAT: {
             int32_t numBytes = readFloat(offset, v);
             if (numBytes < 0) {
@@ -403,9 +472,9 @@ ResultType RowReader::getFloat(int32_t index, int64_t& offset, float& v)
 }
 
 
-ResultType RowReader::getDouble(int32_t index, int64_t& offset, double& v)
+ResultType RowReader::getDouble(int64_t index, int64_t& offset, double& v)
         const noexcept {
-    switch (schema_->getFieldType(index, schemaVer_)->get_type()) {
+    switch (schema_->getFieldType(index).get_type()) {
         case storage::cpp2::SupportedType::FLOAT: {
             float f;
             int32_t numBytes = readFloat(offset, f);
@@ -433,10 +502,10 @@ ResultType RowReader::getDouble(int32_t index, int64_t& offset, double& v)
 }
 
 
-ResultType RowReader::getString(int32_t index,
+ResultType RowReader::getString(int64_t index,
                                 int64_t& offset,
                                 folly::StringPiece& v) const noexcept {
-    switch (schema_->getFieldType(index, schemaVer_)->get_type()) {
+    switch (schema_->getFieldType(index).get_type()) {
         case storage::cpp2::SupportedType::STRING: {
             int32_t numBytes = readString(offset, v);
             if (numBytes < 0) {
@@ -454,9 +523,9 @@ ResultType RowReader::getString(int32_t index,
 }
 
 
-ResultType RowReader::getVid(int32_t index, int64_t& offset, int64_t& v)
+ResultType RowReader::getVid(int64_t index, int64_t& offset, int64_t& v)
         const noexcept {
-    switch (schema_->getFieldType(index, schemaVer_)->get_type()) {
+    switch (schema_->getFieldType(index).get_type()) {
         case storage::cpp2::SupportedType::INT: {
             int32_t numBytes = readInteger(offset, v);
             if (numBytes < 0) {
@@ -483,12 +552,12 @@ ResultType RowReader::getVid(int32_t index, int64_t& offset, int64_t& v)
 
 
 RowReader::Iterator RowReader::begin() const noexcept {
-    return Iterator(this, schema_->getNumFields(schemaVer_), 0);
+    return Iterator(this, schema_->getNumFields(), 0);
 }
 
 
 RowReader::Iterator RowReader::end() const noexcept {
-    auto numFields = schema_->getNumFields(schemaVer_);
+    auto numFields = schema_->getNumFields();
     return Iterator(this, numFields, numFields);
 }
 
@@ -500,7 +569,7 @@ RowReader::Iterator RowReader::end() const noexcept {
  **************************************************/
 ResultType RR_GET_VALUE_BY_NAME(Bool, bool)
 
-ResultType RowReader::getBool(int32_t index, bool& v) const noexcept {
+ResultType RowReader::getBool(int64_t index, bool& v) const noexcept {
     RR_GET_OFFSET()
     return getBool(index, offset, v);
 }
@@ -508,7 +577,7 @@ ResultType RowReader::getBool(int32_t index, bool& v) const noexcept {
 
 ResultType RR_GET_VALUE_BY_NAME(Float, float)
 
-ResultType RowReader::getFloat(int32_t index, float& v) const noexcept {
+ResultType RowReader::getFloat(int64_t index, float& v) const noexcept {
     RR_GET_OFFSET()
     return getFloat(index, offset, v);
 }
@@ -516,7 +585,7 @@ ResultType RowReader::getFloat(int32_t index, float& v) const noexcept {
 
 ResultType RR_GET_VALUE_BY_NAME(Double, double)
 
-ResultType RowReader::getDouble(int32_t index, double& v) const noexcept {
+ResultType RowReader::getDouble(int64_t index, double& v) const noexcept {
     RR_GET_OFFSET()
     return getDouble(index, offset, v);
 }
@@ -524,7 +593,7 @@ ResultType RowReader::getDouble(int32_t index, double& v) const noexcept {
 
 ResultType RR_GET_VALUE_BY_NAME(String, folly::StringPiece)
 
-ResultType RowReader::getString(int32_t index, folly::StringPiece& v)
+ResultType RowReader::getString(int64_t index, folly::StringPiece& v)
         const noexcept {
     RR_GET_OFFSET()
     return getString(index, offset, v);
@@ -533,7 +602,7 @@ ResultType RowReader::getString(int32_t index, folly::StringPiece& v)
 
 ResultType RR_GET_VALUE_BY_NAME(Vid, int64_t)
 
-ResultType RowReader::getVid(int32_t index, int64_t& v) const noexcept {
+ResultType RowReader::getVid(int64_t index, int64_t& v) const noexcept {
     RR_GET_OFFSET()
     return getVid(index, offset, v);
 }

@@ -11,7 +11,7 @@
 #include "base/Base.h"
 #include "gen-cpp2/graph_types.h"
 #include "dataman/DataCommon.h"
-#include "dataman/SchemaProviderIf.h"
+#include "meta/SchemaProviderIf.h"
 #include "dataman/RowReader.h"
 
 namespace nebula {
@@ -23,8 +23,12 @@ namespace nebula {
  */
 class RowUpdater {
 public:
-    explicit RowUpdater(SchemaProviderIf* schema,
-                        folly::StringPiece row = folly::StringPiece());
+    // reader holds the original data
+    // schema is the writer schema, which means the updated data will be encoded
+    //   using this schema
+    RowUpdater(std::unique_ptr<RowReader> reader,
+               std::shared_ptr<meta::SchemaProviderIf> schema);
+    explicit RowUpdater(std::shared_ptr<meta::SchemaProviderIf> schema);
 
     // Encode into a binary array
     std::string encode() const noexcept;
@@ -67,8 +71,7 @@ public:
     // TODO getMap(const std::string& name) const noexcept;
 
 private:
-    SchemaProviderIf* schema_;
-    int32_t schemaVer_;
+    std::shared_ptr<meta::SchemaProviderIf> schema_;
     std::unique_ptr<RowReader> reader_;
     // Hash64(field_name) => value
     std::unordered_map<uint64_t, FieldValue> updatedFields_;
@@ -78,9 +81,9 @@ private:
 
 
 #define RU_GET_TYPE_BY_NAME() \
-    const storage::cpp2::ValueType* type \
-        = schema_->getFieldType(name, schemaVer_); \
-    if (!type) { \
+    const storage::cpp2::ValueType& type \
+        = schema_->getFieldType(name); \
+    if (type == StorageConstants::kInvalidValueType()) { \
         return ResultType::E_NAME_NOT_FOUND; \
     }
 

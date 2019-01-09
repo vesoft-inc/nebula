@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include "gen-cpp2/graph_types.h"
-#include "dataman/SchemaProviderIf.h"
+#include "meta/SchemaProviderIf.h"
 #include "dataman/RowWriter.h"
 
 namespace nebula {
@@ -18,14 +18,16 @@ class RowSetWriter {
 public:
     // The reservedSize is the potential data size, It hints the writer
     // to reserve the space so that the expensive resize() will not happen
-    explicit RowSetWriter(const SchemaProviderIf* schema = nullptr,
-                          int64_t reservedSize = 4096);
+    explicit RowSetWriter(
+        std::shared_ptr<const meta::SchemaProviderIf> schema
+            = std::shared_ptr<const meta::SchemaProviderIf>(),
+        int64_t reservedSize = 4096);
 
-    void setSchema(const SchemaProviderIf* schema) {
+    void setSchema(std::shared_ptr<const meta::SchemaProviderIf> schema) {
         schema_ = schema;
     }
 
-    const SchemaProviderIf* schema() const {
+    std::shared_ptr<const meta::SchemaProviderIf> schema() const {
         return schema_;
     }
 
@@ -41,7 +43,7 @@ public:
     void addRow(const std::string& data);
 
 private:
-    const SchemaProviderIf* schema_;
+    std::shared_ptr<const meta::SchemaProviderIf> schema_;
     std::string data_;
 
     void writeRowLength(int64_t len);

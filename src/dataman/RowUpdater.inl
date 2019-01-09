@@ -12,7 +12,7 @@ RowUpdater::setInt(const folly::StringPiece name, T v) noexcept {
     RU_GET_TYPE_BY_NAME()
 
     uint64_t hash;
-    switch (type->get_type()) {
+    switch (type.get_type()) {
         case storage::cpp2::SupportedType::INT:
             hash = folly::hash::SpookyHashV2::Hash64(name.begin(),
                                                      name.size(),

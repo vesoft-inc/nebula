@@ -8,11 +8,14 @@
 #define META_PARTMANAGER_H_
 
 #include "base/Base.h"
+#include <folly/RWSpinLock.h>
+#include <gtest/gtest.h>
 
 namespace nebula {
 namespace meta {
 
-class PartManager final {
+class PartManager {
+    FRIEND_TEST(FileBasedPartManager, PartitionAllocation);
 public:
     // Retrieve the Partition Manager for the given graph space
     static std::shared_ptr<const PartManager> get(GraphSpaceID space);
@@ -37,16 +40,13 @@ public:
     // Cluster given ids into the shard they belong to
     // The method returns a map
     //  shard_id => [ids that belong to the shard]
-    std::unordered_map<PartitionID, std::vector<int64_t>> clusterIdsToParts(
-        std::vector<int64_t>& ids) const;
+    std::unordered_map<PartitionID, std::vector<int64_t>>
+    clusterIdsToParts(std::vector<int64_t>& ids) const;
 
-private:
+protected:
     PartManager() = default;
 
-private:
-    static std::unordered_map<GraphSpaceID, std::shared_ptr<const PartManager>>
-        partManagers_;
-
+protected:
     // A list of hosts
     std::vector<HostAddr> hosts_;
 
@@ -55,6 +55,10 @@ private:
 
     // A reversed map from host => partition
     std::unordered_map<HostAddr, std::vector<PartitionID>> hostPartMap_;
+
+protected:
+    static folly::RWSpinLock accessLock_;
+    static std::unordered_map<GraphSpaceID, std::shared_ptr<const PartManager>> partManagers_;
 };
 
 }  // namespace meta

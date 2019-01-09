@@ -11,13 +11,20 @@
 namespace nebula {
 
 using folly::hash::SpookyHashV2;
+using namespace nebula::meta;
 
-RowUpdater::RowUpdater(SchemaProviderIf* schema,
-                       folly::StringPiece row)
+RowUpdater::RowUpdater(std::unique_ptr<RowReader> reader,
+                       std::shared_ptr<SchemaProviderIf> schema)
         : schema_(schema)
-        , reader_(row.empty() ? nullptr : new RowReader(schema_, row)) {
-    CHECK(schema_);
-    schemaVer_ = schema->getLatestVer();
+        , reader_(std::move(reader)) {
+    CHECK(!!schema_);
+}
+
+
+RowUpdater::RowUpdater(std::shared_ptr<SchemaProviderIf> schema)
+        : schema_(schema)
+        , reader_(nullptr) {
+    CHECK(!!schema_);
 }
 
 
@@ -31,10 +38,10 @@ std::string RowUpdater::encode() const noexcept {
 
 
 void RowUpdater::encodeTo(std::string& encoded) const noexcept {
-    RowWriter writer(schema_, schemaVer_);
-    auto it = schema_->begin(schemaVer_);
-    while (it) {
-        switch (it->getType()->get_type()) {
+    RowWriter writer(schema_);
+    auto it = schema_->begin();
+    while(bool(it)) {
+        switch(it->getType().get_type()) {
             case storage::cpp2::SupportedType::BOOL: {
                 RU_OUTPUT_VALUE(bool, Bool, false);
                 break;
@@ -80,7 +87,7 @@ ResultType RowUpdater::setBool(const folly::StringPiece name,
     RU_GET_TYPE_BY_NAME()
 
     uint64_t hash;
-    switch (type->get_type()) {
+    switch (type.get_type()) {
         case storage::cpp2::SupportedType::BOOL:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = v;
@@ -98,7 +105,7 @@ ResultType RowUpdater::setFloat(const folly::StringPiece name,
     RU_GET_TYPE_BY_NAME()
 
     uint64_t hash;
-    switch (type->get_type()) {
+    switch (type.get_type()) {
         case storage::cpp2::SupportedType::FLOAT:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = v;
@@ -120,7 +127,7 @@ ResultType RowUpdater::setDouble(const folly::StringPiece name,
     RU_GET_TYPE_BY_NAME()
 
     uint64_t hash;
-    switch (type->get_type()) {
+    switch (type.get_type()) {
         case storage::cpp2::SupportedType::FLOAT:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = static_cast<float>(v);
@@ -142,7 +149,7 @@ ResultType RowUpdater::setString(const folly::StringPiece name,
     RU_GET_TYPE_BY_NAME()
 
     uint64_t hash;
-    switch (type->get_type()) {
+    switch (type.get_type()) {
         case storage::cpp2::SupportedType::STRING:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = std::move(v.toString());
@@ -160,7 +167,7 @@ ResultType RowUpdater::setVid(const folly::StringPiece name,
     RU_GET_TYPE_BY_NAME()
 
     uint64_t hash;
-    switch (type->get_type()) {
+    switch (type.get_type()) {
         case storage::cpp2::SupportedType::VID:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = v;

@@ -9,7 +9,9 @@
 
 namespace nebula {
 
-RowSetWriter::RowSetWriter(const SchemaProviderIf* schema,
+using namespace nebula::meta;
+
+RowSetWriter::RowSetWriter(std::shared_ptr<const SchemaProviderIf> schema,
                            int64_t reservedSize)
         : schema_(schema) {
     data_.reserve(reservedSize);

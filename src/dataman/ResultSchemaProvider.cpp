@@ -29,9 +29,9 @@ const char* ResultSchemaProvider::ResultSchemaField::getName() const {
 }
 
 
-const ValueType* ResultSchemaProvider::ResultSchemaField::getType() const {
+const cpp2::ValueType& ResultSchemaProvider::ResultSchemaField::getType() const {
     DCHECK(!!column_);
-    return &(column_->get_type());
+    return column_->get_type();
 }
 
 
@@ -47,25 +47,19 @@ bool ResultSchemaProvider::ResultSchemaField::isValid() const {
  **********************************/
 ResultSchemaProvider::ResultSchemaProvider(Schema schema)
         : columns_(std::move(schema.get_columns())) {
-    for (auto i = 0UL; i < columns_.size(); i++) {
+    for (int64_t i = 0; i < static_cast<int64_t>(columns_.size()); i++) {
         const std::string& name = columns_[i].get_name();
         nameIndex_.emplace(std::make_pair(SpookyHashV2::Hash64(name.data(), name.size(), 0), i));
     }
 }
 
 
-int32_t ResultSchemaProvider::getLatestVer() const noexcept {
-    return 0;
-}
-
-
-int32_t ResultSchemaProvider::getNumFields(int32_t /*ver*/) const noexcept {
+size_t ResultSchemaProvider::getNumFields() const noexcept {
     return columns_.size();
 }
 
 
-int32_t ResultSchemaProvider::getFieldIndex(const folly::StringPiece name, int32_t ver) const {
-    UNUSED(ver);
+int64_t ResultSchemaProvider::getFieldIndex(const folly::StringPiece name) const {
     uint64_t hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
     auto iter = nameIndex_.find(hash);
     if (iter == nameIndex_.end()) {
@@ -75,53 +69,48 @@ int32_t ResultSchemaProvider::getFieldIndex(const folly::StringPiece name, int32
 }
 
 
-const char* ResultSchemaProvider::getFieldName(int32_t index, int32_t ver) const {
-    UNUSED(ver);
-    if (index < 0 || index >= static_cast<int32_t>(columns_.size())) {
+const char* ResultSchemaProvider::getFieldName(int64_t index) const {
+    if (index < 0 || index >= static_cast<int64_t>(columns_.size())) {
         return nullptr;
     }
     return columns_[index].get_name().c_str();
 }
 
 
-const ValueType* ResultSchemaProvider::getFieldType(int32_t index, int32_t ver) const {
-    UNUSED(ver);
-    if (index < 0 || index >= static_cast<int32_t>(columns_.size())) {
-        return nullptr;
+const cpp2::ValueType& ResultSchemaProvider::getFieldType(int64_t index) const {
+    if (index < 0 || index >= static_cast<int64_t>(columns_.size())) {
+        return StorageConstants::kInvalidValueType();
     }
 
-    return &(columns_[index].get_type());
+    return columns_[index].get_type();
 }
 
 
-const ValueType* ResultSchemaProvider::getFieldType(
-        const folly::StringPiece name,
-        int32_t ver) const {
-    int32_t index = getFieldIndex(name, ver);
+const cpp2::ValueType& ResultSchemaProvider::getFieldType(const folly::StringPiece name) const {
+    auto index = getFieldIndex(name);
     if (index < 0) {
-        return nullptr;
+        return StorageConstants::kInvalidValueType();
     }
-    return &(columns_[index].get_type());
+    return columns_[index].get_type();
 }
 
 
-std::unique_ptr<ResultSchemaProvider::Field>
-ResultSchemaProvider::field(int32_t index, int32_t ver) const {
-    UNUSED(ver);
-    if (index < 0 || index >= static_cast<int32_t>(columns_.size())) {
-        return std::unique_ptr<Field>();
+std::shared_ptr<const meta::SchemaProviderIf::Field> ResultSchemaProvider::field(
+        int64_t index) const {
+    if (index < 0 || index >= static_cast<int64_t>(columns_.size())) {
+        return std::shared_ptr<ResultSchemaField>();
     }
-    return std::make_unique<ResultSchemaField>(&(columns_[index]));
+    return std::make_shared<ResultSchemaField>(&(columns_[index]));
 }
 
 
-std::unique_ptr<ResultSchemaProvider::Field>
-ResultSchemaProvider::field(const folly::StringPiece name, int32_t ver) const {
-    int32_t index = getFieldIndex(name, ver);
+std::shared_ptr<const meta::SchemaProviderIf::Field> ResultSchemaProvider::field(
+        const folly::StringPiece name) const {
+    auto index = getFieldIndex(name);
     if (index < 0) {
-        return std::unique_ptr<Field>();
+        return std::shared_ptr<ResultSchemaField>();
     }
-    return std::make_unique<ResultSchemaField>(&(columns_[index]));
+    return std::make_shared<ResultSchemaField>(&(columns_[index]));
 }
 
 }  // namespace nebula

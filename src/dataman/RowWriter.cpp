@@ -9,16 +9,15 @@
 
 namespace nebula {
 
-using storage::cpp2::Schema;
-using storage::cpp2::SupportedType;
+using namespace storage;
+using namespace nebula::meta;
 
-RowWriter::RowWriter(SchemaProviderIf* schema, int32_t schemaVer)
-        : schema_(schema)
-        , schemaVer_(schemaVer) {
+RowWriter::RowWriter(std::shared_ptr<const SchemaProviderIf> schema)
+        : schema_(schema) {
     if (!schema_) {
         // Need to create a new schema
         schemaWriter_.reset(new SchemaWriter());
-        schema_ = schemaWriter_.get();
+        schema_ = schemaWriter_;
     }
 }
 
@@ -26,8 +25,8 @@ RowWriter::RowWriter(SchemaProviderIf* schema, int32_t schemaVer)
 int64_t RowWriter::size() const noexcept {
     int32_t offsetBytes = calcOccupiedBytes(cord_.size());
     int32_t verBytes = 0;
-    if (schemaVer_) {
-        verBytes = calcOccupiedBytes(schemaVer_);
+    if (schema_->getVersion() > 0) {
+        verBytes = calcOccupiedBytes(schema_->getVersion());
     }
     return cord_.size()  // data length
            + offsetBytes * blockOffsets_.size()  // block offsets length
@@ -48,19 +47,20 @@ std::string RowWriter::encode() noexcept {
 
 void RowWriter::encodeTo(std::string& encoded) noexcept {
     if (!schemaWriter_) {
-        operator<<(Skip(schema_->getNumFields(schemaVer_) - colNum_));
+        operator<<(Skip(schema_->getNumFields() - colNum_));
     }
 
     // Header information
     int32_t offsetBytes = calcOccupiedBytes(cord_.size());
     char header = offsetBytes - 1;
 
-    if (schemaVer_) {
-        size_t verBytes = calcOccupiedBytes(schemaVer_);
+    int32_t ver = schema_->getVersion();
+    if (ver > 0) {
+        int32_t verBytes = calcOccupiedBytes(ver);
         header |= verBytes << 5;
         encoded.append(&header, 1);
         // Schema version is stored in Little Endian
-        encoded.append(reinterpret_cast<char*>(&schemaVer_), verBytes);
+        encoded.append(reinterpret_cast<char*>(&ver), verBytes);
     } else {
         encoded.append(&header, 1);
     }
@@ -217,9 +217,9 @@ RowWriter& RowWriter::operator<<(Skip&& skip) noexcept {
     }
 
     int32_t skipTo = std::min(colNum_ + skip.toSkip_,
-                              schema_->getNumFields(schemaVer_));
+                              static_cast<int64_t>(schema_->getNumFields()));
     for (int i = colNum_; i < skipTo; i++) {
-        switch (schema_->getFieldType(i, schemaVer_)->get_type()) {
+        switch (schema_->getFieldType(i).get_type()) {
             case SupportedType::BOOL: {
                 cord_ << false;
                 break;
