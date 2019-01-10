@@ -105,6 +105,8 @@ public:
     ResultCode prefix(const std::string& prefix,
                       std::unique_ptr<StorageIter>& iter) override;
 
+    ResultCode ingest(const std::vector<std::string>& files);
+
 private:
     std::string  dataPath_;
     std::unique_ptr<rocksdb::DB> db_{nullptr};
