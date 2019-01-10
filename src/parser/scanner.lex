@@ -19,95 +19,101 @@ static constexpr size_t MAX_STRING = 4096;
 %}
 
 %x STR
-
-GO                          ([Gg][Oo])
+/* These tokens are kept sorted for human lookup */
+ALL                         ([Aa][Ll][Ll])
+ALTER                       ([Aa][Ll][Tt][Ee][Rr])
 AS                          ([Aa][Ss])
-TO                          ([Tt][Oo])
-OR                          ([Oo][Rr])
-USE                         ([Uu][Ss][Ee])
-SET                         ([Ss][Ee][Tt])
-FROM                        ([Ff][Rr][Oo][Mm])
-WHERE                       ([Ww][Hh][Ee][Rr][Ee])
-MATCH                       ([Mm][Aa][Tt][Cc][Hh])
-INSERT                      ([Ii][Nn][Ss][Ee][Rr][Tt])
-VALUES                      ([Vv][Aa][Ll][Uu][Ee][Ss])
-YIELD                       ([Yy][Ii][Ee][Ll][Dd])
-RETURN                      ([Rr][Ee][Tt][Uu][Rr][Nn])
+BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
+BOOL                        ([Bb][Oo][Oo][Ll])
 DEFINE                      ([Dd][Ee][Ff][Ii][Nn][Ee])
 DESCRIBE                    ([Dd][Ee][Ss][Cc][Rr][Ii][Bb][Ee])
-VERTEX                      ([Vv][Ee][Rr][Tt][Ee][Xx])
-EDGE                        ([Ee][Dd][Gg][Ee])
-UPDATE                      ([Uu][Pp][Dd][Aa][Tt][Ee])
-ALTER                       ([Aa][Ll][Tt][Ee][Rr])
-STEPS                       ([Ss][Tt][Ee][Pp][Ss])
-OVER                        ([Oo][Vv][Ee][Rr])
-UPTO                        ([Uu][Pp][Tt][Oo])
-REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
-SPACE                       ([Ss][Pp][Aa][Cc][Ee])
-TTL                         ([Tt][Tt][Ll])
-INT                         ([Ii][Nn][Tt])
-BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
-STRING                      ([Ss][Tt][Rr][Ii][Nn][Gg])
-BOOL                        ([Bb][Oo][Oo][Ll])
-TAG                         ([Tt][Aa][Gg])
-UNION                       ([Uu][Nn][Ii][Oo][Nn])
+EDGE                        ([Ee][Dd][Gg][Ee])
+FALSE                       ([Ff][Aa][Ll][Ss][Ee])
+FROM                        ([Ff][Rr][Oo][Mm])
+GO                          ([Gg][Oo])
+HOST                        ([Hh][Oo][Ss][Tt])
+INSERT                      ([Ii][Nn][Ss][Ee][Rr][Tt])
+INT                         ([Ii][Nn][Tt])
 INTERSECT                   ([Ii][Nn][Tt][Ee][Rr][Ss][Ee][Cc][Tt])
+MATCH                       ([Mm][Aa][Tt][Cc][Hh])
 MINUS                       ([Mm][Ii][Nn][Uu][Ss])
 NO                          ([Nn][Oo])
+OR                          ([Oo][Rr])
+OVER                        ([Oo][Vv][Ee][Rr])
 OVERWRITE                   ([Oo][Vv][Ee][Rr][Ww][Rr][Ii][Tt][Ee])
+RETURN                      ([Rr][Ee][Tt][Uu][Rr][Nn])
+REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
+SET                         ([Ss][Ee][Tt])
+SHOW                        ([Ss][Hh][Oo][Ww])
+SPACE                       ([Ss][Pp][Aa][Cc][Ee])
+STEPS                       ([Ss][Tt][Ee][Pp][Ss])
+STRING                      ([Ss][Tt][Rr][Ii][Nn][Gg])
+TAG                         ([Tt][Aa][Gg])
+TO                          ([Tt][Oo])
 TRUE                        ([Tt][Rr][Uu][Ee])
-FALSE                       ([Ff][Aa][Ll][Ss][Ee])
+TTL                         ([Tt][Tt][Ll])
+UNION                       ([Uu][Nn][Ii][Oo][Nn])
+UPDATE                      ([Uu][Pp][Dd][Aa][Tt][Ee])
+UPTO                        ([Uu][Pp][Tt][Oo])
+USE                         ([Uu][Ss][Ee])
+VALUES                      ([Vv][Aa][Ll][Uu][Ee][Ss])
+VERTEX                      ([Vv][Ee][Rr][Tt][Ee][Xx])
+WHERE                       ([Ww][Hh][Ee][Rr][Ee])
+YIELD                       ([Yy][Ii][Ee][Ll][Dd])
 
-LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
 HEX                         ([0-9a-fA-F])
+LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 OCT                         ([0-7])
-
 
 %%
 
                             thread_local static char sbuf[MAX_STRING];
                             size_t pos = 0;
 
-{GO}                        { return TokenType::KW_GO; }
+ /* keep same order as above  */
+{ALL}                       { return TokenType::KW_ALL; }
+{ALTER}                     { return TokenType::KW_ALTER; }
 {AS}                        { return TokenType::KW_AS; }
-{TO}                        { return TokenType::KW_TO; }
-{OR}                        { return TokenType::KW_OR; }
-{USE}                       { return TokenType::KW_USE; }
-{SET}                       { return TokenType::KW_SET; }
-{FROM}                      { return TokenType::KW_FROM; }
-{WHERE}                     { return TokenType::KW_WHERE; }
-{MATCH}                     { return TokenType::KW_MATCH; }
-{INSERT}                    { return TokenType::KW_INSERT; }
-{VALUES}                    { return TokenType::KW_VALUES; }
-{YIELD}                     { return TokenType::KW_YIELD; }
-{RETURN}                    { return TokenType::KW_RETURN; }
+{BIGINT}                    { return TokenType::KW_BIGINT; }
+{BOOL}                      { return TokenType::KW_BOOL; }
 {DEFINE}                    { return TokenType::KW_DEFINE; }
 {DESCRIBE}                  { return TokenType::KW_DESCRIBE; }
-{VERTEX}                    { return TokenType::KW_VERTEX; }
-{EDGE}                      { return TokenType::KW_EDGE; }
-{UPDATE}                    { return TokenType::KW_UPDATE; }
-{ALTER}                     { return TokenType::KW_ALTER; }
-{STEPS}                     { return TokenType::KW_STEPS; }
-{OVER}                      { return TokenType::KW_OVER; }
-{UPTO}                      { return TokenType::KW_UPTO; }
-{REVERSELY}                 { return TokenType::KW_REVERSELY; }
-{SPACE}                     { return TokenType::KW_SPACE; }
-{TTL}                       { return TokenType::KW_TTL; }
-{INT}                       { return TokenType::KW_INT; }
-{BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
-{STRING}                    { return TokenType::KW_STRING; }
-{BOOL}                      { return TokenType::KW_BOOL; }
-{TAG}                       { return TokenType::KW_TAG; }
-{UNION}                     { return TokenType::KW_UNION; }
+{EDGE}                      { return TokenType::KW_EDGE; }
+{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
+{FROM}                      { return TokenType::KW_FROM; }
+{GO}                        { return TokenType::KW_GO; }
+{HOST}                      { return TokenType::KW_HOST; }
+{INSERT}                    { return TokenType::KW_INSERT; }
+{INT}                       { return TokenType::KW_INT; }
 {INTERSECT}                 { return TokenType::KW_INTERSECT; }
+{MATCH}                     { return TokenType::KW_MATCH; }
 {MINUS}                     { return TokenType::KW_MINUS; }
 {NO}                        { return TokenType::KW_NO; }
+{OR}                        { return TokenType::KW_OR; }
+{OVER}                      { return TokenType::KW_OVER; }
 {OVERWRITE}                 { return TokenType::KW_OVERWRITE; }
+{RETURN}                    { return TokenType::KW_RETURN; }
+{REVERSELY}                 { return TokenType::KW_REVERSELY; }
+{SET}                       { return TokenType::KW_SET; }
+{SHOW}                      { return TokenType::KW_SHOW; }
+{SPACE}                     { return TokenType::KW_SPACE; }
+{STEPS}                     { return TokenType::KW_STEPS; }
+{STRING}                    { return TokenType::KW_STRING; }
+{TAG}                       { return TokenType::KW_TAG; }
+{TO}                        { return TokenType::KW_TO; }
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
-{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
+{TTL}                       { return TokenType::KW_TTL; }
+{UNION}                     { return TokenType::KW_UNION; }
+{UPDATE}                    { return TokenType::KW_UPDATE; }
+{UPTO}                      { return TokenType::KW_UPTO; }
+{USE}                       { return TokenType::KW_USE; }
+{VALUES}                    { return TokenType::KW_VALUES; }
+{VERTEX}                    { return TokenType::KW_VERTEX; }
+{WHERE}                     { return TokenType::KW_WHERE; }
+{YIELD}                     { return TokenType::KW_YIELD; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
