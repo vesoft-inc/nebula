@@ -231,11 +231,29 @@ TEST(Scanner, Basic) {
 
         CHECK_SEMANTIC_VALUE("\"Hello\"", TokenType::STRING, "Hello"),
         CHECK_SEMANTIC_VALUE("\"Hello\\\\\"", TokenType::STRING, "Hello\\"),
-        CHECK_SEMANTIC_VALUE("\"Hell\\o\"", TokenType::STRING, "Hello"),
         CHECK_SEMANTIC_VALUE("\"He\\nllo\"", TokenType::STRING, "He\nllo"),
         CHECK_SEMANTIC_VALUE("\"He\\\nllo\"", TokenType::STRING, "He\nllo"),
         CHECK_SEMANTIC_VALUE("\"\\\"Hello\\\"\"", TokenType::STRING, "\"Hello\""),
+
+        // escape Normal character
+        // CHECK_SEMANTIC_VALUE("\"Hell\o\"", TokenType::STRING, "Hello"),    error
+        CHECK_SEMANTIC_VALUE("\"Hell\\o\"", TokenType::STRING, "Hello"),
+        //CHECK_SEMANTIC_VALUE("\"Hell\\\o\"", TokenType::STRING, "Hello"),   error
+        CHECK_SEMANTIC_VALUE("\"Hell\\\\o\"", TokenType::STRING, "Hell\\o"),
+        //CHECK_SEMANTIC_VALUE("\"Hell\\\\\o\"", TokenType::STRING, "Hello"),   error
+        CHECK_SEMANTIC_VALUE("\"Hell\\\\\\o\"", TokenType::STRING, "Hell\\o"),
         CHECK_SEMANTIC_VALUE("\"\\110ello\"", TokenType::STRING, "Hello"),
+        CHECK_SEMANTIC_VALUE("\"\110ello\"", TokenType::STRING, "Hello"),
+
+        CHECK_SEMANTIC_VALUE("\"\110 \"", TokenType::STRING, "H "),
+        CHECK_SEMANTIC_VALUE("\"\\110 \"", TokenType::STRING, "H "),
+        CHECK_SEMANTIC_VALUE("\"\\\110 \"", TokenType::STRING, "H "),
+        CHECK_SEMANTIC_VALUE("\"\\\\110 \"", TokenType::STRING, "\\110 "),
+        CHECK_SEMANTIC_VALUE("\"\\\\\110 \"", TokenType::STRING, "\\H "),
+        CHECK_SEMANTIC_VALUE("\"\\\\\\110 \"", TokenType::STRING, "\\H "),
+        CHECK_SEMANTIC_VALUE("\"\\\\\\\110 \"", TokenType::STRING, "\\H "),
+        CHECK_SEMANTIC_VALUE("\"\\\\\\\\110 \"", TokenType::STRING, "\\\\110 "),
+        CHECK_SEMANTIC_VALUE("\"\\\\\\\\\110 \"", TokenType::STRING, "\\\\H "),
     };
 #undef CHECK_SEMANTIC_TYPE
 #undef CHECK_SEMANTIC_VALUE
