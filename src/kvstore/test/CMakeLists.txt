@@ -82,3 +82,29 @@ target_link_libraries(
 )
 add_test(NAME kvstore_test COMMAND kvstore_test)
 
+add_executable(
+        load_test
+        LoadTest.cpp
+        $<TARGET_OBJECTS:kvstore_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:fs_obj>
+)
+target_link_libraries(
+        load_test
+        ${ROCKSDB_LIBRARIES}
+        jemalloc
+        zstd
+        snappy
+        folly
+        gtest
+        glog
+        gflags
+        boost_context
+        event
+        double-conversion
+        dl
+        z
+        -pthread
+)
+add_test(NAME load_test COMMAND load_test)
