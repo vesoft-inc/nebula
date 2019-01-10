@@ -89,6 +89,16 @@ ResultCode RocksdbEngine::prefix(const std::string& prefix,
     return ResultCode::SUCCESSED;
 }
 
+ResultCode RocksdbEngine::ingest(const std::vector<std::string>& files) {
+    rocksdb::IngestExternalFileOptions options;
+    rocksdb::Status status = db_->IngestExternalFile(files, options);
+    if (status.ok()) {
+        return ResultCode::SUCCESSED;
+    } else {
+        return ResultCode::ERR_UNKNOWN;
+    }
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 
