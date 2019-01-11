@@ -40,7 +40,6 @@ compile_thrift_jar()
 	check_file_exist $thrift_jar_source_path
 	maven_check
 	cd $thrift_jar_source_path && mvn clean package && cd -
-	echo `pwd`
 }
 
 #-----------------------------------------------
