@@ -81,6 +81,7 @@ add_executable(
     TestShard.cpp
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
