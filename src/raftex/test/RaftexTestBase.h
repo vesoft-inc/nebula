@@ -75,6 +75,39 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
 void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      std::shared_ptr<test::TestShard>& leader);
 
+
+class RaftexTestFixture : public ::testing::Test {
+public:
+    RaftexTestFixture(const std::string& testName)
+        : testName_(testName) {}
+    ~RaftexTestFixture() = default;
+
+    void SetUp() {
+        walRoot_ = std::make_unique<fs::TempDir>(
+            folly::stringPrintf("/tmp/%s.XXXXXX", testName_.c_str()).c_str());
+        setupRaft(*walRoot_, workers_, wals_, allHosts_, services_, copies_, leader_);
+
+        // Check all hosts agree on the same leader
+        checkLeadership(copies_, leader_);
+    }
+
+    void TearDown() {
+        finishRaft(services_, copies_, workers_, leader_);
+        walRoot_.reset();
+    }
+
+protected:
+    const std::string testName_;
+    std::unique_ptr<fs::TempDir> walRoot_;
+    std::shared_ptr<thread::GenericThreadPool> workers_;
+    std::vector<std::string> wals_;
+    std::vector<HostAddr> allHosts_;
+    std::vector<std::shared_ptr<RaftexService>> services_;
+    std::vector<std::shared_ptr<test::TestShard>> copies_;
+
+    std::shared_ptr<test::TestShard> leader_;
+};
+
 }  // namespace raftex
 }  // namespace nebula
 #endif  // RAFTEX_TEST_RAFTEXTESTBASE_H_
