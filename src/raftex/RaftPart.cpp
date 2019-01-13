@@ -39,27 +39,81 @@ using namespace nebula::wal;
 
 class AppendLogsIterator final : public LogIterator {
 public:
-    AppendLogsIterator(
-        LogID firstLogId,
-        const std::vector<
-            std::tuple<ClusterID, TermID, std::string>
-        >& logs)
+    AppendLogsIterator(LogID firstLogId,
+                       RaftPart::LogCache logs,
+                       std::function<std::string (const std::string&)> casCB)
             : firstLogId_(firstLogId)
-            , logs_(logs) {
+            , logId_(firstLogId)
+            , logs_(std::move(logs))
+            , casCB_(std::move(casCB)) {
+        leadByCAS_ = processCAS();
+        valid_ = idx_ < logs_.size();
+        hasLogs_ = !leadByCAS_ && valid_;
+    }
+
+    AppendLogsIterator(const AppendLogsIterator&) = delete;
+    AppendLogsIterator(AppendLogsIterator&&) = default;
+
+    AppendLogsIterator& operator=(const AppendLogsIterator&) = delete;
+    AppendLogsIterator& operator=(AppendLogsIterator&&) = default;
+
+    bool leadByCAS() const {
+        return leadByCAS_;
+    }
+
+    bool hasLogs() const {
+        return hasLogs_;
+    }
+
+    LogID firstLogId() const {
+        return firstLogId_;
+    }
+
+    // Return true if the current log is a CAS, otherwise return false
+    bool processCAS() {
+        while (idx_ < logs_.size()) {
+            auto& tup = logs_.at(idx_);
+            bool isCAS = std::get<2>(tup);
+            if (!isCAS) {
+                // Not a CAS
+                return false;
+            }
+
+            // Process CAS log
+            CHECK(!!casCB_);
+            casResult_ = casCB_(std::get<3>(tup));
+            if (casResult_.size() > 0) {
+                // CAS Succeeded
+                return true;
+            } else {
+                // CAS failed, move to the next log, but do not increment the logId_
+                ++idx_;
+            }
+        }
+
+        // Reached the end
+        return false;
     }
 
     LogIterator& operator++() override {
         ++idx_;
+        ++logId_;
+        valid_ = (idx_ < logs_.size()) && !isCAS();
+        if (valid_) {
+            hasLogs_ = true;
+        }
         return *this;
     }
 
+    // The iterator becomes invalid when exausting the logs
+    // **OR** running into a CAS log
     bool valid() const override {
-        return idx_ < logs_.size();
+        return valid_;
     }
 
     LogID logId() const override {
         DCHECK(valid());
-        return firstLogId_ + idx_;
+        return logId_;
     }
 
     TermID logTerm() const override {
@@ -72,17 +126,45 @@ public:
         return std::get<0>(logs_.at(idx_));
     }
 
-    folly::StringPiece logMsg() const {
+    folly::StringPiece logMsg() const override {
         DCHECK(valid());
+        if (isCAS()) {
+            return casResult_;
+        } else {
+            return std::get<3>(logs_.at(idx_));
+        }
+    }
+
+    // Return true when there is no more log left for processing
+    bool empty() const {
+        return idx_ >= logs_.size();
+    }
+
+    // Resume the iterator so that we can continue to process the remaining logs
+    void resume() {
+        CHECK(!valid_);
+        if (!empty()) {
+            leadByCAS_ = processCAS();
+            valid_ = idx_ < logs_.size();
+            hasLogs_ = !leadByCAS_ && valid_;
+        }
+    }
+
+private:
+    bool isCAS() const {
         return std::get<2>(logs_.at(idx_));
     }
 
 private:
     size_t idx_{0};
+    bool leadByCAS_{false};
+    bool hasLogs_{false};
+    bool valid_{true};
+    std::string casResult_;
     LogID firstLogId_;
-    const std::vector<
-        std::tuple<ClusterID, TermID, std::string>
-    >& logs_;
+    LogID logId_;
+    RaftPart::LogCache logs_;
+    std::function<std::string (const std::string&)> casCB_;
 };
 
 
@@ -221,15 +303,26 @@ typename RaftPart::AppendLogResult RaftPart::canAppendLogs(
 }
 
 
-folly::Future<RaftPart::AppendLogResult>
-RaftPart::appendLogsAsync(ClusterID source,
-                          std::vector<std::string>&& logMsgs) {
-    CHECK_GT(logMsgs.size(), 0UL);
+folly::Future<RaftPart::AppendLogResult> RaftPart::appendAsync(ClusterID source,
+                                                               std::string log) {
+    if (source < 0) {
+        source = clusterId_;
+    }
+    return appendLogAsync(source, false, std::move(log));
+}
 
-    std::vector<
-        std::tuple<ClusterID, TermID, std::string>> swappedOutLogs;
-    auto retFuture =
-        folly::Future<RaftPart::AppendLogResult>::makeEmpty();
+
+folly::Future<RaftPart::AppendLogResult> RaftPart::casAsync(std::string log) {
+    return appendLogAsync(clusterId_, true, std::move(log));
+}
+
+
+folly::Future<RaftPart::AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
+                                                                  bool isCAS,
+                                                                  std::string log) {
+    LogCache swappedOutLogs;
+    LogID firstId;
+    auto retFuture = folly::Future<RaftPart::AppendLogResult>::makeEmpty();
 
     {
         std::lock_guard<std::mutex> lck(raftLock_);
@@ -238,15 +331,15 @@ RaftPart::appendLogsAsync(ClusterID source,
         if (res != AppendLogResult::SUCCEEDED) {
             LOG(ERROR) << idStr_
                        << "Cannot append logs, clean the buffer";
-            cachingPromise_.setValue(res);
-            cachingPromise_ = folly::SharedPromise<AppendLogResult>();
+            cachingPromise_.setValue(std::move(res));
+            cachingPromise_.reset();
             logs_.clear();
             return res;
         }
 
         VLOG(2) << idStr_ << "Checking whether buffer overflow";
 
-        if (logs_.size() + logMsgs.size() > FLAGS_max_batch_size) {
+        if (logs_.size() >= FLAGS_max_batch_size) {
             // Buffer is full
             LOG(WARNING) << idStr_
                          << "The appendLog buffer is full."
@@ -257,24 +350,28 @@ RaftPart::appendLogsAsync(ClusterID source,
         VLOG(2) << idStr_ << "Appending logs to the buffer";
 
         // Append new logs to the buffer
-        for (auto& m : logMsgs) {
-            logs_.emplace_back(source, term_, std::move(m));
+        DCHECK_GE(source, 0);
+        if (isCAS) {
+            logs_.emplace_back(source, term_, true, std::move(log));
+            retFuture = cachingPromise_.getSingleFuture();
+        } else {
+            logs_.emplace_back(source, term_, false, std::move(log));
+            retFuture = cachingPromise_.getSharedFuture();
         }
 
         if (replicatingLogs_) {
-            CHECK(!cachingPromise_.isFulfilled());
             VLOG(2) << idStr_
                     << "Another AppendLogs request is ongoing,"
                        " just return";
-            return cachingPromise_.getFuture();
+            return retFuture;
         } else {
             // We need to send logs to all followers
             VLOG(2) << idStr_ << "Preparing to send AppendLog request";
             replicatingLogs_ = true;
             sendingPromise_ = std::move(cachingPromise_);
-            retFuture = sendingPromise_.getFuture();
-            cachingPromise_ = folly::SharedPromise<AppendLogResult>();
+            cachingPromise_.reset();
             std::swap(swappedOutLogs, logs_);
+            firstId = lastLogId_ + 1;
         }
     }
 
@@ -283,47 +380,58 @@ RaftPart::appendLogsAsync(ClusterID source,
     // until majority accept the logs, the leadership changes, or
     // the partition stops
     VLOG(2) << idStr_ << "Calling appendLogsInternal()";
-    appendLogsInternal(std::move(swappedOutLogs));
+    AppendLogsIterator it(
+        firstId,
+        std::move(swappedOutLogs),
+        [this] (const std::string& msg) -> std::string {
+            auto res = compareAndSet(msg);
+            if (res.empty()) {
+                // Failed
+                sendingPromise_.setOneSingleValue(AppendLogResult::E_CAS_FAILURE);
+            }
+            return res;
+        });
+    appendLogsInternal(std::move(it));
 
     return retFuture;
 }
 
 
-void RaftPart::appendLogsInternal(
-        std::vector<std::tuple<ClusterID, TermID, std::string>>&& logs) {
-    CHECK(!logs.empty());
-
-    LogID firstId = 0;
+void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
     TermID currTerm = 0;
     LogID prevLogId = 0;
     TermID prevLogTerm = 0;
     LogID committed = 0;
     {
         std::lock_guard<std::mutex> g(raftLock_);
-        firstId = lastLogId_ + 1;
         currTerm = term_;
         prevLogId = lastLogId_;
         prevLogTerm = lastLogTerm_;
         committed = committedLogId_;
     }
-    LogID lastId = firstId + logs.size() - 1;
 
-    VLOG(2) << idStr_ << "Ready to append logs from id "
-            << firstId << " to " << lastId
-            << " (Current term is " << currTerm << ")";
+    if (iter.valid()) {
+        VLOG(2) << idStr_ << "Ready to append logs from id "
+                << iter.logId() << " (Current term is "
+                << currTerm << ")";
+    } else {
+        VLOG(2) << idStr_ << "Ready to send a heartbeat";
+    }
 
     // Step 1: Write WAL
-    AppendLogsIterator it(firstId, std::move(logs));
-    if (!wal_->appendLogs(it)) {
+    if (!wal_->appendLogs(iter)) {
         LOG(ERROR) << idStr_ << "Failed to write into WAL";
         sendingPromise_.setValue(AppendLogResult::E_WAL_FAILURE);
         return;
     }
-    VLOG(2) << idStr_ << "Succeeded in writing logs to WAL";
+    LogID lastId = wal_->lastLogId();
+    VLOG(2) << idStr_ << "Succeeded writing logs ["
+            << iter.firstLogId() << ", " << lastId << "] to WAL";
 
     // Step 2: Replicate to followers
     auto eb = ioThreadPool_->getEventBase();
     replicateLogs(eb,
+                  std::move(iter),
                   currTerm,
                   lastId,
                   committed,
@@ -337,6 +445,7 @@ void RaftPart::appendLogsInternal(
 folly::Future<RaftPart::AppendLogResponses>
 RaftPart::replicateLogs(
         folly::EventBase* eb,
+        AppendLogsIterator iter,
         TermID currTerm,
         LogID lastLogId,
         LogID committedId,
@@ -407,16 +516,18 @@ RaftPart::replicateLogs(
         })
         .then(eb, [self = shared_from_this(),
                    eb,
+                   it = std::move(iter),
                    currTerm,
                    lastLogId,
                    committedId,
                    prevLogId,
-                   prevLogTerm] (folly::Try<AppendLogResponses>&& result) {
+                   prevLogTerm] (folly::Try<AppendLogResponses>&& result) mutable {
             VLOG(2) << self->idStr_ << "Received enough response";
             CHECK(!result.hasException());
 
             self->processAppendLogResponses(*result,
                                             eb,
+                                            std::move(it),
                                             currTerm,
                                             lastLogId,
                                             committedId,
@@ -431,6 +542,7 @@ RaftPart::replicateLogs(
 void RaftPart::processAppendLogResponses(
         const AppendLogResponses& resps,
         folly::EventBase* eb,
+        AppendLogsIterator iter,
         TermID currTerm,
         LogID lastLogId,
         LogID committedId,
@@ -461,8 +573,6 @@ void RaftPart::processAppendLogResponses(
             walIt = wal_->iterator(committedId + 1, lastLogId);
         }
 
-        decltype(logs_) swappedOutLogs;
-
         // Step 3: Commit the batch
         if (commitLogs(std::move(walIt))) {
             std::lock_guard<std::mutex> g(raftLock_);
@@ -470,33 +580,53 @@ void RaftPart::processAppendLogResponses(
             committedLogId_ = lastLogId;
 
             // Step 4: Fulfill the promise
-            AppendLogResult res = AppendLogResult::SUCCEEDED;
-            sendingPromise_.setValue(std::move(res));
+            if (iter.hasLogs()) {
+                sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
+            }
+            if (iter.leadByCAS()) {
+                sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
+            }
 
             // Step 5: Check whether need to continue
             // the log replication
             CHECK(replicatingLogs_);
-            if (logs_.size() > 0) {
-                // continue to replicate the logs
-                sendingPromise_ = std::move(cachingPromise_);
-                cachingPromise_ =
-                    folly::SharedPromise<AppendLogResult>();
-                std::swap(swappedOutLogs, logs_);
-            } else {
-                replicatingLogs_ = false;
+            // Continue to process the original AppendLogsIterator if necessary
+            iter.resume();
+            if (iter.empty()) {
+                if (logs_.size() > 0) {
+                    // continue to replicate the logs
+                    sendingPromise_ = std::move(cachingPromise_);
+                    cachingPromise_.reset();
+                    iter = AppendLogsIterator(
+                        lastLogId_ + 1,
+                        std::move(logs_),
+                        [this] (const std::string& log) -> std::string {
+                            auto res = compareAndSet(log);
+                            if (res.empty()) {
+                                // Failed
+                                sendingPromise_.setOneSingleValue(
+                                    AppendLogResult::E_CAS_FAILURE);
+                            }
+                            return res;
+                        });
+                    logs_.clear();
+                } else {
+                    replicatingLogs_ = false;
+                }
             }
         } else {
             LOG(FATAL) << idStr_ << "Failed to commit logs";
         }
 
-        if (!swappedOutLogs.empty()) {
-            appendLogsInternal(std::move(swappedOutLogs));
+        if (!iter.empty()) {
+            appendLogsInternal(std::move(iter));
         }
     } else {
         // Not enough hosts accepted the log, re-try
         LOG(WARNING) << idStr_ << "Only " << numSucceeded
                      << " hosts succeeded, Need to try again";
         replicateLogs(eb,
+                      std::move(iter),
                       currTerm,
                       lastLogId,
                       committedId,
@@ -889,7 +1019,7 @@ void RaftPart::processAppendLogRequest(
 
     // Check the last log
     CHECK_GE(req.get_last_log_id_sent(), committedLogId_);
-    if (req.get_last_log_term_sent() != lastLogTerm_) {
+    if (lastLogTerm_ > 0 && req.get_last_log_term_sent() != lastLogTerm_) {
         VLOG(2) << idStr_ << "The local last log term is "
                 << lastLogTerm_
                 << ", which is different from the leader's"
@@ -1101,22 +1231,34 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::sendHeartbeat() {
             CHECK(!result.hasException());
 
             decltype(self->logs_) swappedOutLogs;
+            LogID firstId;
             {
                 std::lock_guard<std::mutex> g(self->raftLock_);
                 CHECK(self->replicatingLogs_);
                 if (self->logs_.size() > 0) {
                     // continue to replicate the logs
-                    self->sendingPromise_ =
-                        std::move(self->cachingPromise_);
-                    self->cachingPromise_ =
-                        folly::SharedPromise<AppendLogResult>();
+                    self->sendingPromise_= std::move(self->cachingPromise_);
+                    self->cachingPromise_.reset();
                     std::swap(swappedOutLogs, self->logs_);
+                    firstId = lastLogId_ + 1;
                 } else {
                     self->replicatingLogs_ = false;
                 }
             }
             if (!swappedOutLogs.empty()) {
-                self->appendLogsInternal(std::move(swappedOutLogs));
+                AppendLogsIterator it(
+                    firstId,
+                    std::move(swappedOutLogs),
+                    [this] (const std::string& msg) -> std::string {
+                        auto res = compareAndSet(msg);
+                        if (res.empty()) {
+                            // Failed
+                            sendingPromise_.setOneSingleValue(
+                                AppendLogResult::E_CAS_FAILURE);
+                        }
+                        return res;
+                    });
+                self->appendLogsInternal(std::move(it));
             }
             return AppendLogResult::SUCCEEDED;
         });

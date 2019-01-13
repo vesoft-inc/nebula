@@ -79,6 +79,14 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
         LogID lastLogIdSent) {
     VLOG(3) << idStr_ << "Entering Host::appendLogs()";
 
+    VLOG(2) << idStr_
+            << "Append logs to the host [term = " << term
+            << ", logId = " << logId
+            << ", committedLogId = " << committedLogId
+            << ", lastLogTermSent = " << lastLogTermSent
+            << ", lastLogIdSent = " << lastLogIdSent
+            << "]";
+
     auto ret = folly::Future<cpp2::AppendLogResponse>::makeEmpty();
     std::shared_ptr<cpp2::AppendLogRequest> req;
     {
