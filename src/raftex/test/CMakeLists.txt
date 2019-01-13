@@ -73,3 +73,41 @@ target_link_libraries(
 )
 add_test(NAME log_append_test COMMAND log_append_test)
 
+
+add_executable(
+    log_cas_test
+    LogCASTest.cpp
+    RaftexTestBase.cpp
+    TestShard.cpp
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:wal_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:time_obj>
+)
+target_link_libraries(
+    log_cas_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    gtest
+    glog
+    gflags
+    boost_context
+    boost_system
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    event
+    -pthread
+)
+add_test(NAME log_cas_test COMMAND log_cas_test)
+
