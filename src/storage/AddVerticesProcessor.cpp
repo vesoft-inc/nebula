@@ -6,7 +6,6 @@
 
 #include "storage/AddVerticesProcessor.h"
 #include <algorithm>
-#include "time/Duration.h"
 #include "time/TimeUtils.h"
 #include "storage/KeyUtils.h"
 
@@ -14,10 +13,11 @@ namespace nebula {
 namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
-    auto now = startMs_ = time::TimeUtils::nowInMSeconds();
+    auto now = time::TimeUtils::nowInMSeconds();
     const auto& partVertices = req.get_vertices();
     auto spaceId = req.get_space_id();
     callingNum_ = partVertices.size();
+    CHECK_NOTNULL(kvstore_);
     std::for_each(partVertices.begin(), partVertices.end(), [&](auto& pv) {
         auto partId = pv.first;
         const auto& vertices = pv.second;
@@ -30,26 +30,8 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                 data.emplace_back(std::move(key), std::move(tag.get_props()));
             });
         });
-        CHECK_NOTNULL(kvstore_);
-        kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
-                                [partId, this](kvstore::ResultCode code, HostAddr addr) {
-            cpp2::ResultCode thriftResult;
-            thriftResult.code = to(code);
-            thriftResult.part_id = partId;
-            if (code == kvstore::ResultCode::ERR_LEADER_CHANAGED) {
-                thriftResult.get_leader()->ip = addr.first;
-                thriftResult.get_leader()->port = addr.second;
-            }
-            std::lock_guard<folly::SpinLock> lg(this->lock_);
-            this->codes_.emplace_back(std::move(thriftResult));
-            this->callingNum_--;
-            if (this->callingNum_ == 0) {
-                this->resp_.set_codes(std::move(this->codes_));
-                this->resp_.set_latency_in_ms(time::TimeUtils::nowInMSeconds() - this->startMs_);
-                this->onFinished();
-            }
-        });
-     });
+        doPut(spaceId, partId, std::move(data));
+    });
 }
 
 }  // namespace storage

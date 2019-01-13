@@ -4,7 +4,7 @@ add_library(
     HostManager.cpp
     SchemaManager.cpp
 )
-add_dependencies(meta_obj common)
+add_dependencies(meta_obj common dataman_obj)
 
 #add_subdirectory(test)
 

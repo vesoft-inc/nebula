@@ -26,7 +26,6 @@ public:
     static StatusOr<std::vector<std::string>> listIPv4s();
     // List out all network devices and its cooresponding Ipv4 address.
     static StatusOr<std::unordered_map<std::string, std::string>> listDeviceAndIPv4s();
-
     // Get the local dynamic port range [low, high], only works for IPv4
     static bool getDynamicPortRange(uint16_t& low, uint16_t& high);
     // Get all ports that are currently in use
