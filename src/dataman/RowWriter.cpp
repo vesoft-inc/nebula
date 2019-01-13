@@ -163,7 +163,6 @@ RowWriter& RowWriter::operator<<(const std::string& v) noexcept {
     return operator<<(folly::StringPiece(v));
 }
 
-
 RowWriter& RowWriter::operator<<(folly::StringPiece v) noexcept {
     RW_GET_COLUMN_TYPE(STRING)
 

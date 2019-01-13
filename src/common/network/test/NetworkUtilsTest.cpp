@@ -62,7 +62,6 @@ TEST(NetworkUtils, listDeviceAndIPv4s) {
     ASSERT_NE(result.value().end(), result.value().find("lo"));
 }
 
-
 TEST(NetworkUtils, intIPv4Conversion) {
     uint32_t ip;
     ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
