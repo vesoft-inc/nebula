@@ -33,16 +33,15 @@ folly::SemiFuture<cpp2::ExecResponse> StorageClient::addVertices(
     std::unordered_map<HostAddr, cpp2::AddVerticesRequest> requests;
     for (auto& c : clusters) {
         auto& host = c.first;
-        cpp2::AddVerticesRequest req;
+        auto& req = requests[host];
         req.set_space_id(space);
         req.set_overwritable(overwritable);
         req.set_vertices(std::move(c.second));
-        requests.emplace(host, std::move(req));
     }
 
     return collectExecResponse(
         evb, std::move(requests),
-        [](std::shared_ptr<cpp2::StorageServiceAsyncClient> client,
+        [](cpp2::StorageServiceAsyncClient* client,
            const cpp2::AddVerticesRequest& r) {
             return client->future_addVertices(r);
         },
@@ -78,7 +77,7 @@ folly::SemiFuture<cpp2::ExecResponse> StorageClient::addEdges(
 
     return collectExecResponse(
         evb, std::move(requests),
-        [](std::shared_ptr<cpp2::StorageServiceAsyncClient> client,
+        [](cpp2::StorageServiceAsyncClient* client,
            const cpp2::AddEdgesRequest& r) {
             return client->future_addEdges(r);
         },
@@ -120,7 +119,7 @@ folly::SemiFuture<storage::cpp2::QueryResponse> StorageClient::getNeighbors(
 
     return collectQueryResponse(
         evb, std::move(requests),
-        [isOutBound](std::shared_ptr<cpp2::StorageServiceAsyncClient> client,
+        [isOutBound](cpp2::StorageServiceAsyncClient* client,
            const cpp2::GetNeighborsRequest& r) {
             if (isOutBound) {
                 return client->future_getOutBound(r);
@@ -166,7 +165,7 @@ folly::SemiFuture<storage::cpp2::QueryResponse> StorageClient::neighborStats(
 
     return collectQueryResponse(
         evb, std::move(requests),
-        [isOutBound](std::shared_ptr<cpp2::StorageServiceAsyncClient> client,
+        [isOutBound](cpp2::StorageServiceAsyncClient* client,
            const cpp2::NeighborsStatsRequest& r) {
             if (isOutBound) {
                 return client->future_outBoundStats(r);
@@ -206,7 +205,7 @@ folly::SemiFuture<storage::cpp2::QueryResponse> StorageClient::getVertexProps(
 
     return collectQueryResponse(
         evb, std::move(requests),
-        [](std::shared_ptr<cpp2::StorageServiceAsyncClient> client,
+        [](cpp2::StorageServiceAsyncClient* client,
            const cpp2::VertexPropRequest& r) {
             return client->future_getProps(r);
         },
@@ -242,7 +241,7 @@ folly::SemiFuture<storage::cpp2::QueryResponse> StorageClient::getEdgeProps(
 
     return collectQueryResponse(
         evb, std::move(requests),
-        [](std::shared_ptr<cpp2::StorageServiceAsyncClient> client,
+        [](cpp2::StorageServiceAsyncClient* client,
            const cpp2::EdgePropRequest& r) {
             return client->future_getEdgeProps(r);
         },

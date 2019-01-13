@@ -10,8 +10,6 @@
 namespace nebula {
 namespace graph {
 
-using namespace storage;
-
 namespace detail {
 
 template<class Request, class Response, class RemoteFunc, class RequestPartAccessor>
@@ -21,8 +19,6 @@ private:
     std::unordered_map<HostAddr, Request> ongoingRequests_;
     bool finishSending_{false};
     bool fulfilled_{false};
-
-    using Iterator = typename decltype(ongoingRequests_)::iterator;
 
 public:
     using ResponseType = Response;
@@ -45,22 +41,23 @@ public:
         }
     }
 
-    std::pair<Iterator, bool> insertRequest(HostAddr host, Request&& req) {
+    std::pair<const Request&, bool> insertRequest(HostAddr host, Request&& req) {
         std::lock_guard<std::mutex> g(lock_);
-        return ongoingRequests_.emplace(host, std::move(req));
+        auto res = ongoingRequests_.emplace(host, std::move(req));
+        return std::make_pair(res.first->second, res.second);
     }
 
-    Iterator findRequest(HostAddr host) {
+    const Request& findRequest(HostAddr host) {
         std::lock_guard<std::mutex> g(lock_);
         auto it = ongoingRequests_.find(host);
         DCHECK(it != ongoingRequests_.end());
-        return it;
+        return it->second;
     }
 
     // Return true if processed all responses
-    bool removeRequest(Iterator it) {
+    bool removeRequest(HostAddr host) {
         std::lock_guard<std::mutex> g(lock_);
-        ongoingRequests_.erase(it);
+        ongoingRequests_.erase(host);
         if (finishSending_ && !fulfilled_ && ongoingRequests_.empty()) {
             fulfilled_ = true;
             return true;
@@ -72,7 +69,7 @@ public:
 
 public:
     folly::Promise<Response> promise;
-    std::vector<cpp2::ResultCode> results;
+    std::vector<storage::cpp2::ResultCode> results;
     int32_t maxLatency{0};
 
     RemoteFunc serverMethod;
@@ -113,28 +110,30 @@ folly::SemiFuture<typename Context::ResponseType> StorageClient::collectResponse
 
     for (auto& req : requests) {
         auto& host = req.first;
-        auto client = thrift::ThriftClientManager<cpp2::StorageServiceAsyncClient>
+        auto client = thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>
                             ::getClient(host, evb);
         // Result is a pair of <Iterator, bool>
         auto res = context->insertRequest(host, std::move(req.second));
         DCHECK(res.second);
         // Invoke the remote method
-        context->serverMethod(client, res.first->second)
+        context->serverMethod(client.get(), res.first)
             // Future process code will be executed on the IO thread
+            // Since all requests are sent using the same eventbase, all then-callback
+            // will be executed on the same IO thread
             .then(evb,
                   [context, handlers, host] (folly::Try<typename Context::ResponseType>&& val) {
-                auto it = context->findRequest(host);
+                auto& r = context->findRequest(host);
                 if (val.hasException()) {
-                    context->partAccessor(it->second, [context] (PartitionID part) {
-                        cpp2::ResultCode result;
-                        result.set_code(cpp2::ErrorCode::E_RPC_FAILURE);
+                    context->partAccessor(r, [context] (PartitionID part) {
+                        storage::cpp2::ResultCode result;
+                        result.set_code(storage::cpp2::ErrorCode::E_RPC_FAILURE);
                         result.set_part_id(part);
                         context->results.emplace_back(std::move(result));
                     });
                 } else {
                     auto value = std::move(val.value());
                     for (auto& code : value.get_codes()) {
-                        if (code.get_code() == cpp2::ErrorCode::E_LEADER_CHANGED) {
+                        if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
                             // TODO Need to retry the new leader
                             LOG(FATAL) << "Not implmented";
                         } else {
@@ -152,7 +151,7 @@ folly::SemiFuture<typename Context::ResponseType> StorageClient::collectResponse
                     handlers->singleResp(context, host, value);
                 }
 
-                if (context->removeRequest(it)) {
+                if (context->removeRequest(host)) {
                     // Received all responses
                     handlers->allDone(context);
                 }
@@ -169,13 +168,13 @@ folly::SemiFuture<typename Context::ResponseType> StorageClient::collectResponse
 
 
 template<class Request, class RemoteFunc, class RequestPartAccessor>
-folly::SemiFuture<cpp2::ExecResponse> StorageClient::collectExecResponse(
+folly::SemiFuture<storage::cpp2::ExecResponse> StorageClient::collectExecResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc,
         RequestPartAccessor&& partAccessor) {
     using ContextBase = detail::ContextBase<Request,
-                                            cpp2::ExecResponse,
+                                            storage::cpp2::ExecResponse,
                                             RemoteFunc,
                                             RequestPartAccessor>;
 
@@ -191,10 +190,10 @@ folly::SemiFuture<cpp2::ExecResponse> StorageClient::collectExecResponse(
     return collectResponse(
         evb, context, std::move(requests),
         // Single response handler
-        [] (std::shared_ptr<ExecResponseContext>, HostAddr, cpp2::ExecResponse&) {},
+        [] (std::shared_ptr<ExecResponseContext>, HostAddr, storage::cpp2::ExecResponse&) {},
         // All done handler
         [] (std::shared_ptr<ExecResponseContext> c) {
-            cpp2::ExecResponse resp;
+            storage::cpp2::ExecResponse resp;
             resp.set_codes(std::move(c->results));
             resp.set_latency_in_ms(c->maxLatency);
             c->promise.setValue(std::move(resp));
@@ -209,7 +208,7 @@ folly::SemiFuture<storage::cpp2::QueryResponse> StorageClient::collectQueryRespo
         RemoteFunc&& remoteFunc,
         RequestPartAccessor&& partAccessor) {
     using ContextBase = detail::ContextBase<Request,
-                                            cpp2::QueryResponse,
+                                            storage::cpp2::QueryResponse,
                                             RemoteFunc,
                                             RequestPartAccessor>;
 
@@ -219,25 +218,28 @@ folly::SemiFuture<storage::cpp2::QueryResponse> StorageClient::collectQueryRespo
             : ContextBase(std::move(remoteFunc), std::move(accessor)) {}
 
     public:
-        std::vector<cpp2::VertexResponse> data;
-        std::shared_ptr<cpp2::Schema> vertexSchema;
-        std::shared_ptr<cpp2::Schema> edgeSchema;
+        std::vector<storage::cpp2::VertexResponse> data;
+        std::shared_ptr<storage::cpp2::Schema> vertexSchema;
+        std::shared_ptr<storage::cpp2::Schema> edgeSchema;
     };
 
-    auto context = std::make_shared<QueryResponseContext>(std::move(remoteFunc),
-                                                          std::move(partAccessor));
+    auto context = std::make_shared<QueryResponseContext>(
+        std::move(remoteFunc),
+        std::move(partAccessor));
 
     return collectResponse(
         evb, context, std::move(requests),
         // Single response handler
-        [] (std::shared_ptr<QueryResponseContext> c, HostAddr h, cpp2::QueryResponse& r) {
+        [] (std::shared_ptr<QueryResponseContext> c,
+            HostAddr h,
+            storage::cpp2::QueryResponse& r) {
             UNUSED(h);
 
             // Vertex schema, only need to add once
             if (!c->vertexSchema) {
                 auto* schema = r.get_vertex_schema();
                 if (schema != nullptr) {
-                    c->vertexSchema = std::make_shared<cpp2::Schema>(*schema);
+                    c->vertexSchema = std::make_shared<storage::cpp2::Schema>(*schema);
                 }
             }
 
@@ -245,19 +247,21 @@ folly::SemiFuture<storage::cpp2::QueryResponse> StorageClient::collectQueryRespo
             if (!c->edgeSchema) {
                 auto* schema = r.get_edge_schema();
                 if (schema != nullptr) {
-                    c->edgeSchema = std::make_shared<cpp2::Schema>(*schema);
+                    c->edgeSchema = std::make_shared<storage::cpp2::Schema>(*schema);
                 }
             }
 
             // data
             auto* data = r.get_vertices();
             if (data != nullptr) {
-                c->data.insert(c->data.end(), data->begin(), data->end());
+                for (auto v : *data) {
+                    c->data.emplace_back(std::move(v));
+                }
             }
         },
         // All done handler
         [] (std::shared_ptr<QueryResponseContext> c) {
-            cpp2::QueryResponse resp;
+            storage::cpp2::QueryResponse resp;
             resp.set_codes(std::move(c->results));
             resp.set_latency_in_ms(c->maxLatency);
             if (!!c->vertexSchema) {
