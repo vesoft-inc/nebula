@@ -92,7 +92,7 @@ TEST(RowUpdater, withOrigin) {
            << true << 3.1415926 << 0xABCDABCDABCDABCD << 2.17;
     std::string encoded(writer.encode());
 
-    std::unique_ptr<RowReader> reader(RowReader::getRowReader(encoded, schema));
+    auto reader = RowReader::getRowReader(encoded, schema);
     RowUpdater updater(std::move(reader), schema);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
@@ -172,7 +172,7 @@ TEST(RowUpdater, encodeWithAllFields) {
     double dVal;
     folly::StringPiece sVal;
 
-    std::unique_ptr<RowReader> reader(RowReader::getRowReader(encoded, schema));
+    auto reader = RowReader::getRowReader(encoded, schema);
 
     EXPECT_EQ(ResultType::E_INCOMPATIBLE_TYPE,
               reader->getFloat("col1", fVal));
@@ -230,7 +230,7 @@ TEST(RowUpdater, encodeWithMissingFields) {
     double dVal;
     folly::StringPiece sVal;
 
-    std::unique_ptr<RowReader> reader(RowReader::getRowReader(encoded, schema));
+    auto reader = RowReader::getRowReader(encoded, schema);
 
     // Default value
     EXPECT_EQ(ResultType::SUCCEEDED,

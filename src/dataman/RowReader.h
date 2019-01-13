@@ -69,13 +69,15 @@ public:
 
 
 public:
-    static RowReader* getTagPropReader(folly::StringPiece row,
-                                       GraphSpaceID space,
-                                       TagID tag);
-    static RowReader* getEdgePropReader(folly::StringPiece row,
-                                        GraphSpaceID space,
-                                        EdgeType edge);
-    static RowReader* getRowReader(
+    static std::unique_ptr<RowReader> getTagPropReader(
+        folly::StringPiece row,
+        GraphSpaceID space,
+        TagID tag);
+    static std::unique_ptr<RowReader> getEdgePropReader(
+        folly::StringPiece row,
+        GraphSpaceID space,
+        EdgeType edge);
+    static std::unique_ptr<RowReader> getRowReader(
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema);
 

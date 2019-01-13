@@ -36,10 +36,9 @@ int32_t RowSetReader::Iterator::prepareReader() {
             folly::ByteRange range(begin + offset_, 10);
             int32_t rowLen = folly::decodeVarint(range);
             int32_t lenBytes = range.begin() - begin - offset_;
-            reader_.reset(
-                RowReader::getRowReader(
-                    data_.subpiece(offset_ + lenBytes, rowLen),
-                    schema_));
+            reader_ = RowReader::getRowReader(
+                data_.subpiece(offset_ + lenBytes, rowLen),
+                schema_);
             return lenBytes + rowLen;
         } catch (const std::exception& ex) {
             LOG(ERROR) << "Failed to read the row length";

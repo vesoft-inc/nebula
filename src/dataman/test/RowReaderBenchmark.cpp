@@ -118,7 +118,7 @@ void prepareData() {
 
 void readMix(int32_t iters) {
     for (int i = 0; i < iters; i++) {
-        std::unique_ptr<RowReader> reader(RowReader::getRowReader(dataMix, schemaMix));
+        auto reader = RowReader::getRowReader(dataMix, schemaMix);
         bool bVal;
         int64_t iVal;
         folly::StringPiece sVal;
@@ -195,7 +195,7 @@ void readMix(int32_t iters) {
 
 #define READ_VALUE(T, SCHEMA, DATA, FN) \
     for (uint64_t i = 0; i < iters; i++) { \
-        std::unique_ptr<RowReader> reader(RowReader::getRowReader(DATA, SCHEMA)); \
+        auto reader = RowReader::getRowReader(DATA, SCHEMA); \
         T val; \
         auto it = reader->begin(); \
         for (int j = 0; j < 32; ++j, ++it) { \
@@ -206,7 +206,7 @@ void readMix(int32_t iters) {
 
 #define READ_VALUE_RANDOMLY(T, SCHEMA, DATA, FN) \
     for (uint64_t i = 0; i < iters; i++) { \
-        std::unique_ptr<RowReader> reader(RowReader::getRowReader(DATA, SCHEMA)); \
+        auto reader = RowReader::getRowReader(DATA, SCHEMA); \
         T val; \
         for (int j = 0; j < 32; j++) { \
             uint32_t idx = folly::Random::rand32(0, 32); \

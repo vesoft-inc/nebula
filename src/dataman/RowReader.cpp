@@ -115,14 +115,15 @@ RowReader::Iterator::operator bool() const {
  *
  ********************************************/
 // static
-RowReader* RowReader::getTagPropReader(folly::StringPiece row,
-                                       GraphSpaceID space,
-                                       TagID tag) {
+std::unique_ptr<RowReader> RowReader::getTagPropReader(
+        folly::StringPiece row,
+        GraphSpaceID space,
+        TagID tag) {
     int32_t ver = getSchemaVer(row);
     if (ver > 0) {
-        return new RowReader(
+        return std::unique_ptr<RowReader>(new RowReader(
             row,
-            meta::SchemaManager::getTagSchema(space, tag, ver));
+            meta::SchemaManager::getTagSchema(space, tag, ver)));
     } else {
         // Invalid data
         // TODO We need a better error handler here
@@ -132,14 +133,15 @@ RowReader* RowReader::getTagPropReader(folly::StringPiece row,
 
 
 // static
-RowReader* RowReader::getEdgePropReader(folly::StringPiece row,
-                                        GraphSpaceID space,
-                                        EdgeType edge) {
+std::unique_ptr<RowReader> RowReader::getEdgePropReader(
+        folly::StringPiece row,
+        GraphSpaceID space,
+        EdgeType edge) {
     int32_t ver = getSchemaVer(row);
     if (ver > 0) {
-        return new RowReader(
+        return std::unique_ptr<RowReader>(new RowReader(
             row,
-            meta::SchemaManager::getEdgeSchema(space, edge, ver));
+            meta::SchemaManager::getEdgeSchema(space, edge, ver)));
     } else {
         // Invalid data
         // TODO We need a better error handler here
@@ -149,12 +151,12 @@ RowReader* RowReader::getEdgePropReader(folly::StringPiece row,
 
 
 // static
-RowReader* RowReader::getRowReader(
+std::unique_ptr<RowReader> RowReader::getRowReader(
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema) {
     int32_t ver = getSchemaVer(row);
     CHECK_EQ(ver, schema->getVersion());
-    return new RowReader(row, schema);
+    return std::unique_ptr<RowReader>(new RowReader(row, schema));
 }
 
 

@@ -20,7 +20,7 @@ TEST(RowWriter, withoutSchema) {
 
     std::string encoded = writer.encode();
     auto schema = std::make_shared<ResultSchemaProvider>(writer.moveSchema());
-    std::unique_ptr<RowReader> reader(RowReader::getRowReader(encoded, schema));
+    auto reader = RowReader::getRowReader(encoded, schema);
 
     EXPECT_EQ(0x00000000, reader->schemaVer());
     EXPECT_EQ(5, reader->numFields());
@@ -89,7 +89,7 @@ TEST(RowWriter, streamControl) {
 
     std::string encoded = writer.encode();
     auto schema = std::make_shared<ResultSchemaProvider>(writer.moveSchema());
-    std::unique_ptr<RowReader> reader(RowReader::getRowReader(encoded, schema));
+    auto reader = RowReader::getRowReader(encoded, schema);
 
     EXPECT_EQ(0x00000000, reader->schemaVer());
     EXPECT_EQ(4, reader->numFields());
@@ -131,7 +131,7 @@ TEST(RowWriter, offsetsCreation) {
 
     std::string encoded = writer.encode();
     auto schema = std::make_shared<ResultSchemaProvider>(writer.moveSchema());
-    std::unique_ptr<RowReader> reader(RowReader::getRowReader(encoded, schema));
+    auto reader = RowReader::getRowReader(encoded, schema);
 
     EXPECT_EQ(0x00000000, reader->schemaVer());
     EXPECT_EQ(33, reader->numFields());
@@ -157,7 +157,7 @@ TEST(RowWriter, withSchema) {
            << 3.1415926 /* By default, this is a double */
            << 1234567;
     std::string encoded = writer.encode();
-    std::unique_ptr<RowReader> reader(RowReader::getRowReader(encoded, schema));
+    auto reader = RowReader::getRowReader(encoded, schema);
 
     int64_t iVal;
     folly::StringPiece sVal;
@@ -218,7 +218,7 @@ TEST(RowWriter, skip) {
            << RowWriter::Skip(1) << "Hello"
            << RowWriter::Skip(1) << true;
     std::string encoded = writer.encode();
-    std::unique_ptr<RowReader> reader(RowReader::getRowReader(encoded, schema));
+    auto reader = RowReader::getRowReader(encoded, schema);
 
     int64_t iVal;
     float fVal;

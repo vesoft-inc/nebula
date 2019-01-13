@@ -15,16 +15,18 @@ TEST(RowReader, headerInfo) {
     // Sinplest row, nothing in it
     char data1[] = {0x00};
     auto schema1 = std::make_shared<SchemaWriter>();
-    std::unique_ptr<RowReader> reader1(
-        RowReader::getRowReader(folly::StringPiece(data1, sizeof(data1)), schema1));
+    auto reader1 = RowReader::getRowReader(
+        folly::StringPiece(data1, sizeof(data1)),
+        schema1);
     EXPECT_EQ(0, reader1->schemaVer());
     EXPECT_EQ(sizeof(data1), reader1->headerLen_);
 
     // With schema version
     char data2[] = {0x40, 0x01, static_cast<char>(0xFF)};
     auto schema2 = std::make_shared<SchemaWriter>(0x00FF01);
-    std::unique_ptr<RowReader> reader2(
-        RowReader::getRowReader(folly::StringPiece(data2, sizeof(data2)), schema2));
+    auto reader2 = RowReader::getRowReader(
+        folly::StringPiece(data2, sizeof(data2)),
+        schema2);
     EXPECT_EQ(0x0000FF01, reader2->schemaVer());
     EXPECT_EQ(sizeof(data2), reader2->headerLen_);
 
@@ -39,8 +41,9 @@ TEST(RowReader, headerInfo) {
     char data3[] = {0x60, 0x01, static_cast<char>(0xFF),
                     static_cast<char>(0xFF), 0x40,
                     static_cast<char>(0xF0)};
-    std::unique_ptr<RowReader> reader3(
-        RowReader::getRowReader(folly::StringPiece(data3, sizeof(data3)), schema3));
+    auto reader3 = RowReader::getRowReader(
+        folly::StringPiece(data3, sizeof(data3)),
+        schema3);
     EXPECT_EQ(0x00FFFF01, reader3->schemaVer());
     EXPECT_EQ(sizeof(data3), reader3->headerLen_);
     ASSERT_EQ(3, reader3->blockOffsets_.size());
@@ -56,8 +59,9 @@ TEST(RowReader, headerInfo) {
     }
 
     char data4[] = {0x01, static_cast<char>(0xFF), 0x40, 0x08, static_cast<char>(0xF0)};
-    std::unique_ptr<RowReader> reader4(
-        RowReader::getRowReader(folly::StringPiece(data4, sizeof(data4)), schema4));
+    auto reader4 = RowReader::getRowReader(
+        folly::StringPiece(data4, sizeof(data4)),
+        schema4);
     EXPECT_EQ(0, reader4->schemaVer());
     EXPECT_EQ(sizeof(data4), reader4->headerLen_);
     ASSERT_EQ(3, reader4->blockOffsets_.size());
@@ -143,7 +147,7 @@ TEST(RowReader, encodedData) {
     /**************************
      * Now let's read it
      *************************/
-    std::unique_ptr<RowReader> reader(RowReader::getRowReader(encoded, schema));
+    auto reader = RowReader::getRowReader(encoded, schema);
 
     // Header info
     EXPECT_EQ(0, reader->schemaVer());
@@ -267,7 +271,7 @@ TEST(RowReader, iterator) {
         encoded.append(1, i + 1);
     }
 
-    std::unique_ptr<RowReader> reader(RowReader::getRowReader(encoded, schema));
+    auto reader = RowReader::getRowReader(encoded, schema);
     auto it = reader->begin();
     int32_t v1;
     int32_t v2;
