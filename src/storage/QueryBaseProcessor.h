@@ -1,0 +1,66 @@
+/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+ *
+ * This source code is licensed under Apache 2.0 License
+ *  (found in the LICENSE.Apache file in the root directory)
+ */
+
+#ifndef STORAGE_QUERYBASEPROCESSOR_H_
+#define STORAGE_QUERYBASEPROCESSOR_H_
+
+#include "base/Base.h"
+#include "storage/BaseProcessor.h"
+#include "storage/Collector.h"
+
+namespace nebula {
+namespace storage {
+
+template<typename REQ, typename RESP>
+class QueryBaseProcessor : public BaseProcessor<RESP> {
+public:
+    virtual ~QueryBaseProcessor() = default;
+
+    void process(const cpp2::GetNeighborsRequest& req);
+
+protected:
+    QueryBaseProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
+        : BaseProcessor<RESP>(kvstore)
+        , schemaMan_(schemaMan) {}
+    /**
+     * Check whether current operatin on the data is valid or not.
+     * */
+    bool validOperation(cpp2::SupportedType vType, cpp2::StatType statType);
+
+    /**
+     * Check request meta is illegal or not. Return contexts for tag and edge.
+     * */
+    cpp2::ErrorCode checkAndBuildContexts(const REQ& req,
+                                          std::vector<TagContext>& tagContexts,
+                                          EdgeContext& edgeContext);
+    /**
+     * collect props in one row, you could define custom behavior by implement your own collector.
+     * */
+    void collectProps(SchemaProviderIf* rowSchema,
+                      folly::StringPiece& key,
+                      folly::StringPiece& val,
+                      std::vector<PropContext>& props,
+                      Collector* collector);
+
+    virtual kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
+                                              std::vector<TagContext>& tagContexts,
+                                              EdgeContext& edgeContext) = 0;
+
+    virtual void onProcessed(std::vector<TagContext>& tagContexts,
+                             EdgeContext& edgeContext,
+                             int32_t retNum) = 0;
+
+protected:
+    meta::SchemaManager* schemaMan_ = nullptr;
+    GraphSpaceID  spaceId_;
+};
+
+}  // namespace storage
+}  // namespace nebula
+
+#include "storage/QueryBaseProcessor.inl"
+
+#endif  // STORAGE_QUERYBASEPROCESSOR_H_

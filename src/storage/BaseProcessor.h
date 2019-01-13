@@ -8,14 +8,22 @@
 #define STORAGE_BASEPROCESSOR_H_
 
 #include "base/Base.h"
+#include <folly/SpinLock.h>
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
+#include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/include/KVStore.h"
+#include "meta/SchemaManager.h"
+#include "dataman/RowSetWriter.h"
+#include "dataman/RowReader.h"
+#include "dataman/RowWriter.h"
+#include "storage/Collector.h"
+#include "time/Duration.h"
 
 namespace nebula {
 namespace storage {
 
-template<typename REQ, typename RESP>
+template<typename RESP>
 class BaseProcessor {
 public:
     BaseProcessor(kvstore::KVStore* kvstore)
@@ -27,8 +35,6 @@ public:
         return promise_.getFuture();
     }
 
-    virtual void process(const REQ& req) = 0;
-
 protected:
     /**
      * Destroy current instance when finished.
@@ -38,27 +44,38 @@ protected:
         delete this;
     }
 
-    cpp2::ErrorCode to(kvstore::ResultCode code) {
-        switch (code) {
-        case kvstore::ResultCode::SUCCESSED:
-            return cpp2::ErrorCode::SUCCEEDED;
-        case kvstore::ResultCode::ERR_LEADER_CHANAGED:
-            return cpp2::ErrorCode::E_LEADER_CHANGED;
-        case kvstore::ResultCode::ERR_SPACE_NOT_FOUND:
-            return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-        case kvstore::ResultCode::ERR_PART_NOT_FOUND:
-            return cpp2::ErrorCode::E_PART_NOT_FOUND;
-        default:
-            return cpp2::ErrorCode::E_UNKNOWN;
-        }
+    void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);
+
+    cpp2::ColumnDef columnDef(std::string name, cpp2::SupportedType type) {
+        cpp2::ColumnDef column;
+        column.name = std::move(name);
+        column.type.type = type;
+        return column;
+    }
+
+    cpp2::ErrorCode to(kvstore::ResultCode code);
+
+    void pushResultCode(cpp2::ErrorCode code, PartitionID partId) {
+        cpp2::ResultCode thriftRet;
+        thriftRet.code = code;
+        thriftRet.part_id = partId;
+        resp_.codes.emplace_back(std::move(thriftRet));
     }
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
+
+    time::Duration duration_;
+    std::vector<cpp2::ResultCode> codes_;
+    folly::SpinLock lock_;
+    int32_t callingNum_;
 };
 
 }  // namespace storage
 }  // namespace nebula
+
+#include "storage/BaseProcessor.inl"
+
 #endif  // STORAGE_BASEPROCESSOR_H_
