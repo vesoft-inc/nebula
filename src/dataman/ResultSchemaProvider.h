@@ -31,7 +31,7 @@ public:
 
 
 public:
-    explicit ResultSchemaProvider(storage::cpp2::Schema&&);
+    explicit ResultSchemaProvider(storage::cpp2::Schema);
     virtual ~ResultSchemaProvider() = default;
 
     int32_t getLatestVer() const noexcept override;
