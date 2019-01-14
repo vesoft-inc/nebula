@@ -5,9 +5,7 @@
 # This source code is licensed under Apache 2.0 License
 #  (found in the LICENSE.Apache file in the root directory)
 
-PROJECT_PATH=$(cd `dirname $0`; pwd)
-PROJECT_NAME="${PROJECT_PATH##*/}"
-CPPLINT_FILE=$PROJECT_PATH"/../../cpplint/cpplint.py"
+CPPLINT_FILE=`dirname $0`/../../cpplint/cpplint.py
 
 if [ $# -eq 0 ];then
   CHECK_FILES=$(git diff --name-only HEAD)
@@ -17,7 +15,7 @@ fi
 
 CPPLINT_EXTENS=cpp,h
 CPPLINT_FITER=-whitespace/indent,-build/include_what_you_use,-readability/todo,-build/include,-build/header_guard,-runtime/references
-python $CPPLINT_FILE --extensions=$CPPLINT_EXTENS --filter=$CPPLINT_FITER --linelength=100 $CHECK_FILES 2>&1 
+python $CPPLINT_FILE --quiet --extensions=$CPPLINT_EXTENS --filter=$CPPLINT_FITER --linelength=100 $CHECK_FILES 2>&1 
 
 result=$?
 if [ $result -eq 0 ]
