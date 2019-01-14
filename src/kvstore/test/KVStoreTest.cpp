@@ -30,7 +30,8 @@ TEST(KVStoreTest, SimpleTest) {
         }
     }
 
-    LOG(INFO) << "Total space num " << partMan->partsMap_.size() << ", " << partMan->parts(HostAddr(0, 0)).size();
+    LOG(INFO) << "Total space num " << partMan->partsMap_.size()
+              << ", " << partMan->parts(HostAddr(0, 0)).size();
 
     auto dataPath = folly::stringPrintf("%s/disk1, %s/disk2", rootPath.path(), rootPath.path());
 
@@ -79,7 +80,7 @@ TEST(KVStoreTest, SimpleTest) {
     std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
     std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
     std::unique_ptr<StorageIter> iter;
-    EXPECT_EQ(ResultCode::SUCCESSED, kv->range(1, 1, s, e, iter));
+    EXPECT_EQ(ResultCode::SUCCESSED, kv->range(1, 1, s, e, &iter));
     int num = 0;
     while (iter->valid()) {
         auto key = *reinterpret_cast<const int32_t*>(iter->key().data());
