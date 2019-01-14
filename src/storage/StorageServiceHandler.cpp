@@ -8,7 +8,10 @@
 #include "base/Base.h"
 #include "storage/AddVerticesProcessor.h"
 #include "storage/AddEdgesProcessor.h"
-#include "storage/QueryProcessor.h"
+#include "storage/QueryBoundProcessor.h"
+#include "storage/QueryVertexPropsProcessor.h"
+#include "storage/QueryEdgePropsProcessor.h"
+#include "storage/QueryStatsProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -20,37 +23,37 @@ namespace storage {
 
 folly::Future<cpp2::QueryResponse>
 StorageServiceHandler::future_getOutBound(const cpp2::GetNeighborsRequest& req) {
-    auto* processor = QueryBoundProcessor::instance(kvstore_);
+    auto* processor = QueryBoundProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::QueryResponse>
 StorageServiceHandler::future_getInBound(const cpp2::GetNeighborsRequest& req) {
-    auto* processor = QueryBoundProcessor::instance(kvstore_);
+    auto* processor = QueryBoundProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::QueryResponse>
-StorageServiceHandler::future_outBoundStats(const cpp2::NeighborsStatsRequest& req) {
-    auto* processor = QueryStatsProcessor::instance(kvstore_);
+folly::Future<cpp2::QueryStatsResponse>
+StorageServiceHandler::future_outBoundStats(const cpp2::GetNeighborsRequest& req) {
+    auto* processor = QueryStatsProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::QueryResponse>
-StorageServiceHandler::future_inBoundStats(const cpp2::NeighborsStatsRequest& req) {
-    auto* processor = QueryStatsProcessor::instance(kvstore_);
+folly::Future<cpp2::QueryStatsResponse>
+StorageServiceHandler::future_inBoundStats(const cpp2::GetNeighborsRequest& req) {
+    auto* processor = QueryStatsProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::QueryResponse>
 StorageServiceHandler::future_getProps(const cpp2::VertexPropRequest& req) {
-    auto* processor = QueryVertexPropsProcessor::instance(kvstore_);
+    auto* processor = QueryVertexPropsProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::QueryResponse>
+folly::Future<cpp2::EdgePropResponse>
 StorageServiceHandler::future_getEdgeProps(const cpp2::EdgePropRequest& req) {
-    auto* processor = QueryEdgePropsProcessor::instance(kvstore_);
+    auto* processor = QueryEdgePropsProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 

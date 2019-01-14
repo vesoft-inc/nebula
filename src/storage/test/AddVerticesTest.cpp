@@ -8,18 +8,17 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
-#include "storage/test/StorageTestBase.h"
+#include "storage/test/TestUtils.h"
 #include "storage/AddVerticesProcessor.h"
 #include "storage/KeyUtils.h"
-
 
 namespace nebula {
 namespace storage {
 
 TEST(AddVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddVerticesTest.XXXXXX");
-    auto* kv = TestUtils::initKV(rootPath.path());
-    auto* processor = AddVerticesProcessor::instance(kv);
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto* processor = AddVerticesProcessor::instance(kv.get());
     LOG(INFO) << "Build AddVerticesRequest...";
     cpp2::AddVerticesRequest req ;
     req.space_id = 0;
