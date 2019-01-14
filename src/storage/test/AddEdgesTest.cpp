@@ -21,7 +21,7 @@ TEST(AddEdgesTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto* processor = AddEdgesProcessor::instance(kv.get());
     LOG(INFO) << "Build AddEdgesRequest...";
-    cpp2::AddEdgesRequest req ;
+    cpp2::AddEdgesRequest req;
     req.space_id = 0;
     req.overwritable = true;
     // partId => List<Edge>
@@ -61,7 +61,6 @@ TEST(AddEdgesTest, SimpleTest) {
             EXPECT_EQ(1, num);
         }
     }
-
 }
 
 }  // namespace storage

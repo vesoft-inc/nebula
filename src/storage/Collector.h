@@ -53,8 +53,8 @@ public:
 
 class PropsCollector : public Collector {
 public:
-    PropsCollector(RowWriter* writer)
-        : writer_(writer) {}
+    explicit PropsCollector(RowWriter* writer)
+                : writer_(writer) {}
 
     void collectInt32(ResultType ret, int32_t v, PropContext& prop) override {
         collect<int32_t>(ret, v, prop);
@@ -126,7 +126,6 @@ public:
             prop.count_++;
         }
     }
-
 };
 
 }  // namespace storage

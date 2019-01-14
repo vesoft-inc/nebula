@@ -55,7 +55,7 @@ std::string KeyUtils::prefix(PartitionID partId, VertexID vId) {
     return key;
 }
 
-//static
+// static
 std::string KeyUtils::prefix(PartitionID partId, VertexID src, EdgeType type,
                              VertexID dst, EdgeRanking ranking) {
     std::string key;

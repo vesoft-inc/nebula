@@ -20,7 +20,7 @@ TEST(AddVerticesTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto* processor = AddVerticesProcessor::instance(kv.get());
     LOG(INFO) << "Build AddVerticesRequest...";
-    cpp2::AddVerticesRequest req ;
+    cpp2::AddVerticesRequest req;
     req.space_id = 0;
     req.overwritable = true;
     // partId => List<Vertex>
@@ -66,7 +66,6 @@ TEST(AddVerticesTest, SimpleTest) {
             EXPECT_EQ(10, tagId);
         }
     }
-
 }
 
 }  // namespace storage

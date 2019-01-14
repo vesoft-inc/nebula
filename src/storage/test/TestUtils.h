@@ -20,20 +20,21 @@ class TestUtils {
 public:
     static kvstore::KVStore* initKV(const char* rootPath) {
         FLAGS_part_man_type = "memory";  // Use MemPartManager.
-        using namespace kvstore;
-        MemPartManager* partMan = reinterpret_cast<MemPartManager*>(PartManager::instance());
+        kvstore::MemPartManager* partMan = reinterpret_cast<kvstore::MemPartManager*>(
+                                                            kvstore::PartManager::instance());
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0, 1, 2, 3, 4, 5}
         auto& partsMap = partMan->partsMap();
         for (auto partId = 0; partId < 6; partId++) {
-            partsMap[0][partId] = PartMeta();
+            partsMap[0][partId] = kvstore::PartMeta();
         }
         auto dataPath = folly::stringPrintf("%s/disk1, %s/disk2", rootPath, rootPath);
         std::vector<std::string> paths;
         paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
         paths.push_back(folly::stringPrintf("%s/disk2", rootPath));
-        KVStoreImpl* kv = reinterpret_cast<KVStoreImpl*>(KVStore::instance(HostAddr(0, 0),
-                                                                       std::move(paths)));
+        kvstore::KVStoreImpl* kv = reinterpret_cast<kvstore::KVStoreImpl*>(
+                                                        kvstore::KVStore::instance(HostAddr(0, 0),
+                                                        std::move(paths)));
         return kv;
     }
 
@@ -46,13 +47,14 @@ public:
         // VertexProp => {tagId, tags}
         std::vector<cpp2::Vertex> vertices;
         VertexID vertexID = 0;
-        while (vertexID < verticesNum){
+        while (vertexID < verticesNum) {
               TagID tagID = 0;
               std::vector<cpp2::Tag> tags;
-              while (tagID < tagsNum){
+              while (tagID < tagsNum) {
                     tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                       tagID,
-                                      folly::stringPrintf("%d_%ld_%d", partitionID, vertexID, tagID++));
+                                      folly::stringPrintf("%d_%ld_%d",
+                                                          partitionID, vertexID, tagID++));
                }
                vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                      vertexID++,
@@ -84,7 +86,7 @@ public:
     /**
      * It will generate tag SchemaProvider with some int fields and string fields
      * */
-    static SchemaProviderIf* genTagSchemaProvider(TagID tagId, 
+    static SchemaProviderIf* genTagSchemaProvider(TagID tagId,
                                                   int32_t intFieldsNum,
                                                   int32_t stringFieldsNum) {
         cpp2::Schema schema;
@@ -113,7 +115,8 @@ public:
         return prop;
     }
 
-    static cpp2::PropDef propDef(cpp2::PropOwner owner, std::string name, cpp2::StatType type, TagID tagId = -1) {
+    static cpp2::PropDef propDef(cpp2::PropOwner owner, std::string name,
+                                 cpp2::StatType type, TagID tagId = -1) {
         auto prop = TestUtils::propDef(owner, name, tagId);
         prop.set_stat(type);
         return prop;

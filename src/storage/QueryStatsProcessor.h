@@ -23,7 +23,8 @@ public:
 
 private:
     QueryStatsProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
-        : QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryStatsResponse>(kvstore, schemaMan) {}
+        : QueryBaseProcessor<cpp2::GetNeighborsRequest,
+                             cpp2::QueryStatsResponse>(kvstore, schemaMan) {}
 
     kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
                                       std::vector<TagContext>& tagContexts,
