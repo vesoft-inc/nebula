@@ -42,7 +42,7 @@ public:
      * Generate edge key for kv store
      * */
     static std::string edgeKey(PartitionID partId, VertexID srcId,
-                               VertexID dstId, EdgeType type,
+                               EdgeType type, VertexID dstId,
                                EdgeRanking rank, EdgeVersion ts);
 
     /**
@@ -55,6 +55,9 @@ public:
      * */
     static std::string prefix(PartitionID partId, VertexID vId);
 
+    static std::string prefix(PartitionID partId, VertexID src, EdgeType type,
+                              VertexID dst, EdgeRanking ranking);
+
     static bool isVertex(const std::string& rawKey) {
         return rawKey.size() == kVertexLen;
     }
@@ -66,12 +69,12 @@ public:
     /**
      * Parse vertex from rawKey, return false if failed.
      * */
-    static bool parseVertex(const std::string& rawKey, Vertex& vertex);
+//    static bool parseVertex(const std::string& rawKey, Vertex& vertex);
 
     /**
      * Parse edge from rawkey, return false if failed.
      **/
-    static bool parseEdge(const std::string& rawKey, Edge& edge);
+//    static bool parseEdge(const std::string& rawKey, Edge& edge);
 
 private:
     KeyUtils() = delete;

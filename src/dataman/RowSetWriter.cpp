@@ -17,6 +17,7 @@ RowSetWriter::RowSetWriter(const SchemaProviderIf* schema,
 
 
 void RowSetWriter::writeRowLength(int64_t len) {
+    VLOG(3) << "Write row length " << len;
     uint8_t buf[10];
     size_t lenBytes = folly::encodeVarint(len, buf);
     DCHECK_GT(lenBytes, 0UL);

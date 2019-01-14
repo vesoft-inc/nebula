@@ -43,7 +43,7 @@ TEST(LeaderElection, ElectionAfterBoot) {
 TEST(LeaderElection, LeaderCrash) {
     LOG(INFO) << "=====> Start LeaderCrash test";
 
-    fs::TempDir walRoot("/tmp/leader_election.XXXXXX");
+    fs::TempDir walRoot("/tmp/leader_crash.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
     std::vector<HostAddr> allHosts;
