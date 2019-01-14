@@ -10,12 +10,14 @@
 namespace nebula {
 
 std::string ShowSentence::toString() const {
+    std::string buf;
     switch (showKind_) {
         case ShowKind::kShowHosts:
-            std::string buf = "SHOW HOSTS";
+            buf = "SHOW HOSTS";
             break;
+        case ShowKind::kUnknown:
         default:
-            LOG(FATAL) << "Show Sentence kind illegal: " << kind_;
+            LOG(FATAL) << "Show Sentence kind illegal: " << showKind_;
             break;
     }
     return buf;

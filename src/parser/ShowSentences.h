@@ -14,16 +14,12 @@ namespace nebula {
 
 class ShowSentence final : public Sentence {
 public:
-    explicit ShowSentence(string cmdstr) {
+    explicit ShowSentence(std::string cmdstr) {
         kind_ = Kind::kShow;
-        switch (cmdstr) {
-            case "hosts":
-                showKind_ = Show_Kind::kShowHosts;
-                break;
-            default:
-                LOG(FATAL) << "Show Sentence kind illegal: " << cmdstr;
-                break;
-        }
+        if (cmdstr.compare("hosts") == 0)
+            showKind_ = ShowKind::kShowHosts;
+        else
+            LOG(FATAL) << "Show Sentence kind illegal: " << cmdstr;
     }
 
     std::string toString() const override;
@@ -39,6 +35,10 @@ public:
 private:
     ShowKind                showKind_{ShowKind::kUnknown};
 };
+
+inline std::ostream& operator<<(std::ostream &os, ShowSentence::ShowKind kind) {
+    return os << static_cast<uint32_t>(kind);
+}
 
 }   // namespace nebula
 

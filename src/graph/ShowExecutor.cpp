@@ -26,9 +26,9 @@ Status ShowExecutor::prepare() {
 
 void ShowExecutor::execute() {
     // TODO(YT) when StorageClient fininshed, then implement this interface
-    auto show_kind = sentence->showKind();
+    auto show_kind = sentence_->showKind();
     switch (show_kind) {
-        case (ShowSentence::ShowKind::KShowHost):
+        case (ShowSentence::ShowKind::kShowHosts):
             DCHECK(onFinish_);
             onFinish_();
             break;
