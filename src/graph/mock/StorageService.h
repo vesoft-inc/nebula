@@ -19,7 +19,7 @@ namespace graph {
 
 class StorageService {
 public:
-    StorageService(SchemaManager *sm);
+    explicit StorageService(SchemaManager *sm);
 
     folly::SemiFuture<Status> addTag(const std::string *tag,
                                      int64_t id,
