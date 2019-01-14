@@ -26,7 +26,6 @@ public:
 private:
     QueryVertexPropsProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
         : QueryBoundProcessor(kvstore, schemaMan) {}
-
 };
 
 }  // namespace storage

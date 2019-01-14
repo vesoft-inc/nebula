@@ -43,7 +43,7 @@ QueryStatsProcessor::collectEdgesStats(PartitionID partId, VertexID vId, EdgeTyp
     if (ret != kvstore::ResultCode::SUCCESSED || !iter) {
         return ret;
     }
-    while(iter->valid()) {
+    while (iter->valid()) {
         auto key = iter->key();
         auto val = iter->val();
         collectProps(edgeSchema, key, val, props, &collector_);
@@ -55,7 +55,7 @@ QueryStatsProcessor::collectEdgesStats(PartitionID partId, VertexID vId, EdgeTyp
 void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
     RowWriter writer;
     for (auto& prop : props) {
-        switch(prop.prop_.stat) {
+        switch (prop.prop_.stat) {
             case cpp2::StatType::SUM: {
                 switch (prop.sum_.which()) {
                     case 0:
@@ -83,7 +83,8 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
             case cpp2::StatType::AVG: {
                 switch (prop.sum_.which()) {
                     case 0:
-                        writer << (double)boost::get<int64_t>(prop.sum_) / prop.count_;
+                        writer << static_cast<double>(boost::get<int64_t>(prop.sum_))
+                                  / prop.count_;
                         break;
                     case 1:
                         writer << boost::get<double>(prop.sum_) / prop.count_;

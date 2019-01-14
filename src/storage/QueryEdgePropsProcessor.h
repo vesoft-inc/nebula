@@ -51,7 +51,6 @@ private:
         UNUSED(retNum);
         LOG(FATAL) << "Unimplement!";
     }
-
 };
 
 }  // namespace storage
