@@ -70,7 +70,8 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 2; i++) {
         tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE,
-                                                   folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
+                                                   folly::stringPrintf("tag_%d_col_%d",
+                                                                       3001 + i*2, i*2),
                                                    cpp2::StatType::AVG,
                                                    3001 + i*2));
     }
@@ -110,7 +111,7 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
         const auto* ftype = provider->getFieldType(i, 0);
         EXPECT_EQ(name,  std::get<0>(expected[i]));
         EXPECT_TRUE(ftype->type == std::get<1>(expected[i]));
-        switch(ftype->type) {
+        switch (ftype->type) {
             case cpp2::SupportedType::INT: {
                 int64_t v;
                 auto ret = reader.getInt<int64_t>(i, v);
@@ -131,7 +132,6 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
             }
         }
     }
-
 }
 
 TEST(QueryStatsTest, StatsSimpleTest) {

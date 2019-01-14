@@ -82,8 +82,9 @@ private:
 private:
     static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(VertexID)
                                         + sizeof(TagID) + sizeof(TagVersion);
-    static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType)
-                                      + sizeof(VertexID) + sizeof(EdgeRanking) + sizeof(EdgeVersion);
+    static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexID)
+                                      + sizeof(EdgeType) + sizeof(VertexID)
+                                      + sizeof(EdgeRanking) + sizeof(EdgeVersion);
 };
 
 }  // namespace storage
