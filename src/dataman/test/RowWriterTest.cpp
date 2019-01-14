@@ -16,7 +16,7 @@ TEST(RowWriter, withoutSchema) {
     RowWriter writer(nullptr, 0x0000FFFF);
     writer << true << 10 << "Hello World!"
            << 3.1415926  // By default, this will be a double
-           << (float)3.1415926;
+           << static_cast<float>(3.1415926);
 
     std::string encoded = writer.encode();
     ResultSchemaProvider schema(writer.moveSchema());
@@ -85,7 +85,7 @@ TEST(RowWriter, streamControl) {
            << RowWriter::ColType(storage::cpp2::SupportedType::STRING)
            << "Hello World!"
            << RowWriter::ColType(storage::cpp2::SupportedType::DOUBLE)
-           << (float)3.1415926;
+           << static_cast<float>(3.1415926);
 
     std::string encoded = writer.encode();
     ResultSchemaProvider schema(writer.moveSchema());

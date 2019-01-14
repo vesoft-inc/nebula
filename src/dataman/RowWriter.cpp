@@ -9,7 +9,8 @@
 
 namespace nebula {
 
-using namespace storage;
+using storage::cpp2::Schema;
+using storage::cpp2::SupportedType;
 
 RowWriter::RowWriter(SchemaProviderIf* schema, int32_t schemaVer)
         : schema_(schema)
@@ -73,11 +74,11 @@ void RowWriter::encodeTo(std::string& encoded) noexcept {
 }
 
 
-cpp2::Schema RowWriter::moveSchema() {
+Schema RowWriter::moveSchema() {
     if (schemaWriter_) {
         return std::move(schemaWriter_->moveSchema());
     } else {
-        return cpp2::Schema();
+        return Schema();
     }
 }
 
@@ -102,7 +103,7 @@ RowWriter& RowWriter::operator<<(bool v) noexcept {
     RW_GET_COLUMN_TYPE(BOOL)
 
     switch (type->get_type()) {
-        case cpp2::SupportedType::BOOL:
+        case SupportedType::BOOL:
             cord_ << v;
             break;
         default:
@@ -121,15 +122,15 @@ RowWriter& RowWriter::operator<<(float v) noexcept {
     RW_GET_COLUMN_TYPE(FLOAT)
 
     switch (type->get_type()) {
-        case cpp2::SupportedType::FLOAT:
+        case SupportedType::FLOAT:
             cord_ << v;
             break;
-        case cpp2::SupportedType::DOUBLE:
+        case SupportedType::DOUBLE:
             cord_ << static_cast<double>(v);
             break;
         default:
             LOG(ERROR) << "Incompatible value type \"float\"";
-            cord_ << (float)0.0;
+            cord_ << static_cast<float>(0.0);
             break;
     }
 
@@ -142,15 +143,15 @@ RowWriter& RowWriter::operator<<(double v) noexcept {
     RW_GET_COLUMN_TYPE(DOUBLE)
 
     switch (type->get_type()) {
-        case cpp2::SupportedType::FLOAT:
+        case SupportedType::FLOAT:
             cord_ << static_cast<float>(v);
             break;
-        case cpp2::SupportedType::DOUBLE:
+        case SupportedType::DOUBLE:
             cord_ << v;
             break;
         default:
             LOG(ERROR) << "Incompatible value type \"double\"";
-            cord_ << (double)0.0;
+            cord_ << static_cast<double>(0.0);
             break;
     }
 
@@ -167,7 +168,7 @@ RowWriter& RowWriter::operator<<(folly::StringPiece v) noexcept {
     RW_GET_COLUMN_TYPE(STRING)
 
     switch (type->get_type()) {
-        case cpp2::SupportedType::STRING: {
+        case SupportedType::STRING: {
             writeInt(v.size());
             cord_ << v;
             break;
@@ -219,28 +220,28 @@ RowWriter& RowWriter::operator<<(Skip&& skip) noexcept {
                               schema_->getNumFields(schemaVer_));
     for (int i = colNum_; i < skipTo; i++) {
         switch (schema_->getFieldType(i, schemaVer_)->get_type()) {
-            case cpp2::SupportedType::BOOL: {
+            case SupportedType::BOOL: {
                 cord_ << false;
                 break;
             }
-            case cpp2::SupportedType::INT: {
+            case SupportedType::INT: {
                 writeInt(0);
                 break;
             }
-            case cpp2::SupportedType::FLOAT: {
-                cord_ << (float)0.0;
+            case SupportedType::FLOAT: {
+                cord_ << static_cast<float>(0.0);
                 break;
             }
-            case cpp2::SupportedType::DOUBLE: {
-                cord_ << (double)0.0;
+            case SupportedType::DOUBLE: {
+                cord_ << static_cast<double>(0.0);
                 break;
             }
-            case cpp2::SupportedType::STRING: {
+            case SupportedType::STRING: {
                 writeInt(0);
                 break;
             }
-            case cpp2::SupportedType::VID: {
-                cord_ << (uint64_t)0;
+            case SupportedType::VID: {
+                cord_ << static_cast<uint64_t>(0);
                 break;
             }
             default: {

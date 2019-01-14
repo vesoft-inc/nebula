@@ -9,17 +9,17 @@
 
 namespace nebula {
 
-using namespace folly::hash;
-using namespace storage;
+using folly::hash::SpookyHashV2;
+using storage::cpp2::ColumnDef;
+using storage::cpp2::ValueType;
+using storage::cpp2::Schema;
 
 /***********************************
  *
  * ResultSchemaField
  *
  **********************************/
-ResultSchemaProvider::ResultSchemaField::ResultSchemaField(
-    const cpp2::ColumnDef* col)
-        : column_(col) {
+ResultSchemaProvider::ResultSchemaField::ResultSchemaField(const ColumnDef* col) : column_(col) {
 }
 
 
@@ -29,7 +29,7 @@ const char* ResultSchemaProvider::ResultSchemaField::getName() const {
 }
 
 
-const cpp2::ValueType* ResultSchemaProvider::ResultSchemaField::getType() const {
+const ValueType* ResultSchemaProvider::ResultSchemaField::getType() const {
     DCHECK(!!column_);
     return &(column_->get_type());
 }
@@ -45,13 +45,11 @@ bool ResultSchemaProvider::ResultSchemaField::isValid() const {
  * ResultSchemaProvider
  *
  **********************************/
-ResultSchemaProvider::ResultSchemaProvider(cpp2::Schema schema)
+ResultSchemaProvider::ResultSchemaProvider(Schema schema)
         : columns_(std::move(schema.get_columns())) {
-    for (auto i = 0UL; i< columns_.size(); i++) {
+    for (auto i = 0UL; i < columns_.size(); i++) {
         const std::string& name = columns_[i].get_name();
-        nameIndex_.emplace(
-            std::make_pair(SpookyHashV2::Hash64(name.data(), name.size(), 0), i)
-        );
+        nameIndex_.emplace(std::make_pair(SpookyHashV2::Hash64(name.data(), name.size(), 0), i));
     }
 }
 
@@ -66,8 +64,7 @@ int32_t ResultSchemaProvider::getNumFields(int32_t /*ver*/) const noexcept {
 }
 
 
-int32_t ResultSchemaProvider::getFieldIndex(const folly::StringPiece name,
-                                            int32_t ver) const {
+int32_t ResultSchemaProvider::getFieldIndex(const folly::StringPiece name, int32_t ver) const {
     UNUSED(ver);
     uint64_t hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
     auto iter = nameIndex_.find(hash);
@@ -78,8 +75,7 @@ int32_t ResultSchemaProvider::getFieldIndex(const folly::StringPiece name,
 }
 
 
-const char* ResultSchemaProvider::getFieldName(int32_t index,
-                                               int32_t ver) const {
+const char* ResultSchemaProvider::getFieldName(int32_t index, int32_t ver) const {
     UNUSED(ver);
     if (index < 0 || index >= static_cast<int32_t>(columns_.size())) {
         return nullptr;
@@ -88,8 +84,7 @@ const char* ResultSchemaProvider::getFieldName(int32_t index,
 }
 
 
-const cpp2::ValueType* ResultSchemaProvider::getFieldType(int32_t index,
-                                                          int32_t ver) const {
+const ValueType* ResultSchemaProvider::getFieldType(int32_t index, int32_t ver) const {
     UNUSED(ver);
     if (index < 0 || index >= static_cast<int32_t>(columns_.size())) {
         return nullptr;
@@ -99,7 +94,7 @@ const cpp2::ValueType* ResultSchemaProvider::getFieldType(int32_t index,
 }
 
 
-const cpp2::ValueType* ResultSchemaProvider::getFieldType(
+const ValueType* ResultSchemaProvider::getFieldType(
         const folly::StringPiece name,
         int32_t ver) const {
     int32_t index = getFieldIndex(name, ver);

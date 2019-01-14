@@ -9,62 +9,64 @@
 #include "dataman/SchemaWriter.h"
 #include "dataman/RowWriter.h"
 
-using namespace nebula;
-using namespace nebula::storage;
+using nebula::SchemaWriter;
+using nebula::RowWriter;
+using nebula::SchemaProviderIf;
+using nebula::storage::cpp2::SupportedType;
 
-SchemaWriter schemaAllInts;
-SchemaWriter schemaAllBools;
-SchemaWriter schemaAllStrings;
-SchemaWriter schemaAllDoubles;
-SchemaWriter schemaAllVids;
-SchemaWriter schemaMix;
+static SchemaWriter schemaAllInts;
+static SchemaWriter schemaAllBools;
+static SchemaWriter schemaAllStrings;
+static SchemaWriter schemaAllDoubles;
+static SchemaWriter schemaAllVids;
+static SchemaWriter schemaMix;
 
 void prepareSchema() {
     for (int i = 0; i < 32; i++) {
         schemaAllInts.appendCol(folly::stringPrintf("col%02d", i),
-                                cpp2::SupportedType::INT);
+                                SupportedType::INT);
         schemaAllBools.appendCol(folly::stringPrintf("col%02d", i),
-                                 cpp2::SupportedType::BOOL);
+                                 SupportedType::BOOL);
         schemaAllStrings.appendCol(folly::stringPrintf("col%02d", i),
-                                   cpp2::SupportedType::STRING);
+                                   SupportedType::STRING);
         schemaAllDoubles.appendCol(folly::stringPrintf("col%02d", i),
-                                   cpp2::SupportedType::DOUBLE);
+                                   SupportedType::DOUBLE);
         schemaAllVids.appendCol(folly::stringPrintf("col%02d", i),
-                                cpp2::SupportedType::VID);
+                                SupportedType::VID);
     }
 
-    schemaMix.appendCol("col01", cpp2::SupportedType::BOOL)
-             .appendCol("col02", cpp2::SupportedType::BOOL)
-             .appendCol("col03", cpp2::SupportedType::BOOL)
-             .appendCol("col04", cpp2::SupportedType::BOOL)
-             .appendCol("col05", cpp2::SupportedType::INT)
-             .appendCol("col06", cpp2::SupportedType::INT)
-             .appendCol("col07", cpp2::SupportedType::INT)
-             .appendCol("col08", cpp2::SupportedType::INT)
-             .appendCol("col09", cpp2::SupportedType::STRING)
-             .appendCol("col10", cpp2::SupportedType::STRING)
-             .appendCol("col11", cpp2::SupportedType::STRING)
-             .appendCol("col12", cpp2::SupportedType::STRING)
-             .appendCol("col13", cpp2::SupportedType::FLOAT)
-             .appendCol("col14", cpp2::SupportedType::FLOAT)
-             .appendCol("col15", cpp2::SupportedType::FLOAT)
-             .appendCol("col16", cpp2::SupportedType::FLOAT)
-             .appendCol("col17", cpp2::SupportedType::DOUBLE)
-             .appendCol("col18", cpp2::SupportedType::DOUBLE)
-             .appendCol("col19", cpp2::SupportedType::DOUBLE)
-             .appendCol("col20", cpp2::SupportedType::DOUBLE)
-             .appendCol("col21", cpp2::SupportedType::VID)
-             .appendCol("col22", cpp2::SupportedType::VID)
-             .appendCol("col23", cpp2::SupportedType::VID)
-             .appendCol("col24", cpp2::SupportedType::VID)
-             .appendCol("col25", cpp2::SupportedType::INT)
-             .appendCol("col26", cpp2::SupportedType::INT)
-             .appendCol("col27", cpp2::SupportedType::INT)
-             .appendCol("col28", cpp2::SupportedType::INT)
-             .appendCol("col29", cpp2::SupportedType::INT)
-             .appendCol("col30", cpp2::SupportedType::INT)
-             .appendCol("col31", cpp2::SupportedType::INT)
-             .appendCol("col32", cpp2::SupportedType::INT);
+    schemaMix.appendCol("col01", SupportedType::BOOL)
+             .appendCol("col02", SupportedType::BOOL)
+             .appendCol("col03", SupportedType::BOOL)
+             .appendCol("col04", SupportedType::BOOL)
+             .appendCol("col05", SupportedType::INT)
+             .appendCol("col06", SupportedType::INT)
+             .appendCol("col07", SupportedType::INT)
+             .appendCol("col08", SupportedType::INT)
+             .appendCol("col09", SupportedType::STRING)
+             .appendCol("col10", SupportedType::STRING)
+             .appendCol("col11", SupportedType::STRING)
+             .appendCol("col12", SupportedType::STRING)
+             .appendCol("col13", SupportedType::FLOAT)
+             .appendCol("col14", SupportedType::FLOAT)
+             .appendCol("col15", SupportedType::FLOAT)
+             .appendCol("col16", SupportedType::FLOAT)
+             .appendCol("col17", SupportedType::DOUBLE)
+             .appendCol("col18", SupportedType::DOUBLE)
+             .appendCol("col19", SupportedType::DOUBLE)
+             .appendCol("col20", SupportedType::DOUBLE)
+             .appendCol("col21", SupportedType::VID)
+             .appendCol("col22", SupportedType::VID)
+             .appendCol("col23", SupportedType::VID)
+             .appendCol("col24", SupportedType::VID)
+             .appendCol("col25", SupportedType::INT)
+             .appendCol("col26", SupportedType::INT)
+             .appendCol("col27", SupportedType::INT)
+             .appendCol("col28", SupportedType::INT)
+             .appendCol("col29", SupportedType::INT)
+             .appendCol("col30", SupportedType::INT)
+             .appendCol("col31", SupportedType::INT)
+             .appendCol("col32", SupportedType::INT);
 }
 
 

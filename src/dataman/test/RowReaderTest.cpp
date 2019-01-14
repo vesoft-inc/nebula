@@ -20,7 +20,7 @@ TEST(RowReader, headerInfo) {
     EXPECT_EQ(sizeof(data1), reader1.headerLen_);
 
     // With schema version
-    char data2[] = {0x40, 0x01, (char)0xFF};
+    char data2[] = {0x40, 0x01, static_cast<char>(0xFF)};
     RowReader reader2(&schema, folly::StringPiece(data2, sizeof(data2)));
     EXPECT_EQ(0x0000FF01, reader2.schemaVer());
     EXPECT_EQ(sizeof(data2), reader2.headerLen_);
@@ -32,7 +32,8 @@ TEST(RowReader, headerInfo) {
     }
 
     // With schema version and offsets
-    char data3[] = {0x60, 0x01, (char)0xFF, (char)0xFF, 0x40, (char)0xF0};
+    char data3[] = {0x60, 0x01, static_cast<char>(0xFF),
+                    static_cast<char>(0xFF), 0x40, static_cast<char>(0xFF)};
     RowReader reader3(&schema, folly::StringPiece(data3, sizeof(data3)));
     EXPECT_EQ(0x00FFFF01, reader3.schemaVer());
     EXPECT_EQ(sizeof(data3), reader3.headerLen_);
@@ -42,7 +43,7 @@ TEST(RowReader, headerInfo) {
     EXPECT_EQ(0x00F0, reader3.blockOffsets_[2].first);
 
     // No schema version, with offsets
-    char data4[] = {0x01, (char)0xFF, 0x40, 0x08, (char)0xF0};
+    char data4[] = {0x01, static_cast<char>(0xFF), 0x40, 0x08, static_cast<char>(0xFF)};
     RowReader reader4(&schema, folly::StringPiece(data4, sizeof(data4)));
     EXPECT_EQ(0, reader4.schemaVer());
     EXPECT_EQ(sizeof(data4), reader4.headerLen_);
