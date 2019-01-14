@@ -31,6 +31,8 @@ protected:
 
 class MemorySchemaManager : public SchemaManager {
 public:
+    ~MemorySchemaManager();
+
     using EdgeSchema
         = std::unordered_map<GraphSpaceID, std::unordered_map<EdgeType, SchemaProviderIf*>>;
 

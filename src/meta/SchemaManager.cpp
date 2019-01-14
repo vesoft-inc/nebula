@@ -15,6 +15,20 @@ SchemaManager* SchemaManager::instance() {
 }
 
 
+MemorySchemaManager::~MemorySchemaManager() {
+    for (auto &space : edgeSchema_) {
+        for (auto &schema : space.second) {
+            delete schema.second;
+        }
+    }
+    for (auto &space : tagSchema_) {
+        for (auto &schema : space.second) {
+            delete schema.second;
+        }
+    }
+}
+
+
 }  // namespace meta
 }  // namespace nebula
 
