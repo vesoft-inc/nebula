@@ -226,3 +226,17 @@ add_custom_target(
     DEPENDS clean-all
 )
 
+set(PRE_COMMIT_HOOK ${CMAKE_CURRENT_SOURCE_DIR}/.git/hooks/pre-commit)
+if(EXISTS ${PRE_COMMIT_HOOK})
+	MESSAGE(STATUS "Remove pre commit hook")
+	FILE(REMOVE ${PRE_COMMIT_HOOK})
+endif()
+
+MESSAGE(STATUS "Create pre commit hook")
+execute_process(COMMAND "ln" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/cpplint/style_checker.sh ${PRE_COMMIT_HOOK}
+	RESULT_VARIABLE result)
+IF(NOT ${result})
+  MESSAGE(STATUS "pre-commit hook create successed")
+ELSE()
+  MESSAGE(STATUS "pre-commit hook create failed")
+ENDIF()
