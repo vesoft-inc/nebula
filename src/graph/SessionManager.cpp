@@ -50,7 +50,7 @@ std::shared_ptr<ClientSession> SessionManager::createSession() {
         // This ID is in use already, try another one
         sid = newSessionId();
     }
-    DCHECK(sid != 0L);
+    DCHECK_NE(sid, 0L);
     auto session = ClientSession::create(sid);
     activeSessions_[sid] = session;
     session->charge();

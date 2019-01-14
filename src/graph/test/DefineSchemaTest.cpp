@@ -23,7 +23,6 @@ protected:
         // ...
         TestBase::TearDown();
     }
-
 };
 
 

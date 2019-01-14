@@ -23,7 +23,6 @@ public:
     void addColumn(std::string name) {
         columns_.emplace_back();
         columns_.back().name_ = std::move(name);
-
     }
 
     std::string toString() const {
@@ -50,8 +49,7 @@ private:
 
 class TraverseExecutor : public Executor {
 public:
-    TraverseExecutor(ExecutionContext *ectx) : Executor(ectx) {
-    }
+    explicit TraverseExecutor(ExecutionContext *ectx) : Executor(ectx) {}
 
     using TraverseRecord = std::vector<VariantType>;
     using TraverseRecords = std::vector<TraverseRecord>;
