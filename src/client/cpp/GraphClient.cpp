@@ -29,10 +29,11 @@ GraphClient::~GraphClient() {
 
 
 cpp2::ErrorCode GraphClient::connect(const std::string& username,
-                                       const std::string& password) {
-    using namespace apache::thrift;
+                                     const std::string& password) {
+    using apache::thrift::async::TAsyncSocket;
+    using apache::thrift::HeaderClientChannel;
 
-    auto socket = async::TAsyncSocket::newSocket(
+    auto socket = TAsyncSocket::newSocket(
         folly::EventBaseManager::get()->getEventBase(),
         addr_,
         port_,
@@ -72,7 +73,7 @@ void GraphClient::disconnect() {
 
 
 cpp2::ErrorCode GraphClient::execute(folly::StringPiece stmt,
-                                       cpp2::ExecutionResponse& resp) {
+                                     cpp2::ExecutionResponse& resp) {
     if (!client_) {
         LOG(ERROR) << "Disconnected from the server";
         return cpp2::ErrorCode::E_DISCONNECTED;
