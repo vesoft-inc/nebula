@@ -22,7 +22,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                        RowSetWriter& rsWriter) {
     auto prefix = KeyUtils::prefix(partId, edgeKey.src, edgeKey.edge_type, edgeKey.dst, edgeKey.ranking);
     std::unique_ptr<kvstore::StorageIter> iter;
-    auto ret = kvstore_->prefix(spaceId_, partId, prefix, iter);
+    auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
     // Only use the latest version.
     if (iter && iter->valid()) {
         RowWriter writer;

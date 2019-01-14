@@ -31,7 +31,7 @@ public:
     virtual ResultCode get(GraphSpaceID spaceId,
                            PartitionID  partId,
                            const std::string& key,
-                           std::string& value) = 0;
+                           std::string* value) = 0;
     /**
      * Get all results in range [start, end)
      * */
@@ -39,7 +39,7 @@ public:
                              PartitionID  partId,
                              const std::string& start,
                              const std::string& end,
-                             std::unique_ptr<StorageIter>& iter) = 0;
+                             std::unique_ptr<StorageIter>* iter) = 0;
 
     /**
      * Get all results with prefix.
@@ -47,7 +47,7 @@ public:
     virtual ResultCode prefix(GraphSpaceID spaceId,
                               PartitionID  partId,
                               const std::string& prefix,
-                              std::unique_ptr<StorageIter>& iter) = 0;
+                              std::unique_ptr<StorageIter>* iter) = 0;
 
 
     virtual ResultCode asyncMultiPut(GraphSpaceID spaceId,

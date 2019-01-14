@@ -51,7 +51,7 @@ TEST(AddEdgesTest, SimpleTest) {
         for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
             auto prefix = KeyUtils::prefix(partId, srcId, srcId*100 + 1);
             std::unique_ptr<kvstore::StorageIter> iter;
-            EXPECT_EQ(kvstore::ResultCode::SUCCESSED, kv->prefix(0, partId, prefix, iter));
+            EXPECT_EQ(kvstore::ResultCode::SUCCESSED, kv->prefix(0, partId, prefix, &iter));
             int num = 0;
             while (iter->valid()) {
                 EXPECT_EQ(folly::stringPrintf("%d_%d", partId, srcId), iter->val());
