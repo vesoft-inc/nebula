@@ -64,7 +64,8 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
        tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE,
-                                                  folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
+                                                  folly::stringPrintf("tag_%d_col_%d",
+                                                                      3001 + i*2, i*2),
                                                   3001 + i*2));
     }
     req.set_return_columns(std::move(tmpColumns));

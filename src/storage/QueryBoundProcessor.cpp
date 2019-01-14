@@ -53,7 +53,7 @@ kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
     if (ret != kvstore::ResultCode::SUCCESSED || !iter) {
         return ret;
     }
-    while(iter->valid()) {
+    while (iter->valid()) {
         RowWriter writer;
         auto key = iter->key();
         auto val = iter->val();

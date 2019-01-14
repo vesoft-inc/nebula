@@ -22,8 +22,8 @@ public:
     void process(const cpp2::AddVerticesRequest& req);
 
 private:
-    AddVerticesProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResponse>(kvstore) {}
+    explicit AddVerticesProcessor(kvstore::KVStore* kvstore)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore) {}
 };
 
 

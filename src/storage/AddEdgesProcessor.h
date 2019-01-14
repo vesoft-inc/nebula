@@ -22,9 +22,8 @@ public:
     void process(const cpp2::AddEdgesRequest& req);
 
 private:
-    AddEdgesProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResponse>(kvstore) {}
-
+    explicit AddEdgesProcessor(kvstore::KVStore* kvstore)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore) {}
 };
 
 }  // namespace storage

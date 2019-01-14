@@ -16,16 +16,14 @@ namespace nebula {
 namespace storage {
 
 TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
-
     fs::TempDir rootPath("/tmp/FutureAddVerticesTest.XXXXXX");
     cpp2::AddVerticesRequest req;
     req.set_space_id(0);
     req.overwritable = true;
 
     LOG(INFO) << "Build FutureAddVerticesTest...";
-    req.vertices.emplace(0, TestUtils::setupVertices(0,10,10));
-    req.vertices.emplace(1, TestUtils::setupVertices(1,20,30));
-
+    req.vertices.emplace(0, TestUtils::setupVertices(0, 10, 10));
+    req.vertices.emplace(1, TestUtils::setupVertices(1, 20, 30));
     LOG(INFO) << "Test FutureAddVerticesTest...";
     std::unique_ptr<kvstore::KVStore> kvstore(TestUtils::initKV(rootPath.path()));
     auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(), nullptr);
@@ -53,9 +51,7 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     }
     ASSERT_EQ(30, tagId);
     LOG(INFO) << "Test FutureAddVerticesTest...";
-
 }
-
 }  // namespace storage
 }  // namespace nebula
 

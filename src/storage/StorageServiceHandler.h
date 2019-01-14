@@ -17,9 +17,9 @@ namespace nebula {
 namespace storage {
 
 class StorageServiceHandler final : public cpp2::StorageServiceSvIf {
-FRIEND_TEST(StorageServiceHandlerTest, FutureAddVerticesTest);
-public:
+    FRIEND_TEST(StorageServiceHandlerTest, FutureAddVerticesTest);
 
+public:
     StorageServiceHandler(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
         : kvstore_(kvstore)
         , schemaMan_(schemaMan) {}
