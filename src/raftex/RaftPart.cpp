@@ -1231,7 +1231,7 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::sendHeartbeat() {
             CHECK(!result.hasException());
 
             decltype(self->logs_) swappedOutLogs;
-            LogID firstId;
+            LogID firstId = 0;
             {
                 std::lock_guard<std::mutex> g(self->raftLock_);
                 CHECK(self->replicatingLogs_);
