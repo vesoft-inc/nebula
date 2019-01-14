@@ -8,7 +8,8 @@
 #include <gtest/gtest.h>
 #include "graph/test/TestEnv.h"
 
-using namespace nebula::graph;
+using nebula::graph::TestEnv;
+using nebula::graph::gEnv;
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

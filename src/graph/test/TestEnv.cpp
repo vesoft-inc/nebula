@@ -35,7 +35,6 @@ void TestEnv::SetUp() {
     thread_ = std::make_unique<thread::NamedThread>("", serve);
     // busy waiting for `thread_' to enter the loop
     while (!server_->getServeEventBase() || !server_->getServeEventBase()->isRunning()) {
-        ;
     }
 }
 

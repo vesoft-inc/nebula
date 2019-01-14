@@ -75,7 +75,7 @@ StorageService::getOutBound(const std::vector<int64_t> &ids,
         if (schema == nullptr) {
             return Status::Error("Edge `%s' not defined", edge->c_str());
         }
-        //storage::cpp2::QueryResponse resp;
+        // storage::cpp2::QueryResponse resp;
         for (auto id : ids) {
             EdgeKey start, end;
             start.srcid_ = id;
@@ -93,7 +93,7 @@ StorageService::getOutBound(const std::vector<int64_t> &ids,
                 if (iter->first.type_ != start.type_) {
                     break;
                 }
-                //auto &properties = iter->second;
+                // auto &properties = iter->second;
                 FLOG_INFO("%ld -%s-> %ld", id, edge->c_str(), iter->first.dstid_);
             }
         }
