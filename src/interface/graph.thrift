@@ -54,7 +54,7 @@ struct DateTime {
 
 union ColumnValue {
     // Simple types
-    1: bool boolean,
+    1: bool bool_val,
     2: i64 integer;
     3: IdType id;
     4: float single_precision;

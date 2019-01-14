@@ -101,8 +101,8 @@ protected:
                 return v.get_timestamp();
             case ColumnType::id:
                 return v.get_id();
-            case ColumnType::boolean:
-                return v.get_boolean();
+            case ColumnType::bool_val:
+                return v.get_bool_val();
             default:
                 throw TestError() << "Cannot convert unknown dynamic column type to integer: "
                                   << static_cast<int32_t>(v.getType());
