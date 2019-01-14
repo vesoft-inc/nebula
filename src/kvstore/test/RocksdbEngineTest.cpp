@@ -19,7 +19,7 @@ TEST(RocksdbEngineTest, SimpleTest) {
     std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCESSED, engine->put("key", "val"));
     std::string val;
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", val));
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", &val));
     EXPECT_EQ(val, "val");
 }
 
@@ -39,7 +39,7 @@ TEST(RocksdbEngineTest, RangeTest) {
         std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
         std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
         std::unique_ptr<StorageIter> iter;
-        EXPECT_EQ(ResultCode::SUCCESSED, engine->range(s, e, iter));
+        EXPECT_EQ(ResultCode::SUCCESSED, engine->range(s, e, &iter));
         int num = 0;
         while (iter->valid()) {
             num++;
@@ -83,7 +83,7 @@ TEST(RocksdbEngineTest, PrefixTest) {
         LOG(INFO) << "prefix " << prefix
                   << ", expectedFrom " << expectedFrom << ", expectedTotal " << expectedTotal;
         std::unique_ptr<StorageIter> iter;
-        EXPECT_EQ(ResultCode::SUCCESSED, engine->prefix(prefix, iter));
+        EXPECT_EQ(ResultCode::SUCCESSED, engine->prefix(prefix, &iter));
         int num = 0;
         while (iter->valid()) {
             num++;

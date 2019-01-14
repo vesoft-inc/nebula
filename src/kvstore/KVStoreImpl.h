@@ -27,6 +27,7 @@ struct GraphSpaceKV {
 
 class KVStoreImpl : public KVStore {
     FRIEND_TEST(KVStoreTest, SimpleTest);
+
 public:
     KVStoreImpl(HostAddr local, std::vector<std::string> paths)
         : partMan_(PartManager::instance())
@@ -43,7 +44,7 @@ public:
     ResultCode get(GraphSpaceID spaceId,
                    PartitionID  partId,
                    const std::string& key,
-                   std::string& value) override;
+                   std::string* value) override;
 
     /**
      * Get all results in range [start, end)
@@ -52,7 +53,7 @@ public:
                      PartitionID  partId,
                      const std::string& start,
                      const std::string& end,
-                     std::unique_ptr<StorageIter>& iter) override;
+                     std::unique_ptr<StorageIter>* iter) override;
 
     /**
      * Get all results with prefix.
@@ -60,7 +61,7 @@ public:
     ResultCode prefix(GraphSpaceID spaceId,
                       PartitionID  partId,
                       const std::string& prefix,
-                      std::unique_ptr<StorageIter>& iter) override;
+                      std::unique_ptr<StorageIter>* iter) override;
 
     /**
      * async batch put.

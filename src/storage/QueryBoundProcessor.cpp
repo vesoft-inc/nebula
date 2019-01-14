@@ -23,7 +23,7 @@ kvstore::ResultCode QueryBoundProcessor::collectVertexProps(
                             RowWriter& writer) {
     auto prefix = KeyUtils::prefix(partId, vId, tagId);
     std::unique_ptr<kvstore::StorageIter> iter;
-    auto ret = kvstore_->prefix(spaceId_, partId, prefix, iter);
+    auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCESSED) {
         VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
         return ret;
@@ -49,7 +49,7 @@ kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
                                                RowSetWriter& rsWriter) {
     auto prefix = KeyUtils::prefix(partId, vId, edgeType);
     std::unique_ptr<kvstore::StorageIter> iter;
-    auto ret = kvstore_->prefix(spaceId_, partId, prefix, iter);
+    auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCESSED || !iter) {
         return ret;
     }
