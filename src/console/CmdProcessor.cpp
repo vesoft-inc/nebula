@@ -56,7 +56,7 @@ void CmdProcessor::calColumnWidths(
                 case cpp2::ColumnValue::Type::__EMPTY__: {
                     break;
                 }
-                case cpp2::ColumnValue::Type::bool_flag: {
+                case cpp2::ColumnValue::Type::bool_val: {
                     // Enough to hold "false"
                     if (widths[idx] < 5UL) {
                         widths[idx] = 5UL;
@@ -243,8 +243,8 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
                     std::cout << folly::stringPrintf(fmt.c_str(), ' ');
                     break;
                 }
-                case cpp2::ColumnValue::Type::bool_flag: {
-                    PRINT_FIELD_VALUE(col.get_bool_flag() ? "true" : "false");
+                case cpp2::ColumnValue::Type::bool_val: {
+                    PRINT_FIELD_VALUE(col.get_bool_val() ? "true" : "false");
                     break;
                 }
                 case cpp2::ColumnValue::Type::integer: {
