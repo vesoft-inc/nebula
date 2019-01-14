@@ -8,9 +8,26 @@
 CPPLINT_FILE=`dirname $0`/../../cpplint/cpplint.py
 
 if [ $# -eq 0 ];then
-  CHECK_FILES=$(git diff --name-only HEAD | egrep '.*\.cpp$|.*\.h$')
+    # Since cpplint.py could only apply on our working tree,
+    # so we forbid committing with unstaged changes present.
+    # Otherwise, lints can be bypassed via changing without commit.
+    if ! git diff-files --exit-code --quiet
+    then
+        echo "You have unstaged changes, please stage or stash them before commit"
+        exit 1
+    fi
+    CHECK_FILES=$(git diff --name-only HEAD | egrep '.*\.cpp$|.*\.h$')
 else
-  CHECK_FILES=$(find $1 -not \( -path src/CMakeFiles -prune \)  -not \( -path src/interface/gen-cpp2 -prune \) -name "*.[h]" -o -name "*.cpp" | grep -v 'GraphScanner.*' | grep -v 'GraphParser.*')
+    CHECK_FILES=$(find $1 -not \( -path src/CMakeFiles -prune \) \
+                          -not \( -path src/interface/gen-cpp2 -prune \) \
+                          -name "*.[h]" -o -name "*.cpp" \
+                          | grep -v 'GraphScanner.*' | grep -v 'GraphParser.*')
+fi
+
+# No changes on .cpp/.h files
+if [[ -z $CHECK_FILES ]]
+then
+    exit 0
 fi
 
 CPPLINT_EXTENS=cpp,h
@@ -21,8 +38,8 @@ python $CPPLINT_FILE --quiet --extensions=$CPPLINT_EXTENS --filter=$CPPLINT_FITE
 result=$?
 if [ $result -eq 0 ]
 then
-  exit 0
+    exit 0
 else
-  echo "cpplint code style check failed, please fix and recommit."
-  exit 1
+    echo "cpplint code style check failed, please fix and recommit."
+    exit 1
 fi
