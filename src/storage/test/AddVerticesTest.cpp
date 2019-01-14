@@ -8,20 +8,19 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
-#include "storage/test/StorageTestBase.h"
+#include "storage/test/TestUtils.h"
 #include "storage/AddVerticesProcessor.h"
 #include "storage/KeyUtils.h"
-
 
 namespace nebula {
 namespace storage {
 
 TEST(AddVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddVerticesTest.XXXXXX");
-    auto* kv = TestUtils::initKV(rootPath.path());
-    auto* processor = AddVerticesProcessor::instance(kv);
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto* processor = AddVerticesProcessor::instance(kv.get());
     LOG(INFO) << "Build AddVerticesRequest...";
-    cpp2::AddVerticesRequest req ;
+    cpp2::AddVerticesRequest req;
     req.space_id = 0;
     req.overwritable = true;
     // partId => List<Vertex>
@@ -57,7 +56,7 @@ TEST(AddVerticesTest, SimpleTest) {
         for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
             auto prefix = KeyUtils::prefix(partId, vertexId);
             std::unique_ptr<kvstore::StorageIter> iter;
-            EXPECT_EQ(kvstore::ResultCode::SUCCESSED, kv->prefix(0, partId, prefix, iter));
+            EXPECT_EQ(kvstore::ResultCode::SUCCESSED, kv->prefix(0, partId, prefix, &iter));
             TagID tagId = 0;
             while (iter->valid()) {
                 EXPECT_EQ(folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId), iter->val());
@@ -67,7 +66,6 @@ TEST(AddVerticesTest, SimpleTest) {
             EXPECT_EQ(10, tagId);
         }
     }
-
 }
 
 }  // namespace storage

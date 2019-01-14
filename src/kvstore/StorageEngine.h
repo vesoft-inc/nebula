@@ -16,13 +16,13 @@ namespace kvstore {
 
 class StorageEngine {
 public:
-    StorageEngine(GraphSpaceID spaceId)
-        : spaceId_(spaceId) {}
+    explicit StorageEngine(GraphSpaceID spaceId)
+                : spaceId_(spaceId) {}
 
     virtual ~StorageEngine() = default;
 
     virtual ResultCode get(const std::string& key,
-                           std::string& value) = 0;
+                           std::string* value) = 0;
 
     virtual ResultCode put(std::string key,
                            std::string value) = 0;
@@ -33,13 +33,13 @@ public:
      * */
     virtual ResultCode range(const std::string& start,
                              const std::string& end,
-                             std::unique_ptr<StorageIter>& iter) = 0;
+                             std::unique_ptr<StorageIter>* iter) = 0;
 
     /**
      * Get all results with 'prefix' str as prefix.
      * */
     virtual ResultCode prefix(const std::string& prefix,
-                              std::unique_ptr<StorageIter>& iter) = 0;
+                              std::unique_ptr<StorageIter>* iter) = 0;
 
 protected:
     GraphSpaceID spaceId_;

@@ -7,7 +7,7 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include "fs/TempDir.h"
-#include "storage/test/StorageTestBase.h"
+#include "storage/test/TestUtils.h"
 #include "storage/AddVerticesProcessor.h"
 #include "storage/StorageServiceHandler.h"
 #include "storage/KeyUtils.h"
@@ -16,21 +16,18 @@ namespace nebula {
 namespace storage {
 
 TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
-
     fs::TempDir rootPath("/tmp/FutureAddVerticesTest.XXXXXX");
     cpp2::AddVerticesRequest req;
-    std::unique_ptr<StorageServiceHandler> storageServiceHandler;
     req.set_space_id(0);
     req.overwritable = true;
 
     LOG(INFO) << "Build FutureAddVerticesTest...";
-    req.vertices.emplace(0, TestUtils::setupVertices(0,10,10));
-    req.vertices.emplace(1, TestUtils::setupVertices(1,20,30));
-
+    req.vertices.emplace(0, TestUtils::setupVertices(0, 10, 10));
+    req.vertices.emplace(1, TestUtils::setupVertices(1, 20, 30));
     LOG(INFO) << "Test FutureAddVerticesTest...";
-    storageServiceHandler = std::make_unique<StorageServiceHandler>();
     std::unique_ptr<kvstore::KVStore> kvstore(TestUtils::initKV(rootPath.path()));
-    storageServiceHandler->kvstore_ = kvstore.get();
+    auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(), nullptr);
+
     auto resp = storageServiceHandler->future_addVertices(req).get();
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());
 
@@ -45,7 +42,7 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     LOG(INFO) << "Verify the vertices data...";
     auto prefix = KeyUtils::prefix(1, 19);
     std::unique_ptr<kvstore::StorageIter> iter;
-    ASSERT_EQ(kvstore::ResultCode::SUCCESSED, kvstore->prefix(0, 1, prefix, iter));
+    ASSERT_EQ(kvstore::ResultCode::SUCCESSED, kvstore->prefix(0, 1, prefix, &iter));
     TagID tagId = 0;
     while (iter->valid()) {
         ASSERT_EQ(folly::stringPrintf("%d_%d_%d", 1, 19, tagId), iter->val());
@@ -54,9 +51,7 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     }
     ASSERT_EQ(30, tagId);
     LOG(INFO) << "Test FutureAddVerticesTest...";
-
 }
-
 }  // namespace storage
 }  // namespace nebula
 
