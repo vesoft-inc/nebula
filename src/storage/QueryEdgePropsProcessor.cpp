@@ -20,7 +20,8 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                        SchemaProviderIf* edgeSchema,
                                        std::vector<PropContext>& props,
                                        RowSetWriter& rsWriter) {
-    auto prefix = KeyUtils::prefix(partId, edgeKey.src, edgeKey.edge_type, edgeKey.dst, edgeKey.ranking);
+    auto prefix = KeyUtils::prefix(partId, edgeKey.src, edgeKey.edge_type,
+                                   edgeKey.dst, edgeKey.ranking);
     std::unique_ptr<kvstore::StorageIter> iter;
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
     // Only use the latest version.
@@ -59,7 +60,7 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
             if (ret != kvstore::ResultCode::SUCCESSED) {
                 break;
             }
-        };
+        }
         // TODO handle failures
         this->pushResultCode(this->to(ret), partId);
     });

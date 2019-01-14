@@ -26,8 +26,8 @@ namespace storage {
 template<typename RESP>
 class BaseProcessor {
 public:
-    BaseProcessor(kvstore::KVStore* kvstore)
-        : kvstore_(kvstore) {}
+    explicit BaseProcessor(kvstore::KVStore* kvstore)
+            : kvstore_(kvstore) {}
 
     virtual ~BaseProcessor() = default;
 
