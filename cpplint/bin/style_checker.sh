@@ -16,7 +16,7 @@ else
 fi
 
 CPPLINT_EXTENS=cpp,h
-CPPLINT_FITER=-whitespace/indent,-build/include_what_you_use,-readability/todo,-build/include,-build/header_guard
+CPPLINT_FITER=-whitespace/indent,-build/include_what_you_use,-readability/todo,-build/include,-build/header_guard,-runtime/references
 python $CPPLINT_FILE --extensions=$CPPLINT_EXTENS --filter=$CPPLINT_FITER --linelength=100 $CHECK_FILES 2>&1 
 
 result=$?
