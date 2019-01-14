@@ -99,7 +99,7 @@ void KVStoreImpl::init() {
 
 ResultCode KVStoreImpl::get(GraphSpaceID spaceId, PartitionID partId,
                             const std::string& key,
-                            std::string& value) {
+                            std::string* value) {
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->get(key, value);
 }
@@ -108,14 +108,14 @@ ResultCode KVStoreImpl::get(GraphSpaceID spaceId, PartitionID partId,
 ResultCode KVStoreImpl::range(GraphSpaceID spaceId, PartitionID partId,
                               const std::string& start,
                               const std::string& end,
-                              std::unique_ptr<StorageIter>& iter) {
+                              std::unique_ptr<StorageIter>* iter) {
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->range(start, end, iter);
 }
 
 ResultCode KVStoreImpl::prefix(GraphSpaceID spaceId, PartitionID partId,
                                const std::string& prefix,
-                               std::unique_ptr<StorageIter>& iter) {
+                               std::unique_ptr<StorageIter>* iter) {
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->prefix(prefix, iter);
 }
