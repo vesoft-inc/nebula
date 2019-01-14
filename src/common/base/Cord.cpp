@@ -75,7 +75,7 @@ void Cord::clear() {
 }
 
 
-bool Cord::applyTo(std::function<bool (const char*, int32_t)> visitor) const {
+bool Cord::applyTo(std::function<bool(const char*, int32_t)> visitor) const {
     char* next = head_;
     while (next != tail_) {
         if (!visitor(next, blockContentSize_)) {

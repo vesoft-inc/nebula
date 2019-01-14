@@ -201,6 +201,6 @@ private:
     std::unique_ptr<YieldColumns>               yieldColumns_;
 };
 
-}
+}   // namespace nebula
 
 #endif  // PARSER_CLAUSES_H_

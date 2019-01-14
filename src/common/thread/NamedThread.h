@@ -46,7 +46,7 @@ public:
 public:
     class Nominator {
     public:
-        Nominator(const std::string &name) {
+        explicit Nominator(const std::string &name) {
             get(prevName_);
             set(name);
         }
@@ -89,7 +89,7 @@ template <typename F, typename...Args>
 NamedThread::NamedThread(const std::string &name, F &&f, Args&&...args)
     : std::thread(hook, this, name,
                   std::bind(std::forward<F>(f), std::forward<Args>(args)...)) {
-};
+}
 
 }   // namespace thread
 }   // namespace nebula

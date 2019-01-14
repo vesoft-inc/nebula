@@ -14,11 +14,9 @@ DEFINE_int32(port, 45500, "Meta daemon listening port");
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
 
-    using namespace nebula::meta;
-
     LOG(INFO) << "Starting the meta Daemon on port " << FLAGS_port;
 
-    auto handler = std::make_shared<MetaServiceHandler>();
+    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>();
     auto server = std::make_shared<apache::thrift::ThriftServer>();
     CHECK(!!server) << "Failed to create the thrift server";
 

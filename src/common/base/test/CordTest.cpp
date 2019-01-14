@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 #include "base/Cord.h"
 
-using namespace nebula;
+namespace nebula {
 
 TEST(Cord, write) {
     Cord cord;
@@ -193,6 +193,8 @@ TEST(Cord, cordStream) {
     EXPECT_EQ(str1.size() + str2.size(), c1.size());
     EXPECT_EQ(str1 + str2, c1.str());
 }
+
+}   // namespace nebula
 
 
 int main(int argc, char** argv) {

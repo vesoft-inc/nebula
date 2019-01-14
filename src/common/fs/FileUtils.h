@@ -213,7 +213,6 @@ public:
         }
 
     private:
-
         void openFileOrDirectory();
         void dirNext();
         void fileNext();
