@@ -32,7 +32,7 @@ public:
         kDescribeEdge,
         kInsertVertex,
         kInsertEdge,
-        kShowAllHost,
+        kShow,
     };
 
     Kind kind() const {

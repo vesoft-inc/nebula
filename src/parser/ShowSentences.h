@@ -12,13 +12,32 @@
 
 namespace nebula {
 
-class ShowAllHostSentence final : public Sentence {
- public:
-    ShowAllHostSentence() {
-        kind_ = Kind::kShowAllHost;
+class ShowSentence final : public Sentence {
+public:
+    explicit ShowSentence(string cmdstr) {
+        kind_ = Kind::kShow;
+        switch (cmdstr) {
+            case "hosts":
+                showKind_ = Show_Kind::kShowHosts;
+                break;
+            default:
+                LOG(FATAL) << "Show Sentence kind illegal: " << cmdstr;
+                break;
+        }
     }
 
-     std::string toString() const override;
+    std::string toString() const override;
+    enum class ShowKind : uint32_t {
+        kUnknown,
+        kShowHosts,
+    };
+
+    ShowKind showKind() const {
+        return showKind_;
+    }
+
+private:
+    ShowKind                showKind_{ShowKind::kUnknown};
 };
 
 }   // namespace nebula

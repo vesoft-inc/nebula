@@ -21,7 +21,7 @@
 #include "graph/DescribeEdgeExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
-#include "graph/ShowAllHostExecutor.h"
+#include "graph/ShowExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -63,8 +63,8 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kInsertEdge:
             executor = std::make_unique<InsertEdgeExecutor>(sentence, ectx());
             break;
-        case Sentence::Kind::kShowAllHost:
-            executor = std::make_unique<ShowAllHostExecutor>(sentence, ectx());
+        case Sentence::Kind::kShow:
+            executor = std::make_unique<ShowExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

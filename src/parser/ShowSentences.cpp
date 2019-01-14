@@ -9,9 +9,15 @@
 
 namespace nebula {
 
-
-std::string ShowAllHostSentence::toString() const {
-    std::string buf = "SHOW ALL HOST";
+std::string ShowSentence::toString() const {
+    switch (showKind_) {
+        case ShowKind::kShowHosts:
+            std::string buf = "SHOW HOSTS";
+            break;
+        default:
+            LOG(FATAL) << "Show Sentence kind illegal: " << kind_;
+            break;
+    }
     return buf;
 }
 
