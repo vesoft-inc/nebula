@@ -20,7 +20,7 @@ QueryStatsProcessor::collectVertexStats(PartitionID partId, VertexID vId, TagID 
                                         std::vector<PropContext>& props) {
     auto prefix = KeyUtils::prefix(partId, vId, tagId);
     std::unique_ptr<kvstore::StorageIter> iter;
-    auto ret = kvstore_->prefix(spaceId_, partId, prefix, iter);
+    auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCESSED) {
         return ret;
     }
@@ -39,7 +39,7 @@ QueryStatsProcessor::collectEdgesStats(PartitionID partId, VertexID vId, EdgeTyp
                                        std::vector<PropContext>& props) {
     auto prefix = KeyUtils::prefix(partId, vId, edgeType);
     std::unique_ptr<kvstore::StorageIter> iter;
-    auto ret = kvstore_->prefix(spaceId_, partId, prefix, iter);
+    auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCESSED || !iter) {
         return ret;
     }

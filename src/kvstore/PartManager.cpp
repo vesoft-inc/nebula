@@ -10,7 +10,7 @@ DEFINE_string(part_man_type, "memory", "memory, meta");
 namespace nebula {
 namespace kvstore {
 
-//static
+// static
 PartManager* PartManager::instance_;
 static std::once_flag initPartManFlag;
 PartManager* PartManager::instance() {

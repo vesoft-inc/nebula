@@ -36,7 +36,6 @@ TEST(PartTest, RocksdbTest) {
     rocksdb::WriteOptions woptions;
     status = db->Write(woptions, &updates);
     CHECK(status.ok());
-    
     LOG(INFO) << "Read data from rocksdb...";
     rocksdb::ReadOptions roptions;
     for (uint32_t i = 0; i < 1000; i++) {

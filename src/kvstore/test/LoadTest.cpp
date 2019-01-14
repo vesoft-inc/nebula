@@ -31,7 +31,7 @@ TEST(Load, SSTLoad) {
     EXPECT_EQ(ResultCode::SUCCESSED, engine->ingest(files));
 
     std::string result;
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", result));
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", &result));
     EXPECT_EQ(result, "value");
 }
 }   // namespace kvstore

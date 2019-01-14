@@ -32,9 +32,9 @@ RocksdbEngine::~RocksdbEngine() {
 }
 
 ResultCode RocksdbEngine::get(const std::string& key,
-                              std::string& value) {
+                              std::string* value) {
     rocksdb::ReadOptions options;
-    rocksdb::Status status = db_->Get(options, rocksdb::Slice(key), &value);
+    rocksdb::Status status = db_->Get(options, rocksdb::Slice(key), value);
     if (status.ok()) {
         return ResultCode::SUCCESSED;
     } else if (status.IsNotFound()) {
@@ -68,24 +68,24 @@ ResultCode RocksdbEngine::multiPut(std::vector<KV> keyValues) {
 
 ResultCode RocksdbEngine::range(const std::string& start,
                                 const std::string& end,
-                                std::unique_ptr<StorageIter>& storageIter) {
+                                std::unique_ptr<StorageIter>* storageIter) {
     rocksdb::ReadOptions options;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
     }
-    storageIter.reset(new RocksdbRangeIter(iter, start, end));
+    storageIter->reset(new RocksdbRangeIter(iter, start, end));
     return ResultCode::SUCCESSED;
 }
 
 ResultCode RocksdbEngine::prefix(const std::string& prefix,
-                                 std::unique_ptr<StorageIter>& storageIter) {
+                                 std::unique_ptr<StorageIter>* storageIter) {
     rocksdb::ReadOptions options;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(prefix));
     }
-    storageIter.reset(new RocksdbPrefixIter(iter, prefix));
+    storageIter->reset(new RocksdbPrefixIter(iter, prefix));
     return ResultCode::SUCCESSED;
 }
 
