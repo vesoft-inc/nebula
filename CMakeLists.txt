@@ -226,17 +226,20 @@ add_custom_target(
     DEPENDS clean-all
 )
 
-set(PRE_COMMIT_HOOK ${CMAKE_CURRENT_SOURCE_DIR}/.git/hooks/pre-commit)
-if(EXISTS ${PRE_COMMIT_HOOK})
-	MESSAGE(STATUS "Remove pre commit hook")
-	FILE(REMOVE ${PRE_COMMIT_HOOK})
-endif()
 
-MESSAGE(STATUS "Create pre commit hook")
-execute_process(COMMAND "ln" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/cpplint/style_checker.sh ${PRE_COMMIT_HOOK}
-	RESULT_VARIABLE result)
-IF(NOT ${result})
-  MESSAGE(STATUS "pre-commit hook create successed")
+# Create the pre-commit hook every time we run cmake
+set(PRE_COMMIT_HOOK ${CMAKE_CURRENT_SOURCE_DIR}/.git/hooks/pre-commit)
+execute_process(
+    COMMAND
+    "rm" "-f" ${PRE_COMMIT_HOOK}
+)
+execute_process(
+    COMMAND
+    "ln" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/cpplint/bin/pre-commit.sh ${PRE_COMMIT_HOOK}
+	RESULT_VARIABLE retcode
+)
+IF(${retcode} EQUAL 0)
+    MESSAGE(STATUS "Creating pre-commit hook done")
 ELSE()
-  MESSAGE(STATUS "pre-commit hook create failed")
+    MESSAGE(FATAL_ERROR "Creating pre-commit hook failed: ${retcode}")
 ENDIF()
