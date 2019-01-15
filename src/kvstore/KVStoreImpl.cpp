@@ -43,7 +43,7 @@ namespace kvstore {
 // static
 KVStore* KVStore::instance(KVOptions options) {
     auto* instance = new KVStoreImpl(options);
-    reinterpret_cast<KVStoreImpl*>(instance)->init();
+    static_cast<KVStoreImpl*>(instance)->init();
     return instance;
 }
 
