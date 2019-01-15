@@ -16,7 +16,7 @@ if [ $# -eq 0 ];then
         echo "You have unstaged changes, please stage or stash them first."
         exit 1
     fi
-    CHECK_FILES=$(git diff --name-only --diff-filter=d HEAD | egrep '.*\.cpp$|.*\.h$|.*\.inl$')
+    CHECK_FILES=$(git diff --name-only --diff-filter=ACMRTUXB HEAD | egrep '.*\.cpp$|.*\.h$|.*\.inl$')
 else
     CHECK_FILES=$(find $@ -not \( -path src/CMakeFiles -prune \) \
                           -not \( -path src/interface/gen-cpp2 -prune \) \
