@@ -8,7 +8,12 @@
 #include "parser/GQLParser.h"
 #include "parser/Expressions.h"
 
-using namespace nebula;
+using nebula::Expression;
+using nebula::GQLParser;
+using nebula::SequentialSentences;
+using nebula::GoSentence;
+using nebula::Status;
+using nebula::StatusOr;
 
 static Expression* getFilterExpr(SequentialSentences *sentences) {
     auto *go = dynamic_cast<GoSentence*>(sentences->sentences().front());

@@ -10,9 +10,13 @@
 #include "dataman/RowUpdater.h"
 #include "dataman/SchemaWriter.h"
 
-using namespace nebula;
+using nebula::ResultType;
+using nebula::SchemaWriter;
+using nebula::RowUpdater;
+using nebula::RowWriter;
+using nebula::RowReader;
 
-SchemaWriter schema;
+static SchemaWriter schema;
 
 void prepareSchema() {
     schema.appendCol("col1", nebula::storage::cpp2::SupportedType::INT);

@@ -22,7 +22,7 @@ public:
 
     // Apply each block to the visitor until the end or the visitor
     // returns false
-    bool applyTo(std::function<bool (const char*, int32_t)> visitor) const;
+    bool applyTo(std::function<bool(const char*, int32_t)> visitor) const;
 
     // Append the cord content to the given string
     size_t appendTo(std::string& str) const;

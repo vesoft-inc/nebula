@@ -8,8 +8,10 @@
 #include <folly/Benchmark.h>
 #include "time/Duration.h"
 
-using namespace nebula::time;
-using namespace std::chrono;
+using nebula::time::Duration;
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
 
 decltype(steady_clock::now()) scThen;
 decltype(steady_clock::now()) scNow;

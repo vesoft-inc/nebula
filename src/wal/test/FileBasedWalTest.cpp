@@ -13,7 +13,8 @@
 namespace nebula {
 namespace wal {
 
-using namespace nebula::fs;
+using nebula::fs::FileUtils;
+using nebula::fs::TempDir;
 
 // Make a message which length > 1KB
 static const char* kLongMsg =
@@ -201,8 +202,8 @@ int main(int argc, char** argv) {
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
 
-    using namespace nebula::wal;
-    flusher.reset(new BufferFlusher());
+    using nebula::wal::flusher;
+    flusher.reset(new nebula::wal::BufferFlusher());
 
     return RUN_ALL_TESTS();
 }

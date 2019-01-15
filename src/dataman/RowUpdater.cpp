@@ -10,7 +10,7 @@
 
 namespace nebula {
 
-using namespace folly::hash;
+using folly::hash::SpookyHashV2;
 
 RowUpdater::RowUpdater(SchemaProviderIf* schema,
                        folly::StringPiece row)
@@ -33,8 +33,8 @@ std::string RowUpdater::encode() const noexcept {
 void RowUpdater::encodeTo(std::string& encoded) const noexcept {
     RowWriter writer(schema_, schemaVer_);
     auto it = schema_->begin(schemaVer_);
-    while(bool(it)) {
-        switch(it->getType()->get_type()) {
+    while (it) {
+        switch (it->getType()->get_type()) {
             case storage::cpp2::SupportedType::BOOL: {
                 RU_OUTPUT_VALUE(bool, Bool, false);
                 break;
@@ -105,7 +105,7 @@ ResultType RowUpdater::setFloat(const folly::StringPiece name,
             break;
         case storage::cpp2::SupportedType::DOUBLE:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
-            updatedFields_[hash] = (double)v;
+            updatedFields_[hash] = static_cast<double>(v);
             break;
         default:
             return ResultType::E_INCOMPATIBLE_TYPE;
@@ -123,7 +123,7 @@ ResultType RowUpdater::setDouble(const folly::StringPiece name,
     switch (type->get_type()) {
         case storage::cpp2::SupportedType::FLOAT:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
-            updatedFields_[hash] = (float)v;
+            updatedFields_[hash] = static_cast<float>(v);
             break;
         case storage::cpp2::SupportedType::DOUBLE:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);

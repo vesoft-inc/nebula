@@ -9,7 +9,8 @@
 #include "fs/TempDir.h"
 #include "fs/FileUtils.h"
 
-using namespace nebula::fs;
+namespace nebula {
+namespace fs {
 
 TEST(TempDir, AutoRemoval) {
     std::string dirpath;
@@ -56,7 +57,7 @@ TEST(TempDir, CreateFiles) {
         TempDir td("/tmp/", "TempDirTest.XXXXXX");
         ASSERT_FALSE(!td.path());
         dirpath = td.path();
-    
+
         int fd = open(FileUtils::joinPath(dirpath, "testfile.txt").c_str(),
                       O_CREAT | O_RDWR | O_EXCL,
                       0644);
@@ -73,6 +74,9 @@ TEST(TempDir, NegativeTest) {
     TempDir td("/", "TempDirNegativeTest1.XXXXXX", false);
     EXPECT_TRUE(!td.path());
 }
+
+}   // namespace fs
+}   // namespace nebula
 
 
 int main(int argc, char** argv) {

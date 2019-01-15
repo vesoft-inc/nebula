@@ -12,7 +12,9 @@
 #include "parser/GraphParser.hpp"
 #include "parser/GraphScanner.h"
 
-using namespace ::testing;
+using testing::AssertionFailure;
+using testing::AssertionSuccess;
+using testing::AssertionResult;
 
 namespace nebula {
 

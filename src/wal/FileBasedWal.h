@@ -103,16 +103,14 @@ public:
     // The iteration finishes when the functor returns false or reaches
     // the end
     // The method returns the number of wal file info being acessed
-    size_t accessAllWalInfo(std::function<bool (WalFileInfoPtr info)> fn)
-        const;
+    size_t accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> fn) const;
 
     // Iterates through all log buffers in reversed order
     // (from the latest to the earliest)
     // The iteration finishes when the functor returns false or reaches
     // the end
     // The method returns the number of buffers being acessed
-    size_t accessAllBuffers(std::function<bool (BufferPtr buffer)> fn)
-        const;
+    size_t accessAllBuffers(std::function<bool(BufferPtr buffer)> fn) const;
 
     // Dump a buffer into a WAL file
     void flushBuffer(BufferPtr buffer);

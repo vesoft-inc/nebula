@@ -54,7 +54,7 @@ SchemaProviderIf::Iterator& SchemaProviderIf::Iterator::operator+(uint16_t steps
 
 
 SchemaProviderIf::Iterator::operator bool() const {
-    return (bool)field_;
+    return static_cast<bool>(field_);
 }
 
 

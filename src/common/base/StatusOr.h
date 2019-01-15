@@ -75,7 +75,7 @@ public:
     // Copy/move construct from `Status'
     // Not explicit to allow construct from a `Status', e.g. in the `return' statement
     template <typename U>
-    StatusOr(U &&status, std::enable_if_t<is_status_v<U>>* = nullptr)
+    StatusOr(U &&status, std::enable_if_t<is_status_v<U>>* = nullptr)   // NOLINT
         : variant_(std::forward<U>(status)) {
         state_ = kStatus;
     }
@@ -83,7 +83,7 @@ public:
     // Copy/move construct with a value of any compatible type
     // Not explicit to allow construct from a value, e.g. in the `return' statement
     template <typename U>
-    StatusOr(U &&value, std::enable_if_t<is_initializable_v<U>>* = nullptr)
+    StatusOr(U &&value, std::enable_if_t<is_initializable_v<U>>* = nullptr)     // NOLINT
         : variant_(std::forward<U>(value)) {
         state_ = kValue;
     }

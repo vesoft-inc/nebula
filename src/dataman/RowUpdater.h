@@ -100,7 +100,7 @@ private:
 
 #define RU_OUTPUT_VALUE(VT, FN, DV) \
     VT val; \
-    auto res = get ## FN (it->getName(), val); \
+    auto res = get ## FN(it->getName(), val); \
     if (res != ResultType::SUCCEEDED) { \
         if (res == ResultType::E_NAME_NOT_FOUND) { \
             /* Use a default value */ \
