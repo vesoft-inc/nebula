@@ -666,7 +666,7 @@ update_edge_sentence
 
 show_sentence
     : KW_SHOW KW_HOSTS {
-        auto sentence = new ShowSentence("hosts");
+        auto sentence = new ShowSentence(ShowKind::kShowHosts);
         $$ = sentence;
     }
     ;

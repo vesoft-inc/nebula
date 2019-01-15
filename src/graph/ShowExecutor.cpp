@@ -28,12 +28,12 @@ void ShowExecutor::execute() {
     // TODO(YT) when StorageClient fininshed, then implement this interface
     auto show_kind = sentence_->showKind();
     switch (show_kind) {
-        case (ShowSentence::ShowKind::kShowHosts):
+        case (ShowKind::kShowHosts):
             DCHECK(onFinish_);
             onFinish_();
             break;
         default:
-            LOG(FATAL) << "Show Sentence kind illegal: " << show_kind;
+            LOG(FATAL) << "Show Sentence kind illegal: " <<show_kind;
             break;
     }
 }

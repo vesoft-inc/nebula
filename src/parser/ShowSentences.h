@@ -12,21 +12,20 @@
 
 namespace nebula {
 
+enum class ShowKind : uint32_t {
+    kUnknown,
+    kShowHosts,
+};
+
+
 class ShowSentence final : public Sentence {
 public:
-    explicit ShowSentence(std::string cmdstr) {
+    explicit ShowSentence(ShowKind sKind) {
         kind_ = Kind::kShow;
-        if (cmdstr.compare("hosts") == 0)
-            showKind_ = ShowKind::kShowHosts;
-        else
-            LOG(FATAL) << "Show Sentence kind illegal: " << cmdstr;
+        showKind_ = sKind;
     }
 
     std::string toString() const override;
-    enum class ShowKind : uint32_t {
-        kUnknown,
-        kShowHosts,
-    };
 
     ShowKind showKind() const {
         return showKind_;
@@ -36,7 +35,7 @@ private:
     ShowKind                showKind_{ShowKind::kUnknown};
 };
 
-inline std::ostream& operator<<(std::ostream &os, ShowSentence::ShowKind kind) {
+inline std::ostream& operator<<(std::ostream &os, ShowKind kind) {
     return os << static_cast<uint32_t>(kind);
 }
 

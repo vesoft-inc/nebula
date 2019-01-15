@@ -12,9 +12,7 @@
 #include "parser/GraphParser.hpp"
 #include "parser/GraphScanner.h"
 
-using testing::AssertionFailure;
-using testing::AssertionSuccess;
-using testing::AssertionResult;
+using namespace ::testing;
 
 namespace nebula {
 
@@ -203,6 +201,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("intersect", TokenType::KW_INTERSECT),
         CHECK_SEMANTIC_TYPE("MINUS", TokenType::KW_MINUS),
         CHECK_SEMANTIC_TYPE("minus", TokenType::KW_MINUS),
+        CHECK_SEMANTIC_TYPE("SHOW", TokenType::KW_SHOW),
+        CHECK_SEMANTIC_TYPE("show", TokenType::KW_SHOW),
+        CHECK_SEMANTIC_TYPE("Show", TokenType::KW_SHOW),
+        CHECK_SEMANTIC_TYPE("HOSTS", TokenType::KW_HOSTS),
+        CHECK_SEMANTIC_TYPE("hosts", TokenType::KW_HOSTS),
+        CHECK_SEMANTIC_TYPE("Hosts", TokenType::KW_HOSTS),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
