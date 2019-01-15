@@ -98,7 +98,7 @@ StatusOr<std::string> FileUtils::readLink(const char *path) {
 
 std::string FileUtils::dirname(const char *path) {
     DCHECK(path != nullptr && *path != '\0');
-    if (::strcmp("/", path) == 0) { // root only
+    if (::strcmp("/", path) == 0) {     // root only
         return "/";
     }
     static const std::regex pattern("(.*)/([^/]+)/?");
@@ -228,7 +228,7 @@ std::string FileUtils::joinPath(const folly::StringPiece dir,
     std::size_t len = dir.size();
     if (len == 0) {
         buf.resize(filename.size() + 2);
-        strcpy(&(buf[0]), "./");
+        strcpy(&(buf[0]), "./");    // NOLINT
         strncpy(&(buf[2]), filename.begin(), filename.size());
         return std::move(buf);
     }

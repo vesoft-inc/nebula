@@ -26,19 +26,25 @@ void ExpressionContext::print() const {
                 entry.first.c_str(), aliasKindToString(entry.second.kind_).c_str());
     }
     if (!srcNodePropNames_.empty()) {
-    auto srclist = std::accumulate(std::next(srcNodePropNames_.begin()), srcNodePropNames_.end(),
-                                   *srcNodePropNames_.begin(), [] (auto &a, auto &b) { return a + ", " + b; });
-    FLOG_INFO("Referred source node's properties: %s", srclist.c_str());
+        auto srclist = std::accumulate(std::next(srcNodePropNames_.begin()),
+                                       srcNodePropNames_.end(),
+                                       *srcNodePropNames_.begin(),
+                                       [] (auto &a, auto &b) { return a + ", " + b; });
+        FLOG_INFO("Referred source node's properties: %s", srclist.c_str());
     }
     if (!dstNodePropNames_.empty()) {
-    auto dstlist = std::accumulate(std::next(dstNodePropNames_.begin()), dstNodePropNames_.end(),
-                                   *dstNodePropNames_.begin(), [] (auto &a, auto &b) { return a + ", " + b; });
-    FLOG_INFO("Referred destination node's properties: %s", dstlist.c_str());
+        auto dstlist = std::accumulate(std::next(dstNodePropNames_.begin()),
+                                       dstNodePropNames_.end(),
+                                       *dstNodePropNames_.begin(),
+                                       [] (auto &a, auto &b) { return a + ", " + b; });
+        FLOG_INFO("Referred destination node's properties: %s", dstlist.c_str());
     }
     if (!edgePropNames_.empty()) {
-    auto edgelist = std::accumulate(std::next(edgePropNames_.begin()), edgePropNames_.end(),
-                                   *edgePropNames_.begin(), [] (auto &a, auto &b) { return a + ", " + b; });
-    FLOG_INFO("Referred edge's properties: %s", edgelist.c_str());
+        auto edgelist = std::accumulate(std::next(edgePropNames_.begin()),
+                                        edgePropNames_.end(),
+                                        *edgePropNames_.begin(),
+                                        [] (auto &a, auto &b) { return a + ", " + b; });
+        FLOG_INFO("Referred edge's properties: %s", edgelist.c_str());
     }
 }
 

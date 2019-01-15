@@ -14,7 +14,7 @@ TempDir::TempDir(const char* pathTemplate, bool deleteOnDestroy)
         : deleteOnDestroy_(deleteOnDestroy) {
     auto len = strlen(pathTemplate);
     std::unique_ptr<char[]> name(new char[len + 1]);
-    strcpy(name.get(), pathTemplate);
+    strcpy(name.get(), pathTemplate);   // NOLINT
 
     VLOG(2) << "Trying to create the temp directory with pattern \""
             << name.get() << "\"";

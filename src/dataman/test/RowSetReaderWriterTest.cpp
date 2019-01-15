@@ -22,7 +22,7 @@ TEST(RowSetReaderWriter, allInts) {
     }
 
     RowSetWriter rsWriter(&schema);
-    for (int row = 0; row < 10; row++ ) {
+    for (int row = 0; row < 10; row++) {
         int32_t base = row * 100;
         RowWriter writer(&schema);
         for (int col = 0; col < 33; col++) {
@@ -35,10 +35,10 @@ TEST(RowSetReaderWriter, allInts) {
     RowSetReader rsReader(&schema, data);
     auto it = rsReader.begin();
     int32_t base = 0;
-    while (bool(it)) {
+    while (it) {
         auto fieldIt = it->begin();
         int32_t expected = base + 1;
-        while (bool(fieldIt)) {
+        while (fieldIt) {
             int32_t v;
             EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getInt(v));
             EXPECT_EQ(expected, v);

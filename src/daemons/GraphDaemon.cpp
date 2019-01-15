@@ -14,10 +14,10 @@
 #include "graph/GraphService.h"
 #include "graph/GraphFlags.h"
 
-using namespace nebula;
-using namespace nebula::graph;
-using namespace nebula::fs;
-using namespace nebula::network;
+using nebula::Status;
+using nebula::ProcessUtils;
+using nebula::graph::GraphService;
+using nebula::network::NetworkUtils;
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 

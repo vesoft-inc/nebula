@@ -178,7 +178,7 @@ private:
         return ResultType::E_INDEX_OUT_OF_RANGE; \
     } \
     int64_t offset = iter_->offset_; \
-    ResultType res = reader_->get ## FN (iter_->index_, offset, v); \
+    ResultType res = reader_->get ## FN(iter_->index_, offset, v); \
     if (res == ResultType::SUCCEEDED) { \
         iter_->bytes_ = offset - iter_->offset_; \
     } else { \
@@ -188,7 +188,7 @@ private:
     return res
 
 #define RR_GET_VALUE_BY_NAME(FN, VT) \
-    RowReader::get ## FN (const folly::StringPiece name, \
+    RowReader::get ## FN(const folly::StringPiece name, \
                           VT& v) const noexcept { \
         int32_t index = schema_->getFieldIndex(name, schemaVer_); \
         if (index < 0) { \

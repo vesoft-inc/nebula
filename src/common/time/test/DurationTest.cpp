@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 #include "time/Duration.h"
 
-using namespace nebula::time;
+using nebula::time::Duration;
 
 TEST(Duration, elapsedInSeconds) {
     for (int i = 0; i < 5; i++) {
@@ -19,8 +19,7 @@ TEST(Duration, elapsedInSeconds) {
         dur.pause();
 
         ASSERT_EQ(std::chrono::duration_cast<std::chrono::seconds>(diff).count(),
-                  dur.elapsedInSec()
-                 ) << "Inaccuracy in iteration " << i;
+                  dur.elapsedInSec()) << "Inaccuracy in iteration " << i;
     }
 }
 
@@ -30,17 +29,15 @@ TEST(Duration, elapsedInMilliSeconds) {
     for (int i = 0; i < 200; i++) {
         dur.reset();
         auto start = std::chrono::steady_clock::now();
-        usleep(5000); // Sleep for 5 ms
+        usleep(5000);   // Sleep for 5 ms
         auto diff = std::chrono::steady_clock::now() - start;
         dur.pause();
 
         // Allow 1ms difference
         ASSERT_LE(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count(),
-                  dur.elapsedInMSec()
-                 ) << "Inaccuracy in iteration " << i;
+                  dur.elapsedInMSec()) << "Inaccuracy in iteration " << i;
         ASSERT_GE(std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() + 1,
-                  dur.elapsedInMSec()
-                 ) << "Inaccuracy in iteration " << i;
+                  dur.elapsedInMSec()) << "Inaccuracy in iteration " << i;
     }
 }
 

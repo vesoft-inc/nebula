@@ -67,5 +67,5 @@ RowReader::readInteger(int64_t offset, T& v) const noexcept {
     return range.begin() - start;
 }
 
-}  // NAMESPACE VESOFT
+}  // namespace nebula
 

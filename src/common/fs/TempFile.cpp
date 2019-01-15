@@ -14,7 +14,7 @@ TempFile::TempFile(const char *path, bool autoDelete) {
     autoDelete_ = autoDelete;
     auto len = ::strlen(path);
     path_ = std::make_unique<char[]>(len + 1);
-    ::strcpy(path_.get(), path);
+    ::strcpy(path_.get(), path);    // NOLINT
 
     auto fd = ::mkstemp(path_.get());
     if (fd == -1) {
