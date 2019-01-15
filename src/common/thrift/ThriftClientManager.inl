@@ -15,15 +15,13 @@ DECLARE_int32(conn_timeout_ms);
 namespace nebula {
 namespace thrift {
 
-using namespace network;
-
 template<class ClientType>
 std::shared_ptr<ClientType> ThriftClientManager<ClientType>::getClient(
         const HostAddr& host, folly::EventBase* evb) {
     static ThriftClientManager manager;
 
     VLOG(2) << "Getting a client to "
-            << NetworkUtils::intToIPv4(host.first)
+            << network::NetworkUtils::intToIPv4(host.first)
             << ":" << host.second;
 
     if (evb == nullptr) {
@@ -36,7 +34,7 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::getClient(
     }
 
     // Need to create a new client
-    auto ipAddr = NetworkUtils::intToIPv4(host.first);
+    auto ipAddr = network::NetworkUtils::intToIPv4(host.first);
     auto port = host.second;
     VLOG(2) << "There is no existing client to "
             << ipAddr << ":" << port

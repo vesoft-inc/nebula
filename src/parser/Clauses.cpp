@@ -84,7 +84,7 @@ std::string YieldColumns::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() -1 );
+    buf.resize(buf.size() - 1);
     return buf;
 }
 

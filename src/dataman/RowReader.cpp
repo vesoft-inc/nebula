@@ -74,7 +74,7 @@ const RowReader::Cell* RowReader::Iterator::operator->() const {
 
 
 RowReader::Iterator& RowReader::Iterator::operator++() {
-    if (bool(*this)) {
+    if (*this) {
         if (bytes_ > 0) {
             offset_ += bytes_;
         } else {

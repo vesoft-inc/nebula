@@ -101,10 +101,10 @@ bool InMemoryLogBuffer::needToRollover() const {
 
 
 std::pair<LogID, TermID> InMemoryLogBuffer::accessAllLogs(
-        std::function<void (LogID,
-                            TermID,
-                            ClusterID,
-                            const std::string&)> fn) const {
+        std::function<void(LogID,
+                           TermID,
+                           ClusterID,
+                           const std::string&)> fn) const {
     folly::RWSpinLock::ReadHolder rh(&accessLock_);
     LogID id = firstLogId_ - 1;
     TermID term = -1;

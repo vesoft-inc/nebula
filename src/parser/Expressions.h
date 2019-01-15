@@ -143,7 +143,7 @@ public:
 
     static double asDouble(const VariantType &value) {
         if (value.which() == 0) {
-            return (double)boost::get<int64_t>(value);
+            return static_cast<double>(boost::get<int64_t>(value));
         }
         return boost::get<double>(value);
     }

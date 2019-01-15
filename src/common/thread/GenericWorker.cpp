@@ -91,7 +91,7 @@ void GenericWorker::notify() {
     if (notifier_ == nullptr) {
         return;
     }
-    DCHECK(evfd_ != -1);
+    DCHECK_NE(-1, evfd_);
     auto one = 1UL;
     auto len = ::write(evfd_, &one, sizeof(one));
     DCHECK(len == sizeof(one));

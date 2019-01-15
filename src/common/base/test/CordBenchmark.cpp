@@ -8,7 +8,7 @@
 #include <folly/Benchmark.h>
 #include "base/Cord.h"
 
-using namespace nebula;
+using nebula::Cord;
 
 BENCHMARK(sstream_10k_string, iters) {
     for (auto i = 0u; i < iters; i++) {
