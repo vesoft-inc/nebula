@@ -3,15 +3,17 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
+
 package nebula.graph.client;
 
-import com.facebook.thrift.TApplicationException;
 import com.facebook.thrift.TException;
 import com.facebook.thrift.protocol.TBinaryProtocol;
 import com.facebook.thrift.protocol.TProtocol;
 import com.facebook.thrift.transport.TSocket;
 import com.facebook.thrift.transport.TTransport;
 import com.facebook.thrift.transport.TTransportException;
+import java.util.Collections;
+import java.util.List;
 import nebula.graph.AuthResponse;
 import nebula.graph.ErrorCode;
 import nebula.graph.ExecutionResponse;
@@ -19,100 +21,107 @@ import nebula.graph.GraphService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 public class GraphClient implements GraphClientIface {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GraphClient.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(GraphClient.class.getName());
+  private long sessionId_;
+  private GraphService.Client syncClient;
+  private TTransport transport = null;
+  private int currentNodeIndex;
+  private GraphServerNode activeNode;
+  private volatile List<GraphServerNode> nodes = Collections.emptyList();
 
-    private String addr_;
-    private short port_;
-    private long sessionId_;
-    private GraphService.Client syncClient;
-    private TTransport transport = null;
 
-    public GraphClient(String addr, short port) {
-        this.addr_ = addr;
-        this.port_ = port;
-    }
+  public void addGraphServerNode(String nodeId, String hostAddress, int hostPort) {
+    nodes.add(new GraphServerNode(nodeId, hostAddress, hostPort));
+  }
 
-    @Override
-    public int connect(String username, String password) {
+  public void addGraphServerNode(String hostAddress, int hostPort) {
+    nodes.add(new GraphServerNode(hostAddress, hostPort));
+  }
 
-        try {
-            transport = new TSocket(addr_, port_, conn_timeout_ms);
+  public int getNodesSize() {
+    return nodes.size();
+  }
 
-            TProtocol protocol = new TBinaryProtocol(transport);
+  // Todo Load Balancing Algorithm.
+  public void setActiveNode() {
+    currentNodeIndex = (currentNodeIndex + 1) % getNodesSize();
+    activeNode = nodes.get(currentNodeIndex);
+  }
 
-            syncClient = new GraphService.Client(protocol);
 
-            transport.open();
+  @Override
+  public int connect(String username, String password) {
 
-            AuthResponse result = syncClient.authenticate(username, password);
+    try {
 
-            if(result.getError_code() != ErrorCode.SUCCEEDED){
-                LOGGER.debug(result.getError_msg());
-                return result.getError_code();
-            }else {
-                sessionId_ = result.getSession_id();
-            }
-        }catch (TTransportException tte) {
+      transport = new TSocket(activeNode.getHostAddress(),
+              activeNode.getHostPort(), conn_timeout_ms);
 
-            LOGGER.debug("Connect failed: " + tte.getMessage());
-            return ErrorCode.E_FAIL_TO_CONNECT;
+      TProtocol protocol = new TBinaryProtocol(transport);
 
-        } catch (TException e) {
-            if (e instanceof TApplicationException
+      syncClient = new GraphService.Client(protocol);
 
-                    && ((TApplicationException) e).getType() ==
+      transport.open();
 
-                    TApplicationException.MISSING_RESULT) {
+      AuthResponse result = syncClient.authenticate(username, password);
 
-                LOGGER.debug("The sessionId is NULL: " + e.getMessage());
-
-            }else {
-                LOGGER.debug("Connect failed: " + e.getMessage());
-            }
-            return ErrorCode.E_FAIL_TO_CONNECT;
-        }
-
+      if (result.getError_code() != ErrorCode.SUCCEEDED) {
+        LOGGER.error(result.getError_msg());
+        return result.getError_code();
+      } else {
+        sessionId_ = result.getSession_id();
         return ErrorCode.SUCCEEDED;
+      }
+    } catch (TTransportException tte) {
+      LOGGER.error("Connect failed: " + tte.getMessage());
+    } catch (TException te) {
+      LOGGER.error("Connect failed: " + te.getMessage());
+    } catch (Exception e) {
+      LOGGER.error("Connect failed: " + e.getMessage());
+    }
+    return ErrorCode.E_FAIL_TO_CONNECT;
+  }
+
+  @Override
+  public void disconnect() {
+
+    if (transport == null || !transport.isOpen()) {
+      return;
     }
 
-    @Override
-    public void disconnect() {
-        if(transport == null || !transport.isOpen()){
-            return;
-        }
+    try {
+      syncClient.signout(sessionId_);
+    } catch (TException e) {
+      LOGGER.error("Disconnect error: " + e.getMessage());
+    } finally {
+      transport.close();
+    }
+  }
 
-        try {
-            syncClient.signout(sessionId_);
-        } catch (TException e) {
-            LOGGER.debug("Disconnect error: " + e.getMessage());
-        }finally {
-            transport.close();
-        }
+  @Override
+  public int execute(String stmt) {
+
+    ExecutionResponse executionResponse = null;
+
+    if (transport == null || !transport.isOpen()) {
+      return ErrorCode.E_DISCONNECTED;
     }
 
-    @Override
-    public int execute(String stmt) {
-        ExecutionResponse executionResponse = null;
+    try {
+      executionResponse = syncClient.execute(sessionId_, stmt);
+      if (executionResponse.getError_code() != ErrorCode.SUCCEEDED) {
+        LOGGER.error("execute error: " + executionResponse.getError_msg());
+        return executionResponse.getError_code();
+      }
 
-        if(transport == null || !transport.isOpen()){
-            return ErrorCode.E_DISCONNECTED;
-        }
-
-        try {
-            executionResponse = syncClient.execute(sessionId_, stmt);
-            if(executionResponse.getError_code() != ErrorCode.SUCCEEDED){
-                LOGGER.debug("execute error: " + executionResponse.getError_msg());
-                return executionResponse.getError_code();
-            }
-
-        } catch (TException e) {
-            LOGGER.debug("Thrift rpc call failed: " + e.getMessage());
-            return ErrorCode.E_RPC_FAILURE;
-        }
-
-
-        return ErrorCode.SUCCEEDED;
+    } catch (TException e) {
+      LOGGER.error("Thrift rpc call failed: " + e.getMessage());
+      return ErrorCode.E_RPC_FAILURE;
     }
+
+    return ErrorCode.SUCCEEDED;
+  }
 }
