@@ -9,10 +9,13 @@
 
 namespace nebula {
 
-using namespace storage;
+using storage::cpp2::Schema;
+using storage::cpp2::ValueType;
+using storage::cpp2::SupportedType;
+using storage::cpp2::ColumnDef;
 
-cpp2::Schema SchemaWriter::moveSchema() noexcept {
-    cpp2::Schema schema;
+Schema SchemaWriter::moveSchema() noexcept {
+    Schema schema;
     schema.set_columns(std::move(columns_));
 
     nameIndex_.clear();
@@ -21,8 +24,8 @@ cpp2::Schema SchemaWriter::moveSchema() noexcept {
 
 
 SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
-                                      cpp2::SupportedType type) noexcept {
-    cpp2::ValueType vt;
+                                      SupportedType type) noexcept {
+    ValueType vt;
     vt.set_type(type);
 
     return appendCol(name, std::move(vt));
@@ -30,12 +33,12 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
 
 
 SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
-                                      cpp2::ValueType&& type) noexcept {
-    using namespace folly::hash;
+                                      ValueType&& type) noexcept {
+    using folly::hash::SpookyHashV2;
     uint64_t hash = SpookyHashV2::Hash64(name.data(), name.size(), 0);
     DCHECK(nameIndex_.find(hash) == nameIndex_.end());
 
-    cpp2::ColumnDef col;
+    ColumnDef col;
     col.set_name(name.toString());
     col.set_type(std::move(type));
 

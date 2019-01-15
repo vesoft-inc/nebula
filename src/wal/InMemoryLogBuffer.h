@@ -43,10 +43,10 @@ public:
     // for each log
     // Returns the LogID and TermID for the last log
     std::pair<LogID, TermID> accessAllLogs(
-        std::function<void (LogID,
-                            TermID,
-                            ClusterID,
-                            const std::string&)> fn) const;
+        std::function<void(LogID,
+                           TermID,
+                           ClusterID,
+                           const std::string&)> fn) const;
 
     // Mark the buffer ready for persistence
     void freeze();
@@ -76,6 +76,6 @@ using BufferPtr = std::shared_ptr<InMemoryLogBuffer>;
 using BufferList = std::list<BufferPtr>;
 
 }  // namespace wal
-}  // namespace raftex
+}  // namespace nebula
 
 #endif  // WAL_INMEMORYLOGBUFFER_H_

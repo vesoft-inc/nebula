@@ -53,7 +53,7 @@ bool BufferFlusher::flushBuffer(std::shared_ptr<FileBasedWal> wal,
 void BufferFlusher::flushLoop() {
     LOG(INFO) << "Buffer flusher loop started";
 
-    while(true) {
+    while (true) {
         decltype(buffers_)::value_type bufferPair;
         {
             std::unique_lock<std::mutex> g(buffersLock_);

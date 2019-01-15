@@ -8,7 +8,8 @@
 #include <gtest/gtest.h>
 #include "fs/FileUtils.h"
 
-using namespace nebula::fs;
+namespace nebula {
+namespace fs {
 
 TEST(FileUtils, readLink) {
     {
@@ -324,6 +325,9 @@ TEST(FileUtilsIterator, File) {
     ++iter;
     ASSERT_FALSE(iter.valid());
 }
+
+}   // namespace fs
+}   // namespace nebula
 
 
 int main(int argc, char** argv) {

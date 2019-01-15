@@ -41,8 +41,12 @@ StatusOr<std::string> getLocalIP() {
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
 
-    using namespace nebula;
-    using namespace nebula::storage;
+    using nebula::HostAddr;
+    using nebula::storage::StorageServiceHandler;
+    using nebula::kvstore::KVStore;
+    using nebula::meta::SchemaManager;
+    using nebula::network::NetworkUtils;
+    using nebula::getLocalIP;
 
     LOG(INFO) << "Starting the storage Daemon on port " << FLAGS_port
               << ", dataPath " << FLAGS_data_path;
@@ -55,11 +59,11 @@ int main(int argc, char *argv[]) {
     auto result = getLocalIP();
     CHECK(result.ok()) << result.status();
     uint32_t localIP;
-    CHECK(network::NetworkUtils::ipv4ToInt(result.value(), localIP));
+    CHECK(NetworkUtils::ipv4ToInt(result.value(), localIP));
 
-    std::unique_ptr<kvstore::KVStore> kvstore(
-            kvstore::KVStore::instance(HostAddr(localIP, FLAGS_port), std::move(paths)));
-    std::unique_ptr<meta::SchemaManager> schemaMan(meta::SchemaManager::instance());
+    std::unique_ptr<KVStore> kvstore;
+    kvstore.reset(KVStore::instance(HostAddr(localIP, FLAGS_port), std::move(paths)));
+    std::unique_ptr<SchemaManager> schemaMan(SchemaManager::instance());
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());
     auto server = std::make_shared<apache::thrift::ThriftServer>();

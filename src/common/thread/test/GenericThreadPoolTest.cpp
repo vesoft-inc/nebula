@@ -108,8 +108,8 @@ TEST(GenericThreadPool, addDelayTask) {
         ASSERT_EQ(1, pool.addDelayTask(50, cb).get());
         ASSERT_GE(shared.use_count(), 2);
         ASSERT_TRUE(msAboutEqual(50, clock.elapsedInUSec() / 1000));
-        ::usleep(5 * 1000); // ensure all internal resources are released
-        ASSERT_EQ(2, shared.use_count()); // two ref: `shared' and `cb'
+        ::usleep(5 * 1000);     // ensure all internal resources are released
+        ASSERT_EQ(2, shared.use_count());   // two ref: `shared' and `cb'
     }
 }
 

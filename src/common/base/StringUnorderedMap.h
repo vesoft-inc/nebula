@@ -92,7 +92,7 @@ public:
     std::pair<iterator, bool> insert_or_assign(key_type&& key, V&& v);
 
     template< class... Args >
-    std::pair<iterator,bool> emplace( Args&&... args );
+    std::pair<iterator, bool> emplace(Args&&... args);
 
     iterator erase(const_iterator pos);
     iterator erase(const_iterator first, const_iterator last);
@@ -112,13 +112,13 @@ public:
     T& operator[](const key_type& key);
     T& operator[](key_type&& key);
 
-    size_type count(const key_type& key ) const;
+    size_type count(const key_type& key) const;
 
     iterator find(const key_type& key);
     const_iterator find(const key_type& key) const;
 
-    std::pair<iterator,iterator> equal_range(const key_type& key);
-    std::pair<const_iterator,const_iterator> equal_range(const key_type& key) const;
+    std::pair<iterator, iterator> equal_range(const key_type& key);
+    std::pair<const_iterator, const_iterator> equal_range(const key_type& key) const;
 
 private:
     std::unordered_map<uint64_t, T> valueMap_;

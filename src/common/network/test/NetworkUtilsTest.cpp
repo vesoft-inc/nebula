@@ -8,8 +8,8 @@
 #include <gtest/gtest.h>
 #include "network/NetworkUtils.h"
 
-using namespace nebula::network;
-
+namespace nebula {
+namespace network {
 
 TEST(NetworkUtils, getHostname) {
     std::string hostname = NetworkUtils::getHostname();
@@ -72,6 +72,9 @@ TEST(NetworkUtils, intIPv4Conversion) {
     ASSERT_TRUE(NetworkUtils::ipv4ToInt(NetworkUtils::intToIPv4(ip), converted));
     EXPECT_EQ(converted, ip);
 }
+
+}   // namespace network
+}   // namespace nebula
 
 
 int main(int argc, char** argv) {

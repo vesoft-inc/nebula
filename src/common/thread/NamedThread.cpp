@@ -11,6 +11,7 @@ namespace nebula {
 namespace thread {
 
 namespace detail {
+
 class TLSThreadID {
 public:
     TLSThreadID() {
@@ -28,7 +29,8 @@ public:
 private:
     pid_t                           tid_;
 };
-}
+
+}   // namespace detail
 
 pid_t gettid() {
     static thread_local detail::TLSThreadID tlstid;

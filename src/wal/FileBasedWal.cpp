@@ -13,8 +13,7 @@
 namespace nebula {
 namespace wal {
 
-using namespace nebula::fs;
-using namespace nebula::thread;
+using nebula::fs::FileUtils;
 
 /**********************************************
  *
@@ -630,8 +629,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
 }
 
 
-size_t FileBasedWal::accessAllWalInfo(
-        std::function<bool (WalFileInfoPtr info)> fn) const {
+size_t FileBasedWal::accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> fn) const {
     std::lock_guard<std::mutex> g(walFilesMutex_);
 
     size_t count = 0;
@@ -646,8 +644,7 @@ size_t FileBasedWal::accessAllWalInfo(
 }
 
 
-size_t FileBasedWal::accessAllBuffers(
-        std::function<bool (BufferPtr buffer)> fn) const {
+size_t FileBasedWal::accessAllBuffers(std::function<bool(BufferPtr buffer)> fn) const {
     std::lock_guard<std::mutex> g(buffersMutex_);
 
     size_t count = 0;
