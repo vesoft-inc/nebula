@@ -22,7 +22,7 @@ class ShowSentence final : public Sentence {
 public:
     explicit ShowSentence(ShowKind sKind) {
         kind_ = Kind::kShow;
-        showKind_ = sKind;
+        showKind_ = std::move(sKind);
     }
 
     std::string toString() const override;

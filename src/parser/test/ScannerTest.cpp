@@ -12,7 +12,9 @@
 #include "parser/GraphParser.hpp"
 #include "parser/GraphScanner.h"
 
-using namespace ::testing;
+using testing::AssertionFailure;
+using testing::AssertionSuccess;
+using testing::AssertionResult;
 
 namespace nebula {
 
@@ -242,11 +244,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("\"\\\"Hello\\\"\"", TokenType::STRING, "\"Hello\""),
 
         // escape Normal character
-        // CHECK_SEMANTIC_VALUE("\"Hell\o\"", TokenType::STRING, "Hello"),    error
         CHECK_SEMANTIC_VALUE("\"Hell\\o\"", TokenType::STRING, "Hello"),
-        //CHECK_SEMANTIC_VALUE("\"Hell\\\o\"", TokenType::STRING, "Hello"),   error
         CHECK_SEMANTIC_VALUE("\"Hell\\\\o\"", TokenType::STRING, "Hell\\o"),
-        //CHECK_SEMANTIC_VALUE("\"Hell\\\\\o\"", TokenType::STRING, "Hello"),   error
         CHECK_SEMANTIC_VALUE("\"Hell\\\\\\o\"", TokenType::STRING, "Hell\\o"),
         CHECK_SEMANTIC_VALUE("\"\\110ello\"", TokenType::STRING, "Hello"),
         CHECK_SEMANTIC_VALUE("\"\110ello\"", TokenType::STRING, "Hello"),
