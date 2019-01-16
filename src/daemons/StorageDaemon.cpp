@@ -62,7 +62,10 @@ int main(int argc, char *argv[]) {
     CHECK(NetworkUtils::ipv4ToInt(result.value(), localIP));
 
     std::unique_ptr<KVStore> kvstore;
-    kvstore.reset(KVStore::instance(HostAddr(localIP, FLAGS_port), std::move(paths)));
+    nebula::kvstore::KVOptions options;
+    options.local_ = HostAddr(localIP, FLAGS_port);
+    options.dataPaths_ = std::move(paths);
+    kvstore.reset(KVStore::instance(std::move(options)));
     std::unique_ptr<SchemaManager> schemaMan(SchemaManager::instance());
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());

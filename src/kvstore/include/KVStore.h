@@ -10,6 +10,8 @@
 #include "base/Base.h"
 #include "kvstore/include/ResultCode.h"
 #include "kvstore/include/Iterator.h"
+#include <rocksdb/merge_operator.h>
+#include <rocksdb/compaction_filter.h>
 
 namespace nebula {
 namespace kvstore {
@@ -17,14 +19,34 @@ namespace kvstore {
 
 using KVCallback = std::function<void(ResultCode code, HostAddr hostAddr)>;
 
+struct KVOptions {
+    /**
+     * Local address, it would be used for search related meta information on meta server.
+     * */
+    HostAddr local_;
+    /**
+     *  Paths for data. It would be used by rocksdb engine.
+     *  Be careful! We should ensure each "paths" has only one instance, otherwise
+     *  it would mix up the data on disk.
+     * */
+    std::vector<std::string> dataPaths_;
+    /**
+     * Custom MergeOperator used in rocksdb.merge method.
+     * */
+    std::shared_ptr<rocksdb::MergeOperator> mergeOp_{nullptr};
+    /**
+     * Custom CompactionFilter used in compaction.
+     * */
+    std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory_{nullptr};
+};
+
+
 class KVStore {
 public:
     /**
      * Create one new instance each time.
-     * Be careful! We should ensure each "paths" has only one instance, otherwise
-     * it would mix up the data on disk.
      * */
-    static KVStore* instance(HostAddr local, std::vector<std::string> paths);
+    static KVStore* instance(KVOptions options);
 
     virtual ~KVStore() = default;
 
