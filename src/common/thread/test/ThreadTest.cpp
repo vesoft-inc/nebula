@@ -23,14 +23,7 @@ TEST(NamedThread, ThreadName) {
 }
 
 TEST(NamedThread, ThreadID) {
-    pid_t tid;
-    auto getter = [&] () {
-        tid = ::syscall(SYS_gettid);
-    };
-
-    NamedThread thread("", getter);
-    thread.join();
-    ASSERT_EQ(tid, thread.tid());
+    ASSERT_EQ(::getpid(), nebula::thread::gettid());
 }
 
 }   // namespace thread
