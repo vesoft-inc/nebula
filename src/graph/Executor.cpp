@@ -9,6 +9,7 @@
 #include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"
 #include "parser/MaintainSentences.h"
+#include "parser/ShowSentences.h"
 #include "graph/GoExecutor.h"
 #include "graph/UseExecutor.h"
 #include "graph/PipeExecutor.h"
@@ -20,6 +21,7 @@
 #include "graph/DescribeEdgeExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
+#include "graph/ShowExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -60,6 +62,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kInsertEdge:
             executor = std::make_unique<InsertEdgeExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kShow:
+            executor = std::make_unique<ShowExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
