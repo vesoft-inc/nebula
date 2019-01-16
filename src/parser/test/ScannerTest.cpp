@@ -203,6 +203,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("intersect", TokenType::KW_INTERSECT),
         CHECK_SEMANTIC_TYPE("MINUS", TokenType::KW_MINUS),
         CHECK_SEMANTIC_TYPE("minus", TokenType::KW_MINUS),
+        CHECK_SEMANTIC_TYPE("SHOW", TokenType::KW_SHOW),
+        CHECK_SEMANTIC_TYPE("show", TokenType::KW_SHOW),
+        CHECK_SEMANTIC_TYPE("Show", TokenType::KW_SHOW),
+        CHECK_SEMANTIC_TYPE("HOSTS", TokenType::KW_HOSTS),
+        CHECK_SEMANTIC_TYPE("hosts", TokenType::KW_HOSTS),
+        CHECK_SEMANTIC_TYPE("Hosts", TokenType::KW_HOSTS),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
@@ -233,11 +239,26 @@ TEST(Scanner, Basic) {
 
         CHECK_SEMANTIC_VALUE("\"Hello\"", TokenType::STRING, "Hello"),
         CHECK_SEMANTIC_VALUE("\"Hello\\\\\"", TokenType::STRING, "Hello\\"),
-        CHECK_SEMANTIC_VALUE("\"Hell\\o\"", TokenType::STRING, "Hello"),
         CHECK_SEMANTIC_VALUE("\"He\\nllo\"", TokenType::STRING, "He\nllo"),
         CHECK_SEMANTIC_VALUE("\"He\\\nllo\"", TokenType::STRING, "He\nllo"),
         CHECK_SEMANTIC_VALUE("\"\\\"Hello\\\"\"", TokenType::STRING, "\"Hello\""),
+
+        // escape Normal character
+        CHECK_SEMANTIC_VALUE("\"Hell\\o\"", TokenType::STRING, "Hello"),
+        CHECK_SEMANTIC_VALUE("\"Hell\\\\o\"", TokenType::STRING, "Hell\\o"),
+        CHECK_SEMANTIC_VALUE("\"Hell\\\\\\o\"", TokenType::STRING, "Hell\\o"),
         CHECK_SEMANTIC_VALUE("\"\\110ello\"", TokenType::STRING, "Hello"),
+        CHECK_SEMANTIC_VALUE("\"\110ello\"", TokenType::STRING, "Hello"),
+
+        CHECK_SEMANTIC_VALUE("\"\110 \"", TokenType::STRING, "H "),
+        CHECK_SEMANTIC_VALUE("\"\\110 \"", TokenType::STRING, "H "),
+        CHECK_SEMANTIC_VALUE("\"\\\110 \"", TokenType::STRING, "H "),
+        CHECK_SEMANTIC_VALUE("\"\\\\110 \"", TokenType::STRING, "\\110 "),
+        CHECK_SEMANTIC_VALUE("\"\\\\\110 \"", TokenType::STRING, "\\H "),
+        CHECK_SEMANTIC_VALUE("\"\\\\\\110 \"", TokenType::STRING, "\\H "),
+        CHECK_SEMANTIC_VALUE("\"\\\\\\\110 \"", TokenType::STRING, "\\H "),
+        CHECK_SEMANTIC_VALUE("\"\\\\\\\\110 \"", TokenType::STRING, "\\\\110 "),
+        CHECK_SEMANTIC_VALUE("\"\\\\\\\\\110 \"", TokenType::STRING, "\\\\H "),
     };
 #undef CHECK_SEMANTIC_TYPE
 #undef CHECK_SEMANTIC_VALUE
