@@ -13,7 +13,9 @@ DEFINE_uint32(batch_reserved_bytes, 4 * 1024, "default reserved bytes for one ba
 namespace nebula {
 namespace kvstore {
 
-RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath)
+RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
+                             std::shared_ptr<rocksdb::MergeOperator> mergeOp,
+                             std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
     : StorageEngine(spaceId)
     , dataPath_(dataPath) {
     LOG(INFO) << "open rocksdb on " << dataPath;
@@ -22,6 +24,12 @@ RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath)
     }
     rocksdb::Options options;
     options.create_if_missing = true;
+    if (mergeOp != nullptr) {
+        options.merge_operator = mergeOp;
+    }
+    if (cfFactory != nullptr) {
+        options.compaction_filter_factory = cfFactory;
+    }
     rocksdb::DB* db = nullptr;
     rocksdb::Status status = rocksdb::DB::Open(options, dataPath_, &db);
     CHECK(status.ok());
