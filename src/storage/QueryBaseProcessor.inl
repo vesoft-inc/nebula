@@ -155,13 +155,13 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     auto retCode = checkAndBuildContexts(req, tagContexts, edgeContext);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         this->pushResultCode(retCode, -1);
-        this->resp_.latency_in_ms = this->duration_.elapsedInMSec();
+        this->resp_.result.set_latency_in_ms(this->duration_.elapsedInMSec());
         this->onFinished();
         return;
     }
 
 //    const auto& filter = req.get_filter();
-    std::for_each(req.get_ids().begin(), req.get_ids().end(), [&](auto& partV) {
+    std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partV) {
         auto partId = partV.first;
         kvstore::ResultCode ret;
         for (auto& vId : partV.second) {
@@ -175,7 +175,7 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     });
 
     onProcessed(tagContexts, edgeContext, returnColumnsNum);
-    this->resp_.latency_in_ms = this->duration_.elapsedInMSec();
+    this->resp_.result.set_latency_in_ms(this->duration_.elapsedInMSec());
     this->onFinished();
 }
 

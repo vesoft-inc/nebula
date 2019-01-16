@@ -15,6 +15,58 @@
 namespace nebula {
 namespace graph {
 
+template<class Response>
+class StorageRpcResponse final {
+public:
+    enum class Result {
+        ALL_SUCCEEDED = 0,
+        PARTIAL_SUCCEEDED = 1,
+    };
+
+    explicit StorageRpcResponse(size_t partsSent) : totalPartsSent_(partsSent) {}
+
+    bool succeeded() const {
+        return result_ == Result::ALL_SUCCEEDED;
+    }
+
+    int32_t maxLatency() const {
+        return maxLatency_;
+    }
+
+    void setLatency(int32_t latency) {
+        if (latency > maxLatency_) {
+            maxLatency_ = latency;
+        }
+    }
+
+    void gotFailure() {
+        result_ = Result::PARTIAL_SUCCEEDED;
+    }
+
+    // A value between [0, 100], representing a precentage
+    int32_t completeness() const {
+        return (totalPartsSent_ - failedParts_.size()) * 100 / totalPartsSent_;
+    }
+
+    std::unordered_map<PartitionID, storage::cpp2::ErrorCode>& failedParts() {
+        return failedParts_;
+    }
+
+    std::vector<Response>& responses() {
+        return responses_;
+    }
+
+
+private:
+    const size_t totalPartsSent_;
+
+    Result result_{Result::ALL_SUCCEEDED};
+    std::unordered_map<PartitionID, storage::cpp2::ErrorCode> failedParts_;
+    int32_t maxLatency_{0};
+    std::vector<Response> responses_;
+};
+
+
 /**
  * A wrapper class for storage thrift API
  *
@@ -24,19 +76,19 @@ class StorageClient final {
 public:
     StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool);
 
-    folly::SemiFuture<storage::cpp2::ExecResponse> addVertices(
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,
         std::vector<storage::cpp2::Vertex> vertices,
         bool overwritable,
         folly::EventBase* evb = nullptr);
 
-    folly::SemiFuture<storage::cpp2::ExecResponse> addEdges(
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addEdges(
         GraphSpaceID space,
         std::vector<storage::cpp2::Edge> edges,
         bool overwritable,
         folly::EventBase* evb = nullptr);
 
-    folly::SemiFuture<storage::cpp2::QueryResponse> getNeighbors(
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryResponse>> getNeighbors(
         GraphSpaceID space,
         std::vector<VertexID> vertices,
         EdgeType edgeType,
@@ -45,22 +97,22 @@ public:
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
 
-    folly::SemiFuture<storage::cpp2::QueryResponse> neighborStats(
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryStatsResponse>> neighborStats(
         GraphSpaceID space,
         std::vector<VertexID> vertices,
         EdgeType edgeType,
         bool isOutBound,
         std::string filter,
-        std::vector<storage::cpp2::PropStat> returnCols,
+        std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
 
-    folly::SemiFuture<storage::cpp2::QueryResponse> getVertexProps(
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryResponse>> getVertexProps(
         GraphSpaceID space,
         std::vector<VertexID> vertices,
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
 
-    folly::SemiFuture<storage::cpp2::QueryResponse> getEdgeProps(
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::EdgePropResponse>> getEdgeProps(
         GraphSpaceID space,
         std::vector<storage::cpp2::EdgeKey> edges,
         std::vector<storage::cpp2::PropDef> returnCols,
@@ -71,29 +123,16 @@ private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
 
     template<class Request,
-             class Context,
-             class SingleResponseHandler,
-             class AllDoneHandler>
-    folly::SemiFuture<typename Context::ResponseType> collectResponse(
-        folly::EventBase* evb,
-        std::shared_ptr<Context> context,
-        std::unordered_map<HostAddr, Request> requests,
-        SingleResponseHandler&& singleRespHandler,
-        AllDoneHandler&& allDoneHandler);
-
-    template<class Request, class RemoteFunc, class RequestPartAccessor>
-    folly::SemiFuture<storage::cpp2::ExecResponse> collectExecResponse(
+             class RemoteFunc,
+             class Response =
+                typename std::result_of<
+                    RemoteFunc(storage::cpp2::StorageServiceAsyncClient*, const Request&)
+                >::type::value_type
+            >
+    folly::SemiFuture<StorageRpcResponse<Response>> collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
-        RemoteFunc&& remoteFunc,
-        RequestPartAccessor&& partAccessor);
-
-    template<class Request, class RemoteFunc, class RequestPartAccessor>
-    folly::SemiFuture<storage::cpp2::QueryResponse> collectQueryResponse(
-        folly::EventBase* evb,
-        std::unordered_map<HostAddr, Request> requests,
-        RemoteFunc&& remoteFunc,
-        RequestPartAccessor&& partAccessor);
+        RemoteFunc&& remoteFunc);
 };
 
 }   // namespace graph
