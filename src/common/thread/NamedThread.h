@@ -30,19 +30,6 @@ public:
     NamedThread(const NamedThread&) = delete;
     NamedThread& operator=(const NamedThread&) = delete;
 
-    pid_t tid() const {
-        while (tid_ == 0) {
-            // `tid_' is unavailable until the thread function is called.
-        }
-        return tid_;
-    }
-
-    // Busy waiting for the thread to enter the thread function
-    void waitForRunning() const {
-        // Use `tid()' for our purpose
-        tid();
-    }
-
 public:
     class Nominator {
     public:
@@ -70,24 +57,18 @@ public:
     };
 
 private:
-    static void hook(NamedThread *thread,
-                     const std::string &name,
+    static void hook(const std::string &name,
                      const std::function<void()> &f) {
-        thread->tid_ = nebula::thread::gettid();
         if (!name.empty()) {
             Nominator::set(name);
         }
         f();
     }
-
-private:
-    // `volatile' to make the change visible in `tid()'
-    volatile pid_t                      tid_{0};
 };
 
 template <typename F, typename...Args>
 NamedThread::NamedThread(const std::string &name, F &&f, Args&&...args)
-    : std::thread(hook, this, name,
+    : std::thread(hook, name,
                   std::bind(std::forward<F>(f), std::forward<Args>(args)...)) {
 }
 
