@@ -29,10 +29,9 @@ class KVStoreImpl : public KVStore {
     FRIEND_TEST(KVStoreTest, SimpleTest);
 
 public:
-    KVStoreImpl(HostAddr local, std::vector<std::string> paths)
-        : partMan_(PartManager::instance())
-        , local_(local)
-        , paths_(std::move(paths)) {}
+    explicit KVStoreImpl(KVOptions options)
+            : partMan_(PartManager::instance())
+            , options_(std::move(options)) {}
 
     ~KVStoreImpl() = default;
 
@@ -77,8 +76,7 @@ private:
 private:
     std::unordered_map<GraphSpaceID, std::unique_ptr<GraphSpaceKV>> kvs_;
     PartManager* partMan_ = nullptr;
-    HostAddr local_;
-    std::vector<std::string> paths_;
+    KVOptions options_;
 };
 
 }  // namespace kvstore

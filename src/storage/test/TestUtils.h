@@ -20,7 +20,7 @@ class TestUtils {
 public:
     static kvstore::KVStore* initKV(const char* rootPath) {
         FLAGS_part_man_type = "memory";  // Use MemPartManager.
-        kvstore::MemPartManager* partMan = reinterpret_cast<kvstore::MemPartManager*>(
+        kvstore::MemPartManager* partMan = static_cast<kvstore::MemPartManager*>(
                                                             kvstore::PartManager::instance());
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0, 1, 2, 3, 4, 5}
@@ -32,9 +32,13 @@ public:
         std::vector<std::string> paths;
         paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
         paths.push_back(folly::stringPrintf("%s/disk2", rootPath));
-        kvstore::KVStoreImpl* kv = reinterpret_cast<kvstore::KVStoreImpl*>(
-                                                        kvstore::KVStore::instance(HostAddr(0, 0),
-                                                        std::move(paths)));
+
+        kvstore::KVOptions options;
+        options.local_ = HostAddr(0, 0);
+        options.dataPaths_ = std::move(paths);
+
+        kvstore::KVStoreImpl* kv = static_cast<kvstore::KVStoreImpl*>(
+                                        kvstore::KVStore::instance(std::move(options)));
         return kv;
     }
 
