@@ -58,6 +58,9 @@ NO                          ([Nn][Oo])
 OVERWRITE                   ([Oo][Vv][Ee][Rr][Ww][Rr][Ii][Tt][Ee])
 TRUE                        ([Tt][Rr][Uu][Ee])
 FALSE                       ([Ff][Aa][Ll][Ss][Ee])
+SHOW                        ([Ss][Hh][Oo][Ww])
+HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
+
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -108,6 +111,8 @@ OCT                         ([0-7])
 {OVERWRITE}                 { return TokenType::KW_OVERWRITE; }
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
+{SHOW}                      { return TokenType::KW_SHOW; }
+{HOSTS}                     { return TokenType::KW_HOSTS; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
