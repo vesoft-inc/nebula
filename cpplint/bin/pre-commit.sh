@@ -5,9 +5,16 @@
 # This source code is licensed under Apache 2.0 License
 #  (found in the LICENSE.Apache file in the root directory)
 
+CURRENT_BRANCH=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
 CPPLINT=`dirname $0`/../../cpplint/cpplint.py
 
-if [ $# -eq 0 ];then
+if [ $# -eq 0 ];then    # invoked by git commit
+    if [[ $CURRENT_BRANCH = "master" ]]
+    then
+        echo "We don't allow to commit on the master branch directly."\
+             "Please open a separate topic branch to contribute."
+        exit 1
+    fi
     # Since cpplint.py could only apply on our working tree,
     # so we forbid committing with unstaged changes present.
     # Otherwise, lints can be bypassed via changing without commit.
@@ -17,7 +24,7 @@ if [ $# -eq 0 ];then
         exit 1
     fi
     CHECK_FILES=$(git diff --name-only --diff-filter=ACMRTUXB HEAD | egrep '.*\.cpp$|.*\.h$|.*\.inl$')
-else
+else    # invoked manually
     CHECK_FILES=$(find $@ -not \( -path src/CMakeFiles -prune \) \
                           -not \( -path src/interface/gen-cpp2 -prune \) \
                           -name "*.[h]" -o -name "*.cpp" -o -name '*.inl' \
