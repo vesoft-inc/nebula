@@ -1,0 +1,70 @@
+add_executable(
+    create_node_test
+    CreateNodeTest.cpp
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+target_link_libraries(
+    create_node_test
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    gtest
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    jemalloc
+    -pthread
+)
+
+add_test(NAME create_node_test COMMAND create_node_test)
+
+add_executable(
+    meta_utils_test
+    MetaUtilsTest.cpp
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+target_link_libraries(
+    meta_utils_test
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    gtest
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    jemalloc
+    -pthread
+)
+
+add_test(NAME meta_utils_test COMMAND meta_utils_test)
+

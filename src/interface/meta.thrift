@@ -21,11 +21,15 @@ enum ErrorCode {
     E_FAIL_TO_CONNECT = -2,
     E_RPC_FAILURE = -3,
 
-    E_LEADER_CHANAGED = -11,
+    E_LEADER_CHANGED = -11,
 
     // Operation Failure
-    E_NODE_HAS_EXISTED = -21,
-    E_NODE_NOT_EXISTED = -22,
+    E_NODE_EXISTED     = -21,
+    E_NODE_NOT_FOUND   = -22,
+    E_PARENT_NOT_FOUND = -23,
+    E_INVALID_PATH     = -24,
+
+    E_UNKNOWN          = -99,
 } (cpp.enum_strict)
 
 struct HostAddr {
@@ -34,7 +38,7 @@ struct HostAddr {
 }
 
 struct ExecResponse {
-    1: ErrorCode ret,
+    1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANAGED.
     2: HostAddr  leader,
 }

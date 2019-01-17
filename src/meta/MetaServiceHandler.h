@@ -10,26 +10,28 @@
 #include "base/Base.h"
 #include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/include/KVStore.h"
+#include <folly/RWSpinLock.h>
 
 namespace nebula {
 namespace meta {
 
 class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 public:
-  folly::Future<cpp2::ExecResponse>
-  future_createNode(const cpp2::CreateNodeRequest& req) override;
+    folly::Future<cpp2::ExecResponse>
+    future_createNode(const cpp2::CreateNodeRequest& req) override;
 
-  folly::Future<cpp2::ExecResponse>
-  future_setNode(const cpp2::SetNodeRequest& req) override;
+    folly::Future<cpp2::ExecResponse>
+    future_setNode(const cpp2::SetNodeRequest& req) override;
 
-  folly::Future<cpp2::GetNodeResponse>
-  future_getNode(const cpp2::GetNodeRequest& req) override;
+    folly::Future<cpp2::GetNodeResponse>
+    future_getNode(const cpp2::GetNodeRequest& req) override;
 
-  folly::Future<cpp2::ListChildrenResponse>
-  future_listChildren(const cpp2::ListChildrenRequest& req) override;
+    folly::Future<cpp2::ListChildrenResponse>
+    future_listChildren(const cpp2::ListChildrenRequest& req) override;
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;
+    folly::RWSpinLock lock_;
 };
 
 }  // namespace meta

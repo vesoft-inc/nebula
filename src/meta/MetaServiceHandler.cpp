@@ -4,15 +4,18 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 #include "meta/MetaServiceHandler.h"
+#include "meta/CreateNodeProcessor.h"
 
 namespace nebula {
 namespace meta {
 
+
 folly::Future<cpp2::ExecResponse>
 MetaServiceHandler::future_createNode(const cpp2::CreateNodeRequest& req) {
-    UNUSED(req);
-    folly::Promise<cpp2::ExecResponse> p;
-    return p.getFuture();
+    auto* processor = CreateNodeProcessor::instance(kvstore_, &lock_);
+    auto f = processor->getFuture();
+    processor->process(req);
+    return f;
 }
 
 folly::Future<cpp2::ExecResponse>
