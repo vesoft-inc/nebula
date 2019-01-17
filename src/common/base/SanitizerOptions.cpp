@@ -7,6 +7,9 @@
 
 #ifdef BUILT_WITH_SANITIZER
 
+// Following hook functions are required by the sanitizer runtime library.
+// So make them exported.
+// Besides, keep these hooks outside the consideration of sanitizer
 #define SANITIZER_HOOK_ATTRIBUTES                                               \
     __attribute__((visibility("default")))                                      \
     __attribute__((no_sanitize("address", "thread", "undefined")))
