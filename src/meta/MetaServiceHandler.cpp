@@ -5,10 +5,12 @@
  */
 #include "meta/MetaServiceHandler.h"
 #include "meta/CreateNodeProcessor.h"
+#include "meta/SetNodeProcessor.h"
+#include "meta/GetNodeProcessor.h"
+#include "meta/ListChildrenProcessor.h"
 
 namespace nebula {
 namespace meta {
-
 
 folly::Future<cpp2::ExecResponse>
 MetaServiceHandler::future_createNode(const cpp2::CreateNodeRequest& req) {
@@ -20,23 +22,26 @@ MetaServiceHandler::future_createNode(const cpp2::CreateNodeRequest& req) {
 
 folly::Future<cpp2::ExecResponse>
 MetaServiceHandler::future_setNode(const cpp2::SetNodeRequest& req) {
-    UNUSED(req);
-    folly::Promise<cpp2::ExecResponse> p;
-    return p.getFuture();
+    auto* processor = SetNodeProcessor::instance(kvstore_, &lock_);
+    auto f = processor->getFuture();
+    processor->process(req);
+    return f;
 }
 
 folly::Future<cpp2::GetNodeResponse>
 MetaServiceHandler::future_getNode(const cpp2::GetNodeRequest& req) {
-    UNUSED(req);
-    folly::Promise<cpp2::GetNodeResponse> p;
-    return p.getFuture();
+    auto* processor = GetNodeProcessor::instance(kvstore_, &lock_);
+    auto f = processor->getFuture();
+    processor->process(req);
+    return f;
 }
 
 folly::Future<cpp2::ListChildrenResponse>
 MetaServiceHandler::future_listChildren(const cpp2::ListChildrenRequest& req) {
-    UNUSED(req);
-    folly::Promise<cpp2::ListChildrenResponse> p;
-    return p.getFuture();
+    auto* processor = ListChildrenProcessor::instance(kvstore_, &lock_);
+    auto f = processor->getFuture();
+    processor->process(req);
+    return f;
 }
 
 }  // namespace meta

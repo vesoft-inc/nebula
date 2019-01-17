@@ -51,7 +51,7 @@ protected:
         case kvstore::ResultCode::ERR_LEADER_CHANAGED:
             return cpp2::ErrorCode::E_LEADER_CHANGED;
         case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
-            return cpp2::ErrorCode::E_PARENT_NOT_FOUND;
+            return cpp2::ErrorCode::E_NODE_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
         }

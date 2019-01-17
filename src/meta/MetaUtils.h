@@ -75,6 +75,10 @@ public:
         return slashNum;
     }
 
+    static folly::StringPiece getPath(folly::StringPiece rawKey) {
+        return rawKey.subpiece(sizeof(uint8_t));
+    }
+
 private:
     MetaUtils() = delete;
 };

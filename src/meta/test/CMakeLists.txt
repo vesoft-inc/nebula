@@ -31,7 +31,7 @@ target_link_libraries(
     -pthread
 )
 
-add_test(NAME create_node_test COMMAND create_node_test)
+nebula_add_test(create_node_test)
 
 add_executable(
     meta_utils_test
@@ -66,5 +66,110 @@ target_link_libraries(
     -pthread
 )
 
-add_test(NAME meta_utils_test COMMAND meta_utils_test)
+nebula_add_test(meta_utils_test)
+
+add_executable(
+    set_node_test
+    SetNodeTest.cpp
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+target_link_libraries(
+    set_node_test
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    gtest
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    jemalloc
+    -pthread
+)
+
+nebula_add_test(set_node_test)
+
+add_executable(
+    get_node_test
+    GetNodeTest.cpp
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+target_link_libraries(
+    get_node_test
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    gtest
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    jemalloc
+    -pthread
+)
+
+nebula_add_test(get_node_test)
+
+add_executable(
+    list_children_test
+    ListChildrenTest.cpp
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+target_link_libraries(
+    list_children_test
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    gtest
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    jemalloc
+    -pthread
+)
+
+nebula_add_test(list_children_test)
 

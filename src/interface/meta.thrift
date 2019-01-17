@@ -26,8 +26,7 @@ enum ErrorCode {
     // Operation Failure
     E_NODE_EXISTED     = -21,
     E_NODE_NOT_FOUND   = -22,
-    E_PARENT_NOT_FOUND = -23,
-    E_INVALID_PATH     = -24,
+    E_INVALID_PATH     = -23,
 
     E_UNKNOWN          = -99,
 } (cpp.enum_strict)
@@ -58,10 +57,9 @@ struct GetNodeRequest {
 }
 
 struct GetNodeResponse {
-    1: ErrorCode ret,
+    1: ErrorCode code,
     2: HostAddr leader,
     3: string value,
-    4: i64 last_updated_time,
 }
 
 struct ListChildrenRequest {
@@ -69,7 +67,7 @@ struct ListChildrenRequest {
 }
 
 struct ListChildrenResponse {
-    1: ErrorCode ret,
+    1: ErrorCode code,
     2: HostAddr leader,
     3: list<string> children,
 }

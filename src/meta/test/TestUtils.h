@@ -8,6 +8,7 @@
 #include "kvstore/include/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/KVStoreImpl.h"
+#include "meta/CreateNodeProcessor.h"
 
 DECLARE_string(part_man_type);
 
@@ -35,6 +36,25 @@ public:
         kvstore::KVStoreImpl* kv = static_cast<kvstore::KVStoreImpl*>(
                                         kvstore::KVStore::instance(std::move(options)));
         return kv;
+    }
+
+    static void createSomeNodes(kvstore::KVStore* kv, folly::RWSpinLock* lock,
+                                std::vector<std::string> nodes = {"/", "/abc", "/abc/d"}) {
+        for (auto& node : nodes) {
+            auto layer = MetaUtils::layer(node);
+            auto* processor = CreateNodeProcessor::instance(kv, lock);
+            cpp2::CreateNodeRequest req;
+            req.set_path(node);
+            req.set_value(folly::stringPrintf("%d_%s", layer, node.c_str()));
+            auto f = processor->getFuture();
+            processor->process(req);
+            auto resp = std::move(f).get();
+            EXPECT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+            std::string val;
+            CHECK_EQ(kvstore::ResultCode::SUCCESSED,
+                     kv->get(0, 0, MetaUtils::metaKey(layer, node.c_str()), &val));
+            CHECK_EQ(folly::stringPrintf("%d_%s", layer, node.c_str()), val);
+        }
     }
 };
 
