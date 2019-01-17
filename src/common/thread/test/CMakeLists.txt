@@ -20,4 +20,4 @@ target_link_libraries(
     pthread
     dl
 )
-add_test(NAME thread_test COMMAND thread_test)
+nebula_add_test(thread_test)
