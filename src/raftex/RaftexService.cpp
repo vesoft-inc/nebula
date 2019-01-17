@@ -12,8 +12,6 @@
 namespace nebula {
 namespace raftex {
 
-using namespace folly;
-
 /*******************************************************
  *
  * Implementation of RaftexService

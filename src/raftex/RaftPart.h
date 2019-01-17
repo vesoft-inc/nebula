@@ -17,7 +17,7 @@
 namespace folly {
 class IOThreadPoolExecutor;
 class EventBase;
-}  // namespace folly;
+}  // namespace folly
 
 namespace nebula {
 

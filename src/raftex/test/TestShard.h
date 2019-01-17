@@ -28,9 +28,9 @@ public:
         wal::BufferFlusher* flusher,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
         std::shared_ptr<thread::GenericThreadPool> workers,
-        std::function<void (size_t idx, const char*, TermID)>
+        std::function<void(size_t idx, const char*, TermID)>
             leadershipLostCB,
-        std::function<void (size_t idx, const char*, TermID)>
+        std::function<void(size_t idx, const char*, TermID)>
             becomeLeaderCB);
 
     std::shared_ptr<RaftexService> getService() const {
@@ -56,9 +56,9 @@ private:
 
     std::unordered_map<LogID, std::string> data_;
 
-    std::function<void (size_t idx, const char*, TermID)>
+    std::function<void(size_t idx, const char*, TermID)>
         leadershipLostCB_;
-    std::function<void (size_t idx, const char*, TermID)>
+    std::function<void(size_t idx, const char*, TermID)>
         becomeLeaderCB_;
 };
 
