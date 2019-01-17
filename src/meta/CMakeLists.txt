@@ -13,4 +13,11 @@ add_library(
 
 add_dependencies(meta_service_handler common meta_thrift_obj kvstore_obj)
 
+add_library(
+    meta_client OBJECT
+    MetaClient.cpp
+)
+
+add_dependencies(meta_client common meta_thrift_obj)
+
 add_subdirectory(test)

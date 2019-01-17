@@ -9,6 +9,8 @@
 #include "kvstore/PartManager.h"
 #include "kvstore/KVStoreImpl.h"
 #include "meta/CreateNodeProcessor.h"
+#include "meta/MetaServiceHandler.h"
+#include <thrift/lib/cpp2/server/ThriftServer.h>
 
 DECLARE_string(part_man_type);
 
@@ -55,6 +57,34 @@ public:
                      kv->get(0, 0, MetaUtils::metaKey(layer, node.c_str()), &val));
             CHECK_EQ(folly::stringPrintf("%d_%s", layer, node.c_str()), val);
         }
+    }
+
+    struct ServerContext {
+        ~ServerContext() {
+            server_->stop();
+            serverT_->join();
+        }
+
+        std::unique_ptr<apache::thrift::ThriftServer> server_;
+        std::unique_ptr<std::thread> serverT_;
+    };
+
+    static std::unique_ptr<ServerContext> mockServer(uint32_t port, const char* dataPath) {
+        auto sc = std::make_unique<ServerContext>();
+        sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
+        sc->serverT_ = std::make_unique<std::thread>([&]() {
+            LOG(INFO) << "Starting the meta Daemon on port " << port << ", path " << dataPath;
+            std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath));
+            auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kv.get());
+            CHECK(!!sc->server_) << "Failed to create the thrift server";
+            sc->server_->setInterface(handler);
+            sc->server_->setPort(port);
+            sc->server_->serve();  // Will wait until the server shuts down
+
+            LOG(INFO) << "Stop the server...";
+        });
+        sleep(1);
+        return sc;
     }
 };
 

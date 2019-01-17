@@ -113,7 +113,6 @@ private:
         // 2xx, for graph engine errors
         kSyntaxError            = 301,
         // 3xx, for storage engine errors
-        // ...
         // 4xx, for meta service errors
         // ...
     };
