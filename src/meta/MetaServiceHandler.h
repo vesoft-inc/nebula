@@ -17,6 +17,8 @@ namespace meta {
 
 class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 public:
+    explicit MetaServiceHandler(kvstore::KVStore* kv) : kvstore_(kv) {}
+
     folly::Future<cpp2::ExecResponse>
     future_createNode(const cpp2::CreateNodeRequest& req) override;
 
@@ -28,6 +30,9 @@ public:
 
     folly::Future<cpp2::ListChildrenResponse>
     future_listChildren(const cpp2::ListChildrenRequest& req) override;
+
+    folly::Future<cpp2::ExecResponse>
+    future_removeNode(const cpp2::RemoveNodeRequest& req) override;
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;

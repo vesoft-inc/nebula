@@ -82,6 +82,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
 )
 target_link_libraries(
     metad

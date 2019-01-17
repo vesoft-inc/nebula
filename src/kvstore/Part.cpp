@@ -9,11 +9,16 @@
 namespace nebula {
 namespace kvstore {
 
-ResultCode SimplePart::asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) {
+void SimplePart::asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) {
     CHECK_NOTNULL(engine_);
     auto ret = engine_->multiPut(std::move(keyValues));
     cb(ret, HostAddr(0, 0));
-    return ret;
+}
+
+void SimplePart::asyncRemove(const std::string& key, KVCallback cb) {
+    CHECK_NOTNULL(engine_);
+    auto ret = engine_->remove(key);
+    cb(ret, HostAddr(0, 0));
 }
 
 }  // namespace kvstore

@@ -8,6 +8,7 @@
 #include "meta/SetNodeProcessor.h"
 #include "meta/GetNodeProcessor.h"
 #include "meta/ListChildrenProcessor.h"
+#include "meta/RemoveNodeProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -39,6 +40,14 @@ MetaServiceHandler::future_getNode(const cpp2::GetNodeRequest& req) {
 folly::Future<cpp2::ListChildrenResponse>
 MetaServiceHandler::future_listChildren(const cpp2::ListChildrenRequest& req) {
     auto* processor = ListChildrenProcessor::instance(kvstore_, &lock_);
+    auto f = processor->getFuture();
+    processor->process(req);
+    return f;
+}
+
+folly::Future<cpp2::ExecResponse>
+MetaServiceHandler::future_removeNode(const cpp2::RemoveNodeRequest& req) {
+    auto* processor = RemoveNodeProcessor::instance(kvstore_, &lock_);
     auto f = processor->getFuture();
     processor->process(req);
     return f;

@@ -173,3 +173,38 @@ target_link_libraries(
 
 nebula_add_test(list_children_test)
 
+add_executable(
+    remove_node_test
+    RemoveNodeTest.cpp
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+target_link_libraries(
+    remove_node_test
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    folly
+    boost_system
+    boost_context
+    ${OPENSSL_LIBRARIES}
+    ${KRB5_LIBRARIES}
+    gtest
+    glog
+    gflags
+    event
+    ${COMPRESSION_LIBRARIES}
+    resolv
+    double-conversion
+    dl
+    jemalloc
+    -pthread
+)
+
+nebula_add_test(remove_node_test)
+

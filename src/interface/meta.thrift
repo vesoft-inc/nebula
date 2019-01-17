@@ -27,6 +27,7 @@ enum ErrorCode {
     E_NODE_EXISTED     = -21,
     E_NODE_NOT_FOUND   = -22,
     E_INVALID_PATH     = -23,
+    E_CHILD_EXISTED    = -24,
 
     E_UNKNOWN          = -99,
 } (cpp.enum_strict)
@@ -72,10 +73,15 @@ struct ListChildrenResponse {
     3: list<string> children,
 }
 
+struct RemoveNodeRequest {
+    1: string path,
+}
+
 service MetaService {
     ExecResponse createNode(1: CreateNodeRequest req);
     ExecResponse setNode(1: SetNodeRequest req);
     GetNodeResponse getNode(1: GetNodeRequest req);
     ListChildrenResponse listChildren(1: ListChildrenRequest req);
+    ExecResponse removeNode(1: RemoveNodeRequest req);
 }
 
