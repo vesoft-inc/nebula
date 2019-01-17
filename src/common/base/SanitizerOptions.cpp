@@ -12,7 +12,7 @@
 // Besides, keep these hooks outside the consideration of sanitizer
 #define SANITIZER_HOOK_ATTRIBUTES                                               \
     __attribute__((visibility("default")))                                      \
-    __attribute__((no_sanitize("address", "thread", "undefined")))
+    // __attribute__((no_sanitize("address", "thread", "undefined")))
 
 extern "C" {
 
