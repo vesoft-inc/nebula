@@ -13,4 +13,4 @@ add_library(
 
 add_dependencies(meta_service_handler common meta_thrift_obj kvstore_obj)
 
-#add_subdirectory(test)
+add_subdirectory(test)

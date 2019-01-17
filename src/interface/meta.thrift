@@ -21,11 +21,15 @@ enum ErrorCode {
     E_FAIL_TO_CONNECT = -2,
     E_RPC_FAILURE = -3,
 
-    E_LEADER_CHANAGED = -11,
+    E_LEADER_CHANGED = -11,
 
     // Operation Failure
-    E_NODE_HAS_EXISTED = -21,
-    E_NODE_NOT_EXISTED = -22,
+    E_NODE_EXISTED     = -21,
+    E_NODE_NOT_FOUND   = -22,
+    E_INVALID_PATH     = -23,
+    E_CHILD_EXISTED    = -24,
+
+    E_UNKNOWN          = -99,
 } (cpp.enum_strict)
 
 struct HostAddr {
@@ -34,7 +38,7 @@ struct HostAddr {
 }
 
 struct ExecResponse {
-    1: ErrorCode ret,
+    1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANAGED.
     2: HostAddr  leader,
 }
@@ -54,10 +58,9 @@ struct GetNodeRequest {
 }
 
 struct GetNodeResponse {
-    1: ErrorCode ret,
+    1: ErrorCode code,
     2: HostAddr leader,
     3: string value,
-    4: i64 last_updated_time,
 }
 
 struct ListChildrenRequest {
@@ -65,9 +68,13 @@ struct ListChildrenRequest {
 }
 
 struct ListChildrenResponse {
-    1: ErrorCode ret,
+    1: ErrorCode code,
     2: HostAddr leader,
     3: list<string> children,
+}
+
+struct RemoveNodeRequest {
+    1: string path,
 }
 
 service MetaService {
@@ -75,5 +82,6 @@ service MetaService {
     ExecResponse setNode(1: SetNodeRequest req);
     GetNodeResponse getNode(1: GetNodeRequest req);
     ListChildrenResponse listChildren(1: ListChildrenRequest req);
+    ExecResponse removeNode(1: RemoveNodeRequest req);
 }
 

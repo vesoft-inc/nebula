@@ -108,6 +108,8 @@ public:
     ResultCode prefix(const std::string& prefix,
                       std::unique_ptr<StorageIter>* iter) override;
 
+    ResultCode remove(const std::string& key) override;
+
     ResultCode ingest(const std::vector<std::string>& files);
 
 private:
