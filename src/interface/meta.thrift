@@ -80,6 +80,19 @@ struct GetPartsAllocResp {
     2: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
 }
 
+struct AddHostsReq {
+    1: list<common.HostAddr> hosts;
+}
+
+struct GetAllHostsResp {
+    1: ExecResp exec_code,
+    2: list<common.HostAddr> hosts,
+}
+
+struct RemoveHostsReq {
+    1: list<common.HostAddr> hosts;
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp deleteSpace(1: DeleteSpaceReq req);
@@ -89,6 +102,10 @@ service MetaService {
 
     ExecResp addEdge(1: AddEdgeReq req);
     GetEdgeSchemaResp getEdgeSchema(1: GetEdgeSchemaReq req);
+
+    ExecResp addHosts(1: AddHostsReq req);
+    GetAllHostsResp getAllHosts();
+    ExecResp removeHosts(1: RemoveHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
 }
