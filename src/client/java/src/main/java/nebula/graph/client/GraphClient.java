@@ -84,6 +84,11 @@ public class GraphClient implements GraphClientIface {
 
                 AuthResponse result = syncClient.authenticate(username, password);
 
+                if (result.getError_code() == ErrorCode.E_BAD_USERNAME_PASSWORD) {
+                    LOGGER.error("User name or password error");
+                    return ErrorCode.E_BAD_USERNAME_PASSWORD;
+                }
+
                 if (result.getError_code() != ErrorCode.SUCCEEDED) {
                     LOGGER.error("Host : "
                             + activeNodeAddr.getAddress() + "error : "
