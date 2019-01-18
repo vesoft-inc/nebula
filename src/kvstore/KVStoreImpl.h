@@ -20,6 +20,8 @@ namespace kvstore {
 // <engine pointer, path>
 using Engine = std::pair<std::unique_ptr<StorageEngine>, std::string>;
 
+using PartEngine = std::unordered_map<PartitionID, Engine*>;
+
 struct GraphSpaceKV {
     std::unordered_map<PartitionID, std::unique_ptr<Part>> parts_;
     std::vector<Engine> engines_;
@@ -27,6 +29,7 @@ struct GraphSpaceKV {
 
 class KVStoreImpl : public KVStore {
     FRIEND_TEST(KVStoreTest, SimpleTest);
+    FRIEND_TEST(KVStoreTest, PartsTest);
 
 public:
     explicit KVStoreImpl(KVOptions options)
@@ -82,7 +85,23 @@ public:
                           KVCallback cb) override;
 
 private:
+    /**
+     * Init engines for one space.
+     * */
     std::vector<Engine> initEngines(GraphSpaceID spaceId);
+
+    /**
+     * Check whether parts stored in local existed in PartMan, if not, remove it locally.
+     * Return partEngine map.
+     * */
+    PartEngine checkLocalParts(GraphSpaceID spaceId);
+
+    /**
+     * Dispatch part to some engine, return the engine while would hold the part.
+     * */
+    const Engine& dispatch(GraphSpaceID spaceId,
+                           PartitionID partId,
+                           const PartEngine& maps);
 
 private:
     std::unordered_map<GraphSpaceID, std::unique_ptr<GraphSpaceKV>> kvs_;

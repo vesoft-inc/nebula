@@ -48,6 +48,25 @@ public:
      * */
     virtual ResultCode removeRange(const std::string& start,
                                    const std::string& end) = 0;
+    /**
+     * Add partId into current storage engine.
+     * */
+    virtual void addPart(PartitionID partId) = 0;
+
+    /**
+     * Remove partId from current storage engine.
+     * */
+    virtual void removePart(PartitionID partId) = 0;
+
+    /**
+     * Return all partIds current storage engine holded.
+     * */
+    virtual std::vector<PartitionID> allParts() = 0;
+
+    /**
+     * Return total parts num
+     * */
+    virtual int32_t totalPartsNum() = 0;
 
 protected:
     GraphSpaceID spaceId_;
