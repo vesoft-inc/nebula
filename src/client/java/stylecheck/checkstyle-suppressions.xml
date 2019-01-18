@@ -109,6 +109,10 @@
             files="YearMonth.java"
              />
 
+  <suppress checks="Indentation"
+            files="ErrorCode.java"
+             />
+
   <suppress checks="CustomImportOrder"
             files="GraphService.java"
              />
