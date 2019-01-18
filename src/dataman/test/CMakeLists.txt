@@ -22,7 +22,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME row_reader_test COMMAND row_reader_test)
+nebula_add_test(row_reader_test)
 
 
 add_executable(
@@ -49,7 +49,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME row_writer_test COMMAND row_writer_test)
+nebula_add_test(row_writer_test)
 
 
 add_executable(
@@ -76,7 +76,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME row_updater_test COMMAND row_updater_test)
+nebula_add_test(row_updater_test)
 
 
 add_executable(
@@ -103,7 +103,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME rowset_reader_writer_test COMMAND rowset_reader_writer_test)
+nebula_add_test(rowset_reader_writer_test)
 
 
 add_executable(

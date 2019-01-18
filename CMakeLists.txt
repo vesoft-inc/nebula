@@ -35,6 +35,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++")
 
+# CMake macro to specify number of jobs to build third-party
 if (NOT THIRD_PARTY_JOBS)
     set(THIRD_PARTY_JOBS 2)
 endif(NOT THIRD_PARTY_JOBS)
@@ -43,7 +44,9 @@ endif(NOT THIRD_PARTY_JOBS)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif(NOT CMAKE_BUILD_TYPE)
-message("== Build type is " ${CMAKE_BUILD_TYPE} " ==")
+
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}, "
+               "options: Debug, Release, RelWithDebInfo, MinSizeRel")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "_build")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "_build")
@@ -51,6 +54,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "_build")
 
 # Set the project home dir
 set(NEBULA_HOME ${CMAKE_CURRENT_SOURCE_DIR})
+add_definitions(-DNEBULA_HOME=${NEBULA_HOME})
 
 # To include customized FindXXX.cmake modules
 set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
@@ -121,11 +125,21 @@ add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
 
 if(asan)
+    add_definitions(-DBUILT_WITH_SANITIZER)
     add_compile_options(-fsanitize=address)
     add_compile_options(-g)
     add_compile_options(-fno-omit-frame-pointer)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
 endif()
+
+macro(nebula_add_test test_name)
+    add_test(NAME ${test_name} COMMAND ${test_name})
+    # e.g. cmake -DNEBULA_ASAN_PRELOAD=/path/to/libasan.so
+    # or,  cmake -DNEBULA_ASAN_PRELOAD=`/path/to/gcc --print-file-name=libasan.so`
+    if (NEBULA_ASAN_PRELOAD)
+        set_property(TEST ${test_name} PROPERTY ENVIRONMENT LD_PRELOAD=${NEBULA_ASAN_PRELOAD})
+    endif(NEBULA_ASAN_PRELOAD)
+endmacro(nebula_add_test)
 
 include_directories(SYSTEM ${NEBULA_HOME}/third-party/bzip2/_install/include)
 include_directories(SYSTEM ${NEBULA_HOME}/third-party/double-conversion/_install/include)
