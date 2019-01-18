@@ -17,7 +17,7 @@ target_link_libraries(
     -pthread
 )
 
-add_test(NAME duration_test COMMAND duration_test)
+nebula_add_test(duration_test)
 
 add_executable(
     duration_bm

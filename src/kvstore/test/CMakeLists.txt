@@ -24,7 +24,7 @@ target_link_libraries(
     z
     -pthread
 )
-add_test(NAME part_test COMMAND part_test)
+nebula_add_test(part_test)
 
 add_executable(
     rocksdb_engine_test
@@ -52,7 +52,7 @@ target_link_libraries(
     z
     -pthread
 )
-add_test(NAME rocksdb_engine_test COMMAND rocksdb_engine_test)
+nebula_add_test(rocksdb_engine_test)
 
 add_executable(
     kvstore_test
@@ -80,7 +80,7 @@ target_link_libraries(
     z
     -pthread
 )
-add_test(NAME kvstore_test COMMAND kvstore_test)
+nebula_add_test(kvstore_test)
 
 add_executable(
         load_test
@@ -107,4 +107,4 @@ target_link_libraries(
         z
         -pthread
 )
-add_test(NAME load_test COMMAND load_test)
+nebula_add_test(load_test)

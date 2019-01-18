@@ -76,6 +76,9 @@
                                         _Pragma("GCC optimize(\"O0\")")
 #define END_NO_OPTIMIZATION             _Pragma("GCC pop_options")
 
+#define NEBULA_STRINGIFY(STR)           NEBULA_STRINGIFY_X(STR)
+#define NEBULA_STRINGIFY_X(STR)         #STR
+
 #ifndef UNUSED
 #define UNUSED(x) (void)(x)
 #endif  // UNUSED
