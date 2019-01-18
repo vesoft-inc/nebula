@@ -8,10 +8,7 @@ namespace cpp nebula.meta
 namespace java nebula.meta
 namespace go nebula.meta
 
-cpp_include "base/ThriftTypes.h"
-
-typedef i32 (cpp.type = "nebula::IPv4") IPv4
-typedef i32 (cpp.type = "nebula::Port") Port
+include "common.thrift"
 
 enum ErrorCode {
     SUCCEEDED = 0,
@@ -24,56 +21,75 @@ enum ErrorCode {
     E_LEADER_CHANAGED = -11,
 
     // Operation Failure
-    E_NODE_HAS_EXISTED = -21,
-    E_NODE_NOT_EXISTED = -22,
 } (cpp.enum_strict)
 
-struct HostAddr {
-    1: IPv4  ip,
-    2: Port  port,
-}
-
-struct ExecResponse {
+struct ExecResp {
     1: ErrorCode ret,
     // Valid if ret equals E_LEADER_CHANAGED.
-    2: HostAddr  leader,
+    2: common.HostAddr  leader,
 }
 
-struct CreateNodeRequest {
-    1: string path,
-    2: string value,
+struct CreateSpaceReq {
+    1: common.GraphSpaceID space_id,
+    2: i32 parts_num,
+    3: i32 replica_factor,
 }
 
-struct SetNodeRequest {
-    1: string path,
-    2: string value,
+struct DeleteSpaceReq {
+    1: common.GraphSpaceID space_id,
 }
 
-struct GetNodeRequest {
-    1: string path,
+struct AddTagReq {
+    1: common.GraphSpaceID space_id,
+    2: i32                 tag_id,
+    3: common.Schema       schema,
 }
 
-struct GetNodeResponse {
-    1: ErrorCode ret,
-    2: HostAddr leader,
-    3: string value,
-    4: i64 last_updated_time,
+struct AddEdgeReq {
+    1: common.GraphSpaceID space_id,
+    2: i32                 edge_type,
+    3: common.Schema       schema,
 }
 
-struct ListChildrenRequest {
-    1: string path,
+struct GetTagSchemaReq {
+    1: common.GraphSpaceID space_id,
+    2: i32                 tag_id,
+    3: i32                 version,
 }
 
-struct ListChildrenResponse {
-    1: ErrorCode ret,
-    2: HostAddr leader,
-    3: list<string> children,
+struct GetTagSchemaResp {
+    1: common.Schema    schema,
+}
+
+struct GetEdgeSchemaReq {
+    1: common.GraphSpaceID space_id,
+    2: i32                 edge_type,
+    3: i32                 version,
+}
+
+struct GetEdgeSchemaResp {
+    1: common.Schema    schema,
+}
+
+struct GetPartsAllocReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct GetPartsAllocResp {
+    1: ExecResp exec_code,
+    2: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
 }
 
 service MetaService {
-    ExecResponse createNode(1: CreateNodeRequest req);
-    ExecResponse setNode(1: SetNodeRequest req);
-    GetNodeResponse getNode(1: GetNodeRequest req);
-    ListChildrenResponse listChildren(1: ListChildrenRequest req);
+    ExecResp createSpace(1: CreateSpaceReq req);
+    ExecResp deleteSpace(1: DeleteSpaceReq req);
+
+    ExecResp addTag(1: AddTagReq req);
+    GetTagSchemaResp getTagSchema(1: GetTagSchemaReq req);
+
+    ExecResp addEdge(1: AddEdgeReq req);
+    GetEdgeSchemaResp getEdgeSchema(1: GetEdgeSchemaReq req);
+
+    GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
 }
 
