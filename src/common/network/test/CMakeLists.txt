@@ -19,7 +19,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME network_utils_test COMMAND network_utils_test)
+nebula_add_test(network_utils_test)
 
 add_executable(
     network_utils_bm

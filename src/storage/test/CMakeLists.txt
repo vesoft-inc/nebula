@@ -33,7 +33,7 @@ target_link_libraries(
     -pthread
 )
 
-add_test(NAME add_vertices_test COMMAND add_vertices_test)
+nebula_add_test(add_vertices_test)
 
 add_executable(
     storage_service_handler_test
@@ -69,7 +69,7 @@ target_link_libraries(
     -pthread
 )
 
-add_test(NAME storage_service_handler_test COMMAND storage_service_handler_test)
+nebula_add_test(storage_service_handler_test)
 
 add_executable(
     add_edges_test
@@ -106,7 +106,7 @@ target_link_libraries(
     -pthread
 )
 
-add_test(NAME add_edges_test COMMAND add_edges_test)
+nebula_add_test(add_edges_test)
 
 add_executable(
     query_bound_test
@@ -143,7 +143,7 @@ target_link_libraries(
     -pthread
 )
 
-add_test(NAME query_bound_test COMMAND query_bound_test)
+nebula_add_test(query_bound_test)
 
 add_executable(
     vertex_props_test
@@ -180,7 +180,7 @@ target_link_libraries(
     -pthread
 )
 
-add_test(NAME vertex_props_test COMMAND vertex_props_test)
+nebula_add_test(vertex_props_test)
 
 add_executable(
     edge_props_test
@@ -217,7 +217,7 @@ target_link_libraries(
     -pthread
 )
 
-add_test(NAME edge_props_test COMMAND edge_props_test)
+nebula_add_test(edge_props_test)
 
 add_executable(
     query_stats_test
@@ -254,5 +254,5 @@ target_link_libraries(
     -pthread
 )
 
-add_test(NAME query_stats_test COMMAND query_stats_test)
+nebula_add_test(query_stats_test)
 

@@ -23,7 +23,7 @@ target_link_libraries(
     -pthread
 )
 target_include_directories(parser_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
-add_test(NAME parser_test COMMAND parser_test)
+nebula_add_test(parser_test)
 
 add_executable(
     scanner_test
@@ -50,7 +50,7 @@ target_link_libraries(
     -pthread
 )
 target_include_directories(scanner_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
-add_test(NAME scanner_test COMMAND scanner_test)
+nebula_add_test(scanner_test)
 
 add_compile_options(-Wno-parentheses)
 
@@ -79,7 +79,7 @@ target_link_libraries(
     -pthread
 )
 target_include_directories(expression_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
-add_test(NAME expression_test COMMAND expression_test)
+nebula_add_test(expression_test)
 
 add_executable(
     expression_encode_decode_bm
