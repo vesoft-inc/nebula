@@ -16,7 +16,7 @@ namespace storage {
 template<typename REQ, typename RESP>
 bool QueryBaseProcessor<REQ, RESP>::validOperation(cpp2::SupportedType vType,
                                               cpp2::StatType statType) {
-    switch(statType) {
+    switch (statType) {
         case cpp2::StatType::SUM:
         case cpp2::StatType::AVG: {
             return vType == cpp2::SupportedType::INT
@@ -43,7 +43,7 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(
     for (auto& prop : props) {
         const auto& name = prop.prop_.get_name();
         VLOG(3) << "collect " << name;
-        switch(prop.type_.type) {
+        switch (prop.type_.type) {
             case cpp2::SupportedType::INT: {
                 int64_t v;
                 auto ret = reader.getInt<int64_t>(name, v);
@@ -78,8 +78,8 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(
                 VLOG(1) << "Unsupport stats!";
                 break;
             }
-        } // switch
-    } // for
+        }  // switch
+    }  // for
 }
 
 template<typename REQ, typename RESP>

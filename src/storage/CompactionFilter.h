@@ -32,7 +32,7 @@ public:
         return false;
     }
 
-    const char* Name() const override { 
+    const char* Name() const override {
         return "NebulaCompactionFilter";
     }
 };

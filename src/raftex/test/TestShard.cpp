@@ -22,9 +22,9 @@ TestShard::TestShard(size_t idx,
                      wal::BufferFlusher* flusher,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,
-                     std::function<void (size_t idx, const char*, TermID)>
+                     std::function<void(size_t idx, const char*, TermID)>
                         leadershipLostCB,
-                     std::function<void (size_t idx, const char*, TermID)>
+                     std::function<void(size_t idx, const char*, TermID)>
                         becomeLeaderCB)
         : RaftPart(1,   // clusterId
                    1,   // spaceId
