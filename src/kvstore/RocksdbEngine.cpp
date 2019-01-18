@@ -97,6 +97,15 @@ ResultCode RocksdbEngine::prefix(const std::string& prefix,
     return ResultCode::SUCCESSED;
 }
 
+ResultCode RocksdbEngine::remove(const std::string& key) {
+    rocksdb::WriteOptions options;
+    auto status = db_->Delete(options, key);
+    if (status.ok()) {
+        return ResultCode::SUCCESSED;
+    }
+    return ResultCode::ERR_UNKNOWN;
+}
+
 ResultCode RocksdbEngine::ingest(const std::vector<std::string>& files) {
     rocksdb::IngestExternalFileOptions options;
     rocksdb::Status status = db_->IngestExternalFile(files, options);

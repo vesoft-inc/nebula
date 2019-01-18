@@ -16,15 +16,17 @@ DEFINE_string(part_type, "simple", "simple, consensus...");
 /**
  * Check spaceId, partId exists or not.
  * */
-#define CHECK_SPACE_AND_PART(spaceId, partId) \
+#define CHECK_FOR_WRITE(spaceId, partId, cb) \
     auto it = kvs_.find(spaceId); \
     if (UNLIKELY(it == kvs_.end())) { \
-        return ResultCode::ERR_SPACE_NOT_FOUND; \
+        cb(ResultCode::ERR_SPACE_NOT_FOUND, HostAddr(0, 0)); \
+        return; \
     } \
     auto& parts = it->second->parts_; \
     auto partIt = parts.find(partId); \
     if (UNLIKELY(partIt == parts.end())) { \
-        return ResultCode::ERR_PART_NOT_FOUND; \
+        cb(ResultCode::ERR_PART_NOT_FOUND, HostAddr(0, 0)); \
+        return; \
     }
 /**
  * Check spaceId, partId and return related storage engine.
@@ -32,7 +34,15 @@ DEFINE_string(part_type, "simple", "simple, consensus...");
 #define CHECK_AND_RETURN_ENGINE(spaceId, partId) \
     StorageEngine* engine = nullptr; \
     do { \
-        CHECK_SPACE_AND_PART(spaceId, partId); \
+        auto it = kvs_.find(spaceId); \
+        if (UNLIKELY(it == kvs_.end())) { \
+            return ResultCode::ERR_SPACE_NOT_FOUND; \
+        } \
+        auto& parts = it->second->parts_; \
+        auto partIt = parts.find(partId); \
+        if (UNLIKELY(partIt == parts.end())) { \
+            return ResultCode::ERR_PART_NOT_FOUND; \
+        } \
         engine = partIt->second->engine(); \
         CHECK_NOTNULL(engine); \
     } while (false)
@@ -122,11 +132,19 @@ ResultCode KVStoreImpl::prefix(GraphSpaceID spaceId, PartitionID partId,
     return engine->prefix(prefix, iter);
 }
 
-ResultCode KVStoreImpl::asyncMultiPut(GraphSpaceID spaceId, PartitionID partId,
-                                      std::vector<KV> keyValues,
-                                      KVCallback cb) {
-    CHECK_SPACE_AND_PART(spaceId, partId);
+void KVStoreImpl::asyncMultiPut(GraphSpaceID spaceId, PartitionID partId,
+                                std::vector<KV> keyValues,
+                                KVCallback cb) {
+    CHECK_FOR_WRITE(spaceId, partId, cb);
     return partIt->second->asyncMultiPut(std::move(keyValues), std::move(cb));
+}
+
+void KVStoreImpl::asyncRemove(GraphSpaceID spaceId,
+                              PartitionID partId,
+                              const std::string& key,
+                              KVCallback cb) {
+    CHECK_FOR_WRITE(spaceId, partId, cb);
+    return partIt->second->asyncRemove(key, std::move(cb));
 }
 
 }  // namespace kvstore

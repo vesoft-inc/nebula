@@ -101,6 +101,17 @@ TEST(RocksdbEngineTest, PrefixTest) {
     checkPrefix("c", 20, 20);
 }
 
+TEST(RocksdbEngineTest, RemoveTest) {
+    fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->put("key", "val"));
+    std::string val;
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", &val));
+    EXPECT_EQ(val, "val");
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->remove("key"));
+    EXPECT_EQ(ResultCode::ERR_KEY_NOT_FOUND, engine->get("key", &val));
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

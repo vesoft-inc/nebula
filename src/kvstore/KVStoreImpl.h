@@ -65,10 +65,15 @@ public:
     /**
      * async batch put.
      * */
-    ResultCode asyncMultiPut(GraphSpaceID spaceId,
-                             PartitionID  partId,
-                             std::vector<KV> keyValues,
-                             KVCallback cb) override;
+    void asyncMultiPut(GraphSpaceID spaceId,
+                       PartitionID  partId,
+                       std::vector<KV> keyValues,
+                       KVCallback cb) override;
+
+    void asyncRemove(GraphSpaceID spaceId,
+                     PartitionID partId,
+                     const std::string& key,
+                     KVCallback cb) override;
 
 private:
     std::vector<Engine> initEngines(GraphSpaceID spaceId);
