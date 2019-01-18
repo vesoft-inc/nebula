@@ -31,7 +31,7 @@ target_link_libraries(
     -pthread
 )
 
-add_test(NAME session_manager_test COMMAND session_manager_test)
+nebula_add_test(session_manager_test)
 
 
 add_executable(
@@ -70,4 +70,4 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME query_engine_test COMMAND query_engine_test)
+nebula_add_test(query_engine_test)

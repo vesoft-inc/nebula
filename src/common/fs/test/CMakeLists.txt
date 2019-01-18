@@ -14,7 +14,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME file_utils_test COMMAND file_utils_test)
+nebula_add_test(file_utils_test)
 
 add_executable(
     temp_dir_test
@@ -32,7 +32,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME temp_dir_test COMMAND temp_dir_test)
+nebula_add_test(temp_dir_test)
 
 add_executable(
     temp_file_test
@@ -51,5 +51,5 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME temp_file_test COMMAND temp_file_test)
+nebula_add_test(temp_file_test)
 

@@ -16,4 +16,4 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME process_test COMMAND process_test)
+nebula_add_test(process_test)

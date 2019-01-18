@@ -19,4 +19,4 @@ target_link_libraries(
     pthread
     dl
 )
-add_test(NAME concurrent_test COMMAND concurrent_test)
+nebula_add_test(concurrent_test)
