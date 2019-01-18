@@ -22,8 +22,8 @@ DEFINE_uint32(max_outstanding_requests, 1024,
 namespace nebula {
 namespace raftex {
 
-using namespace nebula::network;
-using namespace nebula::thrift;
+using nebula::network::NetworkUtils;
+using nebula::thrift::ThriftClientManager;
 
 Host::Host(const HostAddr& addr, std::shared_ptr<RaftPart> part)
         : part_(std::move(part))
@@ -194,7 +194,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogsInternal(
         }
 
         cpp2::AppendLogResponse resp = std::move(t).value();
-        switch(resp.get_error_code()) {
+        switch (resp.get_error_code()) {
             case cpp2::ErrorCode::SUCCEEDED: {
                 VLOG(2) << self->idStr_
                         << "AppendLog request sent successfully";

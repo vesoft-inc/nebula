@@ -60,7 +60,7 @@ public:
     }
 
 private:
-    HostManager(GraphSpaceID space) : space_(space) {}
+    explicit HostManager(GraphSpaceID space) : space_(space) {}
 
 private:
     static std::unordered_map<GraphSpaceID, std::shared_ptr<HostManager>> hostManagers_;

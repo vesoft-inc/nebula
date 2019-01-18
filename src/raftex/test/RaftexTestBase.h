@@ -78,7 +78,7 @@ void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
 
 class RaftexTestFixture : public ::testing::Test {
 public:
-    RaftexTestFixture(const std::string& testName)
+    explicit RaftexTestFixture(const std::string& testName)
         : testName_(testName) {}
     ~RaftexTestFixture() = default;
 
