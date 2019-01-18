@@ -21,5 +21,5 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME file_based_wal_test COMMAND file_based_wal_test)
+nebula_add_test(file_based_wal_test)
 

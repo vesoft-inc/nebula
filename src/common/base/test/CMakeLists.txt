@@ -9,7 +9,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME cord_test COMMAND cord_test)
+nebula_add_test(cord_test)
 
 
 add_executable(cord_bm CordBenchmark.cpp $<TARGET_OBJECTS:base_obj>)
@@ -37,7 +37,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME murmurhash2_test COMMAND murmurhash2_test)
+nebula_add_test(murmurhash2_test)
 
 add_executable(
     configuration_test
@@ -56,7 +56,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME configuration_test COMMAND configuration_test)
+nebula_add_test(configuration_test)
 
 add_executable(
     status_test
@@ -75,7 +75,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME status_test COMMAND status_test)
+nebula_add_test(status_test)
 
 add_executable(
     status_or_test
@@ -94,7 +94,7 @@ target_link_libraries(
     dl
     -pthread
 )
-add_test(NAME status_or_test COMMAND status_or_test)
+nebula_add_test(status_or_test)
 
 add_executable(hash_bm HashBenchmark.cpp $<TARGET_OBJECTS:base_obj>)
 target_link_libraries(
