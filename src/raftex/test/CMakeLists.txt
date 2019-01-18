@@ -33,7 +33,7 @@ target_link_libraries(
     event
     -pthread
 )
-add_test(NAME leader_election_test COMMAND leader_election_test)
+nebula_add_test(leader_election_test)
 
 
 add_executable(
@@ -71,7 +71,7 @@ target_link_libraries(
     event
     -pthread
 )
-add_test(NAME log_append_test COMMAND log_append_test)
+nebula_add_test(log_append_test)
 
 
 add_executable(
@@ -109,5 +109,5 @@ target_link_libraries(
     event
     -pthread
 )
-add_test(NAME log_cas_test COMMAND log_cas_test)
+nebula_add_test(log_cas_test)
 

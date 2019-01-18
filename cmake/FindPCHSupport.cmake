@@ -63,7 +63,9 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input _dep)
     ENDFOREACH(item)
 
 	GET_DIRECTORY_PROPERTY(_directory_flags COMPILE_DEFINITIONS)
-    LIST(APPEND _compiler_FLAGS ${_directory_flags})
+    FOREACH(item ${_directory_flags})
+        LIST(APPEND _compiler_FLAGS "-D${item}")
+    ENDFOREACH(item)
 
     SEPARATE_ARGUMENTS(_compiler_FLAGS)
     MESSAGE("Precompile header file " ${_source} " into " ${_output})

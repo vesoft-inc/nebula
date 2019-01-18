@@ -112,7 +112,8 @@ int main(int argc, char** argv) {
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
 
-    using namespace nebula::raftex;
+    // `flusher' is extern-declared in RaftexTestBase.h, defined in RaftexTestBase.cpp
+    using nebula::raftex::flusher;
     flusher = std::make_unique<nebula::wal::BufferFlusher>();
 
     return RUN_ALL_TESTS();
