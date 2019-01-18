@@ -13,9 +13,9 @@
 namespace nebula {
 namespace raftex {
 
-using namespace network;
-using namespace fs;
-using namespace wal;
+using network::NetworkUtils;
+using fs::FileUtils;
+using wal::BufferFlusher;
 
 std::unique_ptr<BufferFlusher> flusher;
 

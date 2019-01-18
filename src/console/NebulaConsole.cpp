@@ -16,7 +16,7 @@ DEFINE_string(password, "", "Password used to authenticate");
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
 
-    using namespace nebula::graph;
+    using nebula::graph::CliManager;
 
     CliManager cli;
     if (!cli.connect(FLAGS_addr, FLAGS_port, FLAGS_username, FLAGS_password)) {
