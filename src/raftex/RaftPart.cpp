@@ -32,16 +32,17 @@ DEFINE_uint32(max_batch_size, 256, "The max number of logs in a batch");
 namespace nebula {
 namespace raftex {
 
-using namespace nebula::network;
-using namespace nebula::thrift;
-using namespace nebula::thread;
-using namespace nebula::wal;
+using nebula::network::NetworkUtils;
+using nebula::thrift::ThriftClientManager;
+using nebula::wal::FileBasedWal;
+using nebula::wal::FileBasedWalPolicy;
+using nebula::wal::BufferFlusher;
 
 class AppendLogsIterator final : public LogIterator {
 public:
     AppendLogsIterator(LogID firstLogId,
                        RaftPart::LogCache logs,
-                       std::function<std::string (const std::string&)> casCB)
+                       std::function<std::string(const std::string&)> casCB)
             : firstLogId_(firstLogId)
             , logId_(firstLogId)
             , logs_(std::move(logs))
@@ -164,7 +165,7 @@ private:
     LogID firstLogId_;
     LogID logId_;
     RaftPart::LogCache logs_;
-    std::function<std::string (const std::string&)> casCB_;
+    std::function<std::string(const std::string&)> casCB_;
 };
 
 
@@ -265,13 +266,13 @@ void RaftPart::stop() {
         status_ = Status::STOPPED;
 
         hosts = std::move(peerHosts_);
-        for (auto& h: *hosts) {
+        for (auto& h : *hosts) {
             h.second->stop();
         }
         VLOG(2) << idStr_ << "Invoked stop() on all peer hosts";
     }
 
-    for (auto& h: *hosts) {
+    for (auto& h : *hosts) {
         VLOG(2) << idStr_ << "Waiting " << h.second->idStr() << " to stop";
         h.second->waitForStop();
         VLOG(2) << idStr_ << h.second->idStr() << "has stopped";
@@ -451,7 +452,7 @@ RaftPart::replicateLogs(
         LogID committedId,
         TermID prevLogTerm,
         LogID prevLogId) {
-    using namespace folly;
+    using namespace folly;  // NOLINT since the fancy overload of | operator
 
     decltype(peerHosts_) hosts;
     {
@@ -725,8 +726,7 @@ typename RaftPart::Role RaftPart::processElectionResponses(
 
 bool RaftPart::leaderElection() {
     VLOG(2) << idStr_ << "Start leader election...";
-    using namespace apache::thrift;
-    using namespace folly;
+    using namespace folly;  // NOLINT since the fancy overload of | operator
 
     cpp2::AskForVoteRequest voteReq;
     if (!prepareElectionRequest(voteReq)) {
@@ -1153,7 +1153,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
 
 
 folly::Future<RaftPart::AppendLogResult> RaftPart::sendHeartbeat() {
-    using namespace folly;
+    using namespace folly;  // NOLINT since the fancy overload of | operator
 
     VLOG(2) << idStr_ << "Sending heartbeat to all other hosts";
 
@@ -1237,7 +1237,7 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::sendHeartbeat() {
                 CHECK(self->replicatingLogs_);
                 if (self->logs_.size() > 0) {
                     // continue to replicate the logs
-                    self->sendingPromise_= std::move(self->cachingPromise_);
+                    self->sendingPromise_ = std::move(self->cachingPromise_);
                     self->cachingPromise_.reset();
                     std::swap(swappedOutLogs, self->logs_);
                     firstId = lastLogId_ + 1;
