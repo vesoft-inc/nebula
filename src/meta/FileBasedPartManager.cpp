@@ -19,10 +19,10 @@ DEFINE_string(partition_conf_file, "",
 namespace nebula {
 namespace meta {
 
-using namespace nebula::network;
+using nebula::network::NetworkUtils;
 
 // static
-std::unordered_map<GraphSpaceID, std::shared_ptr<const PartManager>> FileBasedPartManager::init() {
+std::unordered_map<GraphSpaceID, std::shared_ptr<PartManager>> FileBasedPartManager::init() {
     DCHECK(!FLAGS_partition_conf_file.empty());
 
     Configuration conf;
@@ -35,7 +35,7 @@ std::unordered_map<GraphSpaceID, std::shared_ptr<const PartManager>> FileBasedPa
     }).ok());
 
     // Retrieve partition allocation for each GraphSpace
-    std::unordered_map<GraphSpaceID, std::shared_ptr<const PartManager>> pms;
+    std::unordered_map<GraphSpaceID, std::shared_ptr<PartManager>> pms;
     for (auto& s : spaces) {
         Configuration spaceConf;
         CHECK(conf.fetchAsSubConf(s.first.c_str(), spaceConf).ok());

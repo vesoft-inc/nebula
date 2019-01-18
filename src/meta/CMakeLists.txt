@@ -3,9 +3,13 @@ add_library(
     SchemaProviderIf.cpp
     PartManager.cpp
     FileBasedPartManager.cpp
+    AdHocPartManager.cpp
+    ServerBasedPartManager.cpp
     HostManager.cpp
     SchemaManager.cpp
     FileBasedSchemaManager.cpp
+    ServerBasedSchemaManager.cpp
+    AdHocSchemaManager.cpp
 )
 add_dependencies(meta_obj common dataman_obj)
 

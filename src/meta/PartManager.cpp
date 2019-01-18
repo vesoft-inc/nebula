@@ -7,20 +7,19 @@
 #include "base/Base.h"
 #include "meta/PartManager.h"
 #include "meta/FileBasedPartManager.h"
+#include "meta/AdHocPartManager.h"
 
 #define ID_HASH(id, numShards) \
     ((static_cast<uint64_t>(id)) % numShards)
 
 DECLARE_string(partition_conf_file);
-//DECLARE_string(meta_servers, "",
-//               "A list of meta server addresses. Multiple addresses are separated by comma");
-
+DECLARE_string(meta_server);
 
 namespace nebula {
 namespace meta {
 
 folly::RWSpinLock PartManager::accessLock_;
-std::unordered_map<GraphSpaceID, std::shared_ptr<const PartManager>>
+std::unordered_map<GraphSpaceID, std::shared_ptr<PartManager>>
     PartManager::partManagers_;
 std::once_flag initFlag;
 
@@ -30,8 +29,10 @@ std::shared_ptr<const PartManager> PartManager::get(GraphSpaceID space) {
     std::call_once(initFlag, [] () {
         if (!FLAGS_partition_conf_file.empty()) {
             partManagers_ = FileBasedPartManager::init();
+        } else if (!FLAGS_meta_server.empty()) {
+            LOG(FATAL) << "Meta server based PartManager has not been implemented";
         } else {
-            LOG(FATAL) << "Only file-based PartManager is implemented";
+            partManagers_ = AdHocPartManager::init();
         }
     });
 

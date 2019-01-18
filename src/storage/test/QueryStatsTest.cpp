@@ -13,6 +13,7 @@
 #include "storage/KeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
+#include "meta/AdHocSchemaManager.h"
 
 namespace nebula {
 namespace storage {
@@ -89,7 +90,7 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
 
     EXPECT_EQ(7, resp.schema.columns.size());
     CHECK_GT(resp.data.size(), 0);
-    auto provider = std::make_unique<ResultSchemaProvider>(resp.schema);
+    auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
     LOG(INFO) << "Check edge props...";
 
     std::vector<std::tuple<std::string, cpp2::SupportedType, int32_t>> expected;
@@ -101,24 +102,24 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
     expected.emplace_back("col_6", cpp2::SupportedType::INT, 6);
     expected.emplace_back("col_8", cpp2::SupportedType::INT, 8);
 
-    RowReader reader(provider.get(), resp.data);
-    auto numFields = provider->getNumFields(0);
-    for (auto i = 0; i < numFields; i++) {
-        const auto* name = provider->getFieldName(i, 0);
-        const auto* ftype = provider->getFieldType(i, 0);
+    auto reader = RowReader::getRowReader(resp.data, provider);
+    auto numFields = provider->getNumFields();
+    for (size_t i = 0; i < numFields; i++) {
+        const auto* name = provider->getFieldName(i);
+        const auto& ftype = provider->getFieldType(i);
         EXPECT_EQ(name,  std::get<0>(expected[i]));
-        EXPECT_TRUE(ftype->type == std::get<1>(expected[i]));
-        switch (ftype->type) {
+        EXPECT_TRUE(ftype.type == std::get<1>(expected[i]));
+        switch (ftype.type) {
             case cpp2::SupportedType::INT: {
                 int64_t v;
-                auto ret = reader.getInt<int64_t>(i, v);
+                auto ret = reader->getInt<int64_t>(i, v);
                 EXPECT_EQ(ret, ResultType::SUCCEEDED);
                 EXPECT_EQ(std::get<2>(expected[i]) * 210 , v);
                 break;
             }
             case cpp2::SupportedType::DOUBLE: {
                 float v;
-                auto ret = reader.getFloat(i, v);
+                auto ret = reader->getFloat(i, v);
                 EXPECT_EQ(ret, ResultType::SUCCEEDED);
                 EXPECT_EQ(std::get<2>(expected[i]) , v);
                 break;
@@ -135,20 +136,18 @@ TEST(QueryStatsTest, StatsSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryStatsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     LOG(INFO) << "Prepare meta...";
-    std::unique_ptr<meta::MemorySchemaManager> schemaMan(new meta::MemorySchemaManager());
-    auto& edgeSchema = schemaMan->edgeSchema();
-    edgeSchema[0][101] = TestUtils::genEdgeSchemaProvider(10, 10);
-    auto& tagSchema = schemaMan->tagSchema();
+    meta::AdHocSchemaManager::addEdgeSchema(
+        0, 101, TestUtils::genEdgeSchemaProvider(10, 10));
     for (auto tagId = 3001; tagId < 3010; tagId++) {
-        tagSchema[0][tagId] = TestUtils::genTagSchemaProvider(tagId, 3, 3);
+        meta::AdHocSchemaManager::addTagSchema(
+            0, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
     }
-    CHECK_NOTNULL(edgeSchema[0][101]);
     mockData(kv.get());
 
     cpp2::GetNeighborsRequest req;
     buildRequest(req);
 
-    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = QueryStatsProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

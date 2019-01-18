@@ -17,7 +17,6 @@ namespace storage {
 kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                        PartitionID partId,
                                        const cpp2::EdgeKey& edgeKey,
-                                       SchemaProviderIf* edgeSchema,
                                        std::vector<PropContext>& props,
                                        RowSetWriter& rsWriter) {
     auto prefix = KeyUtils::prefix(partId, edgeKey.src, edgeKey.edge_type,
@@ -26,16 +25,19 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
     // Only use the latest version.
     if (iter && iter->valid()) {
-        RowWriter writer;
-        auto key = iter->key();
-        auto val = iter->val();
+        RowWriter writer(rsWriter.schema());
         PropsCollector collector(&writer);
-        this->collectProps(edgeSchema, key, val, props, &collector);
-        iter->next();
+        auto reader = RowReader::getEdgePropReader(iter->val(),
+                                                   spaceId_,
+                                                   edgeKey.edge_type);
+        this->collectProps(reader.get(), props, &collector);
         rsWriter.addRow(writer);
+
+        iter->next();
     }
     return ret;
 }
+
 
 void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     spaceId_ = req.get_space_id();
@@ -57,8 +59,7 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
         auto partId = partE.first;
         kvstore::ResultCode ret;
         for (auto& edgeKey : partE.second) {
-            ret = this->collectEdgesProps(partId, edgeKey, edgeContext.schema_,
-                                          edgeContext.props_, rsWriter);
+            ret = this->collectEdgesProps(partId, edgeKey, edgeContext.props_, rsWriter);
             if (ret != kvstore::ResultCode::SUCCESSED) {
                 break;
             }

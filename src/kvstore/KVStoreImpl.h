@@ -10,7 +10,6 @@
 #include <gtest/gtest_prod.h>
 #include "base/Base.h"
 #include "kvstore/include/KVStore.h"
-#include "kvstore/PartManager.h"
 #include "kvstore/Part.h"
 #include "kvstore/StorageEngine.h"
 
@@ -30,8 +29,7 @@ class KVStoreImpl : public KVStore {
 
 public:
     explicit KVStoreImpl(KVOptions options)
-            : partMan_(PartManager::instance())
-            , options_(std::move(options)) {}
+            : options_(std::move(options)) {}
 
     ~KVStoreImpl() = default;
 
@@ -75,7 +73,6 @@ private:
 
 private:
     std::unordered_map<GraphSpaceID, std::unique_ptr<GraphSpaceKV>> kvs_;
-    PartManager* partMan_ = nullptr;
     KVOptions options_;
 };
 

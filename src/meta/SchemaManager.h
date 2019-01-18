@@ -41,9 +41,9 @@ public:
     };
 
 public:
-    static std::shared_ptr<const SchemaManager> getTagSchema(
+    static std::shared_ptr<const SchemaProviderIf> getTagSchema(
         GraphSpaceID space, TagID tag, int32_t ver = -1);
-    static std::shared_ptr<const SchemaManager> getTagSchema(
+    static std::shared_ptr<const SchemaProviderIf> getTagSchema(
         const folly::StringPiece spaceName,
         const folly::StringPiece tagName,
         int32_t ver = -1);
@@ -52,9 +52,9 @@ public:
     static int32_t getNewestTagSchemaVer(const folly::StringPiece spaceName,
                                          const folly::StringPiece tagName);
 
-    static std::shared_ptr<const SchemaManager> getEdgeSchema(
+    static std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
         GraphSpaceID space, EdgeType edge, int32_t ver = -1);
-    static std::shared_ptr<const SchemaManager> getEdgeSchema(
+    static std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
         const folly::StringPiece spaceName,
         const folly::StringPiece typeName,
         int32_t ver = -1);
@@ -97,13 +97,13 @@ protected:
     static folly::RWSpinLock tagLock_;
     static std::unordered_map<std::pair<GraphSpaceID, TagID>,
                               // version -> schema
-                              std::map<int32_t, std::shared_ptr<const SchemaManager>>>
+                              std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>
         tagSchemas_;
 
     static folly::RWSpinLock edgeLock_;
     static std::unordered_map<std::pair<GraphSpaceID, EdgeType>,
                               // version -> schema
-                              std::map<int32_t, std::shared_ptr<const SchemaManager>>>
+                              std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>
         edgeSchemas_;
 };
 

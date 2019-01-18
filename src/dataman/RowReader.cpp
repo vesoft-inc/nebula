@@ -10,7 +10,7 @@
 
 namespace nebula {
 
-using namespace nebula::meta;
+using nebula::meta::SchemaManager;
 
 /*********************************************
  *
@@ -120,10 +120,10 @@ std::unique_ptr<RowReader> RowReader::getTagPropReader(
         GraphSpaceID space,
         TagID tag) {
     int32_t ver = getSchemaVer(row);
-    if (ver > 0) {
+    if (ver >= 0) {
         return std::unique_ptr<RowReader>(new RowReader(
             row,
-            meta::SchemaManager::getTagSchema(space, tag, ver)));
+            SchemaManager::getTagSchema(space, tag, ver)));
     } else {
         // Invalid data
         // TODO We need a better error handler here
@@ -138,10 +138,10 @@ std::unique_ptr<RowReader> RowReader::getEdgePropReader(
         GraphSpaceID space,
         EdgeType edge) {
     int32_t ver = getSchemaVer(row);
-    if (ver > 0) {
+    if (ver >= 0) {
         return std::unique_ptr<RowReader>(new RowReader(
             row,
-            meta::SchemaManager::getEdgeSchema(space, edge, ver)));
+            SchemaManager::getEdgeSchema(space, edge, ver)));
     } else {
         // Invalid data
         // TODO We need a better error handler here

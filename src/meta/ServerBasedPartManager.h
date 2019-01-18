@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef META_FILEBASEDPARTMANAGER_H_
-#define META_FILEBASEDPARTMANAGER_H_
+#ifndef META_SERVERBASEDPARTMANAGER_H_
+#define META_SERVERBASEDPARTMANAGER_H_
 
 #include "base/Base.h"
 #include "meta/PartManager.h"
@@ -13,14 +13,15 @@
 namespace nebula {
 namespace meta {
 
-class FileBasedPartManager final : public PartManager {
+class ServerBasedPartManager final : public PartManager {
     friend class PartManager;
 private:
-    static std::unordered_map<GraphSpaceID, std::shared_ptr<PartManager>> init();
+    static std::unordered_map<GraphSpaceID, std::shared_ptr<const PartManager>> init();
 
-    FileBasedPartManager() = default;
+    ServerBasedPartManager() = default;
 };
 
 }  // namespace meta
 }  // namespace nebula
-#endif  // META_FILEBASEDPARTMANAGER_H_
+#endif  // META_ADHOCPARTMANAGER_H_
+

@@ -22,9 +22,8 @@ public:
     void process(const cpp2::GetNeighborsRequest& req);
 
 protected:
-    QueryBaseProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
-        : BaseProcessor<RESP>(kvstore)
-        , schemaMan_(schemaMan) {}
+    explicit QueryBaseProcessor(kvstore::KVStore* kvstore)
+        : BaseProcessor<RESP>(kvstore) {}
     /**
      * Check whether current operatin on the data is valid or not.
      * */
@@ -39,9 +38,7 @@ protected:
     /**
      * collect props in one row, you could define custom behavior by implement your own collector.
      * */
-    void collectProps(SchemaProviderIf* rowSchema,
-                      folly::StringPiece& key,
-                      folly::StringPiece& val,
+    void collectProps(RowReader* reader,
                       std::vector<PropContext>& props,
                       Collector* collector);
 
@@ -54,7 +51,6 @@ protected:
                              int32_t retNum) = 0;
 
 protected:
-    meta::SchemaManager* schemaMan_ = nullptr;
     GraphSpaceID  spaceId_;
 };
 

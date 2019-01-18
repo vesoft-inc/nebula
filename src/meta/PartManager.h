@@ -14,11 +14,29 @@
 namespace nebula {
 namespace meta {
 
+class AdHocPartManager;
+
 class PartManager {
+    friend class AdHocPartManager;
     FRIEND_TEST(FileBasedPartManager, PartitionAllocation);
+
 public:
     // Retrieve the Partition Manager for the given graph space
     static std::shared_ptr<const PartManager> get(GraphSpaceID space);
+    // Iterate through all Graph Spaces
+    // The method has to have following signature
+    //   void handler(GraphSpaceID space, std::shared_ptr<PartManager> pm)
+    template<class GraphSpaceHandler>
+    static void forEachGraphSpace(GraphSpaceHandler&& handler) {
+        for (auto& pm : partManagers_) {
+            handler(pm.first, pm.second);
+        }
+    }
+
+    // Return the total number of graph spaces
+    static size_t  numGraphSpaces() {
+        return partManagers_.size();
+    }
 
     // Return the total number of partitions
     size_t numParts() const;
@@ -58,7 +76,7 @@ protected:
 
 protected:
     static folly::RWSpinLock accessLock_;
-    static std::unordered_map<GraphSpaceID, std::shared_ptr<const PartManager>> partManagers_;
+    static std::unordered_map<GraphSpaceID, std::shared_ptr<PartManager>> partManagers_;
 };
 
 }  // namespace meta

@@ -70,7 +70,7 @@ void FileBasedSchemaManager::readOneGraphSpace(GraphSpaceID space, const Configu
 
 
 // static
-std::shared_ptr<SchemaManager> FileBasedSchemaManager::readSchema(
+std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
         const folly::dynamic& fields) {
     CHECK(fields.isArray());
 
@@ -90,11 +90,11 @@ std::shared_ptr<SchemaManager> FileBasedSchemaManager::readSchema(
                 schema->ver_ = folly::to<int32_t>(type);
                 if (schema->ver_ < 0) {
                     LOG(ERROR) << "Invalid schema version: " << schema->ver_;
-                    return std::shared_ptr<SchemaManager>();
+                    return std::shared_ptr<SchemaProviderIf>();
                 }
             } catch (const std::exception& ex) {
                 LOG(ERROR) << "Failed to read the version value: " << ex.what();
-                return std::shared_ptr<SchemaManager>();
+                return std::shared_ptr<SchemaProviderIf>();
             }
         } else {
             storage::cpp2::ValueType vtype;
@@ -124,7 +124,7 @@ std::shared_ptr<SchemaManager> FileBasedSchemaManager::readSchema(
                 vtype.set_type(storage::cpp2::SupportedType::PATH);
             } else {
                 LOG(ERROR) << "Unsupported type: \"" << type << "\"";
-                return std::shared_ptr<SchemaManager>();
+                return std::shared_ptr<SchemaProviderIf>();
             }
 
             schema->fields_.push_back(
@@ -135,7 +135,7 @@ std::shared_ptr<SchemaManager> FileBasedSchemaManager::readSchema(
         }
     }
 
-    return schema;
+    return std::static_pointer_cast<const SchemaProviderIf>(schema);
 }
 
 

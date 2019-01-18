@@ -18,7 +18,6 @@ kvstore::ResultCode QueryBoundProcessor::collectVertexProps(
                             PartitionID partId,
                             VertexID vId,
                             TagID tagId,
-                            SchemaProviderIf* tagSchema,
                             std::vector<PropContext>& props,
                             RowWriter& writer) {
     auto prefix = KeyUtils::prefix(partId, vId, tagId);
@@ -28,23 +27,23 @@ kvstore::ResultCode QueryBoundProcessor::collectVertexProps(
         VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
         return ret;
     }
-    // Only get the latest version.
+    // Will decode the properties according to teh schema version
+    // stored along with the properties
     if (iter && iter->valid()) {
-        auto key = iter->key();
-        auto val = iter->val();
         PropsCollector collector(&writer);
-        this->collectProps(tagSchema, key, val, props, &collector);
+        auto reader = RowReader::getTagPropReader(iter->val(), spaceId_, tagId);
+        this->collectProps(reader.get(), props, &collector);
     } else {
         VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
     }
     return ret;
 }
 
+
 kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
                                                PartitionID partId,
                                                VertexID vId,
                                                EdgeType edgeType,
-                                               SchemaProviderIf* schema,
                                                std::vector<PropContext>& props,
                                                RowSetWriter& rsWriter) {
     auto prefix = KeyUtils::prefix(partId, vId, edgeType);
@@ -54,18 +53,20 @@ kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
         return ret;
     }
     while (iter->valid()) {
-        RowWriter writer;
-        auto key = iter->key();
-        auto val = iter->val();
+        RowWriter writer(rsWriter.schema());
         PropsCollector collector(&writer);
-        this->collectProps(schema, key, val, props, &collector);
-        iter->next();
+        auto reader = RowReader::getEdgePropReader(iter->val(), spaceId_, edgeType);
+        this->collectProps(reader.get(), props, &collector);
         rsWriter.addRow(writer);
+
+        iter->next();
     }
     return ret;
 }
 
-kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, VertexID vId,
+
+kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
+                                                       VertexID vId,
                                                        std::vector<TagContext>& tagContexts,
                                                        EdgeContext& edgeContext) {
     cpp2::VertexData vResp;
@@ -75,25 +76,26 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
         for (auto& tc : tagContexts) {
             VLOG(3) << "partId " << partId << ", vId " << vId
                     << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
-            auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.schema_, tc.props_, writer);
+            auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_, writer);
             if (ret != kvstore::ResultCode::SUCCESSED) {
                 return ret;
             }
         }
         vResp.vertex_data = writer.encode();
     }
-    if (edgeContext.schema_ != nullptr) {
-        RowSetWriter rsWriter;
-        auto ret = collectEdgeProps(partId, vId, edgeContext.edgeType_,
-                                    edgeContext.schema_, edgeContext.props_, rsWriter);
-        if (ret != kvstore::ResultCode::SUCCESSED) {
-            return ret;
-        }
-        vResp.edge_data = std::move(rsWriter.data());
+
+    RowSetWriter rsWriter;
+    auto ret = collectEdgeProps(partId, vId, edgeContext.edgeType_,
+                                edgeContext.props_, rsWriter);
+    if (ret != kvstore::ResultCode::SUCCESSED) {
+        return ret;
     }
+    vResp.edge_data = std::move(rsWriter.data());
+
     resp_.vertices.emplace_back(std::move(vResp));
     return kvstore::ResultCode::SUCCESSED;
 }
+
 
 void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
                                       EdgeContext& edgeContext, int32_t retNum) {
@@ -108,15 +110,13 @@ void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
         }
         resp_.vertex_schema = std::move(respTag);
     }
-    if (edgeContext.schema_ != nullptr) {
-        cpp2::Schema respEdge;
-        respEdge.columns.reserve(edgeContext.props_.size());
-        for (auto& prop : edgeContext.props_) {
-            respEdge.columns.emplace_back(columnDef(std::move(prop.prop_.name),
-                                                    prop.type_.type));
-        }
-        resp_.edge_schema = std::move(respEdge);
+    cpp2::Schema respEdge;
+    respEdge.columns.reserve(edgeContext.props_.size());
+    for (auto& prop : edgeContext.props_) {
+        respEdge.columns.emplace_back(columnDef(std::move(prop.prop_.name),
+                                                prop.type_.type));
     }
+    resp_.edge_schema = std::move(respEdge);
 }
 
 }  // namespace storage

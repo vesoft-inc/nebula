@@ -6,9 +6,9 @@
 
 #include "base/Base.h"
 #include "kvstore/include/KVStore.h"
-#include "kvstore/PartManager.h"
+#include "meta/AdHocPartManager.h"
 #include "kvstore/KVStoreImpl.h"
-#include "meta/SchemaManager.h"
+#include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
 
 DECLARE_string(part_man_type);
@@ -16,17 +16,15 @@ DECLARE_string(part_man_type);
 namespace nebula {
 namespace storage {
 
+using meta::AdHocPartManager;
+
 class TestUtils {
 public:
     static kvstore::KVStore* initKV(const char* rootPath) {
-        FLAGS_part_man_type = "memory";  // Use MemPartManager.
-        kvstore::MemPartManager* partMan = static_cast<kvstore::MemPartManager*>(
-                                                            kvstore::PartManager::instance());
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0, 1, 2, 3, 4, 5}
-        auto& partsMap = partMan->partsMap();
         for (auto partId = 0; partId < 6; partId++) {
-            partsMap[0][partId] = kvstore::PartMeta();
+            AdHocPartManager::addPartition(0, partId, HostAddr(0, 0));
         }
         auto dataPath = folly::stringPrintf("%s/disk1, %s/disk2", rootPath, rootPath);
         std::vector<std::string> paths;
@@ -41,6 +39,7 @@ public:
                                         kvstore::KVStore::instance(std::move(options)));
         return kv;
     }
+
 
     static std::vector<cpp2::Vertex> setupVertices(
             const PartitionID partitionID,
@@ -66,11 +65,14 @@ public:
         }
         return vertices;
     }
+
+
     /**
      * It will generate SchemaProvider with some int fields and string fields
      * */
-    static SchemaProviderIf* genEdgeSchemaProvider(int32_t intFieldsNum,
-                                                   int32_t stringFieldsNum) {
+    static std::shared_ptr<meta::SchemaProviderIf> genEdgeSchemaProvider(
+            int32_t intFieldsNum,
+            int32_t stringFieldsNum) {
         cpp2::Schema schema;
         for (auto i = 0; i < intFieldsNum; i++) {
             cpp2::ColumnDef column;
@@ -84,15 +86,18 @@ public:
             column.type.type = cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
-        return new ResultSchemaProvider(std::move(schema));
+        return std::shared_ptr<meta::SchemaProviderIf>(
+            new ResultSchemaProvider(std::move(schema)));
     }
+
 
     /**
      * It will generate tag SchemaProvider with some int fields and string fields
      * */
-    static SchemaProviderIf* genTagSchemaProvider(TagID tagId,
-                                                  int32_t intFieldsNum,
-                                                  int32_t stringFieldsNum) {
+    static std::shared_ptr<meta::SchemaProviderIf> genTagSchemaProvider(
+            TagID tagId,
+            int32_t intFieldsNum,
+            int32_t stringFieldsNum) {
         cpp2::Schema schema;
         for (auto i = 0; i < intFieldsNum; i++) {
             cpp2::ColumnDef column;
@@ -106,10 +111,14 @@ public:
             column.type.type = cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
-        return new ResultSchemaProvider(std::move(schema));
+        return std::shared_ptr<meta::SchemaProviderIf>(
+            new ResultSchemaProvider(std::move(schema)));
     }
 
-    static cpp2::PropDef propDef(cpp2::PropOwner owner, std::string name, TagID tagId = -1) {
+
+    static cpp2::PropDef propDef(cpp2::PropOwner owner,
+                                 std::string name,
+                                 TagID tagId = -1) {
         cpp2::PropDef prop;
         prop.set_name(std::move(name));
         prop.set_owner(owner);
@@ -119,8 +128,11 @@ public:
         return prop;
     }
 
-    static cpp2::PropDef propDef(cpp2::PropOwner owner, std::string name,
-                                 cpp2::StatType type, TagID tagId = -1) {
+
+    static cpp2::PropDef propDef(cpp2::PropOwner owner,
+                                 std::string name,
+                                 cpp2::StatType type,
+                                 TagID tagId = -1) {
         auto prop = TestUtils::propDef(owner, name, tagId);
         prop.set_stat(type);
         return prop;

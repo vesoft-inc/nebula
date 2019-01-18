@@ -7,8 +7,11 @@
 #include "base/Base.h"
 #include "meta/SchemaManager.h"
 #include "meta/FileBasedSchemaManager.h"
+#include "meta/ServerBasedSchemaManager.h"
+#include "meta/AdHocSchemaManager.h"
 
 DECLARE_string(schema_file);
+DECLARE_string(meta_server);
 
 namespace nebula {
 namespace meta {
@@ -16,12 +19,12 @@ namespace meta {
 folly::RWSpinLock SchemaManager::tagLock_;
 std::unordered_map<
     std::pair<GraphSpaceID, TagID>,
-    std::map<int32_t, std::shared_ptr<const SchemaManager>>> SchemaManager::tagSchemas_;
+    std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>> SchemaManager::tagSchemas_;
 
 folly::RWSpinLock SchemaManager::edgeLock_;
 std::unordered_map<
     std::pair<GraphSpaceID, EdgeType>,
-    std::map<int32_t, std::shared_ptr<const SchemaManager>>> SchemaManager::edgeSchemas_;
+    std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>> SchemaManager::edgeSchemas_;
 
 std::once_flag schemaInitFlag;
 
@@ -31,15 +34,18 @@ void SchemaManager::init() {
     std::call_once(schemaInitFlag, []() {
         if (!FLAGS_schema_file.empty()) {
             return FileBasedSchemaManager::init();
+        } else if (!FLAGS_meta_server.empty()) {
+            LOG(FATAL) << "ServerBasedSchemaManager has not been implemented";
         } else {
-            LOG(FATAL) << "Only file-based PartManager is implemented";
+            // Memory based SchemaManager
+            return AdHocSchemaManager::init();
         }
     });
 }
 
 
 // static
-std::shared_ptr<const SchemaManager> SchemaManager::getTagSchema(
+std::shared_ptr<const SchemaProviderIf> SchemaManager::getTagSchema(
         const folly::StringPiece spaceName,
         const folly::StringPiece tagName,
         int32_t ver) {
@@ -49,7 +55,7 @@ std::shared_ptr<const SchemaManager> SchemaManager::getTagSchema(
 
 
 // static
-std::shared_ptr<const SchemaManager> SchemaManager::getTagSchema(
+std::shared_ptr<const SchemaProviderIf> SchemaManager::getTagSchema(
         GraphSpaceID space, TagID tag, int32_t ver) {
     init();
 
@@ -58,14 +64,14 @@ std::shared_ptr<const SchemaManager> SchemaManager::getTagSchema(
     auto it = tagSchemas_.find(std::make_pair(space, tag));
     if (it == tagSchemas_.end()) {
         // Not found
-        return std::shared_ptr<const SchemaManager>();
+        return std::shared_ptr<const SchemaProviderIf>();
     } else {
         // Now check the version
         if (ver < 0) {
             // Get the latest version
             if (it->second.empty()) {
                 // No schema
-                return std::shared_ptr<const SchemaManager>();
+                return std::shared_ptr<const SchemaProviderIf>();
             } else {
                 return it->second.rbegin()->second;
             }
@@ -74,7 +80,7 @@ std::shared_ptr<const SchemaManager> SchemaManager::getTagSchema(
             auto verIt = it->second.find(ver);
             if (verIt == it->second.end()) {
                 // Not found
-                return std::shared_ptr<const SchemaManager>();
+                return std::shared_ptr<const SchemaProviderIf>();
             } else {
                 return verIt->second;
             }
@@ -109,7 +115,7 @@ int32_t SchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
 
 
 // static
-std::shared_ptr<const SchemaManager> SchemaManager::getEdgeSchema(
+std::shared_ptr<const SchemaProviderIf> SchemaManager::getEdgeSchema(
         const folly::StringPiece spaceName,
         const folly::StringPiece typeName,
         int32_t ver) {
@@ -119,7 +125,7 @@ std::shared_ptr<const SchemaManager> SchemaManager::getEdgeSchema(
 
 
 // static
-std::shared_ptr<const SchemaManager> SchemaManager::getEdgeSchema(
+std::shared_ptr<const SchemaProviderIf> SchemaManager::getEdgeSchema(
         GraphSpaceID space, EdgeType edge, int32_t ver) {
     init();
 
@@ -128,14 +134,14 @@ std::shared_ptr<const SchemaManager> SchemaManager::getEdgeSchema(
     auto it = edgeSchemas_.find(std::make_pair(space, edge));
     if (it == edgeSchemas_.end()) {
         // Not found
-        return std::shared_ptr<const SchemaManager>();
+        return std::shared_ptr<const SchemaProviderIf>();
     } else {
         // Now check the version
         if (ver < 0) {
             // Get the latest version
             if (it->second.empty()) {
                 // No schema
-                return std::shared_ptr<const SchemaManager>();
+                return std::shared_ptr<const SchemaProviderIf>();
             } else {
                 return it->second.rbegin()->second;
             }
@@ -144,7 +150,7 @@ std::shared_ptr<const SchemaManager> SchemaManager::getEdgeSchema(
             auto verIt = it->second.find(ver);
             if (verIt == it->second.end()) {
                 // Not found
-                return std::shared_ptr<const SchemaManager>();
+                return std::shared_ptr<const SchemaProviderIf>();
             } else {
                 return verIt->second;
             }
@@ -182,8 +188,11 @@ int32_t SchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge)
 GraphSpaceID SchemaManager::toGraphSpaceID(const folly::StringPiece spaceName) {
     if (!FLAGS_schema_file.empty()) {
         return FileBasedSchemaManager::toGraphSpaceID(spaceName);
+    } else if (!FLAGS_meta_server.empty()) {
+        return ServerBasedSchemaManager::toGraphSpaceID(spaceName);
     } else {
-        LOG(FATAL) << "Only file-based SchemaManager is implemented";
+        // Memory based
+        return AdHocSchemaManager::toGraphSpaceID(spaceName);
     }
 }
 
@@ -192,8 +201,11 @@ GraphSpaceID SchemaManager::toGraphSpaceID(const folly::StringPiece spaceName) {
 TagID SchemaManager::toTagID(const folly::StringPiece tagName) {
     if (!FLAGS_schema_file.empty()) {
         return FileBasedSchemaManager::toTagID(tagName);
+    } else if (!FLAGS_meta_server.empty()) {
+        return ServerBasedSchemaManager::toTagID(tagName);
     } else {
-        LOG(FATAL) << "Only file-based SchemaManager is implemented";
+        // Memory based
+        return AdHocSchemaManager::toTagID(tagName);
     }
 }
 
@@ -202,8 +214,11 @@ TagID SchemaManager::toTagID(const folly::StringPiece tagName) {
 EdgeType SchemaManager::toEdgeType(const folly::StringPiece typeName) {
     if (!FLAGS_schema_file.empty()) {
         return FileBasedSchemaManager::toEdgeType(typeName);
+    } else if (!FLAGS_meta_server.empty()) {
+        return ServerBasedSchemaManager::toEdgeType(typeName);
     } else {
-        LOG(FATAL) << "Only file-based SchemaManager is implemented";
+        // Memory based
+        return AdHocSchemaManager::toEdgeType(typeName);
     }
 }
 

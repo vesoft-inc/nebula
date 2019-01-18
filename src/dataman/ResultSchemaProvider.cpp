@@ -19,8 +19,8 @@ using storage::cpp2::Schema;
  * ResultSchemaField
  *
  **********************************/
-ResultSchemaProvider::ResultSchemaField::ResultSchemaField(const ColumnDef* col) : column_(col) {
-}
+ResultSchemaProvider::ResultSchemaField::ResultSchemaField(const ColumnDef* col)
+    : column_(col) {}
 
 
 const char* ResultSchemaProvider::ResultSchemaField::getName() const {
@@ -29,7 +29,7 @@ const char* ResultSchemaProvider::ResultSchemaField::getName() const {
 }
 
 
-const cpp2::ValueType& ResultSchemaProvider::ResultSchemaField::getType() const {
+const ValueType& ResultSchemaProvider::ResultSchemaField::getType() const {
     DCHECK(!!column_);
     return column_->get_type();
 }
@@ -77,7 +77,7 @@ const char* ResultSchemaProvider::getFieldName(int64_t index) const {
 }
 
 
-const cpp2::ValueType& ResultSchemaProvider::getFieldType(int64_t index) const {
+const ValueType& ResultSchemaProvider::getFieldType(int64_t index) const {
     if (index < 0 || index >= static_cast<int64_t>(columns_.size())) {
         return StorageConstants::kInvalidValueType();
     }
@@ -86,7 +86,7 @@ const cpp2::ValueType& ResultSchemaProvider::getFieldType(int64_t index) const {
 }
 
 
-const cpp2::ValueType& ResultSchemaProvider::getFieldType(const folly::StringPiece name) const {
+const ValueType& ResultSchemaProvider::getFieldType(const folly::StringPiece name) const {
     auto index = getFieldIndex(name);
     if (index < 0) {
         return StorageConstants::kInvalidValueType();
