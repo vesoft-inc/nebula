@@ -75,6 +75,12 @@ public:
                      const std::string& key,
                      KVCallback cb) override;
 
+    void asyncRemoveRange(GraphSpaceID spaceId,
+                          PartitionID partId,
+                          const std::string& start,
+                          const std::string& end,
+                          KVCallback cb) override;
+
 private:
     std::vector<Engine> initEngines(GraphSpaceID spaceId);
 

@@ -21,6 +21,14 @@ void SimplePart::asyncRemove(const std::string& key, KVCallback cb) {
     cb(ret, HostAddr(0, 0));
 }
 
+void SimplePart::asyncRemoveRange(const std::string& start,
+                                  const std::string& end,
+                                  KVCallback cb) {
+    CHECK_NOTNULL(engine_);
+    auto ret = engine_->removeRange(start, end);
+    cb(ret, HostAddr(0, 0));
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

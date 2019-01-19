@@ -147,6 +147,15 @@ void KVStoreImpl::asyncRemove(GraphSpaceID spaceId,
     return partIt->second->asyncRemove(key, std::move(cb));
 }
 
+void KVStoreImpl::asyncRemoveRange(GraphSpaceID spaceId,
+                                   PartitionID partId,
+                                   const std::string& start,
+                                   const std::string& end,
+                                   KVCallback cb) {
+    CHECK_FOR_WRITE(spaceId, partId, cb);
+    return partIt->second->asyncRemoveRange(start, end, std::move(cb));
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

@@ -35,6 +35,10 @@ public:
 
     virtual void asyncRemove(const std::string& key, KVCallback cb) = 0;
 
+    virtual void asyncRemoveRange(const std::string& start,
+                                  const std::string& end,
+                                  KVCallback cb) = 0;
+
 protected:
     GraphSpaceID spaceId_;
     PartitionID partId_;
@@ -54,6 +58,10 @@ public:
     void asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) override;
 
     void asyncRemove(const std::string& key, KVCallback cb) override;
+
+    void asyncRemoveRange(const std::string& start,
+                          const std::string& end,
+                          KVCallback cb) override;
 };
 
 

@@ -82,6 +82,12 @@ public:
                              const std::string& key,
                              KVCallback cb) = 0;
 
+    virtual void asyncRemoveRange(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  const std::string& start,
+                                  const std::string& end,
+                                  KVCallback cb) = 0;
+
 protected:
     KVStore() = default;
 };
