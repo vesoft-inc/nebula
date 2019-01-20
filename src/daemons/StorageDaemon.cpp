@@ -31,7 +31,7 @@ StatusOr<std::string> getLocalIP() {
     }
     for (auto& deviceIP : result.value()) {
         if (deviceIP.second != "127.0.0.1") {
-            return deviceIP.first;
+            return deviceIP.second;
         }
     }
     return Status::Error("No IPv4 address found!");
