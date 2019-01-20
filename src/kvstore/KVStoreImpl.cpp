@@ -91,9 +91,9 @@ PartEngine KVStoreImpl::checkLocalParts(GraphSpaceID spaceId) {
     return maps;
 }
 
-const Engine& KVStoreImpl::dispatch(GraphSpaceID spaceId,
-                                    PartitionID partId,
-                                    const PartEngine& maps) {
+const Engine& KVStoreImpl::dispatchPart(GraphSpaceID spaceId,
+                                        PartitionID partId,
+                                        const PartEngine& maps) {
     auto it = maps.find(partId);
     if (it != maps.end()) {
         return *it->second;
@@ -129,7 +129,7 @@ void KVStoreImpl::init() {
         decltype(this->kvs_[spaceId]->parts_) parts;
         std::for_each(spaceParts.begin(), spaceParts.end(), [&](auto& partItem) {
             auto partId = partItem.first;
-            auto& engine = dispatch(spaceId, partId, partEngineMap);
+            auto& engine = dispatchPart(spaceId, partId, partEngineMap);
             auto& enginePtr = engine.first;
             auto& path = engine.second;
             if (FLAGS_part_type == "simple") {

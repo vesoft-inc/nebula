@@ -99,9 +99,9 @@ private:
     /**
      * Dispatch part to some engine, return the engine while would hold the part.
      * */
-    const Engine& dispatch(GraphSpaceID spaceId,
-                           PartitionID partId,
-                           const PartEngine& maps);
+    const Engine& dispatchPart(GraphSpaceID spaceId,
+                               PartitionID partId,
+                               const PartEngine& maps);
 
 private:
     std::unordered_map<GraphSpaceID, std::unique_ptr<GraphSpaceKV>> kvs_;

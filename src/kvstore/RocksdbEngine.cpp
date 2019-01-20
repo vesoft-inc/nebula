@@ -13,7 +13,7 @@ DEFINE_uint32(batch_reserved_bytes, 4 * 1024, "default reserved bytes for one ba
 namespace nebula {
 namespace kvstore {
 
-const char* kSystem = "__system__parts__";
+const char* kSystemParts = "__system__parts__";
 
 RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
                              std::shared_ptr<rocksdb::MergeOperator> mergeOp,
@@ -121,9 +121,9 @@ ResultCode RocksdbEngine::removeRange(const std::string& start,
 
 std::string RocksdbEngine::partKey(PartitionID partId) {
     std::string key;
-    static constexpr size_t prefixLen = ::strlen(kSystemParts);
+    static const size_t prefixLen = ::strlen(kSystemParts);
     key.reserve(prefixLen + sizeof(PartitionID));
-    key.append(prefix, prefixLen);
+    key.append(kSystemParts, prefixLen);
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
     return key;
 }
@@ -147,8 +147,8 @@ void RocksdbEngine::removePart(PartitionID partId) {
 
 std::vector<PartitionID> RocksdbEngine::allParts() {
     std::unique_ptr<StorageIter> iter;
-    static constexpr size_t prefixLen = ::strlen(kSystemParts);
-    static constexpr std::string prefixStr(prefix, prefixLen);
+    static const size_t prefixLen = ::strlen(kSystemParts);
+    static const std::string prefixStr(kSystemParts, prefixLen);
     CHECK_EQ(ResultCode::SUCCESSED, this->prefix(prefixStr, &iter));
     std::vector<PartitionID> parts;
     while (iter->valid()) {
