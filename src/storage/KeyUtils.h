@@ -97,7 +97,7 @@ public:
     template<typename T>
     static typename std::enable_if<std::is_integral<T>::value, T>::type
     readInt(const char* data, int32_t len) {
-        CHECK_GT(len, sizeof(T));
+        CHECK_GE(len, sizeof(T));
         return *reinterpret_cast<const T*>(data);
     }
 
