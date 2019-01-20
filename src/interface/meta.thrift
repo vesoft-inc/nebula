@@ -23,8 +23,14 @@ enum ErrorCode {
     // Operation Failure
 } (cpp.enum_strict)
 
+union ID {
+    common.GraphSpaceID  space_id,
+    common.TagID         tag_id,
+    common.EdgeType      edge_type,
+}
+
 struct IdName {
-    1: i32    id,
+    1: ID     id,
     2: string name,
 }
 
@@ -32,6 +38,7 @@ struct ExecResp {
     1: ErrorCode ret,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
+    3: ID               id,
 }
 
 // Graph space related operations.
@@ -90,7 +97,7 @@ struct ListTagsResp {
 
 struct GetTagReq {
     1: common.GraphSpaceID space_id,
-    2: i32                 tag_id,
+    2: common.TagID        tag_id,
     3: i32                 version,
 }
 
@@ -107,7 +114,7 @@ struct AddEdgeReq {
 
 struct RemoveEdgeReq {
     1: common.GraphSpaceID space_id,
-    2: i32                 edge_type,
+    2: common.EdgeType     edge_type,
 }
 
 struct ListEdgesReq {
@@ -123,7 +130,7 @@ struct ListEdgesResp {
 
 struct GetEdgeReq {
     1: common.GraphSpaceID space_id,
-    2: i32                 edge_type,
+    2: common.EdgeType     edge_type,
     3: i32                 version,
 }
 
@@ -140,8 +147,10 @@ struct ListHostsReq {
 }
 
 struct ListHostsResp {
-    1: ExecResp exec_code,
-    2: list<common.HostAddr> hosts,
+    1: ErrorCode code,
+    // Valid if ret equals E_LEADER_CHANGED.
+    2: common.HostAddr  leader,
+    3: list<common.HostAddr> hosts,
 }
 
 struct RemoveHostsReq {
@@ -154,8 +163,10 @@ struct GetPartsAllocReq {
 }
 
 struct GetPartsAllocResp {
-    1: ExecResp exec_code,
-    2: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
+    1: ErrorCode code,
+    // Valid if ret equals E_LEADER_CHANGED.
+    2: common.HostAddr  leader,
+    3: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
 }
 
 service MetaService {

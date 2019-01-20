@@ -13,6 +13,9 @@ cpp_include "base/ThriftTypes.h"
 
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
 typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
+typedef i32 (cpp.type = "nebula::TagID") TagID
+typedef i32 (cpp.type = "nebula::EdgeType") EdgeType
+
 typedef i32 (cpp.type = "nebula::IPv4") IPv4
 typedef i32 (cpp.type = "nebula::Port") Port
 
