@@ -110,7 +110,8 @@ std::pair<LogID, TermID> InMemoryLogBuffer::accessAllLogs(
     TermID term = -1;
     for (auto& log : logs_) {
         ++id;
-        fn(id, std::get<0>(log), std::get<1>(log), std::get<2>(log));
+        term = std::get<0>(log);
+        fn(id, term, std::get<1>(log), std::get<2>(log));
     }
 
     return std::make_pair(id, term);
