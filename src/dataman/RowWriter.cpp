@@ -14,7 +14,7 @@ using storage::cpp2::SupportedType;
 using meta::SchemaProviderIf;
 
 RowWriter::RowWriter(std::shared_ptr<const SchemaProviderIf> schema)
-        : schema_(schema) {
+        : schema_(std::move(schema)) {
     if (!schema_) {
         // Need to create a new schema
         schemaWriter_.reset(new SchemaWriter());

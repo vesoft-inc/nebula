@@ -24,7 +24,7 @@ public:
         int64_t reservedSize = 4096);
 
     void setSchema(std::shared_ptr<const meta::SchemaProviderIf> schema) {
-        schema_ = schema;
+        schema_ = std::move(schema);
     }
 
     std::shared_ptr<const meta::SchemaProviderIf> schema() const {

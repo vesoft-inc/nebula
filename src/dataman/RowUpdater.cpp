@@ -11,18 +11,18 @@
 namespace nebula {
 
 using folly::hash::SpookyHashV2;
-using namespace nebula::meta;
+using nebula::meta::SchemaProviderIf;
 
 RowUpdater::RowUpdater(std::unique_ptr<RowReader> reader,
                        std::shared_ptr<SchemaProviderIf> schema)
-        : schema_(schema)
+        : schema_(std::move(schema))
         , reader_(std::move(reader)) {
     CHECK(!!schema_);
 }
 
 
 RowUpdater::RowUpdater(std::shared_ptr<SchemaProviderIf> schema)
-        : schema_(schema)
+        : schema_(std::move(schema))
         , reader_(nullptr) {
     CHECK(!!schema_);
 }
@@ -40,8 +40,8 @@ std::string RowUpdater::encode() const noexcept {
 void RowUpdater::encodeTo(std::string& encoded) const noexcept {
     RowWriter writer(schema_);
     auto it = schema_->begin();
-    while(bool(it)) {
-        switch(it->getType().get_type()) {
+    while (static_cast<bool>(it)) {
+        switch (it->getType().get_type()) {
             case storage::cpp2::SupportedType::BOOL: {
                 RU_OUTPUT_VALUE(bool, Bool, false);
                 break;
