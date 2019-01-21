@@ -48,10 +48,10 @@ protected:
 
     void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);
 
-    cpp2::ColumnDef columnDef(std::string name, cpp2::SupportedType type) {
-        cpp2::ColumnDef column;
+    nebula::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::SupportedType type) {
+        nebula::cpp2::ColumnDef column;
         column.set_name(std::move(name));
-        cpp2::ValueType vType;
+        nebula::cpp2::ValueType vType;
         vType.set_type(type);
         column.set_type(std::move(vType));
         return column;

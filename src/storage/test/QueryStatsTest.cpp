@@ -93,14 +93,14 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
     auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
     LOG(INFO) << "Check edge props...";
 
-    std::vector<std::tuple<std::string, cpp2::SupportedType, int32_t>> expected;
-    expected.emplace_back("tag_3001_col_0", cpp2::SupportedType::DOUBLE, 0);
-    expected.emplace_back("tag_3003_col_2", cpp2::SupportedType::DOUBLE, 2);
-    expected.emplace_back("col_0", cpp2::SupportedType::INT, 0);
-    expected.emplace_back("col_2", cpp2::SupportedType::INT, 2);
-    expected.emplace_back("col_4", cpp2::SupportedType::INT, 4);
-    expected.emplace_back("col_6", cpp2::SupportedType::INT, 6);
-    expected.emplace_back("col_8", cpp2::SupportedType::INT, 8);
+    std::vector<std::tuple<std::string, nebula::cpp2::SupportedType, int32_t>> expected;
+    expected.emplace_back("tag_3001_col_0", nebula::cpp2::SupportedType::DOUBLE, 0);
+    expected.emplace_back("tag_3003_col_2", nebula::cpp2::SupportedType::DOUBLE, 2);
+    expected.emplace_back("col_0", nebula::cpp2::SupportedType::INT, 0);
+    expected.emplace_back("col_2", nebula::cpp2::SupportedType::INT, 2);
+    expected.emplace_back("col_4", nebula::cpp2::SupportedType::INT, 4);
+    expected.emplace_back("col_6", nebula::cpp2::SupportedType::INT, 6);
+    expected.emplace_back("col_8", nebula::cpp2::SupportedType::INT, 8);
 
     auto reader = RowReader::getRowReader(resp.data, provider);
     auto numFields = provider->getNumFields();
@@ -110,14 +110,14 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
         EXPECT_EQ(name,  std::get<0>(expected[i]));
         EXPECT_TRUE(ftype.type == std::get<1>(expected[i]));
         switch (ftype.type) {
-            case cpp2::SupportedType::INT: {
+            case nebula::cpp2::SupportedType::INT: {
                 int64_t v;
                 auto ret = reader->getInt<int64_t>(i, v);
                 EXPECT_EQ(ret, ResultType::SUCCEEDED);
                 EXPECT_EQ(std::get<2>(expected[i]) * 210 , v);
                 break;
             }
-            case cpp2::SupportedType::DOUBLE: {
+            case nebula::cpp2::SupportedType::DOUBLE: {
                 float v;
                 auto ret = reader->getFloat(i, v);
                 EXPECT_EQ(ret, ResultType::SUCCEEDED);
