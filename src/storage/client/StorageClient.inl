@@ -85,8 +85,9 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         evb = ioThreadPool_->getEventBase();
     }
 
-    evb->runInEventBaseThread([reqs = std::move(requests), context, evb] {
-        for (auto req : reqs) {
+    evb->runInEventBaseThread([constReqs = std::move(requests), context, evb] {
+        auto* reqs = const_cast<std::unordered_map<HostAddr, Request>*>(&constReqs);
+        for (auto& req : *reqs) {
             auto& host = req.first;
             auto client = thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>
                                 ::getClient(host, evb);
