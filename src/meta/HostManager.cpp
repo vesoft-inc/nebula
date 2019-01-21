@@ -12,14 +12,16 @@ namespace meta {
 
 std::unordered_map<GraphSpaceID, std::shared_ptr<HostManager>> HostManager::hostManagers_;
 
-
 // static
 std::shared_ptr<const HostManager> HostManager::get(GraphSpaceID space) {
     auto it = hostManagers_.find(space);
     if (it != hostManagers_.end()) {
         return it->second;
     } else {
-        return std::shared_ptr<const HostManager>();
+        auto* hmPtr = new HostManager(space);
+        std::shared_ptr<HostManager> hm(hmPtr);
+        hostManagers_.emplace(space, hm);
+        return hm;
     }
 }
 

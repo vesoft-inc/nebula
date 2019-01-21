@@ -10,6 +10,10 @@
 #include "kvstore/KVStoreImpl.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
+#include "storage/StorageServiceHandler.h"
+#include <thrift/lib/cpp2/server/ThriftServer.h>
+#include "meta/AdHocSchemaManager.h"
+
 
 DECLARE_string(part_man_type);
 
@@ -140,6 +144,40 @@ public:
         prop.set_stat(type);
         return prop;
     }
+
+    struct ServerContext {
+         ~ServerContext() {
+             server_->stop();
+             serverT_->join();
+             VLOG(3) << "~ServerContext";
+         }
+
+         std::unique_ptr<apache::thrift::ThriftServer> server_;
+         std::unique_ptr<std::thread> serverT_;
+     };
+
+     static std::unique_ptr<ServerContext> mockServer(uint32_t port, const char* dataPath) {
+         auto sc = std::make_unique<ServerContext>();
+         sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
+         sc->serverT_ = std::make_unique<std::thread>([&]() {
+             LOG(INFO) << "Starting the storage Daemon on port " << port << ", path " << dataPath;
+             std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath));
+             meta::AdHocSchemaManager::addEdgeSchema(
+                0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
+             for (auto tagId = 3001; tagId < 3010; tagId++) {
+                meta::AdHocSchemaManager::addTagSchema(
+                    0 /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
+             }
+             auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(kv.get());
+             CHECK(!!sc->server_) << "Failed to create the thrift server";
+             sc->server_->setInterface(handler);
+             sc->server_->setPort(port);
+             sc->server_->serve();  // Will wait until the server shuts down
+             LOG(INFO) << "Stop the server...";
+         });
+         sleep(1);
+         return sc;
+     }
 };
 
 }  // namespace storage

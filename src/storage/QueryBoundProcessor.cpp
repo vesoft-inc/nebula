@@ -58,7 +58,6 @@ kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
         auto reader = RowReader::getEdgePropReader(iter->val(), spaceId_, edgeType);
         this->collectProps(reader.get(), iter->key(), props, &collector);
         rsWriter.addRow(writer);
-
         iter->next();
     }
     return ret;
@@ -70,7 +69,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
                                                        std::vector<TagContext>& tagContexts,
                                                        EdgeContext& edgeContext) {
     cpp2::VertexData vResp;
-    vResp.vertex_id = vId;
+    vResp.set_vertex_id(vId);
     if (!tagContexts.empty()) {
         RowWriter writer;
         for (auto& tc : tagContexts) {
@@ -81,26 +80,28 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
                 return ret;
             }
         }
-        vResp.vertex_data = writer.encode();
+        vResp.set_vertex_data(writer.encode());
     }
 
-    RowSetWriter rsWriter;
-    auto ret = collectEdgeProps(partId, vId, edgeContext.edgeType_,
-                                edgeContext.props_, rsWriter);
-    if (ret != kvstore::ResultCode::SUCCESSED) {
-        return ret;
+    if (!edgeContext.props_.empty()) {
+        RowSetWriter rsWriter;
+        auto ret = collectEdgeProps(partId, vId, edgeContext.edgeType_,
+                                    edgeContext.props_, rsWriter);
+        if (ret != kvstore::ResultCode::SUCCESSED) {
+            return ret;
+        }
+        if (!rsWriter.data().empty()) {
+            vResp.set_edge_data(std::move(rsWriter.data()));
+        }
     }
-    if (!rsWriter.data().empty()) {
-        vResp.edge_data = std::move(rsWriter.data());
-    }
-
-    resp_.vertices.emplace_back(std::move(vResp));
+    vertices_.emplace_back(std::move(vResp));
     return kvstore::ResultCode::SUCCESSED;
 }
 
 
 void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
                                       EdgeContext& edgeContext, int32_t retNum) {
+    resp_.set_vertices(std::move(vertices_));
     if (!tagContexts.empty()) {
         cpp2::Schema respTag;
         respTag.columns.reserve(retNum - edgeContext.props_.size());
@@ -111,17 +112,20 @@ void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
             }
         }
         if (!respTag.get_columns().empty()) {
-            resp_.vertex_schema = std::move(respTag);
+            resp_.set_vertex_schema(std::move(respTag));
         }
     }
-    cpp2::Schema respEdge;
-    respEdge.columns.reserve(edgeContext.props_.size());
-    for (auto& prop : edgeContext.props_) {
-        respEdge.columns.emplace_back(columnDef(std::move(prop.prop_.name),
-                                                prop.type_.type));
-    }
-    if (!respEdge.get_columns().empty()) {
-        resp_.edge_schema = std::move(respEdge);
+    if (!edgeContext.props_.empty()) {
+        cpp2::Schema respEdge;
+        respEdge.__isset.columns = true;
+        respEdge.columns.reserve(edgeContext.props_.size());
+        for (auto& prop : edgeContext.props_) {
+            respEdge.columns.emplace_back(columnDef(std::move(prop.prop_.name),
+                                                    prop.type_.type));
+        }
+        if (!respEdge.get_columns().empty()) {
+            resp_.set_edge_schema(std::move(respEdge));
+        }
     }
 }
 
