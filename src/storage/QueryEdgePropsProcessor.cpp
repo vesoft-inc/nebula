@@ -44,7 +44,9 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     std::vector<TagContext> tagContexts;
     auto retCode = this->checkAndBuildContexts(req, tagContexts, edgeContext);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        this->pushResultCode(retCode, -1);
+        for (auto& p : req.get_parts()) {
+            this->pushResultCode(retCode, p.first);
+        }
         this->resp_.result.latency_in_ms = duration_.elapsedInMSec();
         this->onFinished();
         return;

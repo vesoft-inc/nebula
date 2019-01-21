@@ -39,7 +39,7 @@ public:
         }
     }
 
-    void gotFailure() {
+    void markFailure() {
         result_ = Result::PARTIAL_SUCCEEDED;
     }
 
@@ -74,7 +74,7 @@ private:
  */
 class StorageClient final {
 public:
-    StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool);
+    explicit StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,

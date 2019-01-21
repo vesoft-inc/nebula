@@ -154,7 +154,9 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     EdgeContext edgeContext;
     auto retCode = checkAndBuildContexts(req, tagContexts, edgeContext);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        this->pushResultCode(retCode, -1);
+        for (auto& p : req.get_parts()) {
+            this->pushResultCode(retCode, p.first);
+        }
         this->resp_.result.set_latency_in_ms(this->duration_.elapsedInMSec());
         this->onFinished();
         return;

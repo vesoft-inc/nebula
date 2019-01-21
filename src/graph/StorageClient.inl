@@ -105,7 +105,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                             part.first,
                             storage::cpp2::ErrorCode::E_RPC_FAILURE);
                     }
-                    context->resp.gotFailure();
+                    context->resp.markFailure();
                 } else {
                     auto resp = std::move(val.value());
                     auto& result = resp.get_result();
@@ -122,7 +122,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                         }
                     }
                     if (hasFailure) {
-                        context->resp.gotFailure();
+                        context->resp.markFailure();
                     }
 
                     // Adjust the latency
