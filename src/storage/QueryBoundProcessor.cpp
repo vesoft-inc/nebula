@@ -117,12 +117,13 @@ void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
     }
     if (!edgeContext.props_.empty()) {
         cpp2::Schema respEdge;
-        respEdge.__isset.columns = true;
-        respEdge.columns.reserve(edgeContext.props_.size());
+        decltype(respEdge.columns) cols;
+        cols.reserve(edgeContext.props_.size());
         for (auto& prop : edgeContext.props_) {
-            respEdge.columns.emplace_back(columnDef(std::move(prop.prop_.name),
-                                                    prop.type_.type));
+            cols.emplace_back(columnDef(std::move(prop.prop_.name),
+                                                  prop.type_.type));
         }
+        respEdge.set_columns(std::move(cols));
         if (!respEdge.get_columns().empty()) {
             resp_.set_edge_schema(std::move(respEdge));
         }

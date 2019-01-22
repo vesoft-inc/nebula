@@ -19,14 +19,12 @@ namespace storage {
 TEST(StorageClientTest, VerticesInterfacesTest) {
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     uint32_t localIp;
-    uint32_t localPort = 10002;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto sc = TestUtils::mockServer(localPort, rootPath.path());
-
+    auto sc = TestUtils::mockServer(rootPath.path());
 
     GraphSpaceID spaceId = 0;
     meta::AdHocPartManagersBuilder::add(spaceId,
-                                        HostAddr(localIp, localPort),
+                                        HostAddr(localIp, sc->port_),
                                         {0, 1, 2, 3, 4, 5});
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);

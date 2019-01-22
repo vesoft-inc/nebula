@@ -154,13 +154,13 @@ public:
 
          std::unique_ptr<apache::thrift::ThriftServer> server_;
          std::unique_ptr<std::thread> serverT_;
+         uint32_t port_;
      };
 
-     static std::unique_ptr<ServerContext> mockServer(uint32_t port, const char* dataPath) {
+     static std::unique_ptr<ServerContext> mockServer(const char* dataPath, uint32_t port = 0) {
          auto sc = std::make_unique<ServerContext>();
          sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
          sc->serverT_ = std::make_unique<std::thread>([&]() {
-             LOG(INFO) << "Starting the storage Daemon on port " << port << ", path " << dataPath;
              std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath));
              meta::AdHocSchemaManager::addEdgeSchema(
                 0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
@@ -175,7 +175,12 @@ public:
              sc->server_->serve();  // Will wait until the server shuts down
              LOG(INFO) << "Stop the server...";
          });
-         sleep(1);
+         while (!sc->server_->getServeEventBase()
+                 || !sc->server_->getServeEventBase()->isRunning()) {
+         }
+         sc->port_ = sc->server_->getAddress().getPort();
+         LOG(INFO) << "Starting the storage Daemon on port " << sc->port_
+                   << ", path " << dataPath;
          return sc;
      }
 };
