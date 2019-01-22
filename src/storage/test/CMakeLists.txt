@@ -197,26 +197,12 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     storage_client_test
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
-    double-conversion
-    dl
-    jemalloc
-    -pthread
 )
 
 nebula_add_test(storage_client_test)
