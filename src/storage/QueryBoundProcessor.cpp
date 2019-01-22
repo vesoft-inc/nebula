@@ -68,7 +68,7 @@ kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
 kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, VertexID vId,
                                                        std::vector<TagContext>& tagContexts,
                                                        EdgeContext& edgeContext) {
-    cpp2::VertexResponse vResp;
+    cpp2::VertexData vResp;
     vResp.vertex_id = vId;
     if (!tagContexts.empty()) {
         RowWriter writer;

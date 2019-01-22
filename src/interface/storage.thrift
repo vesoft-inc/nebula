@@ -37,6 +37,7 @@ enum ErrorCode {
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
+
 // These are all data types supported in the graph properties
 enum SupportedType {
     // Simple types
@@ -64,6 +65,7 @@ enum SupportedType {
 //    STRUCT = 104,
 } (cpp.enum_strict)
 
+
 struct ValueType {
     1: SupportedType type;
     // vtype only exists when the type is a LIST, SET, or MAP
@@ -72,20 +74,24 @@ struct ValueType {
     3: optional Schema schema (cpp.ref = true);
 } (cpp.virtual)
 
+
 struct ColumnDef {
     1: required string name,
     2: required ValueType type,
 }
 
+
 struct Schema {
     1: list<ColumnDef> columns,
 }
+
 
 enum PropOwner {
     SOURCE = 1,
     DEST = 2,
     EDGE = 3,
 } (cpp.enum_strict)
+
 
 struct PropDef {
     1: PropOwner owner,
@@ -94,16 +100,19 @@ struct PropDef {
     4: StatType stat,    // calc stats when setted.
 }
 
+
 enum StatType {
     SUM = 1,
     COUNT = 2,
     AVG = 3,
 } (cpp.enum_strict)
 
+
 struct HostAddr {
     1: IPv4  ip,
     2: Port  port,
 }
+
 
 struct ResultCode {
     1: required ErrorCode code,
@@ -112,50 +121,60 @@ struct ResultCode {
     3: optional HostAddr  leader,
 }
 
-struct VertexResponse {
+
+struct VertexData {
     1: i64 vertex_id,
     2: binary vertex_data, // decode according to vertex_schema.
     3: binary edge_data,   // decode according to edge_schema.
 }
 
-struct QueryResponse {
-    1: required list<ResultCode> codes,
-    2: required i32 latency_in_ms,      // Query latency from storage service
-    3: optional Schema vertex_schema,   // vertex related props
-    4: optional Schema edge_schema,     // edge related props
-    5: optional list<VertexResponse> vertices,
+
+struct ResponseCommon {
+    // Only contains the partition that returns error
+    1: required list<ResultCode> failed_codes,
+    // Query latency from storage service
+    2: required i32 latency_in_ms,
 }
+
+
+struct QueryResponse {
+    1: required ResponseCommon result,
+    2: optional Schema vertex_schema,   // vertex related props
+    3: optional Schema edge_schema,     // edge related props
+    4: optional list<VertexData> vertices,
+}
+
 
 struct ExecResponse {
-    1: required list<ResultCode> codes,
-    2: required i32 latency_in_ms,      // Execution latency
+    1: required ResponseCommon result,
 }
+
 
 struct EdgePropResponse {
-    1: required list<ResultCode> codes,
-    2: required i32 latency_in_ms,      // Query latency from storage service
-    3: optional Schema schema,          // edge related props
-    4: optional binary data,
+    1: required ResponseCommon result,
+    2: optional Schema schema,          // edge related props
+    3: optional binary data,
 }
 
+
 struct QueryStatsResponse {
-    // If error for the whole request, the codes would have only one element and 
-    // related part_id equals -1
-    1: required list<ResultCode> codes,
-    2: required i32 latency_in_ms,      // Query latency from storage service
-    3: optional Schema schema,
-    4: optional binary data,
+    1: required ResponseCommon result,
+    2: optional Schema schema,
+    3: optional binary data,
 }
+
 
 struct Tag {
     1: i32 tag_id,
     2: binary props,
 }
 
+
 struct Vertex {
     1: i64 id,
     2: list<Tag> tags,
 }
+
 
 struct EdgeKey {
     1: i64 src,
@@ -166,50 +185,57 @@ struct EdgeKey {
     4: i64 ranking,
 }
 
+
 struct Edge {
     1: EdgeKey key,
     2: binary props,
 }
 
+
 struct GetNeighborsRequest {
     1: GraphSpaceID space_id,
     // partId => ids
-    2: map<PartitionID, list<i64>>(cpp.template = "std::unordered_map") ids,
+    2: map<PartitionID, list<i64>>(cpp.template = "std::unordered_map") parts,
     // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
     3: i32 edge_type,
     4: binary filter,
     5: list<PropDef> return_columns,
 }
 
+
 struct VertexPropRequest {
     1: GraphSpaceID space_id,
-    2: map<PartitionID, list<i64>>(cpp.template = "std::unordered_map") ids,
+    2: map<PartitionID, list<i64>>(cpp.template = "std::unordered_map") parts,
     3: list<PropDef> return_columns,
 }
+
 
 struct EdgePropRequest {
     1: GraphSpaceID space_id,
     // partId => edges
-    2: map<PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") edges,
+    2: map<PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
     3: i32 edge_type,
     4: list<PropDef> return_columns,
 }
 
+
 struct AddVerticesRequest {
     1: GraphSpaceID space_id,
     // partId => vertices
-    2: map<PartitionID, list<Vertex>>(cpp.template = "std::unordered_map") vertices,
+    2: map<PartitionID, list<Vertex>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
     3: bool overwritable,
 }
 
+
 struct AddEdgesRequest {
     1: GraphSpaceID space_id,
     // partId => edges
-    2: map<PartitionID, list<Edge>>(cpp.template = "std::unordered_map") edges,
+    2: map<PartitionID, list<Edge>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
     3: bool overwritable,
 }
+
 
 service StorageService {
     QueryResponse getOutBound(1: GetNeighborsRequest req)

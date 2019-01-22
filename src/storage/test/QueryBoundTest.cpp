@@ -70,7 +70,7 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     LOG(INFO) << "Build QueryBoundRequest...";
     cpp2::GetNeighborsRequest req;
     req.set_space_id(0);
-    decltype(req.ids) tmpIds;
+    decltype(req.parts) tmpIds;
     for (auto partId = 0; partId < 3; partId++) {
         for (auto vertexId =  partId * 10, index = 0;
              vertexId < (partId + 1) * 10;
@@ -78,7 +78,7 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
             tmpIds[partId].push_back(vertexId);
         }
     }
-    req.set_ids(std::move(tmpIds));
+    req.set_parts(std::move(tmpIds));
     req.set_edge_type(101);
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
@@ -102,10 +102,7 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(3, resp.codes.size());
-    for (auto i = 0; i < 3; i++) {
-        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.codes[i].code);
-    }
+    EXPECT_EQ(0, resp.result.failed_codes.size());
 
     EXPECT_EQ(10, resp.edge_schema.columns.size());
     EXPECT_EQ(3, resp.vertex_schema.columns.size());

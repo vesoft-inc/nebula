@@ -54,7 +54,7 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     LOG(INFO) << "Build EdgePropRequest...";
     cpp2::EdgePropRequest req;
     req.set_space_id(0);
-    decltype(req.edges) tmpEdges;
+    decltype(req.parts) tmpEdges;
     for (auto partId = 0; partId < 3; partId++) {
         for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             for (auto dstId = 10001; dstId <= 10007; dstId++) {
@@ -63,7 +63,7 @@ TEST(QueryEdgePropsTest, SimpleTest) {
             }
         }
     }
-    req.set_edges(std::move(tmpEdges));
+    req.set_parts(std::move(tmpEdges));
     req.set_edge_type(101);
     // Return edge props col_0, col_2, col_4 ... col_18
     decltype(req.return_columns) tmpColumns;
@@ -79,10 +79,7 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(3, resp.codes.size());
-    for (auto i = 0; i < 3; i++) {
-        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.codes[i].code);
-    }
+    EXPECT_EQ(0, resp.result.failed_codes.size());
 
     EXPECT_EQ(10, resp.schema.columns.size());
     auto provider = std::make_unique<ResultSchemaProvider>(resp.schema);

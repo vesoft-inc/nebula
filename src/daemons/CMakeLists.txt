@@ -12,6 +12,8 @@ add_executable(
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:meta_obj>
 )
 
 target_link_libraries(
