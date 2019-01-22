@@ -14,7 +14,7 @@ namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     auto now = time::TimeUtils::nowInMSeconds();
-    const auto& partVertices = req.get_vertices();
+    const auto& partVertices = req.get_parts();
     auto spaceId = req.get_space_id();
     callingNum_ = partVertices.size();
     CHECK_NOTNULL(kvstore_);

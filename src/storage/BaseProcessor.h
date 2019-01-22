@@ -56,10 +56,12 @@ protected:
     cpp2::ErrorCode to(kvstore::ResultCode code);
 
     void pushResultCode(cpp2::ErrorCode code, PartitionID partId) {
-        cpp2::ResultCode thriftRet;
-        thriftRet.code = code;
-        thriftRet.part_id = partId;
-        resp_.codes.emplace_back(std::move(thriftRet));
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            cpp2::ResultCode thriftRet;
+            thriftRet.code = code;
+            thriftRet.part_id = partId;
+            resp_.result.failed_codes.emplace_back(std::move(thriftRet));
+        }
     }
 
 protected:
