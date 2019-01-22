@@ -44,14 +44,16 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     std::vector<TagContext> tagContexts;
     auto retCode = this->checkAndBuildContexts(req, tagContexts, edgeContext);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        this->pushResultCode(retCode, -1);
-        this->resp_.latency_in_ms = duration_.elapsedInMSec();
+        for (auto& p : req.get_parts()) {
+            this->pushResultCode(retCode, p.first);
+        }
+        this->resp_.result.latency_in_ms = duration_.elapsedInMSec();
         this->onFinished();
         return;
     }
 
     RowSetWriter rsWriter;
-    std::for_each(req.get_edges().begin(), req.get_edges().end(), [&](auto& partE) {
+    std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partE) {
         auto partId = partE.first;
         kvstore::ResultCode ret;
         for (auto& edgeKey : partE.second) {
@@ -79,7 +81,7 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
                 columnDef(std::move(prop.prop_.name),
                           prop.type_.type));
     }
-    resp_.latency_in_ms = duration_.elapsedInMSec();
+    resp_.result.latency_in_ms = duration_.elapsedInMSec();
     this->onFinished();
 }
 

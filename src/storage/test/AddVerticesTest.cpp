@@ -39,17 +39,14 @@ TEST(AddVerticesTest, SimpleTest) {
                                   vertexId,
                                   std::move(tags));
         }
-        req.vertices.emplace(partId, std::move(vertices));
+        req.parts.emplace(partId, std::move(vertices));
     }
 
     LOG(INFO) << "Test AddVerticesProcessor...";
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
-    EXPECT_EQ(3, resp.codes.size());
-    for (auto i = 0; i < 3; i++) {
-        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.codes[i].code);
-    }
+    EXPECT_EQ(0, resp.result.failed_codes.size());
 
     LOG(INFO) << "Check data in kv store...";
     for (auto partId = 0; partId < 3; partId++) {
