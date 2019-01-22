@@ -90,7 +90,9 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
     if (ret != kvstore::ResultCode::SUCCESSED) {
         return ret;
     }
-    vResp.edge_data = std::move(rsWriter.data());
+    if (!rsWriter.data().empty()) {
+        vResp.edge_data = std::move(rsWriter.data());
+    }
 
     resp_.vertices.emplace_back(std::move(vResp));
     return kvstore::ResultCode::SUCCESSED;
@@ -108,7 +110,9 @@ void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
                                                        prop.type_.type));
             }
         }
-        resp_.vertex_schema = std::move(respTag);
+        if (!respTag.get_columns().empty()) {
+            resp_.vertex_schema = std::move(respTag);
+        }
     }
     cpp2::Schema respEdge;
     respEdge.columns.reserve(edgeContext.props_.size());
@@ -116,7 +120,9 @@ void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
         respEdge.columns.emplace_back(columnDef(std::move(prop.prop_.name),
                                                 prop.type_.type));
     }
-    resp_.edge_schema = std::move(respEdge);
+    if (!respEdge.get_columns().empty()) {
+        resp_.edge_schema = std::move(respEdge);
+    }
 }
 
 }  // namespace storage

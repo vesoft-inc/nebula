@@ -89,20 +89,5 @@ const std::vector<PartitionID>& PartManager::partsOnHost(HostAddr host) const {
     return hostIt->second;
 }
 
-
-std::unordered_map<PartitionID, std::vector<int64_t>>
-PartManager::clusterIdsToParts(std::vector<int64_t>& ids) const {
-    std::unordered_map<PartitionID, std::vector<int64_t>> clusters;
-    auto parts = numParts();
-
-    for (auto id : ids) {
-        auto s = ID_HASH(id, parts);
-        CHECK_GE(s, 0U);
-        clusters[s].push_back(id);
-    }
-
-    return clusters;
-}
-
 }  // namespace meta
 }  // namespace nebula

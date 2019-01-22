@@ -55,12 +55,6 @@ public:
 
     const std::vector<PartitionID>& partsOnHost(HostAddr host) const;
 
-    // Cluster given ids into the shard they belong to
-    // The method returns a map
-    //  shard_id => [ids that belong to the shard]
-    std::unordered_map<PartitionID, std::vector<int64_t>>
-    clusterIdsToParts(std::vector<int64_t>& ids) const;
-
 protected:
     PartManager() = default;
 
