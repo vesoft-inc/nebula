@@ -114,6 +114,7 @@ const Engine& NebulaStore::dispatchPart(GraphSpaceID spaceId,
         }
         index++;
     }
+    CHECK_LE(minIndex, 0) << "engines number:" << engines.size();
     const auto& target = engines[minIndex];
     // Write the information into related engine.
     target.first->addPart(partId);
