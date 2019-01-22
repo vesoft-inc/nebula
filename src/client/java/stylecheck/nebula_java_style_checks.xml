@@ -42,7 +42,11 @@
             <property name="allowNonPrintableEscapes" value="true"/>
         </module>
         <module name="LineLength">
+<<<<<<< HEAD
             <property name="max" value="160"/>
+=======
+            <property name="max" value="100"/>
+>>>>>>> add java code style check .
             <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
         </module>
         <module name="AvoidStarImport"/>
@@ -177,7 +181,11 @@
              value="GenericWhitespace ''{0}'' is not preceded with whitespace."/>
         </module>
         <module name="Indentation">
+<<<<<<< HEAD
             <property name="basicOffset" value="4"/>
+=======
+            <property name="basicOffset" value="2"/>
+>>>>>>> add java code style check .
             <property name="braceAdjustment" value="0"/>
             <property name="caseIndent" value="2"/>
             <property name="throwsIndent" value="4"/>

@@ -109,10 +109,13 @@
             files="YearMonth.java"
              />
 
+<<<<<<< HEAD
   <suppress checks="Indentation"
             files="ErrorCode.java"
              />
 
+=======
+>>>>>>> add java code style check .
   <suppress checks="CustomImportOrder"
             files="GraphService.java"
              />
