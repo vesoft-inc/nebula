@@ -14,13 +14,13 @@ namespace meta {
 
 class ListSpacesProcessor : public BaseProcessor<cpp2::ListSpacesResp> {
 public:
-    static ListSpacesProcessor* instance(kvstore::KVStore* kvstore, folly::RWSpinLock* lock) {
+    static ListSpacesProcessor* instance(kvstore::KVStore* kvstore, std::mutex* lock) {
         return new ListSpacesProcessor(kvstore, lock);
     }
 
     void process(const cpp2::ListSpacesReq& req) {
         UNUSED(req);
-        rh_ = std::make_unique<folly::RWSpinLock::ReadHolder>(*lock_);
+        guard_ = std::make_unique<std::lock_guard<std::mutex>>(*lock_);
         auto prefix = MetaUtils::spacePrefix();
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
@@ -43,11 +43,8 @@ public:
     }
 
 private:
-    explicit ListSpacesProcessor(kvstore::KVStore* kvstore, folly::RWSpinLock* lock)
+    explicit ListSpacesProcessor(kvstore::KVStore* kvstore, std::mutex* lock)
             : BaseProcessor<cpp2::ListSpacesResp>(kvstore, lock) {}
-
-private:
-    std::unique_ptr<folly::RWSpinLock::ReadHolder> rh_;
 };
 
 }  // namespace meta

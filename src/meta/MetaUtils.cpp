@@ -24,16 +24,17 @@ std::string MetaUtils::spaceKey(GraphSpaceID spaceId) {
 }
 
 std::string MetaUtils::spaceVal(int32_t partsNum, int32_t replicaFactor, const std::string& name) {
-    std::string key;
-    key.reserve(sizeof(partsNum) + sizeof(replicaFactor) + name.size());
-    key.append(reinterpret_cast<const char*>(&partsNum), sizeof(partsNum));
-    key.append(reinterpret_cast<const char*>(&replicaFactor), sizeof(replicaFactor));
-    key.append(name);
-    return key;
+    std::string val;
+    val.reserve(sizeof(partsNum) + sizeof(replicaFactor) + name.size());
+    val.append(reinterpret_cast<const char*>(&partsNum), sizeof(partsNum));
+    val.append(reinterpret_cast<const char*>(&replicaFactor), sizeof(replicaFactor));
+    val.append(name);
+    return val;
 }
 
-std::string MetaUtils::spacePrefix() {
-    return kSpacesTable;
+const std::string& MetaUtils::spacePrefix() {
+    static const std::string prefix = kSpacesTable;
+    return prefix;
 }
 
 GraphSpaceID MetaUtils::spaceId(folly::StringPiece rawKey) {

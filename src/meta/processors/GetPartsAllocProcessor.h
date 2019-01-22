@@ -14,13 +14,13 @@ namespace meta {
 
 class GetPartsAllocProcessor : public BaseProcessor<cpp2::GetPartsAllocResp> {
 public:
-    static GetPartsAllocProcessor* instance(kvstore::KVStore* kvstore, folly::RWSpinLock* lock) {
+    static GetPartsAllocProcessor* instance(kvstore::KVStore* kvstore, std::mutex* lock) {
         return new GetPartsAllocProcessor(kvstore, lock);
     }
 
     void process(const cpp2::GetPartsAllocReq& req) {
+        guard_ = std::make_unique<std::lock_guard<std::mutex>>(*lock_);
         auto spaceId = req.get_space_id();
-        rh_ = std::make_unique<folly::RWSpinLock::ReadHolder>(*lock_);
         auto prefix = MetaUtils::partPrefix(spaceId);
         std::unique_ptr<kvstore::KVIterator> iter;
         auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
@@ -43,11 +43,8 @@ public:
     }
 
 private:
-    explicit GetPartsAllocProcessor(kvstore::KVStore* kvstore, folly::RWSpinLock* lock)
+    explicit GetPartsAllocProcessor(kvstore::KVStore* kvstore, std::mutex* lock)
             : BaseProcessor<cpp2::GetPartsAllocResp>(kvstore, lock) {}
-
-private:
-    std::unique_ptr<folly::RWSpinLock::ReadHolder> rh_;
 };
 
 }  // namespace meta

@@ -14,13 +14,13 @@ namespace meta {
 
 class ListHostsProcessor : public BaseProcessor<cpp2::ListHostsResp> {
 public:
-    static ListHostsProcessor* instance(kvstore::KVStore* kvstore, folly::RWSpinLock* lock) {
+    static ListHostsProcessor* instance(kvstore::KVStore* kvstore, std::mutex* lock) {
         return new ListHostsProcessor(kvstore, lock);
     }
 
     void process(const cpp2::ListHostsReq& req) {
         UNUSED(req);
-        rh_ = std::make_unique<folly::RWSpinLock::ReadHolder>(*lock_);
+        guard_ = std::make_unique<std::lock_guard<std::mutex>>(*lock_);
         auto ret = allHosts();
         if (!ret.ok()) {
             resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
@@ -33,11 +33,8 @@ public:
     }
 
 private:
-    explicit ListHostsProcessor(kvstore::KVStore* kvstore, folly::RWSpinLock* lock)
+    explicit ListHostsProcessor(kvstore::KVStore* kvstore, std::mutex* lock)
             : BaseProcessor<cpp2::ListHostsResp>(kvstore, lock) {}
-
-private:
-    std::unique_ptr<folly::RWSpinLock::ReadHolder> rh_;
 };
 
 }  // namespace meta

@@ -14,12 +14,12 @@ namespace meta {
 
 class AddHostsProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
-    static AddHostsProcessor* instance(kvstore::KVStore* kvstore, folly::RWSpinLock* lock) {
+    static AddHostsProcessor* instance(kvstore::KVStore* kvstore, std::mutex* lock) {
         return new AddHostsProcessor(kvstore, lock);
     }
 
     void process(const cpp2::AddHostsReq& req) {
-        wh_ = std::make_unique<folly::RWSpinLock::WriteHolder>(*lock_);
+        guard_ = std::make_unique<std::lock_guard<std::mutex>>(*lock_);
         std::vector<kvstore::KV> data;
         for (auto& h : req.get_hosts()) {
             data.emplace_back(MetaUtils::hostKey(h.ip, h.port), MetaUtils::hostVal());
@@ -28,11 +28,8 @@ public:
     }
 
 private:
-    explicit AddHostsProcessor(kvstore::KVStore* kvstore, folly::RWSpinLock* lock)
+    explicit AddHostsProcessor(kvstore::KVStore* kvstore, std::mutex* lock)
             : BaseProcessor<cpp2::ExecResp>(kvstore, lock) {}
-
-private:
-    std::unique_ptr<folly::RWSpinLock::WriteHolder> wh_;
 };
 
 }  // namespace meta

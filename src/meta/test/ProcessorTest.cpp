@@ -20,7 +20,7 @@ namespace meta {
 TEST(ProcessorTest, AddHostsTest) {
     fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    folly::RWSpinLock lock;
+    std::mutex lock;
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
@@ -76,7 +76,7 @@ TEST(ProcessorTest, AddHostsTest) {
 TEST(ProcessorTest, CreateSpaceTest) {
     fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    folly::RWSpinLock lock;
+    std::mutex lock;
     auto hostsNum = TestUtils::createSomeHosts(kv.get(), &lock);
     {
         cpp2::CreateSpaceReq req;

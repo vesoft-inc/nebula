@@ -8,9 +8,9 @@
 #define META_METASERVICEHANDLER_H_
 
 #include "base/Base.h"
+#include <mutex>
 #include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/KVStore.h"
-#include <folly/RWSpinLock.h>
 
 namespace nebula {
 namespace meta {
@@ -37,7 +37,7 @@ public:
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;
-    folly::RWSpinLock lock_;
+    std::mutex mutex_;
 };
 
 }  // namespace meta

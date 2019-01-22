@@ -96,6 +96,8 @@ public:
 
     // Graph engine errors
     STATUS_GENERATOR(SyntaxError);
+
+    // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
     STATUS_GENERATOR(SpaceNotFound);
 
 #undef STATUS_GENERATOR

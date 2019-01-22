@@ -20,27 +20,6 @@ DEFINE_string(data_path, "", "Root data path, multi paths should be split by com
 DEFINE_string(local_ip, "", "Local ip");
 DEFINE_bool(mock_server, true, "start mock server");
 
-// Get local IPv4 address. You could specify it by set FLAGS_local_ip, otherwise
-// it will use the first ip exclude "127.0.0.1"
-namespace nebula {
-
-StatusOr<std::string> getLocalIP() {
-    if (!FLAGS_local_ip.empty()) {
-        return FLAGS_local_ip;
-    }
-    auto result = network::NetworkUtils::listDeviceAndIPv4s();
-    if (!result.ok()) {
-        return std::move(result).status();
-    }
-    for (auto& deviceIP : result.value()) {
-        if (deviceIP.second != "127.0.0.1") {
-            return deviceIP.second;
-        }
-    }
-    return Status::Error("No IPv4 address found!");
-}
-
-}  // namespace nebula
 
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
@@ -50,7 +29,6 @@ int main(int argc, char *argv[]) {
     using nebula::kvstore::KVStore;
     using nebula::meta::SchemaManager;
     using nebula::network::NetworkUtils;
-    using nebula::getLocalIP;
 
     LOG(INFO) << "Starting the storage Daemon on port " << FLAGS_port
               << ", dataPath " << FLAGS_data_path;
@@ -60,7 +38,7 @@ int main(int argc, char *argv[]) {
     std::transform(paths.begin(), paths.end(), paths.begin(), [](auto& p) {
         return folly::trimWhitespace(p).str();
     });
-    auto result = getLocalIP();
+    auto result = nebula::network::NetworkUtils::getLocalIP();
     CHECK(result.ok()) << result.status();
     uint32_t localIP;
     CHECK(NetworkUtils::ipv4ToInt(result.value(), localIP));

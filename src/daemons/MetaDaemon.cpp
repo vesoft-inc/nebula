@@ -10,29 +10,25 @@
 #include "meta/MetaHttpHandler.h"
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
+#include "kvstore/PartManager.h"
 
 DEFINE_int32(port, 45500, "Meta daemon listening port");
 DEFINE_string(data_path, "", "Root data path");
-DEFINE_string(local_ip, "", "Local ip");
+DEFINE_string(peers, "", "It is a list of IPs split by comma,"
+                         "the ips number equals replica number."
+                         "If empty, it means replica is 1");
+DECLARE_string(part_man_type);
 
-// Get local IPv4 address. You could specify it by set FLAGS_local_ip, otherwise
-// it will use the first ip exclude "127.0.0.1"
 namespace nebula {
 
-StatusOr<std::string> getLocalIP() {
-    if (!FLAGS_local_ip.empty()) {
-        return FLAGS_local_ip;
-    }
-    auto result = network::NetworkUtils::listDeviceAndIPv4s();
-    if (!result.ok()) {
-        return std::move(result).status();
-    }
-    for (auto& deviceIP : result.value()) {
-        if (deviceIP.second != "127.0.0.1") {
-            return deviceIP.second;
-        }
-    }
-    return Status::Error("No IPv4 address found!");
+std::vector<HostAddr> toHosts(const std::string& peersStr) {
+    std::vector<HostAddr> hosts;
+    std::vector<std::string> peers;
+    folly::split(",", peersStr, peers, true);
+    std::transform(peers.begin(), peers.end(), hosts.begin(), [](auto& p) {
+        return network::NetworkUtils::toHostAddr(folly::trimWhitespace(p));
+    });
+    return hosts;
 }
 
 }  // namespace nebula
@@ -52,10 +48,18 @@ int main(int argc, char *argv[]) {
     }
 
     LOG(INFO) << "Starting the meta Daemon on port " << FLAGS_port;
-    auto result = nebula::getLocalIP();
+    auto result = nebula::network::NetworkUtils::getLocalIP();
     CHECK(result.ok()) << result.status();
     uint32_t localIP;
     CHECK(nebula::network::NetworkUtils::ipv4ToInt(result.value(), localIP));
+
+    CHECK_EQ("memory", FLAGS_part_man_type);
+    nebula::kvstore::MemPartManager* partMan
+        = reinterpret_cast<nebula::kvstore::MemPartManager*>(
+                nebula::kvstore::PartManager::instance());
+    // The meta server has only one space, one part.
+    partMan->addPart(0, 0, nebula::toHosts(FLAGS_peers));
+
     std::unique_ptr<nebula::kvstore::KVStore> kvstore;
     nebula::kvstore::KVOptions options;
     options.local_ = nebula::HostAddr(localIP, FLAGS_port);

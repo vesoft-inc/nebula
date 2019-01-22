@@ -41,7 +41,7 @@ public:
         return kv;
     }
 
-    static int32_t createSomeHosts(kvstore::KVStore* kv, folly::RWSpinLock* lock,
+    static int32_t createSomeHosts(kvstore::KVStore* kv, std::mutex* lock,
                                    std::vector<HostAddr> hosts
                                         = {{0, 0}, {1, 1}, {2, 2}, {3, 3}}) {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;

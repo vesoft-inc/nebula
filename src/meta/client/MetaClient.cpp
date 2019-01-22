@@ -8,14 +8,14 @@
 #include "thrift/ThriftClientManager.h"
 
 DEFINE_int32(load_data_interval_second, 2 * 60, "Load data interval, unit: second");
-DEFINE_int32(load_data_delayed_ms, 0, "delayed milliseconds for the first load.");
 
 namespace nebula {
 namespace meta {
 
 void MetaClient::init() {
     CHECK(loadDataThread_.start());
-    loadDataThread_.addTimerTask(FLAGS_load_data_delayed_ms,
+    size_t delayMS = 100 + folly::Random::rand32(900);
+    loadDataThread_.addTimerTask(delayMS,
                                  FLAGS_load_data_interval_second * 1000,
                                  &MetaClient::loadDataThreadFunc, this);
 }
@@ -35,10 +35,10 @@ void MetaClient::loadDataThreadFunc() {
             LOG(ERROR) << "Get parts allocaction failed for spaceId " << spaceId;
             return;
         }
-        auto spaceCache = std::make_shared<SpaceLocalCache>();
+        auto spaceCache = std::make_shared<SpaceInfoCache>();
         auto partsAlloc = r.value();
         spaceCache->spaceName = space.second;
-        spaceCache->partsInHost_ = revert(partsAlloc);
+        spaceCache->partsOnHost_ = revert(partsAlloc);
         spaceCache->partsAlloc_ = std::move(partsAlloc);
         VLOG(1) << "Load space " << spaceId << ", parts num:" << spaceCache->partsAlloc_.size();
         cache.emplace(spaceId, spaceCache);
@@ -94,7 +94,7 @@ MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFacto
     return resp.get_id().get_space_id();
 }
 
-StatusOr<std::vector<IdName>> MetaClient::listSpaces() {
+StatusOr<std::vector<SpaceIdName>> MetaClient::listSpaces() {
     cpp2::ListSpacesReq req;
     auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_listSpaces(request);
@@ -102,7 +102,7 @@ StatusOr<std::vector<IdName>> MetaClient::listSpaces() {
     if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
         return handleResponse(resp);
     }
-    return to(resp.get_spaces());
+    return toSpaceIdName(resp.get_spaces());
 }
 
 Status MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
@@ -157,8 +157,8 @@ MetaClient::getPartsFromCache(GraphSpaceID spaceId, const HostAddr& host) {
     if (it == localCache_.end()) {
         return Status::Error("Can't find related spaceId");
     }
-    auto hostIt = it->second->partsInHost_.find(host);
-    if (hostIt != it->second->partsInHost_.end()) {
+    auto hostIt = it->second->partsOnHost_.find(host);
+    if (hostIt != it->second->partsOnHost_.end()) {
         return hostIt->second;
     }
     return Status::Error("Can't find any parts for the host");
@@ -196,12 +196,11 @@ std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& 
     return hosts;
 }
 
-std::vector<IdName> MetaClient::to(const std::vector<cpp2::IdName>& tIdNames) {
-    std::vector<IdName> idNames;
+std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames) {
+    std::vector<SpaceIdName> idNames;
     idNames.resize(tIdNames.size());
     std::transform(tIdNames.begin(), tIdNames.end(), idNames.begin(), [] (const auto& tin) {
-        // TODO(dangleptr) we use the first member by default.
-        return IdName(tin.id.get_space_id(), tin.name);
+        return SpaceIdName(tin.id.get_space_id(), tin.name);
     });
     return idNames;
 }

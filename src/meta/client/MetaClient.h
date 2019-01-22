@@ -8,23 +8,23 @@
 #define META_METACLIENT_H_
 
 #include "base/Base.h"
+#include <folly/executors/IOThreadPoolExecutor.h>
+#include <folly/RWSpinLock.h>
 #include "gen-cpp2/MetaServiceAsyncClient.h"
 #include "base/Status.h"
 #include "base/StatusOr.h"
 #include "thread/GenericWorker.h"
-#include <folly/executors/IOThreadPoolExecutor.h>
-#include <folly/RWSpinLock.h>
 
 namespace nebula {
 namespace meta {
 
 using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAddr>>;
-using IdName = std::pair<int32_t, std::string>;
+using SpaceIdName = std::pair<GraphSpaceID, std::string>;
 
-struct SpaceLocalCache {
+struct SpaceInfoCache {
     std::string spaceName;
     PartsAlloc partsAlloc_;
-    std::unordered_map<HostAddr, std::vector<PartitionID>> partsInHost_;
+    std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
 };
 
 using SpaceIndex = std::unordered_map<std::string, GraphSpaceID>;
@@ -48,7 +48,7 @@ public:
 
     StatusOr<GraphSpaceID> createSpace(std::string name, int32_t partsNum, int32_t replicaFator);
 
-    StatusOr<std::vector<IdName>> listSpaces();
+    StatusOr<std::vector<SpaceIdName>> listSpaces();
 
     Status addHosts(const std::vector<HostAddr>& hosts);
 
@@ -90,14 +90,14 @@ protected:
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
-    std::vector<IdName> to(const std::vector<cpp2::IdName>& tIdNames);
+    std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::vector<HostAddr> addrs_;
     HostAddr active_;
     thread::GenericWorker loadDataThread_;
-    std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceLocalCache>> localCache_;
+    std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
     SpaceIndex  spaceIndexByName_;
     folly::RWSpinLock localCacheLock_;
 };

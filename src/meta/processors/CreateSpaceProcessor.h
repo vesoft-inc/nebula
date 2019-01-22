@@ -14,12 +14,12 @@ namespace meta {
 
 class CreateSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
-    static CreateSpaceProcessor* instance(kvstore::KVStore* kvstore, folly::RWSpinLock* lock) {
+    static CreateSpaceProcessor* instance(kvstore::KVStore* kvstore, std::mutex* lock) {
         return new CreateSpaceProcessor(kvstore, lock);
     }
 
     void process(const cpp2::CreateSpaceReq& req) {
-        wh_ = std::make_unique<folly::RWSpinLock::WriteHolder>(*lock_);
+        guard_ = std::make_unique<std::lock_guard<std::mutex>>(*lock_);
         auto spaceRet = spaceExist(req.get_space_name());
         if (spaceRet.ok()) {
             resp_.set_id(to(spaceRet.value(), IDType::SPACE));
@@ -65,11 +65,8 @@ protected:
     }
 
 private:
-    explicit CreateSpaceProcessor(kvstore::KVStore* kvstore, folly::RWSpinLock* lock)
+    explicit CreateSpaceProcessor(kvstore::KVStore* kvstore, std::mutex* lock)
             : BaseProcessor<cpp2::ExecResp>(kvstore, lock) {}
-
-private:
-    std::unique_ptr<folly::RWSpinLock::WriteHolder> wh_;
 };
 
 }  // namespace meta

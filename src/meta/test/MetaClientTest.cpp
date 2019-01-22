@@ -12,13 +12,10 @@
 #include "network/NetworkUtils.h"
 #include "meta/MetaUtils.h"
 
-DECLARE_int32(load_data_delayed_ms);
-
 namespace nebula {
 namespace meta {
 
 TEST(MetaClientTest, InterfacesTest) {
-    FLAGS_load_data_delayed_ms = 500;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
     auto sc = TestUtils::mockServer(10001, rootPath.path());
 

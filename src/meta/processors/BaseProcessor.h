@@ -8,14 +8,14 @@
 #define META_BASEPROCESSOR_H_
 
 #include "base/Base.h"
-#include "base/StatusOr.h"
-#include <folly/RWSpinLock.h>
+#include <mutex>
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
+#include "interface/gen-cpp2/meta_types.h"
+#include "base/StatusOr.h"
+#include "time/Duration.h"
 #include "kvstore/KVStore.h"
 #include "meta/MetaUtils.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "time/Duration.h"
 
 namespace nebula {
 namespace meta {
@@ -29,9 +29,9 @@ enum IDType {
 template<typename RESP>
 class BaseProcessor {
 public:
-    BaseProcessor(kvstore::KVStore* kvstore, folly::RWSpinLock* lock)
+    BaseProcessor(kvstore::KVStore* kvstore, std::mutex* m)
             : kvstore_(kvstore)
-            , lock_(lock) {}
+            , lock_(m) {}
 
     virtual ~BaseProcessor() = default;
 
@@ -96,7 +96,8 @@ protected:
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
-    folly::RWSpinLock* lock_ = nullptr;
+    std::mutex* lock_ = nullptr;
+    std::unique_ptr<std::lock_guard<std::mutex>> guard_;
     RESP resp_;
     folly::Promise<RESP> promise_;
     const PartitionID kDefaultPartId_ = 0;

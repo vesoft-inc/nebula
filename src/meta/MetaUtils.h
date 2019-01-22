@@ -15,13 +15,14 @@ namespace meta {
 
 class MetaUtils final {
 public:
-    ~MetaUtils() = default;
+    MetaUtils() = delete;
 
     static std::string spaceKey(GraphSpaceID spaceId);
 
+    // TODO(dangleptr) We should use one struct to represent space properties.
     static std::string spaceVal(int32_t partsNum, int32_t replicaFactor, const std::string& name);
 
-    static std::string spacePrefix();
+    static const std::string& spacePrefix();
 
     static GraphSpaceID spaceId(folly::StringPiece rawKey);
 
@@ -50,9 +51,6 @@ public:
     static std::string schemaTagKey(TagID tagId, int32_t version);
 
     static std::string schemaTagVal(nebula::cpp2::Schema schema);
-
-private:
-    MetaUtils() = delete;
 };
 
 }  // namespace meta
