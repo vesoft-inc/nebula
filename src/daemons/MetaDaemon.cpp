@@ -17,6 +17,7 @@ DEFINE_string(data_path, "", "Root data path");
 DEFINE_string(peers, "", "It is a list of IPs split by comma,"
                          "the ips number equals replica number."
                          "If empty, it means replica is 1");
+DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DECLARE_string(part_man_type);
 
 namespace nebula {
@@ -48,7 +49,7 @@ int main(int argc, char *argv[]) {
     }
 
     LOG(INFO) << "Starting the meta Daemon on port " << FLAGS_port;
-    auto result = nebula::network::NetworkUtils::getLocalIP();
+    auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
     CHECK(result.ok()) << result.status();
     uint32_t localIP;
     CHECK(nebula::network::NetworkUtils::ipv4ToInt(result.value(), localIP));
@@ -60,11 +61,11 @@ int main(int argc, char *argv[]) {
     // The meta server has only one space, one part.
     partMan->addPart(0, 0, nebula::toHosts(FLAGS_peers));
 
-    std::unique_ptr<nebula::kvstore::KVStore> kvstore;
     nebula::kvstore::KVOptions options;
     options.local_ = nebula::HostAddr(localIP, FLAGS_port);
     options.dataPaths_ = {FLAGS_data_path};
-    kvstore.reset(nebula::kvstore::KVStore::instance(std::move(options)));
+    std::unique_ptr<nebula::kvstore::KVStore> kvstore(
+            nebula::kvstore::KVStore::instance(std::move(options)));
 
     auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
 

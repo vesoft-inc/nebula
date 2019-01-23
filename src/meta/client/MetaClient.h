@@ -27,7 +27,7 @@ struct SpaceInfoCache {
     std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
 };
 
-using SpaceIndex = std::unordered_map<std::string, GraphSpaceID>;
+using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;
 
 class MetaClient {
 public:
@@ -98,7 +98,7 @@ private:
     HostAddr active_;
     thread::GenericWorker loadDataThread_;
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
-    SpaceIndex  spaceIndexByName_;
+    SpaceNameIdMap  spaceIndexByName_;
     folly::RWSpinLock localCacheLock_;
 };
 

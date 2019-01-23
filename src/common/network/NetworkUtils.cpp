@@ -11,7 +11,6 @@
 #include <arpa/inet.h>
 #include "fs/FileUtils.h"
 
-DEFINE_string(local_ip_specified, "", "Local ip specified in getLocalIP method");
 
 namespace nebula {
 namespace network {
@@ -237,9 +236,9 @@ int32_t NetworkUtils::portFromHostAddr(const HostAddr& host) {
     return host.second;
 }
 
-StatusOr<std::string> NetworkUtils::getLocalIP() {
-    if (!FLAGS_local_ip_specified.empty()) {
-        return FLAGS_local_ip_specified;
+StatusOr<std::string> NetworkUtils::getLocalIP(std::string defaultIP) {
+    if (!defaultIP.empty()) {
+        return defaultIP;
     }
     auto result = network::NetworkUtils::listDeviceAndIPv4s();
     if (!result.ok()) {
