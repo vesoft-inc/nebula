@@ -31,7 +31,7 @@ public:
     int run() {
         uint32_t qpsPerThread = FLAGS_qps / FLAGS_threads;
         uint32_t interval = 1000 / qpsPerThread;
-        CHECK(interval > 0) << "qpsPerThread should not large than 1000, interval " << interval;
+        CHECK_GT(interval, 0) << "qpsPerThread should not large than 1000, interval " << interval;
         LOG(INFO) << "Total threads " << FLAGS_threads
                   << ", qpsPerThread " << qpsPerThread
                   << ", task interval ms " << interval;
