@@ -3,7 +3,6 @@ add_library(
     SchemaProviderIf.cpp
     PartManager.cpp
     FileBasedPartManager.cpp
-    AdHocPartManager.cpp
     ServerBasedPartManager.cpp
     HostManager.cpp
     SchemaManager.cpp

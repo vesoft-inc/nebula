@@ -2,9 +2,7 @@ add_executable(
     part_test
     PartTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
@@ -32,9 +30,7 @@ add_executable(
     rocksdb_engine_test
     RocksdbEngineTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
@@ -62,9 +58,7 @@ add_executable(
     kvstore_test
     KVStoreTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
@@ -89,30 +83,28 @@ target_link_libraries(
 nebula_add_test(kvstore_test)
 
 add_executable(
-    load_test
-    LoadTest.cpp
-    $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
+        load_test
+        LoadTest.cpp
+        $<TARGET_OBJECTS:kvstore_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:fs_obj>
 )
 target_link_libraries(
-    load_test
-    ${ROCKSDB_LIBRARIES}
-    jemalloc
-    zstd
-    snappy
-    folly
-    gtest
-    glog
-    gflags
-    boost_context
-    event
-    double-conversion
-    dl
-    z
-    -pthread
+        load_test
+        ${ROCKSDB_LIBRARIES}
+        jemalloc
+        zstd
+        snappy
+        folly
+        gtest
+        glog
+        gflags
+        boost_context
+        event
+        double-conversion
+        dl
+        z
+        -pthread
 )
 nebula_add_test(load_test)

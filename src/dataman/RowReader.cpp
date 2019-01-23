@@ -128,6 +128,7 @@ std::unique_ptr<RowReader> RowReader::getTagPropReader(
         // Invalid data
         // TODO We need a better error handler here
         LOG(FATAL) << "Invalid schema version in the row data!";
+        return nullptr;
     }
 }
 
@@ -146,6 +147,7 @@ std::unique_ptr<RowReader> RowReader::getEdgePropReader(
         // Invalid data
         // TODO We need a better error handler here
         LOG(FATAL) << "Invalid schema version in the row data!";
+        return nullptr;
     }
 }
 
@@ -156,7 +158,7 @@ std::unique_ptr<RowReader> RowReader::getRowReader(
         std::shared_ptr<const meta::SchemaProviderIf> schema) {
     int32_t ver = getSchemaVer(row);
     CHECK_EQ(ver, schema->getVersion());
-    return std::unique_ptr<RowReader>(new RowReader(row, schema));
+    return std::unique_ptr<RowReader>(new RowReader(row, std::move(schema)));
 }
 
 
@@ -191,8 +193,8 @@ int32_t RowReader::getSchemaVer(folly::StringPiece row) {
 
 RowReader::RowReader(folly::StringPiece row,
                      std::shared_ptr<const meta::SchemaProviderIf> schema)
-        : schema_{schema} {
-    CHECK(!!schema) << "A schema much be provided";
+        : schema_{std::move(schema)} {
+    CHECK(!!schema_) << "A schema much be provided";
 
     if (processHeader(row)) {
         // data_.begin() points to the first field
@@ -235,6 +237,7 @@ bool RowReader::processHeader(folly::StringPiece row) {
     offsets_.resize(numFields + 1, -1);
     offsets_[0] = 0;
     blockOffsets_.push_back(std::make_pair(0, 0));
+    blockOffsets_.reserve(numOffsets);
     for (uint32_t i = 0; i < numOffsets; i++) {
         int64_t offset = 0;
         for (int32_t j = 0; j < numBytesForOffset_; j++) {

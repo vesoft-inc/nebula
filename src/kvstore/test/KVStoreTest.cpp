@@ -9,7 +9,7 @@
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "kvstore/include/KVStore.h"
-#include "meta/AdHocPartManager.h"
+#include "kvstore/PartManager.h"
 #include "kvstore/KVStoreImpl.h"
 
 DECLARE_string(part_man_type);
@@ -17,25 +17,23 @@ DECLARE_string(part_man_type);
 namespace nebula {
 namespace kvstore {
 
-using meta::PartManager;
-using meta::AdHocPartManager;
-
 TEST(KVStoreTest, SimpleTest) {
+    FLAGS_part_man_type = "memory";  // Use MemPartManager.
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
+    MemPartManager* partMan = reinterpret_cast<MemPartManager*>(PartManager::instance());
     // GraphSpaceID =>  {PartitionIDs}
     // 1 => {0, 1, 2, 3, 4, 5}
     // 2 => {0, 1, 2, 3, 4, 5}
     for (auto spaceId = 1; spaceId <=2; spaceId++) {
         for (auto partId = 0; partId < 6; partId++) {
-            AdHocPartManager::addPartition(spaceId, partId, HostAddr(0, 0));
+            partMan->partsMap_[spaceId][partId] = PartMeta();
         }
     }
 
-    LOG(INFO) << "Total number of graph spaces is " << PartManager::numGraphSpaces();
+    LOG(INFO) << "Total space num " << partMan->partsMap_.size()
+              << ", " << partMan->parts(HostAddr(0, 0)).size();
 
-    auto dataPath = folly::stringPrintf("%s/disk1, %s/disk2",
-                                        rootPath.path(),
-                                        rootPath.path());
+    auto dataPath = folly::stringPrintf("%s/disk1, %s/disk2", rootPath.path(), rootPath.path());
 
     std::vector<std::string> paths;
     paths.push_back(folly::stringPrintf("%s/disk1", rootPath.path()));
@@ -50,17 +48,13 @@ TEST(KVStoreTest, SimpleTest) {
 
     EXPECT_EQ(6, kv->kvs_[1]->parts_.size());
     EXPECT_EQ(2, kv->kvs_[1]->engines_.size());
-    EXPECT_EQ(folly::stringPrintf("%s/disk1", rootPath.path()),
-              kv->kvs_[1]->engines_[0].second);
-    EXPECT_EQ(folly::stringPrintf("%s/disk2", rootPath.path()),
-              kv->kvs_[1]->engines_[1].second);
+    EXPECT_EQ(folly::stringPrintf("%s/disk1", rootPath.path()), kv->kvs_[1]->engines_[0].second);
+    EXPECT_EQ(folly::stringPrintf("%s/disk2", rootPath.path()), kv->kvs_[1]->engines_[1].second);
 
     EXPECT_EQ(6, kv->kvs_[2]->parts_.size());
     EXPECT_EQ(2, kv->kvs_[2]->engines_.size());
-    EXPECT_EQ(folly::stringPrintf("%s/disk1", rootPath.path()),
-              kv->kvs_[2]->engines_[0].second);
-    EXPECT_EQ(folly::stringPrintf("%s/disk2", rootPath.path()),
-              kv->kvs_[2]->engines_[1].second);
+    EXPECT_EQ(folly::stringPrintf("%s/disk1", rootPath.path()), kv->kvs_[2]->engines_[0].second);
+    EXPECT_EQ(folly::stringPrintf("%s/disk2", rootPath.path()), kv->kvs_[2]->engines_[1].second);
 
     auto shouldNotReach =  [](ResultCode code, HostAddr addr){
         UNUSED(code);

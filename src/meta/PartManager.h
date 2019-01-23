@@ -14,10 +14,7 @@
 namespace nebula {
 namespace meta {
 
-class AdHocPartManager;
-
 class PartManager {
-    friend class AdHocPartManager;
     FRIEND_TEST(FileBasedPartManager, PartitionAllocation);
 
 public:

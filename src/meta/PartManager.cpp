@@ -7,7 +7,6 @@
 #include "base/Base.h"
 #include "meta/PartManager.h"
 #include "meta/FileBasedPartManager.h"
-#include "meta/AdHocPartManager.h"
 
 #define ID_HASH(id, numShards) \
     ((static_cast<uint64_t>(id)) % numShards)
@@ -29,10 +28,8 @@ std::shared_ptr<const PartManager> PartManager::get(GraphSpaceID space) {
     std::call_once(initFlag, [] () {
         if (!FLAGS_partition_conf_file.empty()) {
             partManagers_ = FileBasedPartManager::init();
-        } else if (!FLAGS_meta_server.empty()) {
-            LOG(FATAL) << "Meta server based PartManager has not been implemented";
         } else {
-            partManagers_ = AdHocPartManager::init();
+            LOG(FATAL) << "Meta server based PartManager has not been implemented";
         }
     });
 

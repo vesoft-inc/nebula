@@ -6,7 +6,7 @@
 
 #include "base/Base.h"
 #include "kvstore/include/KVStore.h"
-#include "meta/AdHocPartManager.h"
+#include "kvstore/PartManager.h"
 #include "kvstore/KVStoreImpl.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
@@ -16,15 +16,18 @@ DECLARE_string(part_man_type);
 namespace nebula {
 namespace storage {
 
-using meta::AdHocPartManager;
-
 class TestUtils {
 public:
     static kvstore::KVStore* initKV(const char* rootPath) {
+        FLAGS_part_man_type = "memory";  // Use MemPartManager.
+        kvstore::MemPartManager* partMan = static_cast<kvstore::MemPartManager*>(
+            kvstore::PartManager::instance());
+
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0, 1, 2, 3, 4, 5}
+        auto& partsMap = partMan->partsMap();
         for (auto partId = 0; partId < 6; partId++) {
-            AdHocPartManager::addPartition(0, partId, HostAddr(0, 0));
+            partsMap[0][partId] = kvstore::PartMeta();
         }
         auto dataPath = folly::stringPrintf("%s/disk1, %s/disk2", rootPath, rootPath);
         std::vector<std::string> paths;
