@@ -116,6 +116,20 @@ using UnorderedMap = typename std::conditional<
     std::unordered_map<Key, T>
 >::type;
 
+struct PartMeta {
+    GraphSpaceID           spaceId_;
+    PartitionID            partId_;
+    std::vector<HostAddr>  peers_;
+
+    bool equals(const PartMeta& that) const {
+        return this->spaceId_ == that.spaceId_
+                    && this->partId_ == that.partId_
+                    && this->peers_ == that.peers_;
+    }
+};
+
+using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
+
 // Useful type traits
 
 // Tell if `T' is copy-constructible

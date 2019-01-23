@@ -8,7 +8,6 @@
 #include "thread/GenericWorker.h"
 #include "time/Duration.h"
 #include "storage/client/StorageClient.h"
-#include "meta/PartManager.h"
 #include "dataman/RowWriter.h"
 
 DEFINE_int32(threads, 2, "Total threads for perf");
@@ -39,13 +38,6 @@ public:
         for (int32_t i = 0; i < FLAGS_threads; i++) {
             auto t = std::make_unique<thread::GenericWorker>();
             threads.emplace_back(std::move(t));
-        }
-        if (FLAGS_mock_server) {
-            uint32_t localIp;
-            network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-            meta::AdHocPartManagersBuilder::add(0,
-                                        HostAddr(localIp, FLAGS_mock_server_port),
-                                        {0, 1, 2, 3, 4, 5});
         }
         threadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_threads);
         client_ = std::make_unique<StorageClient>(threadPool_);

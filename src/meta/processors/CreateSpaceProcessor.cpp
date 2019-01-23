@@ -27,6 +27,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     }
     auto spaceId = autoIncrementId();
+    VLOG(3) << "Create space " << req.get_space_name() << ", id " << spaceId;
     auto hosts = ret.value();
     auto replicaFactor = req.get_replica_factor();
     std::vector<kvstore::KV> data;

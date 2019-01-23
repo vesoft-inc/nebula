@@ -12,6 +12,7 @@
 #include <rocksdb/compaction_filter.h>
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
+#include "kvstore/PartManager.h"
 
 namespace nebula {
 namespace kvstore {
@@ -27,6 +28,10 @@ struct KVOptions {
      *  it would mix up the data on disk.
      * */
     std::vector<std::string> dataPaths_;
+    /**
+     *  PartManager instance for kvstore.
+     * */
+    std::unique_ptr<PartManager> partMan_{nullptr};
     /**
      * Custom MergeOperator used in rocksdb.merge method.
      * */
