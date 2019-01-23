@@ -40,6 +40,8 @@ enum ErrorCode {
 
 // These are all data types supported in the graph properties
 enum SupportedType {
+    UNKNOWN = 0,
+
     // Simple types
     BOOL = 1,
     INT = 2,
@@ -74,6 +76,7 @@ struct ValueType {
     3: optional Schema schema (cpp.ref = true);
 } (cpp.virtual)
 
+const ValueType kInvalidValueType = {"type" : UNKNOWN}
 
 struct ColumnDef {
     1: required string name,

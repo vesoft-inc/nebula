@@ -15,25 +15,25 @@ namespace storage {
 class QueryEdgePropsProcessor
     : public QueryBaseProcessor<cpp2::EdgePropRequest, cpp2::EdgePropResponse> {
 public:
-    static QueryEdgePropsProcessor* instance(kvstore::KVStore* kvstore,
-                                             meta::SchemaManager* schemaMan) {
-        return new QueryEdgePropsProcessor(kvstore, schemaMan);
+    static QueryEdgePropsProcessor* instance(kvstore::KVStore* kvstore) {
+        return new QueryEdgePropsProcessor(kvstore);
     }
 
     // It is one new method for QueryBaseProcessor.process.
     void process(const cpp2::EdgePropRequest& req);
 
 private:
-    QueryEdgePropsProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
-        : QueryBaseProcessor<cpp2::EdgePropRequest, cpp2::EdgePropResponse>(kvstore, schemaMan) {}
+    explicit QueryEdgePropsProcessor(kvstore::KVStore* kvstore)
+        : QueryBaseProcessor<cpp2::EdgePropRequest,
+                             cpp2::EdgePropResponse>(kvstore) {}
 
     kvstore::ResultCode collectEdgesProps(PartitionID partId,
                                           const cpp2::EdgeKey& edgeKey,
-                                          SchemaProviderIf* edgeSchema,
                                           std::vector<PropContext>& props,
                                           RowSetWriter& rsWriter);
 
-    kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
+    kvstore::ResultCode processVertex(PartitionID partID,
+                                      VertexID vId,
                                       std::vector<TagContext>& tagContexts,
                                       EdgeContext& edgeContext) {
         UNUSED(partID);
@@ -45,7 +45,8 @@ private:
     }
 
     void onProcessed(std::vector<TagContext>& tagContexts,
-                     EdgeContext& edgeContext, int32_t retNum) {
+                     EdgeContext& edgeContext,
+                     int32_t retNum) {
         UNUSED(tagContexts);
         UNUSED(edgeContext);
         UNUSED(retNum);

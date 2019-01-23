@@ -17,16 +17,17 @@ namespace storage {
 class QueryBoundProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse> {
 public:
-    static QueryBoundProcessor* instance(kvstore::KVStore* kvstore,
-                                         meta::SchemaManager* schemaMan) {
-        return new QueryBoundProcessor(kvstore, schemaMan);
+    static QueryBoundProcessor* instance(kvstore::KVStore* kvstore) {
+        return new QueryBoundProcessor(kvstore);
     }
 
 protected:
-    QueryBoundProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
-        : QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse>(kvstore, schemaMan) {}
+    explicit QueryBoundProcessor(kvstore::KVStore* kvstore)
+        : QueryBaseProcessor<cpp2::GetNeighborsRequest,
+                             cpp2::QueryResponse>(kvstore) {}
 
-    kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
+    kvstore::ResultCode processVertex(PartitionID partID,
+                                      VertexID vId,
                                       std::vector<TagContext>& tagContexts,
                                       EdgeContext& edgeContext) override;
 
@@ -34,21 +35,17 @@ protected:
                      EdgeContext& edgeContext,
                      int32_t retNum) override;
 
-    kvstore::ResultCode collectVertexProps(
-                            PartitionID partId,
-                            VertexID vId,
-                            TagID tagId,
-                            SchemaProviderIf* tagSchema,
-                            std::vector<PropContext>& props,
-                            RowWriter& writer);
+    kvstore::ResultCode collectVertexProps(PartitionID partId,
+                                           VertexID vId,
+                                           TagID tagId,
+                                           std::vector<PropContext>& props,
+                                           RowWriter& writer);
 
-    kvstore::ResultCode collectEdgeProps(
-                                       PartitionID partId,
-                                       VertexID vId,
-                                       EdgeType edgeType,
-                                       SchemaProviderIf* schema,
-                                       std::vector<PropContext>& props,
-                                       RowSetWriter& writer);
+    kvstore::ResultCode collectEdgeProps(PartitionID partId,
+                                         VertexID vId,
+                                         EdgeType edgeType,
+                                         std::vector<PropContext>& props,
+                                         RowSetWriter& writer);
 };
 
 }  // namespace storage

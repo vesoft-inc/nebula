@@ -11,14 +11,17 @@
 
 namespace nebula {
 
+using namespace nebula::meta;
+
 /***********************************
  *
  * RowSetReader::Iterator class
  *
  **********************************/
-RowSetReader::Iterator::Iterator(SchemaProviderIf* schema,
-                                 const folly::StringPiece& data,
-                                 int64_t offset)
+RowSetReader::Iterator::Iterator(
+    std::shared_ptr<const SchemaProviderIf> schema,
+    const folly::StringPiece& data,
+    int64_t offset)
         : schema_(schema)
         , data_(data)
         , offset_(offset) {
@@ -33,9 +36,9 @@ int32_t RowSetReader::Iterator::prepareReader() {
             folly::ByteRange range(begin + offset_, 10);
             int32_t rowLen = folly::decodeVarint(range);
             int32_t lenBytes = range.begin() - begin - offset_;
-            reader_.reset(
-                new RowReader(schema_,
-                              data_.subpiece(offset_ + lenBytes, rowLen)));
+            reader_ = RowReader::getRowReader(
+                data_.subpiece(offset_ + lenBytes, rowLen),
+                schema_);
             return lenBytes + rowLen;
         } catch (const std::exception& ex) {
             LOG(ERROR) << "Failed to read the row length";
@@ -83,29 +86,20 @@ bool RowSetReader::Iterator::operator==(const Iterator& rhs) {
  *
  **********************************/
 
-RowSetReader::RowSetReader(SchemaProviderIf* schema,
+RowSetReader::RowSetReader(std::shared_ptr<const SchemaProviderIf> schema,
                            folly::StringPiece data)
-        : schema_(schema)
-        , takeOwnership_(false)
-        , data_(data) {
-}
-
-
-RowSetReader::~RowSetReader() {
-    if (!takeOwnership_) {
-        // If not taking the ownership of the schame, let's release it
-        schema_.release();
-    }
+        : schema_{schema}
+        , data_{data} {
 }
 
 
 RowSetReader::Iterator RowSetReader::begin() const noexcept {
-    return Iterator(schema_.get(), data_, 0);
+    return Iterator(schema_, data_, 0);
 }
 
 
 RowSetReader::Iterator RowSetReader::end() const noexcept {
-    return Iterator(schema_.get(), data_, data_.size());
+    return Iterator(schema_, data_, data_.size());
 }
 
 }  // namespace nebula

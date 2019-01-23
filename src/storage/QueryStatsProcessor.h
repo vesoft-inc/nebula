@@ -16,17 +16,17 @@ namespace storage {
 class QueryStatsProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryStatsResponse> {
 public:
-    static QueryStatsProcessor* instance(kvstore::KVStore* kvstore,
-                                         meta::SchemaManager* schemaMan) {
-        return new QueryStatsProcessor(kvstore, schemaMan);
+    static QueryStatsProcessor* instance(kvstore::KVStore* kvstore) {
+        return new QueryStatsProcessor(kvstore);
     }
 
 private:
-    QueryStatsProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
+    explicit QueryStatsProcessor(kvstore::KVStore* kvstore)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryStatsResponse>(kvstore, schemaMan) {}
+                             cpp2::QueryStatsResponse>(kvstore) {}
 
-    kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
+    kvstore::ResultCode processVertex(PartitionID partID,
+                                      VertexID vId,
                                       std::vector<TagContext>& tagContexts,
                                       EdgeContext& edgeContext) override;
 
@@ -35,14 +35,14 @@ private:
                      int32_t retNum) override;
 
     kvstore::ResultCode collectVertexStats(PartitionID partId,
-                                           VertexID vId, TagID tagId,
-                                           SchemaProviderIf* tagSchema,
+                                           VertexID vId,
+                                           TagID tagId,
                                            std::vector<PropContext>& props);
 
 
     kvstore::ResultCode collectEdgesStats(PartitionID partId,
-                                          VertexID vId, EdgeType edgeType,
-                                          SchemaProviderIf* edgeSchema,
+                                          VertexID vId,
+                                          EdgeType edgeType,
                                           std::vector<PropContext>& props);
 
     void calcResult(std::vector<PropContext>&& props);
