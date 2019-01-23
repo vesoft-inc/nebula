@@ -9,7 +9,6 @@
 #include "network/NetworkUtils.h"
 #include "storage/StorageServiceHandler.h"
 #include "kvstore/include/KVStore.h"
-#include "meta/SchemaManager.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
@@ -66,9 +65,8 @@ int main(int argc, char *argv[]) {
     options.local_ = HostAddr(localIP, FLAGS_port);
     options.dataPaths_ = std::move(paths);
     kvstore.reset(KVStore::instance(std::move(options)));
-    std::unique_ptr<SchemaManager> schemaMan(SchemaManager::instance());
 
-    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());
+    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get());
     auto server = std::make_shared<apache::thrift::ThriftServer>();
     CHECK(!!server) << "Failed to create the thrift server";
 

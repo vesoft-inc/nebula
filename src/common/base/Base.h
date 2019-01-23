@@ -87,7 +87,6 @@
 #define COMPILER_BARRIER()              asm volatile ("":::"memory")
 #endif  // COMPILER_BARRIER
 
-#include "base/ThriftTypes.h"
 // Formated logging
 #define FLOG_FATAL(...) LOG(FATAL) << folly::stringPrintf(__VA_ARGS__)
 #define FLOG_ERROR(...) LOG(ERROR) << folly::stringPrintf(__VA_ARGS__)
@@ -98,6 +97,7 @@
 #define FVLOG3(...) VLOG(3) << folly::stringPrintf(__VA_ARGS__)
 #define FVLOG4(...) VLOG(4) << folly::stringPrintf(__VA_ARGS__)
 
+#include "base/ThriftTypes.h"
 
 namespace nebula {
 
@@ -109,6 +109,9 @@ using TagVersion = int64_t;
 using EdgeType = int32_t;
 using EdgeRanking = int64_t;
 using EdgeVersion = int64_t;
+
+// Host address type and utility functions
+using HostAddr = std::pair<IPv4, Port>;
 
 template<typename Key, typename T>
 using UnorderedMap = typename std::conditional<

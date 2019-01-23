@@ -5,9 +5,10 @@
  */
 
 #include "base/Base.h"
-#include "dataman/SchemaProviderIf.h"
+#include "meta/SchemaProviderIf.h"
 
 namespace nebula {
+namespace meta {
 
 /******************************************
  *
@@ -15,13 +16,11 @@ namespace nebula {
  *
  *****************************************/
 SchemaProviderIf::Iterator::Iterator(const SchemaProviderIf* schema,
-                                     int32_t ver,
-                                     int32_t idx)
+                                     int64_t idx)
         : schema_(schema)
-        , schemaVer_(ver)
-        , numFields_(schema_->getNumFields(schemaVer_))
+        , numFields_(schema_->getNumFields())
         , index_(idx) {
-    field_ = schema_->field(index_, schemaVer_);
+    field_ = schema_->field(index_);
 }
 
 
@@ -38,7 +37,7 @@ const SchemaProviderIf::Field* SchemaProviderIf::Iterator::operator->() const {
 SchemaProviderIf::Iterator& SchemaProviderIf::Iterator::operator++() {
     if (field_) {
         index_++;
-        field_ = schema_->field(index_, schemaVer_);
+        field_ = schema_->field(index_);
     }
     return *this;
 }
@@ -47,7 +46,7 @@ SchemaProviderIf::Iterator& SchemaProviderIf::Iterator::operator++() {
 SchemaProviderIf::Iterator& SchemaProviderIf::Iterator::operator+(uint16_t steps) {
     if (field_) {
         index_ += steps;
-        field_ = schema_->field(index_, schemaVer_);
+        field_ = schema_->field(index_);
     }
     return *this;
 }
@@ -60,7 +59,6 @@ SchemaProviderIf::Iterator::operator bool() const {
 
 bool SchemaProviderIf::Iterator::operator==(const Iterator& rhs) const {
     return schema_ == rhs.schema_ &&
-           schemaVer_ == rhs.schemaVer_ &&
            (index_ == rhs.index_ || (!field_ && !rhs.field_));
 }
 
@@ -70,14 +68,15 @@ bool SchemaProviderIf::Iterator::operator==(const Iterator& rhs) const {
  * Iterator implementation
  *
  *****************************************/
-SchemaProviderIf::Iterator SchemaProviderIf::begin(int32_t ver) const {
-    return Iterator(this, ver, 0);
+SchemaProviderIf::Iterator SchemaProviderIf::begin() const {
+    return Iterator(this, 0);
 }
 
 
-SchemaProviderIf::Iterator SchemaProviderIf::end(int32_t ver) const {
-    return Iterator(this, ver, getNumFields(ver));
+SchemaProviderIf::Iterator SchemaProviderIf::end() const {
+    return Iterator(this, getNumFields());
 }
 
+}  // namespace meta
 }  // namespace nebula
 

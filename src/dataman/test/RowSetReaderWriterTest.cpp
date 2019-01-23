@@ -15,16 +15,16 @@
 namespace nebula {
 
 TEST(RowSetReaderWriter, allInts) {
-    SchemaWriter schema;
+    auto schema = std::make_shared<SchemaWriter>();
     for (int i = 0; i < 33; i++) {
-        schema.appendCol(folly::stringPrintf("col%02d", i),
-                         storage::cpp2::SupportedType::INT);
+        schema->appendCol(folly::stringPrintf("col%02d", i),
+                          storage::cpp2::SupportedType::INT);
     }
 
-    RowSetWriter rsWriter(&schema);
-    for (int row = 0; row < 10; row++) {
+    RowSetWriter rsWriter(schema);
+    for (int row = 0; row < 10; row++ ) {
         int32_t base = row * 100;
-        RowWriter writer(&schema);
+        RowWriter writer(schema);
         for (int col = 0; col < 33; col++) {
             writer << base + col + 1;
         }
@@ -32,7 +32,7 @@ TEST(RowSetReaderWriter, allInts) {
     }
 
     std::string data = std::move(rsWriter.data());
-    RowSetReader rsReader(&schema, data);
+    RowSetReader rsReader(schema, data);
     auto it = rsReader.begin();
     int32_t base = 0;
     while (it) {

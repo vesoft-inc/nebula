@@ -16,17 +16,17 @@ using nebula::RowUpdater;
 using nebula::RowWriter;
 using nebula::RowReader;
 
-static SchemaWriter schema;
+auto schema = std::make_shared<SchemaWriter>();
 
 void prepareSchema() {
-    schema.appendCol("col1", nebula::storage::cpp2::SupportedType::INT);
-    schema.appendCol("col2", nebula::storage::cpp2::SupportedType::INT);
-    schema.appendCol("col3", nebula::storage::cpp2::SupportedType::STRING);
-    schema.appendCol("col4", nebula::storage::cpp2::SupportedType::STRING);
-    schema.appendCol("col5", nebula::storage::cpp2::SupportedType::BOOL);
-    schema.appendCol("col6", nebula::storage::cpp2::SupportedType::FLOAT);
-    schema.appendCol("col7", nebula::storage::cpp2::SupportedType::VID);
-    schema.appendCol("col8", nebula::storage::cpp2::SupportedType::DOUBLE);
+    schema->appendCol("col1", nebula::storage::cpp2::SupportedType::INT);
+    schema->appendCol("col2", nebula::storage::cpp2::SupportedType::INT);
+    schema->appendCol("col3", nebula::storage::cpp2::SupportedType::STRING);
+    schema->appendCol("col4", nebula::storage::cpp2::SupportedType::STRING);
+    schema->appendCol("col5", nebula::storage::cpp2::SupportedType::BOOL);
+    schema->appendCol("col6", nebula::storage::cpp2::SupportedType::FLOAT);
+    schema->appendCol("col7", nebula::storage::cpp2::SupportedType::VID);
+    schema->appendCol("col8", nebula::storage::cpp2::SupportedType::DOUBLE);
 }
 
 
@@ -36,7 +36,7 @@ void prepareSchema() {
  *
  *********************************/
 TEST(RowUpdater, noOrigin) {
-    RowUpdater updater(&schema);
+    RowUpdater updater(schema);
 
     bool bVal;
     int64_t iVal;
@@ -87,12 +87,13 @@ TEST(RowUpdater, noOrigin) {
 
 
 TEST(RowUpdater, withOrigin) {
-    RowWriter writer(&schema, 0);
+    RowWriter writer(schema);
     writer << 123 << 456 << "Hello" << "World"
            << true << 3.1415926 << 0xABCDABCDABCDABCD << 2.17;
     std::string encoded(writer.encode());
 
-    RowUpdater updater(&schema, encoded);
+    auto reader = RowReader::getRowReader(encoded, schema);
+    RowUpdater updater(std::move(reader), schema);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
               updater.setInt("col2", 789));
@@ -144,7 +145,7 @@ TEST(RowUpdater, withOrigin) {
 
 
 TEST(RowUpdater, encodeWithAllFields) {
-    RowUpdater updater(&schema);
+    RowUpdater updater(schema);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
               updater.setInt("col1", 123));
@@ -171,46 +172,46 @@ TEST(RowUpdater, encodeWithAllFields) {
     double dVal;
     folly::StringPiece sVal;
 
-    RowReader reader(&schema, encoded);
+    auto reader = RowReader::getRowReader(encoded, schema);
 
     EXPECT_EQ(ResultType::E_INCOMPATIBLE_TYPE,
-              reader.getFloat("col1", fVal));
+              reader->getFloat("col1", fVal));
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getInt("col1", iVal));
+              reader->getInt("col1", iVal));
     EXPECT_EQ(123, iVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getInt("col2", iVal));
+              reader->getInt("col2", iVal));
     EXPECT_EQ(456, iVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getString("col3", sVal));
+              reader->getString("col3", sVal));
     EXPECT_EQ("Hello", sVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getString("col4", sVal));
+              reader->getString("col4", sVal));
     EXPECT_EQ("World", sVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getBool("col5", bVal));
+              reader->getBool("col5", bVal));
     EXPECT_EQ(true, bVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getFloat("col6", fVal));
+              reader->getFloat("col6", fVal));
     EXPECT_FLOAT_EQ(3.1415926, fVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getVid("col7", iVal));
+              reader->getVid("col7", iVal));
     EXPECT_EQ(0xABCDABCDABCDABCD, iVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getDouble("col8", dVal));
+              reader->getDouble("col8", dVal));
     EXPECT_DOUBLE_EQ(2.17, dVal);
 }
 
 
 TEST(RowUpdater, encodeWithMissingFields) {
-    RowUpdater updater(&schema);
+    RowUpdater updater(schema);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
               updater.setInt("col2", 456));
@@ -229,42 +230,42 @@ TEST(RowUpdater, encodeWithMissingFields) {
     double dVal;
     folly::StringPiece sVal;
 
-    RowReader reader(&schema, encoded);
+    auto reader = RowReader::getRowReader(encoded, schema);
 
     // Default value
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getInt("col1", iVal));
+              reader->getInt("col1", iVal));
     EXPECT_EQ(0, iVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getInt("col2", iVal));
+              reader->getInt("col2", iVal));
     EXPECT_EQ(456, iVal);
 
     // Default value
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getString("col3", sVal));
+              reader->getString("col3", sVal));
     EXPECT_EQ("", sVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getString("col4", sVal));
+              reader->getString("col4", sVal));
     EXPECT_EQ("World", sVal);
 
     // Default value
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getBool("col5", bVal));
+              reader->getBool("col5", bVal));
     EXPECT_EQ(false, bVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getFloat("col6", fVal));
+              reader->getFloat("col6", fVal));
     EXPECT_FLOAT_EQ(3.1415926, fVal);
 
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getVid("col7", iVal));
+              reader->getVid("col7", iVal));
     EXPECT_EQ(0xABCDABCDABCDABCD, iVal);
 
     // Default value
     EXPECT_EQ(ResultType::SUCCEEDED,
-              reader.getDouble("col8", dVal));
+              reader->getDouble("col8", dVal));
     EXPECT_DOUBLE_EQ(0.0, dVal);
 }
 

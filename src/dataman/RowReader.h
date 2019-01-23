@@ -11,7 +11,7 @@
 #include <gtest/gtest_prod.h>
 #include "gen-cpp2/graph_types.h"
 #include "dataman/DataCommon.h"
-#include "dataman/SchemaProviderIf.h"
+#include "meta/SchemaProviderIf.h"
 
 namespace nebula {
 
@@ -58,19 +58,28 @@ public:
         bool operator==(const Iterator& rhs) const noexcept;
     private:
         const RowReader* reader_;
-        const int32_t numFields_;
+        const size_t numFields_;
         std::unique_ptr<Cell> cell_;
-        int32_t index_ = 0;
+        int64_t index_ = 0;
         int32_t bytes_ = 0;
         int64_t offset_ = 0;
 
-        Iterator(const RowReader* reader, int32_t numFields, int32_t index = 0);
+        Iterator(const RowReader* reader, size_t numFields, int64_t index = 0);
     };
 
 
 public:
-    RowReader(const SchemaProviderIf* schema,
-              folly::StringPiece row);
+    static std::unique_ptr<RowReader> getTagPropReader(
+        folly::StringPiece row,
+        GraphSpaceID space,
+        TagID tag);
+    static std::unique_ptr<RowReader> getEdgePropReader(
+        folly::StringPiece row,
+        GraphSpaceID space,
+        EdgeType edge);
+    static std::unique_ptr<RowReader> getRowReader(
+        folly::StringPiece row,
+        std::shared_ptr<const meta::SchemaProviderIf> schema);
 
     virtual ~RowReader() = default;
 
@@ -81,7 +90,7 @@ public:
     Iterator end() const noexcept;
 
     ResultType getBool(const folly::StringPiece name, bool& v) const noexcept;
-    ResultType getBool(int32_t index, bool& v) const noexcept;
+    ResultType getBool(int64_t index, bool& v) const noexcept;
 
     template<typename T>
     typename std::enable_if<std::is_integral<T>::value, ResultType>::type
@@ -89,34 +98,33 @@ public:
 
     template<typename T>
     typename std::enable_if<std::is_integral<T>::value, ResultType>::type
-    getInt(int32_t index, T& v) const noexcept;
+    getInt(int64_t index, T& v) const noexcept;
 
     ResultType getFloat(const folly::StringPiece name, float& v) const noexcept;
-    ResultType getFloat(int32_t index, float& v) const noexcept;
+    ResultType getFloat(int64_t index, float& v) const noexcept;
 
     ResultType getDouble(const folly::StringPiece name, double& v) const noexcept;
-    ResultType getDouble(int32_t index, double& v) const noexcept;
+    ResultType getDouble(int64_t index, double& v) const noexcept;
 
     ResultType getString(const folly::StringPiece name,
                          folly::StringPiece& v) const noexcept;
-    ResultType getString(int32_t index,
+    ResultType getString(int64_t index,
                          folly::StringPiece& v) const noexcept;
 
     ResultType getVid(const folly::StringPiece name, int64_t& v) const noexcept;
-    ResultType getVid(int32_t index, int64_t& v) const noexcept;
+    ResultType getVid(int64_t index, int64_t& v) const noexcept;
 
     // TODO getPath(const std::string& name) const noexcept;
-    // TODO getPath(int32_t index) const noexcept;
+    // TODO getPath(int64_t index) const noexcept;
     // TODO getList(const std::string& name) const noexcept;
-    // TODO getList(int32_t index) const noexcept;
+    // TODO getList(int64_t index) const noexcept;
     // TODO getSet(const std::string& name) const noexcept;
-    // TODO getSet(int32_t index) const noexcept;
+    // TODO getSet(int64_t index) const noexcept;
     // TODO getMap(const std::string& name) const noexcept;
-    // TODO getMap(int32_t index) const noexcept;
+    // TODO getMap(int64_t index) const noexcept;
 
 private:
-    const SchemaProviderIf* schema_;
-    int32_t schemaVer_;
+    std::shared_ptr<const meta::SchemaProviderIf> schema_;
 
     folly::StringPiece data_;
     int32_t headerLen_ = 0;
@@ -127,9 +135,19 @@ private:
     mutable std::vector<std::pair<int64_t, uint8_t>> blockOffsets_;
     mutable std::vector<int64_t> offsets_;
 
+private:
+    static int32_t getSchemaVer(folly::StringPiece row);
+
+    RowReader(folly::StringPiece row,
+              std::shared_ptr<const meta::SchemaProviderIf> schema);
+
     // Process the row header infomation
     // Returns false when the row data is invalid
     bool processHeader(folly::StringPiece row);
+
+    // Process the block offsets (each block contains certain number of fields)
+    // Returns false when the row data is invalid
+    bool processBlockOffsets(folly::StringPiece row, int32_t verBytes);
 
     // Skip to the next field
     // Parameter:
@@ -138,12 +156,12 @@ private:
     // When succeeded, the method returns the offset pointing to the
     // next field
     // When failed, the method returns a negative number
-    int64_t skipToNext(int32_t index, int64_t offset) const noexcept;
+    int64_t skipToNext(int64_t index, int64_t offset) const noexcept;
 
     // Skip to the {index}Th field
     // The method retuns the offset of the field
     // It returns a negative number when the data corrupts
-    int64_t skipToField(int32_t index) const noexcept;
+    int64_t skipToField(int64_t index) const noexcept;
 
     // The following methods all return the number of bytes read
     // A negative number will be returned if an error occurs
@@ -159,14 +177,14 @@ private:
     // When succeeded, offset will advance
     template<typename T>
     typename std::enable_if<std::is_integral<T>::value, ResultType>::type
-        getInt(int32_t index, int64_t& offset, T& v) const noexcept;
-    ResultType getBool(int32_t index, int64_t& offset, bool& v) const noexcept;
-    ResultType getFloat(int32_t index, int64_t& offset, float& v) const noexcept;
-    ResultType getDouble(int32_t index, int64_t& offset, double& v)
+        getInt(int64_t index, int64_t& offset, T& v) const noexcept;
+    ResultType getBool(int64_t index, int64_t& offset, bool& v) const noexcept;
+    ResultType getFloat(int64_t index, int64_t& offset, float& v) const noexcept;
+    ResultType getDouble(int64_t index, int64_t& offset, double& v)
         const noexcept;
-    ResultType getString(int32_t index, int64_t& offset, folly::StringPiece& v)
+    ResultType getString(int64_t index, int64_t& offset, folly::StringPiece& v)
         const noexcept;
-    ResultType getVid(int32_t index, int64_t& offset, int64_t& v) const noexcept;
+    ResultType getVid(int64_t index, int64_t& offset, int64_t& v) const noexcept;
 };
 
 }  // namespace nebula
@@ -190,7 +208,7 @@ private:
 #define RR_GET_VALUE_BY_NAME(FN, VT) \
     RowReader::get ## FN(const folly::StringPiece name, \
                           VT& v) const noexcept { \
-        int32_t index = schema_->getFieldIndex(name, schemaVer_); \
+        int64_t index = schema_->getFieldIndex(name); \
         if (index < 0) { \
             return ResultType::E_NAME_NOT_FOUND; \
         } else { \
@@ -203,7 +221,7 @@ private:
     if (offset < 0) { \
         return static_cast<ResultType>(offset); \
     } \
-    if (index >= schema_->getNumFields(schemaVer_)) { \
+    if (index >= static_cast<int64_t>(schema_->getNumFields())) { \
         return ResultType::E_INDEX_OUT_OF_RANGE; \
     }
 

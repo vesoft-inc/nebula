@@ -24,15 +24,14 @@ struct PropContext {
 
 struct TagContext {
     TagID tagId_;
-    SchemaProviderIf* schema_ = nullptr;
     std::vector<PropContext> props_;
 };
 
 struct EdgeContext {
     EdgeType edgeType_;
-    SchemaProviderIf* schema_ = nullptr;
     std::vector<PropContext> props_;
 };
+
 
 class Collector {
 public:
@@ -50,6 +49,7 @@ public:
 
     virtual void collectString(ResultType ret, folly::StringPiece& v, PropContext& prop) = 0;
 };
+
 
 class PropsCollector : public Collector {
 public:
@@ -87,6 +87,7 @@ public:
 private:
     RowWriter* writer_ = nullptr;
 };
+
 
 class StatsCollector : public Collector {
 public:
