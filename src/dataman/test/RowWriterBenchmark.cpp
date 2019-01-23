@@ -9,68 +9,67 @@
 #include "dataman/SchemaWriter.h"
 #include "dataman/RowWriter.h"
 
-using nebula::SchemaWriter;
-using nebula::RowWriter;
-using nebula::SchemaProviderIf;
-using nebula::storage::cpp2::SupportedType;
+using namespace nebula;
+using namespace nebula::meta;
+using namespace nebula::storage;
 
-static SchemaWriter schemaAllInts;
-static SchemaWriter schemaAllBools;
-static SchemaWriter schemaAllStrings;
-static SchemaWriter schemaAllDoubles;
-static SchemaWriter schemaAllVids;
-static SchemaWriter schemaMix;
+auto schemaAllInts = std::make_shared<SchemaWriter>();
+auto schemaAllBools = std::make_shared<SchemaWriter>();
+auto schemaAllStrings = std::make_shared<SchemaWriter>();
+auto schemaAllDoubles = std::make_shared<SchemaWriter>();
+auto schemaAllVids = std::make_shared<SchemaWriter>();
+auto schemaMix = std::make_shared<SchemaWriter>();
 
 void prepareSchema() {
     for (int i = 0; i < 32; i++) {
-        schemaAllInts.appendCol(folly::stringPrintf("col%02d", i),
-                                SupportedType::INT);
-        schemaAllBools.appendCol(folly::stringPrintf("col%02d", i),
-                                 SupportedType::BOOL);
-        schemaAllStrings.appendCol(folly::stringPrintf("col%02d", i),
-                                   SupportedType::STRING);
-        schemaAllDoubles.appendCol(folly::stringPrintf("col%02d", i),
-                                   SupportedType::DOUBLE);
-        schemaAllVids.appendCol(folly::stringPrintf("col%02d", i),
-                                SupportedType::VID);
+        schemaAllInts->appendCol(folly::stringPrintf("col%02d", i),
+                                 cpp2::SupportedType::INT);
+        schemaAllBools->appendCol(folly::stringPrintf("col%02d", i),
+                                  cpp2::SupportedType::BOOL);
+        schemaAllStrings->appendCol(folly::stringPrintf("col%02d", i),
+                                    cpp2::SupportedType::STRING);
+        schemaAllDoubles->appendCol(folly::stringPrintf("col%02d", i),
+                                    cpp2::SupportedType::DOUBLE);
+        schemaAllVids->appendCol(folly::stringPrintf("col%02d", i),
+                                 cpp2::SupportedType::VID);
     }
 
-    schemaMix.appendCol("col01", SupportedType::BOOL)
-             .appendCol("col02", SupportedType::BOOL)
-             .appendCol("col03", SupportedType::BOOL)
-             .appendCol("col04", SupportedType::BOOL)
-             .appendCol("col05", SupportedType::INT)
-             .appendCol("col06", SupportedType::INT)
-             .appendCol("col07", SupportedType::INT)
-             .appendCol("col08", SupportedType::INT)
-             .appendCol("col09", SupportedType::STRING)
-             .appendCol("col10", SupportedType::STRING)
-             .appendCol("col11", SupportedType::STRING)
-             .appendCol("col12", SupportedType::STRING)
-             .appendCol("col13", SupportedType::FLOAT)
-             .appendCol("col14", SupportedType::FLOAT)
-             .appendCol("col15", SupportedType::FLOAT)
-             .appendCol("col16", SupportedType::FLOAT)
-             .appendCol("col17", SupportedType::DOUBLE)
-             .appendCol("col18", SupportedType::DOUBLE)
-             .appendCol("col19", SupportedType::DOUBLE)
-             .appendCol("col20", SupportedType::DOUBLE)
-             .appendCol("col21", SupportedType::VID)
-             .appendCol("col22", SupportedType::VID)
-             .appendCol("col23", SupportedType::VID)
-             .appendCol("col24", SupportedType::VID)
-             .appendCol("col25", SupportedType::INT)
-             .appendCol("col26", SupportedType::INT)
-             .appendCol("col27", SupportedType::INT)
-             .appendCol("col28", SupportedType::INT)
-             .appendCol("col29", SupportedType::INT)
-             .appendCol("col30", SupportedType::INT)
-             .appendCol("col31", SupportedType::INT)
-             .appendCol("col32", SupportedType::INT);
+    schemaMix->appendCol("col01", cpp2::SupportedType::BOOL)
+             .appendCol("col02", cpp2::SupportedType::BOOL)
+             .appendCol("col03", cpp2::SupportedType::BOOL)
+             .appendCol("col04", cpp2::SupportedType::BOOL)
+             .appendCol("col05", cpp2::SupportedType::INT)
+             .appendCol("col06", cpp2::SupportedType::INT)
+             .appendCol("col07", cpp2::SupportedType::INT)
+             .appendCol("col08", cpp2::SupportedType::INT)
+             .appendCol("col09", cpp2::SupportedType::STRING)
+             .appendCol("col10", cpp2::SupportedType::STRING)
+             .appendCol("col11", cpp2::SupportedType::STRING)
+             .appendCol("col12", cpp2::SupportedType::STRING)
+             .appendCol("col13", cpp2::SupportedType::FLOAT)
+             .appendCol("col14", cpp2::SupportedType::FLOAT)
+             .appendCol("col15", cpp2::SupportedType::FLOAT)
+             .appendCol("col16", cpp2::SupportedType::FLOAT)
+             .appendCol("col17", cpp2::SupportedType::DOUBLE)
+             .appendCol("col18", cpp2::SupportedType::DOUBLE)
+             .appendCol("col19", cpp2::SupportedType::DOUBLE)
+             .appendCol("col20", cpp2::SupportedType::DOUBLE)
+             .appendCol("col21", cpp2::SupportedType::VID)
+             .appendCol("col22", cpp2::SupportedType::VID)
+             .appendCol("col23", cpp2::SupportedType::VID)
+             .appendCol("col24", cpp2::SupportedType::VID)
+             .appendCol("col25", cpp2::SupportedType::INT)
+             .appendCol("col26", cpp2::SupportedType::INT)
+             .appendCol("col27", cpp2::SupportedType::INT)
+             .appendCol("col28", cpp2::SupportedType::INT)
+             .appendCol("col29", cpp2::SupportedType::INT)
+             .appendCol("col30", cpp2::SupportedType::INT)
+             .appendCol("col31", cpp2::SupportedType::INT)
+             .appendCol("col32", cpp2::SupportedType::INT);
 }
 
 
-void writeMix(SchemaProviderIf* schema, int32_t iters) {
+void writeMix(std::shared_ptr<SchemaProviderIf> schema, int32_t iters) {
     for (int32_t i = 0; i < iters; i++) {
         RowWriter writer(schema);
         writer << true << false << true << false
@@ -86,7 +85,7 @@ void writeMix(SchemaProviderIf* schema, int32_t iters) {
 
 
 template<typename T>
-void writeValues(SchemaProviderIf* schema, T val, int32_t iters) {
+void writeValues(std::shared_ptr<SchemaProviderIf> schema, T val, int32_t iters) {
     for (int32_t i = 0; i < iters; i++) {
         RowWriter writer(schema);
         for (int j = 0; j < 32; j++) {
@@ -104,7 +103,7 @@ BENCHMARK(bool_no_schema, iters) {
     writeValues(nullptr, true, iters);
 }
 BENCHMARK(bool_with_schema, iters) {
-    writeValues(&schemaAllBools, true, iters);
+    writeValues(schemaAllBools, true, iters);
 }
 
 BENCHMARK_DRAW_LINE();
@@ -113,7 +112,7 @@ BENCHMARK(int_no_schema, iters) {
     writeValues(nullptr, 101, iters);
 }
 BENCHMARK(int_with_schema, iters) {
-    writeValues(&schemaAllInts, 101, iters);
+    writeValues(schemaAllInts, 101, iters);
 }
 
 BENCHMARK_DRAW_LINE();
@@ -122,7 +121,7 @@ BENCHMARK(double_no_schema, iters) {
     writeValues(nullptr, 3.1415926, iters);
 }
 BENCHMARK(double_with_schema, iters) {
-    writeValues(&schemaAllDoubles, 3.1415926, iters);
+    writeValues(schemaAllDoubles, 3.1415926, iters);
 }
 
 BENCHMARK_DRAW_LINE();
@@ -131,7 +130,7 @@ BENCHMARK(vid_no_schema, iters) {
     writeValues(nullptr, 0xFFFFFFFFFFFFFFFF, iters);
 }
 BENCHMARK(vid_with_schema, iters) {
-    writeValues(&schemaAllVids, 0xFFFFFFFFFFFFFFFF, iters);
+    writeValues(schemaAllVids, 0xFFFFFFFFFFFFFFFF, iters);
 }
 
 BENCHMARK_DRAW_LINE();
@@ -140,7 +139,7 @@ BENCHMARK(string_no_schema, iters) {
     writeValues(nullptr, "Hello World!", iters);
 }
 BENCHMARK(string_with_schema, iters) {
-    writeValues(&schemaAllStrings, "Hello World!", iters);
+    writeValues(schemaAllStrings, "Hello World!", iters);
 }
 
 BENCHMARK_DRAW_LINE();
@@ -149,7 +148,7 @@ BENCHMARK(mix_no_schema, iters) {
     writeMix(nullptr, iters);
 }
 BENCHMARK(mix_with_schema, iters) {
-    writeMix(&schemaMix, iters);
+    writeMix(schemaMix, iters);
 }
 /*************************
  * End of benchmarks

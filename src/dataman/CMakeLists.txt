@@ -1,6 +1,5 @@
 add_library(
     dataman_obj OBJECT
-    SchemaProviderIf.cpp
     ResultSchemaProvider.cpp
     SchemaWriter.cpp
     RowSetReader.cpp

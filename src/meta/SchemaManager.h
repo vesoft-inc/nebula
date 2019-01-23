@@ -8,79 +8,106 @@
 #define META_SCHEMAMANAGER_H_
 
 #include "base/Base.h"
-#include "dataman/SchemaProviderIf.h"
+#include <folly/RWSpinLock.h>
+#include "meta/SchemaProviderIf.h"
 
 namespace nebula {
 namespace meta {
 
-class SchemaManager {
+class FileBasedSchemaManager;
+
+class SchemaManager : public SchemaProviderIf {
+    friend class FileBasedSchemaManager;
 public:
-    static SchemaManager* instance();
+    class SchemaField final : public SchemaProviderIf::Field {
+    public:
+        SchemaField(std::string name, storage::cpp2::ValueType type)
+            : name_(std::move(name))
+            , type_(std::move(type)) {}
 
-    virtual SchemaProviderIf* edgeSchema(GraphSpaceID spaceId, EdgeType edgeType) = 0;
+        const char* getName() const override {
+            return name_.c_str();
+        }
+        const storage::cpp2::ValueType& getType() const override {
+            return type_;
+        }
+        bool isValid() const override {
+            return true;
+        }
 
-    virtual SchemaProviderIf* tagSchema(GraphSpaceID spaceId, TagID tagId) = 0;
+    private:
+        std::string name_;
+        storage::cpp2::ValueType type_;
+    };
 
-    virtual int32_t version() = 0;
+public:
+    static std::shared_ptr<const SchemaProviderIf> getTagSchema(
+        GraphSpaceID space, TagID tag, int32_t ver = -1);
+    static std::shared_ptr<const SchemaProviderIf> getTagSchema(
+        const folly::StringPiece spaceName,
+        const folly::StringPiece tagName,
+        int32_t ver = -1);
+    // Returns a negative number when the schema does not exist
+    static int32_t getNewestTagSchemaVer(GraphSpaceID space, TagID tag);
+    static int32_t getNewestTagSchemaVer(const folly::StringPiece spaceName,
+                                         const folly::StringPiece tagName);
 
-    virtual ~SchemaManager() = default;
+    static std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
+        GraphSpaceID space, EdgeType edge, int32_t ver = -1);
+    static std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
+        const folly::StringPiece spaceName,
+        const folly::StringPiece typeName,
+        int32_t ver = -1);
+    // Returns a negative number when the schema does not exist
+    static int32_t getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge);
+    static int32_t getNewestEdgeSchemaVer(const folly::StringPiece spaceName,
+                                          const folly::StringPiece typeName);
+
+    static GraphSpaceID toGraphSpaceID(const folly::StringPiece spaceName);
+    static TagID toTagID(const folly::StringPiece tagName);
+    static EdgeType toEdgeType(const folly::StringPiece typeName);
+
+public:
+    int32_t getVersion() const noexcept override;
+    size_t getNumFields() const noexcept override;
+
+    int64_t getFieldIndex(const folly::StringPiece name) const override;
+    const char* getFieldName(int64_t index) const override;
+
+    const storage::cpp2::ValueType& getFieldType(int64_t index) const override;
+    const storage::cpp2::ValueType& getFieldType(const folly::StringPiece name) const override;
+
+    std::shared_ptr<const SchemaProviderIf::Field> field(int64_t index) const override;
+    std::shared_ptr<const SchemaProviderIf::Field> field(
+        const folly::StringPiece name) const override;
 
 protected:
+    static void init();
+
     SchemaManager() = default;
-};
 
-class MemorySchemaManager : public SchemaManager {
-public:
-    ~MemorySchemaManager();
+protected:
+    int32_t ver_{0};
 
-    using EdgeSchema
-        = std::unordered_map<GraphSpaceID, std::unordered_map<EdgeType, SchemaProviderIf*>>;
+    // fieldname -> index
+    std::unordered_map<std::string, int64_t> fieldNameIndex_;
+    std::vector<std::shared_ptr<SchemaField>>  fields_;
 
-    using TagSchema
-        = std::unordered_map<GraphSpaceID, std::unordered_map<TagID, SchemaProviderIf*>>;
+protected:
+    static folly::RWSpinLock tagLock_;
+    static std::unordered_map<std::pair<GraphSpaceID, TagID>,
+                              // version -> schema
+                              std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>
+        tagSchemas_;
 
-    SchemaProviderIf* edgeSchema(GraphSpaceID spaceId, EdgeType edgeType) override {
-        auto it = edgeSchema_.find(spaceId);
-        if (it != edgeSchema_.end()) {
-            auto edgeIt = it->second.find(edgeType);
-            if (edgeIt != it->second.end()) {
-                return edgeIt->second;
-            }
-        }
-        return nullptr;
-    }
-
-    SchemaProviderIf* tagSchema(GraphSpaceID spaceId, TagID tagId) override {
-        auto it = tagSchema_.find(spaceId);
-        if (it != tagSchema_.end()) {
-            auto tagIt = it->second.find(tagId);
-            if (tagIt != it->second.end()) {
-                return tagIt->second;
-            }
-        }
-        return nullptr;
-    }
-
-    int32_t version() {
-        return 0;
-    }
-
-    EdgeSchema& edgeSchema() {
-        return edgeSchema_;
-    }
-
-    TagSchema& tagSchema() {
-        return tagSchema_;
-    }
-
-private:
-    EdgeSchema edgeSchema_;
-
-    TagSchema tagSchema_;
+    static folly::RWSpinLock edgeLock_;
+    static std::unordered_map<std::pair<GraphSpaceID, EdgeType>,
+                              // version -> schema
+                              std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>
+        edgeSchemas_;
 };
 
 }  // namespace meta
 }  // namespace nebula
 #endif  // META_SCHEMAMANAGER_H_
-
 

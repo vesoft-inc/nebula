@@ -6,19 +6,35 @@
 
 #include "base/Base.h"
 #include "meta/PartManager.h"
+#include "meta/FileBasedPartManager.h"
 
 #define ID_HASH(id, numShards) \
     ((static_cast<uint64_t>(id)) % numShards)
 
+DECLARE_string(partition_conf_file);
+DECLARE_string(meta_server);
+
 namespace nebula {
 namespace meta {
 
-std::unordered_map<GraphSpaceID, std::shared_ptr<const PartManager>>
+folly::RWSpinLock PartManager::accessLock_;
+std::unordered_map<GraphSpaceID, std::shared_ptr<PartManager>>
     PartManager::partManagers_;
+std::once_flag initFlag;
 
 
 // static
 std::shared_ptr<const PartManager> PartManager::get(GraphSpaceID space) {
+    std::call_once(initFlag, [] () {
+        if (!FLAGS_partition_conf_file.empty()) {
+            partManagers_ = FileBasedPartManager::init();
+        } else {
+            LOG(FATAL) << "Meta server based PartManager has not been implemented";
+        }
+    });
+
+    folly::RWSpinLock::ReadHolder rh(accessLock_);
+
     auto it = partManagers_.find(space);
     if (it != partManagers_.end()) {
         return it->second;
@@ -68,21 +84,6 @@ const std::vector<PartitionID>& PartManager::partsOnHost(HostAddr host) const {
     }
 
     return hostIt->second;
-}
-
-
-std::unordered_map<PartitionID, std::vector<int64_t>>
-PartManager::clusterIdsToParts(std::vector<int64_t>& ids) const {
-    std::unordered_map<PartitionID, std::vector<int64_t>> clusters;
-    auto parts = numParts();
-
-    for (auto id : ids) {
-        auto s = ID_HASH(id, parts);
-        CHECK_GE(s, 0U);
-        clusters[s].push_back(id);
-    }
-
-    return clusters;
 }
 
 }  // namespace meta
