@@ -69,12 +69,10 @@ Response MetaClient::collectResponse(Request req,
     folly::Promise<Response> pro;
     auto f = pro.getFuture();
     auto* evb = ioThreadPool_->getEventBase();
-    evb->runInEventBaseThread([&]() {
-        auto client = thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>
-                             ::getClient(active_, evb);
-        remoteFunc(client, std::move(req)).then(evb, [&](folly::Try<Response>&& resp) {
-            pro.setValue(resp.value());
-        });
+    auto client = thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>
+                         ::getClient(active_, evb);
+    remoteFunc(client, std::move(req)).then(evb, [&](folly::Try<Response>&& resp) {
+        pro.setValue(resp.value());
     });
     return std::move(f).get();
 }
