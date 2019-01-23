@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include "gen-cpp2/storage_types.h"
-#include "dataman/SchemaProviderIf.h"
+#include "meta/SchemaProviderIf.h"
 
 namespace nebula {
 
@@ -29,7 +29,7 @@ public:
         bool operator==(const Iterator& rhs);
 
     private:
-        const SchemaProviderIf* schema_;
+        std::shared_ptr<const meta::SchemaProviderIf> schema_;
         // The total length of the encoded row set
         const folly::StringPiece& data_;
 
@@ -39,7 +39,7 @@ public:
         // The length of the current row
         int64_t len_;
 
-        Iterator(SchemaProviderIf* schema,
+        Iterator(std::shared_ptr<const meta::SchemaProviderIf> schema,
                  const folly::StringPiece& data,
                  int64_t offset);
 
@@ -54,12 +54,12 @@ public:
     //
     // In this case, the RowSetReader will *NOT* take the ownership of
     // the schema and the record
-    RowSetReader(SchemaProviderIf* schema,
+    RowSetReader(std::shared_ptr<const meta::SchemaProviderIf> schema,
                  folly::StringPiece record);
 
-    virtual ~RowSetReader();
+    virtual ~RowSetReader() = default;
 
-    SchemaProviderIf const* schema() const {
+    meta::SchemaProviderIf const* schema() const {
         return schema_.get();
     }
 
@@ -67,9 +67,7 @@ public:
     Iterator end() const noexcept;
 
 private:
-    std::unique_ptr<SchemaProviderIf> schema_;
-    bool takeOwnership_ = false;
-
+    std::shared_ptr<const meta::SchemaProviderIf> schema_;
     std::string dataStore_;
     folly::StringPiece data_;
 };

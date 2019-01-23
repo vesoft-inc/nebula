@@ -6,10 +6,10 @@
 
 #include "base/Base.h"
 #include "network/NetworkUtils.h"
-#include "fs/FileUtils.h"
 #include <netdb.h>
 #include <ifaddrs.h>
 #include <arpa/inet.h>
+#include "fs/FileUtils.h"
 
 
 namespace nebula {
@@ -202,6 +202,38 @@ std::string NetworkUtils::intToIPv4(uint32_t ip) {
     pt += f1.size();
 
     return buf;
+}
+
+
+HostAddr NetworkUtils::toHostAddr(const folly::StringPiece ip, int32_t port) {
+    uint32_t ipV4;
+    CHECK(ipv4ToInt(ip.toString(), ipV4));
+    return std::make_pair(ipV4, port);
+}
+
+
+HostAddr NetworkUtils::toHostAddr(const folly::StringPiece ipPort) {
+    auto pos = ipPort.find(':');
+    CHECK_NE(pos, folly::StringPiece::npos);
+
+    int32_t port;
+    try {
+        port = folly::to<int32_t>(ipPort.subpiece(pos + 1));
+    } catch (const std::exception& ex) {
+        LOG(FATAL) << "Bad ipPort: " << ex.what();
+    }
+
+    return toHostAddr(ipPort.subpiece(0, pos), port);
+}
+
+
+std::string NetworkUtils::ipFromHostAddr(const HostAddr& host) {
+    return intToIPv4(host.first);
+}
+
+
+int32_t NetworkUtils::portFromHostAddr(const HostAddr& host) {
+    return host.second;
 }
 
 }  // namespace network

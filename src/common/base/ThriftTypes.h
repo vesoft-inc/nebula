@@ -18,9 +18,6 @@ using LogID = int64_t;
 using IPv4 = int32_t;
 using Port = int32_t;
 
-// Host address type
-using HostAddr = std::pair<IPv4, Port>;
-
 }  // namespace nebula
 #endif  // COMMON_BASE_THRIFTTYPES_H_
 
