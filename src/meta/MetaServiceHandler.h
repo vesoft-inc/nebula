@@ -37,7 +37,6 @@ public:
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;
-    std::mutex mutex_;
 };
 
 }  // namespace meta

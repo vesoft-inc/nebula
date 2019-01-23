@@ -29,9 +29,8 @@ enum IDType {
 template<typename RESP>
 class BaseProcessor {
 public:
-    BaseProcessor(kvstore::KVStore* kvstore, std::mutex* m)
-            : kvstore_(kvstore)
-            , lock_(m) {}
+    explicit BaseProcessor(kvstore::KVStore* kvstore)
+            : kvstore_(kvstore) {}
 
     virtual ~BaseProcessor() = default;
 
@@ -96,13 +95,16 @@ protected:
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
-    std::mutex* lock_ = nullptr;
     std::unique_ptr<std::lock_guard<std::mutex>> guard_;
     RESP resp_;
     folly::Promise<RESP> promise_;
     const PartitionID kDefaultPartId_ = 0;
     const GraphSpaceID kDefaultSpaceId_ = 0;
+    static std::mutex lock_;
 };
+
+template<typename RESP>
+std::mutex BaseProcessor<RESP>::lock_;
 
 }  // namespace meta
 }  // namespace nebula

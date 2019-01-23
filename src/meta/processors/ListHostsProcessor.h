@@ -14,27 +14,15 @@ namespace meta {
 
 class ListHostsProcessor : public BaseProcessor<cpp2::ListHostsResp> {
 public:
-    static ListHostsProcessor* instance(kvstore::KVStore* kvstore, std::mutex* lock) {
-        return new ListHostsProcessor(kvstore, lock);
+    static ListHostsProcessor* instance(kvstore::KVStore* kvstore) {
+        return new ListHostsProcessor(kvstore);
     }
 
-    void process(const cpp2::ListHostsReq& req) {
-        UNUSED(req);
-        guard_ = std::make_unique<std::lock_guard<std::mutex>>(*lock_);
-        auto ret = allHosts();
-        if (!ret.ok()) {
-            resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
-            onFinished();
-            return;
-        }
-        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
-        resp_.set_hosts(std::move(ret.value()));
-        onFinished();
-    }
+    void process(const cpp2::ListHostsReq& req);
 
 private:
-    explicit ListHostsProcessor(kvstore::KVStore* kvstore, std::mutex* lock)
-            : BaseProcessor<cpp2::ListHostsResp>(kvstore, lock) {}
+    explicit ListHostsProcessor(kvstore::KVStore* kvstore)
+            : BaseProcessor<cpp2::ListHostsResp>(kvstore) {}
 };
 
 }  // namespace meta

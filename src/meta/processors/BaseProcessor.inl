@@ -12,7 +12,7 @@ namespace meta {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
-    CHECK(!lock_->try_lock());
+    CHECK(!lock_.try_lock());
     kvstore_->asyncMultiPut(kDefaultSpaceId_, kDefaultPartId_, std::move(data),
                             [this] (kvstore::ResultCode code, HostAddr leader) {
         UNUSED(leader);
@@ -42,7 +42,7 @@ StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
 
 template<typename RESP>
 int32_t BaseProcessor<RESP>::autoIncrementId() {
-    CHECK(!lock_->try_lock());
+    CHECK(!lock_.try_lock());
     static const std::string kIdKey = "__id__";
     int32_t id;
     std::string val;

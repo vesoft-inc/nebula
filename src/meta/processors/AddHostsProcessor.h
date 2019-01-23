@@ -14,22 +14,20 @@ namespace meta {
 
 class AddHostsProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
-    static AddHostsProcessor* instance(kvstore::KVStore* kvstore, std::mutex* lock) {
-        return new AddHostsProcessor(kvstore, lock);
+    /*
+     *  xxxProcessor is self-management.
+     *  The user should get instance when needed and don't care about the instance deleted.
+     *  The instance should be destoryed inside when onFinished method invoked
+     */
+    static AddHostsProcessor* instance(kvstore::KVStore* kvstore) {
+        return new AddHostsProcessor(kvstore);
     }
 
-    void process(const cpp2::AddHostsReq& req) {
-        guard_ = std::make_unique<std::lock_guard<std::mutex>>(*lock_);
-        std::vector<kvstore::KV> data;
-        for (auto& h : req.get_hosts()) {
-            data.emplace_back(MetaUtils::hostKey(h.ip, h.port), MetaUtils::hostVal());
-        }
-        doPut(std::move(data));
-    }
+    void process(const cpp2::AddHostsReq& req);
 
 private:
-    explicit AddHostsProcessor(kvstore::KVStore* kvstore, std::mutex* lock)
-            : BaseProcessor<cpp2::ExecResp>(kvstore, lock) {}
+    explicit AddHostsProcessor(kvstore::KVStore* kvstore)
+            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

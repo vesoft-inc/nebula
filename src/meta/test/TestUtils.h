@@ -41,7 +41,7 @@ public:
         return kv;
     }
 
-    static int32_t createSomeHosts(kvstore::KVStore* kv, std::mutex* lock,
+    static int32_t createSomeHosts(kvstore::KVStore* kv,
                                    std::vector<HostAddr> hosts
                                         = {{0, 0}, {1, 1}, {2, 2}, {3, 3}}) {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
@@ -55,7 +55,7 @@ public:
         {
             cpp2::AddHostsReq req;
             req.set_hosts(std::move(thriftHosts));
-            auto* processor = AddHostsProcessor::instance(kv, lock);
+            auto* processor = AddHostsProcessor::instance(kv);
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
@@ -63,7 +63,7 @@ public:
         }
         {
             cpp2::ListHostsReq req;
-            auto* processor = ListHostsProcessor::instance(kv, lock);
+            auto* processor = ListHostsProcessor::instance(kv);
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();

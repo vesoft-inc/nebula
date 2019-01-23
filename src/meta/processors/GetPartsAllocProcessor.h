@@ -14,37 +14,15 @@ namespace meta {
 
 class GetPartsAllocProcessor : public BaseProcessor<cpp2::GetPartsAllocResp> {
 public:
-    static GetPartsAllocProcessor* instance(kvstore::KVStore* kvstore, std::mutex* lock) {
-        return new GetPartsAllocProcessor(kvstore, lock);
+    static GetPartsAllocProcessor* instance(kvstore::KVStore* kvstore) {
+        return new GetPartsAllocProcessor(kvstore);
     }
 
-    void process(const cpp2::GetPartsAllocReq& req) {
-        guard_ = std::make_unique<std::lock_guard<std::mutex>>(*lock_);
-        auto spaceId = req.get_space_id();
-        auto prefix = MetaUtils::partPrefix(spaceId);
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
-        resp_.set_code(to(ret));
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            onFinished();
-            return;
-        }
-        decltype(resp_.parts) parts;
-        while (iter->valid()) {
-            auto key = iter->key();
-            PartitionID partId;
-            memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-            std::vector<nebula::cpp2::HostAddr> partHosts = MetaUtils::parsePartVal(iter->val());
-            parts.emplace(partId, std::move(partHosts));
-            iter->next();
-        }
-        resp_.set_parts(std::move(parts));
-        onFinished();
-    }
+    void process(const cpp2::GetPartsAllocReq& req);
 
 private:
-    explicit GetPartsAllocProcessor(kvstore::KVStore* kvstore, std::mutex* lock)
-            : BaseProcessor<cpp2::GetPartsAllocResp>(kvstore, lock) {}
+    explicit GetPartsAllocProcessor(kvstore::KVStore* kvstore)
+            : BaseProcessor<cpp2::GetPartsAllocResp>(kvstore) {}
 };
 
 }  // namespace meta

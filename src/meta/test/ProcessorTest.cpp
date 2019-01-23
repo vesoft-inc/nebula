@@ -20,7 +20,6 @@ namespace meta {
 TEST(ProcessorTest, AddHostsTest) {
     fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    std::mutex lock;
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
@@ -28,7 +27,7 @@ TEST(ProcessorTest, AddHostsTest) {
         }
         cpp2::AddHostsReq req;
         req.set_hosts(std::move(thriftHosts));
-        auto* processor = AddHostsProcessor::instance(kv.get(), &lock);
+        auto* processor = AddHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -36,7 +35,7 @@ TEST(ProcessorTest, AddHostsTest) {
     }
     {
         cpp2::ListHostsReq req;
-        auto* processor = ListHostsProcessor::instance(kv.get(), &lock);
+        auto* processor = ListHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -53,7 +52,7 @@ TEST(ProcessorTest, AddHostsTest) {
         }
         cpp2::AddHostsReq req;
         req.set_hosts(std::move(thriftHosts));
-        auto* processor = AddHostsProcessor::instance(kv.get(), &lock);
+        auto* processor = AddHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -61,7 +60,7 @@ TEST(ProcessorTest, AddHostsTest) {
     }
     {
         cpp2::ListHostsReq req;
-        auto* processor = ListHostsProcessor::instance(kv.get(), &lock);
+        auto* processor = ListHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -76,15 +75,14 @@ TEST(ProcessorTest, AddHostsTest) {
 TEST(ProcessorTest, CreateSpaceTest) {
     fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    std::mutex lock;
-    auto hostsNum = TestUtils::createSomeHosts(kv.get(), &lock);
+    auto hostsNum = TestUtils::createSomeHosts(kv.get());
     {
         cpp2::CreateSpaceReq req;
         req.set_space_name("default_space");
         req.set_parts_num(9);
         req.set_replica_factor(3);
 
-        auto* processor = CreateSpaceProcessor::instance(kv.get(), &lock);
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -93,7 +91,7 @@ TEST(ProcessorTest, CreateSpaceTest) {
     }
     {
         cpp2::ListSpacesReq req;
-        auto* processor = ListSpacesProcessor::instance(kv.get(), &lock);
+        auto* processor = ListSpacesProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -106,7 +104,7 @@ TEST(ProcessorTest, CreateSpaceTest) {
     {
         cpp2::GetPartsAllocReq req;
         req.set_space_id(1);
-        auto* processor = GetPartsAllocProcessor::instance(kv.get(), &lock);
+        auto* processor = GetPartsAllocProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
