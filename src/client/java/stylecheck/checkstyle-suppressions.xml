@@ -1,0 +1,500 @@
+<?xml version="1.0"?>
+ 
+<!DOCTYPE suppressions PUBLIC
+     "-//Puppy Crawl//DTD Suppressions 1.0//EN"
+     "http://www.puppycrawl.com/dtds/suppressions_1_0.dtd">
+ 
+<suppressions>
+  <suppress checks="CustomImportOrder"
+             files="ColumnValue.java"
+             />
+
+  <suppress checks="CustomImportOrder"
+             files="ErrorCode.java"
+             />
+
+  <suppress checks="LeftCurly"
+             files="YearMonth.java"
+             />
+
+  <suppress checks="VariableDeclarationUsageDistance"
+            files="DateTime.java"
+             />
+			 
+  <suppress checks="MissingSwitchDefault"
+            files="ColumnValue.java"
+             />
+			 
+  <suppress checks="VariableDeclarationUsageDistance"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="VariableDeclarationUsageDistance"
+            files="Date.java"
+             />
+			 
+  <suppress checks="SummaryJavadoc"
+            files="ExecutionResponse.java"
+             />			 
+			 
+  <suppress checks="VariableDeclarationUsageDistance"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="WhitespaceAround"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="EmptyLineSeparator"
+            files="ErrorCode.java"
+             />
+
+  <suppress checks="AvoidStarImport"
+            files="ErrorCode.java"
+             />
+
+  <suppress checks="VariableDeclarationUsageDistance"
+            files="GraphService.java"
+             />
+			 
+  <suppress checks="WhitespaceAround"
+            files="GraphService.java"
+             />
+
+  <suppress checks="VariableDeclarationUsageDistance"
+            files="AuthResponse.java"
+             />
+			 
+  <suppress checks="WhitespaceAround"
+            files="AuthResponse.java"
+             />	
+
+  <suppress checks="SummaryJavadoc"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="VariableDeclarationUsageDistance"
+            files="RowValue.java"
+             />
+
+  <suppress checks="Indentation"
+            files="GraphService.java"
+             />
+
+  <suppress checks="Indentation"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="Indentation"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="Indentation"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="Indentation"
+            files="Date.java"
+             />
+
+  <suppress checks="Indentation"
+            files="DateTime.java"
+             />
+
+  <suppress checks="Indentation"
+            files="RowValue.java"
+             />
+
+  <suppress checks="Indentation"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="Indentation"
+            files="ErrorCode.java"
+             />
+
+  <suppress checks="CustomImportOrder"
+            files="GraphService.java"
+             />
+
+  <suppress checks="CustomImportOrder"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="CustomImportOrder"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="CustomImportOrder"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="CustomImportOrder"
+            files="Date.java"
+             />
+
+  <suppress checks="CustomImportOrder"
+            files="DateTime.java"
+             />
+
+  <suppress checks="CustomImportOrder"
+            files="RowValue.java"
+             />
+
+  <suppress checks="CustomImportOrder"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="JavadocMethod"
+            files="GraphService.java"
+             />
+
+  <suppress checks="JavadocMethod"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="JavadocMethod"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="JavadocMethod"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="JavadocMethod"
+            files="Date.java"
+             />
+
+  <suppress checks="JavadocMethod"
+            files="DateTime.java"
+             />
+
+  <suppress checks="JavadocMethod"
+            files="RowValue.java"
+             />
+
+  <suppress checks="JavadocMethod"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="NeedBraces"
+            files="GraphService.java"
+             />
+
+  <suppress checks="NeedBraces"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="NeedBraces"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="NeedBraces"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="NeedBraces"
+            files="Date.java"
+             />
+
+  <suppress checks="NeedBraces"
+            files="DateTime.java"
+             />
+
+  <suppress checks="NeedBraces"
+            files="RowValue.java"
+             />
+
+  <suppress checks="NeedBraces"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="LocalVariableName"
+            files="GraphService.java"
+             />
+
+  <suppress checks="LocalVariableName"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="LocalVariableName"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="LocalVariableName"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="LocalVariableName"
+            files="Date.java"
+             />
+
+  <suppress checks="LocalVariableName"
+            files="DateTime.java"
+             />
+
+  <suppress checks="LocalVariableName"
+            files="RowValue.java"
+             />
+
+  <suppress checks="LocalVariableName"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="LeftCurly"
+            files="GraphService.java"
+             />
+
+  <suppress checks="LeftCurly"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="LeftCurly"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="LeftCurly"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="LeftCurly"
+            files="Date.java"
+             />
+
+  <suppress checks="LeftCurly"
+            files="DateTime.java"
+             />
+
+  <suppress checks="LeftCurly"
+            files="RowValue.java"
+             />
+
+  <suppress checks="LeftCurly"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="LineLength"
+            files="GraphService.java"
+             />
+
+  <suppress checks="LineLength"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="LineLength"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="LineLength"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="LineLength"
+            files="Date.java"
+             />
+
+  <suppress checks="LineLength"
+            files="DateTime.java"
+             />
+
+  <suppress checks="LineLength"
+            files="RowValue.java"
+             />
+
+  <suppress checks="LineLength"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="AvoidStarImport"
+            files="GraphService.java"
+             />
+
+  <suppress checks="AvoidStarImport"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="AvoidStarImport"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="AvoidStarImport"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="AvoidStarImport"
+            files="Date.java"
+             />
+
+  <suppress checks="AvoidStarImport"
+            files="DateTime.java"
+             />
+
+  <suppress checks="AvoidStarImport"
+            files="RowValue.java"
+             />
+
+  <suppress checks="AvoidStarImport"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="EmptyLineSeparator"
+            files="GraphService.java"
+             />
+
+  <suppress checks="EmptyLineSeparator"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="EmptyLineSeparator"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="EmptyLineSeparator"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="EmptyLineSeparator"
+            files="Date.java"
+             />
+
+  <suppress checks="EmptyLineSeparator"
+            files="DateTime.java"
+             />
+
+  <suppress checks="EmptyLineSeparator"
+            files="RowValue.java"
+             />
+
+  <suppress checks="EmptyLineSeparator"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="AbbreviationAsWordInName"
+            files="GraphService.java"
+             />
+
+  <suppress checks="AbbreviationAsWordInName"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="AbbreviationAsWordInName"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="AbbreviationAsWordInName"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="AbbreviationAsWordInName"
+            files="Date.java"
+             />
+
+  <suppress checks="AbbreviationAsWordInName"
+            files="DateTime.java"
+             />
+
+  <suppress checks="AbbreviationAsWordInName"
+            files="RowValue.java"
+             />
+
+  <suppress checks="AbbreviationAsWordInName"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="TypeName"
+            files="GraphService.java"
+             />
+
+  <suppress checks="TypeName"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="TypeName"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="TypeName"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="TypeName"
+            files="Date.java"
+             />
+
+  <suppress checks="TypeName"
+            files="DateTime.java"
+             />
+
+  <suppress checks="TypeName"
+            files="RowValue.java"
+             />
+
+  <suppress checks="TypeName"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="ParameterName"
+            files="GraphService.java"
+             />
+
+  <suppress checks="ParameterName"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="ParameterName"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="ParameterName"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="ParameterName"
+            files="Date.java"
+             />
+
+  <suppress checks="ParameterName"
+            files="DateTime.java"
+             />
+
+  <suppress checks="ParameterName"
+            files="RowValue.java"
+             />
+
+  <suppress checks="ParameterName"
+            files="YearMonth.java"
+             />
+
+  <suppress checks="MemberName"
+            files="GraphService.java"
+             />
+
+  <suppress checks="MemberName"
+            files="AuthResponse.java"
+             />
+
+  <suppress checks="MemberName"
+            files="ExecutionResponse.java"
+             />
+
+  <suppress checks="MemberName"
+            files="ColumnValue.java"
+             />
+
+  <suppress checks="MemberName"
+            files="Date.java"
+             />
+
+  <suppress checks="MemberName"
+            files="DateTime.java"
+             />
+
+  <suppress checks="MemberName"
+            files="RowValue.java"
+             />
+
+  <suppress checks="MemberName"
+            files="YearMonth.java"
+             />
+
+</suppressions>
