@@ -227,7 +227,7 @@ add_custom_target(
     clean-all
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
     COMMAND "find" "." "-name" "Testing" "|" "xargs" "rm" "-fr"
-    DEPENDS clean-interface clean-pch clean-third-party
+    DEPENDS clean-interface clean-pch clean-third-party clean-java-client
 )
 
 add_custom_target(

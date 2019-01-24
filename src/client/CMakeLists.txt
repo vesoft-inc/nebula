@@ -3,3 +3,4 @@ add_custom_target(
 )
 
 add_subdirectory(cpp)
+add_subdirectory(java)
