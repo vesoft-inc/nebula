@@ -66,12 +66,12 @@ KVStore* KVStore::instance(KVOptions options) {
 
 Engine NebulaStore::newEngine(GraphSpaceID spaceId, std::string rootPath) {
     if (FLAGS_engine_type == "rocksdb") {
+        auto dataPath = folly::stringPrintf("%s/nebula/%d/data", rootPath.c_str(), spaceId);
         auto engine = std::make_pair(
                                 std::unique_ptr<KVEngine>(
                                     new RocksdbEngine(
                                           spaceId,
-                                          folly::stringPrintf("%s/nebula/%d/data",
-                                                              rootPath.c_str(), spaceId),
+                                          std::move(dataPath),
                                           options_.mergeOp_,
                                           options_.cfFactory_)),
                                 std::move(rootPath));
