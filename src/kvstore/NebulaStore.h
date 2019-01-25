@@ -8,6 +8,7 @@
 #define KVSTORE_NEBULASTORE_H_
 
 #include <gtest/gtest_prod.h>
+#include <folly/RWSpinLock.h>
 #include "base/Base.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
@@ -27,7 +28,7 @@ struct GraphSpaceKV {
     std::vector<Engine> engines_;
 };
 
-class NebulaStore : public KVStore {
+class NebulaStore : public KVStore, public Handler {
     FRIEND_TEST(KVStoreTest, SimpleTest);
     FRIEND_TEST(KVStoreTest, PartsTest);
 
@@ -90,25 +91,23 @@ public:
 
 private:
     /**
-     * Init engines for one space.
+     * Inplement two interfaces in Handler.
      * */
-    std::vector<Engine> initEngines(GraphSpaceID spaceId);
+    void addSpace(GraphSpaceID spaceId) override;
 
-    /**
-     * Check whether parts stored in local existed in PartMan, if not, remove it locally.
-     * Return partEngine map.
-     * */
-    PartEngine checkLocalParts(GraphSpaceID spaceId);
+    void addPart(GraphSpaceID spaceId, PartitionID partId) override;
 
-    /**
-     * Dispatch part to some engine, return the engine while would hold the part.
-     * */
-    const Engine& dispatchPart(GraphSpaceID spaceId,
-                               PartitionID partId,
-                               const PartEngine& maps);
+private:
+    Engine newEngine(GraphSpaceID spaceId, std::string rootPath);
+
+    std::unique_ptr<Part> newPart(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  const Engine& engine);
 
 private:
     std::unordered_map<GraphSpaceID, std::unique_ptr<GraphSpaceKV>> kvs_;
+    // The lock used to protect kvs_
+    folly::RWSpinLock lock_;
     PartManager* partMan_ = nullptr;
     KVOptions options_;
 };
