@@ -17,6 +17,8 @@
 #   NEBULA_OPENSSL_ROOT     -- Specify the root directory for openssl
 #   NEBULA_BOOST_ROOT       -- Specify the root directory for boost
 #
+#   SKIP_JAVA_CLIENT        -- Skip building the java client
+#
 cmake_minimum_required(VERSION 3.0.0)
 
 project("Nebula Graph" C CXX)
@@ -213,7 +215,6 @@ add_subdirectory(src)
 add_subdirectory(etc)
 add_subdirectory(scripts)
 
-add_dependencies(common third-party)
 #add_dependencies(storage_engines common)
 
 add_custom_target(

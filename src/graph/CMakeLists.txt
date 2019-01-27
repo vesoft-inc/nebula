@@ -30,6 +30,6 @@ add_library(
     mock/SchemaManager.cpp
     mock/StorageService.cpp
 )
-add_dependencies(graph_obj common parser_obj graph_thrift_obj)
+add_dependencies(graph_obj base_obj parser_obj graph_thrift_obj)
 
 add_subdirectory(test)
