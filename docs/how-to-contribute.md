@@ -2,7 +2,7 @@
 
 ### Step 1: Fork in the cloud
 
-1. Visit https://github.com/vesoft-inc/nebula-graph
+1. Visit https://github.com/vesoft-inc/nebula
 2. Click `Fork` button (top right) to establish a cloud-based fork.
 
 ### Step 2: Clone fork to local storage
@@ -25,22 +25,22 @@ Create your clone:
 ```sh
 mkdir -p $working_dir
 cd $working_dir
-git clone https://github.com/$user/nebula-graph.git
+git clone https://github.com/$user/nebula.git
 # the following is recommended
-# or: git clone git@github.com:$user/nebula-graph.git
+# or: git clone git@github.com:$user/nebula.git
 
-cd $working_dir/nebula-graph
-git remote add upstream https://github.com/vesoft-inc/nebula-graph.git
-# or: git remote add upstream git@github.com:vesoft-inc/nebula-graph.git
+cd $working_dir/nebula
+git remote add upstream https://github.com/vesoft-inc/nebula.git
+# or: git remote add upstream git@github.com:vesoft-inc/nebula.git
 
 # Never push to upstream master since you do not have write access.
 git remote set-url --push upstream no_push
 
 # Confirm that your remotes make sense:
 # It should look like:
-# origin    git@github.com:$(user)/nebula-graph.git (fetch)
-# origin    git@github.com:$(user)/nebula-graph.git (push)
-# upstream  https://github.com/vesoft-inc/nebula-graph (fetch)
+# origin    git@github.com:$(user)/nebula.git (fetch)
+# origin    git@github.com:$(user)/nebula.git (push)
+# upstream  https://github.com/vesoft-inc/nebula (fetch)
 # upstream  no_push (push)
 git remote -v
 ```
@@ -52,13 +52,13 @@ Please link the Nebula Graph pre-commit hook into your `.git` directory.
 This hook checks your commits for formatting, building, doc generation, etc.
 
 ```sh
-cd $working_dir/nebula-graph/.git/hooks
+cd $working_dir/nebula/.git/hooks
 ln -s ../../hooks/pre-commit .
 ```
 Sometime, pre-commit hook can not be executable. In such case, you have to make it executable manually.
 
 ```sh
-cd $working_dir/nebula-graph/.git/hooks
+cd $working_dir/nebula/.git/hooks
 chmod +x pre-commit
 ```
 
@@ -67,7 +67,7 @@ chmod +x pre-commit
 Get your local master up to date:
 
 ```sh
-cd $working_dir/nebula-graph
+cd $working_dir/nebula
 git fetch upstream
 git checkout master
 git rebase upstream/master
@@ -151,7 +151,7 @@ git push -f origin myfeature
 
 ### Step 8: Create a pull request
 
-1. Visit your fork at https://github.com/$user/nebula-graph (replace `$user` obviously).
+1. Visit your fork at https://github.com/$user/nebula (replace `$user` obviously).
 2. Click the `Compare & pull request` button next to your `myfeature` branch.
 
 ### Step 9: Get a code review

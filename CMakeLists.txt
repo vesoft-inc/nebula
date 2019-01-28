@@ -8,10 +8,12 @@
 #
 #   CMAKE_C_COMPILER        -- Specify the compiler for C language
 #   CMAKE_CXX_COMPILER      -- Specify the compiler for C++ language
-#   FLEX_EXECUTABLE         -- Specify the full path of flex executable
+
 #   NEBULA_GPERF_BIN_DIR    -- Specify the full path to the directory
 #                              containing gperf binary
-#
+#   NEBULA_FLEX_ROOT        -- Specify the root directory for flex
+#   NEBULA_READLINE_ROOT    -- Specify the root directory for readline
+#   NEBULA_NCURSES_ROOT     -- Specify the root directory for ncurses
 #   NEBULA_KRB5_ROOT        -- Specify the root directory for KRB5
 #   NEBULA_LIBUNWIND_ROOT   -- Specify the root directory for libunwind
 #   NEBULA_OPENSSL_ROOT     -- Specify the root directory for openssl
@@ -61,40 +63,52 @@ set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
 
 if(NOT ${NEBULA_KRB5_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_KRB5_ROOT: " ${NEBULA_KRB5_ROOT})
-    list(APPEND CMAKE_INCLUDE_PATH ${NEBULA_KRB5_ROOT}/include)
-    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_KRB5_ROOT}/lib)
-    list(APPEND CMAKE_PROGRAM_PATH ${NEBULA_KRB5_ROOT}/bin)
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_KRB5_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_KRB5_ROOT}/lib)
+    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_KRB5_ROOT}/bin)
 endif()
 
 if(NOT ${NEBULA_LIBUNWIND_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_LIBUNWIND_ROOT: " ${NEBULA_LIBUNWIND_ROOT})
-    list(APPEND CMAKE_INCLUDE_PATH ${NEBULA_LIBUNWIND_ROOT}/include)
-    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_LIBUNWIND_ROOT}/lib)
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_LIBUNWIND_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_LIBUNWIND_ROOT}/lib)
 endif()
 
 if(NOT ${NEBULA_OPENSSL_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_OPENSSL_ROOT: " ${NEBULA_OPENSSL_ROOT})
-    list(APPEND CMAKE_INCLUDE_PATH ${NEBULA_OPENSSL_ROOT}/include)
-    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_OPENSSL_ROOT}/lib)
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_OPENSSL_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_OPENSSL_ROOT}/lib)
 endif()
 
 if(NOT ${NEBULA_BOOST_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_BOOST_ROOT: " ${NEBULA_BOOST_ROOT})
-    list(APPEND CMAKE_INCLUDE_PATH ${NEBULA_BOOST_ROOT}/include)
-    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_BOOST_ROOT}/lib)
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_BOOST_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_BOOST_ROOT}/lib)
 endif()
 
 if(NOT ${NEBULA_READLINE_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_READLINE_ROOT: " ${NEBULA_READLINE_ROOT})
-    list(APPEND CMAKE_INCLUDE_PATH ${NEBULA_READLINE_ROOT}/include)
-    list(APPEND CMAKE_LIBRARY_PATH ${NEBULA_READLINE_ROOT}/lib)
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_READLINE_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_READLINE_ROOT}/lib)
+endif()
+
+if(NOT ${NEBULA_NCURSES_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_NCURSES_ROOT: " ${NEBULA_NCURSES_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_NCURSES_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_NCURSES_ROOT}/lib)
+endif()
+
+if(NOT ${NEBULA_FLEX_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_FLEX_ROOT: " ${NEBULA_FLEX_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_FLEX_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_FLEX_ROOT}/lib)
+    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_FLEX_ROOT}/bin)
 endif()
 
 if(NOT ${NEBULA_GPERF_BIN_DIR} STREQUAL "")
     message(STATUS "Specified NEBULA_GPERF_BIN_DIR: " ${NEBULA_GPERF_BIN_DIR})
-    list(APPEND CMAKE_PROGRAM_PATH ${NEBULA_GPERF_BIN_DIR})
+    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_GPERF_BIN_DIR})
 endif()
-
 
 option(asan "Whether to turn AddressSanitizer ON or OFF" OFF)
 
@@ -113,6 +127,7 @@ find_package(Libunwind REQUIRED)
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
+find_package(NCURSES REQUIRED)
 if(NOT asan)
     find_package(PCHSupport)
     add_compile_options(-Winvalid-pch)
@@ -203,7 +218,12 @@ set(THRIFT_LIBRARIES
     thrift-core
 )
 
-set(ROCKSDB_LIBRARIES ${NEBULA_HOME}/third-party/rocksdb/_install/lib64/librocksdb.a)
+find_library(
+    ROCKSDB_LIBRARIES
+    librocksdb.a
+    PATHS ${NEBULA_HOME}/third-party/rocksdb/_install
+    PATH_SUFFIXES lib lib64
+)
 
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
