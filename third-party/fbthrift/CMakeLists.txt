@@ -11,18 +11,9 @@ set_property(
         fbthrift_src_file
         ${CMAKE_CURRENT_SOURCE_DIR}/_build/${fbthrift_ver_name}/thrift/lib/cpp2/async/ReconnectingRequestChannel.cpp)
 
-add_custom_target(
+build_external(
     tgt_fbthrift
-    COMMAND ${build_command}
-    DEPENDS
-        tgt_glog
-        tgt_gflags
-        tgt_folly
-        tgt_wangle
-        tgt_fatal
-        tgt_mstch
-        tgt_zlib
-        tgt_zstd
+    tgt_glog tgt_gflags tgt_folly tgt_wangle tgt_fatal tgt_mstch tgt_zlib tgt_zstd
 )
 
 add_custom_target(

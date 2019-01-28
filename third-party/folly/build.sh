@@ -26,7 +26,7 @@ echo
 
 cd $SOURCE_DIR
 
-compiler_flags="-fPIC -DPIC -DFOLLY_HAVE_LIBDWARF_DWARF_H -DFOLLY_HAVE_MEMRCHR -Wno-noexcept-type   $EXTRA_CXXFLAGS"
+compiler_flags="-fPIC -DPIC -DFOLLY_HAVE_LIBDWARF_DWARF_H -DFOLLY_HAVE_MEMRCHR -Wno-noexcept-type -Wno-error=parentheses -Wno-error=shadow=compatible-local  $EXTRA_CXXFLAGS"
 exe_linker_flags="-static-libgcc -static-libstdc++ $EXTRA_LDFLAGS"
 NEBULA_INCLUDE_DIRS="$double_conversion_release/include;$libevent_release/include;$gflags_release/include;$glog_release/include;$zstd_release/include;$zlib_release/include;$snappy_release/include;$NEBULA_INCLUDE_DIRS"
 NEBULA_LIB_DIRS="$double_conversion_release/lib;$libevent_release/lib;$gflags_release/lib;$glog_release/lib;$zstd_release/lib;$zlib_release/lib;$snappy_release/lib;$NEBULA_LIB_DIRS"
