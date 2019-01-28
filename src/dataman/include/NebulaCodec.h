@@ -1,0 +1,29 @@
+/* Copyright (c) 2019 - present, VE Software Inc. All rights reserved
+ *
+ * This source code is licensed under Apache 2.0 License
+ *  (found in the LICENSE.Apache file in the root directory)
+ */
+
+#ifndef NEBULA_GRAPH_NEBULACODEC_H
+#define NEBULA_GRAPH_NEBULACODEC_H
+
+#include <string>
+#include <vector>
+#include <boost/any.hpp>
+// #include "base/Base.h"
+
+namespace nebula {
+namespace dataman {
+
+typedef boost::any Value;
+
+class NebulaCodec {
+ public:
+  virtual std::string encode(std::vector<Value> values) = 0;
+
+  // TODO decode
+};
+
+}  // namespace dataman
+}  // namespace nebula
+#endif  // NEBULA_GRAPH_NEBULACODEC_H
