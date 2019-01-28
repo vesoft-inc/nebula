@@ -5,5 +5,15 @@
      "http://www.puppycrawl.com/dtds/suppressions_1_0.dtd">
  
 <suppressions>
-    <suppress checks="[a-zA-Z0-9]*" files="AuthResponse.java|ColumnValue.java|Date.java|DateTime.java|ErrorCode.java|ExecutionResponse.java|GraphDbService.java|GraphService.java|RowValue.java|YearMonth.java"/>
+    <suppress checks="[a-zA-Z0-9]*" files="AuthResponse.java|
+                                           |ColumnValue.java|
+                                           |Date.java|
+                                           |DateTime.java|
+                                           |ErrorCode.java|
+                                           |ExecutionResponse.java|
+                                           |GraphDbService.java|
+                                           |GraphService.java|
+                                           |RowValue.java|
+                                           |YearMonth.java"
+                                           />
 </suppressions>
