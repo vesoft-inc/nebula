@@ -11,6 +11,6 @@ add_library(
     QueryStatsProcessor.cpp
 )
 
-add_dependencies(storage_service_handler common storage_thrift_obj kvstore_obj dataman_obj meta_obj)
+add_dependencies(storage_service_handler base_obj storage_thrift_obj kvstore_obj dataman_obj meta_obj)
 add_subdirectory(test)
 

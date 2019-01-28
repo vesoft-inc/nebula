@@ -1,6 +1,7 @@
-add_custom_target(
-    client ALL
-)
-
 add_subdirectory(cpp)
-add_subdirectory(java)
+
+if (NOT SKIP_JAVA_CLIENT)
+    add_subdirectory(java)
+else()
+    message(STATUS "Skip building the java client")
+endif()

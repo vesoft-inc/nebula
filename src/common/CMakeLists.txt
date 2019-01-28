@@ -1,8 +1,3 @@
-add_custom_target(
-    common ALL
-    DEPENDS base_obj time network fs concurrent thread
-)
-
 add_subdirectory(base)
 add_subdirectory(time)
 add_subdirectory(network)

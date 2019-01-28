@@ -5,7 +5,7 @@ add_library(
     PartManager.cpp
     KVStoreImpl.cpp
 )
-add_dependencies(kvstore_obj common)
+add_dependencies(kvstore_obj base_obj)
 
 add_subdirectory(test)
 
