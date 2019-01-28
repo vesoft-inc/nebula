@@ -50,6 +50,7 @@
 #include <glog/logging.h>
 
 #include <boost/variant.hpp>
+#include <boost/any.hpp>
 
 #include <folly/init/Init.h>
 #include <folly/String.h>
