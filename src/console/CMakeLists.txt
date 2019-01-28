@@ -39,7 +39,7 @@ target_link_libraries(
     resolv
     double-conversion
     ${Readline_LIBRARY}
-    ncurses
+    ${NCURSES_LIBRARY}
     dl
     -pthread
 )
