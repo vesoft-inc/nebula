@@ -220,12 +220,7 @@ set(THRIFT_LIBRARIES
     thrift-core
 )
 
-find_library(
-    ROCKSDB_LIBRARIES
-    librocksdb.a
-    PATHS ${NEBULA_HOME}/third-party/rocksdb/_install
-    PATH_SUFFIXES lib lib64
-)
+set(ROCKSDB_LIBRARIES ${NEBULA_HOME}/third-party/rocksdb/_install/lib/librocksdb.a)
 
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
