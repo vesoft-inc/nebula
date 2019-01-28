@@ -10,7 +10,7 @@ add_library(
     ServerBasedSchemaManager.cpp
     AdHocSchemaManager.cpp
 )
-add_dependencies(meta_obj common dataman_obj)
+add_dependencies(meta_obj base_obj dataman_obj)
 
 add_library(
     meta_service_handler OBJECT
@@ -18,7 +18,7 @@ add_library(
 )
 add_dependencies(
     meta_service_handler
-    common
+    base_obj
     meta_thrift_obj
     kvstore_obj
 )

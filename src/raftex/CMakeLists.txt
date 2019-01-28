@@ -5,7 +5,7 @@ add_library(
     RaftexService.cpp
     Host.cpp
 )
-add_dependencies(raftex_obj common)
+add_dependencies(raftex_obj base_obj)
 
 add_subdirectory(test)
 
