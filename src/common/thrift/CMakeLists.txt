@@ -21,7 +21,6 @@ add_library(
     ThriftClientManager.cpp
     ${thrift_channel}
 )
-
 add_dependencies(thrift_obj base_obj)
 
 # add_subdirectory(test)

@@ -5,7 +5,7 @@ add_library(
     FileBasedWalIterator.cpp
     FileBasedWal.cpp
 )
-add_dependencies(wal_obj common)
+add_dependencies(wal_obj base_obj)
 
 add_subdirectory(test)
 
