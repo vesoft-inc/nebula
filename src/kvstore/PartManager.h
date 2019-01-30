@@ -63,6 +63,10 @@ public:
 
     PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
+    void addPart(GraphSpaceID spaceId, PartitionID partId) {
+        partsMap_[spaceId][partId] = PartMeta();
+    }
+
     PartsMap& partsMap() {
         return partsMap_;
     }

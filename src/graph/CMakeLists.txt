@@ -23,12 +23,13 @@ add_library(
     InsertVertexExecutor.cpp
     InsertEdgeExecutor.cpp
     ShowExecutor.cpp
+    StorageClient.cpp
     mock/PropertiesSchema.cpp
     mock/EdgeSchema.cpp
     mock/TagSchema.cpp
     mock/SchemaManager.cpp
     mock/StorageService.cpp
 )
-add_dependencies(graph_obj common parser_obj graph_thrift_obj)
+add_dependencies(graph_obj base_obj parser_obj graph_thrift_obj)
 
 add_subdirectory(test)

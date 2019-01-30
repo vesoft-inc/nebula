@@ -22,22 +22,17 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     req.overwritable = true;
 
     LOG(INFO) << "Build FutureAddVerticesTest...";
-    req.vertices.emplace(0, TestUtils::setupVertices(0, 10, 10));
-    req.vertices.emplace(1, TestUtils::setupVertices(1, 20, 30));
+    req.parts.emplace(0, TestUtils::setupVertices(0, 10, 10));
+    req.parts.emplace(1, TestUtils::setupVertices(1, 20, 30));
     LOG(INFO) << "Test FutureAddVerticesTest...";
     std::unique_ptr<kvstore::KVStore> kvstore(TestUtils::initKV(rootPath.path()));
-    auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(), nullptr);
+    auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get());
 
     auto resp = storageServiceHandler->future_addVertices(req).get();
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());
 
     LOG(INFO) << "Check ErrorCode of AddVerticesProcessor...";
-    ASSERT_EQ(2, resp.codes.size());
-    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.codes[0].code);
-    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.codes[1].code);
-    ASSERT_EQ(true,
-            (resp.codes[0].part_id == 0 && resp.codes[1].part_id == 1) ||
-            (resp.codes[1].part_id == 0 && resp.codes[0].part_id == 1));
+    ASSERT_EQ(0, resp.result.failed_codes.size());
 
     LOG(INFO) << "Verify the vertices data...";
     auto prefix = KeyUtils::prefix(1, 19);

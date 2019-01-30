@@ -33,6 +33,15 @@ public:
     // Get a dynamic port that is not in use
     static uint16_t getAvailablePort();
 
+    // Convert the given IP (must be in the form of "xx.xx.xx.xx") and Port to a HostAddr
+    static HostAddr toHostAddr(const folly::StringPiece ip, int32_t port);
+    // Convert the given IP/Port (must be in the form of "xx.xx.xx.xx:pp") to a HostAddr
+    static HostAddr toHostAddr(const folly::StringPiece ipPort);
+    // Retrieve the string-form IP from the given HostAddr
+    static std::string ipFromHostAddr(const HostAddr& host);
+    // Retrieve the port number from the given HostAddr
+    static int32_t portFromHostAddr(const HostAddr& host);
+
     // Convert an IPv4 address (in the form of xx.xx.xx.xx) to an 32-bit
     // integer
     // Return true if succeeded.

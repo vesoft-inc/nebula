@@ -6,6 +6,7 @@ add_executable(
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
@@ -43,6 +44,7 @@ add_executable(
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
@@ -79,6 +81,7 @@ add_executable(
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
@@ -116,6 +119,7 @@ add_executable(
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
@@ -153,6 +157,7 @@ add_executable(
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
@@ -190,6 +195,7 @@ add_executable(
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
@@ -227,6 +233,7 @@ add_executable(
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>

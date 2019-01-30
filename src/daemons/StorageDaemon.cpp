@@ -9,12 +9,13 @@
 #include "network/NetworkUtils.h"
 #include "storage/StorageServiceHandler.h"
 #include "kvstore/include/KVStore.h"
-#include "meta/SchemaManager.h"
+#include "kvstore/PartManager.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
                              "For rocksdb engine, one path one instance.");
 DEFINE_string(local_ip, "", "Local ip");
+DEFINE_bool(mock_server, true, "start mock server");
 
 // Get local IPv4 address. You could specify it by set FLAGS_local_ip, otherwise
 // it will use the first ip exclude "127.0.0.1"
@@ -30,7 +31,7 @@ StatusOr<std::string> getLocalIP() {
     }
     for (auto& deviceIP : result.value()) {
         if (deviceIP.second != "127.0.0.1") {
-            return deviceIP.first;
+            return deviceIP.second;
         }
     }
     return Status::Error("No IPv4 address found!");
@@ -60,15 +61,23 @@ int main(int argc, char *argv[]) {
     CHECK(result.ok()) << result.status();
     uint32_t localIP;
     CHECK(NetworkUtils::ipv4ToInt(result.value(), localIP));
-
+    if (FLAGS_mock_server) {
+        nebula::kvstore::MemPartManager* partMan
+            = reinterpret_cast<nebula::kvstore::MemPartManager*>(
+                    nebula::kvstore::PartManager::instance());
+        // GraphSpaceID =>  {PartitionIDs}
+        // 0 => {0, 1, 2, 3, 4, 5}
+        for (auto partId = 0; partId < 6; partId++) {
+            partMan->addPart(0, partId);
+        }
+    }
     std::unique_ptr<KVStore> kvstore;
     nebula::kvstore::KVOptions options;
     options.local_ = HostAddr(localIP, FLAGS_port);
     options.dataPaths_ = std::move(paths);
     kvstore.reset(KVStore::instance(std::move(options)));
-    std::unique_ptr<SchemaManager> schemaMan(SchemaManager::instance());
 
-    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());
+    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get());
     auto server = std::make_shared<apache::thrift::ThriftServer>();
     CHECK(!!server) << "Failed to create the thrift server";
 

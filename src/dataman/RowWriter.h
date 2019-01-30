@@ -58,14 +58,15 @@ public:
     // This cannot be used if a schema is not provided
     struct Skip {
         friend class RowWriter;
-        explicit Skip(int32_t toSkip) : toSkip_(toSkip) {}
+        explicit Skip(int64_t toSkip) : toSkip_(toSkip) {}
     private:
-        int32_t toSkip_;
+        int64_t toSkip_;
     };
 
 public:
-    explicit RowWriter(SchemaProviderIf* schema = nullptr,
-                       int32_t schemaVer = 0);
+    explicit RowWriter(
+        std::shared_ptr<const meta::SchemaProviderIf> schema
+            = std::shared_ptr<const meta::SchemaProviderIf>());
 
     // Encode into a binary array
     std::string encode() noexcept;
@@ -77,7 +78,7 @@ public:
     // Calculate the exact length of the encoded binary array
     int64_t size() const noexcept;
 
-    const SchemaProviderIf* schema() const {
+    std::shared_ptr<const meta::SchemaProviderIf> schema() const {
         return schema_;
     }
 
@@ -104,12 +105,11 @@ public:
     RowWriter& operator<<(Skip&& skip) noexcept;
 
 private:
-    SchemaProviderIf* schema_;
-    int32_t schemaVer_ = 0;
-    std::unique_ptr<SchemaWriter> schemaWriter_;
+    std::shared_ptr<const meta::SchemaProviderIf> schema_;
+    std::shared_ptr<SchemaWriter> schemaWriter_;
     Cord cord_;
 
-    int32_t colNum_ = 0;
+    int64_t colNum_ = 0;
     std::unique_ptr<ColName> colName_;
     std::unique_ptr<ColType> colType_;
 
@@ -129,14 +129,14 @@ private:
 
 #define RW_GET_COLUMN_TYPE(STYPE) \
     const storage::cpp2::ValueType* type; \
-    if (colNum_ >= schema_->getNumFields(schemaVer_)) { \
+    if (colNum_ >= static_cast<int64_t>(schema_->getNumFields())) { \
         CHECK(!!schemaWriter_) << "SchemaWriter cannot be NULL"; \
         if (!colType_) { \
             colType_.reset(new ColType(storage::cpp2::SupportedType::STYPE)); \
         } \
         type = &(colType_->type_); \
     } else { \
-        type = schema_->getFieldType(colNum_, schemaVer_); \
+        type = &(schema_->getFieldType(colNum_)); \
     }
 
 
@@ -146,10 +146,10 @@ private:
         /* We need to record offset for every 16 fields */ \
         blockOffsets_.push_back(cord_.size()); \
     } \
-    if (colNum_ > schema_->getNumFields(schemaVer_)) { \
+    if (colNum_ > static_cast<int64_t>(schema_->getNumFields())) { \
         /* Need to append the new column type to the schema */ \
         if (!colName_) { \
-            schemaWriter_->appendCol(folly::stringPrintf("Column%d", colNum_), \
+            schemaWriter_->appendCol(folly::stringPrintf("Column%ld", colNum_), \
                                      std::move(colType_->type_)); \
         } else { \
             schemaWriter_->appendCol(std::move(colName_->name_), \

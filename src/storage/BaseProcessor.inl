@@ -42,11 +42,13 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
         bool finished = false;
         {
             std::lock_guard<folly::SpinLock> lg(this->lock_);
-            this->codes_.emplace_back(std::move(thriftResult));
+            if (thriftResult.code != cpp2::ErrorCode::SUCCEEDED) {
+                this->codes_.emplace_back(std::move(thriftResult));
+            }
             this->callingNum_--;
             if (this->callingNum_ == 0) {
-                this->resp_.set_codes(std::move(this->codes_));
-                this->resp_.set_latency_in_ms(this->duration_.elapsedInMSec());
+                this->resp_.result.set_failed_codes(std::move(this->codes_));
+                this->resp_.result.set_latency_in_ms(this->duration_.elapsedInMSec());
                 finished = true;
             }
         }

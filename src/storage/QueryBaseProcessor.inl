@@ -15,7 +15,7 @@ namespace storage {
 
 template<typename REQ, typename RESP>
 bool QueryBaseProcessor<REQ, RESP>::validOperation(cpp2::SupportedType vType,
-                                              cpp2::StatType statType) {
+                                                   cpp2::StatType statType) {
     switch (statType) {
         case cpp2::StatType::SUM:
         case cpp2::StatType::AVG: {
@@ -31,46 +31,42 @@ bool QueryBaseProcessor<REQ, RESP>::validOperation(cpp2::SupportedType vType,
     return true;
 }
 
+
 template<typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::collectProps(
-                                       SchemaProviderIf* rowSchema,
-                                       folly::StringPiece& key,
-                                       folly::StringPiece& val,
-                                       std::vector<PropContext>& props,
-                                       Collector* collector) {
-    UNUSED(key);
-    RowReader reader(rowSchema, val);
+void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
+                                                 std::vector<PropContext>& props,
+                                                 Collector* collector) {
     for (auto& prop : props) {
         const auto& name = prop.prop_.get_name();
-        VLOG(3) << "collect " << name;
+        VLOG(3) << "collecting property \"" << name << "\"";
         switch (prop.type_.type) {
             case cpp2::SupportedType::INT: {
                 int64_t v;
-                auto ret = reader.getInt<int64_t>(name, v);
+                auto ret = reader->getInt<int64_t>(name, v);
                 collector->collectInt64(ret, v, prop);
                 break;
             }
             case cpp2::SupportedType::VID: {
                 int64_t v;
-                auto ret = reader.getVid(name, v);
+                auto ret = reader->getVid(name, v);
                 collector->collectInt64(ret, v, prop);
                 break;
             }
             case cpp2::SupportedType::FLOAT: {
                 float v;
-                auto ret = reader.getFloat(name, v);
+                auto ret = reader->getFloat(name, v);
                 collector->collectFloat(ret, v, prop);
                 break;
             }
             case cpp2::SupportedType::DOUBLE: {
                 double v;
-                auto ret = reader.getDouble(name, v);
+                auto ret = reader->getDouble(name, v);
                 collector->collectDouble(ret, v, prop);
                 break;
             }
             case cpp2::SupportedType::STRING: {
                 folly::StringPiece v;
-                auto ret = reader.getString(name, v);
+                auto ret = reader->getString(name, v);
                 collector->collectString(ret, v, prop);
                 break;
             }
@@ -82,18 +78,16 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(
     }  // for
 }
 
+
 template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
-                                              const REQ& req,
-                                              std::vector<TagContext>& tagContexts,
-                                              EdgeContext& edgeContext) {
+        const REQ& req,
+        std::vector<TagContext>& tagContexts,
+        EdgeContext& edgeContext) {
     if (req.__isset.edge_type) {
         edgeContext.edgeType_ = req.edge_type;
-        edgeContext.schema_ = schemaMan_->edgeSchema(spaceId_, req.edge_type);
-        if (edgeContext.schema_ == nullptr) {
-            return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
-        }
     }
+
     int32_t index = 0;
     std::unordered_map<TagID, int32_t> tagIndex;
     for (auto& col : req.get_return_columns()) {
@@ -102,14 +96,14 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
             case cpp2::PropOwner::SOURCE:
             case cpp2::PropOwner::DEST: {
                 auto tagId = col.tag_id;
-                auto* schema = schemaMan_->tagSchema(spaceId_, tagId);
-                if (schema == nullptr) {
+                auto schema = meta::SchemaManager::getTagSchema(spaceId_, tagId);
+                if (!schema) {
                     return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
                 }
-                const auto* ftype = schema->getFieldType(col.name, 0);
-                prop.type_ = *ftype;
+                const auto& ftype = schema->getFieldType(col.name);
+                prop.type_ = ftype;
                 prop.retIndex_ = index;
-                if (col.__isset.stat && !validOperation(ftype->type, col.stat)) {
+                if (col.__isset.stat && !validOperation(ftype.type, col.stat)) {
                     return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
                 }
                 VLOG(3) << "tagId " << tagId << ", prop " << col.name;
@@ -117,7 +111,6 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 auto it = tagIndex.find(tagId);
                 if (it == tagIndex.end()) {
                     TagContext tc;
-                    tc.schema_ = schema;
                     tc.tagId_ = tagId;
                     tc.props_.emplace_back(std::move(prop));
                     tagContexts.emplace_back(std::move(tc));
@@ -128,16 +121,20 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 break;
             }
             case cpp2::PropOwner::EDGE: {
-                if (edgeContext.schema_ != nullptr) {
-                    const auto* ftype = edgeContext.schema_->getFieldType(col.name, 0);
-                    prop.type_ = *ftype;
-                    if (col.__isset.stat && !validOperation(ftype->type, col.stat)) {
-                        return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
-                    }
-                    prop.retIndex_ = index;
-                    prop.prop_ = std::move(col);
-                    edgeContext.props_.emplace_back(std::move(prop));
+                auto schema = meta::SchemaManager::getEdgeSchema(spaceId_,
+                                                                 edgeContext.edgeType_);
+                if (!schema) {
+                    return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                 }
+
+                const auto& ftype = schema->getFieldType(col.name);
+                prop.type_ = ftype;
+                if (col.__isset.stat && !validOperation(ftype.type, col.stat)) {
+                    return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
+                }
+                prop.retIndex_ = index;
+                prop.prop_ = std::move(col);
+                edgeContext.props_.emplace_back(std::move(prop));
                 break;
             }
         }
@@ -145,6 +142,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
     }
     return cpp2::ErrorCode::SUCCEEDED;
 }
+
 
 template<typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req) {
@@ -154,14 +152,16 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     EdgeContext edgeContext;
     auto retCode = checkAndBuildContexts(req, tagContexts, edgeContext);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-        this->pushResultCode(retCode, -1);
-        this->resp_.latency_in_ms = this->duration_.elapsedInMSec();
+        for (auto& p : req.get_parts()) {
+            this->pushResultCode(retCode, p.first);
+        }
+        this->resp_.result.set_latency_in_ms(this->duration_.elapsedInMSec());
         this->onFinished();
         return;
     }
 
 //    const auto& filter = req.get_filter();
-    std::for_each(req.get_ids().begin(), req.get_ids().end(), [&](auto& partV) {
+    std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partV) {
         auto partId = partV.first;
         kvstore::ResultCode ret;
         for (auto& vId : partV.second) {
@@ -175,7 +175,7 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     });
 
     onProcessed(tagContexts, edgeContext, returnColumnsNum);
-    this->resp_.latency_in_ms = this->duration_.elapsedInMSec();
+    this->resp_.result.set_latency_in_ms(this->duration_.elapsedInMSec());
     this->onFinished();
 }
 
