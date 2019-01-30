@@ -31,7 +31,13 @@ public:
         return engine_;
     }
 
-    virtual ResultCode asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) = 0;
+    virtual void asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) = 0;
+
+    virtual void asyncRemove(const std::string& key, KVCallback cb) = 0;
+
+    virtual void asyncRemoveRange(const std::string& start,
+                                  const std::string& end,
+                                  KVCallback cb) = 0;
 
 protected:
     GraphSpaceID spaceId_;
@@ -49,7 +55,13 @@ public:
                const std::string& walPath, StorageEngine* engine)
         : Part(spaceId, partId, walPath, engine) {}
 
-    ResultCode asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) override;
+    void asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) override;
+
+    void asyncRemove(const std::string& key, KVCallback cb) override;
+
+    void asyncRemoveRange(const std::string& start,
+                          const std::string& end,
+                          KVCallback cb) override;
 };
 
 
