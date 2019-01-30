@@ -56,17 +56,15 @@ TEST(KVStoreTest, SimpleTest) {
     EXPECT_EQ(folly::stringPrintf("%s/disk1", rootPath.path()), kv->kvs_[2]->engines_[0].second);
     EXPECT_EQ(folly::stringPrintf("%s/disk2", rootPath.path()), kv->kvs_[2]->engines_[1].second);
 
-    auto shouldNotReach =  [](ResultCode code, HostAddr addr){
-        UNUSED(code);
+    kv->asyncMultiPut(0, 0, {{"key", "val"}}, [](ResultCode code, HostAddr addr) {
         UNUSED(addr);
-        LOG(FATAL) << "Should not reach here";
-    };
+        EXPECT_EQ(ResultCode::ERR_SPACE_NOT_FOUND, code);
+    });
 
-    EXPECT_EQ(ResultCode::ERR_SPACE_NOT_FOUND,
-              kv->asyncMultiPut(0, 0, {{"key", "val"}}, shouldNotReach));
-
-    EXPECT_EQ(ResultCode::ERR_PART_NOT_FOUND,
-              kv->asyncMultiPut(1, 6, {{"key", "val"}}, shouldNotReach));
+    kv->asyncMultiPut(1, 6, {{"key", "val"}}, [](ResultCode code, HostAddr addr) {
+        UNUSED(addr);
+        EXPECT_EQ(ResultCode::ERR_PART_NOT_FOUND, code);
+    });
 
     LOG(INFO) << "Put some data then read them...";
     std::vector<KV> data;
@@ -74,11 +72,10 @@ TEST(KVStoreTest, SimpleTest) {
         data.emplace_back(std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
                           folly::stringPrintf("val_%d", i));
     }
-    EXPECT_EQ(ResultCode::SUCCESSED,
-              kv->asyncMultiPut(1, 1, std::move(data), [](ResultCode code, HostAddr addr){
-                  UNUSED(addr);
-                  EXPECT_EQ(ResultCode::SUCCESSED, code);
-              }));
+    kv->asyncMultiPut(1, 1, std::move(data), [](ResultCode code, HostAddr addr){
+        UNUSED(addr);
+        EXPECT_EQ(ResultCode::SUCCESSED, code);
+    });
     int32_t start = 0, end = 100;
     std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
     std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
