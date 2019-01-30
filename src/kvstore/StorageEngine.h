@@ -41,6 +41,14 @@ public:
     virtual ResultCode prefix(const std::string& prefix,
                               std::unique_ptr<StorageIter>* iter) = 0;
 
+    virtual ResultCode remove(const std::string& key) = 0;
+
+    /**
+     * Remove range [start, end)
+     * */
+    virtual ResultCode removeRange(const std::string& start,
+                                   const std::string& end) = 0;
+
 protected:
     GraphSpaceID spaceId_;
 };

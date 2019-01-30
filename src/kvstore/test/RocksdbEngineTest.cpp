@@ -101,6 +101,58 @@ TEST(RocksdbEngineTest, PrefixTest) {
     checkPrefix("c", 20, 20);
 }
 
+TEST(RocksdbEngineTest, RemoveTest) {
+    fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->put("key", "val"));
+    std::string val;
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", &val));
+    EXPECT_EQ(val, "val");
+    EXPECT_EQ(ResultCode::SUCCESSED, engine->remove("key"));
+    EXPECT_EQ(ResultCode::ERR_KEY_NOT_FOUND, engine->get("key", &val));
+}
+
+TEST(RocksdbEngineTest, RemoveRangeTest) {
+    fs::TempDir rootPath("/tmp/rocksdb_remove_range_test.XXXXXX");
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    for (int32_t i = 0; i < 100; i++) {
+        EXPECT_EQ(ResultCode::SUCCESSED, engine->put(
+                    std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
+                    folly::stringPrintf("%d_val", i)));
+        std::string val;
+        EXPECT_EQ(ResultCode::SUCCESSED, engine->get(
+                    std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
+                    &val));
+        EXPECT_EQ(val, folly::stringPrintf("%d_val", i));
+    }
+    {
+        int32_t s = 0, e = 50;
+        EXPECT_EQ(ResultCode::SUCCESSED, engine->removeRange(
+                     std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t)),
+                     std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t))));
+    }
+    {
+        int32_t s = 0, e = 100;
+        std::unique_ptr<StorageIter> iter;
+        EXPECT_EQ(ResultCode::SUCCESSED, engine->range(
+                                std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t)),
+                                std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t)),
+                                &iter));
+        int num = 0;
+        int expectedFrom = 50;
+        while (iter->valid()) {
+            num++;
+            auto key = *reinterpret_cast<const int32_t*>(iter->key().data());
+            auto val = iter->val();
+            EXPECT_EQ(expectedFrom, key);
+            EXPECT_EQ(folly::stringPrintf("%d_val", expectedFrom), val);
+            expectedFrom++;
+            iter->next();
+        }
+        EXPECT_EQ(50, num);
+    }
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 
