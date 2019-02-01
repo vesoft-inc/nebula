@@ -15,21 +15,6 @@ namespace nebula {
 namespace meta {
 
 class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
-public:
-  folly::Future<cpp2::ExecResponse>
-  future_createNode(const cpp2::CreateNodeRequest& req) override;
-
-  folly::Future<cpp2::ExecResponse>
-  future_setNode(const cpp2::SetNodeRequest& req) override;
-
-  folly::Future<cpp2::GetNodeResponse>
-  future_getNode(const cpp2::GetNodeRequest& req) override;
-
-  folly::Future<cpp2::ListChildrenResponse>
-  future_listChildren(const cpp2::ListChildrenRequest& req) override;
-
-private:
-    kvstore::KVStore* kvstore_ = nullptr;
 };
 
 }  // namespace meta
