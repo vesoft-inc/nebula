@@ -103,12 +103,6 @@ namespace nebula {
 
 // Types using in a graph
 // Partition ID is defined as PartitionID in Raftex
-using VertexID = int64_t;
-using TagID = int32_t;
-using TagVersion = int64_t;
-using EdgeType = int32_t;
-using EdgeRanking = int64_t;
-using EdgeVersion = int64_t;
 
 // Host address type and utility functions
 using HostAddr = std::pair<IPv4, Port>;

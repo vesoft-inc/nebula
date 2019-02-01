@@ -18,6 +18,13 @@ using LogID = int64_t;
 using IPv4 = int32_t;
 using Port = int32_t;
 
+using VertexID = int64_t;
+using TagID = int32_t;
+using TagVersion = int64_t;
+using EdgeType = int32_t;
+using EdgeRanking = int64_t;
+using EdgeVersion = int64_t;
+
 }  // namespace nebula
 #endif  // COMMON_BASE_THRIFTTYPES_H_
 
