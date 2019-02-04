@@ -20,7 +20,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                        std::vector<PropContext>& props,
                                        RowSetWriter& rsWriter) {
     auto prefix = KeyUtils::prefix(partId, edgeKey.src, edgeKey.edge_type,
-                                   edgeKey.dst, edgeKey.ranking);
+                                   edgeKey.ranking, edgeKey.dst);
     std::unique_ptr<kvstore::StorageIter> iter;
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
     // Only use the latest version.
@@ -30,7 +30,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
         auto reader = RowReader::getEdgePropReader(iter->val(),
                                                    spaceId_,
                                                    edgeKey.edge_type);
-        this->collectProps(reader.get(), props, &collector);
+        this->collectProps(reader.get(), iter->key(), props, &collector);
         rsWriter.addRow(writer);
 
         iter->next();
@@ -38,12 +38,19 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
     return ret;
 }
 
+void QueryEdgePropsProcessor::addDefaultProps(EdgeContext& edgeContext) {
+    edgeContext.props_.emplace_back("_src", 0, PropContext::PropInKeyType::SRC);
+    edgeContext.props_.emplace_back("_rank", 1, PropContext::PropInKeyType::RANK);
+    edgeContext.props_.emplace_back("_dst", 2, PropContext::PropInKeyType::DST);
+}
 
 void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     spaceId_ = req.get_space_id();
-    int32_t returnColumnsNum = req.get_return_columns().size();
     EdgeContext edgeContext;
     std::vector<TagContext> tagContexts;
+    // By default, _src, _rank, _dst will be returned as the first 3 fields
+    addDefaultProps(edgeContext);
+    int32_t returnColumnsNum = req.get_return_columns().size() + edgeContext.props_.size();
     auto retCode = this->checkAndBuildContexts(req, tagContexts, edgeContext);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {
@@ -78,6 +85,7 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
         return l.retIndex_ < r.retIndex_;
     });
     for (auto& prop : props) {
+        VLOG(3) << prop.prop_.name << "," << static_cast<int8_t>(prop.type_.type);
         resp_.schema.columns.emplace_back(
                 columnDef(std::move(prop.prop_.name),
                           prop.type_.type));

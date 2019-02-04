@@ -28,7 +28,7 @@ QueryStatsProcessor::collectVertexStats(PartitionID partId,
     // Only get the latest version.
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(iter->val(), spaceId_, tagId);
-        collectProps(reader.get(), props, &collector_);
+        collectProps(reader.get(), iter->key(), props, &collector_);
     }
     return ret;
 }
@@ -47,7 +47,7 @@ QueryStatsProcessor::collectEdgesStats(PartitionID partId,
     }
     while (iter->valid()) {
         auto reader = RowReader::getEdgePropReader(iter->val(), spaceId_, edgeType);
-        collectProps(reader.get(), props, &collector_);
+        collectProps(reader.get(), iter->key(), props, &collector_);
         iter->next();
     }
     return ret;
