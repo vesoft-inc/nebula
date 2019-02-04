@@ -18,23 +18,14 @@
 namespace nebula {
 namespace storage {
 
-TEST(QueryEdgePropsTest, SimpleTest) {
-    fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    LOG(INFO) << "Prepare meta...";
-    auto edgeSchema = TestUtils::genEdgeSchemaProvider(10, 10);
-    meta::AdHocSchemaManager::addEdgeSchema(0, 101, edgeSchema);
-
-    LOG(INFO) << "Prepare data...";
+void mockData(kvstore::KVStore* kv, std::shared_ptr<meta::SchemaProviderIf> edgeSchema) {
     for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
         for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             // Generate 7 edges for each source vertex id
             for (auto dstId = 10001; dstId <= 10007; dstId++) {
-                VLOG(3) << "Write part " << partId
-                        << ", vertex " << vertexId
-                        << ", dst " << dstId;
-                auto key = KeyUtils::edgeKey(partId, vertexId, 101, dstId, dstId - 10001, 0);
+                VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
+                auto key = KeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
                 RowWriter writer(edgeSchema);
                 for (int64_t numInt = 0; numInt < 10; numInt++) {
                     writer << numInt;
@@ -53,9 +44,9 @@ TEST(QueryEdgePropsTest, SimpleTest) {
                 UNUSED(addr);
             });
     }
+}
 
-    LOG(INFO) << "Build EdgePropRequest...";
-    cpp2::EdgePropRequest req;
+void buildRequest(cpp2::EdgePropRequest& req) {
     req.set_space_id(0);
     decltype(req.parts) tmpEdges;
     for (auto partId = 0; partId < 3; partId++) {
@@ -75,6 +66,70 @@ TEST(QueryEdgePropsTest, SimpleTest) {
                                                    folly::stringPrintf("col_%d", i*2)));
     }
     req.set_return_columns(std::move(tmpColumns));
+}
+
+void checkResponse(cpp2::EdgePropResponse& resp) {
+    EXPECT_EQ(0, resp.result.failed_codes.size());
+    EXPECT_EQ(13, resp.schema.columns.size());
+    auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
+    LOG(INFO) << "Check edge props...";
+    RowSetReader rsReader(provider, resp.data);
+    auto it = rsReader.begin();
+    int32_t rowNum = 0;
+    while (static_cast<bool>(it)) {
+        EXPECT_EQ(13, it->numFields());
+        {
+            // _src
+            // We can't ensure the order, so just check the srcId range.
+            int64_t v;
+            EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(0, v));
+            CHECK_GE(30, v);
+            CHECK_LE(0, v);
+        }
+        {
+            // _rank
+            int64_t v;
+            EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(1, v));
+            CHECK_EQ(rowNum % 7, v);
+        }
+        {
+            // _dst
+            int64_t v;
+            EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(2, v));
+            CHECK_EQ(10001 + rowNum % 7, v);
+        }
+        // col_0, col_2 ... col_8
+        for (auto i = 3; i < 8; i++) {
+            int64_t v;
+            EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
+            CHECK_EQ((i - 3) * 2, v);
+        }
+        // col_10, col_12 ... col_18
+        for (auto i = 8; i < 13; i++) {
+            folly::StringPiece v;
+            EXPECT_EQ(ResultType::SUCCEEDED, it->getString(i, v));
+            CHECK_EQ(folly::stringPrintf("string_col_%d", (i - 8 + 5) * 2), v);
+        }
+        ++it;
+        rowNum++;
+    }
+    EXPECT_EQ(it, rsReader.end());
+    EXPECT_EQ(210, rowNum);
+}
+
+TEST(QueryEdgePropsTest, SimpleTest) {
+    fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    LOG(INFO) << "Prepare meta...";
+    auto edgeSchema = TestUtils::genEdgeSchemaProvider(10, 10);
+    meta::AdHocSchemaManager::addEdgeSchema(0, 101, edgeSchema);
+
+    LOG(INFO) << "Prepare data...";
+    mockData(kv.get(), edgeSchema);
+    LOG(INFO) << "Build EdgePropRequest...";
+    cpp2::EdgePropRequest req;
+    buildRequest(req);
+
     LOG(INFO) << "Test QueryEdgePropsRequest...";
     auto* processor = QueryEdgePropsProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -82,41 +137,7 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_codes.size());
-
-    EXPECT_EQ(10, resp.schema.columns.size());
-    auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
-    LOG(INFO) << "Check edge props...";
-    RowSetReader rsReader(provider, resp.data);
-    auto it = rsReader.begin();
-    int32_t rowNum = 0;
-    while (static_cast<bool>(it)) {
-        auto fieldIt = it->begin();
-        int32_t i = 0;
-        std::stringstream ss;
-        while (static_cast<bool>(fieldIt)) {
-            if (i < 5) {
-                int64_t v;
-                EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getInt<int64_t>(v));
-                EXPECT_EQ(i*2, v);
-                ss << v << ",";
-            } else {
-                folly::StringPiece v;
-                EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getString(v));
-                EXPECT_EQ(folly::stringPrintf("string_col_%d", i*2), v);
-                ss << v << ",";
-            }
-            i++;
-            ++fieldIt;
-        }
-        VLOG(3) << ss.str();
-        EXPECT_EQ(fieldIt, it->end());
-        EXPECT_EQ(10, i);
-        ++it;
-        rowNum++;
-    }
-    EXPECT_EQ(it, rsReader.end());
-    EXPECT_EQ(210, rowNum);
+    checkResponse(resp);
 }
 
 }  // namespace storage
