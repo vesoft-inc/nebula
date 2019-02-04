@@ -15,20 +15,50 @@ namespace nebula {
 namespace storage {
 
 struct PropContext {
+    enum PropInKeyType {
+        NONE = 0x00,
+        SRC  = 0x01,
+        DST  = 0x02,
+        TYPE = 0x03,
+        RANK = 0x04,
+    };
+
+    PropContext() = default;
+
+    // Some default props could be constructed by this ctor
+    // For example, _src, _dst, _type, _rank
+    PropContext(const char* name, int32_t retIndex, PropContext::PropInKeyType pikType) {
+        prop_.name = name;
+        prop_.owner = cpp2::PropOwner::EDGE;
+        retIndex_ = retIndex;
+        type_.type = cpp2::SupportedType::INT;
+        pikType_ = pikType;
+    }
+
     cpp2::PropDef prop_;
     cpp2::ValueType type_;
+    PropInKeyType pikType_ = PropInKeyType::NONE;
     boost::variant<int64_t, double> sum_ = 0L;
     int32_t count_    = 0;
+    // The index in request return columns.
     int32_t retIndex_ = -1;
 };
 
 struct TagContext {
-    TagID tagId_;
+    TagContext() {
+        props_.reserve(8);
+    }
+
+    TagID tagId_ = 0;
     std::vector<PropContext> props_;
 };
 
 struct EdgeContext {
-    EdgeType edgeType_;
+    EdgeContext() {
+        props_.reserve(8);
+    }
+
+    EdgeType edgeType_ = 0;
     std::vector<PropContext> props_;
 };
 
