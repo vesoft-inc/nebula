@@ -32,8 +32,9 @@ private:
                                           std::vector<PropContext>& props,
                                           RowSetWriter& rsWriter);
 
-    kvstore::ResultCode processVertex(PartitionID partID,
-                                      VertexID vId,
+    void addDefaultProps(EdgeContext& edgeContext);
+
+    kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
                                       std::vector<TagContext>& tagContexts,
                                       EdgeContext& edgeContext) {
         UNUSED(partID);
