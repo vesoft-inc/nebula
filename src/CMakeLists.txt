@@ -11,4 +11,5 @@ add_subdirectory(dataman)
 add_subdirectory(graph)
 add_subdirectory(daemons)
 add_subdirectory(storage)
+add_subdirectory(webservice)
 
