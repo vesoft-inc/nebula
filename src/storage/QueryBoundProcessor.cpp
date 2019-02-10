@@ -32,7 +32,7 @@ kvstore::ResultCode QueryBoundProcessor::collectVertexProps(
     if (iter && iter->valid()) {
         PropsCollector collector(&writer);
         auto reader = RowReader::getTagPropReader(iter->val(), spaceId_, tagId);
-        this->collectProps(reader.get(), props, &collector);
+        this->collectProps(reader.get(), iter->key(), props, &collector);
     } else {
         VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
     }
@@ -56,7 +56,7 @@ kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
         RowWriter writer(rsWriter.schema());
         PropsCollector collector(&writer);
         auto reader = RowReader::getEdgePropReader(iter->val(), spaceId_, edgeType);
-        this->collectProps(reader.get(), props, &collector);
+        this->collectProps(reader.get(), iter->key(), props, &collector);
         rsWriter.addRow(writer);
 
         iter->next();
