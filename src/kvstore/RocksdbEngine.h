@@ -113,11 +113,23 @@ public:
     ResultCode removeRange(const std::string& start,
                            const std::string& end) override;
 
+    void addPart(PartitionID partId) override;
+
+    void removePart(PartitionID partId) override;
+
+    std::vector<PartitionID> allParts() override;
+
+    int32_t totalPartsNum() override;
+
     ResultCode ingest(const std::vector<std::string>& files);
+
+private:
+    std::string partKey(PartitionID partId);
 
 private:
     std::string  dataPath_;
     std::unique_ptr<rocksdb::DB> db_{nullptr};
+    int32_t partsNum_ = -1;
 };
 
 }  // namespace kvstore

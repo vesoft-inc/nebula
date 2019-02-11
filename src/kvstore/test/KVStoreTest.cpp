@@ -11,11 +11,22 @@
 #include "kvstore/include/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/KVStoreImpl.h"
+#include "kvstore/RocksdbEngine.h"
+#include <iostream>
 
 DECLARE_string(part_man_type);
 
 namespace nebula {
 namespace kvstore {
+
+template<typename T>
+void dump(const std::vector<T>& v) {
+    std::stringstream ss;
+    for (auto& e : v) {
+        ss << e << ", ";
+    }
+    LOG(INFO) << ss.str();
+}
 
 TEST(KVStoreTest, SimpleTest) {
     FLAGS_part_man_type = "memory";  // Use MemPartManager.
@@ -32,8 +43,6 @@ TEST(KVStoreTest, SimpleTest) {
 
     LOG(INFO) << "Total space num " << partMan->partsMap_.size()
               << ", " << partMan->parts(HostAddr(0, 0)).size();
-
-    auto dataPath = folly::stringPrintf("%s/disk1, %s/disk2", rootPath.path(), rootPath.path());
 
     std::vector<std::string> paths;
     paths.push_back(folly::stringPrintf("%s/disk1", rootPath.path()));
@@ -67,9 +76,10 @@ TEST(KVStoreTest, SimpleTest) {
     });
 
     LOG(INFO) << "Put some data then read them...";
+    std::string prefix = "prefix";
     std::vector<KV> data;
     for (auto i = 0; i < 100; i++) {
-        data.emplace_back(std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
+        data.emplace_back(prefix + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
                           folly::stringPrintf("val_%d", i));
     }
     kv->asyncMultiPut(1, 1, std::move(data), [](ResultCode code, HostAddr addr){
@@ -80,10 +90,10 @@ TEST(KVStoreTest, SimpleTest) {
     std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
     std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
     std::unique_ptr<StorageIter> iter;
-    EXPECT_EQ(ResultCode::SUCCESSED, kv->range(1, 1, s, e, &iter));
+    EXPECT_EQ(ResultCode::SUCCESSED, kv->range(1, 1, prefix + s, prefix + e, &iter));
     int num = 0;
     while (iter->valid()) {
-        auto key = *reinterpret_cast<const int32_t*>(iter->key().data());
+        auto key = *reinterpret_cast<const int32_t*>(iter->key().data() + prefix.size());
         auto val = iter->val();
         EXPECT_EQ(num, key);
         EXPECT_EQ(folly::stringPrintf("val_%d", num), val);
@@ -91,6 +101,59 @@ TEST(KVStoreTest, SimpleTest) {
         num++;
     }
     EXPECT_EQ(100, num);
+}
+
+TEST(KVStoreTest, PartsTest) {
+    FLAGS_part_man_type = "memory";  // Use MemPartManager.
+    fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
+    MemPartManager* partMan = reinterpret_cast<MemPartManager*>(PartManager::instance());
+    // GraphSpaceID =>  {PartitionIDs}
+    // 0 => {0, 1, 2, 3...9}
+    // The parts on PartMan is 0...9
+    for (auto partId = 0; partId < 10; partId++) {
+        partMan->partsMap_[0][partId] = PartMeta();
+    }
+    std::vector<std::string> paths;
+    paths.push_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+    paths.push_back(folly::stringPrintf("%s/disk2", rootPath.path()));
+    for (size_t i = 0; i < paths.size(); i++) {
+        auto db = std::make_unique<RocksdbEngine>(0,
+                            folly::stringPrintf("%s/nebula/%d/data", paths[i].c_str(), 0));
+        for (auto partId = 0; partId < 3; partId++) {
+            db->addPart(5 * i + partId);
+        }
+        db->addPart(5 * i + 10);
+        auto parts = db->allParts();
+        dump(parts);
+    }
+    // Currently, the disks hold parts as below:
+    // disk1: 0, 1, 2, 10
+    // disk2: 5, 6, 7, 15
+
+    std::unique_ptr<KVStoreImpl> kv;
+    KVOptions options;
+    options.local_ = HostAddr(0, 0);
+    options.dataPaths_ = std::move(paths);
+    kv.reset(static_cast<KVStoreImpl*>(KVStore::instance(std::move(options))));
+
+    // After init, the parts should be 0-9, and the distribution should be
+    // disk1: 0, 1, 2, x, y
+    // disk2: 5, 6, 7, x1, y1
+    // x, y, x1, y1 in {3, 4, 8, 9}
+    for (auto i = 0; i < 2; i++) {
+        ASSERT_EQ(folly::stringPrintf("%s/disk%d", rootPath.path(), i + 1),
+                  kv->kvs_[0]->engines_[i].second);
+    }
+    {
+        auto parts = kv->kvs_[0]->engines_[0].first->allParts();
+        dump(parts);
+        ASSERT_EQ(5, parts.size());
+    }
+    {
+        auto parts = kv->kvs_[0]->engines_[1].first->allParts();
+        dump(parts);
+        ASSERT_EQ(5, parts.size());
+    }
 }
 
 }  // namespace kvstore
