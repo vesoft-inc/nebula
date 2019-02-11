@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
+#include <fstream>
 #include "process/ProcessUtils.h"
 #include "fs/FileUtils.h"
 
@@ -108,6 +109,25 @@ TEST(ProcessUtils, getProcessName) {
         ASSERT_TRUE(result.ok()) << result.status();
         ASSERT_EQ("systemd", result.value()) << result.value();
     }
+}
+
+
+TEST(ProcessUtils, runCommand) {
+    auto status1 = ProcessUtils::runCommand("echo $HOME");
+    ASSERT_TRUE(status1.ok()) << status1.status();
+    EXPECT_EQ(std::string(getenv("HOME")),
+              folly::rtrimWhitespace(status1.value()).toString());
+
+    // Try large output
+    auto status2 = ProcessUtils::runCommand("cat /etc/profile");
+    ASSERT_TRUE(status2.ok()) << status2.status();
+    std::ifstream is("/etc/profile", std::ios::ate);
+    auto size = is.tellg();
+    EXPECT_EQ(size, status2.value().size());
+    std::string buf(size, '\0');
+    is.seekg(0);
+    is.read(&buf[0], size);
+    EXPECT_EQ(buf, status2.value());
 }
 
 }   // namespace nebula
