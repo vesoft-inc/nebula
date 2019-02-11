@@ -4,6 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include <map>
 #include "base/Base.h"
 #include <gtest/gtest.h>
 
@@ -13,7 +14,7 @@
 
 namespace nebula {
 
-TEST(NebulaCodec, basic) {
+TEST(NebulaCodec, encode) {
   std::vector<boost::any> v;
   v.push_back(1);
   v.push_back(false);
@@ -90,6 +91,55 @@ TEST(NebulaCodec, basic) {
   EXPECT_EQ(ResultType::SUCCEEDED,
             reader->getString("s_field", sVal));
   EXPECT_EQ("hi", sVal.toString());
+}
+
+TEST(NebulaCodec, decode) {
+  std::string encoded;
+  encoded.append(1, 0x00);
+
+  // bool column
+  encoded.append(1, 0x01);
+
+  // int column
+  uint8_t buffer[10];
+  size_t i_size = folly::encodeVarint(64, buffer);
+  encoded.append(reinterpret_cast<char*>(buffer), i_size);
+
+  // vid column
+  int64_t vid = 0x1122334455667788L;
+  encoded.append(reinterpret_cast<char*>(&vid), sizeof(int64_t));
+
+  // float column
+  float pi = 3.14;
+  encoded.append(reinterpret_cast<char*>(&pi), sizeof(float));
+
+  // double column
+  double e = 2.718;
+  encoded.append(reinterpret_cast<char*>(&e), sizeof(double));
+
+  // string column
+  const char* str_value = "Hello World!";
+  size_t s_size = folly::encodeVarint(strlen(str_value), buffer);
+  encoded.append(reinterpret_cast<char*>(buffer), s_size);
+  encoded.append(str_value, strlen(str_value));
+
+  std::vector<std::pair<std::string, storage::cpp2::SupportedType>> fields;
+  fields.push_back(std::make_pair("b_field", storage::cpp2::SupportedType::BOOL));
+  fields.push_back(std::make_pair("i_field", storage::cpp2::SupportedType::INT));
+  fields.push_back(std::make_pair("v_field", storage::cpp2::SupportedType::VID));
+  fields.push_back(std::make_pair("f_field", storage::cpp2::SupportedType::FLOAT));
+  fields.push_back(std::make_pair("d_field", storage::cpp2::SupportedType::DOUBLE));
+  fields.push_back(std::make_pair("s_field", storage::cpp2::SupportedType::STRING));
+
+  dataman::NebulaCodecImpl codec;
+  auto result = codec.decode(encoded, fields);
+
+  EXPECT_TRUE(boost::any_cast<bool>(result["b_field"]));
+  EXPECT_EQ(boost::any_cast<int>(result["i_field"]), 64);
+  EXPECT_EQ(boost::any_cast<int64_t>(result["v_field"]), 0x1122334455667788L);
+  EXPECT_EQ(boost::any_cast<float>(result["f_field"]), 3.14F);
+  EXPECT_EQ(boost::any_cast<double>(result["d_field"]), 2.718);
+  EXPECT_EQ(boost::any_cast<std::string>(result["s_field"]), str_value);
 }
 }  // namespace nebula
 

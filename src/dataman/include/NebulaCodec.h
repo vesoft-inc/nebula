@@ -9,7 +9,9 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include "base/Base.h"
+#include "meta/SchemaProviderIf.h"
 
 namespace nebula {
 namespace dataman {
@@ -20,7 +22,8 @@ class NebulaCodec {
  public:
   virtual std::string encode(std::vector<Value> values) = 0;
 
-  // TODO decode
+  virtual std::unordered_map<std::string, Value> decode(std::string encoded,
+          std::vector<std::pair<std::string, storage::cpp2::SupportedType>> fields) = 0;
 };
 
 }  // namespace dataman
