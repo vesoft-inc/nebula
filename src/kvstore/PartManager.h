@@ -44,6 +44,11 @@ public:
      * */
     virtual PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) = 0;
 
+    /**
+     * Check current part exist or not.
+     * */
+    virtual bool partExist(GraphSpaceID spaceId, PartitionID partId) = 0;
+
 protected:
     PartManager() = default;
     static PartManager* instance_;
@@ -54,6 +59,8 @@ protected:
  * */
 class MemPartManager final : public PartManager {
     FRIEND_TEST(KVStoreTest, SimpleTest);
+    FRIEND_TEST(KVStoreTest, PartsTest);
+
 public:
     MemPartManager() = default;
 
@@ -65,6 +72,17 @@ public:
 
     void addPart(GraphSpaceID spaceId, PartitionID partId) {
         partsMap_[spaceId][partId] = PartMeta();
+    }
+
+    bool partExist(GraphSpaceID spaceId, PartitionID partId) override {
+        auto it = partsMap_.find(spaceId);
+        if (it != partsMap_.end()) {
+            auto partIt = it->second.find(partId);
+            if (partIt != it->second.end()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     PartsMap& partsMap() {

@@ -13,6 +13,8 @@ DEFINE_uint32(batch_reserved_bytes, 4 * 1024, "default reserved bytes for one ba
 namespace nebula {
 namespace kvstore {
 
+const char* kSystemParts = "__system__parts__";
+
 RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
                              std::shared_ptr<rocksdb::MergeOperator> mergeOp,
                              std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
@@ -34,6 +36,7 @@ RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
     rocksdb::Status status = rocksdb::DB::Open(options, dataPath_, &db);
     CHECK(status.ok());
     db_.reset(db);
+    partsNum_ = allParts().size();
 }
 
 RocksdbEngine::~RocksdbEngine() {
@@ -114,6 +117,52 @@ ResultCode RocksdbEngine::removeRange(const std::string& start,
         return ResultCode::SUCCESSED;
     }
     return ResultCode::ERR_UNKNOWN;
+}
+
+std::string RocksdbEngine::partKey(PartitionID partId) {
+    std::string key;
+    static const size_t prefixLen = ::strlen(kSystemParts);
+    key.reserve(prefixLen + sizeof(PartitionID));
+    key.append(kSystemParts, prefixLen);
+    key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
+    return key;
+}
+
+void RocksdbEngine::addPart(PartitionID partId) {
+    auto ret = put(partKey(partId), "");
+    if (ret == ResultCode::SUCCESSED) {
+        partsNum_++;
+        CHECK_GE(partsNum_, 0);
+    }
+}
+
+void RocksdbEngine::removePart(PartitionID partId) {
+     rocksdb::WriteOptions options;
+     auto status = db_->Delete(options, partKey(partId));
+     if (status.ok()) {
+         partsNum_--;
+         CHECK_GE(partsNum_, 0);
+     }
+}
+
+std::vector<PartitionID> RocksdbEngine::allParts() {
+    std::unique_ptr<StorageIter> iter;
+    static const size_t prefixLen = ::strlen(kSystemParts);
+    static const std::string prefixStr(kSystemParts, prefixLen);
+    CHECK_EQ(ResultCode::SUCCESSED, this->prefix(prefixStr, &iter));
+    std::vector<PartitionID> parts;
+    while (iter->valid()) {
+        auto key = iter->key();
+        CHECK_EQ(key.size(), prefixLen + sizeof(PartitionID));
+        parts.emplace_back(
+           *reinterpret_cast<const PartitionID*>(key.data() + key.size() - sizeof(PartitionID)));
+        iter->next();
+    }
+    return parts;
+}
+
+int32_t RocksdbEngine::totalPartsNum() {
+    return partsNum_;
 }
 
 ResultCode RocksdbEngine::ingest(const std::vector<std::string>& files) {
