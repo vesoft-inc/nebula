@@ -266,18 +266,18 @@ void RaftPart::stop() {
         status_ = Status::STOPPED;
 
         hosts = std::move(peerHosts_);
-        for (auto& h : *hosts) {
-            h.second->stop();
-        }
-        VLOG(2) << idStr_ << "Invoked stop() on all peer hosts";
     }
+
+    for (auto& h : *hosts) {
+        h.second->stop();
+    }
+    VLOG(2) << idStr_ << "Invoked stop() on all peer hosts";
 
     for (auto& h : *hosts) {
         VLOG(2) << idStr_ << "Waiting " << h.second->idStr() << " to stop";
         h.second->waitForStop();
         VLOG(2) << idStr_ << h.second->idStr() << "has stopped";
     }
-    hosts->clear();
     VLOG(2) << idStr_ << "All hosts are stopped";
 
     VLOG(2) << idStr_ << "Partition has been stopped";
@@ -1162,6 +1162,7 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::sendHeartbeat() {
     TermID lastLogTerm = 0;
     LogID committed = 0;
 
+    decltype(peerHosts_) hosts;
     {
         std::lock_guard<std::mutex> g(raftLock_);
 
@@ -1194,13 +1195,15 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::sendHeartbeat() {
         lastLogId = lastLogId_;
         lastLogTerm = lastLogTerm_;
         committed = committedLogId_;
+
+        hosts = peerHosts_;
     }
 
     auto eb = ioThreadPool_->getEventBase();
 
     using PeerHostEntry = typename decltype(peerHosts_)::element_type::value_type;
     return collectNSucceeded(
-        gen::from(*peerHosts_)
+        gen::from(*hosts)
         | gen::map([=, self = shared_from_this()] (PeerHostEntry& host) {
             VLOG(2) << self->idStr_
                     << "Send a heartbeat to "
@@ -1262,8 +1265,6 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::sendHeartbeat() {
             }
             return AppendLogResult::SUCCEEDED;
         });
-
-    VLOG(2) << idStr_ << "Done sending the heartbeat";
 }
 
 }  // namespace raftex
