@@ -12,7 +12,7 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     key_utils_test
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -28,13 +28,8 @@ target_link_libraries(
     event
     ${COMPRESSION_LIBRARIES}
     resolv
-    double-conversion
-    dl
-    jemalloc
-    -pthread
 )
-
-add_test(NAME key_utils_test COMMAND key_utils_test)
+nebula_add_test(key_utils_test)
 
 
 add_executable(
@@ -51,7 +46,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     add_vertices_test
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -67,12 +62,7 @@ target_link_libraries(
     event
     ${COMPRESSION_LIBRARIES}
     resolv
-    double-conversion
-    dl
-    jemalloc
-    -pthread
 )
-
 nebula_add_test(add_vertices_test)
 
 add_executable(
@@ -88,7 +78,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>)
-target_link_libraries(
+nebula_link_libraries(
     storage_service_handler_test
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -104,12 +94,7 @@ target_link_libraries(
     event
     ${COMPRESSION_LIBRARIES}
     resolv
-    double-conversion
-    dl
-    jemalloc
-    -pthread
 )
-
 nebula_add_test(storage_service_handler_test)
 
 add_executable(
@@ -126,7 +111,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     add_edges_test
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -142,12 +127,7 @@ target_link_libraries(
     event
     ${COMPRESSION_LIBRARIES}
     resolv
-    double-conversion
-    dl
-    jemalloc
-    -pthread
 )
-
 nebula_add_test(add_edges_test)
 
 add_executable(
@@ -164,7 +144,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     query_bound_test
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -180,12 +160,7 @@ target_link_libraries(
     event
     ${COMPRESSION_LIBRARIES}
     resolv
-    double-conversion
-    dl
-    jemalloc
-    -pthread
 )
-
 nebula_add_test(query_bound_test)
 
 add_executable(
@@ -202,7 +177,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     vertex_props_test
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -218,12 +193,7 @@ target_link_libraries(
     event
     ${COMPRESSION_LIBRARIES}
     resolv
-    double-conversion
-    dl
-    jemalloc
-    -pthread
 )
-
 nebula_add_test(vertex_props_test)
 
 add_executable(
@@ -240,7 +210,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     edge_props_test
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -256,12 +226,7 @@ target_link_libraries(
     event
     ${COMPRESSION_LIBRARIES}
     resolv
-    double-conversion
-    dl
-    jemalloc
-    -pthread
 )
-
 nebula_add_test(edge_props_test)
 
 add_executable(
@@ -278,7 +243,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     query_stats_test
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
@@ -294,11 +259,6 @@ target_link_libraries(
     event
     ${COMPRESSION_LIBRARIES}
     resolv
-    double-conversion
-    dl
-    jemalloc
-    -pthread
 )
-
 nebula_add_test(query_stats_test)
 

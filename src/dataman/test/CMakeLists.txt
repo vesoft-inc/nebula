@@ -8,7 +8,7 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     row_reader_test
     ${THRIFT_LIBRARIES}
     wangle
@@ -21,9 +21,6 @@ target_link_libraries(
     event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
-    double-conversion
-    dl
-    -pthread
 )
 nebula_add_test(row_reader_test)
 
@@ -38,7 +35,7 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     row_writer_test
     ${THRIFT_LIBRARIES}
     wangle
@@ -51,9 +48,6 @@ target_link_libraries(
     event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
-    double-conversion
-    dl
-    -pthread
 )
 nebula_add_test(row_writer_test)
 
@@ -68,7 +62,7 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     row_updater_test
     ${THRIFT_LIBRARIES}
     wangle
@@ -81,9 +75,6 @@ target_link_libraries(
     event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
-    double-conversion
-    dl
-    -pthread
 )
 nebula_add_test(row_updater_test)
 
@@ -98,7 +89,7 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     rowset_reader_writer_test
     ${THRIFT_LIBRARIES}
     wangle
@@ -111,9 +102,6 @@ target_link_libraries(
     event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
-    double-conversion
-    dl
-    -pthread
 )
 nebula_add_test(rowset_reader_writer_test)
 
@@ -128,7 +116,7 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     row_writer_bm
     ${THRIFT_LIBRARIES}
     follybenchmark
@@ -142,9 +130,6 @@ target_link_libraries(
     event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
-    double-conversion
-    dl
-    -pthread
 )
 
 
@@ -158,7 +143,7 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     row_reader_bm
     ${THRIFT_LIBRARIES}
     follybenchmark
@@ -172,9 +157,6 @@ target_link_libraries(
     event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
-    double-conversion
-    dl
-    -pthread
 )
 
 add_executable(
@@ -187,7 +169,7 @@ add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
         nebula_codec_test
         ${THRIFT_LIBRARIES}
         wangle
@@ -200,8 +182,5 @@ target_link_libraries(
         event
         ${OPENSSL_SSL_LIBRARY}
         ${OPENSSL_CRYPTO_LIBRARY}
-        double-conversion
-        dl
-        -pthread
 )
 nebula_add_test(nebula_codec_test)

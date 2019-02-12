@@ -4,15 +4,12 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:base_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     file_utils_test
     folly
     gtest
     glog
     gflags
-    double-conversion
-    dl
-    -pthread
 )
 nebula_add_test(file_utils_test)
 
@@ -22,15 +19,12 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:base_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     temp_dir_test
     folly
     gtest
     glog
     gflags
-    double-conversion
-    dl
-    -pthread
 )
 nebula_add_test(temp_dir_test)
 
@@ -40,16 +34,13 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:base_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     temp_file_test
     folly
     gtest
     gtest_main
     glog
     gflags
-    double-conversion
-    dl
-    -pthread
 )
 nebula_add_test(temp_file_test)
 

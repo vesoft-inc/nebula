@@ -7,7 +7,7 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:time_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     file_based_wal_test
     folly
     gtest
@@ -16,10 +16,7 @@ target_link_libraries(
     boost_context
     boost_system
     resolv
-    double-conversion
     event
-    dl
-    -pthread
 )
 nebula_add_test(file_based_wal_test)
 

@@ -20,6 +20,7 @@
 #   NEBULA_BOOST_ROOT       -- Specify the root directory for boost
 #
 #   SKIP_JAVA_CLIENT        -- Skip building the java client
+#   ENABLE_JEMALLOC         -- Link jemalloc into all executables
 #
 cmake_minimum_required(VERSION 3.0.0)
 
@@ -28,6 +29,9 @@ project("Nebula Graph" C CXX)
 set(CMAKE_SKIP_RPATH TRUE)
 
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
+
+option(SKIP_JAVA_CLIENT "Whether to skip building the java client" OFF)
+option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
 
 enable_testing()
 
@@ -197,7 +201,7 @@ link_directories(
     ${NEBULA_HOME}/third-party/libevent/_install/lib
     ${NEBULA_HOME}/third-party/mstch/_install/lib
     ${NEBULA_HOME}/third-party/proxygen/_install/lib
-    ${NEBULA_HOME}/third-party/rocksdb/_install/lib64
+    ${NEBULA_HOME}/third-party/rocksdb/_install/lib
     ${NEBULA_HOME}/third-party/snappy/_install/lib
     ${NEBULA_HOME}/third-party/wangle/_install/lib
     ${NEBULA_HOME}/third-party/zlib/_install/lib
@@ -225,12 +229,26 @@ set(ROCKSDB_LIBRARIES ${NEBULA_HOME}/third-party/rocksdb/_install/lib/librocksdb
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
 
+if (NOT ENABLE_JEMALLOC)
+    set(NEBULA_COMMON_LIBS double-conversion dl unwind)
+else()
+    set(NEBULA_COMMON_LIBS double-conversion dl unwind jemalloc)
+endif()
+
+# A wrapper for target_link_libraries()
+macro(nebula_link_libraries target)
+    target_link_libraries(
+        ${target}
+        ${ARGN}
+        ${NEBULA_COMMON_LIBS}
+        -pthread
+    )
+endmacro(nebula_link_libraries)
+
 add_subdirectory(third-party)
 add_subdirectory(src)
 add_subdirectory(etc)
 add_subdirectory(scripts)
-
-#add_dependencies(storage_engines common)
 
 add_custom_target(
     clean-build
