@@ -239,11 +239,17 @@ add_custom_target(
     DEPENDS clean-interface clean-pch
 )
 
+if (NOT SKIP_JAVA_CLIENT)
+    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-third-party clean-java-client)
+else()
+    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-third-party)
+endif()
+
 add_custom_target(
     clean-all
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
     COMMAND "find" "." "-name" "Testing" "|" "xargs" "rm" "-fr"
-    DEPENDS clean-interface clean-pch clean-third-party clean-java-client
+    DEPENDS ${NEBULA_CLEAN_ALL_DEPS}
 )
 
 add_custom_target(
