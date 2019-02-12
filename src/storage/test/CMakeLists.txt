@@ -17,8 +17,6 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
 )
 nebula_add_test(key_utils_test)
@@ -43,8 +41,6 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
 )
 nebula_add_test(add_vertices_test)
@@ -67,8 +63,6 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
 )
 nebula_add_test(storage_service_handler_test)
@@ -92,8 +86,6 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
 )
 nebula_add_test(add_edges_test)
@@ -117,8 +109,6 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
 )
 nebula_add_test(query_bound_test)
@@ -142,8 +132,6 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
 )
 nebula_add_test(vertex_props_test)
@@ -167,8 +155,6 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
 )
 nebula_add_test(edge_props_test)
@@ -192,8 +178,6 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
 )
 nebula_add_test(query_stats_test)

@@ -17,8 +17,6 @@ nebula_link_libraries(
     session_manager_test
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
     gtest_main
 )
@@ -49,8 +47,6 @@ nebula_link_libraries(
     query_engine_test
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
     gtest_main
 )

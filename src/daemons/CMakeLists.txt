@@ -18,8 +18,6 @@ nebula_link_libraries(
     nebula-graphd
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
 )
 install(TARGETS nebula-graphd DESTINATION bin)
 
@@ -44,8 +42,6 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
 )
 
 
@@ -67,6 +63,4 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
 )

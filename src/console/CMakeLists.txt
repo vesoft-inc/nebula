@@ -15,8 +15,6 @@ nebula_link_libraries(
     nebula
     ${THRIFT_LIBRARIES}
     wangle
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     ${Readline_LIBRARY}
     ${NCURSES_LIBRARY}
 )

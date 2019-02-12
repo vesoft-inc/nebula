@@ -18,8 +18,6 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
     gtest
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
 )
 nebula_add_test(leader_election_test)
 
@@ -44,8 +42,6 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
     gtest
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
 )
 nebula_add_test(log_append_test)
 
@@ -70,8 +66,6 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
     gtest
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
 )
 nebula_add_test(log_cas_test)
 

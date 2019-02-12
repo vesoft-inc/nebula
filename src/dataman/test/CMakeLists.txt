@@ -13,8 +13,6 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
     gtest
-    ${OPENSSL_SSL_LIBRARY}
-    ${OPENSSL_CRYPTO_LIBRARY}
 )
 nebula_add_test(row_reader_test)
 
@@ -34,8 +32,6 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
     gtest
-    ${OPENSSL_SSL_LIBRARY}
-    ${OPENSSL_CRYPTO_LIBRARY}
 )
 nebula_add_test(row_writer_test)
 
@@ -55,8 +51,6 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
     gtest
-    ${OPENSSL_SSL_LIBRARY}
-    ${OPENSSL_CRYPTO_LIBRARY}
 )
 nebula_add_test(row_updater_test)
 
@@ -76,8 +70,6 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
     gtest
-    ${OPENSSL_SSL_LIBRARY}
-    ${OPENSSL_CRYPTO_LIBRARY}
 )
 nebula_add_test(rowset_reader_writer_test)
 
@@ -98,8 +90,6 @@ nebula_link_libraries(
     follybenchmark
     wangle
     boost_regex
-    ${OPENSSL_SSL_LIBRARY}
-    ${OPENSSL_CRYPTO_LIBRARY}
 )
 
 
@@ -119,8 +109,6 @@ nebula_link_libraries(
     follybenchmark
     wangle
     boost_regex
-    ${OPENSSL_SSL_LIBRARY}
-    ${OPENSSL_CRYPTO_LIBRARY}
 )
 
 add_executable(
@@ -138,7 +126,5 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
     gtest
-    ${OPENSSL_SSL_LIBRARY}
-    ${OPENSSL_CRYPTO_LIBRARY}
 )
 nebula_add_test(nebula_codec_test)

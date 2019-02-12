@@ -249,6 +249,9 @@ macro(nebula_link_libraries target)
         event
         double-conversion
         resolv
+        ${OPENSSL_SSL_LIBRARY}
+        ${OPENSSL_CRYPTO_LIBRARY}
+        ${KRB5_LIBRARIES}
         ${COMPRESSION_LIBRARIES}
         dl
         ${LIBUNWIND_LIBRARIES}
