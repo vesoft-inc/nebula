@@ -34,15 +34,36 @@ bool QueryBaseProcessor<REQ, RESP>::validOperation(cpp2::SupportedType vType,
 
 template<typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
+                                                 folly::StringPiece key,
                                                  std::vector<PropContext>& props,
                                                  Collector* collector) {
     for (auto& prop : props) {
+        switch (prop.pikType_) {
+            case PropContext::PropInKeyType::NONE:
+                break;
+            case PropContext::PropInKeyType::SRC:
+                VLOG(3) << "collect _src, value = " << KeyUtils::getSrcId(key);
+                collector->collectInt64(ResultType::SUCCEEDED, KeyUtils::getSrcId(key), prop);
+                continue;
+            case PropContext::PropInKeyType::DST:
+                VLOG(3) << "collect _dst, value = " << KeyUtils::getDstId(key);
+                collector->collectInt64(ResultType::SUCCEEDED, KeyUtils::getDstId(key), prop);
+                continue;
+            case PropContext::PropInKeyType::TYPE:
+                VLOG(3) << "collect _type, value = " << KeyUtils::getEdgeType(key);
+                collector->collectInt32(ResultType::SUCCEEDED, KeyUtils::getEdgeType(key), prop);
+                continue;
+            case PropContext::PropInKeyType::RANK:
+                VLOG(3) << "collect _rank, value = " << KeyUtils::getRank(key);
+                collector->collectInt64(ResultType::SUCCEEDED, KeyUtils::getRank(key), prop);
+                continue;
+        }
         const auto& name = prop.prop_.get_name();
-        VLOG(3) << "collecting property \"" << name << "\"";
         switch (prop.type_.type) {
             case cpp2::SupportedType::INT: {
                 int64_t v;
                 auto ret = reader->getInt<int64_t>(name, v);
+                VLOG(3) << "collect " << name << ", value = " << v;
                 collector->collectInt64(ret, v, prop);
                 break;
             }
@@ -50,24 +71,28 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                 int64_t v;
                 auto ret = reader->getVid(name, v);
                 collector->collectInt64(ret, v, prop);
+                VLOG(3) << "collect " << name << ", value = " << v;
                 break;
             }
             case cpp2::SupportedType::FLOAT: {
                 float v;
                 auto ret = reader->getFloat(name, v);
                 collector->collectFloat(ret, v, prop);
+                VLOG(3) << "collect " << name << ", value = " << v;
                 break;
             }
             case cpp2::SupportedType::DOUBLE: {
                 double v;
                 auto ret = reader->getDouble(name, v);
                 collector->collectDouble(ret, v, prop);
+                VLOG(3) << "collect " << name << ", value = " << v;
                 break;
             }
             case cpp2::SupportedType::STRING: {
                 folly::StringPiece v;
                 auto ret = reader->getString(name, v);
                 collector->collectString(ret, v, prop);
+                VLOG(3) << "collect " << name << ", value = " << v;
                 break;
             }
             default: {
@@ -87,8 +112,8 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
     if (req.__isset.edge_type) {
         edgeContext.edgeType_ = req.edge_type;
     }
-
-    int32_t index = 0;
+    // Handle the case for query edges which should return some columns by default.
+    int32_t index = edgeContext.props_.size();
     std::unordered_map<TagID, int32_t> tagIndex;
     for (auto& col : req.get_return_columns()) {
         PropContext prop;
@@ -126,10 +151,15 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 if (!schema) {
                     return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                 }
-
-                const auto& ftype = schema->getFieldType(col.name);
-                prop.type_ = ftype;
-                if (col.__isset.stat && !validOperation(ftype.type, col.stat)) {
+                auto it = kPropsInKey_.find(col.name);
+                if (it != kPropsInKey_.end()) {
+                    prop.pikType_ = it->second;
+                    prop.type_.type = cpp2::SupportedType::INT;
+                } else {
+                    const auto& ftype = schema->getFieldType(col.name);
+                    prop.type_ = ftype;
+                }
+                if (col.__isset.stat && !validOperation(prop.type_.type, col.stat)) {
                     return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
                 }
                 prop.retIndex_ = index;
@@ -149,7 +179,9 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     spaceId_ = req.get_space_id();
     int32_t returnColumnsNum = req.get_return_columns().size();
     std::vector<TagContext> tagContexts;
+    tagContexts.reserve(returnColumnsNum);
     EdgeContext edgeContext;
+
     auto retCode = checkAndBuildContexts(req, tagContexts, edgeContext);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {

@@ -37,7 +37,7 @@ void mockData(kvstore::KVStore* kv) {
             // Generate 7 edges for each edgeType.
             for (auto dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
-                auto key = KeyUtils::edgeKey(partId, vertexId, 101, dstId, dstId - 10001, 0);
+                auto key = KeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
                 RowWriter writer(nullptr);
                 for (int64_t numInt = 0; numInt < 10; numInt++) {
                     writer << numInt;

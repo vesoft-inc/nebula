@@ -17,7 +17,7 @@ class NebulaCodecImpl : public NebulaCodec {
   std::string encode(std::vector<Value> values) override;
 };
 
- }  // dataman
+}  // dataman
 }  // nebula
 
- #endif  // NEBULA_GRAPH_NEBULACODECIMPL_H
+#endif  // NEBULA_GRAPH_NEBULACODECIMPL_H

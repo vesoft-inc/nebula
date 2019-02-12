@@ -9,6 +9,7 @@
 #include "kvstore/RocksdbEngine.h"
 #include <algorithm>
 #include <folly/Likely.h>
+#include <cstdint>
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_string(part_type, "simple", "simple, consensus...");
@@ -75,6 +76,44 @@ std::vector<Engine> KVStoreImpl::initEngines(GraphSpaceID spaceId) {
     return engines;
 }
 
+PartEngine KVStoreImpl::checkLocalParts(GraphSpaceID spaceId) {
+    PartEngine maps;
+    for (auto& engine : this->kvs_[spaceId]->engines_) {
+        auto parts = engine.first->allParts();
+        for (auto partId : parts) {
+            if (partMan_->partExist(spaceId, partId)) {
+                maps.emplace(partId, &engine);
+            } else {
+                engine.first->removePart(partId);
+            }
+        }
+    }
+    return maps;
+}
+
+const Engine& KVStoreImpl::dispatchPart(GraphSpaceID spaceId,
+                                        PartitionID partId,
+                                        const PartEngine& maps) {
+    auto it = maps.find(partId);
+    if (it != maps.end()) {
+        return *it->second;
+    }
+    int32_t minIndex = -1, index = 0;
+    int32_t minPartsNum = 0x7FFFFFFF;
+    auto& engines = this->kvs_[spaceId]->engines_;
+    for (auto& engine : engines) {
+        if (engine.first->totalPartsNum() < minPartsNum) {
+            minPartsNum = engine.first->totalPartsNum();
+            minIndex = index;
+        }
+        index++;
+    }
+    const auto& target = engines[minIndex];
+    // Write the information into related engine.
+    target.first->addPart(partId);
+    return target;
+}
+
 void KVStoreImpl::init() {
     auto partsMap = partMan_->parts(options_.local_);
     LOG(INFO) << "Init all parts, total graph space " << partsMap.size();
@@ -85,13 +124,12 @@ void KVStoreImpl::init() {
         this->kvs_[spaceId] = std::make_unique<GraphSpaceKV>();
         this->kvs_[spaceId]->engines_ = initEngines(spaceId);
 
+        auto partEngineMap = checkLocalParts(spaceId);
         // Init kvs[spaceId]->parts
         decltype(this->kvs_[spaceId]->parts_) parts;
-        int32_t idx = 0;
         std::for_each(spaceParts.begin(), spaceParts.end(), [&](auto& partItem) {
             auto partId = partItem.first;
-            auto& engine
-                = this->kvs_[spaceId]->engines_[idx++ % this->kvs_[spaceId]->engines_.size()];
+            auto& engine = dispatchPart(spaceId, partId, partEngineMap);
             auto& enginePtr = engine.first;
             auto& path = engine.second;
             if (FLAGS_part_type == "simple") {

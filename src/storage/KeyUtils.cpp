@@ -22,9 +22,12 @@ std::string KeyUtils::vertexKey(PartitionID partId, VertexID vId,
 }
 
 // static
-std::string KeyUtils::edgeKey(PartitionID partId, VertexID srcId,
-                              EdgeType type, VertexID dstId,
-                              EdgeRanking rank, EdgeVersion ts) {
+std::string KeyUtils::edgeKey(PartitionID partId,
+                              VertexID srcId,
+                              EdgeType type,
+                              EdgeRanking rank,
+                              VertexID dstId,
+                              EdgeVersion ts) {
     std::string key;
     key.reserve(kEdgeLen);
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
@@ -57,7 +60,7 @@ std::string KeyUtils::prefix(PartitionID partId, VertexID vId) {
 
 // static
 std::string KeyUtils::prefix(PartitionID partId, VertexID src, EdgeType type,
-                             VertexID dst, EdgeRanking ranking) {
+                             EdgeRanking ranking, VertexID dst) {
     std::string key;
     key.reserve(sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType)
                 + sizeof(VertexID) + sizeof(EdgeRanking));

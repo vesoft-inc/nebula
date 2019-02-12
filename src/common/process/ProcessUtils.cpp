@@ -5,9 +5,10 @@
  */
 
 #include "base/Base.h"
-#include <signal.h>
-#include "fs/FileUtils.h"
 #include "process/ProcessUtils.h"
+#include <signal.h>
+#include "base/Cord.h"
+#include "fs/FileUtils.h"
 
 namespace nebula {
 
@@ -122,6 +123,33 @@ uint32_t ProcessUtils::maxPid() {
     fs::FileUtils::FileLineIterator iter("/proc/sys/kernel/pid_max", &pattern);
     CHECK(iter.valid());
     return folly::to<uint32_t>(iter.matched()[1].str());
+}
+
+
+StatusOr<std::string> ProcessUtils::runCommand(const char* command) {
+    FILE* f = popen(command, "re");
+    if (f == nullptr) {
+        return Status::Error("Failed to execute the command \"%s\"", command);
+    }
+
+    Cord out;
+    char buf[1024];
+    size_t len;
+    do {
+        len = fread(buf, 1, 1024, f);
+        if (len > 0) {
+            out.write(buf, len);
+        }
+    } while (len == 1024);
+
+    if (ferror(f)) {
+        // Something is wrong
+        fclose(f);
+        return Status::Error("Failed to read the output of the command");
+    }
+
+    fclose(f);
+    return out.str();
 }
 
 }   // namespace nebula
