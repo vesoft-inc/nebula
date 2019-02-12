@@ -183,6 +183,7 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
 include_directories(SYSTEM ${KRB5_INCLUDE_DIRS})
 include_directories(SYSTEM ${FLEX_INCLUDE_DIRS})
+include_directories(SYSTEM ${NCURSES_INCLUDE_DIR})
 include_directories(SYSTEM ${Readline_INCLUDE_DIR})
 include_directories(AFTER ${NEBULA_HOME}/src)
 include_directories(AFTER src/common)
@@ -250,7 +251,7 @@ macro(nebula_link_libraries target)
         resolv
         ${COMPRESSION_LIBRARIES}
         dl
-        unwind
+        ${LIBUNWIND_LIBRARIES}
         ${JEMALLOC_LIB}
         -pthread
     )
