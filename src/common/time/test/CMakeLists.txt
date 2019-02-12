@@ -6,11 +6,7 @@ add_executable(
 )
 nebula_link_libraries(
     duration_test
-    folly
     gtest
-    glog
-    gflags
-    event
 )
 nebula_add_test(duration_test)
 
@@ -23,9 +19,5 @@ add_executable(
 nebula_link_libraries(
     duration_bm
     follybenchmark
-    folly
-    glog
-    gflags
     boost_regex
-    event
 )

@@ -9,12 +9,7 @@ add_executable(
 )
 nebula_link_libraries(
     thread_test
-    folly
-    event
     gtest
     gtest_main
-    glog
-    gflags
-    boost_context
 )
 nebula_add_test(thread_test)

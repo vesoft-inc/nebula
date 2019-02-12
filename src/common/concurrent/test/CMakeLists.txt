@@ -8,12 +8,7 @@ add_executable(
 )
 nebula_link_libraries(
     concurrent_test
-    folly
-    event
     gtest
     gtest_main
-    glog
-    gflags
-    boost_context
 )
 nebula_add_test(concurrent_test)

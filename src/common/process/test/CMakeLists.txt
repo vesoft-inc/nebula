@@ -9,8 +9,5 @@ nebula_link_libraries(
     process_test
     gtest
     gtest_main
-    folly
-    glog
-    gflags
 )
 nebula_add_test(process_test)

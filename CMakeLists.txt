@@ -230,9 +230,9 @@ set(ROCKSDB_LIBRARIES ${NEBULA_HOME}/third-party/rocksdb/_install/lib/librocksdb
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
 
 if (NOT ENABLE_JEMALLOC)
-    set(NEBULA_COMMON_LIBS double-conversion dl unwind)
+    set(JEMALLOC_LIB )
 else()
-    set(NEBULA_COMMON_LIBS double-conversion dl unwind jemalloc)
+    set(JEMALLOC_LIB jemalloc)
 endif()
 
 # A wrapper for target_link_libraries()
@@ -240,7 +240,18 @@ macro(nebula_link_libraries target)
     target_link_libraries(
         ${target}
         ${ARGN}
-        ${NEBULA_COMMON_LIBS}
+        folly
+        glog
+        gflags
+        boost_context
+        boost_system
+        event
+        double-conversion
+        resolv
+        ${COMPRESSION_LIBRARIES}
+        dl
+        unwind
+        ${JEMALLOC_LIB}
         -pthread
     )
 endmacro(nebula_link_libraries)

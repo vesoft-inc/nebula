@@ -17,18 +17,10 @@ nebula_link_libraries(
     session_manager_test
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
     gtest
     gtest_main
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 
 nebula_add_test(session_manager_test)
@@ -57,17 +49,9 @@ nebula_link_libraries(
     query_engine_test
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
     gtest
     gtest_main
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 nebula_add_test(query_engine_test)

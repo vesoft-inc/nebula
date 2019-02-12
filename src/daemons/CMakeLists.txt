@@ -18,16 +18,8 @@ nebula_link_libraries(
     nebula-graphd
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 install(TARGETS nebula-graphd DESTINATION bin)
 
@@ -52,16 +44,8 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 
 
@@ -83,14 +67,6 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )

@@ -31,7 +31,7 @@ function prepareBuild() {
     SOURCE_TAR_BALL_NAME=`ls ${prj_name}*.tar.gz`
     PROJECT_NAME=`echo $SOURCE_TAR_BALL_NAME | sed s/\.tar\.gz//`
     BUILD_PATH=$CURR_DIR/_build
-    
+
     # Extract source code
     mkdir -p $BUILD_PATH
     cd $BUILD_PATH
@@ -71,7 +71,34 @@ function prepareBuild() {
 
     CMAKE_FLAGS="-DCMAKE_CXX_COMPILER:FILEPATH=$NEBULA_CXX_COMPILER -DCMAKE_C_COMPILER:FILEPATH=$NEBULA_C_COMPILER -DCMAKE_SKIP_INSTALL_RPATH:BOOL=YES -DCMAKE_SKIP_RPATH:BOOL=YES -DBUILD_SHARED_LIBS=OFF -DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE -DTHREADS_PREFER_PTHREAD_FLAG:BOOL=TRUE -DCMAKE_INSTALL_PREFIX=$INSTALL_PATH"
 
-    GCC_VER=`$NEBULA_C_COMPILER --version | head -1 | cut -d ' ' -f 3`
+    CC_VER_STR=`$NEBULA_C_COMPILER --version | head -1 | cut -d ' ' -f 3`
+    CC_MAJOR_VER=`echo $CC_VER_STR | cut -d . -f 1`
+    if [[ -z $CC_MAJOR_VER ]]; then
+        CC_MAJOR_VER=0
+    fi
+    CC_MINOR_VER=`echo $CC_VER_STR | cut -d . -f 2`
+    if [[ -z $CC_MINOR_VER ]]; then
+        CC_MINOR_VER=0
+    fi
+    CC_RELEASE_VER=`echo $CC_VER_STR | cut -d . -f 3`
+    if [[ -z $CC_RELEASE_VER ]]; then
+        CC_RELEASE_VER=0
+    fi
+
+    CXX_VER_STR=`$NEBULA_CXX_COMPILER --version | head -1 | cut -d ' ' -f 3`
+    CXX_MAJOR_VER=`echo $CXX_VER_STR | cut -d . -f 1`
+    if [[ -z $CXX_MAJOR_VER ]]; then
+        CXX_MAJOR_VER=0
+    fi
+    CXX_MINOR_VER=`echo $CXX_VER_STR | cut -d . -f 2`
+    if [[ -z $CXX_MINOR_VER ]]; then
+        CXX_MINOR_VER=0
+    fi
+    CXX_RELEASE_VER=`echo $CXX_VER_STR | cut -d . -f 3`
+    if [[ -z $CXX_RELEASE_VER ]]; then
+        CXX_RELEASE_VER=0
+    fi
+
     EXTRA_CXXFLAGS="-O2"
     EXTRA_LDFLAGS=
 }

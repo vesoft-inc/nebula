@@ -11,7 +11,7 @@ gtest_release=$INSTALL_PATH
 libevent_release=$THIRD_PARTY_DIR/libevent/_install
 
 echo
-echo Start building $PROJECT_NAME with gcc-$GCC_VER
+echo "Start building $PROJECT_NAME with $NEBULA_CXX_COMPILER ($CXX_VER_STR)"
 echo
 
 cd $SOURCE_DIR

@@ -9,14 +9,7 @@ add_executable(
 )
 nebula_link_libraries(
     file_based_wal_test
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    boost_system
-    resolv
-    event
 )
 nebula_add_test(file_based_wal_test)
 

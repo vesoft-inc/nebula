@@ -17,7 +17,7 @@ wangle_release=$THIRD_PARTY_DIR/wangle/_install
 zlib_release=$THIRD_PARTY_DIR/zlib/_install
 
 echo
-echo Start building $PROJECT_NAME with gcc-$GCC_VER
+echo "Start building $PROJECT_NAME with $NEBULA_CXX_COMPILER ($CXX_VER_STR)"
 echo
 
 #

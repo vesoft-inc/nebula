@@ -17,17 +17,9 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
     gtest
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 nebula_add_test(key_utils_test)
 
@@ -51,17 +43,9 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
     gtest
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 nebula_add_test(add_vertices_test)
 
@@ -83,17 +67,9 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
     gtest
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 nebula_add_test(storage_service_handler_test)
 
@@ -116,17 +92,9 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
     gtest
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 nebula_add_test(add_edges_test)
 
@@ -149,17 +117,9 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
     gtest
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 nebula_add_test(query_bound_test)
 
@@ -182,17 +142,9 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
     gtest
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 nebula_add_test(vertex_props_test)
 
@@ -215,17 +167,9 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
     gtest
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 nebula_add_test(edge_props_test)
 
@@ -248,17 +192,9 @@ nebula_link_libraries(
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
     gtest
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
 )
 nebula_add_test(query_stats_test)
 

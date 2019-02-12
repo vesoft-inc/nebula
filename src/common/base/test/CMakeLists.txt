@@ -1,10 +1,7 @@
 add_executable(cord_test CordTest.cpp $<TARGET_OBJECTS:base_obj>)
 nebula_link_libraries(
     cord_test
-    folly
     gtest
-    glog
-    gflags
 )
 nebula_add_test(cord_test)
 
@@ -13,9 +10,6 @@ add_executable(cord_bm CordBenchmark.cpp $<TARGET_OBJECTS:base_obj>)
 nebula_link_libraries(
     cord_bm
     follybenchmark
-    folly
-    glog
-    gflags
     boost_regex
 )
 
@@ -24,9 +18,6 @@ nebula_link_libraries(
     murmurhash2_test
     gtest
     gtest_main
-    folly
-    glog
-    gflags
 )
 nebula_add_test(murmurhash2_test)
 
@@ -40,9 +31,6 @@ nebula_link_libraries(
     configuration_test
     gtest
     gtest_main
-    folly
-    glog
-    gflags
 )
 nebula_add_test(configuration_test)
 
@@ -56,9 +44,6 @@ nebula_link_libraries(
     status_test
     gtest
     gtest_main
-    folly
-    glog
-    gflags
 )
 nebula_add_test(status_test)
 
@@ -72,9 +57,6 @@ nebula_link_libraries(
     status_or_test
     gtest
     gtest_main
-    folly
-    glog
-    gflags
 )
 nebula_add_test(status_or_test)
 
@@ -82,8 +64,5 @@ add_executable(hash_bm HashBenchmark.cpp $<TARGET_OBJECTS:base_obj>)
 nebula_link_libraries(
     hash_bm
     follybenchmark
-    folly
-    glog
-    gflags
     boost_regex
 )

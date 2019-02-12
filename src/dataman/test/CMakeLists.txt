@@ -12,13 +12,7 @@ nebula_link_libraries(
     row_reader_test
     ${THRIFT_LIBRARIES}
     wangle
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    ${COMPRESSION_LIBRARIES}
-    event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
 )
@@ -39,13 +33,7 @@ nebula_link_libraries(
     row_writer_test
     ${THRIFT_LIBRARIES}
     wangle
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    ${COMPRESSION_LIBRARIES}
-    event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
 )
@@ -66,13 +54,7 @@ nebula_link_libraries(
     row_updater_test
     ${THRIFT_LIBRARIES}
     wangle
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    ${COMPRESSION_LIBRARIES}
-    event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
 )
@@ -93,13 +75,7 @@ nebula_link_libraries(
     rowset_reader_writer_test
     ${THRIFT_LIBRARIES}
     wangle
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    ${COMPRESSION_LIBRARIES}
-    event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
 )
@@ -121,13 +97,7 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     follybenchmark
     wangle
-    folly
-    glog
-    gflags
     boost_regex
-    boost_context
-    ${COMPRESSION_LIBRARIES}
-    event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
 )
@@ -148,39 +118,27 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     follybenchmark
     wangle
-    folly
-    glog
-    gflags
     boost_regex
-    boost_context
-    ${COMPRESSION_LIBRARIES}
-    event
     ${OPENSSL_SSL_LIBRARY}
     ${OPENSSL_CRYPTO_LIBRARY}
 )
 
 add_executable(
             nebula_codec_test
-        NebulaCodecTest.cpp
-        $<TARGET_OBJECTS:dataman_obj>
-        $<TARGET_OBJECTS:meta_obj>
-        $<TARGET_OBJECTS:storage_thrift_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:fs_obj>
+    NebulaCodecTest.cpp
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:fs_obj>
 )
 nebula_link_libraries(
-        nebula_codec_test
-        ${THRIFT_LIBRARIES}
-        wangle
-        folly
-        gtest
-        glog
-        gflags
-        boost_context
-        ${COMPRESSION_LIBRARIES}
-        event
-        ${OPENSSL_SSL_LIBRARY}
-        ${OPENSSL_CRYPTO_LIBRARY}
+    nebula_codec_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    gtest
+    ${OPENSSL_SSL_LIBRARY}
+    ${OPENSSL_CRYPTO_LIBRARY}
 )
 nebula_add_test(nebula_codec_test)

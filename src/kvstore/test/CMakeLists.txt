@@ -9,13 +9,7 @@ add_executable(
 nebula_link_libraries(
     part_test
     ${ROCKSDB_LIBRARIES}
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    event
-    ${COMPRESSION_LIBRARIES}
 )
 nebula_add_test(part_test)
 
@@ -30,13 +24,7 @@ add_executable(
 nebula_link_libraries(
     rocksdb_engine_test
     ${ROCKSDB_LIBRARIES}
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    event
-    ${COMPRESSION_LIBRARIES}
 )
 nebula_add_test(rocksdb_engine_test)
 
@@ -51,13 +39,7 @@ add_executable(
 nebula_link_libraries(
     kvstore_test
     ${ROCKSDB_LIBRARIES}
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    event
-    ${COMPRESSION_LIBRARIES}
 )
 nebula_add_test(kvstore_test)
 
@@ -72,12 +54,6 @@ add_executable(
 nebula_link_libraries(
     load_test
     ${ROCKSDB_LIBRARIES}
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    event
-    ${COMPRESSION_LIBRARIES}
 )
 nebula_add_test(load_test)

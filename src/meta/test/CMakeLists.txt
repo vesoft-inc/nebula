@@ -8,14 +8,7 @@ add_executable(
 )
 nebula_link_libraries(
     file_based_part_manager_test
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    boost_system
-    resolv
-    event
 )
 add_test(NAME file_based_part_manager_test COMMAND file_based_part_manager_test)
 
@@ -30,14 +23,7 @@ add_executable(
 )
 nebula_link_libraries(
     file_based_schema_manager_test
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    boost_system
-    resolv
-    event
 )
 add_test(NAME file_based_schema_manager_test COMMAND file_based_schema_manager_test)
 

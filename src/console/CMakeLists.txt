@@ -15,16 +15,8 @@ nebula_link_libraries(
     nebula
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
     ${OPENSSL_LIBRARIES}
     ${KRB5_LIBRARIES}
-    event
-    ${COMPRESSION_LIBRARIES}
-    glog
-    gflags
-    resolv
     ${Readline_LIBRARY}
     ${NCURSES_LIBRARY}
 )

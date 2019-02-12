@@ -10,11 +10,6 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
     gtest
-    folly
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
 )
 nebula_add_test(network_utils_test)
 
@@ -30,10 +25,5 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
     follybenchmark
-    folly
-    glog
-    gflags
     boost_regex
-    event
-    ${COMPRESSION_LIBRARIES}
 )
