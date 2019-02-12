@@ -5,123 +5,67 @@ import org.rocksdb.*;
 import java.util.List;
 import java.util.Objects;
 
-public class NativeClient /*implements Client*/ implements AutoCloseable {
+public class NativeClient implements AutoCloseable {
     static {
-        RocksDB.loadLibrary();
         System.loadLibrary("client");
     }
 
-    private final SstFileWriter writer;
-
-    public static class OptionsBuilder {
-        private boolean createIfMissing;
-        private boolean createMissingColumnFamilies;
-        private long maxLogFileSize;
-
-        public OptionsBuilder createIfMissing(boolean createIfMissing) {
-            this.createIfMissing = createIfMissing;
-            return this;
-        }
-
-        public OptionsBuilder createMissingColumnFamilies(boolean createMissingColumnFamilies) {
-            this.createMissingColumnFamilies = createMissingColumnFamilies;
-            return this;
-        }
-
-        public OptionsBuilder maxLogFileSize(long maxLogFileSize) {
-            this.maxLogFileSize = maxLogFileSize;
-            return this;
-        }
-
-        public Options build() {
-            Options options = new Options();
-            options
-                    .setCreateIfMissing(createIfMissing)
-                    .setCreateMissingColumnFamilies(createMissingColumnFamilies)
-                    .setMaxLogFileSize(maxLogFileSize);
-            return options;
-        }
-    }
+    private SstFileWriter writer;
 
     public NativeClient(String path) throws RocksDBException {
-
-        if (path == null || path.trim().length() == 0) {
-            throw new IllegalArgumentException("File Path should not null and empty");
-        }
-
         EnvOptions env = new EnvOptions();
-//        env.set
+        Options options = new Options();
+        options.setCreateIfMissing(true)
+                .setCreateMissingColumnFamilies(true);
+        new NativeClient(path, env, options);
+    }
 
-        OptionsBuilder builder = new OptionsBuilder();
-        Options options = builder
-                .createIfMissing(true)
-                .createMissingColumnFamilies(true)
-                .maxLogFileSize(1L)
-                .build();
-
+    public NativeClient(String path, EnvOptions env, Options options) throws RocksDBException {
+        if (path == null || path.trim().length() == 0) {
+            throw new IllegalArgumentException("File Path should not be null and empty");
+        }
         writer = new SstFileWriter(env, options);
         writer.open(path);
     }
 
-    //    @Override
-    public boolean addVertex(long vertexID, int tagID, List<Object> fields) {
-        byte[] key = new byte[0];
-        byte[] value = new byte[0];
+    public boolean addVertex(String key, Object[] values) {
+        String value = encode(values);
         try {
-            writer.put(key, value);
+            writer.put(key.getBytes(), value.getBytes());
             return true;
         } catch (RocksDBException e) {
-            e.printStackTrace();
             return false;
         }
     }
 
-    //    @Override
-    public boolean addEdge(long srcID, long dstID, String type, long ranking, List<Object> fields) {
-        byte[] key = new byte[0];
-        byte[] value = new byte[0];
-
-        if (checkKey(key)) {
-
-        }
-
+    public boolean addEdge(String key, Object[] values) {
+        String value = encode(values);
         try {
-            writer.put(key, value);
+            writer.put(key.getBytes(), value.getBytes());
             return true;
         } catch (RocksDBException e) {
-            e.printStackTrace();
             return false;
         }
     }
 
-    public boolean deleteVertex() {
+    public boolean deleteVertex(String key) { return delete(key); }
+
+    public boolean deleteEdge(String key) { return delete(key); }
+
+    private boolean delete(String key) {
         try {
-            writer.delete("key".getBytes());
+            writer.delete(key.getBytes());
             return true;
         } catch (RocksDBException e) {
-            e.printStackTrace();
             return false;
         }
     }
 
-    public boolean deleteEdge() {
-        try {
-            writer.delete("key".getBytes());
-            return true;
-        } catch (RocksDBException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    private native String encode(int value);
-
-    //private native String decode();
+    private native String encode(Object[] values);
 
     private boolean checkKey(byte[] key) {
         return Objects.isNull(key) || key.length == 0;
     }
-
 
     @Override
     public void close() throws Exception {
@@ -129,15 +73,10 @@ public class NativeClient /*implements Client*/ implements AutoCloseable {
         writer.close();
     }
 
-    public static void main(String[] args) {
-        NativeClient client = null;
-        try {
-            client = new NativeClient("/tmp/data.sst");
-        } catch (RocksDBException e) {
-            e.printStackTrace();
-        }
-
-        System.out.println(client.encode(0));
-        //System.out.println(client.decode());
+    public static void main(String[] args) throws RocksDBException {
+        NativeClient client = new NativeClient("/tmp/data.sst");
+        Object[] values = {false, 7, 1024L, 3.14F, 0.618, "darion.yaphet"}; // boolean int long float double String
+        String result = client.encode(values);
+        System.out.println("values : "+result +"  "+result.length());
     }
 }

@@ -93,7 +93,6 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                              <!--<executable>/usr/bin/g++ -fPIC -I${JAVA_HOME}/include -I${JAVA_HOME}/include/darwin -dynamiclib -o ${basedir}/target/lib.dylib ${basedir}/src/main/cpp/com_vesoft_client_NativeClient.cpp</executable>-->
                               <executable>${basedir}/builder.sh</executable>
                         </configuration>
                     </execution>

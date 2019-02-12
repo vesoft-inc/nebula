@@ -8,22 +8,59 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cstdint>
 #include "com_vesoft_client_NativeClient.h"
 
-#include "NebulaCodec.h"
-#include "NebulaCodecImpl.h"
+#include "dataman/include/NebulaCodec.h"
+#include "dataman/NebulaCodecImpl.h"
 
 JNIEXPORT jstring JNICALL Java_com_vesoft_client_NativeClient_encode(JNIEnv *env,
-        jobject obj, jint value) {
-  std::vector<boost::any> v;
-  v.push_back(value);
+        jobject obj, jobjectArray values) {
+    std::vector<boost::any> v;
+    jint len = env->GetArrayLength(values);
 
-  NebulaCodecImpl codec;
-  std::string s = codec.encode(v);
-  // std::string s = "encoded string";
-  return env->NewStringUTF(s.c_str());
-}
+    for (int i = 0; i < len; i++) {
+        jobject o = env->GetObjectArrayElement(values, i);
+        jclass clazz = env->GetObjectClass(o);
+        jmethodID getClazz = env->GetMethodID(clazz, "getClass", "()Ljava/lang/Class;");
 
-int main() {
-    return 0;
+        jobject getClazzObj = env->CallObjectMethod(o, getClazz);
+        jclass objClazz = env->GetObjectClass(getClazzObj);
+        jmethodID getName = env->GetMethodID(objClazz, "getName", "()Ljava/lang/String;");
+        jstring clazz_type = static_cast<jstring>(env->CallObjectMethod(getClazzObj, getName));
+
+        auto name = std::string(env->GetStringUTFChars(clazz_type, NULL));
+        if (name.compare("java.lang.Boolean") == 0) {
+            jmethodID m = env->GetMethodID(clazz, "booleanValue", "()Z");
+            auto value = env->CallBooleanMethod(o, m);
+            v.push_back(value);
+        } else if (name.compare("java.lang.Integer") == 0) {
+            jmethodID m = env->GetMethodID(clazz, "intValue", "()I");
+            auto value = env->CallIntMethod(o, m);
+            v.push_back(value);
+        } else if (name.compare("java.lang.Long") == 0) {
+            jmethodID m = env->GetMethodID(clazz, "longValue", "()J");
+            auto value = env->CallLongMethod(o, m);
+            v.push_back(value);
+        } else if (name.compare("java.lang.Float") == 0) {
+            jmethodID m = env->GetMethodID(clazz, "floatValue", "()F");
+            auto value = env->CallFloatMethod(o, m);
+            v.push_back(value);
+        } else if (name.compare("java.lang.Double") == 0) {
+            jmethodID m = env->GetMethodID(clazz, "doubleValue", "()D");
+            auto value = env->CallDoubleMethod(o, m);
+            v.push_back(value);
+        } else if (name.compare("java.lang.String") == 0) {
+            jmethodID m = env->GetMethodID(clazz, "toString", "()Ljava/lang/String;");
+            jstring js_value = static_cast<jstring>(env->CallObjectMethod(o, m));
+            auto value = std::string(env->GetStringUTFChars(js_value, NULL));
+            v.push_back(value);
+        } else {
+            // Type Error
+        }
+    }
+
+    nebula::dataman::NebulaCodecImpl codec;
+    auto result = codec.encode(v);
+    return env->NewString((const jchar *)result.c_str(), result.size());
 }
