@@ -13,25 +13,11 @@ add_executable(
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     leader_election_test
     ${THRIFT_LIBRARIES}
     wangle
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    boost_system
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
-    double-conversion
-    dl
-    event
-    -pthread
 )
 nebula_add_test(leader_election_test)
 
@@ -51,25 +37,11 @@ add_executable(
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     log_append_test
     ${THRIFT_LIBRARIES}
     wangle
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    boost_system
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
-    double-conversion
-    dl
-    event
-    -pthread
 )
 nebula_add_test(log_append_test)
 
@@ -89,25 +61,11 @@ add_executable(
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     log_cas_test
     ${THRIFT_LIBRARIES}
     wangle
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    boost_system
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
-    double-conversion
-    dl
-    event
-    -pthread
 )
 nebula_add_test(log_cas_test)
 

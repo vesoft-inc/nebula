@@ -6,17 +6,9 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     concurrent_test
-    folly
-    event
     gtest
     gtest_main
-    glog
-    gflags
-    boost_context
-    double-conversion
-    pthread
-    dl
 )
 nebula_add_test(concurrent_test)
