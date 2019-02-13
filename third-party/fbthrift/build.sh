@@ -14,7 +14,7 @@ zlib_release=$THIRD_PARTY_DIR/zlib/_install
 zstd_release=$THIRD_PARTY_DIR/zstd/_install
 
 echo
-echo Start building $PROJECT_NAME with gcc-$GCC_VER
+echo "Start building $PROJECT_NAME with $NEBULA_CXX_COMPILER ($CXX_VER_STR)"
 echo
 
 #if !(cd $SOURCE_DIR && autoreconf -ivf -I/usr/local/share/aclocal-1.15 -I/usr/share/aclocal); then

@@ -5,19 +5,11 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     network_utils_test
     ${THRIFT_LIBRARIES}
     wangle
     gtest
-    folly
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    double-conversion
-    dl
-    -pthread
 )
 nebula_add_test(network_utils_test)
 
@@ -28,18 +20,10 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     network_utils_bm
     ${THRIFT_LIBRARIES}
     wangle
     follybenchmark
-    folly
-    glog
-    gflags
     boost_regex
-    event
-    ${COMPRESSION_LIBRARIES}
-    double-conversion
-    dl
-    -pthread
 )
