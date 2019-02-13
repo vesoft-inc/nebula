@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef GRAPH_STORAGECLIENT_H_
-#define GRAPH_STORAGECLIENT_H_
+#ifndef STORAGE_CLIENT_STORAGECLIENT_H_
+#define STORAGE_CLIENT_STORAGECLIENT_H_
 
 #include "base/Base.h"
 #include <folly/futures/Future.h>
@@ -13,7 +13,7 @@
 #include "gen-cpp2/StorageServiceAsyncClient.h"
 
 namespace nebula {
-namespace graph {
+namespace storage {
 
 template<class Response>
 class StorageRpcResponse final {
@@ -135,10 +135,10 @@ private:
         RemoteFunc&& remoteFunc);
 };
 
-}   // namespace graph
+}   // namespace storage
 }   // namespace nebula
 
-#include "graph/StorageClient.inl"
+#include "storage/client/StorageClient.inl"
 
-#endif  // GRAPH_STORAGECLIENT_H_
+#endif  // STORAGE_CLIENT_STORAGECLIENT_H_
 
