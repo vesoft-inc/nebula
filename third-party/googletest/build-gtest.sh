@@ -10,7 +10,7 @@ glog_release=$THIRD_PARTY_DIR/glog/_install
 libevent_release=$THIRD_PARTY_DIR/libevent/_install
 
 echo
-echo Start building $PROJECT_NAME with gcc-$GCC_VER
+echo "Start building $PROJECT_NAME with $NEBULA_CXX_COMPILER ($CXX_VER_STR)"
 echo
 
 cd $SOURCE_DIR
@@ -28,7 +28,7 @@ fi
 if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build-gtest.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !(CC=$NEBULA_C_COMPILER CPP="$NEBULA_C_COMPILER -E" CXX=$NEBULA_CXX_COMPILER    CXXFLAGS="-fPIC -DPIC -DHAVE_LIB_GFLAGS -std=c++11 -I$double_conversion/include -I$libevent_release/include -I$gflags_release/include -I$glog_release/include    $EXTRA_CXXFLAGS"      CFLAGS=$CXXFLAGS CPPFLAGS=$CXXFLAGS      LDFLAGS="-L$double_conversion/lib -L$libevent_release/lib -L$gflags_release/lib -L$glog_release/lib     $EXTRA_LDFLAGS"            $SOURCE_DIR/configure --prefix=$INSTALL_PATH --with-gnu-ld); then
+    if !(CC=$NEBULA_C_COMPILER CPP="$NEBULA_C_COMPILER -E" CXX=$NEBULA_CXX_COMPILER    CXXFLAGS="-fPIC -DPIC -DHAVE_LIB_GFLAGS -std=c++11 -I$double_conversion/include -I$libevent_release/include -I$gflags_release/include -I$glog_release/include    $EXTRA_CXXFLAGS"      CFLAGS=$CXXFLAGS CPPFLAGS=$CXXFLAGS      LDFLAGS="-L$double_conversion/lib -L$libevent_release/lib -L$gflags_release/lib -L$glog_release/lib     $EXTRA_LDFLAGS"            $SOURCE_DIR/configure --prefix=$INSTALL_PATH); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"

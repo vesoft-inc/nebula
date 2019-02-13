@@ -6,19 +6,9 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     file_based_part_manager_test
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    boost_system
-    resolv
-    double-conversion
-    event
-    dl
-    -pthread
 )
 add_test(NAME file_based_part_manager_test COMMAND file_based_part_manager_test)
 
@@ -31,19 +21,9 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     file_based_schema_manager_test
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    boost_system
-    resolv
-    double-conversion
-    event
-    dl
-    -pthread
 )
 add_test(NAME file_based_schema_manager_test COMMAND file_based_schema_manager_test)
 

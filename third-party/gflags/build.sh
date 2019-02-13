@@ -5,7 +5,7 @@ source ../functions.sh
 prepareBuild "gflags"
 
 echo
-echo Start building $PROJECT_NAME with gcc-$GCC_VER and glibc-$GLIBC_VER
+echo "Start building $PROJECT_NAME with $NEBULA_CXX_COMPILER ($CXX_VER_STR)"
 echo
 
 #if !(cd $SOURCE_DIR && NOCONFIGURE=1 ./autogen.sh); then
