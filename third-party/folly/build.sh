@@ -13,7 +13,7 @@ zstd_release=$THIRD_PARTY_DIR/zstd/_install
 snappy_release=$THIRD_PARTY_DIR/snappy/_install
 
 echo
-echo Start building $PROJECT_NAME with gcc-$GCC_VER
+echo "Start building $PROJECT_NAME with $NEBULA_CXX_COMPILER ($CXX_VER_STR)"
 echo
 
 #if !(cd $SOURCE_DIR && autoreconf -ivf ); then
@@ -30,6 +30,10 @@ compiler_flags="-fPIC -DPIC -DFOLLY_HAVE_LIBDWARF_DWARF_H -DFOLLY_HAVE_MEMRCHR -
 exe_linker_flags="-static-libgcc -static-libstdc++ $EXTRA_LDFLAGS"
 NEBULA_INCLUDE_DIRS="$double_conversion_release/include;$libevent_release/include;$gflags_release/include;$glog_release/include;$zstd_release/include;$zlib_release/include;$snappy_release/include;$NEBULA_INCLUDE_DIRS"
 NEBULA_LIB_DIRS="$double_conversion_release/lib;$libevent_release/lib;$gflags_release/lib;$glog_release/lib;$zstd_release/lib;$zlib_release/lib;$snappy_release/lib;$NEBULA_LIB_DIRS"
+
+if (( $CXX_MAJOR_VER > 8 || $CXX_MAJOR_VER == 8 && $CXX_MINOR_VER > 2 || $CXX_MAJOR_VER == 8 && $CXX_MINOR_VER == 2 && $CXX_RELEASE_VER > 0 )); then
+    compiler_flags="$compiler_flags -Wno-error=stringop-truncation"
+fi
 
 if [[ $SOURCE_DIR/CMakeLists.txt -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then

@@ -11,37 +11,12 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:thread_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     nebula
-    thriftcpp2
-    thrift
-    thrift-core
-    thriftprotocol
-    async
-    protocol
-    transport
-    concurrency
-    security
-    thriftfrozen2
+    ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
-    event
-    bz2
-    snappy
-    zstd
-    z
-    glog
-    gflags
-    resolv
-    double-conversion
     ${Readline_LIBRARY}
     ${NCURSES_LIBRARY}
-    dl
-    -pthread
 )
 
 install(TARGETS nebula DESTINATION bin)

@@ -4,23 +4,10 @@ add_executable(
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:base_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     parser_test
     gtest
     gtest_main
-    folly
-    boost_system
-    boost_context
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
-    double-conversion
-    dl
-    -pthread
 )
 target_include_directories(parser_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
 nebula_add_test(parser_test)
@@ -31,23 +18,10 @@ add_executable(
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:base_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     scanner_test
     gtest
     gtest_main
-    folly
-    boost_system
-    boost_context
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
-    double-conversion
-    dl
-    -pthread
 )
 target_include_directories(scanner_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
 nebula_add_test(scanner_test)
@@ -60,23 +34,10 @@ add_executable(
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:base_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     expression_test
     gtest
     gtest_main
-    folly
-    boost_system
-    boost_context
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
-    double-conversion
-    dl
-    -pthread
 )
 target_include_directories(expression_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
 nebula_add_test(expression_test)
@@ -87,21 +48,8 @@ add_executable(
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:base_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     expression_encode_decode_bm
     follybenchmark
-    folly
-    boost_system
-    boost_context
     boost_regex
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
-    double-conversion
-    dl
-    -pthread
 )
