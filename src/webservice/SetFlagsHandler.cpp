@@ -61,7 +61,7 @@ void SetFlagsHandler::onEOM() noexcept {
             return;
         case ErrorCode::E_UNPROCESSABLE:
             ResponseBuilder(downstream_)
-                .status(422, "Unprocessable Entity")
+                .status(400, "Bad Request")
                 .sendWithEOM();
             return;
         default:

@@ -6,23 +6,12 @@ add_executable(
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     flags_access_test
     proxygenhttpserver
     proxygenlib
     wangle
-    folly
     gtest
-    glog
-    gflags
-    boost_context
-    ${COMPRESSION_LIBRARIES}
-    event
-    ${OPENSSL_SSL_LIBRARY}
-    ${OPENSSL_CRYPTO_LIBRARY}
-    double-conversion
-    dl
-    -pthread
 )
 nebula_add_test(row_reader_test)
 
