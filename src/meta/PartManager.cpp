@@ -29,7 +29,7 @@ std::shared_ptr<const PartManager> PartManager::get(GraphSpaceID space) {
         if (!FLAGS_partition_conf_file.empty()) {
             partManagers_ = FileBasedPartManager::init();
         } else {
-            LOG(FATAL) << "Meta server based PartManager has not been implemented";
+            partManagers_ = AdHocPartManagersBuilder::get();
         }
     });
 
@@ -84,6 +84,31 @@ const std::vector<PartitionID>& PartManager::partsOnHost(HostAddr host) const {
     }
 
     return hostIt->second;
+}
+
+std::unordered_map<GraphSpaceID, std::shared_ptr<PartManager>>
+    AdHocPartManagersBuilder::partManagers_;
+// static
+std::unordered_map<GraphSpaceID, std::shared_ptr<PartManager>> AdHocPartManagersBuilder::get() {
+    return partManagers_;
+}
+
+// static
+void AdHocPartManagersBuilder::add(GraphSpaceID spaceId,
+                                   HostAddr host,
+                                   std::vector<PartitionID> parts) {
+    auto it = partManagers_.find(spaceId);
+    if (it != partManagers_.end()) {
+        LOG(FATAL) << "PartManager for space " << spaceId << " already existed!";
+    }
+    auto* pmPtr = new PartManager();
+    std::shared_ptr<PartManager> pm(pmPtr);
+    pm->hosts_.emplace_back(host);
+    for (auto partId : parts) {
+        pm->partHostMap_[partId].emplace_back(host);
+    }
+    pm->hostPartMap_.emplace(host, std::move(parts));
+    partManagers_.emplace(spaceId, pm);
 }
 
 }  // namespace meta

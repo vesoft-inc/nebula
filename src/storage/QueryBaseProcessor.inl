@@ -57,7 +57,7 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                 VLOG(3) << "collect _rank, value = " << KeyUtils::getRank(key);
                 collector->collectInt64(ResultType::SUCCEEDED, KeyUtils::getRank(key), prop);
                 continue;
-        };
+        }
         const auto& name = prop.prop_.get_name();
         switch (prop.type_.type) {
             case cpp2::SupportedType::INT: {
@@ -187,7 +187,6 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
         for (auto& p : req.get_parts()) {
             this->pushResultCode(retCode, p.first);
         }
-        this->resp_.result.set_latency_in_ms(this->duration_.elapsedInMSec());
         this->onFinished();
         return;
     }
@@ -207,7 +206,6 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     });
 
     onProcessed(tagContexts, edgeContext, returnColumnsNum);
-    this->resp_.result.set_latency_in_ms(this->duration_.elapsedInMSec());
     this->onFinished();
 }
 
