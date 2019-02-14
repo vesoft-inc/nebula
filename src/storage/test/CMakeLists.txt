@@ -21,7 +21,6 @@ nebula_link_libraries(
 )
 nebula_add_test(key_utils_test)
 
-
 add_executable(
     add_vertices_test
     AddVerticesTest.cpp
@@ -182,3 +181,28 @@ nebula_link_libraries(
 )
 nebula_add_test(query_stats_test)
 
+add_executable(
+    storage_client_test
+    StorageClientTest.cpp
+    $<TARGET_OBJECTS:storage_client>
+    $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+)
+nebula_link_libraries(
+    storage_client_test
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    gtest
+)
+
+nebula_add_test(storage_client_test)

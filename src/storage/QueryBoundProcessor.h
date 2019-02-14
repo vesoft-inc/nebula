@@ -46,6 +46,9 @@ protected:
                                          EdgeType edgeType,
                                          std::vector<PropContext>& props,
                                          RowSetWriter& writer);
+
+private:
+    std::vector<cpp2::VertexData> vertices_;
 };
 
 }  // namespace storage
