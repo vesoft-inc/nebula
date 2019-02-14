@@ -13,7 +13,6 @@
 #include "storage/KeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
-#include "meta/AdHocSchemaManager.h"
 
 namespace nebula {
 namespace storage {
