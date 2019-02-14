@@ -16,6 +16,7 @@ namespace meta {
 
 class PartManager {
     FRIEND_TEST(FileBasedPartManager, PartitionAllocation);
+    friend class AdHocPartManagersBuilder;
 
 public:
     // Retrieve the Partition Manager for the given graph space
@@ -67,6 +68,16 @@ protected:
 
 protected:
     static folly::RWSpinLock accessLock_;
+    static std::unordered_map<GraphSpaceID, std::shared_ptr<PartManager>> partManagers_;
+};
+
+class AdHocPartManagersBuilder final {
+public:
+    static std::unordered_map<GraphSpaceID, std::shared_ptr<PartManager>> get();
+
+    static void add(GraphSpaceID spaceId, HostAddr host, std::vector<PartitionID> parts);
+
+private:
     static std::unordered_map<GraphSpaceID, std::shared_ptr<PartManager>> partManagers_;
 };
 

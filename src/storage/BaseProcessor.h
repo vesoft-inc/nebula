@@ -40,6 +40,8 @@ protected:
      * Destroy current instance when finished.
      * */
     void onFinished() {
+        result_.set_latency_in_ms(duration_.elapsedInMSec());
+        resp_.set_result(std::move(result_));
         promise_.setValue(std::move(resp_));
         delete this;
     }
@@ -48,8 +50,10 @@ protected:
 
     cpp2::ColumnDef columnDef(std::string name, cpp2::SupportedType type) {
         cpp2::ColumnDef column;
-        column.name = std::move(name);
-        column.type.type = type;
+        column.set_name(std::move(name));
+        cpp2::ValueType vType;
+        vType.set_type(type);
+        column.set_type(std::move(vType));
         return column;
     }
 
@@ -58,9 +62,9 @@ protected:
     void pushResultCode(cpp2::ErrorCode code, PartitionID partId) {
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             cpp2::ResultCode thriftRet;
-            thriftRet.code = code;
-            thriftRet.part_id = partId;
-            resp_.result.failed_codes.emplace_back(std::move(thriftRet));
+            thriftRet.set_code(code);
+            thriftRet.set_part_id(partId);
+            result_.failed_codes.emplace_back(std::move(thriftRet));
         }
     }
 
@@ -68,6 +72,7 @@ protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
+    cpp2::ResponseCommon result_;
 
     time::Duration duration_;
     std::vector<cpp2::ResultCode> codes_;

@@ -33,11 +33,11 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
     this->kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
                                   [partId, this](kvstore::ResultCode code, HostAddr addr) {
         cpp2::ResultCode thriftResult;
-        thriftResult.code = to(code);
-        thriftResult.part_id = partId;
+        thriftResult.set_code(to(code));
+        thriftResult.set_part_id(partId);
         if (code == kvstore::ResultCode::ERR_LEADER_CHANAGED) {
-            thriftResult.get_leader()->ip = addr.first;
-            thriftResult.get_leader()->port = addr.second;
+            thriftResult.get_leader()->set_ip(addr.first);
+            thriftResult.get_leader()->set_port(addr.second);
         }
         bool finished = false;
         {
@@ -47,8 +47,8 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
             }
             this->callingNum_--;
             if (this->callingNum_ == 0) {
-                this->resp_.result.set_failed_codes(std::move(this->codes_));
-                this->resp_.result.set_latency_in_ms(this->duration_.elapsedInMSec());
+                result_.set_failed_codes(std::move(this->codes_));
+                result_.set_latency_in_ms(this->duration_.elapsedInMSec());
                 finished = true;
             }
         }

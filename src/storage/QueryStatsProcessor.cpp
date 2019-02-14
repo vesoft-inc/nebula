@@ -56,19 +56,21 @@ QueryStatsProcessor::collectEdgesStats(PartitionID partId,
 
 void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
     RowWriter writer;
+    decltype(resp_.schema) s;
+    decltype(resp_.schema.columns) cols;
     for (auto& prop : props) {
         switch (prop.prop_.stat) {
             case cpp2::StatType::SUM: {
                 switch (prop.sum_.which()) {
                     case 0:
                         writer << boost::get<int64_t>(prop.sum_);
-                        resp_.schema.columns.emplace_back(
+                        cols.emplace_back(
                                 columnDef(std::move(prop.prop_.name),
                                           cpp2::SupportedType::INT));
                         break;
                     case 1:
                         writer << boost::get<double>(prop.sum_);
-                        resp_.schema.columns.emplace_back(
+                        cols.emplace_back(
                                 columnDef(std::move(prop.prop_.name),
                                           cpp2::SupportedType::DOUBLE));
                         break;
@@ -77,7 +79,7 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
             }
             case cpp2::StatType::COUNT: {
                 writer << prop.count_;
-                resp_.schema.columns.emplace_back(
+                cols.emplace_back(
                             columnDef(std::move(prop.prop_.name),
                                       cpp2::SupportedType::INT));
                 break;
@@ -92,16 +94,17 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
                         writer << boost::get<double>(prop.sum_) / prop.count_;
                         break;
                 }
-                resp_.schema.columns.emplace_back(
+                cols.emplace_back(
                         columnDef(std::move(prop.prop_.name),
                                   cpp2::SupportedType::DOUBLE));
                 break;
             }
         }
     }
-    resp_.data = std::move(writer.encode());
+    s.set_columns(std::move(cols));
+    resp_.set_schema(std::move(s));
+    resp_.set_data(std::move(writer.encode()));
 }
-
 
 kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
                                                        VertexID vId,
