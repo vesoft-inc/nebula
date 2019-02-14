@@ -4,21 +4,21 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef KVSTORE_KVSTOREIMPL_H_
-#define KVSTORE_KVSTOREIMPL_H_
+#ifndef KVSTORE_NEBULASTORE_H_
+#define KVSTORE_NEBULASTORE_H_
 
 #include <gtest/gtest_prod.h>
 #include "base/Base.h"
-#include "kvstore/include/KVStore.h"
+#include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/Part.h"
-#include "kvstore/StorageEngine.h"
+#include "kvstore/KVEngine.h"
 
 namespace nebula {
 namespace kvstore {
 
 // <engine pointer, path>
-using Engine = std::pair<std::unique_ptr<StorageEngine>, std::string>;
+using Engine = std::pair<std::unique_ptr<KVEngine>, std::string>;
 
 using PartEngine = std::unordered_map<PartitionID, Engine*>;
 
@@ -27,21 +27,25 @@ struct GraphSpaceKV {
     std::vector<Engine> engines_;
 };
 
-class KVStoreImpl : public KVStore {
+class NebulaStore : public KVStore {
     FRIEND_TEST(KVStoreTest, SimpleTest);
     FRIEND_TEST(KVStoreTest, PartsTest);
 
 public:
-    explicit KVStoreImpl(KVOptions options)
+    explicit NebulaStore(KVOptions options)
             : partMan_(PartManager::instance())
             , options_(std::move(options)) {}
 
-    ~KVStoreImpl() = default;
+    ~NebulaStore() = default;
 
     /**
      * Pull meta information from PartManager and init current instance.
      * */
     void init();
+
+    uint32_t capability() const override {
+        return 0;
+    }
 
     ResultCode get(GraphSpaceID spaceId,
                    PartitionID  partId,
@@ -55,7 +59,7 @@ public:
                      PartitionID  partId,
                      const std::string& start,
                      const std::string& end,
-                     std::unique_ptr<StorageIter>* iter) override;
+                     std::unique_ptr<KVIterator>* iter) override;
 
     /**
      * Get all results with prefix.
@@ -63,7 +67,7 @@ public:
     ResultCode prefix(GraphSpaceID spaceId,
                       PartitionID  partId,
                       const std::string& prefix,
-                      std::unique_ptr<StorageIter>* iter) override;
+                      std::unique_ptr<KVIterator>* iter) override;
 
     /**
      * async batch put.
@@ -111,5 +115,5 @@ private:
 
 }  // namespace kvstore
 }  // namespace nebula
-#endif  // KVSTORE_KVSTOREIMPL_H_
+#endif  // KVSTORE_NEBULASTORE_H_
 

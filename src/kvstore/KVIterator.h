@@ -4,30 +4,30 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef KVSTORE_INCLUDE_ITERATOR_H_
-#define KVSTORE_INCLUDE_ITERATOR_H_
+#ifndef KVSTORE_KVITERATOR_H_
+#define KVSTORE_KVITERATOR_H_
 
 #include "base/Base.h"
 
 namespace nebula {
 namespace kvstore {
 
-class StorageIter {
+class KVIterator {
 public:
-    virtual ~StorageIter()  = default;
+    virtual ~KVIterator()  = default;
 
-    virtual bool valid() = 0;
+    virtual bool valid() const = 0;
 
     virtual void next() = 0;
 
     virtual void prev() = 0;
 
-    virtual folly::StringPiece key() = 0;
+    virtual folly::StringPiece key() const = 0;
 
-    virtual folly::StringPiece val() = 0;
+    virtual folly::StringPiece val() const = 0;
 };
 
 }  // namespace kvstore
 }  // namespace nebula
-#endif  // KVSTORE_INCLUDE_ITERATOR_H_
+#endif  // KVSTORE_KVITERATOR_H_
 
