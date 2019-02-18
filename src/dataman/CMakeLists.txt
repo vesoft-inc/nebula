@@ -1,4 +1,4 @@
-set(CMAKE_CXX_FLAGS "-w")
+add_compile_options(-w -fPIC)
 
 add_library(
     dataman_obj OBJECT
@@ -26,17 +26,7 @@ add_library(
     RowWriter.cpp
     RowReader.cpp
     NebulaCodecImpl.cpp
-    ../common/base/Cord.cpp
-    ../common/base/Configuration.cpp
-    ../common/base/Status.cpp
-    ../meta/SchemaProviderIf.cpp
-    ../meta/SchemaManager.cpp
-    ../meta/FileBasedSchemaManager.cpp
-    ../meta/ServerBasedSchemaManager.cpp
-    ../meta/AdHocSchemaManager.cpp
-    ../interface/gen-cpp2/storage_constants.cpp
-    ../interface/gen-cpp2/storage_data.cpp
-    ../interface/gen-cpp2/storage_types.cpp
-)
+    $<TARGET_OBJECTS:base_obj>
+    )
 
 add_dependencies(dataman base_obj storage_thrift_obj)
