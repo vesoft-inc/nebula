@@ -8,7 +8,7 @@
 #include <folly/Try.h>
 
 namespace nebula {
-namespace graph {
+namespace storage {
 
 namespace detail {
 
@@ -147,6 +147,6 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
     return context->promise.getSemiFuture();
 }
 
-}   // namespace graph
+}   // namespace storage
 }   // namespace nebula
 
