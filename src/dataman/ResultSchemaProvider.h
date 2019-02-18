@@ -13,25 +13,25 @@
 namespace nebula {
 
 class ResultSchemaProvider : public meta::SchemaProviderIf {
-    using ColumnDefs = std::vector<storage::cpp2::ColumnDef>;
+    using ColumnDefs = std::vector<cpp2::ColumnDef>;
 
 public:
     class ResultSchemaField : public meta::SchemaProviderIf::Field {
     public:
         explicit ResultSchemaField(
-            const storage::cpp2::ColumnDef* col = nullptr);
+            const cpp2::ColumnDef* col = nullptr);
 
         const char* getName() const override;
-        const storage::cpp2::ValueType& getType() const override;
+        const cpp2::ValueType& getType() const override;
         bool isValid() const override;
 
     private:
-        const storage::cpp2::ColumnDef* column_;
+        const cpp2::ColumnDef* column_;
     };
 
 
 public:
-    explicit ResultSchemaProvider(storage::cpp2::Schema);
+    explicit ResultSchemaProvider(cpp2::Schema);
     virtual ~ResultSchemaProvider() = default;
 
     int32_t getVersion() const noexcept override {
@@ -43,8 +43,8 @@ public:
     int64_t getFieldIndex(const folly::StringPiece name) const override;
     const char* getFieldName(int64_t index) const override;
 
-    const storage::cpp2::ValueType& getFieldType(int64_t index) const override;
-    const storage::cpp2::ValueType& getFieldType(const folly::StringPiece name) const override;
+    const cpp2::ValueType& getFieldType(int64_t index) const override;
+    const cpp2::ValueType& getFieldType(const folly::StringPiece name) const override;
 
     std::shared_ptr<const meta::SchemaProviderIf::Field> field(int64_t index) const override;
     std::shared_ptr<const meta::SchemaProviderIf::Field> field(
@@ -58,7 +58,7 @@ protected:
     UnorderedMap<uint64_t, int64_t> nameIndex_;
 
     // Default constructor, only used by SchemaWriter
-    ResultSchemaProvider(int32_t ver = 0) : schemaVer_(ver) {};
+    explicit ResultSchemaProvider(int32_t ver = 0) : schemaVer_(ver) {}
 };
 
 }  // namespace nebula

@@ -31,12 +31,12 @@ struct PropContext {
         prop_.name = name;
         prop_.owner = cpp2::PropOwner::EDGE;
         retIndex_ = retIndex;
-        type_.type = cpp2::SupportedType::INT;
+        type_.type = nebula::cpp2::SupportedType::INT;
         pikType_ = pikType;
     }
 
     cpp2::PropDef prop_;
-    cpp2::ValueType type_;
+    nebula::cpp2::ValueType type_;
     PropInKeyType pikType_ = PropInKeyType::NONE;
     boost::variant<int64_t, double> sum_ = 0L;
     int32_t count_    = 0;

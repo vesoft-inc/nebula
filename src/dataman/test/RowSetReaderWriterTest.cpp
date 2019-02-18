@@ -18,11 +18,11 @@ TEST(RowSetReaderWriter, allInts) {
     auto schema = std::make_shared<SchemaWriter>();
     for (int i = 0; i < 33; i++) {
         schema->appendCol(folly::stringPrintf("col%02d", i),
-                          storage::cpp2::SupportedType::INT);
+                          cpp2::SupportedType::INT);
     }
 
     RowSetWriter rsWriter(schema);
-    for (int row = 0; row < 10; row++ ) {
+    for (int row = 0; row < 10; row++) {
         int32_t base = row * 100;
         RowWriter writer(schema);
         for (int col = 0; col < 33; col++) {

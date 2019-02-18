@@ -19,14 +19,14 @@ using nebula::RowReader;
 auto schema = std::make_shared<SchemaWriter>();
 
 void prepareSchema() {
-    schema->appendCol("col1", nebula::storage::cpp2::SupportedType::INT);
-    schema->appendCol("col2", nebula::storage::cpp2::SupportedType::INT);
-    schema->appendCol("col3", nebula::storage::cpp2::SupportedType::STRING);
-    schema->appendCol("col4", nebula::storage::cpp2::SupportedType::STRING);
-    schema->appendCol("col5", nebula::storage::cpp2::SupportedType::BOOL);
-    schema->appendCol("col6", nebula::storage::cpp2::SupportedType::FLOAT);
-    schema->appendCol("col7", nebula::storage::cpp2::SupportedType::VID);
-    schema->appendCol("col8", nebula::storage::cpp2::SupportedType::DOUBLE);
+    schema->appendCol("col1", nebula::cpp2::SupportedType::INT);
+    schema->appendCol("col2", nebula::cpp2::SupportedType::INT);
+    schema->appendCol("col3", nebula::cpp2::SupportedType::STRING);
+    schema->appendCol("col4", nebula::cpp2::SupportedType::STRING);
+    schema->appendCol("col5", nebula::cpp2::SupportedType::BOOL);
+    schema->appendCol("col6", nebula::cpp2::SupportedType::FLOAT);
+    schema->appendCol("col7", nebula::cpp2::SupportedType::VID);
+    schema->appendCol("col8", nebula::cpp2::SupportedType::DOUBLE);
 }
 
 

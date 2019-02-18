@@ -14,16 +14,16 @@ namespace nebula {
 
 class SchemaWriter : public ResultSchemaProvider {
 public:
-    explicit SchemaWriter(int32_t ver = 0) : ResultSchemaProvider(ver) {};
+    explicit SchemaWriter(int32_t ver = 0) : ResultSchemaProvider(ver) {}
 
     // Move the schema out of the writer
-    storage::cpp2::Schema moveSchema() noexcept;
+    cpp2::Schema moveSchema() noexcept;
 
     SchemaWriter& appendCol(folly::StringPiece name,
-                            storage::cpp2::SupportedType type) noexcept;
+                            cpp2::SupportedType type) noexcept;
 
     SchemaWriter& appendCol(folly::StringPiece name,
-                            storage::cpp2::ValueType&& type)noexcept;
+                            cpp2::ValueType&& type)noexcept;
 
 private:
 };

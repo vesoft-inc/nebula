@@ -5,9 +5,9 @@
  */
 
 
-namespace cpp nebula.common
-namespace java nebula.common
-namespace go nebula.common
+namespace cpp nebula
+namespace java nebula
+namespace go nebula
 
 cpp_include "base/ThriftTypes.h"
 
@@ -15,6 +15,8 @@ typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
 typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
 typedef i32 (cpp.type = "nebula::TagID") TagID
 typedef i32 (cpp.type = "nebula::EdgeType") EdgeType
+typedef i64 (cpp.type = "nebula::EdgeRanking") EdgeRanking
+typedef i64 (cpp.type = "nebula::VertexID") VertexID
 
 typedef i32 (cpp.type = "nebula::IPv4") IPv4
 typedef i32 (cpp.type = "nebula::Port") Port
@@ -71,4 +73,5 @@ struct HostAddr {
     2: Port  port,
 }
 
+const ValueType kInvalidValueType = {"type" : UNKNOWN}
 
