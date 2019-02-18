@@ -42,7 +42,7 @@ private:
         UNUSED(tagContexts);
         UNUSED(edgeContext);
         LOG(FATAL) << "Unimplement!";
-        return kvstore::ResultCode::SUCCESSED;
+        return kvstore::ResultCode::SUCCEEDED;
     }
 
     void onProcessed(std::vector<TagContext>& tagContexts,

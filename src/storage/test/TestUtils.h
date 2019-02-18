@@ -5,9 +5,9 @@
  */
 
 #include "base/Base.h"
-#include "kvstore/include/KVStore.h"
+#include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
-#include "kvstore/KVStoreImpl.h"
+#include "kvstore/NebulaStore.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
@@ -42,7 +42,7 @@ public:
         options.local_ = HostAddr(0, 0);
         options.dataPaths_ = std::move(paths);
 
-        kvstore::KVStoreImpl* kv = static_cast<kvstore::KVStoreImpl*>(
+        kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
                                         kvstore::KVStore::instance(std::move(options)));
         return kv;
     }

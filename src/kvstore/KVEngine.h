@@ -4,22 +4,22 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef KVSTORE_STORAGEENGINE_H_
-#define KVSTORE_STORAGEENGINE_H_
+#ifndef KVSTORE_KVENGINE_H_
+#define KVSTORE_KVENGINE_H_
 
 #include "base/Base.h"
-#include "kvstore/include/Iterator.h"
-#include "kvstore/include/ResultCode.h"
+#include "kvstore/Common.h"
+#include "kvstore/KVIterator.h"
 
 namespace nebula {
 namespace kvstore {
 
-class StorageEngine {
+class KVEngine {
 public:
-    explicit StorageEngine(GraphSpaceID spaceId)
+    explicit KVEngine(GraphSpaceID spaceId)
                 : spaceId_(spaceId) {}
 
-    virtual ~StorageEngine() = default;
+    virtual ~KVEngine() = default;
 
     virtual ResultCode get(const std::string& key,
                            std::string* value) = 0;
@@ -33,13 +33,13 @@ public:
      * */
     virtual ResultCode range(const std::string& start,
                              const std::string& end,
-                             std::unique_ptr<StorageIter>* iter) = 0;
+                             std::unique_ptr<KVIterator>* iter) = 0;
 
     /**
      * Get all results with 'prefix' str as prefix.
      * */
     virtual ResultCode prefix(const std::string& prefix,
-                              std::unique_ptr<StorageIter>* iter) = 0;
+                              std::unique_ptr<KVIterator>* iter) = 0;
 
     virtual ResultCode remove(const std::string& key) = 0;
 
@@ -74,5 +74,5 @@ protected:
 
 }  // namespace kvstore
 }  // namespace nebula
-#endif  // KVSTORE_STORAGEENGINE_H_
+#endif  // KVSTORE_KVENGINE_H_
 

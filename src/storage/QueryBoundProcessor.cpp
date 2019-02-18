@@ -21,9 +21,9 @@ kvstore::ResultCode QueryBoundProcessor::collectVertexProps(
                             std::vector<PropContext>& props,
                             RowWriter& writer) {
     auto prefix = KeyUtils::prefix(partId, vId, tagId);
-    std::unique_ptr<kvstore::StorageIter> iter;
+    std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCESSED) {
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
         VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
         return ret;
     }
@@ -47,9 +47,9 @@ kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
                                                std::vector<PropContext>& props,
                                                RowSetWriter& rsWriter) {
     auto prefix = KeyUtils::prefix(partId, vId, edgeType);
-    std::unique_ptr<kvstore::StorageIter> iter;
+    std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCESSED || !iter) {
+    if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
         return ret;
     }
     while (iter->valid()) {
@@ -76,7 +76,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
             VLOG(3) << "partId " << partId << ", vId " << vId
                     << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
             auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_, writer);
-            if (ret != kvstore::ResultCode::SUCCESSED) {
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
             }
         }
@@ -87,7 +87,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
         RowSetWriter rsWriter;
         auto ret = collectEdgeProps(partId, vId, edgeContext.edgeType_,
                                     edgeContext.props_, rsWriter);
-        if (ret != kvstore::ResultCode::SUCCESSED) {
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
         if (!rsWriter.data().empty()) {
@@ -95,7 +95,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
         }
     }
     vertices_.emplace_back(std::move(vResp));
-    return kvstore::ResultCode::SUCCESSED;
+    return kvstore::ResultCode::SUCCEEDED;
 }
 
 
