@@ -76,13 +76,13 @@ TEST(FileBasedSchemaManager, readFromSchemaFile) {
     EXPECT_EQ(1, sm1->getVersion());
     EXPECT_EQ(3, sm1->getNumFields());
     EXPECT_EQ(2, sm1->getFieldIndex("pending"));
-    EXPECT_EQ(storage::cpp2::SupportedType::VID, sm1->getFieldType("origin").type);
+    EXPECT_EQ(cpp2::SupportedType::VID, sm1->getFieldType("origin").type);
 
     auto sm2 = SchemaManager::getEdgeSchema("space_one", "transfer");
     EXPECT_EQ(3, sm2->getVersion());
     EXPECT_EQ(4, sm2->getNumFields());
     EXPECT_EQ(3, sm2->getFieldIndex("amount"));
-    EXPECT_EQ(storage::cpp2::SupportedType::DATE, sm2->getFieldType("time").type);
+    EXPECT_EQ(cpp2::SupportedType::DATE, sm2->getFieldType("time").type);
 
     EXPECT_EQ(2, SchemaManager::getNewestTagSchemaVer("space_one", "person"));
 
@@ -90,13 +90,13 @@ TEST(FileBasedSchemaManager, readFromSchemaFile) {
     EXPECT_EQ(2, sm3->getVersion());
     EXPECT_EQ(4, sm3->getNumFields());
     EXPECT_EQ(3, sm3->getFieldIndex("address"));
-    EXPECT_EQ(storage::cpp2::SupportedType::STRING, sm3->getFieldType("address").type);
+    EXPECT_EQ(cpp2::SupportedType::STRING, sm3->getFieldType("address").type);
 
     auto sm4 = SchemaManager::getTagSchema("space_one", "person", 1);
     EXPECT_EQ(1, sm4->getVersion());
     EXPECT_EQ(3, sm4->getNumFields());
     EXPECT_EQ(2, sm4->getFieldIndex("employer"));
-    EXPECT_EQ(storage::cpp2::SupportedType::STRING, sm4->getFieldType("employer").type);
+    EXPECT_EQ(cpp2::SupportedType::STRING, sm4->getFieldType("employer").type);
 }
 
 }  // namespace meta

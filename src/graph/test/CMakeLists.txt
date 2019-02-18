@@ -13,25 +13,12 @@ add_executable(
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:meta_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     session_manager_test
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
     gtest_main
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
-    double-conversion
-    dl
-    -pthread
 )
 
 nebula_add_test(session_manager_test)
@@ -56,24 +43,11 @@ add_executable(
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:meta_obj>
 )
-target_link_libraries(
+nebula_link_libraries(
     query_engine_test
     ${THRIFT_LIBRARIES}
     wangle
-    folly
-    boost_system
-    boost_context
-    ${OPENSSL_LIBRARIES}
-    ${KRB5_LIBRARIES}
     gtest
     gtest_main
-    glog
-    gflags
-    event
-    ${COMPRESSION_LIBRARIES}
-    resolv
-    double-conversion
-    dl
-    -pthread
 )
 nebula_add_test(query_engine_test)

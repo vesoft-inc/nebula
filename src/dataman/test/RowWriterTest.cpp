@@ -81,10 +81,10 @@ TEST(RowWriter, streamControl) {
     RowWriter writer(nullptr);
     writer << RowWriter::ColName("bool_col") << true
            << RowWriter::ColName("vid_col")
-           << RowWriter::ColType(storage::cpp2::SupportedType::VID) << 10
-           << RowWriter::ColType(storage::cpp2::SupportedType::STRING)
+           << RowWriter::ColType(cpp2::SupportedType::VID) << 10
+           << RowWriter::ColType(cpp2::SupportedType::STRING)
            << "Hello World!"
-           << RowWriter::ColType(storage::cpp2::SupportedType::DOUBLE)
+           << RowWriter::ColType(cpp2::SupportedType::DOUBLE)
            << static_cast<float>(3.1415926);
 
     std::string encoded = writer.encode();
@@ -144,13 +144,13 @@ TEST(RowWriter, offsetsCreation) {
 
 TEST(RowWriter, withSchema) {
     auto schema = std::make_shared<SchemaWriter>();
-    schema->appendCol("col1", storage::cpp2::SupportedType::INT);
-    schema->appendCol("col2", storage::cpp2::SupportedType::INT);
-    schema->appendCol("col3", storage::cpp2::SupportedType::STRING);
-    schema->appendCol("col4", storage::cpp2::SupportedType::STRING);
-    schema->appendCol("col5", storage::cpp2::SupportedType::BOOL);
-    schema->appendCol("col6", storage::cpp2::SupportedType::FLOAT);
-    schema->appendCol("col7", storage::cpp2::SupportedType::VID);
+    schema->appendCol("col1", cpp2::SupportedType::INT);
+    schema->appendCol("col2", cpp2::SupportedType::INT);
+    schema->appendCol("col3", cpp2::SupportedType::STRING);
+    schema->appendCol("col4", cpp2::SupportedType::STRING);
+    schema->appendCol("col5", cpp2::SupportedType::BOOL);
+    schema->appendCol("col6", cpp2::SupportedType::FLOAT);
+    schema->appendCol("col7", cpp2::SupportedType::VID);
 
     RowWriter writer(schema);
     writer << 1 << 2 << "Hello" << "World" << true
@@ -203,14 +203,14 @@ TEST(RowWriter, withSchema) {
 
 TEST(RowWriter, skip) {
     auto schema = std::make_shared<SchemaWriter>();
-    schema->appendCol("col1", storage::cpp2::SupportedType::INT);
-    schema->appendCol("col2", storage::cpp2::SupportedType::FLOAT);
-    schema->appendCol("col3", storage::cpp2::SupportedType::INT);
-    schema->appendCol("col4", storage::cpp2::SupportedType::STRING);
-    schema->appendCol("col5", storage::cpp2::SupportedType::STRING);
-    schema->appendCol("col6", storage::cpp2::SupportedType::BOOL);
-    schema->appendCol("col7", storage::cpp2::SupportedType::VID);
-    schema->appendCol("col8", storage::cpp2::SupportedType::DOUBLE);
+    schema->appendCol("col1", cpp2::SupportedType::INT);
+    schema->appendCol("col2", cpp2::SupportedType::FLOAT);
+    schema->appendCol("col3", cpp2::SupportedType::INT);
+    schema->appendCol("col4", cpp2::SupportedType::STRING);
+    schema->appendCol("col5", cpp2::SupportedType::STRING);
+    schema->appendCol("col6", cpp2::SupportedType::BOOL);
+    schema->appendCol("col7", cpp2::SupportedType::VID);
+    schema->appendCol("col8", cpp2::SupportedType::DOUBLE);
 
     RowWriter writer(schema);
     // Implicitly skip the last two fields

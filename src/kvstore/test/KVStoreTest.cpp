@@ -7,12 +7,12 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
-#include "fs/TempDir.h"
-#include "kvstore/include/KVStore.h"
-#include "kvstore/PartManager.h"
-#include "kvstore/KVStoreImpl.h"
-#include "kvstore/RocksdbEngine.h"
 #include <iostream>
+#include "fs/TempDir.h"
+#include "kvstore/KVStore.h"
+#include "kvstore/PartManager.h"
+#include "kvstore/NebulaStore.h"
+#include "kvstore/RocksdbEngine.h"
 
 DECLARE_string(part_man_type);
 
@@ -27,6 +27,7 @@ void dump(const std::vector<T>& v) {
     }
     LOG(INFO) << ss.str();
 }
+
 
 TEST(KVStoreTest, SimpleTest) {
     FLAGS_part_man_type = "memory";  // Use MemPartManager.
@@ -48,11 +49,11 @@ TEST(KVStoreTest, SimpleTest) {
     paths.push_back(folly::stringPrintf("%s/disk1", rootPath.path()));
     paths.push_back(folly::stringPrintf("%s/disk2", rootPath.path()));
 
-    std::unique_ptr<KVStoreImpl> kv;
+    std::unique_ptr<NebulaStore> kv;
     KVOptions options;
     options.local_ = HostAddr(0, 0);
     options.dataPaths_ = std::move(paths);
-    kv.reset(static_cast<KVStoreImpl*>(KVStore::instance(std::move(options))));
+    kv.reset(static_cast<NebulaStore*>(KVStore::instance(std::move(options))));
     EXPECT_EQ(2, kv->kvs_.size());
 
     EXPECT_EQ(6, kv->kvs_[1]->parts_.size());
@@ -84,13 +85,13 @@ TEST(KVStoreTest, SimpleTest) {
     }
     kv->asyncMultiPut(1, 1, std::move(data), [](ResultCode code, HostAddr addr){
         UNUSED(addr);
-        EXPECT_EQ(ResultCode::SUCCESSED, code);
+        EXPECT_EQ(ResultCode::SUCCEEDED, code);
     });
     int32_t start = 0, end = 100;
     std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
     std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
-    std::unique_ptr<StorageIter> iter;
-    EXPECT_EQ(ResultCode::SUCCESSED, kv->range(1, 1, prefix + s, prefix + e, &iter));
+    std::unique_ptr<KVIterator> iter;
+    EXPECT_EQ(ResultCode::SUCCEEDED, kv->range(1, 1, prefix + s, prefix + e, &iter));
     int num = 0;
     while (iter->valid()) {
         auto key = *reinterpret_cast<const int32_t*>(iter->key().data() + prefix.size());
@@ -102,6 +103,7 @@ TEST(KVStoreTest, SimpleTest) {
     }
     EXPECT_EQ(100, num);
 }
+
 
 TEST(KVStoreTest, PartsTest) {
     FLAGS_part_man_type = "memory";  // Use MemPartManager.
@@ -130,11 +132,11 @@ TEST(KVStoreTest, PartsTest) {
     // disk1: 0, 1, 2, 10
     // disk2: 5, 6, 7, 15
 
-    std::unique_ptr<KVStoreImpl> kv;
+    std::unique_ptr<NebulaStore> kv;
     KVOptions options;
     options.local_ = HostAddr(0, 0);
     options.dataPaths_ = std::move(paths);
-    kv.reset(static_cast<KVStoreImpl*>(KVStore::instance(std::move(options))));
+    kv.reset(static_cast<NebulaStore*>(KVStore::instance(std::move(options))));
 
     // After init, the parts should be 0-9, and the distribution should be
     // disk1: 0, 1, 2, x, y

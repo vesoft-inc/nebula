@@ -42,7 +42,6 @@ public:
                                               std::vector<typename Container::value_type>
                                              >
                           > clusters;
-
         auto sm = PartManager::get(space_);
         if (!sm) {
             LOG(ERROR) << "Cannot find PartManager for the graph space " << space_;

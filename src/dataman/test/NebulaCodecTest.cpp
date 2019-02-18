@@ -31,11 +31,11 @@ TEST(NebulaCodec, basic) {
   std::string encoded = codec.encode(v);
 
   SchemaWriter schemaWriter;
-  schemaWriter.appendCol("i_field", storage::cpp2::SupportedType::INT);
-  schemaWriter.appendCol("b_field", storage::cpp2::SupportedType::BOOL);
-  schemaWriter.appendCol("f_field", storage::cpp2::SupportedType::FLOAT);
-  schemaWriter.appendCol("d_field", storage::cpp2::SupportedType::DOUBLE);
-  schemaWriter.appendCol("s_field", storage::cpp2::SupportedType::STRING);
+  schemaWriter.appendCol("i_field", cpp2::SupportedType::INT);
+  schemaWriter.appendCol("b_field", cpp2::SupportedType::BOOL);
+  schemaWriter.appendCol("f_field", cpp2::SupportedType::FLOAT);
+  schemaWriter.appendCol("d_field", cpp2::SupportedType::DOUBLE);
+  schemaWriter.appendCol("s_field", cpp2::SupportedType::STRING);
 
   auto schema = std::make_shared<ResultSchemaProvider>(schemaWriter.moveSchema());
   auto reader = RowReader::getRowReader(encoded, schema);

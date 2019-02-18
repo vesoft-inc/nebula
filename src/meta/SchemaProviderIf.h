@@ -9,12 +9,12 @@
 
 #include "base/Base.h"
 #include "gen-cpp2/storage_types.h"
-#include "gen-cpp2/storage_constants.h"
+#include "gen-cpp2/common_constants.h"
 
 
 namespace nebula {
 
-using StorageConstants = nebula::storage::cpp2::storage_constants;
+using CommonConstants = nebula::cpp2::common_constants;
 
 namespace meta {
 
@@ -26,7 +26,7 @@ public:
         virtual ~Field() = default;
 
         virtual const char* getName() const = 0;
-        virtual const storage::cpp2::ValueType& getType() const = 0;
+        virtual const cpp2::ValueType& getType() const = 0;
         virtual bool isValid() const = 0;
     };
 
@@ -50,7 +50,7 @@ public:
         int64_t index_;
         std::shared_ptr<const Field> field_;
 
-        Iterator(const SchemaProviderIf* schema, int64_t idx = 0);
+        explicit Iterator(const SchemaProviderIf* schema, int64_t idx = 0);
     };
 
 public:
@@ -62,8 +62,8 @@ public:
     virtual int64_t getFieldIndex(const folly::StringPiece name) const = 0;
     virtual const char* getFieldName(int64_t index) const = 0;
 
-    virtual const storage::cpp2::ValueType& getFieldType(int64_t index) const = 0;
-    virtual const storage::cpp2::ValueType& getFieldType(const folly::StringPiece name)
+    virtual const cpp2::ValueType& getFieldType(int64_t index) const = 0;
+    virtual const cpp2::ValueType& getFieldType(const folly::StringPiece name)
         const = 0;
 
     virtual std::shared_ptr<const Field> field(int64_t index) const = 0;

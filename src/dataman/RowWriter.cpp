@@ -9,8 +9,8 @@
 
 namespace nebula {
 
-using storage::cpp2::Schema;
-using storage::cpp2::SupportedType;
+using cpp2::Schema;
+using cpp2::SupportedType;
 using meta::SchemaProviderIf;
 
 RowWriter::RowWriter(std::shared_ptr<const SchemaProviderIf> schema)

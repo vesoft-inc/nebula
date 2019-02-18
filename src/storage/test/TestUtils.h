@@ -5,11 +5,15 @@
  */
 
 #include "base/Base.h"
-#include "kvstore/include/KVStore.h"
+#include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
-#include "kvstore/KVStoreImpl.h"
+#include "kvstore/NebulaStore.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
+#include "storage/StorageServiceHandler.h"
+#include <thrift/lib/cpp2/server/ThriftServer.h>
+#include "meta/AdHocSchemaManager.h"
+
 
 DECLARE_string(part_man_type);
 
@@ -38,7 +42,7 @@ public:
         options.local_ = HostAddr(0, 0);
         options.dataPaths_ = std::move(paths);
 
-        kvstore::KVStoreImpl* kv = static_cast<kvstore::KVStoreImpl*>(
+        kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
                                         kvstore::KVStore::instance(std::move(options)));
         return kv;
     }
@@ -76,17 +80,17 @@ public:
     static std::shared_ptr<meta::SchemaProviderIf> genEdgeSchemaProvider(
             int32_t intFieldsNum,
             int32_t stringFieldsNum) {
-        cpp2::Schema schema;
+        nebula::cpp2::Schema schema;
         for (auto i = 0; i < intFieldsNum; i++) {
-            cpp2::ColumnDef column;
+            nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
-            column.type.type = cpp2::SupportedType::INT;
+            column.type.type = nebula::cpp2::SupportedType::INT;
             schema.columns.emplace_back(std::move(column));
         }
         for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
-            cpp2::ColumnDef column;
+            nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
-            column.type.type = cpp2::SupportedType::STRING;
+            column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
         return std::shared_ptr<meta::SchemaProviderIf>(
@@ -101,17 +105,17 @@ public:
             TagID tagId,
             int32_t intFieldsNum,
             int32_t stringFieldsNum) {
-        cpp2::Schema schema;
+        nebula::cpp2::Schema schema;
         for (auto i = 0; i < intFieldsNum; i++) {
-            cpp2::ColumnDef column;
+            nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-            column.type.type = cpp2::SupportedType::INT;
+            column.type.type = nebula::cpp2::SupportedType::INT;
             schema.columns.emplace_back(std::move(column));
         }
         for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
-            cpp2::ColumnDef column;
+            nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-            column.type.type = cpp2::SupportedType::STRING;
+            column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
         return std::shared_ptr<meta::SchemaProviderIf>(
@@ -140,6 +144,45 @@ public:
         prop.set_stat(type);
         return prop;
     }
+
+    struct ServerContext {
+         ~ServerContext() {
+             server_->stop();
+             serverT_->join();
+             VLOG(3) << "~ServerContext";
+         }
+
+         std::unique_ptr<apache::thrift::ThriftServer> server_;
+         std::unique_ptr<std::thread> serverT_;
+         uint32_t port_;
+     };
+
+     static std::unique_ptr<ServerContext> mockServer(const char* dataPath, uint32_t port = 0) {
+         auto sc = std::make_unique<ServerContext>();
+         sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
+         sc->serverT_ = std::make_unique<std::thread>([&]() {
+             std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath));
+             meta::AdHocSchemaManager::addEdgeSchema(
+                0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
+             for (auto tagId = 3001; tagId < 3010; tagId++) {
+                meta::AdHocSchemaManager::addTagSchema(
+                    0 /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
+             }
+             auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(kv.get());
+             CHECK(!!sc->server_) << "Failed to create the thrift server";
+             sc->server_->setInterface(handler);
+             sc->server_->setPort(port);
+             sc->server_->serve();  // Will wait until the server shuts down
+             LOG(INFO) << "Stop the server...";
+         });
+         while (!sc->server_->getServeEventBase()
+                 || !sc->server_->getServeEventBase()->isRunning()) {
+         }
+         sc->port_ = sc->server_->getAddress().getPort();
+         LOG(INFO) << "Starting the storage Daemon on port " << sc->port_
+                   << ", path " << dataPath;
+         return sc;
+     }
 };
 
 }  // namespace storage

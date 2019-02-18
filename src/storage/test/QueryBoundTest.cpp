@@ -52,7 +52,7 @@ void mockData(kvstore::KVStore* kv) {
         kv->asyncMultiPut(
             0, partId, std::move(data),
             [&](kvstore::ResultCode code, HostAddr addr) {
-                EXPECT_EQ(code, kvstore::ResultCode::SUCCESSED);
+                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
                 UNUSED(addr);
             });
     }

@@ -7,6 +7,7 @@
 #include "kvstore/RocksdbEngine.h"
 #include <folly/String.h>
 #include "fs/FileUtils.h"
+#include "kvstore/KVStore.h"
 
 DEFINE_uint32(batch_reserved_bytes, 4 * 1024, "default reserved bytes for one batch operation");
 
@@ -18,7 +19,7 @@ const char* kSystemParts = "__system__parts__";
 RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
                              std::shared_ptr<rocksdb::MergeOperator> mergeOp,
                              std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
-    : StorageEngine(spaceId)
+    : KVEngine(spaceId)
     , dataPath_(dataPath) {
     LOG(INFO) << "open rocksdb on " << dataPath;
     if (nebula::fs::FileUtils::fileType(dataPath.c_str()) == nebula::fs::FileType::NOTEXIST) {
@@ -47,7 +48,7 @@ ResultCode RocksdbEngine::get(const std::string& key,
     rocksdb::ReadOptions options;
     rocksdb::Status status = db_->Get(options, rocksdb::Slice(key), value);
     if (status.ok()) {
-        return ResultCode::SUCCESSED;
+        return ResultCode::SUCCEEDED;
     } else if (status.IsNotFound()) {
         return ResultCode::ERR_KEY_NOT_FOUND;
     }
@@ -59,7 +60,7 @@ ResultCode RocksdbEngine::put(std::string key,
     rocksdb::WriteOptions options;
     rocksdb::Status status = db_->Put(options, rocksdb::Slice(key), rocksdb::Slice(value));
     if (status.ok()) {
-        return ResultCode::SUCCESSED;
+        return ResultCode::SUCCEEDED;
     }
     return ResultCode::ERR_UNKNOWN;
 }
@@ -72,39 +73,39 @@ ResultCode RocksdbEngine::multiPut(std::vector<KV> keyValues) {
     rocksdb::WriteOptions options;
     rocksdb::Status status = db_->Write(options, &updates);
     if (status.ok()) {
-        return ResultCode::SUCCESSED;
+        return ResultCode::SUCCEEDED;
     }
     return ResultCode::ERR_UNKNOWN;
 }
 
 ResultCode RocksdbEngine::range(const std::string& start,
                                 const std::string& end,
-                                std::unique_ptr<StorageIter>* storageIter) {
+                                std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
     }
     storageIter->reset(new RocksdbRangeIter(iter, start, end));
-    return ResultCode::SUCCESSED;
+    return ResultCode::SUCCEEDED;
 }
 
 ResultCode RocksdbEngine::prefix(const std::string& prefix,
-                                 std::unique_ptr<StorageIter>* storageIter) {
+                                 std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(prefix));
     }
     storageIter->reset(new RocksdbPrefixIter(iter, prefix));
-    return ResultCode::SUCCESSED;
+    return ResultCode::SUCCEEDED;
 }
 
 ResultCode RocksdbEngine::remove(const std::string& key) {
     rocksdb::WriteOptions options;
     auto status = db_->Delete(options, key);
     if (status.ok()) {
-        return ResultCode::SUCCESSED;
+        return ResultCode::SUCCEEDED;
     }
     return ResultCode::ERR_UNKNOWN;
 }
@@ -114,7 +115,7 @@ ResultCode RocksdbEngine::removeRange(const std::string& start,
     rocksdb::WriteOptions options;
     auto status = db_->DeleteRange(options, db_->DefaultColumnFamily(), start, end);
     if (status.ok()) {
-        return ResultCode::SUCCESSED;
+        return ResultCode::SUCCEEDED;
     }
     return ResultCode::ERR_UNKNOWN;
 }
@@ -130,7 +131,7 @@ std::string RocksdbEngine::partKey(PartitionID partId) {
 
 void RocksdbEngine::addPart(PartitionID partId) {
     auto ret = put(partKey(partId), "");
-    if (ret == ResultCode::SUCCESSED) {
+    if (ret == ResultCode::SUCCEEDED) {
         partsNum_++;
         CHECK_GE(partsNum_, 0);
     }
@@ -146,10 +147,10 @@ void RocksdbEngine::removePart(PartitionID partId) {
 }
 
 std::vector<PartitionID> RocksdbEngine::allParts() {
-    std::unique_ptr<StorageIter> iter;
+    std::unique_ptr<KVIterator> iter;
     static const size_t prefixLen = ::strlen(kSystemParts);
     static const std::string prefixStr(kSystemParts, prefixLen);
-    CHECK_EQ(ResultCode::SUCCESSED, this->prefix(prefixStr, &iter));
+    CHECK_EQ(ResultCode::SUCCEEDED, this->prefix(prefixStr, &iter));
     std::vector<PartitionID> parts;
     while (iter->valid()) {
         auto key = iter->key();
@@ -169,7 +170,7 @@ ResultCode RocksdbEngine::ingest(const std::vector<std::string>& files) {
     rocksdb::IngestExternalFileOptions options;
     rocksdb::Status status = db_->IngestExternalFile(files, options);
     if (status.ok()) {
-        return ResultCode::SUCCESSED;
+        return ResultCode::SUCCEEDED;
     } else {
         return ResultCode::ERR_UNKNOWN;
     }

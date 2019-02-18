@@ -5,7 +5,7 @@ source ../functions.sh
 prepareBuild "mstch"
 
 echo
-echo Start building $PROJECT_NAME with gcc-$GCC_VER
+echo "Start building $PROJECT_NAME with $NEBULA_CXX_COMPILER ($CXX_VER_STR)"
 echo
 
 #if !(cd $SOURCE_DIR && autoreconf -ivf); then

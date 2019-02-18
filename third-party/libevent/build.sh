@@ -5,7 +5,7 @@ source ../functions.sh
 prepareBuild "libevent"
 
 echo
-echo Start building $PROJECT_NAME with gcc-$GCC_VER
+echo "Start building $PROJECT_NAME with $NEBULA_C_COMPILER ($CC_VER_STR)"
 echo
 
 #if !(cd $SOURCE_DIR && autoreconf -ivf); then
