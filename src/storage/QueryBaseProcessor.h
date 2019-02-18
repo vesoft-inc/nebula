@@ -36,7 +36,7 @@ protected:
     /**
      * Check whether current operatin on the data is valid or not.
      * */
-    bool validOperation(cpp2::SupportedType vType, cpp2::StatType statType);
+    bool validOperation(nebula::cpp2::SupportedType vType, cpp2::StatType statType);
 
     /**
      * Check request meta is illegal or not. Return contexts for tag and edge.

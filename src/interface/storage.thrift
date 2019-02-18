@@ -8,12 +8,7 @@ namespace cpp nebula.storage
 namespace java nebula.storage
 namespace go nebula.storage
 
-cpp_include "base/ThriftTypes.h"
-
-typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
-typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
-typedef i32 (cpp.type = "nebula::IPv4") IPv4
-typedef i32 (cpp.type = "nebula::Port") Port
+include "common.thrift"
 
 enum ErrorCode {
     SUCCEEDED = 0,
@@ -38,71 +33,18 @@ enum ErrorCode {
 } (cpp.enum_strict)
 
 
-// These are all data types supported in the graph properties
-enum SupportedType {
-    UNKNOWN = 0,
-
-    // Simple types
-    BOOL = 1,
-    INT = 2,
-    VID = 3,
-    FLOAT = 4,
-    DOUBLE = 5,
-    STRING = 6,
-
-    // Date time
-    TIMESTAMP = 21,
-    YEAR = 22,
-    YEARMONTH = 23,
-    DATE = 24,
-    DATETIME = 25,
-
-    // Graph specific
-    PATH = 41,
-
-    // Container types
-//    LIST = 101,
-//    SET = 102,
-//    MAP = 103,      // The key type is always a STRING
-//    STRUCT = 104,
-} (cpp.enum_strict)
-
-
-struct ValueType {
-    1: SupportedType type;
-    // vtype only exists when the type is a LIST, SET, or MAP
-    2: optional ValueType value_type (cpp.ref = true);
-    // When the type is STRUCT, schema defines the struct
-    3: optional Schema schema (cpp.ref = true);
-} (cpp.virtual)
-
-const ValueType kInvalidValueType = {"type" : UNKNOWN}
-
-struct ColumnDef {
-    1: required string name,
-    2: required ValueType type,
-}
-
-
-struct Schema {
-    1: list<ColumnDef> columns,
-}
-
-
 enum PropOwner {
     SOURCE = 1,
     DEST = 2,
     EDGE = 3,
 } (cpp.enum_strict)
 
-
 struct PropDef {
     1: PropOwner owner,
-    2: i32 tag_id,       // Only valid when owner is SOURCE or DEST
+    2: common.TagID tag_id,       // Only valid when owner is SOURCE or DEST
     3: string name,      // Property name
     4: StatType stat,    // calc stats when setted.
 }
-
 
 enum StatType {
     SUM = 1,
@@ -110,27 +52,18 @@ enum StatType {
     AVG = 3,
 } (cpp.enum_strict)
 
-
-struct HostAddr {
-    1: IPv4  ip,
-    2: Port  port,
-}
-
-
 struct ResultCode {
     1: required ErrorCode code,
-    2: required PartitionID part_id,
+    2: required common.PartitionID part_id,
     // Only valid when code is E_LEADER_CHANAGED.
-    3: optional HostAddr  leader,
+    3: optional common.HostAddr  leader,
 }
 
-
 struct VertexData {
-    1: i64 vertex_id,
+    1: common.VertexID vertex_id,
     2: binary vertex_data, // decode according to vertex_schema.
     3: binary edge_data,   // decode according to edge_schema.
 }
-
 
 struct ResponseCommon {
     // Only contains the partition that returns error
@@ -139,106 +72,93 @@ struct ResponseCommon {
     2: required i32 latency_in_ms,
 }
 
-
 struct QueryResponse {
     1: required ResponseCommon result,
-    2: optional Schema vertex_schema,   // vertex related props
-    3: optional Schema edge_schema,     // edge related props
+    2: optional common.Schema vertex_schema,   // vertex related props
+    3: optional common.Schema edge_schema,     // edge related props
     4: optional list<VertexData> vertices,
 }
-
 
 struct ExecResponse {
     1: required ResponseCommon result,
 }
 
-
 struct EdgePropResponse {
     1: required ResponseCommon result,
-    2: optional Schema schema,          // edge related props
+    2: optional common.Schema schema,          // edge related props
     3: optional binary data,
 }
 
 
 struct QueryStatsResponse {
     1: required ResponseCommon result,
-    2: optional Schema schema,
+    2: optional common.Schema schema,
     3: optional binary data,
 }
 
-
 struct Tag {
-    1: i32 tag_id,
+    1: common.TagID tag_id,
     2: binary props,
 }
 
-
 struct Vertex {
-    1: i64 id,
+    1: common.VertexID id,
     2: list<Tag> tags,
 }
 
-
 struct EdgeKey {
-    1: i64 src,
+    1: common.VertexID src,
     // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
     // When query edge props, the field could be unset.
-    2: i32 edge_type,
-    3: i64 dst,
-    4: i64 ranking,
+    2: common.EdgeType edge_type,
+    3: common.VertexID dst,
+    4: common.EdgeRanking ranking,
 }
-
 
 struct Edge {
     1: EdgeKey key,
     2: binary props,
 }
 
-
 struct GetNeighborsRequest {
-    1: GraphSpaceID space_id,
+    1: common.GraphSpaceID space_id,
     // partId => ids
-    2: map<PartitionID, list<i64>>(cpp.template = "std::unordered_map") parts,
+    2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
     // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
-    3: i32 edge_type,
+    3: common.EdgeType edge_type,
     4: binary filter,
     5: list<PropDef> return_columns,
 }
 
-
 struct VertexPropRequest {
-    1: GraphSpaceID space_id,
-    2: map<PartitionID, list<i64>>(cpp.template = "std::unordered_map") parts,
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
     3: list<PropDef> return_columns,
 }
 
-
 struct EdgePropRequest {
-    1: GraphSpaceID space_id,
+    1: common.GraphSpaceID space_id,
     // partId => edges
-    2: map<PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
-    3: i32 edge_type,
+    2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
+    3: common.EdgeType edge_type,
     4: list<PropDef> return_columns,
 }
 
-
 struct AddVerticesRequest {
-    1: GraphSpaceID space_id,
+    1: common.GraphSpaceID space_id,
     // partId => vertices
-    2: map<PartitionID, list<Vertex>>(cpp.template = "std::unordered_map") parts,
+    2: map<common.PartitionID, list<Vertex>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
     3: bool overwritable,
 }
-
 
 struct AddEdgesRequest {
-    1: GraphSpaceID space_id,
+    1: common.GraphSpaceID space_id,
     // partId => edges
-    2: map<PartitionID, list<Edge>>(cpp.template = "std::unordered_map") parts,
+    2: map<common.PartitionID, list<Edge>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
     3: bool overwritable,
 }
-
 
 service StorageService {
     QueryResponse getOutBound(1: GetNeighborsRequest req)
