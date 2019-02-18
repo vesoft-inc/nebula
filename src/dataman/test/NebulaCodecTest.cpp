@@ -32,11 +32,11 @@ TEST(NebulaCodec, encode) {
     std::string encoded = codec.encode(v);
 
     SchemaWriter schemaWriter;
-    schemaWriter.appendCol("i_field", storage::cpp2::SupportedType::INT);
-    schemaWriter.appendCol("b_field", storage::cpp2::SupportedType::BOOL);
-    schemaWriter.appendCol("f_field", storage::cpp2::SupportedType::FLOAT);
-    schemaWriter.appendCol("d_field", storage::cpp2::SupportedType::DOUBLE);
-    schemaWriter.appendCol("s_field", storage::cpp2::SupportedType::STRING);
+    schemaWriter.appendCol("i_field", cpp2::SupportedType::INT);
+    schemaWriter.appendCol("b_field", cpp2::SupportedType::BOOL);
+    schemaWriter.appendCol("f_field", cpp2::SupportedType::FLOAT);
+    schemaWriter.appendCol("d_field", cpp2::SupportedType::DOUBLE);
+    schemaWriter.appendCol("s_field", cpp2::SupportedType::STRING);
 
     auto schema = std::make_shared<ResultSchemaProvider>(schemaWriter.moveSchema());
     auto reader = RowReader::getRowReader(encoded, schema);
@@ -122,13 +122,13 @@ TEST(NebulaCodec, decode) {
     encoded.append(reinterpret_cast<char*>(buffer), s_size);
     encoded.append(str_value, strlen(str_value));
 
-    std::vector<std::pair<std::string, storage::cpp2::SupportedType>> fields;
-    fields.push_back(std::make_pair("b_field", storage::cpp2::SupportedType::BOOL));
-    fields.push_back(std::make_pair("i_field", storage::cpp2::SupportedType::INT));
-    fields.push_back(std::make_pair("v_field", storage::cpp2::SupportedType::VID));
-    fields.push_back(std::make_pair("f_field", storage::cpp2::SupportedType::FLOAT));
-    fields.push_back(std::make_pair("d_field", storage::cpp2::SupportedType::DOUBLE));
-    fields.push_back(std::make_pair("s_field", storage::cpp2::SupportedType::STRING));
+    std::vector<std::pair<std::string, cpp2::SupportedType>> fields;
+    fields.push_back(std::make_pair("b_field", cpp2::SupportedType::BOOL));
+    fields.push_back(std::make_pair("i_field", cpp2::SupportedType::INT));
+    fields.push_back(std::make_pair("v_field", cpp2::SupportedType::VID));
+    fields.push_back(std::make_pair("f_field", cpp2::SupportedType::FLOAT));
+    fields.push_back(std::make_pair("d_field", cpp2::SupportedType::DOUBLE));
+    fields.push_back(std::make_pair("s_field", cpp2::SupportedType::STRING));
 
     dataman::NebulaCodecImpl codec;
     auto result = codec.decode(encoded, fields);
@@ -142,7 +142,7 @@ TEST(NebulaCodec, decode) {
 
     // check empty encoded string and empty schema
     EXPECT_THROW(codec.decode("", fields), std::invalid_argument);
-    std::vector<std::pair<std::string, storage::cpp2::SupportedType>> empty_fields;
+    std::vector<std::pair<std::string, cpp2::SupportedType>> empty_fields;
     EXPECT_THROW(codec.decode(encoded, empty_fields), std::invalid_argument);
 }
 }  // namespace nebula

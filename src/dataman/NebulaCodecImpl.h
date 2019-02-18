@@ -15,8 +15,9 @@ namespace dataman {
 class NebulaCodecImpl : public NebulaCodec {
    public:
       std::string encode(std::vector<Value> values) override;
-      std::unordered_map<std::string, Value> decode(std::string encoded,
-              std::vector<std::pair<std::string, storage::cpp2::SupportedType>> fields) override;
+      std::unordered_map<std::string, Value>
+          decode(std::string encoded,
+          std::vector<std::pair<std::string, cpp2::SupportedType>> fields) override;
 };
 
 }  // namespace dataman

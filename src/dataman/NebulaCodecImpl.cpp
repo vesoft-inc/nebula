@@ -33,8 +33,9 @@ std::string NebulaCodecImpl::encode(std::vector<Value> values) {
     return result;
 }
 
-std::unordered_map<std::string, Value> NebulaCodecImpl::decode(std::string encoded,
-        std::vector<std::pair<std::string, storage::cpp2::SupportedType>> fields) {
+std::unordered_map<std::string, Value>
+    NebulaCodecImpl::decode(std::string encoded,
+    std::vector<std::pair<std::string, cpp2::SupportedType>> fields) {
     if (encoded.empty()) {
         throw std::invalid_argument("encoded string is empty");
     }
@@ -56,58 +57,64 @@ std::unordered_map<std::string, Value> NebulaCodecImpl::decode(std::string encod
     for (; iter != fields.end(); iter++) {
         auto field = iter->first;
         switch (iter->second) {
-            case storage::cpp2::SupportedType::BOOL:
+            case cpp2::SupportedType::BOOL:
                 bool b;
                 code = reader->getBool(field, b);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = b;
                 }
                 break;
-            case storage::cpp2::SupportedType::INT:
+            case cpp2::SupportedType::INT:
                 int32_t i;
                 code = reader->getInt(field, i);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = i;
                 }
                 break;
-            case storage::cpp2::SupportedType::STRING:
+            case cpp2::SupportedType::STRING:
                 code = reader->getString(field, piece);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = boost::any(piece.toString());
                 }
                 break;
-            case storage::cpp2::SupportedType::VID:
+            case cpp2::SupportedType::VID:
                 int64_t v;
                 code = reader->getVid(field, v);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = v;
                 }
                 break;
-            case storage::cpp2::SupportedType::FLOAT:
+            case cpp2::SupportedType::FLOAT:
                 float f;
                 code = reader->getFloat(field, f);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = f;
                 }
                 break;
-            case storage::cpp2::SupportedType::DOUBLE:
+            case cpp2::SupportedType::DOUBLE:
                 double d;
                 code = reader->getDouble(field, d);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = d;
                 }
                 break;
-            case storage::cpp2::SupportedType::TIMESTAMP:
+            case cpp2::SupportedType::TIMESTAMP:
+                // TODO(darion) Support TIMESTAMP
                 break;
-            case storage::cpp2::SupportedType::YEAR:
+            case cpp2::SupportedType::YEAR:
+                // TODO(darion) Support YEAR
                 break;
-            case storage::cpp2::SupportedType::YEARMONTH:
+            case cpp2::SupportedType::YEARMONTH:
+                // TODO(darion) Support YEARMONTH
                 break;
-            case storage::cpp2::SupportedType::DATE:
+            case cpp2::SupportedType::DATE:
+                // TODO(darion) Support DATE
                 break;
-            case storage::cpp2::SupportedType::DATETIME:
+            case cpp2::SupportedType::DATETIME:
+                // TODO(darion) Support DATETIME
                 break;
-            case storage::cpp2::SupportedType::PATH:
+            case cpp2::SupportedType::PATH:
+                // TODO(darion) Support PATH
                 break;
             default:
                 // UNKNOWN
