@@ -10,7 +10,7 @@
 #include <gtest/gtest_prod.h>
 #include "base/Base.h"
 #include "interface/gen-cpp2/StorageService.h"
-#include "kvstore/include/KVStore.h"
+#include "kvstore/KVStore.h"
 #include "meta/SchemaManager.h"
 
 namespace nebula {

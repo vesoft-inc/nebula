@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include "interface/gen-cpp2/MetaService.h"
-#include "kvstore/include/KVStore.h"
+#include "kvstore/KVStore.h"
 
 namespace nebula {
 namespace meta {

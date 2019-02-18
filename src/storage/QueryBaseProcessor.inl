@@ -198,7 +198,7 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
         for (auto& vId : partV.second) {
             VLOG(3) << "Process part " << partId << ", vertex " << vId;
             ret = processVertex(partId, vId, tagContexts, edgeContext);
-            if (ret != kvstore::ResultCode::SUCCESSED) {
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
                 break;
             }
         }

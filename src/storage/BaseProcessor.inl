@@ -13,7 +13,7 @@ namespace storage {
 template<typename RESP>
 cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
     switch (code) {
-    case kvstore::ResultCode::SUCCESSED:
+    case kvstore::ResultCode::SUCCEEDED:
         return cpp2::ErrorCode::SUCCEEDED;
     case kvstore::ResultCode::ERR_LEADER_CHANAGED:
         return cpp2::ErrorCode::E_LEADER_CHANGED;
