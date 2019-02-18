@@ -1,5 +1,14 @@
 add_custom_command(
     OUTPUT
+        gen-cpp2/common_constants.cpp
+        gen-cpp2/common_data.cpp
+        gen-cpp2/common_types.cpp
+    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./common.thrift"
+    DEPENDS common.thrift
+)
+
+add_custom_command(
+    OUTPUT
         gen-cpp2/GraphService.cpp
         gen-cpp2/GraphServiceAsyncClient.cpp
         gen-cpp2/GraphService_processmap_binary.cpp
@@ -37,15 +46,6 @@ add_custom_command(
         gen-cpp2/storage_types.cpp
     COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./storage.thrift"
     DEPENDS storage.thrift
-)
-
-add_custom_command(
-    OUTPUT
-        gen-cpp2/common_constants.cpp
-        gen-cpp2/common_data.cpp
-        gen-cpp2/common_types.cpp
-    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./common.thrift"
-    DEPENDS common.thrift
 )
 
 add_custom_command(
@@ -102,6 +102,9 @@ add_library(
     gen-cpp2/storage_constants.cpp
     gen-cpp2/storage_data.cpp
     gen-cpp2/storage_types.cpp
+    gen-cpp2/common_constants.cpp
+    gen-cpp2/common_data.cpp
+    gen-cpp2/common_types.cpp
 )
 add_dependencies(storage_thrift_obj tgt_fbthrift)
 

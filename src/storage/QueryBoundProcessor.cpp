@@ -103,7 +103,7 @@ void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
                                       EdgeContext& edgeContext, int32_t retNum) {
     resp_.set_vertices(std::move(vertices_));
     if (!tagContexts.empty()) {
-        cpp2::Schema respTag;
+        nebula::cpp2::Schema respTag;
         respTag.columns.reserve(retNum - edgeContext.props_.size());
         for (auto& tc : tagContexts) {
             for (auto& prop : tc.props_) {
@@ -116,7 +116,7 @@ void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
         }
     }
     if (!edgeContext.props_.empty()) {
-        cpp2::Schema respEdge;
+        nebula::cpp2::Schema respEdge;
         decltype(respEdge.columns) cols;
         cols.reserve(edgeContext.props_.size());
         for (auto& prop : edgeContext.props_) {

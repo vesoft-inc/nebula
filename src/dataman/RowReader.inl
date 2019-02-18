@@ -27,7 +27,7 @@ template<typename T>
 typename std::enable_if<std::is_integral<T>::value, ResultType>::type
 RowReader::getInt(int64_t index, int64_t& offset, T& v) const noexcept {
     switch (schema_->getFieldType(index).get_type()) {
-        case storage::cpp2::SupportedType::INT: {
+        case cpp2::SupportedType::INT: {
             int32_t numBytes = readInteger(offset, v);
             if (numBytes < 0) {
                 return static_cast<ResultType>(numBytes);
