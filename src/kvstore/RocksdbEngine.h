@@ -10,12 +10,13 @@
 #include <gtest/gtest_prod.h>
 #include <rocksdb/db.h>
 #include "base/Base.h"
-#include "kvstore/StorageEngine.h"
+#include "kvstore/KVIterator.h"
+#include "kvstore/KVEngine.h"
 
 namespace nebula {
 namespace kvstore {
 
-class RocksdbRangeIter : public StorageIter {
+class RocksdbRangeIter : public KVIterator {
 public:
     RocksdbRangeIter(rocksdb::Iterator* iter, rocksdb::Slice start, rocksdb::Slice end)
         : iter_(iter)
@@ -24,7 +25,7 @@ public:
 
     ~RocksdbRangeIter()  = default;
 
-    bool valid() override {
+    bool valid() const override {
         return !!iter_ && iter_->Valid() && (iter_->key().compare(end_) < 0);
     }
 
@@ -36,11 +37,11 @@ public:
         iter_->Prev();
     }
 
-    folly::StringPiece key() override {
+    folly::StringPiece key() const override {
         return folly::StringPiece(iter_->key().data(), iter_->key().size());
     }
 
-    folly::StringPiece val() override {
+    folly::StringPiece val() const override {
         return folly::StringPiece(iter_->value().data(), iter_->value().size());
     }
 
@@ -50,7 +51,8 @@ private:
     rocksdb::Slice end_;
 };
 
-class RocksdbPrefixIter : public StorageIter {
+
+class RocksdbPrefixIter : public KVIterator {
 public:
     RocksdbPrefixIter(rocksdb::Iterator* iter, rocksdb::Slice prefix)
         : iter_(iter)
@@ -58,7 +60,7 @@ public:
 
     ~RocksdbPrefixIter()  = default;
 
-    bool valid() override {
+    bool valid() const override {
         return !!iter_ && iter_->Valid() && (iter_->key().starts_with(prefix_));
     }
 
@@ -70,11 +72,11 @@ public:
         iter_->Prev();
     }
 
-    folly::StringPiece key() override {
+    folly::StringPiece key() const override {
         return folly::StringPiece(iter_->key().data(), iter_->key().size());
     }
 
-    folly::StringPiece val() override {
+    folly::StringPiece val() const override {
         return folly::StringPiece(iter_->value().data(), iter_->value().size());
     }
 
@@ -83,7 +85,8 @@ private:
     rocksdb::Slice prefix_;
 };
 
-class RocksdbEngine : public StorageEngine {
+
+class RocksdbEngine : public KVEngine {
     FRIEND_TEST(RocksdbEngineTest, SimpleTest);
 
 public:
@@ -103,10 +106,10 @@ public:
 
     ResultCode range(const std::string& start,
                      const std::string& end,
-                     std::unique_ptr<StorageIter>* iter) override;
+                     std::unique_ptr<KVIterator>* iter) override;
 
     ResultCode prefix(const std::string& prefix,
-                      std::unique_ptr<StorageIter>* iter) override;
+                      std::unique_ptr<KVIterator>* iter) override;
 
     ResultCode remove(const std::string& key) override;
 

@@ -52,8 +52,8 @@ TEST(AddVerticesTest, SimpleTest) {
     for (auto partId = 0; partId < 3; partId++) {
         for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
             auto prefix = KeyUtils::prefix(partId, vertexId);
-            std::unique_ptr<kvstore::StorageIter> iter;
-            EXPECT_EQ(kvstore::ResultCode::SUCCESSED, kv->prefix(0, partId, prefix, &iter));
+            std::unique_ptr<kvstore::KVIterator> iter;
+            EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             TagID tagId = 0;
             while (iter->valid()) {
                 EXPECT_EQ(folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId), iter->val());

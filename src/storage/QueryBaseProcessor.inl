@@ -14,15 +14,15 @@ namespace nebula {
 namespace storage {
 
 template<typename REQ, typename RESP>
-bool QueryBaseProcessor<REQ, RESP>::validOperation(cpp2::SupportedType vType,
+bool QueryBaseProcessor<REQ, RESP>::validOperation(nebula::cpp2::SupportedType vType,
                                                    cpp2::StatType statType) {
     switch (statType) {
         case cpp2::StatType::SUM:
         case cpp2::StatType::AVG: {
-            return vType == cpp2::SupportedType::INT
-                    || vType == cpp2::SupportedType::VID
-                    || vType == cpp2::SupportedType::FLOAT
-                    || vType == cpp2::SupportedType::DOUBLE;
+            return vType == nebula::cpp2::SupportedType::INT
+                    || vType == nebula::cpp2::SupportedType::VID
+                    || vType == nebula::cpp2::SupportedType::FLOAT
+                    || vType == nebula::cpp2::SupportedType::DOUBLE;
         }
         case cpp2::StatType::COUNT: {
              break;
@@ -60,35 +60,35 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
         }
         const auto& name = prop.prop_.get_name();
         switch (prop.type_.type) {
-            case cpp2::SupportedType::INT: {
+            case nebula::cpp2::SupportedType::INT: {
                 int64_t v;
                 auto ret = reader->getInt<int64_t>(name, v);
                 VLOG(3) << "collect " << name << ", value = " << v;
                 collector->collectInt64(ret, v, prop);
                 break;
             }
-            case cpp2::SupportedType::VID: {
+            case nebula::cpp2::SupportedType::VID: {
                 int64_t v;
                 auto ret = reader->getVid(name, v);
                 collector->collectInt64(ret, v, prop);
                 VLOG(3) << "collect " << name << ", value = " << v;
                 break;
             }
-            case cpp2::SupportedType::FLOAT: {
+            case nebula::cpp2::SupportedType::FLOAT: {
                 float v;
                 auto ret = reader->getFloat(name, v);
                 collector->collectFloat(ret, v, prop);
                 VLOG(3) << "collect " << name << ", value = " << v;
                 break;
             }
-            case cpp2::SupportedType::DOUBLE: {
+            case nebula::cpp2::SupportedType::DOUBLE: {
                 double v;
                 auto ret = reader->getDouble(name, v);
                 collector->collectDouble(ret, v, prop);
                 VLOG(3) << "collect " << name << ", value = " << v;
                 break;
             }
-            case cpp2::SupportedType::STRING: {
+            case nebula::cpp2::SupportedType::STRING: {
                 folly::StringPiece v;
                 auto ret = reader->getString(name, v);
                 collector->collectString(ret, v, prop);
@@ -154,7 +154,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 auto it = kPropsInKey_.find(col.name);
                 if (it != kPropsInKey_.end()) {
                     prop.pikType_ = it->second;
-                    prop.type_.type = cpp2::SupportedType::INT;
+                    prop.type_.type = nebula::cpp2::SupportedType::INT;
                 } else {
                     const auto& ftype = schema->getFieldType(col.name);
                     prop.type_ = ftype;
@@ -198,7 +198,7 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
         for (auto& vId : partV.second) {
             VLOG(3) << "Process part " << partId << ", vertex " << vId;
             ret = processVertex(partId, vId, tagContexts, edgeContext);
-            if (ret != kvstore::ResultCode::SUCCESSED) {
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
                 break;
             }
         }

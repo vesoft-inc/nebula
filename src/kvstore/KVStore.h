@@ -4,20 +4,17 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef KVSTORE_INCLUDE_KVSTORE_H_
-#define KVSTORE_INCLUDE_KVSTORE_H_
+#ifndef KVSTORE_KVSTORE_H_
+#define KVSTORE_KVSTORE_H_
 
 #include "base/Base.h"
-#include "kvstore/include/ResultCode.h"
-#include "kvstore/include/Iterator.h"
 #include <rocksdb/merge_operator.h>
 #include <rocksdb/compaction_filter.h>
+#include "kvstore/Common.h"
+#include "kvstore/KVIterator.h"
 
 namespace nebula {
 namespace kvstore {
-
-
-using KVCallback = std::function<void(ResultCode code, HostAddr hostAddr)>;
 
 struct KVOptions {
     /**
@@ -41,6 +38,15 @@ struct KVOptions {
 };
 
 
+struct StoreCapability {
+    static const uint32_t SC_FILTERING = 1;
+    static const uint32_t SC_ASYNC = 2;
+};
+
+
+/**
+ * Interface for all kv-stores
+ */
 class KVStore {
 public:
     /**
@@ -49,6 +55,9 @@ public:
     static KVStore* instance(KVOptions options);
 
     virtual ~KVStore() = default;
+
+    // Return bit-OR of StoreCapability values;
+    virtual uint32_t capability() const = 0;
 
     virtual ResultCode get(GraphSpaceID spaceId,
                            PartitionID  partId,
@@ -61,7 +70,7 @@ public:
                              PartitionID  partId,
                              const std::string& start,
                              const std::string& end,
-                             std::unique_ptr<StorageIter>* iter) = 0;
+                             std::unique_ptr<KVIterator>* iter) = 0;
 
     /**
      * Get all results with prefix.
@@ -69,7 +78,7 @@ public:
     virtual ResultCode prefix(GraphSpaceID spaceId,
                               PartitionID  partId,
                               const std::string& prefix,
-                              std::unique_ptr<StorageIter>* iter) = 0;
+                              std::unique_ptr<KVIterator>* iter) = 0;
 
 
     virtual void asyncMultiPut(GraphSpaceID spaceId,
@@ -94,5 +103,5 @@ protected:
 
 }  // namespace kvstore
 }  // namespace nebula
-#endif  // KVSTORE_INCLUDE_KVSTORE_H_
+#endif  // KVSTORE_KVSTORE_H_
 

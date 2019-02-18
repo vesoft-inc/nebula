@@ -5,9 +5,9 @@
  */
 
 #include "base/Base.h"
-#include "kvstore/include/KVStore.h"
+#include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
-#include "kvstore/KVStoreImpl.h"
+#include "kvstore/NebulaStore.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
@@ -42,7 +42,7 @@ public:
         options.local_ = HostAddr(0, 0);
         options.dataPaths_ = std::move(paths);
 
-        kvstore::KVStoreImpl* kv = static_cast<kvstore::KVStoreImpl*>(
+        kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
                                         kvstore::KVStore::instance(std::move(options)));
         return kv;
     }
@@ -80,17 +80,17 @@ public:
     static std::shared_ptr<meta::SchemaProviderIf> genEdgeSchemaProvider(
             int32_t intFieldsNum,
             int32_t stringFieldsNum) {
-        cpp2::Schema schema;
+        nebula::cpp2::Schema schema;
         for (auto i = 0; i < intFieldsNum; i++) {
-            cpp2::ColumnDef column;
+            nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
-            column.type.type = cpp2::SupportedType::INT;
+            column.type.type = nebula::cpp2::SupportedType::INT;
             schema.columns.emplace_back(std::move(column));
         }
         for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
-            cpp2::ColumnDef column;
+            nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("col_%d", i);
-            column.type.type = cpp2::SupportedType::STRING;
+            column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
         return std::shared_ptr<meta::SchemaProviderIf>(
@@ -105,17 +105,17 @@ public:
             TagID tagId,
             int32_t intFieldsNum,
             int32_t stringFieldsNum) {
-        cpp2::Schema schema;
+        nebula::cpp2::Schema schema;
         for (auto i = 0; i < intFieldsNum; i++) {
-            cpp2::ColumnDef column;
+            nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-            column.type.type = cpp2::SupportedType::INT;
+            column.type.type = nebula::cpp2::SupportedType::INT;
             schema.columns.emplace_back(std::move(column));
         }
         for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
-            cpp2::ColumnDef column;
+            nebula::cpp2::ColumnDef column;
             column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
-            column.type.type = cpp2::SupportedType::STRING;
+            column.type.type = nebula::cpp2::SupportedType::STRING;
             schema.columns.emplace_back(std::move(column));
         }
         return std::shared_ptr<meta::SchemaProviderIf>(

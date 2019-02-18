@@ -28,10 +28,10 @@ TEST(Load, SSTLoad) {
 
     auto engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
     std::vector<std::string> files = {file};
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->ingest(files));
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->ingest(files));
 
     std::string result;
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", &result));
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &result));
     EXPECT_EQ(result, "value");
 }
 }   // namespace kvstore

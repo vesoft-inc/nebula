@@ -20,9 +20,9 @@ QueryStatsProcessor::collectVertexStats(PartitionID partId,
                                         TagID tagId,
                                         std::vector<PropContext>& props) {
     auto prefix = KeyUtils::prefix(partId, vId, tagId);
-    std::unique_ptr<kvstore::StorageIter> iter;
+    std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCESSED) {
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
         return ret;
     }
     // Only get the latest version.
@@ -40,9 +40,9 @@ QueryStatsProcessor::collectEdgesStats(PartitionID partId,
                                        EdgeType edgeType,
                                        std::vector<PropContext>& props) {
     auto prefix = KeyUtils::prefix(partId, vId, edgeType);
-    std::unique_ptr<kvstore::StorageIter> iter;
+    std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCESSED || !iter) {
+    if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
         return ret;
     }
     while (iter->valid()) {
@@ -66,13 +66,13 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
                         writer << boost::get<int64_t>(prop.sum_);
                         cols.emplace_back(
                                 columnDef(std::move(prop.prop_.name),
-                                          cpp2::SupportedType::INT));
+                                          nebula::cpp2::SupportedType::INT));
                         break;
                     case 1:
                         writer << boost::get<double>(prop.sum_);
                         cols.emplace_back(
                                 columnDef(std::move(prop.prop_.name),
-                                          cpp2::SupportedType::DOUBLE));
+                                          nebula::cpp2::SupportedType::DOUBLE));
                         break;
                 }
                 break;
@@ -81,7 +81,7 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
                 writer << prop.count_;
                 cols.emplace_back(
                             columnDef(std::move(prop.prop_.name),
-                                      cpp2::SupportedType::INT));
+                                      nebula::cpp2::SupportedType::INT));
                 break;
             }
             case cpp2::StatType::AVG: {
@@ -96,7 +96,7 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
                 }
                 cols.emplace_back(
                         columnDef(std::move(prop.prop_.name),
-                                  cpp2::SupportedType::DOUBLE));
+                                  nebula::cpp2::SupportedType::DOUBLE));
                 break;
             }
         }
@@ -112,7 +112,7 @@ kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
                                                        EdgeContext& edgeContext) {
     for (auto& tc : tagContexts) {
         auto ret = collectVertexStats(partId, vId, tc.tagId_, tc.props_);
-        if (ret != kvstore::ResultCode::SUCCESSED) {
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
     }
@@ -121,11 +121,11 @@ kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
                                  vId,
                                  edgeContext.edgeType_,
                                  edgeContext.props_);
-    if (ret != kvstore::ResultCode::SUCCESSED) {
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
         return ret;
     }
 
-    return kvstore::ResultCode::SUCCESSED;
+    return kvstore::ResultCode::SUCCEEDED;
 }
 
 

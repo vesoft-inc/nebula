@@ -81,9 +81,9 @@ private:
 
 
 #define RU_GET_TYPE_BY_NAME() \
-    const storage::cpp2::ValueType& type \
+    const cpp2::ValueType& type \
         = schema_->getFieldType(name); \
-    if (type == StorageConstants::kInvalidValueType()) { \
+    if (type == CommonConstants::kInvalidValueType()) { \
         return ResultType::E_NAME_NOT_FOUND; \
     }
 

@@ -48,7 +48,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
             partId,
             std::move(data),
             [&](kvstore::ResultCode code, HostAddr addr) {
-                EXPECT_EQ(code, kvstore::ResultCode::SUCCESSED);
+                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
                 UNUSED(addr);
             });
     }

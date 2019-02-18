@@ -12,7 +12,7 @@
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 #include "interface/gen-cpp2/storage_types.h"
-#include "kvstore/include/KVStore.h"
+#include "kvstore/KVStore.h"
 #include "meta/SchemaManager.h"
 #include "dataman/RowSetWriter.h"
 #include "dataman/RowReader.h"
@@ -48,10 +48,10 @@ protected:
 
     void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV> data);
 
-    cpp2::ColumnDef columnDef(std::string name, cpp2::SupportedType type) {
-        cpp2::ColumnDef column;
+    nebula::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::SupportedType type) {
+        nebula::cpp2::ColumnDef column;
         column.set_name(std::move(name));
-        cpp2::ValueType vType;
+        nebula::cpp2::ValueType vType;
         vType.set_type(type);
         column.set_type(std::move(vType));
         return column;

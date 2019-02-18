@@ -4,12 +4,12 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "kvstore/KVStoreImpl.h"
+#include "kvstore/NebulaStore.h"
+#include <folly/Likely.h>
+#include <algorithm>
+#include <cstdint>
 #include "network/NetworkUtils.h"
 #include "kvstore/RocksdbEngine.h"
-#include <algorithm>
-#include <folly/Likely.h>
-#include <cstdint>
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_string(part_type, "simple", "simple, consensus...");
@@ -29,11 +29,13 @@ DEFINE_string(part_type, "simple", "simple, consensus...");
         cb(ResultCode::ERR_PART_NOT_FOUND, HostAddr(0, 0)); \
         return; \
     }
+
+
 /**
  * Check spaceId, partId and return related storage engine.
  * */
 #define CHECK_AND_RETURN_ENGINE(spaceId, partId) \
-    StorageEngine* engine = nullptr; \
+    KVEngine* engine = nullptr; \
     do { \
         auto it = kvs_.find(spaceId); \
         if (UNLIKELY(it == kvs_.end())) { \
@@ -48,17 +50,19 @@ DEFINE_string(part_type, "simple", "simple, consensus...");
         CHECK_NOTNULL(engine); \
     } while (false)
 
+
 namespace nebula {
 namespace kvstore {
 
 // static
 KVStore* KVStore::instance(KVOptions options) {
-    auto* instance = new KVStoreImpl(options);
-    static_cast<KVStoreImpl*>(instance)->init();
+    auto* instance = new NebulaStore(options);
+    static_cast<NebulaStore*>(instance)->init();
     return instance;
 }
 
-std::vector<Engine> KVStoreImpl::initEngines(GraphSpaceID spaceId) {
+
+std::vector<Engine> NebulaStore::initEngines(GraphSpaceID spaceId) {
     decltype(kvs_[spaceId]->engines_) engines;
     for (auto& path : options_.dataPaths_) {
         if (FLAGS_engine_type == "rocksdb") {
@@ -76,7 +80,8 @@ std::vector<Engine> KVStoreImpl::initEngines(GraphSpaceID spaceId) {
     return engines;
 }
 
-PartEngine KVStoreImpl::checkLocalParts(GraphSpaceID spaceId) {
+
+PartEngine NebulaStore::checkLocalParts(GraphSpaceID spaceId) {
     PartEngine maps;
     for (auto& engine : this->kvs_[spaceId]->engines_) {
         auto parts = engine.first->allParts();
@@ -91,7 +96,8 @@ PartEngine KVStoreImpl::checkLocalParts(GraphSpaceID spaceId) {
     return maps;
 }
 
-const Engine& KVStoreImpl::dispatchPart(GraphSpaceID spaceId,
+
+const Engine& NebulaStore::dispatchPart(GraphSpaceID spaceId,
                                         PartitionID partId,
                                         const PartEngine& maps) {
     auto it = maps.find(partId);
@@ -114,7 +120,8 @@ const Engine& KVStoreImpl::dispatchPart(GraphSpaceID spaceId,
     return target;
 }
 
-void KVStoreImpl::init() {
+
+void NebulaStore::init() {
     auto partsMap = partMan_->parts(options_.local_);
     LOG(INFO) << "Init all parts, total graph space " << partsMap.size();
     std::for_each(partsMap.begin(), partsMap.end(), [this](auto& idPart) {
@@ -147,7 +154,8 @@ void KVStoreImpl::init() {
     });
 }
 
-ResultCode KVStoreImpl::get(GraphSpaceID spaceId, PartitionID partId,
+
+ResultCode NebulaStore::get(GraphSpaceID spaceId, PartitionID partId,
                             const std::string& key,
                             std::string* value) {
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
@@ -155,29 +163,32 @@ ResultCode KVStoreImpl::get(GraphSpaceID spaceId, PartitionID partId,
 }
 
 
-ResultCode KVStoreImpl::range(GraphSpaceID spaceId, PartitionID partId,
+ResultCode NebulaStore::range(GraphSpaceID spaceId, PartitionID partId,
                               const std::string& start,
                               const std::string& end,
-                              std::unique_ptr<StorageIter>* iter) {
+                              std::unique_ptr<KVIterator>* iter) {
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->range(start, end, iter);
 }
 
-ResultCode KVStoreImpl::prefix(GraphSpaceID spaceId, PartitionID partId,
+
+ResultCode NebulaStore::prefix(GraphSpaceID spaceId, PartitionID partId,
                                const std::string& prefix,
-                               std::unique_ptr<StorageIter>* iter) {
+                               std::unique_ptr<KVIterator>* iter) {
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->prefix(prefix, iter);
 }
 
-void KVStoreImpl::asyncMultiPut(GraphSpaceID spaceId, PartitionID partId,
+
+void NebulaStore::asyncMultiPut(GraphSpaceID spaceId, PartitionID partId,
                                 std::vector<KV> keyValues,
                                 KVCallback cb) {
     CHECK_FOR_WRITE(spaceId, partId, cb);
     return partIt->second->asyncMultiPut(std::move(keyValues), std::move(cb));
 }
 
-void KVStoreImpl::asyncRemove(GraphSpaceID spaceId,
+
+void NebulaStore::asyncRemove(GraphSpaceID spaceId,
                               PartitionID partId,
                               const std::string& key,
                               KVCallback cb) {
@@ -185,7 +196,8 @@ void KVStoreImpl::asyncRemove(GraphSpaceID spaceId,
     return partIt->second->asyncRemove(key, std::move(cb));
 }
 
-void KVStoreImpl::asyncRemoveRange(GraphSpaceID spaceId,
+
+void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,
                                    PartitionID partId,
                                    const std::string& start,
                                    const std::string& end,

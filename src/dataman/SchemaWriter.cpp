@@ -9,10 +9,10 @@
 
 namespace nebula {
 
-using storage::cpp2::Schema;
-using storage::cpp2::ValueType;
-using storage::cpp2::SupportedType;
-using storage::cpp2::ColumnDef;
+using cpp2::Schema;
+using cpp2::ValueType;
+using cpp2::SupportedType;
+using cpp2::ColumnDef;
 
 Schema SchemaWriter::moveSchema() noexcept {
     Schema schema;
