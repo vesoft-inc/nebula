@@ -5,7 +5,7 @@ source ../functions.sh
 prepareBuild "zlib"
 
 echo
-echo Start building $PROJECT_NAME with gcc-$GCC_VER
+echo "Start building $PROJECT_NAME with $NEBULA_C_COMPILER ($CC_VER_STR)"
 echo
 
 #if !(cd $SOURCE_DIR && NOCONFIGURE=1 ./autogen.sh); then
