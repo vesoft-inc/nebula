@@ -36,8 +36,8 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
 
     LOG(INFO) << "Verify the vertices data...";
     auto prefix = KeyUtils::prefix(1, 19);
-    std::unique_ptr<kvstore::StorageIter> iter;
-    ASSERT_EQ(kvstore::ResultCode::SUCCESSED, kvstore->prefix(0, 1, prefix, &iter));
+    std::unique_ptr<kvstore::KVIterator> iter;
+    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kvstore->prefix(0, 1, prefix, &iter));
     TagID tagId = 0;
     while (iter->valid()) {
         ASSERT_EQ(folly::stringPrintf("%d_%d_%d", 1, 19, tagId), iter->val());

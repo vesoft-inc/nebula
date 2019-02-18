@@ -12,7 +12,7 @@
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 #include "interface/gen-cpp2/storage_types.h"
-#include "kvstore/include/KVStore.h"
+#include "kvstore/KVStore.h"
 #include "meta/SchemaManager.h"
 #include "dataman/RowSetWriter.h"
 #include "dataman/RowReader.h"
