@@ -33,53 +33,53 @@ void prepareSchema() {
     for (int i = 0; i < 32; i++) {
         schemaAllInts->appendCol(
             folly::stringPrintf("col%02d", i),
-            nebula::storage::cpp2::SupportedType::INT);
+            nebula::cpp2::SupportedType::INT);
         schemaAllBools->appendCol(
             folly::stringPrintf("col%02d", i),
-            nebula::storage::cpp2::SupportedType::BOOL);
+            nebula::cpp2::SupportedType::BOOL);
         schemaAllStrings->appendCol(
             folly::stringPrintf("col%02d", i),
-            nebula::storage::cpp2::SupportedType::STRING);
+            nebula::cpp2::SupportedType::STRING);
         schemaAllDoubles->appendCol(
             folly::stringPrintf("col%02d", i),
-            nebula::storage::cpp2::SupportedType::DOUBLE);
+            nebula::cpp2::SupportedType::DOUBLE);
         schemaAllVids->appendCol(
             folly::stringPrintf("col%02d", i),
-            nebula::storage::cpp2::SupportedType::VID);
+            nebula::cpp2::SupportedType::VID);
     }
 
-    schemaMix->appendCol("col01",nebula::storage::cpp2::SupportedType::BOOL)
-             .appendCol("col02",nebula::storage::cpp2::SupportedType::BOOL)
-             .appendCol("col03",nebula::storage::cpp2::SupportedType::BOOL)
-             .appendCol("col04",nebula::storage::cpp2::SupportedType::BOOL)
-             .appendCol("col05",nebula::storage::cpp2::SupportedType::INT)
-             .appendCol("col06",nebula::storage::cpp2::SupportedType::INT)
-             .appendCol("col07",nebula::storage::cpp2::SupportedType::INT)
-             .appendCol("col08",nebula::storage::cpp2::SupportedType::INT)
-             .appendCol("col09",nebula::storage::cpp2::SupportedType::STRING)
-             .appendCol("col10",nebula::storage::cpp2::SupportedType::STRING)
-             .appendCol("col11",nebula::storage::cpp2::SupportedType::STRING)
-             .appendCol("col12",nebula::storage::cpp2::SupportedType::STRING)
-             .appendCol("col13",nebula::storage::cpp2::SupportedType::FLOAT)
-             .appendCol("col14",nebula::storage::cpp2::SupportedType::FLOAT)
-             .appendCol("col15",nebula::storage::cpp2::SupportedType::FLOAT)
-             .appendCol("col16",nebula::storage::cpp2::SupportedType::FLOAT)
-             .appendCol("col17",nebula::storage::cpp2::SupportedType::DOUBLE)
-             .appendCol("col18",nebula::storage::cpp2::SupportedType::DOUBLE)
-             .appendCol("col19",nebula::storage::cpp2::SupportedType::DOUBLE)
-             .appendCol("col20",nebula::storage::cpp2::SupportedType::DOUBLE)
-             .appendCol("col21",nebula::storage::cpp2::SupportedType::VID)
-             .appendCol("col22",nebula::storage::cpp2::SupportedType::VID)
-             .appendCol("col23",nebula::storage::cpp2::SupportedType::VID)
-             .appendCol("col24",nebula::storage::cpp2::SupportedType::VID)
-             .appendCol("col25",nebula::storage::cpp2::SupportedType::INT)
-             .appendCol("col26",nebula::storage::cpp2::SupportedType::INT)
-             .appendCol("col27",nebula::storage::cpp2::SupportedType::INT)
-             .appendCol("col28",nebula::storage::cpp2::SupportedType::INT)
-             .appendCol("col29",nebula::storage::cpp2::SupportedType::INT)
-             .appendCol("col30",nebula::storage::cpp2::SupportedType::INT)
-             .appendCol("col31",nebula::storage::cpp2::SupportedType::INT)
-             .appendCol("col32",nebula::storage::cpp2::SupportedType::INT);
+    schemaMix->appendCol("col01", nebula::cpp2::SupportedType::BOOL)
+             .appendCol("col02", nebula::cpp2::SupportedType::BOOL)
+             .appendCol("col03", nebula::cpp2::SupportedType::BOOL)
+             .appendCol("col04", nebula::cpp2::SupportedType::BOOL)
+             .appendCol("col05", nebula::cpp2::SupportedType::INT)
+             .appendCol("col06", nebula::cpp2::SupportedType::INT)
+             .appendCol("col07", nebula::cpp2::SupportedType::INT)
+             .appendCol("col08", nebula::cpp2::SupportedType::INT)
+             .appendCol("col09", nebula::cpp2::SupportedType::STRING)
+             .appendCol("col10", nebula::cpp2::SupportedType::STRING)
+             .appendCol("col11", nebula::cpp2::SupportedType::STRING)
+             .appendCol("col12", nebula::cpp2::SupportedType::STRING)
+             .appendCol("col13", nebula::cpp2::SupportedType::FLOAT)
+             .appendCol("col14", nebula::cpp2::SupportedType::FLOAT)
+             .appendCol("col15", nebula::cpp2::SupportedType::FLOAT)
+             .appendCol("col16", nebula::cpp2::SupportedType::FLOAT)
+             .appendCol("col17", nebula::cpp2::SupportedType::DOUBLE)
+             .appendCol("col18", nebula::cpp2::SupportedType::DOUBLE)
+             .appendCol("col19", nebula::cpp2::SupportedType::DOUBLE)
+             .appendCol("col20", nebula::cpp2::SupportedType::DOUBLE)
+             .appendCol("col21", nebula::cpp2::SupportedType::VID)
+             .appendCol("col22", nebula::cpp2::SupportedType::VID)
+             .appendCol("col23", nebula::cpp2::SupportedType::VID)
+             .appendCol("col24", nebula::cpp2::SupportedType::VID)
+             .appendCol("col25", nebula::cpp2::SupportedType::INT)
+             .appendCol("col26", nebula::cpp2::SupportedType::INT)
+             .appendCol("col27", nebula::cpp2::SupportedType::INT)
+             .appendCol("col28", nebula::cpp2::SupportedType::INT)
+             .appendCol("col29", nebula::cpp2::SupportedType::INT)
+             .appendCol("col30", nebula::cpp2::SupportedType::INT)
+             .appendCol("col31", nebula::cpp2::SupportedType::INT)
+             .appendCol("col32", nebula::cpp2::SupportedType::INT);
 }
 
 
@@ -210,7 +210,7 @@ void readMix(int32_t iters) {
         T val; \
         for (int j = 0; j < 32; j++) { \
             uint32_t idx = folly::Random::rand32(0, 32); \
-            reader->get ## FN (idx, val); \
+            reader->get ## FN(idx, val); \
             folly::doNotOptimizeAway(val); \
         } \
     }

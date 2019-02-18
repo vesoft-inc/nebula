@@ -252,7 +252,7 @@ const char* SchemaManager::getFieldName(int64_t index) const {
 }
 
 
-const storage::cpp2::ValueType& SchemaManager::getFieldType(int64_t index) const {
+const cpp2::ValueType& SchemaManager::getFieldType(int64_t index) const {
     CHECK_GE(index, 0) << "Invalid index " << index;
     CHECK_LT(index, fields_.size()) << "Index is out of range";
 
@@ -260,7 +260,7 @@ const storage::cpp2::ValueType& SchemaManager::getFieldType(int64_t index) const
 }
 
 
-const storage::cpp2::ValueType& SchemaManager::getFieldType(const folly::StringPiece name)
+const cpp2::ValueType& SchemaManager::getFieldType(const folly::StringPiece name)
         const {
     auto it = fieldNameIndex_.find(name.toString());
     CHECK(it != fieldNameIndex_.end())

@@ -42,27 +42,27 @@ void RowUpdater::encodeTo(std::string& encoded) const noexcept {
     auto it = schema_->begin();
     while (static_cast<bool>(it)) {
         switch (it->getType().get_type()) {
-            case storage::cpp2::SupportedType::BOOL: {
+            case cpp2::SupportedType::BOOL: {
                 RU_OUTPUT_VALUE(bool, Bool, false);
                 break;
             }
-            case storage::cpp2::SupportedType::INT: {
+            case cpp2::SupportedType::INT: {
                 RU_OUTPUT_VALUE(int64_t, Int, 0);
                 break;
             }
-            case storage::cpp2::SupportedType::FLOAT: {
+            case cpp2::SupportedType::FLOAT: {
                 RU_OUTPUT_VALUE(float, Float, (float)0.0);
                 break;
             }
-            case storage::cpp2::SupportedType::DOUBLE: {
+            case cpp2::SupportedType::DOUBLE: {
                 RU_OUTPUT_VALUE(double, Double, (double)0.0);
                 break;
             }
-            case storage::cpp2::SupportedType::STRING: {
+            case cpp2::SupportedType::STRING: {
                 RU_OUTPUT_VALUE(folly::StringPiece, String, "");
                 break;
             }
-            case storage::cpp2::SupportedType::VID: {
+            case cpp2::SupportedType::VID: {
                 RU_OUTPUT_VALUE(int64_t, Vid, 0);
                 break;
             }
@@ -88,7 +88,7 @@ ResultType RowUpdater::setBool(const folly::StringPiece name,
 
     uint64_t hash;
     switch (type.get_type()) {
-        case storage::cpp2::SupportedType::BOOL:
+        case cpp2::SupportedType::BOOL:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = v;
             break;
@@ -106,11 +106,11 @@ ResultType RowUpdater::setFloat(const folly::StringPiece name,
 
     uint64_t hash;
     switch (type.get_type()) {
-        case storage::cpp2::SupportedType::FLOAT:
+        case cpp2::SupportedType::FLOAT:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = v;
             break;
-        case storage::cpp2::SupportedType::DOUBLE:
+        case cpp2::SupportedType::DOUBLE:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = static_cast<double>(v);
             break;
@@ -128,11 +128,11 @@ ResultType RowUpdater::setDouble(const folly::StringPiece name,
 
     uint64_t hash;
     switch (type.get_type()) {
-        case storage::cpp2::SupportedType::FLOAT:
+        case cpp2::SupportedType::FLOAT:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = static_cast<float>(v);
             break;
-        case storage::cpp2::SupportedType::DOUBLE:
+        case cpp2::SupportedType::DOUBLE:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = v;
             break;
@@ -150,7 +150,7 @@ ResultType RowUpdater::setString(const folly::StringPiece name,
 
     uint64_t hash;
     switch (type.get_type()) {
-        case storage::cpp2::SupportedType::STRING:
+        case cpp2::SupportedType::STRING:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = std::move(v.toString());
             break;
@@ -168,7 +168,7 @@ ResultType RowUpdater::setVid(const folly::StringPiece name,
 
     uint64_t hash;
     switch (type.get_type()) {
-        case storage::cpp2::SupportedType::VID:
+        case cpp2::SupportedType::VID:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
             updatedFields_[hash] = v;
             break;
