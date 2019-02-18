@@ -66,13 +66,13 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
                         writer << boost::get<int64_t>(prop.sum_);
                         cols.emplace_back(
                                 columnDef(std::move(prop.prop_.name),
-                                          cpp2::SupportedType::INT));
+                                          nebula::cpp2::SupportedType::INT));
                         break;
                     case 1:
                         writer << boost::get<double>(prop.sum_);
                         cols.emplace_back(
                                 columnDef(std::move(prop.prop_.name),
-                                          cpp2::SupportedType::DOUBLE));
+                                          nebula::cpp2::SupportedType::DOUBLE));
                         break;
                 }
                 break;
@@ -81,7 +81,7 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
                 writer << prop.count_;
                 cols.emplace_back(
                             columnDef(std::move(prop.prop_.name),
-                                      cpp2::SupportedType::INT));
+                                      nebula::cpp2::SupportedType::INT));
                 break;
             }
             case cpp2::StatType::AVG: {
@@ -96,7 +96,7 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
                 }
                 cols.emplace_back(
                         columnDef(std::move(prop.prop_.name),
-                                  cpp2::SupportedType::DOUBLE));
+                                  nebula::cpp2::SupportedType::DOUBLE));
                 break;
             }
         }
