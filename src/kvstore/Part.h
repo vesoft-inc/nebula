@@ -8,8 +8,8 @@
 #define KVSTORE_PART_H_
 
 #include "base/Base.h"
-#include "kvstore/StorageEngine.h"
-#include "kvstore/include/KVStore.h"
+#include "kvstore/Common.h"
+#include "kvstore/KVEngine.h"
 
 namespace nebula {
 namespace kvstore {
@@ -19,7 +19,7 @@ public:
     Part(GraphSpaceID spaceId,
          PartitionID partId,
          const std::string& walPath,
-         StorageEngine* engine)
+         KVEngine* engine)
         : spaceId_(spaceId)
         , partId_(partId)
         , walPath_(walPath)
@@ -27,7 +27,7 @@ public:
 
     virtual ~Part() = default;
 
-    StorageEngine* engine() {
+    KVEngine* engine() {
         return engine_;
     }
 
@@ -43,7 +43,7 @@ protected:
     GraphSpaceID spaceId_;
     PartitionID partId_;
     std::string walPath_;
-    StorageEngine* engine_ = nullptr;
+    KVEngine* engine_ = nullptr;
 };
 
 /**
@@ -52,7 +52,7 @@ protected:
 class SimplePart final : public Part {
 public:
     SimplePart(GraphSpaceID spaceId, PartitionID partId,
-               const std::string& walPath, StorageEngine* engine)
+               const std::string& walPath, KVEngine* engine)
         : Part(spaceId, partId, walPath, engine) {}
 
     void asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) override;

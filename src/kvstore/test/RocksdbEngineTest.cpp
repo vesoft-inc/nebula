@@ -17,9 +17,9 @@ namespace kvstore {
 TEST(RocksdbEngineTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
     std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->put("key", "val"));
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", &val));
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
     EXPECT_EQ(val, "val");
 }
 
@@ -31,15 +31,15 @@ TEST(RocksdbEngineTest, RangeTest) {
         data.emplace_back(std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
                           folly::stringPrintf("val_%d", i));
     }
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->multiPut(std::move(data)));
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
     auto checkRange = [&](int32_t start, int32_t end,
                           int32_t expectedFrom, int32_t expectedTotal) {
         LOG(INFO) << "start " << start << ", end " << end
                   << ", expectedFrom " << expectedFrom << ", expectedTotal " << expectedTotal;
         std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
         std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
-        std::unique_ptr<StorageIter> iter;
-        EXPECT_EQ(ResultCode::SUCCESSED, engine->range(s, e, &iter));
+        std::unique_ptr<KVIterator> iter;
+        EXPECT_EQ(ResultCode::SUCCEEDED, engine->range(s, e, &iter));
         int num = 0;
         while (iter->valid()) {
             num++;
@@ -77,13 +77,13 @@ TEST(RocksdbEngineTest, PrefixTest) {
         data.emplace_back(folly::stringPrintf("c_%d", i),
                           folly::stringPrintf("val_%d", i));
     }
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->multiPut(std::move(data)));
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
     auto checkPrefix = [&](const std::string& prefix,
                           int32_t expectedFrom, int32_t expectedTotal) {
         LOG(INFO) << "prefix " << prefix
                   << ", expectedFrom " << expectedFrom << ", expectedTotal " << expectedTotal;
-        std::unique_ptr<StorageIter> iter;
-        EXPECT_EQ(ResultCode::SUCCESSED, engine->prefix(prefix, &iter));
+        std::unique_ptr<KVIterator> iter;
+        EXPECT_EQ(ResultCode::SUCCEEDED, engine->prefix(prefix, &iter));
         int num = 0;
         while (iter->valid()) {
             num++;
@@ -104,11 +104,11 @@ TEST(RocksdbEngineTest, PrefixTest) {
 TEST(RocksdbEngineTest, RemoveTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
     std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->put("key", "val"));
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->get("key", &val));
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
     EXPECT_EQ(val, "val");
-    EXPECT_EQ(ResultCode::SUCCESSED, engine->remove("key"));
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->remove("key"));
     EXPECT_EQ(ResultCode::ERR_KEY_NOT_FOUND, engine->get("key", &val));
 }
 
@@ -116,25 +116,25 @@ TEST(RocksdbEngineTest, RemoveRangeTest) {
     fs::TempDir rootPath("/tmp/rocksdb_remove_range_test.XXXXXX");
     std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
     for (int32_t i = 0; i < 100; i++) {
-        EXPECT_EQ(ResultCode::SUCCESSED, engine->put(
+        EXPECT_EQ(ResultCode::SUCCEEDED, engine->put(
                     std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
                     folly::stringPrintf("%d_val", i)));
         std::string val;
-        EXPECT_EQ(ResultCode::SUCCESSED, engine->get(
+        EXPECT_EQ(ResultCode::SUCCEEDED, engine->get(
                     std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
                     &val));
         EXPECT_EQ(val, folly::stringPrintf("%d_val", i));
     }
     {
         int32_t s = 0, e = 50;
-        EXPECT_EQ(ResultCode::SUCCESSED, engine->removeRange(
+        EXPECT_EQ(ResultCode::SUCCEEDED, engine->removeRange(
                      std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t)),
                      std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t))));
     }
     {
         int32_t s = 0, e = 100;
-        std::unique_ptr<StorageIter> iter;
-        EXPECT_EQ(ResultCode::SUCCESSED, engine->range(
+        std::unique_ptr<KVIterator> iter;
+        EXPECT_EQ(ResultCode::SUCCEEDED, engine->range(
                                 std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t)),
                                 std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t)),
                                 &iter));
