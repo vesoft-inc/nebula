@@ -108,7 +108,7 @@ private:
             return State::VOID;
         }
 
-        static constexpr auto type = sfinae<Args...>();
+        static constexpr auto* type = sfinae<Args...>();
         static constexpr State state = getState();
     };
 
