@@ -10,7 +10,7 @@
 namespace nebula {
 namespace storage {
 
-namespace detail {
+namespace {
 
 template<class Request, class RemoteFunc, class Response>
 struct ResponseContext {
@@ -31,10 +31,10 @@ public:
         }
     }
 
-    std::pair<const Request&, bool> insertRequest(HostAddr host, Request&& req) {
+    std::pair<const Request*, bool> insertRequest(HostAddr host, Request&& req) {
         std::lock_guard<std::mutex> g(lock_);
         auto res = ongoingRequests_.emplace(host, std::move(req));
-        return std::make_pair(res.first->second, res.second);
+        return std::make_pair(&res.first->second, res.second);
     }
 
     const Request& findRequest(HostAddr host) {
@@ -69,7 +69,7 @@ private:
     bool fulfilled_{false};
 };
 
-}  // namespace detail
+}  // Anonymous namespace
 
 
 template<class Request, class RemoteFunc, class Response>
@@ -77,7 +77,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc) {
-    auto context = std::make_shared<detail::ResponseContext<Request, RemoteFunc, Response>>(
+    auto context = std::make_shared<ResponseContext<Request, RemoteFunc, Response>>(
         requests.size(), std::move(remoteFunc));
 
     if (evb == nullptr) {
@@ -93,7 +93,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
         auto res = context->insertRequest(host, std::move(req.second));
         DCHECK(res.second);
         // Invoke the remote method
-        context->serverMethod(client.get(), res.first)
+        context->serverMethod(client.get(), *res.first)
             // Future process code will be executed on the IO thread
             // Since all requests are sent using the same eventbase, all then-callback
             // will be executed on the same IO thread
@@ -138,7 +138,6 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                 }
             });
     }
-
     if (context->finishSending()) {
         // Received all responses, most likely, all rpc failed
         context->promise.setValue(std::move(context->resp));

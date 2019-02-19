@@ -10,9 +10,9 @@
 namespace nebula {
 
 using folly::hash::SpookyHashV2;
-using storage::cpp2::ColumnDef;
-using storage::cpp2::ValueType;
-using storage::cpp2::Schema;
+using cpp2::ColumnDef;
+using cpp2::ValueType;
+using cpp2::Schema;
 
 /***********************************
  *
@@ -79,7 +79,7 @@ const char* ResultSchemaProvider::getFieldName(int64_t index) const {
 
 const ValueType& ResultSchemaProvider::getFieldType(int64_t index) const {
     if (index < 0 || index >= static_cast<int64_t>(columns_.size())) {
-        return StorageConstants::kInvalidValueType();
+        return CommonConstants::kInvalidValueType();
     }
 
     return columns_[index].get_type();
@@ -89,7 +89,7 @@ const ValueType& ResultSchemaProvider::getFieldType(int64_t index) const {
 const ValueType& ResultSchemaProvider::getFieldType(const folly::StringPiece name) const {
     auto index = getFieldIndex(name);
     if (index < 0) {
-        return StorageConstants::kInvalidValueType();
+        return CommonConstants::kInvalidValueType();
     }
     return columns_[index].get_type();
 }

@@ -97,31 +97,31 @@ std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
                 return std::shared_ptr<SchemaProviderIf>();
             }
         } else {
-            storage::cpp2::ValueType vtype;
+            cpp2::ValueType vtype;
             if (type == "bool") {
-                vtype.set_type(storage::cpp2::SupportedType::BOOL);
+                vtype.set_type(cpp2::SupportedType::BOOL);
             } else if (type == "integer") {
-                vtype.set_type(storage::cpp2::SupportedType::INT);
+                vtype.set_type(cpp2::SupportedType::INT);
             } else if (type == "vertexid") {
-                vtype.set_type(storage::cpp2::SupportedType::VID);
+                vtype.set_type(cpp2::SupportedType::VID);
             } else if (type == "float") {
-                vtype.set_type(storage::cpp2::SupportedType::FLOAT);
+                vtype.set_type(cpp2::SupportedType::FLOAT);
             } else if (type == "double") {
-                vtype.set_type(storage::cpp2::SupportedType::DOUBLE);
+                vtype.set_type(cpp2::SupportedType::DOUBLE);
             } else if (type == "string") {
-                vtype.set_type(storage::cpp2::SupportedType::STRING);
+                vtype.set_type(cpp2::SupportedType::STRING);
             } else if (type == "timestamp") {
-                vtype.set_type(storage::cpp2::SupportedType::TIMESTAMP);
+                vtype.set_type(cpp2::SupportedType::TIMESTAMP);
             } else if (type == "year") {
-                vtype.set_type(storage::cpp2::SupportedType::YEAR);
+                vtype.set_type(cpp2::SupportedType::YEAR);
             } else if (type == "yearmonth") {
-                vtype.set_type(storage::cpp2::SupportedType::YEARMONTH);
+                vtype.set_type(cpp2::SupportedType::YEARMONTH);
             } else if (type == "date") {
-                vtype.set_type(storage::cpp2::SupportedType::DATE);
+                vtype.set_type(cpp2::SupportedType::DATE);
             } else if (type == "datetime") {
-                vtype.set_type(storage::cpp2::SupportedType::DATETIME);
+                vtype.set_type(cpp2::SupportedType::DATETIME);
             } else if (type == "path") {
-                vtype.set_type(storage::cpp2::SupportedType::PATH);
+                vtype.set_type(cpp2::SupportedType::PATH);
             } else {
                 LOG(ERROR) << "Unsupported type: \"" << type << "\"";
                 return std::shared_ptr<SchemaProviderIf>();

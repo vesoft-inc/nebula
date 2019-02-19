@@ -8,7 +8,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "network/NetworkUtils.h"
 #include "storage/StorageServiceHandler.h"
-#include "kvstore/include/KVStore.h"
+#include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");

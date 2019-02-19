@@ -44,9 +44,13 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::getClient(
             static thread_local int connectionCount = 0;
             VLOG(2) << "Connecting to " << ipAddr << ":" << port
                     << " for " << ++connectionCount << " times";
-            return apache::thrift::HeaderClientChannel::newChannel(
-                apache::thrift::async::TAsyncSocket::newSocket(
-                    &eb, ipAddr, port, FLAGS_conn_timeout_ms));
+            std::shared_ptr<apache::thrift::async::TAsyncSocket> socket;
+            eb.runImmediatelyOrRunInEventBaseThreadAndWait(
+                [&socket, &eb, ipAddr, port]() {
+                    socket = apache::thrift::async::TAsyncSocket::newSocket(
+                        &eb, ipAddr, port, FLAGS_conn_timeout_ms);
+                });
+            return apache::thrift::HeaderClientChannel::newChannel(socket);
         });
     auto client = std::make_shared<ClientType>(std::move(channel));
     manager.clientMap_->emplace(std::make_pair(host, evb), client);

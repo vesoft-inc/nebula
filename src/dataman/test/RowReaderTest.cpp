@@ -34,7 +34,7 @@ TEST(RowReader, headerInfo) {
     auto schema3 = std::make_shared<SchemaWriter>(0x00FFFF01);
     for (int i = 0; i < 33; i++) {
         schema3->appendCol(folly::stringPrintf("Column%02d", i),
-                           storage::cpp2::SupportedType::INT);
+                           cpp2::SupportedType::INT);
     }
 
     // With schema version and offsets
@@ -55,7 +55,7 @@ TEST(RowReader, headerInfo) {
     auto schema4 = std::make_shared<SchemaWriter>();
     for (int i = 0; i < 33; i++) {
         schema4->appendCol(folly::stringPrintf("Column%02d", i),
-                           storage::cpp2::SupportedType::INT);
+                           cpp2::SupportedType::INT);
     }
 
     char data4[] = {0x01, static_cast<char>(0xFF), 0x40, 0x08, static_cast<char>(0xF0)};
@@ -78,28 +78,28 @@ TEST(RowReader, encodedData) {
 
     auto schema = std::make_shared<SchemaWriter>();
     // Col 0: bool_col1 -- BOOL
-    schema->appendCol("bool_col1", storage::cpp2::SupportedType::BOOL);
+    schema->appendCol("bool_col1", cpp2::SupportedType::BOOL);
     // Col 1: str_col1 -- STRING
     schema->appendCol(folly::stringPrintf("str_col1"),
-                      storage::cpp2::SupportedType::STRING);
+                      cpp2::SupportedType::STRING);
     // Col 2: int_col1 -- INT
-    schema->appendCol(colName1, storage::cpp2::SupportedType::INT);
+    schema->appendCol(colName1, cpp2::SupportedType::INT);
     // Col 3: int_col2 -- INT
-    schema->appendCol(colName2, storage::cpp2::SupportedType::INT);
+    schema->appendCol(colName2, cpp2::SupportedType::INT);
     // Col 4: vid_col -- VID
     schema->appendCol(folly::StringPiece(colName3),
-                      storage::cpp2::SupportedType::VID);
+                      cpp2::SupportedType::VID);
     // Col 5: str_col2 -- STRING
-    schema->appendCol("str_col2", storage::cpp2::SupportedType::STRING);
+    schema->appendCol("str_col2", cpp2::SupportedType::STRING);
     // Col 6: bool_col2 -- BOOL
     schema->appendCol(std::string("bool_col2"),
-                      storage::cpp2::SupportedType::BOOL);
+                      cpp2::SupportedType::BOOL);
     // Col 7: float_col -- FLOAT
     schema->appendCol(std::string("float_col"),
-                      storage::cpp2::SupportedType::FLOAT);
+                      cpp2::SupportedType::FLOAT);
     // Col 8: double_col -- DOUBLE
     schema->appendCol(std::string("double_col"),
-                      storage::cpp2::SupportedType::DOUBLE);
+                      cpp2::SupportedType::DOUBLE);
 
     std::string encoded;
     // Single byte header (Schema version is 0, no offset)
@@ -267,7 +267,7 @@ TEST(RowReader, iterator) {
     auto schema = std::make_shared<SchemaWriter>();
     for (int i = 0; i < 64; i++) {
         schema->appendCol(folly::stringPrintf("Col%02d", i),
-                          storage::cpp2::SupportedType::INT);
+                          cpp2::SupportedType::INT);
         encoded.append(1, i + 1);
     }
 

@@ -21,14 +21,14 @@ class SchemaManager : public SchemaProviderIf {
 public:
     class SchemaField final : public SchemaProviderIf::Field {
     public:
-        SchemaField(std::string name, storage::cpp2::ValueType type)
+        SchemaField(std::string name, cpp2::ValueType type)
             : name_(std::move(name))
             , type_(std::move(type)) {}
 
         const char* getName() const override {
             return name_.c_str();
         }
-        const storage::cpp2::ValueType& getType() const override {
+        const cpp2::ValueType& getType() const override {
             return type_;
         }
         bool isValid() const override {
@@ -37,7 +37,7 @@ public:
 
     private:
         std::string name_;
-        storage::cpp2::ValueType type_;
+        cpp2::ValueType type_;
     };
 
 public:
@@ -74,8 +74,8 @@ public:
     int64_t getFieldIndex(const folly::StringPiece name) const override;
     const char* getFieldName(int64_t index) const override;
 
-    const storage::cpp2::ValueType& getFieldType(int64_t index) const override;
-    const storage::cpp2::ValueType& getFieldType(const folly::StringPiece name) const override;
+    const cpp2::ValueType& getFieldType(int64_t index) const override;
+    const cpp2::ValueType& getFieldType(const folly::StringPiece name) const override;
 
     std::shared_ptr<const SchemaProviderIf::Field> field(int64_t index) const override;
     std::shared_ptr<const SchemaProviderIf::Field> field(

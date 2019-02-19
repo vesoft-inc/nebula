@@ -21,7 +21,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                        RowSetWriter& rsWriter) {
     auto prefix = KeyUtils::prefix(partId, edgeKey.src, edgeKey.edge_type,
                                    edgeKey.ranking, edgeKey.dst);
-    std::unique_ptr<kvstore::StorageIter> iter;
+    std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
     // Only use the latest version.
     if (iter && iter->valid()) {
@@ -56,7 +56,6 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
         for (auto& p : req.get_parts()) {
             this->pushResultCode(retCode, p.first);
         }
-        this->resp_.result.latency_in_ms = duration_.elapsedInMSec();
         this->onFinished();
         return;
     }
@@ -67,14 +66,14 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
         kvstore::ResultCode ret;
         for (auto& edgeKey : partE.second) {
             ret = this->collectEdgesProps(partId, edgeKey, edgeContext.props_, rsWriter);
-            if (ret != kvstore::ResultCode::SUCCESSED) {
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
                 break;
             }
         }
         // TODO handle failures
         this->pushResultCode(this->to(ret), partId);
     });
-    resp_.data = std::move(rsWriter.data());
+    resp_.set_data(std::move(rsWriter.data()));
 
     std::vector<PropContext> props;
     props.reserve(returnColumnsNum);
@@ -84,13 +83,16 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     std::sort(props.begin(), props.end(), [](auto& l, auto& r){
         return l.retIndex_ < r.retIndex_;
     });
+    decltype(resp_.schema) s;
+    decltype(resp_.schema.columns) cols;
     for (auto& prop : props) {
         VLOG(3) << prop.prop_.name << "," << static_cast<int8_t>(prop.type_.type);
-        resp_.schema.columns.emplace_back(
+        cols.emplace_back(
                 columnDef(std::move(prop.prop_.name),
                           prop.type_.type));
     }
-    resp_.result.latency_in_ms = duration_.elapsedInMSec();
+    s.set_columns(std::move(cols));
+    resp_.set_schema(std::move(s));
     this->onFinished();
 }
 
