@@ -14,35 +14,58 @@ namespace nebula {
 
 namespace {  // NOLINT
 
-template<typename U>
-struct TypeSelector {
-    TypeSelector() = delete;
-};
-
-using TypeOne = TypeSelector<char*>;
-using TypeTwo = TypeSelector<float>;
+using LeftType = std::true_type;
+using RightType = std::false_type;
 
 enum class State : int16_t {
     VOID = 0,
-    FIRST_TYPE = 1,
-    SECOND_TYPE = 2,
+    LEFT_TYPE = 1,
+    RIGHT_TYPE = 2,
 };
 
 }  // Anonymous namespace
 
-static constexpr TypeOne* kConstructT1 = nullptr;
-static constexpr TypeTwo* kConstructT2 = nullptr;
+static constexpr LeftType* kConstructLeft = nullptr;
+static constexpr RightType* kConstructRight = nullptr;
 
 
-template<typename T1,
-         typename T2,
-         typename = std::enable_if_t<!std::is_same<T1, T2>::value>
->
+/**
+ * EitherOr<> is a type to hold a value of either LEFT type or RIGHT type.
+ * The only constrain is the LEFT type cannot be same as the RIGHT type
+ *
+ * vs. boost::variant<>: Variant is an old design which tries to solve the
+ * problem that only POD can be allowed in `union`
+ * (https://www.boost.org/doc/libs/1_69_0/doc/html/variant.html#variant.abstract).
+ * The problem boost:::variant tries to solve does not exist any more since C++11
+ * (https://en.cppreference.com/w/cpp/language/union). EitherOr is designed based
+ * on the new `union` in C++11, so it means they are more efficient
+ *
+ * vs. StatusOr<>: EitherOr is a more generic form of StatusOr. EitherOr supports
+ * any two types, as long as the two types are different. StatusOr supports Status
+ * and another type. So StatusOr is a special case of EitherOr. Later we would
+ * rewrite StatusOr based on EitherOr
+ *
+ * EitherOr<> provides multiple constructors. Besides the default constructor
+ * and copy constructors, EitherOr<> will use the parameters to decide which
+ * type should be instantiated. If the LEFT and RIGHT types are similar enough
+ * and EitherOr<> cannot decide which type to instantiate, we need to use the
+ * constructors with the type Tag. For example
+ *
+ *   EitherOr<int32_t, uint32_t> v1(kConstructLeft, 12);
+ *   EXPECT_TRUE(v1.isLeftType());
+ *
+ *   EitherOr<int32_t, uint32_t> v1(kConstructRight, 12);
+ *   EXPECT_TRUE(v1.isRightType());
+ */
+template<typename LEFT, typename RIGHT>
 class EitherOr {
 private:
-    // Make friends with other compatible StatusOr<U>
-    template <typename U, typename V, typename Cond>
+    // Make friends with other compatible EitherOr<U, V>
+    template <typename U, typename V>
     friend class EitherOr;
+
+    static_assert(!std::is_same<LEFT, RIGHT>::value,
+                  "The left type and right type of EitherOr<> cannot be same");
 
     template<class... Args>
     struct TypeConverter {
@@ -50,42 +73,42 @@ private:
 
         template<class... Types>
         static constexpr typename std::enable_if_t<
-            std::is_constructible<T1, Types...>::value &&
-                !std::is_constructible<T2, Types...>::value,
-            TypeOne
-        >* sfinae() { return nullptr; }
+            std::is_constructible<LEFT, Types...>::value &&
+                !std::is_constructible<RIGHT, Types...>::value,
+            LeftType
+        >* sfinae() { return kConstructLeft; }
 
         template<class... Types>
         static constexpr typename std::enable_if_t<
-            !std::is_constructible<T1, Types...>::value &&
-                std::is_constructible<T2, Types...>::value,
-            TypeTwo
-        >* sfinae() { return nullptr; }
+            !std::is_constructible<LEFT, Types...>::value &&
+                std::is_constructible<RIGHT, Types...>::value,
+            RightType
+        >* sfinae() { return kConstructRight; }
 
         template<class... Types>
         static constexpr typename std::enable_if_t<
-            std::is_constructible<T1, Types...>::value &&
-                std::is_constructible<T2, Types...>::value
-        > sfinae() {
-            static_assert(std::is_constructible<T1, Types...>::value &&
-                            std::is_constructible<T2, Types...>::value,
+            std::is_constructible<LEFT, Types...>::value &&
+                std::is_constructible<RIGHT, Types...>::value
+        >* sfinae() {
+            static_assert(std::is_constructible<LEFT, Types...>::value &&
+                            std::is_constructible<RIGHT, Types...>::value,
                           "The arguments can be converted into either"
-                          " T1 or T2, so please use the construct or"
-                          " with explicit tag");
+                          " LEFT or RIGHT, so please use the constructor"
+                          " with an explicit tag");
         }
 
         static constexpr State getState() {
-            auto ptr = sfinae<Args...>();
-            if (std::is_same<decltype(ptr), TypeOne*>::value) {
-                return State::FIRST_TYPE;
+            auto* ptr = sfinae<Args...>();
+            if (std::is_same<decltype(ptr), LeftType*>::value) {
+                return State::LEFT_TYPE;
             }
-            if (std::is_same<decltype(ptr), TypeTwo*>::value) {
-                return State::SECOND_TYPE;
+            if (std::is_same<decltype(ptr), RightType*>::value) {
+                return State::RIGHT_TYPE;
             }
             return State::VOID;
         }
 
-        static constexpr auto* type = sfinae<Args...>();
+        static constexpr auto type = sfinae<Args...>();
         static constexpr State state = getState();
     };
 
@@ -111,13 +134,13 @@ public:
         switch (rhs.state_) {
             case State::VOID:
                 break;
-            case State::FIRST_TYPE:
-                new (&val_) Variant(kConstructT1, rhs.val_.v1_);
-                state_ = State::FIRST_TYPE;
+            case State::LEFT_TYPE:
+                new (&val_) Variant(kConstructLeft, rhs.val_.left_);
+                state_ = State::LEFT_TYPE;
                 break;
-            case State::SECOND_TYPE:
-                new (&val_) Variant(kConstructT2, rhs.val_.v2_);
-                state_ = State::SECOND_TYPE;
+            case State::RIGHT_TYPE:
+                new (&val_) Variant(kConstructRight, rhs.val_.right_);
+                state_ = State::RIGHT_TYPE;
                 break;
         }
     }
@@ -126,13 +149,13 @@ public:
         switch (rhs.state_) {
             case State::VOID:
                 break;
-            case State::FIRST_TYPE:
-                new (&val_) Variant(kConstructT1, std::move(rhs).v1());
-                state_ = State::FIRST_TYPE;
+            case State::LEFT_TYPE:
+                new (&val_) Variant(kConstructLeft, std::move(rhs).left());
+                state_ = State::LEFT_TYPE;
                 break;
-            case State::SECOND_TYPE:
-                new (&val_) Variant(kConstructT2, std::move(rhs).v2());
-                state_ = State::SECOND_TYPE;
+            case State::RIGHT_TYPE:
+                new (&val_) Variant(kConstructRight, std::move(rhs).right());
+                state_ = State::RIGHT_TYPE;
                 break;
         }
     }
@@ -140,21 +163,21 @@ public:
     template<
         typename U, typename V,
         typename = std::enable_if_t<
-            std::is_constructible<T1, U>::value &&
-            std::is_constructible<T2, V>::value
+            std::is_constructible<LEFT, U>::value &&
+            std::is_constructible<RIGHT, V>::value
         >
     >
     EitherOr(const EitherOr<U, V>& rhs) noexcept {
         switch (rhs.state_) {
             case State::VOID:
                 break;
-            case State::FIRST_TYPE:
-                new (&val_) Variant(kConstructT1, rhs.val_.v1_);
-                state_ = State::FIRST_TYPE;
+            case State::LEFT_TYPE:
+                new (&val_) Variant(kConstructLeft, rhs.val_.left_);
+                state_ = State::LEFT_TYPE;
                 break;
-            case State::SECOND_TYPE:
-                new (&val_) Variant(kConstructT2, rhs.val_.v2_);
-                state_ = State::SECOND_TYPE;
+            case State::RIGHT_TYPE:
+                new (&val_) Variant(kConstructRight, rhs.val_.right_);
+                state_ = State::RIGHT_TYPE;
                 break;
         }
     }
@@ -162,81 +185,81 @@ public:
     template<
         typename U, typename V,
         typename = std::enable_if_t<
-            std::is_constructible<T1, U>::value &&
-            std::is_constructible<T2, V>::value
+            std::is_constructible<LEFT, U>::value &&
+            std::is_constructible<RIGHT, V>::value
         >
     >
     EitherOr(EitherOr<U, V>&& rhs) noexcept {
         switch (rhs.state_) {
             case State::VOID:
                 break;
-            case State::FIRST_TYPE:
-                new (&val_) Variant(kConstructT1, std::move(rhs).v1());
-                state_ = State::FIRST_TYPE;
+            case State::LEFT_TYPE:
+                new (&val_) Variant(kConstructLeft, std::move(rhs).left());
+                state_ = State::LEFT_TYPE;
                 break;
-            case State::SECOND_TYPE:
-                new (&val_) Variant(kConstructT2, std::move(rhs).v2());
-                state_ = State::SECOND_TYPE;
+            case State::RIGHT_TYPE:
+                new (&val_) Variant(kConstructRight, std::move(rhs).right());
+                state_ = State::RIGHT_TYPE;
                 break;
         }
     }
 
-    EitherOr(const T1& v) noexcept {  // NOLINT
-        new (&val_) Variant(kConstructT1, v);
-        state_ = State::FIRST_TYPE;
+    EitherOr(const LEFT& v) noexcept {  // NOLINT
+        new (&val_) Variant(kConstructLeft, v);
+        state_ = State::LEFT_TYPE;
     }
 
-    EitherOr(T1&& v) noexcept {  // NOLINT
-        new (&val_) Variant(kConstructT1, std::move(v));
-        state_ = State::FIRST_TYPE;
+    EitherOr(LEFT&& v) noexcept {  // NOLINT
+        new (&val_) Variant(kConstructLeft, std::move(v));
+        state_ = State::LEFT_TYPE;
     }
 
-    EitherOr(const T2& v) noexcept {  // NOLINT
-        new (&val_) Variant(kConstructT2, v);
-        state_ = State::SECOND_TYPE;
+    EitherOr(const RIGHT& v) noexcept {  // NOLINT
+        new (&val_) Variant(kConstructRight, v);
+        state_ = State::RIGHT_TYPE;
     }
 
-    EitherOr(T2&& v) noexcept {  // NOLINT
-        new (&val_) Variant(kConstructT2, std::move(v));
-        state_ = State::SECOND_TYPE;
+    EitherOr(RIGHT&& v) noexcept {  // NOLINT
+        new (&val_) Variant(kConstructRight, std::move(v));
+        state_ = State::RIGHT_TYPE;
     }
 
     // Construct from a list of values which can only construct either
-    // T1 or T2, not both
+    // LEFT or RIGHT, not both
     template<class... Args,
              typename = std::enable_if_t<
-                std::is_constructible<T1, Args...>::value ||
-                std::is_constructible<T2, Args...>::value>
+                std::is_constructible<LEFT, Args...>::value ||
+                std::is_constructible<RIGHT, Args...>::value>
     >
     EitherOr(Args&&... v) noexcept {  // NOLINT
         new (&val_) Variant(convert_to_t<Args...>, std::forward<Args>(v)...);
         state_ = convert_to_s<Args...>;
     }
 
-    // Construct from a value which can construct both T1 and T2
-    // So we use a type tag to force selecting T1
+    // Construct from a value which can construct both LEFT and RIGHT
+    // So we use a type tag to force selecting LEFT
     template<typename U,
              typename = std::enable_if_t<
-                std::is_constructible<T1, U>::value &&
-                std::is_constructible<T2, U>::value
+                std::is_constructible<LEFT, U>::value &&
+                std::is_constructible<RIGHT, U>::value
              >
     >
-    EitherOr(const TypeOne*, U&& v) noexcept {
-        new (&val_) Variant(kConstructT1, std::forward<U>(v));
-        state_ = State::FIRST_TYPE;
+    EitherOr(const LeftType*, U&& v) noexcept {
+        new (&val_) Variant(kConstructLeft, std::forward<U>(v));
+        state_ = State::LEFT_TYPE;
     }
 
-    // Construct from a value which can construct both T1 and T2
-    // So we use a type tag to force selecting T2
+    // Construct from a value which can construct both LEFT and RIGHT
+    // So we use a type tag to force selecting RIGHT
     template<typename U,
              typename = std::enable_if_t<
-                std::is_constructible<T1, U>::value &&
-                std::is_constructible<T2, U>::value
+                std::is_constructible<LEFT, U>::value &&
+                std::is_constructible<RIGHT, U>::value
              >
     >
-    EitherOr(const TypeTwo*, U&& v) noexcept {
-        new (&val_) Variant(kConstructT2, std::forward<U>(v));
-        state_ = State::SECOND_TYPE;
+    EitherOr(const RightType*, U&& v) noexcept {
+        new (&val_) Variant(kConstructRight, std::forward<U>(v));
+        state_ = State::RIGHT_TYPE;
     }
 
 
@@ -245,39 +268,39 @@ public:
      * Assignments
      *
      **********************************************/
-    EitherOr& operator=(const T1& v) noexcept {
+    EitherOr& operator=(const LEFT& v) noexcept {
         reset();
-        new (&val_) Variant(kConstructT1, v);
-        state_ = State::FIRST_TYPE;
+        new (&val_) Variant(kConstructLeft, v);
+        state_ = State::LEFT_TYPE;
         return *this;
     }
 
-    EitherOr& operator=(T1&& v) noexcept {
+    EitherOr& operator=(LEFT&& v) noexcept {
         reset();
-        new (&val_) Variant(kConstructT1, std::move(v));
-        state_ = State::FIRST_TYPE;
+        new (&val_) Variant(kConstructLeft, std::move(v));
+        state_ = State::LEFT_TYPE;
         return *this;
     }
 
-    EitherOr& operator=(const T2& v) noexcept {
+    EitherOr& operator=(const RIGHT& v) noexcept {
         reset();
-        new (&val_) Variant(kConstructT2, v);
-        state_ = State::SECOND_TYPE;
+        new (&val_) Variant(kConstructRight, v);
+        state_ = State::RIGHT_TYPE;
         return *this;
     }
 
-    EitherOr& operator=(T2&& v) noexcept {
+    EitherOr& operator=(RIGHT&& v) noexcept {
         reset();
-        new (&val_) Variant(kConstructT2, std::move(v));
-        state_ = State::SECOND_TYPE;
+        new (&val_) Variant(kConstructRight, std::move(v));
+        state_ = State::RIGHT_TYPE;
         return *this;
     }
 
-    // Assign from a value which can only construct either T1 or T2,
+    // Assign from a value which can only construct either LEFT or RIGHT,
     // but not both
     template<typename U>
     typename std::enable_if_t<
-        std::is_constructible<T1, U>::value || std::is_constructible<T2, U>::value,
+        std::is_constructible<LEFT, U>::value || std::is_constructible<RIGHT, U>::value,
         EitherOr
     >&
     operator=(U&& v) noexcept {
@@ -288,34 +311,44 @@ public:
     }
 
     EitherOr& operator=(const EitherOr& rhs) noexcept {
+        // Avoid self-assignment
+        if (&rhs == this) {
+            return *this;
+        }
+
         reset();
         switch (rhs.state_) {
             case State::VOID:
                 break;
-            case State::FIRST_TYPE:
-                new (&val_) Variant(kConstructT1, rhs.v1());
-                state_ = State::FIRST_TYPE;
+            case State::LEFT_TYPE:
+                new (&val_) Variant(kConstructLeft, rhs.left());
+                state_ = State::LEFT_TYPE;
                 break;
-            case State::SECOND_TYPE:
-                new (&val_) Variant(kConstructT2, rhs.v2());
-                state_ = State::SECOND_TYPE;
+            case State::RIGHT_TYPE:
+                new (&val_) Variant(kConstructRight, rhs.right());
+                state_ = State::RIGHT_TYPE;
                 break;
         }
         return *this;
     }
 
     EitherOr& operator=(EitherOr&& rhs) noexcept {
+        // Avoid self-assignment
+        if (&rhs == this) {
+            return *this;
+        }
+
         reset();
         switch (rhs.state_) {
             case State::VOID:
                 break;
-            case State::FIRST_TYPE:
-                new (&val_) Variant(kConstructT1, std::move(rhs).v1());
-                state_ = State::FIRST_TYPE;
+            case State::LEFT_TYPE:
+                new (&val_) Variant(kConstructLeft, std::move(rhs).left());
+                state_ = State::LEFT_TYPE;
                 break;
-            case State::SECOND_TYPE:
-                new (&val_) Variant(kConstructT2, std::move(rhs).v2());
-                state_ = State::SECOND_TYPE;
+            case State::RIGHT_TYPE:
+                new (&val_) Variant(kConstructRight, std::move(rhs).right());
+                state_ = State::RIGHT_TYPE;
                 break;
         }
         return *this;
@@ -323,20 +356,20 @@ public:
 
     template<typename U, typename V>
     typename std::enable_if_t<
-        std::is_constructible<T1, U>::value && std::is_constructible<T2, V>::value,
+        std::is_constructible<LEFT, U>::value && std::is_constructible<RIGHT, V>::value,
         EitherOr
     >& operator=(const EitherOr<U, V>& rhs) noexcept {
         reset();
         switch (rhs.state_) {
             case State::VOID:
                 break;
-            case State::FIRST_TYPE:
-                new (&val_) Variant(kConstructT1, rhs.v1());
-                state_ = State::FIRST_TYPE;
+            case State::LEFT_TYPE:
+                new (&val_) Variant(kConstructLeft, rhs.left());
+                state_ = State::LEFT_TYPE;
                 break;
-            case State::SECOND_TYPE:
-                new (&val_) Variant(kConstructT2, rhs.v2());
-                state_ = State::SECOND_TYPE;
+            case State::RIGHT_TYPE:
+                new (&val_) Variant(kConstructRight, rhs.right());
+                state_ = State::RIGHT_TYPE;
                 break;
         }
         return *this;
@@ -344,20 +377,20 @@ public:
 
     template<typename U, typename V>
     typename std::enable_if_t<
-        std::is_constructible<T1, U>::value && std::is_constructible<T2, V>::value,
+        std::is_constructible<LEFT, U>::value && std::is_constructible<RIGHT, V>::value,
         EitherOr
     >& operator=(EitherOr<U, V>&& rhs) noexcept {
         reset();
         switch (rhs.state_) {
             case State::VOID:
                 break;
-            case State::FIRST_TYPE:
-                new (&val_) Variant(kConstructT1, std::move(rhs).v1());
-                state_ = State::FIRST_TYPE;
+            case State::LEFT_TYPE:
+                new (&val_) Variant(kConstructLeft, std::move(rhs).left());
+                state_ = State::LEFT_TYPE;
                 break;
-            case State::SECOND_TYPE:
-                new (&val_) Variant(kConstructT2, std::move(rhs).v2());
-                state_ = State::SECOND_TYPE;
+            case State::RIGHT_TYPE:
+                new (&val_) Variant(kConstructRight, std::move(rhs).right());
+                state_ = State::RIGHT_TYPE;
                 break;
         }
         return *this;
@@ -372,12 +405,12 @@ public:
         return state_ == State::VOID;
     }
 
-    bool isTypeOne() const {
-        return state_ == State::FIRST_TYPE;
+    bool isLeftType() const {
+        return state_ == State::LEFT_TYPE;
     }
 
-    bool isTypeTwo() const {
-        return state_ == State::SECOND_TYPE;
+    bool isRightType() const {
+        return state_ == State::RIGHT_TYPE;
     }
 
     /***********************************************
@@ -385,38 +418,38 @@ public:
      * Access values
      *
      **********************************************/
-    T1& v1() & {
-        CHECK(isTypeOne());
-        return val_.v1_;
+    LEFT& left() & {
+        CHECK(isLeftType());
+        return val_.left_;
     }
 
-    const T1& v1() const & {
-        CHECK(isTypeOne());
-        return val_.v1_;
+    const LEFT& left() const & {
+        CHECK(isLeftType());
+        return val_.left_;
     }
 
-    T1 v1() && {
-        CHECK(isTypeOne());
-        auto v = std::move(val_.v1_);
-        val_.v1_.~T1();
+    LEFT left() && {
+        CHECK(isLeftType());
+        auto v = std::move(val_.left_);
+        val_.left_.~LEFT();
         state_ = State::VOID;
         return v;
     }
 
-    T2& v2() & {
-        CHECK(isTypeTwo());
-        return val_.v2_;
+    RIGHT& right() & {
+        CHECK(isRightType());
+        return val_.right_;
     }
 
-    const T2& v2() const & {
-        CHECK(isTypeTwo());
-        return val_.v2_;
+    const RIGHT& right() const & {
+        CHECK(isRightType());
+        return val_.right_;
     }
 
-    T2 v2() && {
-        CHECK(isTypeTwo());
-        auto v = std::move(val_.v2_);
-        val_.v2_.~T2();
+    RIGHT right() && {
+        CHECK(isRightType());
+        auto v = std::move(val_.right_);
+        val_.right_.~RIGHT();
         state_ = State::VOID;
         return v;
     }
@@ -426,11 +459,11 @@ private:
         switch (state_) {
             case State::VOID:
                 return;
-            case State::FIRST_TYPE:
-                val_.v1_.~T1();
+            case State::LEFT_TYPE:
+                val_.left_.~LEFT();
                 return;
-            case State::SECOND_TYPE:
-                val_.v2_.~T2();
+            case State::RIGHT_TYPE:
+                val_.right_.~RIGHT();
         }
     }
 
@@ -444,15 +477,15 @@ private:
         Variant() {}
 
         template<class... Args>
-        Variant(const TypeOne*, Args&&... v) : v1_(std::forward<Args>(v)...) {}
+        Variant(const LeftType*, Args&&... v) : left_(std::forward<Args>(v)...) {}
 
         template<class... Args>
-        Variant(const TypeTwo*, Args&&... v) : v2_(std::forward<Args>(v)...) {}
+        Variant(const RightType*, Args&&... v) : right_(std::forward<Args>(v)...) {}
 
         ~Variant() {}
 
-        T1 v1_;
-        T2 v2_;
+        LEFT left_;
+        RIGHT right_;
     };
 
     Variant val_;
