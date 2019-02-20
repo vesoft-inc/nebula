@@ -36,6 +36,6 @@ public class GraphNetworkAddressTest extends GraphClientBase {
         expectedEx.expectMessage("InetSocketAddress must not be null or ip format invalid");
 
         Assert.assertEquals("256.0.0.11:1123",
-                GraphNetworkAddress.format(new InetSocketAddress("256.0.0.011",1123)));
+                GraphNetworkAddress.format(InetSocketAddress.createUnresolved("256.0.0.011",1123)));
     }
 }
