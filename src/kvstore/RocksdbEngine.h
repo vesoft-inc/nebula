@@ -96,6 +96,8 @@ public:
 
     ~RocksdbEngine();
 
+    void close();
+
     ResultCode get(const std::string& key,
                    std::string* value) override;
 

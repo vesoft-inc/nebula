@@ -6,7 +6,9 @@
 
 #include "base/Base.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+#include <kvstore/NebulaStore.h>
 #include "network/NetworkUtils.h"
+#include "signal/SignalUtils.h"
 #include "storage/StorageServiceHandler.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
@@ -17,6 +19,10 @@ DEFINE_string(data_path, "", "Root data path, multi paths should be split by com
                              "For rocksdb engine, one path one instance.");
 DEFINE_string(local_ip, "", "Local ip");
 DEFINE_bool(mock_server, true, "start mock server");
+
+static std::unique_ptr<nebula::kvstore::NebulaStore> kvstore;
+static nebula::kvstore::KVOptions options;
+static std::shared_ptr<apache::thrift::ThriftServer> server;
 
 // Get local IPv4 address. You could specify it by set FLAGS_local_ip, otherwise
 // it will use the first ip exclude "127.0.0.1"
@@ -40,18 +46,29 @@ StatusOr<std::string> getLocalIP() {
 
 }  // namespace nebula
 
+void exit_signal_handler(int signal_num) {
+    LOG(INFO) << "storaged interrupt, signal number is : " << signal_num;
+    kvstore->destroyEngines();
+    server->stop();
+    ::exit(signal_num);
+}
+
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
     using nebula::HostAddr;
     using nebula::storage::StorageServiceHandler;
     using nebula::kvstore::KVStore;
+    using nebula::kvstore::NebulaStore;
     using nebula::meta::SchemaManager;
     using nebula::network::NetworkUtils;
     using nebula::getLocalIP;
 
     LOG(INFO) << "Starting the storage Daemon on port " << FLAGS_port
               << ", dataPath " << FLAGS_data_path;
+
+    // Setup the signal handlers
+    SYSTEM_SIGNAL_SETUP("storaged");
 
     std::vector<std::string> paths;
     folly::split(",", FLAGS_data_path, paths, true);
@@ -80,14 +97,13 @@ int main(int argc, char *argv[]) {
                nebula::storage::TestUtils::genTagSchemaProvider(tagId, 3, 3));
         }
     }
-    std::unique_ptr<KVStore> kvstore;
-    nebula::kvstore::KVOptions options;
+
     options.local_ = HostAddr(localIP, FLAGS_port);
     options.dataPaths_ = std::move(paths);
-    kvstore.reset(KVStore::instance(std::move(options)));
+    kvstore.reset(static_cast<NebulaStore*>(KVStore::instance(std::move(options))));
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get());
-    auto server = std::make_shared<apache::thrift::ThriftServer>();
+    server = std::make_shared<apache::thrift::ThriftServer>();
     CHECK(!!server) << "Failed to create the thrift server";
 
     server->setInterface(handler);

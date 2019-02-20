@@ -43,6 +43,11 @@ public:
      * */
     void init();
 
+    /*
+     * destroy kvstore engines
+     */
+    void destroyEngines();
+
     uint32_t capability() const override {
         return 0;
     }

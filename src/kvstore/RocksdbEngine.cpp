@@ -43,6 +43,10 @@ RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
 RocksdbEngine::~RocksdbEngine() {
 }
 
+void RocksdbEngine::close() {
+   db_.release();
+}
+
 ResultCode RocksdbEngine::get(const std::string& key,
                               std::string* value) {
     rocksdb::ReadOptions options;

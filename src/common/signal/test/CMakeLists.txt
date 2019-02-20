@@ -1,0 +1,11 @@
+add_executable(
+        signal_test
+        SignalTest.cpp
+        $<TARGET_OBJECTS:base_obj>
+)
+nebula_link_libraries(
+        signal_test
+        gtest
+        gtest_main
+)
+nebula_add_test(signal_test)

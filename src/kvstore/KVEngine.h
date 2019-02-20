@@ -21,6 +21,8 @@ public:
 
     virtual ~KVEngine() = default;
 
+    virtual void close() = 0;
+
     virtual ResultCode get(const std::string& key,
                            std::string* value) = 0;
 

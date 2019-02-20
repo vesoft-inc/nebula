@@ -155,6 +155,19 @@ void NebulaStore::init() {
     });
 }
 
+void NebulaStore::destroyEngines() {
+    if (this->kvs_.size() > 0) {
+        std::for_each(this->kvs_.begin(), this->kvs_.end(), [](auto& kv) {
+            auto& graphSpaceKV = kv.second;
+            if (graphSpaceKV->engines_.size() > 0) {
+                for (auto& engine : graphSpaceKV->engines_) {
+                    auto& kvengine = engine.first;
+                    kvengine->close();
+                }
+            }
+        });
+    }
+}
 
 ResultCode NebulaStore::get(GraphSpaceID spaceId, PartitionID partId,
                             const std::string& key,

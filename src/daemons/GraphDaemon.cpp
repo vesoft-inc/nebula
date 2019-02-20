@@ -5,8 +5,8 @@
  */
 
 #include "base/Base.h"
+#include "signal/SignalUtils.h"
 #include "network/NetworkUtils.h"
-#include <signal.h>
 #include "base/Status.h"
 #include "fs/FileUtils.h"
 #include "process/ProcessUtils.h"
@@ -21,11 +21,10 @@ using nebula::network::NetworkUtils;
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
-static void signalHandler(int sig);
-static Status setupSignalHandler();
 static Status setupLogging();
 static void printHelp(const char *prog);
 static void printVersion();
+void exit_signal_handler(int signal_num);
 
 DECLARE_string(flagfile);
 
@@ -82,11 +81,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Setup the signal handlers
-    status = setupSignalHandler();
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        return EXIT_FAILURE;
-    }
+    SYSTEM_SIGNAL_SETUP("nebula-graphd");
 
     // Get the IPv4 address the server will listen on
     std::string localIP;
@@ -130,28 +125,6 @@ int main(int argc, char *argv[]) {
 
     return EXIT_SUCCESS;
 }
-
-
-Status setupSignalHandler() {
-    ::signal(SIGPIPE, SIG_IGN);
-    ::signal(SIGINT, signalHandler);
-    ::signal(SIGTERM, signalHandler);
-    return Status::OK();
-}
-
-
-void signalHandler(int sig) {
-    switch (sig) {
-        case SIGINT:
-        case SIGTERM:
-            FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            gServer->stop();
-            break;
-        default:
-            FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
-    }
-}
-
 
 Status setupLogging() {
     if (!FLAGS_redirect_stdout) {
@@ -198,4 +171,10 @@ void printHelp(const char *prog) {
 
 void printVersion() {
     // TODO(dutor)
+}
+
+void exit_signal_handler(int signal_num) {
+    LOG(INFO) << "nebula-graphd interrupt, signal number is : " << signal_num;
+    gServer->stop();
+    ::exit(signal_num);
 }
