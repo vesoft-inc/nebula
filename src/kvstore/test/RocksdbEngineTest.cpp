@@ -134,10 +134,9 @@ TEST(RocksdbEngineTest, RemoveRangeTest) {
     {
         int32_t s = 0, e = 100;
         std::unique_ptr<KVIterator> iter;
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->range(
-                                std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t)),
-                                std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t)),
-                                &iter));
+        std::string start(reinterpret_cast<const char*>(&s), sizeof(int32_t));
+        std::string end(reinterpret_cast<const char*>(&e), sizeof(int32_t));
+        EXPECT_EQ(ResultCode::SUCCEEDED, engine->range(start, end, &iter));
         int num = 0;
         int expectedFrom = 50;
         while (iter->valid()) {
