@@ -20,7 +20,7 @@ void FileBasedSchemaManager::init() {
     Configuration conf;
     CHECK(conf.parseFromFile(FLAGS_schema_file).ok());
 
-    DCHECK(conf.forEachKey([&conf](const std::string& name) {
+    CHECK(conf.forEachKey([&conf](const std::string& name) {
         auto space = toGraphSpaceID(name);
         Configuration spaceConf;
         CHECK(conf.fetchAsSubConf(name.c_str(), spaceConf).ok());
@@ -33,7 +33,7 @@ void FileBasedSchemaManager::init() {
 void FileBasedSchemaManager::readOneGraphSpace(GraphSpaceID space, const Configuration& conf) {
     Configuration edgeConf;
     if (conf.fetchAsSubConf("edges", edgeConf).ok()) {
-        DCHECK(edgeConf.forEachItem([space] (const std::string& name,
+        CHECK(edgeConf.forEachItem([space] (const std::string& name,
                                              const folly::dynamic& versions) {
             CHECK(versions.isArray());
             auto type = toEdgeType(name);
@@ -51,7 +51,7 @@ void FileBasedSchemaManager::readOneGraphSpace(GraphSpaceID space, const Configu
 
     Configuration tagConf;
     if (conf.fetchAsSubConf("tags", tagConf).ok()) {
-        DCHECK(tagConf.forEachItem([space] (const std::string& name,
+        CHECK(tagConf.forEachItem([space] (const std::string& name,
                                             const folly::dynamic& versions) {
             CHECK(versions.isArray());
             auto id = toTagID(name);
