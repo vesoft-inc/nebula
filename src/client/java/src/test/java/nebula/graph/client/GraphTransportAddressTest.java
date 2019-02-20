@@ -7,6 +7,8 @@
 package nebula.graph.client;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+
 import nebula.graph.client.network.GraphTransportAddress;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
@@ -50,11 +52,11 @@ public class GraphTransportAddressTest extends GraphClientBase {
     public void graphTransportAddressTest3() throws Exception {
         Pair<String, Integer> addr = Pair.of("255.255.255.256", 1123);
 
-        expectedEx.expect(java.net.UnknownHostException.class);
-        expectedEx.expectMessage("255.255.255.256: Name or service not known");
+        expectedEx.expect(java.lang.IllegalArgumentException.class);
+        expectedEx.expectMessage("Address must be resolved but returned null");
 
         GraphTransportAddress graphTransportAddress =
-                new GraphTransportAddress(InetAddress.getByName(addr.getKey()), addr.getValue());
+                new GraphTransportAddress(InetSocketAddress.createUnresolved(addr.getKey(), addr.getValue()));
 
     }
 
