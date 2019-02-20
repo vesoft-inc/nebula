@@ -60,6 +60,30 @@ nebula_link_libraries(
 )
 nebula_add_test(status_or_test)
 
+add_executable(
+    either_or_test
+    EitherOrTest.cpp
+    $<TARGET_OBJECTS:base_obj>
+)
+nebula_link_libraries(
+    either_or_test
+    gtest
+    gtest_main
+)
+nebula_add_test(either_or_test)
+
+add_executable(
+    error_or_test
+    ErrorOrTest.cpp
+    $<TARGET_OBJECTS:base_obj>
+)
+nebula_link_libraries(
+    error_or_test
+    gtest
+    gtest_main
+)
+nebula_add_test(error_or_test)
+
 add_executable(hash_bm HashBenchmark.cpp $<TARGET_OBJECTS:base_obj>)
 nebula_link_libraries(
     hash_bm

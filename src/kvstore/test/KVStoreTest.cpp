@@ -90,8 +90,10 @@ TEST(KVStoreTest, SimpleTest) {
     int32_t start = 0, end = 100;
     std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
     std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
+    s = prefix + s;
+    e = prefix + e;
     std::unique_ptr<KVIterator> iter;
-    EXPECT_EQ(ResultCode::SUCCEEDED, kv->range(1, 1, prefix + s, prefix + e, &iter));
+    EXPECT_EQ(ResultCode::SUCCEEDED, kv->range(1, 1, s, e, &iter));
     int num = 0;
     while (iter->valid()) {
         auto key = *reinterpret_cast<const int32_t*>(iter->key().data() + prefix.size());
