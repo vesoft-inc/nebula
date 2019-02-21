@@ -10,7 +10,7 @@ import java.util.Objects;
 
 public class NativeClient implements AutoCloseable {
     static {
-        System.loadLibrary("client");
+        System.loadLibrary("nebula_native_client");
     }
 
     private static final int PARTITION_ID = 4;

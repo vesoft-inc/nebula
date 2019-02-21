@@ -12,4 +12,7 @@ add_subdirectory(graph)
 add_subdirectory(daemons)
 add_subdirectory(storage)
 add_subdirectory(webservice)
-add_subdirectory(tools/native-client)
+
+if (ENABLE_NATIVE)
+    add_subdirectory(tools/native-client)
+endif()

@@ -1,4 +1,5 @@
 *.swp
+*.so
 
 _build
 _build.log

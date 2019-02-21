@@ -1,5 +1,3 @@
-add_compile_options(-w -fPIC)
-
 add_library(
     base_obj OBJECT
     Cord.cpp

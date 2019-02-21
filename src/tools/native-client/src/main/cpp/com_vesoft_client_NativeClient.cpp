@@ -20,11 +20,11 @@ JNIEXPORT jstring JNICALL Java_com_vesoft_client_NativeClient_encode(JNIEnv *env
     jint len = env->GetArrayLength(values);
 
     for (int i = 0; i < len; i++) {
-        jobject o = env->GetObjectArrayElement(values, i);
-        jclass clazz = env->GetObjectClass(o);
+        obj = env->GetObjectArrayElement(values, i);
+        jclass clazz = env->GetObjectClass(obj);
         jmethodID getClazz = env->GetMethodID(clazz, "getClass", "()Ljava/lang/Class;");
 
-        jobject getClazzObj = env->CallObjectMethod(o, getClazz);
+        jobject getClazzObj = env->CallObjectMethod(obj, getClazz);
         jclass objClazz = env->GetObjectClass(getClazzObj);
         jmethodID getName = env->GetMethodID(objClazz, "getName", "()Ljava/lang/String;");
         jstring clazz_type = static_cast<jstring>(env->CallObjectMethod(getClazzObj, getName));
@@ -32,29 +32,29 @@ JNIEXPORT jstring JNICALL Java_com_vesoft_client_NativeClient_encode(JNIEnv *env
         auto name = std::string(env->GetStringUTFChars(clazz_type, NULL));
         if (name.compare("java.lang.Boolean") == 0) {
             jmethodID m = env->GetMethodID(clazz, "booleanValue", "()Z");
-            auto value = env->CallBooleanMethod(o, m);
+            auto value = env->CallBooleanMethod(obj, m);
             v.push_back(value);
         } else if (name.compare("java.lang.Integer") == 0) {
             jmethodID m = env->GetMethodID(clazz, "intValue", "()I");
-            auto value = env->CallIntMethod(o, m);
+            auto value = env->CallIntMethod(obj, m);
             v.push_back(value);
         } else if (name.compare("java.lang.Long") == 0) {
             jmethodID m = env->GetMethodID(clazz, "longValue", "()J");
-            auto value = env->CallLongMethod(o, m);
+            auto value = env->CallLongMethod(obj, m);
             v.push_back(value);
         } else if (name.compare("java.lang.Float") == 0) {
             jmethodID m = env->GetMethodID(clazz, "floatValue", "()F");
-            auto value = env->CallFloatMethod(o, m);
+            auto value = env->CallFloatMethod(obj, m);
             v.push_back(value);
         } else if (name.compare("java.lang.Double") == 0) {
             jmethodID m = env->GetMethodID(clazz, "doubleValue", "()D");
-            auto value = env->CallDoubleMethod(o, m);
+            auto value = env->CallDoubleMethod(obj, m);
             v.push_back(value);
         } else if (name.compare("java.lang.String") == 0) {
             jmethodID m = env->GetMethodID(clazz, "toString", "()Ljava/lang/String;");
-            jstring js_value = static_cast<jstring>(env->CallObjectMethod(o, m));
-            auto value = std::string(env->GetStringUTFChars(js_value, NULL));
-            v.push_back(value);
+            jstring j_value = static_cast<jstring>(env->CallObjectMethod(obj, m));
+            auto value = std::string(env->GetStringUTFChars(j_value, NULL));
+            v.emplace_back(std::move(value));
         } else {
             // Type Error
         }

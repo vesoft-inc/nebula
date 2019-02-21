@@ -1,5 +1,3 @@
-add_compile_options(-w -fPIC)
-
 add_library(
     meta_obj OBJECT
     SchemaProviderIf.cpp
