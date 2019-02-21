@@ -10,6 +10,7 @@
 #include "storage/StorageServiceHandler.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
+#include "storage/test/TestUtils.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
@@ -41,7 +42,7 @@ StatusOr<std::string> getLocalIP() {
 
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
-
+    google::SetStderrLogging(google::INFO);
     using nebula::HostAddr;
     using nebula::storage::StorageServiceHandler;
     using nebula::kvstore::KVStore;
@@ -69,6 +70,14 @@ int main(int argc, char *argv[]) {
         // 0 => {0, 1, 2, 3, 4, 5}
         for (auto partId = 0; partId < 6; partId++) {
             partMan->addPart(0, partId);
+        }
+        nebula::meta::AdHocSchemaManager::addEdgeSchema(
+           0 /*space id*/, 101 /*edge type*/,
+           nebula::storage::TestUtils::genEdgeSchemaProvider(10, 10));
+        for (auto tagId = 3001; tagId < 3010; tagId++) {
+            nebula::meta::AdHocSchemaManager::addTagSchema(
+               0 /*space id*/, tagId,
+               nebula::storage::TestUtils::genTagSchemaProvider(tagId, 3, 3));
         }
     }
     std::unique_ptr<KVStore> kvstore;
