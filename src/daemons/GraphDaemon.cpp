@@ -12,7 +12,9 @@
 #include "process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "graph/GraphService.h"
+#include "graph/GraphHttpHandler.h"
 #include "graph/GraphFlags.h"
+#include "webservice/WebService.h"
 
 using nebula::Status;
 using nebula::ProcessUtils;
@@ -87,6 +89,12 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
     }
+
+    LOG(INFO) << "Starting Graph HTTP Service";
+    nebula::WebService::registerHandler("/graph", [] {
+        return new nebula::graph::GraphHttpHandler();
+    });
+    nebula::WebService::start();
 
     // Get the IPv4 address the server will listen on
     std::string localIP;

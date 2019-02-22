@@ -51,6 +51,13 @@ public:
     // (in the form of xx.xx.xx.xx)
     static std::string intToIPv4(uint32_t ip);
 
+public:
+    enum class Code {
+        SUCCEEDED = 0,
+        E_UNSUPPORTED_METHOD = -1,
+        E_UNPROCESSABLE = -2,
+    };
+
 private:
 };
 

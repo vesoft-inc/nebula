@@ -4,40 +4,41 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef WEBSERVICE_SETFLAGSHANDLER_H_
-#define WEBSERVICE_SETFLAGSHANDLER_H_
+#ifndef GRAPH_GRAPHTTPHANDLER_H_
+#define GRAPH_GRAPHTTPHANDLER_H_
 
 #include "base/Base.h"
 #include "network/NetworkUtils.h"
-#include <proxygen/httpserver/RequestHandler.h>
+#include "proxygen/httpserver/RequestHandler.h"
 
 namespace nebula {
+namespace graph {
 
 using nebula::network::NetworkUtils;
 
-class SetFlagsHandler : public proxygen::RequestHandler {
+class GraphHttpHandler : public proxygen::RequestHandler {
 public:
-    SetFlagsHandler() = default;
+    GraphHttpHandler() = default;
 
-    void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers)
-        noexcept override;
+    void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
     void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override;
 
     void onEOM() noexcept override;
 
-    void onUpgrade(proxygen::UpgradeProtocol proto) noexcept override;
+    void onUpgrade(proxygen::UpgradeProtocol protocal) noexcept override;
 
     void requestComplete() noexcept override;
 
-    void onError(proxygen::ProxygenError err) noexcept override;
+    void onError(proxygen::ProxygenError error) noexcept override;
 
 private:
     NetworkUtils::Code err_{NetworkUtils::Code::SUCCEEDED};
-    std::string name_;
-    std::string value_;
+    std::string name;
+    std::string value;
 };
 
+}  // namespace graph
 }  // namespace nebula
-#endif  // WEBSERVICE_SETFLAGSHANDLER_H_
 
+#endif  // GRAPH_GRAPHTTPHANDLER_H_

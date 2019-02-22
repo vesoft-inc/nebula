@@ -8,6 +8,7 @@
 #include <folly/String.h>
 #include "fs/FileUtils.h"
 #include "kvstore/KVStore.h"
+#include <unordered_map>
 
 DEFINE_uint32(batch_reserved_bytes, 4 * 1024, "default reserved bytes for one batch operation");
 

@@ -241,6 +241,8 @@ macro(nebula_link_libraries target)
     target_link_libraries(
         ${target}
         ${ARGN}
+        proxygenhttpserver
+        proxygenlib
         folly
         glog
         gflags

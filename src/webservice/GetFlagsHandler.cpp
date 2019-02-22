@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "network/NetworkUtils.h"
 #include "webservice/GetFlagsHandler.h"
 #include <folly/String.h>
 #include <folly/json.h>
@@ -18,11 +19,12 @@ using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
+using nebula::network::NetworkUtils;
 
 void GetFlagsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
         // Unsupported method
-        err_ = ErrorCode::E_UNSUPPORTED_METHOD;
+        err_ = NetworkUtils::Code::E_UNSUPPORTED_METHOD;
         return;
     }
 
@@ -48,7 +50,7 @@ void GetFlagsHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
 
 void GetFlagsHandler::onEOM() noexcept {
     switch (err_) {
-        case ErrorCode::E_UNSUPPORTED_METHOD:
+        case NetworkUtils::Code::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
                 .status(405, "Method Not Allowed")
                 .sendWithEOM();

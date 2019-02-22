@@ -8,10 +8,13 @@
 #define WEBSERVICE_GETFLAGSHANDLER_H_
 
 #include "base/Base.h"
+#include "network/NetworkUtils.h"
 #include <folly/dynamic.h>
 #include <proxygen/httpserver/RequestHandler.h>
 
 namespace nebula {
+
+using nebula::network::NetworkUtils;
 
 class GetFlagsHandler : public proxygen::RequestHandler {
 public:
@@ -38,12 +41,7 @@ private:
     std::string toStr(folly::dynamic& vals);
 
 private:
-    enum class ErrorCode {
-        SUCCEEDED = 0,
-        E_UNSUPPORTED_METHOD = -1,
-    };
-
-    ErrorCode err_{ErrorCode::SUCCEEDED};
+    NetworkUtils::Code err_{NetworkUtils::Code::SUCCEEDED};
     bool verbose_{false};
     bool returnJson_{false};
     std::vector<std::string> flagnames_;
