@@ -62,9 +62,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
     for (auto partId = 0; partId < 3; partId++) {
-        for (auto vertexId =  partId * 10, index = 0;
-             vertexId < (partId + 1) * 10;
-             vertexId++, index++) {
+        for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             tmpIds[partId].push_back(vertexId);
         }
     }

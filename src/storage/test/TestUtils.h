@@ -33,7 +33,6 @@ public:
         for (auto partId = 0; partId < 6; partId++) {
             partsMap[0][partId] = kvstore::PartMeta();
         }
-        auto dataPath = folly::stringPrintf("%s/disk1, %s/disk2", rootPath, rootPath);
         std::vector<std::string> paths;
         paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
         paths.push_back(folly::stringPrintf("%s/disk2", rootPath));
