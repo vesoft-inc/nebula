@@ -13,5 +13,5 @@ nebula_link_libraries(
     wangle
     gtest
 )
-nebula_add_test(row_reader_test)
+nebula_add_test(flags_access_test)
 
