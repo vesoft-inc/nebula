@@ -6,13 +6,20 @@
 
 package nebula.graph.client;
 
+import com.google.common.collect.Lists;
+
 import java.util.List;
+
 import nebula.graph.RowValue;
 
 public class ResultSet {
 
     private List<byte[]> columns;
     private List<RowValue> rows;
+
+    public ResultSet() {
+        this(Lists.newArrayList(), Lists.newArrayList());
+    }
 
     public ResultSet(List<byte[]> columns, List<RowValue> rows) {
         this.columns = columns;
