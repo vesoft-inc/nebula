@@ -1,4 +1,5 @@
 *.swp
+*.so
 
 _build
 _build.log
@@ -13,4 +14,4 @@ cmake_install.cmake
 CTestTestfile.cmake
 CMakeFiles/
 Testing/
-
+target/

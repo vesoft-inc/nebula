@@ -178,6 +178,7 @@ template<typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req) {
     spaceId_ = req.get_space_id();
     int32_t returnColumnsNum = req.get_return_columns().size();
+    VLOG(3) << "Receive request, spaceId " << spaceId_ << ", return cols " << returnColumnsNum;
     std::vector<TagContext> tagContexts;
     tagContexts.reserve(returnColumnsNum);
     EdgeContext edgeContext;

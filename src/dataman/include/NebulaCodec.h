@@ -10,8 +10,8 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "base/Base.h"
 #include "meta/SchemaProviderIf.h"
+#include <boost/any.hpp>
 
 namespace nebula {
 namespace dataman {

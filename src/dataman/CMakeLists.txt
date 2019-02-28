@@ -26,18 +26,9 @@ add_library(
     RowWriter.cpp
     RowReader.cpp
     NebulaCodecImpl.cpp
-    ../common/base/Cord.cpp
-    ../common/base/Configuration.cpp
-    ../common/base/Status.cpp
-    ../meta/SchemaProviderIf.cpp
-    ../meta/SchemaManager.cpp
-    ../meta/FileBasedSchemaManager.cpp
-    ../meta/ServerBasedSchemaManager.cpp
-    ../meta/AdHocSchemaManager.cpp
-    ../interface/gen-cpp2/storage_constants.cpp
-    ../interface/gen-cpp2/storage_data.cpp
-    ../interface/gen-cpp2/storage_types.cpp
-)
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:storage_thrift_obj>)
 
 add_dependencies(dataman base_obj graph_thrift_obj)
 
