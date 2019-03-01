@@ -10,13 +10,17 @@
 #include <folly/lang/Bits.h>
 #include "fs/TempDir.h"
 #include "kvstore/RocksdbEngine.h"
+#include "kvstore/NebulaStore.h"
 
 namespace nebula {
 namespace kvstore {
 
 TEST(RocksdbEngineTest, SimpleTest) {
+    rocksdb::Options options;
+    options.create_if_missing = true;
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    std::unique_ptr<RocksdbEngine> engine =
+            std::make_unique<RocksdbEngine>(0, rootPath.path(), options);
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
@@ -24,8 +28,11 @@ TEST(RocksdbEngineTest, SimpleTest) {
 }
 
 TEST(RocksdbEngineTest, RangeTest) {
+    rocksdb::Options options;
+    options.create_if_missing = true;
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    std::unique_ptr<RocksdbEngine> engine =
+            std::make_unique<RocksdbEngine>(0, rootPath.path(), options);
     std::vector<KV> data;
     for (int32_t i = 10; i < 20;  i++) {
         data.emplace_back(std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
@@ -61,8 +68,11 @@ TEST(RocksdbEngineTest, RangeTest) {
 }
 
 TEST(RocksdbEngineTest, PrefixTest) {
+    rocksdb::Options options;
+    options.create_if_missing = true;
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    std::unique_ptr<RocksdbEngine> engine =
+            std::make_unique<RocksdbEngine>(0, rootPath.path(), options);
     LOG(INFO) << "Write data in batch and scan them...";
     std::vector<KV> data;
     for (int32_t i = 0; i < 10;  i++) {
@@ -102,8 +112,11 @@ TEST(RocksdbEngineTest, PrefixTest) {
 }
 
 TEST(RocksdbEngineTest, RemoveTest) {
+    rocksdb::Options options;
+    options.create_if_missing = true;
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    std::unique_ptr<RocksdbEngine> engine =
+            std::make_unique<RocksdbEngine>(0, rootPath.path(), options);
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
@@ -113,8 +126,11 @@ TEST(RocksdbEngineTest, RemoveTest) {
 }
 
 TEST(RocksdbEngineTest, RemoveRangeTest) {
+    rocksdb::Options options;
+    options.create_if_missing = true;
     fs::TempDir rootPath("/tmp/rocksdb_remove_range_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    std::unique_ptr<RocksdbEngine> engine =
+            std::make_unique<RocksdbEngine>(0, rootPath.path(), options);
     for (int32_t i = 0; i < 100; i++) {
         EXPECT_EQ(ResultCode::SUCCEEDED, engine->put(
                     std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),

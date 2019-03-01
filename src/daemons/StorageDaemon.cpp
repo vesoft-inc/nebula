@@ -14,9 +14,14 @@
 #include "storage/test/TestUtils.h"
 #include "webservice/WebService.h"
 
+// Global config options for storage.
+DEFINE_int32(nebula_space_num, 0, "Total spaces for each instance.");
+DEFINE_int32(nebula_part_num, 6, "Total parts for each space.");
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
                              "For rocksdb engine, one path one instance.");
+DEFINE_string(wal_path, "", "Root wal path, multi paths should be split by comma."
+                            "For rocksdb engine, one path one instance.");
 DEFINE_string(local_ip, "", "Local ip");
 DEFINE_bool(mock_server, true, "start mock server");
 
@@ -48,6 +53,7 @@ int main(int argc, char *argv[]) {
     using nebula::HostAddr;
     using nebula::storage::StorageServiceHandler;
     using nebula::kvstore::KVStore;
+    using nebula::kvstore::RocksdbConfigOptions;
     using nebula::meta::SchemaManager;
     using nebula::network::NetworkUtils;
     using nebula::getLocalIP;
@@ -55,11 +61,11 @@ int main(int argc, char *argv[]) {
     LOG(INFO) << "Starting the storage Daemon on port " << FLAGS_port
               << ", dataPath " << FLAGS_data_path;
 
-    std::vector<std::string> paths;
-    folly::split(",", FLAGS_data_path, paths, true);
-    std::transform(paths.begin(), paths.end(), paths.begin(), [](auto& p) {
-        return folly::trimWhitespace(p).str();
-    });
+    nebula::kvstore::KV_paths kv_paths;
+    if (!RocksdbConfigOptions::getKVPaths(FLAGS_data_path, FLAGS_wal_path, kv_paths)) {
+       ::exit(1);
+    }
+
     auto result = getLocalIP();
     CHECK(result.ok()) << result.status();
     uint32_t localIP;
@@ -70,22 +76,34 @@ int main(int argc, char *argv[]) {
                     nebula::kvstore::PartManager::instance());
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0, 1, 2, 3, 4, 5}
-        for (auto partId = 0; partId < 6; partId++) {
-            partMan->addPart(0, partId);
-        }
-        nebula::meta::AdHocSchemaManager::addEdgeSchema(
-           0 /*space id*/, 101 /*edge type*/,
-           nebula::storage::TestUtils::genEdgeSchemaProvider(10, 10));
-        for (auto tagId = 3001; tagId < 3010; tagId++) {
-            nebula::meta::AdHocSchemaManager::addTagSchema(
-               0 /*space id*/, tagId,
-               nebula::storage::TestUtils::genTagSchemaProvider(tagId, 3, 3));
+        for (auto spaceId = 0; spaceId < FLAGS_nebula_space_num; spaceId++) {
+            for (auto partId = 0; partId < FLAGS_nebula_part_num; partId++) {
+                partMan->addPart(spaceId, partId);
+            }
+            nebula::meta::AdHocSchemaManager::addEdgeSchema(
+                    0 /*space id*/, 101 /*edge type*/,
+                    nebula::storage::TestUtils::genEdgeSchemaProvider(10, 10));
+            for (auto tagId = 3001; tagId < 3010; tagId++) {
+                nebula::meta::AdHocSchemaManager::addTagSchema(
+                        0 /*space id*/, tagId,
+                        nebula::storage::TestUtils::genTagSchemaProvider(tagId, 3, 3));
+            }
         }
     }
+
+    rocksdb::Options rocksdb_options;
     std::unique_ptr<KVStore> kvstore;
     nebula::kvstore::KVOptions options;
     options.local_ = HostAddr(localIP, FLAGS_port);
-    options.dataPaths_ = std::move(paths);
+    options.rocksdb_paths_ = std::move(kv_paths);
+    rocksdb::Status s = std::make_shared<nebula::kvstore::RocksdbConfigOptions>
+            (options.rocksdb_paths_, FLAGS_nebula_space_num, false, false)
+            ->createRocksdbEngineOptions(rocksdb_options);
+    if (!s.ok()) {
+        LOG(FATAL) << s.ToString();
+        ::exit(1);
+    }
+    options.dbOptions_ = rocksdb_options;
     kvstore.reset(KVStore::instance(std::move(options)));
 
     LOG(INFO) << "Starting Storage HTTP Service";

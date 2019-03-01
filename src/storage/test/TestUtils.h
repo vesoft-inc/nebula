@@ -24,22 +24,28 @@ class TestUtils {
 public:
     static kvstore::KVStore* initKV(const char* rootPath) {
         FLAGS_part_man_type = "memory";  // Use MemPartManager.
+        int nebula_part_num = 6;
+        nebula::kvstore::KV_paths kv_paths;
+        nebula::kvstore::RocksdbConfigOptions::getKVPaths(
+                folly::stringPrintf("%s/disk1,%s/disk2", rootPath, rootPath),
+                folly::stringPrintf("%s/disk1,%s/disk2", rootPath, rootPath),
+                kv_paths);
+
         kvstore::MemPartManager* partMan = static_cast<kvstore::MemPartManager*>(
             kvstore::PartManager::instance());
 
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0, 1, 2, 3, 4, 5}
         auto& partsMap = partMan->partsMap();
-        for (auto partId = 0; partId < 6; partId++) {
+        for (auto partId = 0; partId < nebula_part_num; partId++) {
             partsMap[0][partId] = kvstore::PartMeta();
         }
-        std::vector<std::string> paths;
-        paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
-        paths.push_back(folly::stringPrintf("%s/disk2", rootPath));
-
+        rocksdb::Options rocksdb_options;
+        rocksdb_options.create_if_missing = true;
         kvstore::KVOptions options;
         options.local_ = HostAddr(0, 0);
-        options.dataPaths_ = std::move(paths);
+        options.rocksdb_paths_ = std::move(kv_paths);
+        options.dbOptions_ = rocksdb_options;
 
         kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
                                         kvstore::KVStore::instance(std::move(options)));

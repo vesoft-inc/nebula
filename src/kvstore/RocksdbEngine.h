@@ -90,9 +90,9 @@ class RocksdbEngine : public KVEngine {
     FRIEND_TEST(RocksdbEngineTest, SimpleTest);
 
 public:
-    RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
-                  std::shared_ptr<rocksdb::MergeOperator> mergeOp = nullptr,
-                  std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr);
+    RocksdbEngine(GraphSpaceID spaceId,
+            const std::string& dataPath,
+            rocksdb::Options options);
 
     ~RocksdbEngine();
 

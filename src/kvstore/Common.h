@@ -21,10 +21,19 @@ enum ResultCode {
     ERR_LEADER_CHANAGED = -5,
 };
 
+#define KV_DATA_PATH_FORMAT(path, spaceId) \
+    folly::stringPrintf("%s/nebula/%d/data", path, spaceId)
+#define KV_WAL_PATH_FORMAT(path, spaceId) \
+    folly::stringPrintf("%s/nebula/%d/wal", path, spaceId)
+#define NEBULA_WAL_PATH_FORMAT(path, spaceId, partId) \
+    folly::stringPrintf("%s/nebula/%d/wals/%d", path, spaceId, partId)
 
 using KVCallback = std::function<void(ResultCode code, HostAddr hostAddr)>;
 using KV = std::pair<std::string, std::string>;
-
+using KV_data_path = std::string;
+using KV_wal_path = std::string;
+using KV_path = std::pair<KV_data_path, KV_wal_path>;
+using KV_paths = std::vector<KV_path>;
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_COMMON_H_

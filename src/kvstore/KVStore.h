@@ -7,11 +7,11 @@
 #ifndef KVSTORE_KVSTORE_H_
 #define KVSTORE_KVSTORE_H_
 
+#include <rocksdb/options.h>
 #include "base/Base.h"
-#include <rocksdb/merge_operator.h>
-#include <rocksdb/compaction_filter.h>
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
+#include "kvstore/RocksdbConfigOptions.h"
 
 namespace nebula {
 namespace kvstore {
@@ -22,19 +22,15 @@ struct KVOptions {
      * */
     HostAddr local_;
     /**
-     *  Paths for data. It would be used by rocksdb engine.
+     *  rocksdb_paths_ for data and wal. It would be used by rocksdb engine.
      *  Be careful! We should ensure each "paths" has only one instance, otherwise
      *  it would mix up the data on disk.
      * */
-    std::vector<std::string> dataPaths_;
-    /**
-     * Custom MergeOperator used in rocksdb.merge method.
-     * */
-    std::shared_ptr<rocksdb::MergeOperator> mergeOp_{nullptr};
-    /**
-     * Custom CompactionFilter used in compaction.
-     * */
-    std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory_{nullptr};
+    KV_paths rocksdb_paths_;
+    /*
+     * dbOptions_ for rocksdb instance, this dbOptions_ can not change after instance startup.
+     */
+    rocksdb::Options dbOptions_;
 };
 
 

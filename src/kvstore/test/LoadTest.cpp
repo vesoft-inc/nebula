@@ -17,6 +17,7 @@ namespace nebula {
 namespace kvstore {
 TEST(Load, SSTLoad) {
     rocksdb::Options options;
+    options.create_if_missing = true;
     rocksdb::SstFileWriter writer(rocksdb::EnvOptions(), options);
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
     auto file = folly::stringPrintf("%s/%s", rootPath.path(), "data.sst");
@@ -26,7 +27,7 @@ TEST(Load, SSTLoad) {
     writer.Put("key", "value");
     writer.Finish();
 
-    auto engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksdbEngine>(0, rootPath.path(), options);
     std::vector<std::string> files = {file};
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->ingest(files));
 
