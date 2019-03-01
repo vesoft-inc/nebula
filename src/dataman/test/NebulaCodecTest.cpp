@@ -101,24 +101,24 @@ TEST(NebulaCodec, decode) {
 
     // int column
     uint8_t buffer[10];
-    auto i_size = folly::encodeVarint(64, buffer);
+    size_t i_size = folly::encodeVarint(64, buffer);
     encoded.append(reinterpret_cast<char*>(buffer), i_size);
 
     // vid column
-    auto vid = 0x1122334455667788L;
+    int64_t vid = 0x1122334455667788L;
     encoded.append(reinterpret_cast<char*>(&vid), sizeof(int64_t));
 
     // float column
-    auto pi = 3.14F;
+    float pi = 3.14F;
     encoded.append(reinterpret_cast<char*>(&pi), sizeof(float));
 
     // double column
-    auto e = 2.718;
+    double e = 2.718;
     encoded.append(reinterpret_cast<char*>(&e), sizeof(double));
 
     // string column
-    auto str_value = "Hello World!";
-    auto s_size = folly::encodeVarint(strlen(str_value), buffer);
+    const char* str_value = "Hello World!";
+    size_t s_size = folly::encodeVarint(strlen(str_value), buffer);
     encoded.append(reinterpret_cast<char*>(buffer), s_size);
     encoded.append(str_value, strlen(str_value));
 
@@ -133,17 +133,25 @@ TEST(NebulaCodec, decode) {
     dataman::NebulaCodecImpl codec;
     auto result = codec.decode(encoded, fields);
 
-    EXPECT_TRUE(boost::any_cast<bool>(result["b_field"]));
-    EXPECT_EQ(boost::any_cast<int>(result["i_field"]), 64);
-    EXPECT_EQ(boost::any_cast<int64_t>(result["v_field"]), 0x1122334455667788L);
-    EXPECT_EQ(boost::any_cast<float>(result["f_field"]), 3.14F);
-    EXPECT_EQ(boost::any_cast<double>(result["d_field"]), 2.718);
-    EXPECT_EQ(boost::any_cast<std::string>(result["s_field"]), "Hello World!");
+    EXPECT_TRUE(boost::any_cast<bool>(result.value()["b_field"]));
+    EXPECT_EQ(boost::any_cast<int>(result.value()["i_field"]), 64);
+    EXPECT_EQ(boost::any_cast<int64_t>(result.value()["v_field"]), 0x1122334455667788L);
+    EXPECT_EQ(boost::any_cast<float>(result.value()["f_field"]), 3.14F);
+    EXPECT_EQ(boost::any_cast<double>(result.value()["d_field"]), 2.718);
+    EXPECT_EQ(boost::any_cast<std::string>(result.value()["s_field"]), "Hello World!");
 
-    // check empty encoded string and empty schema
-    EXPECT_THROW(codec.decode("", fields), std::invalid_argument);
+    // check empty encoded string
+    auto empty_encoded = codec.decode("", fields);
+    ASSERT_FALSE(empty_encoded.ok());
+    ASSERT_FALSE(empty_encoded.status().ok());
+    ASSERT_EQ("encoded string is empty", empty_encoded.status().toString());
+
+    // check empty schema
     std::vector<std::pair<std::string, cpp2::SupportedType>> empty_fields;
-    EXPECT_THROW(codec.decode(encoded, empty_fields), std::invalid_argument);
+    auto empty_schema = codec.decode(encoded, empty_fields);
+    ASSERT_FALSE(empty_schema.ok());
+    ASSERT_FALSE(empty_schema.status().ok());
+    ASSERT_EQ("fields is not set", empty_schema.status().toString());
 }
 }  // namespace nebula
 

@@ -7,6 +7,7 @@
 #ifndef NEBULA_GRAPH_NEBULACODEC_H
 #define NEBULA_GRAPH_NEBULACODEC_H
 
+#include "base/StatusOr.h"
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -22,9 +23,9 @@ class NebulaCodec {
 public:
     virtual std::string encode(std::vector<Value> values) = 0;
 
-    virtual std::unordered_map<std::string, Value>
-        decode(std::string encoded,
-        std::vector<std::pair<std::string, cpp2::SupportedType>> fields) = 0;
+    virtual StatusOr<std::unordered_map<std::string, Value>>
+    decode(std::string encoded,
+           std::vector<std::pair<std::string, cpp2::SupportedType>> fields) = 0;
 };
 
 }  // namespace dataman

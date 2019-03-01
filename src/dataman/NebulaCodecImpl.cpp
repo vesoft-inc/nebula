@@ -33,14 +33,14 @@ std::string NebulaCodecImpl::encode(std::vector<Value> values) {
     return result;
 }
 
-std::unordered_map<std::string, Value>
-    NebulaCodecImpl::decode(std::string encoded,
-    std::vector<std::pair<std::string, cpp2::SupportedType>> fields) {
+StatusOr<std::unordered_map<std::string, Value>>
+NebulaCodecImpl::decode(std::string encoded,
+                        std::vector<std::pair<std::string, cpp2::SupportedType>> fields) {
     if (encoded.empty()) {
-        throw std::invalid_argument("encoded string is empty");
+        return Status::Error("encoded string is empty");
     }
     if (fields.size() == 0) {
-        throw std::invalid_argument("fields is not set");
+        return Status::Error("fields is not set");
     }
 
     auto schema = std::make_shared<SchemaWriter>();
@@ -53,8 +53,7 @@ std::unordered_map<std::string, Value>
     ResultType code;
     auto reader = RowReader::getRowReader(encoded, schema);
     std::unordered_map<std::string, Value> result;
-    iter = fields.begin();
-    for (; iter != fields.end(); iter++) {
+    for (iter = fields.begin(); iter != fields.end(); iter++) {
         auto field = iter->first;
         switch (iter->second) {
             case cpp2::SupportedType::BOOL:
