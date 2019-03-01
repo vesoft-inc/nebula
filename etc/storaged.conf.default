@@ -6,7 +6,7 @@
 
 ########## storage ##########
 # Total spaces for each instance.
---nebula_space_num=0
+--nebula_space_num=1
 # Total parts for each space.
 --nebula_part_num=6
 # Root data path, multi paths should be split by comma.For rocksdb engine, one path one instance.

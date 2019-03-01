@@ -15,7 +15,7 @@
 #include "webservice/WebService.h"
 
 // Global config options for storage.
-DEFINE_int32(nebula_space_num, 0, "Total spaces for each instance.");
+DEFINE_int32(nebula_space_num, 1, "Total spaces for each instance.");
 DEFINE_int32(nebula_part_num, 6, "Total parts for each space.");
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
