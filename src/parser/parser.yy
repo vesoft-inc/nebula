@@ -58,7 +58,7 @@ class GraphScanner;
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_DEFINE KW_VERTEX KW_TTL
 %token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_LOAD
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -103,6 +103,7 @@ class GraphScanner;
 %type <sentence> maintainance_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence
 %type <sentence> show_sentence
+%type <sentence> load_vertex_sentence load_edge_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -671,11 +672,29 @@ show_sentence
     }
     ;
 
+load_vertex_sentence
+    : KW_LOAD KW_VERTEX STRING{
+        auto sentence = new LoadSentence(LoadKind::kLoadVertex);
+        sentence->setPath($3);
+        $$ = sentence;
+    }
+    ;
+
+load_edge_sentence
+    : KW_LOAD KW_EDGE STRING{
+        auto sentence = new LoadSentence(LoadKind::kLoadEdge);
+        sentence->setPath($3);
+        $$ = sentence;
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence {}
     | insert_edge_sentence {}
     | update_vertex_sentence {}
     | update_edge_sentence {}
+    | load_vertex_sentence {}
+    | load_edge_sentence {}
     ;
 
 maintainance_sentence

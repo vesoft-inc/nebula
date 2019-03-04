@@ -60,7 +60,7 @@ TRUE                        ([Tt][Rr][Uu][Ee])
 FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 SHOW                        ([Ss][Hh][Oo][Ww])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
-
+LOAD                        ([Ll][Oo][Aa][Dd])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -113,6 +113,7 @@ OCT                         ([0-7])
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {SHOW}                      { return TokenType::KW_SHOW; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
+{LOAD}                      { return TokenType::KW_LOAD; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

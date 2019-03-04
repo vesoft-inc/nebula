@@ -23,6 +23,7 @@ add_library(
     InsertVertexExecutor.cpp
     InsertEdgeExecutor.cpp
     ShowExecutor.cpp
+    LoadExecutor.cpp
     mock/PropertiesSchema.cpp
     mock/EdgeSchema.cpp
     mock/TagSchema.cpp

@@ -281,4 +281,22 @@ TEST(Parser, UpdateEdge) {
     }
 }
 
+TEST(Parser, LoadVertex) {
+    {
+        GQLParser parser;
+        std::string query = "LOAD VERTEX \"vertexs.csv\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, LoadEdge) {
+    {
+        GQLParser parser;
+        std::string query = "LOAD EDGE \"edges.csv\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 }   // namespace nebula

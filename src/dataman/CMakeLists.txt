@@ -1,5 +1,3 @@
-set(CMAKE_CXX_FLAGS "-w")
-
 add_library(
     dataman_obj OBJECT
     ResultSchemaProvider.cpp

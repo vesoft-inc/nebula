@@ -14,7 +14,7 @@ namespace graph {
 
 
 ShowExecutor::ShowExecutor(Sentence *sentence,
-                              ExecutionContext *ectx) : Executor(ectx) {
+                           ExecutionContext *ectx) : Executor(ectx) {
     sentence_ = static_cast<ShowSentence*>(sentence);
 }
 

@@ -33,6 +33,7 @@ public:
         kInsertVertex,
         kInsertEdge,
         kShow,
+        kLoad,
     };
 
     Kind kind() const {
