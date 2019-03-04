@@ -1,3 +1,5 @@
+set(CMAKE_CXX_FLAGS "-w")
+
 add_library(
     dataman_obj OBJECT
     ResultSchemaProvider.cpp
@@ -12,4 +14,3 @@ add_library(
 add_dependencies(dataman_obj base_obj graph_thrift_obj)
 
 add_subdirectory(test)
-
