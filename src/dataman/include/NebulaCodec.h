@@ -7,8 +7,11 @@
 #ifndef NEBULA_GRAPH_NEBULACODEC_H
 #define NEBULA_GRAPH_NEBULACODEC_H
 
+#include "base/StatusOr.h"
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include "meta/SchemaProviderIf.h"
 #include <boost/any.hpp>
 
 namespace nebula {
@@ -17,10 +20,12 @@ namespace dataman {
 typedef boost::any Value;
 
 class NebulaCodec {
- public:
-  virtual std::string encode(std::vector<Value> values) = 0;
+public:
+    virtual std::string encode(std::vector<Value> values) = 0;
 
-  // TODO decode
+    virtual StatusOr<std::unordered_map<std::string, Value>>
+    decode(std::string encoded,
+           std::vector<std::pair<std::string, cpp2::SupportedType>> fields) = 0;
 };
 
 }  // namespace dataman
