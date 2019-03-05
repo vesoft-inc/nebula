@@ -201,6 +201,7 @@ ResultType RowUpdater::setTimestamp(const folly::StringPiece name,
     return ResultType::SUCCEEDED;
 }
 
+
 /***************************************************
  *
  * Field Accessors
@@ -312,6 +313,7 @@ ResultType RowUpdater::getTimestamp(const folly::StringPiece name,
 
     return ResultType::SUCCEEDED;
 }
+
 #undef CHECK_UPDATED_FIELDS
 
 }  // namespace nebula

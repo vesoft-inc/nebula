@@ -41,9 +41,11 @@ ResultType RowReader::Cell::getVid(int64_t& v) const noexcept {
     RR_CELL_GET_VALUE(Vid);
 }
 
+
 ResultType RowReader::Cell::getTimestamp(int64_t& v) const noexcept {
     RR_CELL_GET_VALUE(Timestamp);
 }
+
 
 /*********************************************
  *

@@ -34,7 +34,7 @@ void prepareSchema() {
         schemaAllVids->appendCol(folly::stringPrintf("col%02d", i),
                                  nebula::cpp2::SupportedType::VID);
         schemaAllTimestamps->appendCol(folly::stringPrintf("col%02d", i),
-                                 nebula::cpp2::SupportedType::TIMESTAMP);
+                                       nebula::cpp2::SupportedType::TIMESTAMP);
     }
 
     schemaMix->appendCol("col01", nebula::cpp2::SupportedType::BOOL)
