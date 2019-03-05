@@ -728,7 +728,7 @@ void RocksdbConfigOptions::load_option_maps() {
 }
 
 static RocksdbConfigOptions *rco;
-static bool isEmptyOpt(true);
+std::once_flag createOptionsFlag;
 RocksdbConfigOptions::RocksdbConfigOptions()  {
     rco = this;
     LOG(INFO) << "begin create rocksdb options... ";
@@ -744,20 +744,19 @@ rocksdb::Options RocksdbConfigOptions::getRocksdbOptions(
         bool inputStringsEscaped) {
     rocksdb::Status status;
 
-    if (isEmptyOpt) {
+    std::call_once(createOptionsFlag, [&status, ignoreUnknownOptions, inputStringsEscaped] () {
         status = rco->createRocksdbEngineOptions(ignoreUnknownOptions, inputStringsEscaped);
         if (!status.ok()) {
             LOG(FATAL) << "Create rocksdb options error : " << status.ToString();
             ::exit(1);
         }
-    }
+    });
+
     // check options compatibility
     status = rco->checkOptionsCompatibility(dataPath);
     if (!status.ok()) {
         LOG(FATAL) << "Check options compatibility error : " << status.ToString();
         ::exit(1);
-
-        isEmptyOpt = false;
     }
 
     baseOpts.wal_dir = walPath;
