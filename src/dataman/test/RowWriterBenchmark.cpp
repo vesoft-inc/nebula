@@ -18,6 +18,7 @@ auto schemaAllBools = std::make_shared<SchemaWriter>();
 auto schemaAllStrings = std::make_shared<SchemaWriter>();
 auto schemaAllDoubles = std::make_shared<SchemaWriter>();
 auto schemaAllVids = std::make_shared<SchemaWriter>();
+auto schemaAllTimestamps = std::make_shared<SchemaWriter>();
 auto schemaMix = std::make_shared<SchemaWriter>();
 
 void prepareSchema() {
@@ -32,6 +33,8 @@ void prepareSchema() {
                                     nebula::cpp2::SupportedType::DOUBLE);
         schemaAllVids->appendCol(folly::stringPrintf("col%02d", i),
                                  nebula::cpp2::SupportedType::VID);
+        schemaAllTimestamps->appendCol(folly::stringPrintf("col%02d", i),
+                                 nebula::cpp2::SupportedType::TIMESTAMP);
     }
 
     schemaMix->appendCol("col01", nebula::cpp2::SupportedType::BOOL)
@@ -58,10 +61,10 @@ void prepareSchema() {
              .appendCol("col22", nebula::cpp2::SupportedType::VID)
              .appendCol("col23", nebula::cpp2::SupportedType::VID)
              .appendCol("col24", nebula::cpp2::SupportedType::VID)
-             .appendCol("col25", nebula::cpp2::SupportedType::INT)
-             .appendCol("col26", nebula::cpp2::SupportedType::INT)
-             .appendCol("col27", nebula::cpp2::SupportedType::INT)
-             .appendCol("col28", nebula::cpp2::SupportedType::INT)
+             .appendCol("col25", nebula::cpp2::SupportedType::TIMESTAMP)
+             .appendCol("col26", nebula::cpp2::SupportedType::TIMESTAMP)
+             .appendCol("col27", nebula::cpp2::SupportedType::TIMESTAMP)
+             .appendCol("col28", nebula::cpp2::SupportedType::TIMESTAMP)
              .appendCol("col29", nebula::cpp2::SupportedType::INT)
              .appendCol("col30", nebula::cpp2::SupportedType::INT)
              .appendCol("col31", nebula::cpp2::SupportedType::INT)
@@ -78,7 +81,8 @@ void writeMix(std::shared_ptr<SchemaProviderIf> schema, int32_t iters) {
                << 1.23 << 2.34 << 3.1415926 << 2.17
                << 1.23 << 2.34 << 3.1415926 << 2.17
                << 0xFFFFFFFF << 0xABABABABABABABAB << 0x0 << -1
-               << 0 << 1 << 2 << 3 << 4 << 5 << 6 << 7;
+               << 1551331827 << 1551331827 << 1551331827 << 1551331827
+               << 0 << 1 << 2 << 3;
         folly::doNotOptimizeAway(writer);
     }
 }
@@ -135,6 +139,14 @@ BENCHMARK(vid_with_schema, iters) {
 
 BENCHMARK_DRAW_LINE();
 
+BENCHMARK(timestamp_no_schema, iters) {
+    writeValues(nullptr, 1551331827, iters);
+}
+BENCHMARK(timestamp_with_schema, iters) {
+    writeValues(schemaAllTimestamps, 1551331827, iters);
+}
+
+BENCHMARK_DRAW_LINE();
 BENCHMARK(string_no_schema, iters) {
     writeValues(nullptr, "Hello World!", iters);
 }

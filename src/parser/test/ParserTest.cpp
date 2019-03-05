@@ -107,7 +107,7 @@ TEST(Parser, DefineTag) {
     {
         GQLParser parser;
         std::string query = "DEFINE TAG person(name string, age int TTL = 100, "
-                            "married bool, salary double)";
+                            "married bool, salary double, create_time timestamp)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -176,15 +176,15 @@ TEST(Parser, Pipe) {
 TEST(Parser, InsertVertex) {
     {
         GQLParser parser;
-        std::string query = "INSERT VERTEX person(name,age,married,salary) "
-                            "VALUES(12345: \"dutor\", 30, true, 3.14)";
+        std::string query = "INSERT VERTEX person(name,age,married,salary,create_time) "
+                            "VALUES(12345: \"dutor\", 30, true, 3.14, 1551331900)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
         std::string query = "INSERT TAG person(name,age,married,salary) "
-                            "VALUES(12345: \"dutor\", 30, true, 3.14)";
+                            "VALUES(12345: \"dutor\", 30, true, 3.14, 1551331900)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -193,28 +193,36 @@ TEST(Parser, InsertVertex) {
 TEST(Parser, UpdateVertex) {
     {
         GQLParser parser;
-        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\",age=30,married=true";
+        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\", age=30, "
+                            "married=true, create_time=1551331999";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\",age=31,married=true "
-                            "WHERE salary > 10000";
+        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\", age=31, "
+                            "married=true, create_time=1551332019 WHERE salary > 10000";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\",age=30,married=true "
-                            "YIELD name,salary";
+        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\", age=31, married=true, "
+                            "create_time=1551332019 WHERE create_time > 1551332018";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE OR INSERT VERTEX 12345 SET name=\"dutor\",age=30,married=true "
-                            "YIELD name,salary";
+        std::string query = "UPDATE VERTEX 12345 SET name=\"dutor\", age=30, married=true "
+                            "YIELD name, salary, create_time";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE OR INSERT VERTEX 12345 SET name=\"dutor\", age=30, "
+                            "married=true YIELD name, salary, create_time";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

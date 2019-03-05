@@ -16,7 +16,8 @@ RowWriter::operator<<(T v) noexcept {
             writeInt(v);
             break;
         }
-        case cpp2::SupportedType::VID: {
+        case cpp2::SupportedType::VID:
+        case cpp2::SupportedType::TIMESTAMP: {
             cord_ << (uint64_t)v;
             break;
         }
