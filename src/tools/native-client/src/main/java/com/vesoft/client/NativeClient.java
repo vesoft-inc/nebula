@@ -7,10 +7,29 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Map;
 
 public class NativeClient implements AutoCloseable {
     static {
         System.loadLibrary("nebula_native_client");
+    }
+
+    public static class Pair {
+        private String field;
+        private Class clazz;
+
+        public Pair(String field, Class clazz) {
+            this.field = field;
+            this.clazz = clazz;
+        }
+
+        public String getField() { return field; }
+
+        public void setField(String field) { this.field = field; }
+
+        public String getClazz() { return clazz.getName(); }
+
+        public void setClazz(Class clazz) { this.clazz = clazz; }
     }
 
     private static final int PARTITION_ID = 4;
@@ -112,6 +131,8 @@ public class NativeClient implements AutoCloseable {
 
     private native String encode(Object[] values);
 
+    private native Map<String, Object> decode(String encoded, Pair[] fields);
+
     private boolean checkKey(String key) {
         return Objects.isNull(key) || key.length() == 0;
     }
@@ -132,5 +153,16 @@ public class NativeClient implements AutoCloseable {
         Object[] values = {false, 7, 1024L, 3.14F, 0.618, "darion.yaphet"}; // boolean int long float double String
         String result = client.encode(values);
         System.out.println("values : "+result +"  "+result.length());
+
+        Pair[] pairs = {
+            new Pair("b_field", Boolean.class),
+            new Pair("i_field", Integer.class),
+            new Pair("l_field", Long.class),
+            new Pair("f_field", Float.class),
+            new Pair("d_field", Double.class),
+            new Pair("s_field", String.class)
+        };
+        Map<String, Object> decodedMap = client.decode(result, pairs);
+        System.out.println("Decoded Map Result : " + decodedMap.toString());
     }
 }

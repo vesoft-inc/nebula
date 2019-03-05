@@ -33,7 +33,7 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
 option(SKIP_JAVA_CLIENT "Whether to skip building the java client" OFF)
 option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
-option(ENABLE_NATIVE "Whether to build native client" OFF)
+option(ENABLE_NATIVE "Whether to build native client" ON)
 
 if (ENABLE_NATIVE)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")

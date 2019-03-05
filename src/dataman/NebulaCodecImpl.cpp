@@ -44,8 +44,8 @@ NebulaCodecImpl::decode(std::string encoded,
     }
 
     auto schema = std::make_shared<SchemaWriter>();
-    auto iter = fields.begin();
-    for (; iter != fields.end(); iter++) {
+    // auto iter = fields.begin();
+    for (auto iter = fields.begin(); iter != fields.end(); iter++) {
         schema->appendCol(iter->first, iter->second);
     }
 
@@ -53,7 +53,7 @@ NebulaCodecImpl::decode(std::string encoded,
     ResultType code;
     auto reader = RowReader::getRowReader(encoded, schema);
     std::unordered_map<std::string, Value> result;
-    for (iter = fields.begin(); iter != fields.end(); iter++) {
+    for (auto iter = fields.begin(); iter != fields.end(); iter++) {
         auto field = iter->first;
         switch (iter->second) {
             case cpp2::SupportedType::BOOL:
