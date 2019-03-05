@@ -7,7 +7,6 @@
 #ifndef KVSTORE_KVSTORE_H_
 #define KVSTORE_KVSTORE_H_
 
-#include <rocksdb/options.h>
 #include "base/Base.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
