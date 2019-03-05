@@ -18,7 +18,7 @@ namespace nebula {
 namespace meta {
 
 void prepareSchemaFile() {
-    static fs::TempFile schemaFile("/tmp/file_based_part_manager.XXXXXX");
+    static fs::TempFile schemaFile("/tmp/file_based_schema_manager.XXXXXX");
     std::ofstream fs(schemaFile.path());
     fs << "{"
        << "  \"space_one\" : {"
