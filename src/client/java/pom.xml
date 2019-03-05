@@ -30,17 +30,17 @@
                 <version>3.0.0</version>
                 <configuration>
                     <configLocation>stylecheck/nebula_java_style_checks.xml</configLocation>
-		    <excludes>
-			nebula/graph/RowValue.java,
-			nebula/graph/GraphService.java,
-			nebula/graph/AuthResponse.java,
-			nebula/graph/ErrorCode.java,
-			nebula/graph/ExecutionResponse.java,
-			nebula/graph/Date.java,
-			nebula/graph/ColumnValue.java,
-			nebula/graph/DateTime.java,
-			nebula/graph/YearMonth.java
-		    </excludes>
+                    <excludes>
+                        nebula/graph/RowValue.java,
+                        nebula/graph/GraphService.java,
+                        nebula/graph/AuthResponse.java,
+                        nebula/graph/ErrorCode.java,
+                        nebula/graph/ExecutionResponse.java,
+                        nebula/graph/Date.java,
+                        nebula/graph/ColumnValue.java,
+                        nebula/graph/DateTime.java,
+                        nebula/graph/YearMonth.java
+                    </excludes>
                     <encoding>UTF-8</encoding>
                     <failOnViolation>true</failOnViolation>
                     <linkXRef>false</linkXRef>
@@ -69,39 +69,47 @@
     </build>
 
     <dependencies>
-	<dependency>
-	    <groupId>com.facebook</groupId>
-        <artifactId>thrift</artifactId>
-	    <version>1.0.0-SNAPSHORT</version>
-	    <scope>system</scope>
-	    <systemPath>${project.basedir}/${fbthrift.root.dir}/${fbthrift.biuld.dir}/${fbthrift.target.dir}/thrift-1.0-SNAPSHOT.jar</systemPath>
-	</dependency>
-	<dependency>
-	    <groupId>commons-lang</groupId>
-	    <artifactId>commons-lang</artifactId>
-	    <version>2.6</version>
-	</dependency>
-    <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>3.8</version>
-    </dependency>
-    <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-log4j12</artifactId>
-        <version>1.7.25</version>
-        <scope>test</scope>
-    </dependency>
-    <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>1.7.25</version>
-	</dependency>
-    <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.12</version>
-        <scope>test</scope>
-    </dependency>
+        <dependency>
+            <groupId>com.facebook</groupId>
+            <artifactId>thrift</artifactId>
+            <version>1.0.0-SNAPSHORT</version>
+            <scope>system</scope>
+            <systemPath>
+                ${project.basedir}/${fbthrift.root.dir}/${fbthrift.biuld.dir}/${fbthrift.target.dir}/thrift-1.0-SNAPSHOT.jar
+            </systemPath>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.25</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>27.0.1-jre</version>
+        </dependency>
     </dependencies>
 </project>
+
