@@ -11,7 +11,6 @@
 #include "base/Base.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
-#include "kvstore/RocksdbConfigOptions.h"
 
 namespace nebula {
 namespace kvstore {
@@ -26,11 +25,7 @@ struct KVOptions {
      *  Be careful! We should ensure each "paths" has only one instance, otherwise
      *  it would mix up the data on disk.
      * */
-    KV_paths rocksdb_paths_;
-    /*
-     * dbOptions_ for rocksdb instance, this dbOptions_ can not change after instance startup.
-     */
-    rocksdb::Options dbOptions_;
+    KVPaths kvPaths;
 };
 
 

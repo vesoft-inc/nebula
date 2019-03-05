@@ -30,10 +30,8 @@ enum ResultCode {
 
 using KVCallback = std::function<void(ResultCode code, HostAddr hostAddr)>;
 using KV = std::pair<std::string, std::string>;
-using KV_data_path = std::string;
-using KV_wal_path = std::string;
-using KV_path = std::pair<KV_data_path, KV_wal_path>;
-using KV_paths = std::vector<KV_path>;
+using KVPath = std::pair<std::string, std::string>;
+using KVPaths = std::vector<KVPath>;
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_COMMON_H_

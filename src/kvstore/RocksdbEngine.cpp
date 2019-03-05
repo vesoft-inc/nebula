@@ -18,7 +18,7 @@ const char* kSystemParts = "__system__parts__";
 
 RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId,
         const std::string& dataPath,
-        rocksdb::Options options)
+        const std::string& walPath)
     : KVEngine(spaceId)
     , dataPath_(dataPath) {
     LOG(INFO) << "open rocksdb on " << dataPath;
@@ -26,7 +26,9 @@ RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId,
         nebula::fs::FileUtils::makeDir(dataPath);
     }
 
+    rocksdb::Options options;
     rocksdb::DB* db = nullptr;
+    options = RocksdbConfigOptions::getRocksdbOptions(dataPath, walPath, false, false);
     rocksdb::Status status = rocksdb::DB::Open(options, dataPath_, &db);
     CHECK(status.ok());
     db_.reset(db);

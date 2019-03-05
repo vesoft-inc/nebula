@@ -27,7 +27,8 @@ TEST(Load, SSTLoad) {
     writer.Put("key", "value");
     writer.Finish();
 
-    auto engine = std::make_unique<RocksdbEngine>(0, rootPath.path(), options);
+    auto engine = std::make_unique<RocksdbEngine>(0, KV_DATA_PATH_FORMAT(rootPath.path(), 0),
+            KV_WAL_PATH_FORMAT(rootPath.path(), 0));
     std::vector<std::string> files = {file};
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->ingest(files));
 

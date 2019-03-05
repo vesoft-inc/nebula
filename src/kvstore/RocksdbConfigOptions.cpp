@@ -590,7 +590,7 @@ namespace nebula {
 namespace kvstore {
 
 void RocksdbConfigOptions::load_option_maps() {
-    options_map_database = {
+    dbMap = {
             KVSTORE_CONFIG_FLAG(manual_wal_flush),
             KVSTORE_CONFIG_FLAG(allow_ingest_behind),
             KVSTORE_CONFIG_FLAG(avoid_flush_during_shutdown),
@@ -655,7 +655,7 @@ void RocksdbConfigOptions::load_option_maps() {
             KVSTORE_CONFIG_FLAG(advise_random_on_open)
     };
 
-    options_map_columnfamilie = {
+    cfMap = {
             KVSTORE_CONFIG_FLAG(compaction_pri),
             KVSTORE_CONFIG_FLAG(merge_operator),
             KVSTORE_CONFIG_FLAG(compaction_filter_factory),
@@ -703,7 +703,7 @@ void RocksdbConfigOptions::load_option_maps() {
             KVSTORE_CONFIG_FLAG(compaction_options_fifo)
     };
 
-    options_map_blockbasedtable = {
+    bbtMap = {
             KVSTORE_CONFIG_FLAG(pin_top_level_index_and_filter),
             KVSTORE_CONFIG_FLAG(enable_index_compression),
             KVSTORE_CONFIG_FLAG(read_amp_bytes_per_bit),
@@ -727,21 +727,45 @@ void RocksdbConfigOptions::load_option_maps() {
     };
 }
 
-RocksdbConfigOptions::RocksdbConfigOptions(const KV_paths rocksdb_paths,
-                                           int nebula_space_num,
-                                           bool ignore_unknown_options,
-                                           bool input_strings_escaped)
-                                           : dataPaths_(rocksdb_paths)
-                                           , nebula_space_num_(nebula_space_num)
-                                           , ignore_unknown_options_(ignore_unknown_options)
-                                           , input_strings_escaped_(input_strings_escaped)  {
+static RocksdbConfigOptions *rco;
+static bool isEmptyOpt(true);
+RocksdbConfigOptions::RocksdbConfigOptions()  {
+    rco = this;
     LOG(INFO) << "begin create rocksdb options... ";
 }
 
 RocksdbConfigOptions::~RocksdbConfigOptions() {
 }
 
-rocksdb::Status RocksdbConfigOptions::createRocksdbEngineOptions(rocksdb::Options &options) {
+rocksdb::Options RocksdbConfigOptions::getRocksdbOptions(
+        const std::string &dataPath,
+        const std::string &walPath,
+        bool ignoreUnknownOptions,
+        bool inputStringsEscaped) {
+    rocksdb::Status status;
+
+    if (isEmptyOpt) {
+        status = rco->createRocksdbEngineOptions(ignoreUnknownOptions, inputStringsEscaped);
+        if (!status.ok()) {
+            LOG(FATAL) << "Create rocksdb options error : " << status.ToString();
+            ::exit(1);
+        }
+    }
+    // check options compatibility
+    status = rco->checkOptionsCompatibility(dataPath);
+    if (!status.ok()) {
+        LOG(FATAL) << "Check options compatibility error : " << status.ToString();
+        ::exit(1);
+
+        isEmptyOpt = false;
+    }
+
+    baseOpts.wal_dir = walPath;
+    return baseOpts;
+}
+
+rocksdb::Status RocksdbConfigOptions::createRocksdbEngineOptions(bool ignoreUnknownOptions,
+                                                                 bool inputStringsEscaped) {
     // Check Configuration option version and rocksdb version
     if (FLAGS_rocksdb_options_version !=
         folly::stringPrintf("%d.%d.%d", ROCKSDB_MAJOR, ROCKSDB_MINOR, ROCKSDB_PATCH)) {
@@ -756,7 +780,7 @@ rocksdb::Status RocksdbConfigOptions::createRocksdbEngineOptions(rocksdb::Option
     }
 
     // create rocksdb config options
-    rocksdb::Status s = initRocksdbOptions();
+    rocksdb::Status s = initRocksdbOptions(ignoreUnknownOptions, inputStringsEscaped);
     if (!s.ok()) {
         LOG(ERROR) << "Create Rocksdb Options error, "
                       "please check rocksdb options. return status : "
@@ -764,204 +788,190 @@ rocksdb::Status RocksdbConfigOptions::createRocksdbEngineOptions(rocksdb::Option
         return s;
     }
 
-    // check options compatibility
-    s = checkOptionsCompatibility();
+    return rocksdb::Status::OK();
+}
+
+rocksdb::Status RocksdbConfigOptions::checkOptionsCompatibility(const std::string &dataPath) {
+    std::vector<rocksdb::ColumnFamilyDescriptor> cfDesc;
+    cfDesc.push_back({rocksdb::kDefaultColumnFamilyName, cfOpts});
+    rocksdb::Status s = rocksdb::CheckOptionsCompatibility(
+            dataPath,
+            rocksdb::Env::Default(),
+            dbOpts, cfDesc);
+    if (s.code() == rocksdb::Status::kNotFound) {
+        LOG(INFO) << "new rocksdb instance, no compatibility "
+                     "checks are required. data path is : "
+                  << dataPath;
+        return rocksdb::Status::OK();
+    }
+
     if (!s.ok()) {
-        LOG(ERROR) << "Check rocksdb options compatibility, "
-                      "please check rocksdb options and "
-                      "rocksdb version. return status : "
-                      << s.ToString();
         return s;
     }
 
-    options = std::move(base_opts_);
     return rocksdb::Status::OK();
 }
 
-rocksdb::Status RocksdbConfigOptions::checkOptionsCompatibility() {
-    for (auto spaceId = 0; spaceId < nebula_space_num_; spaceId++) {
-        for (auto& path : dataPaths_) {
-            rocksdb::Status s = rocksdb::CheckOptionsCompatibility(
-                    KV_DATA_PATH_FORMAT(path.first.c_str(), spaceId),
-                    rocksdb::Env::Default(),
-                    RocksdbConfigOptions::db_opts_, cf_descs_);
-            if (s.code() == rocksdb::Status::kNotFound) {
-                LOG(INFO) << "new rocksdb instance, no compatibility "
-                             "checks are required. data path is : "
-                          << path.first.c_str();
-                continue;
-            }
-
-            if (!s.ok()) {
-                return s;
-            }
-        }
-    }
-
-    return rocksdb::Status::OK();
-}
-
-rocksdb::Status RocksdbConfigOptions::initRocksdbOptions() {
-    rocksdb::DBOptions base_db_opt;
-    rocksdb::ColumnFamilyOptions base_cf_opt;
+rocksdb::Status RocksdbConfigOptions::initRocksdbOptions(bool ignoreUnknownOptions,
+                                                         bool inputStringsEscaped) {
+    rocksdb::DBOptions baseDBOpt;
+    rocksdb::ColumnFamilyOptions baseCFOpt;
     rocksdb::Status s;
 
-    base_opts_.create_if_missing = true;
+    baseOpts.create_if_missing = true;
     load_option_maps();
-    s = GetDBOptionsFromMap(base_db_opt,
-                            options_map_database,
-                            &db_opts_);
+    s = GetDBOptionsFromMap(baseDBOpt,
+                            dbMap,
+                            &dbOpts);
 
     if (!s.ok()) {
         return s;
     }
 
-    s = GetColumnFamilyOptionsFromMap(base_cf_opt,
-                                      options_map_columnfamilie,
-                                      &cf_opts_,
-                                      input_strings_escaped_,
-                                      ignore_unknown_options_);
+    s = GetColumnFamilyOptionsFromMap(baseCFOpt,
+                                      cfMap,
+                                      &cfOpts,
+                                      inputStringsEscaped,
+                                      ignoreUnknownOptions);
 
     if (!s.ok()) {
         return s;
     }
 
-    base_opts_ = rocksdb::Options(db_opts_, cf_opts_);
-
-    cf_descs_.push_back({rocksdb::kDefaultColumnFamilyName, cf_opts_});
+    baseOpts = rocksdb::Options(dbOpts, cfOpts);
 
     s = rocksdb::GetBlockBasedTableOptionsFromMap(
             rocksdb::BlockBasedTableOptions(),
-            options_map_blockbasedtable,
-            &bbt_opts_,
-            input_strings_escaped_,
-            ignore_unknown_options_);
+            bbtMap,
+            &bbtOpts,
+            inputStringsEscaped,
+            ignoreUnknownOptions);
 
     if (!s.ok()) {
         return s;
     }
 
-    if (!setup_block_cache()) {
+    if (!setupBlockCache()) {
         return rocksdb::Status::Aborted("rocksdb option block_cache error");
     }
 
-    if (!setup_memtable_factory()) {
+    if (!setupMemtableFactory()) {
         return rocksdb::Status::Aborted("rocksdb option memtable_factory error");
     }
 
-    if (!setup_compaction_filter_factory()) {
+    if (!setupCompactionFilterFactory()) {
         return rocksdb::Status::Aborted("rocksdb option compaction_filter_factory error");
     }
 
-    if (!setup_prefix_extractor()) {
+    if (!setupPrefixExtractor()) {
         return rocksdb::Status::Aborted("rocksdb option prefix_extractor error");
     }
 
-    if (!setup_comparator()) {
+    if (!setupComparator()) {
         return rocksdb::Status::Aborted("rocksdb option comparator error");
     }
 
-    if (!setup_merge_operator()) {
+    if (!setupMergeOperator()) {
         return rocksdb::Status::Aborted("rocksdb option merge_operator error");
     }
 
-    if (!setup_compaction_filter()) {
+    if (!setupCompactionFilter()) {
         return rocksdb::Status::Aborted("rocksdb option compaction_filter error");
     }
 
-    base_opts_.table_factory.reset(NewBlockBasedTableFactory(bbt_opts_));
+    baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
 
 
     return rocksdb::Status::OK();
 }
 
 bool RocksdbConfigOptions::getRocksdbEngineOptionValue(
-        ROCKSDB_OPTION_TYPE opt_type,
+        ROCKSDB_OPTION_TYPE optType,
         const char *opt_name,
-        std::string &opt_value) {
-    switch (opt_type) {
-        case (ROCKSDB_OPTION_TYPE::DBOptions):
-            if (options_map_database.find(opt_name) != options_map_database.end()) {
-                opt_value = options_map_database[opt_name].c_str();
+        std::string &optValue) {
+    switch (optType) {
+        case (ROCKSDB_OPTION_TYPE::DBOPT):
+            if (dbMap.find(opt_name) != dbMap.end()) {
+                optValue = dbMap[opt_name].c_str();
                 return true;
             }
             break;
-        case (ROCKSDB_OPTION_TYPE::CFOptions):
-            if (options_map_database.find(opt_name) != options_map_database.end()) {
-                opt_value = options_map_database[opt_name].c_str();
+        case (ROCKSDB_OPTION_TYPE::CFOPT):
+            if (dbMap.find(opt_name) != dbMap.end()) {
+                optValue = dbMap[opt_name].c_str();
                 return true;
             }
             break;
-        case (ROCKSDB_OPTION_TYPE::TableOptions):
-            if (options_map_blockbasedtable.find(opt_name) != options_map_blockbasedtable.end()) {
-                opt_value = options_map_blockbasedtable[opt_name].c_str();
+        case (ROCKSDB_OPTION_TYPE::TABLEOPT):
+            if (bbtMap.find(opt_name) != bbtMap.end()) {
+                optValue = bbtMap[opt_name].c_str();
                 return true;
             }
             break;
         default:
-            LOG(FATAL) << "option type illegal: " << opt_type;
+            LOG(FATAL) << "option type illegal: " << optType;
             break;
     }
 
     return false;
 }
 
-typedef enum { error_token,
-               nullptr_token,
-               skiplist_token,
-               vector_token,
-               hashskiplist_token,
-               hashlinklist_token,
-               cuckoo_token } mem_token_t;
+typedef enum { ERRORT,
+               NULLPTR,
+               SKIPLIST,
+               VECTOR,
+               HASHSKIPLIST,
+               HASHLINKLIST,
+               CUCKOO } MemToken;
 
-mem_token_t mem_factory_lexer(const char *s) {
+MemToken memFactoryLexer(const char *s) {
     // TODO: consider hash table here
     static struct entry_s {
         const char *key;
-        mem_token_t token;
+        MemToken token;
     } token_table[] = {
-            { "nullptr", nullptr_token },
-            { "skiplist", skiplist_token },
-            { "vector" , vector_token },
-            { "hashskiplist" , hashskiplist_token },
-            { "hashlinklist", hashlinklist_token },
-            { "cuckoo", cuckoo_token },
-            {"", error_token},
+            { "nullptr", NULLPTR },
+            { "skiplist", SKIPLIST },
+            { "vector" , VECTOR },
+            { "hashskiplist" , HASHSKIPLIST },
+            { "hashlinklist", HASHLINKLIST },
+            { "cuckoo", CUCKOO },
+            {"", ERRORT},
     };
     struct entry_s *p = token_table;
     for (; p->key != NULL && std::strcmp(p->key, s) != 0; ++p) continue;
     return p->token;
 }
 
-bool RocksdbConfigOptions::setup_memtable_factory() {
-    switch (mem_factory_lexer(FLAGS_memtable_factory.c_str())) {
-        case nullptr_token :
+bool RocksdbConfigOptions::setupMemtableFactory() {
+    switch (memFactoryLexer(FLAGS_memtable_factory.c_str())) {
+        case NULLPTR :
             return true;
-        case skiplist_token :
-            base_opts_.memtable_factory.reset(new rocksdb::SkipListFactory);
+        case SKIPLIST :
+            baseOpts.memtable_factory.reset(new rocksdb::SkipListFactory);
             break;
-        case vector_token :
-            base_opts_.memtable_factory.reset(new rocksdb::VectorRepFactory);
+        case VECTOR :
+            baseOpts.memtable_factory.reset(new rocksdb::VectorRepFactory);
             break;
-        case hashskiplist_token :
-            base_opts_.memtable_factory.reset(rocksdb::NewHashSkipListRepFactory(
+        case HASHSKIPLIST :
+            baseOpts.memtable_factory.reset(rocksdb::NewHashSkipListRepFactory(
                     FLAGS_bucket_count, FLAGS_hashskiplist_height,
                     FLAGS_hashskiplist_branching_factor));
             break;
-        case hashlinklist_token :
-            base_opts_.memtable_factory.reset(rocksdb::NewHashLinkListRepFactory(
+        case HASHLINKLIST :
+            baseOpts.memtable_factory.reset(rocksdb::NewHashLinkListRepFactory(
                     FLAGS_bucket_count, FLAGS_huge_page_tlb_size,
                     FLAGS_bucket_entries_logging_threshold,
                     FLAGS_if_log_bucket_dist_when_flash, FLAGS_threshold_use_skiplist));
             break;
-        case cuckoo_token :
-            base_opts_.memtable_factory.reset(rocksdb::NewHashCuckooRepFactory(
+        case CUCKOO :
+            baseOpts.memtable_factory.reset(rocksdb::NewHashCuckooRepFactory(
                     static_cast<int>(strtol(FLAGS_write_buffer_size.c_str(), NULL, 10)),
 
                     FLAGS_average_data_size,
                     static_cast<uint32_t>(FLAGS_hash_function_count)));
             break;
-        case error_token : {
+        case ERRORT : {
             LOG(ERROR) << "Unknown memtable_factory : "
             << FLAGS_memtable_factory.c_str();
             return false;
@@ -970,45 +980,45 @@ bool RocksdbConfigOptions::setup_memtable_factory() {
     return true;
 }
 
-bool RocksdbConfigOptions::setup_compaction_filter_factory() {
+bool RocksdbConfigOptions::setupCompactionFilterFactory() {
     // TODO compaction_filter_factory need
     return true;
 }
 
-bool RocksdbConfigOptions::setup_prefix_extractor() {
-    base_opts_.prefix_extractor.reset(
+bool RocksdbConfigOptions::setupPrefixExtractor() {
+    baseOpts.prefix_extractor.reset(
             rocksdb::NewFixedPrefixTransform(FLAGS_prefix_length));
     return true;
 }
 
-bool RocksdbConfigOptions::setup_comparator() {
+bool RocksdbConfigOptions::setupComparator() {
     // TODO comparator need
     return true;
 }
 
-bool RocksdbConfigOptions::setup_merge_operator() {
+bool RocksdbConfigOptions::setupMergeOperator() {
     // TODO merge_operator need
     return true;
 }
 
-bool RocksdbConfigOptions::setup_compaction_filter() {
+bool RocksdbConfigOptions::setupCompactionFilter() {
     // TODO compaction_filter need
     return true;
 }
 
-bool RocksdbConfigOptions::setup_block_cache() {
-    bbt_opts_.block_cache = rocksdb::NewLRUCache(FLAGS_block_cache * 1024 * 1024);
+bool RocksdbConfigOptions::setupBlockCache() {
+    bbtOpts.block_cache = rocksdb::NewLRUCache(FLAGS_block_cache * 1024 * 1024);
     return true;
 }
 
-bool RocksdbConfigOptions::getKVPaths(std::string data_paths_str,
-        std::string wal_paths_str, KV_paths &rocksdb_paths) {
+bool RocksdbConfigOptions::getKVPaths(std::string dataPaths,
+        std::string walPaths, KVPaths &kvPaths) {
     std::vector<std::string> data_paths, wal_paths;
-    folly::split(",", data_paths_str, data_paths, true);
+    folly::split(",", dataPaths, data_paths, true);
     std::transform(data_paths.begin(), data_paths.end(), data_paths.begin(), [](auto& p) {
         return folly::trimWhitespace(p).str();
     });
-    folly::split(",", wal_paths_str, wal_paths, true);
+    folly::split(",", walPaths, wal_paths, true);
     std::transform(wal_paths.begin(), wal_paths.end(), wal_paths.begin(), [](auto& p) {
         return folly::trimWhitespace(p).str();
     });
@@ -1022,8 +1032,8 @@ bool RocksdbConfigOptions::getKVPaths(std::string data_paths_str,
     // Because the number of data_paths is equal to the number of wal_paths,
     // So can assign values directly according to the i.
     for (uint32_t i = 0 ; i < data_paths.size(); i++) {
-        rocksdb_paths.emplace_back(
-                KV_path(data_paths.at(i), wal_paths.at(i)));
+        kvPaths.emplace_back(
+                KVPath(data_paths.at(i), wal_paths.at(i)));
     }
     return true;
 }

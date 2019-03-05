@@ -10,9 +10,9 @@
 # Total parts for each space.
 --nebula_part_num=6
 # Root data path, multi paths should be split by comma.For rocksdb engine, one path one instance.
---data_path=/tmp/nebula/data
+--data_path=
 # Root wal path, multi paths should be split by comma.For rocksdb engine, one path one instance.
---wal_path=/tmp/nebula/wal
+--wal_path=
 # start mock server
 --mock_server=true
 # part manager type, [memory | meta]

@@ -61,8 +61,8 @@ int main(int argc, char *argv[]) {
     LOG(INFO) << "Starting the storage Daemon on port " << FLAGS_port
               << ", dataPath " << FLAGS_data_path;
 
-    nebula::kvstore::KV_paths kv_paths;
-    if (!RocksdbConfigOptions::getKVPaths(FLAGS_data_path, FLAGS_wal_path, kv_paths)) {
+    nebula::kvstore::KVPaths kvPaths;
+    if (!RocksdbConfigOptions::getKVPaths(FLAGS_data_path, FLAGS_wal_path, kvPaths)) {
        ::exit(1);
     }
 
@@ -91,19 +91,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    rocksdb::Options rocksdb_options;
     std::unique_ptr<KVStore> kvstore;
     nebula::kvstore::KVOptions options;
     options.local_ = HostAddr(localIP, FLAGS_port);
-    options.rocksdb_paths_ = std::move(kv_paths);
-    rocksdb::Status s = std::make_shared<nebula::kvstore::RocksdbConfigOptions>
-            (options.rocksdb_paths_, FLAGS_nebula_space_num, false, false)
-            ->createRocksdbEngineOptions(rocksdb_options);
-    if (!s.ok()) {
-        LOG(FATAL) << s.ToString();
-        ::exit(1);
-    }
-    options.dbOptions_ = rocksdb_options;
+    options.kvPaths = std::move(kvPaths);
     kvstore.reset(KVStore::instance(std::move(options)));
 
     LOG(INFO) << "Starting Storage HTTP Service";

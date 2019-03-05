@@ -25,7 +25,7 @@ public:
     static kvstore::KVStore* initKV(const char* rootPath) {
         FLAGS_part_man_type = "memory";  // Use MemPartManager.
         int nebula_part_num = 6;
-        nebula::kvstore::KV_paths kv_paths;
+        nebula::kvstore::KVPaths kv_paths;
         nebula::kvstore::RocksdbConfigOptions::getKVPaths(
                 folly::stringPrintf("%s/disk1,%s/disk2", rootPath, rootPath),
                 folly::stringPrintf("%s/disk1,%s/disk2", rootPath, rootPath),
@@ -40,12 +40,9 @@ public:
         for (auto partId = 0; partId < nebula_part_num; partId++) {
             partsMap[0][partId] = kvstore::PartMeta();
         }
-        rocksdb::Options rocksdb_options;
-        rocksdb_options.create_if_missing = true;
         kvstore::KVOptions options;
         options.local_ = HostAddr(0, 0);
-        options.rocksdb_paths_ = std::move(kv_paths);
-        options.dbOptions_ = rocksdb_options;
+        options.kvPaths = std::move(kv_paths);
 
         kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
                                         kvstore::KVStore::instance(std::move(options)));

@@ -7,6 +7,7 @@
 #ifndef NEBULA_GRAPH_ROCKSDBCONFIGOPTIONS_H
 #define NEBULA_GRAPH_ROCKSDBCONFIGOPTIONS_H
 
+#include <gtest/gtest_prod.h>
 #include "base/Base.h"
 #include "rocksdb/db.h"
 #include "rocksdb/cache.h"
@@ -15,56 +16,56 @@
 #include "rocksdb/slice_transform.h"
 #include "kvstore/Common.h"
 
-#define KVSTORE_CONFIG_FLAG(engine_flag) \
-  { ""#engine_flag"", FLAGS_##engine_flag }
-
+#define KVSTORE_CONFIG_FLAG(engineflag) \
+  { ""#engineflag"", FLAGS_##engineflag }
 
 namespace nebula {
 namespace kvstore {
-static std::unordered_map<std::string, std::string> options_map_database;
-static std::unordered_map<std::string, std::string> options_map_columnfamilie;
-static std::unordered_map<std::string, std::string> options_map_blockbasedtable;
+static rocksdb::Options baseOpts;
+static rocksdb::DBOptions dbOpts;
+static rocksdb::ColumnFamilyOptions cfOpts;
+static rocksdb::BlockBasedTableOptions bbtOpts;
+static std::unordered_map<std::string, std::string> dbMap;
+static std::unordered_map<std::string, std::string> cfMap;
+static std::unordered_map<std::string, std::string> bbtMap;
+
 class RocksdbConfigOptions final {
+    FRIEND_TEST(RocksdbEngineOptionsTest, versionTest);
+    FRIEND_TEST(RocksdbEngineOptionsTest, createOptionsTest);
+    FRIEND_TEST(RocksdbEngineOptionsTest, getOptionValueTest);
+    FRIEND_TEST(RocksdbEngineOptionsTest, memtableTest);
+
 public:
     enum ROCKSDB_OPTION_TYPE {
-        DBOptions = 1,
-        CFOptions,
-        TableOptions };
+        DBOPT = 1,
+        CFOPT,
+        TABLEOPT };
 
-    RocksdbConfigOptions(const KV_paths rocksdb_paths,
-                       int nebula_space_num,
-                       bool ignore_unknown_options,
-                       bool input_strings_escaped);
+    RocksdbConfigOptions();
 
     ~RocksdbConfigOptions();
 
-    static bool getRocksdbEngineOptionValue(ROCKSDB_OPTION_TYPE opt_type,
-            const char *opt_name, std::string &opt_value);
-    static bool getKVPaths(std::string data_paths_str,
-            std::string wal_paths_str, KV_paths &rocksdb_paths);
-    rocksdb::Status createRocksdbEngineOptions(rocksdb::Options &options);
+    static bool getRocksdbEngineOptionValue(ROCKSDB_OPTION_TYPE optType,
+            const char *opt_name, std::string &optValue);
+    static bool getKVPaths(std::string dataPaths,
+            std::string walPaths, KVPaths &kvPaths);
+    static rocksdb::Options getRocksdbOptions(const std::string &dataPath,
+                                              const std::string &walPath,
+                                              bool ignoreUnknownOptions,
+                                              bool inputStringsEscaped);
 
 private:
-    rocksdb::Options base_opts_;
-    rocksdb::DBOptions db_opts_;
-    rocksdb::ColumnFamilyOptions cf_opts_;
-    rocksdb::BlockBasedTableOptions bbt_opts_;
-    std::vector<rocksdb::ColumnFamilyDescriptor> cf_descs_;
-    const KV_paths dataPaths_;
-    int nebula_space_num_;
-    bool ignore_unknown_options_;
-    bool input_strings_escaped_;
-
-private:
-    rocksdb::Status initRocksdbOptions();
-    rocksdb::Status checkOptionsCompatibility();
-    bool setup_memtable_factory();
-    bool setup_compaction_filter_factory();
-    bool setup_prefix_extractor();
-    bool setup_comparator();
-    bool setup_merge_operator();
-    bool setup_compaction_filter();
-    bool setup_block_cache();
+    rocksdb::Status initRocksdbOptions(bool ignoreUnknownOptions, bool inputStringsEscaped);
+    rocksdb::Status checkOptionsCompatibility(const std::string &dataPath);
+    rocksdb::Status createRocksdbEngineOptions(bool ignoreUnknownOptions,
+                                               bool inputStringsEscaped);
+    bool setupMemtableFactory();
+    bool setupCompactionFilterFactory();
+    bool setupPrefixExtractor();
+    bool setupComparator();
+    bool setupMergeOperator();
+    bool setupCompactionFilter();
+    bool setupBlockCache();
     void load_option_maps();
 };
 }  // namespace kvstore

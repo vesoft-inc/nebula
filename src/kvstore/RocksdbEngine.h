@@ -92,7 +92,7 @@ class RocksdbEngine : public KVEngine {
 public:
     RocksdbEngine(GraphSpaceID spaceId,
             const std::string& dataPath,
-            rocksdb::Options options);
+            const std::string& walPath);
 
     ~RocksdbEngine();
 
