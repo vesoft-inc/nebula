@@ -564,7 +564,7 @@ ResultType RowReader::getInt64(int64_t index, int64_t& offset, int64_t& v)
             break;
         }
         case cpp2::SupportedType::TIMESTAMP: {
-            int32_t numBytes = readVid(offset, v);
+            int32_t numBytes = readTimestamp(offset, v);
             if (numBytes < 0) {
                 return static_cast<ResultType>(numBytes);
             }
