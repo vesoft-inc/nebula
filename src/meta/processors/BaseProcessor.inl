@@ -12,7 +12,6 @@ namespace meta {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
-    CHECK(!lock_.try_lock());
     kvstore_->asyncMultiPut(kDefaultSpaceId_, kDefaultPartId_, std::move(data),
                             [this] (kvstore::ResultCode code, HostAddr leader) {
         UNUSED(leader);
@@ -42,7 +41,7 @@ StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
 
 template<typename RESP>
 int32_t BaseProcessor<RESP>::autoIncrementId() {
-    CHECK(!lock_.try_lock());
+    folly::RWSpinLock::WriteHolder holder(LockUtils::idLock());
     static const std::string kIdKey = "__id__";
     int32_t id;
     std::string val;
@@ -64,24 +63,16 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
     return id;
 }
 
-// TODO(dangleptr) Maybe we could use index to improve the efficient
 template<typename RESP>
-StatusOr<GraphSpaceID> BaseProcessor<RESP>::spaceExist(const std::string& name) {
-    auto prefix = MetaUtils::spacePrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error, prefix " << prefix << ", ret = " << static_cast<int32_t>(ret);
-        return Status::Error("Unknown error!");
+bool BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
+    folly::RWSpinLock::ReadHolder rHolder(LockUtils::spaceLock());
+    auto spaceKey = MetaUtils::spaceKey(spaceId);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, spaceKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return true;
     }
-    while (iter->valid()) {
-        auto spaceName = MetaUtils::spaceName(iter->val());
-        if (spaceName == name) {
-            return MetaUtils::spaceId(iter->key());
-        }
-        iter->next();
-    }
-    return Status::SpaceNotFound();
+    return false;
 }
 
 }  // namespace meta

@@ -23,6 +23,9 @@ public:
 private:
     explicit ListHostsProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ListHostsResp>(kvstore) {}
+
+private:
+    std::unique_ptr<folly::RWSpinLock::ReadHolder> rHolder_;
 };
 
 }  // namespace meta

@@ -25,6 +25,10 @@ protected:
                                             PartitionID partId,
                                             const std::vector<nebula::cpp2::HostAddr>& hosts,
                                             int32_t replicaFactor);
+    /**
+     * Check space_name exists or not, if existed, return the id.
+     * */
+    StatusOr<GraphSpaceID> checkSpace(const std::string& name);
 
 private:
     explicit CreateSpaceProcessor(kvstore::KVStore* kvstore)

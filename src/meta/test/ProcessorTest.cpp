@@ -13,6 +13,7 @@
 #include "meta/processors/CreateSpaceProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
+#include "meta/processors/AddTagProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -119,6 +120,52 @@ TEST(ProcessorTest, CreateSpaceTest) {
     }
 }
 
+TEST(ProcessorTest, AddTagsTest) {
+    fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    {
+        cpp2::CreateSpaceReq req;
+        req.set_space_name("default_space");
+        req.set_parts_num(9);
+        req.set_replica_factor(1);
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(resp.get_id().get_space_id(), 1);
+    }
+    nebula::cpp2::Schema schema;
+    decltype(schema.columns) cols;
+    cols.emplace_back(TestUtils::columnDef(0, nebula::cpp2::SupportedType::INT));
+    cols.emplace_back(TestUtils::columnDef(1, nebula::cpp2::SupportedType::FLOAT));
+    cols.emplace_back(TestUtils::columnDef(2, nebula::cpp2::SupportedType::STRING));
+    schema.set_columns(std::move(cols));
+    {
+        cpp2::AddTagReq req;
+        req.set_space_id(0);
+        req.set_tag_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = AddTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::E_NOT_FOUND);
+    }
+    {
+        cpp2::AddTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = AddTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(resp.get_id().get_tag_id(), 2);
+    }
+}
 
 
 }  // namespace meta

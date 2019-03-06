@@ -11,12 +11,17 @@ namespace meta {
 
 void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
     UNUSED(req);
-    guard_ = std::make_unique<std::lock_guard<std::mutex>>(
-                                BaseProcessor<cpp2::ListSpacesResp>::lock_);
+    auto& spaceLock = LockUtils::spaceLock();
+    if (!spaceLock.try_lock_shared()) {
+        resp_.set_code(cpp2::ErrorCode::E_TABLE_LOCKED);
+        onFinished();
+        return;
+    }
     auto prefix = MetaUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
+        spaceLock.unlock_shared();
         resp_.set_code(to(ret));
         onFinished();
         return;
@@ -27,10 +32,11 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
         auto spaceName = MetaUtils::spaceName(iter->val());
         VLOG(3) << "List spaces " << spaceId << ", name " << spaceName.str();
         spaces.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                            to(spaceId, IDType::SPACE),
+                            to(spaceId, EntryType::SPACE),
                             spaceName.str());
         iter->next();
     }
+    spaceLock.unlock_shared();
     resp_.set_spaces(std::move(spaces));
     onFinished();
 }
