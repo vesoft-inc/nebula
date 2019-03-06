@@ -16,7 +16,9 @@ namespace kvstore {
 
 TEST(RocksdbEngineTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    fs::TempDir extraPath("/tmp/rocksdb_engine_test_extra.XXXXXX");
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path(),
+                                                                            extraPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
@@ -25,7 +27,9 @@ TEST(RocksdbEngineTest, SimpleTest) {
 
 TEST(RocksdbEngineTest, RangeTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    fs::TempDir extraPath("/tmp/rocksdb_engine_test_extra.XXXXXX");
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path(),
+                                                                            extraPath.path());
     std::vector<KV> data;
     for (int32_t i = 10; i < 20;  i++) {
         data.emplace_back(std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
@@ -62,7 +66,9 @@ TEST(RocksdbEngineTest, RangeTest) {
 
 TEST(RocksdbEngineTest, PrefixTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    fs::TempDir extraPath("/tmp/rocksdb_engine_test_extra.XXXXXX");
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path(),
+                                                                            extraPath.path());
     LOG(INFO) << "Write data in batch and scan them...";
     std::vector<KV> data;
     for (int32_t i = 0; i < 10;  i++) {
@@ -103,7 +109,9 @@ TEST(RocksdbEngineTest, PrefixTest) {
 
 TEST(RocksdbEngineTest, RemoveTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    fs::TempDir extraPath("/tmp/rocksdb_engine_test_extra.XXXXXX");
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path(),
+                                                                            extraPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
@@ -114,7 +122,9 @@ TEST(RocksdbEngineTest, RemoveTest) {
 
 TEST(RocksdbEngineTest, RemoveRangeTest) {
     fs::TempDir rootPath("/tmp/rocksdb_remove_range_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    fs::TempDir extraPath("/tmp/rocksdb_engine_test_extra.XXXXXX");
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path(),
+                                                                            extraPath.path());
     for (int32_t i = 0; i < 100; i++) {
         EXPECT_EQ(ResultCode::SUCCEEDED, engine->put(
                     std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
@@ -150,6 +160,27 @@ TEST(RocksdbEngineTest, RemoveRangeTest) {
         }
         EXPECT_EQ(50, num);
     }
+}
+
+TEST(RocksdbEngineTest, OptionTest) {
+    fs::TempDir rootPath("/tmp/rocksdb_option_test.XXXXXX");
+    fs::TempDir extraPath("/tmp/rocksdb_engine_test_extra.XXXXXX");
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path(),
+                                                                            extraPath.path());
+    EXPECT_EQ(ResultCode::SUCCEEDED,
+              engine->setOption("disable_auto_compactions", "true"));
+    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+              engine->setOption("disable_auto_compactions_", "true"));
+    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+              engine->setOption("disable_auto_compactions", "bad_value"));
+    EXPECT_EQ(ResultCode::SUCCEEDED,
+              engine->setDBOption("max_background_compactions", "2"));
+    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+              engine->setDBOption("max_background_compactions_", "2"));
+    EXPECT_EQ(ResultCode::SUCCEEDED,
+              engine->setDBOption("max_background_compactions", "2_"));
+    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+            engine->setDBOption("max_background_compactions", "bad_value"));
 }
 
 }  // namespace kvstore

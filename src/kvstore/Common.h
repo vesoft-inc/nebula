@@ -13,12 +13,13 @@ namespace nebula {
 namespace kvstore {
 
 enum ResultCode {
-    SUCCEEDED           = 0,
-    ERR_UNKNOWN         = -1,
-    ERR_PART_NOT_FOUND  = -2,
-    ERR_KEY_NOT_FOUND   = -3,
-    ERR_SPACE_NOT_FOUND = -4,
-    ERR_LEADER_CHANAGED = -5,
+    SUCCEEDED            = 0,
+    ERR_UNKNOWN          = -1,
+    ERR_PART_NOT_FOUND   = -2,
+    ERR_KEY_NOT_FOUND    = -3,
+    ERR_SPACE_NOT_FOUND  = -4,
+    ERR_LEADER_CHANAGED  = -5,
+    ERR_INVALID_ARGUMENT = -6,
 };
 
 

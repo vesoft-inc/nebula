@@ -19,6 +19,7 @@ TEST(Load, SSTLoad) {
     rocksdb::Options options;
     rocksdb::SstFileWriter writer(rocksdb::EnvOptions(), options);
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
+    fs::TempDir extraPath("/tmp/rocksdb_engine_test.XXXXXX");
     auto file = folly::stringPrintf("%s/%s", rootPath.path(), "data.sst");
     auto s = writer.Open(file);
     ASSERT_TRUE(s.ok());
@@ -26,7 +27,7 @@ TEST(Load, SSTLoad) {
     writer.Put("key", "value");
     writer.Finish();
 
-    auto engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksdbEngine>(0, rootPath.path(), extraPath.path());
     std::vector<std::string> files = {file};
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->ingest(files));
 

@@ -16,15 +16,25 @@ namespace kvstore {
 
 const char* kSystemParts = "__system__parts__";
 
-RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
+RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId,
+                             const std::string& dataPath,
+                             const std::string& extraPath,
                              std::shared_ptr<rocksdb::MergeOperator> mergeOp,
                              std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
     : KVEngine(spaceId)
-    , dataPath_(dataPath) {
+    , dataPath_(dataPath)
+    , extraPath_(extraPath) {
     LOG(INFO) << "open rocksdb on " << dataPath;
     if (nebula::fs::FileUtils::fileType(dataPath.c_str()) == nebula::fs::FileType::NOTEXIST) {
         nebula::fs::FileUtils::makeDir(dataPath);
     }
+
+    if (!extraPath.empty() &&
+        nebula::fs::FileUtils::fileType(extraPath.c_str()) == nebula::fs::FileType::NOTEXIST) {
+            LOG(INFO) << "extra path " << extraPath;
+            nebula::fs::FileUtils::makeDir(extraPath);
+    }
+
     rocksdb::Options options;
     options.create_if_missing = true;
     if (mergeOp != nullptr) {
@@ -173,6 +183,34 @@ ResultCode RocksdbEngine::ingest(const std::vector<std::string>& files) {
         return ResultCode::SUCCEEDED;
     } else {
         return ResultCode::ERR_UNKNOWN;
+    }
+}
+
+ResultCode RocksdbEngine::setOption(const std::string& config_key,
+                                    const std::string& config_value) {
+    std::unordered_map<std::string, std::string> config_options = {
+        {config_key, config_value}
+    };
+
+    rocksdb::Status status = db_->SetOptions(config_options);
+    if (status.ok()) {
+        return ResultCode::SUCCEEDED;
+    } else {
+        return ResultCode::ERR_INVALID_ARGUMENT;
+    }
+}
+
+ResultCode RocksdbEngine::setDBOption(const std::string& config_key,
+                                      const std::string& config_value) {
+    std::unordered_map<std::string, std::string> config_db_options = {
+        {config_key, config_value}
+    };
+
+    rocksdb::Status status = db_->SetDBOptions(config_db_options);
+    if (status.ok()) {
+        return ResultCode::SUCCEEDED;
+    } else {
+        return ResultCode::ERR_INVALID_ARGUMENT;
     }
 }
 

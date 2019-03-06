@@ -15,6 +15,7 @@
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
                              "For rocksdb engine, one path one instance.");
+DEFINE_string(extra_path, "", "extra data path");
 DEFINE_string(local_ip, "", "Local ip");
 DEFINE_bool(mock_server, true, "start mock server");
 
@@ -50,6 +51,10 @@ int main(int argc, char *argv[]) {
     using nebula::network::NetworkUtils;
     using nebula::getLocalIP;
 
+    if (FLAGS_data_path.empty()) {
+        LOG(FATAL) << "Storage Data Path should not empty";
+        return -1;
+    }
     LOG(INFO) << "Starting the storage Daemon on port " << FLAGS_port
               << ", dataPath " << FLAGS_data_path;
 

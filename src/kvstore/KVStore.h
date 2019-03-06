@@ -28,6 +28,10 @@ struct KVOptions {
      * */
     std::vector<std::string> dataPaths_;
     /**
+     * Path for loading extra data. It will include all spaces running on this node.
+     */
+    std::string extraPath_;
+    /**
      * Custom MergeOperator used in rocksdb.merge method.
      * */
     std::shared_ptr<rocksdb::MergeOperator> mergeOp_{nullptr};

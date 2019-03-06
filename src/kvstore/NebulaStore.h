@@ -88,6 +88,17 @@ public:
                           const std::string& end,
                           KVCallback cb) override;
 
+    ResultCode ingest(GraphSpaceID spaceId,
+                      const std::vector<std::string>& files);
+
+    ResultCode setOption(GraphSpaceID spaceId,
+                         const std::string& config_key,
+                         const std::string& config_value);
+
+    ResultCode setDBOption(GraphSpaceID spaceId,
+                           const std::string& config_key,
+                           const std::string& config_value);
+
 private:
     /**
      * Init engines for one space.

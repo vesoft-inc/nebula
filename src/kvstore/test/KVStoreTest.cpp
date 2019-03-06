@@ -110,6 +110,7 @@ TEST(KVStoreTest, SimpleTest) {
 TEST(KVStoreTest, PartsTest) {
     FLAGS_part_man_type = "memory";  // Use MemPartManager.
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
+    fs::TempDir extraPath("/tmp/rocksdb_engine_test_extra.XXXXXX");
     MemPartManager* partMan = reinterpret_cast<MemPartManager*>(PartManager::instance());
     // GraphSpaceID =>  {PartitionIDs}
     // 0 => {0, 1, 2, 3...9}
@@ -122,7 +123,8 @@ TEST(KVStoreTest, PartsTest) {
     paths.push_back(folly::stringPrintf("%s/disk2", rootPath.path()));
     for (size_t i = 0; i < paths.size(); i++) {
         auto db = std::make_unique<RocksdbEngine>(0,
-                            folly::stringPrintf("%s/nebula/%d/data", paths[i].c_str(), 0));
+                            folly::stringPrintf("%s/nebula/%d/data", paths[i].c_str(), 0),
+                            extraPath.path());
         for (auto partId = 0; partId < 3; partId++) {
             db->addPart(5 * i + partId);
         }
