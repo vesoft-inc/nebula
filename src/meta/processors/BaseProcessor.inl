@@ -74,10 +74,9 @@ StatusOr<GraphSpaceID> BaseProcessor<RESP>::spaceExist(const std::string& name) 
         return Status::Error("Unknown error!");
     }
     while (iter->valid()) {
-        auto spaceId = MetaUtils::spaceId(iter->key());
         auto spaceName = MetaUtils::spaceName(iter->val());
         if (spaceName == name) {
-            return spaceId;
+            return MetaUtils::spaceId(iter->key());
         }
         iter->next();
     }

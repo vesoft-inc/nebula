@@ -7,6 +7,7 @@ _install
 install_manifest.txt
 
 src/common/base/Base.h.gch
+src/tools/native-client/src/main/cpp/com_vesoft_client_NativeClient.h
 
 CMakeCache.txt
 Makefile
@@ -15,4 +16,3 @@ CTestTestfile.cmake
 CMakeFiles/
 Testing/
 target/
-src/tools/native-client/src/main/cpp/com_vesoft_client_NativeClient.h

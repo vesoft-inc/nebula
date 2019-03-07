@@ -46,6 +46,9 @@ public:
 
     void init();
 
+    /**
+     * TODO(dangleptr): Use one struct to represent space description.
+     * */
     StatusOr<GraphSpaceID> createSpace(std::string name, int32_t partsNum, int32_t replicaFator);
 
     StatusOr<std::vector<SpaceIdName>> listSpaces();
