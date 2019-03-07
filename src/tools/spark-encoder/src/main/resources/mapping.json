@@ -1,0 +1,68 @@
+{
+  "space_one": {
+    "key_policy": "hash_primary_key",
+    "partitions": 3,
+    "tags": [
+      {
+        "table_name": "table1",
+        "tag_name": "vertex1",
+        "primary_key": "column1",
+        "mappings": [
+          {
+            "column1": {
+              "name": "prop1",
+              "type": "string"
+            }
+          },
+          {
+            "column2": {
+              "name": "prop2",
+              "type": "double"
+            }
+          }
+        ]
+      },
+      {
+        "table_name": "table2",
+        "tag_name": "vertex2",
+        "primary_key": "column1",
+        "mappings": [
+          {
+            "column1": {
+              "name": "prop3",
+              "type": "float"
+            }
+          },
+          {
+            "column2": {
+              "name": "prop4",
+              "type": "date"
+            }
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "table_name": "table3",
+        "edge_name": "edge1",
+        "from_column": "column1",
+        "to_column": "column2",
+        "mappings": [
+          {
+            "column3": {
+              "name": "prop1",
+              "type": "string"
+            }
+          },
+          {
+            "column4": {
+              "name": "prop2",
+              "type": "date"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
