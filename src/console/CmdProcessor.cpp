@@ -305,10 +305,11 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
 }
 #undef PRINT_FIELD_VALUE
 
-
 bool CmdProcessor::processClientCmd(folly::StringPiece cmd,
                                     bool& readyToExit) {
-    if (cmd == "exit") {
+    std::string cmd_ = cmd.toString();
+    std::transform(cmd_.begin(), cmd_.end(), cmd_.begin(), ::tolower);
+    if (cmd_ == "exit") {
         readyToExit = true;
         return true;
     } else {
@@ -316,7 +317,25 @@ bool CmdProcessor::processClientCmd(folly::StringPiece cmd,
     }
 
     // TODO(sye) Check for all client commands
+    const std::vector<std::string> commands{"load"};
+    for (auto iter = commands.begin(); iter != commands.end(); iter++) {
+        if (cmd_ == *iter || cmd_.find(*iter) == 0) {
+            time::Duration dur;
+            cpp2::ExecutionResponse resp;
+            cpp2::ErrorCode res = client_->execute(cmd_, resp);
 
+            // TODO(darion) refine client & server process
+            if (res == cpp2::ErrorCode::SUCCEEDED) {
+                printResult(resp);
+                if (resp.get_rows() != nullptr) {
+                    std::cout << "Got " << resp.get_rows()->size()
+                        << " rows (Time spent: "
+                        << resp.get_latency_in_ms() << "/"
+                        << dur.elapsedInMSec() << " ms)\n";
+                }
+            }
+        }
+    }
     return false;
 }
 

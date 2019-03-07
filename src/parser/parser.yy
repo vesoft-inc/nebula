@@ -673,7 +673,7 @@ show_sentence
     ;
 
 load_vertex_sentence
-    : KW_LOAD KW_VERTEX STRING{
+    : KW_LOAD KW_VERTEX STRING {
         auto sentence = new LoadSentence(LoadKind::kLoadVertex);
         sentence->setPath($3);
         $$ = sentence;
@@ -681,7 +681,7 @@ load_vertex_sentence
     ;
 
 load_edge_sentence
-    : KW_LOAD KW_EDGE STRING{
+    : KW_LOAD KW_EDGE STRING {
         auto sentence = new LoadSentence(LoadKind::kLoadEdge);
         sentence->setPath($3);
         $$ = sentence;

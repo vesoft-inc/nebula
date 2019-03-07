@@ -4,6 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include <iostream>
 #include "base/Base.h"
 #include "graph/LoadExecutor.h"
 
@@ -20,6 +21,7 @@ Status LoadExecutor::prepare() {
 }
 
 void LoadExecutor::execute() {
+    std::cout << sentence_->path() << std::endl;
 }
 
 void LoadExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
