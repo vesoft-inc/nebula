@@ -16,3 +16,6 @@ CTestTestfile.cmake
 CMakeFiles/
 Testing/
 target/
+
+**/.DS_Store
+.idea
