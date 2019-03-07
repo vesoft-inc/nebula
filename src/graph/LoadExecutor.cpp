@@ -7,6 +7,9 @@
 #include <iostream>
 #include "base/Base.h"
 #include "graph/LoadExecutor.h"
+#include <fstream>
+#include <sstream>
+#include <string>
 
 namespace nebula {
 namespace graph {
@@ -21,7 +24,23 @@ Status LoadExecutor::prepare() {
 }
 
 void LoadExecutor::execute() {
-    std::cout << sentence_->path() << std::endl;
+    std::ifstream f(sentence_->path());
+    std::string line;
+
+    switch (sentence_->loadKind()) {
+        case LoadKind::kLoadVertex:
+            while (std::getline(f, line)) {
+            }
+            break;
+          case LoadKind::kLoadEdge:
+            while (std::getline(f, line)) {
+            }
+            break;
+          case LoadKind::kUnknown:
+          default:
+            LOG(FATAL) << "Load Executor kind illegal: " << loadKind_;
+            break;
+      }$
 }
 
 void LoadExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
