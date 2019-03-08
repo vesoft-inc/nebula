@@ -65,7 +65,7 @@ void MetaClient::loadDataThreadFunc() {
         auto spaceCache = std::make_shared<SpaceInfoCache>();
         auto partsAlloc = r.value();
         spaceCache->spaceName = space.second;
-        spaceCache->partsOnHost_ = revert(partsAlloc);
+        spaceCache->partsOnHost_ = reverse(partsAlloc);
         spaceCache->partsAlloc_ = std::move(partsAlloc);
         VLOG(3) << "Load space " << spaceId << ", parts num:" << spaceCache->partsAlloc_.size();
         cache.emplace(spaceId, spaceCache);
@@ -81,7 +81,7 @@ void MetaClient::loadDataThreadFunc() {
 }
 
 std::unordered_map<HostAddr, std::vector<PartitionID>>
-MetaClient::revert(const PartsAlloc& parts) {
+MetaClient::reverse(const PartsAlloc& parts) {
     std::unordered_map<HostAddr, std::vector<PartitionID>> hosts;
     for (auto& partHost : parts) {
         for (auto& h : partHost.second) {
@@ -325,7 +325,7 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
                 } else {
                     const auto& oldPartMeta = oldPartIt->second;
                     const auto& newPartMeta = partIt->second;
-                    if (!oldPartMeta.equals(newPartMeta)) {
+                    if (oldPartMeta != newPartMeta) {
                         VLOG(1) << "SpaceId " << spaceId
                                 << ", partId " << partIt->first << " was updated!";
                         listener_->onPartUpdated(newPartMeta);

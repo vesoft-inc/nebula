@@ -121,10 +121,14 @@ struct PartMeta {
     PartitionID            partId_;
     std::vector<HostAddr>  peers_;
 
-    bool equals(const PartMeta& that) const {
+    bool operator==(const PartMeta& that) const {
         return this->spaceId_ == that.spaceId_
                     && this->partId_ == that.partId_
                     && this->peers_ == that.peers_;
+    }
+
+    bool operator!=(const PartMeta& that) const {
+        return !(*this == that);
     }
 };
 

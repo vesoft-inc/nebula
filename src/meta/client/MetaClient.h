@@ -84,7 +84,7 @@ public:
 protected:
     void loadDataThreadFunc();
 
-    std::unordered_map<HostAddr, std::vector<PartitionID>> revert(const PartsAlloc& parts);
+    std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
     void updateActiveHost() {
         std::random_device rd;

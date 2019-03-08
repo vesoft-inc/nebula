@@ -61,27 +61,23 @@ bool MetaServerBasedPartManager::spaceExist(const HostAddr& host,
 }
 
 void MetaServerBasedPartManager::onSpaceAdded(GraphSpaceID spaceId) {
-    if (handler_) {
-        handler_->addSpace(spaceId);
-    }
+    CHECK_NOTNULL(handler_);
+    handler_->addSpace(spaceId);
 }
 
 void MetaServerBasedPartManager::onSpaceRemoved(GraphSpaceID spaceId) {
-    if (handler_) {
-        handler_->removeSpace(spaceId);
-    }
+    CHECK_NOTNULL(handler_);
+    handler_->removeSpace(spaceId);
 }
 
 void MetaServerBasedPartManager::onPartAdded(const PartMeta& partMeta) {
-    if (handler_) {
-        handler_->addPart(partMeta.spaceId_, partMeta.partId_);
-    }
+    CHECK_NOTNULL(handler_);
+    handler_->addPart(partMeta.spaceId_, partMeta.partId_);
 }
 
 void MetaServerBasedPartManager::onPartRemoved(GraphSpaceID spaceId, PartitionID partId) {
-    if (handler_) {
-        handler_->removePart(spaceId, partId);
-    }
+    CHECK_NOTNULL(handler_);
+    handler_->removePart(spaceId, partId);
 }
 
 void MetaServerBasedPartManager::onPartUpdated(const PartMeta& partMeta) {
