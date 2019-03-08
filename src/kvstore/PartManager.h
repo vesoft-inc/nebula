@@ -18,7 +18,7 @@ using MachineID = uint32_t;
 struct PartMeta {
     GraphSpaceID           spaceId_;
     PartitionID            partId_;
-    std::vector<HostAddr> peers_;
+    std::vector<HostAddr>  peers_;
 };
 
 using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;

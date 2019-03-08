@@ -50,8 +50,11 @@ protected:
     cpp2::ErrorCode to(kvstore::ResultCode code) {
         switch (code) {
         case kvstore::ResultCode::SUCCEEDED:
-        default:
             return cpp2::ErrorCode::SUCCEEDED;
+        case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
+            return cpp2::ErrorCode::E_NOT_FOUND;
+        default:
+            return cpp2::ErrorCode::E_UNKNOWN;
         }
     }
 

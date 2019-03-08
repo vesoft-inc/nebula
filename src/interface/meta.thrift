@@ -23,6 +23,7 @@ enum ErrorCode {
     // Operation Failure
     E_NO_HOSTS       = -21,
     E_SPACE_EXISTED  = -22,
+    E_NOT_FOUND      = -23,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
