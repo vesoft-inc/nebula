@@ -33,6 +33,7 @@ TEST(KVStoreTest, SimpleTest) {
     FLAGS_part_man_type = "memory";  // Use MemPartManager.
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
     MemPartManager* partMan = reinterpret_cast<MemPartManager*>(PartManager::instance());
+    partMan->clear();
     // GraphSpaceID =>  {PartitionIDs}
     // 1 => {0, 1, 2, 3, 4, 5}
     // 2 => {0, 1, 2, 3, 4, 5}
@@ -111,11 +112,12 @@ TEST(KVStoreTest, PartsTest) {
     FLAGS_part_man_type = "memory";  // Use MemPartManager.
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
     MemPartManager* partMan = reinterpret_cast<MemPartManager*>(PartManager::instance());
+    partMan->clear();
     // GraphSpaceID =>  {PartitionIDs}
     // 0 => {0, 1, 2, 3...9}
     // The parts on PartMan is 0...9
     for (auto partId = 0; partId < 10; partId++) {
-        partMan->partsMap_[0][partId] = PartMeta();
+        partMan->addPart(0, partId);
     }
     std::vector<std::string> paths;
     paths.push_back(folly::stringPrintf("%s/disk1", rootPath.path()));
@@ -140,24 +142,25 @@ TEST(KVStoreTest, PartsTest) {
     options.dataPaths_ = std::move(paths);
     kv.reset(static_cast<NebulaStore*>(KVStore::instance(std::move(options))));
 
-    // After init, the parts should be 0-9, and the distribution should be
-    // disk1: 0, 1, 2, x, y
-    // disk2: 5, 6, 7, x1, y1
-    // x, y, x1, y1 in {3, 4, 8, 9}
-    for (auto i = 0; i < 2; i++) {
-        ASSERT_EQ(folly::stringPrintf("%s/disk%d", rootPath.path(), i + 1),
-                  kv->kvs_[0]->engines_[i].second);
+    auto check = [&](GraphSpaceID spaceId) {
+        // After init, the parts should be 0-9, and the distribution should be
+        // disk1: 0, 1, 2, x, y
+        // disk2: 5, 6, 7, x1, y1
+        // x, y, x1, y1 in {3, 4, 8, 9}
+        for (auto i = 0; i < 2; i++) {
+            ASSERT_EQ(folly::stringPrintf("%s/disk%d", rootPath.path(), i + 1),
+                      kv->kvs_[spaceId]->engines_[i].second);
+            auto parts = kv->kvs_[spaceId]->engines_[i].first->allParts();
+            dump(parts);
+            ASSERT_EQ(5, parts.size());
+        }
+    };
+    check(0);
+    // Let's create another space with 10 parts.
+    for (auto partId = 0; partId < 10; partId++) {
+        partMan->addPart(1, partId);
     }
-    {
-        auto parts = kv->kvs_[0]->engines_[0].first->allParts();
-        dump(parts);
-        ASSERT_EQ(5, parts.size());
-    }
-    {
-        auto parts = kv->kvs_[0]->engines_[1].first->allParts();
-        dump(parts);
-        ASSERT_EQ(5, parts.size());
-    }
+    check(1);
 }
 
 }  // namespace kvstore

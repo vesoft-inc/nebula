@@ -22,6 +22,13 @@ struct PartMeta {
 };
 
 using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
+
+class Handler {
+public:
+    virtual void addSpace(GraphSpaceID spaceId) = 0;
+    virtual void addPart(GraphSpaceID spaceId, PartitionID partId) = 0;
+};
+
 /**
  * This class manages all meta information one storage host needed.
  * */
@@ -49,9 +56,22 @@ public:
      * */
     virtual bool partExist(GraphSpaceID spaceId, PartitionID partId) = 0;
 
+    /**
+     * Check current space exist or not.
+     * */
+    virtual bool spaceExist(GraphSpaceID spaceId) = 0;
+
+    /**
+     * Register Handler
+     * */
+    void registerHandler(Handler* handler) {
+        handler_ = handler;
+    }
+
 protected:
     PartManager() = default;
     static PartManager* instance_;
+    Handler* handler_ = nullptr;
 };
 
 /**
@@ -71,7 +91,18 @@ public:
     PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
     void addPart(GraphSpaceID spaceId, PartitionID partId) {
-        partsMap_[spaceId][partId] = PartMeta();
+        if (partsMap_.find(spaceId) == partsMap_.end()) {
+            if (handler_) {
+                handler_->addSpace(spaceId);
+            }
+        }
+        auto& p = partsMap_[spaceId];
+        if (p.find(partId) == p.end()) {
+            if (handler_) {
+                handler_->addPart(spaceId, partId);
+            }
+        }
+        p[partId] = PartMeta();
     }
 
     bool partExist(GraphSpaceID spaceId, PartitionID partId) override {
@@ -83,6 +114,15 @@ public:
             }
         }
         return false;
+    }
+
+    bool spaceExist(GraphSpaceID spaceId) override {
+        return partsMap_.find(spaceId) != partsMap_.end();
+    }
+
+    void clear() {
+        partsMap_.clear();
+        handler_ = nullptr;
     }
 
     PartsMap& partsMap() {
