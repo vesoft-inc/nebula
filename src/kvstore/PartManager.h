@@ -105,9 +105,7 @@ public:
             it->second.erase(partId);
             if (handler_) {
                 handler_->removePart(spaceId, partId);
-            }
-            if (it->second.empty()) {
-                if (handler_) {
+                if (it->second.empty()) {
                     handler_->removeSpace(spaceId);
                 }
             }
