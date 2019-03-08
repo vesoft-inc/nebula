@@ -22,6 +22,10 @@ const std::unordered_map<std::string, PropContext::PropInKeyType> kPropsInKey_ =
     {"_rank", PropContext::PropInKeyType::RANK}
 };
 
+enum class BoundType {
+    IN_BOUND,
+    OUT_BOUND,
+};
 
 template<typename REQ, typename RESP>
 class QueryBaseProcessor : public BaseProcessor<RESP> {
@@ -31,8 +35,9 @@ public:
     void process(const cpp2::GetNeighborsRequest& req);
 
 protected:
-    explicit QueryBaseProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<RESP>(kvstore) {}
+    explicit QueryBaseProcessor(kvstore::KVStore* kvstore, BoundType type = BoundType::OUT_BOUND)
+        : BaseProcessor<RESP>(kvstore)
+        , type_(type) {}
     /**
      * Check whether current operatin on the data is valid or not.
      * */
@@ -62,6 +67,7 @@ protected:
 
 protected:
     GraphSpaceID  spaceId_;
+    BoundType     type_;
 };
 
 }  // namespace storage
