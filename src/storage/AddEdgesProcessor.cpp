@@ -5,6 +5,7 @@
  */
 #include "storage/AddEdgesProcessor.h"
 #include <algorithm>
+#include <climits>
 #include "time/TimeUtils.h"
 #include "storage/KeyUtils.h"
 
@@ -13,7 +14,7 @@ namespace storage {
 
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     auto spaceId = req.get_space_id();
-    auto now = time::TimeUtils::nowInMSeconds();
+    auto version = LLONG_MAX - time::TimeUtils::nowInMSeconds();
     callingNum_ = req.parts.size();
     CHECK_NOTNULL(kvstore_);
     std::for_each(req.parts.begin(), req.parts.end(), [&](auto& partEdges){
@@ -21,7 +22,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
         std::vector<kvstore::KV> data;
         std::for_each(partEdges.second.begin(), partEdges.second.end(), [&](auto& edge){
             auto key = KeyUtils::edgeKey(partId, edge.key.src, edge.key.edge_type,
-                                         edge.key.ranking, edge.key.dst, now);
+                                         edge.key.ranking, edge.key.dst, version);
             data.emplace_back(std::move(key), std::move(edge.get_props()));
         });
         doPut(spaceId, partId, std::move(data));

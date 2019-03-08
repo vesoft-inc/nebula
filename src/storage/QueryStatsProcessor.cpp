@@ -45,10 +45,19 @@ QueryStatsProcessor::collectEdgesStats(PartitionID partId,
     if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
         return ret;
     }
-    while (iter->valid()) {
-        auto reader = RowReader::getEdgePropReader(iter->val(), spaceId_, edgeType);
-        collectProps(reader.get(), iter->key(), props, &collector_);
-        iter->next();
+    EdgeRanking lastRank = -1;
+    for (; iter->valid(); iter->next()) {
+        auto key = iter->key();
+        auto val = iter->val();
+        auto rank = KeyUtils::getRank(key);
+        if (rank == lastRank) {
+            VLOG(3) << "Only get the latest version for each edge.";
+            continue;
+        }
+        lastRank = rank;
+        CHECK_GT(edgeType, 0) << "Only outBound support stats on edge props.";
+        auto reader = RowReader::getEdgePropReader(val, spaceId_, edgeType);
+        collectProps(reader.get(), key, props, &collector_);
     }
     return ret;
 }

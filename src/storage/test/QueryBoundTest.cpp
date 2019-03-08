@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
+#include <climits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/QueryBoundProcessor.h"
@@ -34,19 +35,32 @@ void mockData(kvstore::KVStore* kv) {
                 auto val = writer.encode();
                 data.emplace_back(std::move(key), std::move(val));
             }
-            // Generate 7 edges for each edgeType.
+            // Generate 7 out-edges for each edgeType.
             for (auto dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
-                auto key = KeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
-                RowWriter writer(nullptr);
-                for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                    writer << numInt;
+                // Write multi versions,  we should get the latest version.
+                for (auto version = 0; version < 3; version++) {
+                    auto key = KeyUtils::edgeKey(partId, vertexId, 101,
+                                                 dstId - 10001, dstId, LLONG_MAX - version);
+                    RowWriter writer(nullptr);
+                    for (uint64_t numInt = 0; numInt < 10; numInt++) {
+                        writer << numInt;
+                    }
+                    for (auto numString = 10; numString < 20; numString++) {
+                        writer << folly::stringPrintf("string_col_%d_%d", numString, version);
+                    }
+                    auto val = writer.encode();
+                    data.emplace_back(std::move(key), std::move(val));
                 }
-                for (auto numString = 10; numString < 20; numString++) {
-                    writer << folly::stringPrintf("string_col_%d", numString);
+            }
+            // Generate 5 in-edges for each edgeType, the edgeType is negative
+            for (auto srcId = 20001; srcId <= 20005; srcId++) {
+                VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
+                for (auto version = 0; version < 3; version++) {
+                    auto key = KeyUtils::edgeKey(partId, vertexId, -101,
+                                                 srcId - 20001, srcId, LLONG_MAX - version);
+                    data.emplace_back(std::move(key), "");
                 }
-                auto val = writer.encode();
-                data.emplace_back(std::move(key), std::move(val));
             }
         }
         kv->asyncMultiPut(
@@ -58,7 +72,7 @@ void mockData(kvstore::KVStore* kv) {
     }
 }
 
-void buildRequest(cpp2::GetNeighborsRequest& req) {
+void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
     for (auto partId = 0; partId < 3; partId++) {
@@ -67,7 +81,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
         }
     }
     req.set_parts(std::move(tmpIds));
-    req.set_edge_type(101);
+    req.set_edge_type(outBound ? 101 : -101);
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
@@ -80,19 +94,24 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
                                                folly::stringPrintf("_dst")));
     tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
                                                folly::stringPrintf("_rank")));
-    // Return edge props col_0, col_2, col_4 ... col_18
-    for (int i = 0; i < 10; i++) {
-        tmpColumns.emplace_back(
-            TestUtils::propDef(cpp2::PropOwner::EDGE,
-                               folly::stringPrintf("col_%d", i*2)));
+    if (outBound) {
+        // Return edge props col_0, col_2, col_4 ... col_18
+        for (int i = 0; i < 10; i++) {
+            tmpColumns.emplace_back(
+                TestUtils::propDef(cpp2::PropOwner::EDGE,
+                                   folly::stringPrintf("col_%d", i*2)));
+        }
     }
     req.set_return_columns(std::move(tmpColumns));
 }
 
-void checkResponse(cpp2::QueryResponse& resp) {
+void checkResponse(cpp2::QueryResponse& resp, bool outBound = true) {
+    int32_t edgeFields = outBound ? 12 : 2;
+    int32_t dstIdFrom = outBound ? 10001 : 20001;
+    int32_t edgeNum = outBound ? 7 : 5;
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
-    EXPECT_EQ(12, resp.edge_schema.columns.size());
+    EXPECT_EQ(edgeFields, resp.edge_schema.columns.size());
     EXPECT_EQ(3, resp.vertex_schema.columns.size());
     auto provider = std::make_shared<ResultSchemaProvider>(resp.edge_schema);
     auto tagProvider = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
@@ -118,12 +137,12 @@ void checkResponse(cpp2::QueryResponse& resp) {
         auto it = rsReader.begin();
         int32_t rowNum = 0;
         while (static_cast<bool>(it)) {
-            EXPECT_EQ(12, it->numFields());
+            EXPECT_EQ(edgeFields, it->numFields());
             {
                 // _dst
                 int64_t v;
                 EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(0, v));
-                CHECK_EQ(10001 + rowNum, v);
+                CHECK_EQ(dstIdFrom + rowNum, v);
             }
             {
                 // _rank
@@ -131,23 +150,25 @@ void checkResponse(cpp2::QueryResponse& resp) {
                 EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(1, v));
                 CHECK_EQ(rowNum, v);
             }
-            // col_0, col_2 ... col_8
-            for (auto i = 2; i < 7; i++) {
-                int64_t v;
-                EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
-                CHECK_EQ((i - 2) * 2, v);
-            }
-            // col_10, col_12 ... col_18
-            for (auto i = 7; i < 12; i++) {
-                folly::StringPiece v;
-                EXPECT_EQ(ResultType::SUCCEEDED, it->getString(i, v));
-                CHECK_EQ(folly::stringPrintf("string_col_%d", (i - 7 + 5) * 2), v);
+            if (outBound) {
+                // col_0, col_2 ... col_8
+                for (auto i = 2; i < 7; i++) {
+                    int64_t v;
+                    EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
+                    CHECK_EQ((i - 2) * 2, v);
+                }
+                // col_10, col_12 ... col_18
+                for (auto i = 7; i < 12; i++) {
+                    folly::StringPiece v;
+                    EXPECT_EQ(ResultType::SUCCEEDED, it->getString(i, v));
+                    CHECK_EQ(folly::stringPrintf("string_col_%d_%d", (i - 7 + 5) * 2, 2), v);
+                }
             }
             ++it;
             rowNum++;
         }
         EXPECT_EQ(it, rsReader.end());
-        EXPECT_EQ(7, rowNum);
+        EXPECT_EQ(edgeNum, rowNum);
     }
 }
 
@@ -174,6 +195,31 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
 
     LOG(INFO) << "Check the results...";
     checkResponse(resp);
+}
+
+TEST(QueryBoundTest, inBoundSimpleTest) {
+    fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
+    LOG(INFO) << "Prepare meta...";
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    meta::AdHocSchemaManager::addEdgeSchema(
+        0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
+    for (auto tagId = 3001; tagId < 3010; tagId++) {
+        meta::AdHocSchemaManager::addTagSchema(
+            0 /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
+    }
+    mockData(kv.get());
+
+    cpp2::GetNeighborsRequest req;
+    buildRequest(req, false);
+
+    LOG(INFO) << "Test QueryInBoundRequest...";
+    auto* processor = QueryBoundProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    checkResponse(resp, false);
 }
 
 }  // namespace storage

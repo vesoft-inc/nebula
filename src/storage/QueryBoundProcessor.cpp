@@ -39,7 +39,6 @@ kvstore::ResultCode QueryBoundProcessor::collectVertexProps(
     return ret;
 }
 
-
 kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
                                                PartitionID partId,
                                                VertexID vId,
@@ -52,13 +51,24 @@ kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
     if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
         return ret;
     }
-    while (iter->valid()) {
+    EdgeRanking lastRank = -1;
+    for (; iter->valid(); iter->next()) {
+        auto key = iter->key();
+        auto val = iter->val();
+        auto rank = KeyUtils::getRank(key);
+        if (rank == lastRank) {
+            VLOG(3) << "Only get the latest version for each edge.";
+            continue;
+        }
+        lastRank = rank;
         RowWriter writer(rsWriter.schema());
         PropsCollector collector(&writer);
-        auto reader = RowReader::getEdgePropReader(iter->val(), spaceId_, edgeType);
-        this->collectProps(reader.get(), iter->key(), props, &collector);
+        std::unique_ptr<RowReader> reader;
+        if (edgeType > 0 && !val.empty()) {
+            reader = RowReader::getEdgePropReader(val, spaceId_, edgeType);
+        }
+        this->collectProps(reader.get(), key, props, &collector);
         rsWriter.addRow(writer);
-        iter->next();
     }
     return ret;
 }
