@@ -7,7 +7,7 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
-#include <climits>
+#include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/QueryBoundProcessor.h"
@@ -41,7 +41,8 @@ void mockData(kvstore::KVStore* kv) {
                 // Write multi versions,  we should get the latest version.
                 for (auto version = 0; version < 3; version++) {
                     auto key = KeyUtils::edgeKey(partId, vertexId, 101,
-                                                 dstId - 10001, dstId, LLONG_MAX - version);
+                                                 dstId - 10001, dstId,
+                                                 std::numeric_limits<int>::max() - version);
                     RowWriter writer(nullptr);
                     for (uint64_t numInt = 0; numInt < 10; numInt++) {
                         writer << numInt;
@@ -58,7 +59,8 @@ void mockData(kvstore::KVStore* kv) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
                 for (auto version = 0; version < 3; version++) {
                     auto key = KeyUtils::edgeKey(partId, vertexId, -101,
-                                                 srcId - 20001, srcId, LLONG_MAX - version);
+                                                 srcId - 20001, srcId,
+                                                 std::numeric_limits<int>::max() - version);
                     data.emplace_back(std::move(key), "");
                 }
             }
@@ -94,13 +96,11 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
                                                folly::stringPrintf("_dst")));
     tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
                                                folly::stringPrintf("_rank")));
-    if (outBound) {
-        // Return edge props col_0, col_2, col_4 ... col_18
-        for (int i = 0; i < 10; i++) {
-            tmpColumns.emplace_back(
-                TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                   folly::stringPrintf("col_%d", i*2)));
-        }
+    // Return edge props col_0, col_2, col_4 ... col_18
+    for (int i = 0; i < 10; i++) {
+        tmpColumns.emplace_back(
+            TestUtils::propDef(cpp2::PropOwner::EDGE,
+                               folly::stringPrintf("col_%d", i*2)));
     }
     req.set_return_columns(std::move(tmpColumns));
 }
@@ -213,7 +213,7 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
     buildRequest(req, false);
 
     LOG(INFO) << "Test QueryInBoundRequest...";
-    auto* processor = QueryBoundProcessor::instance(kv.get());
+    auto* processor = QueryBoundProcessor::instance(kv.get(), BoundType::IN_BOUND);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

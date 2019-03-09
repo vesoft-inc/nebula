@@ -17,14 +17,15 @@ namespace storage {
 class QueryBoundProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse> {
 public:
-    static QueryBoundProcessor* instance(kvstore::KVStore* kvstore) {
-        return new QueryBoundProcessor(kvstore);
+    static QueryBoundProcessor* instance(kvstore::KVStore* kvstore,
+                                         BoundType type = BoundType::OUT_BOUND) {
+        return new QueryBoundProcessor(kvstore, type);
     }
 
 protected:
-    explicit QueryBoundProcessor(kvstore::KVStore* kvstore)
+    explicit QueryBoundProcessor(kvstore::KVStore* kvstore, BoundType type)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryResponse>(kvstore) {}
+                             cpp2::QueryResponse>(kvstore, type) {}
 
     kvstore::ResultCode processVertex(PartitionID partID,
                                       VertexID vId,

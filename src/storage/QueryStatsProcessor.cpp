@@ -33,7 +33,6 @@ QueryStatsProcessor::collectVertexStats(PartitionID partId,
     return ret;
 }
 
-
 kvstore::ResultCode
 QueryStatsProcessor::collectEdgesStats(PartitionID partId,
                                        VertexID vId,
@@ -55,13 +54,14 @@ QueryStatsProcessor::collectEdgesStats(PartitionID partId,
             continue;
         }
         lastRank = rank;
-        CHECK_GT(edgeType, 0) << "Only outBound support stats on edge props.";
-        auto reader = RowReader::getEdgePropReader(val, spaceId_, edgeType);
+        std::unique_ptr<RowReader> reader;
+        if (type_ == BoundType::OUT_BOUND && !val.empty()) {
+            reader = RowReader::getEdgePropReader(val, spaceId_, edgeType);
+        }
         collectProps(reader.get(), key, props, &collector_);
     }
     return ret;
 }
-
 
 void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
     RowWriter writer;

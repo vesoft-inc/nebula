@@ -61,12 +61,12 @@ kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
             continue;
         }
         lastRank = rank;
-        RowWriter writer(rsWriter.schema());
-        PropsCollector collector(&writer);
         std::unique_ptr<RowReader> reader;
-        if (edgeType > 0 && !val.empty()) {
+        if (type_ == BoundType::OUT_BOUND && !val.empty()) {
             reader = RowReader::getEdgePropReader(val, spaceId_, edgeType);
         }
+        RowWriter writer(rsWriter.schema());
+        PropsCollector collector(&writer);
         this->collectProps(reader.get(), key, props, &collector);
         rsWriter.addRow(writer);
     }

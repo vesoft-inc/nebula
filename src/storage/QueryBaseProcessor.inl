@@ -152,7 +152,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 if (it != kPropsInKey_.end()) {
                     prop.pikType_ = it->second;
                     prop.type_.type = nebula::cpp2::SupportedType::INT;
-                } else if (edgeContext.edgeType_ > 0) {
+                } else if (type_ == BoundType::OUT_BOUND) {
                     // Only outBound have properties on edge.
                     auto schema = meta::SchemaManager::getEdgeSchema(spaceId_,
                                                                      edgeContext.edgeType_);

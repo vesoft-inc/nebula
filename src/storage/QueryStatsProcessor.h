@@ -16,14 +16,15 @@ namespace storage {
 class QueryStatsProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryStatsResponse> {
 public:
-    static QueryStatsProcessor* instance(kvstore::KVStore* kvstore) {
-        return new QueryStatsProcessor(kvstore);
+    static QueryStatsProcessor* instance(kvstore::KVStore* kvstore,
+                                         BoundType type = BoundType::OUT_BOUND) {
+        return new QueryStatsProcessor(kvstore, type);
     }
 
 private:
-    explicit QueryStatsProcessor(kvstore::KVStore* kvstore)
+    explicit QueryStatsProcessor(kvstore::KVStore* kvstore, BoundType type)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryStatsResponse>(kvstore) {}
+                             cpp2::QueryStatsResponse>(kvstore, type) {}
 
     kvstore::ResultCode processVertex(PartitionID partID,
                                       VertexID vId,
@@ -38,7 +39,6 @@ private:
                                            VertexID vId,
                                            TagID tagId,
                                            std::vector<PropContext>& props);
-
 
     kvstore::ResultCode collectEdgesStats(PartitionID partId,
                                           VertexID vId,
