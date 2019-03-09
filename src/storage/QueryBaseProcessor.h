@@ -27,6 +27,11 @@ enum class BoundType {
     OUT_BOUND,
 };
 
+using EdgeProcessor
+    = std::function<void(RowReader* reader,
+                         folly::StringPiece key,
+                         std::vector<PropContext>& props)>;
+
 template<typename REQ, typename RESP>
 class QueryBaseProcessor : public BaseProcessor<RESP> {
 public:
@@ -64,6 +69,20 @@ protected:
     virtual void onProcessed(std::vector<TagContext>& tagContexts,
                              EdgeContext& edgeContext,
                              int32_t retNum) = 0;
+
+    kvstore::ResultCode collectVertexProps(
+                            PartitionID partId,
+                            VertexID vId,
+                            TagID tagId,
+                            std::vector<PropContext>& props,
+                            Collector* collector);
+
+    kvstore::ResultCode collectEdgeProps(
+                               PartitionID partId,
+                               VertexID vId,
+                               EdgeType edgeType,
+                               std::vector<PropContext>& props,
+                               EdgeProcessor proc);
 
 protected:
     GraphSpaceID  spaceId_;

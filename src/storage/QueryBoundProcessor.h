@@ -36,18 +36,6 @@ protected:
                      EdgeContext& edgeContext,
                      int32_t retNum) override;
 
-    kvstore::ResultCode collectVertexProps(PartitionID partId,
-                                           VertexID vId,
-                                           TagID tagId,
-                                           std::vector<PropContext>& props,
-                                           RowWriter& writer);
-
-    kvstore::ResultCode collectEdgeProps(PartitionID partId,
-                                         VertexID vId,
-                                         EdgeType edgeType,
-                                         std::vector<PropContext>& props,
-                                         RowSetWriter& writer);
-
 private:
     std::vector<cpp2::VertexData> vertices_;
 };

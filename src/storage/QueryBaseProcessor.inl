@@ -179,6 +179,62 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
+template<typename REQ, typename RESP>
+kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
+                            PartitionID partId,
+                            VertexID vId,
+                            TagID tagId,
+                            std::vector<PropContext>& props,
+                            Collector* collector) {
+    auto prefix = KeyUtils::prefix(partId, vId, tagId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
+        return ret;
+    }
+    // Will decode the properties according to teh schema version
+    // stored along with the properties
+    if (iter && iter->valid()) {
+        auto reader = RowReader::getTagPropReader(iter->val(), spaceId_, tagId);
+        this->collectProps(reader.get(), iter->key(), props, collector);
+    } else {
+        VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
+    }
+    return ret;
+}
+
+template<typename REQ, typename RESP>
+kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
+                                               PartitionID partId,
+                                               VertexID vId,
+                                               EdgeType edgeType,
+                                               std::vector<PropContext>& props,
+                                               EdgeProcessor proc) {
+    auto prefix = KeyUtils::prefix(partId, vId, edgeType);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
+        return ret;
+    }
+    EdgeRanking lastRank = -1;
+    for (; iter->valid(); iter->next()) {
+        auto key = iter->key();
+        auto val = iter->val();
+        auto rank = KeyUtils::getRank(key);
+        if (rank == lastRank) {
+            VLOG(3) << "Only get the latest version for each edge.";
+            continue;
+        }
+        lastRank = rank;
+        std::unique_ptr<RowReader> reader;
+        if (type_ == BoundType::OUT_BOUND && !val.empty()) {
+            reader = RowReader::getEdgePropReader(val, spaceId_, edgeType);
+        }
+        proc(reader.get(), key, props);
+    }
+    return ret;
+}
 
 template<typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req) {

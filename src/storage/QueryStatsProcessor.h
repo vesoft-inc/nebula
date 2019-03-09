@@ -35,16 +35,6 @@ private:
                      EdgeContext& edgeContext,
                      int32_t retNum) override;
 
-    kvstore::ResultCode collectVertexStats(PartitionID partId,
-                                           VertexID vId,
-                                           TagID tagId,
-                                           std::vector<PropContext>& props);
-
-    kvstore::ResultCode collectEdgesStats(PartitionID partId,
-                                          VertexID vId,
-                                          EdgeType edgeType,
-                                          std::vector<PropContext>& props);
-
     void calcResult(std::vector<PropContext>&& props);
 
 private:
