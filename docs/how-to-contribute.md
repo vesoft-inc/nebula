@@ -53,7 +53,7 @@ This hook checks your commits for formatting, building, doc generation, etc.
 
 ```sh
 cd $working_dir/nebula/.git/hooks
-ln -s ../../cpplint/bin/pre-commit .
+ln -s ../../cpplint/bin/pre-commit.sh .
 ```
 Sometime, pre-commit hook can not be executable. In such case, you have to make it executable manually.
 
@@ -95,7 +95,7 @@ git push --force origin master
 
 #### Edit the code
 
-You can now edit the code on the `myfeature` branch. Please follow the coding style guidance [here](docs/cpp-coding-style.md)
+You can now edit the code on the `myfeature` branch. Please follow the coding style guidance [here](docs/cpp-coding-style.md).
 
 #### Run stand-alone mode
 
