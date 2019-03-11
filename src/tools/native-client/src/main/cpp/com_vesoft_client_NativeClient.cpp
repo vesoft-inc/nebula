@@ -15,13 +15,13 @@
 #include "dataman/NebulaCodecImpl.h"
 
 JNIEXPORT jstring JNICALL Java_com_vesoft_client_NativeClient_encode(JNIEnv *env,
-        jobject obj, jobjectArray values) {
+        jclass clazz, jobjectArray values) {
     std::vector<boost::any> v;
     jint len = env->GetArrayLength(values);
 
     for (int i = 0; i < len; i++) {
-        obj = env->GetObjectArrayElement(values, i);
-        jclass clazz = env->GetObjectClass(obj);
+        jobject obj = env->GetObjectArrayElement(values, i);
+        clazz = env->GetObjectClass(obj);
         jmethodID getClazz = env->GetMethodID(clazz, "getClass", "()Ljava/lang/Class;");
 
         jobject getClazzObj = env->CallObjectMethod(obj, getClazz);

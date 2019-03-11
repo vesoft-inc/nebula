@@ -25,7 +25,7 @@ public class NativeClient implements AutoCloseable {
 
     private SstFileWriter writer;
 
-    public NativeClient(String path) throws RocksDBException {
+    public NativeClient(String path) {
         EnvOptions env = new EnvOptions();
         Options options = new Options();
         options.setCreateIfMissing(true)
@@ -33,12 +33,16 @@ public class NativeClient implements AutoCloseable {
         new NativeClient(path, env, options);
     }
 
-    public NativeClient(String path, EnvOptions env, Options options) throws RocksDBException {
+    public NativeClient(String path, EnvOptions env, Options options) {
         if (path == null || path.trim().length() == 0) {
             throw new IllegalArgumentException("File Path should not be null and empty");
         }
         writer = new SstFileWriter(env, options);
-        writer.open(path);
+        try {
+            writer.open(path);
+        } catch (RocksDBException e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean addVertex(String key, Object[] values) {
@@ -110,7 +114,7 @@ public class NativeClient implements AutoCloseable {
         return buffer.array();
     }
 
-    private native String encode(Object[] values);
+    private static native String encode(Object[] values);
 
     private boolean checkKey(String key) {
         return Objects.isNull(key) || key.length() == 0;
@@ -128,9 +132,8 @@ public class NativeClient implements AutoCloseable {
     }
 
     public static void main(String[] args) throws RocksDBException {
-        NativeClient client = new NativeClient("/tmp/data.sst");
         Object[] values = {false, 7, 1024L, 3.14F, 0.618, "darion.yaphet"}; // boolean int long float double String
-        String result = client.encode(values);
+        String result = encode(values);
         System.out.println("values : "+result +"  "+result.length());
     }
 }
