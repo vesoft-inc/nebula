@@ -51,9 +51,7 @@ ResultCode RocksdbEngine::get(const std::string& key,
 ResultCode RocksdbEngine::put(std::string key,
                               std::string value) {
     rocksdb::WriteOptions options;
-    if (FLAGS_rocksdb_disable_wal) {
-        options.disableWAL = FLAGS_rocksdb_disable_wal;
-    }
+    options.disableWAL = FLAGS_rocksdb_disable_wal;
     rocksdb::Status status = db_->Put(options, rocksdb::Slice(key), rocksdb::Slice(value));
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
@@ -67,9 +65,7 @@ ResultCode RocksdbEngine::multiPut(std::vector<KV> keyValues) {
         updates.Put(rocksdb::Slice(keyValues[i].first), rocksdb::Slice(keyValues[i].second));
     }
     rocksdb::WriteOptions options;
-    if (FLAGS_rocksdb_disable_wal) {
-        options.disableWAL = FLAGS_rocksdb_disable_wal;
-    }
+    options.disableWAL = FLAGS_rocksdb_disable_wal;
     rocksdb::Status status = db_->Write(options, &updates);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
@@ -102,9 +98,7 @@ ResultCode RocksdbEngine::prefix(const std::string& prefix,
 
 ResultCode RocksdbEngine::remove(const std::string& key) {
     rocksdb::WriteOptions options;
-    if (FLAGS_rocksdb_disable_wal) {
-        options.disableWAL = FLAGS_rocksdb_disable_wal;
-    }
+    options.disableWAL = FLAGS_rocksdb_disable_wal;
     auto status = db_->Delete(options, key);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
@@ -115,9 +109,7 @@ ResultCode RocksdbEngine::remove(const std::string& key) {
 ResultCode RocksdbEngine::removeRange(const std::string& start,
                                       const std::string& end) {
     rocksdb::WriteOptions options;
-    if (FLAGS_rocksdb_disable_wal) {
-        options.disableWAL = FLAGS_rocksdb_disable_wal;
-    }
+    options.disableWAL = FLAGS_rocksdb_disable_wal;
     auto status = db_->DeleteRange(options, db_->DefaultColumnFamily(), start, end);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
@@ -144,9 +136,7 @@ void RocksdbEngine::addPart(PartitionID partId) {
 
 void RocksdbEngine::removePart(PartitionID partId) {
      rocksdb::WriteOptions options;
-    if (FLAGS_rocksdb_disable_wal) {
-        options.disableWAL = FLAGS_rocksdb_disable_wal;
-    }
+     options.disableWAL = FLAGS_rocksdb_disable_wal;
      auto status = db_->Delete(options, partKey(partId));
      if (status.ok()) {
          partsNum_--;
