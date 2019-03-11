@@ -35,7 +35,7 @@ namespace stats {
  *                           in the last ten minutes
  *   latency.p9999.60   -- The latency that slower than 99.99% of all queries
  *                           in the last one minute
- *   error.count.600    -- Total number of errors in the last tn minutes
+ *   error.count.600    -- Total number of errors in the last ten minutes
  */
 class StatsManager final {
     using VT = int64_t;
