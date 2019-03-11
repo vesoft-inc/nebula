@@ -66,14 +66,12 @@ KVStore* KVStore::instance(KVOptions options) {
 
 Engine NebulaStore::newEngine(GraphSpaceID spaceId, std::string rootPath) {
     if (FLAGS_engine_type == "rocksdb") {
-        auto dataPath = folly::stringPrintf("%s/nebula/%d/data", rootPath.c_str(), spaceId);
+        auto dataPath = KV_DATA_PATH_FORMAT(rootPath.c_str(), spaceId);
         auto engine = std::make_pair(
                                 std::unique_ptr<KVEngine>(
                                     new RocksdbEngine(
                                           spaceId,
-                                          std::move(dataPath),
-                                          options_.mergeOp_,
-                                          options_.cfFactory_)),
+                                          std::move(dataPath))),
                                 std::move(rootPath));
         return engine;
     } else {
@@ -88,8 +86,7 @@ std::unique_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
         return std::unique_ptr<Part>(new SimplePart(
                spaceId,
                partId,
-               folly::stringPrintf("%s/nebula/%d/wals/%d",
-                        engine.second.c_str(), spaceId, partId),
+               KV_WAL_PATH_FORMAT(engine.second.c_str(), spaceId, partId),
                engine.first.get()));
     } else {
         LOG(FATAL) << "Unknown Part type " << FLAGS_part_type;

@@ -8,6 +8,8 @@
 #define KVSTORE_KVSTORE_H_
 
 #include "base/Base.h"
+#include <rocksdb/merge_operator.h>
+#include <rocksdb/compaction_filter.h>
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
 
@@ -20,11 +22,11 @@ struct KVOptions {
      * */
     HostAddr local_;
     /**
-     *  rocksdb_paths_ for data and wal. It would be used by rocksdb engine.
+     *  Paths for data. It would be used by rocksdb engine.
      *  Be careful! We should ensure each "paths" has only one instance, otherwise
      *  it would mix up the data on disk.
      * */
-    KVPaths kvPaths;
+    std::vector<std::string> dataPaths_;
 };
 
 

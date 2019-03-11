@@ -10,17 +10,13 @@
 #include <folly/lang/Bits.h>
 #include "fs/TempDir.h"
 #include "kvstore/RocksdbEngine.h"
-#include "kvstore/NebulaStore.h"
 
 namespace nebula {
 namespace kvstore {
 
 TEST(RocksdbEngineTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine =
-            std::make_unique<RocksdbEngine>(0,
-                    KV_DATA_PATH_FORMAT(rootPath.path(), 0),
-                    KV_WAL_PATH_FORMAT(rootPath.path(), 0));
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
@@ -29,10 +25,7 @@ TEST(RocksdbEngineTest, SimpleTest) {
 
 TEST(RocksdbEngineTest, RangeTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine =
-            std::make_unique<RocksdbEngine>(0,
-                    KV_DATA_PATH_FORMAT(rootPath.path(), 0),
-                    KV_WAL_PATH_FORMAT(rootPath.path(), 0));
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
     std::vector<KV> data;
     for (int32_t i = 10; i < 20;  i++) {
         data.emplace_back(std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
@@ -69,10 +62,7 @@ TEST(RocksdbEngineTest, RangeTest) {
 
 TEST(RocksdbEngineTest, PrefixTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine =
-            std::make_unique<RocksdbEngine>(0,
-                    KV_DATA_PATH_FORMAT(rootPath.path(), 0),
-                    KV_WAL_PATH_FORMAT(rootPath.path(), 0));
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
     LOG(INFO) << "Write data in batch and scan them...";
     std::vector<KV> data;
     for (int32_t i = 0; i < 10;  i++) {
@@ -113,10 +103,7 @@ TEST(RocksdbEngineTest, PrefixTest) {
 
 TEST(RocksdbEngineTest, RemoveTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine =
-            std::make_unique<RocksdbEngine>(0,
-                    KV_DATA_PATH_FORMAT(rootPath.path(), 0),
-                    KV_WAL_PATH_FORMAT(rootPath.path(), 0));
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
     std::string val;
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
@@ -127,10 +114,7 @@ TEST(RocksdbEngineTest, RemoveTest) {
 
 TEST(RocksdbEngineTest, RemoveRangeTest) {
     fs::TempDir rootPath("/tmp/rocksdb_remove_range_test.XXXXXX");
-    std::unique_ptr<RocksdbEngine> engine =
-            std::make_unique<RocksdbEngine>(0,
-                    KV_DATA_PATH_FORMAT(rootPath.path(), 0),
-                    KV_WAL_PATH_FORMAT(rootPath.path(), 0));
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
     for (int32_t i = 0; i < 100; i++) {
         EXPECT_EQ(ResultCode::SUCCEEDED, engine->put(
                     std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),

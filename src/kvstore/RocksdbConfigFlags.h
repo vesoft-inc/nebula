@@ -13,6 +13,8 @@
 
 DECLARE_string(rocksdb_options_version);
 
+DECLARE_bool(rocksdb_disable_wal);
+
 // [DBOptions]
 /*
  * Rocksdb

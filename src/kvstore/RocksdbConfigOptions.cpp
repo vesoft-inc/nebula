@@ -15,6 +15,12 @@
 DEFINE_string(rocksdb_options_version,
               "5.15.10",
               "rocksdb options version.");
+
+// [WAL]
+DEFINE_bool(rocksdb_disable_wal,
+             true,
+             "rocksdb wal is close by default");
+
 // [DBOptions]
 /*
  * Rocksdb
@@ -94,10 +100,6 @@ DEFINE_string(bytes_per_sync,
 
 DEFINE_string(writable_file_max_buffer_size,
               "1048576",
-              ROCKSDB_OPTIONS_TYPE_DB);
-
-DEFINE_string(wal_dir,
-              "",
               ROCKSDB_OPTIONS_TYPE_DB);
 
 DEFINE_string(log_file_time_to_roll,
@@ -610,7 +612,6 @@ void RocksdbConfigOptions::load_option_maps() {
             KVSTORE_CONFIG_FLAG(two_write_queues),
             KVSTORE_CONFIG_FLAG(bytes_per_sync),
             KVSTORE_CONFIG_FLAG(writable_file_max_buffer_size),
-            KVSTORE_CONFIG_FLAG(wal_dir),
             KVSTORE_CONFIG_FLAG(log_file_time_to_roll),
             KVSTORE_CONFIG_FLAG(keep_log_file_num),
             KVSTORE_CONFIG_FLAG(WAL_ttl_seconds),
@@ -739,7 +740,6 @@ RocksdbConfigOptions::~RocksdbConfigOptions() {
 
 rocksdb::Options RocksdbConfigOptions::getRocksdbOptions(
         const std::string &dataPath,
-        const std::string &walPath,
         bool ignoreUnknownOptions,
         bool inputStringsEscaped) {
     rocksdb::Status status;
@@ -748,7 +748,6 @@ rocksdb::Options RocksdbConfigOptions::getRocksdbOptions(
         status = rco->createRocksdbEngineOptions(ignoreUnknownOptions, inputStringsEscaped);
         if (!status.ok()) {
             LOG(FATAL) << "Create rocksdb options error : " << status.ToString();
-            ::exit(1);
         }
     });
 
@@ -756,10 +755,7 @@ rocksdb::Options RocksdbConfigOptions::getRocksdbOptions(
     status = rco->checkOptionsCompatibility(dataPath);
     if (!status.ok()) {
         LOG(FATAL) << "Check options compatibility error : " << status.ToString();
-        ::exit(1);
     }
-
-    baseOpts.wal_dir = walPath;
     return baseOpts;
 }
 
@@ -889,19 +885,19 @@ bool RocksdbConfigOptions::getRocksdbEngineOptionValue(
         const char *opt_name,
         std::string &optValue) {
     switch (optType) {
-        case (ROCKSDB_OPTION_TYPE::DBOPT):
+        case ROCKSDB_OPTION_TYPE::DBOPT :
             if (dbMap.find(opt_name) != dbMap.end()) {
                 optValue = dbMap[opt_name].c_str();
                 return true;
             }
             break;
-        case (ROCKSDB_OPTION_TYPE::CFOPT):
+        case ROCKSDB_OPTION_TYPE::CFOPT :
             if (dbMap.find(opt_name) != dbMap.end()) {
                 optValue = dbMap[opt_name].c_str();
                 return true;
             }
             break;
-        case (ROCKSDB_OPTION_TYPE::TABLEOPT):
+        case ROCKSDB_OPTION_TYPE::TABLEOPT :
             if (bbtMap.find(opt_name) != bbtMap.end()) {
                 optValue = bbtMap[opt_name].c_str();
                 return true;
@@ -924,7 +920,6 @@ typedef enum { ERRORT,
                CUCKOO } MemToken;
 
 MemToken memFactoryLexer(const char *s) {
-    // TODO: consider hash table here
     static struct entry_s {
         const char *key;
         MemToken token;
@@ -1007,33 +1002,6 @@ bool RocksdbConfigOptions::setupCompactionFilter() {
 
 bool RocksdbConfigOptions::setupBlockCache() {
     bbtOpts.block_cache = rocksdb::NewLRUCache(FLAGS_block_cache * 1024 * 1024);
-    return true;
-}
-
-bool RocksdbConfigOptions::getKVPaths(std::string dataPaths,
-        std::string walPaths, KVPaths &kvPaths) {
-    std::vector<std::string> data_paths, wal_paths;
-    folly::split(",", dataPaths, data_paths, true);
-    std::transform(data_paths.begin(), data_paths.end(), data_paths.begin(), [](auto& p) {
-        return folly::trimWhitespace(p).str();
-    });
-    folly::split(",", walPaths, wal_paths, true);
-    std::transform(wal_paths.begin(), wal_paths.end(), wal_paths.begin(), [](auto& p) {
-        return folly::trimWhitespace(p).str();
-    });
-
-    if (data_paths.size() == 0 || data_paths.size() != wal_paths.size()) {
-        LOG(ERROR) << "If wal_path is not null , "
-                      "the number of data_path and wal_path must be equal.";
-        return false;
-    }
-
-    // Because the number of data_paths is equal to the number of wal_paths,
-    // So can assign values directly according to the i.
-    for (uint32_t i = 0 ; i < data_paths.size(); i++) {
-        kvPaths.emplace_back(
-                KVPath(data_paths.at(i), wal_paths.at(i)));
-    }
     return true;
 }
 

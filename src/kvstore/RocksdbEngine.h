@@ -90,9 +90,7 @@ class RocksdbEngine : public KVEngine {
     FRIEND_TEST(RocksdbEngineTest, SimpleTest);
 
 public:
-    RocksdbEngine(GraphSpaceID spaceId,
-            const std::string& dataPath,
-            const std::string& walPath);
+    RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath);
 
     ~RocksdbEngine();
 

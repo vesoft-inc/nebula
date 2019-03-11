@@ -47,10 +47,7 @@ public:
 
     static bool getRocksdbEngineOptionValue(ROCKSDB_OPTION_TYPE optType,
             const char *opt_name, std::string &optValue);
-    static bool getKVPaths(std::string dataPaths,
-            std::string walPaths, KVPaths &kvPaths);
     static rocksdb::Options getRocksdbOptions(const std::string &dataPath,
-                                              const std::string &walPath,
                                               bool ignoreUnknownOptions,
                                               bool inputStringsEscaped);
 
