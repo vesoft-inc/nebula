@@ -9,6 +9,7 @@ import scala.language.implicitConversions
   * column mapping
   *
   * @param columnName column
+  * @param propertyName
   * @param `type`     map to graph's data type
   */
 case class Column(columnName: String, propertyName: String, `type`: String = "string")
@@ -44,14 +45,26 @@ object Column {
 }
 
 /**
+  * a trait that both Tag and Edge should be
+  */
+trait WithColumnMapping {
+
+  def tableName: String
+
+  def name: String
+
+  def columnMappings: Option[Seq[Column]]
+}
+
+/**
   * tag section of configuration file
   *
   * @param tableName      hive table name
-  * @param tagName        tag name
+  * @param name           tag name
   * @param primaryKey     which column is PK
   * @param columnMappings map of hive table column to properties
   */
-case class Tag(tableName: String, tagName: String, primaryKey: String, columnMappings: Option[Seq[Column]] = None) {
+case class Tag(override val tableName: String, override val name: String, primaryKey: String, override val columnMappings: Option[Seq[Column]] = None) extends WithColumnMapping {
   def allColumnNames(): Option[Seq[String]] = columnMappings.map(_.map(_.columnName))
 
   def getColumn(name: String): Option[Column] = {
@@ -69,12 +82,12 @@ object Tag {
     override def writes(tag: Tag): JsValue = {
       tag.columnMappings.fold(
         Json.obj("table_name" -> JsString(tag.tableName),
-          "tag_name" -> JsString(tag.tagName),
+          "tag_name" -> JsString(tag.name),
           "primary_key" -> JsString(tag.primaryKey)
         )) {
         cols =>
           Json.obj("table_name" -> JsString(tag.tableName),
-            "tag_name" -> JsString(tag.tagName),
+            "tag_name" -> JsString(tag.name),
             "primary_key" -> JsString(tag.primaryKey),
             "mappings" -> Json.toJson(cols))
       }
@@ -97,13 +110,17 @@ object Tag {
 /**
   * edge section of configuration file
   *
-  * @param tableName      hive table name
-  * @param edgeName       edge type name
-  * @param fromColumn     which column represent FROM Vertex
-  * @param toColumn       which column represent END Vertex
-  * @param columnMappings map of hive table column to properties
+  * @param tableName            hive table name
+  * @param name                 edge type name
+  * @param fromForeignKeyColumn which column is srcID
+  * @param fromReferenceTable   which table does srcID column reference
+  * @param fromReferenceColumn  which column of fromReferenceTable is referenced by srcID
+  * @param toForeignKeyColumn   which column is dstID
+  * @param toReferenceTable     which table does dstID column reference
+  * @param toReferenceColumn    which column of { @line com.vesoft.tools.Edge#toReferenceTable} is referenced by srcID
+  * @param columnMappings       map of hive table column to properties
   */
-case class Edge(tableName: String, edgeName: String, fromColumn: String, toColumn: String, columnMappings: Option[Seq[Column]] = None) {
+case class Edge(override val tableName: String, override val name: String, fromForeignKeyColumn: String, fromReferenceTable: String, fromReferenceColumn: String, toForeignKeyColumn: String, toReferenceTable: String, toReferenceColumn: String, override val columnMappings: Option[Seq[Column]] = None) extends WithColumnMapping {
   def allColumnNames(): Option[Seq[String]] = columnMappings.map(columns => columns.map(_.columnName))
 }
 
@@ -116,16 +133,25 @@ object Edge {
     override def writes(edge: Edge): JsValue = {
       edge.columnMappings.fold(
         Json.obj("table_name" -> JsString(edge.tableName),
-          "edge_name" -> JsString(edge.edgeName),
-          "from_column" -> JsString(edge.fromColumn),
-          "to_column" -> JsString(edge.toColumn)
+          "edge_name" -> JsString(edge.name),
+          "from_foreign_key_column" -> JsString(edge.fromForeignKeyColumn),
+          "from_reference_table" -> JsString(edge.fromReferenceTable),
+          "from_reference_column" -> JsString(edge.fromReferenceColumn),
+          "to_foreign_key_column" -> JsString(edge.toForeignKeyColumn),
+          "to_reference_table" -> JsString(edge.toReferenceTable),
+          "to_reference_column" -> JsString(edge.toReferenceColumn)
         )) {
         cols =>
           Json.obj("table_name" -> JsString(edge.tableName),
-            "edge_name" -> JsString(edge.edgeName),
-            "from_column" -> JsString(edge.fromColumn),
-            "to_column" -> JsString(edge.toColumn),
-            "mappings" -> Json.toJson(cols))
+            "edge_name" -> JsString(edge.name),
+            "from_foreign_key_column" -> JsString(edge.fromForeignKeyColumn),
+            "from_reference_table" -> JsString(edge.fromReferenceTable),
+            "from_reference_column" -> JsString(edge.fromReferenceColumn),
+            "to_foreign_key_column" -> JsString(edge.toForeignKeyColumn),
+            "to_reference_table" -> JsString(edge.toReferenceTable),
+            "to_reference_column" -> JsString(edge.toReferenceColumn),
+            "mappings" -> Json.toJson(cols)
+          )
       }
     }
   }
@@ -135,11 +161,16 @@ object Edge {
 
       val tableName = (json \ "table_name").as[String]
       val edgeName = (json \ "edge_name").as[String]
-      val fromColumn = (json \ "from_column").as[String]
-      val toColumn = (json \ "to_column").as[String]
+      val fromForeignKeyColumn = (json \ "from_foreign_key_column").as[String]
+      val fromReferenceTable = (json \ "from_reference_table").as[String]
+      val fromReferenceColumn = (json \ "from_reference_column").as[String]
+      val toForeignKeyColumn = (json \ "to_foreign_key_column").as[String]
+      val toReferenceTable = (json \ "to_reference_table").as[String]
+      val toReferenceColumn = (json \ "to_reference_column").as[String]
+
       val columnMappings = (json \ "mappings").asOpt[Seq[Column]]
 
-      JsSuccess(Edge(tableName, edgeName, fromColumn, toColumn, columnMappings))
+      JsSuccess(Edge(tableName, edgeName, fromForeignKeyColumn, fromReferenceTable, fromReferenceColumn, toForeignKeyColumn, toReferenceTable, toReferenceColumn, columnMappings))
     }
   }
 }

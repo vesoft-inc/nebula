@@ -31,7 +31,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % "2.7.1",
   "joda-time" % "joda-time" % "2.10.1",
 
-//need nebula native client for encoding, need to run mvn install to deploy to local repo before used
+  //need nebula native client for encoding, need to run mvn install to deploy to local repo before used
   "org.rocksdb" % "rocksdbjni" % "5.17.2",
   "com.vesoft" % "native-client" % "1.0-SNAPSHOT"
 )
@@ -52,20 +52,11 @@ assemblyShadeRules in assembly := Seq(
   ShadeRule.rename("org.apache.commons.cli.**" -> "shadecli.org.apache.commons.cli.@1").inAll
 )
 
-assemblyJarName in assembly := s"${name}.jar"
+assemblyJarName in assembly := "nebula-spark-sstfile-generator.jar"
 
 test in assembly := {}
 // should not include scala runtime when submitting spark job
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
-
-// TODO: for local deployment to artifactory, should be removed in PR
-publishTo in ThisBuild := Some("Artifactory Realm" at "http://localhost:8081/artifactory/sbt-dev")
-val artifactoryCredentials = Credentials("Artifactory Realm", "localhost", "admin", "admin123")
-credentials += artifactoryCredentials
-
-publishTo in ThisBuild := Some("Artifactory Realm" at "http://localhost:8081/artifactory/sbt-dev;build.timestamp=" + new java.util.Date().getTime)
-credentials += artifactoryCredentials
-
 
 
 

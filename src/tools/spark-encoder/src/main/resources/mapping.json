@@ -46,8 +46,12 @@
       {
         "table_name": "table3",
         "edge_name": "edge1",
-        "from_column": "column1",
-        "to_column": "column2",
+        "from_foreign_key_column": "column1",
+        "from_reference_table": "table1",
+        "from_reference_column": "reference_column1",
+        "to_foreign_key_column": "column2",
+        "to_reference_table": "table2",
+        "to_reference_column": "reference_column2",
         "mappings": [
           {
             "column3": {
