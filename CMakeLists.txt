@@ -21,6 +21,7 @@
 #
 #   SKIP_JAVA_CLIENT        -- Skip building the java client
 #   ENABLE_JEMALLOC         -- Link jemalloc into all executables
+#   ENABLE_NATIVE           -- Build native client
 #
 cmake_minimum_required(VERSION 3.0.0)
 
@@ -32,6 +33,12 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
 option(SKIP_JAVA_CLIENT "Whether to skip building the java client" OFF)
 option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
+option(ENABLE_NATIVE "Whether to build native client" OFF)
+
+if (ENABLE_NATIVE)
+    message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
+    add_compile_options(-fPIC)
+endif()
 
 enable_testing()
 
@@ -134,7 +141,7 @@ find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
 find_package(NCURSES REQUIRED)
-if(NOT asan)
+if(NOT asan AND NOT ENABLE_NATIVE)
     find_package(PCHSupport)
     add_compile_options(-Winvalid-pch)
 endif()
