@@ -5,7 +5,6 @@ import org.rocksdb.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 public class NativeClient implements AutoCloseable {
@@ -50,9 +49,9 @@ public class NativeClient implements AutoCloseable {
             throw new IllegalArgumentException("Add Vertex key and value should not null");
         }
 
-        String value = encode(values);
+        byte[] value = encode(values);
         try {
-            writer.put(key.getBytes(), value.getBytes());
+            writer.put(key.getBytes(), value);
             return true;
         } catch (RocksDBException e) {
             return false;
@@ -64,9 +63,9 @@ public class NativeClient implements AutoCloseable {
             throw new IllegalArgumentException("Add Vertex key and value should not null");
         }
 
-        String value = encode(values);
+        byte[] value = encode(values);
         try {
-            writer.put(key.getBytes(), value.getBytes());
+            writer.put(key.getBytes(), value);
             return true;
         } catch (RocksDBException e) {
             return false;
@@ -114,7 +113,7 @@ public class NativeClient implements AutoCloseable {
         return buffer.array();
     }
 
-    private static native String encode(Object[] values);
+    private static native byte[] encode(Object[] values);
 
     private boolean checkKey(String key) {
         return Objects.isNull(key) || key.length() == 0;
@@ -132,8 +131,15 @@ public class NativeClient implements AutoCloseable {
     }
 
     public static void main(String[] args) throws RocksDBException {
-        Object[] values = {false, 7, 1024L, 3.14F, 0.618, "darion.yaphet"}; // boolean int long float double String
-        String result = encode(values);
-        System.out.println("values : "+result +"  "+result.length());
+        Object[] values = {
+                false,
+                7,
+                1024L,
+                3.14F,
+                0.618,
+                "Hello World!".getBytes()
+        };
+        byte[] result = encode(values);
+        System.out.println("values : " + new String(result) + " Size " + result.length);
     }
 }

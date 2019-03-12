@@ -14,7 +14,7 @@
 #include "dataman/include/NebulaCodec.h"
 #include "dataman/NebulaCodecImpl.h"
 
-JNIEXPORT jstring JNICALL Java_com_vesoft_client_NativeClient_encode(JNIEnv *env,
+JNIEXPORT jbyteArray JNICALL Java_com_vesoft_client_NativeClient_encode(JNIEnv *env,
         jclass clazz, jobjectArray values) {
     std::vector<boost::any> v;
     jint len = env->GetArrayLength(values);
@@ -50,17 +50,22 @@ JNIEXPORT jstring JNICALL Java_com_vesoft_client_NativeClient_encode(JNIEnv *env
             jmethodID m = env->GetMethodID(clazz, "doubleValue", "()D");
             auto value = env->CallDoubleMethod(obj, m);
             v.push_back(value);
-        } else if (name.compare("java.lang.String") == 0) {
-            jmethodID m = env->GetMethodID(clazz, "toString", "()Ljava/lang/String;");
-            jstring j_value = static_cast<jstring>(env->CallObjectMethod(obj, m));
-            auto value = std::string(env->GetStringUTFChars(j_value, NULL));
+        } else if (name.compare("[B") == 0) {
+            char* bytes = reinterpret_cast<char*>(obj);
+            auto value = std::string(bytes);
             v.emplace_back(std::move(value));
         } else {
             // Type Error
+            std::cout << "Type Error : " << name << std::endl;
         }
     }
 
     nebula::dataman::NebulaCodecImpl codec;
     auto result = codec.encode(v);
-    return env->NewString((const jchar *)result.c_str(), result.size());
+    auto *result_array = reinterpret_cast<const signed char *>(result.data());
+    auto result_size = result.size();
+
+    jbyteArray arrays = env->NewByteArray(result_size);
+    env->SetByteArrayRegion(arrays, 0, result_size, result_array);
+    return arrays;
 }
