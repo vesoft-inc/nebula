@@ -16,7 +16,6 @@ using proxygen::HTTPMessage;
 using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
-using nebula::network::NetworkUtils;
 
 void GraphHttpHandler::onRequest(std::unique_ptr<HTTPMessage>) noexcept {
 }

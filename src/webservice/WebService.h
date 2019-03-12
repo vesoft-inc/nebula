@@ -32,6 +32,13 @@ public:
     static void registerHandler(const std::string& path,
                                 std::function<proxygen::RequestHandler*()>&& gen);
 
+public:
+    enum class HttpCode {
+        SUCCEEDED = 0,
+        E_UNSUPPORTED_METHOD = -1,
+        E_UNPROCESSABLE = -2,
+    };
+
 private:
     WebService() = delete;
 

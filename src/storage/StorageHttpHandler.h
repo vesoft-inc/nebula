@@ -8,13 +8,11 @@
 #define STORAGE_STORAGEHTTPHANDLER_H_
 
 #include "base/Base.h"
-#include "network/NetworkUtils.h"
+#include "webservice/WebService.h"
 #include "proxygen/httpserver/RequestHandler.h"
 
 namespace nebula {
 namespace storage {
-
-using nebula::network::NetworkUtils;
 
 class StorageHttpHandler : public proxygen::RequestHandler {
 public:
@@ -33,7 +31,7 @@ public:
     void onError(proxygen::ProxygenError error) noexcept override;
 
 private:
-    NetworkUtils::Code code{NetworkUtils::Code::SUCCEEDED};
+    nebula::WebService::HttpCode code{nebula::WebService::HttpCode::SUCCEEDED};
     std::string name;
     std::string value;
 };

@@ -8,13 +8,11 @@
 #define META_METAHTTPHANDLER_H_
 
 #include "base/Base.h"
-#include "network/NetworkUtils.h"
+#include "webservice/WebService.h"
 #include "proxygen/httpserver/RequestHandler.h"
 
 namespace nebula {
 namespace meta {
-
-using nebula::network::NetworkUtils;
 
 class MetaHttpHandler : public proxygen::RequestHandler {
 public:
@@ -33,7 +31,7 @@ public:
     void onError(proxygen::ProxygenError error) noexcept override;
 
 private:
-    NetworkUtils::Code err_{NetworkUtils::Code::SUCCEEDED};
+    nebula::WebService::HttpCode err_{nebula::WebService::HttpCode::SUCCEEDED};
     std::string name;
     std::string value;
 };

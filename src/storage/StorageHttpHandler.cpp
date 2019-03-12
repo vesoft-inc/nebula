@@ -16,7 +16,6 @@ using proxygen::HTTPMessage;
 using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
-using nebula::network::NetworkUtils;
 
 void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->hasQueryParam("key") && headers->hasQueryParam("value")) {
