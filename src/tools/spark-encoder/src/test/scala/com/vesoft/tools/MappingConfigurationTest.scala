@@ -9,18 +9,20 @@ import scala.language.implicitConversions
 class MappingConfigurationTest extends FlatSpec with BeforeAndAfter {
   "an Edge" should "be serializable to and deserializable from json" in {
     // edge w/o properties
-    val emptyPropertyEdge = Edge("table1", "edge1", "from_column1", "to_column1")
+    val emptyPropertyEdge = Edge("table1", "edge1", "from_column1", "table1", "reference_column1", "to_column1", "table2", "reference_column2")
     val jsonString = Json.toJson(emptyPropertyEdge).toString()
-    val expectedResult ="""{"table_name":"table1","edge_name":"edge1","from_column":"from_column1","to_column":"to_column1"}"""
+    val expectedResult =
+      """{"table_name":"table1","edge_name":"edge1","from_foreign_key_column":"from_column1","from_reference_table":"table1","from_reference_column":"reference_column1","to_foreign_key_column":"to_column1","to_reference_table":"table2","to_reference_column":"reference_column2"}"""
     assert(expectedResult == jsonString)
 
     val deserializedEdge = Json.parse(expectedResult).as[Edge]
     assert(deserializedEdge == emptyPropertyEdge)
 
     // edge w/ properties
-    val withPropertiesEdge = Edge("table1", "edge1", "from_column1", "to_column1", Some(Seq(Column("col1", "prop1"), Column("col2", "prop2"))))
+    val withPropertiesEdge = Edge("table1", "edge1", "from_column1", "table1", "reference_column1", "to_column1", "table2", "reference_column2", Some(Seq(Column("col1", "prop1"), Column("col2", "prop2"))))
     val withPropertiesEdgeJsonString = Json.toJson(withPropertiesEdge).toString()
-    val expectedResultWithPropertiesEdge ="""{"table_name":"table1","edge_name":"edge1","from_column":"from_column1","to_column":"to_column1","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}"""
+    val expectedResultWithPropertiesEdge =
+      """{"table_name":"table1","edge_name":"edge1","from_foreign_key_column":"from_column1","from_reference_table":"table1","from_reference_column":"reference_column1","to_foreign_key_column":"to_column1","to_reference_table":"table2","to_reference_column":"reference_column2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}"""
     assert(expectedResultWithPropertiesEdge == withPropertiesEdgeJsonString)
   }
 
@@ -49,13 +51,13 @@ class MappingConfigurationTest extends FlatSpec with BeforeAndAfter {
     val tag3 = Tag("table3", "tag3", "column3", Some(Seq(Column("col1", "prop1"), Column("col2", "prop2"))))
 
     // edge w/ properties
-    val edge1 = Edge("table4", "edge1", "from_column1", "to_column1", Some(Seq(Column("col1", "prop1"), Column("col2", "prop2"))))
-    val edge2 = Edge("table5", "edge2", "from_column1", "to_column1", Some(Seq(Column("col1", "prop1"), Column("col2", "prop2"))))
+    val edge1 = Edge("table4", "edge1", "from_column1", "table1", "reference_column1", "to_column1", "table2", "reference_column2", Some(Seq(Column("col1", "prop1"), Column("col2", "prop2"))))
+    val edge2 = Edge("table5", "edge2", "from_column1", "table1", "reference_column1", "to_column1", "table2", "reference_column2", Some(Seq(Column("col1", "prop1"), Column("col2", "prop2"))))
 
     val mappingConfig = MappingConfiguration("graph_space1", 3, Seq(tag1, tag2, tag3), Seq(edge1, edge2))
     val jsonString = Json.toJson(mappingConfig).toString()
     val expectedResult =
-      """{"graph_space1":{"key_policy":"hash_primary_key","partitions":3,"tags":[{"table_name":"table1","tag_name":"tag1","primary_key":"column1","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table2","tag_name":"tag2","primary_key":"column2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table3","tag_name":"tag3","primary_key":"column3","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}],"edges":[{"table_name":"table4","edge_name":"edge1","from_column":"from_column1","to_column":"to_column1","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table5","edge_name":"edge2","from_column":"from_column1","to_column":"to_column1","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}]}}"""
+      """{"graph_space1":{"key_policy":"hash_primary_key","partitions":3,"tags":[{"table_name":"table1","tag_name":"tag1","primary_key":"column1","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table2","tag_name":"tag2","primary_key":"column2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table3","tag_name":"tag3","primary_key":"column3","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}],"edges":[{"table_name":"table4","edge_name":"edge1","from_foreign_key_column":"from_column1","from_reference_table":"table1","from_reference_column":"reference_column1","to_foreign_key_column":"to_column1","to_reference_table":"table2","to_reference_column":"reference_column2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table5","edge_name":"edge2","from_foreign_key_column":"from_column1","from_reference_table":"table1","from_reference_column":"reference_column1","to_foreign_key_column":"to_column1","to_reference_table":"table2","to_reference_column":"reference_column2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}]}}"""
     assert(expectedResult == jsonString)
 
     val deserializedMappingConfig = Json.parse(expectedResult).as[MappingConfiguration]
@@ -65,7 +67,7 @@ class MappingConfigurationTest extends FlatSpec with BeforeAndAfter {
     val mappingConfigWithCustomPolicy = MappingConfiguration("graph_space1", 3, Seq(tag1, tag2, tag3), Seq(edge1, edge2), Some("some_other_policy"))
     val mappingConfigWithCustomPolicyJson = Json.toJson(mappingConfigWithCustomPolicy).toString()
     val mappingConfigWithCustomPolicyExpected =
-      """{"graph_space1":{"key_policy":"some_other_policy","partitions":3,"tags":[{"table_name":"table1","tag_name":"tag1","primary_key":"column1","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table2","tag_name":"tag2","primary_key":"column2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table3","tag_name":"tag3","primary_key":"column3","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}],"edges":[{"table_name":"table4","edge_name":"edge1","from_column":"from_column1","to_column":"to_column1","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table5","edge_name":"edge2","from_column":"from_column1","to_column":"to_column1","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}]}}"""
+      """{"graph_space1":{"key_policy":"some_other_policy","partitions":3,"tags":[{"table_name":"table1","tag_name":"tag1","primary_key":"column1","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table2","tag_name":"tag2","primary_key":"column2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table3","tag_name":"tag3","primary_key":"column3","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}],"edges":[{"table_name":"table4","edge_name":"edge1","from_foreign_key_column":"from_column1","from_reference_table":"table1","from_reference_column":"reference_column1","to_foreign_key_column":"to_column1","to_reference_table":"table2","to_reference_column":"reference_column2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table5","edge_name":"edge2","from_foreign_key_column":"from_column1","from_reference_table":"table1","from_reference_column":"reference_column1","to_foreign_key_column":"to_column1","to_reference_table":"table2","to_reference_column":"reference_column2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}]}}"""
     assert(mappingConfigWithCustomPolicyExpected == mappingConfigWithCustomPolicyJson)
 
     val deserializedMappingConfigWithCustomPolicy = Json.parse(mappingConfigWithCustomPolicyExpected).as[MappingConfiguration]
@@ -82,7 +84,7 @@ class MappingConfigurationTest extends FlatSpec with BeforeAndAfter {
     val tag2 = Tag("table2", "vertex2", "column1", Some(Seq(Column("column1", "prop3", "float"), Column("column2", "prop4", "date"))))
 
     // edge w/ properties
-    val edge1 = Edge("table3", "edge1", "column1", "column2", Some(Seq(Column("column3", "prop1", "string"), Column("column4", "prop2", "date"))))
+    val edge1 = Edge("table3", "edge1", "column1", "table1", "reference_column1", "column2", "table2", "reference_column2", Some(Seq(Column("column3", "prop1", "string"), Column("column4", "prop2", "date"))))
 
     Seq(tag1, tag2) should contain theSameElementsInOrderAs config.tags
     List(edge1) should contain theSameElementsInOrderAs config.edges
