@@ -81,16 +81,6 @@ TEST(RocksdbEngineOptionsTest, getOptionValueTest) {
     FLAGS_stats_dump_period_sec = "600";
 }
 
-TEST(RocksdbEngineOptionsTest, pathsTest) {
-    fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
-//    KVPaths kv_paths;
-//    ASSERT_FALSE(RocksdbConfigOptions::getKVPaths(
-//            folly::stringPrintf("%s/disk1", rootPath.path()), "", kv_paths));
-//    ASSERT_FALSE(RocksdbConfigOptions::getKVPaths("", "", kv_paths));
-//    ASSERT_TRUE(RocksdbConfigOptions::getKVPaths("aaa", "aaa", kv_paths));
-//    ASSERT_EQ(kv_paths.size(), 1);
-}
-
 TEST(RocksdbEngineOptionsTest, memtableTest) {
     std::vector<std::pair<std::string, std::string>> mem_facs = {
             {"nullptr", "SkipListFactory"},  // nullptr is a default factory.
