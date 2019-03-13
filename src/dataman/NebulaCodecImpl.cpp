@@ -44,7 +44,6 @@ NebulaCodecImpl::decode(std::string encoded,
     }
 
     auto schema = std::make_shared<SchemaWriter>();
-    // auto iter = fields.begin();
     for (auto iter = fields.begin(); iter != fields.end(); iter++) {
         schema->appendCol(iter->first, iter->second);
     }
