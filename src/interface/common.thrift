@@ -6,7 +6,7 @@
 
 
 namespace cpp nebula
-namespace java nebula
+namespace java com.vesoft.nebula
 namespace go nebula
 
 cpp_include "base/ThriftTypes.h"
