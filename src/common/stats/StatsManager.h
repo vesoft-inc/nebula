@@ -80,7 +80,10 @@ public:
     static VT readHisto(const std::string& counterName,
                         TimeRange range,
                         double pct);
-
+    static VT readStatsNoLock(const std::string& counterName,
+                              TimeRange range,
+                              StatsMethod method);
+    static void readAllValue(folly::dynamic& vals);
 
 private:
     static StatsManager& get();

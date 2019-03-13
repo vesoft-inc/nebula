@@ -11,7 +11,6 @@
 
 namespace nebula {
 namespace stats {
-
 // static
 StatsManager& StatsManager::get() {
     static StatsManager sm;
@@ -70,7 +69,7 @@ int32_t StatsManager::registerStats(folly::StringPiece counterName) {
 
     // Update the index
     {
-        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
+        folly::RWSpinLock::WriteHolder rh(sm.nameMapLock_);
         sm.nameMap_[name] = index;
     }
 
@@ -118,7 +117,7 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
 
     // Update the index
     {
-        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
+        folly::RWSpinLock::WriteHolder rh(sm.nameMapLock_);
         sm.nameMap_[name] = index;
     }
 
@@ -200,6 +199,96 @@ StatsManager::VT StatsManager::readValue(folly::StringPiece metricName) {
     } else {
         LOG(ERROR) << "Unsupported statistic method \"" << parts[1] << "\"";
         return 0;
+    }
+}
+
+
+// static
+void StatsManager::readAllValue(folly::dynamic& vals) {
+    auto& sm = get();
+
+    folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
+
+    for (auto statsName : sm.nameMap_) {
+        for (auto  method = StatsMethod::SUM; method <= StatsMethod::RATE;
+            method = static_cast<StatsMethod>(static_cast<int>(method) + 1)) {
+            for (auto range = TimeRange::ONE_MINUTE; range <= TimeRange::ONE_HOUR;
+                range = static_cast<TimeRange>(static_cast<int>(range) + 1)) {
+                std::string counterName = statsName.first;
+                int64_t counterValue = readStatsNoLock(counterName, range, method);
+
+                folly::dynamic stat = folly::dynamic::object();
+
+                switch (method) {
+                    case StatsMethod::SUM:
+                        counterName += ".sum";
+                        break;
+                    case StatsMethod::COUNT:
+                        counterName += ".count";
+                        break;
+                    case StatsMethod::AVG:
+                        counterName += ".avg";
+                        break;
+                   case StatsMethod::RATE:
+                        counterName += ".rate";
+                        break;
+                   default:
+                        break;
+                }
+
+                switch (range) {
+                    case TimeRange::ONE_MINUTE:
+                        counterName += ".60";
+                        break;
+                    case TimeRange::TEN_MINUTES:
+                        counterName += ".600";
+                        break;
+                    case TimeRange::ONE_HOUR:
+                        counterName += ".3600";
+                        break;
+                   default:
+                        break;
+                }
+
+                stat["name"] = counterName;
+                stat["value"] = counterValue;
+                vals.push_back(std::move(stat));
+            }
+        }
+    }
+}
+
+
+// static
+StatsManager::VT StatsManager::readStatsNoLock(const std::string& counterName,
+                                               StatsManager::TimeRange range,
+                                               StatsManager::StatsMethod method) {
+    auto& sm = get();
+
+    // Look up the counter name
+    int32_t index = 0;
+
+    auto it = sm.nameMap_.find(counterName);
+    if (it == sm.nameMap_.end()) {
+       // Not found
+       return 0;
+    }
+    index = it->second;
+
+    if (index > 0) {
+        // stats
+        --index;
+        DCHECK_LT(index, sm.stats_.size());
+        std::lock_guard<std::mutex> g(*(sm.stats_[index].first));
+        sm.stats_[index].second->update(Clock::now());
+        return readValue(*(sm.stats_[index].second), range, method);
+    } else {
+        // histograms_
+        index = - (index + 1);
+        DCHECK_LT(index, sm.histograms_.size());
+        std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
+        sm.histograms_[index].second->update(Clock::now());
+        return readValue(*(sm.histograms_[index].second), range, method);
     }
 }
 

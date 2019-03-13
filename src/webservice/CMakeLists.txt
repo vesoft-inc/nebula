@@ -4,6 +4,7 @@ add_library(
     NotFoundHandler.cpp
     GetFlagsHandler.cpp
     SetFlagsHandler.cpp
+    GetStatsHandler.cpp
 )
 add_dependencies(
     ws_obj
