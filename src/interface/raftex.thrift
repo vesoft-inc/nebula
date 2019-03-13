@@ -5,7 +5,7 @@
  */
 
 namespace cpp nebula.raftex
-namespace java nebula.raftex
+namespace java com.vesoft.nebula.raftex
 namespace go nebula.raftex
 
 cpp_include "base/ThriftTypes.h"

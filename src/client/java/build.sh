@@ -6,13 +6,13 @@
 src_root_path=`cd ../../../; pwd`;
 thrift_root_path=$src_root_path/"third-party/fbthrift"
 thrift_jar_source_path=$thrift_root_path/"_build/fbthrift-2018.08.20.00/thrift/lib/java/thrift"
-graph_gen_java_path=$src_root_path"/src/interface/gen-java/nebula/graph/"
-java_client_source_file_path=$src_root_path/src/client/java/src/main/java/nebula/graph/
+graph_gen_java_path=$src_root_path"/src/interface/gen-java/com/vesoft/nebula/graph/"
+java_client_source_file_path=$src_root_path/src/client/java/src/main/java/com/vesoft/nebula/graph/
 
 #-----------------------------------------------
 # check file or dir exist 
 #-----------------------------------------------
-check_file_exist()  
+check_file_exist()
 {
 	if [ -f $1 ] || [ -d $1 ]
 	then
@@ -52,7 +52,6 @@ setup_graph_source()
 	ln -s $graph_gen_java_path/* $java_client_source_file_path
 }
 
-
 #-----------------------------------------------
 # compile java-client
 #-----------------------------------------------
@@ -65,5 +64,4 @@ compile_java_client()
 compile_thrift_jar
 setup_graph_source
 compile_java_client
-
 

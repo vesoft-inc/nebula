@@ -4,7 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-package nebula.graph.client;
+package com.vesoft.nebula.graph.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -16,6 +16,10 @@ import com.facebook.thrift.transport.TTransport;
 import com.facebook.thrift.transport.TTransportException;
 import com.google.common.collect.Lists;
 import com.google.common.net.InetAddresses;
+import com.vesoft.nebula.graph.AuthResponse;
+import com.vesoft.nebula.graph.ErrorCode;
+import com.vesoft.nebula.graph.ExecutionResponse;
+import com.vesoft.nebula.graph.GraphService;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -25,10 +29,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
-import nebula.graph.AuthResponse;
-import nebula.graph.ErrorCode;
-import nebula.graph.ExecutionResponse;
-import nebula.graph.GraphService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
