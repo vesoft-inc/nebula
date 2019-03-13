@@ -32,15 +32,15 @@
                 <configuration>
                     <configLocation>${project.root.dir}/stylecheck/nebula_java_style_checks.xml</configLocation>
                     <excludes>
-                        nebula/graph/RowValue.java,
-                        nebula/graph/GraphService.java,
-                        nebula/graph/AuthResponse.java,
-                        nebula/graph/ErrorCode.java,
-                        nebula/graph/ExecutionResponse.java,
-                        nebula/graph/Date.java,
-                        nebula/graph/ColumnValue.java,
-                        nebula/graph/DateTime.java,
-                        nebula/graph/YearMonth.java
+                        com/vesoft/nebula/graph/RowValue.java,
+                        com/vesoft/nebula/graph/GraphService.java,
+                        com/vesoft/nebula/graph/AuthResponse.java,
+                        com/vesoft/nebula/graph/ErrorCode.java,
+                        com/vesoft/nebula/graph/ExecutionResponse.java,
+                        com/vesoft/nebula/graph/Date.java,
+                        com/vesoft/nebula/graph/ColumnValue.java,
+                        com/vesoft/nebula/graph/DateTime.java,
+                        com/vesoft/nebula/graph/YearMonth.java
                     </excludes>
                     <encoding>UTF-8</encoding>
                     <failOnViolation>true</failOnViolation>
