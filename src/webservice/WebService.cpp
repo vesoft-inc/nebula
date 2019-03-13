@@ -80,6 +80,9 @@ void WebService::start() {
     registerHandler("/set_flags", [] {
         return new SetFlagsHandler();
     });
+    registerHandler("/get_stat", [] {
+        return new GetStatsHandler();
+    });
     registerHandler("/get_stats", [] {
         return new GetStatsHandler();
     });

@@ -32,8 +32,8 @@ public:
 
 private:
     folly::dynamic getStats();
-    void addOneStats(folly::dynamic& vals, const std::string& statName,
-                     int64_t statValue);
+    void addOneStat(folly::dynamic& vals, const std::string& statName,
+                    int64_t statValue);
     std::string toStr(folly::dynamic& vals);
 
 private:
@@ -44,7 +44,7 @@ private:
 
     ErrorCode err_{ErrorCode::SUCCEEDED};
     bool returnJson_{false};
-    std::vector<std::string> statnames_;
+    std::vector<std::string> statNames_;
 };
 
 }  // namespace nebula

@@ -19,7 +19,6 @@ using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
-
 using nebula::stats::StatsManager;
 
 void GetStatsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
@@ -35,7 +34,7 @@ void GetStatsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
 
     auto* statsStr = headers->getQueryParamPtr("stats");
     if (statsStr != nullptr) {
-        folly::split(",", *statsStr, statnames_, true);
+        folly::split(",", *statsStr, statNames_, true);
     }
 }
 
@@ -89,7 +88,7 @@ void GetStatsHandler::onError(ProxygenError err) noexcept {
 }
 
 
-void GetStatsHandler::addOneStats(folly::dynamic& vals,
+void GetStatsHandler::addOneStat(folly::dynamic& vals,
                                  const std::string& statName,
                                  int64_t statValue) {
     folly::dynamic stat = folly::dynamic::object();
@@ -101,15 +100,13 @@ void GetStatsHandler::addOneStats(folly::dynamic& vals,
 
 folly::dynamic GetStatsHandler::getStats() {
     auto stats = folly::dynamic::array();
-    if (statnames_.empty()) {
+    if (statNames_.empty()) {
         // Read all stats
-        // readAllValue(stats);
         StatsManager::readAllValue(stats);
     } else {
-        for (auto& sn : statnames_) {
-            // int64_t statValue = readValue(sn);
+        for (auto& sn : statNames_) {
             int64_t statValue = StatsManager::readValue(sn);
-            addOneStats(stats, sn, statValue);
+            addOneStat(stats, sn, statValue);
         }
     }
 

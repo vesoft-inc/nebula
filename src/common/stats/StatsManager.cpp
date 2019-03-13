@@ -11,6 +11,7 @@
 
 namespace nebula {
 namespace stats {
+
 // static
 StatsManager& StatsManager::get() {
     static StatsManager sm;
@@ -69,7 +70,7 @@ int32_t StatsManager::registerStats(folly::StringPiece counterName) {
 
     // Update the index
     {
-        folly::RWSpinLock::WriteHolder rh(sm.nameMapLock_);
+        folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
         sm.nameMap_[name] = index;
     }
 
@@ -117,7 +118,7 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
 
     // Update the index
     {
-        folly::RWSpinLock::WriteHolder rh(sm.nameMapLock_);
+        folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
         sm.nameMap_[name] = index;
     }
 
@@ -211,47 +212,47 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
 
     for (auto statsName : sm.nameMap_) {
         for (auto  method = StatsMethod::SUM; method <= StatsMethod::RATE;
-            method = static_cast<StatsMethod>(static_cast<int>(method) + 1)) {
+             method = static_cast<StatsMethod>(static_cast<int>(method) + 1)) {
             for (auto range = TimeRange::ONE_MINUTE; range <= TimeRange::ONE_HOUR;
-                range = static_cast<TimeRange>(static_cast<int>(range) + 1)) {
-                std::string counterName = statsName.first;
-                int64_t counterValue = readStatsNoLock(counterName, range, method);
+                 range = static_cast<TimeRange>(static_cast<int>(range) + 1)) {
+                std::string metricName = statsName.first;
+                int64_t metricValue = readStatsNoLock(metricName, range, method);
 
                 folly::dynamic stat = folly::dynamic::object();
 
                 switch (method) {
                     case StatsMethod::SUM:
-                        counterName += ".sum";
+                        metricName += ".sum";
                         break;
                     case StatsMethod::COUNT:
-                        counterName += ".count";
+                        metricName += ".count";
                         break;
                     case StatsMethod::AVG:
-                        counterName += ".avg";
+                        metricName += ".avg";
                         break;
                    case StatsMethod::RATE:
-                        counterName += ".rate";
+                        metricName += ".rate";
                         break;
                    default:
-                        break;
+                        break;  // never execute
                 }
 
                 switch (range) {
                     case TimeRange::ONE_MINUTE:
-                        counterName += ".60";
+                        metricName += ".60";
                         break;
                     case TimeRange::TEN_MINUTES:
-                        counterName += ".600";
+                        metricName += ".600";
                         break;
                     case TimeRange::ONE_HOUR:
-                        counterName += ".3600";
+                        metricName += ".3600";
                         break;
                    default:
-                        break;
+                        break;   // never execute
                 }
 
-                stat["name"] = counterName;
-                stat["value"] = counterValue;
+                stat["name"] = metricName;
+                stat["value"] = metricValue;
                 vals.push_back(std::move(stat));
             }
         }
