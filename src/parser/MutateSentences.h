@@ -267,6 +267,74 @@ private:
     std::unique_ptr<YieldClause>                yieldClause_;
 };
 
-}   // namespace nebula
+class DeleteVertexSentence final : public Sentence {
+public:
+    explicit DeleteVertexSentence(SourceNodeList *srcNodeList) {
+        srcNodeList_.reset(srcNodeList);
+        kind_ = Kind::kDeleteVertex;
+    }
+
+    SourceNodeList* srcNodeLists() const {
+        return srcNodeList_.get();
+    }
+
+    void setWhereClause(WhereClause *clause) {
+        whereClause_.reset(clause);
+    }
+
+    WhereClause* whereClause() const {
+        return whereClause_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<SourceNodeList>            srcNodeList_;
+    std::unique_ptr<WhereClause>               whereClause_;
+};
+
+class EdgeList final {
+public:
+    void addEdge(int64_t srcid, int64_t dstid) {
+        edges_.emplace_back(std::make_pair(srcid, dstid));
+    }
+
+    const std::vector<std::pair<int64_t, int64_t>>& edges() const {
+        return edges_;
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::pair<int64_t, int64_t>>    edges_;
+};
+
+class DeleteEdgeSentence final : public Sentence {
+public:
+    explicit DeleteEdgeSentence(EdgeList *edgeList) {
+        edgeList_.reset(edgeList);
+        kind_ = Kind::kDeleteEdge;
+    }
+
+    EdgeList* edgeList() const {
+        return edgeList_.get();
+    }
+
+    void setWhereClause(WhereClause *clause) {
+        whereClause_.reset(clause);
+    }
+
+    WhereClause* whereClause() const {
+        return whereClause_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<EdgeList>                   edgeList_;
+    std::unique_ptr<WhereClause>                whereClause_;
+};
+
+}  // namespace nebula
 
 #endif  // PARSER_MUTATESENTENCES_H_
