@@ -5,7 +5,7 @@
  */
 
 namespace cpp nebula.storage
-namespace java nebula.storage
+namespace java com.vesoft.nebula.storage
 namespace go nebula.storage
 
 include "common.thrift"
