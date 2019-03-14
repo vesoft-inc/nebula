@@ -6,7 +6,7 @@
 
 #include "base/Base.h"
 #include "webservice/GetFlagsHandler.h"
-#include "webservice/WebService.h"
+#include "webservice/Common.h"
 #include <folly/String.h>
 #include <folly/json.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
@@ -23,7 +23,7 @@ using proxygen::ResponseBuilder;
 void GetFlagsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
         // Unsupported method
-        err_ = WebService::HttpCode::E_UNSUPPORTED_METHOD;
+        err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
 
@@ -49,7 +49,7 @@ void GetFlagsHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
 
 void GetFlagsHandler::onEOM() noexcept {
     switch (err_) {
-        case WebService::HttpCode::E_UNSUPPORTED_METHOD:
+        case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
                 .status(405, "Method Not Allowed")
                 .sendWithEOM();

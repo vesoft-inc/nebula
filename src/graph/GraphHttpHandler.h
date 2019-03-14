@@ -8,7 +8,7 @@
 #define GRAPH_GRAPHTTPHANDLER_H_
 
 #include "base/Base.h"
-#include "webservice/WebService.h"
+#include "webservice/Common.h"
 #include "proxygen/httpserver/RequestHandler.h"
 
 namespace nebula {
@@ -31,7 +31,7 @@ public:
     void onError(proxygen::ProxygenError error) noexcept override;
 
 private:
-    nebula::WebService::HttpCode err_{nebula::WebService::HttpCode::SUCCEEDED};
+    nebula::HttpCode err_{nebula::HttpCode::SUCCEEDED};
     std::string name;
     std::string value;
 };

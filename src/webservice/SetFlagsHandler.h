@@ -8,7 +8,7 @@
 #define WEBSERVICE_SETFLAGSHANDLER_H_
 
 #include "base/Base.h"
-#include "webservice/WebService.h"
+#include "webservice/Common.h"
 #include <proxygen/httpserver/RequestHandler.h>
 
 namespace nebula {
@@ -31,7 +31,7 @@ public:
     void onError(proxygen::ProxygenError err) noexcept override;
 
 private:
-    WebService::HttpCode err_{WebService::HttpCode::SUCCEEDED};
+    HttpCode err_{HttpCode::SUCCEEDED};
     std::string name_;
     std::string value_;
 };

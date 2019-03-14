@@ -4,7 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "webservice/WebService.h"
+#include "webservice/Common.h"
 #include "meta/MetaHttpHandler.h"
 #include <proxygen/httpserver/RequestHandler.h>
 
@@ -18,7 +18,6 @@ using proxygen::HTTPMessage;
 using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
-using nebula::WebService;
 
 void MetaHttpHandler::onRequest(std::unique_ptr<HTTPMessage>) noexcept {
 }

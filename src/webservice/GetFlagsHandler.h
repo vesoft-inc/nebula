@@ -8,7 +8,7 @@
 #define WEBSERVICE_GETFLAGSHANDLER_H_
 
 #include "base/Base.h"
-#include "webservice/WebService.h"
+#include "webservice/Common.h"
 #include <folly/dynamic.h>
 #include <proxygen/httpserver/RequestHandler.h>
 
@@ -39,7 +39,7 @@ private:
     std::string toStr(folly::dynamic& vals);
 
 private:
-    WebService::HttpCode err_{WebService::HttpCode::SUCCEEDED};
+    HttpCode err_{HttpCode::SUCCEEDED};
     bool verbose_{false};
     bool returnJson_{false};
     std::vector<std::string> flagnames_;
