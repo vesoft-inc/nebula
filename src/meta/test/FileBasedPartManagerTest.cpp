@@ -19,7 +19,7 @@ DECLARE_string(schema_file);
 namespace nebula {
 namespace meta {
 
-using namespace nebula::network;
+using nebula::network::NetworkUtils;
 
 void prepareConfFile() {
     static fs::TempFile confFile("/tmp/file_based_part_manager.XXXXXX");

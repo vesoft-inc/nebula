@@ -11,7 +11,7 @@
 
 namespace nebula {
 
-using namespace nebula::meta;
+using nebula::meta::SchemaProviderIf;
 
 /***********************************
  *
