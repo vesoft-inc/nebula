@@ -204,5 +204,4 @@ nebula_link_libraries(
     wangle
     gtest
 )
-
 nebula_add_test(storage_client_test)
