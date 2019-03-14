@@ -11,6 +11,7 @@
 #include <cstdint>
 #include "com_vesoft_client_NativeClient.h"
 
+#include "base/Base.h"
 #include "dataman/include/NebulaCodec.h"
 #include "dataman/NebulaCodecImpl.h"
 
@@ -57,7 +58,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_vesoft_client_NativeClient_encode(JNIEnv *
             v.emplace_back(std::move(value));
         } else {
             // Type Error
-            std::cout << "Type Error : " << name << std::endl;
+            LOG(ERROR) << "Type Error : " << name;
         }
     }
 

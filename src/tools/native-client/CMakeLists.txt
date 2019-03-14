@@ -27,3 +27,9 @@ target_link_libraries(nebula_native_client
                       -lstdc++
                       -lpthread
                       -ldl)
+
+add_custom_target(
+    nebula_native_java_client ALL
+    COMMAND "./build.sh" ">" "./_build.log" "2>&1"
+    DEPENDS nebula_native_client
+)

@@ -1,13 +1,22 @@
-package com.vesoft.client;
+/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+ *
+ * This source code is licensed under Apache 2.0 License
+ *  (found in the LICENSE.Apache file in the root directory)
+ */
 
-import org.rocksdb.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package com.vesoft.client;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Objects;
+
+import org.rocksdb.EnvOptions;
+import org.rocksdb.Options;
+import org.rocksdb.RocksDBException;
+import org.rocksdb.SstFileWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NativeClient implements AutoCloseable {
     static {
@@ -78,9 +87,13 @@ public class NativeClient implements AutoCloseable {
         }
     }
 
-    public boolean deleteVertex(String key) { return delete(key); }
+    public boolean deleteVertex(String key) {
+        return delete(key);
+    }
 
-    public boolean deleteEdge(String key) { return delete(key); }
+    public boolean deleteEdge(String key) {
+        return delete(key);
+    }
 
     private boolean delete(String key) {
         if (checkKey(key)) {
@@ -96,39 +109,43 @@ public class NativeClient implements AutoCloseable {
         }
     }
 
-    public static byte[] createEdgeKey(int partitionID, long srcID, int edgeType,
-                                       long edgeRank, long dstID, long edgeVersion) {
+    public static byte[] createEdgeKey(int partitionId, long srcId, int edgeType,
+                                       long edgeRank, long dstId, long edgeVersion) {
         ByteBuffer buffer = ByteBuffer.allocate(EDGE_SIZE);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
-        buffer.putInt(partitionID);
-        buffer.putLong(srcID);
+        buffer.putInt(partitionId);
+        buffer.putLong(srcId);
         buffer.putInt(edgeType);
         buffer.putLong(edgeRank);
-        buffer.putLong(dstID);
+        buffer.putLong(dstId);
         buffer.putLong(edgeVersion);
         return buffer.array();
     }
 
-    public static byte[] createVertexKey(int partitionID, long vertexID,
-                                         int tagID, long tagVersion) {
+    public static byte[] createVertexKey(int partitionId, long vertexId,
+                                         int tagId, long tagVersion) {
         ByteBuffer buffer = ByteBuffer.allocate(VERTEX_SIZE);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
-        buffer.putInt(partitionID);
-        buffer.putLong(vertexID);
-        buffer.putInt(tagID);
+        buffer.putInt(partitionId);
+        buffer.putLong(vertexId);
+        buffer.putInt(tagId);
         buffer.putLong(tagVersion);
         return buffer.array();
     }
 
     private static native byte[] encode(Object[] values);
 
+    public static byte[] encoded(Object[] values) {
+        return encode(values);
+    }
+
     private boolean checkKey(String key) {
         return Objects.isNull(key) || key.length() == 0;
     }
 
     private boolean checkValues(Object[] values) {
-        return Objects.isNull(values) || values.length == 0 ||
-                Arrays.asList(values).contains(null);
+        return Objects.isNull(values) || values.length == 0
+                || Arrays.asList(values).contains(null);
     }
 
     @Override
@@ -137,16 +154,4 @@ public class NativeClient implements AutoCloseable {
         writer.close();
     }
 
-    public static void main(String[] args) throws RocksDBException {
-        Object[] values = {
-                false,
-                7,
-                1024L,
-                3.14F,
-                0.618,
-                "Hello World!".getBytes()
-        };
-        byte[] result = encode(values);
-        System.out.println("values : " + new String(result) + " Size " + result.length);
-    }
 }
