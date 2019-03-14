@@ -148,10 +148,6 @@ DECLARE_string(advise_random_on_open);
 
 DECLARE_string(compaction_pri);
 
-DECLARE_string(merge_operator);
-
-DECLARE_string(compaction_filter_factory);
-
 DECLARE_string(memtable_insert_with_hint_prefix_extractor);
 
 DECLARE_string(comparator);
@@ -193,8 +189,6 @@ DECLARE_string(compression);
 DECLARE_string(level0_stop_writes_trigger);
 
 DECLARE_string(level0_slowdown_writes_trigger);
-
-DECLARE_string(compaction_filter);
 
 DECLARE_string(level0_file_num_compaction_trigger);
 
@@ -303,4 +297,12 @@ DECLARE_int32(prefix_length);
 // BlockBasedTable block_cache
 DECLARE_int64(block_cache);
 
+// CompactionFilter
+DECLARE_string(compaction_filter);
+
+// CompactionFilterFactory
+DECLARE_string(compaction_filter_factory);
+
+// MergeOperator
+DECLARE_string(merge_operator);
 #endif  // NEBULA_GRAPH_ROCKSDBCONFIGFLAGS_H

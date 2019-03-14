@@ -37,16 +37,16 @@ TEST(RocksdbEngineOptionsTest, simpleOptionTest) {
     nebula::fs::FileType::NOTEXIST);
     ASSERT_EQ(nebula::fs::FileUtils::fileType(rootPath.path()), nebula::fs::FileType::DIRECTORY);
 
-    rocksdb::DBOptions loaded_db_opt;
-    std::vector<rocksdb::ColumnFamilyDescriptor> loaded_cf_descs;
+    rocksdb::DBOptions loadedDbOpt;
+    std::vector<rocksdb::ColumnFamilyDescriptor> loadedCfDescs;
     rocksdb::Status s = LoadLatestOptions(
             KV_DATA_PATH_FORMAT(rootPath.path(), 0),
             rocksdb::Env::Default(),
-            &loaded_db_opt,
-            &loaded_cf_descs);
+            &loadedDbOpt,
+            &loadedCfDescs);
     ASSERT_TRUE(s.ok());
 
-    ASSERT_EQ(loaded_db_opt.stats_dump_period_sec,
+    ASSERT_EQ(loadedDbOpt.stats_dump_period_sec,
             static_cast<int>(strtol(FLAGS_stats_dump_period_sec.c_str(), NULL, 10)));
 }
 
@@ -82,7 +82,7 @@ TEST(RocksdbEngineOptionsTest, getOptionValueTest) {
 }
 
 TEST(RocksdbEngineOptionsTest, memtableTest) {
-    std::vector<std::pair<std::string, std::string>> mem_facs = {
+    std::vector<std::pair<std::string, std::string>> memFacs = {
             {"nullptr", "SkipListFactory"},  // nullptr is a default factory.
             {"skiplist", "SkipListFactory"},
             {"vector", "VectorRepFactory"},
@@ -90,8 +90,8 @@ TEST(RocksdbEngineOptionsTest, memtableTest) {
             {"hashlinklist", "HashLinkListRepFactory"},
             {"cuckoo", "HashCuckooRepFactory"}
     };
-    for (auto mem_kind : mem_facs) {
-        FLAGS_memtable_factory = mem_kind.first;
+    for (auto memKind : memFacs) {
+        FLAGS_memtable_factory = memKind.first;
         fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
         std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0,
                 KV_DATA_PATH_FORMAT(rootPath.path(), 0));
@@ -106,6 +106,76 @@ TEST(RocksdbEngineOptionsTest, memtableTest) {
         ASSERT_EQ("Operation aborted: rocksdb option memtable_factory error", s.ToString());
     } while (false);
     FLAGS_memtable_factory = "nullptr";
+}
+
+TEST(RocksdbEngineOptionsTest, compactionFilterTest) {
+    std::vector<std::string> compactionFilters = {
+            {""},
+            {"nullptr"},
+            {"nebula"}
+    };
+    for (auto compactionFilter : compactionFilters) {
+        FLAGS_compaction_filter = compactionFilter;
+        fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
+        std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0,
+                 KV_DATA_PATH_FORMAT(rootPath.path(), 0));
+        ASSERT(engine);
+    }
+    do {
+        FLAGS_compaction_filter = "ccc";
+        fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
+        rocksdb::Status s =
+                std::make_shared<RocksdbConfigOptions>()->createRocksdbEngineOptions(false, false);
+        ASSERT_EQ("Operation aborted: rocksdb option compaction_filter error", s.ToString());
+    } while (false);
+    FLAGS_compaction_filter = "nullptr";
+}
+
+TEST(RocksdbEngineOptionsTest, compactionFilterFactoryTest) {
+    std::vector<std::string> compactionFilterFactories = {
+            {""},
+            {"nullptr"},
+            {"nebula"}
+    };
+    for (auto compactionFilterFactory : compactionFilterFactories) {
+        FLAGS_compaction_filter_factory = compactionFilterFactory;
+        fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
+        std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0,
+                       KV_DATA_PATH_FORMAT(rootPath.path(), 0));
+        ASSERT(engine);
+    }
+    do {
+        FLAGS_compaction_filter_factory = "ccc";
+        fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
+        rocksdb::Status s =
+                std::make_shared<RocksdbConfigOptions>()->createRocksdbEngineOptions(false, false);
+        ASSERT_EQ("Operation aborted: rocksdb option compaction_filter_factory error",
+                s.ToString());
+    } while (false);
+        FLAGS_compaction_filter_factory = "nullptr";
+}
+
+TEST(RocksdbEngineOptionsTest, mergeOperatorTest) {
+    std::vector<std::string> mergeOperators = {
+            {""},
+            {"nullptr"},
+            {"nebula"}
+    };
+    for (auto mergeOperator : mergeOperators) {
+        FLAGS_merge_operator = mergeOperator;
+        fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
+        std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0,
+                       KV_DATA_PATH_FORMAT(rootPath.path(), 0));
+        ASSERT(engine);
+    }
+    do {
+        FLAGS_merge_operator = "ccc";
+        fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
+        rocksdb::Status s =
+                std::make_shared<RocksdbConfigOptions>()->createRocksdbEngineOptions(false, false);
+        ASSERT_EQ("Operation aborted: rocksdb option merge_operator error", s.ToString());
+    } while (false);
+        FLAGS_merge_operator = "nullptr";
 }
 
 }  // namespace kvstore

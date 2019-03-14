@@ -11,24 +11,19 @@
 #include <rocksdb/compaction_filter.h>
 
 namespace nebula {
-namespace storage {
+namespace kvstore {
 
-class NebulaCompactionFilterFactory final : public rocksdb::CompactionFilterFactory {
-public:
-    std::unique_ptr<rocksdb::CompactionFilter>
-    CreateCompactionFilter(const rocksdb::CompactionFilter::Context& context) override {
-        return std::make_unique<NebulaCompactionFilter>();
-    }
-
-    const char* Name() const override {
-        return "NebulaCompactionFilterFactory";
-    }
-};
 
 class NebulaCompactionFilter final : public rocksdb::CompactionFilter {
 public:
     bool Filter(int level, const rocksdb::Slice& key, const rocksdb::Slice& old_val,
                 std::string* new_val, bool* value_changed) const override {
+        UNUSED(level);
+        UNUSED(key);
+        UNUSED(old_val);
+        UNUSED(new_val);
+        UNUSED(value_changed);
+        LOG(ERROR) << "NebulaCompactionFilter not supported yet";
         return false;
     }
 
@@ -37,7 +32,19 @@ public:
     }
 };
 
-}  // namespace storage
+class NebulaCompactionFilterFactory final : public rocksdb::CompactionFilterFactory {
+public:
+    std::unique_ptr<rocksdb::CompactionFilter>
+    CreateCompactionFilter(const rocksdb::CompactionFilter::Context& context) override {
+        UNUSED(context);
+        return std::make_unique<NebulaCompactionFilter>();
+    }
+    const char* Name() const override {
+        return "NebulaCompactionFilterFactory";
+    }
+};
+
+}  // namespace kvstore
 }  // namespace nebula
 #endif  // STORAGE_COMPACTIONFILTER_H_
 

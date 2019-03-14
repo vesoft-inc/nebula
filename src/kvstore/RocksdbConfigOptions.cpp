@@ -276,14 +276,6 @@ DEFINE_string(compaction_pri,
               "kByCompensatedSize",
               ROCKSDB_OPTIONS_TYPE_CF);
 
-DEFINE_string(merge_operator,
-              "nullptr",
-              ROCKSDB_OPTIONS_TYPE_CF);
-
-DEFINE_string(compaction_filter_factory,
-              "KeepFilterFactory",
-              ROCKSDB_OPTIONS_TYPE_CF);
-
 DEFINE_string(memtable_insert_with_hint_prefix_extractor,
               "nullptr",
               ROCKSDB_OPTIONS_TYPE_CF);
@@ -366,10 +358,6 @@ DEFINE_string(level0_stop_writes_trigger,
 
 DEFINE_string(level0_slowdown_writes_trigger,
               "20",
-              ROCKSDB_OPTIONS_TYPE_CF);
-
-DEFINE_string(compaction_filter,
-              "DummyCompactionFilter",
               ROCKSDB_OPTIONS_TYPE_CF);
 
 DEFINE_string(level0_file_num_compaction_trigger,
@@ -588,6 +576,21 @@ DEFINE_int32(prefix_length, 8,
 DEFINE_int64(block_cache, 4,
              "BlockBasedTable:block_cache : MB");
 
+// CompactionFilter
+DEFINE_string(compaction_filter,
+              "nullptr",
+              "compaction filter : [ nullptr | nebula ]");
+
+// CompactionFilterFactory
+DEFINE_string(compaction_filter_factory,
+              "nullptr",
+              "compaction filter factory : [ nullptr | nebula ]");
+
+// MergeOperator
+DEFINE_string(merge_operator,
+              "nullptr",
+              "merge_operator : [ nullptr | nebula ]");
+
 namespace nebula {
 namespace kvstore {
 
@@ -658,8 +661,6 @@ void RocksdbConfigOptions::load_option_maps() {
 
     cfMap = {
             KVSTORE_CONFIG_FLAG(compaction_pri),
-            KVSTORE_CONFIG_FLAG(merge_operator),
-            KVSTORE_CONFIG_FLAG(compaction_filter_factory),
             KVSTORE_CONFIG_FLAG(memtable_insert_with_hint_prefix_extractor),
             KVSTORE_CONFIG_FLAG(comparator),
             KVSTORE_CONFIG_FLAG(target_file_size_base),
@@ -681,7 +682,6 @@ void RocksdbConfigOptions::load_option_maps() {
             KVSTORE_CONFIG_FLAG(compression),
             KVSTORE_CONFIG_FLAG(level0_stop_writes_trigger),
             KVSTORE_CONFIG_FLAG(level0_slowdown_writes_trigger),
-            KVSTORE_CONFIG_FLAG(compaction_filter),
             KVSTORE_CONFIG_FLAG(level0_file_num_compaction_trigger),
             KVSTORE_CONFIG_FLAG(max_compaction_bytes),
             KVSTORE_CONFIG_FLAG(memtable_prefix_bloom_size_ratio),
@@ -854,6 +854,10 @@ rocksdb::Status RocksdbConfigOptions::initRocksdbOptions(bool ignoreUnknownOptio
         return rocksdb::Status::Aborted("rocksdb option memtable_factory error");
     }
 
+    if (!setupCompactionFilter()) {
+        return rocksdb::Status::Aborted("rocksdb option compaction_filter error");
+    }
+
     if (!setupCompactionFilterFactory()) {
         return rocksdb::Status::Aborted("rocksdb option compaction_filter_factory error");
     }
@@ -862,20 +866,11 @@ rocksdb::Status RocksdbConfigOptions::initRocksdbOptions(bool ignoreUnknownOptio
         return rocksdb::Status::Aborted("rocksdb option prefix_extractor error");
     }
 
-    if (!setupComparator()) {
-        return rocksdb::Status::Aborted("rocksdb option comparator error");
-    }
-
     if (!setupMergeOperator()) {
         return rocksdb::Status::Aborted("rocksdb option merge_operator error");
     }
 
-    if (!setupCompactionFilter()) {
-        return rocksdb::Status::Aborted("rocksdb option compaction_filter error");
-    }
-
     baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
-
 
     return rocksdb::Status::OK();
 }
@@ -974,8 +969,29 @@ bool RocksdbConfigOptions::setupMemtableFactory() {
     return true;
 }
 
+bool RocksdbConfigOptions::setupCompactionFilter() {
+    if (FLAGS_compaction_filter.empty() || FLAGS_compaction_filter == "nullptr") {
+        delete baseOpts.compaction_filter;
+    } else if (FLAGS_compaction_filter == "nebula") {
+        baseOpts.compaction_filter = new NebulaCompactionFilter();
+    } else {
+        LOG(ERROR) << "Unknown CompactionFilter : "
+        << FLAGS_compaction_filter.c_str();
+        return false;
+    }
+    return true;
+}
+
 bool RocksdbConfigOptions::setupCompactionFilterFactory() {
-    // TODO compaction_filter_factory need
+    if (FLAGS_compaction_filter_factory.empty() || FLAGS_compaction_filter_factory == "nullptr") {
+        baseOpts.compaction_filter_factory.reset();
+    } else if (FLAGS_compaction_filter_factory == "nebula") {
+        baseOpts.compaction_filter_factory.reset(new NebulaCompactionFilterFactory());
+    } else {
+        LOG(ERROR) << "Unknown CompactionFilterFactory : "
+                   << FLAGS_compaction_filter_factory.c_str();
+        return false;
+    }
     return true;
 }
 
@@ -985,20 +1001,19 @@ bool RocksdbConfigOptions::setupPrefixExtractor() {
     return true;
 }
 
-bool RocksdbConfigOptions::setupComparator() {
-    // TODO comparator need
-    return true;
-}
-
 bool RocksdbConfigOptions::setupMergeOperator() {
-    // TODO merge_operator need
+    if (FLAGS_merge_operator == "nebula") {
+        baseOpts.merge_operator.reset(new NebulaOperator());
+    } else if (FLAGS_merge_operator.empty() || FLAGS_merge_operator == "nullptr") {
+        baseOpts.merge_operator.reset();
+    } else {
+        LOG(ERROR) << "Unknown MergeOperator : "
+                   << FLAGS_merge_operator.c_str();
+        return false;
+    }
     return true;
 }
 
-bool RocksdbConfigOptions::setupCompactionFilter() {
-    // TODO compaction_filter need
-    return true;
-}
 
 bool RocksdbConfigOptions::setupBlockCache() {
     bbtOpts.block_cache = rocksdb::NewLRUCache(FLAGS_block_cache * 1024 * 1024);

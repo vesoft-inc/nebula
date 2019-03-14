@@ -16,21 +16,27 @@ namespace kvstore {
 class NebulaOperator : public rocksdb::MergeOperator {
 public:
     const char* Name() const override {
-        return "NebulaOperator";
+        return "NebulaMergeOperator";
     }
 
 private:
-    // Default implementations of the MergeOperator functions
     bool FullMergeV2(const MergeOperationInput& merge_in,
                      MergeOperationOutput* merge_out) const override {
-        LOG(FATAL) << "NOT Implement!";
+        UNUSED(merge_in);
+        UNUSED(merge_out);
+        LOG(ERROR) << "NebulaMergeOperator not supported yet";
         return false;
     }
 
-    bool PartialMerge(const Slice& key, const Slice& left_operand,
-                      const Slice& right_operand, std::string* new_value,
-                      Logger* logger) const override {
-        LOG(FATL) << "NOT implement!";
+    bool PartialMerge(const rocksdb::Slice& key, const rocksdb::Slice& left_operand,
+                      const rocksdb::Slice& right_operand, std::string* new_value,
+                      rocksdb::Logger* logger) const override {
+        UNUSED(key);
+        UNUSED(left_operand);
+        UNUSED(right_operand);
+        UNUSED(new_value);
+        UNUSED(logger);
+        LOG(ERROR) << "NebulaMergeOperator not supported yet";
         return false;
     }
 };
