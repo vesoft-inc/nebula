@@ -5,7 +5,7 @@
  */
 
 namespace cpp nebula.meta
-namespace java nebula.meta
+namespace java com.vesoft.nebula.meta
 namespace go nebula.meta
 
 include "common.thrift"
