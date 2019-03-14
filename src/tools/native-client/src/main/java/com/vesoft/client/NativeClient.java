@@ -1,6 +1,8 @@
 package com.vesoft.client;
 
 import org.rocksdb.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -11,6 +13,8 @@ public class NativeClient implements AutoCloseable {
     static {
         System.loadLibrary("nebula_native_client");
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NativeClient.class.getName());
 
     private static final int PARTITION_ID = 4;
     private static final int VERTEX_ID = 8;
@@ -40,7 +44,7 @@ public class NativeClient implements AutoCloseable {
         try {
             writer.open(path);
         } catch (RocksDBException e) {
-            e.printStackTrace();
+            LOGGER.error("SstFileWriter Open Failed {}", e.getMessage());
         }
     }
 
@@ -54,6 +58,7 @@ public class NativeClient implements AutoCloseable {
             writer.put(key.getBytes(), value);
             return true;
         } catch (RocksDBException e) {
+            LOGGER.error("AddVertex Failed {}", e.getMessage());
             return false;
         }
     }
@@ -68,6 +73,7 @@ public class NativeClient implements AutoCloseable {
             writer.put(key.getBytes(), value);
             return true;
         } catch (RocksDBException e) {
+            LOGGER.error("AddEdge Failed {}", e.getMessage());
             return false;
         }
     }
@@ -85,6 +91,7 @@ public class NativeClient implements AutoCloseable {
             writer.delete(key.getBytes());
             return true;
         } catch (RocksDBException e) {
+            LOGGER.error("Delete Failed {}", e.getMessage());
             return false;
         }
     }

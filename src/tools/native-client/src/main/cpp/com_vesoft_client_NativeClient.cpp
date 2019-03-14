@@ -52,7 +52,8 @@ JNIEXPORT jbyteArray JNICALL Java_com_vesoft_client_NativeClient_encode(JNIEnv *
             v.push_back(value);
         } else if (name.compare("[B") == 0) {
             char* bytes = reinterpret_cast<char*>(obj);
-            auto value = std::string(bytes);
+            auto size = env->GetArrayLength(reinterpret_cast<jbyteArray>(obj));
+            auto value = std::string(bytes, size);
             v.emplace_back(std::move(value));
         } else {
             // Type Error
