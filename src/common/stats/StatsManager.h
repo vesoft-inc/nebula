@@ -74,15 +74,15 @@ public:
     static void addValue(int32_t index, VT value = 1);
 
     static VT readValue(folly::StringPiece counter);
+    static VT readStats(int32_t index,
+                        TimeRange range,
+                        StatsMethod method);
     static VT readStats(const std::string& counterName,
                         TimeRange range,
                         StatsMethod method);
     static VT readHisto(const std::string& counterName,
                         TimeRange range,
                         double pct);
-    static VT readStatsNoLock(const std::string& counterName,
-                              TimeRange range,
-                              StatsMethod method);
     static void readAllValue(folly::dynamic& vals);
 
 private:

@@ -70,7 +70,7 @@ int32_t StatsManager::registerStats(folly::StringPiece counterName) {
 
     // Update the index
     {
-        folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
+        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
         sm.nameMap_[name] = index;
     }
 
@@ -118,7 +118,7 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
 
     // Update the index
     {
-        folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
+        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
         sm.nameMap_[name] = index;
     }
 
@@ -129,6 +129,7 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
 // static
 void StatsManager::addValue(int32_t index, VT value) {
     using std::chrono::seconds;
+    CHECK_NE(index, 0);
 
     auto& sm = get();
     if (index > 0) {
@@ -216,8 +217,7 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
             for (auto range = TimeRange::ONE_MINUTE; range <= TimeRange::ONE_HOUR;
                  range = static_cast<TimeRange>(static_cast<int>(range) + 1)) {
                 std::string metricName = statsName.first;
-                int64_t metricValue = readStatsNoLock(metricName, range, method);
-
+                int64_t metricValue = readStats(statsName.second, range, method);
                 folly::dynamic stat = folly::dynamic::object();
 
                 switch (method) {
@@ -261,20 +261,12 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
 
 
 // static
-StatsManager::VT StatsManager::readStatsNoLock(const std::string& counterName,
-                                               StatsManager::TimeRange range,
-                                               StatsManager::StatsMethod method) {
+StatsManager::VT StatsManager::readStats(int32_t index,
+                                         StatsManager::TimeRange range,
+                                         StatsManager::StatsMethod method) {
     auto& sm = get();
 
-    // Look up the counter name
-    int32_t index = 0;
-
-    auto it = sm.nameMap_.find(counterName);
-    if (it == sm.nameMap_.end()) {
-       // Not found
-       return 0;
-    }
-    index = it->second;
+    CHECK_NE(index, 0);
 
     if (index > 0) {
         // stats
@@ -302,6 +294,7 @@ StatsManager::VT StatsManager::readStats(const std::string& counterName,
 
     // Look up the counter name
     int32_t index = 0;
+
     {
         folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
         auto it = sm.nameMap_.find(counterName);
@@ -313,21 +306,7 @@ StatsManager::VT StatsManager::readStats(const std::string& counterName,
         index = it->second;
     }
 
-    if (index > 0) {
-        // stats
-        --index;
-        DCHECK_LT(index, sm.stats_.size());
-        std::lock_guard<std::mutex> g(*(sm.stats_[index].first));
-        sm.stats_[index].second->update(Clock::now());
-        return readValue(*(sm.stats_[index].second), range, method);
-    } else {
-        // histograms_
-        index = - (index + 1);
-        DCHECK_LT(index, sm.histograms_.size());
-        std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
-        sm.histograms_[index].second->update(Clock::now());
-        return readValue(*(sm.histograms_[index].second), range, method);
-    }
+    return readStats(index, range, method);
 }
 
 
