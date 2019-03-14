@@ -297,12 +297,4 @@ DECLARE_int32(prefix_length);
 // BlockBasedTable block_cache
 DECLARE_int64(block_cache);
 
-// CompactionFilter
-DECLARE_string(compaction_filter);
-
-// CompactionFilterFactory
-DECLARE_string(compaction_filter_factory);
-
-// MergeOperator
-DECLARE_string(merge_operator);
 #endif  // NEBULA_GRAPH_ROCKSDBCONFIGFLAGS_H

@@ -71,7 +71,9 @@ Engine NebulaStore::newEngine(GraphSpaceID spaceId, std::string rootPath) {
                                 std::unique_ptr<KVEngine>(
                                     new RocksdbEngine(
                                           spaceId,
-                                          std::move(dataPath))),
+                                          std::move(dataPath),
+                                          options_.mergeOp_,
+                                          options_.cfFactory_)),
                                 std::move(rootPath));
         return engine;
     } else {

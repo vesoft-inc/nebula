@@ -17,7 +17,9 @@ namespace kvstore {
 
 const char* kSystemParts = "__system__parts__";
 
-RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath)
+RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
+                             std::shared_ptr<rocksdb::MergeOperator> mergeOp,
+                             std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
     : KVEngine(spaceId)
     , dataPath_(dataPath) {
     LOG(INFO) << "open rocksdb on " << dataPath;
@@ -27,6 +29,12 @@ RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath)
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
     options = RocksdbConfigOptions::getRocksdbOptions(dataPath, false, false);
+    if (mergeOp != nullptr) {
+        options.merge_operator = mergeOp;
+    }
+    if (cfFactory != nullptr) {
+        options.compaction_filter_factory = cfFactory;
+    }
     rocksdb::Status status = rocksdb::DB::Open(options, dataPath_, &db);
     CHECK(status.ok());
     db_.reset(db);

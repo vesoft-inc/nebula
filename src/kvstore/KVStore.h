@@ -27,6 +27,14 @@ struct KVOptions {
      *  it would mix up the data on disk.
      * */
     std::vector<std::string> dataPaths_;
+    /**
+     * Custom MergeOperator used in rocksdb.merge method.
+     * */
+    std::shared_ptr<rocksdb::MergeOperator> mergeOp_{nullptr};
+    /**
+     * Custom CompactionFilter used in compaction.
+     * */
+    std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory_{nullptr};
 };
 
 

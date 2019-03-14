@@ -11,7 +11,7 @@
 #include <rocksdb/merge_operator.h>
 
 namespace nebula {
-namespace kvstore {
+namespace storage {
 
 class NebulaOperator : public rocksdb::MergeOperator {
 public:
@@ -42,7 +42,7 @@ private:
 };
 
 
-}  // namespace kvstore
+}  // namespace storage
 }  // namespace nebula
 #endif  // KVSTORE_MERGEOPERATOR_H_
 

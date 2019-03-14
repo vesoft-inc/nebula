@@ -11,7 +11,7 @@
 #include <rocksdb/compaction_filter.h>
 
 namespace nebula {
-namespace kvstore {
+namespace storage {
 
 
 class NebulaCompactionFilter final : public rocksdb::CompactionFilter {
@@ -44,7 +44,7 @@ public:
     }
 };
 
-}  // namespace kvstore
+}  // namespace storage
 }  // namespace nebula
 #endif  // STORAGE_COMPACTIONFILTER_H_
 

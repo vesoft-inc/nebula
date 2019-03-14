@@ -15,8 +15,6 @@
 #include "rocksdb/utilities/options_util.h"
 #include "rocksdb/slice_transform.h"
 #include "kvstore/Common.h"
-#include "kvstore/CompactionFilter.h"
-#include "kvstore/MergeOperator.h"
 
 
 #define KVSTORE_CONFIG_FLAG(engineflag) \
@@ -37,9 +35,6 @@ class RocksdbConfigOptions final {
     FRIEND_TEST(RocksdbEngineOptionsTest, createOptionsTest);
     FRIEND_TEST(RocksdbEngineOptionsTest, getOptionValueTest);
     FRIEND_TEST(RocksdbEngineOptionsTest, memtableTest);
-    FRIEND_TEST(RocksdbEngineOptionsTest, compactionFilterTest);
-    FRIEND_TEST(RocksdbEngineOptionsTest, compactionFilterFactoryTest);
-    FRIEND_TEST(RocksdbEngineOptionsTest, mergeOperatorTest);
 
 public:
     enum ROCKSDB_OPTION_TYPE {
@@ -63,10 +58,7 @@ private:
     rocksdb::Status createRocksdbEngineOptions(bool ignoreUnknownOptions,
                                                bool inputStringsEscaped);
     bool setupMemtableFactory();
-    bool setupCompactionFilterFactory();
     bool setupPrefixExtractor();
-    bool setupMergeOperator();
-    bool setupCompactionFilter();
     bool setupBlockCache();
     void load_option_maps();
 };
