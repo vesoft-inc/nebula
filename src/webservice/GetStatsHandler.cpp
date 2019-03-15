@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "webservice/GetStatsHandler.h"
+#include "webservice/Common.h"
 #include "stats/StatsManager.h"
 #include <folly/String.h>
 #include <folly/json.h>
@@ -24,7 +25,7 @@ using nebula::stats::StatsManager;
 void GetStatsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
         // Unsupported method
-        err_ = ErrorCode::E_UNSUPPORTED_METHOD;
+        err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
 
@@ -46,7 +47,7 @@ void GetStatsHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
 
 void GetStatsHandler::onEOM() noexcept {
     switch (err_) {
-        case ErrorCode::E_UNSUPPORTED_METHOD:
+        case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
                 .status(405, "Method Not Allowed")
                 .sendWithEOM();

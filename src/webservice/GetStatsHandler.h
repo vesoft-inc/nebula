@@ -8,6 +8,7 @@
 #define WEBSERVICE_GETSTATSHANDLER_H_
 
 #include "base/Base.h"
+#include "webservice/Common.h"
 #include <folly/dynamic.h>
 #include <proxygen/httpserver/RequestHandler.h>
 
@@ -37,12 +38,7 @@ private:
     std::string toStr(folly::dynamic& vals);
 
 private:
-    enum class ErrorCode {
-        SUCCEEDED = 0,
-        E_UNSUPPORTED_METHOD = -1,
-    };
-
-    ErrorCode err_{ErrorCode::SUCCEEDED};
+    HttpCode err_{HttpCode::SUCCEEDED};
     bool returnJson_{false};
     std::vector<std::string> statNames_;
 };
