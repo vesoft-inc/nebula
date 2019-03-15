@@ -28,7 +28,7 @@ public:
     // effect
     //
     // By default, web service will register the handler for getting/setting
-    // the flags
+    // the flags, getting the stats
     static void registerHandler(const std::string& path,
                                 std::function<proxygen::RequestHandler*()>&& gen);
 

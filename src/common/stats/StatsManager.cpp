@@ -129,6 +129,7 @@ int32_t StatsManager::registerHisto(folly::StringPiece counterName,
 // static
 void StatsManager::addValue(int32_t index, VT value) {
     using std::chrono::seconds;
+    CHECK_NE(index, 0);
 
     auto& sm = get();
     if (index > 0) {
@@ -205,23 +206,67 @@ StatsManager::VT StatsManager::readValue(folly::StringPiece metricName) {
 
 
 // static
-StatsManager::VT StatsManager::readStats(const std::string& counterName,
+void StatsManager::readAllValue(folly::dynamic& vals) {
+    auto& sm = get();
+
+    folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
+
+    for (auto statsName : sm.nameMap_) {
+        for (auto  method = StatsMethod::SUM; method <= StatsMethod::RATE;
+             method = static_cast<StatsMethod>(static_cast<int>(method) + 1)) {
+            for (auto range = TimeRange::ONE_MINUTE; range <= TimeRange::ONE_HOUR;
+                 range = static_cast<TimeRange>(static_cast<int>(range) + 1)) {
+                std::string metricName = statsName.first;
+                int64_t metricValue = readStats(statsName.second, range, method);
+                folly::dynamic stat = folly::dynamic::object();
+
+                switch (method) {
+                    case StatsMethod::SUM:
+                        metricName += ".sum";
+                        break;
+                    case StatsMethod::COUNT:
+                        metricName += ".count";
+                        break;
+                    case StatsMethod::AVG:
+                        metricName += ".avg";
+                        break;
+                   case StatsMethod::RATE:
+                        metricName += ".rate";
+                        break;
+                   default:
+                        break;  // never execute
+                }
+
+                switch (range) {
+                    case TimeRange::ONE_MINUTE:
+                        metricName += ".60";
+                        break;
+                    case TimeRange::TEN_MINUTES:
+                        metricName += ".600";
+                        break;
+                    case TimeRange::ONE_HOUR:
+                        metricName += ".3600";
+                        break;
+                   default:
+                        break;   // never execute
+                }
+
+                stat["name"] = metricName;
+                stat["value"] = metricValue;
+                vals.push_back(std::move(stat));
+            }
+        }
+    }
+}
+
+
+// static
+StatsManager::VT StatsManager::readStats(int32_t index,
                                          StatsManager::TimeRange range,
                                          StatsManager::StatsMethod method) {
     auto& sm = get();
 
-    // Look up the counter name
-    int32_t index = 0;
-    {
-        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
-        auto it = sm.nameMap_.find(counterName);
-        if (it == sm.nameMap_.end()) {
-            // Not found
-            return 0;
-        }
-
-        index = it->second;
-    }
+    CHECK_NE(index, 0);
 
     if (index > 0) {
         // stats
@@ -238,6 +283,30 @@ StatsManager::VT StatsManager::readStats(const std::string& counterName,
         sm.histograms_[index].second->update(Clock::now());
         return readValue(*(sm.histograms_[index].second), range, method);
     }
+}
+
+
+// static
+StatsManager::VT StatsManager::readStats(const std::string& counterName,
+                                         StatsManager::TimeRange range,
+                                         StatsManager::StatsMethod method) {
+    auto& sm = get();
+
+    // Look up the counter name
+    int32_t index = 0;
+
+    {
+        folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
+        auto it = sm.nameMap_.find(counterName);
+        if (it == sm.nameMap_.end()) {
+            // Not found
+            return 0;
+        }
+
+        index = it->second;
+    }
+
+    return readStats(index, range, method);
 }
 
 
