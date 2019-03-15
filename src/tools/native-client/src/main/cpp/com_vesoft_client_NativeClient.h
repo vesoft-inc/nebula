@@ -34,10 +34,10 @@ extern "C" {
 /*
  * Class:     com_vesoft_client_NativeClient
  * Method:    encode
- * Signature: ([Ljava/lang/Object;)Ljava/lang/String;
+ * Signature: ([Ljava/lang/Object;)[B
  */
-JNIEXPORT jstring JNICALL Java_com_vesoft_client_NativeClient_encode
-  (JNIEnv *, jobject, jobjectArray);
+JNIEXPORT jbyteArray JNICALL Java_com_vesoft_client_NativeClient_encode
+  (JNIEnv *, jclass, jobjectArray);
 
 #ifdef __cplusplus
 }
