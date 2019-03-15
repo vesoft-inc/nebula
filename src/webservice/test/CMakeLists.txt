@@ -5,6 +5,7 @@ add_executable(
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:stats_obj>
 )
 nebula_link_libraries(
     flags_access_test
@@ -15,3 +16,20 @@ nebula_link_libraries(
 )
 nebula_add_test(flags_access_test)
 
+add_executable(
+    stats_read_test
+    StatsReaderTest.cpp
+    $<TARGET_OBJECTS:ws_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:stats_obj>
+)
+nebula_link_libraries(
+    stats_read_test
+    proxygenhttpserver
+    proxygenlib
+    wangle
+    gtest
+)
+nebula_add_test(stats_read_test)
