@@ -7,12 +7,19 @@
 #include "base/Base.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/MetaServiceHandler.h"
+#include "meta/MetaHttpHandler.h"
+#include "webservice/WebService.h"
 
 DEFINE_int32(port, 45500, "Meta daemon listening port");
 
-
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
+
+    LOG(INFO) << "Starting Meta HTTP Service";
+    nebula::WebService::registerHandler("/meta", [] {
+        return new nebula::meta::MetaHttpHandler();
+    });
+    nebula::WebService::start();
 
     LOG(INFO) << "Starting the meta Daemon on port " << FLAGS_port;
 

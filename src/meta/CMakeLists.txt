@@ -9,6 +9,8 @@ add_library(
     FileBasedSchemaManager.cpp
     ServerBasedSchemaManager.cpp
     AdHocSchemaManager.cpp
+    MetaServiceHandler.cpp
+    MetaHttpHandler.cpp
 )
 add_dependencies(meta_obj base_obj dataman_obj)
 
