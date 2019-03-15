@@ -56,8 +56,9 @@ FileBasedWal::~FileBasedWal() {
     if (!buffers_.empty()) {
         // There should be only one left
         CHECK_EQ(buffers_.size(), 1UL);
-        buffers_.back()->freeze();
-        flushBuffer(buffers_.back());
+        if (buffers_.back()->freeze()) {
+            flushBuffer(buffers_.back());
+        }
     }
 
     // Close the last file
@@ -321,7 +322,7 @@ void FileBasedWal::dumpCord(Cord& cord,
             ssize_t res = write(currFd_, start, size);
             if (res < 0) {
                 LOG(ERROR) << "Failed to write wal file (" << errno
-                           << "): " << strerror(errno);
+                           << "): " << strerror(errno) << ", fd " << currFd_;
                 return false;
             }
             size -= res;
@@ -341,7 +342,8 @@ void FileBasedWal::dumpCord(Cord& cord,
 
 
 void FileBasedWal::flushBuffer(BufferPtr buffer) {
-    if (!buffer || buffer->empty()) {
+    std::lock_guard<std::mutex> flushGuard(flushMutex_);
+    if (!buffer || buffer->empty() || buffer->invalid()) {
         return;
     }
 
@@ -372,6 +374,8 @@ void FileBasedWal::flushBuffer(BufferPtr buffer) {
             closeCurrFile();
         }
     };
+
+    // Dump the buffer to file
     auto lastLog = buffer->accessAllLogs(accessFn);
 
     // Dump the rest if any
@@ -439,8 +443,9 @@ bool FileBasedWal::appendLogInternal(BufferPtr& buffer,
          sizeof(TermID) +
          sizeof(LogID) > maxBufferSize_)) {
         // Freeze the current buffer
-        buffer->freeze();
-        flusher_->flushBuffer(shared_from_this(), buffer);
+        if (buffer->freeze()) {
+            flusher_->flushBuffer(shared_from_this(), buffer);
+        }
         buffer.reset();
     }
 
@@ -517,6 +522,7 @@ std::unique_ptr<LogIterator> FileBasedWal::iterator(LogID firstLogId,
 
 
 bool FileBasedWal::rollbackToLog(LogID id) {
+    std::lock_guard<std::mutex> flushGuard(flushMutex_);
     bool foundTarget{false};
 
     if (id < firstLogId_) {
@@ -524,12 +530,12 @@ bool FileBasedWal::rollbackToLog(LogID id) {
                    << " is before the first log id in WAL (which is "
                    << firstLogId_ << ")";
         return false;
-    } else {
+    }
+
+    BufferPtr buf = nullptr;
+    {
         // First rollback from buffers
         std::unique_lock<std::mutex> g(buffersMutex_);
-
-        // Freeze the last buffer
-        buffers_.back()->freeze();
 
         // Remove all buffers that are rolled back
         auto it = buffers_.begin();
@@ -537,22 +543,31 @@ bool FileBasedWal::rollbackToLog(LogID id) {
             ++it;
         }
         while (it != buffers_.end()) {
+            (*it)->markInvalid();
             it = buffers_.erase(it);
         }
 
         if (!buffers_.empty()) {
             // Found the target log id
-            BufferPtr buf = buffers_.back();
+            buf = buffers_.back();
             foundTarget = true;
             lastLogId_ = id;
             lastLogTerm_ = buf->getTerm(lastLogId_ - buf->firstLogId());
-        }
 
-        // Create a new buffer starting from id + 1
-        createNewBuffer(id + 1, g);
-        // Since the log id is rolled back, we need to close
-        // the previous wal file
-        buffers_.back()->rollover();
+            // Create a new buffer starting from id + 1
+            createNewBuffer(id + 1, g);
+            // Since the log id is rolled back, we need to close
+            // the previous wal file
+            buffers_.back()->rollover();
+        }
+    }
+
+    if (foundTarget) {
+        CHECK(buf != nullptr);
+       if (buf->freeze()) {
+            // Flush the incomplete buffer which the target log id resides in
+            flusher_->flushBuffer(shared_from_this(), buf);
+        }
     }
 
     int fd{-1};
@@ -560,6 +575,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
         LOG(WARNING) << "Need to rollback from files."
                         " This is an expensive operation."
                         " Please make sure it is correct and necessary";
+
         // Close the current file fist
         closeCurrFile();
 
