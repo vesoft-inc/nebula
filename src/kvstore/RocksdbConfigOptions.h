@@ -18,14 +18,8 @@
 
 namespace nebula {
 namespace kvstore {
-static rocksdb::Options baseOpts;
-static rocksdb::DBOptions dbOpts;
-static rocksdb::ColumnFamilyOptions cfOpts;
-static rocksdb::BlockBasedTableOptions bbtOpts;
 class RocksdbConfigOptions final {
-    FRIEND_TEST(RocksdbEngineOptionsTest, versionTest);
     FRIEND_TEST(RocksdbEngineOptionsTest, createOptionsTest);
-    FRIEND_TEST(RocksdbEngineOptionsTest, memtableTest);
 
 public:
     RocksdbConfigOptions();
@@ -33,12 +27,7 @@ public:
     static rocksdb::Options getRocksdbOptions(const std::string &dataPath);
 
 private:
-    rocksdb::Status initRocksdbOptions();
-    rocksdb::Status checkOptionsCompatibility(const std::string &dataPath);
-    rocksdb::Status createRocksdbEngineOptions();
-    bool setupMemtableFactory();
-    bool setupPrefixExtractor();
-    bool setupBlockCache();
+    rocksdb::Status initRocksdbOptions(const std::string &dataPath);
 };
 }  // namespace kvstore
 }  // namespace nebula

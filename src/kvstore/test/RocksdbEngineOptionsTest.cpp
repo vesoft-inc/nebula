@@ -16,16 +16,6 @@
 namespace nebula {
 namespace kvstore {
 
-
-TEST(RocksdbEngineOptionsTest, versionTest) {
-    rocksdb::Options options;
-    FLAGS_rocksdb_options_version = "111.111.1";
-    rocksdb::Status s = std::make_shared<RocksdbConfigOptions>()
-            ->createRocksdbEngineOptions();
-    FLAGS_rocksdb_options_version = "5.15.10";
-    ASSERT_EQ(rocksdb::Status::kNotSupported , s.code());
-}
-
 TEST(RocksdbEngineOptionsTest, simpleOptionTest) {
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
         rocksdb::BlockBasedTableOptions *loadedBbtOpt;
@@ -68,43 +58,16 @@ TEST(RocksdbEngineOptionsTest, simpleOptionTest) {
 }
 
 TEST(RocksdbEngineOptionsTest, createOptionsTest) {
+    rocksdb::Options options;
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
     FLAGS_rocksdb_db_options = "stats_dump_period_sec=aaaaaa";
     rocksdb::Status s = std::make_shared<RocksdbConfigOptions>()
-            ->createRocksdbEngineOptions();
+            ->initRocksdbOptions(rootPath.path());
     FLAGS_rocksdb_db_options = "";
     ASSERT_EQ(rocksdb::Status::kInvalidArgument , s.code());
     ASSERT_EQ("Invalid argument: Unable to parse DBOptions:: stats_dump_period_sec",
             s.ToString());
 }
-
-TEST(RocksdbEngineOptionsTest, memtableTest) {
-    std::vector<std::pair<std::string, std::string>> memFacs = {
-            {"nullptr", "SkipListFactory"},  // nullptr is a default factory.
-            {"skiplist", "SkipListFactory"},
-            {"vector", "VectorRepFactory"},
-            {"hashskiplist", "HashSkipListRepFactory"},
-            {"hashlinklist", "HashLinkListRepFactory"},
-            {"cuckoo", "HashCuckooRepFactory"}
-    };
-    for (auto memKind : memFacs) {
-        FLAGS_memtable_factory = memKind.first;
-        fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
-        std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0,
-                KV_DATA_PATH_FORMAT(rootPath.path(), 0));
-        ASSERT(engine);
-    }
-
-    do {
-        FLAGS_memtable_factory = "ccc";
-        fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
-        rocksdb::Status s =
-                std::make_shared<RocksdbConfigOptions>()->createRocksdbEngineOptions();
-        ASSERT_EQ("Operation aborted: rocksdb option memtable_factory error", s.ToString());
-    } while (false);
-    FLAGS_memtable_factory = "nullptr";
-}
-
 }  // namespace kvstore
 }  // namespace nebula
 

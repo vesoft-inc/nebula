@@ -27,4 +27,7 @@ DECLARE_string(memtable_factory);
 // rocksdb db wal disable
 DECLARE_bool(rocksdb_disable_wal);
 
+// BlockBasedTable block_cache
+DECLARE_int64(block_cache);
+
 #endif  // NEBULA_GRAPH_ROCKSDBCONFIGFLAGS_H
