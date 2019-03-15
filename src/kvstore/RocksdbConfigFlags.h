@@ -13,11 +13,13 @@
 DECLARE_string(rocksdb_options_version);
 
 // [DBOptions]
-DECLARE_string(stats_dump_period_sec);
+DECLARE_string(rocksdb_db_options);
 
 // [CFOptions "default"]
+DECLARE_string(rocksdb_column_family_options);
 
 //  [TableOptions/BlockBasedTable "default"]
+DECLARE_string(rocksdb_block_based_table_options);
 
 // memtable_factory
 DECLARE_string(memtable_factory);

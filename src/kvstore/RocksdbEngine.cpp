@@ -28,7 +28,7 @@ RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
     }
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
-    options = RocksdbConfigOptions::getRocksdbOptions(dataPath, false, false);
+    options = RocksdbConfigOptions::getRocksdbOptions(dataPath);
     if (mergeOp != nullptr) {
         options.merge_operator = mergeOp;
     }

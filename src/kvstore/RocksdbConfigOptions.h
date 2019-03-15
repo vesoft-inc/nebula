@@ -16,51 +16,29 @@
 #include "rocksdb/slice_transform.h"
 #include "kvstore/Common.h"
 
-
-#define KVSTORE_CONFIG_FLAG(engineflag) \
-  { ""#engineflag"", FLAGS_##engineflag }
-
 namespace nebula {
 namespace kvstore {
 static rocksdb::Options baseOpts;
 static rocksdb::DBOptions dbOpts;
 static rocksdb::ColumnFamilyOptions cfOpts;
 static rocksdb::BlockBasedTableOptions bbtOpts;
-static std::unordered_map<std::string, std::string> dbMap;
-static std::unordered_map<std::string, std::string> cfMap;
-static std::unordered_map<std::string, std::string> bbtMap;
-
 class RocksdbConfigOptions final {
     FRIEND_TEST(RocksdbEngineOptionsTest, versionTest);
     FRIEND_TEST(RocksdbEngineOptionsTest, createOptionsTest);
-    FRIEND_TEST(RocksdbEngineOptionsTest, getOptionValueTest);
     FRIEND_TEST(RocksdbEngineOptionsTest, memtableTest);
 
 public:
-    enum ROCKSDB_OPTION_TYPE {
-        DBOPT = 1,
-        CFOPT,
-        TABLEOPT };
-
     RocksdbConfigOptions();
-
     ~RocksdbConfigOptions();
-
-    static bool getRocksdbEngineOptionValue(ROCKSDB_OPTION_TYPE optType,
-            const char *opt_name, std::string &optValue);
-    static rocksdb::Options getRocksdbOptions(const std::string &dataPath,
-                                              bool ignoreUnknownOptions,
-                                              bool inputStringsEscaped);
+    static rocksdb::Options getRocksdbOptions(const std::string &dataPath);
 
 private:
-    rocksdb::Status initRocksdbOptions(bool ignoreUnknownOptions, bool inputStringsEscaped);
+    rocksdb::Status initRocksdbOptions();
     rocksdb::Status checkOptionsCompatibility(const std::string &dataPath);
-    rocksdb::Status createRocksdbEngineOptions(bool ignoreUnknownOptions,
-                                               bool inputStringsEscaped);
+    rocksdb::Status createRocksdbEngineOptions();
     bool setupMemtableFactory();
     bool setupPrefixExtractor();
     bool setupBlockCache();
-    void load_option_maps();
 };
 }  // namespace kvstore
 }  // namespace nebula

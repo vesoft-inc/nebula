@@ -21,14 +21,21 @@ TEST(RocksdbEngineOptionsTest, versionTest) {
     rocksdb::Options options;
     FLAGS_rocksdb_options_version = "111.111.1";
     rocksdb::Status s = std::make_shared<RocksdbConfigOptions>()
-            ->createRocksdbEngineOptions(false, false);
+            ->createRocksdbEngineOptions();
     FLAGS_rocksdb_options_version = "5.15.10";
     ASSERT_EQ(rocksdb::Status::kNotSupported , s.code());
 }
 
 TEST(RocksdbEngineOptionsTest, simpleOptionTest) {
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
-    FLAGS_stats_dump_period_sec = "200";
+        rocksdb::BlockBasedTableOptions *loadedBbtOpt;
+    FLAGS_rocksdb_db_options = "stats_dump_period_sec=200;"
+                               "enable_write_thread_adaptive_yield=false;"
+                               "write_thread_max_yield_usec=600";
+    FLAGS_rocksdb_column_family_options = "max_write_buffer_number=4;"
+                                          "min_write_buffer_number_to_merge=2;"
+                                          "max_write_buffer_number_to_maintain=1";
+    FLAGS_rocksdb_block_based_table_options = "block_restart_interval=2";
     std::unique_ptr<RocksdbEngine> engine = nullptr;
             std::make_unique<RocksdbEngine>(0, KV_DATA_PATH_FORMAT(rootPath.path(), 0));
     engine.reset(nullptr);
@@ -46,39 +53,29 @@ TEST(RocksdbEngineOptionsTest, simpleOptionTest) {
             &loadedCfDescs);
     ASSERT_TRUE(s.ok());
 
-    ASSERT_EQ(loadedDbOpt.stats_dump_period_sec,
-            static_cast<int>(strtol(FLAGS_stats_dump_period_sec.c_str(), NULL, 10)));
+    ASSERT_EQ(loadedDbOpt.stats_dump_period_sec, 200);
+    ASSERT_EQ(loadedDbOpt.enable_write_thread_adaptive_yield, false);
+    ASSERT_EQ(loadedDbOpt.write_thread_max_yield_usec, 600);
+    ASSERT_EQ(loadedCfDescs[0].options.max_write_buffer_number, 4);
+    ASSERT_EQ(loadedCfDescs[0].options.min_write_buffer_number_to_merge, 2);
+    ASSERT_EQ(loadedCfDescs[0].options.max_write_buffer_number_to_maintain, 1);
+    loadedBbtOpt = reinterpret_cast<rocksdb::BlockBasedTableOptions*>(
+                loadedCfDescs[0].options.table_factory->GetOptions());
+    ASSERT_EQ(loadedBbtOpt->block_restart_interval, 2);
+    FLAGS_rocksdb_db_options = "";
+    FLAGS_rocksdb_column_family_options = "";
+    FLAGS_rocksdb_block_based_table_options = "";
 }
 
 TEST(RocksdbEngineOptionsTest, createOptionsTest) {
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
-    FLAGS_stats_dump_period_sec = "aaaaa";
+    FLAGS_rocksdb_db_options = "stats_dump_period_sec=aaaaaa";
     rocksdb::Status s = std::make_shared<RocksdbConfigOptions>()
-            ->createRocksdbEngineOptions(false, false);
-    FLAGS_stats_dump_period_sec = "600";
+            ->createRocksdbEngineOptions();
+    FLAGS_rocksdb_db_options = "";
     ASSERT_EQ(rocksdb::Status::kInvalidArgument , s.code());
     ASSERT_EQ("Invalid argument: Unable to parse DBOptions:: stats_dump_period_sec",
             s.ToString());
-}
-
-TEST(RocksdbEngineOptionsTest, getOptionValueTest) {
-    rocksdb::Options options;
-    fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
-    FLAGS_stats_dump_period_sec = "200";
-    rocksdb::Status s =
-            std::make_shared<RocksdbConfigOptions>()
-                    ->createRocksdbEngineOptions(false, false);
-    std::string value;
-    ASSERT_FALSE(RocksdbConfigOptions::getRocksdbEngineOptionValue(
-            RocksdbConfigOptions::ROCKSDB_OPTION_TYPE::DBOPT,
-            FLAGS_stats_dump_period_sec.c_str(),
-            value));
-    ASSERT_TRUE(RocksdbConfigOptions::getRocksdbEngineOptionValue(
-            RocksdbConfigOptions::ROCKSDB_OPTION_TYPE::DBOPT,
-            "stats_dump_period_sec",
-            value));
-    ASSERT_EQ(FLAGS_stats_dump_period_sec, value);
-    FLAGS_stats_dump_period_sec = "600";
 }
 
 TEST(RocksdbEngineOptionsTest, memtableTest) {
@@ -102,7 +99,7 @@ TEST(RocksdbEngineOptionsTest, memtableTest) {
         FLAGS_memtable_factory = "ccc";
         fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
         rocksdb::Status s =
-                std::make_shared<RocksdbConfigOptions>()->createRocksdbEngineOptions(false, false);
+                std::make_shared<RocksdbConfigOptions>()->createRocksdbEngineOptions();
         ASSERT_EQ("Operation aborted: rocksdb option memtable_factory error", s.ToString());
     } while (false);
     FLAGS_memtable_factory = "nullptr";
