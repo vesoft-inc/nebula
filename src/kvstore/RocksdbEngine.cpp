@@ -8,8 +8,7 @@
 #include <folly/String.h>
 #include "fs/FileUtils.h"
 #include "kvstore/KVStore.h"
-
-DEFINE_uint32(batch_reserved_bytes, 4 * 1024, "default reserved bytes for one batch operation");
+#include "kvstore/RocksdbConfigFlags.h"
 
 namespace nebula {
 namespace kvstore {
@@ -26,15 +25,17 @@ RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
         nebula::fs::FileUtils::makeDir(dataPath);
     }
     rocksdb::Options options;
-    options.create_if_missing = true;
+    rocksdb::DB* db = nullptr;
+    rocksdb::Status status;
+    status = RocksdbConfigOptions::initRocksdbOptions(options);
+    CHECK(status.ok());
     if (mergeOp != nullptr) {
         options.merge_operator = mergeOp;
     }
     if (cfFactory != nullptr) {
         options.compaction_filter_factory = cfFactory;
     }
-    rocksdb::DB* db = nullptr;
-    rocksdb::Status status = rocksdb::DB::Open(options, dataPath_, &db);
+    status = rocksdb::DB::Open(options, dataPath_, &db);
     CHECK(status.ok());
     db_.reset(db);
     partsNum_ = allParts().size();
@@ -58,6 +59,7 @@ ResultCode RocksdbEngine::get(const std::string& key,
 ResultCode RocksdbEngine::put(std::string key,
                               std::string value) {
     rocksdb::WriteOptions options;
+    options.disableWAL = FLAGS_rocksdb_disable_wal;
     rocksdb::Status status = db_->Put(options, rocksdb::Slice(key), rocksdb::Slice(value));
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
@@ -71,6 +73,7 @@ ResultCode RocksdbEngine::multiPut(std::vector<KV> keyValues) {
         updates.Put(rocksdb::Slice(keyValues[i].first), rocksdb::Slice(keyValues[i].second));
     }
     rocksdb::WriteOptions options;
+    options.disableWAL = FLAGS_rocksdb_disable_wal;
     rocksdb::Status status = db_->Write(options, &updates);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
@@ -103,6 +106,7 @@ ResultCode RocksdbEngine::prefix(const std::string& prefix,
 
 ResultCode RocksdbEngine::remove(const std::string& key) {
     rocksdb::WriteOptions options;
+    options.disableWAL = FLAGS_rocksdb_disable_wal;
     auto status = db_->Delete(options, key);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
@@ -113,6 +117,7 @@ ResultCode RocksdbEngine::remove(const std::string& key) {
 ResultCode RocksdbEngine::removeRange(const std::string& start,
                                       const std::string& end) {
     rocksdb::WriteOptions options;
+    options.disableWAL = FLAGS_rocksdb_disable_wal;
     auto status = db_->DeleteRange(options, db_->DefaultColumnFamily(), start, end);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
@@ -139,6 +144,7 @@ void RocksdbEngine::addPart(PartitionID partId) {
 
 void RocksdbEngine::removePart(PartitionID partId) {
      rocksdb::WriteOptions options;
+     options.disableWAL = FLAGS_rocksdb_disable_wal;
      auto status = db_->Delete(options, partKey(partId));
      if (status.ok()) {
          partsNum_--;

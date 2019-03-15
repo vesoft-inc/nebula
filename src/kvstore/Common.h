@@ -21,7 +21,11 @@ enum ResultCode {
     ERR_LEADER_CHANAGED = -5,
 };
 
-
+#define KV_DATA_PATH_FORMAT(path, spaceId) \
+     folly::stringPrintf("%s/nebula/%d/data", path, spaceId)
+#define KV_WAL_PATH_FORMAT(path, spaceId, partId) \
+     folly::stringPrintf("%s/nebula/%d/wals/%d", \
+        path, spaceId, partId)
 using KVCallback = std::function<void(ResultCode code, HostAddr hostAddr)>;
 using KV = std::pair<std::string, std::string>;
 

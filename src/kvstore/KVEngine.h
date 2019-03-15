@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
+#include "kvstore/RocksdbConfigOptions.h"
 
 namespace nebula {
 namespace kvstore {
