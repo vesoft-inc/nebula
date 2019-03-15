@@ -8,6 +8,7 @@ add_executable(
 )
 nebula_link_libraries(
     file_based_part_manager_test
+    ${THRIFT_LIBRARIES}
     gtest
 )
 add_test(NAME file_based_part_manager_test COMMAND file_based_part_manager_test)
@@ -23,6 +24,7 @@ add_executable(
 )
 nebula_link_libraries(
     file_based_schema_manager_test
+    ${THRIFT_LIBRARIES}
     gtest
 )
 add_test(NAME file_based_schema_manager_test COMMAND file_based_schema_manager_test)

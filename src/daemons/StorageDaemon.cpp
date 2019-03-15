@@ -8,9 +8,11 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "network/NetworkUtils.h"
 #include "storage/StorageServiceHandler.h"
+#include "storage/StorageHttpHandler.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "storage/test/TestUtils.h"
+#include "webservice/WebService.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
@@ -85,6 +87,12 @@ int main(int argc, char *argv[]) {
     options.local_ = HostAddr(localIP, FLAGS_port);
     options.dataPaths_ = std::move(paths);
     kvstore.reset(KVStore::instance(std::move(options)));
+
+    LOG(INFO) << "Starting Storage HTTP Service";
+    nebula::WebService::registerHandler("/storage", [] {
+        return new nebula::storage::StorageHttpHandler();
+    });
+    nebula::WebService::start();
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get());
     auto server = std::make_shared<apache::thrift::ThriftServer>();

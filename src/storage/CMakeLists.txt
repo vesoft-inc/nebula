@@ -9,9 +9,10 @@ add_library(
     QueryVertexPropsProcessor.cpp
     QueryEdgePropsProcessor.cpp
     QueryStatsProcessor.cpp
+    StorageHttpHandler.cpp
 )
 
-add_dependencies(storage_service_handler base_obj storage_thrift_obj kvstore_obj dataman_obj meta_obj)
+add_dependencies(storage_service_handler base_obj storage_thrift_obj kvstore_obj dataman_obj meta_obj ws_obj)
 
 add_library(
     storage_client OBJECT
