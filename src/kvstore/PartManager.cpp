@@ -4,8 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 #include "kvstore/PartManager.h"
-
-DEFINE_string(part_man_type, "memory", "memory, meta");
+#include "kvstore/RocksdbConfigFlags.h"
 
 namespace nebula {
 namespace kvstore {
