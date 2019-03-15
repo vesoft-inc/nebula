@@ -59,10 +59,9 @@ TEST(RocksdbEngineOptionsTest, simpleOptionTest) {
 
 TEST(RocksdbEngineOptionsTest, createOptionsTest) {
     rocksdb::Options options;
-    fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
     FLAGS_rocksdb_db_options = "stats_dump_period_sec=aaaaaa";
     rocksdb::Status s = std::make_shared<RocksdbConfigOptions>()
-            ->initRocksdbOptions(rootPath.path());
+            ->initRocksdbOptions(options);
     FLAGS_rocksdb_db_options = "";
     ASSERT_EQ(rocksdb::Status::kInvalidArgument , s.code());
     ASSERT_EQ("Invalid argument: Unable to parse DBOptions:: stats_dump_period_sec",

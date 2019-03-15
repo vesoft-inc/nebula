@@ -19,11 +19,10 @@
 --part_type=simple
 
 ############## rocksdb Options ##############
---rocksdb_options_version=5.15.10
 --rocksdb_disable_wal=true
-#rocksdb DBOptions, each option will be given as <option_name>:<option_value> separated by ;.
+#rocksdb DBOptions, each option will be given as <option_name>:<option_value> separated by ;
 --rocksdb_db_options=
-#rocksdb ColumnFamilyOptions, each option will be given as <option_name>:<option_value> separated by ;.
+#rocksdb ColumnFamilyOptions, each option will be given as <option_name>:<option_value> separated by ;
 --rocksdb_column_family_options=
-#rocksdb BlockBasedTableOptions, each option will be given as <option_name>:<option_value> separated by ;.
+#rocksdb BlockBasedTableOptions, each option will be given as <option_name>:<option_value> separated by ;
 --rocksdb_block_based_table_options=

@@ -22,12 +22,7 @@ class RocksdbConfigOptions final {
     FRIEND_TEST(RocksdbEngineOptionsTest, createOptionsTest);
 
 public:
-    RocksdbConfigOptions();
-    ~RocksdbConfigOptions();
-    static rocksdb::Options getRocksdbOptions(const std::string &dataPath);
-
-private:
-    rocksdb::Status initRocksdbOptions(const std::string &dataPath);
+    static rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts);
 };
 }  // namespace kvstore
 }  // namespace nebula

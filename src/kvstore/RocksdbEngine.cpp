@@ -10,8 +10,6 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/RocksdbConfigFlags.h"
 
-DEFINE_uint32(batch_reserved_bytes, 4 * 1024, "default reserved bytes for one batch operation");
-
 namespace nebula {
 namespace kvstore {
 
@@ -28,14 +26,16 @@ RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
     }
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
-    options = RocksdbConfigOptions::getRocksdbOptions(dataPath);
+    rocksdb::Status status;
+    status = RocksdbConfigOptions::initRocksdbOptions(options);
+    CHECK(status.ok());
     if (mergeOp != nullptr) {
         options.merge_operator = mergeOp;
     }
     if (cfFactory != nullptr) {
         options.compaction_filter_factory = cfFactory;
     }
-    rocksdb::Status status = rocksdb::DB::Open(options, dataPath_, &db);
+    status = rocksdb::DB::Open(options, dataPath_, &db);
     CHECK(status.ok());
     db_.reset(db);
     partsNum_ = allParts().size();

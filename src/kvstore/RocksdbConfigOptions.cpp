@@ -15,20 +15,27 @@ DEFINE_bool(rocksdb_disable_wal,
 DEFINE_string(rocksdb_db_options,
               "",
               "DBOptions, each option will be given "
-              "as <option_name>:<option_value> separated by ;.");
+              "as <option_name>:<option_value> separated by ;");
 
 // [CFOptions "default"]
 DEFINE_string(rocksdb_column_family_options,
               "",
               "ColumnFamilyOptions, each option will be given "
-              "as <option_name>:<option_value> separated by ;.");
+              "as <option_name>:<option_value> separated by ;");
 
 //  [TableOptions/BlockBasedTable "default"]
 DEFINE_string(rocksdb_block_based_table_options,
               "",
               "BlockBasedTableOptions, each option will be given "
-              "as <option_name>:<option_value> separated by ;.");
+              "as <option_name>:<option_value> separated by ;");
 
+DEFINE_uint32(batch_reserved_bytes,
+              4 * 1024,
+              "default reserved bytes for one batch operation");
+
+DEFINE_string(part_man_type,
+              "memory",
+              "memory, meta");
 /*
  * For these un-supported string options as below, will need to specify them with gflag.
  */
@@ -39,34 +46,11 @@ DEFINE_int64(block_cache, 4,
 
 namespace nebula {
 namespace kvstore {
-static RocksdbConfigOptions *rco;
-std::once_flag createOptionsFlag;
-rocksdb::Options baseOpts;
-RocksdbConfigOptions::RocksdbConfigOptions()  {
-    rco = this;
-    LOG(INFO) << "begin create rocksdb options... ";
-}
-
-RocksdbConfigOptions::~RocksdbConfigOptions() {
-}
-
-rocksdb::Options RocksdbConfigOptions::getRocksdbOptions(
-        const std::string &dataPath) {
-    std::call_once(createOptionsFlag, [&dataPath] () {
-        rocksdb::Status status = rco->initRocksdbOptions(dataPath);
-        if (!status.ok()) {
-            LOG(FATAL) << "Create rocksdb options error : " << status.ToString();
-        }
-    });
-    return baseOpts;
-}
-
-rocksdb::Status RocksdbConfigOptions::initRocksdbOptions(const std::string &dataPath) {
+rocksdb::Status RocksdbConfigOptions::initRocksdbOptions(rocksdb::Options &baseOpts) {
     rocksdb::Status s;
     rocksdb::DBOptions dbOpts;
     rocksdb::ColumnFamilyOptions cfOpts;
     rocksdb::BlockBasedTableOptions bbtOpts;
-    std::vector<rocksdb::ColumnFamilyDescriptor> cfDesc;
     s = GetDBOptionsFromString(rocksdb::DBOptions(),
             FLAGS_rocksdb_db_options, &dbOpts);
     if (!s.ok()) {
@@ -92,18 +76,6 @@ rocksdb::Status RocksdbConfigOptions::initRocksdbOptions(const std::string &data
     bbtOpts.block_cache = rocksdb::NewLRUCache(FLAGS_block_cache * 1024 * 1024);
     baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
     baseOpts.create_if_missing = true;
-
-    // Check options compatibility
-    s = rocksdb::CheckOptionsCompatibility(
-            dataPath,
-            rocksdb::Env::Default(),
-            dbOpts, cfDesc);
-    if (s.code() == rocksdb::Status::kNotFound) {
-        LOG(INFO) << "new rocksdb instance, no compatibility "
-                     "checks are required. data path is : "
-                  << dataPath;
-        return rocksdb::Status::OK();
-    }
     return s;
 }
 }  // namespace kvstore
