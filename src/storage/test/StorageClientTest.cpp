@@ -12,11 +12,12 @@
 #include "meta/PartManager.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
+#include "dataman/RowSetReader.h"
 
 namespace nebula {
 namespace storage {
 
-TEST(StorageClientTest, VerticesInterfacesTest) {
+TEST(StorageClientTest, InterfacesTest) {
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
@@ -29,8 +30,9 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto client = std::make_unique<StorageClient>(threadPool);
+    // VerticesInterfacesTest(addVertices and getVertexProps)
     {
-        LOG(INFO) << "Prepare data...";
+        LOG(INFO) << "Prepare vertices data...";
         std::vector<storage::cpp2::Vertex> vertices;
         for (int32_t vId = 0; vId < 10; vId++) {
             cpp2::Vertex v;
@@ -96,6 +98,90 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getString("tag_3005_col_4", col3));
             EXPECT_EQ(folly::stringPrintf("tag_string_col_4"), col3);
         }
+    }
+
+    // EdgesInterfacesTest(addEdges and getEdgeProps)
+    {
+        LOG(INFO) << "Prepare edges data...";
+        std::vector<storage::cpp2::Edge> edges;
+        for (uint64_t srcId = 0; srcId < 10; srcId++) {
+            cpp2::Edge edge;
+            // Set the edge key.
+            decltype(edge.key) edgeKey;
+            edgeKey.set_src(srcId);
+            edgeKey.set_edge_type(101);
+            edgeKey.set_dst(srcId*100 + 2);
+            edgeKey.set_ranking(srcId*100 + 3);
+            edge.set_key(std::move(edgeKey));
+            // Generate some edge props.
+            RowWriter writer;
+            for (int32_t iInt = 0; iInt < 10; iInt++) {
+                writer << iInt;
+            }
+            for (int32_t iString = 10; iString < 20; iString++) {
+                writer << folly::stringPrintf("string_col_%d", iString);
+            }
+            edge.set_props(writer.encode());
+            edges.emplace_back(std::move(edge));
+        }
+        auto f = client->addEdges(spaceId, std::move(edges), true);
+        LOG(INFO) << "Waiting for the response...";
+        auto resp = std::move(f).get();
+        ASSERT_TRUE(resp.succeeded());
+    }
+    {
+        std::vector<storage::cpp2::EdgeKey> edgeKeys;
+        std::vector<cpp2::PropDef> retCols;
+        for (uint64_t srcId = 0; srcId < 10; srcId++) {
+            // Set the edge key.
+            cpp2::EdgeKey edgeKey;
+            edgeKey.set_src(srcId);
+            edgeKey.set_edge_type(101);
+            edgeKey.set_dst(srcId*100 + 2);
+            edgeKey.set_ranking(srcId*100 + 3);
+            edgeKeys.emplace_back(std::move(edgeKey));
+        }
+        for (int i = 0; i < 20; i++) {
+            retCols.emplace_back(
+                TestUtils::propDef(cpp2::PropOwner::EDGE,
+                                   folly::stringPrintf("col_%d", i)));
+        }
+        auto f = client->getEdgeProps(spaceId, std::move(edgeKeys), std::move(retCols));
+        auto resp = std::move(f).get();
+        ASSERT_TRUE(resp.succeeded());
+
+        auto& results = resp.responses();
+        ASSERT_EQ(1, results.size());
+        EXPECT_EQ(0, results[0].result.failed_codes.size());
+        EXPECT_EQ(3 + 20, results[0].schema.columns.size());
+
+        auto edgeProvider = std::make_shared<ResultSchemaProvider>(results[0].schema);
+        RowSetReader rsReader(edgeProvider, results[0].data);
+        auto it = rsReader.begin();
+        while (it) {
+            EXPECT_EQ(3 + 20, it->numFields());
+            auto fieldIt = it->begin();
+            int index = 0;
+            while (fieldIt) {
+                if (index < 3) {  // _src | _rank | _dst
+                    int64_t vid;
+                    EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getVid(vid));
+                } else if (index >= 13) {  // the last 10 STRING fields
+                    folly::StringPiece stringCol;
+                    EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getString(stringCol));
+                    EXPECT_EQ(folly::stringPrintf("string_col_%d", index - 3), stringCol);
+                } else {  // the middle 10 INT fields
+                    int32_t intCol;
+                    EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getInt(intCol));
+                    EXPECT_EQ(index - 3, intCol);
+                }
+                ++index;
+                ++fieldIt;
+            }
+            EXPECT_EQ(fieldIt, it->end());
+            ++it;
+        }
+        EXPECT_EQ(it, rsReader.end());
     }
 }
 
