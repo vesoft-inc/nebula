@@ -49,11 +49,13 @@ public:
                            const std::string&)> fn) const;
 
     // Mark the buffer ready for persistence
-    void freeze();
-    bool isFrozen() const;
+    bool freeze();
 
     void rollover();
     bool needToRollover() const;
+
+    bool invalid() const;
+    void markInvalid();
 
 private:
     mutable folly::RWSpinLock accessLock_;
@@ -69,6 +71,9 @@ private:
     // When a buffer is frozen, no futher write will be allowed.
     // It's ready to be flushed out
     std::atomic<bool> frozen_{false};
+
+    // If the buffer marked invalid, it means we should not flush it.
+    bool invalid_{false};
 };
 
 

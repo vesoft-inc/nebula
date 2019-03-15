@@ -195,6 +195,7 @@ LogIterator& FileBasedWalIterator::operator++() {
         if (currId_ == firstIdInBuffer_) {
             nextFirstId_ = getFirstIdInNextBuffer();
             CHECK_LT(firstIdInBuffer_, nextFirstId_);
+            currIdx_ = -1;
         }
 
         // Read from buffer

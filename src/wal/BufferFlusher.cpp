@@ -67,13 +67,13 @@ void BufferFlusher::flushLoop() {
                 bufferReadyCV_.wait(g, [this] {
                     return !buffers_.empty() || stopped_;
                 });
+                continue;
             } else {
                 bufferPair = std::move(buffers_.front());
                 buffers_.pop();
-
-                bufferPair.first->flushBuffer(bufferPair.second);
             }
         }
+        bufferPair.first->flushBuffer(bufferPair.second);
     }
 
     LOG(INFO) << "Buffer flusher loop finished";
