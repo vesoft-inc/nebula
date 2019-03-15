@@ -35,7 +35,7 @@ namespace stats {
  *                           in the last ten minutes
  *   latency.p9999.60   -- The latency that slower than 99.99% of all queries
  *                           in the last one minute
- *   error.count.600    -- Total number of errors in the last tn minutes
+ *   error.count.600    -- Total number of errors in the last ten minutes
  */
 class StatsManager final {
     using VT = int64_t;
@@ -74,13 +74,16 @@ public:
     static void addValue(int32_t index, VT value = 1);
 
     static VT readValue(folly::StringPiece counter);
+    static VT readStats(int32_t index,
+                        TimeRange range,
+                        StatsMethod method);
     static VT readStats(const std::string& counterName,
                         TimeRange range,
                         StatsMethod method);
     static VT readHisto(const std::string& counterName,
                         TimeRange range,
                         double pct);
-
+    static void readAllValue(folly::dynamic& vals);
 
 private:
     static StatsManager& get();
