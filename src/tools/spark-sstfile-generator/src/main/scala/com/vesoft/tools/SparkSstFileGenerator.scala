@@ -221,10 +221,9 @@ object SparkSstFileGenerator {
         //TODO: join FROM_COLUMN and join TO_COLUMN from the table where this columns referencing, to make sure that the claimed id really exist in the reference table.BUT with HUGE Perf penalty
         val tagDF = hiveContext.sql(s"SELECT ${columnExpression} FROM ${edge.name}")
         //RDD[(businessKey->values)]
-        val bizKeyAndValues: RDD[(String, String, String, Seq[Any])] = tagDF.map(row => {
-          (row.getAs[String](edge.fromForeignKeyColumn) + "_" + row.getAs[String](edge.toForeignKeyColumn) + "_" + edge.tableName, //from + to_tableName used as key before HASH
-            row.getAs[String](edge.fromForeignKeyColumn) + "_" + edge.fromReferenceTable, // same pattern as Tag key= TagID_TableName
-            row.getAs[String](edge.toForeignKeyColumn) + "_" + edge.toReferenceTable,
+        val bizKeyAndValues: RDD[(String, String, Seq[Any])] = tagDF.map(row => {
+          (row.getAs[String](edge.fromForeignKeyColumn), //consistent with vertexId generation logic, to make sure that vertex and its' outbound edges are in the same partition
+            row.getAs[String](edge.toForeignKeyColumn), //consistent with vertexId generation logic
             allColumns.filter(col => !col.columnName.equalsIgnoreCase(edge.fromForeignKeyColumn) && !col.columnName.equalsIgnoreCase(edge.toForeignKeyColumn)).map(col => {
               col.`type` match {
                 case "INTEGER" => row.getAs[Int](col.columnName)
@@ -241,8 +240,8 @@ object SparkSstFileGenerator {
         })
 
         bizKeyAndValues.map {
-          case (key, srcIDString, dstIdString, values) => {
-            val id = idGeneratorFunction.apply(key)
+          case (srcIDString, dstIdString, values) => {
+            val id = idGeneratorFunction.apply(srcIDString)
             val partitionId: Int = (id % mappingConfiguration.partitions).asInstanceOf[Int]
 
             val srcId = idGeneratorFunction.apply(srcIDString)
