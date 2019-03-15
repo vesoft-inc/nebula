@@ -57,3 +57,17 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(load_test)
+
+add_executable(
+    rocksdb_options_test
+    RocksdbEngineOptionsTest.cpp
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+nebula_link_libraries(
+    rocksdb_options_test
+    ${ROCKSDB_LIBRARIES}
+    gtest
+)
+nebula_add_test(rocksdb_options_test)
