@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 - present, VE Software Inc. All rights reserveduto-merging src/graph/CMakeLists.txt
  *
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
@@ -9,7 +9,7 @@
 #include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"
 #include "parser/MaintainSentences.h"
-#include "parser/ShowSentences.h"
+#include "parser/AdminSentences.h"
 #include "graph/GoExecutor.h"
 #include "graph/UseExecutor.h"
 #include "graph/PipeExecutor.h"
@@ -21,8 +21,8 @@
 // #include "graph/DescribeEdgeExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
-#include "graph/ShowExecutor.h"
 #include "graph/AssignmentExecutor.h"
+#include "graph/AdminExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -73,6 +73,12 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kAssignment:
             executor = std::make_unique<AssignmentExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAddHosts:
+            executor = std::make_unique<AddHostsExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateSpace:
+            executor = std::make_unique<CreateSpaceExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
