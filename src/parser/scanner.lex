@@ -61,9 +61,10 @@ OVERWRITE                   ([Oo][Vv][Ee][Rr][Ww][Rr][Ii][Tt][Ee])
 TRUE                        ([Tt][Rr][Uu][Ee])
 FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 SHOW                        ([Ss][Hh][Oo][Ww])
+ADD                         ([Aa][Dd][Dd])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
 TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
-
+CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -117,8 +118,10 @@ OCT                         ([0-7])
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {SHOW}                      { return TokenType::KW_SHOW; }
+{ADD}                       { return TokenType::KW_ADD; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
 {TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
+{CREATE}                    { return TokenType::KW_CREATE;}
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

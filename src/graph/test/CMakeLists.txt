@@ -4,8 +4,8 @@ add_executable(
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
@@ -13,6 +13,8 @@ add_executable(
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_service_handler>
 )
 nebula_link_libraries(
     session_manager_test
@@ -35,8 +37,8 @@ add_executable(
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -44,10 +46,15 @@ add_executable(
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
 )
+
 nebula_link_libraries(
     query_engine_test
     ${THRIFT_LIBRARIES}
+    ${ROCKSDB_LIBRARIES}
     wangle
     gtest
     gtest_main

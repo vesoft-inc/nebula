@@ -7,7 +7,9 @@
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
-
+#include "meta/test/TestUtils.h"
+#include "fs/TempDir.h"
+#include "graph/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
@@ -116,6 +118,40 @@ TEST_F(DefineSchemaTest, DISABLED_Simple) {
             {"person", "person"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+TEST_F(DefineSchemaTest, metaCommunication) {
+    using nebula::meta::TestUtils;
+    using nebula::fs::TempDir;
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+
+    fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
+    auto sc = TestUtils::mockServer(FLAGS_meta_server_port, rootPath.path());
+
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "add hosts(\"127.0.0.1:1000\", \"127.0.0.1:1100\")";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "show hosts";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"127.0.0.1", "1000"},
+            {"127.0.0.1", "1100"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "create space (\"default_space\", 9, 3)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
 }
 
