@@ -32,10 +32,10 @@ public:
     void onError(proxygen::ProxygenError err) noexcept override;
 
 private:
-    folly::dynamic getStats();
+    folly::dynamic getStats() const;
     void addOneStat(folly::dynamic& vals, const std::string& statName,
-                    int64_t statValue);
-    std::string toStr(folly::dynamic& vals);
+                    int64_t statValue) const;
+    std::string toStr(folly::dynamic& vals) const;
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
