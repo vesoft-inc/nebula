@@ -1,12 +1,32 @@
+########## basics ##########
+# Whether run as a daemon process
+--daemonize=true
+# File to host the process id
+--pid_file=pids/nebula-storaged.pid
+
+########## logging ##########
+# Directory to host logging files, which must already exist
+--log_dir=logs
+# 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
+--minloglevel=0
+# verbose loging level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
+--v=4
+# maximum seconds to buffer the log messages
+--logbufsecs=0
+
 ########## networking ##########
 # Local ip
 --local_ip=127.0.0.1
 # Storage daemon listening port
 --port=44500
+# HTTP service port
+--ws_http_port=0
+# HTTP2 service port
+--ws_h2_portt=0
 
 ########## storage ##########
 # Root data path, multi paths should be split by comma.For rocksdb engine, one path one instance.
---data_path=
+--data_path=data/storage
 # start mock server
 --mock_server=true
 # part manager type, [memory | meta]

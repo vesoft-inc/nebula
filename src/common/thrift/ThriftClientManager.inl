@@ -15,48 +15,77 @@ DECLARE_int32(conn_timeout_ms);
 namespace nebula {
 namespace thrift {
 
+
 template<class ClientType>
 std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
         const HostAddr& host, folly::EventBase* evb) {
-    VLOG(2) << "Getting a client to "
-            << network::NetworkUtils::intToIPv4(host.first)
-            << ":" << host.second;
+    VLOG(2) << "Getting a client to " << host;
 
     if (evb == nullptr) {
+        // NOTE: This is an event base for the current thread
         evb = folly::EventBaseManager::get()->getEventBase();
     }
 
-    auto it = clientMap_->find(std::make_pair(host, evb));
-    if (it != clientMap_->end()) {
+    // Get the thread-local client map for the current thread.
+    auto *clients = clientMap_.get();
+
+    auto it = clients->find(std::make_pair(host, evb));
+    if (it != clients->end()) {
         return it->second;
     }
 
     // Need to create a new client
-    auto ipAddr = network::NetworkUtils::intToIPv4(host.first);
-    auto port = host.second;
-    VLOG(2) << "There is no existing client to "
-            << ipAddr << ":" << port
+    VLOG(2) << "There is no existing client to " << host
             << ", trying to create one";
-    auto channel = apache::thrift::ReconnectingRequestChannel::newChannel(
-        *evb, [ipAddr, port] (folly::EventBase& eb) mutable {
-            static thread_local int connectionCount = 0;
-            VLOG(2) << "Connecting to " << ipAddr << ":" << port
-                    << " for " << ++connectionCount << " times";
-            std::shared_ptr<apache::thrift::async::TAsyncSocket> socket;
-            eb.runImmediatelyOrRunInEventBaseThreadAndWait(
-                [&socket, &eb, ipAddr, port]() {
-                    socket = apache::thrift::async::TAsyncSocket::newSocket(
-                        &eb, ipAddr, port, FLAGS_conn_timeout_ms);
-                });
-            return apache::thrift::HeaderClientChannel::newChannel(socket);
+
+    using apache::thrift::HeaderClientChannel;
+    using apache::thrift::ReconnectingRequestChannel;
+    using apache::thrift::async::TAsyncSocket;
+
+    // To make sure the channel would be destroyed in its belonging event base thread,
+    // we must provide a customized deleter.
+    auto deleter = [evb] (auto *channel) {
+        auto cb = [=] () {
+            channel->destroy();
+        };
+        if (evb->isInEventBaseThread()) {
+            cb();
+        } else if (evb->isRunning()) {
+            evb->runInEventBaseThread(cb);
+        }
+    };
+
+    auto creator = [host, deleter] (auto &eb) mutable {
+        static thread_local int connectionCount = 0;
+        VLOG(2) << "Connecting to " << host
+                << " for " << ++connectionCount << " times";
+
+        // The TAsyncSocket must be created from inside the event base thread
+        std::shared_ptr<TAsyncSocket> socket;
+        eb.runImmediatelyOrRunInEventBaseThreadAndWait([&socket, &eb, host] () {
+            auto ip = network::NetworkUtils::intToIPv4(host.first);
+            auto port = host.second;
+            socket = TAsyncSocket::newSocket(&eb, ip, port, FLAGS_conn_timeout_ms);
         });
-    std::shared_ptr<ClientType> client(new ClientType(std::move(channel)), [evb](auto* p) {
-        evb->runImmediatelyOrRunInEventBaseThreadAndWait([p] {
-            delete p;
-        });
-    });
-    clientMap_->emplace(std::make_pair(host, evb), client);
+
+        auto *channel = new HeaderClientChannel(std::move(socket));
+        return std::shared_ptr<HeaderClientChannel>(channel, deleter);
+    };
+
+    auto channel = ReconnectingRequestChannel::newChannel(*evb, creator);
+    auto client = std::make_shared<ClientType>(std::move(channel));
+    clients->emplace(std::make_pair(host, evb), client);
     return client;
+}
+
+
+template <class ClientType>
+void ThriftClientManager<ClientType>::destroyAll() {
+    VLOG(2) << "Destroying all clients.";
+    for (auto &clients : clientMap_.accessAllThreads()) {
+        clients.clear();
+    }
+    VLOG(2) << "All clients are destroyed.";
 }
 
 }  // namespace thrift

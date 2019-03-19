@@ -12,7 +12,6 @@
 #include "graph/RequestContext.h"
 #include "gen-cpp2/GraphService.h"
 #include "graph/mock/SchemaManager.h"
-#include "graph/mock/StorageService.h"
 
 /**
  * ExecutinoEngine is responsible to create and manage ExecutionPlan.
@@ -20,12 +19,20 @@
  * instead we create a plan for each query, and destroy it upon finish.
  */
 
+namespace folly {
+class IOThreadPoolExecutor;
+}   // namespace folly
+
 namespace nebula {
+namespace storage {
+class StorageClient;
+}   // namespace storage
+
 namespace graph {
 
 class ExecutionEngine final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    ExecutionEngine();
+    explicit ExecutionEngine(std::unique_ptr<storage::StorageClient> storage);
     ~ExecutionEngine();
 
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
@@ -33,7 +40,7 @@ public:
 
 private:
     std::unique_ptr<SchemaManager>              schemaManager_;
-    std::unique_ptr<StorageService>             storage_;
+    std::unique_ptr<storage::StorageClient>     storage_;
 };
 
 }   // namespace graph

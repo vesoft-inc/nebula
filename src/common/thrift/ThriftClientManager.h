@@ -26,13 +26,17 @@ public:
         VLOG(3) << "ThriftClientManager";
     }
 
+    // Destroy all clients for all threads
+    void destroyAll();
+
 private:
     using ClientMap = std::unordered_map<
         std::pair<HostAddr, folly::EventBase*>,     // <ip, port> pair
         std::shared_ptr<ClientType>                 // Async thrift client
     >;
 
-    folly::ThreadLocal<ClientMap> clientMap_;
+    struct DumyTag;  // Required by `ThreadLocal::Accessor' if we invoke `accessAllThreads'
+    folly::ThreadLocal<ClientMap, DumyTag> clientMap_;
 };
 
 }  // namespace thrift

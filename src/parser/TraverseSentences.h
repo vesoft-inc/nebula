@@ -120,8 +120,8 @@ public:
         space_.reset(space);
     }
 
-    const std::string& space() const {
-        return *space_;
+    const std::string* space() const {
+        return space_.get();
     }
 
     std::string toString() const override;
@@ -183,6 +183,14 @@ public:
         kind_ = Kind::kAssignment;
         variable_.reset(variable);
         sentence_.reset(sentence);
+    }
+
+    std::string* var() const {
+        return variable_.get();
+    }
+
+    Sentence* sentence() const {
+        return sentence_.get();
     }
 
     std::string toString() const override;

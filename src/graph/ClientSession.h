@@ -27,12 +27,20 @@ public:
         id_ = id;
     }
 
-    const std::string& space() const {
+    GraphSpaceID space() const {
         return space_;
     }
 
-    void setSpace(std::string space) {
-        space_ = std::move(space);
+    void setSpace(GraphSpaceID space) {
+        space_ = space;
+    }
+
+    const std::string& spaceName() const {
+        return spaceName_;
+    }
+
+    void setSpaceName(const std::string &spaceName) {
+        spaceName_ = spaceName;
     }
 
     uint64_t idleSeconds() const;
@@ -58,8 +66,9 @@ private:
 
 private:
     int64_t             id_{0};
+    GraphSpaceID        space_{0};
     time::Duration      idleDuration_;
-    std::string         space_;
+    std::string         spaceName_;
     std::string         user_;
 };
 

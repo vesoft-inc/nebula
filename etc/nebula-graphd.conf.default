@@ -1,6 +1,8 @@
 ########## basics ##########
 # Whether run as a daemon process
 --daemonize=true
+# File to host the process id
+--pid_file=pids/nebula-graphd.pid
 
 ########## logging ##########
 # Directory to host logging files, which must already exist
@@ -16,23 +18,25 @@
 # Destination filename of stdout and stderr, which will also reside in log_dir.
 --stdout_log_file=stdout.log
 --stderr_log_file=stderr.log
-# File to host the process id, which also resides in log_dir
---pid_file=nebula-graphd.pid
 
 ########## networking ##########
 # Network device to listen on
 --listen_netdev=any
 # Port to listen on
 --port=3699
-# seconds before we close the idle connections, 0 for infinite
+# Seconds before we close the idle connections, 0 for infinite
 --client_idle_timeout_secs=0
-# seconds before we expire the idle sessions, 0 for inifnite
+# Seconds before we expire the idle sessions, 0 for inifnite
 --session_idle_timeout_secs=60000
-# number of threads to accept incoming connections
+# Number of threads to accept incoming connections
 --num_accept_threads=1
-# number of networking IO threads, 0 for number of physical CPU cores
+# Number of networking IO threads, 0 for number of physical CPU cores
 --num_netio_threads=0
-# turn on SO_REUSEPORT or not
+# Turn on SO_REUSEPORT or not
 --reuse_port=false
 # Backlog of the listen socket, adjust this together with net.core.somaxconn
 --listen_backlog=1024
+# HTTP service port
+--ws_http_port=0
+# HTTP2 service port
+--ws_h2_portt=0

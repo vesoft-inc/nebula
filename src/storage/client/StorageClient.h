@@ -25,7 +25,7 @@ public:
         PARTIAL_SUCCEEDED = 1,
     };
 
-    explicit StorageRpcResponse(size_t partsSent) : totalPartsSent_(partsSent) {}
+    explicit StorageRpcResponse(size_t reqsSent) : totalReqsSent_(reqsSent) {}
 
     bool succeeded() const {
         return result_ == Result::ALL_SUCCEEDED;
@@ -43,11 +43,12 @@ public:
 
     void markFailure() {
         result_ = Result::PARTIAL_SUCCEEDED;
+        ++failedReqs_;
     }
 
     // A value between [0, 100], representing a precentage
     int32_t completeness() const {
-        return (totalPartsSent_ - failedParts_.size()) * 100 / totalPartsSent_;
+        return (totalReqsSent_ - failedReqs_) * 100 / totalReqsSent_;
     }
 
     std::unordered_map<PartitionID, storage::cpp2::ErrorCode>& failedParts() {
@@ -60,7 +61,8 @@ public:
 
 
 private:
-    const size_t totalPartsSent_;
+    const size_t totalReqsSent_;
+    size_t failedReqs_{0};
 
     Result result_{Result::ALL_SUCCEEDED};
     std::unordered_map<PartitionID, storage::cpp2::ErrorCode> failedParts_;

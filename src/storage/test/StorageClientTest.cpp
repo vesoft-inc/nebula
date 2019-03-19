@@ -208,6 +208,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     client.reset();
     LOG(INFO) << "Stop meta server...";
     metaServerContext.reset();
+    threadPool.reset();
 }
 
 

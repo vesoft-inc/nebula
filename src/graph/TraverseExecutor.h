@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "graph/Executor.h"
+#include "graph/IntermResult.h"
 
 namespace nebula {
 namespace graph {
@@ -51,11 +52,9 @@ class TraverseExecutor : public Executor {
 public:
     explicit TraverseExecutor(ExecutionContext *ectx) : Executor(ectx) {}
 
-    using TraverseRecord = std::vector<VariantType>;
-    using TraverseRecords = std::vector<TraverseRecord>;
-    using OnResult = std::function<void(TraverseRecords)>;
+    using OnResult = std::function<void(std::unique_ptr<IntermResult>)>;
 
-    virtual void feedResult(TraverseRecords records) = 0;
+    virtual void feedResult(std::unique_ptr<IntermResult> result) = 0;
 
     /**
      * `onResult_' must be set except for the right most executor
@@ -78,6 +77,9 @@ public:
     virtual void setInputResultSchema(ResultSchema *schema) {
         inputResultSchema_ = schema;
     }
+
+    static std::unique_ptr<TraverseExecutor>
+    makeTraverseExecutor(Sentence *sentence, ExecutionContext *ectx);
 
 protected:
     std::unique_ptr<TraverseExecutor> makeTraverseExecutor(Sentence *sentence);

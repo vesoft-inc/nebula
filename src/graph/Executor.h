@@ -11,6 +11,7 @@
 #include "base/Status.h"
 #include "cpp/helpers.h"
 #include "graph/ExecutionContext.h"
+#include "gen-cpp2/common_types.h"
 
 
 /**

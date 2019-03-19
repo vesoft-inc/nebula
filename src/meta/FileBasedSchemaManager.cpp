@@ -18,7 +18,8 @@ void FileBasedSchemaManager::init() {
     DCHECK(!FLAGS_schema_file.empty()) << "Schema file is required";
 
     Configuration conf;
-    CHECK(conf.parseFromFile(FLAGS_schema_file).ok());
+    auto status = conf.parseFromFile(FLAGS_schema_file);
+    CHECK(status.ok()) << status;
 
     CHECK(conf.forEachKey([&conf](const std::string& name) {
         auto space = toGraphSpaceID(name);
@@ -141,7 +142,10 @@ std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
 
 // static
 GraphSpaceID FileBasedSchemaManager::toGraphSpaceID(const folly::StringPiece spaceName) {
-    return folly::hash::fnv32_buf(spaceName.start(), spaceName.size());
+    UNUSED(spaceName);
+    // TODO(dutor) Fix this once the server based schema manager is merged in
+    return 1;
+    // return folly::hash::fnv32_buf(spaceName.start(), spaceName.size());
 }
 
 

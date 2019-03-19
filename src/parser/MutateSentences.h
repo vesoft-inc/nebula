@@ -32,6 +32,7 @@ private:
     std::vector<std::unique_ptr<std::string>>   properties_;
 };
 
+
 class ValueList final {
 public:
     void addValue(Expression *value) {
@@ -52,24 +53,64 @@ private:
     std::vector<std::unique_ptr<Expression>>    values_;
 };
 
+
+class VertexRowItem final {
+public:
+    VertexRowItem(int64_t id, ValueList *values) {
+        id_ = id;
+        values_.reset(values);
+    }
+
+    int64_t id() const {
+        return id_;
+    }
+
+    std::vector<Expression*> values() const {
+        return values_->values();
+    }
+
+    std::string toString() const;
+
+private:
+    int64_t                                     id_;
+    std::unique_ptr<ValueList>                  values_;
+};
+
+
+class VertexRowList final {
+public:
+    void addRow(VertexRowItem *row) {
+        rows_.emplace_back(row);
+    }
+
+    std::vector<VertexRowItem*> rows() const {
+        std::vector<VertexRowItem*> result;
+        result.resize(rows_.size());
+        auto get = [] (const auto &ptr) { return ptr.get(); };
+        std::transform(rows_.begin(), rows_.end(), result.begin(), get);
+        return result;
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::unique_ptr<VertexRowItem>> rows_;
+};
+
+
 class InsertVertexSentence final : public Sentence {
 public:
-    InsertVertexSentence(int64_t id, std::string *vertex, PropertyList *props,
-                         ValueList *values, bool overwritable = true) {
-        id_ = id;
+    InsertVertexSentence(std::string *vertex, PropertyList *props,
+                         VertexRowList *rows, bool overwritable = true) {
         vertex_.reset(vertex);
         properties_.reset(props);
-        values_.reset(values);
+        rows_.reset(rows);
         overwritable_ = overwritable;
         kind_ = Kind::kInsertVertex;
     }
 
     bool overwritable() const {
         return overwritable_;
-    }
-
-    int64_t id() const {
-        return id_;
     }
 
     std::string* vertex() const {
@@ -80,8 +121,8 @@ public:
         return properties_->properties();
     }
 
-    std::vector<Expression*> values() const {
-        return values_->values();
+    std::vector<VertexRowItem*> rows() const {
+        return rows_->rows();
     }
 
     std::string toString() const override;
@@ -91,8 +132,71 @@ private:
     int64_t                                     id_;
     std::unique_ptr<std::string>                vertex_;
     std::unique_ptr<PropertyList>               properties_;
+    std::unique_ptr<VertexRowList>              rows_;
+};
+
+
+class EdgeRowItem final {
+public:
+    EdgeRowItem(int64_t srcid, int64_t dstid, ValueList *values) {
+        srcid_ = srcid;
+        dstid_ = dstid;
+        values_.reset(values);
+    }
+
+    EdgeRowItem(int64_t srcid, int64_t dstid, int64_t rank, ValueList *values) {
+        srcid_ = srcid;
+        dstid_ = dstid;
+        rank_ = rank;
+        values_.reset(values);
+    }
+
+    int64_t srcid() const {
+        return srcid_;
+    }
+
+    int64_t dstid() const {
+        return dstid_;
+    }
+
+    int64_t rank() const {
+        return rank_;
+    }
+
+    std::vector<Expression*> values() const {
+        return values_->values();
+    }
+
+    std::string toString() const;
+
+private:
+    int64_t                                     srcid_{0};
+    int64_t                                     dstid_{0};
+    int64_t                                     rank_{0};
     std::unique_ptr<ValueList>                  values_;
 };
+
+
+class EdgeRowList final {
+public:
+    void addRow(EdgeRowItem *row) {
+        rows_.emplace_back(row);
+    }
+
+    std::vector<EdgeRowItem*> rows() const {
+        std::vector<EdgeRowItem*> result;
+        result.resize(rows_.size());
+        auto get = [] (const auto &ptr) { return ptr.get(); };
+        std::transform(rows_.begin(), rows_.end(), result.begin(), get);
+        return result;
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::unique_ptr<EdgeRowItem>>   rows_;
+};
+
 
 class InsertEdgeSentence final : public Sentence {
 public:
@@ -105,30 +209,6 @@ public:
 
     bool overwritable() const {
         return overwritable_;
-    }
-
-    void setSrcId(int64_t srcid) {
-        srcid_ = srcid;
-    }
-
-    int64_t srcid() const {
-        return srcid_;
-    }
-
-    void setDstId(int64_t dstid) {
-        dstid_ = dstid;
-    }
-
-    int64_t dstid() const {
-        return dstid_;
-    }
-
-    void setRank(int64_t rank) {
-        rank_ = rank;
-    }
-
-    int64_t rank() const {
-        return rank_;
     }
 
     void setEdge(std::string *edge) {
@@ -147,25 +227,23 @@ public:
         return properties_->properties();
     }
 
-    void setValues(ValueList *values) {
-        values_.reset(values);
+    void setRows(EdgeRowList *rows) {
+        rows_.reset(rows);
     }
 
-    std::vector<Expression*> values() const {
-        return values_->values();
+    std::vector<EdgeRowItem*> rows() const {
+        return rows_->rows();
     }
 
     std::string toString() const override;
 
 private:
     bool                                        overwritable_{true};
-    int64_t                                     srcid_{0};
-    int64_t                                     dstid_{0};
-    int64_t                                     rank_{0};
     std::unique_ptr<std::string>                edge_;
     std::unique_ptr<PropertyList>               properties_;
-    std::unique_ptr<ValueList>                  values_;
+    std::unique_ptr<EdgeRowList>                rows_;
 };
+
 
 class UpdateItem final {
 public:
@@ -181,6 +259,7 @@ private:
     std::unique_ptr<Expression>                 value_;
 };
 
+
 class UpdateList final {
 public:
     void addItem(UpdateItem *item) {
@@ -192,6 +271,7 @@ public:
 private:
     std::vector<std::unique_ptr<UpdateItem>>    items_;
 };
+
 
 class UpdateVertexSentence final : public Sentence {
 public:
@@ -224,6 +304,7 @@ private:
     std::unique_ptr<WhereClause>                whereClause_;
     std::unique_ptr<YieldClause>                yieldClause_;
 };
+
 
 class UpdateEdgeSentence final : public Sentence {
 public:

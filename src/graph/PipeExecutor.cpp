@@ -56,9 +56,9 @@ Status PipeExecutor::prepare() {
         };
         left_->setOnFinish(onFinish);
 
-        auto onResult = [this] (TraverseRecords records) {
+        auto onResult = [this] (std::unique_ptr<IntermResult> result) {
             // Feed results from `left_' to `right_'
-            right_->feedResult(std::move(records));
+            right_->feedResult(std::move(result));
         };
         left_->setOnResult(onResult);
 
@@ -73,9 +73,9 @@ Status PipeExecutor::prepare() {
         right_->setOnFinish(onFinish);
 
         if (onResult_) {
-            auto onResult = [this] (TraverseRecords records) {
+            auto onResult = [this] (std::unique_ptr<IntermResult> result) {
                 // This executor takes results of `right_' as results.
-                onResult_(std::move(records));
+                onResult_(std::move(result));
             };
             right_->setOnResult(onResult);
         } else {
@@ -94,8 +94,8 @@ void PipeExecutor::execute() {
 }
 
 
-void PipeExecutor::feedResult(TraverseRecords records) {
-    left_->feedResult(std::move(records));
+void PipeExecutor::feedResult(std::unique_ptr<IntermResult> result) {
+    left_->feedResult(std::move(result));
 }
 
 

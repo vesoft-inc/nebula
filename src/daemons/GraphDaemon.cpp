@@ -54,6 +54,12 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    if (FLAGS_daemonize) {
+        google::SetStderrLogging(google::FATAL);
+    } else {
+        google::SetStderrLogging(google::INFO);
+    }
+
     // Setup logging
     auto status = setupLogging();
     if (!status.ok()) {
@@ -62,7 +68,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Detect if the server has already been started
-    auto pidPath = FLAGS_log_dir + "/" + FLAGS_pid_file;
+    auto pidPath = FLAGS_pid_file;
     status = ProcessUtils::isPidAvailable(pidPath);
     if (!status.ok()) {
         LOG(ERROR) << status;
@@ -112,10 +118,10 @@ int main(int argc, char *argv[]) {
         localIP = std::move(result).value();
     }
 
-    auto interface = std::make_shared<GraphService>();
     gServer = std::make_unique<apache::thrift::ThriftServer>();
+    auto interface = std::make_shared<GraphService>(gServer->getIOThreadPool());
 
-    gServer->setInterface(interface);
+    gServer->setInterface(std::move(interface));
     gServer->setAddress(localIP, FLAGS_port);
     gServer->setReusePort(FLAGS_reuse_port);
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
