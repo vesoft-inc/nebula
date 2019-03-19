@@ -19,7 +19,11 @@ int main(int argc, char *argv[]) {
     nebula::WebService::registerHandler("/meta", [] {
         return new nebula::meta::MetaHttpHandler();
     });
-    nebula::WebService::start();
+    auto status = nebula::WebService::start();
+    if (!status.ok()) {
+        LOG(ERROR) << "Failed to start web service: " << status;
+        return EXIT_FAILURE;
+    }
 
     LOG(INFO) << "Starting the meta Daemon on port " << FLAGS_port;
 

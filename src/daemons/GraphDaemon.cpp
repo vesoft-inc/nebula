@@ -46,12 +46,13 @@ int main(int argc, char *argv[]) {
             return EXIT_SUCCESS;
         }
     }
+
+    folly::init(&argc, &argv, true);
+
     if (FLAGS_flagfile.empty()) {
         printHelp(argv[0]);
         return EXIT_FAILURE;
     }
-
-    folly::init(&argc, &argv, true);
 
     // Setup logging
     auto status = setupLogging();
@@ -94,7 +95,11 @@ int main(int argc, char *argv[]) {
     nebula::WebService::registerHandler("/graph", [] {
         return new nebula::graph::GraphHttpHandler();
     });
-    nebula::WebService::start();
+    status = nebula::WebService::start();
+    if (!status.ok()) {
+        LOG(ERROR) << "Failed to start web service: " << status;
+        return EXIT_FAILURE;
+    }
 
     // Get the IPv4 address the server will listen on
     std::string localIP;
@@ -153,6 +158,7 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
+            nebula::WebService::stop();
             gServer->stop();
             break;
         default:
