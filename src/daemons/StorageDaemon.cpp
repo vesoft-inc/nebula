@@ -92,7 +92,12 @@ int main(int argc, char *argv[]) {
     nebula::WebService::registerHandler("/storage", [] {
         return new nebula::storage::StorageHttpHandler();
     });
-    nebula::WebService::start();
+
+    auto status = nebula::WebService::start();
+    if (!status.ok()) {
+        LOG(ERROR) << "Failed to start web service: " << status;
+        return EXIT_FAILURE;
+    }
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get());
     auto server = std::make_shared<apache::thrift::ThriftServer>();

@@ -24,7 +24,7 @@ public:
 
     void onEOM() noexcept override;
 
-    void onUpgrade(proxygen::UpgradeProtocol protocal) noexcept override;
+    void onUpgrade(proxygen::UpgradeProtocol protocol) noexcept override;
 
     void requestComplete() noexcept override;
 
