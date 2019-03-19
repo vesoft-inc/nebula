@@ -66,7 +66,7 @@ void WebService::registerHandler(const std::string& path,
 
 
 // static
-void WebService::start() {
+Status WebService::start() {
     // Register the default handlers
     registerHandler("/get_flag", [] {
         return new GetFlagsHandler();
@@ -98,7 +98,6 @@ void WebService::start() {
     HTTPServerOptions options;
     options.threads = static_cast<size_t>(FLAGS_ws_threads);
     options.idleTimeout = std::chrono::milliseconds(60000);
-    options.shutdownOn = {SIGINT, SIGTERM};
     options.enableContentCompression = false;
     options.handlerFactories = proxygen::RequestHandlerChain()
         .addThen<WebServiceHandlerFactory>(std::move(handlerGenMap_))
@@ -110,7 +109,8 @@ void WebService::start() {
 
     std::condition_variable cv;
     std::mutex mut;
-    bool serverStarted = false;
+    auto status = Status::OK();
+    bool serverStartedDone = false;
 
     // Start HTTPServer mainloop in a separate thread
     wsThread_ = std::make_unique<thread::NamedThread>(
@@ -118,24 +118,45 @@ void WebService::start() {
         [&] () {
             server_->start(
                 [&]() {
-                    LOG(INFO) << "Web service started";
+                    auto addresses = server_->addresses();
+                    CHECK_EQ(addresses.size(), 2UL);
+                    if (FLAGS_ws_http_port == 0) {
+                        FLAGS_ws_http_port = addresses[0].address.getPort();
+                    }
+                    if (FLAGS_ws_h2_port == 0) {
+                        FLAGS_ws_h2_port = addresses[1].address.getPort();
+                    }
+                    LOG(INFO) << "Web service started on "
+                              << "HTTP[" << FLAGS_ws_http_port << "], "
+                              << "HTTP2[" << FLAGS_ws_h2_port << "]";
                     {
                         std::lock_guard<std::mutex> g(mut);
-                        serverStarted = true;
+                        serverStartedDone = true;
                     }
                     cv.notify_all();
                 },
-                [&] (std::exception_ptr) {
-                    LOG(ERROR) << "Failed to start web service";
+                [&] (std::exception_ptr eptr) {
+                    CHECK(eptr);
+                    try {
+                        std::rethrow_exception(eptr);
+                    } catch (const std::exception &e) {
+                        status = Status::Error(e.what());
+                    }
+                    {
+                        std::lock_guard<std::mutex> g(mut);
+                        serverStartedDone = true;
+                    }
+                    cv.notify_all();
                 });
-        });
+    });
 
     {
         std::unique_lock<std::mutex> lck(mut);
         cv.wait(lck, [&]() {
-            return serverStarted;
+            return serverStartedDone;
         });
     }
+    return status;
 }
 
 

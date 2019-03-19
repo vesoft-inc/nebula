@@ -91,7 +91,7 @@ void GetStatsHandler::onError(ProxygenError err) noexcept {
 
 void GetStatsHandler::addOneStat(folly::dynamic& vals,
                                  const std::string& statName,
-                                 int64_t statValue) {
+                                 int64_t statValue) const {
     folly::dynamic stat = folly::dynamic::object();
     stat["name"] = statName;
     stat["value"] = statValue;
@@ -99,7 +99,7 @@ void GetStatsHandler::addOneStat(folly::dynamic& vals,
 }
 
 
-folly::dynamic GetStatsHandler::getStats() {
+folly::dynamic GetStatsHandler::getStats() const {
     auto stats = folly::dynamic::array();
     if (statNames_.empty()) {
         // Read all stats
@@ -115,7 +115,7 @@ folly::dynamic GetStatsHandler::getStats() {
 }
 
 
-std::string GetStatsHandler::toStr(folly::dynamic& vals) {
+std::string GetStatsHandler::toStr(folly::dynamic& vals) const {
     std::stringstream ss;
     for (auto& counter : vals) {
         auto& val = counter["value"];

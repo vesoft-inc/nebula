@@ -211,8 +211,8 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
 
     folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
 
-    for (auto statsName : sm.nameMap_) {
-        for (auto  method = StatsMethod::SUM; method <= StatsMethod::RATE;
+    for (auto &statsName : sm.nameMap_) {
+        for (auto method = StatsMethod::SUM; method <= StatsMethod::RATE;
              method = static_cast<StatsMethod>(static_cast<int>(method) + 1)) {
             for (auto range = TimeRange::ONE_MINUTE; range <= TimeRange::ONE_HOUR;
                  range = static_cast<TimeRange>(static_cast<int>(range) + 1)) {
@@ -233,8 +233,7 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
                    case StatsMethod::RATE:
                         metricName += ".rate";
                         break;
-                   default:
-                        break;  // never execute
+                    // intentionally no `default'
                 }
 
                 switch (range) {
@@ -247,8 +246,7 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
                     case TimeRange::ONE_HOUR:
                         metricName += ".3600";
                         break;
-                   default:
-                        break;   // never execute
+                    // intentionally no `default'
                 }
 
                 stat["name"] = metricName;
