@@ -236,6 +236,22 @@ int32_t NetworkUtils::portFromHostAddr(const HostAddr& host) {
     return host.second;
 }
 
+StatusOr<std::string> NetworkUtils::getLocalIP(std::string defaultIP) {
+    if (!defaultIP.empty()) {
+        return defaultIP;
+    }
+    auto result = network::NetworkUtils::listDeviceAndIPv4s();
+    if (!result.ok()) {
+        return std::move(result).status();
+    }
+    for (auto& deviceIP : result.value()) {
+        if (deviceIP.second != "127.0.0.1") {
+            return deviceIP.second;
+        }
+    }
+    return Status::Error("No IPv4 address found!");
+}
+
 }  // namespace network
 }  // namespace nebula
 

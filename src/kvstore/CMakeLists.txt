@@ -4,6 +4,7 @@ add_library(
     RocksdbEngine.cpp
     PartManager.cpp
     NebulaStore.cpp
+    RocksdbConfigOptions.cpp
 )
 add_dependencies(kvstore_obj base_obj)
 

@@ -11,13 +11,14 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     gtest
 )
-add_test(NAME file_based_part_manager_test COMMAND file_based_part_manager_test)
+nebula_add_test(file_based_part_manager_test)
 
 
 add_executable(
     file_based_schema_manager_test
     FileBasedSchemaManagerTest.cpp
     $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
@@ -27,5 +28,67 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     gtest
 )
-add_test(NAME file_based_schema_manager_test COMMAND file_based_schema_manager_test)
+nebula_add_test(file_based_schema_manager_test)
+
+add_executable(
+    meta_utils_test
+    MetaUtilsTest.cpp
+    ../MetaUtils.cpp
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+)
+nebula_link_libraries(
+    meta_utils_test
+    ${THRIFT_LIBRARIES}
+    gtest
+)
+nebula_add_test(meta_utils_test)
+
+add_executable(
+    processor_test
+    ProcessorTest.cpp
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+)
+nebula_link_libraries(
+    processor_test
+    proxygenhttpserver
+    proxygenlib
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    gtest
+)
+nebula_add_test(processor_test)
+
+add_executable(
+    meta_client_test
+    MetaClientTest.cpp
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+)
+nebula_link_libraries(
+    meta_client_test
+    proxygenhttpserver
+    proxygenlib
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    gtest
+)
+
+nebula_add_test(meta_client_test)
 

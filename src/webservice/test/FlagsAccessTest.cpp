@@ -10,9 +10,6 @@
 #include "webservice/WebService.h"
 #include "process/ProcessUtils.h"
 
-DECLARE_int32(ws_http_port);
-DECLARE_string(ws_ip);
-
 DEFINE_int32(int32_test, 10, "Test flag for int32 type");
 DEFINE_int64(int64_test, 10, "Test flag for int64 type");
 DEFINE_bool(bool_test, false, "Test flag for bool type");
@@ -24,8 +21,11 @@ namespace nebula {
 class FlagsAccessTestEnv : public ::testing::Environment {
 public:
     void SetUp() override {
+        FLAGS_ws_http_port = 0;
+        FLAGS_ws_h2_port = 0;
         VLOG(1) << "Starting web service...";
-        WebService::start();
+        auto status = WebService::start();
+        ASSERT_TRUE(status.ok()) << status;
     }
 
     void TearDown() override {
@@ -44,12 +44,12 @@ bool getUrl(const std::string& urlPath, std::string& respBody) {
 
     auto command = folly::stringPrintf("/usr/bin/curl -G \"%s\" 2> /dev/null",
                                        url.c_str());
-    auto status = ProcessUtils::runCommand(command.c_str());
-    if (!status.ok()) {
-        LOG(ERROR) << "Failed to run curl: " << status.status();
+    auto result = ProcessUtils::runCommand(command.c_str());
+    if (!result.ok()) {
+        LOG(ERROR) << "Failed to run curl: " << result.status();
         return false;
     }
-    respBody = status.value();
+    respBody = result.value();
     return true;
 }
 
