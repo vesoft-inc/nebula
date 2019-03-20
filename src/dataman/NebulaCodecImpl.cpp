@@ -5,7 +5,7 @@
  */
 
 #include <string>
-#include <stdexcept>
+#include "base/Base.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 #include "dataman/SchemaWriter.h"
@@ -27,6 +27,8 @@ std::string NebulaCodecImpl::encode(std::vector<Value> values) {
             writer <<  boost::any_cast<float>(value);
         } else if (value.type() == typeid(bool)) {
             writer <<  boost::any_cast<bool>(value);
+        } else {
+            LOG(ERROR) << "Value Type :" << value.type().name() << std::endl;
         }
     }
     std::string result = writer.encode();
@@ -60,6 +62,9 @@ NebulaCodecImpl::decode(std::string encoded,
                 code = reader->getBool(field, b);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = b;
+                } else {
+                    LOG(ERROR) << "GetBool ResultType : " << static_cast<int>(code)
+                               << " Value " << b << std::endl;
                 }
                 break;
             case cpp2::SupportedType::INT:
@@ -67,12 +72,18 @@ NebulaCodecImpl::decode(std::string encoded,
                 code = reader->getInt(field, i);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = i;
+                } else {
+                    LOG(ERROR) << "GetInt ResultType : " << static_cast<int>(code)
+                               << " Value " << i << std::endl;
                 }
                 break;
             case cpp2::SupportedType::STRING:
                 code = reader->getString(field, piece);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = boost::any(piece.toString());
+                } else {
+                    LOG(ERROR) << "GetString ResultType : " << static_cast<int>(code)
+                               << " Value " << piece.toString() << std::endl;
                 }
                 break;
             case cpp2::SupportedType::VID:
@@ -80,6 +91,9 @@ NebulaCodecImpl::decode(std::string encoded,
                 code = reader->getVid(field, v);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = v;
+                } else {
+                    LOG(ERROR) << "GetVid ResultType : " << static_cast<int>(code)
+                               << " Value " << v << std::endl;
                 }
                 break;
             case cpp2::SupportedType::FLOAT:
@@ -87,6 +101,9 @@ NebulaCodecImpl::decode(std::string encoded,
                 code = reader->getFloat(field, f);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = f;
+                } else {
+                    LOG(ERROR) << "GetFloat ResultType : " << static_cast<int>(code)
+                               << " Value " << f << std::endl;
                 }
                 break;
             case cpp2::SupportedType::DOUBLE:
@@ -94,6 +111,9 @@ NebulaCodecImpl::decode(std::string encoded,
                 code = reader->getDouble(field, d);
                 if (ResultType::SUCCEEDED == code) {
                     result[field] = d;
+                } else {
+                    LOG(ERROR) << "GetDouble ResultType : " << static_cast<int>(code)
+                               << " Value " << d << std::endl;
                 }
                 break;
             case cpp2::SupportedType::TIMESTAMP:

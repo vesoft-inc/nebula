@@ -12,7 +12,7 @@
 namespace nebula {
 
 TEST(RowReader, headerInfo) {
-    // Sinplest row, nothing in it
+    // Simplest row, nothing in it
     char data1[] = {0x00};
     auto schema1 = std::make_shared<SchemaWriter>();
     auto reader1 = RowReader::getRowReader(
