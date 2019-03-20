@@ -21,6 +21,11 @@ enum ErrorCode {
     E_LEADER_CHANGED = -11,
 
     // Operation Failure
+    E_NO_HOSTS       = -21,
+    E_SPACE_EXISTED  = -22,
+    E_NOT_FOUND      = -23,
+
+    E_UNKNOWN        = -99,
 } (cpp.enum_strict)
 
 union ID {
@@ -35,10 +40,10 @@ struct IdName {
 }
 
 struct ExecResp {
-    1: ErrorCode ret,
+    1: ErrorCode        code,
+    2: ID               id,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,
-    3: ID               id,
+    3: common.HostAddr  leader,
 }
 
 // Graph space related operations.
@@ -81,7 +86,7 @@ struct AddTagReq {
 
 struct RemoveTagReq {
     1: common.GraphSpaceID space_id,
-    2: i32                 tag_id,
+    2: common.TagID        tag_id,
 }
 
 struct ListTagsReq {
