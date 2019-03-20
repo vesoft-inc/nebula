@@ -11,6 +11,17 @@
 #include "dataman/SchemaWriter.h"
 #include "NebulaCodecImpl.h"
 
+/**
+ * Report error message
+ */
+#define PRINT_ERROR_MESSAGE(code, value) \
+    if (ResultType::SUCCEEDED == code) { \
+        result[field] = value; \
+    } else { \
+        LOG(ERROR) << "ResultType : " << static_cast<int>(code) \
+                   << " Value " << value << std::endl; \
+    }
+
 namespace nebula {
 namespace dataman {
 
@@ -60,61 +71,31 @@ NebulaCodecImpl::decode(std::string encoded,
             case cpp2::SupportedType::BOOL:
                 bool b;
                 code = reader->getBool(field, b);
-                if (ResultType::SUCCEEDED == code) {
-                    result[field] = b;
-                } else {
-                    LOG(ERROR) << "GetBool ResultType : " << static_cast<int>(code)
-                               << " Value " << b << std::endl;
-                }
+                PRINT_ERROR_MESSAGE(code, b);
                 break;
             case cpp2::SupportedType::INT:
                 int32_t i;
                 code = reader->getInt(field, i);
-                if (ResultType::SUCCEEDED == code) {
-                    result[field] = i;
-                } else {
-                    LOG(ERROR) << "GetInt ResultType : " << static_cast<int>(code)
-                               << " Value " << i << std::endl;
-                }
+                PRINT_ERROR_MESSAGE(code, i);
                 break;
             case cpp2::SupportedType::STRING:
                 code = reader->getString(field, piece);
-                if (ResultType::SUCCEEDED == code) {
-                    result[field] = boost::any(piece.toString());
-                } else {
-                    LOG(ERROR) << "GetString ResultType : " << static_cast<int>(code)
-                               << " Value " << piece.toString() << std::endl;
-                }
+                PRINT_ERROR_MESSAGE(code, piece.toString());
                 break;
             case cpp2::SupportedType::VID:
                 int64_t v;
                 code = reader->getVid(field, v);
-                if (ResultType::SUCCEEDED == code) {
-                    result[field] = v;
-                } else {
-                    LOG(ERROR) << "GetVid ResultType : " << static_cast<int>(code)
-                               << " Value " << v << std::endl;
-                }
+                PRINT_ERROR_MESSAGE(code, v);
                 break;
             case cpp2::SupportedType::FLOAT:
                 float f;
                 code = reader->getFloat(field, f);
-                if (ResultType::SUCCEEDED == code) {
-                    result[field] = f;
-                } else {
-                    LOG(ERROR) << "GetFloat ResultType : " << static_cast<int>(code)
-                               << " Value " << f << std::endl;
-                }
+                PRINT_ERROR_MESSAGE(code, f);
                 break;
             case cpp2::SupportedType::DOUBLE:
                 double d;
                 code = reader->getDouble(field, d);
-                if (ResultType::SUCCEEDED == code) {
-                    result[field] = d;
-                } else {
-                    LOG(ERROR) << "GetDouble ResultType : " << static_cast<int>(code)
-                               << " Value " << d << std::endl;
-                }
+                PRINT_ERROR_MESSAGE(code, d)
                 break;
             case cpp2::SupportedType::TIMESTAMP:
                 // TODO(darion) Support TIMESTAMP

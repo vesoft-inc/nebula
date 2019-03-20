@@ -25,19 +25,6 @@ import java.util.Map;
 import org.junit.Test;
 
 public class NativeClientTest {
-    //@Test
-    public void testEncoded() {
-        Object[] values = {
-            false,
-            7,
-            1024L,
-            3.14F,
-            0.618,
-            "Hello".getBytes(),
-        };
-        byte[] result = encoded(values);
-        assertEquals(20, result.length);
-    }
 
     @Test
     public void testDecoded() {
