@@ -51,6 +51,10 @@ public:
     // (in the form of xx.xx.xx.xx)
     static std::string intToIPv4(uint32_t ip);
 
+    // Get local IPv4 address. You could specify it by pass in default local ip, otherwise
+    // it will use the first ip exclude "127.0.0.1"
+    static StatusOr<std::string> getLocalIP(std::string defaultIP = "");
+
 private:
 };
 
