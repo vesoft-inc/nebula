@@ -68,7 +68,11 @@ public:
         return Status();
     }
 
-#define STATUS_GENERATOR(ERROR)                        \
+#define STATUS_GENERATOR(ERROR)                         \
+    static Status ERROR() {                             \
+        return Status(k##ERROR, "");                    \
+    }                                                   \
+                                                        \
     static Status ERROR(folly::StringPiece msg) {       \
         return Status(k##ERROR, msg);                   \
     }                                                   \
@@ -93,6 +97,9 @@ public:
     // Graph engine errors
     STATUS_GENERATOR(SyntaxError);
 
+    // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
+    STATUS_GENERATOR(SpaceNotFound);
+
 #undef STATUS_GENERATOR
 
     std::string toString() const;
@@ -115,7 +122,7 @@ private:
         // 3xx, for storage engine errors
         // ...
         // 4xx, for meta service errors
-        // ...
+        kSpaceNotFound          = 404,
     };
 
     Code code() const {

@@ -128,10 +128,10 @@ public:
      */
     void purgeTimerTask(uint64_t id);
 
-private:
     template <typename F, typename...Args>
     uint64_t addTimerTask(size_t, size_t, F&&, Args&&...);
 
+private:
     void purgeTimerInternal(uint64_t id);
 
 private:

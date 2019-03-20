@@ -52,7 +52,11 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::getClient(
                 });
             return apache::thrift::HeaderClientChannel::newChannel(socket);
         });
-    auto client = std::make_shared<ClientType>(std::move(channel));
+    std::shared_ptr<ClientType> client(new ClientType(std::move(channel)), [evb](auto* p) {
+        evb->runImmediatelyOrRunInEventBaseThreadAndWait([p] {
+            delete p;
+        });
+    });
     manager.clientMap_->emplace(std::make_pair(host, evb), client);
     return client;
 }

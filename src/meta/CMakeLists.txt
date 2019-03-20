@@ -9,20 +9,33 @@ add_library(
     FileBasedSchemaManager.cpp
     ServerBasedSchemaManager.cpp
     AdHocSchemaManager.cpp
-    MetaServiceHandler.cpp
-    MetaHttpHandler.cpp
 )
 add_dependencies(meta_obj base_obj dataman_obj)
 
 add_library(
     meta_service_handler OBJECT
     MetaServiceHandler.cpp
+    MetaUtils.cpp
+    MetaHttpHandler.cpp
+    processors/CreateSpaceProcessor.cpp
+    processors/AddHostsProcessor.cpp
+    processors/ListHostsProcessor.cpp
+    processors/ListSpacesProcessor.cpp
+    processors/GetPartsAllocProcessor.cpp
 )
+
 add_dependencies(
     meta_service_handler
     base_obj
     meta_thrift_obj
     kvstore_obj
 )
+
+add_library(
+    meta_client OBJECT
+    client/MetaClient.cpp
+)
+
+add_dependencies(meta_client base_obj meta_thrift_obj)
 
 add_subdirectory(test)
