@@ -62,14 +62,6 @@ DEFINE_string(part_type, "simple", "simple, consensus...");
         return ResultCode::ERR_SPACE_NOT_FOUND; \
     }
 
-/**
- * Check and return code
- */
-#define CHECK_AND_RETURN_CODE \
-    if (code != ResultCode::SUCCEEDED) { \
-        return code; \
-    }
-
 namespace nebula {
 namespace kvstore {
 
@@ -83,13 +75,11 @@ KVStore* KVStore::instance(KVOptions options) {
 Engine NebulaStore::newEngine(GraphSpaceID spaceId, std::string rootPath) {
     if (FLAGS_engine_type == "rocksdb") {
         auto dataPath = KV_DATA_PATH_FORMAT(rootPath.c_str(), spaceId);
-        auto extraPath = KV_DATA_PATH_FORMAT(rootPath.c_str(), spaceId);
         auto engine = std::make_pair(
                                 std::unique_ptr<KVEngine>(
                                     new RocksdbEngine(
                                           spaceId,
                                           std::move(dataPath),
-                                          std::move(extraPath),
                                           options_.mergeOp_,
                                           options_.cfFactory_)),
                                 std::move(rootPath));
@@ -257,6 +247,7 @@ void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,
 }
 
 ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
+                               const std::string& extra,
                                const std::vector<std::string>& files) {
     CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
     for (auto& engine : it->second->engines_) {
@@ -264,17 +255,19 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
         std::vector<std::string> extras;
         for (auto part : parts) {
             for (auto file : files) {
-                auto extraData = folly::stringPrintf("%s/nebula/%d/%d/%s",
-                                                     options_.extraPath_.c_str(),
+                auto extraPath = folly::stringPrintf("%s/nebula/%d/%d/%s",
+                                                     extra.c_str(),
                                                      spaceId,
                                                      part,
                                                      file.c_str());
-                LOG(INFO) << "Loading extra path : " << extraData;
-                extras.emplace_back(std::move(extraData));
+                LOG(INFO) << "Loading extra path : " << extraPath;
+                extras.emplace_back(std::move(extraPath));
             }
         }
         auto code = engine.first->ingest(std::move(extras));
-        CHECK_AND_RETURN_CODE
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
     }
     return ResultCode::SUCCEEDED;
 }
@@ -285,7 +278,9 @@ ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
     CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
     for (auto& engine : it->second->engines_) {
         auto code = engine.first->setOption(config_key, config_value);
-        CHECK_AND_RETURN_CODE
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
     }
     return ResultCode::SUCCEEDED;
 }
@@ -297,7 +292,9 @@ ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
     CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
     for (auto& engine : it->second->engines_) {
         auto code = engine.first->setDBOption(config_key, config_value);
-        CHECK_AND_RETURN_CODE
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
     }
     return ResultCode::SUCCEEDED;
 }

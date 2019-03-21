@@ -4,6 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include "base/Base.h"
 #include "kvstore/RocksdbEngine.h"
 #include <folly/String.h>
 #include "fs/FileUtils.h"
@@ -17,21 +18,13 @@ const char* kSystemParts = "__system__parts__";
 
 RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId,
                              const std::string& dataPath,
-                             const std::string& extraPath,
                              std::shared_ptr<rocksdb::MergeOperator> mergeOp,
                              std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
     : KVEngine(spaceId)
-    , dataPath_(dataPath)
-    , extraPath_(extraPath) {
+    , dataPath_(dataPath) {
     LOG(INFO) << "open rocksdb on " << dataPath;
     if (nebula::fs::FileUtils::fileType(dataPath.c_str()) == nebula::fs::FileType::NOTEXIST) {
         nebula::fs::FileUtils::makeDir(dataPath);
-    }
-
-    if (!extraPath.empty() &&
-        nebula::fs::FileUtils::fileType(extraPath.c_str()) == nebula::fs::FileType::NOTEXIST) {
-            LOG(INFO) << "extra path " << extraPath;
-            nebula::fs::FileUtils::makeDir(extraPath);
     }
 
     rocksdb::Options options;

@@ -90,6 +90,7 @@ public:
                           KVCallback cb) override;
 
     ResultCode ingest(GraphSpaceID spaceId,
+                      const std::string& extra,
                       const std::vector<std::string>& files);
 
     ResultCode setOption(GraphSpaceID spaceId,
