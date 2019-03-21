@@ -193,8 +193,9 @@ object SparkSstFileGenerator {
             val partitionId: Int = (vertexId % mappingConfiguration.partitions).asInstanceOf[Int]
             val keyEncoded: Array[Byte] = NativeClient.createVertexKey(partitionId, vertexId, tagType, DefaultVersion)
             // TODO: need static NativeClient.encode here
-            // val valuesEncoded:Array[Byte] = NativeClient.encode(values)
-            val valuesEncoded: Array[Byte] = Array.empty[Byte]
+            // we need to wrap AnyVal in AnyRef to be compatible with NativeClient.encoded(Array[AnyRef])
+            val anyArray: Array[AnyRef] = Array(values)
+            val valuesEncoded: Array[Byte] = NativeClient.encoded(anyArray)
             (new BytesWritable(keyEncoded), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded))) //TODO:valuesEncoded should be of type BytesWritable
           }
         }
