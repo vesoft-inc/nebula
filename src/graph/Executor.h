@@ -78,9 +78,9 @@ public:
         return ectx_;
     }
 
-	/**
-	 * Init meta client
-	 */
+    /**
+     * Init meta client
+     */
     void InitMetaClient() {
         auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
         uint32_t localIp;

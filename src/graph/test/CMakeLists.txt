@@ -20,6 +20,7 @@ add_executable(
     $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:meta_obj>
 )
 nebula_link_libraries(
     session_manager_test
@@ -59,6 +60,7 @@ add_executable(
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_obj>
 )
 
 nebula_link_libraries(

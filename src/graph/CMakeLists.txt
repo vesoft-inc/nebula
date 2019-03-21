@@ -41,6 +41,7 @@ add_dependencies(
     ws_obj
     meta_thrift_obj
     meta_client
+    meta_obj
 )
 
 add_subdirectory(test)
