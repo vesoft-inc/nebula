@@ -187,6 +187,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
+
 template<typename REQ, typename RESP>
 kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
                             PartitionID partId,
@@ -195,12 +196,14 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
                             std::vector<PropContext>& props,
                             Collector* collector) {
     auto prefix = KeyUtils::prefix(partId, vId, tagId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
-        return ret;
+    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix);
+    if (!ok(ret)) {
+        VLOG(3) << "Error! ret = " << static_cast<int32_t>(error(ret))
+                << ", spaceId " << spaceId_;
+        return error(ret);
     }
+
+    std::unique_ptr<kvstore::KVIterator> iter = value(std::move(ret));;
     // Will decode the properties according to the schema version
     // stored along with the properties
     if (iter && iter->valid()) {
@@ -209,8 +212,10 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     } else {
         VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
     }
-    return ret;
+
+    return kvstore::ResultCode::SUCCEEDED;
 }
+
 
 template<typename REQ, typename RESP>
 kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
@@ -220,11 +225,15 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                                std::vector<PropContext>& props,
                                                EdgeProcessor proc) {
     auto prefix = KeyUtils::prefix(partId, vId, edgeType);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
-        return ret;
+    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix);
+    if (!ok(ret)) {
+        return error(ret);
     }
+    std::unique_ptr<kvstore::KVIterator> iter = value(std::move(ret));
+    if (!iter) {
+        return kvstore::ResultCode::SUCCEEDED;
+    }
+
     EdgeRanking lastRank  = -1;
     VertexID    lastDstId = 0;
     bool        firstLoop = true;
@@ -248,8 +257,10 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
             firstLoop = false;
         }
     }
-    return ret;
+
+    return kvstore::ResultCode::SUCCEEDED;
 }
+
 
 template<typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req) {

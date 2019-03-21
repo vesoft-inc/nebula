@@ -17,9 +17,16 @@ namespace nebula {
 namespace storage {
 
 TEST(AddEdgesTest, SimpleTest) {
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(),
+                                                             {0, 0},
+                                                             ioPool,
+                                                             workers);
     auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
+
     LOG(INFO) << "Build AddEdgesRequest...";
     cpp2::AddEdgesRequest req;
     req.space_id = 0;
@@ -47,8 +54,10 @@ TEST(AddEdgesTest, SimpleTest) {
     for (auto partId = 0; partId < 3; partId++) {
         for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
             auto prefix = KeyUtils::prefix(partId, srcId, srcId*100 + 1);
-            std::unique_ptr<kvstore::KVIterator> iter;
-            EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
+            auto res = kv->prefix(0, partId, prefix);
+            ASSERT_TRUE(ok(res));
+
+            std::unique_ptr<kvstore::KVIterator> iter = value(std::move(res));
             int num = 0;
             while (iter->valid()) {
                 EXPECT_EQ(folly::stringPrintf("%d_%d", partId, srcId), iter->val());

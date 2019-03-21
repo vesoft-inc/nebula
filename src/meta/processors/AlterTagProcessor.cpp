@@ -26,18 +26,21 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     auto tagId = ret.value();
 
     // Check the tag belongs to the space
+    auto res = kvstore_->prefix(
+        kDefaultSpaceId_,
+        kDefaultPartId_,
+        MetaServiceUtils::schemaTagPrefix(req.get_space_id(), tagId));
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto tagPrefix = MetaServiceUtils::schemaTagPrefix(req.get_space_id(), tagId);
-    auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, tagPrefix, &iter);
-    if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
+    if (!ok(res) || !(iter = value(std::move(res)))->valid()) {
         LOG(WARNING) << "Tag could not be found " << req.get_tag_name()
-        << ", spaceId " << req.get_space_id() << ", tagId " << tagId;
+                     << ", spaceId " << req.get_space_id()
+                     << ", tagId " << tagId;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
-    // Get lasted version of tag
+    // Get last version of tag
     auto version = MetaServiceUtils::parseTagVersion(iter->key()) + 1;
     auto schema = MetaServiceUtils::parseSchema(iter->val());
     auto columns = schema.get_columns();
@@ -63,6 +66,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));
 }
+
 
 cpp2::ErrorCode AlterTagProcessor::alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
                                                    const nebula::cpp2::ColumnDef col,

@@ -25,14 +25,14 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     std::vector<std::string> deleteKeys;
 
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(ret));
+    auto res = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix);
+    if (!ok(res)) {
+        resp_.set_code(to(error(res)));
         onFinished();
         return;
     }
 
+    std::unique_ptr<kvstore::KVIterator> iter = value(std::move(res));
     while (iter->valid()) {
         deleteKeys.emplace_back(iter->key());
         iter->next();

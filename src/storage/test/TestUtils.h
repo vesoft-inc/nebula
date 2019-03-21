@@ -15,33 +15,46 @@
 #include "meta/SchemaManager.h"
 
 
-DECLARE_string(part_man_type);
-
 namespace nebula {
 namespace storage {
 
 class TestUtils {
 public:
-    static kvstore::KVStore* initKV(const char* rootPath) {
-        auto partMan = std::make_unique<kvstore::MemPartManager>();
-        // GraphSpaceID =>  {PartitionIDs}
-        // 0 => {0, 1, 2, 3, 4, 5}
-        auto& partsMap = partMan->partsMap();
-        for (auto partId = 0; partId < 6; partId++) {
-            partsMap[0][partId] = PartMeta();
+    static std::unique_ptr<kvstore::KVStore> initKV(
+            const char* rootPath,
+            HostAddr localhost,
+            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
+            std::shared_ptr<thread::GenericThreadPool> workers,
+            bool useMetaServer = false) {
+        std::unique_ptr<kvstore::PartManager> partMan;
+        if (useMetaServer) {
+            partMan = std::make_unique<kvstore::MetaServerBasedPartManager>(localhost);
+        } else {
+            auto memPartMan = std::make_unique<kvstore::MemPartManager>();
+            // GraphSpaceID =>  {PartitionIDs}
+            // 0 => {0, 1, 2, 3, 4, 5}
+            auto& partsMap = memPartMan->partsMap();
+            for (auto partId = 0; partId < 6; partId++) {
+                partsMap[0][partId] = PartMeta();
+            }
+
+            partMan = std::move(memPartMan);
         }
+
         std::vector<std::string> paths;
         paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
         paths.push_back(folly::stringPrintf("%s/disk2", rootPath));
 
+        // Prepare KVStore
         kvstore::KVOptions options;
-        options.local_ = HostAddr(0, 0);
         options.dataPaths_ = std::move(paths);
         options.partMan_ = std::move(partMan);
-
-        kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
-                                        kvstore::KVStore::instance(std::move(options)));
-        return kv;
+        auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
+                                                            ioPool,
+                                                            workers,
+                                                            localhost);
+        sleep(1);
+        return store;
     }
 
     static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
@@ -154,53 +167,53 @@ public:
     }
 
     struct ServerContext {
-         ~ServerContext() {
-             server_->stop();
-             serverT_->join();
-             VLOG(3) << "~ServerContext";
-         }
+        ~ServerContext() {
+            server_->stop();
+            serverT_->join();
+            VLOG(3) << "~ServerContext";
+        }
 
-         std::unique_ptr<apache::thrift::ThriftServer> server_;
-         std::unique_ptr<std::thread> serverT_;
-         uint32_t port_;
-     };
+        std::unique_ptr<apache::thrift::ThriftServer> server_;
+        std::unique_ptr<std::thread> serverT_;
+        uint32_t port_;
+    };
 
-     static std::unique_ptr<ServerContext> mockServer(const char* dataPath,
-                                                      uint32_t ip,
-                                                      uint32_t port = 0) {
-         auto sc = std::make_unique<ServerContext>();
-         sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
-         sc->serverT_ = std::make_unique<std::thread>([&]() {
-            std::vector<std::string> paths;
-            paths.push_back(folly::stringPrintf("%s/disk1", dataPath));
-            paths.push_back(folly::stringPrintf("%s/disk2", dataPath));
-            kvstore::KVOptions options;
-            options.local_ = HostAddr(ip, port);
-            options.dataPaths_ = std::move(paths);
-            options.partMan_
-                = std::make_unique<kvstore::MetaServerBasedPartManager>(options.local_);
-            kvstore::NebulaStore* kvPtr = static_cast<kvstore::NebulaStore*>(
-                                        kvstore::KVStore::instance(std::move(options)));
-             std::unique_ptr<kvstore::KVStore> kv(kvPtr);
-             auto schemaMan = TestUtils::mockSchemaMan(1);
-             auto handler
-                    = std::make_shared<nebula::storage::StorageServiceHandler>(
-                                                                            kv.get(),
-                                                                            std::move(schemaMan));
-             CHECK(!!sc->server_) << "Failed to create the thrift server";
-             sc->server_->setInterface(handler);
-             sc->server_->setPort(port);
-             sc->server_->serve();  // Will wait until the server shuts down
-             LOG(INFO) << "Stop the server...";
-         });
-         while (!sc->server_->getServeEventBase()
-                 || !sc->server_->getServeEventBase()->isRunning()) {
-         }
-         sc->port_ = sc->server_->getAddress().getPort();
-         LOG(INFO) << "Starting the storage Daemon on port " << sc->port_
-                   << ", path " << dataPath;
-         return sc;
-     }
+    static std::unique_ptr<ServerContext> mockServer(const char* dataPath,
+                                                     uint32_t ip,
+                                                     uint32_t port = 0) {
+        auto sc = std::make_unique<ServerContext>();
+        sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
+        sc->serverT_ = std::make_unique<std::thread>([&]() {
+            auto workers = std::make_shared<thread::GenericThreadPool>();
+            workers->start(4);
+            auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+            HostAddr localhost = {ip, port};
+            auto kv = TestUtils::initKV(dataPath, localhost, ioPool, workers, true);
+
+            // Prepare thrift server
+            auto schemaMan = TestUtils::mockSchemaMan(1);
+            auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
+               kv.get(),
+               std::move(schemaMan));
+            CHECK(!!sc->server_) << "Failed to create the thrift server";
+            sc->server_->setInterface(handler);
+            sc->server_->setPort(port);
+            sc->server_->setIOThreadPool(ioPool);
+            sc->server_->serve();  // Will wait until the server shuts down
+            LOG(INFO) << "Stop the server...";
+        });
+
+        while (!sc->server_->getServeEventBase()
+                || !sc->server_->getServeEventBase()->isRunning()) {
+            // Sleep for 100ms
+            usleep(100000);
+        }
+
+        sc->port_ = sc->server_->getAddress().getPort();
+        LOG(INFO) << "The mock storage server started on port " << sc->port_
+                  << ", data path is \"" << dataPath << "\"";
+        return sc;
+    }
 };
 
 }  // namespace storage

@@ -13,14 +13,17 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
     auto spaceId = req.get_space_id();
     auto prefix = MetaServiceUtils::schemaEdgesPrefix(spaceId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
-    resp_.set_code(to(ret));
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    auto res = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix);
+    if (!ok(res)) {
+        resp_.set_code(to(error(res)));
         onFinished();
         return;
+    } else {
+        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     }
+
     decltype(resp_.edges) edges;
+    std::unique_ptr<kvstore::KVIterator> iter = value(std::move(res));
     while (iter->valid()) {
         cpp2::EdgeItem tag;
         auto key = iter->key();

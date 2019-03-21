@@ -13,13 +13,16 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto spaceId = req.get_space_id();
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
-    resp_.set_code(to(ret));
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix);
+    if (!ok(ret)) {
+        resp_.set_code(to(error(ret)));
         onFinished();
         return;
+    } else {
+        resp_.set_code(to(kvstore::ResultCode::SUCCEEDED));
     }
+
+    std::unique_ptr<kvstore::KVIterator> iter = value(std::move(ret));
     decltype(resp_.parts) parts;
     while (iter->valid()) {
         auto key = iter->key();

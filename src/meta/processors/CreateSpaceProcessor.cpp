@@ -19,12 +19,14 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     }
     CHECK_EQ(Status::SpaceNotFound(), spaceRet.status());
+
     auto ret = allHosts();
     if (!ret.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
         onFinished();
         return;
     }
+
     auto spaceId = autoIncrementId();
     VLOG(3) << "Create space " << req.get_space_name() << ", id " << spaceId;
     auto hosts = ret.value();
@@ -45,6 +47,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     resp_.set_id(to(spaceId, EntryType::SPACE));
     doPut(std::move(data));
 }
+
 
 std::vector<nebula::cpp2::HostAddr>
 CreateSpaceProcessor::pickHosts(PartitionID partId,

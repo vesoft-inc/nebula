@@ -5,6 +5,8 @@
  */
 
 #include "meta/processors/ListTagsProcessor.h"
+#include "interface/gen-cpp2/meta_types.h"
+#include "kvstore/Common.h"
 
 namespace nebula {
 namespace meta {
@@ -13,13 +15,16 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
     auto spaceId = req.get_space_id();
     auto prefix = MetaServiceUtils::schemaTagsPrefix(spaceId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
-    resp_.set_code(to(ret));
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    auto res = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix);
+    if (!ok(res)) {
+        resp_.set_code(to(error(res)));
         onFinished();
         return;
+    } else {
+        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     }
+
+    std::unique_ptr<kvstore::KVIterator> iter = value(std::move(res));
     decltype(resp_.tags) tags;
     while (iter->valid()) {
         cpp2::TagItem tag;

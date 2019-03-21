@@ -48,13 +48,12 @@ void mockData(kvstore::KVStore* kv) {
                 data.emplace_back(std::move(key), std::move(val));
             }
         }
-        kv->asyncMultiPut(0, partId, std::move(data),
-                            [&](kvstore::ResultCode code, HostAddr addr) {
+        kv->asyncMultiPut(0, partId, std::move(data), [&](kvstore::ResultCode code) {
             EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-            UNUSED(addr);
         });
     }
 }
+
 
 void buildRequest(cpp2::GetNeighborsRequest& req) {
     req.set_space_id(0);
@@ -83,6 +82,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
     }
     req.set_return_columns(std::move(tmpColumns));
 }
+
 
 void checkResponse(const cpp2::QueryStatsResponse& resp) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
@@ -131,9 +131,17 @@ void checkResponse(const cpp2::QueryStatsResponse& resp) {
     }
 }
 
+
 TEST(QueryStatsTest, StatsSimpleTest) {
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/QueryStatsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(),
+                                                             {0, 0},
+                                                             ioPool,
+                                                             workers);
+
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
@@ -157,6 +165,7 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
+
     return RUN_ALL_TESTS();
 }
 

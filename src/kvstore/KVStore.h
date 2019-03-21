@@ -8,6 +8,7 @@
 #define KVSTORE_KVSTORE_H_
 
 #include "base/Base.h"
+#include "base/ErrorOr.h"
 #include <rocksdb/merge_operator.h>
 #include <rocksdb/compaction_filter.h>
 #include "kvstore/Common.h"
@@ -18,10 +19,6 @@ namespace nebula {
 namespace kvstore {
 
 struct KVOptions {
-    /**
-     * Local address, it would be used for search related meta information on meta server.
-     * */
-    HostAddr local_;
     /**
      *  Paths for data. It would be used by rocksdb engine.
      *  Be careful! We should ensure each "paths" has only one instance, otherwise
@@ -44,9 +41,10 @@ struct KVOptions {
 
 
 struct StoreCapability {
-    static const uint32_t SC_FILTERING = 1;
-    static const uint32_t SC_ASYNC = 2;
+    static const uint32_t SC_FILTER = 1;
 };
+#define SUPPORT_FILTER(store) \
+    (store.capability() & StoreCapability::SC_FILTER)
 
 
 /**
@@ -54,60 +52,64 @@ struct StoreCapability {
  */
 class KVStore {
 public:
-    /**
-     * Create one new instance each time.
-     * */
-    static KVStore* instance(KVOptions options);
-
     virtual ~KVStore() = default;
 
     // Return bit-OR of StoreCapability values;
     virtual uint32_t capability() const = 0;
 
-    virtual ResultCode get(GraphSpaceID spaceId,
-                           PartitionID  partId,
-                           const std::string& key,
-                           std::string* value) = 0;
+    // Retrieve the current leader for the given partition. This
+    // is usually called when ERR_LEADER_CHANGED result code is
+    // returnde
+    virtual HostAddr partLeader(GraphSpaceID spaceId, PartitionID partID) = 0;
 
-    virtual ResultCode multiGet(GraphSpaceID spaceId,
-                                PartitionID partId,
-                                const std::vector<std::string>& keys,
-                                std::vector<std::string>* values) = 0;
+    virtual ErrorOr<ResultCode, std::string> get(GraphSpaceID spaceId,
+                                                 PartitionID  partId,
+                                                 const std::string& key) = 0;
+    virtual ErrorOr<ResultCode, std::vector<std::string>>
+    multiGet(GraphSpaceID spaceId,
+             PartitionID partId,
+             const std::vector<std::string>& keys) = 0;
+
     /**
      * Get all results in range [start, end)
-     * */
-    virtual ResultCode range(GraphSpaceID spaceId,
-                             PartitionID  partId,
-                             const std::string& start,
-                             const std::string& end,
-                             std::unique_ptr<KVIterator>* iter) = 0;
+     **/
+    virtual ErrorOr<ResultCode, std::unique_ptr<KVIterator>>
+    range(GraphSpaceID spaceId,
+          PartitionID  partId,
+          const std::string& start,
+          const std::string& end) = 0;
+
     /**
      * Since the `range' interface will hold references to its 3rd & 4th parameter, in `iter',
      * thus the arguments must outlive `iter'.
      * Here we forbid one to invoke `range' with rvalues, which is the common mistake.
      */
-    virtual ResultCode range(GraphSpaceID spaceId,
-                             PartitionID  partId,
-                             std::string&& start,
-                             std::string&& end,
-                             std::unique_ptr<KVIterator>* iter) = delete;
+    virtual ErrorOr<ResultCode, std::unique_ptr<KVIterator>>
+    range(GraphSpaceID spaceId,
+          PartitionID  partId,
+          std::string&& start,
+          std::string&& end) = delete;
 
     /**
      * Get all results with prefix.
-     * */
-    virtual ResultCode prefix(GraphSpaceID spaceId,
-                              PartitionID  partId,
-                              const std::string& prefix,
-                              std::unique_ptr<KVIterator>* iter) = 0;
+     **/
+    virtual ErrorOr<ResultCode, std::unique_ptr<KVIterator>>
+    prefix(GraphSpaceID spaceId,
+           PartitionID  partId,
+           const std::string& prefix) = 0;
+
     /**
      * To forbid to pass rvalue via the `prefix' parameter.
      */
-    virtual ResultCode prefix(GraphSpaceID spaceId,
-                              PartitionID  partId,
-                              std::string&& prefix,
-                              std::unique_ptr<KVIterator>* iter) = delete;
+    virtual ErrorOr<ResultCode, std::unique_ptr<KVIterator>>
+    prefix(GraphSpaceID spaceId,
+           PartitionID  partId,
+           std::string&& prefix,
+           std::unique_ptr<KVIterator>* iter) = delete;
 
-
+    /**
+     * Asynchrous version of remove methods
+     **/
     virtual void asyncMultiPut(GraphSpaceID spaceId,
                                PartitionID  partId,
                                std::vector<KV> keyValues,

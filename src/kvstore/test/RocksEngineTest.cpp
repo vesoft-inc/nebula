@@ -18,9 +18,9 @@ TEST(RocksEngineTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
-    std::string val;
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
-    EXPECT_EQ(val, "val");
+    auto res = engine->get("key");
+    EXPECT_TRUE(ok(res));
+    EXPECT_EQ(value(res), "val");
 }
 
 
@@ -29,18 +29,22 @@ TEST(RocksEngineTest, RangeTest) {
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     std::vector<KV> data;
     for (int32_t i = 10; i < 20;  i++) {
-        data.emplace_back(std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
+        data.emplace_back(std::string(reinterpret_cast<const char*>(&i),
+                                      sizeof(int32_t)),
                           folly::stringPrintf("val_%d", i));
     }
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
+
     auto checkRange = [&](int32_t start, int32_t end,
                           int32_t expectedFrom, int32_t expectedTotal) {
-        LOG(INFO) << "start " << start << ", end " << end
-                  << ", expectedFrom " << expectedFrom << ", expectedTotal " << expectedTotal;
+        VLOG(1) << "start = " << start << ", end = " << end
+                << ", expectedFrom = " << expectedFrom
+                << ", expectedTotal = " << expectedTotal;
         std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
         std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
-        std::unique_ptr<KVIterator> iter;
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->range(s, e, &iter));
+        auto res = engine->range(s, e);
+        EXPECT_TRUE(ok(res));
+        std::unique_ptr<KVIterator> iter = value(std::move(res));
         int num = 0;
         while (iter->valid()) {
             num++;
@@ -65,7 +69,7 @@ TEST(RocksEngineTest, RangeTest) {
 TEST(RocksEngineTest, PrefixTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
-    LOG(INFO) << "Write data in batch and scan them...";
+    VLOG(1) << "Write data in batch and scan them...";
     std::vector<KV> data;
     for (int32_t i = 0; i < 10;  i++) {
         data.emplace_back(folly::stringPrintf("a_%d", i),
@@ -80,12 +84,17 @@ TEST(RocksEngineTest, PrefixTest) {
                           folly::stringPrintf("val_%d", i));
     }
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
+
     auto checkPrefix = [&](const std::string& prefix,
-                          int32_t expectedFrom, int32_t expectedTotal) {
-        LOG(INFO) << "prefix " << prefix
-                  << ", expectedFrom " << expectedFrom << ", expectedTotal " << expectedTotal;
-        std::unique_ptr<KVIterator> iter;
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->prefix(prefix, &iter));
+                           int32_t expectedFrom,
+                           int32_t expectedTotal) {
+        VLOG(1) << "prefix = \"" << prefix
+                << "\", expectedFrom = " << expectedFrom
+                << ", expectedTotal = " << expectedTotal;
+
+        auto res = engine->prefix(prefix);
+        EXPECT_TRUE(ok(res));
+        std::unique_ptr<KVIterator> iter = value(std::move(res));
         int num = 0;
         while (iter->valid()) {
             num++;
@@ -98,6 +107,7 @@ TEST(RocksEngineTest, PrefixTest) {
         }
         EXPECT_EQ(expectedTotal, num);
     };
+
     checkPrefix("a", 0, 10);
     checkPrefix("b", 10, 5);
     checkPrefix("c", 20, 20);
@@ -108,11 +118,14 @@ TEST(RocksEngineTest, RemoveTest) {
     fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->put("key", "val"));
-    std::string val;
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &val));
-    EXPECT_EQ(val, "val");
+    auto res1 = engine->get("key");
+    EXPECT_TRUE(ok(res1));
+    EXPECT_EQ(value(std::move(res1)), "val");
+
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->remove("key"));
-    EXPECT_EQ(ResultCode::ERR_KEY_NOT_FOUND, engine->get("key", &val));
+    auto res2 = engine->get("key");
+    ASSERT_FALSE(ok(res2));
+    EXPECT_EQ(ResultCode::ERR_KEY_NOT_FOUND, error(res2));
 }
 
 
@@ -120,27 +133,32 @@ TEST(RocksEngineTest, RemoveRangeTest) {
     fs::TempDir rootPath("/tmp/rocksdb_remove_range_test.XXXXXX");
     auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     for (int32_t i = 0; i < 100; i++) {
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->put(
-                    std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
-                    folly::stringPrintf("%d_val", i)));
-        std::string val;
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->get(
-                    std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
-                    &val));
-        EXPECT_EQ(val, folly::stringPrintf("%d_val", i));
+        auto key = std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t));
+        EXPECT_EQ(ResultCode::SUCCEEDED,
+                  engine->put(key, folly::stringPrintf("%d_val", i)));
+        auto res = engine->get(key);
+        EXPECT_TRUE(ok(res));
+        EXPECT_EQ(value(std::move(res)), folly::stringPrintf("%d_val", i));
     }
+
     {
-        int32_t s = 0, e = 50;
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->removeRange(
-                     std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t)),
-                     std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t))));
+        int32_t s = 0;
+        int32_t e = 50;
+        EXPECT_EQ(ResultCode::SUCCEEDED,
+                  engine->removeRange(
+                    std::string(reinterpret_cast<const char*>(&s), sizeof(int32_t)),
+                    std::string(reinterpret_cast<const char*>(&e), sizeof(int32_t))));
     }
+
     {
-        int32_t s = 0, e = 100;
-        std::unique_ptr<KVIterator> iter;
+        int32_t s = 0;
+        int32_t e = 100;
         std::string start(reinterpret_cast<const char*>(&s), sizeof(int32_t));
         std::string end(reinterpret_cast<const char*>(&e), sizeof(int32_t));
-        EXPECT_EQ(ResultCode::SUCCEEDED, engine->range(start, end, &iter));
+
+        auto res = engine->range(start, end);
+        EXPECT_TRUE(ok(res));
+        std::unique_ptr<KVIterator> iter = value(std::move(res));
         int num = 0;
         int expectedFrom = 50;
         while (iter->valid()) {
@@ -159,7 +177,7 @@ TEST(RocksEngineTest, RemoveRangeTest) {
 
 TEST(RocksEngineTest, OptionTest) {
     fs::TempDir rootPath("/tmp/rocksdb_option_test.XXXXXX");
-    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    std::unique_ptr<RocksEngine> engine = std::make_unique<RocksEngine>(0, rootPath.path());
     EXPECT_EQ(ResultCode::SUCCEEDED,
               engine->setOption("disable_auto_compactions", "true"));
     EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,

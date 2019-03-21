@@ -11,7 +11,9 @@
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
+#include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/NebulaStore.h"
 
 using nebula::ProcessUtils;
 using nebula::Status;
@@ -22,6 +24,8 @@ DEFINE_string(peers, "", "It is a list of IPs split by comma,"
                          "the ips number equals replica number."
                          "If empty, it means replica is 1");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
+DEFINE_int32(num_workers, 4, "Number of worker threads");
+DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DECLARE_string(part_man_type);
 
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
@@ -104,12 +108,22 @@ int main(int argc, char *argv[]) {
     // The meta server has only one space, one part.
     partMan->addPart(0, 0, nebula::toHosts(FLAGS_peers));
 
+    // Generic thread pool
+    auto workers = std::make_shared<nebula::thread::GenericThreadPool>();
+    workers->start(FLAGS_num_workers);
+
+    // folly IOThreadPoolExecutor
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
+
     nebula::kvstore::KVOptions options;
-    options.local_ = nebula::HostAddr(localIP, FLAGS_port);
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
-    std::unique_ptr<nebula::kvstore::KVStore> kvstore(
-            nebula::kvstore::KVStore::instance(std::move(options)));
+    nebula::HostAddr localhost = nebula::HostAddr(localIP, FLAGS_port);
+    std::unique_ptr<nebula::kvstore::KVStore> kvstore =
+        std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
+                                                       ioPool,
+                                                       workers,
+                                                       localhost);
 
     auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
 

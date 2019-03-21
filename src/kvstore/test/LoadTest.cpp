@@ -31,9 +31,9 @@ TEST(Load, SSTLoad) {
     std::vector<std::string> files = {file};
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->ingest(files));
 
-    std::string result;
-    EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &result));
-    EXPECT_EQ(result, "value");
+    auto res = engine->get("key");
+    EXPECT_TRUE(ok(res));
+    EXPECT_EQ("value", value(std::move(res)));
 }
 
 }   // namespace kvstore

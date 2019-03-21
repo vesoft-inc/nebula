@@ -15,7 +15,7 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
     switch (code) {
     case kvstore::ResultCode::SUCCEEDED:
         return cpp2::ErrorCode::SUCCEEDED;
-    case kvstore::ResultCode::ERR_LEADER_CHANAGED:
+    case kvstore::ResultCode::ERR_LEADER_CHANGED:
         return cpp2::ErrorCode::E_LEADER_CHANGED;
     case kvstore::ResultCode::ERR_SPACE_NOT_FOUND:
         return cpp2::ErrorCode::E_SPACE_NOT_FOUND;
@@ -26,17 +26,22 @@ cpp2::ErrorCode BaseProcessor<RESP>::to(kvstore::ResultCode code) {
     }
 }
 
+
 template<typename RESP>
 void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<kvstore::KV> data) {
-    this->kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
-                                  [partId, this](kvstore::ResultCode code, HostAddr addr) {
+    this->kvstore_->asyncMultiPut(spaceId,
+                                  partId,
+                                  std::move(data),
+                                  [spaceId, partId, this](kvstore::ResultCode code) {
         VLOG(3) << "partId:" << partId << ", code:" << static_cast<int32_t>(code);
+
         cpp2::ResultCode thriftResult;
         thriftResult.set_code(to(code));
         thriftResult.set_part_id(partId);
-        if (code == kvstore::ResultCode::ERR_LEADER_CHANAGED) {
+        if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+            auto addr = kvstore_->partLeader(spaceId, partId);
             thriftResult.get_leader()->set_ip(addr.first);
             thriftResult.get_leader()->set_port(addr.second);
         }
@@ -57,7 +62,6 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
         }
     });
 }
-
 
 }  // namespace storage
 }  // namespace nebula

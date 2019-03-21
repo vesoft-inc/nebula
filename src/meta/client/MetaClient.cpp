@@ -41,9 +41,11 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
     if (addrs_.empty() && !FLAGS_meta_server_addrs.empty()) {
         addrs_ = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
     }
-    CHECK(!addrs_.empty());
-    clientsMan_ = std::make_shared<thrift::ThriftClientManager<
-                                    meta::cpp2::MetaServiceAsyncClient>>();
+    CHECK(!addrs_.empty())
+        << "No meta server address is specified. Meta server is required";
+    clientsMan_ = std::make_shared<
+        thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>
+    >();
     updateActiveHost();
     loadDataThreadFunc();
     LOG(INFO) << "Create meta client to " << active_;
@@ -90,7 +92,8 @@ void MetaClient::loadDataThreadFunc() {
         spaceCache->spaceName = space.second;
         spaceCache->partsOnHost_ = reverse(partsAlloc);
         spaceCache->partsAlloc_ = std::move(partsAlloc);
-        VLOG(3) << "Load space " << spaceId << ", parts num:" << spaceCache->partsAlloc_.size();
+        VLOG(2) << "Load space " << spaceId
+                << ", parts num:" << spaceCache->partsAlloc_.size();
 
         // loadSchemas
         if (!loadSchemas(spaceId,

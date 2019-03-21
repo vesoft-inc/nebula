@@ -35,8 +35,11 @@ using nebula::cpp2::SupportedType;
 using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(ProcessorTest, AddHostsTest) {
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
@@ -110,9 +113,13 @@ TEST(ProcessorTest, AddHostsTest) {
     }
 }
 
+
 TEST(ProcessorTest, CreateSpaceTest) {
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
     {
         cpp2::CreateSpaceReq req;
@@ -176,9 +183,13 @@ TEST(ProcessorTest, CreateSpaceTest) {
     }
 }
 
+
 TEST(ProcessorTest, CreateTagsTest) {
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
     TestUtils::createSomeHosts(kv.get());
     {
         cpp2::CreateSpaceReq req;
@@ -223,9 +234,13 @@ TEST(ProcessorTest, CreateTagsTest) {
     }
 }
 
+
 TEST(ProcessorTest, KVOperationTest) {
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/KVOperationTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
     UNUSED(hostsNum);
 
@@ -360,9 +375,13 @@ TEST(ProcessorTest, KVOperationTest) {
     }
 }
 
+
 TEST(ProcessorTest, ListOrGetTagsTest) {
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/ListTagsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
     TestUtils::mockTag(kv.get(), 10);
 
     // test ListTagsProcessor
@@ -408,41 +427,51 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
     }
 }
 
+
 TEST(ProcessorTest, RemoveTagTest) {
-     fs::TempDir rootPath("/tmp/RemoveTagTest.XXXXXX");
-     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
-     TestUtils::mockTag(kv.get(), 1);
-      // remove tag processor test
-     {
-         cpp2::RemoveTagReq req;
-         req.set_space_id(1);
-         req.set_tag_name("tag_0");
-         auto* processor = RemoveTagProcessor::instance(kv.get());
-         auto f = processor->getFuture();
-         processor->process(req);
-         auto resp = std::move(f).get();
-         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-     }
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+    fs::TempDir rootPath("/tmp/RemoveTagTest.XXXXXX");
+    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    TestUtils::mockTag(kv.get(), 1);
+
+    // remove tag processor test
+    {
+        cpp2::RemoveTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        auto* processor = RemoveTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
 
      // check tag data has been deleted.
-     {
-         std::string tagVal;
-         kvstore::ResultCode ret;
-         std::unique_ptr<kvstore::KVIterator> iter;
-         ret = kv.get()->get(0, 0, std::move(MetaServiceUtils::indexTagKey(1, "tag_1")),
-                             &tagVal);
-         ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
-         std::string tagPrefix = "__tags__";
-         ret = kv.get()->prefix(0, 0, tagPrefix, &iter);
-         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
-         ASSERT_FALSE(iter->valid());
-     }
+    {
+        auto res1 = kv->get(
+            0,
+            0,
+            std::move(MetaServiceUtils::indexTagKey(1, "tag_1")));
+        ASSERT_FALSE(ok(res1));
+        ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, error(res1));
+
+        auto res2 = kv->prefix(0, 0, "__tags__");
+        ASSERT_TRUE(ok(res2));
+        std::unique_ptr<kvstore::KVIterator> iter = value(std::move(res2));
+        ASSERT_FALSE(iter->valid());
+    }
 }
 
+
 TEST(ProcessorTest, AlterTagTest) {
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/AlterTagTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockTag(kv.get(), 1);
     // Alter tag processor test
@@ -590,10 +619,15 @@ TEST(ProcessorTest, AlterTagTest) {
     }
 }
 
+
 TEST(ProcessorTest, SameNameTagsTest) {
-    fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+    fs::TempDir rootPath("/tmp/SameNameTagsTest.XXXXXX");
+    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
     TestUtils::createSomeHosts(kv.get());
+
     {
         cpp2::CreateSpaceReq req;
         req.set_space_name("first_space");
@@ -606,6 +640,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
+
     {
         cpp2::CreateSpaceReq req;
         req.set_space_name("second_space");
@@ -626,6 +661,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
     cols.emplace_back(TestUtils::columnDef(1, SupportedType::FLOAT));
     cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
     schema.set_columns(std::move(cols));
+
     {
         cpp2::CreateTagReq req;
         req.set_space_id(1);
@@ -638,6 +674,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(3, resp.get_id().get_tag_id());
     }
+
     {
         cpp2::CreateTagReq req;
         req.set_space_id(2);
@@ -676,6 +713,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         ASSERT_EQ(0, tags.size());
     }
+
     {
         cpp2::ListTagsReq req;
         req.set_space_id(2);
@@ -694,6 +732,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
 }
 }  // namespace meta
 }  // namespace nebula
+
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

@@ -86,41 +86,57 @@ private:
 };
 
 
+/**************************************************************************
+ *
+ * An implementation of KVEngine based on Rocksdb
+ *
+ *************************************************************************/
 class RocksEngine : public KVEngine {
     FRIEND_TEST(RocksEngineTest, SimpleTest);
 
 public:
     RocksEngine(GraphSpaceID spaceId,
-                const std::string& dataPath,
+                const std::string& path,
                 std::shared_ptr<rocksdb::MergeOperator> mergeOp = nullptr,
                 std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr);
 
-    ~RocksEngine();
+    ~RocksEngine() = default;
 
-    ResultCode get(const std::string& key,
-                   std::string* value) override;
+    const char* getDataRoot() const override {
+        return dataRoot_.c_str();
+    }
 
-    ResultCode multiGet(const std::vector<std::string>& keys,
-                        std::vector<std::string>* values) override;
+    std::unique_ptr<WriteBatch> startBatchWrite() override;
+    ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch) override;
 
-    ResultCode put(std::string key,
-                   std::string value) override;
+    /*********************
+     * Data retrieval
+     ********************/
+    ErrorOr<ResultCode, std::string> get(folly::StringPiece key) override;
 
-    ResultCode multiPut(std::vector<KV> keyValues) override;
+    ErrorOr<ResultCode, std::vector<std::string>>
+    multiGet(const std::vector<std::string>& keys) override;
 
-    ResultCode range(const std::string& start,
-                     const std::string& end,
-                     std::unique_ptr<KVIterator>* iter) override;
+    ErrorOr<ResultCode, std::unique_ptr<KVIterator>>
+    range(folly::StringPiece start, folly::StringPiece end) override;
 
-    ResultCode prefix(const std::string& prefix,
-                      std::unique_ptr<KVIterator>* iter) override;
+    ErrorOr<ResultCode, std::unique_ptr<KVIterator>>
+    prefix(folly::StringPiece prefix) override;
 
-    ResultCode remove(const std::string& key) override;
+    /*********************
+     * Data modification
+     ********************/
+    ResultCode put(folly::StringPiece key, folly::StringPiece value) override;
 
-    ResultCode multiRemove(std::vector<std::string> keys) override;
+    ResultCode multiPut(const std::vector<KV>& keyValues) override;
 
-    ResultCode removeRange(const std::string& start,
-                           const std::string& end) override;
+    ResultCode remove(folly::StringPiece key) override;
+
+    ResultCode multiRemove(const std::vector<std::string>& keys) override;
+
+    ResultCode removePrefix(folly::StringPiece prefix) override;
+
+    ResultCode removeRange(folly::StringPiece start, folly::StringPiece end) override;
 
     void addPart(PartitionID partId) override;
 
@@ -144,8 +160,7 @@ private:
     std::string partKey(PartitionID partId);
 
 private:
-    std::string  dataPath_;
-    std::string  extraPath_;
+    std::string dataRoot_;
     std::unique_ptr<rocksdb::DB> db_{nullptr};
     int32_t partsNum_ = -1;
 };

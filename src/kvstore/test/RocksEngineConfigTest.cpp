@@ -11,15 +11,15 @@
 #include "rocksdb/convenience.h"
 #include "rocksdb/utilities/options_util.h"
 #include "rocksdb/slice_transform.h"
-#include <kvstore/RocksEngine.h>
 #include "fs/TempDir.h"
+#include "kvstore/RocksEngine.h"
 #include "kvstore/RocksEngineConfig.h"
 
 namespace nebula {
 namespace kvstore {
 
-TEST(RocksEngineConfigTest, simpleOptionTest) {
-    fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
+TEST(RocksEngineConfigTest, SimpleOptionTest) {
+    fs::TempDir rootPath("/tmp/SimpleOptionTest.XXXXXX");
 
     FLAGS_rocksdb_db_options = "stats_dump_period_sec=200;"
                                "enable_write_thread_adaptive_yield=false;"
@@ -30,7 +30,7 @@ TEST(RocksEngineConfigTest, simpleOptionTest) {
     FLAGS_rocksdb_block_based_table_options = "block_restart_interval=2";
 
     // Create the RocksEngine instance
-    auto engine = std::make_unique<RocksEngine>(0, KV_DATA_PATH_FORMAT(rootPath.path(), 0));
+    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     engine.reset();
 
     ASSERT_NE(nebula::fs::FileType::NOTEXIST,
@@ -45,7 +45,10 @@ TEST(RocksEngineConfigTest, simpleOptionTest) {
             rocksdb::Env::Default(),
             &loadedDbOpt,
             &loadedCfDescs);
-    ASSERT_TRUE(s.ok());
+    ASSERT_TRUE(s.ok())
+        << "Unexpected error happens when loading the option file from \""
+        << KV_DATA_PATH_FORMAT(rootPath.path(), 0)
+        << "\": " << s.ToString();
 
     EXPECT_EQ(200, loadedDbOpt.stats_dump_period_sec);
     EXPECT_EQ(false, loadedDbOpt.enable_write_thread_adaptive_yield);

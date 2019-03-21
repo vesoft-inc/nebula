@@ -23,8 +23,12 @@ using nebula::cpp2::SupportedType;
 
 class TestUtils {
 public:
-    static kvstore::KVStore* initKV(const char* rootPath) {
+    static std::unique_ptr<kvstore::KVStore> initKV(
+            const char* rootPath,
+            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
+            std::shared_ptr<thread::GenericThreadPool> workers) {
         auto partMan = std::make_unique<kvstore::MemPartManager>();
+
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0}
         auto& partsMap = partMan->partsMap();
@@ -34,13 +38,16 @@ public:
         paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
 
         kvstore::KVOptions options;
-        options.local_ = HostAddr(0, 0);
         options.dataPaths_ = std::move(paths);
         options.partMan_ = std::move(partMan);
+        HostAddr localhost = HostAddr(0, 0);
 
-        kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
-                                     kvstore::KVStore::instance(std::move(options)));
-        return kv;
+        auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
+                                                            ioPool,
+                                                            workers,
+                                                            localhost);
+        sleep(1);
+        return std::move(store);
     }
 
     static nebula::cpp2::ColumnDef columnDef(int32_t index, nebula::cpp2::SupportedType st) {
@@ -92,10 +99,9 @@ public:
         std::vector<nebula::kvstore::KV> data;
         data.emplace_back(MetaServiceUtils::spaceKey(id), "test_space");
         kv->asyncMultiPut(0, 0, std::move(data),
-                          [&] (kvstore::ResultCode code, HostAddr leader) {
-            ret = (code == kvstore::ResultCode::SUCCEEDED);
-            UNUSED(leader);
-        });
+                          [&] (kvstore::ResultCode code) {
+                              ret = (code == kvstore::ResultCode::SUCCEEDED);
+                          });
         return ret;
     }
 
@@ -119,10 +125,9 @@ public:
         }
 
         kv->asyncMultiPut(0, 0, std::move(tags),
-                                [] (kvstore::ResultCode code, HostAddr leader) {
-            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
-            UNUSED(leader);
-        });
+                          [] (kvstore::ResultCode code) {
+                                ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+                          });
     }
 
     struct ServerContext {
@@ -140,17 +145,28 @@ public:
         auto sc = std::make_unique<ServerContext>();
         sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
         sc->serverT_ = std::make_unique<std::thread>([&]() {
-            LOG(INFO) << "Starting the meta Daemon on port " << port << ", path " << dataPath;
-            std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath));
+            auto workers = std::make_shared<thread::GenericThreadPool>();
+            workers->start(4);
+            auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+            LOG(INFO) << "Initializing KVStore at \"" << dataPath << "\"";
+            auto kv = TestUtils::initKV(dataPath, ioPool, workers);
             auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kv.get());
             CHECK(!!sc->server_) << "Failed to create the thrift server";
             sc->server_->setInterface(handler);
             sc->server_->setPort(port);
+            LOG(INFO) << "Starting the mock meta server on port " << port;
             sc->server_->serve();  // Will wait until the server shuts down
 
             LOG(INFO) << "Stop the server...";
         });
-        sleep(1);
+
+        while (!sc->server_->getServeEventBase()
+                || !sc->server_->getServeEventBase()->isRunning()) {
+            // Sleep for 100ms
+            usleep(100000);
+        }
+
+        LOG(INFO) << "The mock meta server started on port " << port;
         return sc;
     }
 };

@@ -13,13 +13,16 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
     UNUSED(req);
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::spacePrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        resp_.set_code(to(ret));
+    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix);
+    if (!ok(ret)) {
+        resp_.set_code(to(error(ret)));
         onFinished();
         return;
+    } else {
+        resp_.set_code(to(kvstore::ResultCode::SUCCEEDED));
     }
+
+    std::unique_ptr<kvstore::KVIterator> iter = value(std::move(ret));
     std::vector<cpp2::IdName> spaces;
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());

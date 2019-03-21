@@ -66,6 +66,7 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
     resp_.set_data(std::move(writer.encode()));
 }
 
+
 kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
                                                        VertexID vId,
                                                        std::vector<TagContext>& tagContexts,

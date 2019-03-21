@@ -23,6 +23,7 @@ public:
     virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
 };
 
+
 /**
  * This class manages all meta information one storage host needed.
  * */
@@ -62,6 +63,7 @@ public:
 protected:
     Handler* handler_ = nullptr;
 };
+
 
 /**
 : * Memory based PartManager, it is used in UTs now.
@@ -126,6 +128,7 @@ public:
 private:
     PartsMap partsMap_;
 };
+
 
 class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedListener {
 public:

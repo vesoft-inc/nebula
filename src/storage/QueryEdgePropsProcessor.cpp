@@ -21,8 +21,13 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                        RowSetWriter& rsWriter) {
     auto prefix = KeyUtils::prefix(partId, edgeKey.src, edgeKey.edge_type,
                                    edgeKey.ranking, edgeKey.dst);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
+    auto res = kvstore_->prefix(spaceId_, partId, prefix);
+    if (!ok(res)) {
+        VLOG(2) << "Failed to retrieve keys (error = " << error(res) << ")";
+        return error(res);
+    }
+
+    std::unique_ptr<kvstore::KVIterator> iter = value(std::move(res));
     // Only use the latest version.
     if (iter && iter->valid()) {
         RowWriter writer(rsWriter.schema());
@@ -36,14 +41,17 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
 
         iter->next();
     }
-    return ret;
+
+    return kvstore::ResultCode::SUCCEEDED;
 }
+
 
 void QueryEdgePropsProcessor::addDefaultProps(EdgeContext& edgeContext) {
     edgeContext.props_.emplace_back("_src", 0, PropContext::PropInKeyType::SRC);
     edgeContext.props_.emplace_back("_rank", 1, PropContext::PropInKeyType::RANK);
     edgeContext.props_.emplace_back("_dst", 2, PropContext::PropInKeyType::DST);
 }
+
 
 void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     spaceId_ = req.get_space_id();
