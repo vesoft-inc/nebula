@@ -30,6 +30,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         onFinished();
         return;
     }
+
     auto spaceId = autoIncrementId();
     auto spaceName = properties.get_space_name();
     auto partitionNum = properties.get_partition_num();
@@ -56,6 +57,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     resp_.set_id(to(spaceId, EntryType::SPACE));
     doPut(std::move(data));
 }
+
 
 std::vector<nebula::cpp2::HostAddr>
 CreateSpaceProcessor::pickHosts(PartitionID partId,

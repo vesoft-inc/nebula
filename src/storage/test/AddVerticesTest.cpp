@@ -16,9 +16,16 @@ namespace nebula {
 namespace storage {
 
 TEST(AddVerticesTest, SimpleTest) {
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/AddVerticesTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(),
+                                                             {0, 0},
+                                                             ioPool,
+                                                             workers);
     auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr);
+
     LOG(INFO) << "Build AddVerticesRequest...";
     cpp2::AddVerticesRequest req;
     req.space_id = 0;

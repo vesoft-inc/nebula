@@ -59,10 +59,13 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         usleep(1000);
     }
     auto ret = mClient->createSpace("default", 10, 1).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
+    LOG(INFO) << "Created space \"default\", its id is " << spaceId;
     sleep(2 * FLAGS_load_data_interval_secs + 1);
 
     auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
+
     // VerticesInterfacesTest(addVertices and getVertexProps)
     {
         LOG(INFO) << "Prepare vertices data...";
@@ -91,8 +94,15 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         auto f = client->addVertices(spaceId, std::move(vertices), true);
         LOG(INFO) << "Waiting for the response...";
         auto resp = std::move(f).get();
-        ASSERT_TRUE(resp.succeeded());
+        if (!resp.succeeded()) {
+            for (auto& err : resp.failedParts()) {
+                LOG(ERROR) << "Partition " << err.first
+                           << " failed: " << static_cast<int32_t>(err.second);
+            }
+            ASSERT_TRUE(resp.succeeded());
+        }
     }
+
     {
         std::vector<VertexID> vIds;
         std::vector<cpp2::PropDef> retCols;
@@ -162,6 +172,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         auto resp = std::move(f).get();
         ASSERT_TRUE(resp.succeeded());
     }
+
     {
         std::vector<storage::cpp2::EdgeKey> edgeKeys;
         std::vector<cpp2::PropDef> retCols;
@@ -224,7 +235,6 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     metaServerContext.reset();
     threadPool.reset();
 }
-
 
 }  // namespace storage
 }  // namespace nebula

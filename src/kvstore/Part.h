@@ -8,22 +8,22 @@
 #define KVSTORE_PART_H_
 
 #include "base/Base.h"
+#include "raftex/RaftPart.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
 
 namespace nebula {
 namespace kvstore {
 
-class Part {
+class Part : public raftex::RaftPart {
 public:
     Part(GraphSpaceID spaceId,
          PartitionID partId,
+         HostAddr localAddr,
          const std::string& walPath,
-         KVEngine* engine)
-        : spaceId_(spaceId)
-        , partId_(partId)
-        , walPath_(walPath)
-        , engine_(engine) {}
+         KVEngine* engine,
+         std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+         std::shared_ptr<thread::GenericThreadPool> workers);
 
     virtual ~Part() = default;
 
@@ -31,15 +31,26 @@ public:
         return engine_;
     }
 
-    virtual void asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) = 0;
+    void asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback cb);
+    void asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb);
 
-    virtual void asyncRemove(const std::string& key, KVCallback cb) = 0;
+    void asyncRemove(folly::StringPiece key, KVCallback cb);
+    void asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb);
+    void asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb);
+    void asyncRemoveRange(folly::StringPiece start,
+                          folly::StringPiece end,
+                          KVCallback cb);
 
-    virtual void asyncMultiRemove(std::vector<std::string> keys, KVCallback cb) = 0;
+    /**
+     * Methods inherited from RaftPart
+     */
+    void onLostLeadership(TermID term) override;
 
-    virtual void asyncRemoveRange(const std::string& start,
-                                  const std::string& end,
-                                  KVCallback cb) = 0;
+    void onElected(TermID term) override;
+
+    std::string compareAndSet(const std::string& log) override;
+
+    bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
 protected:
     GraphSpaceID spaceId_;
@@ -47,28 +58,6 @@ protected:
     std::string walPath_;
     KVEngine* engine_ = nullptr;
 };
-
-/**
- * Bypass raft, just write into storage when asyncMultiPut invoked.
- * */
-class SimplePart final : public Part {
-public:
-    SimplePart(GraphSpaceID spaceId, PartitionID partId,
-               const std::string& walPath, KVEngine* engine)
-        : Part(spaceId, partId, walPath, engine) {}
-
-    void asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) override;
-
-    void asyncRemove(const std::string& key, KVCallback cb) override;
-
-    void asyncMultiRemove(std::vector<std::string> keys, KVCallback cb) override;
-
-    void asyncRemoveRange(const std::string& start,
-                          const std::string& end,
-                          KVCallback cb) override;
-};
-
-
 
 }  // namespace kvstore
 }  // namespace nebula

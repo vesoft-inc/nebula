@@ -5,34 +5,210 @@
  */
 
 #include "kvstore/Part.h"
+#include "wal/BufferFlusher.h"
+#include "kvstore/LogEncoder.h"
+
+DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
 
 namespace nebula {
 namespace kvstore {
 
-void SimplePart::asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) {
-    CHECK_NOTNULL(engine_);
-    auto ret = engine_->multiPut(std::move(keyValues));
-    cb(ret, HostAddr(0, 0));
+using raftex::AppendLogResult;
+
+namespace {
+
+ResultCode toResultCode(AppendLogResult res) {
+    switch (res) {
+        case AppendLogResult::SUCCEEDED:
+            return ResultCode::SUCCEEDED;
+        case AppendLogResult::E_NOT_A_LEADER:
+            return ResultCode::ERR_LEADER_CHANGED;
+        default:
+            return ResultCode::ERR_CONSENSUS_ERROR;
+    }
 }
 
-void SimplePart::asyncRemove(const std::string& key, KVCallback cb) {
-    CHECK_NOTNULL(engine_);
-    auto ret = engine_->remove(key);
-    cb(ret, HostAddr(0, 0));
+
+wal::BufferFlusher* getBufferFlusher() {
+    static wal::BufferFlusher flusher;
+    return &flusher;
 }
 
-void SimplePart::asyncMultiRemove(std::vector<std::string> keys, KVCallback cb) {
-    CHECK_NOTNULL(engine_);
-    auto ret = engine_->multiRemove(std::move(keys));
-    cb(ret, HostAddr(0, 0));
+}  // Anonymous namespace
+
+
+Part::Part(GraphSpaceID spaceId,
+           PartitionID partId,
+           HostAddr localAddr,
+           const std::string& walPath,
+           KVEngine* engine,
+           std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
+           std::shared_ptr<thread::GenericThreadPool> workers)
+        : RaftPart(FLAGS_cluster_id,
+                   spaceId,
+                   partId,
+                   localAddr,
+                   walPath,
+                   getBufferFlusher(),
+                   ioPool,
+                   workers)
+        , spaceId_(spaceId)
+        , partId_(partId)
+        , walPath_(walPath)
+        , engine_(engine) {
 }
 
-void SimplePart::asyncRemoveRange(const std::string& start,
-                                  const std::string& end,
-                                  KVCallback cb) {
-    CHECK_NOTNULL(engine_);
-    auto ret = engine_->removeRange(start, end);
-    cb(ret, HostAddr(0, 0));
+
+void Part::asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback cb) {
+    std::string log = encodeMultiValues(OP_PUT, key, value);;
+
+    appendAsync(FLAGS_cluster_id, std::move(log))
+        .then([callback = std::move(cb)] (AppendLogResult res) {
+            callback(toResultCode(res));
+        });
+}
+
+
+void Part::asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb) {
+    std::string log = encodeMultiValues(OP_MULTI_PUT, keyValues);;
+
+    appendAsync(FLAGS_cluster_id, std::move(log))
+        .then([callback = std::move(cb)] (AppendLogResult res) {
+            callback(toResultCode(res));
+        });
+}
+
+
+void Part::asyncRemove(folly::StringPiece key, KVCallback cb) {
+    std::string log = encodeSingleValue(OP_REMOVE, key);;
+
+    appendAsync(FLAGS_cluster_id, std::move(log))
+        .then([callback = std::move(cb)] (AppendLogResult res) {
+            callback(toResultCode(res));
+        });
+}
+
+
+void Part::asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb) {
+    std::string log = encodeMultiValues(OP_MULTI_REMOVE, keys);;
+
+    appendAsync(FLAGS_cluster_id, std::move(log))
+        .then([callback = std::move(cb)] (AppendLogResult res) {
+            callback(toResultCode(res));
+        });
+}
+
+
+void Part::asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb) {
+    std::string log = encodeSingleValue(OP_REMOVE_PREFIX, prefix);;
+
+    appendAsync(FLAGS_cluster_id, std::move(log))
+        .then([callback = std::move(cb)] (AppendLogResult res) {
+            callback(toResultCode(res));
+        });
+}
+
+
+void Part::asyncRemoveRange(folly::StringPiece start,
+                            folly::StringPiece end,
+                            KVCallback cb) {
+    std::string log = encodeMultiValues(OP_REMOVE_RANGE, start, end);;
+
+    appendAsync(FLAGS_cluster_id, std::move(log))
+        .then([callback = std::move(cb)] (AppendLogResult res) {
+            callback(toResultCode(res));
+        });
+}
+
+
+void Part::onLostLeadership(TermID term) {
+    VLOG(1) << "Lost the leadership for the term " << term;
+}
+
+
+void Part::onElected(TermID term) {
+    VLOG(1) << "Being elected as the leader for the term " << term;
+}
+
+
+std::string Part::compareAndSet(const std::string& log) {
+    UNUSED(log);
+    LOG(FATAL) << "To be implemented";
+}
+
+
+bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
+    auto batch = engine_->startBatchWrite();
+    while (iter->valid()) {
+        auto log = iter->logMsg();
+        DCHECK_GE(log.size(), sizeof(int64_t) + 1 + sizeof(uint32_t));
+        // Skip the timestamp (type of int64_t)
+        switch (log[sizeof(int64_t)]) {
+        case OP_PUT: {
+            auto pieces = decodeMultiValues(log);
+            DCHECK_EQ(2, pieces.size());
+            if (batch->put(pieces[0], pieces[1]) != ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Failed to call WriteBatch::put()";
+                return false;
+            }
+            break;
+        }
+        case OP_MULTI_PUT: {
+            auto kvs = decodeMultiValues(log);
+            // Make the number of values are an even number
+            DCHECK_EQ((kvs.size() + 1) / 2, kvs.size() / 2);
+            for (size_t i = 0; i < kvs.size(); i += 2) {
+                if (batch->put(kvs[i], kvs[i + 1]) != ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << "Failed to call WriteBatch::put()";
+                    return false;
+                }
+            }
+            break;
+        }
+        case OP_REMOVE: {
+            auto key = decodeSingleValue(log);
+            if (batch->remove(key) != ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Failed to call WriteBatch::remove()";
+                return false;
+            }
+            break;
+        }
+        case OP_MULTI_REMOVE: {
+            auto keys = decodeMultiValues(log);
+            for (auto k : keys) {
+                if (batch->remove(k) != ResultCode::SUCCEEDED) {
+                    LOG(ERROR) << "Failed to call WriteBatch::remove()";
+                    return false;
+                }
+            }
+            break;
+        }
+        case OP_REMOVE_PREFIX: {
+            auto prefix = decodeSingleValue(log);
+            if (batch->removePrefix(prefix) != ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Failed to call WriteBatch::removePrefix()";
+                return false;
+            }
+            break;
+        }
+        case OP_REMOVE_RANGE: {
+            auto range = decodeMultiValues(log);
+            DCHECK_EQ(2, range.size());
+            if (batch->removeRange(range[0], range[1]) != ResultCode::SUCCEEDED) {
+                LOG(ERROR) << "Failed to call WriteBatch::removeRange()";
+                return false;
+            }
+            break;
+        }
+        default: {
+            LOG(FATAL) << "Unknown operation: " << static_cast<uint8_t>(log[0]);
+        }
+        }
+
+        ++(*iter);
+    }
+
+    return engine_->commitBatchWrite(std::move(batch)) == ResultCode::SUCCEEDED;
 }
 
 }  // namespace kvstore

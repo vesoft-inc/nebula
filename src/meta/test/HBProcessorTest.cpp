@@ -23,8 +23,12 @@ using nebula::cpp2::SupportedType;
 using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(HBProcessorTest, HBTest) {
+    auto workers = std::make_shared<thread::GenericThreadPool>();
+    workers->start(4);
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/HBTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
@@ -82,6 +86,7 @@ TEST(HBProcessorTest, HBTest) {
 
 }  // namespace meta
 }  // namespace nebula
+
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

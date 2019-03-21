@@ -29,23 +29,23 @@ class BufferFlusher;
 
 namespace raftex {
 
+enum class AppendLogResult {
+    SUCCEEDED = 0,
+    E_CAS_FAILURE = -1,
+    E_NOT_A_LEADER = -2,
+    E_STOPPED = -3,
+    E_NOT_READY = -4,
+    E_BUFFER_OVERFLOW = -5,
+    E_WAL_FAILURE = -6,
+};
+
 class Host;
 class AppendLogsIterator;
+
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
 public:
-    enum class AppendLogResult {
-        SUCCEEDED = 0,
-        E_CAS_FAILURE = -1,
-        E_NOT_A_LEADER = -2,
-        E_STOPPED = -3,
-        E_NOT_READY = -4,
-        E_BUFFER_OVERFLOW = -5,
-        E_WAL_FAILURE = -6,
-    };
-
-
     virtual ~RaftPart();
 
     bool isRunning() const {
