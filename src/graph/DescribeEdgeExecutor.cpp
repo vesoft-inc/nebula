@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "graph/DescribeEdgeExecutor.h"
+#include "meta/SchemaManager.h"
 
 namespace nebula {
 namespace graph {
@@ -22,9 +23,10 @@ Status DescribeEdgeExecutor::prepare() {
 
 
 void DescribeEdgeExecutor::execute() {
-    auto *sm = ectx()->schemaManager();
     auto *name = sentence_->name();
-    auto *schema = sm->getEdgeSchema(*name);
+    auto space = ectx()->rctx()->session()->space();
+
+    auto schema = meta::SchemaManager::getEdgeSchema(space, *name);
     resp_ = std::make_unique<cpp2::ExecutionResponse>();
 
     do {
@@ -32,33 +34,19 @@ void DescribeEdgeExecutor::execute() {
             onError_(Status::Error("Schema not found for edge `%s'", name->c_str()));
             return;
         }
-        std::vector<std::string> header{"SrcTag", "DstTag", "Column", "Type"};
-        auto &src = schema->srcTag();
-        auto &dst = schema->dstTag();
-        auto &items = schema->getPropertiesSchema()->getItems();
+        std::vector<std::string> header{"Column", "Type"};
+        resp_->set_column_names(std::move(header));
+        uint32_t numFields = schema->getNumFields();
         std::vector<cpp2::RowValue> rows;
-        for (auto &item : items) {
+        for (uint32_t index = 0; index < numFields; index++) {
             std::vector<cpp2::ColumnValue> row;
-            row.resize(4);
-            row[0].set_str(src);
-            row[1].set_str(dst);
-            row[2].set_str(item.name_);
-            row[3].set_str(columnTypeToString(item.type_));
+            row.resize(2);
+            row[0].set_str(schema->getFieldName(index));
+            row[1].set_str(valueTypeToString(schema->getFieldType(index)));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
-        if (!rows.empty()) {
-            resp_->set_column_names(std::move(header));
-        } else {     // no columns
-            header.resize(header.size() - 2);
-            resp_->set_column_names(std::move(header));
-            std::vector<cpp2::ColumnValue> row;
-            row.resize(2);
-            row[0].set_str(src);
-            row[1].set_str(dst);
-            rows.resize(1);
-            rows[0].set_columns(std::move(row));
-        }
+
         resp_->set_rows(std::move(rows));
     } while (false);
 
