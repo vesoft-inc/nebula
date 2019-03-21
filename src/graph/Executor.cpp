@@ -76,5 +76,21 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
     return executor;
 }
 
+std::string Executor::valueTypeToString(nebula::cpp2::ValueType type){
+    switch (type.type) {
+	case nebula::cpp2::SupportedType::BOOL:
+            return "bool";
+	case nebula::cpp2::SupportedType::INT:
+            return "int";
+	case nebula::cpp2::SupportedType::DOUBLE:
+            return "double";
+	case nebula::cpp2::SupportedType::STRING:
+            return "string";
+        default:
+            return "unknown";
+    }
+
+}
+
 }   // namespace graph
 }   // namespace nebula
