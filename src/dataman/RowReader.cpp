@@ -194,7 +194,7 @@ int32_t RowReader::getSchemaVer(folly::StringPiece row) {
 RowReader::RowReader(folly::StringPiece row,
                      std::shared_ptr<const meta::SchemaProviderIf> schema)
         : schema_{std::move(schema)} {
-    CHECK(!!schema_) << "A schema much be provided";
+    CHECK(!!schema_) << "A schema must be provided";
 
     if (processHeader(row)) {
         // data_.begin() points to the first field

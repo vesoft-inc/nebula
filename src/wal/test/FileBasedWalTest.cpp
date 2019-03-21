@@ -92,6 +92,7 @@ TEST(FileBasedWal, CacheOverflow) {
     }
     ASSERT_EQ(10000, wal->lastLogId());
 
+    ASSERT_EQ(2, wal.use_count());
     // Wait one second to make sure all buffers have been flushed
     sleep(1);
 
@@ -191,6 +192,120 @@ TEST(FileBasedWal, Rollback) {
 
     // Wait one second to make sure all buffers being flushed
     sleep(1);
+}
+
+TEST(FileBasedWal, RollbackToFile) {
+    // Force to make each file 1MB, each buffer is 1MB, and there are two
+    // buffers at most
+    FileBasedWalPolicy policy;
+    policy.fileSize = 1;
+    policy.bufferSize = 1;
+    policy.numBuffers = 2;
+
+    TempDir walDir("/tmp/testWal.XXXXXX");
+
+    // Create a new WAL, add one log and close it
+    auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    EXPECT_EQ(0, wal->lastLogId());
+    // Append > 1MB logs in total
+    for (int i = 1; i <= 1000; i++) {
+       ASSERT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+           folly::stringPrintf(kLongMsg, i)));
+    }
+    ASSERT_EQ(1000, wal->lastLogId());
+
+    // Wait a few seconds to make sure all buffers being flushed
+    sleep(2);
+
+    // Close the wal
+    wal.reset();
+
+    // Check the number of files
+    auto files = FileUtils::listAllFilesInDir(walDir.path());
+    ASSERT_EQ(2, files.size());
+
+    // Now let's open it to read
+    wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    EXPECT_EQ(1000, wal->lastLogId());
+
+    // Let's verify the logs
+    auto it = wal->iterator(1, 1000);
+    LogID id = 1;
+    while (it->valid()) {
+        ASSERT_EQ(id, it->logId());
+        ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
+        ++(*it);
+        ++id;
+    }
+    EXPECT_EQ(1001, id);
+
+    // Appending >1M logs make sure the first buffer will be sent to
+    // flusher thread
+    for (int i = 1001; i <= 2000; i++) {
+        ASSERT_TRUE(
+            wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                folly::stringPrintf(kLongMsg, i + 1000)));
+    }
+    ASSERT_EQ(2000, wal->lastLogId());
+
+    // Rollbacking to 900 will remove all buffer in memory
+    wal->rollbackToLog(900);
+    ASSERT_EQ(900, wal->lastLogId());
+
+    // Wait a few seconds to make sure all buffers being flushed
+    sleep(2);
+}
+
+TEST(FileBasedWal, RollbackToMemory) {
+    // Force to make each file 1MB, each buffer is 1MB, and there are two
+    // buffers at most
+    FileBasedWalPolicy policy;
+    policy.fileSize = 1;
+    policy.bufferSize = 1;
+    policy.numBuffers = 2;
+
+    TempDir walDir("/tmp/testWal.XXXXXX");
+
+    // Create a new WAL, add one log and close it
+    auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    EXPECT_EQ(0, wal->lastLogId());
+
+    // Append < 1MB logs in total
+    for (int i = 1; i <= 100; i++) {
+        ASSERT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+            folly::stringPrintf(kLongMsg, i)));
+    }
+    ASSERT_EQ(100, wal->lastLogId());
+
+    // Rollback 10 logs
+    wal->rollbackToLog(90);
+    ASSERT_EQ(90, wal->lastLogId());
+
+    // Now let's append >1M more logs
+    for (int i = 91; i <= 2100; i++) {
+        ASSERT_TRUE(
+            wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                folly::stringPrintf(kLongMsg, i + 1000)));
+    }
+    ASSERT_EQ(2100, wal->lastLogId());
+
+    // Let's verify the logs
+    auto it = wal->iterator(1, 2100);
+    LogID id = 1;
+    while (it->valid()) {
+        ASSERT_EQ(id, it->logId());
+        if (id < 91) {
+            ASSERT_EQ(folly::stringPrintf(kLongMsg, id), it->logMsg());
+        } else {
+            ASSERT_EQ(folly::stringPrintf(kLongMsg, id + 1000), it->logMsg());
+        }
+        ++(*it);
+        ++id;
+    }
+    EXPECT_EQ(2101, id);
+
+    // Wait a few seconds to make sure all buffers being flushed
+    sleep(2);
 }
 
 }  // namespace wal

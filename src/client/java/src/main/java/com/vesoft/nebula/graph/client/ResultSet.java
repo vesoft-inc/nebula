@@ -4,15 +4,21 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-package nebula.graph.client;
+package com.vesoft.nebula.graph.client;
+
+import com.google.common.collect.Lists;
+import com.vesoft.nebula.graph.RowValue;
 
 import java.util.List;
-import nebula.graph.RowValue;
 
 public class ResultSet {
 
     private List<byte[]> columns;
     private List<RowValue> rows;
+
+    public ResultSet() {
+        this(Lists.newArrayList(), Lists.newArrayList());
+    }
 
     public ResultSet(List<byte[]> columns, List<RowValue> rows) {
         this.columns = columns;

@@ -69,7 +69,7 @@ bool CliManager::connect(const std::string& addr,
         return true;
     } else {
         // There is an error
-        std::cout << "Authentication failed\n";
+        std::cout << "Connection failed\n";
         return false;
     }
 }

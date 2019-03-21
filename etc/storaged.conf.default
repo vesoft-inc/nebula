@@ -1,0 +1,28 @@
+########## networking ##########
+# Local ip
+--local_ip=127.0.0.1
+# Storage daemon listening port
+--port=44500
+
+########## storage ##########
+# Root data path, multi paths should be split by comma.For rocksdb engine, one path one instance.
+--data_path=
+# start mock server
+--mock_server=true
+# part manager type, [memory | meta]
+--part_man_type=memory
+# default reserved bytes for one batch operation
+--batch_reserved_bytes=4096
+# rocksdb, memory...
+--engine_type=rocksdb
+# simple, consensus...
+--part_type=simple
+
+############## rocksdb Options ##############
+--rocksdb_disable_wal=true
+#rocksdb DBOptions, each option will be given as <option_name>:<option_value> separated by ;
+--rocksdb_db_options=
+#rocksdb ColumnFamilyOptions, each option will be given as <option_name>:<option_value> separated by ;
+--rocksdb_column_family_options=
+#rocksdb BlockBasedTableOptions, each option will be given as <option_name>:<option_value> separated by ;
+--rocksdb_block_based_table_options=

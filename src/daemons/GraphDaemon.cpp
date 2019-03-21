@@ -12,7 +12,9 @@
 #include "process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "graph/GraphService.h"
+#include "graph/GraphHttpHandler.h"
 #include "graph/GraphFlags.h"
+#include "webservice/WebService.h"
 
 using nebula::Status;
 using nebula::ProcessUtils;
@@ -44,12 +46,13 @@ int main(int argc, char *argv[]) {
             return EXIT_SUCCESS;
         }
     }
+
+    folly::init(&argc, &argv, true);
+
     if (FLAGS_flagfile.empty()) {
         printHelp(argv[0]);
         return EXIT_FAILURE;
     }
-
-    folly::init(&argc, &argv, true);
 
     // Setup logging
     auto status = setupLogging();
@@ -85,6 +88,16 @@ int main(int argc, char *argv[]) {
     status = setupSignalHandler();
     if (!status.ok()) {
         LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
+
+    LOG(INFO) << "Starting Graph HTTP Service";
+    nebula::WebService::registerHandler("/graph", [] {
+        return new nebula::graph::GraphHttpHandler();
+    });
+    status = nebula::WebService::start();
+    if (!status.ok()) {
+        LOG(ERROR) << "Failed to start web service: " << status;
         return EXIT_FAILURE;
     }
 
@@ -145,6 +158,7 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
+            nebula::WebService::stop();
             gServer->stop();
             break;
         default:

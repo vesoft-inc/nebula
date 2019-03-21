@@ -193,6 +193,8 @@ private:
     mutable std::mutex buffersMutex_;
     // There is a vacancy for a new buffer
     std::condition_variable slotReadyCV_;
+
+    mutable std::mutex flushMutex_;
 };
 
 }  // namespace wal
