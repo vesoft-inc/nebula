@@ -72,6 +72,7 @@ public:
 
 protected:
     std::unique_ptr<Executor> makeExecutor(Sentence *sentence);
+    std::string valueTypeToString(nebula::cpp2::ValueType type);
 
 protected:
     ExecutionContext                           *ectx_;
