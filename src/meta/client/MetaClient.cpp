@@ -5,16 +5,43 @@
  */
 
 #include "meta/client/MetaClient.h"
-#include "thrift/ThriftClientManager.h"
+#include "network/NetworkUtils.h"
 
 DEFINE_int32(load_data_interval_second, 2 * 60, "Load data interval, unit: second");
+DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
+                                     "the format looks like ip1:port1, ip2:port2, ip3:port3");
+DEFINE_int32(meta_client_io_threads, 3, "meta client io threads");
 
 namespace nebula {
 namespace meta {
 
+MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
+                       std::vector<HostAddr> addrs)
+    : ioThreadPool_(ioThreadPool)
+    , addrs_(std::move(addrs)) {
+    if (ioThreadPool_ == nullptr) {
+        ioThreadPool_
+            = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_meta_client_io_threads);
+    }
+    if (addrs_.empty() && !FLAGS_meta_server_addrs.empty()) {
+        addrs_ = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
+    }
+    CHECK(!addrs_.empty());
+    clientsMan_ = std::make_shared<thrift::ThriftClientManager<
+                                    meta::cpp2::MetaServiceAsyncClient>>();
+    updateActiveHost();
+    loadDataThreadFunc();
+}
+
+ MetaClient::~MetaClient() {
+    loadDataThread_.stop();
+    loadDataThread_.wait();
+    VLOG(3) << "~MetaClient";
+}
+
 void MetaClient::init() {
     CHECK(loadDataThread_.start());
-    size_t delayMS = 100 + folly::Random::rand32(900);
+    size_t delayMS = FLAGS_load_data_interval_second * 1000 + folly::Random::rand32(900);
     loadDataThread_.addTimerTask(delayMS,
                                  FLAGS_load_data_interval_second * 1000,
                                  &MetaClient::loadDataThreadFunc, this);
@@ -38,12 +65,13 @@ void MetaClient::loadDataThreadFunc() {
         auto spaceCache = std::make_shared<SpaceInfoCache>();
         auto partsAlloc = r.value();
         spaceCache->spaceName = space.second;
-        spaceCache->partsOnHost_ = revert(partsAlloc);
+        spaceCache->partsOnHost_ = reverse(partsAlloc);
         spaceCache->partsAlloc_ = std::move(partsAlloc);
-        VLOG(1) << "Load space " << spaceId << ", parts num:" << spaceCache->partsAlloc_.size();
+        VLOG(3) << "Load space " << spaceId << ", parts num:" << spaceCache->partsAlloc_.size();
         cache.emplace(spaceId, spaceCache);
         indexByName.emplace(space.second, spaceId);
     }
+    diff(cache);
     {
         folly::RWSpinLock::WriteHolder holder(localCacheLock_);
         localCache_ = std::move(cache);
@@ -53,7 +81,7 @@ void MetaClient::loadDataThreadFunc() {
 }
 
 std::unordered_map<HostAddr, std::vector<PartitionID>>
-MetaClient::revert(const PartsAlloc& parts) {
+MetaClient::reverse(const PartsAlloc& parts) {
     std::unordered_map<HostAddr, std::vector<PartitionID>> hosts;
     for (auto& partHost : parts) {
         for (auto& h : partHost.second) {
@@ -69,8 +97,7 @@ Response MetaClient::collectResponse(Request req,
     folly::Promise<Response> pro;
     auto f = pro.getFuture();
     auto* evb = ioThreadPool_->getEventBase();
-    auto client = thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>
-                         ::getClient(active_, evb);
+    auto client = clientsMan_->client(active_, evb);
     remoteFunc(client, std::move(req)).then(evb, [&](folly::Try<Response>&& resp) {
         pro.setValue(resp.value());
     });
@@ -148,34 +175,6 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
     return parts;
 }
 
-StatusOr<std::vector<PartitionID>>
-MetaClient::getPartsFromCache(GraphSpaceID spaceId, const HostAddr& host) {
-    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-    auto it = localCache_.find(spaceId);
-    if (it == localCache_.end()) {
-        return Status::Error("Can't find related spaceId");
-    }
-    auto hostIt = it->second->partsOnHost_.find(host);
-    if (hostIt != it->second->partsOnHost_.end()) {
-        return hostIt->second;
-    }
-    return Status::Error("Can't find any parts for the host");
-}
-
-StatusOr<std::vector<HostAddr>>
-MetaClient::getHostsFromCache(GraphSpaceID spaceId, PartitionID partId) {
-    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-    auto it = localCache_.find(spaceId);
-    if (it == localCache_.end()) {
-        return Status::Error("Can't find related spaceId");
-    }
-    auto partIt = it->second->partsAlloc_.find(partId);
-    if (partIt != it->second->partsAlloc_.end()) {
-        return partIt->second;
-    }
-    return Status::Error("Can't find any hosts for the part");
-}
-
 StatusOr<GraphSpaceID>
 MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
     auto it = spaceIndexByName_.find(name);
@@ -214,6 +213,149 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("Leader changed!");
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
+    }
+}
+
+PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
+                                   const std::unordered_map<
+                                                GraphSpaceID,
+                                                std::shared_ptr<SpaceInfoCache>>& localCache) {
+    PartsMap partMap;
+    for (auto it = localCache.begin(); it != localCache.end(); it++) {
+        auto spaceId = it->first;
+        auto& cache = it->second;
+        auto partsIt = cache->partsOnHost_.find(host);
+        if (partsIt != cache->partsOnHost_.end()) {
+            for (auto& partId : partsIt->second) {
+                auto partAllocIter = cache->partsAlloc_.find(partId);
+                CHECK(partAllocIter != cache->partsAlloc_.end());
+                auto& partM = partMap[spaceId][partId];
+                partM.spaceId_ = spaceId;
+                partM.partId_  = partId;
+                partM.peers_   = partAllocIter->second;
+            }
+        }
+    }
+    return partMap;
+}
+PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    return doGetPartsMap(host, localCache_);
+}
+
+PartMeta MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(spaceId);
+    CHECK(it != localCache_.end());
+    auto& cache = it->second;
+    auto partAllocIter = cache->partsAlloc_.find(partId);
+    CHECK(partAllocIter != cache->partsAlloc_.end());
+    PartMeta pm;
+    pm.spaceId_ = spaceId;
+    pm.partId_  = partId;
+    pm.peers_   = partAllocIter->second;
+    return pm;
+}
+
+bool MetaClient::checkPartExistInCache(const HostAddr& host,
+                                       GraphSpaceID spaceId,
+                                       PartitionID partId) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(spaceId);
+    if (it != localCache_.end()) {
+        auto partsIt = it->second->partsOnHost_.find(host);
+        if (partsIt != it->second->partsOnHost_.end()) {
+            for (auto& pId : partsIt->second) {
+                if (pId == partId) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
+                                        GraphSpaceID spaceId) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(spaceId);
+    if (it != localCache_.end()) {
+        auto partsIt = it->second->partsOnHost_.find(host);
+        if (partsIt != it->second->partsOnHost_.end() && !partsIt->second.empty()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(spaceId);
+    CHECK(it != localCache_.end());
+    return it->second->partsAlloc_.size();
+}
+
+void MetaClient::diff(const std::unordered_map<GraphSpaceID,
+                                               std::shared_ptr<SpaceInfoCache>>& newCache) {
+    if (listener_ == nullptr) {
+        return;
+    }
+    auto localHost = listener_->getLocalHost();
+    auto newPartsMap = doGetPartsMap(localHost, newCache);
+    auto oldPartsMap = getPartsMapFromCache(localHost);
+    VLOG(1) << "Let's check if any new parts added/updated....";
+    for (auto it = newPartsMap.begin(); it != newPartsMap.end(); it++) {
+        auto spaceId = it->first;
+        const auto& newParts = it->second;
+        auto oldIt = oldPartsMap.find(spaceId);
+        if (oldIt == oldPartsMap.end()) {
+            VLOG(1) << "SpaceId " << spaceId << " was added!";
+            listener_->onSpaceAdded(spaceId);
+            for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
+                listener_->onPartAdded(partIt->second);
+            }
+        } else {
+            const auto& oldParts = oldIt->second;
+            for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
+                auto oldPartIt = oldParts.find(partIt->first);
+                if (oldPartIt == oldParts.end()) {
+                    VLOG(1) << "SpaceId " << spaceId << ", partId "
+                            << partIt->first << " was added!";
+                    listener_->onPartAdded(partIt->second);
+                } else {
+                    const auto& oldPartMeta = oldPartIt->second;
+                    const auto& newPartMeta = partIt->second;
+                    if (oldPartMeta != newPartMeta) {
+                        VLOG(1) << "SpaceId " << spaceId
+                                << ", partId " << partIt->first << " was updated!";
+                        listener_->onPartUpdated(newPartMeta);
+                    }
+                }
+            }
+        }
+    }
+    VLOG(1) << "Let's check if any old parts removed....";
+    for (auto it = oldPartsMap.begin(); it != oldPartsMap.end(); it++) {
+        auto spaceId = it->first;
+        const auto& oldParts = it->second;
+        auto newIt = newPartsMap.find(spaceId);
+        if (newIt == newPartsMap.end()) {
+            VLOG(1) << "SpaceId " << spaceId << " was removed!";
+            for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
+                listener_->onPartRemoved(spaceId, partIt->first);
+            }
+            listener_->onSpaceRemoved(spaceId);
+        } else {
+            const auto& newParts = newIt->second;
+            for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
+                auto newPartIt = newParts.find(partIt->first);
+                if (newPartIt == newParts.end()) {
+                    VLOG(1) << "SpaceId " << spaceId
+                            << ", partId " << partIt->first << " was removed!";
+                    listener_->onPartRemoved(spaceId, partIt->first);
+                }
+            }
+        }
     }
 }
 

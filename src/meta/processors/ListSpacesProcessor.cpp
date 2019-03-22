@@ -25,6 +25,7 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
     while (iter->valid()) {
         auto spaceId = MetaUtils::spaceId(iter->key());
         auto spaceName = MetaUtils::spaceName(iter->val());
+        VLOG(3) << "List spaces " << spaceId << ", name " << spaceName.str();
         spaces.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                             to(spaceId, IDType::SPACE),
                             spaceName.str());

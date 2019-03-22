@@ -2,8 +2,8 @@ add_executable(
     row_reader_test
     RowReaderTest.cpp
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -21,8 +21,8 @@ add_executable(
     row_writer_test
     RowWriterTest.cpp
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -40,8 +40,8 @@ add_executable(
     row_updater_test
     RowUpdaterTest.cpp
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -59,8 +59,8 @@ add_executable(
     rowset_reader_writer_test
     RowSetReaderWriterTest.cpp
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -78,8 +78,8 @@ add_executable(
     row_writer_bm
     RowWriterBenchmark.cpp
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -97,8 +97,8 @@ add_executable(
     row_reader_bm
     RowReaderBenchmark.cpp
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -115,8 +115,8 @@ add_executable(
             nebula_codec_test
     NebulaCodecTest.cpp
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>

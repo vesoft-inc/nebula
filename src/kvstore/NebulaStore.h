@@ -21,8 +21,6 @@ namespace kvstore {
 // <engine pointer, path>
 using Engine = std::pair<std::unique_ptr<KVEngine>, std::string>;
 
-using PartEngine = std::unordered_map<PartitionID, Engine*>;
-
 struct GraphSpaceKV {
     std::unordered_map<PartitionID, std::unique_ptr<Part>> parts_;
     std::vector<Engine> engines_;
@@ -34,8 +32,9 @@ class NebulaStore : public KVStore, public Handler {
 
 public:
     explicit NebulaStore(KVOptions options)
-            : partMan_(PartManager::instance())
-            , options_(std::move(options)) {}
+            : options_(std::move(options)) {
+        partMan_ = std::move(options_.partMan_);
+    }
 
     ~NebulaStore() = default;
 
@@ -109,6 +108,10 @@ private:
 
     void addPart(GraphSpaceID spaceId, PartitionID partId) override;
 
+    void removeSpace(GraphSpaceID spaceId) override;
+
+    void removePart(GraphSpaceID spaceId, PartitionID partId) override;
+
 private:
     Engine newEngine(GraphSpaceID spaceId, std::string rootPath);
 
@@ -118,9 +121,8 @@ private:
 
 private:
     std::unordered_map<GraphSpaceID, std::unique_ptr<GraphSpaceKV>> kvs_;
-    // The lock used to protect kvs_
     folly::RWSpinLock lock_;
-    PartManager* partMan_ = nullptr;
+    std::unique_ptr<PartManager> partMan_{nullptr};
     KVOptions options_;
 };
 
