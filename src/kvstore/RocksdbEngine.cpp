@@ -4,6 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include "base/Base.h"
 #include "kvstore/RocksdbEngine.h"
 #include <folly/String.h>
 #include "fs/FileUtils.h"
@@ -15,7 +16,8 @@ namespace kvstore {
 
 const char* kSystemParts = "__system__parts__";
 
-RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
+RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId,
+                             const std::string& dataPath,
                              std::shared_ptr<rocksdb::MergeOperator> mergeOp,
                              std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
     : KVEngine(spaceId)
@@ -24,6 +26,7 @@ RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
     if (nebula::fs::FileUtils::fileType(dataPath.c_str()) == nebula::fs::FileType::NOTEXIST) {
         nebula::fs::FileUtils::makeDir(dataPath);
     }
+
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
     rocksdb::Status status;
@@ -179,6 +182,34 @@ ResultCode RocksdbEngine::ingest(const std::vector<std::string>& files) {
         return ResultCode::SUCCEEDED;
     } else {
         return ResultCode::ERR_UNKNOWN;
+    }
+}
+
+ResultCode RocksdbEngine::setOption(const std::string& config_key,
+                                    const std::string& config_value) {
+    std::unordered_map<std::string, std::string> config_options = {
+        {config_key, config_value}
+    };
+
+    rocksdb::Status status = db_->SetOptions(config_options);
+    if (status.ok()) {
+        return ResultCode::SUCCEEDED;
+    } else {
+        return ResultCode::ERR_INVALID_ARGUMENT;
+    }
+}
+
+ResultCode RocksdbEngine::setDBOption(const std::string& config_key,
+                                      const std::string& config_value) {
+    std::unordered_map<std::string, std::string> config_db_options = {
+        {config_key, config_value}
+    };
+
+    rocksdb::Status status = db_->SetDBOptions(config_db_options);
+    if (status.ok()) {
+        return ResultCode::SUCCEEDED;
+    } else {
+        return ResultCode::ERR_INVALID_ARGUMENT;
     }
 }
 

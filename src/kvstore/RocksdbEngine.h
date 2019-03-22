@@ -90,7 +90,8 @@ class RocksdbEngine : public KVEngine {
     FRIEND_TEST(RocksdbEngineTest, SimpleTest);
 
 public:
-    RocksdbEngine(GraphSpaceID spaceId, const std::string& dataPath,
+    RocksdbEngine(GraphSpaceID spaceId,
+                  const std::string& dataPath,
                   std::shared_ptr<rocksdb::MergeOperator> mergeOp = nullptr,
                   std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr);
 
@@ -124,13 +125,20 @@ public:
 
     int32_t totalPartsNum() override;
 
-    ResultCode ingest(const std::vector<std::string>& files);
+    ResultCode ingest(const std::vector<std::string>& files) override;
+
+    ResultCode setOption(const std::string& config_key,
+                         const std::string& config_value) override;
+
+    ResultCode setDBOption(const std::string& config_key,
+                           const std::string& config_value) override;
 
 private:
     std::string partKey(PartitionID partId);
 
 private:
     std::string  dataPath_;
+    std::string  extraPath_;
     std::unique_ptr<rocksdb::DB> db_{nullptr};
     int32_t partsNum_ = -1;
 };
