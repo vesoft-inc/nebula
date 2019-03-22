@@ -123,6 +123,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 auto tagId = col.tag_id;
                 auto schema = meta::SchemaManager::getTagSchema(spaceId_, tagId);
                 if (!schema) {
+                    VLOG(3) << "Can't find spaceId " << spaceId_ << ", tagId " << tagId;
                     return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
                 }
                 const auto& ftype = schema->getFieldType(col.name);
