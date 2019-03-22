@@ -30,6 +30,10 @@ int main(int argc, char *argv[]) {
     using nebula::meta::SchemaManager;
     using nebula::network::NetworkUtils;
 
+    if (FLAGS_data_path.empty()) {
+        LOG(FATAL) << "Storage Data Path should not empty";
+        return -1;
+    }
     LOG(INFO) << "Starting the storage Daemon on port " << FLAGS_port
               << ", dataPath " << FLAGS_data_path;
 

@@ -52,6 +52,14 @@ DEFINE_string(part_type, "simple", "simple, consensus...");
         CHECK_NOTNULL(engine); \
     } while (false)
 
+/**
+ * check spaceId is exist and return related partitions
+ */
+#define CHECK_AND_RETURN_SPACE_ENGINES(spaceId) \
+    auto it = kvs_.find(spaceId); \
+    if (UNLIKELY(it == kvs_.end())) { \
+        return ResultCode::ERR_SPACE_NOT_FOUND; \
+    }
 
 namespace nebula {
 namespace kvstore {
@@ -265,6 +273,59 @@ void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,
                                    KVCallback cb) {
     CHECK_FOR_WRITE(spaceId, partId, cb);
     return partIt->second->asyncRemoveRange(start, end, std::move(cb));
+}
+
+ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
+                               const std::string& extra,
+                               const std::vector<std::string>& files) {
+    CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
+    for (auto& engine : it->second->engines_) {
+        auto parts = engine.first->allParts();
+        std::vector<std::string> extras;
+        for (auto part : parts) {
+            for (auto file : files) {
+                auto extraPath = folly::stringPrintf("%s/nebula/%d/%d/%s",
+                                                     extra.c_str(),
+                                                     spaceId,
+                                                     part,
+                                                     file.c_str());
+                LOG(INFO) << "Loading extra path : " << extraPath;
+                extras.emplace_back(std::move(extraPath));
+            }
+        }
+        auto code = engine.first->ingest(std::move(extras));
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
+    }
+    return ResultCode::SUCCEEDED;
+}
+
+ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
+                                  const std::string& config_key,
+                                  const std::string& config_value) {
+    CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
+    for (auto& engine : it->second->engines_) {
+        auto code = engine.first->setOption(config_key, config_value);
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
+    }
+    return ResultCode::SUCCEEDED;
+}
+
+
+ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
+                                    const std::string& config_key,
+                                    const std::string& config_value) {
+    CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
+    for (auto& engine : it->second->engines_) {
+        auto code = engine.first->setDBOption(config_key, config_value);
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
+    }
+    return ResultCode::SUCCEEDED;
 }
 
 }  // namespace kvstore
