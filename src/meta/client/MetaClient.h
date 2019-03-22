@@ -125,7 +125,7 @@ private:
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
     SpaceNameIdMap  spaceIndexByName_;
     folly::RWSpinLock localCacheLock_;
-    MetaChangedListener* listener_;
+    MetaChangedListener* listener_{nullptr};
 };
 
 }  // namespace meta
