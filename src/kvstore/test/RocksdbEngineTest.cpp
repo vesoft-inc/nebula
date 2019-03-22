@@ -152,6 +152,25 @@ TEST(RocksdbEngineTest, RemoveRangeTest) {
     }
 }
 
+TEST(RocksdbEngineTest, OptionTest) {
+    fs::TempDir rootPath("/tmp/rocksdb_option_test.XXXXXX");
+    std::unique_ptr<RocksdbEngine> engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    EXPECT_EQ(ResultCode::SUCCEEDED,
+              engine->setOption("disable_auto_compactions", "true"));
+    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+              engine->setOption("disable_auto_compactions_", "true"));
+    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+              engine->setOption("disable_auto_compactions", "bad_value"));
+    EXPECT_EQ(ResultCode::SUCCEEDED,
+              engine->setDBOption("max_background_compactions", "2"));
+    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+              engine->setDBOption("max_background_compactions_", "2"));
+    EXPECT_EQ(ResultCode::SUCCEEDED,
+              engine->setDBOption("max_background_compactions", "2_"));
+    EXPECT_EQ(ResultCode::ERR_INVALID_ARGUMENT,
+            engine->setDBOption("max_background_compactions", "bad_value"));
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

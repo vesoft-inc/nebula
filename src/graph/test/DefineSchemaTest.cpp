@@ -26,7 +26,7 @@ protected:
 };
 
 
-TEST_F(DefineSchemaTest, Simple) {
+TEST_F(DefineSchemaTest, DISABLED_Simple) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
     {

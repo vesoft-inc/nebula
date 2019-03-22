@@ -11,6 +11,8 @@
 #include <folly/futures/Future.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include "gen-cpp2/StorageServiceAsyncClient.h"
+#include "meta/client/MetaClient.h"
+#include "thrift/ThriftClientManager.h"
 
 namespace nebula {
 namespace storage {
@@ -75,6 +77,9 @@ private:
 class StorageClient final {
 public:
     explicit StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool);
+    ~StorageClient() {
+        VLOG(3) << "~StorageClient";
+    }
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,
@@ -121,6 +126,13 @@ public:
 
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
+    std::unique_ptr<meta::MetaClient> client_;
+    std::unique_ptr<thrift::ThriftClientManager<
+                        storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
+
+private:
+    // Calculate the partition id for the given vertex id
+    PartitionID partId(GraphSpaceID spaceId, int64_t id) const;
 
     template<class Request,
              class RemoteFunc,
@@ -133,6 +145,32 @@ private:
         folly::EventBase* evb,
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc);
+
+    // Cluster given ids into the host they belong to
+    // The method returns a map
+    //  host_addr (A host, but in most case, the leader will be chosen)
+    //      => (partition -> [ids that belong to the shard])
+    template<class Container, class GetIdFunc>
+    std::unordered_map<HostAddr,
+                       std::unordered_map<PartitionID,
+                                          std::vector<typename Container::value_type>
+                                         >
+                      >
+    clusterIdsToHosts(GraphSpaceID spaceId, Container ids, GetIdFunc f) const {
+        std::unordered_map<HostAddr,
+                           std::unordered_map<PartitionID,
+                                              std::vector<typename Container::value_type>
+                                             >
+                          > clusters;
+        for (auto& id : ids) {
+            PartitionID part = partId(spaceId, f(id));
+            auto partMeta = client_->getPartMetaFromCache(spaceId, part);
+            CHECK_GT(partMeta.peers_.size(), 0U);
+            // TODO We need to use the leader here
+            clusters[partMeta.peers_.front()][part].push_back(std::move(id));
+        }
+        return clusters;
+    }
 };
 
 }   // namespace storage

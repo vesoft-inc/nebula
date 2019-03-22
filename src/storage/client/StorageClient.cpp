@@ -6,21 +6,28 @@
 
 #include "base/Base.h"
 #include "storage/client/StorageClient.h"
-#include "meta/HostManager.h"
+
+#define ID_HASH(id, numShards) \
+    ((static_cast<uint64_t>(id)) % numShards + 1)
 
 namespace nebula {
 namespace storage {
 
 StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool)
-        : ioThreadPool_(threadPool) {}
-
+        : ioThreadPool_(threadPool) {
+    client_ = std::make_unique<meta::MetaClient>();
+    client_->init();
+    clientsMan_
+        = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
+}
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVertices(
         GraphSpaceID space,
         std::vector<cpp2::Vertex> vertices,
         bool overwritable,
         folly::EventBase* evb) {
-    auto clusters = meta::HostManager::get(space)->clusterIdsToHosts(
+    auto clusters = clusterIdsToHosts(
+        space,
         vertices,
         [] (const cpp2::Vertex& v) {
             return v.get_id();
@@ -35,6 +42,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVert
         req.set_parts(std::move(c.second));
     }
 
+    VLOG(3) << "requests size " << requests.size();
     return collectResponse(
         evb, std::move(requests),
         [](cpp2::StorageServiceAsyncClient* client,
@@ -49,7 +57,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
         std::vector<storage::cpp2::Edge> edges,
         bool overwritable,
         folly::EventBase* evb) {
-    auto clusters = meta::HostManager::get(space)->clusterIdsToHosts(
+    auto clusters = clusterIdsToHosts(
+        space,
         edges,
         [] (const cpp2::Edge& e) {
             return e.get_key().get_src();
@@ -81,7 +90,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
         std::string filter,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    auto clusters = meta::HostManager::get(space)->clusterIdsToHosts(
+    auto clusters = clusterIdsToHosts(
+        space,
         vertices,
         [] (const VertexID& v) {
             return v;
@@ -120,7 +130,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::n
         std::string filter,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    auto clusters = meta::HostManager::get(space)->clusterIdsToHosts(
+    auto clusters = clusterIdsToHosts(
+        space,
         vertices,
         [] (const VertexID& v) {
             return v;
@@ -156,7 +167,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getVer
         std::vector<VertexID> vertices,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    auto clusters = meta::HostManager::get(space)->clusterIdsToHosts(
+    auto clusters = clusterIdsToHosts(
+        space,
         vertices,
         [] (const VertexID& v) {
             return v;
@@ -185,7 +197,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         std::vector<cpp2::EdgeKey> edges,
         std::vector<cpp2::PropDef> returnCols,
         folly::EventBase* evb) {
-    auto clusters = meta::HostManager::get(space)->clusterIdsToHosts(
+    auto clusters = clusterIdsToHosts(
+        space,
         edges,
         [] (const cpp2::EdgeKey& v) {
             return v.get_src();
@@ -212,5 +225,11 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         });
 }
 
+PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
+    auto parts = client_->partsNum(spaceId);
+    auto s = ID_HASH(id, parts);
+    CHECK_GE(s, 0U);
+    return s;
+}
 }   // namespace storage
 }   // namespace nebula

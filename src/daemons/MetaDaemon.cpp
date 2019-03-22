@@ -54,16 +54,15 @@ int main(int argc, char *argv[]) {
     uint32_t localIP;
     CHECK(nebula::network::NetworkUtils::ipv4ToInt(result.value(), localIP));
 
-    CHECK_EQ("memory", FLAGS_part_man_type);
-    nebula::kvstore::MemPartManager* partMan
-        = reinterpret_cast<nebula::kvstore::MemPartManager*>(
-                nebula::kvstore::PartManager::instance());
+    auto partMan
+        = std::make_unique<nebula::kvstore::MemPartManager>();
     // The meta server has only one space, one part.
     partMan->addPart(0, 0, nebula::toHosts(FLAGS_peers));
 
     nebula::kvstore::KVOptions options;
     options.local_ = nebula::HostAddr(localIP, FLAGS_port);
     options.dataPaths_ = {FLAGS_data_path};
+    options.partMan_ = std::move(partMan);
     std::unique_ptr<nebula::kvstore::KVStore> kvstore(
             nebula::kvstore::KVStore::instance(std::move(options)));
 

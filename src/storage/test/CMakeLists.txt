@@ -2,10 +2,14 @@ add_executable(
     key_utils_test
     KeyUtilsTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
-    $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
@@ -26,9 +30,13 @@ add_executable(
     AddVerticesTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
@@ -49,9 +57,13 @@ add_executable(
     StorageServiceHandlerTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
@@ -71,9 +83,13 @@ add_executable(
     AddEdgesTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
@@ -94,9 +110,13 @@ add_executable(
     QueryBoundTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
@@ -117,9 +137,13 @@ add_executable(
     QueryVertexPropsTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
@@ -140,9 +164,13 @@ add_executable(
     QueryEdgePropsTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
@@ -163,9 +191,13 @@ add_executable(
     QueryStatsTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
@@ -186,11 +218,16 @@ add_executable(
     StorageClientTest.cpp
     $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>

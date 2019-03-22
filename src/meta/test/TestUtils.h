@@ -21,13 +21,11 @@ namespace meta {
 class TestUtils {
 public:
     static kvstore::KVStore* initKV(const char* rootPath) {
-        FLAGS_part_man_type = "memory";  // Use MemPartManager.
-        kvstore::MemPartManager* partMan = static_cast<kvstore::MemPartManager*>(
-                                                         kvstore::PartManager::instance());
+        auto partMan = std::make_unique<kvstore::MemPartManager>();
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0}
         auto& partsMap = partMan->partsMap();
-        partsMap[0][0] = kvstore::PartMeta();
+        partsMap[0][0] = PartMeta();
 
         std::vector<std::string> paths;
         paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
@@ -35,6 +33,7 @@ public:
         kvstore::KVOptions options;
         options.local_ = HostAddr(0, 0);
         options.dataPaths_ = std::move(paths);
+        options.partMan_ = std::move(partMan);
 
         kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
                                      kvstore::KVStore::instance(std::move(options)));
