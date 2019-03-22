@@ -44,7 +44,7 @@ protected:
         : BaseProcessor<RESP>(kvstore)
         , type_(type) {}
     /**
-     * Check whether current operatin on the data is valid or not.
+     * Check whether current operation on the data is valid or not.
      * */
     bool validOperation(nebula::cpp2::SupportedType vType, cpp2::StatType statType);
 

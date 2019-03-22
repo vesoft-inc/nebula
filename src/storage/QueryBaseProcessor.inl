@@ -193,7 +193,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
         VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
         return ret;
     }
-    // Will decode the properties according to teh schema version
+    // Will decode the properties according to the schema version
     // stored along with the properties
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(iter->val(), spaceId_, tagId);
