@@ -16,12 +16,15 @@ namespace thrift {
 template<class ClientType>
 class ThriftClientManager final {
 public:
-    // Get the thrift client for the current thread
-    static std::shared_ptr<ClientType> getClient(const HostAddr& host,
-                                                 folly::EventBase* evb = nullptr);
+    std::shared_ptr<ClientType> client(const HostAddr& host, folly::EventBase* evb = nullptr);
 
-private:
-    ThriftClientManager() = default;
+    ~ThriftClientManager() {
+        VLOG(3) << "~ThriftClientManager";
+    }
+
+    ThriftClientManager() {
+        VLOG(3) << "ThriftClientManager";
+    }
 
 private:
     using ClientMap = std::unordered_map<

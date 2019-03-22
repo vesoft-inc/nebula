@@ -226,6 +226,16 @@ HostAddr NetworkUtils::toHostAddr(const folly::StringPiece ipPort) {
     return toHostAddr(ipPort.subpiece(0, pos), port);
 }
 
+std::vector<HostAddr> NetworkUtils::toHosts(const std::string& peersStr) {
+    std::vector<HostAddr> hosts;
+    std::vector<std::string> peers;
+    folly::split(",", peersStr, peers, true);
+    hosts.resize(peers.size());
+    std::transform(peers.begin(), peers.end(), hosts.begin(), [](auto& p) {
+        return network::NetworkUtils::toHostAddr(folly::trimWhitespace(p));
+    });
+    return hosts;
+}
 
 std::string NetworkUtils::ipFromHostAddr(const HostAddr& host) {
     return intToIPv4(host.first);

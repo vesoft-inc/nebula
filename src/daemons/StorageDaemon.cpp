@@ -42,27 +42,12 @@ int main(int argc, char *argv[]) {
     CHECK(result.ok()) << result.status();
     uint32_t localIP;
     CHECK(NetworkUtils::ipv4ToInt(result.value(), localIP));
-    if (FLAGS_mock_server) {
-        nebula::kvstore::MemPartManager* partMan
-            = reinterpret_cast<nebula::kvstore::MemPartManager*>(
-                    nebula::kvstore::PartManager::instance());
-        // GraphSpaceID =>  {PartitionIDs}
-        // 0 => {0, 1, 2, 3, 4, 5}
-        for (auto partId = 0; partId < 6; partId++) {
-            partMan->addPart(0, partId);
-        }
-        nebula::meta::AdHocSchemaManager::addEdgeSchema(
-           0 /*space id*/, 101 /*edge type*/,
-           nebula::storage::TestUtils::genEdgeSchemaProvider(10, 10));
-        for (auto tagId = 3001; tagId < 3010; tagId++) {
-            nebula::meta::AdHocSchemaManager::addTagSchema(
-               0 /*space id*/, tagId,
-               nebula::storage::TestUtils::genTagSchemaProvider(tagId, 3, 3));
-        }
-    }
+
     nebula::kvstore::KVOptions options;
     options.local_ = HostAddr(localIP, FLAGS_port);
     options.dataPaths_ = std::move(paths);
+    options.partMan_
+        = std::make_unique<nebula::kvstore::MetaServerBasedPartManager>(options.local_);
     std::unique_ptr<nebula::kvstore::KVStore> kvstore(
             nebula::kvstore::KVStore::instance(std::move(options)));
 

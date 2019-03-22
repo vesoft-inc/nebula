@@ -13,6 +13,7 @@ namespace nebula {
 namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
+    VLOG(3) << "Receive AddVerticesRequest...";
     auto now = time::TimeUtils::nowInMSeconds();
     const auto& partVertices = req.get_parts();
     auto spaceId = req.get_space_id();
