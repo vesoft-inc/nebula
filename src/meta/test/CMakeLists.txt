@@ -1,6 +1,10 @@
 add_executable(
     file_based_schema_manager_test
     FileBasedSchemaManagerTest.cpp
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:base_obj>
