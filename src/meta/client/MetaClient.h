@@ -14,6 +14,7 @@
 #include "base/Status.h"
 #include "base/StatusOr.h"
 #include "thread/GenericWorker.h"
+#include "thrift/ThriftClientManager.h"
 
 namespace nebula {
 namespace meta {
@@ -29,22 +30,28 @@ struct SpaceInfoCache {
 
 using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;
 
+class MetaChangedListener {
+public:
+    virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
+    virtual void onSpaceRemoved(GraphSpaceID spaceId) = 0;
+    virtual void onPartAdded(const PartMeta& partMeta) = 0;
+    virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) = 0;
+    virtual void onPartUpdated(const PartMeta& partMeta) = 0;
+    virtual HostAddr getLocalHost() = 0;
+};
+
 class MetaClient {
 public:
-    MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-               std::vector<HostAddr> addrs)
-        : ioThreadPool_(ioThreadPool)
-        , addrs_(std::move(addrs)) {
-        updateActiveHost();
-     }
+    explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool = nullptr,
+                        std::vector<HostAddr> addrs = {});
 
-    virtual ~MetaClient() {
-        loadDataThread_.stop();
-        loadDataThread_.wait();
-        VLOG(3) << "~MetaClient";
-    }
+    virtual ~MetaClient();
 
     void init();
+
+    void registerListener(MetaChangedListener* listener) {
+        listener_ = listener;
+    }
 
     /**
      * TODO(dangleptr): Use one struct to represent space description.
@@ -59,18 +66,25 @@ public:
 
     StatusOr<PartsAlloc> getPartsAlloc(GraphSpaceID spaceId);
 
-    StatusOr<std::vector<PartitionID>>
-    getPartsFromCache(GraphSpaceID spaceId, const HostAddr& host);
-
-    StatusOr<std::vector<HostAddr>>
-    getHostsFromCache(GraphSpaceID spaceId, PartitionID partId);
-
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
+
+    PartsMap getPartsMapFromCache(const HostAddr& host);
+
+    PartMeta getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId);
+
+    bool checkPartExistInCache(const HostAddr& host,
+                               GraphSpaceID spaceId,
+                               PartitionID partId);
+
+    bool checkSpaceExistInCache(const HostAddr& host,
+                                GraphSpaceID spaceId);
+
+    int32_t partsNum(GraphSpaceID spaceId);
 
 protected:
     void loadDataThreadFunc();
 
-    std::unordered_map<HostAddr, std::vector<PartitionID>> revert(const PartsAlloc& parts);
+    std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
     void updateActiveHost() {
         std::random_device rd;
@@ -78,6 +92,8 @@ protected:
         std::uniform_int_distribution<> dis(0, addrs_.size() - 1);
         active_ = addrs_[dis(gen)];
     }
+
+    void diff(const std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>& newCache);
 
     template<typename RESP>
     Status handleResponse(const RESP& resp);
@@ -95,14 +111,21 @@ protected:
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 
+    PartsMap doGetPartsMap(const HostAddr& host,
+                           const std::unordered_map<
+                                        GraphSpaceID,
+                                        std::shared_ptr<SpaceInfoCache>>& localCache);
+
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
+    std::shared_ptr<thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>> clientsMan_;
     std::vector<HostAddr> addrs_;
     HostAddr active_;
     thread::GenericWorker loadDataThread_;
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
     SpaceNameIdMap  spaceIndexByName_;
     folly::RWSpinLock localCacheLock_;
+    MetaChangedListener* listener_;
 };
 
 }  // namespace meta

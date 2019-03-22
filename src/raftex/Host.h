@@ -10,6 +10,8 @@
 #include "base/Base.h"
 #include <folly/futures/Future.h>
 #include "interface/gen-cpp2/raftex_types.h"
+#include "gen-cpp2/RaftexServiceAsyncClient.h"
+#include "thrift/ThriftClientManager.h"
 
 namespace folly {
 class EventBase;
@@ -74,6 +76,10 @@ private:
     std::shared_ptr<cpp2::AppendLogRequest> prepareAppendLogRequest(
         std::lock_guard<std::mutex>& lck) const;
 
+    thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>& tcManager() {
+        static thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient> manager;
+        return manager;
+    }
 
 private:
     std::shared_ptr<RaftPart> part_;
