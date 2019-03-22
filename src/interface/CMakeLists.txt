@@ -92,6 +92,12 @@ add_library(
 )
 add_dependencies(raftex_thrift_obj tgt_fbthrift)
 
+add_library(
+    common_thrift_obj OBJECT
+    gen-cpp2/common_constants.cpp
+    gen-cpp2/common_data.cpp
+    gen-cpp2/common_types.cpp
+)
 
 add_library(
     storage_thrift_obj OBJECT
@@ -102,11 +108,8 @@ add_library(
     gen-cpp2/storage_constants.cpp
     gen-cpp2/storage_data.cpp
     gen-cpp2/storage_types.cpp
-    gen-cpp2/common_constants.cpp
-    gen-cpp2/common_data.cpp
-    gen-cpp2/common_types.cpp
 )
-add_dependencies(storage_thrift_obj tgt_fbthrift)
+add_dependencies(storage_thrift_obj common_thrift_obj tgt_fbthrift)
 
 add_library(
     meta_thrift_obj OBJECT
@@ -117,8 +120,5 @@ add_library(
     gen-cpp2/meta_constants.cpp
     gen-cpp2/meta_data.cpp
     gen-cpp2/meta_types.cpp
-    gen-cpp2/common_constants.cpp
-    gen-cpp2/common_data.cpp
-    gen-cpp2/common_types.cpp
 )
-add_dependencies(meta_thrift_obj tgt_fbthrift)
+add_dependencies(meta_thrift_obj common_thrift_obj tgt_fbthrift)

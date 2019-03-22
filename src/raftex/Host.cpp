@@ -9,8 +9,6 @@
 #include "raftex/RaftPart.h"
 #include "wal/FileBasedWal.h"
 #include <folly/io/async/EventBase.h>
-#include "gen-cpp2/RaftexServiceAsyncClient.h"
-#include "thrift/ThriftClientManager.h"
 #include "network/NetworkUtils.h"
 
 DEFINE_uint32(max_appendlog_batch_size, 128,
@@ -23,7 +21,6 @@ namespace nebula {
 namespace raftex {
 
 using nebula::network::NetworkUtils;
-using nebula::thrift::ThriftClientManager;
 
 Host::Host(const HostAddr& addr, std::shared_ptr<RaftPart> part)
         : part_(std::move(part))
@@ -64,8 +61,7 @@ cpp2::ErrorCode Host::checkStatus(std::lock_guard<std::mutex>& lck) const {
 
 folly::Future<cpp2::AskForVoteResponse> Host::askForVote(
         const cpp2::AskForVoteRequest& req) {
-    auto client = ThriftClientManager<cpp2::RaftexServiceAsyncClient>
-        ::getClient(addr_);
+    auto client = tcManager().client(addr_);
     return client->future_askForVote(req);
 }
 
@@ -380,8 +376,7 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
     }
 
     // Get client connection
-    auto client = ThriftClientManager<cpp2::RaftexServiceAsyncClient>
-        ::getClient(addr_);
+    auto client = tcManager().client(addr_);
     return client->future_appendLog(*req);
 }
 

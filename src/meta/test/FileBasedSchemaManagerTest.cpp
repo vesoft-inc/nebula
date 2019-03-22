@@ -8,7 +8,6 @@
 #include <gtest/gtest.h>
 #include <folly/String.h>
 #include <fstream>
-#include "meta/PartManager.h"
 #include "meta/SchemaManager.h"
 #include "fs/TempFile.h"
 

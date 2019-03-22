@@ -26,7 +26,7 @@ public:
         virtual ~Field() = default;
 
         virtual const char* getName() const = 0;
-        virtual const cpp2::ValueType& getType() const = 0;
+        virtual const nebula::cpp2::ValueType& getType() const = 0;
         virtual bool isValid() const = 0;
     };
 
@@ -35,14 +35,38 @@ public:
         friend class SchemaProviderIf;
 
     public:
-        const Field& operator*() const;
-        const Field* operator->() const;
+        const Field& operator*() const {
+            return *field_;
+        }
 
-        Iterator& operator++();
-        Iterator& operator+(uint16_t steps);
+        const Field* operator->() const {
+            return field_.get();
+        }
 
-        operator bool() const;
-        bool operator==(const Iterator& rhs) const;
+        Iterator& operator++() {
+            if (field_) {
+                index_++;
+                field_ = schema_->field(index_);
+            }
+            return *this;
+        }
+
+        Iterator& operator+(uint16_t steps) {
+            if (field_) {
+                index_ += steps;
+                field_ = schema_->field(index_);
+            }
+            return *this;
+        }
+
+        operator bool() const {
+            return static_cast<bool>(field_);
+        }
+
+        bool operator==(const Iterator& rhs) const {
+            return schema_ == rhs.schema_ &&
+                   (index_ == rhs.index_ || (!field_ && !rhs.field_));
+        }
 
     private:
         const SchemaProviderIf* schema_;
@@ -50,7 +74,14 @@ public:
         int64_t index_;
         std::shared_ptr<const Field> field_;
 
-        explicit Iterator(const SchemaProviderIf* schema, int64_t idx = 0);
+    private:
+        explicit Iterator(const SchemaProviderIf* schema,
+                         int64_t idx = 0)
+                : schema_(schema)
+                , numFields_(schema_->getNumFields())
+                , index_(idx) {
+            field_ = schema_->field(index_);
+        }
     };
 
 public:
@@ -62,16 +93,28 @@ public:
     virtual int64_t getFieldIndex(const folly::StringPiece name) const = 0;
     virtual const char* getFieldName(int64_t index) const = 0;
 
-    virtual const cpp2::ValueType& getFieldType(int64_t index) const = 0;
-    virtual const cpp2::ValueType& getFieldType(const folly::StringPiece name)
+    virtual const nebula::cpp2::ValueType& getFieldType(int64_t index) const = 0;
+    virtual const nebula::cpp2::ValueType& getFieldType(const folly::StringPiece name)
         const = 0;
 
     virtual std::shared_ptr<const Field> field(int64_t index) const = 0;
     virtual std::shared_ptr<const Field> field(const folly::StringPiece name) const = 0;
 
-    Iterator begin() const;
-    Iterator end() const;
+    /******************************************
+     *
+     * Iterator implementation
+     *
+     *****************************************/
+    Iterator begin() const {
+        return Iterator(this, 0);
+    }
+
+
+    Iterator end() const {
+        return Iterator(this, getNumFields());
+    }
 };
+
 
 }  // namespace meta
 }  // namespace nebula

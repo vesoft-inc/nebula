@@ -9,7 +9,6 @@
 #include <rocksdb/db.h>
 #include <kvstore/RocksdbEngine.h>
 #include "fs/TempDir.h"
-#include "kvstore/NebulaStore.h"
 #include "kvstore/RocksdbConfigFlags.h"
 #include "kvstore/RocksdbConfigOptions.h"
 
