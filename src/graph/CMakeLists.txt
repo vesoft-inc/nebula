@@ -19,8 +19,8 @@ add_library(
     DefineTagExecutor.cpp
     AlterEdgeExecutor.cpp
     AlterTagExecutor.cpp
-    DescribeTagExecutor.cpp
-    DescribeEdgeExecutor.cpp
+    #    DescribeTagExecutor.cpp
+    #    DescribeEdgeExecutor.cpp
     InsertVertexExecutor.cpp
     InsertEdgeExecutor.cpp
     AssignmentExecutor.cpp

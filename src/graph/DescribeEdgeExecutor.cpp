@@ -25,8 +25,8 @@ Status DescribeEdgeExecutor::prepare() {
 void DescribeEdgeExecutor::execute() {
     auto *name = sentence_->name();
     auto space = ectx()->rctx()->session()->space();
-    auto edgeType = meta::SchemaManager::toEdgeType(*name);
-    auto schema = meta::SchemaManager::getEdgeSchema(space, edgeType);
+    auto edgeType = ectx()->schemaManager()->toEdgeType(*name);
+    auto schema = ectx()->schemaManager()->getEdgeSchema(space, *name);
     resp_ = std::make_unique<cpp2::ExecutionResponse>();
 
     do {

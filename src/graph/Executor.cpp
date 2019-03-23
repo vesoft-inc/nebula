@@ -17,8 +17,8 @@
 #include "graph/DefineEdgeExecutor.h"
 #include "graph/AlterTagExecutor.h"
 #include "graph/AlterEdgeExecutor.h"
-#include "graph/DescribeTagExecutor.h"
-#include "graph/DescribeEdgeExecutor.h"
+// #include "graph/DescribeTagExecutor.h"
+// #include "graph/DescribeEdgeExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "graph/ShowExecutor.h"
@@ -52,12 +52,14 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kAlterEdge:
             executor = std::make_unique<AlterEdgeExecutor>(sentence, ectx());
             break;
+        /*
         case Sentence::Kind::kDescribeTag:
             executor = std::make_unique<DescribeTagExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kDescribeEdge:
             executor = std::make_unique<DescribeEdgeExecutor>(sentence, ectx());
             break;
+        */
         case Sentence::Kind::kInsertVertex:
             executor = std::make_unique<InsertVertexExecutor>(sentence, ectx());
             break;

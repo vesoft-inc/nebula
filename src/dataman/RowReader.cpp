@@ -6,7 +6,6 @@
 
 #include "base/Base.h"
 #include "dataman/RowReader.h"
-#include "meta/SchemaManager.h"
 
 namespace nebula {
 
@@ -121,14 +120,16 @@ RowReader::Iterator::operator bool() const {
  ********************************************/
 // static
 std::unique_ptr<RowReader> RowReader::getTagPropReader(
+        meta::SchemaManager* schemaMan,
         folly::StringPiece row,
         GraphSpaceID space,
         TagID tag) {
+    CHECK_NOTNULL(schemaMan);
     int32_t ver = getSchemaVer(row);
     if (ver >= 0) {
         return std::unique_ptr<RowReader>(new RowReader(
             row,
-            SchemaManager::getTagSchema(space, tag, ver)));
+            schemaMan->getTagSchema(space, tag, ver)));
     } else {
         // Invalid data
         // TODO We need a better error handler here
@@ -140,14 +141,16 @@ std::unique_ptr<RowReader> RowReader::getTagPropReader(
 
 // static
 std::unique_ptr<RowReader> RowReader::getEdgePropReader(
+        meta::SchemaManager* schemaMan,
         folly::StringPiece row,
         GraphSpaceID space,
         EdgeType edge) {
+    CHECK_NOTNULL(schemaMan);
     int32_t ver = getSchemaVer(row);
     if (ver >= 0) {
         return std::unique_ptr<RowReader>(new RowReader(
             row,
-            SchemaManager::getEdgeSchema(space, edge, ver)));
+            schemaMan->getEdgeSchema(space, edge, ver)));
     } else {
         // Invalid data
         // TODO We need a better error handler here
