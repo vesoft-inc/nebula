@@ -31,7 +31,8 @@ TEST_F(DefineSchemaTest, DISABLED_Simple) {
     ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DEFINE TAG person(name string, email string, age int, gender string)";
+        std::string query = "DEFINE TAG person(name string, email string, "
+                            "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -44,6 +45,7 @@ TEST_F(DefineSchemaTest, DISABLED_Simple) {
             {"name", "string"},
             {"age", "int"},
             {"gender", "string"},
+            {"row_timestamp", "timestamp"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

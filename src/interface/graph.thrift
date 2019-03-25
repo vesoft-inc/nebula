@@ -69,13 +69,13 @@ union ColumnValue {
     11: DateTime datetime;
 
     // Graph specific
-//    PATH = 41;
+    // PATH = 41;
 
     // Container types
-//    LIST = 101;
-//    SET = 102;
-//    MAP = 103;
-//    STRUCT = 104;
+    // LIST = 101;
+    // SET = 102;
+    // MAP = 103;
+    // STRUCT = 104;
 }
 
 

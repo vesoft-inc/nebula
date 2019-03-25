@@ -471,7 +471,7 @@ TEST_F(ExpressionTest, EdgeReference) {
     GQLParser parser;
     {
         std::string query = "GO FROM 1 OVER follow WHERE follow._src == 1 "
-                                                        "|| follow.timestamp < 1545798791"
+                                                        "|| follow.cur_time < 1545798791"
                                                         "&& follow._dst == 2";
         auto parsed = parser.parse(query);
         ASSERT_TRUE(parsed.ok());
@@ -485,7 +485,7 @@ TEST_F(ExpressionTest, EdgeReference) {
             return 2L;
         };
         ctx->getters().getEdgeProp = [] (auto &prop) -> VariantType {
-            if (prop == "timestamp") {
+            if (prop == "cur_time") {
                 return static_cast<int64_t>(::time(NULL));
             }
             return 1545798790L;
