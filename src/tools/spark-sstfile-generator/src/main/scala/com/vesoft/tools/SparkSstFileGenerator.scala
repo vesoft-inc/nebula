@@ -147,7 +147,7 @@ object SparkSstFileGenerator {
 
     // id generator lambda, use FNV hash for now
     //TODO: support id generator function other than FNV hash
-    //TODO: what need to be done when hash collision
+    //TODO: what need to be done when hash collision, might cause data corruption
     val idGeneratorFunction = mappingConfiguration.keyPolicy.map(_.toLowerCase) match {
       case Some("hash_primary_key") => (key: String) => FNVHash.hash64(key)
       case Some(a@_) => throw new IllegalStateException(s"not supported key generator=${a}")
@@ -170,17 +170,17 @@ object SparkSstFileGenerator {
 
         val tagDF = hiveContext.sql(s"SELECT ${columnExpression} FROM ${tag.tableName}")
         //RDD[(businessKey->values)]
-        val bizKeyAndValues: RDD[(String, Seq[Any])] = tagDF.map(row => {
+        val bizKeyAndValues: RDD[(String, Seq[AnyRef])] = tagDF.map(row => {
           (row.getAs[String](tag.primaryKey) + "_" + tag.tableName, //businessId_tableName used as key before HASH
             allColumns.filter(!_.columnName.equalsIgnoreCase(tag.primaryKey)).map(col => {
               col.`type` match {
-                case "INTEGER" => row.getAs[Int](col.columnName)
-                case "STRING" => row.getAs[String](col.columnName).getBytes("UTF-8") //native client can't decide string's charset
-                case "FLOAT" => row.getAs[Float](col.columnName)
-                case "LONG" => row.getAs[Long](col.columnName)
-                case "DOUBLE" => row.getAs[Double](col.columnName)
-                case "BOOL" => row.getAs[Boolean](col.columnName)
-                case "DATE" => row.getAs[Date](col.columnName) //TODO: not support Date type yet
+                case "INTEGER" => Int.box(row.getAs[Int](col.columnName))
+                case "STRING" => row.getAs[String](col.columnName).getBytes("UTF-8") //native client don't know string's charset
+                case "FLOAT" => Float.box(row.getAs[Float](col.columnName))
+                case "LONG" => Long.box(row.getAs[Long](col.columnName))
+                case "DOUBLE" => Double.box(row.getAs[Double](col.columnName))
+                case "BOOL" => Boolean.box(row.getAs[Boolean](col.columnName))
+                //case "DATE" => row.getAs[Date](col.columnName) //TODO: not support Date type yet
                 case a@_ => throw new IllegalStateException(s"unsupported tag data type ${a}")
               }
             })
@@ -192,17 +192,15 @@ object SparkSstFileGenerator {
             val vertexId: Long = idGeneratorFunction.apply(key) //apply id generator function
             val partitionId: Int = (vertexId % mappingConfiguration.partitions).asInstanceOf[Int]
             val keyEncoded: Array[Byte] = NativeClient.createVertexKey(partitionId, vertexId, tagType, DefaultVersion)
-            // TODO: need static NativeClient.encode here
-            // we need to wrap AnyVal in AnyRef to be compatible with NativeClient.encoded(Array[AnyRef])
-            val anyArray: Array[AnyRef] = Array(values)
-            val valuesEncoded: Array[Byte] = NativeClient.encoded(anyArray)
+            // use native client
+            val valuesEncoded: Array[Byte] = NativeClient.encoded(values.toArray)
             (new BytesWritable(keyEncoded), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded))) //TODO:valuesEncoded should be of type BytesWritable
           }
         }
       }
     }.fold(sc.emptyRDD[(BytesWritable, PartitionIdAndValueBinaryWritable)])(_ ++ _) // concat all vertex data
 
-    // should generate a sub dir per partitionId in each worker node, to allow a partition shuffles to every worker
+    // should generate a sub dir per partitionId in each worker node, to allow that a partition is shuffled to every worker
     tagsKVEncoded.saveAsNewAPIHadoopFile(sstFileOutput, classOf[BytesWritable], classOf[PartitionIdAndValueBinaryWritable], classOf[SstFileOutputFormat])
 
     //2)  handle edges
@@ -219,21 +217,21 @@ object SparkSstFileGenerator {
             s"${edge.fromForeignKeyColumn},${edge.toForeignKeyColumn}" + allColumns.mkString(",")
           }
 
-        //TODO: join FROM_COLUMN and join TO_COLUMN from the table where this columns referencing, to make sure that the claimed id really exist in the reference table.BUT with HUGE Perf penalty
+        //TODO: join FROM_COLUMN and join TO_COLUMN from the table where this columns referencing, to make sure that the claimed id really exists in the reference table.BUT with HUGE Perf penalty
         val tagDF = hiveContext.sql(s"SELECT ${columnExpression} FROM ${edge.name}")
         //RDD[(businessKey->values)]
-        val bizKeyAndValues: RDD[(String, String, Seq[Any])] = tagDF.map(row => {
+        val bizKeyAndValues: RDD[(String, String, Seq[AnyRef])] = tagDF.map(row => {
           (row.getAs[String](edge.fromForeignKeyColumn), //consistent with vertexId generation logic, to make sure that vertex and its' outbound edges are in the same partition
             row.getAs[String](edge.toForeignKeyColumn), //consistent with vertexId generation logic
             allColumns.filter(col => !col.columnName.equalsIgnoreCase(edge.fromForeignKeyColumn) && !col.columnName.equalsIgnoreCase(edge.toForeignKeyColumn)).map(col => {
               col.`type` match {
-                case "INTEGER" => row.getAs[Int](col.columnName)
-                case "STRING" => row.getAs[String](col.columnName).getBytes("UTF-8") //native client can't decide string's charset
-                case "FLOAT" => row.getAs[Float](col.columnName)
-                case "LONG" => row.getAs[Long](col.columnName)
-                case "DOUBLE" => row.getAs[Double](col.columnName)
-                case "BOOL" => row.getAs[Boolean](col.columnName)
-                case "DATE" => row.getAs[Date](col.columnName) //TODO: not support Date type yet
+                case "INTEGER" => Int.box(row.getAs[Int](col.columnName))
+                case "STRING" => row.getAs[String](col.columnName).getBytes("UTF-8")
+                case "FLOAT" => Float.box(row.getAs[Float](col.columnName))
+                case "LONG" => Long.box(row.getAs[Long](col.columnName))
+                case "DOUBLE" => Double.box(row.getAs[Double](col.columnName))
+                case "BOOL" => Boolean.box(row.getAs[Boolean](col.columnName))
+                //case "DATE" => row.getAs[Date](col.columnName) //TODO: not support Date type yet
                 case a@_ => throw new IllegalStateException(s"unsupported edge data type ${a}")
               }
             })
@@ -248,9 +246,8 @@ object SparkSstFileGenerator {
             val srcId = idGeneratorFunction.apply(srcIDString)
             val dstId = idGeneratorFunction.apply(dstIdString)
             val keyEncoded = NativeClient.createEdgeKey(partitionId, srcId, edgeType.asInstanceOf[Int], -1L, dstId, DefaultVersion) //TODO: support edge ranking,like create_time desc
-            // TODO: need static NativeClient.encode here
-            // val valuesEncoded:Array[Byte] = NativeClient.encode(values)
-            val valuesEncoded: Array[Byte] = Array.empty[Byte]
+            // use NativeClient
+            val valuesEncoded: Array[Byte] = NativeClient.encoded(values.toArray)
             (new BytesWritable(keyEncoded), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded), false)) //TODO:valuesEncoded should be of type BytesWritable
           }
         }
