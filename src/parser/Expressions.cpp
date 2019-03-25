@@ -831,6 +831,8 @@ std::string columnTypeToString(ColumnType type) {
             return "bigint";
         case BOOL:
             return "bool";
+        case TIMESTAMP:
+            return  "timestamp";
         default:
             return "unknown";
     }

@@ -209,6 +209,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("HOSTS", TokenType::KW_HOSTS),
         CHECK_SEMANTIC_TYPE("hosts", TokenType::KW_HOSTS),
         CHECK_SEMANTIC_TYPE("Hosts", TokenType::KW_HOSTS),
+        CHECK_SEMANTIC_TYPE("TIMESTAMP", TokenType::KW_TIMESTAMP),
+        CHECK_SEMANTIC_TYPE("timestamp", TokenType::KW_TIMESTAMP),
+        CHECK_SEMANTIC_TYPE("Timestamp", TokenType::KW_TIMESTAMP),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
