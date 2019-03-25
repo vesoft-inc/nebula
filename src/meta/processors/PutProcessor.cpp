@@ -4,21 +4,18 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "meta/processors/AddHostsProcessor.h"
+#include "meta/processors/PutProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
+void PutProcessor::process(const cpp2::PutReq& req) {
     guard_ = std::make_unique<std::lock_guard<std::mutex>>(
-                                BaseProcessor<cpp2::ExecResp>::lock_);
+                                BaseProcessor<cpp2::PutResp>::lock_);
     std::vector<kvstore::KV> data;
-    for (auto& h : req.get_hosts()) {
-        data.emplace_back(MetaUtils::hostKey(h.ip, h.port), MetaUtils::hostVal());
-    }
+    data.emplace_back(std::move(req.get_key()), std::move(req.get_value()));
     doPut(std::move(data));
 }
 
 }  // namespace meta
 }  // namespace nebula
-

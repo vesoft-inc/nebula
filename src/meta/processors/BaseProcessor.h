@@ -82,6 +82,34 @@ protected:
     void doPut(std::vector<kvstore::KV> data);
 
     /**
+     * General get function.
+     * When an error occurs, return Get Failed
+     * */
+    StatusOr<std::string> doGet(const std::string& key);
+
+    /**
+     * General multi get function.
+     * */
+    StatusOr<std::vector<std::string>> doMultiGet(const std::vector<std::string> keys);
+
+    /**
+     * General remove function.
+     * */
+    void doRemove(const std::string& key);
+
+    /**
+     * Remove keys from start to end, doesn't contain end.
+     * */
+    void doRemoveRange(const std::string& start,
+                       const std::string& end);
+
+    /**
+     * Scan keys from start to end, doesn't contain end.
+     * */
+     StatusOr<std::vector<std::string>> doScan(const std::string& start,
+                                               const std::string& end);
+
+    /**
      * Get all hosts
      * */
     StatusOr<std::vector<nebula::cpp2::HostAddr>> allHosts();
@@ -95,6 +123,11 @@ protected:
      * Check space_name exists or not, if existed, return the id.
      * */
     StatusOr<GraphSpaceID> spaceExist(const std::string& name);
+
+    /**
+     * Check key if start with some prefix used by meta server.
+     * */
+    bool checkRetainedPrefix(const std::string& key);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

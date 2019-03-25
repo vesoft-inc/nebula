@@ -67,6 +67,21 @@ public:
 
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
+    StatusOr<bool> put(const std::string& key, const std::string& value);
+
+    StatusOr<bool> multiPut(const std::vector<std::pair<std::string, std::string>>& pairs);
+
+    StatusOr<std::string> get(const std::string& key);
+
+    StatusOr<std::vector<std::string>> multiGet(const std::vector<std::string>& keys);
+
+    StatusOr<std::vector<std::string>> scan(const std::string& start, const std::string& end);
+
+    StatusOr<bool> remove(const std::string& key);
+
+    StatusOr<bool> removeRange(const std::string& start, const std::string& end);
+
+
 protected:
     void loadDataThreadFunc();
 

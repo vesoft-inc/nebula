@@ -63,6 +63,11 @@ public:
                            PartitionID  partId,
                            const std::string& key,
                            std::string* value) = 0;
+
+    virtual ResultCode multiGet(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                const std::vector<std::string> keys,
+                                std::vector<std::string>* values) = 0;
     /**
      * Get all results in range [start, end)
      * */

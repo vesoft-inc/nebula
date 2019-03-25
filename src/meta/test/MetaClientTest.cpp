@@ -93,6 +93,58 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_FALSE(ret.ok());
         ASSERT_EQ(Status::SpaceNotFound(), ret.status());
     }
+    {
+        // Put Test
+        auto ret = client->put("key", "value");
+        ASSERT_TRUE(ret.ok());
+    }
+    {
+        // Multi Put Test
+        std::vector<std::pair<std::string, std::string>> pairs;
+        for (auto i = 0; i < 10; i++) {
+            pairs.emplace_back(folly::stringPrintf("key_%d", i),
+                               folly::stringPrintf("value_%d", i));
+        }
+        auto ret = client->multiPut(pairs);
+        ASSERT_TRUE(ret.ok());
+    }
+    {
+        // Get Test
+        auto ret = client->get("key");
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(ret.value(), "value");
+    }
+    {
+        // Multi Get Test
+        std::vector<std::string> keys;
+        for (auto i = 0; i < 2; i++) {
+            keys.emplace_back(std::move(folly::stringPrintf("key_%d", i)));
+        }
+        auto ret = client->multiGet(keys);
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(ret.value().size(), 2);
+        ASSERT_EQ(ret.value()[0], "value_0");
+        ASSERT_EQ(ret.value()[1], "value_1");
+    }
+    {
+        // Scan Test
+        auto ret = client->scan("key_0", "key_3");
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(ret.value().size(), 3);
+        ASSERT_EQ(ret.value()[0], "value_0");
+        ASSERT_EQ(ret.value()[1], "value_1");
+        ASSERT_EQ(ret.value()[2], "value_2");
+    }
+    {
+        // Remove Test
+        auto ret = client->remove("key");
+        ASSERT_TRUE(ret.ok());
+    }
+    {
+        // Remove Range Test
+        auto ret = client->removeRange("key_0", "key_4");
+        ASSERT_TRUE(ret.ok());
+    }
     client.reset();
 }
 

@@ -13,6 +13,13 @@
 #include "meta/processors/CreateSpaceProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
+#include "meta/processors/PutProcessor.h"
+#include "meta/processors/MultiPutProcessor.h"
+#include "meta/processors/GetProcessor.h"
+#include "meta/processors/MultiGetProcessor.h"
+#include "meta/processors/RemoveProcessor.h"
+#include "meta/processors/RemoveRangeProcessor.h"
+#include "meta/processors/ScanProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -119,7 +126,125 @@ TEST(ProcessorTest, CreateSpaceTest) {
     }
 }
 
+TEST(ProcessorTest, KVOperationTest) {
+    fs::TempDir rootPath("/tmp/KVOperationTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto hostsNum = TestUtils::createSomeHosts(kv.get());
+    UNUSED(hostsNum);
 
+    {
+        cpp2::CreateSpaceReq req;
+        req.set_space_name("default_space");
+        req.set_parts_num(9);
+        req.set_replica_factor(3);
+
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(resp.get_id().get_space_id(), 1);
+    }
+    {
+        // Put Test
+        cpp2::PutReq req;
+        req.set_key("key");
+        req.set_value("value");
+
+        auto* processor = PutProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+    }
+    {
+        // Multi Put Test
+        std::vector<cpp2::Pair> pairs;
+        for (auto i = 0; i < 10; i++) {
+            pairs.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                               folly::stringPrintf("key_%d", i),
+                               folly::stringPrintf("value_%d", i));
+        }
+
+        cpp2::MultiPutReq req;
+        req.set_pairs(std::move(pairs));
+
+        auto* processor = MultiPutProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+    }
+    {
+        // Get Test
+        cpp2::GetReq req;
+        req.set_key("key");
+
+        auto* processor = GetProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(resp.value, "value");
+    }
+    {
+        // Multi Get Test
+        std::vector<std::string> keys;
+        for (auto i = 0; i < 2; i++) {
+            keys.emplace_back(std::move(folly::stringPrintf("key_%d", i)));
+        }
+
+        cpp2::MultiGetReq req;
+        req.set_keys(std::move(keys));
+
+        auto* processor = MultiGetProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(resp.values.size(), 2);
+        ASSERT_EQ(resp.values[0], "value_0");
+        ASSERT_EQ(resp.values[1], "value_1");
+    }
+    {
+        // Scan Test
+        cpp2::ScanReq req;
+        req.set_start("key_1");
+        req.set_end("key_4");
+        auto* processor = ScanProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(resp.values.size(), 3);
+        ASSERT_EQ(resp.values[0], "value_1");
+        ASSERT_EQ(resp.values[1], "value_2");
+        ASSERT_EQ(resp.values[2], "value_3");
+    }
+    {
+        // Remove Test
+        cpp2::RemoveReq req;
+        req.set_key("key");
+
+        auto* processor = RemoveProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+    }
+    {
+        // Remove Range Test
+        cpp2::RemoveRangeReq req;
+        req.set_start("key_0");
+        req.set_end("key_4");
+
+        auto* processor = RemoveRangeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+    }
+}
 
 }  // namespace meta
 }  // namespace nebula

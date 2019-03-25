@@ -56,6 +56,26 @@ ResultCode RocksdbEngine::get(const std::string& key,
     return ResultCode::ERR_UNKNOWN;
 }
 
+ResultCode RocksdbEngine::multiGet(const std::vector<std::string> keys,
+                                   std::vector<std::string>* values) {
+    rocksdb::ReadOptions options;
+    std::vector<rocksdb::Slice> slices;
+    for (unsigned int index = 0 ; index < keys.size() ; index++) {
+        slices.emplace_back(std::move(keys[index]));
+    }
+
+    std::vector<rocksdb::Status> status = db_->MultiGet(options, std::move(slices), values);
+    auto code = std::all_of(status.begin(), status.end(),
+                            [](rocksdb::Status s) {
+                                return s.ok();
+                            });
+    if (code) {
+        return ResultCode::SUCCEEDED;
+    } else {
+        return ResultCode::ERR_UNKNOWN;
+    }
+}
+
 ResultCode RocksdbEngine::put(std::string key,
                               std::string value) {
     rocksdb::WriteOptions options;

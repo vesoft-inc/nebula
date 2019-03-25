@@ -22,6 +22,13 @@ add_library(
     processors/ListHostsProcessor.cpp
     processors/ListSpacesProcessor.cpp
     processors/GetPartsAllocProcessor.cpp
+    processors/GetProcessor.cpp
+    processors/MultiGetProcessor.cpp
+    processors/PutProcessor.cpp
+    processors/MultiPutProcessor.cpp
+    processors/RemoveProcessor.cpp
+    processors/RemoveRangeProcessor.cpp
+    processors/ScanProcessor.cpp
 )
 
 add_dependencies(

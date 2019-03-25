@@ -185,6 +185,105 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
     return Status::SpaceNotFound();
 }
 
+StatusOr<bool>
+MetaClient::put(const std::string& key, const std::string& value) {
+    cpp2::PutReq req;
+    req.set_key(std::move(key));
+    req.set_value(std::move(value));
+    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+                   return client->future_put(request);
+                });
+    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
+        return handleResponse(resp);
+    }
+    return true;
+}
+
+StatusOr<bool>
+MetaClient::multiPut(const std::vector<std::pair<std::string, std::string>>& pairs) {
+    cpp2::MultiPutReq req;
+    std::vector<cpp2::Pair> data;
+    for (auto element : pairs) {
+        data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                          element.first, element.second);
+    }
+    req.set_pairs(std::move(data));
+    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_multiPut(request);
+                });
+    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
+        return handleResponse(resp);
+    }
+    return true;
+}
+
+StatusOr<std::string>
+MetaClient::get(const std::string& key) {
+    cpp2::GetReq req;
+    req.set_key(std::move(key));
+    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_get(request);
+                });
+    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
+        return handleResponse(resp);
+    }
+    return resp.get_value();
+}
+
+StatusOr<std::vector<std::string>>
+MetaClient::multiGet(const std::vector<std::string>& keys) {
+    cpp2::MultiGetReq req;
+    req.set_keys(keys);
+    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_multiGet(request);
+                });
+    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
+        return handleResponse(resp);
+    }
+    return resp.get_values();
+}
+
+StatusOr<std::vector<std::string>>
+MetaClient::scan(const std::string& start, const std::string& end) {
+    cpp2::ScanReq req;
+    req.set_start(std::move(start));
+    req.set_end(std::move(end));
+    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_scan(request);
+                });
+    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
+        return handleResponse(resp);
+    }
+    return resp.get_values();
+}
+
+StatusOr<bool>
+MetaClient::remove(const std::string& key) {
+    cpp2::RemoveReq req;
+    req.set_key(std::move(key));
+    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_remove(request);
+                });
+    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
+        return handleResponse(resp);
+    }
+    return true;
+}
+
+StatusOr<bool>
+MetaClient::removeRange(const std::string& start, const std::string& end) {
+    cpp2::RemoveRangeReq req;
+    req.set_start(std::move(start));
+    req.set_end(std::move(end));
+    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_removeRange(request);
+                });
+    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
+        return handleResponse(resp);
+    }
+    return true;
+}
+
 std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& tHosts) {
     std::vector<HostAddr> hosts;
     hosts.resize(tHosts.size());

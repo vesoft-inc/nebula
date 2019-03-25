@@ -25,6 +25,9 @@ enum ErrorCode {
     E_SPACE_EXISTED  = -22,
     E_NOT_FOUND      = -23,
 
+    // KV Failure
+    E_STORE_FAILURE  = -31,
+
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
 
@@ -37,6 +40,11 @@ union ID {
 struct IdName {
     1: ID     id,
     2: string name,
+}
+
+struct Pair {
+    1: string key,
+    2: string value,
 }
 
 struct ExecResp {
@@ -174,6 +182,68 @@ struct GetPartsAllocResp {
     3: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
 }
 
+struct PutReq {
+    1: string key,
+    2: string value,
+}
+
+struct PutResp {
+    1: ErrorCode code,
+}
+
+struct MultiPutReq {
+    1: list<Pair> pairs
+}
+
+struct MultiPutResp {
+    1: ErrorCode code,
+} 
+
+struct GetReq {
+    1: string key,
+}
+
+struct GetResp {
+    1: ErrorCode code,
+    2: string    value,
+}
+
+struct MultiGetReq {
+    1: list<string> keys,
+}
+
+struct MultiGetResp {
+    1: ErrorCode    code,
+    2: list<string> values
+}
+
+struct RemoveReq {
+    1: string key,
+}
+
+struct RemoveResp {
+    1: ErrorCode code,
+}
+
+struct RemoveRangeReq {
+    1: string start,
+    2: string end,
+}
+
+struct RemoveRangeResp {
+    1: ErrorCode code,
+}
+
+struct ScanReq {
+    1: string start,
+    2: string end,
+}
+
+struct ScanResp {
+    1: ErrorCode code,
+    2: list<string> values,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp deleteSpace(1: DeleteSpaceReq req);
@@ -195,5 +265,13 @@ service MetaService {
     ListHostsResp listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
+
+    PutResp          put(1: PutReq req);
+    MultiPutResp     multiPut(1: MultiPutReq req);
+    GetResp          get(1: GetReq req);
+    MultiGetResp     multiGet(1: MultiGetReq req);
+    RemoveResp       remove(1: RemoveReq req);
+    RemoveRangeResp  removeRange(1: RemoveRangeReq req);
+    ScanResp         scan(1: ScanReq req);
 }
 
