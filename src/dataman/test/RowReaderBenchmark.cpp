@@ -19,14 +19,16 @@ auto schemaAllBools = std::make_shared<SchemaWriter>();
 auto schemaAllStrings = std::make_shared<SchemaWriter>();
 auto schemaAllDoubles = std::make_shared<SchemaWriter>();
 auto schemaAllVids = std::make_shared<SchemaWriter>();
+auto schemaAllTimestamps = std::make_shared<SchemaWriter>();
 auto schemaMix = std::make_shared<SchemaWriter>();
 
-static std::string dataAllBools;    // NOLINT
-static std::string dataAllInts;     // NOLINT
-static std::string dataAllDoubles;  // NOLINT
-static std::string dataAllStrings;  // NOLINT
-static std::string dataAllVids;     // NOLINT
-static std::string dataMix;         // NOLINT
+static std::string dataAllBools;        // NOLINT
+static std::string dataAllInts;         // NOLINT
+static std::string dataAllDoubles;      // NOLINT
+static std::string dataAllStrings;      // NOLINT
+static std::string dataAllVids;         // NOLINT
+static std::string dataAllTimestamps;	// NOLINT
+static std::string dataMix;             // NOLINT
 
 
 void prepareSchema() {
@@ -46,6 +48,9 @@ void prepareSchema() {
         schemaAllVids->appendCol(
             folly::stringPrintf("col%02d", i),
             nebula::cpp2::SupportedType::VID);
+        schemaAllTimestamps->appendCol(
+            folly::stringPrintf("col%02d", i),
+            nebula::cpp2::SupportedType::TIMESTAMP);
     }
 
     schemaMix->appendCol("col01", nebula::cpp2::SupportedType::BOOL)
@@ -72,10 +77,10 @@ void prepareSchema() {
              .appendCol("col22", nebula::cpp2::SupportedType::VID)
              .appendCol("col23", nebula::cpp2::SupportedType::VID)
              .appendCol("col24", nebula::cpp2::SupportedType::VID)
-             .appendCol("col25", nebula::cpp2::SupportedType::INT)
-             .appendCol("col26", nebula::cpp2::SupportedType::INT)
-             .appendCol("col27", nebula::cpp2::SupportedType::INT)
-             .appendCol("col28", nebula::cpp2::SupportedType::INT)
+             .appendCol("col25", nebula::cpp2::SupportedType::TIMESTAMP)
+             .appendCol("col26", nebula::cpp2::SupportedType::TIMESTAMP)
+             .appendCol("col27", nebula::cpp2::SupportedType::TIMESTAMP)
+             .appendCol("col28", nebula::cpp2::SupportedType::TIMESTAMP)
              .appendCol("col29", nebula::cpp2::SupportedType::INT)
              .appendCol("col30", nebula::cpp2::SupportedType::INT)
              .appendCol("col31", nebula::cpp2::SupportedType::INT)
@@ -89,6 +94,7 @@ void prepareData() {
     RowWriter wDoubles(schemaAllDoubles);
     RowWriter wStrings(schemaAllStrings);
     RowWriter wVids(schemaAllVids);
+    RowWriter wTimestamps(schemaAllTimestamps);
     RowWriter wMix(schemaMix);
 
     for (int i = 0; i < 32; i++) {
@@ -97,6 +103,7 @@ void prepareData() {
         wDoubles << 3.1415926;
         wStrings << "Hello World";
         wVids << 0xABCDABCDABCDABCD;
+        wTimestamps << 1551331827;
     }
 
     wMix << true << false << true << false
@@ -105,13 +112,15 @@ void prepareData() {
          << 1.23 << 2.34 << 3.1415926 << 2.17
          << 1.23 << 2.34 << 3.1415926 << 2.17
          << 0xFFFFFFFF << 0xABABABABABABABAB << 0x0 << -1
-         << 0 << 1 << 2 << 3 << 4 << 5 << 6 << 7;
+         << 1551331827 << 1551331827 << 1551331827 << 1551331827
+         << 0 << 1 << 2 << 3;
 
     dataAllBools = wBools.encode();
     dataAllInts = wInts.encode();
     dataAllDoubles = wDoubles.encode();
     dataAllStrings = wStrings.encode();
     dataAllVids = wVids.encode();
+    dataAllTimestamps = wTimestamps.encode();
     dataMix = wMix.encode();
 }
 
@@ -173,13 +182,13 @@ void readMix(int32_t iters) {
         folly::doNotOptimizeAway(iVal);
         reader->getVid(23, iVal);
         folly::doNotOptimizeAway(iVal);
-        reader->getInt(24, iVal);
+        reader->getTimestamp(24, iVal);
         folly::doNotOptimizeAway(iVal);
-        reader->getInt(25, iVal);
+        reader->getTimestamp(25, iVal);
         folly::doNotOptimizeAway(iVal);
-        reader->getInt(26, iVal);
+        reader->getTimestamp(26, iVal);
         folly::doNotOptimizeAway(iVal);
-        reader->getInt(27, iVal);
+        reader->getTimestamp(27, iVal);
         folly::doNotOptimizeAway(iVal);
         reader->getInt(28, iVal);
         folly::doNotOptimizeAway(iVal);
@@ -260,6 +269,15 @@ BENCHMARK(read_vid_seq, iters) {
 }
 BENCHMARK(read_vid_rand, iters) {
     READ_VALUE_RANDOMLY(int64_t, schemaAllVids, dataAllVids, Vid);
+}
+
+BENCHMARK_DRAW_LINE();
+
+BENCHMARK(read_timestamp_seq, iters) {
+    READ_VALUE(int64_t, schemaAllTimestamps, dataAllTimestamps, Timestamp);
+}
+BENCHMARK(read_timestamp_rand, iters) {
+    READ_VALUE_RANDOMLY(int64_t, schemaAllTimestamps, dataAllTimestamps, Timestamp);
 }
 
 BENCHMARK_DRAW_LINE();
