@@ -66,6 +66,10 @@ void RowUpdater::encodeTo(std::string& encoded) const noexcept {
                 RU_OUTPUT_VALUE(int64_t, Vid, 0);
                 break;
             }
+            case cpp2::SupportedType::TIMESTAMP: {
+                RU_OUTPUT_VALUE(int64_t, Timestamp, 0);
+                break;
+            }
             default: {
                 LOG(FATAL) << "Unimplemented";
             }
@@ -180,6 +184,24 @@ ResultType RowUpdater::setVid(const folly::StringPiece name,
 }
 
 
+ResultType RowUpdater::setTimestamp(const folly::StringPiece name,
+                              int64_t v) noexcept {
+    RU_GET_TYPE_BY_NAME()
+
+    uint64_t hash;
+    switch (type.get_type()) {
+        case cpp2::SupportedType::TIMESTAMP:
+            hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
+            updatedFields_[hash] = v;
+            break;
+        default:
+            return ResultType::E_INCOMPATIBLE_TYPE;
+    }
+
+    return ResultType::SUCCEEDED;
+}
+
+
 /***************************************************
  *
  * Field Accessors
@@ -264,6 +286,22 @@ ResultType RowUpdater::getString(const folly::StringPiece name,
 ResultType RowUpdater::getVid(const folly::StringPiece name,
                               int64_t& v) const noexcept {
     RU_CHECK_UPDATED_FIELDS(Vid)
+
+    switch (it->second.which()) {
+    case VALUE_TYPE_INT:
+        v = boost::get<int64_t>(it->second);
+        break;
+    default:
+        return ResultType::E_INCOMPATIBLE_TYPE;
+    }
+
+    return ResultType::SUCCEEDED;
+}
+
+
+ResultType RowUpdater::getTimestamp(const folly::StringPiece name,
+                              int64_t& v) const noexcept {
+    RU_CHECK_UPDATED_FIELDS(Timestamp)
 
     switch (it->second.which()) {
     case VALUE_TYPE_INT:

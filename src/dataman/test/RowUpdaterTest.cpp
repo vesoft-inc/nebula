@@ -27,6 +27,7 @@ void prepareSchema() {
     schema->appendCol("col6", nebula::cpp2::SupportedType::FLOAT);
     schema->appendCol("col7", nebula::cpp2::SupportedType::VID);
     schema->appendCol("col8", nebula::cpp2::SupportedType::DOUBLE);
+    schema->appendCol("col9", nebula::cpp2::SupportedType::TIMESTAMP);
 }
 
 
@@ -39,7 +40,7 @@ TEST(RowUpdater, noOrigin) {
     RowUpdater updater(schema);
 
     bool bVal;
-    int64_t iVal;
+    int64_t iVal, tVal;
     float fVal;
     double dVal;
     folly::StringPiece sVal;
@@ -83,13 +84,20 @@ TEST(RowUpdater, noOrigin) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               updater.getDouble("col8", dVal));
     EXPECT_DOUBLE_EQ(2.17, dVal);
+
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              updater.setTimestamp("col9", 1551331827));
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              updater.getTimestamp("col9", tVal));
+    EXPECT_EQ(1551331827, tVal);
 }
 
 
 TEST(RowUpdater, withOrigin) {
     RowWriter writer(schema);
     writer << 123 << 456 << "Hello" << "World"
-           << true << 3.1415926 << 0xABCDABCDABCDABCD << 2.17;
+           << true << 3.1415926 << 0xABCDABCDABCDABCD
+           << 2.17 << 1551331828;
     std::string encoded(writer.encode());
 
     auto reader = RowReader::getRowReader(encoded, schema);
@@ -101,9 +109,11 @@ TEST(RowUpdater, withOrigin) {
               updater.setFloat("col6", 2.17));
     EXPECT_EQ(ResultType::SUCCEEDED,
               updater.setVid("col7", 0x1234123412341234));
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              updater.setTimestamp("col9", 1551331830));
 
     bool bVal;
-    int64_t iVal;
+    int64_t iVal, tVal;
     folly::StringPiece sVal;
     float fVal;
     double dVal;
@@ -141,6 +151,10 @@ TEST(RowUpdater, withOrigin) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               updater.getDouble("col8", dVal));
     EXPECT_DOUBLE_EQ(2.17, dVal);
+
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              updater.getTimestamp("col9", tVal));
+    EXPECT_DOUBLE_EQ(1551331830, tVal);
 }
 
 
@@ -163,11 +177,13 @@ TEST(RowUpdater, encodeWithAllFields) {
               updater.setVid("col7", 0xABCDABCDABCDABCD));
     EXPECT_EQ(ResultType::SUCCEEDED,
               updater.setDouble("col8", 2.17));
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              updater.setTimestamp("col9", 1551331830));
 
     std::string encoded(updater.encode());
 
     bool bVal;
-    int64_t iVal;
+    int64_t iVal, tVal;
     float fVal;
     double dVal;
     folly::StringPiece sVal;
@@ -207,6 +223,10 @@ TEST(RowUpdater, encodeWithAllFields) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getDouble("col8", dVal));
     EXPECT_DOUBLE_EQ(2.17, dVal);
+
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getTimestamp("col9", tVal));
+    EXPECT_DOUBLE_EQ(1551331830, tVal);
 }
 
 
@@ -225,7 +245,7 @@ TEST(RowUpdater, encodeWithMissingFields) {
     std::string encoded(updater.encode());
 
     bool bVal;
-    int64_t iVal;
+    int64_t iVal, tVal;
     float fVal;
     double dVal;
     folly::StringPiece sVal;
@@ -267,6 +287,11 @@ TEST(RowUpdater, encodeWithMissingFields) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getDouble("col8", dVal));
     EXPECT_DOUBLE_EQ(0.0, dVal);
+
+    // Default value
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getTimestamp("col9", tVal));
+    EXPECT_DOUBLE_EQ(0, tVal);
 }
 
 

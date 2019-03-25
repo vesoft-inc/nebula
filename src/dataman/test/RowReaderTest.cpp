@@ -100,6 +100,8 @@ TEST(RowReader, encodedData) {
     // Col 8: double_col -- DOUBLE
     schema->appendCol(std::string("double_col"),
                       cpp2::SupportedType::DOUBLE);
+    // Col 9: timestamp_col -- TIMESTAMP
+    schema->appendCol("timestamp_col", cpp2::SupportedType::TIMESTAMP);
 
     std::string encoded;
     // Single byte header (Schema version is 0, no offset)
@@ -143,6 +145,10 @@ TEST(RowReader, encodedData) {
     // Col 8
     double e = 2.71828182845904523536028747135266249775724709369995;
     encoded.append(reinterpret_cast<char*>(&e), sizeof(double));
+
+    // Col 9
+    int64_t timestampVal = 1551331827;
+    encoded.append(reinterpret_cast<char*>(&timestampVal), sizeof(int64_t));
 
     /**************************
      * Now let's read it
@@ -248,9 +254,19 @@ TEST(RowReader, encodedData) {
               reader->getDouble("double_col", dVal));
     EXPECT_DOUBLE_EQ(e, dVal);
 
-    // Col 9 -- non-existing column
+    // Col 9
+    i64Val = 0;
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getTimestamp(9, i64Val));
+    EXPECT_EQ(1551331827, i64Val);
+    i64Val = 0;
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getTimestamp("timestamp_col", i64Val));
+    EXPECT_EQ(1551331827, i64Val);
+
+    // Col 10 -- non-existing column
     EXPECT_EQ(ResultType::E_INDEX_OUT_OF_RANGE,
-              reader->getBool(9, bVal));
+              reader->getBool(10, bVal));
     EXPECT_EQ(ResultType::E_NAME_NOT_FOUND,
               reader->getBool("bool_col3", bVal));
 }
