@@ -98,6 +98,7 @@ add_library(
     gen-cpp2/common_data.cpp
     gen-cpp2/common_types.cpp
 )
+add_dependencies(common_thrift_obj tgt_fbthrift)
 
 add_library(
     storage_thrift_obj OBJECT
