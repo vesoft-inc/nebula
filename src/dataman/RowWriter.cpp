@@ -241,7 +241,8 @@ RowWriter& RowWriter::operator<<(Skip&& skip) noexcept {
                 writeInt(0);
                 break;
             }
-            case SupportedType::VID: {
+            case SupportedType::VID:
+            case SupportedType::TIMESTAMP: {
                 cord_ << static_cast<uint64_t>(0);
                 break;
             }

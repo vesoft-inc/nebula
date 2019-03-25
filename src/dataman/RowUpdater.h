@@ -65,6 +65,9 @@ public:
     ResultType setVid(const folly::StringPiece name, int64_t v) noexcept;
     ResultType getVid(const folly::StringPiece name, int64_t& v) const noexcept;
 
+    ResultType setTimestamp(const folly::StringPiece name, int64_t v) noexcept;
+    ResultType getTimestamp(const folly::StringPiece name, int64_t& v) const noexcept;
+
     // TODO getPath(const std::string& name) const noexcept;
     // TODO getList(const std::string& name) const noexcept;
     // TODO getSet(const std::string& name) const noexcept;
