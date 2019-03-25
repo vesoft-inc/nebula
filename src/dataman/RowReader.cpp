@@ -42,6 +42,11 @@ ResultType RowReader::Cell::getVid(int64_t& v) const noexcept {
 }
 
 
+ResultType RowReader::Cell::getTimestamp(int64_t& v) const noexcept {
+    RR_CELL_GET_VALUE(Timestamp);
+}
+
+
 /*********************************************
  *
  * class RowReader::Iterator
@@ -307,7 +312,8 @@ int64_t RowReader::skipToNext(int64_t index, int64_t offset) const noexcept {
             offset += intLen + strLen;
             break;
         }
-        case cpp2::SupportedType::VID: {
+        case cpp2::SupportedType::VID:
+        case cpp2::SupportedType::TIMESTAMP: {
             // Eight bytes
             offset += sizeof(int64_t);
             break;
@@ -396,7 +402,7 @@ int32_t RowReader::readString(int64_t offset, folly::StringPiece& v)
 }
 
 
-int32_t RowReader::readVid(int64_t offset, int64_t& v) const noexcept {
+int32_t RowReader::readInt64(int64_t offset, int64_t& v) const noexcept {
     if (offset + sizeof(int64_t) > data_.size()) {
         return static_cast<int32_t>(ResultType::E_DATA_INVALID);
     }
@@ -405,6 +411,16 @@ int32_t RowReader::readVid(int64_t offset, int64_t& v) const noexcept {
     memcpy(reinterpret_cast<char*>(&v), &(data_[offset]), sizeof(int64_t));
 
     return sizeof(int64_t);
+}
+
+
+int32_t RowReader::readVid(int64_t offset, int64_t& v) const noexcept {
+    return readInt64(offset, v);
+}
+
+
+int32_t RowReader::readTimestamp(int64_t offset, int64_t& v) const noexcept {
+    return readInt64(offset, v);
 }
 
 
@@ -528,7 +544,7 @@ ResultType RowReader::getString(int64_t index,
 }
 
 
-ResultType RowReader::getVid(int64_t index, int64_t& offset, int64_t& v)
+ResultType RowReader::getInt64(int64_t index, int64_t& offset, int64_t& v)
         const noexcept {
     switch (schema_->getFieldType(index).get_type()) {
         case cpp2::SupportedType::INT: {
@@ -547,12 +563,40 @@ ResultType RowReader::getVid(int64_t index, int64_t& offset, int64_t& v)
             offset += numBytes;
             break;
         }
+        case cpp2::SupportedType::TIMESTAMP: {
+            int32_t numBytes = readTimestamp(offset, v);
+            if (numBytes < 0) {
+                return static_cast<ResultType>(numBytes);
+            }
+            offset += numBytes;
+            break;
+        }
         default: {
             return ResultType::E_INCOMPATIBLE_TYPE;
         }
     }
 
     return ResultType::SUCCEEDED;
+}
+
+
+ResultType RowReader::getVid(int64_t index, int64_t& offset, int64_t& v)
+        const noexcept {
+    auto fieldType = schema_->getFieldType(index).get_type();
+    if (fieldType == cpp2::SupportedType::INT || fieldType == cpp2::SupportedType::VID)
+        return getInt64(index, offset, v);
+    else
+        return ResultType::E_INCOMPATIBLE_TYPE;
+}
+
+
+ResultType RowReader::getTimestamp(int64_t index, int64_t& offset, int64_t& v)
+        const noexcept {
+    auto fieldType = schema_->getFieldType(index).get_type();
+    if (fieldType == cpp2::SupportedType::INT || fieldType == cpp2::SupportedType::TIMESTAMP)
+        return getInt64(index, offset, v);
+    else
+        return ResultType::E_INCOMPATIBLE_TYPE;
 }
 
 
@@ -610,6 +654,13 @@ ResultType RR_GET_VALUE_BY_NAME(Vid, int64_t)
 ResultType RowReader::getVid(int64_t index, int64_t& v) const noexcept {
     RR_GET_OFFSET()
     return getVid(index, offset, v);
+}
+
+ResultType RR_GET_VALUE_BY_NAME(Timestamp, int64_t)
+
+ResultType RowReader::getTimestamp(int64_t index, int64_t& v) const noexcept {
+    RR_GET_OFFSET()
+    return getTimestamp(index, offset, v);
 }
 
 }  // namespace nebula

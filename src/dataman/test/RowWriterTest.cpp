@@ -85,14 +85,16 @@ TEST(RowWriter, streamControl) {
            << RowWriter::ColType(cpp2::SupportedType::STRING)
            << "Hello World!"
            << RowWriter::ColType(cpp2::SupportedType::DOUBLE)
-           << static_cast<float>(3.1415926);
+           << static_cast<float>(3.1415926)
+           << RowWriter::ColType(cpp2::SupportedType::TIMESTAMP)
+           << 1551331827;
 
     std::string encoded = writer.encode();
     auto schema = std::make_shared<ResultSchemaProvider>(writer.moveSchema());
     auto reader = RowReader::getRowReader(encoded, schema);
 
     EXPECT_EQ(0x00000000, reader->schemaVer());
-    EXPECT_EQ(4, reader->numFields());
+    EXPECT_EQ(5, reader->numFields());
 
     // Col 0
     bool bVal;
@@ -119,6 +121,14 @@ TEST(RowWriter, streamControl) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getFloat("Column4", fVal));
     EXPECT_FLOAT_EQ(3.1415926, fVal);
+
+    // Col 4
+    int64_t tVal;
+    EXPECT_EQ(ResultType::E_INCOMPATIBLE_TYPE,
+              reader->getInt("Column5", tVal));
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getTimestamp("Column5", tVal));
+    EXPECT_EQ(1551331827, tVal);
 }
 
 
@@ -151,11 +161,13 @@ TEST(RowWriter, withSchema) {
     schema->appendCol("col5", cpp2::SupportedType::BOOL);
     schema->appendCol("col6", cpp2::SupportedType::FLOAT);
     schema->appendCol("col7", cpp2::SupportedType::VID);
+    schema->appendCol("col8", cpp2::SupportedType::TIMESTAMP);
 
     RowWriter writer(schema);
     writer << 1 << 2 << "Hello" << "World" << true
            << 3.1415926 /* By default, this is a double */
-           << 1234567;
+           << 1234567
+           << 1551331827;
     std::string encoded = writer.encode();
     auto reader = RowReader::getRowReader(encoded, schema);
 
@@ -163,6 +175,7 @@ TEST(RowWriter, withSchema) {
     folly::StringPiece sVal;
     bool bVal;
     double dVal;
+    int64_t tVal;
 
     // Col 1
     EXPECT_EQ(ResultType::SUCCEEDED,
@@ -198,6 +211,11 @@ TEST(RowWriter, withSchema) {
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getVid("col7", iVal));
     EXPECT_EQ(1234567, iVal);
+
+    // Col 8
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getTimestamp("col8", tVal));
+    EXPECT_EQ(1551331827, tVal);
 }
 
 
@@ -211,6 +229,7 @@ TEST(RowWriter, skip) {
     schema->appendCol("col6", cpp2::SupportedType::BOOL);
     schema->appendCol("col7", cpp2::SupportedType::VID);
     schema->appendCol("col8", cpp2::SupportedType::DOUBLE);
+    schema->appendCol("col9", cpp2::SupportedType::TIMESTAMP);
 
     RowWriter writer(schema);
     // Implicitly skip the last two fields
@@ -220,7 +239,7 @@ TEST(RowWriter, skip) {
     std::string encoded = writer.encode();
     auto reader = RowReader::getRowReader(encoded, schema);
 
-    int64_t iVal;
+    int64_t iVal, tVal;
     float fVal;
     double dVal;
     folly::StringPiece sVal;
@@ -264,6 +283,11 @@ TEST(RowWriter, skip) {
     // Col 8: Implicitly skipped field
     EXPECT_EQ(ResultType::SUCCEEDED,
               reader->getDouble("col8", dVal));
+    EXPECT_DOUBLE_EQ(0.0, dVal);
+
+    // Col 9: Implicitly skipped field
+    EXPECT_EQ(ResultType::SUCCEEDED,
+              reader->getTimestamp("col9", tVal));
     EXPECT_DOUBLE_EQ(0.0, dVal);
 }
 

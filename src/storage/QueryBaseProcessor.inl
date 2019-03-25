@@ -21,6 +21,7 @@ bool QueryBaseProcessor<REQ, RESP>::validOperation(nebula::cpp2::SupportedType v
         case cpp2::StatType::AVG: {
             return vType == nebula::cpp2::SupportedType::INT
                     || vType == nebula::cpp2::SupportedType::VID
+                    || vType == nebula::cpp2::SupportedType::TIMESTAMP
                     || vType == nebula::cpp2::SupportedType::FLOAT
                     || vType == nebula::cpp2::SupportedType::DOUBLE;
         }
@@ -71,6 +72,13 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                 case nebula::cpp2::SupportedType::VID: {
                     int64_t v;
                     auto ret = reader->getVid(name, v);
+                    collector->collectInt64(ret, v, prop);
+                    VLOG(3) << "collect " << name << ", value = " << v;
+                    break;
+                }
+                case nebula::cpp2::SupportedType::TIMESTAMP: {
+                    int64_t v;
+                    auto ret = reader->getTimestamp(name, v);
                     collector->collectInt64(ret, v, prop);
                     VLOG(3) << "collect " << name << ", value = " << v;
                     break;
@@ -254,7 +262,7 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
         return;
     }
 
-//    const auto& filter = req.get_filter();
+    // const auto& filter = req.get_filter();
     std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partV) {
         auto partId = partV.first;
         kvstore::ResultCode ret;

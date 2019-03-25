@@ -60,6 +60,7 @@ TRUE                        ([Tt][Rr][Uu][Ee])
 FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 SHOW                        ([Ss][Hh][Oo][Ww])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
+TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
 
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
@@ -113,6 +114,7 @@ OCT                         ([0-7])
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {SHOW}                      { return TokenType::KW_SHOW; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
+{TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
