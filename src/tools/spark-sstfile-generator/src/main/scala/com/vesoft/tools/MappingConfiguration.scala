@@ -45,7 +45,7 @@ object Column {
 }
 
 /**
-  * a trait that both Tag and Edge should be
+  * a trait that both Tag and Edge should extends
   */
 trait WithColumnMapping {
 
