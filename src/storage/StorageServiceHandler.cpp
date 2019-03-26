@@ -29,7 +29,7 @@ StorageServiceHandler::future_getOutBound(const cpp2::GetNeighborsRequest& req) 
 
 folly::Future<cpp2::QueryResponse>
 StorageServiceHandler::future_getInBound(const cpp2::GetNeighborsRequest& req) {
-    auto* processor = QueryBoundProcessor::instance(kvstore_);
+    auto* processor = QueryBoundProcessor::instance(kvstore_, BoundType::IN_BOUND);
     RETURN_FUTURE(processor);
 }
 
@@ -41,7 +41,7 @@ StorageServiceHandler::future_outBoundStats(const cpp2::GetNeighborsRequest& req
 
 folly::Future<cpp2::QueryStatsResponse>
 StorageServiceHandler::future_inBoundStats(const cpp2::GetNeighborsRequest& req) {
-    auto* processor = QueryStatsProcessor::instance(kvstore_);
+    auto* processor = QueryStatsProcessor::instance(kvstore_, BoundType::IN_BOUND);
     RETURN_FUTURE(processor);
 }
 

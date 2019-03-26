@@ -14,46 +14,6 @@
 namespace nebula {
 namespace storage {
 
-kvstore::ResultCode
-QueryStatsProcessor::collectVertexStats(PartitionID partId,
-                                        VertexID vId,
-                                        TagID tagId,
-                                        std::vector<PropContext>& props) {
-    auto prefix = KeyUtils::prefix(partId, vId, tagId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return ret;
-    }
-    // Only get the latest version.
-    if (iter && iter->valid()) {
-        auto reader = RowReader::getTagPropReader(iter->val(), spaceId_, tagId);
-        collectProps(reader.get(), iter->key(), props, &collector_);
-    }
-    return ret;
-}
-
-
-kvstore::ResultCode
-QueryStatsProcessor::collectEdgesStats(PartitionID partId,
-                                       VertexID vId,
-                                       EdgeType edgeType,
-                                       std::vector<PropContext>& props) {
-    auto prefix = KeyUtils::prefix(partId, vId, edgeType);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
-        return ret;
-    }
-    while (iter->valid()) {
-        auto reader = RowReader::getEdgePropReader(iter->val(), spaceId_, edgeType);
-        collectProps(reader.get(), iter->key(), props, &collector_);
-        iter->next();
-    }
-    return ret;
-}
-
-
 void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
     RowWriter writer;
     decltype(resp_.schema) s;
@@ -111,20 +71,24 @@ kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
                                                        std::vector<TagContext>& tagContexts,
                                                        EdgeContext& edgeContext) {
     for (auto& tc : tagContexts) {
-        auto ret = collectVertexStats(partId, vId, tc.tagId_, tc.props_);
+        auto ret = this->collectVertexProps(partId, vId, tc.tagId_, tc.props_, &collector_);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
     }
 
-    auto ret = collectEdgesStats(partId,
-                                 vId,
-                                 edgeContext.edgeType_,
-                                 edgeContext.props_);
+    auto ret = this->collectEdgeProps(partId,
+                                      vId,
+                                      edgeContext.edgeType_,
+                                      edgeContext.props_,
+                                      [&, this] (RowReader* reader,
+                                                 folly::StringPiece key,
+                                                 std::vector<PropContext>& props) {
+                                          this->collectProps(reader, key, props, &collector_);
+                                      });
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return ret;
     }
-
     return kvstore::ResultCode::SUCCEEDED;
 }
 
