@@ -59,55 +59,57 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                 collector->collectInt64(ResultType::SUCCEEDED, KeyUtils::getRank(key), prop);
                 continue;
         }
-        const auto& name = prop.prop_.get_name();
-        switch (prop.type_.type) {
-            case nebula::cpp2::SupportedType::INT: {
-                int64_t v;
-                auto ret = reader->getInt<int64_t>(name, v);
-                VLOG(3) << "collect " << name << ", value = " << v;
-                collector->collectInt64(ret, v, prop);
-                break;
-            }
-            case nebula::cpp2::SupportedType::VID: {
-                int64_t v;
-                auto ret = reader->getVid(name, v);
-                collector->collectInt64(ret, v, prop);
-                VLOG(3) << "collect " << name << ", value = " << v;
-                break;
-            }
-            case nebula::cpp2::SupportedType::TIMESTAMP: {
-                int64_t v;
-                auto ret = reader->getTimestamp(name, v);
-                collector->collectInt64(ret, v, prop);
-                VLOG(3) << "collect " << name << ", value = " << v;
-                break;
-            }
-            case nebula::cpp2::SupportedType::FLOAT: {
-                float v;
-                auto ret = reader->getFloat(name, v);
-                collector->collectFloat(ret, v, prop);
-                VLOG(3) << "collect " << name << ", value = " << v;
-                break;
-            }
-            case nebula::cpp2::SupportedType::DOUBLE: {
-                double v;
-                auto ret = reader->getDouble(name, v);
-                collector->collectDouble(ret, v, prop);
-                VLOG(3) << "collect " << name << ", value = " << v;
-                break;
-            }
-            case nebula::cpp2::SupportedType::STRING: {
-                folly::StringPiece v;
-                auto ret = reader->getString(name, v);
-                collector->collectString(ret, v, prop);
-                VLOG(3) << "collect " << name << ", value = " << v;
-                break;
-            }
-            default: {
-                VLOG(1) << "Unsupport stats!";
-                break;
-            }
-        }  // switch
+        if (reader != nullptr) {
+            const auto& name = prop.prop_.get_name();
+            switch (prop.type_.type) {
+                case nebula::cpp2::SupportedType::INT: {
+                    int64_t v;
+                    auto ret = reader->getInt<int64_t>(name, v);
+                    VLOG(3) << "collect " << name << ", value = " << v;
+                    collector->collectInt64(ret, v, prop);
+                    break;
+                }
+                case nebula::cpp2::SupportedType::VID: {
+                    int64_t v;
+                    auto ret = reader->getVid(name, v);
+                    collector->collectInt64(ret, v, prop);
+                    VLOG(3) << "collect " << name << ", value = " << v;
+                    break;
+                }
+                case nebula::cpp2::SupportedType::TIMESTAMP: {
+                    int64_t v;
+                    auto ret = reader->getTimestamp(name, v);
+                    collector->collectInt64(ret, v, prop);
+                    VLOG(3) << "collect " << name << ", value = " << v;
+                    break;
+                }
+                case nebula::cpp2::SupportedType::FLOAT: {
+                    float v;
+                    auto ret = reader->getFloat(name, v);
+                    collector->collectFloat(ret, v, prop);
+                    VLOG(3) << "collect " << name << ", value = " << v;
+                    break;
+                }
+                case nebula::cpp2::SupportedType::DOUBLE: {
+                    double v;
+                    auto ret = reader->getDouble(name, v);
+                    collector->collectDouble(ret, v, prop);
+                    VLOG(3) << "collect " << name << ", value = " << v;
+                    break;
+                }
+                case nebula::cpp2::SupportedType::STRING: {
+                    folly::StringPiece v;
+                    auto ret = reader->getString(name, v);
+                    collector->collectString(ret, v, prop);
+                    VLOG(3) << "collect " << name << ", value = " << v;
+                    break;
+                }
+                default: {
+                    VLOG(1) << "Unsupport stats!";
+                    break;
+                }
+            }  // switch
+        }  // if
     }  // for
 }
 
@@ -136,7 +138,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 }
                 const auto& ftype = schema->getFieldType(col.name);
                 prop.type_ = ftype;
-                prop.retIndex_ = index;
+                prop.retIndex_ = index++;
                 if (col.__isset.stat && !validOperation(ftype.type, col.stat)) {
                     return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
                 }
@@ -155,33 +157,92 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 break;
             }
             case cpp2::PropOwner::EDGE: {
-                auto schema = meta::SchemaManager::getEdgeSchema(spaceId_,
-                                                                 edgeContext.edgeType_);
-                if (!schema) {
-                    return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
-                }
                 auto it = kPropsInKey_.find(col.name);
                 if (it != kPropsInKey_.end()) {
                     prop.pikType_ = it->second;
                     prop.type_.type = nebula::cpp2::SupportedType::INT;
-                } else {
+                } else if (type_ == BoundType::OUT_BOUND) {
+                    // Only outBound have properties on edge.
+                    auto schema = meta::SchemaManager::getEdgeSchema(spaceId_,
+                                                                     edgeContext.edgeType_);
+                    if (!schema) {
+                        return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+                    }
                     const auto& ftype = schema->getFieldType(col.name);
                     prop.type_ = ftype;
+                } else {
+                    VLOG(3) << "InBound has none props, skip it!";
+                    break;
                 }
                 if (col.__isset.stat && !validOperation(prop.type_.type, col.stat)) {
                     return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
                 }
-                prop.retIndex_ = index;
+                prop.retIndex_ = index++;
                 prop.prop_ = std::move(col);
                 edgeContext.props_.emplace_back(std::move(prop));
                 break;
             }
         }
-        index++;
     }
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
+template<typename REQ, typename RESP>
+kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
+                            PartitionID partId,
+                            VertexID vId,
+                            TagID tagId,
+                            std::vector<PropContext>& props,
+                            Collector* collector) {
+    auto prefix = KeyUtils::prefix(partId, vId, tagId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
+        return ret;
+    }
+    // Will decode the properties according to the schema version
+    // stored along with the properties
+    if (iter && iter->valid()) {
+        auto reader = RowReader::getTagPropReader(iter->val(), spaceId_, tagId);
+        this->collectProps(reader.get(), iter->key(), props, collector);
+    } else {
+        VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
+    }
+    return ret;
+}
+
+template<typename REQ, typename RESP>
+kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
+                                               PartitionID partId,
+                                               VertexID vId,
+                                               EdgeType edgeType,
+                                               std::vector<PropContext>& props,
+                                               EdgeProcessor proc) {
+    auto prefix = KeyUtils::prefix(partId, vId, edgeType);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
+        return ret;
+    }
+    EdgeRanking lastRank = -1;
+    for (; iter->valid(); iter->next()) {
+        auto key = iter->key();
+        auto val = iter->val();
+        auto rank = KeyUtils::getRank(key);
+        if (rank == lastRank) {
+            VLOG(3) << "Only get the latest version for each edge.";
+            continue;
+        }
+        lastRank = rank;
+        std::unique_ptr<RowReader> reader;
+        if (type_ == BoundType::OUT_BOUND && !val.empty()) {
+            reader = RowReader::getEdgePropReader(val, spaceId_, edgeType);
+        }
+        proc(reader.get(), key, props);
+    }
+    return ret;
+}
 
 template<typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req) {

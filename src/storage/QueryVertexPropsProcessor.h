@@ -23,7 +23,7 @@ public:
 
 private:
     explicit QueryVertexPropsProcessor(kvstore::KVStore* kvstore)
-        : QueryBoundProcessor(kvstore) {}
+        : QueryBoundProcessor(kvstore, BoundType::OUT_BOUND) {}
 };
 
 }  // namespace storage
