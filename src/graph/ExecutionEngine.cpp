@@ -15,6 +15,10 @@ namespace graph {
 ExecutionEngine::ExecutionEngine() {
     schemaManager_ = std::make_unique<SchemaManager>();
     storage_ = std::make_unique<StorageService>(schemaManager_.get());
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    metaClient_ = std::make_unique<meta::MetaClient>(threadPool);
+    metaClient_->init();
 }
 
 
@@ -25,7 +29,8 @@ ExecutionEngine::~ExecutionEngine() {
 void ExecutionEngine::execute(RequestContextPtr rctx) {
     auto ectx = std::make_unique<ExecutionContext>(std::move(rctx),
                                                    schemaManager_.get(),
-                                                   storage_.get());
+                                                   storage_.get(),
+                                                   metaClient_.get());
     // TODO(dutor) add support to execution plan
     auto plan = new ExecutionPlan(std::move(ectx));
 

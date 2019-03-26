@@ -25,7 +25,3 @@ DEFINE_bool(redirect_stdout, true, "Whether to redirect stdout and stderr to sep
 DEFINE_string(stdout_log_file, "graphd-stdout.log", "Destination filename of stdout");
 DEFINE_string(stderr_log_file, "graphd-stderr.log", "Destination filename of stderr");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
-
-DEFINE_int32(meta_server_port, 11000, "Port to run meta daemon");
-DEFINE_string(meta_server_ip, "127.0.0.1", "IP/Hostname to run meta daemon");
-

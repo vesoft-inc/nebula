@@ -7,9 +7,7 @@
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
-#include "meta/test/TestUtils.h"
-#include "fs/TempDir.h"
-#include "graph/GraphFlags.h"
+
 
 namespace nebula {
 namespace graph {
@@ -123,13 +121,8 @@ TEST_F(DefineSchemaTest, DISABLED_Simple) {
 
 
 TEST_F(DefineSchemaTest, metaCommunication) {
-    using nebula::meta::TestUtils;
-    using nebula::fs::TempDir;
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
-
-    fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockServer(FLAGS_meta_server_port, rootPath.path());
 
     {
         cpp2::ExecutionResponse resp;

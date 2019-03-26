@@ -34,8 +34,7 @@ void ShowExecutor::execute() {
 
     switch (show_kind) {
         case ShowKind::kShowHosts:
-            InitMetaClient();
-            retShowHosts = metaClient_->listHosts();
+            retShowHosts = ectx()->getMetaClient()->listHosts();
             CHECK(retShowHosts.ok());
 
             header.clear();
@@ -83,8 +82,7 @@ Status AddHostsExecutor::prepare() {
 
 
 void AddHostsExecutor::execute() {
-    InitMetaClient();
-    auto ret = metaClient_->addHosts(host_);
+    auto ret = ectx()->getMetaClient()->addHosts(host_);
     CHECK_EQ(ret, Status::OK());
 
     DCHECK(onFinish_);
@@ -117,8 +115,7 @@ Status CreateSpaceExecutor::prepare() {
 void CreateSpaceExecutor::execute() {
     CHECK_GT(partNum_, 0) << "partition_num value illegal";
     CHECK_GT(replicaFactor_, 0) << "replica_factor value illegal";
-    InitMetaClient();
-    auto ret = metaClient_->createSpace(*spaceName_, partNum_, replicaFactor_);
+    auto ret = ectx()->getMetaClient()->createSpace(*spaceName_, partNum_, replicaFactor_);
     CHECK(ret.ok()) << ret.status();
 
     DCHECK(onFinish_);

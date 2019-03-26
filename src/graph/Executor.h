@@ -12,10 +12,6 @@
 #include "cpp/helpers.h"
 #include "graph/ExecutionContext.h"
 
-#include "meta/client/MetaClient.h"
-#include "graph/GraphFlags.h"
-#include "network/NetworkUtils.h"
-#include <folly/executors/IOThreadPoolExecutor.h>
 
 /**
  * Executor is the interface of kinds of specific executors that do the actual execution.
@@ -23,9 +19,6 @@
 
 namespace nebula {
 namespace graph {
-
-using nebula::network::NetworkUtils;
-using nebula::meta::MetaClient;
 
 class Executor : public cpp::NonCopyable, public cpp::NonMovable {
 public:
@@ -77,18 +70,6 @@ public:
         return ectx_;
     }
 
-    /**
-     * Init meta client
-     */
-    void InitMetaClient() {
-        auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-        uint32_t localIp;
-        network::NetworkUtils::ipv4ToInt(FLAGS_meta_server_ip, localIp);
-        metaClient_ = std::make_shared<meta::MetaClient>(threadPool,
-            std::vector<HostAddr>{HostAddr(localIp, FLAGS_meta_server_port)});
-        metaClient_->init();
-    }
-
 protected:
     std::unique_ptr<Executor> makeExecutor(Sentence *sentence);
     std::string valueTypeToString(nebula::cpp2::ValueType type);
@@ -97,7 +78,6 @@ protected:
     ExecutionContext                           *ectx_;
     std::function<void()>                       onFinish_;
     std::function<void(Status)>                 onError_;
-    std::shared_ptr<meta::MetaClient>           metaClient_;
 };
 
 }   // namespace graph

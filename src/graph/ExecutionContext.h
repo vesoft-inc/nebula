@@ -13,6 +13,7 @@
 #include "parser/SequentialSentences.h"
 #include "graph/mock/SchemaManager.h"
 #include "graph/mock/StorageService.h"
+#include "meta/client/MetaClient.h"
 
 /**
  * ExecutionContext holds context infos in the execution process, e.g. clients of storage or meta services.
@@ -24,10 +25,14 @@ namespace graph {
 class ExecutionContext final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
-    ExecutionContext(RequestContextPtr rctx, SchemaManager *sm, StorageService *storage) {
+    ExecutionContext(RequestContextPtr rctx,
+                     SchemaManager *sm,
+                     StorageService *storage,
+                     meta::MetaClient *metaClient) {
         rctx_ = std::move(rctx);
         sm_ = sm;
         storage_ = storage;
+        metaClient_ = metaClient;
     }
 
     ~ExecutionContext() = default;
@@ -44,10 +49,15 @@ public:
         return storage_;
     }
 
+    meta::MetaClient* getMetaClient() const {
+        return metaClient_;
+    }
+
 private:
     RequestContextPtr                           rctx_;
     SchemaManager                              *sm_{nullptr};
     StorageService                             *storage_{nullptr};
+    meta::MetaClient                           *metaClient_{nullptr};
 };
 
 }   // namespace graph
