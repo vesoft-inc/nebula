@@ -149,7 +149,7 @@ TEST_F(DefineSchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "create space (\"default_space\", 9, 3)";
+        std::string query = "create space default_space(partition_num=9, replica_factor=3)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

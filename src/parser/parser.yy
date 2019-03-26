@@ -116,7 +116,7 @@ class GraphScanner;
 %type <update_list> update_list
 %type <update_item> update_item
 %type <edge_list> edge_list
-%type <host_list> host_list;
+%type <host_list> host_list
 %type <space_opt_list> space_opt_list
 %type <space_opt_item> space_opt_item
 
@@ -795,8 +795,7 @@ create_space_sentence
 	    $$ = sentence;
     }
     ;
-
- space_opt_list
+space_opt_list
     : space_opt_item {
         $$ = new SpaceOptList();
 	    $$->addOpt($1);
@@ -820,7 +819,6 @@ create_space_sentence
     // TODO(YT) Create Spaces for different engines 
     // KW_ENGINE_TYPE ASSIGN LABEL
     ;
-
 
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }

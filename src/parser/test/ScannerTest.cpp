@@ -225,6 +225,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("CREATE", TokenType::KW_CREATE),
         CHECK_SEMANTIC_TYPE("create", TokenType::KW_CREATE),
         CHECK_SEMANTIC_TYPE("Create", TokenType::KW_CREATE),
+        CHECK_SEMANTIC_TYPE("PARTITION_NUM", TokenType::KW_PARTITION_NUM),
+        CHECK_SEMANTIC_TYPE("partition_num", TokenType::KW_PARTITION_NUM),
+        CHECK_SEMANTIC_TYPE("Partition_num", TokenType::KW_PARTITION_NUM),
+        CHECK_SEMANTIC_TYPE("REPLICA_FACTOR", TokenType::KW_REPLICA_FACTOR),
+        CHECK_SEMANTIC_TYPE("replica_factor", TokenType::KW_REPLICA_FACTOR),
+        CHECK_SEMANTIC_TYPE("Replica_factor", TokenType::KW_REPLICA_FACTOR),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

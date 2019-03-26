@@ -44,15 +44,38 @@ std::string AddHostsSentence::toString() const {
 }
 
 
+std::string SpaceOptItem::toString() const {
+    char buf[256];
+    switch (optType_) {
+        case PARTITION_NUM:
+            snprintf(buf, sizeof(buf), "partition_num = %ld", boost::get<int64_t>(optValue_));
+            break;
+        case REPLICA_FACTOR:
+            snprintf(buf, sizeof(buf), "replica_factor = %ld", boost::get<int64_t>(optValue_));
+            break;
+    }
+    return buf;
+}
+
+std::string SpaceOptList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &item : items_) {
+        buf += item->toString();
+        buf += ",";
+    }
+    buf.resize(buf.size()-1);
+    return buf;
+}
+
+
 std::string CreateSpaceSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "CREATE SPACE (";
+    buf += "CREATE SPACE ";
     buf += *spaceName_;
-    buf += ",";
-    buf += std::to_string(partNum_);
-    buf += ",";
-    buf += std::to_string(replicaFactor_);
+    buf += "(";
+    buf += spaceOpts_->toString();
     buf += ") ";
     return buf;
 }
