@@ -18,6 +18,8 @@
 #include "meta/processors/RemoveTagProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
+#include "meta/processors/DropSpaceProcessor.h"
+#include "meta/processors/RemoveHostsProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -78,6 +80,27 @@ TEST(ProcessorTest, AddHostsTest) {
             EXPECT_EQ(i, resp.hosts[i].port);
         }
     }
+    {
+        std::vector<nebula::cpp2::HostAddr> thriftHosts;
+        for (auto i = 0; i < 20; i++) {
+            thriftHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
+        }
+        cpp2::RemoveHostsReq req;
+        req.set_hosts(std::move(thriftHosts));
+        auto* processor = RemoveHostsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        EXPECT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+    }
+    {
+        cpp2::ListHostsReq req;
+        auto* processor = ListHostsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        EXPECT_EQ(0, resp.hosts.size());
+    }
 }
 
 TEST(ProcessorTest, CreateSpaceTest) {
@@ -124,6 +147,25 @@ TEST(ProcessorTest, CreateSpaceTest) {
                 ASSERT_EQ(h.get_ip(), h.get_port());
             }
         }
+    }
+    {
+        cpp2::DropSpaceReq req;
+        req.set_space_name("default_space");
+
+        auto* processor = DropSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+    }
+    {
+        cpp2::ListSpacesReq req;
+        auto* processor = ListSpacesProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(resp.spaces.size(), 0);
     }
 }
 

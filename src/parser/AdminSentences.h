@@ -87,6 +87,27 @@ private:
 };
 
 
+class RemoveHostsSentence final : public Sentence {
+public:
+    RemoveHostsSentence() {
+        kind_ = Kind::kRemoveHosts;
+    }
+
+    void setHosts(HostList *hosts) {
+        hosts_.reset(hosts);
+    }
+
+    std::vector<HostAddr> hosts() const {
+        return hosts_->toHosts();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<HostList>               hosts_;
+};
+
+
 class SpaceOptItem final {
 public:
     using Value = boost::variant<int64_t, std::string>;
@@ -165,6 +186,7 @@ private:
     std::vector<std::unique_ptr<SpaceOptItem>>    items_;
 };
 
+
 class CreateSpaceSentence final : public Sentence {
 public:
     explicit CreateSpaceSentence(std::string *spaceName) {
@@ -189,6 +211,24 @@ public:
 private:
     std::unique_ptr<std::string>     spaceName_;
     std::unique_ptr<SpaceOptList>    spaceOpts_;
+};
+
+
+class DropSpaceSentence final : public Sentence {
+public:
+    explicit DropSpaceSentence(std::string *spaceName) {
+        spaceName_.reset(spaceName);
+        kind_ = Kind::kDropSpace;
+    }
+
+    std::string* spaceName() {
+        return spaceName_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>     spaceName_;
 };
 
 }   // namespace nebula

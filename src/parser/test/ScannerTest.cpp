@@ -231,6 +231,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("REPLICA_FACTOR", TokenType::KW_REPLICA_FACTOR),
         CHECK_SEMANTIC_TYPE("replica_factor", TokenType::KW_REPLICA_FACTOR),
         CHECK_SEMANTIC_TYPE("Replica_factor", TokenType::KW_REPLICA_FACTOR),
+        CHECK_SEMANTIC_TYPE("DROP", TokenType::KW_DROP),
+        CHECK_SEMANTIC_TYPE("drop", TokenType::KW_DROP),
+        CHECK_SEMANTIC_TYPE("Drop", TokenType::KW_DROP),
+        CHECK_SEMANTIC_TYPE("REMOVE", TokenType::KW_REMOVE),
+        CHECK_SEMANTIC_TYPE("remove", TokenType::KW_REMOVE),
+        CHECK_SEMANTIC_TYPE("Remove", TokenType::KW_REMOVE),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

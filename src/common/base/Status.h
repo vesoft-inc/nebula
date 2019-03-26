@@ -99,6 +99,7 @@ public:
 
     // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
     STATUS_GENERATOR(SpaceNotFound);
+    STATUS_GENERATOR(HostNotFound);
 
 #undef STATUS_GENERATOR
 
@@ -123,6 +124,7 @@ private:
         // ...
         // 4xx, for meta service errors
         kSpaceNotFound          = 404,
+        kHostNotFound           = 405,
     };
 
     Code code() const {

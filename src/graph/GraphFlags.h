@@ -25,8 +25,5 @@ DECLARE_string(stdout_log_file);
 DECLARE_string(stderr_log_file);
 DECLARE_bool(daemonize);
 
-DECLARE_int32(meta_server_port);
-DECLARE_string(meta_server_ip);
-
 
 #endif  // GRAPH_GRAPHFLAGS_H_

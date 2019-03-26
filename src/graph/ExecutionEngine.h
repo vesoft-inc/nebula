@@ -12,9 +12,14 @@
 #include "graph/RequestContext.h"
 #include "gen-cpp2/GraphService.h"
 #include "meta/SchemaManager.h"
+#include "graph/mock/SchemaManager.h"
+#include "graph/mock/StorageService.h"
+#include "meta/client/MetaClient.h"
+#include "network/NetworkUtils.h"
+#include <folly/executors/IOThreadPoolExecutor.h>
 
 /**
- * ExecutinoEngine is responsible to create and manage ExecutionPlan.
+ * ExecutionEngine is responsible to create and manage ExecutionPlan.
  * For the time being, we don't have the execution plan cache support,
  * instead we create a plan for each query, and destroy it upon finish.
  */
@@ -37,6 +42,7 @@ public:
 private:
     std::unique_ptr<meta::SchemaManager>              schemaManager_;
     std::unique_ptr<storage::StorageClient>     storage_;
+    std::unique_ptr<meta::MetaClient>           metaClient_;
 };
 
 }   // namespace graph

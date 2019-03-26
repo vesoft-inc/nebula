@@ -24,6 +24,7 @@ public:
     Status MUST_USE_RESULT prepare() override;
 
     void execute() override;
+    void showHostsExecute();
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
@@ -51,6 +52,24 @@ private:
 };
 
 
+class RemoveHostsExecutor final : public Executor {
+public:
+    RemoveHostsExecutor(Sentence *sentence, ExecutionContext *ectx);
+
+    const char* name() const override {
+        return "RemoveHostsExecutor";
+    }
+
+    Status MUST_USE_RESULT prepare() override;
+
+    void execute() override;
+
+private:
+    RemoveHostsSentence     *sentence_{nullptr};
+    std::vector<HostAddr>    host_;
+};
+
+
 class CreateSpaceExecutor final : public Executor {
 public:
     CreateSpaceExecutor(Sentence *sentence, ExecutionContext *ectx);
@@ -69,6 +88,25 @@ private:
     int32_t                  partNum_{0};
     int32_t                  replicaFactor_{0};
 };
+
+
+class DropSpaceExecutor final : public Executor {
+public:
+    DropSpaceExecutor(Sentence *sentence, ExecutionContext *ectx);
+
+    const char* name() const override {
+        return "DropSpaceExecutor";
+    }
+
+    Status MUST_USE_RESULT prepare() override;
+
+    void execute() override;
+
+private:
+    DropSpaceSentence       *sentence_{nullptr};
+    std::string             *spaceName_{nullptr};
+};
+
 }   // namespace graph
 }   // namespace nebula
 

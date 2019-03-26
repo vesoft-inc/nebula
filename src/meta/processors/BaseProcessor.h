@@ -16,9 +16,12 @@
 #include "time/Duration.h"
 #include "kvstore/KVStore.h"
 #include "meta/MetaUtils.h"
+#include "network/NetworkUtils.h"
 
 namespace nebula {
 namespace meta {
+
+using nebula::network::NetworkUtils;
 
 class LockUtils {
 public:
@@ -113,6 +116,11 @@ protected:
      * Check spaceId exist or not.
      * */
     Status spaceExist(GraphSpaceID spaceId);
+
+    /**
+     * Check multi host_name exists or not.
+     * */
+    Status hostsExist(const std::vector<std::string>& name);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

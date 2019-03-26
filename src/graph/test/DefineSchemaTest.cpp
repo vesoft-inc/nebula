@@ -7,9 +7,7 @@
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
-#include "meta/test/TestUtils.h"
-#include "fs/TempDir.h"
-#include "graph/GraphFlags.h"
+
 
 namespace nebula {
 namespace graph {
@@ -123,13 +121,8 @@ TEST_F(DefineSchemaTest, DISABLED_Simple) {
 
 
 TEST_F(DefineSchemaTest, metaCommunication) {
-    using nebula::meta::TestUtils;
-    using nebula::fs::TempDir;
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
-
-    fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockServer(FLAGS_meta_server_port, rootPath.path());
 
     {
         cpp2::ExecutionResponse resp;
@@ -152,6 +145,24 @@ TEST_F(DefineSchemaTest, metaCommunication) {
         std::string query = "create space default_space(partition_num=9, replica_factor=3)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "drop space default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "remove hosts(\"127.0.0.1:1000\", \"127.0.0.1:1100\")";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "show hosts";
+        client->execute(query, resp);
+        ASSERT_EQ((*(resp.get_rows())).size(), 0);
     }
 }
 

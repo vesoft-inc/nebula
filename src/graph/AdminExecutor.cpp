@@ -25,40 +25,62 @@ Status ShowExecutor::prepare() {
 
 void ShowExecutor::execute() {
     auto show_kind = sentence_->showKind();
-    resp_ = std::make_unique<cpp2::ExecutionResponse>();
-    std::vector<cpp2::RowValue> rows;
-    std::vector<cpp2::ColumnValue> row;
-    std::vector<std::string> header;
-
-    StatusOr<std::vector<HostAddr>> retShowHosts;
-
     switch (show_kind) {
         case ShowKind::kShowHosts:
-            InitMetaClient();
-            retShowHosts = metaClient_->listHosts();
-            CHECK(retShowHosts.ok());
-
-            header.clear();
-            header.push_back("Ip");
-            header.push_back("Port");
-            resp_->set_column_names(std::move(header));
-
-            for (auto &host : retShowHosts.value()) {
-                 row.clear();
-                 row.resize(2);
-                 row[0].set_str(NetworkUtils::ipFromHostAddr(host));
-                 row[1].set_str(folly::to<std::string>(NetworkUtils::portFromHostAddr(host)));
-                 rows.emplace_back();
-                 rows.back().set_columns(std::move(row));
-            }
-            resp_->set_rows(std::move(rows));
+            showHostsExecute();
             break;
         case ShowKind::kUnknown:
             LOG(FATAL) << "Show Sentence kind unknown: " <<show_kind;
+            break;
         // intentionally no `default'
     }
-    DCHECK(onFinish_);
-    onFinish_();
+}
+
+
+void ShowExecutor::showHostsExecute() {
+    auto future = ectx()->getMetaClient()->listHosts();
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(Status::Error("remove hosts failed"));
+            return;
+        }
+
+        auto retShowHosts = resp.value();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<cpp2::ColumnValue> row;
+        std::vector<std::string> header;
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+
+        header.clear();
+        header.push_back("Ip");
+        header.push_back("Port");
+        resp_->set_column_names(std::move(header));
+
+        for (auto &host : retShowHosts) {
+            row.clear();
+            row.resize(2);
+            row[0].set_str(NetworkUtils::ipFromHostAddr(host));
+            row[1].set_str(folly::to<std::string>(NetworkUtils::portFromHostAddr(host)));
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 
@@ -83,12 +105,69 @@ Status AddHostsExecutor::prepare() {
 
 
 void AddHostsExecutor::execute() {
-    InitMetaClient();
-    auto ret = metaClient_->addHosts(host_);
-    CHECK_EQ(ret, Status::OK());
+    auto future = ectx()->getMetaClient()->addHosts(host_);
+    auto *runner = ectx()->rctx()->runner();
 
-    DCHECK(onFinish_);
-    onFinish_();
+    auto cb = [this] (auto &&resp) {
+        auto ret = resp.value();
+        if (!ret) {
+            DCHECK(onError_);
+            onError_(Status::Error("add hosts failed"));
+            return;
+        }
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+
+RemoveHostsExecutor::RemoveHostsExecutor(Sentence *sentence,
+                                         ExecutionContext *ectx) : Executor(ectx) {
+    sentence_ = static_cast<RemoveHostsSentence*>(sentence);
+}
+
+
+Status RemoveHostsExecutor::prepare() {
+    host_ = sentence_->hosts();
+    if (host_.size() == 0) {
+        LOG(FATAL) << "Remove hosts Sentence host address illegal";
+    }
+    return Status::OK();
+}
+
+
+void RemoveHostsExecutor::execute() {
+    auto future = ectx()->getMetaClient()->removeHosts(host_);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        auto ret = resp.value();
+        if (!ret) {
+            DCHECK(onError_);
+            onError_(Status::Error("remove hosts failed"));
+            return;
+        }
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 
@@ -117,12 +196,66 @@ Status CreateSpaceExecutor::prepare() {
 void CreateSpaceExecutor::execute() {
     CHECK_GT(partNum_, 0) << "partition_num value illegal";
     CHECK_GT(replicaFactor_, 0) << "replica_factor value illegal";
-    InitMetaClient();
-    auto ret = metaClient_->createSpace(*spaceName_, partNum_, replicaFactor_);
-    CHECK(ret.ok()) << ret.status();
+    auto future = ectx()->getMetaClient()->createSpace(*spaceName_, partNum_, replicaFactor_);
+    auto *runner = ectx()->rctx()->runner();
 
-    DCHECK(onFinish_);
-    onFinish_();
+    auto cb = [this] (auto &&resp) {
+        auto spaceId = resp.value();
+        if (spaceId == 0) {
+            DCHECK(onError_);
+            onError_(Status::Error("Create space failed"));
+            return;
+        }
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+
+DropSpaceExecutor::DropSpaceExecutor(Sentence *sentence,
+                                     ExecutionContext *ectx) : Executor(ectx) {
+    sentence_ = static_cast<DropSpaceSentence*>(sentence);
+}
+
+
+Status DropSpaceExecutor::prepare() {
+    spaceName_ = sentence_->spaceName();
+    return Status::OK();
+}
+
+
+void DropSpaceExecutor::execute() {
+    auto future = ectx()->getMetaClient()->dropSpace(*spaceName_);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        auto  ret = resp.value();
+        if (!ret) {
+            DCHECK(onError_);
+            onError_(Status::Error("Drop space failed"));
+            return;
+        }
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 }   // namespace graph
 }   // namespace nebula
