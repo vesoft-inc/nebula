@@ -40,6 +40,20 @@ std::string MatchSentence::toString() const {
     return "MATCH sentence";
 }
 
+std::string FindSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "FIND ";
+    buf += properties_->toString();
+    buf += " FROM ";
+    buf += *type_;
+    if (whereClause_ != nullptr) {
+        buf += " WHERE ";
+        buf += whereClause_->toString();
+    }
+    return buf;
+}
+
 std::string UseSentence::toString() const {
     return "USE SPACE " + *space_;
 }
