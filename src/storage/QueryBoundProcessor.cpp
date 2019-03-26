@@ -14,56 +14,6 @@
 namespace nebula {
 namespace storage {
 
-kvstore::ResultCode QueryBoundProcessor::collectVertexProps(
-                            PartitionID partId,
-                            VertexID vId,
-                            TagID tagId,
-                            std::vector<PropContext>& props,
-                            RowWriter& writer) {
-    auto prefix = KeyUtils::prefix(partId, vId, tagId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId " << spaceId_;
-        return ret;
-    }
-    // Will decode the properties according to teh schema version
-    // stored along with the properties
-    if (iter && iter->valid()) {
-        PropsCollector collector(&writer);
-        auto reader = RowReader::getTagPropReader(iter->val(), spaceId_, tagId);
-        this->collectProps(reader.get(), iter->key(), props, &collector);
-    } else {
-        VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
-    }
-    return ret;
-}
-
-
-kvstore::ResultCode QueryBoundProcessor::collectEdgeProps(
-                                               PartitionID partId,
-                                               VertexID vId,
-                                               EdgeType edgeType,
-                                               std::vector<PropContext>& props,
-                                               RowSetWriter& rsWriter) {
-    auto prefix = KeyUtils::prefix(partId, vId, edgeType);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
-        return ret;
-    }
-    while (iter->valid()) {
-        RowWriter writer(rsWriter.schema());
-        PropsCollector collector(&writer);
-        auto reader = RowReader::getEdgePropReader(iter->val(), spaceId_, edgeType);
-        this->collectProps(reader.get(), iter->key(), props, &collector);
-        rsWriter.addRow(writer);
-        iter->next();
-    }
-    return ret;
-}
-
-
 kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
                                                        VertexID vId,
                                                        std::vector<TagContext>& tagContexts,
@@ -72,10 +22,11 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
     vResp.set_vertex_id(vId);
     if (!tagContexts.empty()) {
         RowWriter writer;
+        PropsCollector collector(&writer);
         for (auto& tc : tagContexts) {
             VLOG(3) << "partId " << partId << ", vId " << vId
                     << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
-            auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_, writer);
+            auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_, &collector);
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
             }
@@ -85,8 +36,17 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
 
     if (!edgeContext.props_.empty()) {
         RowSetWriter rsWriter;
-        auto ret = collectEdgeProps(partId, vId, edgeContext.edgeType_,
-                                    edgeContext.props_, rsWriter);
+        auto ret = collectEdgeProps(partId, vId,
+                                    edgeContext.edgeType_,
+                                    edgeContext.props_,
+                                    [&, this] (RowReader* reader,
+                                               folly::StringPiece key,
+                                               std::vector<PropContext>& props) {
+                                        RowWriter writer(rsWriter.schema());
+                                        PropsCollector collector(&writer);
+                                        this->collectProps(reader, key, props, &collector);
+                                        rsWriter.addRow(writer);
+                                    });
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
