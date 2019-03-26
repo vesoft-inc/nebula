@@ -87,12 +87,88 @@ private:
 };
 
 
+class SpaceOptItem final {
+public:
+    using Value = boost::variant<int64_t, std::string>;
+
+    enum OptionType : uint8_t {
+        PARTITION_NUM, REPLICA_FACTOR
+    };
+
+    SpaceOptItem(OptionType op, std::string val) {
+        optType_ = op;
+        optValue_ = std::move(val);
+    }
+
+    SpaceOptItem(OptionType op, int64_t val) {
+        optType_ = op;
+        optValue_ = val;
+    }
+
+    int64_t asInt() {
+        return boost::get<int64_t>(optValue_);
+    }
+
+    const std::string& asString() {
+        return boost::get<std::string>(optValue_);
+    }
+
+    bool isInt() {
+        return optValue_.which() == 0;
+    }
+
+    bool isString() {
+        return optValue_.which() == 1;
+    }
+
+    int64_t get_partition_num() {
+        if (isInt()) {
+            return asInt();
+        } else {
+            LOG(FATAL) << "partition_num value illegal.";
+        }
+    }
+
+    int64_t get_replica_factor() {
+        if (isInt()) {
+            return asInt();
+        } else {
+            LOG(FATAL) << "replica_factor value illegal.";
+        }
+    }
+
+    OptionType getOptType() {
+        return optType_;
+    }
+
+    std::string toString() const;
+
+private:
+    Value           optValue_;
+    OptionType      optType_;
+};
+
+
+class SpaceOptList final {
+public:
+    void addOpt(SpaceOptItem *item) {
+        items_.emplace_back(item);
+    }
+
+    std::vector<std::unique_ptr<SpaceOptItem>> getOpt() {
+        return std::move(items_);
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::unique_ptr<SpaceOptItem>>    items_;
+};
+
 class CreateSpaceSentence final : public Sentence {
 public:
-    CreateSpaceSentence(std::string *spaceName, int64_t partNum, int64_t replicaFactor) {
+    explicit CreateSpaceSentence(std::string *spaceName) {
         spaceName_.reset(spaceName);
-        partNum_ = static_cast<int32_t>(partNum);
-        replicaFactor_ = static_cast<int32_t>(replicaFactor);
         kind_ = Kind::kCreateSpace;
     }
 
@@ -100,21 +176,21 @@ public:
         return spaceName_.get();
     }
 
-    int32_t partNum() {
-        return partNum_;
+    void setOpts(SpaceOptList* spaceOpts) {
+        spaceOpts_.reset(spaceOpts);
     }
 
-    int32_t replicaFactor() {
-        return replicaFactor_;
+    std::vector<std::unique_ptr<SpaceOptItem>> getOpts() {
+        return spaceOpts_->getOpt();
     }
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<std::string> spaceName_;
-    int32_t                      partNum_{0};
-    int32_t                      replicaFactor_{0};
+    std::unique_ptr<std::string>     spaceName_;
+    std::unique_ptr<SpaceOptList>    spaceOpts_;
 };
+
 }   // namespace nebula
 
 #endif  // PARSER_ADMINSENTENCES_H_

@@ -100,13 +100,23 @@ CreateSpaceExecutor::CreateSpaceExecutor(Sentence *sentence,
 
 Status CreateSpaceExecutor::prepare() {
     spaceName_ = sentence_->spaceName();
-    partNum_ = sentence_->partNum();
-    replicaFactor_ = sentence_->replicaFactor();
+    for (auto &item : sentence_->getOpts()) {
+        switch (item->getOptType()) {
+            case SpaceOptItem::PARTITION_NUM:
+                partNum_ = item->get_partition_num();
+                break;
+            case SpaceOptItem::REPLICA_FACTOR:
+                replicaFactor_ = item->get_replica_factor();
+                break;
+        }
+    }
     return Status::OK();
 }
 
 
 void CreateSpaceExecutor::execute() {
+    CHECK_GT(partNum_, 0) << "partition_num value illegal";
+    CHECK_GT(replicaFactor_, 0) << "replica_factor value illegal";
     InitMetaClient();
     auto ret = metaClient_->createSpace(*spaceName_, partNum_, replicaFactor_);
     CHECK(ret.ok()) << ret.status();

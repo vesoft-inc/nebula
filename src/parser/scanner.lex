@@ -65,6 +65,8 @@ ADD                         ([Aa][Dd][Dd])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
 TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
 CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
+PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
+REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -122,6 +124,8 @@ OCT                         ([0-7])
 {HOSTS}                     { return TokenType::KW_HOSTS; }
 {TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
 {CREATE}                    { return TokenType::KW_CREATE;}
+{PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
+{REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
