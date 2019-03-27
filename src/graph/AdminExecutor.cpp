@@ -90,6 +90,30 @@ void AddHostsExecutor::execute() {
 }
 
 
+DeleteHostsExecutor::DeleteHostsExecutor(Sentence *sentence,
+                                         ExecutionContext *ectx) : Executor(ectx) {
+    sentence_ = static_cast<DeleteHostsSentence*>(sentence);
+}
+
+
+Status DeleteHostsExecutor::prepare() {
+    host_ = sentence_->hosts();
+    if (host_.size() == 0) {
+        LOG(FATAL) << "Delete hosts Sentence host address illegal";
+    }
+    return Status::OK();
+}
+
+
+void DeleteHostsExecutor::execute() {
+    auto ret = ectx()->getMetaClient()->deleteHosts(host_);
+    CHECK_EQ(ret, Status::OK());
+
+    DCHECK(onFinish_);
+    onFinish_();
+}
+
+
 CreateSpaceExecutor::CreateSpaceExecutor(Sentence *sentence,
                                          ExecutionContext *ectx) : Executor(ectx) {
     sentence_ = static_cast<CreateSpaceSentence*>(sentence);
@@ -116,6 +140,27 @@ void CreateSpaceExecutor::execute() {
     CHECK_GT(partNum_, 0) << "partition_num value illegal";
     CHECK_GT(replicaFactor_, 0) << "replica_factor value illegal";
     auto ret = ectx()->getMetaClient()->createSpace(*spaceName_, partNum_, replicaFactor_);
+    CHECK(ret.ok()) << ret.status();
+
+    DCHECK(onFinish_);
+    onFinish_();
+}
+
+
+DropSpaceExecutor::DropSpaceExecutor(Sentence *sentence,
+                                     ExecutionContext *ectx) : Executor(ectx) {
+    sentence_ = static_cast<DropSpaceSentence*>(sentence);
+}
+
+
+Status DropSpaceExecutor::prepare() {
+    spaceName_ = sentence_->spaceName();
+    return Status::OK();
+}
+
+
+void DropSpaceExecutor::execute() {
+    auto ret = ectx()->getMetaClient()->dropSpace(*spaceName_);
     CHECK(ret.ok()) << ret.status();
 
     DCHECK(onFinish_);

@@ -130,6 +130,11 @@ StatusOr<std::vector<SpaceIdName>> MetaClient::listSpaces() {
     return toSpaceIdName(resp.get_spaces());
 }
 
+Status MetaClient::dropSpace(std::string name) {
+    cpp2::DropSpaceReq req;
+    req.set_space_name(std::move(name);
+}
+
 Status MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
     std::vector<nebula::cpp2::HostAddr> thriftHosts;
     thriftHosts.resize(hosts.size());

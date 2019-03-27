@@ -69,8 +69,14 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kAddHosts:
             executor = std::make_unique<AddHostsExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kDeleteHosts:
+            executor = std::make_unique<DeleteHostsExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kCreateSpace:
             executor = std::make_unique<CreateSpaceExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropSpace:
+            executor = std::make_unique<DropSpaceExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

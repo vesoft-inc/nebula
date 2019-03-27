@@ -37,7 +37,9 @@ public:
         kDeleteEdge,
         kFind,
         kAddHosts,
+        KDeleteHosts,
         kCreateSpace,
+        kDropSpace,
     };
 
     Kind kind() const {

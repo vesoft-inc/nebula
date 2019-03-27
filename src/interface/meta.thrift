@@ -60,7 +60,7 @@ struct CreateSpaceReq {
     3: i32 replica_factor,
 }
 
-struct DeleteSpaceReq {
+struct DropSpaceReq {
     1: common.GraphSpaceID space_id,
 }
 

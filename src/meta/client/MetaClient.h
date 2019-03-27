@@ -62,6 +62,8 @@ public:
 
     Status addHosts(const std::vector<HostAddr>& hosts);
 
+    Status dropSpace(std::string name);
+
     StatusOr<std::vector<HostAddr>> listHosts();
 
     StatusOr<PartsAlloc> getPartsAlloc(GraphSpaceID spaceId);

@@ -67,6 +67,7 @@ TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
 CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
 PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
 REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
+DROP                        ([Dd][Rr][Oo][Pp])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -126,6 +127,7 @@ OCT                         ([0-7])
 {CREATE}                    { return TokenType::KW_CREATE;}
 {PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
 {REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
+{DROP}                      { return TokenType::KW_DROP; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

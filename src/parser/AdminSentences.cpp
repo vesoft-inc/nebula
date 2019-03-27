@@ -44,6 +44,15 @@ std::string AddHostsSentence::toString() const {
 }
 
 
+std::string DeleteHostsSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "DELETE HOSTS (";
+    buf += hosts_->toString();
+    buf += ") ";
+    return buf;
+}
+
 std::string SpaceOptItem::toString() const {
     char buf[256];
     switch (optType_) {
@@ -79,4 +88,14 @@ std::string CreateSpaceSentence::toString() const {
     buf += ") ";
     return buf;
 }
+
+
+std::string DroppSpaceSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "DROP SPACE ";
+    buf += *spaceName_;
+    return buf;
+}
+
 }   // namespace nebula
