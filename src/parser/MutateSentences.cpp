@@ -167,7 +167,10 @@ std::string DeleteEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE EDGE ";
+    buf += *edge_;
+    buf += "(";
     buf += edgeList_->toString();
+    buf += ")";
     if (whereClause_ != nullptr) {
         buf += " ";
         buf += whereClause_->toString();

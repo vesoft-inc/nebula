@@ -46,7 +46,19 @@ std::string FindSentence::toString() const {
     buf += "FIND ";
     buf += properties_->toString();
     buf += " FROM ";
-    buf += *type_;
+    switch (findKind_) {
+        case FindKind::kFindVertex:
+            buf += "VERETEX(";
+            break;
+        case FindKind::kFindEdge:
+            buf += " EDGE(";
+            break;
+        default:
+            LOG(FATAL) << "Find Sentence kind illegal: " << findKind_;
+            break;
+    }
+    buf += *name_;
+    buf += ")";
     if (whereClause_ != nullptr) {
         buf += " WHERE ";
         buf += whereClause_->toString();

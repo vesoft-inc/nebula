@@ -311,7 +311,8 @@ private:
 
 class DeleteEdgeSentence final : public Sentence {
 public:
-    explicit DeleteEdgeSentence(EdgeList *edgeList) {
+    explicit DeleteEdgeSentence(std::string *edge, EdgeList *edgeList) {
+        edge_.reset(edge);
         edgeList_.reset(edgeList);
         kind_ = Kind::kDeleteEdge;
     }
@@ -328,9 +329,14 @@ public:
         return whereClause_.get();
     }
 
+    std::string* edge() const {
+        return edge_.get();
+    }
+
     std::string toString() const override;
 
 private:
+    std::unique_ptr<std::string>                edge_;
     std::unique_ptr<EdgeList>                   edgeList_;
     std::unique_ptr<WhereClause>                whereClause_;
 };

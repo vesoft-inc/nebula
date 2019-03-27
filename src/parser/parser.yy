@@ -392,9 +392,14 @@ match_sentence
     ;
 
 find_sentence
-    : KW_FIND prop_list KW_FROM LABEL where_clause {
-        auto sentence = new FindSentence($4, $2);
-        sentence->setWhereClause($5);
+    : KW_FIND prop_list KW_FROM KW_VERTEX L_PAREN LABEL R_PAREN where_clause {
+        auto sentence = new FindSentence(FindKind::kFindVertex, $6, $2);
+        sentence->setWhereClause($8);
+        $$ = sentence;
+    }
+    | KW_FIND prop_list KW_FROM KW_EDGE L_PAREN LABEL R_PAREN where_clause {
+        auto sentence = new FindSentence(FindKind::kFindEdge, $6, $2);
+        sentence->setWhereClause($8);
         $$ = sentence;
     }
     ;
@@ -703,9 +708,9 @@ edge_list
     ;
 
 delete_edge_sentence
-    : KW_DELETE KW_EDGE edge_list where_clause {
-        auto sentence = new DeleteEdgeSentence($3);
-        sentence->setWhereClause($4);
+    : KW_DELETE KW_EDGE LABEL L_PAREN edge_list R_PAREN where_clause {
+        auto sentence = new DeleteEdgeSentence($3, $5);
+        sentence->setWhereClause($7);
         $$ = sentence;
     }
     ;

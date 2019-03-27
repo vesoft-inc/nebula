@@ -80,16 +80,24 @@ public:
 };
 
 
+enum class FindKind : uint32_t {
+    kUnknown,
+    kFindVertex,
+    kFindEdge,
+};
+
+
 class FindSentence final : public Sentence {
 public:
-    FindSentence(std::string *type, PropertyList *props) {
-        type_.reset(type);
+    FindSentence(FindKind findKind, std::string *name, PropertyList *props) {
+        findKind_ = findKind;
+        name_.reset(name);
         properties_.reset(props);
         kind_ = Kind::kFind;
     }
 
-    std::string* type() const {
-        return type_.get();
+    std::string* name() const {
+        return name_.get();
     }
 
     std::vector<std::string*> properties() const {
@@ -104,14 +112,22 @@ public:
         return whereClause_.get();
     }
 
+    FindKind findKind() const {
+        return findKind_;
+    }
+
     std::string toString() const override;
 
 private:
-    std::unique_ptr<std::string>                type_;
+    FindKind                                    findKind_{FindKind::kUnknown};
+    std::unique_ptr<std::string>                name_;
     std::unique_ptr<PropertyList>               properties_;
     std::unique_ptr<WhereClause>                whereClause_;
 };
 
+inline std::ostream& operator<<(std::ostream &os, FindKind kind) {
+    return os << static_cast<uint32_t>(kind);
+}
 
 class UseSentence final : public Sentence {
 public:

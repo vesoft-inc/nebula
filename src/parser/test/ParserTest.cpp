@@ -319,25 +319,26 @@ TEST(Parser, DeleteVertex) {
 TEST(Parser, DeleteEdge) {
     {
         GQLParser parser;
-        std::string query = "DELETE EDGE 12345 -> 54321";
+        std::string query = "DELETE EDGE transfer(12345 -> 54321)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "DELETE EDGE 123 -> 321,456 -> 654,789 -> 987";
+        std::string query = "DELETE EDGE transfer(123 -> 321,456 -> 654,789 -> 987)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "DELETE EDGE 12345 -> 54321 WHERE amount > 3.14";
+        std::string query = "DELETE EDGE transfer(12345 -> 54321) WHERE amount > 3.14";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "DELETE EDGE 123 -> 321,456 -> 654,789 -> 987 WHERE amount > 3.14";
+        std::string query = "DELETE EDGE transfer(123 -> 321,456 -> 654,789 -> 987) "
+                            "WHERE amount > 3.14";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -346,25 +347,25 @@ TEST(Parser, DeleteEdge) {
 TEST(Parser, Find) {
     {
         GQLParser parser;
-        std::string query = "FIND name FROM person";
+        std::string query = "FIND name FROM VERTEX(person)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND name, salary, age FROM person";
+        std::string query = "FIND name, salary, age FROM VERTEX(person)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND name, salary, age FROM person WHERE gender == \"man\"";
+        std::string query = "FIND name, salary, age FROM VERTEX(person) WHERE gender == \"man\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "FIND amount, time FROM transfer WHERE amount > 1000";
+        std::string query = "FIND amount, time FROM EDGE(transfer) WHERE amount > 1000";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
