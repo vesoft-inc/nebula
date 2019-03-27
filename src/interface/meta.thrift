@@ -39,6 +39,13 @@ struct IdName {
     2: string name,
 }
 
+struct TagItem {
+    1: common.TagID         tag_id,
+    2: string               tag_name,
+    3: i32                  version,
+    4: common.Schema        schema,
+}
+
 struct ExecResp {
     1: ErrorCode        code,
     2: ID               id,
@@ -86,7 +93,7 @@ struct AddTagReq {
 
 struct RemoveTagReq {
     1: common.GraphSpaceID space_id,
-    2: common.TagID        tag_id,
+    2: string              tag_name,
 }
 
 struct ListTagsReq {
@@ -97,7 +104,7 @@ struct ListTagsResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<IdName> tags,
+    3: list<TagItem> tags,
 }
 
 struct GetTagReq {
@@ -181,12 +188,12 @@ service MetaService {
     ListSpacesResp listSpaces(1: ListSpacesReq req);
 
     ExecResp addTag(1: AddTagReq req);
-    ExecResp RemoveTag(1: RemoveTagReq req);
+    ExecResp removeTag(1: RemoveTagReq req);
     GetTagResp getTag(1: GetTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);
 
     ExecResp addEdge(1: AddEdgeReq req);
-    ExecResp RemoveEdge(1: RemoveEdgeReq req);
+    ExecResp removeEdge(1: RemoveEdgeReq req);
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 
