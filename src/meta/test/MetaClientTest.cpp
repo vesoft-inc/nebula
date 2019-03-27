@@ -12,10 +12,13 @@
 #include "network/NetworkUtils.h"
 #include "meta/MetaUtils.h"
 
+DECLARE_int32(load_data_interval_second);
+
 namespace nebula {
 namespace meta {
 
 TEST(MetaClientTest, InterfacesTest) {
+    FLAGS_load_data_interval_second = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
     auto sc = TestUtils::mockServer(10001, rootPath.path());
 
@@ -24,7 +27,7 @@ TEST(MetaClientTest, InterfacesTest) {
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
-                                            std::vector<HostAddr>{HostAddr(localIp, 10001)});
+                                               std::vector<HostAddr>{HostAddr(localIp, 10001)});
     client->init();
     {
         // Test addHost, listHosts interface.
@@ -60,25 +63,18 @@ TEST(MetaClientTest, InterfacesTest) {
             }
         }
     }
-    // waiting for the cache being filled.
-    sleep(1);
+    sleep(FLAGS_load_data_interval_second + 1);
     {
         // Test cache interfaces
         // For Host(0, 0) the parts should be 2, 3, 4, 6, 7, 8
-        auto ret = client->getPartsFromCache(spaceId, HostAddr(0, 0));
-        ASSERT_TRUE(ret.ok()) << ret.status();
-        int32_t index = 0;
-        ASSERT_EQ(6, ret.value().size());
-        std::vector<PartitionID> expected = {8, 7, 6, 4, 3, 2};
-        for (auto partId : ret.value()) {
-            EXPECT_EQ(expected[index++], partId);
-        }
+        auto partsMap = client->getPartsMapFromCache(HostAddr(0, 0));
+        ASSERT_EQ(1, partsMap.size());
+        ASSERT_EQ(6, partsMap[spaceId].size());
     }
     {
-        auto ret = client->getHostsFromCache(spaceId, 1);
-        ASSERT_TRUE(ret.ok()) << ret.status();
+        auto partMeta = client->getPartMetaFromCache(spaceId, 1);
         int32_t startIndex = 1;
-        for (auto& h : ret.value()) {
+        for (auto& h : partMeta.peers_) {
             ASSERT_EQ(startIndex++ % 4, h.first);
             ASSERT_EQ(h.first, h.second);
         }
@@ -146,6 +142,79 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_TRUE(ret.ok());
     }
     client.reset();
+}
+
+class TestListener : public MetaChangedListener {
+public:
+    void onSpaceAdded(GraphSpaceID spaceId) override {
+        LOG(INFO) << "Space " << spaceId << " added";
+        spaceNum++;
+    }
+
+    void onSpaceRemoved(GraphSpaceID spaceId) override {
+        LOG(INFO) << "Space " << spaceId << " removed";
+        spaceNum--;
+    }
+
+    void onPartAdded(const PartMeta& partMeta) override {
+        LOG(INFO) << "[" << partMeta.spaceId_ << ", " << partMeta.partId_ << "] added!";
+        partNum++;
+    }
+
+    void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override {
+        LOG(INFO) << "[" << spaceId << ", " << partId << "] removed!";
+        partNum--;
+    }
+
+    void onPartUpdated(const PartMeta& partMeta) override {
+        LOG(INFO) << "[" << partMeta.spaceId_ << ", " << partMeta.partId_ << "] updated!";
+        partChanged++;
+    }
+
+    HostAddr getLocalHost() override {
+        return HostAddr(0, 0);
+    }
+
+    int32_t spaceNum = 0;
+    int32_t partNum = 0;
+    int32_t partChanged = 0;
+};
+
+TEST(MetaClientTest, DiffTest) {
+    FLAGS_load_data_interval_second = 1;
+    fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
+    auto sc = TestUtils::mockServer(10001, rootPath.path());
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    uint32_t localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto listener = std::make_unique<TestListener>();
+    auto client = std::make_shared<MetaClient>(threadPool,
+                                               std::vector<HostAddr>{HostAddr(localIp, 10001)});
+    client->registerListener(listener.get());
+    client->init();
+    {
+        // Test addHost, listHosts interface.
+        std::vector<HostAddr> hosts = {{0, 0}};
+        ASSERT_EQ(Status::OK(), client->addHosts(hosts));
+        auto ret = client->listHosts();
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(hosts, ret.value());
+    }
+    {
+        auto ret = client->createSpace("default_space", 9, 1);
+        ASSERT_TRUE(ret.ok()) << ret.status();
+    }
+    sleep(FLAGS_load_data_interval_second + 1);
+    ASSERT_EQ(listener->spaceNum, 1);
+    ASSERT_EQ(listener->partNum, 9);
+    {
+        auto ret = client->createSpace("default_space_1", 5, 1);
+        ASSERT_TRUE(ret.ok()) << ret.status();
+    }
+    sleep(FLAGS_load_data_interval_second + 1);
+    ASSERT_EQ(listener->spaceNum, 2);
+    ASSERT_EQ(listener->partNum, 14);
 }
 
 }  // namespace meta

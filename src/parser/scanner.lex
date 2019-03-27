@@ -38,6 +38,8 @@ DESCRIBE                    ([Dd][Ee][Ss][Cc][Rr][Ii][Bb][Ee])
 VERTEX                      ([Vv][Ee][Rr][Tt][Ee][Xx])
 EDGE                        ([Ee][Dd][Gg][Ee])
 UPDATE                      ([Uu][Pp][Dd][Aa][Tt][Ee])
+DELETE                      ([Dd][Ee][Ll][Ee][Tt][Ee])
+FIND                        ([Ff][Ii][Nn][Dd])
 ALTER                       ([Aa][Ll][Tt][Ee][Rr])
 STEPS                       ([Ss][Tt][Ee][Pp][Ss])
 OVER                        ([Oo][Vv][Ee][Rr])
@@ -60,6 +62,7 @@ TRUE                        ([Tt][Rr][Uu][Ee])
 FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 SHOW                        ([Ss][Hh][Oo][Ww])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
+TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
 
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
@@ -91,6 +94,8 @@ OCT                         ([0-7])
 {VERTEX}                    { return TokenType::KW_VERTEX; }
 {EDGE}                      { return TokenType::KW_EDGE; }
 {UPDATE}                    { return TokenType::KW_UPDATE; }
+{DELETE}                    { return TokenType::KW_DELETE; }
+{FIND}                      { return TokenType::KW_FIND; }
 {ALTER}                     { return TokenType::KW_ALTER; }
 {STEPS}                     { return TokenType::KW_STEPS; }
 {OVER}                      { return TokenType::KW_OVER; }
@@ -113,6 +118,7 @@ OCT                         ([0-7])
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {SHOW}                      { return TokenType::KW_SHOW; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
+{TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

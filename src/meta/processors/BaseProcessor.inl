@@ -139,6 +139,7 @@ StatusOr<GraphSpaceID> BaseProcessor<RESP>::spaceExist(const std::string& name) 
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
+        VLOG(3) << "Error, prefix " << prefix << ", ret = " << static_cast<int32_t>(ret);
         return Status::Error("Unknown error!");
     }
     while (iter->valid()) {

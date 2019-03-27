@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License
  *  (found in the LICENSE.Apache file in the root directory)
  */
-
 #include "base/Base.h"
 #include "parser/MutateSentences.h"
 
@@ -136,6 +135,43 @@ std::string UpdateEdgeSentence::toString() const {
         buf += yieldClause_->toString();
     }
 
+    return buf;
+}
+
+std::string DeleteVertexSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "DELETE VERTEX ";
+    buf += srcNodeList_->toString();
+    if (whereClause_ != nullptr) {
+        buf += " ";
+        buf += whereClause_->toString();
+    }
+    return buf;
+}
+
+std::string EdgeList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto edge : edges_) {
+        buf += std::to_string(edge.first);
+        buf += "->";
+        buf += std::to_string(edge.second);
+        buf += ",";
+    }
+    buf.resize(buf.size() - 1);
+    return buf;
+}
+
+std::string DeleteEdgeSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "DELETE EDGE ";
+    buf += edgeList_->toString();
+    if (whereClause_ != nullptr) {
+        buf += " ";
+        buf += whereClause_->toString();
+    }
     return buf;
 }
 

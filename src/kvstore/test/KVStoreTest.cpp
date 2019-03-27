@@ -30,10 +30,8 @@ void dump(const std::vector<T>& v) {
 
 
 TEST(KVStoreTest, SimpleTest) {
-    FLAGS_part_man_type = "memory";  // Use MemPartManager.
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
-    MemPartManager* partMan = reinterpret_cast<MemPartManager*>(PartManager::instance());
-    partMan->clear();
+    auto partMan = std::make_unique<MemPartManager>();
     // GraphSpaceID =>  {PartitionIDs}
     // 1 => {0, 1, 2, 3, 4, 5}
     // 2 => {0, 1, 2, 3, 4, 5}
@@ -54,6 +52,7 @@ TEST(KVStoreTest, SimpleTest) {
     KVOptions options;
     options.local_ = HostAddr(0, 0);
     options.dataPaths_ = std::move(paths);
+    options.partMan_ = std::move(partMan);
     kv.reset(static_cast<NebulaStore*>(KVStore::instance(std::move(options))));
     EXPECT_EQ(2, kv->kvs_.size());
 
@@ -109,10 +108,8 @@ TEST(KVStoreTest, SimpleTest) {
 
 
 TEST(KVStoreTest, PartsTest) {
-    FLAGS_part_man_type = "memory";  // Use MemPartManager.
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
-    MemPartManager* partMan = reinterpret_cast<MemPartManager*>(PartManager::instance());
-    partMan->clear();
+    auto partMan = std::make_unique<MemPartManager>();
     // GraphSpaceID =>  {PartitionIDs}
     // 0 => {0, 1, 2, 3...9}
     // The parts on PartMan is 0...9
@@ -140,6 +137,7 @@ TEST(KVStoreTest, PartsTest) {
     KVOptions options;
     options.local_ = HostAddr(0, 0);
     options.dataPaths_ = std::move(paths);
+    options.partMan_ = std::move(partMan);
     kv.reset(static_cast<NebulaStore*>(KVStore::instance(std::move(options))));
 
     auto check = [&](GraphSpaceID spaceId) {
@@ -156,11 +154,29 @@ TEST(KVStoreTest, PartsTest) {
         }
     };
     check(0);
+    auto* pm = static_cast<MemPartManager*>(kv->partMan_.get());
     // Let's create another space with 10 parts.
     for (auto partId = 0; partId < 10; partId++) {
-        partMan->addPart(1, partId);
+        pm->addPart(1, partId);
     }
     check(1);
+    // Let's remove space some parts in GraphSpace 0
+    for (auto partId = 0; partId < 5; partId++) {
+        pm->removePart(0, partId);
+    }
+    int32_t totalParts = 0;
+    for (auto i = 0; i < 2; i++) {
+        ASSERT_EQ(folly::stringPrintf("%s/disk%d", rootPath.path(), i + 1),
+                  kv->kvs_[0]->engines_[i].second);
+        auto parts = kv->kvs_[0]->engines_[i].first->allParts();
+        dump(parts);
+        totalParts += parts.size();
+    }
+    ASSERT_EQ(5, totalParts);
+    for (auto partId = 5; partId < 10; partId++) {
+        pm->removePart(0, partId);
+    }
+    ASSERT_TRUE(kv->kvs_.find(0) == kv->kvs_.end());
 }
 
 }  // namespace kvstore
