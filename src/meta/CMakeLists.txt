@@ -13,12 +13,13 @@ add_library(
     MetaServiceHandler.cpp
     MetaUtils.cpp
     MetaHttpHandler.cpp
-    processors/CreateSpaceProcessor.cpp
     processors/AddHostsProcessor.cpp
     processors/ListHostsProcessor.cpp
+    processors/RemoveHostsProcessor.cpp
+    processors/CreateSpaceProcessor.cpp
     processors/ListSpacesProcessor.cpp
-    processors/GetPartsAllocProcessor.cpp
     processors/DropSpaceProcessor.cpp
+    processors/GetPartsAllocProcessor.cpp
 )
 
 add_dependencies(

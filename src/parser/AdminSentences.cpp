@@ -44,10 +44,10 @@ std::string AddHostsSentence::toString() const {
 }
 
 
-std::string DeleteHostsSentence::toString() const {
+std::string RemoveHostsSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "DELETE HOSTS (";
+    buf += "REMOVE HOSTS (";
     buf += hosts_->toString();
     buf += ") ";
     return buf;

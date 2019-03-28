@@ -51,12 +51,12 @@ private:
 };
 
 
-class DeleteHostsExecutor final : public Executor {
+class RemoveHostsExecutor final : public Executor {
 public:
-    DeleteHostsExecutor(Sentence *sentence, ExecutionContext *ectx);
+    RemoveHostsExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "DeleteHostsExecutor";
+        return "RemoveHostsExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -64,7 +64,7 @@ public:
     void execute() override;
 
 private:
-    DeleteHostsSentence     *sentence_{nullptr};
+    RemoveHostsSentence     *sentence_{nullptr};
     std::vector<HostAddr>    host_;
 };
 

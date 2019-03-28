@@ -63,7 +63,7 @@ class GraphScanner;
 %token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD KW_CREATE
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -111,7 +111,7 @@ class GraphScanner;
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
 %type <sentence> maintainance_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence add_hosts_sentence delete_hosts_sentence create_space_sentence drop_space_sentence
+%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence drop_space_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -724,9 +724,9 @@ add_hosts_sentence
     }
     ;
 
-delete_hosts_sentence
-    : KW_DELETE KW_HOSTS L_PAREN host_list R_PAREN {
-        auto sentence = new DeleteHostsSentence();
+remove_hosts_sentence
+    : KW_REMOVE KW_HOSTS L_PAREN host_list R_PAREN {
+        auto sentence = new RemoveHostsSentence();
         sentence->setHosts($4);
         $$ = sentence;
     }
@@ -802,7 +802,7 @@ maintainance_sentence
     | describe_edge_sentence {}
     | show_sentence {}
     | add_hosts_sentence {}
-    | delete_hosts_sentence {}
+    | remove_hosts_sentence {}
     | create_space_sentence {}
     | drop_space_sentence {}
     ;

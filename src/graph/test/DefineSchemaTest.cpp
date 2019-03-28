@@ -142,7 +142,7 @@ TEST_F(DefineSchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "delete hosts(\"127.0.0.1:1000\", \"127.0.0.1:1100\")";
+        std::string query = "remove hosts(\"127.0.0.1:1000\", \"127.0.0.1:1100\")";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

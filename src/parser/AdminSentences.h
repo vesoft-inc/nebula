@@ -87,10 +87,10 @@ private:
 };
 
 
-class DeleteHostsSentence final : public Sentence {
+class RemoveHostsSentence final : public Sentence {
 public:
-    DeleteHostsSentence() {
-        kind_ = Kind::kDeleteHosts;
+    RemoveHostsSentence() {
+        kind_ = Kind::kRemoveHosts;
     }
 
     void setHosts(HostList *hosts) {

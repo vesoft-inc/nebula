@@ -16,9 +16,14 @@
 #include "time/Duration.h"
 #include "kvstore/KVStore.h"
 #include "meta/MetaUtils.h"
+#include "network/NetworkUtils.h"
+
+
 
 namespace nebula {
 namespace meta {
+
+using nebula::network::NetworkUtils;
 
 enum IDType {
     SPACE,
@@ -95,6 +100,11 @@ protected:
      * Check space_name exists or not, if existed, return the id.
      * */
     StatusOr<GraphSpaceID> spaceExist(const std::string& name);
+
+    /**
+     * Check multi host_name exists or not.
+     * */
+    Status hostsExist(std::vector<std::string>& name);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

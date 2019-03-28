@@ -139,7 +139,6 @@ Status MetaClient::dropSpace(std::string name) {
     return handleResponse(resp);
 }
 
-
 Status MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
     std::vector<nebula::cpp2::HostAddr> thriftHosts;
     thriftHosts.resize(hosts.size());
@@ -166,6 +165,23 @@ StatusOr<std::vector<HostAddr>> MetaClient::listHosts() {
         return handleResponse(resp);
     }
     return to(resp.hosts);
+}
+
+Status MetaClient::removeHosts(const std::vector<HostAddr>& hosts) {
+    std::vector<nebula::cpp2::HostAddr> thriftHosts;
+    thriftHosts.resize(hosts.size());
+    std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
+        nebula::cpp2::HostAddr th;
+        th.set_ip(h.first);
+        th.set_port(h.second);
+        return th;
+    });
+    cpp2::RemoveHostsReq req;
+    req.set_hosts(std::move(thriftHosts));
+    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_removeHosts(request);
+                });
+    return handleResponse(resp);
 }
 
 StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>
@@ -220,7 +236,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
         case cpp2::ErrorCode::E_SPACE_EXISTED:
             return Status::Error("space existed!");
         case cpp2::ErrorCode::E_NOT_FOUND:
-            return Status::Error("space not existed!");
+            return Status::Error("not existed!");
         case cpp2::ErrorCode::E_LEADER_CHANGED:
             return Status::Error("Leader changed!");
         default:
@@ -250,6 +266,7 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
     }
     return partMap;
 }
+
 PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     return doGetPartsMap(host, localCache_);

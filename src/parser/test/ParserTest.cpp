@@ -385,7 +385,7 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "delete hosts (\"127.0.0.1:1000\", \"127.0.0.1:9000\")";
+        std::string query = "remove hosts (\"127.0.0.1:1000\", \"127.0.0.1:9000\")";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

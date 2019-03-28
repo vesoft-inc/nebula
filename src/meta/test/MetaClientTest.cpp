@@ -89,6 +89,20 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_FALSE(ret.ok());
         ASSERT_EQ(Status::SpaceNotFound(), ret.status());
     }
+    {
+        auto ret = client->dropSpace("default_space");
+        ASSERT_EQ(Status::OK(), ret);
+        auto ret1 = client->listSpaces();
+        ASSERT_TRUE(ret1.ok()) << ret1.status();
+        ASSERT_EQ(ret1.value().size(), 0);
+    }
+    {
+        std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+        ASSERT_EQ(Status::OK(), client->removeHosts(hosts));
+        auto ret = client->listHosts();
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(ret.value().size(), 0);
+    }
     client.reset();
 }
 

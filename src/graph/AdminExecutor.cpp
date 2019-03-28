@@ -90,24 +90,24 @@ void AddHostsExecutor::execute() {
 }
 
 
-DeleteHostsExecutor::DeleteHostsExecutor(Sentence *sentence,
+RemoveHostsExecutor::RemoveHostsExecutor(Sentence *sentence,
                                          ExecutionContext *ectx) : Executor(ectx) {
-    sentence_ = static_cast<DeleteHostsSentence*>(sentence);
+    sentence_ = static_cast<RemoveHostsSentence*>(sentence);
 }
 
 
-Status DeleteHostsExecutor::prepare() {
+Status RemoveHostsExecutor::prepare() {
     host_ = sentence_->hosts();
     if (host_.size() == 0) {
-        LOG(FATAL) << "Delete hosts Sentence host address illegal";
+        LOG(FATAL) << "Remove hosts Sentence host address illegal";
     }
     return Status::OK();
 }
 
 
-void DeleteHostsExecutor::execute() {
-    // auto ret = ectx()->getMetaClient()->deleteHosts(host_);
-    // CHECK_EQ(ret, Status::OK());
+void RemoveHostsExecutor::execute() {
+    auto ret = ectx()->getMetaClient()->removeHosts(host_);
+    CHECK_EQ(ret, Status::OK());
 
     DCHECK(onFinish_);
     onFinish_();
