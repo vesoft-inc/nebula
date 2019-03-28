@@ -77,12 +77,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    status = setupSignalHandler();
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        return EXIT_FAILURE;
-    }
-
     LOG(INFO) << "Starting Meta HTTP Service";
     nebula::WebService::registerHandler("/meta", [] {
         return new nebula::meta::MetaHttpHandler();
@@ -118,6 +112,14 @@ int main(int argc, char *argv[]) {
 
     gServer->setInterface(handler);
     gServer->setPort(FLAGS_port);
+
+    // Setup the signal handlers
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
+
     try {
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception &e) {

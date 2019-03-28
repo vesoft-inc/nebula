@@ -45,15 +45,9 @@ int main(int argc, char *argv[]) {
     using nebula::network::NetworkUtils;
     using nebula::ProcessUtils;
 
-    auto status = setupSignalHandler();
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        return EXIT_FAILURE;
-    }
-
     // Detect if the server has already been started
     auto pidPath = FLAGS_pid_file;
-    status = ProcessUtils::isPidAvailable(pidPath);
+    auto status = ProcessUtils::isPidAvailable(pidPath);
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
@@ -113,6 +107,13 @@ int main(int argc, char *argv[]) {
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get());
     gServer = std::make_unique<apache::thrift::ThriftServer>();
     CHECK(!!gServer) << "Failed to create the thrift server";
+
+    // Setup the signal handlers
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
 
     gServer->setInterface(handler);
     gServer->setPort(FLAGS_port);

@@ -90,13 +90,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Setup the signal handlers
-    status = setupSignalHandler();
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        return EXIT_FAILURE;
-    }
-
     LOG(INFO) << "Starting Graph HTTP Service";
     nebula::WebService::registerHandler("/graph", [] {
         return new nebula::graph::GraphHttpHandler();
@@ -135,6 +128,13 @@ int main(int argc, char *argv[]) {
     gServer->setThreadStackSizeMB(5);
     if (FLAGS_num_netio_threads != 0) {
         gServer->setNumIOWorkerThreads(FLAGS_num_netio_threads);
+    }
+
+    // Setup the signal handlers
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
     }
 
     FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);
