@@ -132,8 +132,13 @@ StatusOr<std::vector<SpaceIdName>> MetaClient::listSpaces() {
 
 Status MetaClient::dropSpace(std::string name) {
     cpp2::DropSpaceReq req;
-    req.set_space_name(std::move(name);
+    req.set_space_name(std::move(name));
+    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_dropSpace(request);
+                });
+    return handleResponse(resp);
 }
+
 
 Status MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
     std::vector<nebula::cpp2::HostAddr> thriftHosts;
@@ -214,6 +219,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::OK();
         case cpp2::ErrorCode::E_SPACE_EXISTED:
             return Status::Error("space existed!");
+        case cpp2::ErrorCode::E_NOT_FOUND:
+            return Status::Error("space not existed!");
         case cpp2::ErrorCode::E_LEADER_CHANGED:
             return Status::Error("Leader changed!");
         default:

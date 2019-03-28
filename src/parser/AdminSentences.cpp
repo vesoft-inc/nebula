@@ -90,7 +90,7 @@ std::string CreateSpaceSentence::toString() const {
 }
 
 
-std::string DroppSpaceSentence::toString() const {
+std::string DropSpaceSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DROP SPACE ";

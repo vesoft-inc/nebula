@@ -27,6 +27,9 @@ public:
     future_listSpaces(const cpp2::ListSpacesReq& req) override;
 
     folly::Future<cpp2::ExecResp>
+    future_dropSpace(const cpp2::DropSpaceReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
     future_addHosts(const cpp2::AddHostsReq& req) override;
 
     folly::Future<cpp2::ListHostsResp>

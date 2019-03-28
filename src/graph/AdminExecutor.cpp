@@ -106,8 +106,8 @@ Status DeleteHostsExecutor::prepare() {
 
 
 void DeleteHostsExecutor::execute() {
-    auto ret = ectx()->getMetaClient()->deleteHosts(host_);
-    CHECK_EQ(ret, Status::OK());
+    // auto ret = ectx()->getMetaClient()->deleteHosts(host_);
+    // CHECK_EQ(ret, Status::OK());
 
     DCHECK(onFinish_);
     onFinish_();
@@ -161,7 +161,7 @@ Status DropSpaceExecutor::prepare() {
 
 void DropSpaceExecutor::execute() {
     auto ret = ectx()->getMetaClient()->dropSpace(*spaceName_);
-    CHECK(ret.ok()) << ret.status();
+    CHECK_EQ(ret, Status::OK());
 
     DCHECK(onFinish_);
     onFinish_();

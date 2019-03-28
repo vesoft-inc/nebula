@@ -89,7 +89,7 @@ private:
 
 class DeleteHostsSentence final : public Sentence {
 public:
-    AddHostsSentence() {
+    DeleteHostsSentence() {
         kind_ = Kind::kDeleteHosts;
     }
 

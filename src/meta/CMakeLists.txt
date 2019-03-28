@@ -18,6 +18,7 @@ add_library(
     processors/ListHostsProcessor.cpp
     processors/ListSpacesProcessor.cpp
     processors/GetPartsAllocProcessor.cpp
+    processors/DropSpaceProcessor.cpp
 )
 
 add_dependencies(
