@@ -13,14 +13,17 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     guard_ = std::make_unique<std::lock_guard<std::mutex>>(
                                     BaseProcessor<cpp2::ExecResp>::lock_);
     auto spaceRet = spaceExist(req.get_space_name());
-    if (spaceRet.status() == Status::SpaceNotFound()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+
+    if (!spaceRet.ok()) {
+        if (spaceRet.status() == Status::SpaceNotFound()) {
+            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        } else {
+            resp_.set_code(cpp2::ErrorCode::E_UNKNOWN);
+        }
         onFinished();
         return;;
     }
-    CHECK(spaceRet.ok());
 
-    // find space
     auto spaceId = spaceRet.value();
     VLOG(3) << "Drop space " << req.get_space_name() << ", id " << spaceId;
 
@@ -59,6 +62,8 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
         this->resp_.set_code(to(code));
         this->onFinished();
     });
+
+    // TODO(YT) delete part files of the space
 }
 
 }  // namespace meta

@@ -18,8 +18,6 @@
 #include "meta/MetaUtils.h"
 #include "network/NetworkUtils.h"
 
-
-
 namespace nebula {
 namespace meta {
 

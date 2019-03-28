@@ -21,7 +21,11 @@ void RemoveHostsProcessor::process(const cpp2::RemoveHostsReq& req) {
 
     auto hostsRet = hostsExist(hostsKey);
     if (!hostsRet.ok()) {
-        resp_.set_code(cpp2::ErrorCode::E_SPACE_EXISTED);
+        if (hostsRet == Status::HostNotFound()) {
+            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        } else {
+            resp_.set_code(cpp2::ErrorCode::E_UNKNOWN);
+        }
         onFinished();
         return;
     }
