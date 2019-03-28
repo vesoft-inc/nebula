@@ -15,6 +15,7 @@
 #include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
 #include "meta/processors/AddTagProcessor.h"
+#include "meta/processors/RemoveTagProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
 
@@ -243,6 +244,56 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
     }
 }
 
+TEST(ProcessorTest, RemoveTagTest) {
+     fs::TempDir rootPath("/tmp/RemoveTagTest.XXXXXX");
+     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+
+      // Setup tag index and tag data
+     {
+         TagID tagId = 1;
+         std::vector<nebula::kvstore::KV> tags;
+         auto version = time::TimeUtils::nowInMSeconds();
+         tags.emplace_back(MetaUtils::spaceKey(0), "default_space");
+         tags.emplace_back(MetaUtils::indexKey(EntryType::TAG, "tag_1"),
+                 std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
+         tags.emplace_back(MetaUtils::schemaTagKey(0, tagId, version), "tag_schema1");
+         tags.emplace_back(MetaUtils::schemaTagKey(0, tagId, version + 1000), "tag_schema2");
+         kv.get()->asyncMultiPut(0, 0, std::move(tags),
+                 [] (kvstore::ResultCode code, HostAddr leader) {
+                 ASSERT_TRUE(code == kvstore::ResultCode::SUCCEEDED);
+                 UNUSED(leader);
+         });
+     }
+
+      // remove tag processor test
+     {
+         cpp2::RemoveTagReq req;
+         req.set_space_id(0);
+         req.set_tag_name("tag_1");
+         auto* processor = RemoveTagProcessor::instance(kv.get());
+         auto f = processor->getFuture();
+         processor->process(req);
+         auto resp = std::move(f).get();
+         ASSERT_EQ(resp.get_code(), cpp2::ErrorCode::SUCCEEDED);
+     }
+
+ 
+      // check tag data has been deleted.
+     {
+         std::string tagVal, tagKey;
+         kvstore::ResultCode ret;
+         const std::string kTagsTable   = "__tags__";
+         std::unique_ptr<kvstore::KVIterator> iter;
+
+          ret = kv.get()->get(0, 0, std::move(MetaUtils::indexKey(EntryType::TAG, "tag_1")), &tagVal);
+         ASSERT_TRUE(ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND);
+         tagKey.reserve(kTagsTable.size());
+         tagKey.append(kTagsTable.data(), kTagsTable.size());
+         ret = kv.get()->prefix(0, 0, tagKey, &iter);
+         ASSERT_TRUE(ret == kvstore::ResultCode::SUCCEEDED);
+         ASSERT_FALSE(iter->valid());
+     }
+ }
 
 }  // namespace meta
 }  // namespace nebula

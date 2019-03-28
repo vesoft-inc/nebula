@@ -92,6 +92,11 @@ protected:
     void doPut(std::vector<kvstore::KV> data);
 
     /**
+     *  Remove index and data. using tag, space or edge
+     **/
+    void doRemoveMixed(std::string &key, std::string &start, std::string &end);
+
+    /**
      * Get all hosts
      * */
     StatusOr<std::vector<nebula::cpp2::HostAddr>> allHosts();
