@@ -102,7 +102,7 @@ Status GoExecutor::prepareFrom() {
     auto *clause = sentence_->fromClause();
     do {
         if (clause == nullptr) {
-            break;
+            LOG(FATAL) << "From clause shall never be null";
         }
         if (!clause->isRef()) {
             starts_ = clause->srcNodeList()->nodeIds();
@@ -130,7 +130,7 @@ Status GoExecutor::prepareOver() {
     auto *clause = sentence_->overClause();
     do {
         if (clause == nullptr) {
-            break;
+            LOG(FATAL) << "Over clause shall never be null";
         }
         edge_ = meta::SchemaManager::toEdgeType(*clause->edge());
         reversely_ = clause->isReversely();
@@ -277,16 +277,7 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
             fetchVertexProps(std::move(dstids), std::move(rpcResp));
             return;
         }
-        if (onResult_) {
-            auto result = setupIntermResult(std::move(rpcResp));
-            onResult_(std::move(result));
-        } else {
-            resp_ = std::make_unique<cpp2::ExecutionResponse>();
-            setupResponseHeader(*resp_);
-            setupResponseBody(rpcResp, *resp_);
-        }
-        DCHECK(onFinish_);
-        onFinish_();
+        finishExecution(std::move(rpcResp));
         return;
     } else {
         curStep_++;
@@ -318,13 +309,27 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
             auto iter = rsReader.begin();
             while (iter) {
                 VertexID dst;
-                iter->getVid("_dst", dst);
+                auto rc = iter->getVid("_dst", dst);
+                CHECK(rc == ResultType::SUCCEEDED);
                 set.emplace(dst);
                 ++iter;
             }
         }
     }
     return std::vector<VertexID>(set.begin(), set.end());
+}
+
+
+void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
+    if (onResult_) {
+        onResult_(setupIntermResult(std::move(rpcResp)));
+    } else {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        setupResponseHeader(*resp_);
+        setupResponseBody(rpcResp, *resp_);
+    }
+    DCHECK(onFinish_);
+    onFinish_();
 }
 
 
@@ -398,15 +403,7 @@ void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcRe
         for (auto &resp : result.responses()) {
             vertexHolder_->add(resp);
         }
-        if (onResult_) {
-            onResult_(setupIntermResult(std::move(stepOutResp)));
-        } else {
-            resp_ = std::make_unique<cpp2::ExecutionResponse>();
-            setupResponseHeader(*resp_);
-            setupResponseBody(stepOutResp, *resp_);
-        }
-        DCHECK(onFinish_);
-        onFinish_();
+        finishExecution(std::move(stepOutResp));
         return;
     };
     auto error = [this] (auto &&e) {
@@ -486,7 +483,7 @@ std::unique_ptr<IntermResult> GoExecutor::setupIntermResult(RpcResponse &&rpcRes
         rsWriter->addRow(writer);
     };  // cb
     processFinalResult(rpcResp, cb);
-    return std::make_unique<IntermResult>(rsWriter.get());
+    return std::make_unique<IntermResult>(std::move(rsWriter));
 }
 
 
@@ -602,6 +599,7 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 vreader = RowReader::getRowReader(vdata.vertex_data, vschema);
             }
             DCHECK(vdata.__isset.edge_data);
+            DCHECK(eschema != nullptr);
             RowSetReader rsReader(eschema, vdata.edge_data);
             auto iter = rsReader.begin();
             while (iter) {

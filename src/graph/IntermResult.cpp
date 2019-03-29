@@ -11,9 +11,9 @@
 namespace nebula {
 namespace graph {
 
-IntermResult::IntermResult(RowSetWriter *rows) {
-    data_ = rows->data();
-    rsReader_ = std::make_unique<RowSetReader>(rows->schema(), data_);
+IntermResult::IntermResult(std::unique_ptr<RowSetWriter> rsWriter) {
+    rsWriter_ = std::move(rsWriter);
+    rsReader_ = std::make_unique<RowSetReader>(rsWriter_->schema(), rsWriter_->data());
 }
 
 

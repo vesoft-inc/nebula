@@ -29,7 +29,7 @@ public:
     IntermResult(IntermResult &&) = default;
     IntermResult& operator=(IntermResult &&) = default;
 
-    explicit IntermResult(RowSetWriter *rows);
+    explicit IntermResult(std::unique_ptr<RowSetWriter> rsWriter);
     explicit IntermResult(std::vector<VertexID> vids);
 
     std::vector<VertexID> getVIDs(const std::string &col) const;
@@ -38,7 +38,7 @@ public:
 
 private:
     std::unique_ptr<RowSetReader>               rsReader_;
-    std::string                                 data_;
+    std::unique_ptr<RowSetWriter>               rsWriter_;
     std::vector<VertexID>                       vids_;
 };
 

@@ -119,10 +119,15 @@ private:
     std::vector<VertexID> getDstIdsFromResp(RpcResponse &rpcResp) const;
 
     /**
+     * All required data have arrived, finish the execution.
+     */
+    void finishExecution(RpcResponse &&rpcResp);
+
+    /**
      * To setup an intermediate representation of the execution result,
      * which is about to be piped to the next executor.
      */
-    std::unique_ptr<IntermResult> setupIntermResult(RpcResponse && rpcResp);
+    std::unique_ptr<IntermResult> setupIntermResult(RpcResponse &&rpcResp);
 
     /**
      * To setup the header of the execution result, i.e. the column names.
