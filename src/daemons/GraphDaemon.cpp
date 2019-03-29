@@ -127,8 +127,10 @@ int main(int argc, char *argv[]) {
     gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
     gServer->setListenBacklog(FLAGS_listen_backlog);
     gServer->setThreadStackSizeMB(5);
-    if (FLAGS_num_netio_threads != 0) {
+    if (FLAGS_num_netio_threads > 0) {
         gServer->setNumIOWorkerThreads(FLAGS_num_netio_threads);
+    } else {
+        LOG(WARNING) << "Number netio threads should be greater than zero";
     }
 
     FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);

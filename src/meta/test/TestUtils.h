@@ -58,7 +58,7 @@ public:
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
-            EXPECT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+            EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         }
         {
             cpp2::ListHostsReq req;

@@ -11,7 +11,6 @@
 #include "meta/processors/ListHostsProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
-#include "meta/processors/PutProcessor.h"
 #include "meta/processors/MultiPutProcessor.h"
 #include "meta/processors/GetProcessor.h"
 #include "meta/processors/MultiGetProcessor.h"
@@ -54,12 +53,6 @@ MetaServiceHandler::future_listHosts(const cpp2::ListHostsReq& req) {
 folly::Future<cpp2::GetPartsAllocResp>
 MetaServiceHandler::future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) {
     auto* processor = GetPartsAllocProcessor::instance(kvstore_);
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::PutResp>
-MetaServiceHandler::future_put(const cpp2::PutReq& req) {
-    auto* processor = PutProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

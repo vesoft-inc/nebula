@@ -32,6 +32,7 @@ public:
                            std::string value) = 0;
 
     virtual ResultCode multiPut(std::vector<KV> keyValues) = 0;
+
     /**
      * Get all results in range [start, end)
      * */

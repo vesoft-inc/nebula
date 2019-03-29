@@ -12,6 +12,14 @@ DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
                                      "the format looks like ip1:port1, ip2:port2, ip3:port3");
 DEFINE_int32(meta_client_io_threads, 3, "meta client io threads");
 
+/**
+ * check argument is empty
+ */
+#define CHECK_PARAMETER(argument) \
+    if (argument.empty()) { \
+        return Status::Error("argument is invalid!"); \
+    }
+
 namespace nebula {
 namespace meta {
 
@@ -184,25 +192,12 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
     return Status::SpaceNotFound();
 }
 
-StatusOr<bool>
-MetaClient::put(const std::string& key, const std::string& value) {
-    cpp2::PutReq req;
-    req.set_key(std::move(key));
-    req.set_value(std::move(value));
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
-                   return client->future_put(request);
-                });
-    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-        return handleResponse(resp);
-    }
-    return true;
-}
-
-StatusOr<bool>
+Status
 MetaClient::multiPut(const std::vector<std::pair<std::string, std::string>>& pairs) {
+    CHECK_PARAMETER(pairs);
     cpp2::MultiPutReq req;
     std::vector<cpp2::Pair> data;
-    for (auto element : pairs) {
+    for (auto const &element : pairs) {
         data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                           element.first, element.second);
     }
@@ -210,16 +205,14 @@ MetaClient::multiPut(const std::vector<std::pair<std::string, std::string>>& pai
     auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_multiPut(request);
                 });
-    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-        return handleResponse(resp);
-    }
-    return true;
+    return handleResponse(resp);
 }
 
 StatusOr<std::string>
 MetaClient::get(const std::string& key) {
+    CHECK_PARAMETER(key);
     cpp2::GetReq req;
-    req.set_key(std::move(key));
+    req.set_key(key);
     auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_get(request);
                 });
@@ -231,6 +224,7 @@ MetaClient::get(const std::string& key) {
 
 StatusOr<std::vector<std::string>>
 MetaClient::multiGet(const std::vector<std::string>& keys) {
+    CHECK_PARAMETER(keys);
     cpp2::MultiGetReq req;
     req.set_keys(keys);
     auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
@@ -244,9 +238,11 @@ MetaClient::multiGet(const std::vector<std::string>& keys) {
 
 StatusOr<std::vector<std::string>>
 MetaClient::scan(const std::string& start, const std::string& end) {
+    CHECK_PARAMETER(start);
+    CHECK_PARAMETER(end);
     cpp2::ScanReq req;
-    req.set_start(std::move(start));
-    req.set_end(std::move(end));
+    req.set_start(start);
+    req.set_end(end);
     auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_scan(request);
                 });
@@ -256,31 +252,28 @@ MetaClient::scan(const std::string& start, const std::string& end) {
     return resp.get_values();
 }
 
-StatusOr<bool>
+Status
 MetaClient::remove(const std::string& key) {
+    CHECK_PARAMETER(key);
     cpp2::RemoveReq req;
-    req.set_key(std::move(key));
+    req.set_key(key);
     auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_remove(request);
                 });
-    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-        return handleResponse(resp);
-    }
-    return true;
+    return handleResponse(resp);
 }
 
-StatusOr<bool>
+Status
 MetaClient::removeRange(const std::string& start, const std::string& end) {
+    CHECK_PARAMETER(start);
+    CHECK_PARAMETER(end);
     cpp2::RemoveRangeReq req;
-    req.set_start(std::move(start));
-    req.set_end(std::move(end));
+    req.set_start(start);
+    req.set_end(end);
     auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_removeRange(request);
                 });
-    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-        return handleResponse(resp);
-    }
-    return true;
+    return handleResponse(resp);
 }
 
 std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& tHosts) {

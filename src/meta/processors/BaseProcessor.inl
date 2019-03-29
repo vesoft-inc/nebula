@@ -35,7 +35,7 @@ StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
 
 template<typename RESP>
 StatusOr<std::vector<std::string>>
-BaseProcessor<RESP>::doMultiGet(const std::vector<std::string> keys) {
+BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
     CHECK(!lock_.try_lock());
     std::vector<std::string> values;
     auto code = kvstore_->multiGet(kDefaultSpaceId_, kDefaultPartId_,
@@ -83,7 +83,7 @@ StatusOr<std::vector<std::string>> BaseProcessor<RESP>::doScan(const std::string
 
     std::vector<std::string> values;
     while (iter->valid()) {
-        values.emplace_back(std::move(iter->val()));
+        values.emplace_back(iter->val());
         iter->next();
     }
     return values;

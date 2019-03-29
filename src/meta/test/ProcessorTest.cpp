@@ -13,7 +13,6 @@
 #include "meta/processors/CreateSpaceProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
-#include "meta/processors/PutProcessor.h"
 #include "meta/processors/MultiPutProcessor.h"
 #include "meta/processors/GetProcessor.h"
 #include "meta/processors/MultiGetProcessor.h"
@@ -38,7 +37,7 @@ TEST(ProcessorTest, AddHostsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        EXPECT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         cpp2::ListHostsReq req;
@@ -63,7 +62,7 @@ TEST(ProcessorTest, AddHostsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        EXPECT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         cpp2::ListHostsReq req;
@@ -93,8 +92,8 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
-        ASSERT_EQ(resp.get_id().get_space_id(), 1);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
         cpp2::ListSpacesReq req;
@@ -102,10 +101,10 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
-        ASSERT_EQ(resp.spaces.size(), 1);
-        ASSERT_EQ(resp.spaces[0].id.get_space_id(), 1);
-        ASSERT_EQ(resp.spaces[0].name, "default_space");
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.spaces.size());
+        ASSERT_EQ(1, resp.spaces[0].id.get_space_id());
+        ASSERT_EQ("default_space", resp.spaces[0].name);
     }
     // Check the result. The dispatch way from part to hosts is in a round robin fashion.
     {
@@ -115,7 +114,7 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         for (auto& p : resp.get_parts()) {
             auto startIndex = p.first;
             for (auto& h : p.second) {
@@ -142,20 +141,8 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
-        ASSERT_EQ(resp.get_id().get_space_id(), 1);
-    }
-    {
-        // Put Test
-        cpp2::PutReq req;
-        req.set_key("key");
-        req.set_value("value");
-
-        auto* processor = PutProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
         // Multi Put Test
@@ -173,7 +160,7 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         // Get Test
@@ -184,8 +171,8 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
-        ASSERT_EQ(resp.value, "value");
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ("value", resp.value);
     }
     {
         // Multi Get Test
@@ -201,10 +188,10 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
-        ASSERT_EQ(resp.values.size(), 2);
-        ASSERT_EQ(resp.values[0], "value_0");
-        ASSERT_EQ(resp.values[1], "value_1");
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(2, resp.values.size());
+        ASSERT_EQ("value_0", resp.values[0]);
+        ASSERT_EQ("value_1", resp.values[1]);
     }
     {
         // Scan Test
@@ -215,11 +202,11 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
-        ASSERT_EQ(resp.values.size(), 3);
-        ASSERT_EQ(resp.values[0], "value_1");
-        ASSERT_EQ(resp.values[1], "value_2");
-        ASSERT_EQ(resp.values[2], "value_3");
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(3, resp.values.size());
+        ASSERT_EQ("value_1", resp.values[0]);
+        ASSERT_EQ("value_2", resp.values[1]);
+        ASSERT_EQ("value_3", resp.values[2]);
     }
     {
         // Remove Test
@@ -230,7 +217,7 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         // Remove Range Test
@@ -242,7 +229,7 @@ TEST(ProcessorTest, KVOperationTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
 }
 

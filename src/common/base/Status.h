@@ -11,9 +11,9 @@
 
 /**
  * Status is modeled on the one from levelDB, beyond that,
- * this one adds support on move semantics and formated error messages.
+ * this one adds support on move semantics and formatted error messages.
  *
- * Status is as cheap as raw pointers in the successfull case,
+ * Status is as cheap as raw pointers in the successful case,
  * without any heap memory allocations.
  */
 

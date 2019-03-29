@@ -12,7 +12,7 @@ namespace meta {
 void RemoveRangeProcessor::process(const cpp2::RemoveRangeReq& req) {
     guard_ = std::make_unique<std::lock_guard<std::mutex>>(
                                 BaseProcessor<cpp2::RemoveRangeResp>::lock_);
-    doRemoveRange(std::move(req.get_start()), std::move(req.get_end()));
+    doRemoveRange(req.get_start(), req.get_end());
 }
 
 }  // namespace meta

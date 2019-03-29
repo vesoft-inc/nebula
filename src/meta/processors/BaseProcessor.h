@@ -90,7 +90,7 @@ protected:
     /**
      * General multi get function.
      * */
-    StatusOr<std::vector<std::string>> doMultiGet(const std::vector<std::string> keys);
+    StatusOr<std::vector<std::string>> doMultiGet(const std::vector<std::string>& keys);
 
     /**
      * General remove function.

@@ -81,9 +81,7 @@ public:
 
     int32_t partsNum(GraphSpaceID spaceId);
 
-    StatusOr<bool> put(const std::string& key, const std::string& value);
-
-    StatusOr<bool> multiPut(const std::vector<std::pair<std::string, std::string>>& pairs);
+    Status multiPut(const std::vector<std::pair<std::string, std::string>>& pairs);
 
     StatusOr<std::string> get(const std::string& key);
 
@@ -91,9 +89,9 @@ public:
 
     StatusOr<std::vector<std::string>> scan(const std::string& start, const std::string& end);
 
-    StatusOr<bool> remove(const std::string& key);
+    Status remove(const std::string& key);
 
-    StatusOr<bool> removeRange(const std::string& start, const std::string& end);
+    Status removeRange(const std::string& start, const std::string& end);
 
 
 protected:

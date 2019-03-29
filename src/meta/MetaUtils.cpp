@@ -66,7 +66,7 @@ std::string MetaUtils::partVal(const std::vector<nebula::cpp2::HostAddr>& hosts)
     return val;
 }
 
-std::string MetaUtils::partPrefix() {
+const std::string& MetaUtils::partPrefix() {
     static const std::string prefix = kPartsTable;
     return prefix;
 }

@@ -35,9 +35,6 @@ public:
     folly::Future<cpp2::GetPartsAllocResp>
     future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) override;
 
-    folly::Future<cpp2::PutResp>
-    future_put(const cpp2::PutReq& req) override;
-
     folly::Future<cpp2::MultiPutResp>
     future_multiPut(const cpp2::MultiPutReq& req) override;
 

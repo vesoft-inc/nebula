@@ -20,7 +20,6 @@ add_library(
     processors/GetPartsAllocProcessor.cpp
     processors/GetProcessor.cpp
     processors/MultiGetProcessor.cpp
-    processors/PutProcessor.cpp
     processors/MultiPutProcessor.cpp
     processors/RemoveProcessor.cpp
     processors/RemoveRangeProcessor.cpp

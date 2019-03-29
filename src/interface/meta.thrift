@@ -189,22 +189,13 @@ struct GetPartsAllocResp {
     3: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
 }
 
-struct PutReq {
-    1: string key,
-    2: string value,
-}
-
-struct PutResp {
-    1: ErrorCode code,
-}
-
 struct MultiPutReq {
-    1: list<Pair> pairs
+    1: list<Pair> pairs,
 }
 
 struct MultiPutResp {
     1: ErrorCode code,
-} 
+}
 
 struct GetReq {
     1: string key,
@@ -221,7 +212,7 @@ struct MultiGetReq {
 
 struct MultiGetResp {
     1: ErrorCode    code,
-    2: list<string> values
+    2: list<string> values,
 }
 
 struct RemoveReq {
@@ -273,7 +264,6 @@ service MetaService {
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
 
-    PutResp          put(1: PutReq req);
     MultiPutResp     multiPut(1: MultiPutReq req);
     GetResp          get(1: GetReq req);
     MultiGetResp     multiGet(1: MultiGetReq req);

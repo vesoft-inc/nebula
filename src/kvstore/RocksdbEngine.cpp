@@ -64,7 +64,7 @@ ResultCode RocksdbEngine::multiGet(const std::vector<std::string> keys,
     rocksdb::ReadOptions options;
     std::vector<rocksdb::Slice> slices;
     for (unsigned int index = 0 ; index < keys.size() ; index++) {
-        slices.emplace_back(std::move(keys[index]));
+        slices.emplace_back(keys[index]);
     }
 
     std::vector<rocksdb::Status> status = db_->MultiGet(options, std::move(slices), values);

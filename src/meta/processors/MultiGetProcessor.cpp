@@ -12,7 +12,7 @@ namespace meta {
 void MultiGetProcessor::process(const cpp2::MultiGetReq& req) {
     guard_ = std::make_unique<std::lock_guard<std::mutex>>(
                                 BaseProcessor<cpp2::MultiGetResp>::lock_);
-    auto result = doMultiGet(std::move(req.get_keys()));
+    auto result = doMultiGet(req.get_keys());
     if (!result.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();

@@ -47,9 +47,9 @@ TEST(MetaClientTest, InterfacesTest) {
         {
             auto ret = client->listSpaces();
             ASSERT_TRUE(ret.ok()) << ret.status();
-            ASSERT_EQ(ret.value().size(), 1);
-            ASSERT_EQ(ret.value()[0].first, 1);
-            ASSERT_EQ(ret.value()[0].second, "default_space");
+            ASSERT_EQ(1, ret.value().size());
+            ASSERT_EQ(1, ret.value()[0].first);
+            ASSERT_EQ("default_space", ret.value()[0].second);
         }
         {
             auto ret = client->getPartsAlloc(spaceId);
@@ -90,11 +90,6 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_EQ(Status::SpaceNotFound(), ret.status());
     }
     {
-        // Put Test
-        auto ret = client->put("key", "value");
-        ASSERT_TRUE(ret.ok());
-    }
-    {
         // Multi Put Test
         std::vector<std::pair<std::string, std::string>> pairs;
         for (auto i = 0; i < 10; i++) {
@@ -108,28 +103,28 @@ TEST(MetaClientTest, InterfacesTest) {
         // Get Test
         auto ret = client->get("key");
         ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(ret.value(), "value");
+        ASSERT_EQ("value", ret.value());
     }
     {
         // Multi Get Test
         std::vector<std::string> keys;
         for (auto i = 0; i < 2; i++) {
-            keys.emplace_back(std::move(folly::stringPrintf("key_%d", i)));
+            keys.emplace_back(folly::stringPrintf("key_%d", i));
         }
         auto ret = client->multiGet(keys);
         ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(ret.value().size(), 2);
-        ASSERT_EQ(ret.value()[0], "value_0");
-        ASSERT_EQ(ret.value()[1], "value_1");
+        ASSERT_EQ(2, ret.value().size());
+        ASSERT_EQ("value_0", ret.value()[0]);
+        ASSERT_EQ("value_1", ret.value()[1]);
     }
     {
         // Scan Test
         auto ret = client->scan("key_0", "key_3");
         ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(ret.value().size(), 3);
-        ASSERT_EQ(ret.value()[0], "value_0");
-        ASSERT_EQ(ret.value()[1], "value_1");
-        ASSERT_EQ(ret.value()[2], "value_2");
+        ASSERT_EQ(3, ret.value().size());
+        ASSERT_EQ("value_0", ret.value()[0]);
+        ASSERT_EQ("value_1", ret.value()[1]);
+        ASSERT_EQ("value_2", ret.value()[2]);
     }
     {
         // Remove Test
@@ -206,15 +201,15 @@ TEST(MetaClientTest, DiffTest) {
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
     sleep(FLAGS_load_data_interval_second + 1);
-    ASSERT_EQ(listener->spaceNum, 1);
-    ASSERT_EQ(listener->partNum, 9);
+    ASSERT_EQ(1, listener->spaceNum);
+    ASSERT_EQ(9, listener->partNum);
     {
         auto ret = client->createSpace("default_space_1", 5, 1);
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
     sleep(FLAGS_load_data_interval_second + 1);
-    ASSERT_EQ(listener->spaceNum, 2);
-    ASSERT_EQ(listener->partNum, 14);
+    ASSERT_EQ(2, listener->spaceNum);
+    ASSERT_EQ(14, listener->partNum);
 }
 
 }  // namespace meta
