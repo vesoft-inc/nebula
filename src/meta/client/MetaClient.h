@@ -56,16 +56,22 @@ public:
     /**
      * TODO(dangleptr): Use one struct to represent space description.
      * */
-    StatusOr<GraphSpaceID> createSpace(std::string name, int32_t partsNum, int32_t replicaFator);
+    folly::Future<StatusOr<GraphSpaceID>>
+    createSpace(std::string name, int32_t partsNum, int32_t replicaFator);
 
-    StatusOr<std::vector<SpaceIdName>> listSpaces();
+    folly::Future<StatusOr<std::vector<SpaceIdName>>>
+    listSpaces();
 
-    Status addHosts(const std::vector<HostAddr>& hosts);
+    folly::Future<StatusOr<bool>>
+    addHosts(const std::vector<HostAddr>& hosts);
 
-    StatusOr<std::vector<HostAddr>> listHosts();
+    folly::Future<StatusOr<std::vector<HostAddr>>>
+    listHosts();
 
-    StatusOr<PartsAlloc> getPartsAlloc(GraphSpaceID spaceId);
+    folly::Future<StatusOr<PartsAlloc>>
+    getPartsAlloc(GraphSpaceID spaceId);
 
+    // These are the interfaces about cache opeartions.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
@@ -107,6 +113,21 @@ protected:
     >
     Response collectResponse(Request req, RemoteFunc remoteFunc);
 
+    template<class Request,
+             class RemoteFunc,
+             class RespGenerator,
+             class RpcResponse =
+                typename std::result_of<
+                    RemoteFunc(std::shared_ptr<meta::cpp2::MetaServiceAsyncClient>, Request)
+                >::type::value_type,
+             class Response =
+                typename std::result_of<RespGenerator(RpcResponse)>::type
+    >
+    folly::Future<StatusOr<Response>> getResponse(
+                                    Request req,
+                                    RemoteFunc remoteFunc,
+                                    RespGenerator respGen);
+
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
@@ -127,7 +148,6 @@ private:
     folly::RWSpinLock localCacheLock_;
     MetaChangedListener* listener_{nullptr};
 };
-
 }  // namespace meta
 }  // namespace nebula
 #endif  // META_METACLIENT_H_
