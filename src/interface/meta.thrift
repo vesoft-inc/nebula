@@ -29,9 +29,9 @@ enum ErrorCode {
 } (cpp.enum_strict)
 
 union ID {
-    common.GraphSpaceID  space_id,
-    common.TagID         tag_id,
-    common.EdgeType      edge_type,
+    1: common.GraphSpaceID  space_id,
+    2: common.TagID         tag_id,
+    3: common.EdgeType      edge_type,
 }
 
 struct IdName {
