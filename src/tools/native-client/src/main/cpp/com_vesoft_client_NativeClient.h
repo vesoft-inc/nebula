@@ -33,6 +33,25 @@ extern "C" {
 JNIEXPORT jbyteArray JNICALL Java_com_vesoft_client_NativeClient_encode
   (JNIEnv *, jclass, jobjectArray);
 
+/*
+ * Class:     com_vesoft_client_NativeClient
+ * Method:    decode
+ * Signature: ([B[Lcom/vesoft/client/NativeClient/Pair;)Ljava/util/Map;
+ */
+JNIEXPORT jobject JNICALL Java_com_vesoft_client_NativeClient_decode
+  (JNIEnv *, jclass, jbyteArray, jobjectArray);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class com_vesoft_client_NativeClient_Pair */
+
+#ifndef _Included_com_vesoft_client_NativeClient_Pair
+#define _Included_com_vesoft_client_NativeClient_Pair
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef __cplusplus
 }
 #endif
