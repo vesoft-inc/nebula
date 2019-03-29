@@ -9,6 +9,7 @@ package com.vesoft.client;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 
 import org.rocksdb.EnvOptions;
@@ -21,6 +22,29 @@ import org.slf4j.LoggerFactory;
 public class NativeClient implements AutoCloseable {
     static {
         System.loadLibrary("nebula_native_client");
+    }
+
+    public static class Pair {
+        private String field;
+        private String clazz;
+
+        public Pair(String field, String clazz) {
+            this.field = field;
+            this.clazz = clazz;
+        }
+
+        public String getField() {
+            return field;
+        }
+
+        public String getClazz() {
+            return clazz;
+        }
+
+        @Override
+        public String toString() {
+            return "Pair{" + "field='" + field + '\'' + ", clazz=" + clazz + '}';
+        }
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NativeClient.class.getName());
@@ -137,6 +161,12 @@ public class NativeClient implements AutoCloseable {
 
     public static byte[] encoded(Object[] values) {
         return encode(values);
+    }
+
+    private static native Map<String, byte[]> decode(byte[] encoded, Pair[] fields);
+
+    public static Map<String, byte[]> decoded(byte[] encoded, Pair[] fields) {
+        return decode(encoded, fields);
     }
 
     private boolean checkKey(String key) {
