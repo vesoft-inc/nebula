@@ -48,7 +48,7 @@ void MetaClient::init() {
 }
 
 void MetaClient::loadDataThreadFunc() {
-    auto ret = listSpaces();
+    auto ret = listSpaces().get();
     if (!ret.ok()) {
         LOG(ERROR) << "List space failed!";
         return;
@@ -57,7 +57,7 @@ void MetaClient::loadDataThreadFunc() {
     decltype(spaceIndexByName_) indexByName;
     for (auto space : ret.value()) {
         auto spaceId = space.first;
-        auto r = getPartsAlloc(spaceId);
+        auto r = getPartsAlloc(spaceId).get();
         if (!r.ok()) {
             LOG(ERROR) << "Get parts allocaction failed for spaceId " << spaceId;
             return;
@@ -91,46 +91,57 @@ MetaClient::reverse(const PartsAlloc& parts) {
     return hosts;
 }
 
-template<typename Request, typename RemoteFunc, typename Response>
-Response MetaClient::collectResponse(Request req,
-                                     RemoteFunc remoteFunc) {
-    folly::Promise<Response> pro;
+template<typename Request,
+         typename RemoteFunc,
+         typename RespGenerator,
+         typename RpcResponse,
+         typename Response>
+folly::Future<StatusOr<Response>> MetaClient::getResponse(
+                                     Request req,
+                                     RemoteFunc remoteFunc,
+                                     RespGenerator respGen) {
+    folly::Promise<StatusOr<Response>> pro;
     auto f = pro.getFuture();
     auto* evb = ioThreadPool_->getEventBase();
     auto client = clientsMan_->client(active_, evb);
-    remoteFunc(client, std::move(req)).then(evb, [&](folly::Try<Response>&& resp) {
-        pro.setValue(resp.value());
+    remoteFunc(client, std::move(req))
+         .then(evb, [p = std::move(pro), respGen, this] (folly::Try<RpcResponse>&& t) mutable {
+        if (t.hasException()) {
+            LOG(ERROR) << "Rpc failed!";
+        } else {
+            auto&& resp = t.value();
+            if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
+                p.setValue(this->handleResponse(resp));
+            }
+            p.setValue(respGen(std::move(resp)));
+        }
     });
-    return std::move(f).get();
+    return f;
 }
 
-StatusOr<GraphSpaceID>
+folly::Future<StatusOr<GraphSpaceID>>
 MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFactor) {
     cpp2::CreateSpaceReq req;
     req.set_space_name(std::move(name));
     req.set_parts_num(partsNum);
     req.set_replica_factor(replicaFactor);
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_createSpace(request);
-                });
-    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-        return handleResponse(resp);
-    }
-    return resp.get_id().get_space_id();
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_createSpace(request);
+            }, [] (cpp2::ExecResp&& resp) -> GraphSpaceID {
+                return resp.get_id().get_space_id();
+            });
 }
 
-StatusOr<std::vector<SpaceIdName>> MetaClient::listSpaces() {
+folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
     cpp2::ListSpacesReq req;
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+    return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_listSpaces(request);
+                }, [this] (cpp2::ListSpacesResp&& resp) -> decltype(auto) {
+                    return this->toSpaceIdName(resp.get_spaces());
                 });
-    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-        return handleResponse(resp);
-    }
-    return toSpaceIdName(resp.get_spaces());
 }
 
-Status MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
+folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
     std::vector<nebula::cpp2::HostAddr> thriftHosts;
     thriftHosts.resize(hosts.size());
     std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
@@ -141,38 +152,35 @@ Status MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
     });
     cpp2::AddHostsReq req;
     req.set_hosts(std::move(thriftHosts));
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+    return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_addHosts(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 });
-    return handleResponse(resp);
 }
 
-StatusOr<std::vector<HostAddr>> MetaClient::listHosts() {
+folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::listHosts() {
     cpp2::ListHostsReq req;
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_listHosts(request);
-                });
-    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-        return handleResponse(resp);
-    }
-    return to(resp.hosts);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_listHosts(request);
+            }, [this] (cpp2::ListHostsResp&& resp) -> decltype(auto) {
+                return this->to(resp.hosts);
+            });
 }
 
-StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>
+folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
 MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
     cpp2::GetPartsAllocReq req;
     req.set_space_id(spaceId);
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+    return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_getPartsAlloc(request);
-                });
-    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-        return handleResponse(resp);
-    }
-    std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
-    for (auto it = resp.parts.begin(); it != resp.parts.end(); it++) {
-        parts.emplace(it->first, to(it->second));
-    }
-    return parts;
+                }, [this] (cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
+        std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
+        for (auto it = resp.parts.begin(); it != resp.parts.end(); it++) {
+            parts.emplace(it->first, to(it->second));
+        }
+        return parts;
+    });
 }
 
 StatusOr<GraphSpaceID>
