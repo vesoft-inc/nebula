@@ -41,8 +41,9 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     LOG(INFO) << "Add hosts and create space....";
     {
         auto mClient = std::make_unique<meta::MetaClient>();
-        ASSERT_EQ(Status::OK(), mClient->addHosts({HostAddr(localIp, localDataPort)}));
-        auto ret = mClient->createSpace("default", 10, 1);
+        auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
+        ASSERT_TRUE(r.ok());
+        auto ret = mClient->createSpace("default", 10, 1).get();
         spaceId = ret.value();
     }
     sleep(2 * FLAGS_load_data_interval_second + 1);
