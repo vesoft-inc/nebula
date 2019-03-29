@@ -52,11 +52,12 @@ class GraphScanner;
     nebula::ValueList                      *value_list;
     nebula::UpdateList                     *update_list;
     nebula::UpdateItem                     *update_item;
+    nebula::EdgeList                       *edge_list;
 }
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_DEFINE KW_VERTEX KW_TTL
-%token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE
+%token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP
 /* symbols */
@@ -89,19 +90,20 @@ class GraphScanner;
 %type <value_list> value_list
 %type <update_list> update_list
 %type <update_item> update_item
+%type <edge_list> edge_list
 
 %type <intval> ttl_spec
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
 
-%type <sentence> go_sentence match_sentence use_sentence
+%type <sentence> go_sentence match_sentence use_sentence find_sentence
 %type <sentence> define_tag_sentence define_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
 %type <sentence> maintainance_sentence insert_vertex_sentence insert_edge_sentence
-%type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence
+%type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
 %type <sentence> show_sentence
 %type <sentence> sentence
 %type <sentences> sentences
@@ -389,6 +391,14 @@ match_sentence
     : KW_MATCH { $$ = new MatchSentence; }
     ;
 
+find_sentence
+    : KW_FIND prop_list KW_FROM LABEL where_clause {
+        auto sentence = new FindSentence($4, $2);
+        sentence->setWhereClause($5);
+        $$ = sentence;
+    }
+    ;
+
 use_sentence
     : KW_USE KW_SPACE LABEL { $$ = new UseSentence($3); }
     ;
@@ -476,6 +486,7 @@ describe_edge_sentence
 traverse_sentence
     : go_sentence {}
     | match_sentence {}
+    | find_sentence {}
     ;
 
 set_sentence
@@ -672,11 +683,40 @@ show_sentence
     }
     ;
 
+delete_vertex_sentence
+    : KW_DELETE KW_VERTEX id_list where_clause {
+        auto sentence = new DeleteVertexSentence($3);
+        sentence->setWhereClause($4);
+        $$ = sentence;
+    }
+    ;
+
+edge_list
+    : INTEGER R_ARROW INTEGER {
+        $$ = new EdgeList();
+        $$->addEdge($1, $3);
+    }
+    | edge_list COMMA INTEGER R_ARROW INTEGER {
+        $$ = $1;
+        $$->addEdge($3, $5);
+    }
+    ;
+
+delete_edge_sentence
+    : KW_DELETE KW_EDGE edge_list where_clause {
+        auto sentence = new DeleteEdgeSentence($3);
+        sentence->setWhereClause($4);
+        $$ = sentence;
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence {}
     | insert_edge_sentence {}
     | update_vertex_sentence {}
     | update_edge_sentence {}
+    | delete_vertex_sentence {}
+    | delete_edge_sentence {}
     ;
 
 maintainance_sentence
