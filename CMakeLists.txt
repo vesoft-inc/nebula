@@ -263,8 +263,8 @@ macro(nebula_link_libraries target)
         ${KRB5_LIBRARIES}
         ${COMPRESSION_LIBRARIES}
         dl
-        ${LIBUNWIND_LIBRARIES}
         ${JEMALLOC_LIB}
+        ${LIBUNWIND_LIBRARIES}
         -pthread
     )
 endmacro(nebula_link_libraries)
