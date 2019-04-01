@@ -29,7 +29,7 @@ private:
     explicit AddTagProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    StatusOr<TagID> findTag(const std::string& tagName);
+    StatusOr<TagID> getTag(const std::string& tagName);
 };
 
 }  // namespace meta

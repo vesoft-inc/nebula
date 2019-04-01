@@ -5,24 +5,17 @@
  */
 
 #include "meta/processors/ListSpacesProcessor.h"
-#include <chrono>
 
 namespace nebula {
 namespace meta {
 
 void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
     UNUSED(req);
-    auto& spaceLock = LockUtils::spaceLock();
-    if (!spaceLock.try_lock_shared_for(std::chrono::milliseconds(50))) {
-        resp_.set_code(cpp2::ErrorCode::E_TABLE_LOCKED);
-        onFinished();
-        return;
-    }
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        spaceLock.unlock_shared();
         resp_.set_code(to(ret));
         onFinished();
         return;
@@ -37,7 +30,6 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
                             spaceName.str());
         iter->next();
     }
-    spaceLock.unlock_shared();
     resp_.set_spaces(std::move(spaces));
     onFinished();
 }

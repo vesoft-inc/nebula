@@ -5,25 +5,18 @@
  */
 
 #include "meta/processors/GetPartsAllocProcessor.h"
-#include <chrono>
 
 namespace nebula {
 namespace meta {
 
 void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
-    auto& spaceLock = LockUtils::spaceLock();
-    if (!spaceLock.try_lock_shared_for(std::chrono::microseconds(50))) {
-        resp_.set_code(cpp2::ErrorCode::E_TABLE_LOCKED);
-        onFinished();
-        return;
-    }
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto spaceId = req.get_space_id();
     auto prefix = MetaUtils::partPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     resp_.set_code(to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        spaceLock.unlock_shared();
         onFinished();
         return;
     }
@@ -36,7 +29,6 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
         parts.emplace(partId, std::move(partHosts));
         iter->next();
     }
-    spaceLock.unlock_shared();
     resp_.set_parts(std::move(parts));
     onFinished();
 }

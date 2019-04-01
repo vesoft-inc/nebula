@@ -17,19 +17,18 @@ void AddTagProcessor::process(const cpp2::AddTagReq& req) {
         return;
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    TagID tagId = -1;
-    auto ret = findTag(req.get_tag_name());
-    auto version = time::TimeUtils::nowInMSeconds();
+    auto ret = getTag(req.get_tag_name());
     std::vector<kvstore::KV> data;
     if (ret.ok()) {
-        LOG(INFO) << "Tag " << req.get_tag_name() << " has been existed!";
-        tagId = ret.value();
-    } else {
-        tagId = autoIncrementId();
-        LOG(INFO) << "This is a new Tag:" << req.get_tag_name();
-        data.emplace_back(MetaUtils::indexKey(EntryType::TAG, req.get_tag_name()),
-                          std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
+        resp_.set_id(to(ret.value(), EntryType::TAG));
+        resp_.set_code(cpp2::ErrorCode::E_TAG_EXISTED);
+        onFinished();
+        return;
     }
+    auto version = time::TimeUtils::nowInMSeconds();
+    TagID tagId = autoIncrementId();
+    data.emplace_back(MetaUtils::indexKey(EntryType::TAG, req.get_tag_name()),
+                      std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
     LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaUtils::schemaTagKey(req.get_space_id(), tagId, version),
                       MetaUtils::schemaTagVal(req.get_schema()));
@@ -38,7 +37,7 @@ void AddTagProcessor::process(const cpp2::AddTagReq& req) {
     doPut(std::move(data));
 }
 
-StatusOr<TagID> AddTagProcessor::findTag(const std::string& tagName) {
+StatusOr<TagID> AddTagProcessor::getTag(const std::string& tagName) {
     auto indexKey = MetaUtils::indexKey(EntryType::TAG, tagName);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
