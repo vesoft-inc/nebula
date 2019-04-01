@@ -10,8 +10,8 @@ namespace nebula {
 namespace meta {
 
 void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
-    folly::RWSpinLock::WriteHolder wHolder(LockUtils::spaceLock());
-    auto spaceRet = checkSpace(req.get_space_name());
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+    auto spaceRet = getSpaceId(req.get_space_name());
     if (spaceRet.ok()) {
         resp_.set_id(to(spaceRet.value(), EntryType::SPACE));
         resp_.set_code(cpp2::ErrorCode::E_SPACE_EXISTED);
@@ -58,8 +58,7 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
     return pickedHosts;
 }
 
-// TODO(dangleptr) Maybe we could use index to improve the efficient
-StatusOr<GraphSpaceID> CreateSpaceProcessor::checkSpace(const std::string& name) {
+StatusOr<GraphSpaceID> CreateSpaceProcessor::getSpaceId(const std::string& name) {
     auto indexKey = MetaUtils::indexKey(EntryType::SPACE, name);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
@@ -67,7 +66,7 @@ StatusOr<GraphSpaceID> CreateSpaceProcessor::checkSpace(const std::string& name)
         try {
             return folly::to<GraphSpaceID>(val);
         } catch (std::exception& e) {
-            LOG(ERROR) << "Convert failed for " << val;
+            LOG(ERROR) << "Convert failed for " << val << ", msg " << e.what();
         }
     }
     return Status::SpaceNotFound();

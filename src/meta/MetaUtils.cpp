@@ -12,12 +12,12 @@
 namespace nebula {
 namespace meta {
 
-const std::string kSpacesTable = "__spaces__";  //NOLINT
-const std::string kPartsTable  = "__parts__";   //NOLINT
-const std::string kHostsTable  = "__hosts__";   //NOLINT
-const std::string kTagsTable   = "__tags__";    //NOLINT
-const std::string kEdgesTable  = "__edges__";   //NOLINT
-const std::string kIndexTable  = "__index__";   //NOLINT
+const std::string kSpacesTable = "__spaces__";  // NOLINT
+const std::string kPartsTable  = "__parts__";   // NOLINT
+const std::string kHostsTable  = "__hosts__";   // NOLINT
+const std::string kTagsTable   = "__tags__";    // NOLINT
+const std::string kEdgesTable  = "__edges__";   // NOLINT
+const std::string kIndexTable  = "__index__";   // NOLINT
 
 std::string MetaUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;

@@ -11,12 +11,12 @@ namespace nebula {
 namespace meta {
 
 void AddTagProcessor::process(const cpp2::AddTagReq& req) {
-    if (!spaceExist(req.get_space_id())) {
+    if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    folly::RWSpinLock::WriteHolder wHolder(LockUtils::tagLock());
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     TagID tagId = -1;
     auto ret = findTag(req.get_tag_name());
     auto version = time::TimeUtils::nowInMSeconds();
@@ -46,7 +46,7 @@ StatusOr<TagID> AddTagProcessor::findTag(const std::string& tagName) {
         try {
             return folly::to<TagID>(val);
         } catch (std::exception& e) {
-            LOG(ERROR) << "Convert failed for " << val;
+            LOG(ERROR) << "Convert failed for " << val << ", msg " << e.what();
         }
     }
     return Status::Error("No Tag!");

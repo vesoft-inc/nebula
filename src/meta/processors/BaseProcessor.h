@@ -8,10 +8,9 @@
 #define META_BASEPROCESSOR_H_
 
 #include "base/Base.h"
-#include <mutex>
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
-#include <folly/RWSpinLock.h>
+#include <folly/SharedMutex.h>
 #include "interface/gen-cpp2/meta_types.h"
 #include "base/StatusOr.h"
 #include "time/Duration.h"
@@ -24,9 +23,9 @@ namespace meta {
 class LockUtils {
 public:
     LockUtils() = delete;
-#define GENERATE_LOCK(E) \
-    static folly::RWSpinLock& E##Lock() { \
-        static folly::RWSpinLock l; \
+#define GENERATE_LOCK(Entry) \
+    static folly::SharedMutex& Entry##Lock() { \
+        static folly::SharedMutex l; \
         return l; \
     }
 
@@ -70,7 +69,7 @@ protected:
     }
 
     template<class T>
-    typename std::enable_if<std::is_integral<T>::value, cpp2::ID>::type
+    std::enable_if_t<std::is_integral<T>::value, cpp2::ID>
     to(T id, EntryType type) {
         cpp2::ID thriftID;
         switch (type) {
@@ -105,7 +104,7 @@ protected:
     /**
      * Check spaceId exist or not.
      * */
-    bool spaceExist(GraphSpaceID spaceId);
+    Status spaceExist(GraphSpaceID spaceId);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

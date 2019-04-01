@@ -5,6 +5,7 @@
  */
 
 #include "meta/processors/ListSpacesProcessor.h"
+#include <chrono>
 
 namespace nebula {
 namespace meta {
@@ -12,7 +13,7 @@ namespace meta {
 void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
     UNUSED(req);
     auto& spaceLock = LockUtils::spaceLock();
-    if (!spaceLock.try_lock_shared()) {
+    if (!spaceLock.try_lock_shared_for(std::chrono::milliseconds(50))) {
         resp_.set_code(cpp2::ErrorCode::E_TABLE_LOCKED);
         onFinished();
         return;

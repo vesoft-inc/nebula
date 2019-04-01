@@ -41,7 +41,7 @@ StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
 
 template<typename RESP>
 int32_t BaseProcessor<RESP>::autoIncrementId() {
-    folly::RWSpinLock::WriteHolder holder(LockUtils::idLock());
+    folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     static const std::string kIdKey = "__id__";
     int32_t id;
     std::string val;
@@ -64,15 +64,15 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
 }
 
 template<typename RESP>
-bool BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
-    folly::RWSpinLock::ReadHolder rHolder(LockUtils::spaceLock());
+Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto spaceKey = MetaUtils::spaceKey(spaceId);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, spaceKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
-        return true;
+        return Status::OK();
     }
-    return false;
+    return Status::SpaceNotFound();
 }
 
 }  // namespace meta

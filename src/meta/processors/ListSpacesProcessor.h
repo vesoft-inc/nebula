@@ -23,9 +23,6 @@ public:
 private:
     explicit ListSpacesProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ListSpacesResp>(kvstore) {}
-
-private:
-    std::unique_ptr<folly::RWSpinLock::ReadHolder> rHolder_;
 };
 
 }  // namespace meta

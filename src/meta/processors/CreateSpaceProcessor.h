@@ -26,9 +26,9 @@ protected:
                                             const std::vector<nebula::cpp2::HostAddr>& hosts,
                                             int32_t replicaFactor);
     /**
-     * Check space_name exists or not, if existed, return the id.
+     * Return the spaceId for name.
      * */
-    StatusOr<GraphSpaceID> checkSpace(const std::string& name);
+    StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
 
 private:
     explicit CreateSpaceProcessor(kvstore::KVStore* kvstore)

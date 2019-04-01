@@ -11,7 +11,7 @@ namespace meta {
 
 
 void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
-    folly::RWSpinLock::WriteHolder wHolder(LockUtils::spaceLock());
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     std::vector<kvstore::KV> data;
     for (auto& h : req.get_hosts()) {
         data.emplace_back(MetaUtils::hostKey(h.ip, h.port), MetaUtils::hostVal());

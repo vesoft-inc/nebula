@@ -5,13 +5,14 @@
  */
 
 #include "meta/processors/GetPartsAllocProcessor.h"
+#include <chrono>
 
 namespace nebula {
 namespace meta {
 
 void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
     auto& spaceLock = LockUtils::spaceLock();
-    if (!spaceLock.try_lock_shared()) {
+    if (!spaceLock.try_lock_shared_for(std::chrono::microseconds(50))) {
         resp_.set_code(cpp2::ErrorCode::E_TABLE_LOCKED);
         onFinished();
         return;
