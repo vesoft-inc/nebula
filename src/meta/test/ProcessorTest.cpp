@@ -165,14 +165,23 @@ TEST(ProcessorTest, KVOperationTest) {
     {
         // Get Test
         cpp2::GetReq req;
-        req.set_key("key");
+        req.set_key("key_0");
 
         auto* processor = GetProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ("value", resp.value);
+        ASSERT_EQ("value_0", resp.value);
+
+        cpp2::GetReq missedReq;
+        missedReq.set_key("missed_key");
+
+        auto* missedProcessor = GetProcessor::instance(kv.get());
+        auto missedFuture = missedProcessor->getFuture();
+        missedProcessor->process(missedReq);
+        auto missedResp = std::move(missedFuture).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_STORE_FAILURE, missedResp.code);
     }
     {
         // Multi Get Test

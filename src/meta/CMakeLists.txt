@@ -30,6 +30,7 @@ add_dependencies(
     meta_service_handler
     base_obj
     meta_thrift_obj
+    common_thrift_obj
     kvstore_obj
 )
 

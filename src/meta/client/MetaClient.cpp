@@ -15,7 +15,7 @@ DEFINE_int32(meta_client_io_threads, 3, "meta client io threads");
 /**
  * check argument is empty
  */
-#define CHECK_PARAMETER(argument) \
+#define CHECK_PARAMETER_AND_RETURN_STATUS(argument) \
     if (argument.empty()) { \
         return Status::Error("argument is invalid!"); \
     }
@@ -200,9 +200,9 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
     return Status::SpaceNotFound();
 }
 
-Status
+folly::Future<StatusOr<bool>>
 MetaClient::multiPut(const std::vector<std::pair<std::string, std::string>>& pairs) {
-    CHECK_PARAMETER(pairs);
+    CHECK_PARAMETER_AND_RETURN_STATUS(pairs);
     cpp2::MultiPutReq req;
     std::vector<cpp2::Pair> data;
     for (auto const &element : pairs) {
@@ -210,78 +210,75 @@ MetaClient::multiPut(const std::vector<std::pair<std::string, std::string>>& pai
                           element.first, element.second);
     }
     req.set_pairs(std::move(data));
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+    return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_multiPut(request);
+                }, [this] (cpp2::MultiPutResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 });
-    return handleResponse(resp);
 }
 
-StatusOr<std::string>
+folly::Future<StatusOr<std::string>>
 MetaClient::get(const std::string& key) {
-    CHECK_PARAMETER(key);
+    CHECK_PARAMETER_AND_RETURN_STATUS(key);
     cpp2::GetReq req;
     req.set_key(key);
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+    return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_get(request);
+                }, [this] (cpp2::GetResp&& resp) -> std::string {
+                    return resp.get_value();
                 });
-    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-        return handleResponse(resp);
-    }
-    return resp.get_value();
 }
 
-StatusOr<std::vector<std::string>>
+folly::Future<StatusOr<std::vector<std::string>>>
 MetaClient::multiGet(const std::vector<std::string>& keys) {
-    CHECK_PARAMETER(keys);
+    CHECK_PARAMETER_AND_RETURN_STATUS(keys);
     cpp2::MultiGetReq req;
     req.set_keys(keys);
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+    return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_multiGet(request);
+                }, [this] (cpp2::MultiGetResp&& resp) -> std::vector<std::string> {
+                    return resp.get_values();
                 });
-    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-        return handleResponse(resp);
-    }
-    return resp.get_values();
 }
 
-StatusOr<std::vector<std::string>>
+folly::Future<StatusOr<std::vector<std::string>>>
 MetaClient::scan(const std::string& start, const std::string& end) {
-    CHECK_PARAMETER(start);
-    CHECK_PARAMETER(end);
+    CHECK_PARAMETER_AND_RETURN_STATUS(start);
+    CHECK_PARAMETER_AND_RETURN_STATUS(end);
     cpp2::ScanReq req;
     req.set_start(start);
     req.set_end(end);
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_scan(request);
-                });
-    if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-        return handleResponse(resp);
-    }
-    return resp.get_values();
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_scan(request);
+            }, [this] (cpp2::ScanResp&& resp) -> std::vector<std::string> {
+                return resp.get_values();
+            });
 }
 
-Status
+folly::Future<StatusOr<bool>>
 MetaClient::remove(const std::string& key) {
-    CHECK_PARAMETER(key);
+    CHECK_PARAMETER_AND_RETURN_STATUS(key);
     cpp2::RemoveReq req;
     req.set_key(key);
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_remove(request);
-                });
-    return handleResponse(resp);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_remove(request);
+            }, [this] (cpp2::RemoveResp&& resp) -> bool {
+                return resp.code == cpp2::ErrorCode::SUCCEEDED;
+            });
 }
 
-Status
+folly::Future<StatusOr<bool>>
 MetaClient::removeRange(const std::string& start, const std::string& end) {
-    CHECK_PARAMETER(start);
-    CHECK_PARAMETER(end);
+    CHECK_PARAMETER_AND_RETURN_STATUS(start);
+    CHECK_PARAMETER_AND_RETURN_STATUS(end);
     cpp2::RemoveRangeReq req;
     req.set_start(start);
     req.set_end(end);
-    auto resp = collectResponse(std::move(req), [] (auto client, auto request) {
+    return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_removeRange(request);
+                }, [] (cpp2::RemoveRangeResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 });
-    return handleResponse(resp);
 }
 
 std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& tHosts) {

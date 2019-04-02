@@ -197,15 +197,6 @@ struct MultiPutResp {
     1: ErrorCode code,
 }
 
-struct GetReq {
-    1: string key,
-}
-
-struct GetResp {
-    1: ErrorCode code,
-    2: string    value,
-}
-
 struct MultiGetReq {
     1: list<string> keys,
 }
