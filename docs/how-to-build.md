@@ -22,3 +22,6 @@ The project itself includes the source code of several 3rd-party libraries, whic
   ncurses
   readline
 
+Currently, we using `git-lfs` to manage the 3rd-party libraries. You should make sure `git-lfs` have been installed before building the source code.
+
+Please see [INSTALLING.md](https://github.com/git-lfs/git-lfs/blob/master/INSTALLING.md) for more details.

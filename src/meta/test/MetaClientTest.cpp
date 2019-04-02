@@ -32,27 +32,28 @@ TEST(MetaClientTest, InterfacesTest) {
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-        ASSERT_EQ(Status::OK(), client->addHosts(hosts));
-        auto ret = client->listHosts();
+        auto r = client->addHosts(hosts).get();
+        ASSERT_TRUE(r.ok());
+        auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(hosts, ret.value());
     }
     {
         // Test createSpace, listSpaces, getPartsAlloc.
         {
-            auto ret = client->createSpace("default_space", 9, 3);
+            auto ret = client->createSpace("default_space", 9, 3).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             spaceId = ret.value();
         }
         {
-            auto ret = client->listSpaces();
+            auto ret = client->listSpaces().get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             ASSERT_EQ(1, ret.value().size());
             ASSERT_EQ(1, ret.value()[0].first);
             ASSERT_EQ("default_space", ret.value()[0].second);
         }
         {
-            auto ret = client->getPartsAlloc(spaceId);
+            auto ret = client->getPartsAlloc(spaceId).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             for (auto it = ret.value().begin(); it != ret.value().end(); it++) {
                 auto startIndex = it->first;
@@ -191,20 +192,21 @@ TEST(MetaClientTest, DiffTest) {
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}};
-        ASSERT_EQ(Status::OK(), client->addHosts(hosts));
-        auto ret = client->listHosts();
+        auto r = client->addHosts(hosts).get();
+        ASSERT_TRUE(r.ok());
+        auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(hosts, ret.value());
     }
     {
-        auto ret = client->createSpace("default_space", 9, 1);
+        auto ret = client->createSpace("default_space", 9, 1).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
     sleep(FLAGS_load_data_interval_second + 1);
     ASSERT_EQ(1, listener->spaceNum);
     ASSERT_EQ(9, listener->partNum);
     {
-        auto ret = client->createSpace("default_space_1", 5, 1);
+        auto ret = client->createSpace("default_space_1", 5, 1).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
     sleep(FLAGS_load_data_interval_second + 1);
