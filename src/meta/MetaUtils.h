@@ -51,6 +51,16 @@ public:
     static std::string schemaTagKey(TagID tagId, int32_t version);
 
     static std::string schemaTagVal(nebula::cpp2::Schema schema);
+
+    static std::string userKey(GraphSpaceID spaceId, const std::string& name);
+
+    static std::string userVal(RoleType type, const std::string& pwd);
+
+    static std::string userPrefix(GraphSpaceID spaceId);
+
+    static std::string encPassword(const std::string &pwd);
+
+    static nebula::cpp2::UserItem parseUserItem(const std::string& key, const std::string& val);
 };
 
 }  // namespace meta

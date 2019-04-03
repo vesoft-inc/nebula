@@ -35,6 +35,25 @@ public:
     folly::Future<cpp2::GetPartsAllocResp>
     future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) override;
 
+    // User management and authentication
+    folly::Future<cpp2::ExecResp>
+    future_createUser(const cpp2::CreateUserReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_dropUser(const cpp2::DropUserReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_alterUser(const cpp2::AlterUserReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_grantToUser(const cpp2::GrantToUserReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_revokeFromUser(const cpp2::RevokeFromUserReq& req) override;
+
+    folly::Future<cpp2::ListUsersResp>
+    future_listUsers(const cpp2::ListUsersReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
 };

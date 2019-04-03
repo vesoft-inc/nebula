@@ -24,6 +24,9 @@ enum ErrorCode {
     E_NO_HOSTS       = -21,
     E_SPACE_EXISTED  = -22,
     E_NOT_FOUND      = -23,
+    E_TABLE_LOCKED   = -24,
+    E_USER_EXISTED   = -25,
+    E_ROLE_ERROR     = -26,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -181,6 +184,48 @@ struct GetPartsAllocResp {
     3: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
 }
 
+// user management
+struct CreateUserReq {
+    1: common.GraphSpaceID space_id,
+    2: bool missing_ok,
+    3: string user_name,
+    4: string password,
+    5: common.RoleType role,
+}
+
+struct DropUserReq {
+    1: common.GraphSpaceID space_id,
+    2: bool missing_ok,
+    3: string user_name,
+}
+
+struct AlterUserReq {
+    1: common.GraphSpaceID space_id,
+    2: string user_name,
+    3: string password,
+}
+
+struct GrantToUserReq {
+    1: common.GraphSpaceID space_id,
+    2: string user_name,
+    3: common.RoleType role,
+}
+
+struct RevokeFromUserReq {
+    1: common.GraphSpaceID space_id,
+    2: string user_name,
+    3: common.RoleType role,
+}
+
+struct ListUsersReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ListUsersResp {
+    1: ErrorCode code,
+    3: list<common.UserItem> users;
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp deleteSpace(1: DeleteSpaceReq req);
@@ -202,5 +247,12 @@ service MetaService {
     ListHostsResp listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
+
+    ExecResp createUser(1: CreateUserReq req);
+    ExecResp dropUser(1: DropUserReq req);
+    ExecResp alterUser(1: AlterUserReq req);
+    ExecResp grantToUser(1: GrantToUserReq req);
+    ExecResp revokeFromUser(1: RevokeFromUserReq req);
+    ListUsersResp listUsers(1: ListUsersReq req);
 }
 

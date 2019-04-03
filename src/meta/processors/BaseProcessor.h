@@ -26,6 +26,23 @@ enum IDType {
     EDGE,
 };
 
+class LockUtils {
+public:
+    LockUtils() = delete;
+#define GENERATE_LOCK(Entry) \
+static folly::SharedMutex& Entry##Lock() { \
+    static folly::SharedMutex l; \
+    return l; \
+}
+
+    GENERATE_LOCK(space);
+    GENERATE_LOCK(id);
+    GENERATE_LOCK(tag);
+    GENERATE_LOCK(user);
+
+#undef GENERATE_LOCK
+};
+
 template<typename RESP>
 class BaseProcessor {
 public:
@@ -81,6 +98,8 @@ protected:
      * */
     void doPut(std::vector<kvstore::KV> data);
 
+    void doPut(std::vector<kvstore::KV> data, folly::SharedMutex& lock);
+
     /**
      * Get all hosts
      * */
@@ -95,6 +114,8 @@ protected:
      * Check space_name exists or not, if existed, return the id.
      * */
     StatusOr<GraphSpaceID> spaceExist(const std::string& name);
+
+    Status spaceExist(GraphSpaceID spaceId);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

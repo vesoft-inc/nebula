@@ -21,6 +21,8 @@ typedef i64 (cpp.type = "nebula::VertexID") VertexID
 typedef i32 (cpp.type = "nebula::IPv4") IPv4
 typedef i32 (cpp.type = "nebula::Port") Port
 
+typedef byte (cpp.type = "nebula::RoleType") RoleType
+
 // These are all data types supported in the graph properties
 enum SupportedType {
     UNKNOWN = 0,
@@ -71,6 +73,12 @@ struct Schema {
 struct HostAddr {
     1: IPv4  ip,
     2: Port  port,
+}
+
+struct UserItem {
+    1: string user_name,
+    2: string user_pwd,
+    3: RoleType role,
 }
 
 const ValueType kInvalidValueType = {"type" : UNKNOWN}

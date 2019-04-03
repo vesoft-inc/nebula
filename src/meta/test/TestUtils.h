@@ -10,6 +10,7 @@
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/AddHostsProcessor.h"
 #include "meta/processors/ListHostsProcessor.h"
+#include "meta/processors/AuthenticationProcessor.h"
 #include "meta/MetaServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
@@ -73,6 +74,29 @@ public:
             }
         }
         return hosts.size();
+    }
+
+    static bool assembleSpace(kvstore::KVStore* kv, GraphSpaceID id) {
+        bool ret = false;
+        std::vector<nebula::kvstore::KV> data;
+        data.emplace_back(MetaUtils::spaceKey(id), "test_space");
+        kv->asyncMultiPut(0, 0, std::move(data),
+                                [&] (kvstore::ResultCode code, HostAddr leader) {
+            ret = (code == kvstore::ResultCode::SUCCEEDED);
+            UNUSED(leader);
+        });
+        return ret;
+    }
+
+    static cpp2::ErrorCode createUser(kvstore::KVStore* kv, GraphSpaceID id , bool missing_ok,
+    std::string name, std::string pwd, nebula::cpp2::RoleType type) {
+        cpp2::CreateUserReq req(apache::thrift::FragileConstructor::FRAGILE,
+                id, missing_ok, name, pwd, type);
+        auto* processor = CreateUserProcessor::instance(kv);
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        return resp.code;
     }
 
     struct ServerContext {

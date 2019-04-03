@@ -5,6 +5,7 @@
  */
 
 #include "meta/MetaUtils.h"
+#include "proxygen/lib/utils/CryptUtil.h"
 #include <string.h>
 
 namespace nebula {
@@ -13,6 +14,7 @@ namespace meta {
 const char kSpacesTable[] = "__spaces__";
 const char kPartsTable[] = "__parts__";
 const char kHostsTable[] = "__hosts__";
+const std::string kUserTable  = "__user__";   // NOLINT
 
 std::string MetaUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
@@ -136,6 +138,48 @@ std::string MetaUtils::schemaTagKey(TagID tagId, int32_t version) {
 std::string MetaUtils::schemaTagVal(nebula::cpp2::Schema schema) {
     UNUSED(schema);
     return "";
+}
+
+std::string MetaUtils::userKey(GraphSpaceID spaceId, const std::string& name) {
+    std::string key;
+    key.reserve(kUserTable.size() + sizeof(GraphSpaceID) + name.length());
+    key.append(kUserTable.data(), kUserTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(name);
+    return key;
+}
+
+std::string MetaUtils::userVal(RoleType type, const std::string& pwd) {
+    std::string val;
+    std::string pwdSha = MetaUtils::encPassword(pwd);
+    val.reserve(sizeof(RoleType) + pwd.size());
+    val.append(reinterpret_cast<const char*>(&type), sizeof(RoleType));
+    val.append(pwdSha);
+    return val;
+}
+
+std::string MetaUtils::userPrefix(GraphSpaceID spaceId) {
+    std::string prefix;
+    prefix.reserve(kUserTable.size() + sizeof(GraphSpaceID));
+    prefix.append(kUserTable.data(), kUserTable.size());
+    prefix.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    return prefix;
+}
+
+std::string MetaUtils::encPassword(const std::string &pwd) {
+    return proxygen::md5Encode(folly::ByteRange(
+                    reinterpret_cast<const unsigned char*>(pwd.c_str()),
+                    pwd.length()));
+}
+
+nebula::cpp2::UserItem MetaUtils::parseUserItem(const std::string& key, const std::string& val) {
+    auto prefixLen = kUserTable.size() + sizeof(GraphSpaceID);
+    auto type = *reinterpret_cast<const nebula::cpp2::RoleType*>(val.data());
+    auto pwd = val.substr(sizeof(RoleType), val.size() - sizeof(RoleType));
+    auto name = key.substr(prefixLen, key.size() - prefixLen);
+    nebula::cpp2::UserItem userItem(apache::thrift::FragileConstructor::FRAGILE,
+            std::move(name), std::move(pwd), std::move(type));
+    return userItem;
 }
 
 }  // namespace meta
