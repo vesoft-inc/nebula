@@ -15,12 +15,12 @@ add_library(
     UseExecutor.cpp
     GoExecutor.cpp
     PipeExecutor.cpp
-    DefineEdgeExecutor.cpp
-    DefineTagExecutor.cpp
+    # DefineEdgeExecutor.cpp
+    # DefineTagExecutor.cpp
     AlterEdgeExecutor.cpp
     AlterTagExecutor.cpp
-    #    DescribeTagExecutor.cpp
-    #    DescribeEdgeExecutor.cpp
+    # DescribeTagExecutor.cpp
+    # DescribeEdgeExecutor.cpp
     InsertVertexExecutor.cpp
     InsertEdgeExecutor.cpp
     AssignmentExecutor.cpp
