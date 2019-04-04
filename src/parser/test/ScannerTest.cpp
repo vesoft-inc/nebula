@@ -212,6 +212,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("TIMESTAMP", TokenType::KW_TIMESTAMP),
         CHECK_SEMANTIC_TYPE("timestamp", TokenType::KW_TIMESTAMP),
         CHECK_SEMANTIC_TYPE("Timestamp", TokenType::KW_TIMESTAMP),
+        CHECK_SEMANTIC_TYPE("DELETE", TokenType::KW_DELETE),
+        CHECK_SEMANTIC_TYPE("delete", TokenType::KW_DELETE),
+        CHECK_SEMANTIC_TYPE("Delete", TokenType::KW_DELETE),
+        CHECK_SEMANTIC_TYPE("FIND", TokenType::KW_FIND),
+        CHECK_SEMANTIC_TYPE("find", TokenType::KW_FIND),
+        CHECK_SEMANTIC_TYPE("Find", TokenType::KW_FIND),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
