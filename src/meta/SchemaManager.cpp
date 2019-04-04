@@ -13,6 +13,9 @@
 DECLARE_string(schema_file);
 DECLARE_string(meta_server);
 
+DEFINE_bool(graph_id_from_server, false, "get graphID from meta server."
+                                         "This is a temp flag");
+
 namespace nebula {
 namespace meta {
 
@@ -35,7 +38,7 @@ void SchemaManager::init() {
         if (!FLAGS_schema_file.empty()) {
             return FileBasedSchemaManager::init();
         } else if (!FLAGS_meta_server.empty()) {
-            LOG(FATAL) << "ServerBasedSchemaManager has not been implemented";
+            return ServerBasedSchemaManager::init();
         } else {
             // Memory based SchemaManager
             return AdHocSchemaManager::init();
@@ -186,6 +189,9 @@ int32_t SchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge)
 
 // static
 GraphSpaceID SchemaManager::toGraphSpaceID(const folly::StringPiece spaceName) {
+    if (FLAGS_graph_id_from_server) {
+        return ServerBasedSchemaManager::toGraphSpaceID(spaceName);
+    }
     if (!FLAGS_schema_file.empty()) {
         return FileBasedSchemaManager::toGraphSpaceID(spaceName);
     } else if (!FLAGS_meta_server.empty()) {
@@ -252,7 +258,7 @@ const char* SchemaManager::getFieldName(int64_t index) const {
 }
 
 
-const cpp2::ValueType& SchemaManager::getFieldType(int64_t index) const {
+const nebula::cpp2::ValueType& SchemaManager::getFieldType(int64_t index) const {
     CHECK_GE(index, 0) << "Invalid index " << index;
     CHECK_LT(index, fields_.size()) << "Index is out of range";
 
@@ -260,7 +266,7 @@ const cpp2::ValueType& SchemaManager::getFieldType(int64_t index) const {
 }
 
 
-const cpp2::ValueType& SchemaManager::getFieldType(const folly::StringPiece name)
+const nebula::cpp2::ValueType& SchemaManager::getFieldType(const folly::StringPiece name)
         const {
     auto it = fieldNameIndex_.find(name.toString());
     CHECK(it != fieldNameIndex_.end())
