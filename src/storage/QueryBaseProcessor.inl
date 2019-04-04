@@ -225,21 +225,28 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
         return ret;
     }
-    EdgeRanking lastRank = -1;
+    EdgeRanking lastRank  = -1;
+    VertexID    lastDstId = 0;
+    bool        firstLoop = true;
     for (; iter->valid(); iter->next()) {
         auto key = iter->key();
         auto val = iter->val();
         auto rank = KeyUtils::getRank(key);
-        if (rank == lastRank) {
+        auto dstId = KeyUtils::getDstId(key);
+        if (!firstLoop && rank == lastRank && lastDstId == dstId) {
             VLOG(3) << "Only get the latest version for each edge.";
             continue;
         }
         lastRank = rank;
+        lastDstId = dstId;
         std::unique_ptr<RowReader> reader;
         if (type_ == BoundType::OUT_BOUND && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_, val, spaceId_, edgeType);
         }
         proc(reader.get(), key, props);
+        if (firstLoop) {
+            firstLoop = false;
+        }
     }
     return ret;
 }
