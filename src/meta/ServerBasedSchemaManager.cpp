@@ -14,9 +14,19 @@ DEFINE_string(meta_server, "",
 namespace nebula {
 namespace meta {
 
+std::unique_ptr<MetaClient> ServerBasedSchemaManager::client_;
+
+void ServerBasedSchemaManager::init() {
+    client_ = std::make_unique<MetaClient>();
+    client_->init();
+}
+
 // static
 GraphSpaceID ServerBasedSchemaManager::toGraphSpaceID(const folly::StringPiece spaceName) {
-    return folly::hash::fnv32_buf(spaceName.start(), spaceName.size());
+    auto spaceStr = spaceName.str();
+    auto ret = client_->getSpaceIdByNameFromCache(spaceStr);
+    CHECK(ret.ok());
+    return ret.value();
 }
 
 
