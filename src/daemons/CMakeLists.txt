@@ -58,7 +58,7 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
 )
-install(TARGETS storaged DESTINATION bin)
+install(TARGETS nebula-storaged DESTINATION bin)
 
 
 add_executable(
@@ -88,4 +88,4 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
 )
-install(TARGETS metad DESTINATION bin)
+install(TARGETS nebula-metad DESTINATION bin)

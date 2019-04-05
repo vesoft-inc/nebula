@@ -1,42 +1,53 @@
 #!/bin/sh
-
 #
 # Create a SRPM which can be used to build nebula
-#
-# ./make-srpm.sh <rpmbuild dir>
 # 
 #
 
 %global project_name nebula
 
 Name:     %{project_name}
-Version:  1.0.0
-Release:  1%{?dist}
+Version:  @VERSION@
+Release:  @RELEASE@%{?dist}
 Summary:  %{project_name} 
 License:  GPL
-
-# package tar name, this is a temp name
-Source:   nebula-1.0.0.tar.gz
+# the url to get tar.gz
+#URL:      http://
+# tar name, this is a temp name
+Source:   %{project_name}-@VERSION@.tar.gz
 
 # BuildRoot dir
 BuildRoot:%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
+# TODO: we should check dependence's version after adapt to different system versions
 BuildRequires:   gcc, gcc-c++
+BuildRequires:   libstdc++-static
 BuildRequires:   cmake
+BuildRequires:   make
 BuildRequires:   autoconf
 BuildRequires:   automake
+BuildRequires:   flex
+BuildRequires:   gperf
 BuildRequires:   libtool
 BuildRequires:   bison
 BuildRequires:   unzip
 BuildRequires:   boost
-BuildRequires:   gperf
+BuildRequires:   boost-devel
+BuildRequires:   boost-static
 BuildRequires:   openssl
+BuildRequires:   openssl-devel
 BuildRequires:   libunwind
+BuildRequires:   libunwind-devel
 BuildRequires:   ncurses
+BuildRequires:   ncurses-devel
 BuildRequires:   readline
+BuildRequires:   readline-devel
+BuildRequires:   python
+BuildRequires:   java-1.8.0-openjdk
+BuildRequires:   java-1.8.0-openjdk-devel
 Requires:        krb5
 
-%description 
+%description
 A high performance distributed graph database
 
 %prep
@@ -85,22 +96,22 @@ Group: Applications/Databases
 # metad rpm 
 %files metad
 %defattr(-,root,root,-)
-%{_bindir}/metad
+%{_bindir}/nebula-metad
 %{_datadir}/nebula-metad.service
 
 # TODO : add daemon to systemctl
 
 # after install , arg 1:install new packet, arg 2: update exist packet
-%post metad 
-%systemd_post nebula-metad.service
+#%%post metad
+#%%systemd_post nebula-metad.service
 
 # before uninstall, arg 0:delete  arg 1:update
-%preun metad  
-%systemd_preun nebula-metad.service
+#%%preun metad
+#%%systemd_preun nebula-metad.service
 
 # upgrade, arg 0:delete  arg 1:update
-%postun metad 
-%systemd_postun nebula-metad.service
+#%%postun metad
+#%%systemd_postun nebula-metad.service
 
 # graphd rpm
 %files graphd
@@ -111,28 +122,28 @@ Group: Applications/Databases
 
 # TODO : add daemon to systemctl
 
-%post graphd
-%systemd_post nebula-graphd.service  
+#%%post graphd
+#%%systemd_post nebula-graphd.service
 
-%preun graphd
-%systemd_preun nebula-graphd.service
+#%%preun graphd
+#%%systemd_preun nebula-graphd.service
 
-%postun graphd
-%systemd_postun nebula-graphd.service 
+#%%postun graphd
+#%%systemd_postun nebula-graphd.service
 
 %files storaged
 %defattr(-,root,root,-)
-%{_bindir}/storaged
+%{_bindir}/nebula-storaged
 %{_datadir}/nebula-storaged.service
 
-%post storaged
-%systemd_post nebula-storaged.service 
+#%%post storaged
+#%%systemd_post nebula-storaged.service
 
-%preun storaged
-%systemd_preun nebula-storaged.service
+#%%preun storaged
+#%%systemd_preun nebula-storaged.service
 
-%postun storaged
-%systemd_postun nebula-storaged.service
+#%%postun storaged
+#%%systemd_postun nebula-storaged.service
 
 %files nebula
 %defattr(-,root,root,-)
