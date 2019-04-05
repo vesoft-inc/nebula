@@ -30,7 +30,7 @@ install(TARGETS nebula-graphd DESTINATION bin)
 
 
 add_executable(
-    storaged
+    nebula-storaged
     StorageDaemon.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:storage_thrift_obj>
@@ -51,7 +51,7 @@ add_executable(
     $<TARGET_OBJECTS:ws_obj>
 )
 nebula_link_libraries(
-    storaged
+    nebula-storaged
     proxygenhttpserver
     proxygenlib
     ${ROCKSDB_LIBRARIES}
@@ -62,7 +62,7 @@ install(TARGETS nebula-storaged DESTINATION bin)
 
 
 add_executable(
-    metad
+    nebula-metad
     MetaDaemon.cpp
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
@@ -81,7 +81,7 @@ add_executable(
     $<TARGET_OBJECTS:ws_obj>
 )
 nebula_link_libraries(
-    metad
+    nebula-metad
     proxygenhttpserver
     proxygenlib
     ${ROCKSDB_LIBRARIES}
