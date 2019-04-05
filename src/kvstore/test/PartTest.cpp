@@ -17,7 +17,7 @@ TEST(PartTest, SimpleTest) {
     LOG(INFO) << "Simple test for shard class...";
 }
 
-TEST(PartTest, RocksdbTest) {
+TEST(PartTest, RocksTest) {
     fs::TempDir dataPath("/tmp/rocksdb_test.XXXXXX");
     rocksdb::Options options;
     options.create_if_missing = true;

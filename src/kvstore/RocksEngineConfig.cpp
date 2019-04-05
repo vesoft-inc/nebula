@@ -4,12 +4,18 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "kvstore/RocksdbConfigOptions.h"
+#include "base/Base.h"
+#include "kvstore/RocksEngineConfig.h"
+#include "rocksdb/db.h"
+#include "rocksdb/cache.h"
+#include "rocksdb/convenience.h"
+#include "rocksdb/utilities/options_util.h"
+#include "rocksdb/slice_transform.h"
 
 // [WAL]
 DEFINE_bool(rocksdb_disable_wal,
-              true,
-              "rocksdb wal is close by default");
+            true,
+            "rocksdb wal is close by default");
 
 // [DBOptions]
 DEFINE_string(rocksdb_db_options,
@@ -44,9 +50,11 @@ DEFINE_string(part_man_type,
 DEFINE_int64(block_cache, 4,
              "BlockBasedTable:block_cache : MB");
 
+
 namespace nebula {
 namespace kvstore {
-rocksdb::Status RocksdbConfigOptions::initRocksdbOptions(rocksdb::Options &baseOpts) {
+
+rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
     rocksdb::Status s;
     rocksdb::DBOptions dbOpts;
     rocksdb::ColumnFamilyOptions cfOpts;
@@ -78,5 +86,6 @@ rocksdb::Status RocksdbConfigOptions::initRocksdbOptions(rocksdb::Options &baseO
     baseOpts.create_if_missing = true;
     return s;
 }
+
 }  // namespace kvstore
 }  // namespace nebula
