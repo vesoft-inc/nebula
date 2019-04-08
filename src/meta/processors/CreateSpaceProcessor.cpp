@@ -10,11 +10,10 @@ namespace nebula {
 namespace meta {
 
 void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
-    guard_ = std::make_unique<std::lock_guard<std::mutex>>(
-                                    BaseProcessor<cpp2::ExecResp>::lock_);
-    auto spaceRet = spaceExist(req.get_space_name());
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+    auto spaceRet = getSpaceId(req.get_space_name());
     if (spaceRet.ok()) {
-        resp_.set_id(to(spaceRet.value(), IDType::SPACE));
+        resp_.set_id(to(spaceRet.value(), EntryType::SPACE));
         resp_.set_code(cpp2::ErrorCode::E_SPACE_EXISTED);
         onFinished();
         return;
@@ -31,6 +30,8 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto hosts = ret.value();
     auto replicaFactor = req.get_replica_factor();
     std::vector<kvstore::KV> data;
+    data.emplace_back(MetaUtils::indexKey(EntryType::SPACE, req.get_space_name()),
+                      std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
     data.emplace_back(MetaUtils::spaceKey(spaceId),
                       MetaUtils::spaceVal(req.get_parts_num(),
                                           replicaFactor,
@@ -41,7 +42,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
                           MetaUtils::partVal(partHosts));
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
-    resp_.set_id(to(spaceId, IDType::SPACE));
+    resp_.set_id(to(spaceId, EntryType::SPACE));
     doPut(std::move(data));
 }
 
@@ -55,6 +56,20 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
         pickedHosts.emplace_back(hosts[startIndex++ % hosts.size()]);
     }
     return pickedHosts;
+}
+
+StatusOr<GraphSpaceID> CreateSpaceProcessor::getSpaceId(const std::string& name) {
+    auto indexKey = MetaUtils::indexKey(EntryType::SPACE, name);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        try {
+            return folly::to<GraphSpaceID>(val);
+        } catch (std::exception& e) {
+            LOG(ERROR) << "Convert failed for " << val << ", msg " << e.what();
+        }
+    }
+    return Status::SpaceNotFound();
 }
 
 }  // namespace meta

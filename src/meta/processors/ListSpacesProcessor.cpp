@@ -11,8 +11,7 @@ namespace meta {
 
 void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
     UNUSED(req);
-    guard_ = std::make_unique<std::lock_guard<std::mutex>>(
-                                BaseProcessor<cpp2::ListSpacesResp>::lock_);
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
@@ -27,7 +26,7 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
         auto spaceName = MetaUtils::spaceName(iter->val());
         VLOG(3) << "List spaces " << spaceId << ", name " << spaceName.str();
         spaces.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                            to(spaceId, IDType::SPACE),
+                            to(spaceId, EntryType::SPACE),
                             spaceName.str());
         iter->next();
     }
