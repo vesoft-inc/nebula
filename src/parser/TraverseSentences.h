@@ -80,15 +80,14 @@ public:
 };
 
 
-enum class FindKind : uint32_t {
-    kUnknown,
-    kFindVertex,
-    kFindEdge,
-};
-
-
 class FindSentence final : public Sentence {
 public:
+    enum class FindKind : uint32_t {
+        kUnknown,
+        kFindVertex,
+        kFindEdge
+    };
+
     FindSentence(FindKind findKind, std::string *name, PropertyList *props) {
         findKind_ = findKind;
         name_.reset(name);
@@ -125,7 +124,7 @@ private:
     std::unique_ptr<WhereClause>                whereClause_;
 };
 
-inline std::ostream& operator<<(std::ostream &os, FindKind kind) {
+inline std::ostream& operator<<(std::ostream &os, FindSentence::FindKind kind) {
     return os << static_cast<uint32_t>(kind);
 }
 

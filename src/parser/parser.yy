@@ -393,12 +393,12 @@ match_sentence
 
 find_sentence
     : KW_FIND prop_list KW_FROM KW_VERTEX L_PAREN LABEL R_PAREN where_clause {
-        auto sentence = new FindSentence(FindKind::kFindVertex, $6, $2);
+        auto sentence = new FindSentence(FindSentence::FindKind::kFindVertex, $6, $2);
         sentence->setWhereClause($8);
         $$ = sentence;
     }
     | KW_FIND prop_list KW_FROM KW_EDGE L_PAREN LABEL R_PAREN where_clause {
-        auto sentence = new FindSentence(FindKind::kFindEdge, $6, $2);
+        auto sentence = new FindSentence(FindSentence::FindKind::kFindEdge, $6, $2);
         sentence->setWhereClause($8);
         $$ = sentence;
     }
