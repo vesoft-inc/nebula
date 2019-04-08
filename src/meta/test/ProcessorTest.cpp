@@ -13,6 +13,7 @@
 #include "meta/processors/CreateSpaceProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
+#include "meta/processors/AddTagProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -31,7 +32,7 @@ TEST(ProcessorTest, AddHostsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        EXPECT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         cpp2::ListHostsReq req;
@@ -56,7 +57,7 @@ TEST(ProcessorTest, AddHostsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        EXPECT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         cpp2::ListHostsReq req;
@@ -86,8 +87,8 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
-        ASSERT_EQ(resp.get_id().get_space_id(), 1);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
         cpp2::ListSpacesReq req;
@@ -95,10 +96,10 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
-        ASSERT_EQ(resp.spaces.size(), 1);
-        ASSERT_EQ(resp.spaces[0].id.get_space_id(), 1);
-        ASSERT_EQ(resp.spaces[0].name, "default_space");
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.spaces.size());
+        ASSERT_EQ(1, resp.spaces[0].id.get_space_id());
+        ASSERT_EQ("default_space", resp.spaces[0].name);
     }
     // Check the result. The dispatch way from part to hosts is in a round robin fashion.
     {
@@ -119,6 +120,52 @@ TEST(ProcessorTest, CreateSpaceTest) {
     }
 }
 
+TEST(ProcessorTest, AddTagsTest) {
+    fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    {
+        cpp2::CreateSpaceReq req;
+        req.set_space_name("default_space");
+        req.set_parts_num(9);
+        req.set_replica_factor(1);
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
+    }
+    nebula::cpp2::Schema schema;
+    decltype(schema.columns) cols;
+    cols.emplace_back(TestUtils::columnDef(0, nebula::cpp2::SupportedType::INT));
+    cols.emplace_back(TestUtils::columnDef(1, nebula::cpp2::SupportedType::FLOAT));
+    cols.emplace_back(TestUtils::columnDef(2, nebula::cpp2::SupportedType::STRING));
+    schema.set_columns(std::move(cols));
+    {
+        cpp2::AddTagReq req;
+        req.set_space_id(0);
+        req.set_tag_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = AddTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.code);
+    }
+    {
+        cpp2::AddTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = AddTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(2, resp.get_id().get_tag_id());
+    }
+}
 
 
 }  // namespace meta
