@@ -19,10 +19,6 @@
  * instead we create a plan for each query, and destroy it upon finish.
  */
 
-namespace folly {
-class IOThreadPoolExecutor;
-}   // namespace folly
-
 namespace nebula {
 namespace storage {
 class StorageClient;
