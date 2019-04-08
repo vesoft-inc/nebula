@@ -12,6 +12,7 @@
 #include "meta/processors/ListHostsProcessor.h"
 #include "meta/MetaServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+#include "interface/gen-cpp2/common_types.h"
 
 DECLARE_string(part_man_type);
 
@@ -38,6 +39,15 @@ public:
         kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
                                      kvstore::KVStore::instance(std::move(options)));
         return kv;
+    }
+
+    static nebula::cpp2::ColumnDef columnDef(int32_t index, nebula::cpp2::SupportedType st) {
+        nebula::cpp2::ColumnDef column;
+        column.set_name(folly::stringPrintf("col_%d", index));
+        nebula::cpp2::ValueType vType;
+        vType.set_type(st);
+        column.set_type(std::move(vType));
+        return column;
     }
 
     static int32_t createSomeHosts(kvstore::KVStore* kv,

@@ -8,9 +8,9 @@
 #define META_BASEPROCESSOR_H_
 
 #include "base/Base.h"
-#include <mutex>
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
+#include <folly/SharedMutex.h>
 #include "interface/gen-cpp2/meta_types.h"
 #include "base/StatusOr.h"
 #include "time/Duration.h"
@@ -20,10 +20,20 @@
 namespace nebula {
 namespace meta {
 
-enum IDType {
-    SPACE,
-    TAG,
-    EDGE,
+class LockUtils {
+public:
+    LockUtils() = delete;
+#define GENERATE_LOCK(Entry) \
+    static folly::SharedMutex& Entry##Lock() { \
+        static folly::SharedMutex l; \
+        return l; \
+    }
+
+GENERATE_LOCK(space);
+GENERATE_LOCK(id);
+GENERATE_LOCK(tag);
+
+#undef GENERATE_LOCK
 };
 
 template<typename RESP>
@@ -59,17 +69,17 @@ protected:
     }
 
     template<class T>
-    typename std::enable_if<std::is_integral<T>::value, cpp2::ID>::type
-    to(T id, IDType type) {
+    std::enable_if_t<std::is_integral<T>::value, cpp2::ID>
+    to(T id, EntryType type) {
         cpp2::ID thriftID;
         switch (type) {
-        case IDType::SPACE:
+        case EntryType::SPACE:
             thriftID.set_space_id(static_cast<GraphSpaceID>(id));
             break;
-        case IDType::TAG:
+        case EntryType::TAG:
             thriftID.set_tag_id(static_cast<TagID>(id));
             break;
-        case IDType::EDGE:
+        case EntryType::EDGE:
             thriftID.set_edge_type(static_cast<EdgeType>(id));
             break;
         }
@@ -92,22 +102,17 @@ protected:
     int32_t autoIncrementId();
 
     /**
-     * Check space_name exists or not, if existed, return the id.
+     * Check spaceId exist or not.
      * */
-    StatusOr<GraphSpaceID> spaceExist(const std::string& name);
+    Status spaceExist(GraphSpaceID spaceId);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
-    std::unique_ptr<std::lock_guard<std::mutex>> guard_;
     RESP resp_;
     folly::Promise<RESP> promise_;
     const PartitionID kDefaultPartId_ = 0;
     const GraphSpaceID kDefaultSpaceId_ = 0;
-    static std::mutex lock_;
 };
-
-template<typename RESP>
-std::mutex BaseProcessor<RESP>::lock_;
 
 }  // namespace meta
 }  // namespace nebula
