@@ -12,14 +12,14 @@
 #include "meta/test/TestUtils.h"
 #include <common/time/TimeUtils.h>
 #include "meta/processors/CreateSpaceProcessor.h"
-#include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
+#include "meta/processors/DropSpaceProcessor.h"
+#include "meta/processors/RemoveHostsProcessor.h"
+#include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/AddTagProcessor.h"
 #include "meta/processors/RemoveTagProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
-#include "meta/processors/DropSpaceProcessor.h"
-#include "meta/processors/RemoveHostsProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -91,7 +91,7 @@ TEST(ProcessorTest, AddHostsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        EXPECT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         cpp2::ListHostsReq req;
@@ -139,7 +139,7 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         for (auto& p : resp.get_parts()) {
             auto startIndex = p.first;
             for (auto& h : p.second) {
@@ -156,7 +156,7 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         cpp2::ListSpacesReq req;
@@ -164,8 +164,8 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(resp.code, cpp2::ErrorCode::SUCCEEDED);
-        ASSERT_EQ(resp.spaces.size(), 0);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(0, resp.spaces.size());
     }
 }
 

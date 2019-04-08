@@ -42,11 +42,7 @@ StatusOr<TagID> AddTagProcessor::getTag(const std::string& tagName) {
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
-        try {
-            return folly::to<TagID>(val);
-        } catch (std::exception& e) {
-            LOG(ERROR) << "Convert failed for " << val << ", msg " << e.what();
-        }
+       return *reinterpret_cast<const TagID*>(val.c_str());
     }
     return Status::Error("No Tag!");
 }

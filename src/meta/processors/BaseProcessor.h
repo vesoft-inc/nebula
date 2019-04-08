@@ -122,6 +122,11 @@ protected:
      * */
     Status hostsExist(const std::vector<std::string>& name);
 
+    /**
+     * Return the spaceId for name.
+     * */
+    StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
+
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;

@@ -162,7 +162,7 @@ TEST_F(DefineSchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "show hosts";
         client->execute(query, resp);
-        ASSERT_EQ((*(resp.get_rows())).size(), 0);
+        ASSERT_EQ(0, (*(resp.get_rows())).size());
     }
 }
 

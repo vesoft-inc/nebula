@@ -107,6 +107,17 @@ Status BaseProcessor<RESP>::hostsExist(const std::vector<std::string> &hostsKey)
     return Status::OK();
 }
 
+template<typename RESP>
+StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) {
+    auto indexKey = MetaUtils::indexKey(EntryType::SPACE, name);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
+    }
+    return Status::SpaceNotFound();
+}
+
 }  // namespace meta
 }  // namespace nebula
 
