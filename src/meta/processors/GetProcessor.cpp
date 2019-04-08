@@ -11,8 +11,6 @@ namespace nebula {
 namespace meta {
 
 void GetProcessor::process(const cpp2::GetReq& req) {
-    guard_ = std::make_unique<std::lock_guard<std::mutex>>(
-                                BaseProcessor<cpp2::GetResp>::lock_);
     auto result = doGet(req.get_key());
     if (!result.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);

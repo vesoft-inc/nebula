@@ -7,12 +7,13 @@
 #include "meta/MetaUtils.h"
 #include "meta/processors/BaseProcessor.h"
 
+#include <regex>
+
 namespace nebula {
 namespace meta {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
-    CHECK(!lock_.try_lock());
     kvstore_->asyncMultiPut(kDefaultSpaceId_, kDefaultPartId_, std::move(data),
                             [this] (kvstore::ResultCode code, HostAddr leader) {
         UNUSED(leader);
@@ -23,7 +24,6 @@ void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
 
 template<typename RESP>
 StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
-    CHECK(!lock_.try_lock());
     std::string value;
     auto code = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_,
                               std::move(key), &value);
@@ -36,7 +36,6 @@ StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
 template<typename RESP>
 StatusOr<std::vector<std::string>>
 BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
-    CHECK(!lock_.try_lock());
     std::vector<std::string> values;
     auto code = kvstore_->multiGet(kDefaultSpaceId_, kDefaultPartId_,
                                    std::move(keys), &values);
@@ -48,7 +47,6 @@ BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doRemove(const std::string& key) {
-    CHECK(!lock_.try_lock());
     kvstore_->asyncRemove(kDefaultSpaceId_, kDefaultPartId_, std::move(key),
                           [this] (kvstore::ResultCode code, HostAddr leader) {
         UNUSED(leader);
@@ -60,7 +58,6 @@ void BaseProcessor<RESP>::doRemove(const std::string& key) {
 template<typename RESP>
 void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
                                         const std::string& end) {
-    CHECK(!lock_.try_lock());
     kvstore_->asyncRemoveRange(kDefaultSpaceId_, kDefaultPartId_,
                                std::move(start), std::move(end),
                                [this] (kvstore::ResultCode code, HostAddr leader) {
@@ -73,7 +70,6 @@ void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
 template<typename RESP>
 StatusOr<std::vector<std::string>> BaseProcessor<RESP>::doScan(const std::string& start,
                                  const std::string& end) {
-    CHECK(!lock_.try_lock());
     std::unique_ptr<kvstore::KVIterator> iter;
     auto code = kvstore_->range(kDefaultSpaceId_, kDefaultPartId_,
                                 start, end, &iter);
@@ -110,7 +106,7 @@ StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
 
 template<typename RESP>
 int32_t BaseProcessor<RESP>::autoIncrementId() {
-    CHECK(!lock_.try_lock());
+    folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     static const std::string kIdKey = "__id__";
     int32_t id;
     std::string val;
@@ -132,35 +128,16 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
     return id;
 }
 
-// TODO(dangleptr) Maybe we could use index to improve the efficient
 template<typename RESP>
-StatusOr<GraphSpaceID> BaseProcessor<RESP>::spaceExist(const std::string& name) {
-    auto prefix = MetaUtils::spacePrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error, prefix " << prefix << ", ret = " << static_cast<int32_t>(ret);
-        return Status::Error("Unknown error!");
-    }
-    while (iter->valid()) {
-        auto spaceName = MetaUtils::spaceName(iter->val());
-        if (spaceName == name) {
-            return MetaUtils::spaceId(iter->key());
-        }
-        iter->next();
+Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+    auto spaceKey = MetaUtils::spaceKey(spaceId);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, spaceKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return Status::OK();
     }
     return Status::SpaceNotFound();
-}
-
-template<typename RESP>
-bool BaseProcessor<RESP>::checkRetainedPrefix(const std::string& key) {
-    if ((key == MetaUtils::spacePrefix()) ||
-        (key == MetaUtils::partPrefix()) ||
-        (key == MetaUtils::hostPrefix())) {
-        return false;
-    } else {
-        return true;
-    }
 }
 
 }  // namespace meta

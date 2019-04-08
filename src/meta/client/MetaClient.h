@@ -15,6 +15,7 @@
 #include "base/StatusOr.h"
 #include "thread/GenericWorker.h"
 #include "thrift/ThriftClientManager.h"
+#include "meta/SchemaProviderIf.h"
 
 namespace nebula {
 namespace meta {
@@ -26,6 +27,12 @@ struct SpaceInfoCache {
     std::string spaceName;
     PartsAlloc partsAlloc_;
     std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
+    // Key: <TagID, version>, Value: schema
+    std::unordered_map<std::pair<TagID, int32_t>,
+                       std::shared_ptr<const SchemaProviderIf>> tagSchemas_;
+    // Key: <EdgeType, version>, Value: schema
+    std::unordered_map<std::pair<EdgeType, int32_t>,
+                       std::shared_ptr<const SchemaProviderIf>> edgeSchemas_;
 };
 
 using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;

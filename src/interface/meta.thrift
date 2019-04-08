@@ -24,9 +24,11 @@ enum ErrorCode {
     E_NO_HOSTS       = -21,
     E_SPACE_EXISTED  = -22,
     E_NOT_FOUND      = -23,
+    E_TAG_EXISTED    = -24,
 
     // KV Failure
-    E_STORE_FAILURE  = -31,
+    E_STORE_FAILURE      = -31,
+    E_STORE_KEY_ILLEGAL  = -32,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -195,6 +197,15 @@ struct MultiPutReq {
 
 struct MultiPutResp {
     1: ErrorCode code,
+}
+
+struct GetReq {
+    1: string key,
+}
+
+ struct GetResp {
+    1: ErrorCode code,
+    2: string    value,
 }
 
 struct MultiGetReq {

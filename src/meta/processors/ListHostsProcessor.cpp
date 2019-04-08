@@ -11,8 +11,7 @@ namespace meta {
 
 void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
     UNUSED(req);
-    guard_ = std::make_unique<std::lock_guard<std::mutex>>(
-                                BaseProcessor<cpp2::ListHostsResp>::lock_);
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto ret = allHosts();
     if (!ret.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);

@@ -10,8 +10,6 @@ namespace nebula {
 namespace meta {
 
 void RemoveProcessor::process(const cpp2::RemoveReq& req) {
-    guard_ = std::make_unique<std::lock_guard<std::mutex>>(
-                                BaseProcessor<cpp2::RemoveResp>::lock_);
     doRemove(req.get_key());
 }
 

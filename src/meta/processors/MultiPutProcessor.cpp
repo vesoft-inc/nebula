@@ -10,8 +10,6 @@ namespace nebula {
 namespace meta {
 
 void MultiPutProcessor::process(const cpp2::MultiPutReq& req) {
-    guard_ = std::make_unique<std::lock_guard<std::mutex>>(
-                                BaseProcessor<cpp2::MultiPutResp>::lock_);
     std::vector<kvstore::KV> data;
     for (auto& pair : req.get_pairs()) {
         data.emplace_back(std::move(pair.get_key()), std::move(pair.get_value()));

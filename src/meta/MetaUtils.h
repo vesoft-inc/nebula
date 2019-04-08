@@ -13,6 +13,12 @@
 namespace nebula {
 namespace meta {
 
+enum class EntryType : int8_t {
+    SPACE = 0x01,
+    TAG   = 0x02,
+    EDGE  = 0x03,
+};
+
 class MetaUtils final {
 public:
     MetaUtils() = delete;
@@ -46,13 +52,19 @@ public:
 
     static nebula::cpp2::HostAddr parseHostKey(folly::StringPiece key);
 
-    static std::string schemaEdgeKey(EdgeType edgeType, int32_t version);
+    static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, int64_t version);
 
     static std::string schemaEdgeVal(nebula::cpp2::Schema schema);
 
-    static std::string schemaTagKey(TagID tagId, int32_t version);
+    static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version);
 
     static std::string schemaTagVal(nebula::cpp2::Schema schema);
+
+    static nebula::cpp2::Schema parseSchema(folly::StringPiece rawData);
+
+    static std::string indexKey(EntryType type, const std::string& name);
+
+    static bool checkPrefix(const std::string& key);
 };
 
 }  // namespace meta

@@ -13,6 +13,7 @@
 #include "meta/processors/CreateSpaceProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
+#include "meta/processors/AddTagProcessor.h"
 #include "meta/processors/MultiPutProcessor.h"
 #include "meta/processors/GetProcessor.h"
 #include "meta/processors/MultiGetProcessor.h"
@@ -125,19 +126,66 @@ TEST(ProcessorTest, CreateSpaceTest) {
     }
 }
 
+TEST(ProcessorTest, AddTagsTest) {
+    fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    {
+        cpp2::CreateSpaceReq req;
+        req.set_space_name("default_space");
+        req.set_parts_num(9);
+        req.set_replica_factor(1);
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
+    }
+    nebula::cpp2::Schema schema;
+    decltype(schema.columns) cols;
+    cols.emplace_back(TestUtils::columnDef(0, nebula::cpp2::SupportedType::INT));
+    cols.emplace_back(TestUtils::columnDef(1, nebula::cpp2::SupportedType::FLOAT));
+    cols.emplace_back(TestUtils::columnDef(2, nebula::cpp2::SupportedType::STRING));
+    schema.set_columns(std::move(cols));
+    {
+        cpp2::AddTagReq req;
+        req.set_space_id(0);
+        req.set_tag_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = AddTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.code);
+    }
+    {
+        cpp2::AddTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = AddTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(2, resp.get_id().get_tag_id());
+    }
+}
+
 TEST(ProcessorTest, KVOperationTest) {
     fs::TempDir rootPath("/tmp/KVOperationTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
     UNUSED(hostsNum);
 
-    {
+     {
         cpp2::CreateSpaceReq req;
         req.set_space_name("default_space");
         req.set_parts_num(9);
         req.set_replica_factor(3);
 
-        auto* processor = CreateSpaceProcessor::instance(kv.get());
+         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -153,10 +201,10 @@ TEST(ProcessorTest, KVOperationTest) {
                                folly::stringPrintf("value_%d", i));
         }
 
-        cpp2::MultiPutReq req;
+         cpp2::MultiPutReq req;
         req.set_pairs(std::move(pairs));
 
-        auto* processor = MultiPutProcessor::instance(kv.get());
+         auto* processor = MultiPutProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -167,17 +215,18 @@ TEST(ProcessorTest, KVOperationTest) {
         cpp2::GetReq req;
         req.set_key("key_0");
 
-        auto* processor = GetProcessor::instance(kv.get());
+         auto* processor = GetProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ("value_0", resp.value);
 
-        cpp2::GetReq missedReq;
+
+         cpp2::GetReq missedReq;
         missedReq.set_key("missed_key");
 
-        auto* missedProcessor = GetProcessor::instance(kv.get());
+         auto* missedProcessor = GetProcessor::instance(kv.get());
         auto missedFuture = missedProcessor->getFuture();
         missedProcessor->process(missedReq);
         auto missedResp = std::move(missedFuture).get();
@@ -190,10 +239,10 @@ TEST(ProcessorTest, KVOperationTest) {
             keys.emplace_back(std::move(folly::stringPrintf("key_%d", i)));
         }
 
-        cpp2::MultiGetReq req;
+         cpp2::MultiGetReq req;
         req.set_keys(std::move(keys));
 
-        auto* processor = MultiGetProcessor::instance(kv.get());
+         auto* processor = MultiGetProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -222,7 +271,7 @@ TEST(ProcessorTest, KVOperationTest) {
         cpp2::RemoveReq req;
         req.set_key("key");
 
-        auto* processor = RemoveProcessor::instance(kv.get());
+         auto* processor = RemoveProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -234,7 +283,7 @@ TEST(ProcessorTest, KVOperationTest) {
         req.set_start("key_0");
         req.set_end("key_4");
 
-        auto* processor = RemoveRangeProcessor::instance(kv.get());
+         auto* processor = RemoveRangeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

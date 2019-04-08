@@ -6,26 +6,30 @@
 
 #include "meta/MetaUtils.h"
 #include <string.h>
+#include <thrift/lib/cpp2/protocol/Serializer.h>
+#include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
 namespace nebula {
 namespace meta {
 
-const char kSpacesTable[] = "__spaces__";
-const char kPartsTable[] = "__parts__";
-const char kHostsTable[] = "__hosts__";
+const std::string kSpacesTable = "__spaces__";  // NOLINT
+const std::string kPartsTable  = "__parts__";   // NOLINT
+const std::string kHostsTable  = "__hosts__";   // NOLINT
+const std::string kTagsTable   = "__tags__";    // NOLINT
+const std::string kEdgesTable  = "__edges__";   // NOLINT
+const std::string kIndexTable  = "__index__";   // NOLINT
 
 std::string MetaUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
-    static const size_t prefixLen = ::strlen(kSpacesTable);
-    key.reserve(prefixLen + sizeof(spaceId));
-    key.append(kSpacesTable, prefixLen);
+    key.reserve(256);
+    key.append(kSpacesTable.data(), kSpacesTable.size());
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
     return key;
 }
 
 std::string MetaUtils::spaceVal(int32_t partsNum, int32_t replicaFactor, const std::string& name) {
     std::string val;
-    val.reserve(sizeof(partsNum) + sizeof(replicaFactor) + name.size());
+    val.reserve(256);
     val.append(reinterpret_cast<const char*>(&partsNum), sizeof(partsNum));
     val.append(reinterpret_cast<const char*>(&replicaFactor), sizeof(replicaFactor));
     val.append(name);
@@ -33,13 +37,11 @@ std::string MetaUtils::spaceVal(int32_t partsNum, int32_t replicaFactor, const s
 }
 
 const std::string& MetaUtils::spacePrefix() {
-    static const std::string prefix = kSpacesTable;
-    return prefix;
+    return kSpacesTable;
 }
 
 GraphSpaceID MetaUtils::spaceId(folly::StringPiece rawKey) {
-    static const size_t prefixLen = ::strlen(kSpacesTable);
-    return *reinterpret_cast<const GraphSpaceID*>(rawKey.data() + prefixLen);
+    return *reinterpret_cast<const GraphSpaceID*>(rawKey.data() + kSpacesTable.size());
 }
 
 folly::StringPiece MetaUtils::spaceName(folly::StringPiece rawVal) {
@@ -48,9 +50,8 @@ folly::StringPiece MetaUtils::spaceName(folly::StringPiece rawVal) {
 
 std::string MetaUtils::partKey(GraphSpaceID spaceId, PartitionID partId) {
     std::string key;
-    static constexpr size_t tableLen = ::strlen(kPartsTable);
-    key.reserve(tableLen + sizeof(GraphSpaceID) + sizeof(PartitionID));
-    key.append(kPartsTable, tableLen);
+    key.reserve(128);
+    key.append(kPartsTable.data(), kPartsTable.size());
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
     return key;
@@ -58,7 +59,7 @@ std::string MetaUtils::partKey(GraphSpaceID spaceId, PartitionID partId) {
 
 std::string MetaUtils::partVal(const std::vector<nebula::cpp2::HostAddr>& hosts) {
     std::string val;
-    val.reserve(hosts.size() * sizeof(int32_t) * 2);
+    val.reserve(128);
     for (auto& h : hosts) {
         val.append(reinterpret_cast<const char*>(&h.ip), sizeof(h.ip));
         val.append(reinterpret_cast<const char*>(&h.port), sizeof(h.port));
@@ -73,9 +74,8 @@ const std::string& MetaUtils::partPrefix() {
 
 std::string MetaUtils::partPrefix(GraphSpaceID spaceId) {
     std::string prefix;
-    static constexpr size_t tableLen = ::strlen(kPartsTable);
-    prefix.reserve(tableLen + sizeof(GraphSpaceID));
-    prefix.append(kPartsTable, tableLen);
+    prefix.reserve(128);
+    prefix.append(kPartsTable.data(), kPartsTable.size());
     prefix.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     return prefix;
 }
@@ -99,9 +99,8 @@ std::vector<nebula::cpp2::HostAddr> MetaUtils::parsePartVal(folly::StringPiece v
 
 std::string MetaUtils::hostKey(IPv4 ip, Port port) {
     std::string key;
-    static constexpr size_t tableLen = ::strlen(kHostsTable);
-    key.reserve(tableLen + sizeof(IPv4) + sizeof(Port));
-    key.append(kHostsTable, tableLen);
+    key.reserve(128);
+    key.append(kHostsTable.data(), kHostsTable.size());
     key.append(reinterpret_cast<const char*>(&ip), sizeof(ip));
     key.append(reinterpret_cast<const char*>(&port), sizeof(port));
     return key;
@@ -112,35 +111,68 @@ std::string MetaUtils::hostVal() {
 }
 
 const std::string& MetaUtils::hostPrefix() {
-    static const std::string prefix = kHostsTable;
-    return prefix;
+    return kHostsTable;
 }
 
 nebula::cpp2::HostAddr MetaUtils::parseHostKey(folly::StringPiece key) {
     nebula::cpp2::HostAddr host;
-    static constexpr size_t tableLen = ::strlen(kHostsTable);
-    memcpy(&host, key.data() + tableLen, sizeof(host));
+    memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
     return host;
 }
 
-std::string MetaUtils::schemaEdgeKey(EdgeType edgeType, int32_t version) {
-    UNUSED(edgeType); UNUSED(version);
-    return "";
+std::string MetaUtils::schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, int64_t version) {
+    std::string key;
+    key.reserve(128);
+    key.append(kEdgesTable.data(), kEdgesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    key.append(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType));
+    key.append(reinterpret_cast<const char*>(&version), sizeof(version));
+    return key;
 }
 
 std::string MetaUtils::schemaEdgeVal(nebula::cpp2::Schema schema) {
-    UNUSED(schema);
-    return "";
+    std::string val;
+    apache::thrift::CompactSerializer::serialize(schema, &val);
+    return val;
 }
 
-std::string MetaUtils::schemaTagKey(TagID tagId, int32_t version) {
-    UNUSED(tagId); UNUSED(version);
-    return "";
+std::string MetaUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version) {
+    std::string key;
+    key.reserve(128);
+    key.append(kTagsTable.data(), kTagsTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    key.append(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
+    key.append(reinterpret_cast<const char*>(&version), sizeof(version));
+    return key;
 }
 
 std::string MetaUtils::schemaTagVal(nebula::cpp2::Schema schema) {
-    UNUSED(schema);
-    return "";
+    std::string val;
+    apache::thrift::CompactSerializer::serialize(schema, &val);
+    return val;
+}
+
+nebula::cpp2::Schema MetaUtils::parseSchema(folly::StringPiece rawData) {
+    nebula::cpp2::Schema schema;
+    apache::thrift::CompactSerializer::deserialize(rawData, schema);
+    return schema;
+}
+
+std::string MetaUtils::indexKey(EntryType type, const std::string& name) {
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(name);
+    return key;
+}
+
+bool MetaUtils::checkPrefix(const std::string& key) {
+    std::regex reg("^[0-9a-zA-Z]+$");
+    if (!key.empty() && std::regex_match(key, reg)) {
+        return true;
+    }
+    return false;
 }
 
 }  // namespace meta

@@ -1,6 +1,8 @@
 add_executable(
     nebula-graphd
     GraphDaemon.cpp
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>

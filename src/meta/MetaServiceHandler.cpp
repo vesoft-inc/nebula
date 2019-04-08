@@ -11,6 +11,10 @@
 #include "meta/processors/ListHostsProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
+#include "meta/processors/AddTagProcessor.h"
+#include "meta/processors/AddEdgeProcessor.h"
+#include "meta/processors/ListTagsProcessor.h"
+#include "meta/processors/ListEdgesProcessor.h"
 #include "meta/processors/MultiPutProcessor.h"
 #include "meta/processors/GetProcessor.h"
 #include "meta/processors/MultiGetProcessor.h"
@@ -89,6 +93,30 @@ MetaServiceHandler::future_remove(const cpp2::RemoveReq& req) {
 folly::Future<cpp2::RemoveRangeResp>
 MetaServiceHandler::future_removeRange(const cpp2::RemoveRangeReq& req) {
     auto* processor = RemoveRangeProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_addTag(const cpp2::AddTagReq& req) {
+    auto* processor = AddTagProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListTagsResp>
+MetaServiceHandler::future_listTags(const cpp2::ListTagsReq& req) {
+    auto* processor = ListTagsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_addEdge(const cpp2::AddEdgeReq& req) {
+    auto* processor = AddEdgeProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListEdgesResp>
+MetaServiceHandler::future_listEdges(const cpp2::ListEdgesReq& req) {
+    auto* processor = ListEdgesProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

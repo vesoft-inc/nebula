@@ -20,6 +20,9 @@ public:
     explicit MetaServiceHandler(kvstore::KVStore* kv)
                 : kvstore_(kv) {}
 
+    /**
+     * Parts distributation related operations.
+     * */
     folly::Future<cpp2::ExecResp>
     future_createSpace(const cpp2::CreateSpaceReq& req) override;
 
@@ -52,6 +55,21 @@ public:
 
     folly::Future<cpp2::ScanResp>
     future_scan(const cpp2::ScanReq& req) override;
+
+    /**
+     * Schema related operations.
+     * */
+    folly::Future<cpp2::ExecResp>
+    future_addTag(const cpp2::AddTagReq& req) override;
+
+    folly::Future<cpp2::ListTagsResp>
+    future_listTags(const cpp2::ListTagsReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_addEdge(const cpp2::AddEdgeReq& req) override;
+
+    folly::Future<cpp2::ListEdgesResp>
+    future_listEdges(const cpp2::ListEdgesReq& req) override;
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;
