@@ -20,6 +20,7 @@ enum ResultCode {
     ERR_SPACE_NOT_FOUND  = -4,
     ERR_LEADER_CHANAGED  = -5,
     ERR_INVALID_ARGUMENT = -6,
+    ERR_IO_ERROR         = -7,
 };
 
 #define KV_DATA_PATH_FORMAT(path, spaceId) \

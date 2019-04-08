@@ -10,6 +10,8 @@ namespace nebula {
 namespace meta {
 
 void RemoveRangeProcessor::process(const cpp2::RemoveRangeReq& req) {
+    CHECK_KEY_PREFIX(req.get_start());
+    CHECK_KEY_PREFIX(req.get_end());
     doRemoveRange(req.get_start(), req.get_end());
 }
 

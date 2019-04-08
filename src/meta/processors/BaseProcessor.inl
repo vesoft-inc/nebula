@@ -28,7 +28,11 @@ StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
     auto code = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_,
                               std::move(key), &value);
     if (code != kvstore::ResultCode::SUCCEEDED) {
-        return Status::Error("Get Failed");
+        if (code == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+            return Status::Error("Key Not Found");
+        } else {
+            return Status::Error("Get Failed");
+        }
     }
     return value;
 }

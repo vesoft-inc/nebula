@@ -132,7 +132,7 @@ TEST(MetaClientTest, InterfacesTest) {
     }
     {
         // Remove Test
-        auto ret = client->remove("key").get();
+        auto ret = client->remove("key_9").get();
         ASSERT_TRUE(ret.ok());
     }
     {

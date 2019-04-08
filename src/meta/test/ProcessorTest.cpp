@@ -269,7 +269,7 @@ TEST(ProcessorTest, KVOperationTest) {
     {
         // Remove Test
         cpp2::RemoveReq req;
-        req.set_key("key");
+        req.set_key("key_9");
 
          auto* processor = RemoveProcessor::instance(kv.get());
         auto f = processor->getFuture();

@@ -36,6 +36,13 @@ GENERATE_LOCK(tag);
 #undef GENERATE_LOCK
 };
 
+#define CHECK_KEY_PREFIX(key) \
+    if (MetaUtils::checkPrefix(key)) { \
+        resp_.set_code(cpp2::ErrorCode::E_STORE_KEY_ILLEGAL); \
+        onFinished(); \
+        return; \
+    }
+
 template<typename RESP>
 class BaseProcessor {
 public:

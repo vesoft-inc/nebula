@@ -10,6 +10,7 @@ namespace nebula {
 namespace meta {
 
 void RemoveProcessor::process(const cpp2::RemoveReq& req) {
+    CHECK_KEY_PREFIX(req.get_key());
     doRemove(req.get_key());
 }
 

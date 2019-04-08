@@ -12,6 +12,7 @@ namespace meta {
 void MultiPutProcessor::process(const cpp2::MultiPutReq& req) {
     std::vector<kvstore::KV> data;
     for (auto& pair : req.get_pairs()) {
+        CHECK_KEY_PREFIX(pair.get_key())
         data.emplace_back(std::move(pair.get_key()), std::move(pair.get_value()));
     }
     doPut(std::move(data));

@@ -10,6 +10,10 @@ namespace nebula {
 namespace meta {
 
 void MultiGetProcessor::process(const cpp2::MultiGetReq& req) {
+    for (auto& key : req.get_keys()) {
+        CHECK_KEY_PREFIX(key);
+    }
+
     auto result = doMultiGet(req.get_keys());
     if (!result.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
