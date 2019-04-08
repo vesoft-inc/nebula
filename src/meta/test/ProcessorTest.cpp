@@ -10,10 +10,13 @@
 #include <fstream>
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
+#include <common/time/TimeUtils.h>
 #include "meta/processors/CreateSpaceProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
 #include "meta/processors/AddTagProcessor.h"
+#include "meta/processors/GetTagProcessor.h"
+#include "meta/processors/ListTagsProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -164,6 +167,79 @@ TEST(ProcessorTest, AddTagsTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(2, resp.get_id().get_tag_id());
+    }
+}
+
+TEST(ProcessorTest, ListOrGetTagsTest) {
+    fs::TempDir rootPath("/tmp/ListTagsTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto version = time::TimeUtils::nowInMSeconds();
+    // setup
+    {
+        std::vector<nebula::kvstore::KV> tags;
+        for (auto t = 1; t < 10; t++) {
+            nebula::cpp2::Schema srcsch;
+            for (auto i = 0; i < 2; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = folly::stringPrintf("tag_%d_col_%d", t, i);
+                column.type.type = i < 1 ?
+                                   nebula::cpp2::SupportedType::INT :
+                                   nebula::cpp2::SupportedType::STRING;
+                srcsch.columns.emplace_back(std::move(column));
+            }
+
+            tags.emplace_back(MetaUtils::schemaTagKey(1, t, version++),
+                    MetaUtils::schemaTagVal(srcsch, folly::stringPrintf("tag_%d", t)));
+        }
+
+        kv.get()->asyncMultiPut(0, 0, std::move(tags),
+                                [] (kvstore::ResultCode code, HostAddr leader) {
+            ASSERT_TRUE(code == kvstore::ResultCode::SUCCEEDED);
+            UNUSED(leader);
+        });
+    }
+
+    // test ListTagsProcessor
+    {
+        cpp2::ListTagsReq req;
+        req.set_space_id(1);
+        auto* processor = ListTagsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        decltype(resp.tags) tags;
+        tags = resp.get_tags();
+        ASSERT_EQ(resp.get_code(), cpp2::ErrorCode::SUCCEEDED);
+        ASSERT_EQ(tags.size(), 9);
+
+        for (auto t = 1; t < 10; t++) {
+            auto tag = tags[t-1];
+            EXPECT_EQ(tag.get_tag_id(), t);
+            EXPECT_EQ(tag.get_tag_name(), folly::stringPrintf("tag_%d", t));
+        }
+    }
+
+    // test GetTagProcessor
+    {
+        cpp2::GetTagReq req;
+        req.set_space_id(1);
+        req.set_tag_id(9);
+        req.set_version(version - 1);
+
+        auto* processor = GetTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        auto schema = resp.get_schema();
+
+        std::vector<nebula::cpp2::ColumnDef> cols = schema.get_columns();
+        ASSERT_EQ(cols.size(), 2);
+        for (auto i = 0; i < 2; i++) {
+            EXPECT_EQ(cols[i].get_name(), folly::stringPrintf("tag_%d_col_%d", 9, i));
+            EXPECT_EQ(cols[i].get_type().get_type(),
+            (i < 1 ? nebula::cpp2::SupportedType::INT :
+            nebula::cpp2::SupportedType::STRING));
+        }
     }
 }
 

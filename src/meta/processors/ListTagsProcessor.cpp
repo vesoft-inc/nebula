@@ -10,20 +10,13 @@ namespace nebula {
 namespace meta {
 
 void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
-    auto& tagLock = LockUtils::tagLock();
-    if (!tagLock.try_lock_shared()) {
-        resp_.set_code(cpp2::ErrorCode::E_TABLE_LOCKED);
-        onFinished();
-        return;
-    }
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
     auto spaceId = req.get_space_id();
     auto prefix = MetaUtils::schemaTagsPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    folly::RWSpinLock::ReadHolder rHolder(LockUtils::tagLock());
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     resp_.set_code(to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        tagLock.unlock_shared();
         onFinished();
         return;
     }
@@ -37,14 +30,11 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto tagName = val.subpiece(sizeof(int32_t), nameLen).str();
         auto schema = MetaUtils::parseSchema(val);
-        tag.set_tag_id(tagID);
-        tag.set_tag_name(tagName.data());
-        tag.set_version(vers);
-        tag.set_schema(schema);
-        tags.emplace_back(tag);
+        cpp2::TagItem tagItem(apache::thrift::FragileConstructor::FRAGILE,
+                tagID, tagName, vers, schema);
+        tags.emplace_back(std::move(tagItem));
         iter->next();
     }
-    tagLock.unlock_shared();
     resp_.set_tags(std::move(tags));
     onFinished();
 }

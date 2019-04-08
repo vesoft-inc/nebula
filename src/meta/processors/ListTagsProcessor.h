@@ -23,9 +23,7 @@ public:
         return new ListTagsProcessor(kvstore);
     }
 
-    void process(const cpp2::ListTagsReq& req) {
-        UNUSED(req);
-    }
+    void process(const cpp2::ListTagsReq& req);
 
 private:
     explicit ListTagsProcessor(kvstore::KVStore* kvstore)

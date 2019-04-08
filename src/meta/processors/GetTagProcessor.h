@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef NEBULA_GRAPH_GETTAGPROCESSOR_H
-#define NEBULA_GRAPH_GETTAGPROCESSOR_H
+#ifndef META_GETTAGPROCESSOR_H_
+#define META_GETTAGPROCESSOR_H_
 
 #include "meta/processors/BaseProcessor.h"
 
@@ -27,4 +27,4 @@ private:
 
 }  // namespace meta
 }  // namespace nebula
-#endif  // NEBULA_GRAPH_GETTAGPROCESSOR_H
+#endif  // META_GETTAGPROCESSOR_H_

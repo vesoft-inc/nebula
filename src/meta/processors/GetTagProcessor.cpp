@@ -10,22 +10,16 @@ namespace nebula {
 namespace meta {
 
 void GetTagProcessor::process(const cpp2::GetTagReq& req) {
-    auto& tagLock = LockUtils::tagLock();
-    if (!tagLock.try_lock_shared()) {
-        onFinished();
-        return;
-    }
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
     std::string val;
     std::string tagKey = MetaUtils::schemaTagKey(req.get_space_id(),
                                                  req.get_tag_id(),
                                                  req.get_version());
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, std::move(tagKey), &val);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        tagLock.unlock_shared();
         onFinished();
         return;
     }
-    tagLock.unlock_shared();
     resp_.set_schema(MetaUtils::parseSchema(val));
     onFinished();
 }

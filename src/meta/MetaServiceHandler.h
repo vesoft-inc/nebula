@@ -38,12 +38,14 @@ public:
     folly::Future<cpp2::GetPartsAllocResp>
     future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) override;
 
-<<<<<<< HEAD
     /**
      * Schema related operations.
      * */
     folly::Future<cpp2::ExecResp>
     future_addTag(const cpp2::AddTagReq& req) override;
+
+    folly::Future<cpp2::GetTagResp>
+    future_getTag(const cpp2::GetTagReq &req) override;
 
     folly::Future<cpp2::ListTagsResp>
     future_listTags(const cpp2::ListTagsReq& req) override;
@@ -53,13 +55,6 @@ public:
 
     folly::Future<cpp2::ListEdgesResp>
     future_listEdges(const cpp2::ListEdgesReq& req) override;
-=======
-    folly::Future<cpp2::GetTagResp>
-    future_getTag(const ::nebula::meta::cpp2::GetTagReq &req) override;
-
-    folly::Future<cpp2::ListTagsResp>
-    future_listTags(const ::nebula::meta::cpp2::ListTagsReq &req) override;
->>>>>>> getTag and listTags
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;
