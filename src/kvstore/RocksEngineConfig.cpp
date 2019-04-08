@@ -15,7 +15,7 @@
 // [WAL]
 DEFINE_bool(rocksdb_disable_wal,
             true,
-            "rocksdb wal is close by default");
+            "Whether to disable the WAL in rocksdb");
 
 // [DBOptions]
 DEFINE_string(rocksdb_db_options,
