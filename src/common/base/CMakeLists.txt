@@ -4,6 +4,7 @@ add_library(
     Configuration.cpp
     Status.cpp
     SanitizerOptions.cpp
+    SignalHandler.cpp
 )
 add_dependencies(base_obj third-party)
 IF(${PCHSupport_FOUND})
