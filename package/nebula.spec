@@ -1,4 +1,3 @@
-#!/bin/sh
 #
 # Create a SRPM which can be used to build nebula
 # 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#  used to build nebula rpm flles
+#  used to build nebula rpm files
 # ./make-srpm.sh -v <version> -p <build path>, the version should be match tag name
 
 # the format of publish version is 'version-release'
@@ -17,14 +17,13 @@ while getopts v:p: opt;
 do
     case $opt in
         v)
-            echo "-v $OPTARG"
-	    version=$OPTARG
+            version=$OPTARG
             ;;
         p)
-            echo "-p $OPTARG"
-	    rpmbuilddir=$OPTARG
+            rpmbuilddir=$OPTARG
             ;;
-        ?) echo "Invalid option, use default arguments"
+        ?)
+            echo "Invalid option, use default arguments"
             ;;
     esac
 done
@@ -54,7 +53,6 @@ echo "current version is [ $rpm_version ], release is [$rpm_release]"
 echo "current rpmbuild is [ $rpmbuilddir ]"
 
 # because of use the static third-party lib, the rpmbuild can't check the file in rpm packet, so change the check to warnning
-echo "do ....."
 sudo sed -i "s/_unpackaged_files_terminate_build.*/_unpackaged_files_terminate_build      0/g" /usr/lib/rpm/macros
 
 # modify nebula.spec's version
