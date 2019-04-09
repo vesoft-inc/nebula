@@ -141,6 +141,7 @@ find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
 find_package(NCURSES REQUIRED)
+find_package(LibLZMA MODULE)
 if(NOT asan AND NOT ENABLE_NATIVE)
     find_package(PCHSupport)
     add_compile_options(-Winvalid-pch)
@@ -236,6 +237,10 @@ set(ROCKSDB_LIBRARIES ${NEBULA_HOME}/third-party/rocksdb/_install/lib/librocksdb
 
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
+if (LIBLZMA_FOUND)
+    include_directories(SYSTEM ${LIBLZMA_INCLUDE_DIRS})
+    list(APPEND COMPRESSION_LIBRARIES ${LIBLZMA_LIBRARIES})
+endif()
 
 if (NOT ENABLE_JEMALLOC)
     set(JEMALLOC_LIB )
@@ -262,9 +267,9 @@ macro(nebula_link_libraries target)
         ${OPENSSL_CRYPTO_LIBRARY}
         ${KRB5_LIBRARIES}
         ${COMPRESSION_LIBRARIES}
-        dl
         ${JEMALLOC_LIB}
         ${LIBUNWIND_LIBRARIES}
+        dl
         -pthread
     )
 endmacro(nebula_link_libraries)

@@ -11,7 +11,6 @@
 #include "base/Base.h"
 #include "interface/gen-cpp2/StorageService.h"
 #include "kvstore/KVStore.h"
-#include "meta/SchemaManager.h"
 
 namespace nebula {
 namespace storage {

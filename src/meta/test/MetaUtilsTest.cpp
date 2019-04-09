@@ -64,6 +64,39 @@ TEST(MetaUtilsTest, HostKeyTest) {
     ASSERT_EQ(11, addr.get_port());
 }
 
+TEST(MetaUtilsTest, TagTest) {
+    cpp2::Schema schema;
+    decltype(schema.columns) cols;
+    for (auto i = 1; i <= 3; i++) {
+        nebula::cpp2::ColumnDef column;
+        column.set_name(folly::stringPrintf("col_%d", i));
+        nebula::cpp2::ValueType vType;
+        vType.set_type(cpp2::SupportedType::INT);
+        column.set_type(std::move(vType));
+        cols.emplace_back(std::move(column));
+    }
+    for (auto i = 4; i <= 6; i++) {
+        nebula::cpp2::ColumnDef column;
+        column.set_name(folly::stringPrintf("col_%d", i));
+        nebula::cpp2::ValueType vType;
+        vType.set_type(cpp2::SupportedType::FLOAT);
+        column.set_type(std::move(vType));
+        cols.emplace_back(std::move(column));
+    }
+    for (auto i = 7; i < 10; i++) {
+        nebula::cpp2::ColumnDef column;
+        column.set_name(folly::stringPrintf("col_%d", i));
+        nebula::cpp2::ValueType vType;
+        vType.set_type(cpp2::SupportedType::STRING);
+        column.set_type(std::move(vType));
+        cols.emplace_back(std::move(column));
+    }
+    schema.set_columns(std::move(cols));
+    auto val = MetaUtils::schemaTagVal(schema);
+    auto parsedSchema = MetaUtils::parseSchema(val);
+    ASSERT_EQ(parsedSchema, schema);
+}
+
 }  // namespace meta
 }  // namespace nebula
 

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # The method takes up to three parameters
 #   1st: Project name

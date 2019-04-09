@@ -10,8 +10,7 @@ namespace nebula {
 namespace meta {
 
 void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
-    guard_ = std::make_unique<std::lock_guard<std::mutex>>(
-                            BaseProcessor<cpp2::GetPartsAllocResp>::lock_);
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto spaceId = req.get_space_id();
     auto prefix = MetaUtils::partPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;

@@ -4,10 +4,11 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef NEBULA_GRAPH_ROCKSDBCONFIGFLAGS_H
-#define NEBULA_GRAPH_ROCKSDBCONFIGFLAGS_H
+#ifndef KVSTORE_ROCKSENGINECONFIG_H_
+#define KVSTORE_ROCKSENGINECONFIG_H_
 
 #include "base/Base.h"
+#include "rocksdb/db.h"
 
 // [Version]
 DECLARE_string(rocksdb_options_version);
@@ -34,4 +35,13 @@ DECLARE_uint32(batch_reserved_bytes);
 
 DECLARE_string(part_man_type);
 
-#endif  // NEBULA_GRAPH_ROCKSDBCONFIGFLAGS_H
+
+namespace nebula {
+namespace kvstore {
+
+rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts);
+
+}  // namespace kvstore
+}  // namespace nebula
+#endif  // KVSTORE_ROCKSENGINECONFIG_H_
+
