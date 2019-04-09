@@ -5,32 +5,34 @@
  */
 
 #include "base/Base.h"
-#include "kvstore/RocksdbEngine.h"
+#include "kvstore/RocksEngine.h"
 #include <folly/String.h>
 #include "fs/FileUtils.h"
 #include "kvstore/KVStore.h"
-#include "kvstore/RocksdbConfigFlags.h"
+#include "kvstore/RocksEngineConfig.h"
 
 namespace nebula {
 namespace kvstore {
 
+using fs::FileUtils;
+using fs::FileType;
+
 const char* kSystemParts = "__system__parts__";
 
-RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId,
-                             const std::string& dataPath,
-                             std::shared_ptr<rocksdb::MergeOperator> mergeOp,
-                             std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
-    : KVEngine(spaceId)
-    , dataPath_(dataPath) {
+RocksEngine::RocksEngine(GraphSpaceID spaceId,
+                         const std::string& dataPath,
+                         std::shared_ptr<rocksdb::MergeOperator> mergeOp,
+                         std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
+        : KVEngine(spaceId)
+        , dataPath_(dataPath) {
     LOG(INFO) << "open rocksdb on " << dataPath;
-    if (nebula::fs::FileUtils::fileType(dataPath.c_str()) == nebula::fs::FileType::NOTEXIST) {
-        nebula::fs::FileUtils::makeDir(dataPath);
+    if (FileUtils::fileType(dataPath.c_str()) == FileType::NOTEXIST) {
+        FileUtils::makeDir(dataPath);
     }
 
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
-    rocksdb::Status status;
-    status = RocksdbConfigOptions::initRocksdbOptions(options);
+    rocksdb::Status status = initRocksdbOptions(options);
     CHECK(status.ok());
     if (mergeOp != nullptr) {
         options.merge_operator = mergeOp;
@@ -44,11 +46,12 @@ RocksdbEngine::RocksdbEngine(GraphSpaceID spaceId,
     partsNum_ = allParts().size();
 }
 
-RocksdbEngine::~RocksdbEngine() {
+
+RocksEngine::~RocksEngine() {
 }
 
-ResultCode RocksdbEngine::get(const std::string& key,
-                              std::string* value) {
+
+ResultCode RocksEngine::get(const std::string& key, std::string* value) {
     rocksdb::ReadOptions options;
     rocksdb::Status status = db_->Get(options, rocksdb::Slice(key), value);
     if (status.ok()) {
@@ -59,21 +62,22 @@ ResultCode RocksdbEngine::get(const std::string& key,
     return ResultCode::ERR_UNKNOWN;
 }
 
-ResultCode RocksdbEngine::put(std::string key,
-                              std::string value) {
+
+ResultCode RocksEngine::put(std::string key, std::string value) {
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;
-    rocksdb::Status status = db_->Put(options, rocksdb::Slice(key), rocksdb::Slice(value));
+    rocksdb::Status status = db_->Put(options, key, value);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
     return ResultCode::ERR_UNKNOWN;
 }
 
-ResultCode RocksdbEngine::multiPut(std::vector<KV> keyValues) {
+
+ResultCode RocksEngine::multiPut(std::vector<KV> keyValues) {
     rocksdb::WriteBatch updates(FLAGS_batch_reserved_bytes);
     for (size_t i = 0; i < keyValues.size(); i++) {
-        updates.Put(rocksdb::Slice(keyValues[i].first), rocksdb::Slice(keyValues[i].second));
+        updates.Put(keyValues[i].first, keyValues[i].second);
     }
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;
@@ -84,30 +88,33 @@ ResultCode RocksdbEngine::multiPut(std::vector<KV> keyValues) {
     return ResultCode::ERR_UNKNOWN;
 }
 
-ResultCode RocksdbEngine::range(const std::string& start,
-                                const std::string& end,
-                                std::unique_ptr<KVIterator>* storageIter) {
+
+ResultCode RocksEngine::range(const std::string& start,
+                              const std::string& end,
+                              std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(start));
     }
-    storageIter->reset(new RocksdbRangeIter(iter, start, end));
+    storageIter->reset(new RocksRangeIter(iter, start, end));
     return ResultCode::SUCCEEDED;
 }
 
-ResultCode RocksdbEngine::prefix(const std::string& prefix,
-                                 std::unique_ptr<KVIterator>* storageIter) {
+
+ResultCode RocksEngine::prefix(const std::string& prefix,
+                               std::unique_ptr<KVIterator>* storageIter) {
     rocksdb::ReadOptions options;
     rocksdb::Iterator* iter = db_->NewIterator(options);
     if (iter) {
         iter->Seek(rocksdb::Slice(prefix));
     }
-    storageIter->reset(new RocksdbPrefixIter(iter, prefix));
+    storageIter->reset(new RocksPrefixIter(iter, prefix));
     return ResultCode::SUCCEEDED;
 }
 
-ResultCode RocksdbEngine::remove(const std::string& key) {
+
+ResultCode RocksEngine::remove(const std::string& key) {
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;
     auto status = db_->Delete(options, key);
@@ -117,8 +124,9 @@ ResultCode RocksdbEngine::remove(const std::string& key) {
     return ResultCode::ERR_UNKNOWN;
 }
 
-ResultCode RocksdbEngine::removeRange(const std::string& start,
-                                      const std::string& end) {
+
+ResultCode RocksEngine::removeRange(const std::string& start,
+                                    const std::string& end) {
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;
     auto status = db_->DeleteRange(options, db_->DefaultColumnFamily(), start, end);
@@ -128,7 +136,8 @@ ResultCode RocksdbEngine::removeRange(const std::string& start,
     return ResultCode::ERR_UNKNOWN;
 }
 
-std::string RocksdbEngine::partKey(PartitionID partId) {
+
+std::string RocksEngine::partKey(PartitionID partId) {
     std::string key;
     static const size_t prefixLen = ::strlen(kSystemParts);
     key.reserve(prefixLen + sizeof(PartitionID));
@@ -137,7 +146,8 @@ std::string RocksdbEngine::partKey(PartitionID partId) {
     return key;
 }
 
-void RocksdbEngine::addPart(PartitionID partId) {
+
+void RocksEngine::addPart(PartitionID partId) {
     auto ret = put(partKey(partId), "");
     if (ret == ResultCode::SUCCEEDED) {
         partsNum_++;
@@ -145,7 +155,8 @@ void RocksdbEngine::addPart(PartitionID partId) {
     }
 }
 
-void RocksdbEngine::removePart(PartitionID partId) {
+
+void RocksEngine::removePart(PartitionID partId) {
      rocksdb::WriteOptions options;
      options.disableWAL = FLAGS_rocksdb_disable_wal;
      auto status = db_->Delete(options, partKey(partId));
@@ -155,7 +166,8 @@ void RocksdbEngine::removePart(PartitionID partId) {
      }
 }
 
-std::vector<PartitionID> RocksdbEngine::allParts() {
+
+std::vector<PartitionID> RocksEngine::allParts() {
     std::unique_ptr<KVIterator> iter;
     static const size_t prefixLen = ::strlen(kSystemParts);
     static const std::string prefixStr(kSystemParts, prefixLen);
@@ -171,11 +183,13 @@ std::vector<PartitionID> RocksdbEngine::allParts() {
     return parts;
 }
 
-int32_t RocksdbEngine::totalPartsNum() {
+
+int32_t RocksEngine::totalPartsNum() {
     return partsNum_;
 }
 
-ResultCode RocksdbEngine::ingest(const std::vector<std::string>& files) {
+
+ResultCode RocksEngine::ingest(const std::vector<std::string>& files) {
     rocksdb::IngestExternalFileOptions options;
     rocksdb::Status status = db_->IngestExternalFile(files, options);
     if (status.ok()) {
@@ -185,8 +199,9 @@ ResultCode RocksdbEngine::ingest(const std::vector<std::string>& files) {
     }
 }
 
-ResultCode RocksdbEngine::setOption(const std::string& config_key,
-                                    const std::string& config_value) {
+
+ResultCode RocksEngine::setOption(const std::string& config_key,
+                                  const std::string& config_value) {
     std::unordered_map<std::string, std::string> config_options = {
         {config_key, config_value}
     };
@@ -199,8 +214,9 @@ ResultCode RocksdbEngine::setOption(const std::string& config_key,
     }
 }
 
-ResultCode RocksdbEngine::setDBOption(const std::string& config_key,
-                                      const std::string& config_value) {
+
+ResultCode RocksEngine::setDBOption(const std::string& config_key,
+                                    const std::string& config_value) {
     std::unordered_map<std::string, std::string> config_db_options = {
         {config_key, config_value}
     };

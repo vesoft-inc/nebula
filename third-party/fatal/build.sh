@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # fatal is a haeder library, no need tp build, we just need to copy to the destination, so that we could build the rpm package
 
