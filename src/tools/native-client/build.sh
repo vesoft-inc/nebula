@@ -1,1 +1,4 @@
-mvn compile package test
+#!/bin/bash
+
+mvn clean compile package -DskipTests
+mvn test

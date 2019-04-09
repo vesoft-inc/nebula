@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 public class NativeClient implements AutoCloseable {
     static {
-        System.loadLibrary("nebula_native_client");
+        NativeClientResourceLoader.resourceLoader();
     }
 
     public static class Pair {
