@@ -67,8 +67,8 @@ protected:
 : * Memory based PartManager, it is used in UTs now.
  * */
 class MemPartManager final : public PartManager {
-    FRIEND_TEST(KVStoreTest, SimpleTest);
-    FRIEND_TEST(KVStoreTest, PartsTest);
+    FRIEND_TEST(NebulaStoreTest, SimpleTest);
+    FRIEND_TEST(NebulaStoreTest, PartsTest);
 
 public:
     MemPartManager() = default;

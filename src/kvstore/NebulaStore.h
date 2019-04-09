@@ -7,9 +7,9 @@
 #ifndef KVSTORE_NEBULASTORE_H_
 #define KVSTORE_NEBULASTORE_H_
 
+#include "base/Base.h"
 #include <gtest/gtest_prod.h>
 #include <folly/RWSpinLock.h>
-#include "base/Base.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/Part.h"
@@ -26,9 +26,10 @@ struct GraphSpaceKV {
     std::vector<Engine> engines_;
 };
 
+
 class NebulaStore : public KVStore, public Handler {
-    FRIEND_TEST(KVStoreTest, SimpleTest);
-    FRIEND_TEST(KVStoreTest, PartsTest);
+    FRIEND_TEST(NebulaStoreTest, SimpleTest);
+    FRIEND_TEST(NebulaStoreTest, PartsTest);
 
 public:
     explicit NebulaStore(KVOptions options)

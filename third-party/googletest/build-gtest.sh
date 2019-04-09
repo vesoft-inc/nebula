@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 PROJECT_NAME=$1
 SOURCE_DIR=$2
