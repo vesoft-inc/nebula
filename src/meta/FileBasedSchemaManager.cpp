@@ -142,10 +142,7 @@ std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
 
 // static
 GraphSpaceID FileBasedSchemaManager::toGraphSpaceID(const folly::StringPiece spaceName) {
-    UNUSED(spaceName);
-    // TODO(dutor) Fix this once the server based schema manager is merged in
-    return 1;
-    // return folly::hash::fnv32_buf(spaceName.start(), spaceName.size());
+    return folly::hash::fnv32_buf(spaceName.start(), spaceName.size());
 }
 
 

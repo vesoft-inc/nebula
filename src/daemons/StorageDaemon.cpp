@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    gServer->setInterface(handler);
+    gServer->setInterface(std::move(handler));
     gServer->setPort(FLAGS_port);
     gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
 

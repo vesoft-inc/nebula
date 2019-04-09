@@ -34,8 +34,7 @@ Status InsertEdgeExecutor::prepare() {
 
 
 void InsertEdgeExecutor::execute() {
-    std::vector<storage::cpp2::Edge> outwards(rows_.size());
-    std::vector<storage::cpp2::Edge> inwards(rows_.size());
+    std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto src = row->srcid();
@@ -67,51 +66,38 @@ void InsertEdgeExecutor::execute() {
             }
         }
         {
-            auto &edge = outwards[i];
-            edge.key.set_src(src);
-            edge.key.set_dst(dst);
-            edge.key.set_ranking(rank);
-            edge.key.set_edge_type(edge_);
-            edge.props = writer.encode();
-            edge.__isset.key = true;
-            edge.__isset.props = true;
+            auto &out = edges[i];
+            out.key.set_src(src);
+            out.key.set_dst(dst);
+            out.key.set_ranking(rank);
+            out.key.set_edge_type(edge_);
+            out.props = writer.encode();
+            out.__isset.key = true;
+            out.__isset.props = true;
         }
         {
-            auto &edge = inwards[i];
-            edge.key.set_src(dst);
-            edge.key.set_dst(src);
-            edge.key.set_ranking(rank);
-            edge.key.set_edge_type(-edge_);
-            edge.props = "";
-            edge.__isset.key = true;
-            edge.__isset.props = true;
+            auto &in = edges[i + 1];
+            in.key.set_src(dst);
+            in.key.set_dst(src);
+            in.key.set_ranking(rank);
+            in.key.set_edge_type(-edge_);
+            in.props = "";
+            in.__isset.key = true;
+            in.__isset.props = true;
         }
     }
 
     auto space = ectx()->rctx()->session()->space();
-    using storage::cpp2::ExecResponse;
-    std::array<folly::SemiFuture<storage::StorageRpcResponse<ExecResponse>>, 2> both = {
-        ectx()->storage()->addEdges(space, std::move(outwards), overwritable_),
-        ectx()->storage()->addEdges(space, std::move(inwards), overwritable_)
-    };
-
+    auto future = ectx()->storage()->addEdges(space, std::move(edges), overwritable_);
     auto *runner = ectx()->rctx()->runner();
 
-    auto cb = [this] (auto &&results) {
+    auto cb = [this] (auto &&resp) {
         // For insertion, we regard partial success as failure.
-        for (auto &result : results) {
-            if (result.hasException()) {
-                LOG(ERROR) << "Insert edge failed: " << result.exception().what();
-                onError_(Status::Error("Internal Error"));
-                return;
-            }
-            auto resp = std::move(result).value();
-            auto completeness = resp.completeness();
-            if (completeness != 100) {
-                DCHECK(onError_);
-                onError_(Status::Error("Internal Error"));
-                return;
-            }
+        auto completeness = resp.completeness();
+        if (completeness != 100) {
+            DCHECK(onError_);
+            onError_(Status::Error("Internal Error"));
+            return;
         }
         DCHECK(onFinish_);
         onFinish_();
@@ -123,8 +109,6 @@ void InsertEdgeExecutor::execute() {
         onError_(Status::Error("Internal error"));
         return;
     };
-
-    auto future = folly::collectAll(both);
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }

@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
     gServer = std::make_unique<apache::thrift::ThriftServer>();
     CHECK(!!gServer) << "Failed to create the thrift server";
 
-    gServer->setInterface(handler);
+    gServer->setInterface(std::move(handler));
     gServer->setPort(FLAGS_port);
 
     // Setup the signal handlers
