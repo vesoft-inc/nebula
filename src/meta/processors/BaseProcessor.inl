@@ -113,7 +113,11 @@ StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) 
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
-        return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
+        try {
+            return folly::to<GraphSpaceID>(val);
+        } catch (std::exception& e) {
+            LOG(ERROR) << "Convert failed for " << val << ", msg " << e.what();
+        }
     }
     return Status::SpaceNotFound();
 }

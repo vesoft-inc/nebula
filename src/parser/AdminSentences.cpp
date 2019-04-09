@@ -10,13 +10,14 @@ namespace nebula {
 
 std::string ShowSentence::toString() const {
     std::string buf;
+    buf.reserve(256);
     switch (showKind_) {
         case ShowKind::kShowHosts:
             buf = "SHOW HOSTS";
             break;
         case ShowKind::kUnknown:
         default:
-            LOG(FATAL) << "Show Sentence kind illegal: " << showKind_;
+            FLOG_FATAL("Show Sentence kind illegal");
             break;
     }
     return buf;
@@ -56,13 +57,14 @@ std::string RemoveHostsSentence::toString() const {
 
 
 std::string SpaceOptItem::toString() const {
-    char buf[256];
+    std::string buf;
+    buf.reserve(256);
     switch (optType_) {
         case PARTITION_NUM:
-            snprintf(buf, sizeof(buf), "partition_num = %ld", boost::get<int64_t>(optValue_));
+            buf = folly::stringPrintf("partition_num = %ld", boost::get<int64_t>(optValue_));
             break;
         case REPLICA_FACTOR:
-            snprintf(buf, sizeof(buf), "replica_factor = %ld", boost::get<int64_t>(optValue_));
+            buf = folly::stringPrintf("replica_factor = %ld", boost::get<int64_t>(optValue_));
             break;
     }
     return buf;

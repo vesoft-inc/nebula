@@ -30,7 +30,7 @@ void ShowExecutor::execute() {
             showHostsExecute();
             break;
         case ShowKind::kUnknown:
-            LOG(FATAL) << "Show Sentence kind unknown: " <<show_kind;
+            onError_(Status::Error("Show Sentence kind unknown"));
             break;
         // intentionally no `default'
     }
@@ -98,7 +98,7 @@ AddHostsExecutor::AddHostsExecutor(Sentence *sentence,
 Status AddHostsExecutor::prepare() {
     host_ = sentence_->hosts();
     if (host_.size() == 0) {
-        LOG(FATAL) << "Add hosts Sentence host address illegal";
+        return Status::Error("Add hosts Sentence host address illegal");
     }
     return Status::OK();
 }
@@ -139,7 +139,7 @@ RemoveHostsExecutor::RemoveHostsExecutor(Sentence *sentence,
 Status RemoveHostsExecutor::prepare() {
     host_ = sentence_->hosts();
     if (host_.size() == 0) {
-        LOG(FATAL) << "Remove hosts Sentence host address illegal";
+        return Status::Error("Remove hosts Sentence host address illegal");
     }
     return Status::OK();
 }
@@ -189,19 +189,21 @@ Status CreateSpaceExecutor::prepare() {
                 break;
         }
     }
+    if (partNum_ == 0)
+        return Status::Error("partition_num value illegal");
+    if (replicaFactor_ == 0)
+        return Status::Error("replica_factor value illegal");
     return Status::OK();
 }
 
 
 void CreateSpaceExecutor::execute() {
-    CHECK_GT(partNum_, 0) << "partition_num value illegal";
-    CHECK_GT(replicaFactor_, 0) << "replica_factor value illegal";
     auto future = ectx()->getMetaClient()->createSpace(*spaceName_, partNum_, replicaFactor_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
         auto spaceId = resp.value();
-        if (spaceId == 0) {
+        if (spaceId <= 0) {
             DCHECK(onError_);
             onError_(Status::Error("Create space failed"));
             return;
