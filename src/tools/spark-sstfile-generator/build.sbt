@@ -2,38 +2,49 @@ import Commons._
 
 organization := "com.vesoft"
 // compatible with spark 1.6.2
-scalaVersion := "2.11.8"
+//scalaVersion := "2.11.8"
+// compatible with spark 1.6.0
+scalaVersion := "2.10.5"
 name := "nebula-spark-sstfile-generator"
 version := "1.0-SNAPSHOT"
 
 test in assembly in ThisBuild := {}
-javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint")
 
 //not include src and doc when dist
 sources in(Compile, doc) in ThisBuild := Seq.empty
 publishArtifact in(Compile, packageDoc) in ThisBuild := false
 sources in (packageSrc) := Seq.empty
 
-
 libraryDependencies ++= commonDependencies
 libraryDependencies ++= Seq(
-  "org.apache.spark" %% "spark-core" % "1.6.2" % "provided",
-  "org.apache.spark" %% "spark-sql" % "1.6.2" % "provided",
-  "org.apache.spark" %% "spark-yarn" % "1.6.2" % "provided",
+  // compatible with spark 1.6.2
+  //  "org.apache.spark" %% "spark-core" % "1.6.2" % "provided",
+  //  "org.apache.spark" %% "spark-sql" % "1.6.2" % "provided",
+  //  "org.apache.spark" %% "spark-yarn" % "1.6.2" % "provided",
+  //  "com.databricks" %% "spark-csv" % "1.5.0" % "provided",
+  //  "org.apache.spark" %% "spark-hive" % "1.6.2" % "provided",
+
+  // compatible with spark 1.6.0
+  "org.apache.spark" %% "spark-core" % "1.6.0" % "provided",
+  "org.apache.spark" %% "spark-sql" % "1.6.0" % "provided",
+  "org.apache.spark" %% "spark-yarn" % "1.6.0" % "provided",
   "com.databricks" %% "spark-csv" % "1.5.0" % "provided",
+  "org.apache.spark" %% "spark-hive" % "1.6.0" % "provided",
 
   //cmd line parsing
   "commons-cli" % "commons-cli" % "1.4",
   "org.scalatest" %% "scalatest" % "3.0.4" % Test,
-  "org.apache.spark" %% "spark-hive" % "1.6.2" % "provided",
 
   // json parsing
-  "com.typesafe.play" %% "play-json" % "2.7.1",
+  "com.typesafe.play" %% "play-json" % "2.6.0",
   "joda-time" % "joda-time" % "2.10.1",
+  // to eliminate the annoying '[warn] Class org.joda.convert.FromString not found - continuing with a stub.' message
+  "org.joda" % "joda-convert" % "2.2.0" % "provided",
 
   //need nebula native client for encoding, need to run mvn install to deploy to local repo before used
   "org.rocksdb" % "rocksdbjni" % "5.17.2",
-  "com.vesoft" % "native-client" % "1.0-SNAPSHOT"
+  //  "com.vesoft" % "native-client" % "1.0.0"
+  "com.vesoft" % "native-client" % "1.0-SNAPSHOT" changing()
 )
 
 //CAUTION: when dependency with version of X-SNAPSHOT is updated, you should comment out the following line, and run sbt update
@@ -44,7 +55,8 @@ assemblyMergeStrategy in assembly := {
   case PathList("org", "apache", "logging", xs@_*) => MergeStrategy.discard
   case PathList("ch", "qos", "logback", xs@_*) => MergeStrategy.discard
   case PathList("org", "scalactic", xs@_*) => MergeStrategy.discard
-  case x => val oldStrategy = (assemblyMergeStrategy in assembly).value
+  case x =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
 }
 

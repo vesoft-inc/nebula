@@ -1,7 +1,5 @@
 package com.vesoft.tools
 
-import java.sql.Date
-
 import com.vesoft.client.NativeClient
 import org.apache.commons.cli.{CommandLine, DefaultParser, HelpFormatter, Options, ParseException, Option => CliOption}
 import org.apache.hadoop.io.BytesWritable
@@ -24,31 +22,31 @@ import org.slf4j.LoggerFactory
   *
   * after job complete, following dir structure will be generated；
   * worker_node1
-  * |
-  * |-sstFileOutput
-  * |
-  * |--1
-  * |  |
-  * |  |——vertex.data
-  * |  |--edge.data
-  * |
-  * |--2
-  * |
-  * |——vertex.data
-  * |--edge.data
+  *       |
+  *       |-sstFileOutput
+  *       |
+  *       |--1
+  *       |  |
+  *       |  |——vertex.data
+  *       |  |--edge.data
+  *       |
+  *       |--2
+  *       |
+  *       |——vertex.data
+  *       |--edge.data
   * worker_node2
-  * |
-  * |-sstFileOutput
-  * |
-  * |--1
-  * |  |
-  * |  |——vertex.data
-  * |  |--edge.data
-  * |
-  * |--2
-  * |
-  * |——vertex.data
-  * |--edge.data
+  *       |
+  *       |-sstFileOutput
+  *       |
+  *       |--1
+  *       |  |
+  *       |  |——vertex.data
+  *       |  |--edge.data
+  *       |
+  *       |--2
+  *       |
+  *       |——vertex.data
+  *       |--edge.data
   * </p>
   */
 object SparkSstFileGenerator {
@@ -86,11 +84,26 @@ object SparkSstFileGenerator {
       .desc("where the generated sst files will be put")
       .build
 
+    val datePartitionKey = CliOption.builder("pi").longOpt("date_partition_input")
+      .required()
+      .hasArg()
+      .desc("table partitioned by a date field")
+      .build
+
+    // when the newest data arrive
+    val latestDate = CliOption.builder("li").longOpt("latest_date_input")
+      .required()
+      .hasArg()
+      .desc("latest date to query")
+      .build
+
     val opts = new Options()
     opts.addOption(defaultColumnMapPolicy)
     opts.addOption(dataSourceTypeInput)
     opts.addOption(mappingFileInput)
     opts.addOption(sstFileOutput)
+    opts.addOption(datePartitionKey)
+    opts.addOption(latestDate)
   }
 
   // cmd line formatter when something is wrong with options
@@ -111,7 +124,7 @@ object SparkSstFileGenerator {
     }
     catch {
       case e: ParseException => {
-        log.error("illegal args", e)
+        log.error("illegal arguments", e)
         formatter.printHelp("nebula spark sst file generator", options)
         System.exit(-1)
       }
@@ -133,12 +146,16 @@ object SparkSstFileGenerator {
       sstFileOutput = sstFileOutput.stripSuffix("/")
     }
 
+    //when date partition is used, we should use the LATEST data
+    val datePartitionKey: String = cmd.getOptionValue("pi")
+    val latestDate = cmd.getOptionValue("li")
+
     // parse mapping file
     val mappingConfiguration: MappingConfiguration = MappingConfiguration(mappingFileInput)
 
     val sparkConf = new SparkConf().setAppName("nebula-graph-sstFileGenerator")
     val sc = new SparkContext(sparkConf)
-    val hiveContext = new HiveContext(sc)
+    val sqlContext = new HiveContext(sc)
 
     // to pass sst file dir to SstFileOutputFormat
     sc.getConf.set(SSF_OUTPUT_DIR_CONF_KEY, sstFileOutput)
@@ -159,21 +176,19 @@ object SparkSstFileGenerator {
       //tag index used as tagId
       case (tag, tagType) => {
         //all column w/o PK column
-        val allColumns: Seq[Column] = checkAndPopulateColumns(hiveContext, Left(tag))
+        val (allColumns, partitionCols) = validateColumns(sqlContext, tag, Seq(tag.primaryKey), Seq(tag.primaryKey), mappingConfiguration.databaseName)
+        val columnExpression = {
+          assert(allColumns.size > 0) // should have columns defined
+          s"${tag.primaryKey}," + allColumns.map(_.columnName).mkString(",")
+        }
 
-        val columnExpression =
-          if (allColumns.size == 0) { // only PK columns defined, so fetch all columns
-            "*"
-          } else {
-            s"${tag.primaryKey}," + allColumns.mkString(",")
-          }
-
-        val tagDF = hiveContext.sql(s"SELECT ${columnExpression} FROM ${tag.tableName}")
+        val whereClause = tag.typePartitionKey.map(key => s"${key}='${tag.name}' AND ${datePartitionKey}='${latestDate}'").getOrElse(s"${datePartitionKey}='${latestDate}'")
+        val tagDF = sqlContext.sql(s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${tag.tableName} WHERE ${whereClause}") //TODO:to handle multiple partition columns' Cartesian product
         //RDD[(businessKey->values)]
         val bizKeyAndValues: RDD[(String, Seq[AnyRef])] = tagDF.map(row => {
           (row.getAs[String](tag.primaryKey) + "_" + tag.tableName, //businessId_tableName used as key before HASH
             allColumns.filter(!_.columnName.equalsIgnoreCase(tag.primaryKey)).map(col => {
-              col.`type` match {
+              col.`type`.toUpperCase match {
                 case "INTEGER" => Int.box(row.getAs[Int](col.columnName))
                 case "STRING" => row.getAs[String](col.columnName).getBytes("UTF-8") //native client don't know string's charset
                 case "FLOAT" => Float.box(row.getAs[Float](col.columnName))
@@ -194,7 +209,7 @@ object SparkSstFileGenerator {
             val keyEncoded: Array[Byte] = NativeClient.createVertexKey(partitionId, vertexId, tagType, DefaultVersion)
             // use native client
             val valuesEncoded: Array[Byte] = NativeClient.encoded(values.toArray)
-            (new BytesWritable(keyEncoded), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded))) //TODO:valuesEncoded should be of type BytesWritable
+            (new BytesWritable(keyEncoded), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded)))
           }
         }
       }
@@ -208,23 +223,23 @@ object SparkSstFileGenerator {
       //edge index used as edge_type
       case (edge, edgeType) => {
         //all column w/o PK column
-        val allColumns: Seq[Column] = checkAndPopulateColumns(hiveContext, Right(edge))
+        val (allColumns, partitionColumns) = validateColumns(sqlContext, edge, Seq(edge.fromForeignKeyColumn), Seq(edge.fromForeignKeyColumn, edge.toForeignKeyColumn), mappingConfiguration.databaseName)
 
-        val columnExpression =
-          if (allColumns.size == 0) { // only FROM and TO column defined，so fetch all other column as properties
-            "*"
-          } else {
-            s"${edge.fromForeignKeyColumn},${edge.toForeignKeyColumn}" + allColumns.mkString(",")
-          }
+        val columnExpression = {
+          assert(allColumns.size > 0)
+          s"${edge.fromForeignKeyColumn},${edge.toForeignKeyColumn}" + allColumns.mkString(",")
+        }
+
+        val whereClause = edge.typePartitionKey.map(key => s"${key}='${edge.name}' AND ${datePartitionKey}='${latestDate}'").getOrElse(s"${datePartitionKey}='${latestDate}'")
 
         //TODO: join FROM_COLUMN and join TO_COLUMN from the table where this columns referencing, to make sure that the claimed id really exists in the reference table.BUT with HUGE Perf penalty
-        val tagDF = hiveContext.sql(s"SELECT ${columnExpression} FROM ${edge.name}")
+        val edgeDf = sqlContext.sql(s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${edge.tableName} WHERE ${whereClause}")
         //RDD[(businessKey->values)]
-        val bizKeyAndValues: RDD[(String, String, Seq[AnyRef])] = tagDF.map(row => {
+        val bizKeyAndValues: RDD[(String, String, Seq[AnyRef])] = edgeDf.map(row => {
           (row.getAs[String](edge.fromForeignKeyColumn), //consistent with vertexId generation logic, to make sure that vertex and its' outbound edges are in the same partition
             row.getAs[String](edge.toForeignKeyColumn), //consistent with vertexId generation logic
-            allColumns.filter(col => !col.columnName.equalsIgnoreCase(edge.fromForeignKeyColumn) && !col.columnName.equalsIgnoreCase(edge.toForeignKeyColumn)).map(col => {
-              col.`type` match {
+            allColumns.filterNot(col => (col.columnName.equalsIgnoreCase(edge.fromForeignKeyColumn) || col.columnName.equalsIgnoreCase(edge.toForeignKeyColumn))).map(col => {
+              col.`type`.toUpperCase match {
                 case "INTEGER" => Int.box(row.getAs[Int](col.columnName))
                 case "STRING" => row.getAs[String](col.columnName).getBytes("UTF-8")
                 case "FLOAT" => Float.box(row.getAs[Float](col.columnName))
@@ -234,7 +249,8 @@ object SparkSstFileGenerator {
                 //case "DATE" => row.getAs[Date](col.columnName) //TODO: not support Date type yet
                 case a@_ => throw new IllegalStateException(s"unsupported edge data type ${a}")
               }
-            })
+            }
+            )
           )
         })
 
@@ -245,13 +261,14 @@ object SparkSstFileGenerator {
 
             val srcId = idGeneratorFunction.apply(srcIDString)
             val dstId = idGeneratorFunction.apply(dstIdString)
+            // use NativeClient to generate key and encode values
             val keyEncoded = NativeClient.createEdgeKey(partitionId, srcId, edgeType.asInstanceOf[Int], -1L, dstId, DefaultVersion) //TODO: support edge ranking,like create_time desc
-            // use NativeClient
             val valuesEncoded: Array[Byte] = NativeClient.encoded(values.toArray)
-            (new BytesWritable(keyEncoded), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded), false)) //TODO:valuesEncoded should be of type BytesWritable
+            (new BytesWritable(keyEncoded), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded), false))
           }
         }
       }
+
     }.fold(sc.emptyRDD[(BytesWritable, PartitionIdAndValueBinaryWritable)])(_ ++ _)
 
 
@@ -259,135 +276,62 @@ object SparkSstFileGenerator {
   }
 
   /**
-    * check that columns required in mapping configuration file should be defined in db(hive)
+    * check that columns claimed in mapping configuration file are defined in db(hive)
     * and its type is compatible, when not, throw exception, return all required column definitions,
-    *
-    * @return all explicitly defined column or all columns(default), except PK column
     */
-  private def checkAndPopulateColumns(hiveContext: HiveContext, tagEdgeEither: Either[Tag, Edge]): Seq[Column] = {
-    tagEdgeEither match {
-      case Left(tag) => {
-        handleTag(hiveContext, tag)
-      }
-      case Right(edge) => {
-        handleEdge(hiveContext, edge)
-      }
-    }
-  }
-
-  private def handleEdge(hiveContext: HiveContext, edge: Edge): Seq[Column] = {
-    val descriptionDF = hiveContext.sql(s"DESC ${edge.tableName}")
+  private def validateColumns(sqlContext: HiveContext, edge: WithColumnMapping, colsMustCheck: Seq[String], colsMustFilter: Seq[String], databaseName: String): (Seq[Column], Seq[String]) = {
+    val descriptionDF = sqlContext.sql(s"DESC ${databaseName}.${edge.tableName}")
     // all columns' name ---> type mapping in db
-    val allColumnsMapInDB: Map[String, String] = descriptionDF.map {
+    val allColumnsMapInDB: Seq[(String, String)] = descriptionDF.map {
       case Row(colName: String, colType: String, _) => {
         (colName.toUpperCase, colType.toUpperCase)
       }
-    }.collect.toMap
+    }.collect.toSeq
 
-
-    // check FK column and the reference column
-    if (allColumnsMapInDB.get(edge.fromForeignKeyColumn.toUpperCase).isEmpty) {
-      throw new IllegalStateException(s"Edge=${edge.name}'s from column: ${edge.fromForeignKeyColumn} not defined in table=${edge.tableName}")
+    val nonPartitionColumnIndex = allColumnsMapInDB.indexWhere(_._1.startsWith("#"))
+    val partitionColumnIndex = allColumnsMapInDB.lastIndexWhere(_._1.startsWith("#"))
+    var partitionColumns: Seq[(String, String)] = Seq.empty[(String, String)]
+    if (nonPartitionColumnIndex != -1 && ((partitionColumnIndex + 1) < allColumnsMapInDB.size)) {
+      partitionColumns = allColumnsMapInDB.slice(partitionColumnIndex + 1, allColumnsMapInDB.size)
     }
 
-    // check FROM_COLUMN foreignkey must reference an existing column
-    val fromColumnExist = checkColumnExistInTable(hiveContext, edge.fromReferenceTable, edge.fromReferenceColumn)
-    if (!fromColumnExist) {
-      throw new IllegalStateException(s"Edge=${edge.name}'s from reference column: ${edge.fromReferenceColumn} not defined in table=${edge.fromReferenceTable}")
+    //all columns except partition columns
+    val allColumnMap = allColumnsMapInDB.slice(0, nonPartitionColumnIndex).toMap
+
+    // check the claimed columns really exist in db
+    colsMustCheck.map(_.toUpperCase).foreach {
+      col =>
+        if (allColumnMap.get(col).isEmpty) {
+          throw new IllegalStateException(s"${edge.name}'s from column: ${col} not defined in table=${edge.tableName}")
+        }
     }
 
-    if (allColumnsMapInDB.get(edge.toForeignKeyColumn.toUpperCase).isEmpty) {
-      throw new IllegalStateException(s"Edge=${edge.name}'s to column: ${edge.fromForeignKeyColumn} not defined in table=${edge.tableName}")
-    }
-
-    // check TO_COLUMN foreignkey must reference an existing column
-    val toColumnExist = checkColumnExistInTable(hiveContext, edge.toReferenceTable, edge.toReferenceColumn)
-    if (!toColumnExist) {
-      throw new IllegalStateException(s"Edge=${edge.name}'s to reference column: ${edge.toReferenceColumn} not defined in table=${edge.toReferenceTable}")
-    }
-
-    if (edge.columnMappings.isEmpty) { //only (from,to) columns are checked, but all columns should be returned
-      allColumnsMapInDB.filter(col => !col._1.equalsIgnoreCase(edge.fromForeignKeyColumn) && !col._1.equalsIgnoreCase(edge.toForeignKeyColumn)).map {
+    if (edge.columnMappings.isEmpty) {
+      //only (from,to) columns are checked, but all columns should be returned
+      (allColumnMap.filter(!partitionColumns.contains(_)).filter(!colsMustFilter.contains(_)).map {
         case (colName, colType) => {
           Column(colName, colName, colType) // propertyName default=colName
         }
-      }.toSeq
+      }.toSeq, partitionColumns.map(_._1))
     }
-    else { // tag.columnMappings should be checked and returned
+    else {
+      // tag/edge's columnMappings should be checked and returned
       val columnMappings = edge.columnMappings.get
-      //just check
       val notValid = columnMappings.filter(
         col => {
-          val typeInDb = allColumnsMapInDB.get(col.columnName.toUpperCase)
-          !typeInDb.isEmpty || !DataTypeCompatibility.isCompatible(col.`type`, typeInDb.get)
+          val typeInDb = allColumnMap.get(col.columnName.toUpperCase)
+          typeInDb.isEmpty || !DataTypeCompatibility.isCompatible(col.`type`, typeInDb.get)
         }
       ).map {
         case col => s"name=${col.columnName},type=${col.`type`}"
       }
 
       if (notValid.nonEmpty) {
-        throw new IllegalStateException(s"Edge=${edge.name}'s columns: ${notValid.mkString("\t")} not defined in or compatible with db's definitions")
+        throw new IllegalStateException(s"${edge.name}'s columns: ${notValid.mkString("\t")} not defined in or compatible with db's definitions")
       }
       else {
-        columnMappings
+        (columnMappings, partitionColumns.map(_._1))
       }
     }
-  }
-
-
-  private def handleTag(hiveContext: HiveContext, tag: Tag): Seq[Column] = {
-    val descriptionDF = hiveContext.sql(s"DESC ${tag.tableName}")
-    // all columns' name ---> type in db
-    val allColumnsMapInDB: Map[String, String] = descriptionDF.map {
-      case Row(colName: String, colType: String, _) => {
-        (colName.toUpperCase, colType.toUpperCase)
-      }
-    }.collect.toMap
-
-
-    //always check PK column
-    if (allColumnsMapInDB.get(tag.primaryKey.toUpperCase).isEmpty) {
-      throw new IllegalStateException(s"Tag=${tag.name}'s PK column: ${tag.primaryKey} not defined in db")
-    }
-
-    if (tag.columnMappings.isEmpty) { //only PK column checked, but all columns should be returned
-      allColumnsMapInDB.filter(!_._1.equalsIgnoreCase(tag.primaryKey)).map {
-        case (colName, colType) => {
-          Column(colName, colName, colType) // propertyName default=colName
-        }
-      }.toSeq
-    }
-    else { // tag.columnMappings should be checked and returned
-      val columnMappings = tag.columnMappings.get
-      val notValid = columnMappings.filter(
-        col => {
-          val typeInDb = allColumnsMapInDB.get(col.columnName.toUpperCase)
-          !typeInDb.isEmpty || !DataTypeCompatibility.isCompatible(col.`type`, typeInDb.get)
-        }
-      ).map {
-        case col => s"name=${col.columnName},type=${col.`type`}"
-      }
-
-      if (notValid.nonEmpty) {
-        throw new IllegalStateException(s"Tag=${tag.name}'s columns: ${notValid.mkString("\t")} not defined in or compatible with db's definitions")
-      }
-      else {
-        columnMappings
-      }
-    }
-  }
-
-  /**
-    * check whether a column exist in a table
-    */
-  private def checkColumnExistInTable(hiveContext: HiveContext, tableName: String, columnName: String): Boolean = {
-    val fromDF = hiveContext.sql(s"DESC ${tableName}")
-    val fromTableCols: Map[String, String] = fromDF.map {
-      case Row(colName: String, colType: String, _) => {
-        (colName.toUpperCase, colType.toUpperCase)
-      }
-    }.collect.toMap
-
-    fromTableCols.get(columnName.toUpperCase).isEmpty
   }
 }

@@ -1,5 +1,5 @@
 {
-  "fma": {
+  "space_one": {
     "key_policy": "hash_primary_key",
     "partitions": 3,
     "tags": [
@@ -43,7 +43,7 @@
         "from_foreign_key_column": "from_node",
         "from_tag": "user_pin",
         "to_foreign_key_column": "to_node",
-        "to_tag": "mac",
+        "to_tag": "qq",
         "mappings": [
           {
             "src_pri_value": {
