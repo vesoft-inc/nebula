@@ -59,12 +59,14 @@ trait WithColumnMapping {
 /**
   * tag section of configuration file
   *
-  * @param tableName      hive table name
-  * @param name           tag name
-  * @param primaryKey     which column is PK
-  * @param columnMappings map of hive table column to properties
+  * @param tableName        hive table name
+  * @param name             tag name
+  * @param primaryKey       which column is PK
+  * @param datePartitionKey date partition column,Hive table in production usually is Date partitioned
+  * @param typePartitionKey type partition columns, when different vertex/edge's properties are identical,they are stored in one hive table, and partition by a `type` column
+  * @param columnMappings   map of hive table column to properties
   */
-case class Tag(override val tableName: String, override val name: String, primaryKey: String, override val columnMappings: Option[Seq[Column]] = None) extends WithColumnMapping {
+case class Tag(override val tableName: String, override val name: String, primaryKey: String, datePartitionKey: Option[String] = None, typePartitionKey: Option[String] = None, override val columnMappings: Option[Seq[Column]] = None) extends WithColumnMapping {
   def allColumnNames(): Option[Seq[String]] = columnMappings.map(_.map(_.columnName))
 
   def getColumn(name: String): Option[Column] = {
@@ -83,12 +85,16 @@ object Tag {
       tag.columnMappings.fold(
         Json.obj("table_name" -> JsString(tag.tableName),
           "tag_name" -> JsString(tag.name),
-          "primary_key" -> JsString(tag.primaryKey)
+          "primary_key" -> JsString(tag.primaryKey),
+          "date_partition_key" -> (if (tag.datePartitionKey.isDefined) JsString(tag.datePartitionKey.get) else JsNull),
+          "type_partition_key" -> (if (tag.typePartitionKey.isDefined) JsString(tag.typePartitionKey.get) else JsNull)
         )) {
         cols =>
           Json.obj("table_name" -> JsString(tag.tableName),
             "tag_name" -> JsString(tag.name),
             "primary_key" -> JsString(tag.primaryKey),
+            "date_partition_key" -> (if (tag.datePartitionKey.isDefined) JsString(tag.datePartitionKey.get) else JsNull),
+            "type_partition_key" -> (if (tag.typePartitionKey.isDefined) JsString(tag.typePartitionKey.get) else JsNull),
             "mappings" -> Json.toJson(cols))
       }
     }
@@ -99,9 +105,11 @@ object Tag {
       val tableName = (json \ "table_name").as[String]
       val tagName = (json \ "tag_name").as[String]
       val pk = (json \ "primary_key").as[String]
+      val datePartitionKey = (json \ "date_partition_key").asOpt[String]
+      val typePartitionKey = (json \ "type_partition_key").asOpt[String]
       val columnMappings = (json \ "mappings").asOpt[Seq[Column]]
 
-      JsSuccess(Tag(tableName, tagName, pk, columnMappings))
+      JsSuccess(Tag(tableName, tagName, pk, datePartitionKey, typePartitionKey, columnMappings))
     }
   }
 }
@@ -113,14 +121,12 @@ object Tag {
   * @param tableName            hive table name
   * @param name                 edge type name
   * @param fromForeignKeyColumn which column is srcID
-  * @param fromReferenceTable   which table does srcID column reference
-  * @param fromReferenceColumn  which column of fromReferenceTable is referenced by srcID
+  * @param fromReferenceTag     which Tag does srcID column reference
   * @param toForeignKeyColumn   which column is dstID
-  * @param toReferenceTable     which table does dstID column reference
-  * @param toReferenceColumn    which column of { @line com.vesoft.tools.Edge#toReferenceTable} is referenced by srcID
+  * @param toReferenceTag       which Tag does dstID column reference
   * @param columnMappings       map of hive table column to properties
   */
-case class Edge(override val tableName: String, override val name: String, fromForeignKeyColumn: String, fromReferenceTable: String, fromReferenceColumn: String, toForeignKeyColumn: String, toReferenceTable: String, toReferenceColumn: String, override val columnMappings: Option[Seq[Column]] = None) extends WithColumnMapping {
+case class Edge(override val tableName: String, override val name: String, fromForeignKeyColumn: String, fromReferenceTag: String, toForeignKeyColumn: String, toReferenceTag: String, datePartitionKey: Option[String] = None, typePartitionKey: Option[String] = None, override val columnMappings: Option[Seq[Column]] = None) extends WithColumnMapping {
   def allColumnNames(): Option[Seq[String]] = columnMappings.map(columns => columns.map(_.columnName))
 }
 
@@ -134,22 +140,22 @@ object Edge {
       edge.columnMappings.fold(
         Json.obj("table_name" -> JsString(edge.tableName),
           "edge_name" -> JsString(edge.name),
+          "date_partition_key" -> (if (edge.datePartitionKey.isDefined) JsString(edge.datePartitionKey.get) else JsNull),
+          "type_partition_key" -> (if (edge.typePartitionKey.isDefined) JsString(edge.typePartitionKey.get) else JsNull),
           "from_foreign_key_column" -> JsString(edge.fromForeignKeyColumn),
-          "from_reference_table" -> JsString(edge.fromReferenceTable),
-          "from_reference_column" -> JsString(edge.fromReferenceColumn),
+          "from_tag" -> JsString(edge.fromReferenceTag),
           "to_foreign_key_column" -> JsString(edge.toForeignKeyColumn),
-          "to_reference_table" -> JsString(edge.toReferenceTable),
-          "to_reference_column" -> JsString(edge.toReferenceColumn)
+          "to_tag" -> JsString(edge.toReferenceTag)
         )) {
         cols =>
           Json.obj("table_name" -> JsString(edge.tableName),
             "edge_name" -> JsString(edge.name),
+            "date_partition_key" -> (if (edge.datePartitionKey.isDefined) JsString(edge.datePartitionKey.get) else JsNull),
+            "type_partition_key" -> (if (edge.typePartitionKey.isDefined) JsString(edge.typePartitionKey.get) else JsNull),
             "from_foreign_key_column" -> JsString(edge.fromForeignKeyColumn),
-            "from_reference_table" -> JsString(edge.fromReferenceTable),
-            "from_reference_column" -> JsString(edge.fromReferenceColumn),
+            "from_tag" -> JsString(edge.fromReferenceTag),
             "to_foreign_key_column" -> JsString(edge.toForeignKeyColumn),
-            "to_reference_table" -> JsString(edge.toReferenceTable),
-            "to_reference_column" -> JsString(edge.toReferenceColumn),
+            "to_tag" -> JsString(edge.toReferenceTag),
             "mappings" -> Json.toJson(cols)
           )
       }
@@ -161,16 +167,17 @@ object Edge {
 
       val tableName = (json \ "table_name").as[String]
       val edgeName = (json \ "edge_name").as[String]
+      val datePartitionKey = (json \ "date_partition_key").asOpt[String]
+      val typePartitionKey = (json \ "type_partition_key").asOpt[String]
+
       val fromForeignKeyColumn = (json \ "from_foreign_key_column").as[String]
-      val fromReferenceTable = (json \ "from_reference_table").as[String]
-      val fromReferenceColumn = (json \ "from_reference_column").as[String]
+      val fromTag = (json \ "from_tag").as[String]
       val toForeignKeyColumn = (json \ "to_foreign_key_column").as[String]
-      val toReferenceTable = (json \ "to_reference_table").as[String]
-      val toReferenceColumn = (json \ "to_reference_column").as[String]
+      val toTag = (json \ "to_tag").as[String]
 
       val columnMappings = (json \ "mappings").asOpt[Seq[Column]]
 
-      JsSuccess(Edge(tableName, edgeName, fromForeignKeyColumn, fromReferenceTable, fromReferenceColumn, toForeignKeyColumn, toReferenceTable, toReferenceColumn, columnMappings))
+      JsSuccess(Edge(tableName, edgeName, fromForeignKeyColumn, fromTag, toForeignKeyColumn, toTag, datePartitionKey, typePartitionKey, columnMappings))
     }
   }
 }
@@ -178,18 +185,18 @@ object Edge {
 /**
   * a mapping file in-memory representation
   *
-  * @param graphSpace graphspace name this mapping configuration for
-  * @param partitions partition number of this graphspace
-  * @param tags       tag's mapping
-  * @param edges      edge's mapping
-  * @param keyPolicy  policy which used to generate unique id, default=hash_primary_key
+  * @param databaseName graphspace name this mapping configuration for
+  * @param partitions   partition number of this graphspace
+  * @param tags         tag's mapping
+  * @param edges        edge's mapping
+  * @param keyPolicy    policy which used to generate unique id, default=hash_primary_key
   */
-case class MappingConfiguration(graphSpace: String, partitions: Int, tags: Seq[Tag], edges: Seq[Edge], keyPolicy: Option[String] = Some("hash_primary_key"))
+case class MappingConfiguration(databaseName: String, partitions: Int, tags: Seq[Tag], edges: Seq[Edge], keyPolicy: Option[String] = Some("hash_primary_key"))
 
 object MappingConfiguration {
   implicit val MappingConfigurationWrites: Writes[MappingConfiguration] = new Writes[MappingConfiguration] {
     override def writes(mapping: MappingConfiguration): JsValue = {
-      Json.obj(mapping.graphSpace -> mapping.keyPolicy.fold(
+      Json.obj(mapping.databaseName -> mapping.keyPolicy.fold(
         Json.obj("partitions" -> mapping.partitions,
           "tags" -> mapping.tags,
           "edges" -> mapping.edges
@@ -221,6 +228,12 @@ object MappingConfiguration {
           val tags = (mappingContent \ "tags").get.as[Seq[Tag]]
           val edges = (mappingContent \ "edges").get.as[Seq[Edge]]
 
+          // make sure all edge reference existing tags
+          val allReferencedTag = (edges.map(_.fromReferenceTag) ++ edges.map(_.toReferenceTag)).distinct
+          if (tags.map(_.name).intersect(allReferencedTag).size != allReferencedTag.size) {
+            throw new IllegalStateException(s"edge's from/to tag reference non-existing tag")
+          }
+
           JsSuccess(MappingConfiguration(graphSpaceName, partitions, tags, edges, keyPolicy))
         }
         case a@_ => throw new IllegalStateException(s"illegal mapping format:${a}")
@@ -229,9 +242,9 @@ object MappingConfiguration {
   }
 
   /**
-    * ctor from a mapping file
+    * construct from a mapping file
     *
-    * @param mappingFile mapping file, could be embedded in jar, or will be provided through "--files" option
+    * @param mappingFile mapping file, could be embedded in jar, or will be provided through "--files" option, and sepcified the application arg "---mapping_file_input"(--mi for short) at the same time
     * @return MappingConfiguration instance
     */
   def apply(mappingFile: String): MappingConfiguration = {

@@ -5,11 +5,12 @@ object DataTypeCompatibility {
   /**
     * nebula data type --> Hive data type mapping
     */
-  val conversionMatrix: Map[String, Set[String]] = Map(
+  val compatibilityMatrix: Map[String, Set[String]] = Map(
     "INTEGER" -> Set("TINYINT", "SMALLINT", "INT", "BIGINT"),
     "DOUBLE" -> Set("DOUBLE", "DECIMAL"),
     "FLOAT" -> Set("FLOAT", "DECIMAL"),
-    "STRING" -> Set("VARCHAR", "CHAR"),
+    //TODO: varchar/char?
+    "STRING" -> Set("VARCHAR", "CHAR", "STRING"),
     "BOOL" -> Set("BOOLEAN"),
     "DATE" -> Set("DATE", "TIMESTAMP"),
     "DATETIME" -> Set("DATE", "TIMESTAMP"),
@@ -26,7 +27,7 @@ object DataTypeCompatibility {
     if (nebulaType.equalsIgnoreCase("string")) {
       true
     } else {
-      conversionMatrix.get(nebulaType.toUpperCase).contains(hiveType.toUpperCase)
+      compatibilityMatrix.get(nebulaType.toUpperCase).map(_.contains(hiveType.toUpperCase)).getOrElse(false)
     }
   }
 }

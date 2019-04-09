@@ -4,6 +4,7 @@ import com.vesoft.client.NativeClient
 import org.scalatest.{BeforeAndAfter, FlatSpec}
 
 class SparkSstFileGeneratorTest extends FlatSpec with BeforeAndAfter {
+  // need to put the dir which contains nebula_native_client.so in java.library.path before run this test
   "an Seq[Any]" should "be encoded by NativeClient" in {
     val values = Seq("Hello World".getBytes("UTF-8"), Boolean.box(false), Long.box(1024L), Int.box(7), Float.box(3.1415f), Double.box(9.12))
     val bytes: Array[Byte] = NativeClient.encoded(values.toArray)

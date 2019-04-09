@@ -54,7 +54,7 @@ class SstRecordWriter(sstFileOutput: String) extends RecordWriter[BytesWritable,
       /*
        * create the following dir structure:
        *
-       * sstFileOutput
+       * ${sstFileOutput}
        *       |
        *       |--1
        *       |  |

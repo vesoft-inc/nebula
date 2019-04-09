@@ -20,8 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class NativeClient implements AutoCloseable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(NativeClient.class.getName());
+
     static {
-        NativeClientResourceLoader.resourceLoader();
+        System.loadLibrary("nebula_native_client");
     }
 
     public static class Pair {
@@ -46,8 +48,6 @@ public class NativeClient implements AutoCloseable {
             return "Pair{" + "field='" + field + '\'' + ", clazz=" + clazz + '}';
         }
     }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(NativeClient.class.getName());
 
     private static final int PARTITION_ID = 4;
     private static final int VERTEX_ID = 8;

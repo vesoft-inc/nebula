@@ -1,5 +1,5 @@
 {
-  "fma": {
+  "space_one": {
     "key_policy": "hash_primary_key",
     "partitions": 3,
     "tags": [
