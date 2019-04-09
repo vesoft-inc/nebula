@@ -33,7 +33,7 @@ public:
 
     void execute() override;
 
-    void feedResult(std::unique_ptr<IntermResult> result) override;
+    void feedResult(std::unique_ptr<InterimResult> result) override;
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
@@ -127,7 +127,7 @@ private:
      * To setup an intermediate representation of the execution result,
      * which is about to be piped to the next executor.
      */
-    std::unique_ptr<IntermResult> setupIntermResult(RpcResponse &&rpcResp);
+    std::unique_ptr<InterimResult> setupInterimResult(RpcResponse &&rpcResp);
 
     /**
      * To setup the header of the execution result, i.e. the column names.
@@ -171,8 +171,8 @@ private:
     std::string                                *colname_{nullptr};
     Expression                                 *filter_{nullptr};
     std::vector<YieldColumn*>                   yields_;
-    std::unique_ptr<IntermResult>               inputs_;
-    std::unique_ptr<ExpressionContext>          expctx_;
+    std::unique_ptr<InterimResult>              inputs_;
+    std::unique_ptr<ExpressionContext>          expCtx_;
     std::vector<VertexID>                       starts_;
     std::unique_ptr<VertexHolder>               vertexHolder_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;

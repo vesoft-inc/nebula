@@ -25,7 +25,7 @@ public:
 
     void execute() override;
 
-    void feedResult(std::unique_ptr<IntermResult> result) override;
+    void feedResult(std::unique_ptr<InterimResult> result) override;
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 

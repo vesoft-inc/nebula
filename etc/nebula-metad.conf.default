@@ -7,7 +7,7 @@
 ########## logging ##########
 # The directory to host logging files, which must already exists
 --log_dir=logs
-# Log evel, 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
+# Log level, 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
 --minloglevel=0
 # Verbose log level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
 --v=4

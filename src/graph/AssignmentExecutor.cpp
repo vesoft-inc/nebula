@@ -14,7 +14,7 @@ namespace graph {
 
 
 AssignmentExecutor::AssignmentExecutor(Sentence *sentence,
-                              ExecutionContext *ectx) : Executor(ectx) {
+                                       ExecutionContext *ectx) : Executor(ectx) {
     sentence_ = static_cast<AssignmentSentence*>(sentence);
 }
 
@@ -36,7 +36,7 @@ Status AssignmentExecutor::prepare() {
         DCHECK(onFinish_);
         onFinish_();
     };
-    auto onResult = [this] (std::unique_ptr<IntermResult> result) {
+    auto onResult = [this] (std::unique_ptr<InterimResult> result) {
         ectx()->variableHolder()->add(*var_, std::move(result));
     };
     executor_->setOnError(onError);

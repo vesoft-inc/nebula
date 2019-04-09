@@ -24,7 +24,7 @@ GoExecutor::GoExecutor(Sentence *sentence, ExecutionContext *ectx) : TraverseExe
 Status GoExecutor::prepare() {
     DCHECK(sentence_ != nullptr);
     Status status;
-    expctx_ = std::make_unique<ExpressionContext>();
+    expCtx_ = std::make_unique<ExpressionContext>();
     do {
         status = prepareStep();
         if (!status.ok()) {
@@ -56,8 +56,6 @@ Status GoExecutor::prepare() {
         return status;
     }
 
-    // expctx_->print();
-
     return status;
 }
 
@@ -77,7 +75,7 @@ void GoExecutor::execute() {
 }
 
 
-void GoExecutor::feedResult(std::unique_ptr<IntermResult> result) {
+void GoExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     inputs_ = std::move(result);
 }
 
@@ -135,9 +133,9 @@ Status GoExecutor::prepareOver() {
         edge_ = meta::SchemaManager::toEdgeType(*clause->edge());
         reversely_ = clause->isReversely();
         if (clause->alias() != nullptr) {
-            expctx_->addAlias(*clause->alias(), AliasKind::Edge, *clause->edge());
+            expCtx_->addAlias(*clause->alias(), AliasKind::Edge, *clause->edge());
         } else {
-            expctx_->addAlias(*clause->edge(), AliasKind::Edge, *clause->edge());
+            expCtx_->addAlias(*clause->edge(), AliasKind::Edge, *clause->edge());
         }
     } while (false);
 
@@ -171,7 +169,7 @@ Status GoExecutor::prepareNeededProps() {
     auto status = Status::OK();
     do {
         if (filter_ != nullptr) {
-            filter_->setContext(expctx_.get());
+            filter_->setContext(expCtx_.get());
             status = filter_->prepare();
             if (!status.ok()) {
                 break;
@@ -181,7 +179,7 @@ Status GoExecutor::prepareNeededProps() {
             break;
         }
         for (auto *col : yields_) {
-            col->expr()->setContext(expctx_.get());
+            col->expr()->setContext(expCtx_.get());
             status = col->expr()->prepare();
             if (!status.ok()) {
                 break;
@@ -268,7 +266,7 @@ void GoExecutor::stepOut() {
 
 void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
     if (isFinalStep()) {
-        if (expctx_->hasDstTagProp()) {
+        if (expCtx_->hasDstTagProp()) {
             auto dstids = getDstIdsFromResp(rpcResp);
             if (dstids.empty()) {
                 onEmptyInputs();
@@ -322,7 +320,7 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
 
 void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     if (onResult_) {
-        onResult_(setupIntermResult(std::move(rpcResp)));
+        onResult_(setupInterimResult(std::move(rpcResp)));
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         setupResponseHeader(*resp_);
@@ -346,7 +344,7 @@ std::vector<storage::cpp2::PropDef> GoExecutor::getStepOutProps() const {
         return props;
     }
 
-    for (auto &tagProp : expctx_->srcTagProps()) {
+    for (auto &tagProp : expCtx_->srcTagProps()) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::SOURCE;
         pd.name = tagProp.second;
@@ -354,7 +352,7 @@ std::vector<storage::cpp2::PropDef> GoExecutor::getStepOutProps() const {
         pd.set_tag_id(tagId);
         props.emplace_back(std::move(pd));
     }
-    for (auto &prop : expctx_->edgeProps()) {
+    for (auto &prop : expCtx_->edgeProps()) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
         pd.name = prop;
@@ -367,7 +365,7 @@ std::vector<storage::cpp2::PropDef> GoExecutor::getStepOutProps() const {
 
 std::vector<storage::cpp2::PropDef> GoExecutor::getDstProps() const {
     std::vector<storage::cpp2::PropDef> props;
-    for (auto &tagProp : expctx_->dstTagProps()) {
+    for (auto &tagProp : expCtx_->dstTagProps()) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::DEST;
         pd.name = tagProp.second;
@@ -428,7 +426,7 @@ std::vector<std::string> GoExecutor::getResultColumnNames() const {
 }
 
 
-std::unique_ptr<IntermResult> GoExecutor::setupIntermResult(RpcResponse &&rpcResp) {
+std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcResp) {
     // Generic results
     std::shared_ptr<SchemaWriter> schema;
     std::unique_ptr<RowSetWriter> rsWriter;
@@ -441,7 +439,7 @@ std::unique_ptr<IntermResult> GoExecutor::setupIntermResult(RpcResponse &&rpcRes
                 SupportedType type;
                 switch (record[i].which()) {
                     case 0:
-                        // all integers in IntermResult are regarded as type of VID
+                        // all integers in InterimResult are regarded as type of VID
                         type = SupportedType::VID;
                         break;
                     case 1:
@@ -483,7 +481,7 @@ std::unique_ptr<IntermResult> GoExecutor::setupIntermResult(RpcResponse &&rpcRes
         rsWriter->addRow(writer);
     };  // cb
     processFinalResult(rpcResp, cb);
-    return std::make_unique<IntermResult>(std::move(rsWriter));
+    return std::make_unique<InterimResult>(std::move(rsWriter));
 }
 
 
@@ -603,7 +601,7 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             RowSetReader rsReader(eschema, vdata.edge_data);
             auto iter = rsReader.begin();
             while (iter) {
-                auto &getters = expctx_->getters();
+                auto &getters = expCtx_->getters();
                 getters.getEdgeProp = [&] (const std::string &prop) -> VariantType {
                     return getProp(prop, &*iter, eschema.get());
                 };

@@ -56,7 +56,7 @@ Status PipeExecutor::prepare() {
         };
         left_->setOnFinish(onFinish);
 
-        auto onResult = [this] (std::unique_ptr<IntermResult> result) {
+        auto onResult = [this] (std::unique_ptr<InterimResult> result) {
             // Feed results from `left_' to `right_'
             right_->feedResult(std::move(result));
         };
@@ -73,7 +73,7 @@ Status PipeExecutor::prepare() {
         right_->setOnFinish(onFinish);
 
         if (onResult_) {
-            auto onResult = [this] (std::unique_ptr<IntermResult> result) {
+            auto onResult = [this] (std::unique_ptr<InterimResult> result) {
                 // This executor takes results of `right_' as results.
                 onResult_(std::move(result));
             };
@@ -94,7 +94,7 @@ void PipeExecutor::execute() {
 }
 
 
-void PipeExecutor::feedResult(std::unique_ptr<IntermResult> result) {
+void PipeExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     left_->feedResult(std::move(result));
 }
 

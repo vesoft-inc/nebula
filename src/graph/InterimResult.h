@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef GRAPH_INTERMRESULT_H_
-#define GRAPH_INTERMRESULT_H_
+#ifndef GRAPH_INTERIMRESULT_H_
+#define GRAPH_INTERIMRESULT_H_
 
 #include "base/Base.h"
 #include "dataman/RowSetReader.h"
@@ -20,17 +20,17 @@
 namespace nebula {
 namespace graph {
 
-class IntermResult final {
+class InterimResult final {
 public:
-    IntermResult() = default;
-    ~IntermResult() = default;
-    IntermResult(const IntermResult &) = default;
-    IntermResult& operator=(const IntermResult &) = default;
-    IntermResult(IntermResult &&) = default;
-    IntermResult& operator=(IntermResult &&) = default;
+    InterimResult() = default;
+    ~InterimResult() = default;
+    InterimResult(const InterimResult &) = default;
+    InterimResult& operator=(const InterimResult &) = default;
+    InterimResult(InterimResult &&) = default;
+    InterimResult& operator=(InterimResult &&) = default;
 
-    explicit IntermResult(std::unique_ptr<RowSetWriter> rsWriter);
-    explicit IntermResult(std::vector<VertexID> vids);
+    explicit InterimResult(std::unique_ptr<RowSetWriter> rsWriter);
+    explicit InterimResult(std::vector<VertexID> vids);
 
     std::vector<VertexID> getVIDs(const std::string &col) const;
 
@@ -45,4 +45,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // GRAPH_INTERMRESULT_H_
+#endif  // GRAPH_INTERIMRESULT_H_

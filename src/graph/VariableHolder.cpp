@@ -6,7 +6,7 @@
 
 #include "base/Base.h"
 #include "graph/VariableHolder.h"
-#include "graph/IntermResult.h"
+#include "graph/InterimResult.h"
 
 namespace nebula {
 namespace graph {
@@ -33,12 +33,12 @@ VariableHolder& VariableHolder::operator=(VariableHolder &&rhs) noexcept {
 }
 
 
-void VariableHolder::add(const std::string &var, std::unique_ptr<IntermResult> result) {
+void VariableHolder::add(const std::string &var, std::unique_ptr<InterimResult> result) {
     holder_[var] = std::move(result);
 }
 
 
-const IntermResult* VariableHolder::get(const std::string &var) const {
+const InterimResult* VariableHolder::get(const std::string &var) const {
     auto iter = holder_.find(var);
     if (iter == holder_.end()) {
         return nullptr;

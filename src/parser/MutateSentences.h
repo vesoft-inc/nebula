@@ -83,6 +83,14 @@ public:
         rows_.emplace_back(row);
     }
 
+    /**
+     * For now, we haven't execution plan cache supported.
+     * So to avoid too many deep copying, we return the fields or nodes
+     * of kinds of parsing tree in such a shallow copy way,
+     * just like in all other places.
+     * In the future, we might do deep copy to the plan,
+     * of course excluding the volatile arguments in queries.
+     */
     std::vector<VertexRowItem*> rows() const {
         std::vector<VertexRowItem*> result;
         result.resize(rows_.size());

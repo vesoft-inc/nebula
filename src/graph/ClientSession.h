@@ -31,16 +31,13 @@ public:
         return space_;
     }
 
-    void setSpace(GraphSpaceID space) {
+    void setSpace(const std::string &name, GraphSpaceID space) {
+        spaceName_ = name;
         space_ = space;
     }
 
     const std::string& spaceName() const {
         return spaceName_;
-    }
-
-    void setSpaceName(const std::string &spaceName) {
-        spaceName_ = spaceName;
     }
 
     uint64_t idleSeconds() const;

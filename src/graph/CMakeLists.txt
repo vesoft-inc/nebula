@@ -25,7 +25,7 @@ add_library(
     InsertEdgeExecutor.cpp
     AssignmentExecutor.cpp
     ShowExecutor.cpp
-    IntermResult.cpp
+    InterimResult.cpp
     VariableHolder.cpp
     mock/PropertiesSchema.cpp
     mock/EdgeSchema.cpp

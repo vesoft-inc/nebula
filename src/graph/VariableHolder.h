@@ -12,7 +12,7 @@
 namespace nebula {
 namespace graph {
 
-class IntermResult;
+class InterimResult;
 class VariableHolder final {
 public:
     VariableHolder();
@@ -22,12 +22,12 @@ public:
     VariableHolder(VariableHolder &&) noexcept;
     VariableHolder& operator=(VariableHolder &&) noexcept;
 
-    void add(const std::string &var, std::unique_ptr<IntermResult> result);
+    void add(const std::string &var, std::unique_ptr<InterimResult> result);
 
-    const IntermResult* get(const std::string &var) const;
+    const InterimResult* get(const std::string &var) const;
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<IntermResult>> holder_;
+    std::unordered_map<std::string, std::unique_ptr<InterimResult>> holder_;
 };
 
 }   // namespace graph

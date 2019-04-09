@@ -5,24 +5,24 @@
  */
 
 #include "base/Base.h"
-#include "graph/IntermResult.h"
+#include "graph/InterimResult.h"
 #include "dataman/RowReader.h"
 
 namespace nebula {
 namespace graph {
 
-IntermResult::IntermResult(std::unique_ptr<RowSetWriter> rsWriter) {
+InterimResult::InterimResult(std::unique_ptr<RowSetWriter> rsWriter) {
     rsWriter_ = std::move(rsWriter);
     rsReader_ = std::make_unique<RowSetReader>(rsWriter_->schema(), rsWriter_->data());
 }
 
 
-IntermResult::IntermResult(std::vector<VertexID> vids) {
+InterimResult::InterimResult(std::vector<VertexID> vids) {
     vids_ = std::move(vids);
 }
 
 
-std::vector<VertexID> IntermResult::getVIDs(const std::string &col) const {
+std::vector<VertexID> InterimResult::getVIDs(const std::string &col) const {
     if (!vids_.empty()) {
         DCHECK(rsReader_ == nullptr);
         return vids_;
