@@ -35,6 +35,7 @@ Status InsertEdgeExecutor::prepare() {
 
 void InsertEdgeExecutor::execute() {
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
+    auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto src = row->srcid();
@@ -66,7 +67,7 @@ void InsertEdgeExecutor::execute() {
             }
         }
         {
-            auto &out = edges[i];
+            auto &out = edges[index++];
             out.key.set_src(src);
             out.key.set_dst(dst);
             out.key.set_ranking(rank);
@@ -76,7 +77,7 @@ void InsertEdgeExecutor::execute() {
             out.__isset.props = true;
         }
         {
-            auto &in = edges[i + 1];
+            auto &in = edges[index++];
             in.key.set_src(dst);
             in.key.set_dst(src);
             in.key.set_ranking(rank);
