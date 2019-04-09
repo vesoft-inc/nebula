@@ -21,8 +21,8 @@ nebula_link_libraries(
 nebula_add_test(part_test)
 
 add_executable(
-    rocksdb_engine_test
-    RocksdbEngineTest.cpp
+    rocks_engine_test
+    RocksEngineTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
@@ -34,17 +34,17 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
 )
 nebula_link_libraries(
-    rocksdb_engine_test
+    rocks_engine_test
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
     gtest
 )
-nebula_add_test(rocksdb_engine_test)
+nebula_add_test(rocks_engine_test)
 
 add_executable(
-    kvstore_test
-    KVStoreTest.cpp
+    nebula_store_test
+    NebulaStoreTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
@@ -56,13 +56,13 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
 )
 nebula_link_libraries(
-    kvstore_test
+    nebula_store_test
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
     gtest
 )
-nebula_add_test(kvstore_test)
+nebula_add_test(nebula_store_test)
 
 add_executable(
     load_test
@@ -87,16 +87,17 @@ nebula_link_libraries(
 nebula_add_test(load_test)
 
 add_executable(
-    rocksdb_options_test
-    RocksdbEngineOptionsTest.cpp
-    ../RocksdbEngine.cpp
-    ../RocksdbConfigOptions.cpp
+    rocks_engine_config_test
+    RocksEngineConfigTest.cpp
+    ../RocksEngine.cpp
+    ../RocksEngineConfig.cpp
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:fs_obj>
 )
 nebula_link_libraries(
-    rocksdb_options_test
+    rocks_engine_config_test
     ${ROCKSDB_LIBRARIES}
     gtest
 )
-nebula_add_test(rocksdb_options_test)
+nebula_add_test(rocks_engine_config_test)
+

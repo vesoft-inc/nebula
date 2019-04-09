@@ -9,12 +9,9 @@
 #include <rocksdb/db.h>
 #include <iostream>
 #include "fs/TempDir.h"
-#include "kvstore/KVStore.h"
-#include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
-#include "kvstore/RocksdbEngine.h"
-
-DECLARE_string(part_man_type);
+#include "kvstore/PartManager.h"
+#include "kvstore/RocksEngine.h"
 
 namespace nebula {
 namespace kvstore {
@@ -29,7 +26,7 @@ void dump(const std::vector<T>& v) {
 }
 
 
-TEST(KVStoreTest, SimpleTest) {
+TEST(NebulaStoreTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
     auto partMan = std::make_unique<MemPartManager>();
     // GraphSpaceID =>  {PartitionIDs}
@@ -48,30 +45,34 @@ TEST(KVStoreTest, SimpleTest) {
     paths.push_back(folly::stringPrintf("%s/disk1", rootPath.path()));
     paths.push_back(folly::stringPrintf("%s/disk2", rootPath.path()));
 
-    std::unique_ptr<NebulaStore> kv;
+    std::unique_ptr<NebulaStore> store;
     KVOptions options;
     options.local_ = HostAddr(0, 0);
     options.dataPaths_ = std::move(paths);
     options.partMan_ = std::move(partMan);
-    kv.reset(static_cast<NebulaStore*>(KVStore::instance(std::move(options))));
-    EXPECT_EQ(2, kv->kvs_.size());
+    store.reset(static_cast<NebulaStore*>(KVStore::instance(std::move(options))));
+    EXPECT_EQ(2, store->kvs_.size());
 
-    EXPECT_EQ(6, kv->kvs_[1]->parts_.size());
-    EXPECT_EQ(2, kv->kvs_[1]->engines_.size());
-    EXPECT_EQ(folly::stringPrintf("%s/disk1", rootPath.path()), kv->kvs_[1]->engines_[0].second);
-    EXPECT_EQ(folly::stringPrintf("%s/disk2", rootPath.path()), kv->kvs_[1]->engines_[1].second);
+    EXPECT_EQ(6, store->kvs_[1]->parts_.size());
+    EXPECT_EQ(2, store->kvs_[1]->engines_.size());
+    EXPECT_EQ(folly::stringPrintf("%s/disk1", rootPath.path()),
+              store->kvs_[1]->engines_[0].second);
+    EXPECT_EQ(folly::stringPrintf("%s/disk2", rootPath.path()),
+              store->kvs_[1]->engines_[1].second);
 
-    EXPECT_EQ(6, kv->kvs_[2]->parts_.size());
-    EXPECT_EQ(2, kv->kvs_[2]->engines_.size());
-    EXPECT_EQ(folly::stringPrintf("%s/disk1", rootPath.path()), kv->kvs_[2]->engines_[0].second);
-    EXPECT_EQ(folly::stringPrintf("%s/disk2", rootPath.path()), kv->kvs_[2]->engines_[1].second);
+    EXPECT_EQ(6, store->kvs_[2]->parts_.size());
+    EXPECT_EQ(2, store->kvs_[2]->engines_.size());
+    EXPECT_EQ(folly::stringPrintf("%s/disk1", rootPath.path()),
+              store->kvs_[2]->engines_[0].second);
+    EXPECT_EQ(folly::stringPrintf("%s/disk2", rootPath.path()),
+              store->kvs_[2]->engines_[1].second);
 
-    kv->asyncMultiPut(0, 0, {{"key", "val"}}, [](ResultCode code, HostAddr addr) {
+    store->asyncMultiPut(0, 0, {{"key", "val"}}, [](ResultCode code, HostAddr addr) {
         UNUSED(addr);
         EXPECT_EQ(ResultCode::ERR_SPACE_NOT_FOUND, code);
     });
 
-    kv->asyncMultiPut(1, 6, {{"key", "val"}}, [](ResultCode code, HostAddr addr) {
+    store->asyncMultiPut(1, 6, {{"key", "val"}}, [](ResultCode code, HostAddr addr) {
         UNUSED(addr);
         EXPECT_EQ(ResultCode::ERR_PART_NOT_FOUND, code);
     });
@@ -80,10 +81,11 @@ TEST(KVStoreTest, SimpleTest) {
     std::string prefix = "prefix";
     std::vector<KV> data;
     for (auto i = 0; i < 100; i++) {
-        data.emplace_back(prefix + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
-                          folly::stringPrintf("val_%d", i));
+        data.emplace_back(
+            prefix + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)),
+            folly::stringPrintf("val_%d", i));
     }
-    kv->asyncMultiPut(1, 1, std::move(data), [](ResultCode code, HostAddr addr){
+    store->asyncMultiPut(1, 1, std::move(data), [](ResultCode code, HostAddr addr){
         UNUSED(addr);
         EXPECT_EQ(ResultCode::SUCCEEDED, code);
     });
@@ -93,7 +95,7 @@ TEST(KVStoreTest, SimpleTest) {
     s = prefix + s;
     e = prefix + e;
     std::unique_ptr<KVIterator> iter;
-    EXPECT_EQ(ResultCode::SUCCEEDED, kv->range(1, 1, s, e, &iter));
+    EXPECT_EQ(ResultCode::SUCCEEDED, store->range(1, 1, s, e, &iter));
     int num = 0;
     while (iter->valid()) {
         auto key = *reinterpret_cast<const int32_t*>(iter->key().data() + prefix.size());
@@ -107,7 +109,7 @@ TEST(KVStoreTest, SimpleTest) {
 }
 
 
-TEST(KVStoreTest, PartsTest) {
+TEST(NebulaStoreTest, PartsTest) {
     fs::TempDir rootPath("/tmp/kvstore_test.XXXXXX");
     auto partMan = std::make_unique<MemPartManager>();
     // GraphSpaceID =>  {PartitionIDs}
@@ -116,11 +118,13 @@ TEST(KVStoreTest, PartsTest) {
     for (auto partId = 0; partId < 10; partId++) {
         partMan->addPart(0, partId);
     }
+
     std::vector<std::string> paths;
     paths.push_back(folly::stringPrintf("%s/disk1", rootPath.path()));
     paths.push_back(folly::stringPrintf("%s/disk2", rootPath.path()));
+
     for (size_t i = 0; i < paths.size(); i++) {
-        auto db = std::make_unique<RocksdbEngine>(0,
+        auto db = std::make_unique<RocksEngine>(0,
                             folly::stringPrintf("%s/nebula/%d/data", paths[i].c_str(), 0));
         for (auto partId = 0; partId < 3; partId++) {
             db->addPart(5 * i + partId);
@@ -133,12 +137,12 @@ TEST(KVStoreTest, PartsTest) {
     // disk1: 0, 1, 2, 10
     // disk2: 5, 6, 7, 15
 
-    std::unique_ptr<NebulaStore> kv;
+    std::unique_ptr<NebulaStore> store;
     KVOptions options;
     options.local_ = HostAddr(0, 0);
     options.dataPaths_ = std::move(paths);
     options.partMan_ = std::move(partMan);
-    kv.reset(static_cast<NebulaStore*>(KVStore::instance(std::move(options))));
+    store.reset(static_cast<NebulaStore*>(KVStore::instance(std::move(options))));
 
     auto check = [&](GraphSpaceID spaceId) {
         // After init, the parts should be 0-9, and the distribution should be
@@ -147,19 +151,21 @@ TEST(KVStoreTest, PartsTest) {
         // x, y, x1, y1 in {3, 4, 8, 9}
         for (auto i = 0; i < 2; i++) {
             ASSERT_EQ(folly::stringPrintf("%s/disk%d", rootPath.path(), i + 1),
-                      kv->kvs_[spaceId]->engines_[i].second);
-            auto parts = kv->kvs_[spaceId]->engines_[i].first->allParts();
+                      store->kvs_[spaceId]->engines_[i].second);
+            auto parts = store->kvs_[spaceId]->engines_[i].first->allParts();
             dump(parts);
             ASSERT_EQ(5, parts.size());
         }
     };
     check(0);
-    auto* pm = static_cast<MemPartManager*>(kv->partMan_.get());
+
+    auto* pm = static_cast<MemPartManager*>(store->partMan_.get());
     // Let's create another space with 10 parts.
     for (auto partId = 0; partId < 10; partId++) {
         pm->addPart(1, partId);
     }
     check(1);
+
     // Let's remove space some parts in GraphSpace 0
     for (auto partId = 0; partId < 5; partId++) {
         pm->removePart(0, partId);
@@ -167,16 +173,17 @@ TEST(KVStoreTest, PartsTest) {
     int32_t totalParts = 0;
     for (auto i = 0; i < 2; i++) {
         ASSERT_EQ(folly::stringPrintf("%s/disk%d", rootPath.path(), i + 1),
-                  kv->kvs_[0]->engines_[i].second);
-        auto parts = kv->kvs_[0]->engines_[i].first->allParts();
+                  store->kvs_[0]->engines_[i].second);
+        auto parts = store->kvs_[0]->engines_[i].first->allParts();
         dump(parts);
         totalParts += parts.size();
     }
     ASSERT_EQ(5, totalParts);
+
     for (auto partId = 5; partId < 10; partId++) {
         pm->removePart(0, partId);
     }
-    ASSERT_TRUE(kv->kvs_.find(0) == kv->kvs_.end());
+    ASSERT_TRUE(store->kvs_.find(0) == store->kvs_.end());
 }
 
 }  // namespace kvstore
@@ -187,6 +194,7 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
+
     return RUN_ALL_TESTS();
 }
 

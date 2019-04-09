@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef KVSTORE_ROCKSDBENGINE_H_
-#define KVSTORE_ROCKSDBENGINE_H_
+#ifndef KVSTORE_ROCKSENGINE_H_
+#define KVSTORE_ROCKSENGINE_H_
 
 #include <gtest/gtest_prod.h>
 #include <rocksdb/db.h>
@@ -16,14 +16,14 @@
 namespace nebula {
 namespace kvstore {
 
-class RocksdbRangeIter : public KVIterator {
+class RocksRangeIter : public KVIterator {
 public:
-    RocksdbRangeIter(rocksdb::Iterator* iter, rocksdb::Slice start, rocksdb::Slice end)
+    RocksRangeIter(rocksdb::Iterator* iter, rocksdb::Slice start, rocksdb::Slice end)
         : iter_(iter)
         , start_(start)
         , end_(end) {}
 
-    ~RocksdbRangeIter()  = default;
+    ~RocksRangeIter()  = default;
 
     bool valid() const override {
         return !!iter_ && iter_->Valid() && (iter_->key().compare(end_) < 0);
@@ -52,13 +52,13 @@ private:
 };
 
 
-class RocksdbPrefixIter : public KVIterator {
+class RocksPrefixIter : public KVIterator {
 public:
-    RocksdbPrefixIter(rocksdb::Iterator* iter, rocksdb::Slice prefix)
+    RocksPrefixIter(rocksdb::Iterator* iter, rocksdb::Slice prefix)
         : iter_(iter)
         , prefix_(prefix) {}
 
-    ~RocksdbPrefixIter()  = default;
+    ~RocksPrefixIter()  = default;
 
     bool valid() const override {
         return !!iter_ && iter_->Valid() && (iter_->key().starts_with(prefix_));
@@ -86,16 +86,16 @@ private:
 };
 
 
-class RocksdbEngine : public KVEngine {
-    FRIEND_TEST(RocksdbEngineTest, SimpleTest);
+class RocksEngine : public KVEngine {
+    FRIEND_TEST(RocksEngineTest, SimpleTest);
 
 public:
-    RocksdbEngine(GraphSpaceID spaceId,
-                  const std::string& dataPath,
-                  std::shared_ptr<rocksdb::MergeOperator> mergeOp = nullptr,
-                  std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr);
+    RocksEngine(GraphSpaceID spaceId,
+                const std::string& dataPath,
+                std::shared_ptr<rocksdb::MergeOperator> mergeOp = nullptr,
+                std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr);
 
-    ~RocksdbEngine();
+    ~RocksEngine();
 
     ResultCode get(const std::string& key,
                    std::string* value) override;
@@ -145,5 +145,5 @@ private:
 
 }  // namespace kvstore
 }  // namespace nebula
-#endif  // KVSTORE_ROCKSDBENGINE_H_
+#endif  // KVSTORE_ROCKSENGINE_H_
 
