@@ -5,7 +5,6 @@
  */
 
 #include "meta/MetaUtils.h"
-#include <string.h>
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
@@ -27,6 +26,7 @@ std::string MetaUtils::spaceKey(GraphSpaceID spaceId) {
     return key;
 }
 
+
 std::string MetaUtils::spaceVal(int32_t partsNum, int32_t replicaFactor, const std::string& name) {
     std::string val;
     val.reserve(256);
@@ -36,17 +36,21 @@ std::string MetaUtils::spaceVal(int32_t partsNum, int32_t replicaFactor, const s
     return val;
 }
 
+
 const std::string& MetaUtils::spacePrefix() {
     return kSpacesTable;
 }
+
 
 GraphSpaceID MetaUtils::spaceId(folly::StringPiece rawKey) {
     return *reinterpret_cast<const GraphSpaceID*>(rawKey.data() + kSpacesTable.size());
 }
 
+
 folly::StringPiece MetaUtils::spaceName(folly::StringPiece rawVal) {
     return rawVal.subpiece(sizeof(int32_t)*2);
 }
+
 
 std::string MetaUtils::partKey(GraphSpaceID spaceId, PartitionID partId) {
     std::string key;
@@ -56,6 +60,7 @@ std::string MetaUtils::partKey(GraphSpaceID spaceId, PartitionID partId) {
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
     return key;
 }
+
 
 std::string MetaUtils::partVal(const std::vector<nebula::cpp2::HostAddr>& hosts) {
     std::string val;
@@ -67,11 +72,6 @@ std::string MetaUtils::partVal(const std::vector<nebula::cpp2::HostAddr>& hosts)
     return val;
 }
 
-const std::string& MetaUtils::partPrefix() {
-    static const std::string prefix = kPartsTable;
-    return prefix;
-}
-
 std::string MetaUtils::partPrefix(GraphSpaceID spaceId) {
     std::string prefix;
     prefix.reserve(128);
@@ -79,6 +79,7 @@ std::string MetaUtils::partPrefix(GraphSpaceID spaceId) {
     prefix.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     return prefix;
 }
+
 
 std::vector<nebula::cpp2::HostAddr> MetaUtils::parsePartVal(folly::StringPiece val) {
     std::vector<nebula::cpp2::HostAddr> hosts;
@@ -97,6 +98,7 @@ std::vector<nebula::cpp2::HostAddr> MetaUtils::parsePartVal(folly::StringPiece v
     return hosts;
 }
 
+
 std::string MetaUtils::hostKey(IPv4 ip, Port port) {
     std::string key;
     key.reserve(128);
@@ -106,19 +108,23 @@ std::string MetaUtils::hostKey(IPv4 ip, Port port) {
     return key;
 }
 
+
 std::string MetaUtils::hostVal() {
     return "";
 }
 
+
 const std::string& MetaUtils::hostPrefix() {
     return kHostsTable;
 }
+
 
 nebula::cpp2::HostAddr MetaUtils::parseHostKey(folly::StringPiece key) {
     nebula::cpp2::HostAddr host;
     memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
     return host;
 }
+
 
 std::string MetaUtils::schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, int64_t version) {
     std::string key;
@@ -130,11 +136,13 @@ std::string MetaUtils::schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, in
     return key;
 }
 
+
 std::string MetaUtils::schemaEdgeVal(nebula::cpp2::Schema schema) {
     std::string val;
     apache::thrift::CompactSerializer::serialize(schema, &val);
     return val;
 }
+
 
 std::string MetaUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version) {
     std::string key;
@@ -146,17 +154,20 @@ std::string MetaUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t v
     return key;
 }
 
+
 std::string MetaUtils::schemaTagVal(nebula::cpp2::Schema schema) {
     std::string val;
     apache::thrift::CompactSerializer::serialize(schema, &val);
     return val;
 }
 
+
 nebula::cpp2::Schema MetaUtils::parseSchema(folly::StringPiece rawData) {
     nebula::cpp2::Schema schema;
     apache::thrift::CompactSerializer::deserialize(rawData, schema);
     return schema;
 }
+
 
 std::string MetaUtils::indexKey(EntryType type, const std::string& name) {
     std::string key;
