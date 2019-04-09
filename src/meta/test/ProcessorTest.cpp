@@ -179,13 +179,13 @@ TEST(ProcessorTest, KVOperationTest) {
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
     UNUSED(hostsNum);
 
-     {
+    {
         cpp2::CreateSpaceReq req;
         req.set_space_name("default_space");
         req.set_parts_num(9);
         req.set_replica_factor(3);
 
-         auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -201,10 +201,11 @@ TEST(ProcessorTest, KVOperationTest) {
                                folly::stringPrintf("value_%d", i));
         }
 
-         cpp2::MultiPutReq req;
+        cpp2::MultiPutReq req;
+        req.set_segment("test");
         req.set_pairs(std::move(pairs));
 
-         auto* processor = MultiPutProcessor::instance(kv.get());
+        auto* processor = MultiPutProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -213,9 +214,10 @@ TEST(ProcessorTest, KVOperationTest) {
     {
         // Get Test
         cpp2::GetReq req;
+        req.set_segment("test");
         req.set_key("key_0");
 
-         auto* processor = GetProcessor::instance(kv.get());
+        auto* processor = GetProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -223,10 +225,10 @@ TEST(ProcessorTest, KVOperationTest) {
         ASSERT_EQ("value_0", resp.value);
 
 
-         cpp2::GetReq missedReq;
+        cpp2::GetReq missedReq;
         missedReq.set_key("missed_key");
 
-         auto* missedProcessor = GetProcessor::instance(kv.get());
+        auto* missedProcessor = GetProcessor::instance(kv.get());
         auto missedFuture = missedProcessor->getFuture();
         missedProcessor->process(missedReq);
         auto missedResp = std::move(missedFuture).get();
@@ -239,10 +241,11 @@ TEST(ProcessorTest, KVOperationTest) {
             keys.emplace_back(std::move(folly::stringPrintf("key_%d", i)));
         }
 
-         cpp2::MultiGetReq req;
+        cpp2::MultiGetReq req;
+        req.set_segment("test");
         req.set_keys(std::move(keys));
 
-         auto* processor = MultiGetProcessor::instance(kv.get());
+        auto* processor = MultiGetProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -250,12 +253,25 @@ TEST(ProcessorTest, KVOperationTest) {
         ASSERT_EQ(2, resp.values.size());
         ASSERT_EQ("value_0", resp.values[0]);
         ASSERT_EQ("value_1", resp.values[1]);
+
+        std::vector<std::string> missedKeys{"missed_key"};
+        cpp2::MultiGetReq missedReq;
+        missedReq.set_segment("test");
+        missedReq.set_keys(std::move(missedKeys));
+
+        auto* missedProcessor = MultiGetProcessor::instance(kv.get());
+        auto missed = missedProcessor->getFuture();
+        missedProcessor->process(missedReq);
+        auto missedResp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_UNKNOWN, missedResp.code);
     }
     {
         // Scan Test
         cpp2::ScanReq req;
+        req.set_segment("test");
         req.set_start("key_1");
         req.set_end("key_4");
+
         auto* processor = ScanProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -269,9 +285,10 @@ TEST(ProcessorTest, KVOperationTest) {
     {
         // Remove Test
         cpp2::RemoveReq req;
+        req.set_segment("test");
         req.set_key("key_9");
 
-         auto* processor = RemoveProcessor::instance(kv.get());
+        auto* processor = RemoveProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -280,14 +297,27 @@ TEST(ProcessorTest, KVOperationTest) {
     {
         // Remove Range Test
         cpp2::RemoveRangeReq req;
+        req.set_segment("test");
         req.set_start("key_0");
         req.set_end("key_4");
 
-         auto* processor = RemoveRangeProcessor::instance(kv.get());
+        auto* processor = RemoveRangeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+    }
+    {
+        // Illegal Segment Test
+        cpp2::GetReq req;
+        req.set_segment("_test_");
+        req.set_key("key_8");
+
+        auto* processor = GetProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL, resp.code);
     }
 }
 

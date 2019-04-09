@@ -48,20 +48,14 @@ public:
         return 0;
     }
 
-    /**
-     *
-     * */
     ResultCode get(GraphSpaceID spaceId,
                    PartitionID  partId,
                    const std::string& key,
                    std::string* value) override;
 
-    /**
-     *
-     * */
     ResultCode multiGet(GraphSpaceID spaceId,
                         PartitionID partId,
-                        const std::vector<std::string> keys,
+                        const std::vector<std::string>& keys,
                         std::vector<std::string>* values) override;
 
     /**

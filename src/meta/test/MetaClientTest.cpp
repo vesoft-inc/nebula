@@ -97,16 +97,16 @@ TEST(MetaClientTest, InterfacesTest) {
             pairs.emplace_back(folly::stringPrintf("key_%d", i),
                                folly::stringPrintf("value_%d", i));
         }
-        auto ret = client->multiPut(pairs).get();
+        auto ret = client->multiPut("test", pairs).get();
         ASSERT_TRUE(ret.ok());
     }
     {
         // Get Test
-        auto ret = client->get("key_0").get();
+        auto ret = client->get("test", "key_0").get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ("value_0", ret.value());
 
-        auto missedRet = client->get("missed_key").get();
+        auto missedRet = client->get("test", "missed_key").get();
         ASSERT_FALSE(missedRet.ok());
     }
     {
@@ -115,7 +115,7 @@ TEST(MetaClientTest, InterfacesTest) {
         for (auto i = 0; i < 2; i++) {
             keys.emplace_back(folly::stringPrintf("key_%d", i));
         }
-        auto ret = client->multiGet(keys).get();
+        auto ret = client->multiGet("test", keys).get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(2, ret.value().size());
         ASSERT_EQ("value_0", ret.value()[0]);
@@ -123,7 +123,7 @@ TEST(MetaClientTest, InterfacesTest) {
     }
     {
         // Scan Test
-        auto ret = client->scan("key_0", "key_3").get();
+        auto ret = client->scan("test", "key_0", "key_3").get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(3, ret.value().size());
         ASSERT_EQ("value_0", ret.value()[0]);
@@ -132,12 +132,12 @@ TEST(MetaClientTest, InterfacesTest) {
     }
     {
         // Remove Test
-        auto ret = client->remove("key_9").get();
+        auto ret = client->remove("test", "key_9").get();
         ASSERT_TRUE(ret.ok());
     }
     {
         // Remove Range Test
-        auto ret = client->removeRange("key_0", "key_4").get();
+        auto ret = client->removeRange("test", "key_0", "key_4").get();
         ASSERT_TRUE(ret.ok());
     }
     client.reset();

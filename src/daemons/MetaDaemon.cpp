@@ -38,7 +38,7 @@ std::vector<HostAddr> toHosts(const std::string& peersStr) {
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
     if (FLAGS_data_path.empty()) {
-        LOG(FATAL) << "Meta Data Path should not empty";
+        LOG(ERROR) << "Meta Data Path should not empty";
         return EXIT_FAILURE;
     }
 

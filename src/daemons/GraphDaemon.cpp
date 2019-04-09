@@ -131,6 +131,7 @@ int main(int argc, char *argv[]) {
         gServer->setNumIOWorkerThreads(FLAGS_num_netio_threads);
     } else {
         LOG(WARNING) << "Number netio threads should be greater than zero";
+        return EXIT_FAILURE;
     }
 
     FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);

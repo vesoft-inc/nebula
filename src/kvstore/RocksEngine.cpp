@@ -50,7 +50,6 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
 RocksEngine::~RocksEngine() {
 }
 
-
 ResultCode RocksEngine::get(const std::string& key, std::string* value) {
     rocksdb::ReadOptions options;
     rocksdb::Status status = db_->Get(options, rocksdb::Slice(key), value);
@@ -62,7 +61,7 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
     return ResultCode::ERR_UNKNOWN;
 }
 
-ResultCode RocksdbEngine::multiGet(const std::vector<std::string> keys,
+ResultCode RocksEngine::multiGet(const std::vector<std::string> keys,
                                    std::vector<std::string>* values) {
     rocksdb::ReadOptions options;
     std::vector<rocksdb::Slice> slices;

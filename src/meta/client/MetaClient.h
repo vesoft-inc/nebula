@@ -95,22 +95,24 @@ public:
     int32_t partsNum(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    multiPut(const std::vector<std::pair<std::string, std::string>>& pairs);
+    multiPut(const std::string& segment,
+             const std::vector<std::pair<std::string, std::string>>& pairs);
 
     folly::Future<StatusOr<std::string>>
-    get(const std::string& key);
+    get(const std::string& segment, const std::string& key);
 
     folly::Future<StatusOr<std::vector<std::string>>>
-    multiGet(const std::vector<std::string>& keys);
+    multiGet(const std::string& segment,
+             const std::vector<std::string>& keys);
 
     folly::Future<StatusOr<std::vector<std::string>>>
-    scan(const std::string& start, const std::string& end);
+    scan(const std::string& segment, const std::string& start, const std::string& end);
 
     folly::Future<StatusOr<bool>>
-    remove(const std::string& key);
+    remove(const std::string& segment, const std::string& key);
 
     folly::Future<StatusOr<bool>>
-    removeRange(const std::string& start, const std::string& end);
+    removeRange(const std::string& segment, const std::string& start, const std::string& end);
 
 
 protected:

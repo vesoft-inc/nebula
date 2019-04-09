@@ -245,7 +245,7 @@ ResultCode NebulaStore::get(GraphSpaceID spaceId, PartitionID partId,
 }
 
 ResultCode NebulaStore::multiGet(GraphSpaceID spaceId, PartitionID partId,
-                                 const std::vector<std::string> keys,
+                                 const std::vector<std::string>& keys,
                                  std::vector<std::string>* values) {
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->multiGet(keys, values);

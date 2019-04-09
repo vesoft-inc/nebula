@@ -40,6 +40,11 @@ add_library(
     client/MetaClient.cpp
 )
 
-add_dependencies(meta_client base_obj meta_thrift_obj)
+add_dependencies(
+    meta_client
+    base_obj
+    meta_thrift_obj
+    common_thrift_obj
+)
 
 add_subdirectory(test)

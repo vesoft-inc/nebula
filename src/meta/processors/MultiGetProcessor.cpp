@@ -10,11 +10,13 @@ namespace nebula {
 namespace meta {
 
 void MultiGetProcessor::process(const cpp2::MultiGetReq& req) {
+    CHECK_SEGMENT(req.get_segment());
+    std::vector<std::string> keys;
     for (auto& key : req.get_keys()) {
-        CHECK_KEY_PREFIX(key);
+        keys.emplace_back(MetaUtils::assembleSegmentKey(req.get_segment(), key));
     }
 
-    auto result = doMultiGet(req.get_keys());
+    auto result = doMultiGet(keys);
     if (!result.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();

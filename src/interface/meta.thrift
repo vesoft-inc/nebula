@@ -27,8 +27,8 @@ enum ErrorCode {
     E_TAG_EXISTED    = -24,
 
     // KV Failure
-    E_STORE_FAILURE      = -31,
-    E_STORE_KEY_ILLEGAL  = -32,
+    E_STORE_FAILURE          = -31,
+    E_STORE_SEGMENT_ILLEGAL  = -32,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -192,7 +192,10 @@ struct GetPartsAllocResp {
 }
 
 struct MultiPutReq {
-    1: list<Pair> pairs,
+    // segment is used to avoid conflict with system data.
+    // it should be comprised of numbers and letters.
+    1: string     segment,
+    2: list<Pair> pairs,
 }
 
 struct MultiPutResp {
@@ -200,7 +203,8 @@ struct MultiPutResp {
 }
 
 struct GetReq {
-    1: string key,
+    1: string segment,
+    2: string key,
 }
 
  struct GetResp {
@@ -209,7 +213,8 @@ struct GetReq {
 }
 
 struct MultiGetReq {
-    1: list<string> keys,
+    1: string       segment,
+    2: list<string> keys,
 }
 
 struct MultiGetResp {
@@ -218,7 +223,8 @@ struct MultiGetResp {
 }
 
 struct RemoveReq {
-    1: string key,
+    1: string segment,
+    2: string key,
 }
 
 struct RemoveResp {
@@ -226,8 +232,9 @@ struct RemoveResp {
 }
 
 struct RemoveRangeReq {
-    1: string start,
-    2: string end,
+    1: string segment,
+    2: string start,
+    3: string end,
 }
 
 struct RemoveRangeResp {
@@ -235,8 +242,9 @@ struct RemoveRangeResp {
 }
 
 struct ScanReq {
-    1: string start,
-    2: string end,
+    1: string segment,
+    2: string start,
+    3: string end,
 }
 
 struct ScanResp {

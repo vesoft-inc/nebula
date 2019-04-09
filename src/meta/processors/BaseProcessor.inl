@@ -27,14 +27,14 @@ StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
     std::string value;
     auto code = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_,
                               std::move(key), &value);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
-        if (code == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+    switch (code) {
+        case kvstore::ResultCode::SUCCEEDED:
+            return value;
+        case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
             return Status::Error("Key Not Found");
-        } else {
+        default:
             return Status::Error("Get Failed");
-        }
     }
-    return value;
 }
 
 template<typename RESP>
@@ -143,7 +143,5 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
     }
     return Status::SpaceNotFound();
 }
-
 }  // namespace meta
 }  // namespace nebula
-

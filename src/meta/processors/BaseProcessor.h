@@ -36,9 +36,9 @@ GENERATE_LOCK(tag);
 #undef GENERATE_LOCK
 };
 
-#define CHECK_KEY_PREFIX(key) \
-    if (MetaUtils::checkPrefix(key)) { \
-        resp_.set_code(cpp2::ErrorCode::E_STORE_KEY_ILLEGAL); \
+#define CHECK_SEGMENT(segment) \
+    if (MetaUtils::checkSegment(segment)) { \
+        resp_.set_code(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
         onFinished(); \
         return; \
     }
@@ -100,7 +100,6 @@ protected:
 
     /**
      * General get function.
-     * When an error occurs, return Get Failed
      * */
     StatusOr<std::string> doGet(const std::string& key);
 
