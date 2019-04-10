@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "graph/Executor.h"
+#include "meta/SchemaManager.h"
 
 namespace nebula {
 namespace graph {
@@ -26,14 +27,13 @@ public:
     void execute() override;
 
 private:
+    using EdgeSchema = std::shared_ptr<const meta::SchemaProviderIf>;
     InsertEdgeSentence                         *sentence_{nullptr};
     bool                                        overwritable_{true};
-    int64_t                                     srcid_{0};
-    int64_t                                     dstid_{0};
-    int64_t                                     rank_{0};
-    std::string                                *edge_{nullptr};
+    EdgeType                                    edge_{0};
+    EdgeSchema                                  schema_;
     std::vector<std::string*>                   properties_;
-    std::vector<Expression*>                    values_;
+    std::vector<EdgeRowItem*>                   rows_;
 };
 
 }   // namespace graph

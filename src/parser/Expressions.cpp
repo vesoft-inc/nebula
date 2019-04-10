@@ -20,43 +20,11 @@
 
 namespace nebula {
 
-void ExpressionContext::print() const {
-    for (auto &entry : aliasInfo_) {
-        FLOG_INFO("Alias `%s': kind of `%s'",
-                entry.first.c_str(), aliasKindToString(entry.second.kind_).c_str());
-    }
-    if (!srcNodePropNames_.empty()) {
-        auto srclist = std::accumulate(std::next(srcNodePropNames_.begin()),
-                                       srcNodePropNames_.end(),
-                                       *srcNodePropNames_.begin(),
-                                       [] (auto &a, auto &b) { return a + ", " + b; });
-        FLOG_INFO("Referred source node's properties: %s", srclist.c_str());
-    }
-    if (!dstNodePropNames_.empty()) {
-        auto dstlist = std::accumulate(std::next(dstNodePropNames_.begin()),
-                                       dstNodePropNames_.end(),
-                                       *dstNodePropNames_.begin(),
-                                       [] (auto &a, auto &b) { return a + ", " + b; });
-        FLOG_INFO("Referred destination node's properties: %s", dstlist.c_str());
-    }
-    if (!edgePropNames_.empty()) {
-        auto edgelist = std::accumulate(std::next(edgePropNames_.begin()),
-                                        edgePropNames_.end(),
-                                        *edgePropNames_.begin(),
-                                        [] (auto &a, auto &b) { return a + ", " + b; });
-        FLOG_INFO("Referred edge's properties: %s", edgelist.c_str());
-    }
-}
-
 
 Status ExpressionContext::addAliasProp(const std::string &alias, const std::string &prop) {
     auto kind = aliasKind(alias);
     if (kind == AliasKind::Unknown) {
         return Status::Error("Alias `%s' not defined", alias.c_str());
-    }
-    if (kind == AliasKind::SourceNode) {
-        addSrcNodeProp(prop);
-        return Status::OK();
     }
     if (kind == AliasKind::Edge) {
         addEdgeProp(prop);
@@ -113,8 +81,6 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
             return std::make_unique<RelationalExpression>();
         case kLogical:
             return std::make_unique<LogicalExpression>();
-        case kSourceId:
-            return std::make_unique<SourceIdExpression>();
         case kSourceProp:
             return std::make_unique<SourcePropertyExpression>();
         case kEdgeRank:
@@ -129,8 +95,6 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
             return std::make_unique<EdgePropertyExpression>();
         case kVariableProp:
             return std::make_unique<VariablePropertyExpression>();
-        case kDestId:
-            return std::make_unique<DestIdExpression>();
         case kDestProp:
             return std::make_unique<DestPropertyExpression>();
         case kInputProp:
@@ -171,7 +135,7 @@ Expression::decode(folly::StringPiece buffer) noexcept {
 std::string InputPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += "$_.";
+    buf += "$-.";
     buf += *prop_;
     return buf;
 }
@@ -219,6 +183,7 @@ VariantType DestPropertyExpression::eval() const {
 
 
 Status DestPropertyExpression::prepare() {
+    context_->addDstTagProp(*tag_, *prop_);
     return Status::OK();
 }
 
@@ -251,46 +216,6 @@ const char* DestPropertyExpression::decode(const char *pos, const char *end) {
         prop_ = std::make_unique<std::string>(pos, size);
         pos += size;
     }
-
-    return pos;
-}
-
-
-std::string DestIdExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$$[";
-    buf += *tag_;
-    buf += "]._id";
-    return buf;
-}
-
-
-VariantType DestIdExpression::eval() const {
-    return context_->getters().getDstTagId();
-}
-
-
-Status DestIdExpression::prepare() {
-    return Status::OK();
-}
-
-
-void DestIdExpression::encode(Cord &cord) const {
-    cord << kindToInt(kind());
-    cord << static_cast<uint16_t>(tag_->size());
-    cord << *tag_;
-}
-
-
-const char* DestIdExpression::decode(const char *pos, const char *end) {
-    THROW_IF_NO_SPACE(pos, end, 2UL);
-    auto size = *reinterpret_cast<const uint16_t*>(pos);
-    pos += 2;
-
-    THROW_IF_NO_SPACE(pos, end, size);
-    tag_ = std::make_unique<std::string>(pos, size);
-    pos += size;
 
     return pos;
 }
@@ -455,7 +380,7 @@ std::string EdgeSrcIdExpression::toString() const {
 
 
 VariantType EdgeSrcIdExpression::eval() const {
-    return context_->getters().getSrcTagId();
+    return context_->getters().getEdgeProp("_src");
 }
 
 
@@ -494,7 +419,7 @@ std::string EdgeDstIdExpression::toString() const {
 
 
 VariantType EdgeDstIdExpression::eval() const {
-    return context_->getters().getDstTagId();
+    return context_->getters().getEdgeProp("_dst");
 }
 
 
@@ -533,7 +458,7 @@ std::string EdgeRankExpression::toString() const {
 
 
 VariantType EdgeRankExpression::eval() const {
-    return context_->getters().getEdgeRank();
+    return context_->getters().getEdgeProp("_rank");
 }
 
 
@@ -565,8 +490,7 @@ const char* EdgeRankExpression::decode(const char *pos, const char *end) {
 std::string SourcePropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += *alias_;
-    buf += "[";
+    buf += "$^[";
     buf += *tag_;
     buf += "].";
     buf += *prop_;
@@ -580,6 +504,7 @@ VariantType SourcePropertyExpression::eval() const {
 
 
 Status SourcePropertyExpression::prepare() {
+    context_->addSrcTagProp(*tag_, *prop_);
     return Status::OK();
 }
 
@@ -612,47 +537,6 @@ const char* SourcePropertyExpression::decode(const char *pos, const char *end) {
         prop_ = std::make_unique<std::string>(pos, size);
         pos += size;
     }
-
-    return pos;
-}
-
-
-std::string SourceIdExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "[";
-    buf += *tag_;
-    buf += "]._id";
-    return buf;
-}
-
-
-VariantType SourceIdExpression::eval() const {
-    return context_->getters().getSrcTagId();
-}
-
-
-Status SourceIdExpression::prepare() {
-    return Status::OK();
-}
-
-
-void SourceIdExpression::encode(Cord &cord) const {
-    cord << kindToInt(kind());
-    cord << static_cast<uint16_t>(tag_->size());
-    cord << *tag_;
-}
-
-
-const char* SourceIdExpression::decode(const char *pos, const char *end) {
-    THROW_IF_NO_SPACE(pos, end, 2UL);
-    auto size = *reinterpret_cast<const uint16_t*>(pos);
-    pos += 2;
-
-    THROW_IF_NO_SPACE(pos, end, size);
-    tag_ = std::make_unique<std::string>(pos, size);
-    pos += size;
 
     return pos;
 }

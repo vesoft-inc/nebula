@@ -400,7 +400,7 @@ TEST_F(ExpressionTest, LiteralConstantsLogical) {
 TEST_F(ExpressionTest, InputReference) {
     GQLParser parser;
     {
-        std::string query = "GO FROM 1 OVER follow WHERE $_.name";
+        std::string query = "GO FROM 1 OVER follow WHERE $-.name";
         auto parsed = parser.parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
@@ -419,7 +419,7 @@ TEST_F(ExpressionTest, InputReference) {
         ASSERT_EQ("Freddie", Expression::asString(value));
     }
     {
-        std::string query = "GO FROM 1 OVER follow WHERE $_.age >= 18";
+        std::string query = "GO FROM 1 OVER follow WHERE $-.age >= 18";
         auto parsed = parser.parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
@@ -443,8 +443,7 @@ TEST_F(ExpressionTest, InputReference) {
 TEST_F(ExpressionTest, SourceTagReference) {
     GQLParser parser;
     {
-        std::string query = "GO FROM 1 AS src OVER follow WHERE src[person].name == \"dutor\" "
-                                                                "&& src[person]._id == 1";
+        std::string query = "GO FROM 1 OVER follow WHERE $^[person].name == \"dutor\"";
         auto parsed = parser.parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());
@@ -455,9 +454,6 @@ TEST_F(ExpressionTest, SourceTagReference) {
                 return std::string("dutor");
             }
             return std::string("nobody");
-        };
-        ctx->getters().getSrcTagId = [] () -> int64_t {
-            return 1L;
         };
         expr->setContext(ctx.get());
         auto value = expr->eval();
@@ -478,15 +474,15 @@ TEST_F(ExpressionTest, EdgeReference) {
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
         auto ctx = std::make_unique<ExpressionContext>();
-        ctx->getters().getSrcTagId = [] () -> int64_t {
-            return 0L;
-        };
-        ctx->getters().getDstTagId = [] () -> int64_t {
-            return 2L;
-        };
         ctx->getters().getEdgeProp = [] (auto &prop) -> VariantType {
             if (prop == "cur_time") {
                 return static_cast<int64_t>(::time(NULL));
+            }
+            if (prop == "_src") {
+                return 0L;
+            }
+            if (prop == "_dst") {
+                return 2L;
             }
             return 1545798790L;
         };

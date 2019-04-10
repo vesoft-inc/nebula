@@ -53,15 +53,13 @@ private:
 
 class FromClause final {
 public:
-    explicit FromClause(SourceNodeList *srcNodeList, std::string *alias = nullptr) {
+    explicit FromClause(SourceNodeList *srcNodeList) {
         srcNodeList_.reset(srcNodeList);
-        alias_.reset(alias);
         isRef_ = false;
     }
 
-    explicit FromClause(Expression *expr, std::string *alias = nullptr) {
+    explicit FromClause(Expression *expr) {
         ref_.reset(expr);
-        alias_.reset(alias);
         isRef_ = true;
     }
 
@@ -77,10 +75,6 @@ public:
         return ref_.get();
     }
 
-    std::string* alias() const {
-        return alias_.get();
-    }
-
     bool isRef() const {
         return isRef_;
     }
@@ -90,7 +84,6 @@ public:
 private:
     std::unique_ptr<SourceNodeList>             srcNodeList_;
     std::unique_ptr<Expression>                 ref_;
-    std::unique_ptr<std::string>                alias_;
     bool                                        isRef_{false};
 };
 

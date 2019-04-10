@@ -14,14 +14,21 @@ namespace nebula {
 namespace graph {
 
 std::unique_ptr<TraverseExecutor> TraverseExecutor::makeTraverseExecutor(Sentence *sentence) {
+    return makeTraverseExecutor(sentence, ectx());
+}
+
+
+// static
+std::unique_ptr<TraverseExecutor>
+TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ectx) {
     auto kind = sentence->kind();
     std::unique_ptr<TraverseExecutor> executor;
     switch (kind) {
         case Sentence::Kind::kGo:
-            executor = std::make_unique<GoExecutor>(sentence, ectx());
+            executor = std::make_unique<GoExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kPipe:
-            executor = std::make_unique<PipeExecutor>(sentence, ectx());
+            executor = std::make_unique<PipeExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

@@ -50,6 +50,10 @@ class GraphScanner;
     nebula::YieldColumn                    *yield_column;
     nebula::PropertyList                   *prop_list;
     nebula::ValueList                      *value_list;
+    nebula::VertexRowList                  *vertex_row_list;
+    nebula::VertexRowItem                  *vertex_row_item;
+    nebula::EdgeRowList                    *edge_row_list;
+    nebula::EdgeRowItem                    *edge_row_item;
     nebula::UpdateList                     *update_list;
     nebula::UpdateItem                     *update_item;
     nebula::EdgeList                       *edge_list;
@@ -64,7 +68,7 @@ class GraphScanner;
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
 %token DOT COLON SEMICOLON L_ARROW R_ARROW AT
-%token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF
+%token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
 
 /* token type specification */
 %token <boolval> BOOL
@@ -75,7 +79,11 @@ class GraphScanner;
 %type <expr> expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression
 %type <expr> unary_expression primary_expression equality_expression
-%type <expr> ref_expression input_ref_expression dst_ref_expression var_ref_expression
+%type <expr> ref_expression
+%type <expr> src_ref_expression
+%type <expr> dst_ref_expression
+%type <expr> input_ref_expression
+%type <expr> var_ref_expression
 %type <expr> alias_ref_expression
 %type <type> type_spec
 %type <step_clause> step_clause
@@ -88,6 +96,10 @@ class GraphScanner;
 %type <yield_column> yield_column
 %type <prop_list> prop_list
 %type <value_list> value_list
+%type <vertex_row_list> vertex_row_list
+%type <vertex_row_item> vertex_row_item
+%type <edge_row_list> edge_row_list
+%type <edge_row_item> edge_row_item
 %type <update_list> update_list
 %type <update_item> update_item
 %type <edge_list> edge_list
@@ -133,6 +145,9 @@ primary_expression
     | input_ref_expression {
         $$ = $1;
     }
+    | src_ref_expression {
+        $$ = $1;
+    }
     | dst_ref_expression {
         $$ = $1;
     }
@@ -153,11 +168,14 @@ input_ref_expression
     }
     ;
 
-dst_ref_expression
-    : DST_REF L_BRACKET LABEL R_BRACKET DOT ID_PROP {
-        $$ = new DestIdExpression($3);
+src_ref_expression
+    : SRC_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
+        $$ = new SourcePropertyExpression($3, $6);
     }
-    | DST_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
+    ;
+
+dst_ref_expression
+    : DST_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
         $$ = new DestPropertyExpression($3, $6);
     }
     ;
@@ -183,12 +201,6 @@ alias_ref_expression
     }
     | LABEL DOT RANK_PROP {
         $$ = new EdgeRankExpression($1);
-    }
-    | LABEL L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new SourcePropertyExpression($1, $3, $6);
-    }
-    | LABEL L_BRACKET LABEL R_BRACKET DOT ID_PROP {
-        $$ = new SourceIdExpression($1, $3);
     }
     ;
 
@@ -291,6 +303,15 @@ go_sentence
         go->setFromClause($3);
         go->setOverClause($4);
         go->setWhereClause($5);
+        if ($6 == nullptr) {
+            auto *edge = new std::string(*$4->edge());
+            auto *expr = new EdgeDstIdExpression(edge);
+            auto *alias = new std::string("id");
+            auto *col = new YieldColumn(expr, alias);
+            auto *cols = new YieldColumns();
+            cols->addColumn(col);
+            $6 = new YieldClause(cols);
+        }
         go->setYieldClause($6);
         $$ = go;
     }
@@ -307,16 +328,8 @@ from_clause
         auto from = new FromClause($2);
         $$ = from;
     }
-    | KW_FROM id_list KW_AS LABEL {
-        auto from = new FromClause($2, $4);
-        $$ = from;
-    }
     | KW_FROM ref_expression {
         auto from = new FromClause($2);
-        $$ = from;
-    }
-    | KW_FROM ref_expression KW_AS LABEL {
-        auto from = new FromClause($2, $4);
         $$ = from;
     }
     ;
@@ -509,11 +522,8 @@ assignment_sentence
     ;
 
 insert_vertex_sentence
-    : KW_INSERT KW_VERTEX LABEL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN INTEGER COLON value_list R_PAREN {
-        $$ = new InsertVertexSentence($9, $3, $5, $11);
-    }
-    | KW_INSERT KW_TAG LABEL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN INTEGER COLON value_list R_PAREN {
-        $$ = new InsertVertexSentence($9, $3, $5, $11);
+    : KW_INSERT KW_VERTEX LABEL L_PAREN prop_list R_PAREN KW_VALUES vertex_row_list {
+        $$ = new InsertVertexSentence($3, $5, $8);
     }
     ;
 
@@ -528,6 +538,23 @@ prop_list
     }
     | prop_list COMMA {
         $$ = $1;
+    }
+    ;
+
+vertex_row_list
+    : vertex_row_item {
+        $$ = new VertexRowList();
+        $$->addRow($1);
+    }
+    | vertex_row_list COMMA vertex_row_item {
+        $1->addRow($3);
+        $$ = $1;
+    }
+    ;
+
+vertex_row_item
+    : L_PAREN INTEGER COLON value_list R_PAREN {
+        $$ = new VertexRowItem($2, $4);
     }
     ;
 
@@ -546,49 +573,40 @@ value_list
     ;
 
 insert_edge_sentence
-    : KW_INSERT KW_EDGE LABEL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN
-      INTEGER R_ARROW INTEGER COLON value_list R_PAREN {
+    : KW_INSERT KW_EDGE LABEL L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setEdge($3);
         sentence->setProps($5);
-        sentence->setSrcId($9);
-        sentence->setDstId($11);
-        sentence->setValues($13);
+        sentence->setRows($8);
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE LABEL L_PAREN prop_list R_PAREN
-      KW_VALUES L_PAREN INTEGER R_ARROW INTEGER COLON value_list R_PAREN {
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE LABEL L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setOverwrite(false);
         sentence->setEdge($5);
         sentence->setProps($7);
-        sentence->setSrcId($11);
-        sentence->setDstId($13);
-        sentence->setValues($15);
+        sentence->setRows($10);
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE LABEL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN
-      INTEGER R_ARROW INTEGER AT INTEGER COLON value_list R_PAREN {
-        auto sentence = new InsertEdgeSentence();
-        sentence->setEdge($3);
-        sentence->setProps($5);
-        sentence->setSrcId($9);
-        sentence->setDstId($11);
-        sentence->setRank($13);
-        sentence->setValues($15);
-        $$ = sentence;
+    ;
+
+edge_row_list
+    : edge_row_item {
+        $$ = new EdgeRowList();
+        $$->addRow($1);
     }
-    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE LABEL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN
-      INTEGER R_ARROW INTEGER AT INTEGER COLON value_list R_PAREN {
-        auto sentence = new InsertEdgeSentence();
-        sentence->setOverwrite(false);
-        sentence->setEdge($5);
-        sentence->setProps($7);
-        sentence->setSrcId($11);
-        sentence->setDstId($13);
-        sentence->setRank($15);
-        sentence->setValues($17);
-        $$ = sentence;
+    | edge_row_list COMMA edge_row_item {
+        $1->addRow($3);
+        $$ = $1;
+    }
+    ;
+
+edge_row_item
+    : L_PAREN INTEGER R_ARROW INTEGER COLON value_list R_PAREN {
+        $$ = new EdgeRowItem($2, $4, $6);
+    }
+    | L_PAREN INTEGER R_ARROW INTEGER AT INTEGER COLON value_list R_PAREN {
+        $$ = new EdgeRowItem($2, $4, $6, $8);
     }
     ;
 

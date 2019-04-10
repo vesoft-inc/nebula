@@ -11,6 +11,7 @@
 #include "storage/StorageHttpHandler.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
+#include "process/ProcessUtils.h"
 #include "storage/test/TestUtils.h"
 #include "webservice/WebService.h"
 
@@ -19,16 +20,53 @@ DEFINE_string(data_path, "", "Root data path, multi paths should be split by com
                              "For rocksdb engine, one path one instance.");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DEFINE_bool(mock_server, true, "start mock server");
+DEFINE_bool(daemonize, true, "Whether to run the process as a daemon");
+DEFINE_string(pid_file, "pids/nebula-storaged.pid", "");
+
+using nebula::Status;
+
+static std::unique_ptr<apache::thrift::ThriftServer> gServer;
+
+static void signalHandler(int sig);
+static Status setupSignalHandler();
 
 
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
-    google::SetStderrLogging(google::INFO);
+    if (FLAGS_daemonize) {
+        google::SetStderrLogging(google::FATAL);
+    } else {
+        google::SetStderrLogging(google::INFO);
+    }
     using nebula::HostAddr;
     using nebula::storage::StorageServiceHandler;
     using nebula::kvstore::KVStore;
     using nebula::meta::SchemaManager;
     using nebula::network::NetworkUtils;
+    using nebula::ProcessUtils;
+
+    // Detect if the server has already been started
+    auto pidPath = FLAGS_pid_file;
+    auto status = ProcessUtils::isPidAvailable(pidPath);
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
+
+    if (FLAGS_daemonize) {
+        status = ProcessUtils::daemonize(pidPath);
+        if (!status.ok()) {
+            LOG(ERROR) << status;
+            return EXIT_FAILURE;
+        }
+    } else {
+        // Write the current pid into the pid file
+        status = ProcessUtils::makePidFile(pidPath);
+        if (!status.ok()) {
+            LOG(ERROR) << status;
+            return EXIT_FAILURE;
+        }
+    }
 
     if (FLAGS_data_path.empty()) {
         LOG(FATAL) << "Storage Data Path should not empty";
@@ -60,21 +98,50 @@ int main(int argc, char *argv[]) {
         return new nebula::storage::StorageHttpHandler();
     });
 
-    auto status = nebula::WebService::start();
+    status = nebula::WebService::start();
     if (!status.ok()) {
         LOG(ERROR) << "Failed to start web service: " << status;
         return EXIT_FAILURE;
     }
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get());
-    auto server = std::make_shared<apache::thrift::ThriftServer>();
-    CHECK(!!server) << "Failed to create the thrift server";
+    gServer = std::make_unique<apache::thrift::ThriftServer>();
+    CHECK(!!gServer) << "Failed to create the thrift server";
 
-    server->setInterface(handler);
-    server->setPort(FLAGS_port);
+    // Setup the signal handlers
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
 
-    server->serve();  // Will wait until the server shuts down
+    gServer->setInterface(std::move(handler));
+    gServer->setPort(FLAGS_port);
+    gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
+
+    gServer->serve();  // Will wait until the server shuts down
 
     LOG(INFO) << "The storage Daemon on port " << FLAGS_port << " stopped";
 }
 
+
+Status setupSignalHandler() {
+    ::signal(SIGPIPE, SIG_IGN);
+    ::signal(SIGINT, signalHandler);
+    ::signal(SIGTERM, signalHandler);
+    return Status::OK();
+}
+
+
+void signalHandler(int sig) {
+    switch (sig) {
+        case SIGINT:
+        case SIGTERM:
+            FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
+            nebula::WebService::stop();
+            gServer->stop();
+            break;
+        default:
+            FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
+    }
+}
