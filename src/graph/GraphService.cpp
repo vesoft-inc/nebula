@@ -9,18 +9,22 @@
 #include "time/Duration.h"
 #include "graph/RequestContext.h"
 #include "graph/SimpleAuthenticator.h"
+#include "storage/client/StorageClient.h"
 
 namespace nebula {
 namespace graph {
 
-GraphService::GraphService() {
+GraphService::GraphService(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
     sessionManager_ = std::make_unique<SessionManager>();
-    executionEngine_ = std::make_unique<ExecutionEngine>();
+    auto storage = std::make_unique<storage::StorageClient>(ioExecutor);
+    executionEngine_ = std::make_unique<ExecutionEngine>(std::move(storage));
     authenticator_ = std::make_unique<SimpleAuthenticator>();
 }
 
+
 GraphService::~GraphService() {
 }
+
 
 folly::Future<cpp2::AuthResponse> GraphService::future_authenticate(
         const std::string& username,

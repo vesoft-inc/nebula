@@ -41,16 +41,16 @@ using VariantType = boost::variant<int64_t, double, bool, std::string>;
 
 class ExpressionContext final {
 public:
-    void addSrcNodeProp(const std::string &prop) {
-        srcNodePropNames_.emplace(prop);
+    void addSrcTagProp(const std::string &tag, const std::string &prop) {
+        srcTagProps_.emplace(tag, prop);
     }
 
-    void addDstNodeProp(const std::string &prop) {
-        dstNodePropNames_.emplace(prop);
+    void addDstTagProp(const std::string &tag, const std::string &prop) {
+        dstTagProps_.emplace(tag, prop);
     }
 
     void addEdgeProp(const std::string &prop) {
-        edgePropNames_.emplace(prop);
+        edgeProps_.emplace(prop);
     }
 
     Status addAliasProp(const std::string &alias, const std::string &prop);
@@ -74,22 +74,26 @@ public:
         return iter->second.kind_;
     }
 
-    std::vector<std::string> srcNodePropNames() const {
-        return std::vector<std::string>(srcNodePropNames_.begin(), srcNodePropNames_.end());
+    using TagProp = std::pair<std::string, std::string>;
+
+    std::vector<TagProp> srcTagProps() const {
+        return std::vector<TagProp>(srcTagProps_.begin(), srcTagProps_.end());
     }
 
-    std::vector<std::string> dstNodePropNames() const {
-        return std::vector<std::string>(dstNodePropNames_.begin(), dstNodePropNames_.end());
+    std::vector<TagProp> dstTagProps() const {
+        return std::vector<TagProp>(dstTagProps_.begin(), dstTagProps_.end());
     }
 
-    std::vector<std::string> edgePropNames() const {
-        return std::vector<std::string>(edgePropNames_.begin(), edgePropNames_.end());
+    std::vector<std::string> edgeProps() const {
+        return std::vector<std::string>(edgeProps_.begin(), edgeProps_.end());
+    }
+
+    bool hasDstTagProp() const {
+        return !dstTagProps_.empty();
     }
 
     struct Getters {
-        std::function<int64_t()> getSrcTagId;
-        std::function<int64_t()> getDstTagId;
-        std::function<int64_t()> getEdgeRank;
+        std::function<VariantType()> getEdgeRank;
         std::function<VariantType(const std::string&)> getEdgeProp;
         std::function<VariantType(const std::string&)> getInputProp;
         std::function<VariantType(const std::string&, const std::string&)> getSrcTagProp;
@@ -105,9 +109,9 @@ public:
 private:
     Getters                                     getters_;
     std::unordered_map<std::string, AliasInfo>  aliasInfo_;
-    std::unordered_set<std::string>             srcNodePropNames_;
-    std::unordered_set<std::string>             dstNodePropNames_;
-    std::unordered_set<std::string>             edgePropNames_;
+    std::unordered_set<TagProp>                 srcTagProps_;
+    std::unordered_set<TagProp>                 dstTagProps_;
+    std::unordered_set<std::string>             edgeProps_;
 };
 
 
@@ -124,6 +128,14 @@ public:
     virtual Status MUST_USE_RESULT prepare() = 0;
 
     virtual VariantType eval() const = 0;
+
+    virtual bool isInputExpression() const {
+        return kind_ == kInputProp;
+    }
+
+    virtual bool isVariableExpression() const {
+        return kind_ == kVariableProp;
+    }
 
     /**
      * To encode an expression into a byte buffer.
@@ -205,7 +217,6 @@ protected:
         kArithmetic,
         kRelational,
         kLogical,
-        kSourceId,
         kSourceProp,
         kEdgeRank,
         kEdgeDstId,
@@ -213,7 +224,6 @@ protected:
         kEdgeType,
         kEdgeProp,
         kVariableProp,
-        kDestId,
         kDestProp,
         kInputProp,
 
@@ -245,7 +255,6 @@ private:
     friend class ArithmeticExpression;
     friend class RelationalExpression;
     friend class LogicalExpression;
-    friend class SourceIdExpression;
     friend class SourcePropertyExpression;
     friend class EdgeRankExpression;
     friend class EdgeDstIdExpression;
@@ -253,7 +262,6 @@ private:
     friend class EdgeTypeExpression;
     friend class EdgePropertyExpression;
     friend class VariablePropertyExpression;
-    friend class DestIdExpression;
     friend class InputPropertyExpression;
 
     virtual void encode(Cord &cord) const = 0;
@@ -289,6 +297,10 @@ public:
 
     Status MUST_USE_RESULT prepare() override {
         return Status::OK();
+    }
+
+    std::string* prop() const {
+        return prop_.get();
     }
 
 private:
@@ -331,34 +343,6 @@ private:
 };
 
 
-// $$[TagName]._id
-class DestIdExpression final : public Expression {
-public:
-    DestIdExpression() {
-        kind_ = kDestId;
-    }
-
-    explicit DestIdExpression(std::string *tag) {
-        kind_ = kDestId;
-        tag_.reset(tag);
-    }
-
-    std::string toString() const override;
-
-    VariantType eval() const override;
-
-    Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                tag_;
-};
-
-
 // $VarName.any_prop_name
 class VariablePropertyExpression final : public Expression {
 public:
@@ -377,6 +361,14 @@ public:
     VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
+
+    std::string* var() const {
+        return var_.get();
+    }
+
+    std::string* prop() const {
+        return prop_.get();
+    }
 
 private:
     void encode(Cord &cord) const override;
@@ -531,16 +523,15 @@ private:
 };
 
 
-// Alias[TagName].any_prop_name
+// $^[TagName].any_prop_name
 class SourcePropertyExpression final : public Expression {
 public:
     SourcePropertyExpression() {
         kind_ = kSourceProp;
     }
 
-    SourcePropertyExpression(std::string *alias, std::string *tag, std::string *prop) {
+    SourcePropertyExpression(std::string *tag, std::string *prop) {
         kind_ = kSourceProp;
-        alias_.reset(alias);
         tag_.reset(tag);
         prop_.reset(prop);
     }
@@ -557,39 +548,8 @@ private:
     const char* decode(const char *pos, const char *end) override;
 
 private:
-    std::unique_ptr<std::string>                alias_;
     std::unique_ptr<std::string>                tag_;
     std::unique_ptr<std::string>                prop_;
-};
-
-
-// Alias[TagName]._id
-class SourceIdExpression final : public Expression {
-public:
-    SourceIdExpression() {
-        kind_ = kSourceId;
-    }
-
-    SourceIdExpression(std::string *alias, std::string *tag) {
-        kind_ = kSourceId;
-        alias_.reset(alias);
-        tag_.reset(tag);
-    }
-
-    std::string toString() const override;
-
-    VariantType eval() const override;
-
-    Status MUST_USE_RESULT prepare() override;
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                alias_;
-    std::unique_ptr<std::string>                tag_;
 };
 
 

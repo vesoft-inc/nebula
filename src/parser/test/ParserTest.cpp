@@ -15,80 +15,80 @@ namespace nebula {
 TEST(Parser, Go) {
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend";
+        std::string query = "GO FROM 1 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend;";
+        std::string query = "GO FROM 1 OVER friend;";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO 2 STEPS FROM 1 AS person OVER friend";
+        std::string query = "GO 2 STEPS FROM 1 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO UPTO 2 STEPS FROM 1 AS person OVER friend";
+        std::string query = "GO UPTO 2 STEPS FROM 1 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend";
+        std::string query = "GO FROM 1 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend REVERSELY";
+        std::string query = "GO FROM 1 OVER friend REVERSELY";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend YIELD person.name";
+        std::string query = "GO FROM 1 OVER friend YIELD person.name";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend "
-                            "YIELD person[manager].name,person[manager].age";
+        std::string query = "GO FROM 1 OVER friend "
+                            "YIELD $^[manager].name,$^[manager].age";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1,2,3 AS person OVER friend";
+        std::string query = "GO FROM 1,2,3 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM $_.id AS person OVER friend";
+        std::string query = "GO FROM $-.id OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM $_.col1 AS person OVER friend";
+        std::string query = "GO FROM $-.col1 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM $_.id AS person OVER friend";
+        std::string query = "GO FROM $-.id OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1,2,3 AS person OVER friend WHERE person.name == \"dutor\"";
+        std::string query = "GO FROM 1,2,3 OVER friend WHERE person.name == \"dutor\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -125,30 +125,30 @@ TEST(Parser, AlterTag) {
 TEST(Parser, Set) {
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend INTERSECT "
-                            "GO FROM 2 AS person OVER friend";
+        std::string query = "GO FROM 1 OVER friend INTERSECT "
+                            "GO FROM 2 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend UNION "
-                            "GO FROM 2 AS person OVER friend";
+        std::string query = "GO FROM 1 OVER friend UNION "
+                            "GO FROM 2 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend MINUS "
-                            "GO FROM 2 AS person OVER friend";
+        std::string query = "GO FROM 1 OVER friend MINUS "
+                            "GO FROM 2 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend MINUS "
-                            "GO FROM 2 AS person OVER friend UNION "
-                            "GO FROM 3 AS person OVER friend";
+        std::string query = "GO FROM 1 OVER friend MINUS "
+                            "GO FROM 2 OVER friend UNION "
+                            "GO FROM 3 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -157,17 +157,17 @@ TEST(Parser, Set) {
 TEST(Parser, Pipe) {
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend | "
-                            "GO FROM 2 AS person OVER friend | "
-                            "GO FROM 3 AS person OVER friend";
+        std::string query = "GO FROM 1 OVER friend | "
+                            "GO FROM 2 OVER friend | "
+                            "GO FROM 3 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GO FROM 1 AS person OVER friend MINUS "
-                            "GO FROM 2 AS person OVER friend | "
-                            "GO FROM 3 AS person OVER friend";
+        std::string query = "GO FROM 1 OVER friend MINUS "
+                            "GO FROM 2 OVER friend | "
+                            "GO FROM 3 OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -177,13 +177,6 @@ TEST(Parser, InsertVertex) {
     {
         GQLParser parser;
         std::string query = "INSERT VERTEX person(name,age,married,salary,create_time) "
-                            "VALUES(12345: \"dutor\", 30, true, 3.14, 1551331900)";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
-        std::string query = "INSERT TAG person(name,age,married,salary) "
                             "VALUES(12345: \"dutor\", 30, true, 3.14, 1551331900)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();

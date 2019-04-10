@@ -108,6 +108,8 @@ namespace nebula {
 // Host address type and utility functions
 using HostAddr = std::pair<IPv4, Port>;
 
+std::ostream& operator<<(std::ostream &, const HostAddr&);
+
 template<typename Key, typename T>
 using UnorderedMap = typename std::conditional<
     std::is_same<Key, std::string>::value,

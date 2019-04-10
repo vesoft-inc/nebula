@@ -19,6 +19,7 @@ std::string PropertyList::toString() const {
     return buf;
 }
 
+
 std::string ValueList::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -30,14 +31,11 @@ std::string ValueList::toString() const {
     return buf;
 }
 
-std::string InsertVertexSentence::toString() const {
+
+std::string VertexRowItem::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "INSERT VERTEX ";
-    buf += *vertex_;
     buf += "(";
-    buf += properties_->toString();
-    buf += ") VALUES(";
     buf += std::to_string(id_);
     buf += ": ";
     buf += values_->toString();
@@ -45,18 +43,36 @@ std::string InsertVertexSentence::toString() const {
     return buf;
 }
 
-std::string InsertEdgeSentence::toString() const {
+
+std::string VertexRowList::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "INSERT EDGE ";
-    if (!overwritable_) {
-        buf += "NO OVERWRITE ";
+    for (auto &item : rows_) {
+        buf += item->toString();
+        buf += ",";
     }
-    buf += *edge_;
+    buf.resize(buf.size() - 1);
+    return buf;
+}
+
+
+std::string InsertVertexSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "INSERT VERTEX ";
+    buf += *vertex_;
     buf += "(";
     buf += properties_->toString();
-    buf += ") ";
-    buf += "VALUES(";
+    buf += ") VALUES";
+    buf += rows_->toString();
+    return buf;
+}
+
+
+std::string EdgeRowItem::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "(";
     buf += std::to_string(srcid_);
     buf += " -> ";
     buf += std::to_string(dstid_);
@@ -70,6 +86,35 @@ std::string InsertEdgeSentence::toString() const {
     return buf;
 }
 
+
+std::string EdgeRowList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &item : rows_) {
+        buf += item->toString();
+        buf += ",";
+    }
+    buf.resize(buf.size() - 1);
+    return buf;
+}
+
+
+std::string InsertEdgeSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "INSERT EDGE ";
+    if (!overwritable_) {
+        buf += "NO OVERWRITE ";
+    }
+    buf += *edge_;
+    buf += "(";
+    buf += properties_->toString();
+    buf += ") VALUES";
+    buf += rows_->toString();
+    return buf;
+}
+
+
 std::string UpdateItem::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -78,6 +123,7 @@ std::string UpdateItem::toString() const {
     buf += value_->toString();
     return buf;
 }
+
 
 std::string UpdateList::toString() const {
     std::string buf;
@@ -89,6 +135,7 @@ std::string UpdateList::toString() const {
     buf.resize(buf.size() - 1);
     return buf;
 }
+
 
 std::string UpdateVertexSentence::toString() const {
     std::string buf;
@@ -112,6 +159,7 @@ std::string UpdateVertexSentence::toString() const {
 
     return buf;
 }
+
 
 std::string UpdateEdgeSentence::toString() const {
     std::string buf;

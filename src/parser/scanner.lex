@@ -160,8 +160,9 @@ OCT                         ([0-7])
 "_src"                      { return TokenType::SRC_ID_PROP; }
 "_dst"                      { return TokenType::DST_ID_PROP; }
 "_rank"                     { return TokenType::RANK_PROP; }
-"$_"                        { return TokenType::INPUT_REF; }
 "$$"                        { return TokenType::DST_REF; }
+"$^"                        { return TokenType::SRC_REF; }
+"$-"                        { return TokenType::INPUT_REF; }
 
 {LABEL}                     {
                                 yylval->strval = new std::string(yytext, yyleng);
@@ -182,7 +183,7 @@ OCT                         ([0-7])
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
-{DEC}+                      { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
+[+-]?{DEC}+                 { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
 {DEC}+\.{DEC}*              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
 {DEC}*\.{DEC}+              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
 

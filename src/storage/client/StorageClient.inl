@@ -14,8 +14,8 @@ namespace {
 template<class Request, class RemoteFunc, class Response>
 struct ResponseContext {
 public:
-    ResponseContext(size_t partsSent, RemoteFunc&& remoteFunc)
-        : resp(partsSent)
+    ResponseContext(size_t reqsSent, RemoteFunc&& remoteFunc)
+        : resp(reqsSent)
         , serverMethod(std::move(remoteFunc)) {}
 
     // Return true if processed all responses
@@ -98,6 +98,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
             .then(evb, [context, host] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
+                    LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
                     for (auto& part : r.parts) {
                         VLOG(3) << "Exception! Failed part " << part.first;
                         context->resp.failedParts().emplace(
