@@ -21,13 +21,16 @@
 namespace nebula {
 namespace meta {
 
+using nebula::cpp2::SupportedType;
+using apache::thrift::FragileConstructor::FRAGILE;
+
 TEST(ProcessorTest, AddHostsTest) {
     fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
-            thriftHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
+            thriftHosts.emplace_back(FRAGILE, i, i);
         }
         cpp2::AddHostsReq req;
         req.set_hosts(std::move(thriftHosts));
@@ -52,7 +55,7 @@ TEST(ProcessorTest, AddHostsTest) {
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 10; i < 20; i++) {
-            thriftHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
+            thriftHosts.emplace_back(FRAGILE, i, i);
         }
         cpp2::AddHostsReq req;
         req.set_hosts(std::move(thriftHosts));
@@ -141,9 +144,9 @@ TEST(ProcessorTest, AddTagsTest) {
     }
     nebula::cpp2::Schema schema;
     decltype(schema.columns) cols;
-    cols.emplace_back(TestUtils::columnDef(0, nebula::cpp2::SupportedType::INT));
-    cols.emplace_back(TestUtils::columnDef(1, nebula::cpp2::SupportedType::FLOAT));
-    cols.emplace_back(TestUtils::columnDef(2, nebula::cpp2::SupportedType::STRING));
+    cols.emplace_back(TestUtils::columnDef(0, SupportedType::INT));
+    cols.emplace_back(TestUtils::columnDef(1, SupportedType::FLOAT));
+    cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
     schema.set_columns(std::move(cols));
     {
         cpp2::AddTagReq req;
@@ -182,19 +185,17 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
             for (auto i = 0; i < 2; i++) {
                 nebula::cpp2::ColumnDef column;
                 column.name = folly::stringPrintf("tag_%d_col_%d", t, i);
-                column.type.type = i < 1 ?
-                                   nebula::cpp2::SupportedType::INT :
-                                   nebula::cpp2::SupportedType::STRING;
+                column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
                 srcsch.columns.emplace_back(std::move(column));
             }
 
             tags.emplace_back(MetaUtils::schemaTagKey(1, t, version++),
-                    MetaUtils::schemaTagVal(srcsch, folly::stringPrintf("tag_%d", t)));
+                    MetaUtils::schemaTagVal(folly::stringPrintf("tag_%d", t), srcsch));
         }
 
         kv.get()->asyncMultiPut(0, 0, std::move(tags),
                                 [] (kvstore::ResultCode code, HostAddr leader) {
-            ASSERT_TRUE(code == kvstore::ResultCode::SUCCEEDED);
+            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
             UNUSED(leader);
         });
     }
@@ -209,13 +210,13 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
         auto resp = std::move(f).get();
         decltype(resp.tags) tags;
         tags = resp.get_tags();
-        ASSERT_EQ(resp.get_code(), cpp2::ErrorCode::SUCCEEDED);
-        ASSERT_EQ(tags.size(), 9);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(9, tags.size());
 
         for (auto t = 1; t < 10; t++) {
             auto tag = tags[t-1];
-            EXPECT_EQ(tag.get_tag_id(), t);
-            EXPECT_EQ(tag.get_tag_name(), folly::stringPrintf("tag_%d", t));
+            EXPECT_EQ(t, tag.get_tag_id());
+            EXPECT_EQ(folly::stringPrintf("tag_%d", t), tag.get_tag_name());
         }
     }
 
@@ -235,10 +236,9 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
         std::vector<nebula::cpp2::ColumnDef> cols = schema.get_columns();
         ASSERT_EQ(cols.size(), 2);
         for (auto i = 0; i < 2; i++) {
-            EXPECT_EQ(cols[i].get_name(), folly::stringPrintf("tag_%d_col_%d", 9, i));
-            EXPECT_EQ(cols[i].get_type().get_type(),
-            (i < 1 ? nebula::cpp2::SupportedType::INT :
-            nebula::cpp2::SupportedType::STRING));
+            EXPECT_EQ(folly::stringPrintf("tag_%d_col_%d", 9, i), cols[i].get_name());
+            EXPECT_EQ((i < 1 ? SupportedType::INT : SupportedType::STRING),
+                      cols[i].get_type().get_type());
         }
     }
 }
