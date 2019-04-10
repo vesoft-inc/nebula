@@ -109,7 +109,6 @@ std::string MetaUtils::hostKey(IPv4 ip, Port port) {
     return key;
 }
 
-
 std::string MetaUtils::hostVal() {
     return "";
 }
@@ -144,7 +143,6 @@ std::string MetaUtils::schemaEdgeVal(nebula::cpp2::Schema schema) {
     return val;
 }
 
-
 std::string MetaUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version) {
     std::string key;
     key.reserve(128);
@@ -156,16 +154,32 @@ std::string MetaUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t v
 }
 
 
-std::string MetaUtils::schemaTagVal(nebula::cpp2::Schema schema) {
-    std::string val;
-    apache::thrift::CompactSerializer::serialize(schema, &val);
+std::string MetaUtils::schemaTagsPrefix(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(kTagsTable.size() + sizeof(GraphSpaceID));
+    key.append(kTagsTable.data(), kTagsTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    return key;
+}
+
+
+std::string MetaUtils::schemaTagVal(const std::string& name, nebula::cpp2::Schema schema) {
+    int32_t len = name.size();
+    std::string val, sval;
+    apache::thrift::CompactSerializer::serialize(schema, &sval);
+    val.reserve(sizeof(int32_t) + name.size() + sval.size());
+    val.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+    val.append(name);
+    val.append(sval);
     return val;
 }
 
 
 nebula::cpp2::Schema MetaUtils::parseSchema(folly::StringPiece rawData) {
     nebula::cpp2::Schema schema;
-    apache::thrift::CompactSerializer::deserialize(rawData, schema);
+    int32_t offset = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(rawData.begin());
+    auto schval = rawData.subpiece(offset, rawData.size() - offset);
+    apache::thrift::CompactSerializer::deserialize(schval, schema);
     return schema;
 }
 

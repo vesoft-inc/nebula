@@ -43,7 +43,7 @@ struct IdName {
 struct TagItem {
     1: common.TagID         tag_id,
     2: string               tag_name,
-    3: i32                  version,
+    3: i64                  version,
     4: common.Schema        schema,
 }
 
@@ -111,7 +111,7 @@ struct ListTagsResp {
 struct GetTagReq {
     1: common.GraphSpaceID space_id,
     2: common.TagID        tag_id,
-    3: i32                 version,
+    3: i64                 version,
 }
 
 struct GetTagResp {
@@ -144,7 +144,7 @@ struct ListEdgesResp {
 struct GetEdgeReq {
     1: common.GraphSpaceID space_id,
     2: common.EdgeType     edge_type,
-    3: i32                 version,
+    3: i64                 version,
 }
 
 struct GetEdgeResp {
