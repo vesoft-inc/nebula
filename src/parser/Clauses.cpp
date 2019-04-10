@@ -41,10 +41,6 @@ std::string FromClause::toString() const {
     } else {
         buf += ref_->toString();
     }
-    if (alias_ != nullptr) {
-        buf += " AS ";
-        buf += *alias_;
-    }
     return buf;
 }
 

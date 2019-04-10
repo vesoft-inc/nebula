@@ -10,7 +10,11 @@
 #include "meta/MetaHttpHandler.h"
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
+#include "process/ProcessUtils.h"
 #include "kvstore/PartManager.h"
+
+using nebula::ProcessUtils;
+using nebula::Status;
 
 DEFINE_int32(port, 45500, "Meta daemon listening port");
 DEFINE_string(data_path, "", "Root data path");
@@ -19,6 +23,9 @@ DEFINE_string(peers, "", "It is a list of IPs split by comma,"
                          "If empty, it means replica is 1");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DECLARE_string(part_man_type);
+
+DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
+DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 
 namespace nebula {
 
@@ -35,14 +42,46 @@ std::vector<HostAddr> toHosts(const std::string& peersStr) {
 }  // namespace nebula
 
 
+static std::unique_ptr<apache::thrift::ThriftServer> gServer;
+
+static void signalHandler(int sig);
+static Status setupSignalHandler();
+
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
+    if (FLAGS_daemonize) {
+        google::SetStderrLogging(google::FATAL);
+    } else {
+        google::SetStderrLogging(google::INFO);
+    }
+
+    // Detect if the server has already been started
+    auto pidPath = FLAGS_pid_file;
+    auto status = ProcessUtils::isPidAvailable(pidPath);
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
+
+    if (FLAGS_daemonize) {
+        status = ProcessUtils::daemonize(pidPath);
+        if (!status.ok()) {
+            LOG(ERROR) << status;
+            return EXIT_FAILURE;
+        }
+    } else {
+        status = ProcessUtils::makePidFile(pidPath);
+        if (!status.ok()) {
+            LOG(ERROR) << status;
+            return EXIT_FAILURE;
+        }
+    }
 
     LOG(INFO) << "Starting Meta HTTP Service";
     nebula::WebService::registerHandler("/meta", [] {
         return new nebula::meta::MetaHttpHandler();
     });
-    auto status = nebula::WebService::start();
+    status = nebula::WebService::start();
     if (!status.ok()) {
         LOG(ERROR) << "Failed to start web service: " << status;
         return EXIT_FAILURE;
@@ -68,13 +107,47 @@ int main(int argc, char *argv[]) {
 
     auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
 
-    auto server = std::make_shared<apache::thrift::ThriftServer>();
-    CHECK(!!server) << "Failed to create the thrift server";
+    gServer = std::make_unique<apache::thrift::ThriftServer>();
+    CHECK(!!gServer) << "Failed to create the thrift server";
 
-    server->setInterface(handler);
-    server->setPort(FLAGS_port);
+    gServer->setInterface(std::move(handler));
+    gServer->setPort(FLAGS_port);
 
-    server->serve();  // Will wait until the server shuts down
+    // Setup the signal handlers
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
+
+    try {
+        gServer->serve();  // Will wait until the server shuts down
+    } catch (const std::exception &e) {
+        LOG(ERROR) << "Exception thrown: " << e.what();
+        return EXIT_FAILURE;
+    }
 
     LOG(INFO) << "The storage Daemon on port " << FLAGS_port << " stopped";
+}
+
+
+Status setupSignalHandler() {
+    ::signal(SIGPIPE, SIG_IGN);
+    ::signal(SIGINT, signalHandler);
+    ::signal(SIGTERM, signalHandler);
+    return Status::OK();
+}
+
+
+void signalHandler(int sig) {
+    switch (sig) {
+        case SIGINT:
+        case SIGTERM:
+            FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
+            nebula::WebService::stop();
+            gServer->stop();
+            break;
+        default:
+            FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
+    }
 }

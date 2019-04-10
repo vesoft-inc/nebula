@@ -13,12 +13,16 @@
 #include "graph/ExecutionEngine.h"
 #include "graph/Authenticator.h"
 
+namespace folly {
+class IOThreadPoolExecutor;
+}   // namespace folly
+
 namespace nebula {
 namespace graph {
 
 class GraphService final : public cpp2::GraphServiceSvIf {
 public:
-    GraphService();
+    explicit GraphService(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
     ~GraphService();
     folly::Future<cpp2::AuthResponse> future_authenticate(
         const std::string& username,
@@ -26,9 +30,8 @@ public:
 
     void signout(int64_t /*sessionId*/) override;
 
-    folly::Future<cpp2::ExecutionResponse> future_execute(
-        int64_t sessionId,
-        const std::string& stmt) override;
+    folly::Future<cpp2::ExecutionResponse>
+    future_execute(int64_t sessionId, const std::string& stmt) override;
 
     const char* getErrorStr(cpp2::ErrorCode result);
 

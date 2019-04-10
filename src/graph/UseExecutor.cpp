@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "graph/UseExecutor.h"
+#include "meta/SchemaManager.h"
 
 namespace nebula {
 namespace graph {
@@ -24,8 +25,9 @@ void UseExecutor::execute() {
     auto *session = ectx()->rctx()->session();
 
     // TODO(dutor) Check space's validness and map to type of integer
-    session->setSpace(sentence_->space());
-    FLOG_INFO("Graph space switched to `%s'", sentence_->space().c_str());
+    auto space = meta::SchemaManager::toGraphSpaceID(*sentence_->space());
+    session->setSpace(*sentence_->space(), space);
+    FLOG_INFO("Graph space switched to `%s', space id: %d", sentence_->space()->c_str(), space);
 
     onFinish_();
 }

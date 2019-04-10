@@ -10,10 +10,12 @@
 
 using nebula::graph::TestEnv;
 using nebula::graph::gEnv;
+DECLARE_string(meta_server_addrs);
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
+    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:44503");
 
     gEnv = new TestEnv();   // gtest will delete this env object for us
     ::testing::AddGlobalTestEnvironment(gEnv);

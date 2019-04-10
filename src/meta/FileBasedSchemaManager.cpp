@@ -18,7 +18,8 @@ void FileBasedSchemaManager::init() {
     DCHECK(!FLAGS_schema_file.empty()) << "Schema file is required";
 
     Configuration conf;
-    CHECK(conf.parseFromFile(FLAGS_schema_file).ok());
+    auto status = conf.parseFromFile(FLAGS_schema_file);
+    CHECK(status.ok()) << status;
 
     CHECK(conf.forEachKey([&conf](const std::string& name) {
         auto space = toGraphSpaceID(name);

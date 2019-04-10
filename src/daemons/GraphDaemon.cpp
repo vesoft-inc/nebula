@@ -54,6 +54,12 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    if (FLAGS_daemonize) {
+        google::SetStderrLogging(google::FATAL);
+    } else {
+        google::SetStderrLogging(google::INFO);
+    }
+
     // Setup logging
     auto status = setupLogging();
     if (!status.ok()) {
@@ -62,7 +68,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Detect if the server has already been started
-    auto pidPath = FLAGS_log_dir + "/" + FLAGS_pid_file;
+    auto pidPath = FLAGS_pid_file;
     status = ProcessUtils::isPidAvailable(pidPath);
     if (!status.ok()) {
         LOG(ERROR) << status;
@@ -82,13 +88,6 @@ int main(int argc, char *argv[]) {
             LOG(ERROR) << status;
             return EXIT_FAILURE;
         }
-    }
-
-    // Setup the signal handlers
-    status = setupSignalHandler();
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        return EXIT_FAILURE;
     }
 
     LOG(INFO) << "Starting Graph HTTP Service";
@@ -112,10 +111,10 @@ int main(int argc, char *argv[]) {
         localIP = std::move(result).value();
     }
 
-    auto interface = std::make_shared<GraphService>();
     gServer = std::make_unique<apache::thrift::ThriftServer>();
+    auto interface = std::make_shared<GraphService>(gServer->getIOThreadPool());
 
-    gServer->setInterface(interface);
+    gServer->setInterface(std::move(interface));
     gServer->setAddress(localIP, FLAGS_port);
     gServer->setReusePort(FLAGS_reuse_port);
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
@@ -129,6 +128,13 @@ int main(int argc, char *argv[]) {
     gServer->setThreadStackSizeMB(5);
     if (FLAGS_num_netio_threads != 0) {
         gServer->setNumIOWorkerThreads(FLAGS_num_netio_threads);
+    }
+
+    // Setup the signal handlers
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
     }
 
     FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);

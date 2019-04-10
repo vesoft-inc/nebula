@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "graph/Executor.h"
+#include "meta/SchemaManager.h"
 
 namespace nebula {
 namespace graph {
@@ -26,12 +27,14 @@ public:
     void execute() override;
 
 private:
+    using TagSchema = std::shared_ptr<const meta::SchemaProviderIf>;
     InsertVertexSentence                       *sentence_{nullptr};
     bool                                        overwritable_{true};
-    int64_t                                     id_{0};
+    TagID                                       tagId_{0};
     std::string                                *vertex_{nullptr};
+    TagSchema                                   schema_;
     std::vector<std::string*>                   properties_;
-    std::vector<Expression*>                    values_;
+    std::vector<VertexRowItem*>                 rows_;
 };
 
 }   // namespace graph
