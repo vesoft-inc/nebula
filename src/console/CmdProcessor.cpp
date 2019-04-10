@@ -347,12 +347,12 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         if (std::regex_search(*msg, result, range)) {
             auto start = folly::to<size_t>(result[1].str());
             auto end = folly::to<size_t>(result[2].str());
-            verbose = "syntax error near `" + std::string(&cmd[start-1], &cmd[end]) + "'";
+            verbose = "syntax error near `" + std::string(&cmd[start-1], end - start + 1) + "'";
         } else if (std::regex_search(*msg, result, single)) {
             auto start = folly::to<size_t>(result[1].str());
             auto end = start + 8;
             end = end > cmd.size() ? cmd.size() : end;
-            verbose = "syntax error near `" + std::string(&cmd[start-1], &cmd[end]) + "'";
+            verbose = "syntax error near `" + std::string(&cmd[start-1], end - start + 1) + "'";
         }
         std::cout << "[ERROR (" << static_cast<int32_t>(res)
                   << ")]: " << verbose << "\n";

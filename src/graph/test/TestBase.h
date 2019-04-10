@@ -49,16 +49,24 @@ std::ostream& operator<<(std::ostream &os, const std::tuple<Args...> &tuple) {
 namespace nebula {
 namespace graph {
 
+using AssertionResult = ::testing::AssertionResult;
 class TestBase : public ::testing::Test {
 protected:
     void SetUp() override;
 
     void TearDown() override;
 
-    using AssertionResult = ::testing::AssertionResult;
     using ColumnType = cpp2::ColumnValue::Type;
     using Row = std::vector<cpp2::ColumnValue>;
     using Rows = std::vector<Row>;
+
+    static AssertionResult TestOK() {
+        return ::testing::AssertionSuccess();
+    }
+
+    static AssertionResult TestError() {
+        return ::testing::AssertionFailure();
+    }
 
     template <typename, typename>
     struct uniform_tuple_impl;
@@ -194,8 +202,6 @@ protected:
     }
 
 protected:
-    std::function<AssertionResult()> TestOK = [] { return ::testing::AssertionSuccess(); };
-    std::function<AssertionResult()> TestError = [] { return ::testing::AssertionFailure(); };
 };
 
 }   // namespace graph

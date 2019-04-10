@@ -6,24 +6,42 @@
 
 #include "base/Base.h"
 #include "console/CliManager.h"
+#include "fs/FileUtils.h"
 
 DEFINE_string(addr, "127.0.0.1", "Nebula daemon IP address");
-DEFINE_int32(port, 34500, "Nebula daemon listening port");
-DEFINE_string(username, "", "Username used to authenticate");
-DEFINE_string(password, "", "Password used to authenticate");
+DEFINE_int32(port, 0, "Nebula daemon listening port");
+DEFINE_string(u, "", "Username used to authenticate");
+DEFINE_string(p, "", "Password used to authenticate");
 
 
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
 
     using nebula::graph::CliManager;
+    using nebula::fs::FileUtils;
+    if (FLAGS_port == 0) {
+        // If port not provided, we use the one in etc/nebula-graphd.conf
+        auto path = FileUtils::readLink("/proc/self/exe").value();
+        auto dir = FileUtils::dirname(path.c_str());
+        static const std::regex pattern("--port=([0-9]+)");
+        FileUtils::FileLineIterator iter(dir + "/../etc/nebula-graphd.conf", &pattern);
+        if (iter.valid()) {
+            auto &smatch = iter.matched();
+            FLAGS_port = folly::to<int>(smatch[1].str());
+        }
+    }
+    if (FLAGS_port == 0) {
+        fprintf(stderr, "--port must be specified\n");
+        return EXIT_FAILURE;
+    }
 
     CliManager cli;
-    if (!cli.connect(FLAGS_addr, FLAGS_port, FLAGS_username, FLAGS_password)) {
-        exit(1);
+    if (!cli.connect(FLAGS_addr, FLAGS_port, FLAGS_u, FLAGS_p)) {
+        return EXIT_FAILURE;
     }
 
     cli.loop();
+    return EXIT_SUCCESS;
 }
 
 

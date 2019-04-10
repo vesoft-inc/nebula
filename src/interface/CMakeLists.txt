@@ -1,3 +1,4 @@
+add_compile_options(-Wno-maybe-uninitialized)
 add_custom_command(
     OUTPUT
         gen-cpp2/common_constants.cpp
