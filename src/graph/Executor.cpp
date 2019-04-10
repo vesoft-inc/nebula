@@ -22,7 +22,11 @@
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "graph/AssignmentExecutor.h"
-#include "graph/AdminExecutor.h"
+#include "graph/ShowExecutor.h"
+#include "graph/AddHostsExecutor.h"
+#include "graph/RemoveHostsExecutor.h"
+#include "graph/CreateSpaceExecutor.h"
+#include "graph/DropSpaceExecutor.h"
 
 namespace nebula {
 namespace graph {

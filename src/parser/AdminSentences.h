@@ -15,7 +15,7 @@ namespace nebula {
 
 using nebula::network::NetworkUtils;
 
-enum class ShowKind : uint32_t {
+enum class ShowType : uint32_t {
     kUnknown,
     kShowHosts,
 };
@@ -23,23 +23,23 @@ enum class ShowKind : uint32_t {
 
 class ShowSentence final : public Sentence {
 public:
-    explicit ShowSentence(ShowKind sKind) {
+    explicit ShowSentence(ShowType sType) {
         kind_ = Kind::kShow;
-        showKind_ = std::move(sKind);
+        showType_ = std::move(sType);
     }
 
     std::string toString() const override;
 
-    ShowKind showKind() const {
-        return showKind_;
+    ShowType showType() const {
+        return showType_;
     }
 
 private:
-    ShowKind    showKind_{ShowKind::kUnknown};
+    ShowType    showType_{ShowType::kUnknown};
 };
 
-inline std::ostream& operator<<(std::ostream &os, ShowKind kind) {
-    return os << static_cast<uint32_t>(kind);
+inline std::ostream& operator<<(std::ostream &os, ShowType type) {
+    return os << static_cast<uint32_t>(type);
 }
 
 

@@ -128,7 +128,7 @@ TEST_F(DefineSchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "add hosts(\"127.0.0.1:1000\", \"127.0.0.1:1100\")";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -138,31 +138,31 @@ TEST_F(DefineSchemaTest, metaCommunication) {
             {"127.0.0.1", "1000"},
             {"127.0.0.1", "1100"},
         };
-        ASSERT_TRUE(verifyResult(resp, expected));
+        EXPECT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "create space default_space(partition_num=9, replica_factor=3)";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "drop space default_space";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "remove hosts(\"127.0.0.1:1000\", \"127.0.0.1:1100\")";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "show hosts";
         client->execute(query, resp);
-        ASSERT_EQ(0, (*(resp.get_rows())).size());
+        EXPECT_EQ(0, (*(resp.get_rows())).size());
     }
 }
 

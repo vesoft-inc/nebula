@@ -26,7 +26,11 @@ add_library(
     AssignmentExecutor.cpp
     InterimResult.cpp
     VariableHolder.cpp
-    AdminExecutor.cpp
+    AddHostsExecutor.cpp
+    RemoveHostsExecutor.cpp
+    CreateSpaceExecutor.cpp
+    DropSpaceExecutor.cpp
+    ShowExecutor.cpp
     mock/PropertiesSchema.cpp
     mock/EdgeSchema.cpp
     mock/TagSchema.cpp

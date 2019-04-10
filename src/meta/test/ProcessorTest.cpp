@@ -117,8 +117,8 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(1, resp.get_id().get_space_id());
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        EXPECT_EQ(1, resp.get_id().get_space_id());
     }
     {
         cpp2::ListSpacesReq req;
@@ -126,10 +126,10 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(1, resp.spaces.size());
-        ASSERT_EQ(1, resp.spaces[0].id.get_space_id());
-        ASSERT_EQ("default_space", resp.spaces[0].name);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        EXPECT_EQ(1, resp.spaces.size());
+        EXPECT_EQ(1, resp.spaces[0].id.get_space_id());
+        EXPECT_EQ("default_space", resp.spaces[0].name);
     }
     // Check the result. The dispatch way from part to hosts is in a round robin fashion.
     {
@@ -139,12 +139,12 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         for (auto& p : resp.get_parts()) {
             auto startIndex = p.first;
             for (auto& h : p.second) {
-                ASSERT_EQ(startIndex++ % hostsNum, h.get_ip());
-                ASSERT_EQ(h.get_ip(), h.get_port());
+                EXPECT_EQ(startIndex++ % hostsNum, h.get_ip());
+                EXPECT_EQ(h.get_ip(), h.get_port());
             }
         }
     }
@@ -156,7 +156,7 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         cpp2::ListSpacesReq req;
@@ -164,8 +164,8 @@ TEST(ProcessorTest, CreateSpaceTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(0, resp.spaces.size());
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        EXPECT_EQ(0, resp.spaces.size());
     }
 }
 
@@ -182,8 +182,8 @@ TEST(ProcessorTest, AddTagsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(1, resp.get_id().get_space_id());
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        EXPECT_EQ(1, resp.get_id().get_space_id());
     }
     nebula::cpp2::Schema schema;
     decltype(schema.columns) cols;
@@ -200,7 +200,7 @@ TEST(ProcessorTest, AddTagsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.code);
+        EXPECT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.code);
     }
     {
         cpp2::AddTagReq req;
@@ -211,8 +211,8 @@ TEST(ProcessorTest, AddTagsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(2, resp.get_id().get_tag_id());
+        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        EXPECT_EQ(2, resp.get_id().get_tag_id());
     }
 }
 

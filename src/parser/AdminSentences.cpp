@@ -11,13 +11,13 @@ namespace nebula {
 std::string ShowSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    switch (showKind_) {
-        case ShowKind::kShowHosts:
+    switch (showType_) {
+        case ShowType::kShowHosts:
             buf = "SHOW HOSTS";
             break;
-        case ShowKind::kUnknown:
+        case ShowType::kUnknown:
         default:
-            FLOG_FATAL("Show Sentence kind illegal");
+            FLOG_FATAL("Show Sentence type illegal");
             break;
     }
     return buf;
