@@ -21,24 +21,9 @@ void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
 }
 
 template<typename RESP>
-void BaseProcessor<RESP>::doRemoveMixed(std::string &key, std::string &start, std::string &end) {
-    kvstore_->asyncRemoveRange(kDefaultSpaceId_, kDefaultPartId_,
-                               std::move(start),
-                               std::move(end),
-                               [this] (kvstore::ResultCode code, HostAddr leader) {
-        UNUSED(leader);
-        if (code != kvstore::ResultCode::SUCCEEDED) {
-            this->resp_.set_code(to(code));
-            this->onFinished();
-        }
-    });
-
-    if (resp_.get_code() != cpp2::ErrorCode::SUCCEEDED) {
-        return;
-    }
-
-    kvstore_->asyncRemove(kDefaultSpaceId_, kDefaultPartId_, std::move(key),
-                          [this] (kvstore::ResultCode code, HostAddr leader) {
+void BaseProcessor<RESP>::doRemove(std::vector<std::string> keys) {
+    kvstore_->asyncMultiRemove(kDefaultSpaceId_, kDefaultPartId_, std::move(keys),
+                            [this] (kvstore::ResultCode code, HostAddr leader) {
         UNUSED(leader);
         this->resp_.set_code(to(code));
         this->onFinished();
@@ -98,18 +83,6 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
         return Status::OK();
     }
     return Status::SpaceNotFound();
-}
-
-template<typename RESP>
-bool BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
-    folly::RWSpinLock::ReadHolder rHolder(LockUtils::spaceLock());
-    auto spaceKey = MetaUtils::spaceKey(spaceId);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, spaceKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
-        return true;
-    }
-    return false;
 }
 
 }  // namespace meta

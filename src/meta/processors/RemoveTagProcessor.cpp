@@ -10,30 +10,52 @@ namespace nebula {
 namespace meta {
 
 void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
-    TagID tagID = -1;
-    std::string tagVal;
-    if (!spaceExist(req.get_space_id())) {
+    if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
+    auto ret = getTagKeys(req.get_space_id(), req.get_tag_name());
+    if (!ret.ok()) {
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
+    }
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    LOG(INFO) << "Remove Tag " << req.get_tag_name();
+    doRemove(std::move(ret.value()));
+}
 
-    folly::RWSpinLock::WriteHolder wHolder(LockUtils::tagLock());
-    auto indexKey = MetaUtils::indexKey(EntryType::TAG, req.get_tag_name());
+StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID id,
+                                                                  const std::string& tagName) {
+    auto indexKey = MetaUtils::indexKey(EntryType::TAG, tagName);
+    std::vector<std::string> keys;
+    std::string tagVal;
+    TagID tagId;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &tagVal);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
-        tagID = *reinterpret_cast<const TagID *>(tagVal.data());
+        tagId = *reinterpret_cast<const TagID *>(tagVal.data());
+        resp_.set_id(to(tagId, EntryType::TAG));
+        keys.emplace_back(indexKey);
     } else {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
+        return Status::Error("No Tag!");
     }
 
-    std::string start = MetaUtils::schemaTagKey(req.get_space_id(), tagID, 0x0000000);
-    std::string end = MetaUtils::schemaTagKey(req.get_space_id(), tagID, 0x7FFFFFFF);
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
-    resp_.set_id(to(tagID, IDType::TAG));
-    doRemoveMixed(indexKey, start, end);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    ret = kvstore_->range(kDefaultSpaceId_, kDefaultPartId_,
+                          MetaUtils::schemaTagKey(id, tagId, MIN_VERSION_HEX),
+                          MetaUtils::schemaTagKey(id, tagId, MAX_VERSION_HEX),
+                          &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return Status::Error("Tag get error by id : %d !", tagId);
+    }
+
+    while (iter->valid()) {
+        keys.emplace_back(iter->key());
+        iter->next();
+    }
+    return std::move(keys);
 }
 
 }  // namespace meta

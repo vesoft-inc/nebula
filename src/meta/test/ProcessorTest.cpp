@@ -178,28 +178,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
     fs::TempDir rootPath("/tmp/ListTagsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto version = time::TimeUtils::nowInMSeconds();
-    // setup
-    {
-        std::vector<nebula::kvstore::KV> tags;
-        for (auto t = 1; t < 10; t++) {
-            nebula::cpp2::Schema srcsch;
-            for (auto i = 0; i < 2; i++) {
-                nebula::cpp2::ColumnDef column;
-                column.name = folly::stringPrintf("tag_%d_col_%d", t, i);
-                column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
-                srcsch.columns.emplace_back(std::move(column));
-            }
-
-            tags.emplace_back(MetaUtils::schemaTagKey(1, t, version++),
-                    MetaUtils::schemaTagVal(folly::stringPrintf("tag_%d", t), srcsch));
-        }
-
-        kv.get()->asyncMultiPut(0, 0, std::move(tags),
-                                [] (kvstore::ResultCode code, HostAddr leader) {
-            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
-            UNUSED(leader);
-        });
-    }
+    TestUtils::mockTag(kv.get(), 10, version);
 
     // test ListTagsProcessor
     {
@@ -212,10 +191,10 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
         decltype(resp.tags) tags;
         tags = resp.get_tags();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        ASSERT_EQ(9, tags.size());
+        ASSERT_EQ(10, tags.size());
 
-        for (auto t = 1; t < 10; t++) {
-            auto tag = tags[t-1];
+        for (auto t = 0; t < 10; t++) {
+            auto tag = tags[t];
             EXPECT_EQ(t, tag.get_tag_id());
             EXPECT_EQ(folly::stringPrintf("tag_%d", t), tag.get_tag_name());
         }
@@ -225,8 +204,8 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
     {
         cpp2::GetTagReq req;
         req.set_space_id(1);
-        req.set_tag_id(9);
-        req.set_version(version - 1);
+        req.set_tag_id(0);
+        req.set_version(version);
 
         auto* processor = GetTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -237,7 +216,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
         std::vector<nebula::cpp2::ColumnDef> cols = schema.get_columns();
         ASSERT_EQ(cols.size(), 2);
         for (auto i = 0; i < 2; i++) {
-            EXPECT_EQ(folly::stringPrintf("tag_%d_col_%d", 9, i), cols[i].get_name());
+            EXPECT_EQ(folly::stringPrintf("tag_%d_col_%d", 0, i), cols[i].get_name());
             EXPECT_EQ((i < 1 ? SupportedType::INT : SupportedType::STRING),
                       cols[i].get_type().get_type());
         }
@@ -247,50 +226,30 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
 TEST(ProcessorTest, RemoveTagTest) {
      fs::TempDir rootPath("/tmp/RemoveTagTest.XXXXXX");
      std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-
-      // Setup tag index and tag data
-     {
-         TagID tagId = 1;
-         std::vector<nebula::kvstore::KV> tags;
-         auto version = time::TimeUtils::nowInMSeconds();
-         tags.emplace_back(MetaUtils::spaceKey(0), "default_space");
-         tags.emplace_back(MetaUtils::indexKey(EntryType::TAG, "tag_1"),
-                 std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
-         tags.emplace_back(MetaUtils::schemaTagKey(0, tagId, version), "tag_schema1");
-         tags.emplace_back(MetaUtils::schemaTagKey(0, tagId, version + 1000), "tag_schema2");
-         kv.get()->asyncMultiPut(0, 0, std::move(tags),
-                 [] (kvstore::ResultCode code, HostAddr leader) {
-                 ASSERT_TRUE(code == kvstore::ResultCode::SUCCEEDED);
-                 UNUSED(leader);
-         });
-     }
-
+     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+     TestUtils::mockTag(kv.get(), 1, time::TimeUtils::nowInMSeconds());
       // remove tag processor test
      {
          cpp2::RemoveTagReq req;
-         req.set_space_id(0);
-         req.set_tag_name("tag_1");
+         req.set_space_id(1);
+         req.set_tag_name("tag_0");
          auto* processor = RemoveTagProcessor::instance(kv.get());
          auto f = processor->getFuture();
          processor->process(req);
          auto resp = std::move(f).get();
-         ASSERT_EQ(resp.get_code(), cpp2::ErrorCode::SUCCEEDED);
+         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
      }
 
- 
       // check tag data has been deleted.
      {
-         std::string tagVal, tagKey;
+         std::string tagVal;
          kvstore::ResultCode ret;
-         const std::string kTagsTable   = "__tags__";
          std::unique_ptr<kvstore::KVIterator> iter;
-
-          ret = kv.get()->get(0, 0, std::move(MetaUtils::indexKey(EntryType::TAG, "tag_1")), &tagVal);
-         ASSERT_TRUE(ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND);
-         tagKey.reserve(kTagsTable.size());
-         tagKey.append(kTagsTable.data(), kTagsTable.size());
-         ret = kv.get()->prefix(0, 0, tagKey, &iter);
-         ASSERT_TRUE(ret == kvstore::ResultCode::SUCCEEDED);
+         ret = kv.get()->get(0, 0, std::move(MetaUtils::indexKey(EntryType::TAG, "tag_1")),
+                             &tagVal);
+         ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
+         ret = kv.get()->prefix(0, 0, "__tags__", &iter);
+         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
          ASSERT_FALSE(iter->valid());
      }
  }

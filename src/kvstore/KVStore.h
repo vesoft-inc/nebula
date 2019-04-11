@@ -96,6 +96,11 @@ public:
                              const std::string& key,
                              KVCallback cb) = 0;
 
+    virtual void asyncMultiRemove(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  std::vector<std::string> keys,
+                                  KVCallback cb) = 0;
+
     virtual void asyncRemoveRange(GraphSpaceID spaceId,
                                   PartitionID partId,
                                   const std::string& start,

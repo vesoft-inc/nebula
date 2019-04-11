@@ -23,6 +23,8 @@ public:
 private:
     explicit RemoveTagProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    StatusOr<std::vector<std::string>> getTagKeys(GraphSpaceID id, const std::string& tagName);
 };
 
 }  // namespace meta

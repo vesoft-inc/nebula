@@ -36,6 +36,9 @@ GENERATE_LOCK(tag);
 #undef GENERATE_LOCK
 };
 
+#define MAX_VERSION_HEX 0x7FFFFFFFFFFFFFFF
+#define MIN_VERSION_HEX 0x0000000000000000
+
 template<typename RESP>
 class BaseProcessor {
 public:
@@ -92,9 +95,9 @@ protected:
     void doPut(std::vector<kvstore::KV> data);
 
     /**
-     *  Remove index and data. using tag, space or edge
+     * General multi remove function.
      **/
-    void doRemoveMixed(std::string &key, std::string &start, std::string &end);
+    void doRemove(std::vector<std::string> keys);
 
     /**
      * Get all hosts
