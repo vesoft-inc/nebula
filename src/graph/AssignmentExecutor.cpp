@@ -20,9 +20,14 @@ AssignmentExecutor::AssignmentExecutor(Sentence *sentence,
 
 
 Status AssignmentExecutor::prepare() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+
     var_ = sentence_->var();
     executor_ = TraverseExecutor::makeTraverseExecutor(sentence_->sentence(), ectx());
-    auto status = executor_->prepare();
+    status = executor_->prepare();
     if (!status.ok()) {
         FLOG_ERROR("Prepare executor `%s' failed: %s",
                     executor_->name(), status.toString().c_str());
