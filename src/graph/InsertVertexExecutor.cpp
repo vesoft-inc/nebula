@@ -19,6 +19,11 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 
 
 Status InsertVertexExecutor::prepare() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+
     overwritable_ = sentence_->overwritable();
     vertex_ = sentence_->vertex();
     tagId_ = meta::SchemaManager::toTagID(*vertex_);

@@ -17,7 +17,7 @@ DefineTagExecutor::DefineTagExecutor(Sentence *sentence,
 
 
 Status DefineTagExecutor::prepare() {
-    return Status::OK();
+    return checkIfGraphSpaceChosen();
 }
 
 

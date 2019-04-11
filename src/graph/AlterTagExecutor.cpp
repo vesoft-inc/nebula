@@ -17,7 +17,7 @@ AlterTagExecutor::AlterTagExecutor(Sentence *sentence,
 
 
 Status AlterTagExecutor::prepare() {
-    return Status::OK();
+    return checkIfGraphSpaceChosen();
 }
 
 
