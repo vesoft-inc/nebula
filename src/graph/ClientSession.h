@@ -63,7 +63,7 @@ private:
 
 private:
     int64_t             id_{0};
-    GraphSpaceID        space_{0};
+    GraphSpaceID        space_{-1};
     time::Duration      idleDuration_;
     std::string         spaceName_;
     std::string         user_;
