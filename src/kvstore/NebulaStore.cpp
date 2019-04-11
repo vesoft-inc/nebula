@@ -283,7 +283,7 @@ void NebulaStore::asyncMultiRemove(GraphSpaceID spaceId,
                                    std::vector<std::string> keys,
                                    KVCallback cb) {
     CHECK_FOR_WRITE(spaceId, partId, cb);
-    return partIt->second->asyncMultiRemove(keys, cb);
+    return partIt->second->asyncMultiRemove(std::move(keys), cb);
 }
 
 void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,

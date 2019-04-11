@@ -55,7 +55,7 @@ StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID i
         keys.emplace_back(iter->key());
         iter->next();
     }
-    return std::move(keys);
+    return keys;
 }
 
 }  // namespace meta
