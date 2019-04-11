@@ -57,6 +57,7 @@ class GraphScanner;
     nebula::UpdateList                     *update_list;
     nebula::UpdateItem                     *update_item;
     nebula::EdgeList                       *edge_list;
+    nebula::ArgumentList                   *argument_list;
 }
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
@@ -85,6 +86,8 @@ class GraphScanner;
 %type <expr> input_ref_expression
 %type <expr> var_ref_expression
 %type <expr> alias_ref_expression
+%type <expr> function_call_expression
+%type <argument_list> argument_list
 %type <type> type_spec
 %type <step_clause> step_clause
 %type <from_clause> from_clause
@@ -160,6 +163,9 @@ primary_expression
     | L_PAREN expression R_PAREN {
         $$ = $2;
     }
+    | function_call_expression {
+        $$ = $1;
+    }
     ;
 
 input_ref_expression
@@ -201,6 +207,26 @@ alias_ref_expression
     }
     | LABEL DOT RANK_PROP {
         $$ = new EdgeRankExpression($1);
+    }
+    ;
+
+function_call_expression
+    : LABEL L_PAREN argument_list R_PAREN {
+        $$ = new FunctionCallExpression($1, $3);
+    }
+    ;
+
+argument_list
+    : %empty {
+        $$ = nullptr;
+    }
+    | expression {
+        $$ = new ArgumentList();
+        $$->addArgument($1);
+    }
+    | argument_list COMMA expression {
+        $$ = $1;
+        $$->addArgument($3);
     }
     ;
 
