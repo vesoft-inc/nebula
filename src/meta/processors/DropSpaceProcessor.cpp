@@ -26,47 +26,26 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     auto spaceId = spaceRet.value();
     VLOG(3) << "Drop space " << req.get_space_name() << ", id " << spaceId;
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    std::vector<std::string> deleteKeys;
 
-    std::vector<folly::Future<kvstore::ResultCode>> removeResults;
-
-    std::string start = MetaUtils::partKey(spaceId, 0x00000000);
-    std::string end = MetaUtils::partKey(spaceId, 0x7FFFFFFF);
-    auto spaceIndexKey = MetaUtils::indexKey(EntryType::SPACE, req.get_space_name());
-    auto spaceKey = MetaUtils::spaceKey(spaceId);
-
-    auto callFunc = [&removeResults] (kvstore::ResultCode code, HostAddr leader) {
-         UNUSED(leader);
-         folly::Promise<kvstore::ResultCode> pro;
-         auto f = pro.getFuture();
-         pro.setValue(code);
-         removeResults.emplace_back(std::move(f));
-         return;
-    };
-
-    kvstore_->asyncRemoveRange(kDefaultSpaceId_, kDefaultPartId_, start, end, callFunc);
-    kvstore_->asyncRemove(kDefaultSpaceId_, kDefaultPartId_, spaceIndexKey, callFunc);
-    kvstore_->asyncRemove(kDefaultSpaceId_, kDefaultPartId_, spaceKey, callFunc);
-
-    while (removeResults.size() != 3)
-        usleep(10);
-
-    folly::collectAll(removeResults).thenTry([this] (auto&& t) {
-        CHECK(!t.hasException()) << "Should not happen! msg:" << t.exception().what();
-        CHECK_GT(t.value().size(), 0);
-        for (const auto& entry : t.value()) {
-            auto retVal = entry.value();
-            if (retVal == kvstore::ResultCode::SUCCEEDED) {
-                continue;
-            } else {
-                this->resp_.set_code(to(retVal));
-                this->onFinished();
-                return;
-            }
-        }
-        this->resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
-        this->onFinished();
+    auto prefix = MetaUtils::partPrefix(spaceId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        resp_.set_code(to(ret));
+        onFinished();
         return;
-    });
+    }
+
+    while (iter->valid()) {
+        deleteKeys.emplace_back(iter->key());
+        iter->next();
+    }
+
+    deleteKeys.emplace_back(MetaUtils::indexKey(EntryType::SPACE, req.get_space_name()));
+    deleteKeys.emplace_back(MetaUtils::spaceKey(spaceId));
+
+    doRemove(std::move(deleteKeys));
     // TODO(YT) delete part files of the space
 }
 

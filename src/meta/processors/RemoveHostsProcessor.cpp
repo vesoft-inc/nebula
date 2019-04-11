@@ -29,24 +29,9 @@ void RemoveHostsProcessor::process(const cpp2::RemoveHostsReq& req) {
         return;
     }
 
-    for (auto& hostKey : hostsKey) {
-        resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
-        kvstore_->asyncRemove(kDefaultSpaceId_, kDefaultPartId_, hostKey,
-                              [this] (kvstore::ResultCode code, HostAddr leader) {
-            UNUSED(leader);
-            if (code != kvstore::ResultCode::SUCCEEDED) {
-                this->resp_.set_code(to(code));
-                return;
-            }
-        });
-
-        if (resp_.get_code() != cpp2::ErrorCode::SUCCEEDED) {
-            this->onFinished();
-            return;
-        }
-    }
-
-    onFinished();
+    LOG(INFO) << "Remove hosts ";
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    doRemove(std::move(hostsKey));
 }
 
 }  // namespace meta
