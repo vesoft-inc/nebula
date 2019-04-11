@@ -114,6 +114,8 @@ public:
 
     ResultCode remove(const std::string& key) override;
 
+    ResultCode multiRemove(std::vector<std::string> keys) override;
+
     ResultCode removeRange(const std::string& start,
                            const std::string& end) override;
 

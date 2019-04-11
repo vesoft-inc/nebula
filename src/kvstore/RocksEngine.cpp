@@ -124,6 +124,20 @@ ResultCode RocksEngine::remove(const std::string& key) {
     return ResultCode::ERR_UNKNOWN;
 }
 
+ResultCode RocksEngine::multiRemove(std::vector<std::string> keys) {
+    rocksdb::WriteBatch deletes(FLAGS_batch_reserved_bytes);
+    for (size_t i = 0; i < keys.size(); i++) {
+        deletes.Delete(keys[i]);
+    }
+    rocksdb::WriteOptions options;
+    options.disableWAL = FLAGS_rocksdb_disable_wal;
+    rocksdb::Status status = db_->Write(options, &deletes);
+    if (status.ok()) {
+        return ResultCode::SUCCEEDED;
+    }
+    return ResultCode::ERR_UNKNOWN;
+}
+
 
 ResultCode RocksEngine::removeRange(const std::string& start,
                                     const std::string& end) {
