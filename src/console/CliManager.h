@@ -15,7 +15,7 @@ namespace graph {
 
 class CliManager final {
 public:
-    CliManager() = default;
+    CliManager();
     ~CliManager() = default;
 
     bool connect(const std::string& addr,
@@ -27,7 +27,7 @@ public:
 
     void loop();
 
-    bool readLine(std::string &line);
+    bool readLine(std::string &line, bool linebreak = false);
 
     void updateHistory(const char *line);
 

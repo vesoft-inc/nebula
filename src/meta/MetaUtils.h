@@ -58,7 +58,9 @@ public:
 
     static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version);
 
-    static std::string schemaTagVal(nebula::cpp2::Schema schema);
+    static std::string schemaTagsPrefix(GraphSpaceID spaceId);
+
+    static std::string schemaTagVal(const std::string& name, nebula::cpp2::Schema schema);
 
     static nebula::cpp2::Schema parseSchema(folly::StringPiece rawData);
 

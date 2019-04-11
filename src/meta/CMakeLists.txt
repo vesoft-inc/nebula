@@ -19,6 +19,8 @@ add_library(
     processors/ListSpacesProcessor.cpp
     processors/GetPartsAllocProcessor.cpp
     processors/AddTagProcessor.cpp
+    processors/GetTagProcessor.cpp
+    processors/ListTagsProcessor.cpp
     processors/GetProcessor.cpp
     processors/MultiGetProcessor.cpp
     processors/MultiPutProcessor.cpp

@@ -138,7 +138,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("<-", TokenType::L_ARROW),
         CHECK_SEMANTIC_TYPE("->", TokenType::R_ARROW),
 
-        CHECK_SEMANTIC_TYPE("$_", TokenType::INPUT_REF),
+        CHECK_SEMANTIC_TYPE("$-", TokenType::INPUT_REF),
+        CHECK_SEMANTIC_TYPE("$^", TokenType::SRC_REF),
         CHECK_SEMANTIC_TYPE("$$", TokenType::DST_REF),
 
         CHECK_SEMANTIC_TYPE("GO", TokenType::KW_GO),
@@ -224,8 +225,6 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("_src", TokenType::SRC_ID_PROP),
         CHECK_SEMANTIC_TYPE("_dst", TokenType::DST_ID_PROP),
         CHECK_SEMANTIC_TYPE("_rank", TokenType::RANK_PROP),
-        CHECK_SEMANTIC_TYPE("$_", TokenType::INPUT_REF),
-        CHECK_SEMANTIC_TYPE("$$", TokenType::DST_REF),
 
         CHECK_SEMANTIC_VALUE("TRUE", TokenType::BOOL, true),
         CHECK_SEMANTIC_VALUE("true", TokenType::BOOL, true),
@@ -239,6 +238,7 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("label123", TokenType::LABEL, "label123"),
 
         CHECK_SEMANTIC_VALUE("123", TokenType::INTEGER, 123),
+        CHECK_SEMANTIC_VALUE("-123", TokenType::INTEGER, -123),
         CHECK_SEMANTIC_VALUE("0x123", TokenType::INTEGER, 0x123),
         CHECK_SEMANTIC_VALUE("0xdeadbeef", TokenType::INTEGER, 0xdeadbeef),
         CHECK_SEMANTIC_VALUE("0123", TokenType::INTEGER, 0123),

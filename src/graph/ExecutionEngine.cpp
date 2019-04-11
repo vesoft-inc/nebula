@@ -8,13 +8,14 @@
 #include "graph/ExecutionEngine.h"
 #include "graph/ExecutionContext.h"
 #include "graph/ExecutionPlan.h"
+#include "storage/client/StorageClient.h"
 
 namespace nebula {
 namespace graph {
 
-ExecutionEngine::ExecutionEngine() {
+ExecutionEngine::ExecutionEngine(std::unique_ptr<storage::StorageClient> storage) {
     schemaManager_ = std::make_unique<SchemaManager>();
-    storage_ = std::make_unique<StorageService>(schemaManager_.get());
+    storage_ = std::move(storage);
 }
 
 
@@ -26,7 +27,7 @@ void ExecutionEngine::execute(RequestContextPtr rctx) {
     auto ectx = std::make_unique<ExecutionContext>(std::move(rctx),
                                                    schemaManager_.get(),
                                                    storage_.get());
-    // TODO(dutor) add support to execution plan
+    // TODO(dutor) add support to plan cache
     auto plan = new ExecutionPlan(std::move(ectx));
 
     plan->execute();
