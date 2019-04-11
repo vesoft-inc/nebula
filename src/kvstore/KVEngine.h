@@ -24,7 +24,7 @@ public:
     virtual ResultCode get(const std::string& key,
                            std::string* value) = 0;
 
-    virtual ResultCode multiGet(const std::vector<std::string> keys,
+    virtual ResultCode multiGet(const std::vector<std::string>& keys,
                                 std::vector<std::string>* values) = 0;
 
     virtual ResultCode put(std::string key,
