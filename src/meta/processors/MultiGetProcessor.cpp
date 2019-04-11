@@ -16,7 +16,7 @@ void MultiGetProcessor::process(const cpp2::MultiGetReq& req) {
         keys.emplace_back(MetaUtils::assembleSegmentKey(req.get_segment(), key));
     }
 
-    auto result = doMultiGet(keys);
+    auto result = doMultiGet(std::move(keys));
     if (!result.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();

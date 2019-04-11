@@ -29,6 +29,7 @@ enum ErrorCode {
     // KV Failure
     E_STORE_FAILURE          = -31,
     E_STORE_SEGMENT_ILLEGAL  = -32,
+    E_KEY_NOT_FOUND          = -33,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)

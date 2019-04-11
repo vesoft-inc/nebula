@@ -81,8 +81,9 @@ add_executable(
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:network_obj>

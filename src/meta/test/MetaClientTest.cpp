@@ -108,6 +108,9 @@ TEST(MetaClientTest, InterfacesTest) {
 
         auto missedRet = client->get("test", "missed_key").get();
         ASSERT_FALSE(missedRet.ok());
+
+        auto emptyRet = client->get("test", "").get();
+        ASSERT_FALSE(emptyRet.ok());
     }
     {
         // Multi Get Test
@@ -120,6 +123,10 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_EQ(2, ret.value().size());
         ASSERT_EQ("value_0", ret.value()[0]);
         ASSERT_EQ("value_1", ret.value()[1]);
+
+        std::vector<std::string> emptyKeys;
+        auto emptyRet = client->multiGet("test", emptyKeys).get();
+        ASSERT_FALSE(emptyRet.ok());
     }
     {
         // Scan Test
@@ -139,6 +146,10 @@ TEST(MetaClientTest, InterfacesTest) {
         // Remove Range Test
         auto ret = client->removeRange("test", "key_0", "key_4").get();
         ASSERT_TRUE(ret.ok());
+    }
+    {
+        auto ret = client->remove("_test_", "key_8").get();
+        ASSERT_FALSE(ret.ok());
     }
     client.reset();
 }

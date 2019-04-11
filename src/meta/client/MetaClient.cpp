@@ -21,19 +21,13 @@ DEFINE_int32(meta_client_io_threads, 3, "meta client io threads");
         return Status::Error("argument is invalid!"); \
     }
 
-/**
 #define CHECK_SEGMENT_AND_RETURN_STATUS(segment) \
-    if (nebula::meta::MetaUtils::checkSegment(segment)) { \
+    if (!nebula::meta::MetaUtils::checkSegment(segment)) { \
         return Status::Error("segment is invalid!"); \
     }
-**/
+
 namespace nebula {
 namespace meta {
-
-#define CHECK_SEGMENT_AND_RETURN_STATUS(segment) \
-    if (MetaUtils::checkSegment(segment)) { \
-        return Status::Error("segment is invalid!"); \
-    }
 
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                        std::vector<HostAddr> addrs)
@@ -214,20 +208,20 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
 
 folly::Future<StatusOr<bool>>
 MetaClient::multiPut(const std::string& segment,
-                     const std::vector<std::pair<std::string, std::string>>& pairs) {
+                     std::vector<std::pair<std::string, std::string>> pairs) {
     CHECK_SEGMENT_AND_RETURN_STATUS(segment);
     CHECK_PARAMETER_AND_RETURN_STATUS(pairs);
     cpp2::MultiPutReq req;
     std::vector<cpp2::Pair> data;
-    for (const auto& element : pairs) {
+    for (auto& element : pairs) {
         data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                          element.first, element.second);
+                          std::move(element.first), std::move(element.second));
     }
     req.set_segment(segment);
     req.set_pairs(std::move(data));
     return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_multiPut(request);
-                }, [this] (cpp2::MultiPutResp&& resp) -> bool {
+                }, [] (cpp2::MultiPutResp&& resp) -> bool {
                     return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 });
 }
@@ -241,7 +235,7 @@ MetaClient::get(const std::string& segment, const std::string& key) {
     req.set_key(key);
     return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_get(request);
-                }, [this] (cpp2::GetResp&& resp) -> std::string {
+                }, [] (cpp2::GetResp&& resp) -> std::string {
                     return resp.get_value();
                 });
 }
@@ -255,7 +249,7 @@ MetaClient::multiGet(const std::string& segment, const std::vector<std::string>&
     req.set_keys(keys);
     return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_multiGet(request);
-                }, [this] (cpp2::MultiGetResp&& resp) -> std::vector<std::string> {
+                }, [] (cpp2::MultiGetResp&& resp) -> std::vector<std::string> {
                     return resp.get_values();
                 });
 }
@@ -271,7 +265,7 @@ MetaClient::scan(const std::string& segment, const std::string& start, const std
     req.set_end(end);
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_scan(request);
-            }, [this] (cpp2::ScanResp&& resp) -> std::vector<std::string> {
+            }, [] (cpp2::ScanResp&& resp) -> std::vector<std::string> {
                 return resp.get_values();
             });
 }
@@ -285,7 +279,7 @@ MetaClient::remove(const std::string& segment, const std::string& key) {
     req.set_key(key);
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_remove(request);
-            }, [this] (cpp2::RemoveResp&& resp) -> bool {
+            }, [] (cpp2::RemoveResp&& resp) -> bool {
                 return resp.code == cpp2::ErrorCode::SUCCEEDED;
             });
 }

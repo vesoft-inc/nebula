@@ -96,7 +96,7 @@ public:
 
     folly::Future<StatusOr<bool>>
     multiPut(const std::string& segment,
-             const std::vector<std::pair<std::string, std::string>>& pairs);
+             std::vector<std::pair<std::string, std::string>> pairs);
 
     folly::Future<StatusOr<std::string>>
     get(const std::string& segment, const std::string& key);

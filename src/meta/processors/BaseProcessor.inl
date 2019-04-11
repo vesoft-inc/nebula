@@ -26,7 +26,7 @@ template<typename RESP>
 StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
     std::string value;
     auto code = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_,
-                              std::move(key), &value);
+                              key, &value);
     switch (code) {
         case kvstore::ResultCode::SUCCEEDED:
             return value;
@@ -42,7 +42,7 @@ StatusOr<std::vector<std::string>>
 BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
     std::vector<std::string> values;
     auto code = kvstore_->multiGet(kDefaultSpaceId_, kDefaultPartId_,
-                                   std::move(keys), &values);
+                                   keys, &values);
     if (code != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("MultiGet Failed");
     }
@@ -51,7 +51,7 @@ BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doRemove(const std::string& key) {
-    kvstore_->asyncRemove(kDefaultSpaceId_, kDefaultPartId_, std::move(key),
+    kvstore_->asyncRemove(kDefaultSpaceId_, kDefaultPartId_, key,
                           [this] (kvstore::ResultCode code, HostAddr leader) {
         UNUSED(leader);
         this->resp_.set_code(to(code));
@@ -62,8 +62,7 @@ void BaseProcessor<RESP>::doRemove(const std::string& key) {
 template<typename RESP>
 void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
                                         const std::string& end) {
-    kvstore_->asyncRemoveRange(kDefaultSpaceId_, kDefaultPartId_,
-                               std::move(start), std::move(end),
+    kvstore_->asyncRemoveRange(kDefaultSpaceId_, kDefaultPartId_, start, end,
                                [this] (kvstore::ResultCode code, HostAddr leader) {
         UNUSED(leader);
         this->resp_.set_code(to(code));

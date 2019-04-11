@@ -230,15 +230,15 @@ TEST(ProcessorTest, KVOperationTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ("value_0", resp.value);
 
-
         cpp2::GetReq missedReq;
+        missedReq.set_segment("test");
         missedReq.set_key("missed_key");
 
         auto* missedProcessor = GetProcessor::instance(kv.get());
         auto missedFuture = missedProcessor->getFuture();
         missedProcessor->process(missedReq);
         auto missedResp = std::move(missedFuture).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_STORE_FAILURE, missedResp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_KEY_NOT_FOUND, missedResp.code);
     }
     {
         // Multi Get Test
@@ -259,17 +259,6 @@ TEST(ProcessorTest, KVOperationTest) {
         ASSERT_EQ(2, resp.values.size());
         ASSERT_EQ("value_0", resp.values[0]);
         ASSERT_EQ("value_1", resp.values[1]);
-
-        std::vector<std::string> missedKeys{"missed_key"};
-        cpp2::MultiGetReq missedReq;
-        missedReq.set_segment("test");
-        missedReq.set_keys(std::move(missedKeys));
-
-        auto* missedProcessor = MultiGetProcessor::instance(kv.get());
-        auto missed = missedProcessor->getFuture();
-        missedProcessor->process(missedReq);
-        auto missedResp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_UNKNOWN, missedResp.code);
     }
     {
         // Scan Test
@@ -316,7 +305,7 @@ TEST(ProcessorTest, KVOperationTest) {
     {
         // Illegal Segment Test
         cpp2::GetReq req;
-        req.set_segment("_test_");
+        req.set_segment("_test0_");
         req.set_key("key_8");
 
         auto* processor = GetProcessor::instance(kv.get());

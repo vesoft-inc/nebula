@@ -36,8 +36,11 @@ GENERATE_LOCK(tag);
 #undef GENERATE_LOCK
 };
 
+/**
+ * Check segemnt is consist of numbers and letters and should not empty.
+ * */
 #define CHECK_SEGMENT(segment) \
-    if (MetaUtils::checkSegment(segment)) { \
+    if (!MetaUtils::checkSegment(segment)) { \
         resp_.set_code(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
         onFinished(); \
         return; \
