@@ -46,6 +46,9 @@ GENERATE_LOCK(tag);
         return; \
     }
 
+#define MAX_VERSION_HEX 0x7FFFFFFFFFFFFFFF
+#define MIN_VERSION_HEX 0x0000000000000000
+
 template<typename RESP>
 class BaseProcessor {
 public:
@@ -127,6 +130,10 @@ protected:
      * */
      StatusOr<std::vector<std::string>> doScan(const std::string& start,
                                                const std::string& end);
+     /**
+     * General multi remove function.
+     **/
+     void doRemoves(std::vector<std::string> keys);
 
     /**
      * Get all hosts

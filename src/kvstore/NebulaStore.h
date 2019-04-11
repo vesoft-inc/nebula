@@ -88,6 +88,11 @@ public:
                      const std::string& key,
                      KVCallback cb) override;
 
+    void asyncMultiRemove(GraphSpaceID spaceId,
+                          PartitionID  partId,
+                          std::vector<std::string> keys,
+                          KVCallback cb) override;
+
     void asyncRemoveRange(GraphSpaceID spaceId,
                           PartitionID partId,
                           const std::string& start,

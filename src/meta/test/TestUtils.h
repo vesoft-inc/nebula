@@ -19,6 +19,8 @@ DECLARE_string(part_man_type);
 namespace nebula {
 namespace meta {
 
+using nebula::cpp2::SupportedType;
+
 class TestUtils {
 public:
     static kvstore::KVStore* initKV(const char* rootPath) {
@@ -83,6 +85,44 @@ public:
             }
         }
         return hosts.size();
+    }
+
+    static bool assembleSpace(kvstore::KVStore* kv, GraphSpaceID id) {
+        bool ret = false;
+        std::vector<nebula::kvstore::KV> data;
+        data.emplace_back(MetaUtils::spaceKey(id), "test_space");
+        kv->asyncMultiPut(0, 0, std::move(data),
+                          [&] (kvstore::ResultCode code, HostAddr leader) {
+                              ret = (code == kvstore::ResultCode::SUCCEEDED);
+                              UNUSED(leader);
+                          });
+        return ret;
+    }
+
+    static void mockTag(kvstore::KVStore* kv, int32_t tagNum, int64_t version) {
+        std::vector<nebula::kvstore::KV> tags;
+        int64_t ver = version;
+        for (auto t = 0; t < tagNum; t++) {
+            TagID tagId = t;
+            nebula::cpp2::Schema srcsch;
+            for (auto i = 0; i < 2; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+                column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
+                srcsch.columns.emplace_back(std::move(column));
+            }
+            auto tagName = folly::stringPrintf("tag_%d", tagId);
+            auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
+            tags.emplace_back(MetaUtils::indexKey(EntryType::TAG, tagName), tagIdVal);
+            tags.emplace_back(MetaUtils::schemaTagKey(1, tagId, ver++),
+                              MetaUtils::schemaTagVal(tagName, srcsch));
+        }
+
+        kv->asyncMultiPut(0, 0, std::move(tags),
+                                [] (kvstore::ResultCode code, HostAddr leader) {
+                                    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+                                    UNUSED(leader);
+                                });
     }
 
     struct ServerContext {

@@ -60,6 +60,16 @@ void BaseProcessor<RESP>::doRemove(const std::string& key) {
 }
 
 template<typename RESP>
+void BaseProcessor<RESP>::doRemove(std::vector<std::string> keys) {
+    kvstore_->asyncMultiRemove(kDefaultSpaceId_, kDefaultPartId_, std::move(keys),
+                            [this] (kvstore::ResultCode code, HostAddr leader) {
+        UNUSED(leader);
+        this->resp_.set_code(to(code));
+        this->onFinished();
+    });
+}
+
+template<typename RESP>
 void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
                                         const std::string& end) {
     kvstore_->asyncRemoveRange(kDefaultSpaceId_, kDefaultPartId_, start, end,
