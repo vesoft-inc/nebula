@@ -43,6 +43,8 @@ public:
 
     virtual ResultCode remove(const std::string& key) = 0;
 
+    virtual ResultCode multiRemove(std::vector<std::string> keys) = 0;
+
     /**
      * Remove range [start, end)
      * */
