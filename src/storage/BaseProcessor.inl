@@ -49,7 +49,6 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
             this->callingNum_--;
             if (this->callingNum_ == 0) {
                 result_.set_failed_codes(std::move(this->codes_));
-                result_.set_latency_in_ms(this->duration_.elapsedInMSec());
                 finished = true;
             }
         }
