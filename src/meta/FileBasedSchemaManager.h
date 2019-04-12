@@ -9,24 +9,28 @@
 
 #include "base/Base.h"
 #include "meta/SchemaManager.h"
+#include "meta/client/MetaClient.h"
 #include "base/Configuration.h"
 
 namespace nebula {
 namespace meta {
 
-class FileBasedSchemaManager final : public SchemaManager {
+class FileBasedSchemaManager final : public AdHocSchemaManager {
     friend class SchemaManager;
-private:
-    static void init();
-
-    static void readOneGraphSpace(GraphSpaceID space, const Configuration& conf);
-    static std::shared_ptr<const SchemaProviderIf> readSchema(const folly::dynamic& fields);
-
-    static GraphSpaceID toGraphSpaceID(const folly::StringPiece spaceName);
-    static TagID toTagID(const folly::StringPiece tagName);
-    static EdgeType toEdgeType(const folly::StringPiece typeName);
-
+public:
     FileBasedSchemaManager() = default;
+
+    void init() override;
+
+private:
+    void readOneGraphSpace(GraphSpaceID space, const Configuration& conf);
+
+    std::shared_ptr<const SchemaProviderIf> readSchema(const folly::dynamic& fields);
+
+    GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) override;
+
+private:
+    std::unique_ptr<MetaClient> client_;
 };
 
 }  // namespace meta

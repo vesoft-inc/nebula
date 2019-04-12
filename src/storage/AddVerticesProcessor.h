@@ -15,15 +15,16 @@ namespace storage {
 
 class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 public:
-    static AddVerticesProcessor* instance(kvstore::KVStore* kvstore) {
-        return new AddVerticesProcessor(kvstore);
+    static AddVerticesProcessor* instance(kvstore::KVStore* kvstore,
+                                          meta::SchemaManager* schemaMan) {
+        return new AddVerticesProcessor(kvstore, schemaMan);
     }
 
     void process(const cpp2::AddVerticesRequest& req);
 
 private:
-    explicit AddVerticesProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResponse>(kvstore) {}
+    explicit AddVerticesProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
+            : BaseProcessor<cpp2::ExecResponse>(kvstore, schemaMan) {}
 };
 
 

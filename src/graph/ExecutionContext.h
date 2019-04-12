@@ -11,7 +11,7 @@
 #include "cpp/helpers.h"
 #include "graph/RequestContext.h"
 #include "parser/SequentialSentences.h"
-#include "graph/mock/SchemaManager.h"
+#include "meta/SchemaManager.h"
 #include "graph/VariableHolder.h"
 
 /**
@@ -27,7 +27,9 @@ namespace graph {
 class ExecutionContext final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
-    ExecutionContext(RequestContextPtr rctx, SchemaManager *sm, storage::StorageClient *storage) {
+    ExecutionContext(RequestContextPtr rctx,
+                     meta::SchemaManager *sm,
+                     storage::StorageClient *storage) {
         rctx_ = std::move(rctx);
         sm_ = sm;
         storage_ = storage;
@@ -40,7 +42,7 @@ public:
         return rctx_.get();
     }
 
-    SchemaManager* schemaManager() const {
+    meta::SchemaManager* schemaManager() const {
         return sm_;
     }
 
@@ -54,7 +56,7 @@ public:
 
 private:
     RequestContextPtr                           rctx_;
-    SchemaManager                              *sm_{nullptr};
+    meta::SchemaManager                              *sm_{nullptr};
     storage::StorageClient                     *storage_{nullptr};
     std::unique_ptr<VariableHolder>             variableHolder_;
 };

@@ -11,7 +11,7 @@
 #include "cpp/helpers.h"
 #include "graph/RequestContext.h"
 #include "gen-cpp2/GraphService.h"
-#include "graph/mock/SchemaManager.h"
+#include "meta/SchemaManager.h"
 
 /**
  * ExecutinoEngine is responsible to create and manage ExecutionPlan.
@@ -35,7 +35,7 @@ public:
     void execute(RequestContextPtr rctx);
 
 private:
-    std::unique_ptr<SchemaManager>              schemaManager_;
+    std::unique_ptr<meta::SchemaManager>              schemaManager_;
     std::unique_ptr<storage::StorageClient>     storage_;
 };
 

@@ -17,14 +17,17 @@ class QueryStatsProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryStatsResponse> {
 public:
     static QueryStatsProcessor* instance(kvstore::KVStore* kvstore,
+                                         meta::SchemaManager* schemaMan,
                                          BoundType type = BoundType::OUT_BOUND) {
-        return new QueryStatsProcessor(kvstore, type);
+        return new QueryStatsProcessor(kvstore, schemaMan, type);
     }
 
 private:
-    explicit QueryStatsProcessor(kvstore::KVStore* kvstore, BoundType type)
+    explicit QueryStatsProcessor(kvstore::KVStore* kvstore,
+                                 meta::SchemaManager* schemaMan,
+                                 BoundType type)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryStatsResponse>(kvstore, type) {}
+                             cpp2::QueryStatsResponse>(kvstore, schemaMan, type) {}
 
     kvstore::ResultCode processVertex(PartitionID partID,
                                       VertexID vId,

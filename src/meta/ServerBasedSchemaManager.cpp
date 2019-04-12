@@ -14,33 +14,6 @@ DEFINE_string(meta_server, "",
 namespace nebula {
 namespace meta {
 
-std::unique_ptr<MetaClient> ServerBasedSchemaManager::client_;
-
-void ServerBasedSchemaManager::init() {
-    client_ = std::make_unique<MetaClient>();
-    client_->init();
-}
-
-// static
-GraphSpaceID ServerBasedSchemaManager::toGraphSpaceID(const folly::StringPiece spaceName) {
-    auto spaceStr = spaceName.str();
-    auto ret = client_->getSpaceIdByNameFromCache(spaceStr);
-    CHECK(ret.ok());
-    return ret.value();
-}
-
-
-// static
-TagID ServerBasedSchemaManager::toTagID(const folly::StringPiece tagName) {
-    return folly::hash::fnv32_buf(tagName.start(), tagName.size());
-}
-
-
-// static
-EdgeType ServerBasedSchemaManager::toEdgeType(const folly::StringPiece typeName) {
-    return folly::hash::fnv32_buf(typeName.start(), typeName.size());
-}
-
 }  // namespace meta
 }  // namespace nebula
 
