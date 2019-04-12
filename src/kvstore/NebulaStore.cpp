@@ -324,11 +324,11 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
 
 
 ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
-                                  const std::string& config_key,
-                                  const std::string& config_value) {
+                                  const std::string& configKey,
+                                  const std::string& configValue) {
     CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
     for (auto& engine : it->second->engines_) {
-        auto code = engine.first->setOption(config_key, config_value);
+        auto code = engine.first->setOption(configKey, configValue);
         if (code != ResultCode::SUCCEEDED) {
             return code;
         }
@@ -338,16 +338,25 @@ ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
 
 
 ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
-                                    const std::string& config_key,
-                                    const std::string& config_value) {
+                                    const std::string& configKey,
+                                    const std::string& configValue) {
     CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
     for (auto& engine : it->second->engines_) {
-        auto code = engine.first->setDBOption(config_key, config_value);
+        auto code = engine.first->setDBOption(configKey, configValue);
         if (code != ResultCode::SUCCEEDED) {
             return code;
         }
     }
     return ResultCode::SUCCEEDED;
+}
+
+
+ResultCode NebulaStore::compact(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                const std::string& start,
+                                const std::string& end) {
+    CHECK_AND_RETURN_ENGINE(spaceId, partId);
+    return engine->compact(start, end);
 }
 
 }  // namespace kvstore

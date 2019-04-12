@@ -129,11 +129,14 @@ public:
 
     ResultCode ingest(const std::vector<std::string>& files) override;
 
-    ResultCode setOption(const std::string& config_key,
-                         const std::string& config_value) override;
+    ResultCode setOption(const std::string& configKey,
+                         const std::string& configValue) override;
 
-    ResultCode setDBOption(const std::string& config_key,
-                           const std::string& config_value) override;
+    ResultCode setDBOption(const std::string& configKey,
+                           const std::string& configValue) override;
+
+    ResultCode compact(const std::string& startKey = nullptr,
+                       const std::string& endKey = nullptr) override;
 
 private:
     std::string partKey(PartitionID partId);

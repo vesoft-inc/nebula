@@ -106,6 +106,11 @@ public:
                            const std::string& config_key,
                            const std::string& config_value);
 
+    ResultCode compact(GraphSpaceID spaceId,
+                       PartitionID partId,
+                       const std::string& start = nullptr,
+                       const std::string& end = nullptr);
+
 private:
     /**
      * Implement two interfaces in Handler.

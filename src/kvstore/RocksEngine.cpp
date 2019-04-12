@@ -214,13 +214,13 @@ ResultCode RocksEngine::ingest(const std::vector<std::string>& files) {
 }
 
 
-ResultCode RocksEngine::setOption(const std::string& config_key,
-                                  const std::string& config_value) {
-    std::unordered_map<std::string, std::string> config_options = {
-        {config_key, config_value}
+ResultCode RocksEngine::setOption(const std::string& configKey,
+                                  const std::string& configValue) {
+    std::unordered_map<std::string, std::string> configOptions = {
+        {configKey, configValue}
     };
 
-    rocksdb::Status status = db_->SetOptions(config_options);
+    rocksdb::Status status = db_->SetOptions(configOptions);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
@@ -229,17 +229,30 @@ ResultCode RocksEngine::setOption(const std::string& config_key,
 }
 
 
-ResultCode RocksEngine::setDBOption(const std::string& config_key,
-                                    const std::string& config_value) {
-    std::unordered_map<std::string, std::string> config_db_options = {
-        {config_key, config_value}
+ResultCode RocksEngine::setDBOption(const std::string& configKey,
+                                    const std::string& configValue) {
+    std::unordered_map<std::string, std::string> configOptions = {
+        {configKey, configValue}
     };
 
-    rocksdb::Status status = db_->SetDBOptions(config_db_options);
+    rocksdb::Status status = db_->SetDBOptions(configOptions);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
         return ResultCode::ERR_INVALID_ARGUMENT;
+    }
+}
+
+ResultCode RocksEngine::compact(const std::string& startKey,
+                                const std::string& endKey) {
+    rocksdb::CompactRangeOptions options;
+    auto start = rocksdb::Slice(std::move(startKey));
+    auto end = rocksdb::Slice(std::move(endKey));
+    rocksdb::Status status = db_->CompactRange(options, &start, &end);
+    if (status.ok()) {
+        return ResultCode::SUCCEEDED;
+    } else {
+        return ResultCode::ERR_UNKNOWN;
     }
 }
 
