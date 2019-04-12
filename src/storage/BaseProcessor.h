@@ -40,7 +40,7 @@ protected:
      * Destroy current instance when finished.
      * */
     void onFinished() {
-        result_.set_latency_in_ms(duration_.elapsedInMSec());
+        result_.set_latency_in_us(duration_.elapsedInUSec());
         resp_.set_result(std::move(result_));
         promise_.setValue(std::move(resp_));
         delete this;
