@@ -14,7 +14,6 @@
 #include "storage/KeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
-#include "meta/AdHocSchemaManager.h"
 
 namespace nebula {
 namespace storage {
@@ -176,19 +175,14 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    meta::AdHocSchemaManager::addEdgeSchema(
-        0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
-    for (auto tagId = 3001; tagId < 3010; tagId++) {
-        meta::AdHocSchemaManager::addTagSchema(
-            0 /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
-    }
+    auto schemaMan = TestUtils::mockSchemaMan();;
     mockData(kv.get());
 
     cpp2::GetNeighborsRequest req;
     buildRequest(req);
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
-    auto* processor = QueryBoundProcessor::instance(kv.get());
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -201,19 +195,14 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    meta::AdHocSchemaManager::addEdgeSchema(
-        0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
-    for (auto tagId = 3001; tagId < 3010; tagId++) {
-        meta::AdHocSchemaManager::addTagSchema(
-            0 /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
-    }
+    auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
     cpp2::GetNeighborsRequest req;
     buildRequest(req, false);
 
     LOG(INFO) << "Test QueryInBoundRequest...";
-    auto* processor = QueryBoundProcessor::instance(kv.get(), BoundType::IN_BOUND);
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), BoundType::IN_BOUND);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

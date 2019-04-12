@@ -13,7 +13,6 @@
 #include "storage/KeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
-#include "meta/AdHocSchemaManager.h"
 
 namespace nebula {
 namespace storage {
@@ -136,18 +135,13 @@ TEST(QueryStatsTest, StatsSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryStatsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     LOG(INFO) << "Prepare meta...";
-    meta::AdHocSchemaManager::addEdgeSchema(
-        0, 101, TestUtils::genEdgeSchemaProvider(10, 10));
-    for (auto tagId = 3001; tagId < 3010; tagId++) {
-        meta::AdHocSchemaManager::addTagSchema(
-            0, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
-    }
+    auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
     cpp2::GetNeighborsRequest req;
     buildRequest(req);
 
-    auto* processor = QueryStatsProcessor::instance(kv.get());
+    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
