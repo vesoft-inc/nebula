@@ -21,6 +21,16 @@ void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
 }
 
 template<typename RESP>
+void BaseProcessor<RESP>::doRemove(std::vector<std::string> keys) {
+    kvstore_->asyncMultiRemove(kDefaultSpaceId_, kDefaultPartId_, std::move(keys),
+                            [this] (kvstore::ResultCode code, HostAddr leader) {
+        UNUSED(leader);
+        this->resp_.set_code(to(code));
+        this->onFinished();
+    });
+}
+
+template<typename RESP>
 StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
     std::vector<nebula::cpp2::HostAddr> hosts;
     const auto& prefix = MetaUtils::hostPrefix();
