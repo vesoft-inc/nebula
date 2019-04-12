@@ -15,7 +15,8 @@
 #include "base/StatusOr.h"
 #include "time/Duration.h"
 #include "kvstore/KVStore.h"
-#include "meta/MetaUtils.h"
+#include "meta/MetaServerUtils.h"
+#include "meta/common/MetaCommon.h"
 
 namespace nebula {
 namespace meta {
@@ -40,7 +41,7 @@ GENERATE_LOCK(tag);
  * Check segemnt is consist of numbers and letters and should not empty.
  * */
 #define CHECK_SEGMENT(segment) \
-    if (!MetaUtils::checkSegment(segment)) { \
+    if (!MetaCommon::checkSegment(segment)) { \
         resp_.set_code(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
         onFinished(); \
         return; \

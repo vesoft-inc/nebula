@@ -13,7 +13,7 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     std::vector<kvstore::KV> data;
     for (auto& h : req.get_hosts()) {
-        data.emplace_back(MetaUtils::hostKey(h.ip, h.port), MetaUtils::hostVal());
+        data.emplace_back(MetaServerUtils::hostKey(h.ip, h.port), MetaServerUtils::hostVal());
     }
     doPut(std::move(data));
 }

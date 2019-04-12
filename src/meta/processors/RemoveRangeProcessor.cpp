@@ -11,8 +11,8 @@ namespace meta {
 
 void RemoveRangeProcessor::process(const cpp2::RemoveRangeReq& req) {
     CHECK_SEGMENT(req.get_segment());
-    auto start = MetaUtils::assembleSegmentKey(req.get_segment(), req.get_start());
-    auto end   = MetaUtils::assembleSegmentKey(req.get_segment(), req.get_end());
+    auto start = MetaCommon::assembleSegmentKey(req.get_segment(), req.get_start());
+    auto end   = MetaCommon::assembleSegmentKey(req.get_segment(), req.get_end());
     doRemoveRange(start, end);
 }
 

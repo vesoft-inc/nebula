@@ -11,8 +11,8 @@ namespace meta {
 
 void ScanProcessor::process(const cpp2::ScanReq& req) {
     CHECK_SEGMENT(req.get_segment());
-    auto start = MetaUtils::assembleSegmentKey(req.get_segment(), req.get_start());
-    auto end   = MetaUtils::assembleSegmentKey(req.get_segment(), req.get_end());
+    auto start = MetaCommon::assembleSegmentKey(req.get_segment(), req.get_start());
+    auto end   = MetaCommon::assembleSegmentKey(req.get_segment(), req.get_end());
     auto result = doScan(start, end);
     if (!result.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);

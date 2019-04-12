@@ -4,7 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "meta/MetaUtils.h"
+#include "meta/MetaServerUtils.h"
 #include "meta/processors/BaseProcessor.h"
 
 #include <regex>
@@ -60,7 +60,7 @@ void BaseProcessor<RESP>::doRemove(const std::string& key) {
 }
 
 template<typename RESP>
-void BaseProcessor<RESP>::doRemove(std::vector<std::string> keys) {
+void BaseProcessor<RESP>::doRemoves(std::vector<std::string> keys) {
     kvstore_->asyncMultiRemove(kDefaultSpaceId_, kDefaultPartId_, std::move(keys),
                             [this] (kvstore::ResultCode code, HostAddr leader) {
         UNUSED(leader);
@@ -101,7 +101,7 @@ StatusOr<std::vector<std::string>> BaseProcessor<RESP>::doScan(const std::string
 template<typename RESP>
 StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
     std::vector<nebula::cpp2::HostAddr> hosts;
-    const auto& prefix = MetaUtils::hostPrefix();
+    const auto& prefix = MetaServerUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -144,7 +144,7 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
 template<typename RESP>
 Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    auto spaceKey = MetaUtils::spaceKey(spaceId);
+    auto spaceKey = MetaServerUtils::spaceKey(spaceId);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, spaceKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {

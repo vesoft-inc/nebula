@@ -11,7 +11,7 @@ namespace meta {
 
 void RemoveProcessor::process(const cpp2::RemoveReq& req) {
     CHECK_SEGMENT(req.get_segment());
-    auto key = MetaUtils::assembleSegmentKey(req.get_segment(), req.get_key());
+    auto key = MetaCommon::assembleSegmentKey(req.get_segment(), req.get_key());
     doRemove(key);
 }
 

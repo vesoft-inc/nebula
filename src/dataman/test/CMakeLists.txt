@@ -3,7 +3,6 @@ add_executable(
     RowReaderTest.cpp
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
 
@@ -28,7 +27,6 @@ add_executable(
     RowWriterTest.cpp
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
 
@@ -53,7 +51,6 @@ add_executable(
     RowUpdaterTest.cpp
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
 
@@ -77,7 +74,6 @@ add_executable(
     rowset_reader_writer_test
     RowSetReaderWriterTest.cpp
     $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
@@ -103,7 +99,6 @@ add_executable(
     RowWriterBenchmark.cpp
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
 
@@ -127,7 +122,6 @@ add_executable(
     row_reader_bm
     RowReaderBenchmark.cpp
     $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
@@ -152,7 +146,6 @@ add_executable(
     NebulaCodecTest.cpp
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
 

@@ -13,7 +13,7 @@ void MultiPutProcessor::process(const cpp2::MultiPutReq& req) {
     CHECK_SEGMENT(req.get_segment());
     std::vector<kvstore::KV> data;
     for (auto& pair : req.get_pairs()) {
-        data.emplace_back(MetaUtils::assembleSegmentKey(req.get_segment(), pair.get_key()),
+        data.emplace_back(MetaCommon::assembleSegmentKey(req.get_segment(), pair.get_key()),
                           pair.get_value());
     }
     doPut(std::move(data));

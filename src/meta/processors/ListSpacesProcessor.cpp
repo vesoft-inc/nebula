@@ -12,7 +12,7 @@ namespace meta {
 void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
     UNUSED(req);
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    auto prefix = MetaUtils::spacePrefix();
+    auto prefix = MetaServerUtils::spacePrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -22,8 +22,8 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
     }
     std::vector<cpp2::IdName> spaces;
     while (iter->valid()) {
-        auto spaceId = MetaUtils::spaceId(iter->key());
-        auto spaceName = MetaUtils::spaceName(iter->val());
+        auto spaceId = MetaServerUtils::spaceId(iter->key());
+        auto spaceName = MetaServerUtils::spaceName(iter->val());
         VLOG(3) << "List spaces " << spaceId << ", name " << spaceName.str();
         spaces.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                             to(spaceId, EntryType::SPACE),

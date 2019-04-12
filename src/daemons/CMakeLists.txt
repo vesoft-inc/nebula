@@ -2,7 +2,6 @@ add_executable(
     nebula-graphd
     GraphDaemon.cpp
     $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:base_obj>
@@ -40,7 +39,6 @@ add_executable(
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>

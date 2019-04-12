@@ -12,7 +12,7 @@ namespace meta {
 
 void GetProcessor::process(const cpp2::GetReq& req) {
     CHECK_SEGMENT(req.get_segment());
-    auto key = MetaUtils::assembleSegmentKey(req.get_segment(), req.get_key());
+    auto key = MetaCommon::assembleSegmentKey(req.get_segment(), req.get_key());
     auto result = doGet(key);
     if (!result.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_KEY_NOT_FOUND);

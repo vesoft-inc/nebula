@@ -2,7 +2,6 @@ add_executable(
     file_based_schema_manager_test
     FileBasedSchemaManagerTest.cpp
     $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
@@ -22,8 +21,8 @@ nebula_add_test(file_based_schema_manager_test)
 
 add_executable(
     meta_utils_test
-    MetaUtilsTest.cpp
-    ../MetaUtils.cpp
+    MetaServerUtilsTest.cpp
+    ../MetaServerUtils.cpp
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>

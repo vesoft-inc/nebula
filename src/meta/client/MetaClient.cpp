@@ -4,7 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "meta/MetaUtils.h"
+#include "meta/common/MetaCommon.h"
 #include "meta/client/MetaClient.h"
 #include "network/NetworkUtils.h"
 
@@ -22,7 +22,7 @@ DEFINE_int32(meta_client_io_threads, 3, "meta client io threads");
     }
 
 #define CHECK_SEGMENT_AND_RETURN_STATUS(segment) \
-    if (!nebula::meta::MetaUtils::checkSegment(segment)) { \
+    if (!nebula::meta::MetaCommon::checkSegment(segment)) { \
         return Status::Error("segment is invalid!"); \
     }
 
@@ -207,7 +207,7 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::multiPut(const std::string& segment,
+MetaClient::multiPut(std::string segment,
                      std::vector<std::pair<std::string, std::string>> pairs) {
     CHECK_SEGMENT_AND_RETURN_STATUS(segment);
     CHECK_PARAMETER_AND_RETURN_STATUS(pairs);
@@ -217,7 +217,7 @@ MetaClient::multiPut(const std::string& segment,
         data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                           std::move(element.first), std::move(element.second));
     }
-    req.set_segment(segment);
+    req.set_segment(std::move(segment));
     req.set_pairs(std::move(data));
     return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_multiPut(request);
@@ -227,12 +227,12 @@ MetaClient::multiPut(const std::string& segment,
 }
 
 folly::Future<StatusOr<std::string>>
-MetaClient::get(const std::string& segment, const std::string& key) {
+MetaClient::get(std::string segment, std::string key) {
     CHECK_SEGMENT_AND_RETURN_STATUS(segment);
     CHECK_PARAMETER_AND_RETURN_STATUS(key);
     cpp2::GetReq req;
-    req.set_segment(segment);
-    req.set_key(key);
+    req.set_segment(std::move(segment));
+    req.set_key(std::move(key));
     return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_get(request);
                 }, [] (cpp2::GetResp&& resp) -> std::string {
@@ -241,12 +241,12 @@ MetaClient::get(const std::string& segment, const std::string& key) {
 }
 
 folly::Future<StatusOr<std::vector<std::string>>>
-MetaClient::multiGet(const std::string& segment, const std::vector<std::string>& keys) {
+MetaClient::multiGet(std::string segment, std::vector<std::string> keys) {
     CHECK_SEGMENT_AND_RETURN_STATUS(segment);
     CHECK_PARAMETER_AND_RETURN_STATUS(keys);
     cpp2::MultiGetReq req;
-    req.set_segment(segment);
-    req.set_keys(keys);
+    req.set_segment(std::move(segment));
+    req.set_keys(std::move(keys));
     return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_multiGet(request);
                 }, [] (cpp2::MultiGetResp&& resp) -> std::vector<std::string> {
@@ -255,14 +255,14 @@ MetaClient::multiGet(const std::string& segment, const std::vector<std::string>&
 }
 
 folly::Future<StatusOr<std::vector<std::string>>>
-MetaClient::scan(const std::string& segment, const std::string& start, const std::string& end) {
+MetaClient::scan(std::string segment, std::string start, std::string end) {
     CHECK_SEGMENT_AND_RETURN_STATUS(segment);
     CHECK_PARAMETER_AND_RETURN_STATUS(start);
     CHECK_PARAMETER_AND_RETURN_STATUS(end);
     cpp2::ScanReq req;
-    req.set_segment(segment);
-    req.set_start(start);
-    req.set_end(end);
+    req.set_segment(std::move(segment));
+    req.set_start(std::move(start));
+    req.set_end(std::move(end));
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_scan(request);
             }, [] (cpp2::ScanResp&& resp) -> std::vector<std::string> {
@@ -271,12 +271,12 @@ MetaClient::scan(const std::string& segment, const std::string& start, const std
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::remove(const std::string& segment, const std::string& key) {
+MetaClient::remove(std::string segment, std::string key) {
     CHECK_SEGMENT_AND_RETURN_STATUS(segment);
     CHECK_PARAMETER_AND_RETURN_STATUS(key);
     cpp2::RemoveReq req;
-    req.set_segment(segment);
-    req.set_key(key);
+    req.set_segment(std::move(segment));
+    req.set_key(std::move(key));
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_remove(request);
             }, [] (cpp2::RemoveResp&& resp) -> bool {
@@ -285,16 +285,14 @@ MetaClient::remove(const std::string& segment, const std::string& key) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::removeRange(const std::string& segment,
-                        const std::string& start,
-                        const std::string& end) {
+MetaClient::removeRange(std::string segment, std::string start, std::string end) {
     CHECK_SEGMENT_AND_RETURN_STATUS(segment);
     CHECK_PARAMETER_AND_RETURN_STATUS(start);
     CHECK_PARAMETER_AND_RETURN_STATUS(end);
     cpp2::RemoveRangeReq req;
-    req.set_segment(segment);
-    req.set_start(start);
-    req.set_end(end);
+    req.set_segment(std::move(segment));
+    req.set_start(std::move(start));
+    req.set_end(std::move(end));
     return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_removeRange(request);
                 }, [] (cpp2::RemoveRangeResp&& resp) -> bool {

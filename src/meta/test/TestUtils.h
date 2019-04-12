@@ -90,7 +90,7 @@ public:
     static bool assembleSpace(kvstore::KVStore* kv, GraphSpaceID id) {
         bool ret = false;
         std::vector<nebula::kvstore::KV> data;
-        data.emplace_back(MetaUtils::spaceKey(id), "test_space");
+        data.emplace_back(MetaServerUtils::spaceKey(id), "test_space");
         kv->asyncMultiPut(0, 0, std::move(data),
                           [&] (kvstore::ResultCode code, HostAddr leader) {
                               ret = (code == kvstore::ResultCode::SUCCEEDED);
@@ -113,9 +113,9 @@ public:
             }
             auto tagName = folly::stringPrintf("tag_%d", tagId);
             auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
-            tags.emplace_back(MetaUtils::indexKey(EntryType::TAG, tagName), tagIdVal);
-            tags.emplace_back(MetaUtils::schemaTagKey(1, tagId, ver++),
-                              MetaUtils::schemaTagVal(tagName, srcsch));
+            tags.emplace_back(MetaServerUtils::indexKey(EntryType::TAG, tagName), tagIdVal);
+            tags.emplace_back(MetaServerUtils::schemaTagKey(1, tagId, ver++),
+                              MetaServerUtils::schemaTagVal(tagName, srcsch));
         }
 
         kv->asyncMultiPut(0, 0, std::move(tags),

@@ -12,7 +12,7 @@ namespace meta {
 void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto spaceId = req.get_space_id();
-    auto prefix = MetaUtils::partPrefix(spaceId);
+    auto prefix = MetaServerUtils::partPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     resp_.set_code(to(ret));
@@ -25,7 +25,7 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
         auto key = iter->key();
         PartitionID partId;
         memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-        std::vector<nebula::cpp2::HostAddr> partHosts = MetaUtils::parsePartVal(iter->val());
+        std::vector<nebula::cpp2::HostAddr> partHosts = MetaServerUtils::parsePartVal(iter->val());
         parts.emplace(partId, std::move(partHosts));
         iter->next();
     }

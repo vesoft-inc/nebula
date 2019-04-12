@@ -12,7 +12,7 @@ namespace meta {
 void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
     auto spaceId = req.get_space_id();
-    auto prefix = MetaUtils::schemaTagsPrefix(spaceId);
+    auto prefix = MetaServerUtils::schemaTagsPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     resp_.set_code(to(ret));
@@ -29,7 +29,7 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
         auto vers = *reinterpret_cast<const int64_t *>(key.data() + prefix.size() + sizeof(TagID));
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto tagName = val.subpiece(sizeof(int32_t), nameLen).str();
-        auto schema = MetaUtils::parseSchema(val);
+        auto schema = MetaServerUtils::parseSchema(val);
         cpp2::TagItem tagItem(apache::thrift::FragileConstructor::FRAGILE,
                 tagID, tagName, vers, schema);
         tags.emplace_back(std::move(tagItem));
