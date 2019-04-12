@@ -6,10 +6,11 @@
 
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
+#include "process/ProcessUtils.h"
+
 
 namespace nebula {
 namespace graph {
-
 
 TestEnv *gEnv = nullptr;
 
@@ -22,6 +23,8 @@ TestEnv::~TestEnv() {
 
 
 void TestEnv::SetUp() {
+    pidFile_ = std::make_unique<fs::TempFile>("/tmp/nebula-graph-tmp.pid.XXXXXX");
+
     using ThriftServer = apache::thrift::ThriftServer;
     server_ = std::make_unique<ThriftServer>();
     auto interface = std::make_shared<GraphService>(server_->getIOThreadPool());
@@ -29,6 +32,7 @@ void TestEnv::SetUp() {
     server_->setPort(0);    // Let the system choose an available port for us
 
     auto serve = [this] {
+        ProcessUtils::makePidFile(pidFile_->path());
         server_->serve();
     };
 
@@ -62,6 +66,10 @@ std::unique_ptr<GraphClient> TestEnv::getClient() const {
         return nullptr;
     }
     return client;
+}
+
+std::string TestEnv::getPidFileName() const {
+    return pidFile_->path();
 }
 
 }   // namespace graph

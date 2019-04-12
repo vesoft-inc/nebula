@@ -1,4 +1,3 @@
-
 add_library(
     storage_service_handler OBJECT
     StorageServiceHandler.cpp
@@ -9,17 +8,42 @@ add_library(
     QueryVertexPropsProcessor.cpp
     QueryEdgePropsProcessor.cpp
     QueryStatsProcessor.cpp
-    StorageHttpHandler.cpp
+)
+add_dependencies(
+    storage_service_handler
+    base_obj
+    storage_thrift_obj
+    kvstore_obj
+    dataman_obj
+    ws_obj
 )
 
-add_dependencies(storage_service_handler base_obj storage_thrift_obj kvstore_obj dataman_obj ws_obj)
 
 add_library(
     storage_client OBJECT
     client/StorageClient.cpp
 )
+add_dependencies(
+    storage_client
+    base_obj
+    storage_thrift_obj
+    dataman_obj
+)
 
-add_dependencies(storage_client base_obj storage_thrift_obj dataman_obj)
+
+add_library(
+    storage_http_handler OBJECT
+    StorageHttpHandler.cpp
+    StorageFlags.cpp
+)
+add_dependencies(
+    storage_http_handler
+    base_obj
+    process_obj
+    thread_obj
+    ws_obj
+    stats_obj
+)
+
 
 add_subdirectory(test)
-
