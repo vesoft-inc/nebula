@@ -10,14 +10,14 @@
 namespace nebula {
 namespace meta {
 
-void AddTagProcessor::process(const cpp2::AddTagReq& req) {
+void AddTagProcessor::process(const cpp2::WriteTagReq& req) {
     if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    auto ret = getTag(req.get_tag_name());
+    auto ret = getElementId(EntryType::TAG, req.get_tag_name());
     std::vector<kvstore::KV> data;
     if (ret.ok()) {
         resp_.set_id(to(ret.value(), EntryType::TAG));
@@ -36,16 +36,5 @@ void AddTagProcessor::process(const cpp2::AddTagReq& req) {
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));
 }
-
-StatusOr<TagID> AddTagProcessor::getTag(const std::string& tagName) {
-    auto indexKey = MetaServiceUtils::indexKey(EntryType::TAG, tagName);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
-        return *reinterpret_cast<const TagID*>(val.c_str());
-    }
-    return Status::Error("No Tag!");
-}
-
 }  // namespace meta
 }  // namespace nebula

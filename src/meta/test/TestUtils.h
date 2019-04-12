@@ -93,9 +93,9 @@ public:
         data.emplace_back(MetaServiceUtils::spaceKey(id), "test_space");
         kv->asyncMultiPut(0, 0, std::move(data),
                           [&] (kvstore::ResultCode code, HostAddr leader) {
-                              ret = (code == kvstore::ResultCode::SUCCEEDED);
-                              UNUSED(leader);
-                          });
+            ret = (code == kvstore::ResultCode::SUCCEEDED);
+            UNUSED(leader);
+        });
         return ret;
     }
 
@@ -120,9 +120,9 @@ public:
 
         kv->asyncMultiPut(0, 0, std::move(tags),
                                 [] (kvstore::ResultCode code, HostAddr leader) {
-                                    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
-                                    UNUSED(leader);
-                                });
+            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            UNUSED(leader);
+        });
     }
 
     struct ServerContext {

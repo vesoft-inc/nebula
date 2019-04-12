@@ -96,7 +96,7 @@ struct GetSpaceResp {
 }
 
 // Tags related operations
-struct AddTagReq {
+struct WriteTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
     3: common.Schema       schema,
@@ -260,7 +260,8 @@ service MetaService {
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
 
-    ExecResp addTag(1: AddTagReq req);
+    ExecResp addTag(1: WriteTagReq req);
+    ExecResp alterTag(1: WriteTagReq req);
     ExecResp removeTag(1: RemoveTagReq req);
     GetTagResp getTag(1: GetTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);

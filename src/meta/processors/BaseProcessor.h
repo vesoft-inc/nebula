@@ -156,6 +156,7 @@ protected:
      * */
     StatusOr<std::vector<nebula::cpp2::HostAddr>> allHosts();
 
+    StatusOr<TagID> getTag(const std::string& tagName);
     /**
      * Get one auto-increment Id.
      * */

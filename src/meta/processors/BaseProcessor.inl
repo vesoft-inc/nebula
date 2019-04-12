@@ -116,6 +116,17 @@ StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
 }
 
 template<typename RESP>
+StatusOr<TagID> BaseProcessor<RESP>::getTag(const std::string& tagName) {
+    auto indexKey = MetaUtils::indexKey(EntryType::TAG, tagName);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return Status::Error("No Tag!");
+    }
+    return *reinterpret_cast<const TagID *>(val.c_str());
+}
+
+template<typename RESP>
 int32_t BaseProcessor<RESP>::autoIncrementId() {
     folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     static const std::string kIdKey = "__id__";

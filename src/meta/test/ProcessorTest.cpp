@@ -26,6 +26,7 @@
 #include "meta/processors/RemoveProcessor.h"
 #include "meta/processors/RemoveRangeProcessor.h"
 #include "meta/processors/ScanProcessor.h"
+#include "meta/processors/AlterTagProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -198,7 +199,7 @@ TEST(ProcessorTest, AddTagsTest) {
     cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
     schema.set_columns(std::move(cols));
     {
-        cpp2::AddTagReq req;
+        cpp2::WriteTagReq req;
         req.set_space_id(0);
         req.set_tag_name("default_tag");
         req.set_schema(schema);
@@ -209,7 +210,7 @@ TEST(ProcessorTest, AddTagsTest) {
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.code);
     }
     {
-        cpp2::AddTagReq req;
+        cpp2::WriteTagReq req;
         req.set_space_id(1);
         req.set_tag_name("default_tag");
         req.set_schema(schema);
@@ -437,7 +438,51 @@ TEST(ProcessorTest, RemoveTagTest) {
          ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
          ASSERT_FALSE(iter->valid());
      }
- }
+}
+
+TEST(ProcessorTest, AlterTagTest) {
+    fs::TempDir rootPath("/tmp/AlterTagTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    auto version = time::TimeUtils::nowInMSeconds();
+    TestUtils::mockTag(kv.get(), 1, version);
+    // Avoid the same version number with sleep
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    nebula::cpp2::Schema schema;
+    decltype(schema.columns) cols;
+    cols.emplace_back(TestUtils::columnDef(0, SupportedType::INT));
+    cols.emplace_back(TestUtils::columnDef(1, SupportedType::FLOAT));
+    cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
+    schema.set_columns(std::move(cols));
+    // Alter tag processor test
+    {
+        cpp2::WriteTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_schema(schema);
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+
+    {
+        cpp2::ListTagsReq req;
+        req.set_space_id(1);
+        auto* processor = ListTagsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto tags = resp.get_tags();
+        ASSERT_EQ(2, tags.size());
+        auto tag = tags[0];
+        EXPECT_EQ(0, tag.get_tag_id());
+        EXPECT_EQ(folly::stringPrintf("tag_%d", 0), tag.get_tag_name());
+        EXPECT_EQ(schema, tag.get_schema());
+    }
+}
 
 }  // namespace meta
 }  // namespace nebula
