@@ -18,7 +18,7 @@ DescribeTagExecutor::DescribeTagExecutor(Sentence *sentence,
 
 
 Status DescribeTagExecutor::prepare() {
-    return Status::OK();
+    return checkIfGraphSpaceChosen();
 }
 
 

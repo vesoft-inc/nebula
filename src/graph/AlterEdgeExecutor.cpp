@@ -17,7 +17,7 @@ AlterEdgeExecutor::AlterEdgeExecutor(Sentence *sentence,
 
 
 Status AlterEdgeExecutor::prepare() {
-    return Status::OK();
+    return checkIfGraphSpaceChosen();
 }
 
 

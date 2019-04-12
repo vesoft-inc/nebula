@@ -21,6 +21,7 @@ add_library(
     processors/AddTagProcessor.cpp
     processors/GetTagProcessor.cpp
     processors/ListTagsProcessor.cpp
+    processors/RemoveTagProcessor.cpp
 )
 
 add_dependencies(
