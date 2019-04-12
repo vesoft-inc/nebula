@@ -30,7 +30,7 @@ class ExecutionContext final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
     ExecutionContext(RequestContextPtr rctx,
-                     SchemaManager *sm,
+                     meta::SchemaManager *sm,
                      storage::StorageClient *storage,
                      meta::MetaClient *metaClient) {
         rctx_ = std::move(rctx);
@@ -64,7 +64,7 @@ public:
 
 private:
     RequestContextPtr                           rctx_;
-    meta::SchemaManager                              *sm_{nullptr};
+    meta::SchemaManager                        *sm_{nullptr};
     storage::StorageClient                     *storage_{nullptr};
     meta::MetaClient                           *metaClient_{nullptr};
     std::unique_ptr<VariableHolder>             variableHolder_;

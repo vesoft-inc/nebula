@@ -762,7 +762,7 @@ delete_edge_sentence
 
 show_sentence
     : KW_SHOW KW_HOSTS {
-        $$ = new ShowSentence(ShowType::kShowHosts);
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowHosts);
     }
     ;
 

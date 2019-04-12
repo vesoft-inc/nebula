@@ -26,10 +26,10 @@ Status ShowExecutor::prepare() {
 void ShowExecutor::execute() {
     auto showType = sentence_->showType();
     switch (showType) {
-        case ShowType::kShowHosts:
+        case ShowSentence::ShowType::kShowHosts:
             showHostsExecute();
             break;
-        case ShowType::kUnknown:
+        case ShowSentence::ShowType::kUnknown:
             onError_(Status::Error("Show Sentence type unknown"));
             break;
         // intentionally no `default'

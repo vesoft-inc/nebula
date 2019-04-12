@@ -14,11 +14,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     auto spaceRet = getSpaceId(req.get_space_name());
 
     if (!spaceRet.ok()) {
-        if (spaceRet.status() == Status::SpaceNotFound()) {
-            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        } else {
-            resp_.set_code(cpp2::ErrorCode::E_UNKNOWN);
-        }
+        resp_.set_code(to(std::move(spaceRet.status())));
         onFinished();
         return;;
     }
@@ -45,6 +41,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     deleteKeys.emplace_back(MetaUtils::indexKey(EntryType::SPACE, req.get_space_name()));
     deleteKeys.emplace_back(MetaUtils::spaceKey(spaceId));
 
+    // TODO(YT) delete Tag/Edge under the space
     doRemove(std::move(deleteKeys));
     // TODO(YT) delete part files of the space
 }

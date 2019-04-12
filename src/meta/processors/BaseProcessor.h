@@ -74,6 +74,18 @@ protected:
         }
     }
 
+    cpp2::ErrorCode to(Status status) {
+        switch (status.code()) {
+        case Status::kOk:
+            return cpp2::ErrorCode::SUCCEEDED;
+        case Status::kSpaceNotFound:
+        case Status::kHostNotFound:
+            return cpp2::ErrorCode::E_NOT_FOUND;
+        default:
+            return cpp2::ErrorCode::E_UNKNOWN;
+        }
+    }
+
     template<class T>
     std::enable_if_t<std::is_integral<T>::value, cpp2::ID>
     to(T id, EntryType type) {

@@ -28,7 +28,7 @@ void AddTagProcessor::process(const cpp2::AddTagReq& req) {
     auto version = time::TimeUtils::nowInMSeconds();
     TagID tagId = autoIncrementId();
     data.emplace_back(MetaUtils::indexKey(EntryType::TAG, req.get_tag_name()),
-                      folly::to<std::string>(tagId));
+                      std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
     LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaUtils::schemaTagKey(req.get_space_id(), tagId, version),
                       MetaUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
@@ -42,11 +42,7 @@ StatusOr<TagID> AddTagProcessor::getTag(const std::string& tagName) {
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
-        try {
-            return folly::to<TagID>(val);
-        } catch (std::exception& e) {
-            LOG(ERROR) << "Convert failed for " << val << ", msg " << e.what();
-        }
+        return *reinterpret_cast<const TagID*>(val.c_str());
     }
     return Status::Error("No Tag!");
 }

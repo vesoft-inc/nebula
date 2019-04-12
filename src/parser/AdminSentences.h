@@ -15,14 +15,13 @@ namespace nebula {
 
 using nebula::network::NetworkUtils;
 
-enum class ShowType : uint32_t {
-    kUnknown,
-    kShowHosts,
-};
-
-
 class ShowSentence final : public Sentence {
 public:
+    enum class ShowType : uint32_t {
+        kUnknown,
+        kShowHosts,
+    };
+
     explicit ShowSentence(ShowType sType) {
         kind_ = Kind::kShow;
         showType_ = std::move(sType);
@@ -38,7 +37,7 @@ private:
     ShowType    showType_{ShowType::kUnknown};
 };
 
-inline std::ostream& operator<<(std::ostream &os, ShowType type) {
+inline std::ostream& operator<<(std::ostream &os, ShowSentence::ShowType type) {
     return os << static_cast<uint32_t>(type);
 }
 
@@ -146,7 +145,8 @@ public:
         if (isInt()) {
             return asInt();
         } else {
-            LOG(FATAL) << "partition_num value illegal.";
+            LOG(ERROR) << "partition_num value illegal.";
+            return 0;
         }
     }
 
@@ -154,7 +154,8 @@ public:
         if (isInt()) {
             return asInt();
         } else {
-            LOG(FATAL) << "replica_factor value illegal.";
+            LOG(ERROR) << "replica_factor value illegal.";
+            return 0;
         }
     }
 
