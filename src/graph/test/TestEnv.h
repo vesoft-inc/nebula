@@ -13,6 +13,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "graph/GraphService.h"
 #include "client/cpp/GraphClient.h"
+#include "fs/TempFile.h"
 
 namespace apache {
 namespace thrift {
@@ -22,6 +23,8 @@ class ThriftServer;
 
 namespace nebula {
 namespace graph {
+
+using nebula::fs::TempFile;
 
 class GraphClient;
 class TestEnv : public ::testing::Environment {
@@ -37,9 +40,12 @@ public:
 
     std::unique_ptr<GraphClient> getClient() const;
 
+    std::string getPidFileName() const;
+
 private:
     std::unique_ptr<apache::thrift::ThriftServer>   server_;
     std::unique_ptr<thread::NamedThread>            thread_;
+    std::unique_ptr<fs::TempFile>                   pidFile_;
 };
 
 

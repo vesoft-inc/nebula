@@ -9,6 +9,7 @@
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/SchemaProviderIf.h"
+#include "process/ProcessUtils.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
@@ -167,10 +168,14 @@ public:
 
      static std::unique_ptr<ServerContext> mockServer(const char* dataPath,
                                                       uint32_t ip,
-                                                      uint32_t port = 0) {
+                                                      uint32_t port = 0,
+                                                      const std::string pidFile ="") {
          auto sc = std::make_unique<ServerContext>();
          sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
          sc->serverT_ = std::make_unique<std::thread>([&]() {
+            if (!pidFile.empty()) {
+                ProcessUtils::makePidFile(pidFile);
+            }
             std::vector<std::string> paths;
             paths.push_back(folly::stringPrintf("%s/disk1", dataPath));
             paths.push_back(folly::stringPrintf("%s/disk2", dataPath));

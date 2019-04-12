@@ -15,6 +15,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     key_utils_test
@@ -24,6 +25,7 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(key_utils_test)
+
 
 add_executable(
     add_vertices_test
@@ -42,6 +44,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     add_vertices_test
@@ -51,6 +54,7 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(add_vertices_test)
+
 
 add_executable(
     storage_service_handler_test
@@ -68,7 +72,9 @@ add_executable(
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:fs_obj>)
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:process_obj>
+)
 nebula_link_libraries(
     storage_service_handler_test
     ${ROCKSDB_LIBRARIES}
@@ -77,6 +83,7 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(storage_service_handler_test)
+
 
 add_executable(
     add_edges_test
@@ -95,6 +102,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     add_edges_test
@@ -104,6 +112,7 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(add_edges_test)
+
 
 add_executable(
     query_bound_test
@@ -122,6 +131,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     query_bound_test
@@ -131,6 +141,7 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(query_bound_test)
+
 
 add_executable(
     vertex_props_test
@@ -149,6 +160,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     vertex_props_test
@@ -158,6 +170,7 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(vertex_props_test)
+
 
 add_executable(
     edge_props_test
@@ -176,6 +189,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     edge_props_test
@@ -185,6 +199,7 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(edge_props_test)
+
 
 add_executable(
     query_stats_test
@@ -203,6 +218,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     query_stats_test
@@ -212,6 +228,7 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(query_stats_test)
+
 
 add_executable(
     storage_client_test
@@ -232,6 +249,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     storage_client_test
@@ -241,3 +259,40 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(storage_client_test)
+
+
+add_executable(
+    storage_http_test
+    StorageHttpHandlerTest.cpp
+    $<TARGET_OBJECTS:storage_client>
+    $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:storage_http_handler>
+    $<TARGET_OBJECTS:dataman_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:ws_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:process_obj>
+)
+
+ nebula_link_libraries(
+    storage_http_test
+    proxygenhttpserver
+    proxygenlib
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    gtest
+)
+nebula_add_test(storage_http_test)

@@ -29,7 +29,6 @@ static Status setupLogging();
 static void printHelp(const char *prog);
 static void printVersion();
 
-DECLARE_string(flagfile);
 
 int main(int argc, char *argv[]) {
     if (argc == 1) {
@@ -49,12 +48,12 @@ int main(int argc, char *argv[]) {
 
     folly::init(&argc, &argv, true);
 
-    if (FLAGS_flagfile.empty()) {
+    if (FLAGS_graph_flag_file.empty()) {
         printHelp(argv[0]);
         return EXIT_FAILURE;
     }
 
-    if (FLAGS_daemonize) {
+    if (FLAGS_graph_daemonize) {
         google::SetStderrLogging(google::FATAL);
     } else {
         google::SetStderrLogging(google::INFO);
@@ -68,14 +67,14 @@ int main(int argc, char *argv[]) {
     }
 
     // Detect if the server has already been started
-    auto pidPath = FLAGS_pid_file;
+    auto pidPath = FLAGS_graph_pid_file;
     status = ProcessUtils::isPidAvailable(pidPath);
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
     }
 
-    if (FLAGS_daemonize) {
+    if (FLAGS_graph_daemonize) {
         status = ProcessUtils::daemonize(pidPath);
         if (!status.ok()) {
             LOG(ERROR) << status;
@@ -91,7 +90,7 @@ int main(int argc, char *argv[]) {
     }
 
     LOG(INFO) << "Starting Graph HTTP Service";
-    nebula::WebService::registerHandler("/graph", [] {
+    nebula::WebService::registerHandler("/get_graph", [] {
         return new nebula::graph::GraphHttpHandler();
     });
     status = nebula::WebService::start();
@@ -115,7 +114,7 @@ int main(int argc, char *argv[]) {
     auto interface = std::make_shared<GraphService>(gServer->getIOThreadPool());
 
     gServer->setInterface(std::move(interface));
-    gServer->setAddress(localIP, FLAGS_port);
+    gServer->setAddress(localIP, FLAGS_graph_port);
     gServer->setReusePort(FLAGS_reuse_port);
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
 
@@ -140,7 +139,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);
+    FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_graph_port);
     try {
         gServer->serve();  // Blocking wait until shut down via gServer->stop()
     } catch (const std::exception &e) {
@@ -148,7 +147,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    FLOG_INFO("nebula-graphd on %s:%d has been stopped", localIP.c_str(), FLAGS_port);
+    FLOG_INFO("nebula-graphd on %s:%d has been stopped", localIP.c_str(), FLAGS_graph_port);
 
     return EXIT_SUCCESS;
 }

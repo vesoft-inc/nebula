@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 
-DECLARE_int32(port);
+DECLARE_int32(graph_port);
 DECLARE_int32(client_idle_timeout_secs);
 DECLARE_int32(session_idle_timeout_secs);
 DECLARE_int32(session_reclaim_interval_secs);
@@ -18,12 +18,11 @@ DECLARE_int32(num_accept_threads);
 DECLARE_bool(reuse_port);
 DECLARE_int32(listen_backlog);
 DECLARE_string(listen_netdev);
-DECLARE_string(pid_file);
-
 DECLARE_bool(redirect_stdout);
 DECLARE_string(stdout_log_file);
 DECLARE_string(stderr_log_file);
-DECLARE_bool(daemonize);
-
+DECLARE_bool(graph_daemonize);
+DECLARE_string(graph_pid_file);
+DECLARE_string(graph_flag_file);
 
 #endif  // GRAPH_GRAPHFLAGS_H_

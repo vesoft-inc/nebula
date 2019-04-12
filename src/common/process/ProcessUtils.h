@@ -26,6 +26,10 @@ public:
      *      The pidFile contains a valid pid and no such process exists.
      */
     static Status isPidAvailable(const std::string &pidFile);
+
+    // check if the pid of pidFile is running
+    static Status isPidRunning(const std::string &pidFile);
+
     /**
      * Write pid into file, create if not exist.
      */
