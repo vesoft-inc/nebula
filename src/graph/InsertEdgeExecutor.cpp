@@ -20,6 +20,11 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 
 
 Status InsertEdgeExecutor::prepare() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+
     overwritable_ = sentence_->overwritable();
     edge_ = ectx()->schemaManager()->toEdgeType(*sentence_->edge());
     properties_ = sentence_->properties();

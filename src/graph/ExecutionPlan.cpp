@@ -51,8 +51,11 @@ void ExecutionPlan::execute() {
 
 
 void ExecutionPlan::onFinish() {
-    executor_->setupResponse(ectx()->rctx()->resp());
-    ectx()->rctx()->finish();
+    auto *rctx = ectx()->rctx();
+    executor_->setupResponse(rctx->resp());
+    auto latency = rctx->duration().elapsedInUSec();
+    rctx->resp().set_latency_in_us(latency);
+    rctx->finish();
 
     // The `ExecutionPlan' is the root node holding all resources during the execution.
     // When the whole query process is done, it's safe to release this object, as long as
@@ -70,6 +73,8 @@ void ExecutionPlan::onError(Status status) {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_EXECUTION_ERROR);
     }
     rctx->resp().set_error_msg(status.toString());
+    auto latency = rctx->duration().elapsedInUSec();
+    rctx->resp().set_latency_in_us(latency);
     rctx->finish();
     delete this;
 }

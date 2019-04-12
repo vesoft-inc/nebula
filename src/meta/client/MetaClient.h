@@ -64,7 +64,7 @@ public:
      * TODO(dangleptr): Use one struct to represent space description.
      * */
     folly::Future<StatusOr<GraphSpaceID>>
-    createSpace(std::string name, int32_t partsNum, int32_t replicaFator);
+    createSpace(std::string name, int32_t partsNum, int32_t replicaFactor);
 
     folly::Future<StatusOr<std::vector<SpaceIdName>>>
     listSpaces();
@@ -100,10 +100,7 @@ protected:
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
     void updateActiveHost() {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dis(0, addrs_.size() - 1);
-        active_ = addrs_[dis(gen)];
+        active_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
     void diff(const std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>& newCache);

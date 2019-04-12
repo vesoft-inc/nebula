@@ -26,6 +26,10 @@ Status GoExecutor::prepare() {
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
     do {
+        status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            break;
+        }
         status = prepareStep();
         if (!status.ok()) {
             break;

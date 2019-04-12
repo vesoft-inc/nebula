@@ -26,7 +26,8 @@ target_link_libraries(nebula_native_client
                       -lzstd
                       -levent
                       -ldouble-conversion
-                      -lstdc++
+                      -static-libgcc
+                      -static-libstdc++
                       -lpthread
                       -ldl)
 

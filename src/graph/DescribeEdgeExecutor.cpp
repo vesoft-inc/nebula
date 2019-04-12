@@ -18,7 +18,7 @@ DescribeEdgeExecutor::DescribeEdgeExecutor(Sentence *sentence,
 
 
 Status DescribeEdgeExecutor::prepare() {
-    return Status::OK();
+    return checkIfGraphSpaceChosen();
 }
 
 
