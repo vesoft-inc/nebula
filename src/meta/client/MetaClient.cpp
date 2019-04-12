@@ -324,8 +324,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
     switch (resp.get_code()) {
         case cpp2::ErrorCode::SUCCEEDED:
             return Status::OK();
-        case cpp2::ErrorCode::E_SPACE_EXISTED:
-            return Status::Error("space existed!");
+        case cpp2::ErrorCode::E_EXISTED:
+            return Status::Error("existed!");
         case cpp2::ErrorCode::E_LEADER_CHANGED:
             return Status::Error("Leader changed!");
         default:

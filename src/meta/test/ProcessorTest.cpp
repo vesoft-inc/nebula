@@ -388,7 +388,7 @@ TEST(ProcessorTest, RemoveTagTest) {
          std::string tagVal;
          kvstore::ResultCode ret;
          std::unique_ptr<kvstore::KVIterator> iter;
-         ret = kv.get()->get(0, 0, std::move(MetaServerUtils::indexKey(EntryType::TAG, "tag_1")),
+         ret = kv.get()->get(0, 0, std::move(MetaServiceUtils::indexKey(EntryType::TAG, "tag_1")),
                              &tagVal);
          ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
          ret = kv.get()->prefix(0, 0, "__tags__", &iter);

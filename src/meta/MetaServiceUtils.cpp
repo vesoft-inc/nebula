@@ -4,7 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "meta/MetaServerUtils.h"
+#include "meta/MetaServiceUtils.h"
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
@@ -18,7 +18,7 @@ const std::string kTagsTable   = "__tags__";    // NOLINT
 const std::string kEdgesTable  = "__edges__";   // NOLINT
 const std::string kIndexTable  = "__index__";   // NOLINT
 
-std::string MetaServerUtils::spaceKey(GraphSpaceID spaceId) {
+std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
     key.reserve(256);
     key.append(kSpacesTable.data(), kSpacesTable.size());
@@ -26,9 +26,9 @@ std::string MetaServerUtils::spaceKey(GraphSpaceID spaceId) {
     return key;
 }
 
-std::string MetaServerUtils::spaceVal(int32_t partsNum,
-                                      int32_t replicaFactor,
-                                      const std::string& name) {
+std::string MetaServiceUtils::spaceVal(int32_t partsNum,
+                                       int32_t replicaFactor,
+                                       const std::string& name) {
     std::string val;
     val.reserve(256);
     val.append(reinterpret_cast<const char*>(&partsNum), sizeof(partsNum));
@@ -37,19 +37,19 @@ std::string MetaServerUtils::spaceVal(int32_t partsNum,
     return val;
 }
 
-const std::string& MetaServerUtils::spacePrefix() {
+const std::string& MetaServiceUtils::spacePrefix() {
     return kSpacesTable;
 }
 
-GraphSpaceID MetaServerUtils::spaceId(folly::StringPiece rawKey) {
+GraphSpaceID MetaServiceUtils::spaceId(folly::StringPiece rawKey) {
     return *reinterpret_cast<const GraphSpaceID*>(rawKey.data() + kSpacesTable.size());
 }
 
-folly::StringPiece MetaServerUtils::spaceName(folly::StringPiece rawVal) {
+folly::StringPiece MetaServiceUtils::spaceName(folly::StringPiece rawVal) {
     return rawVal.subpiece(sizeof(int32_t)*2);
 }
 
-std::string MetaServerUtils::partKey(GraphSpaceID spaceId, PartitionID partId) {
+std::string MetaServiceUtils::partKey(GraphSpaceID spaceId, PartitionID partId) {
     std::string key;
     key.reserve(128);
     key.append(kPartsTable.data(), kPartsTable.size());
@@ -58,7 +58,7 @@ std::string MetaServerUtils::partKey(GraphSpaceID spaceId, PartitionID partId) {
     return key;
 }
 
-std::string MetaServerUtils::partVal(const std::vector<nebula::cpp2::HostAddr>& hosts) {
+std::string MetaServiceUtils::partVal(const std::vector<nebula::cpp2::HostAddr>& hosts) {
     std::string val;
     val.reserve(128);
     for (auto& h : hosts) {
@@ -68,7 +68,7 @@ std::string MetaServerUtils::partVal(const std::vector<nebula::cpp2::HostAddr>& 
     return val;
 }
 
-std::string MetaServerUtils::partPrefix(GraphSpaceID spaceId) {
+std::string MetaServiceUtils::partPrefix(GraphSpaceID spaceId) {
     std::string prefix;
     prefix.reserve(128);
     prefix.append(kPartsTable.data(), kPartsTable.size());
@@ -76,7 +76,7 @@ std::string MetaServerUtils::partPrefix(GraphSpaceID spaceId) {
     return prefix;
 }
 
-std::vector<nebula::cpp2::HostAddr> MetaServerUtils::parsePartVal(folly::StringPiece val) {
+std::vector<nebula::cpp2::HostAddr> MetaServiceUtils::parsePartVal(folly::StringPiece val) {
     std::vector<nebula::cpp2::HostAddr> hosts;
     static const size_t unitSize = sizeof(int32_t) * 2;
     auto hostsNum = val.size() / unitSize;
@@ -93,7 +93,7 @@ std::vector<nebula::cpp2::HostAddr> MetaServerUtils::parsePartVal(folly::StringP
     return hosts;
 }
 
-std::string MetaServerUtils::hostKey(IPv4 ip, Port port) {
+std::string MetaServiceUtils::hostKey(IPv4 ip, Port port) {
     std::string key;
     key.reserve(128);
     key.append(kHostsTable.data(), kHostsTable.size());
@@ -102,23 +102,23 @@ std::string MetaServerUtils::hostKey(IPv4 ip, Port port) {
     return key;
 }
 
-std::string MetaServerUtils::hostVal() {
+std::string MetaServiceUtils::hostVal() {
     return "";
 }
 
-const std::string& MetaServerUtils::hostPrefix() {
+const std::string& MetaServiceUtils::hostPrefix() {
     return kHostsTable;
 }
 
-nebula::cpp2::HostAddr MetaServerUtils::parseHostKey(folly::StringPiece key) {
+nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
     nebula::cpp2::HostAddr host;
     memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
     return host;
 }
 
-std::string MetaServerUtils::schemaEdgeKey(GraphSpaceID spaceId,
-                                           EdgeType edgeType,
-                                           int64_t version) {
+std::string MetaServiceUtils::schemaEdgeKey(GraphSpaceID spaceId,
+                                            EdgeType edgeType,
+                                            int64_t version) {
     std::string key;
     key.reserve(128);
     key.append(kEdgesTable.data(), kEdgesTable.size());
@@ -128,13 +128,13 @@ std::string MetaServerUtils::schemaEdgeKey(GraphSpaceID spaceId,
     return key;
 }
 
-std::string MetaServerUtils::schemaEdgeVal(nebula::cpp2::Schema schema) {
+std::string MetaServiceUtils::schemaEdgeVal(nebula::cpp2::Schema schema) {
     std::string val;
     apache::thrift::CompactSerializer::serialize(schema, &val);
     return val;
 }
 
-std::string MetaServerUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version) {
+std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version) {
     std::string key;
     key.reserve(128);
     key.append(kTagsTable.data(), kTagsTable.size());
@@ -144,7 +144,7 @@ std::string MetaServerUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, int
     return key;
 }
 
-std::string MetaServerUtils::schemaTagsPrefix(GraphSpaceID spaceId) {
+std::string MetaServiceUtils::schemaTagsPrefix(GraphSpaceID spaceId) {
     std::string key;
     key.reserve(kTagsTable.size() + sizeof(GraphSpaceID));
     key.append(kTagsTable.data(), kTagsTable.size());
@@ -153,7 +153,7 @@ std::string MetaServerUtils::schemaTagsPrefix(GraphSpaceID spaceId) {
 }
 
 
-std::string MetaServerUtils::schemaTagVal(const std::string& name, nebula::cpp2::Schema schema) {
+std::string MetaServiceUtils::schemaTagVal(const std::string& name, nebula::cpp2::Schema schema) {
     int32_t len = name.size();
     std::string val, sval;
     apache::thrift::CompactSerializer::serialize(schema, &sval);
@@ -164,7 +164,7 @@ std::string MetaServerUtils::schemaTagVal(const std::string& name, nebula::cpp2:
     return val;
 }
 
-nebula::cpp2::Schema MetaServerUtils::parseSchema(folly::StringPiece rawData) {
+nebula::cpp2::Schema MetaServiceUtils::parseSchema(folly::StringPiece rawData) {
     nebula::cpp2::Schema schema;
     int32_t offset = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(rawData.begin());
     auto schval = rawData.subpiece(offset, rawData.size() - offset);
@@ -172,13 +172,22 @@ nebula::cpp2::Schema MetaServerUtils::parseSchema(folly::StringPiece rawData) {
     return schema;
 }
 
-std::string MetaServerUtils::indexKey(EntryType type, const std::string& name) {
+std::string MetaServiceUtils::indexKey(EntryType type, const std::string& name) {
     std::string key;
     key.reserve(128);
     key.append(kIndexTable.data(), kIndexTable.size());
     key.append(reinterpret_cast<const char*>(&type), sizeof(type));
     key.append(name);
     return key;
+}
+
+std::string MetaServiceUtils::assembleSegmentKey(const std::string& segment,
+                                                 const std::string& key) {
+    std::string segmentKey;
+    segmentKey.reserve(64);
+    segmentKey.append(segment);
+    segmentKey.append(key.data(), key.size());
+    return segmentKey;
 }
 
 }  // namespace meta

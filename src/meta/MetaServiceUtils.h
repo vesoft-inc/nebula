@@ -19,9 +19,9 @@ enum class EntryType : int8_t {
     EDGE  = 0x03,
 };
 
-class MetaServerUtils final {
+class MetaServiceUtils final {
 public:
-    MetaServerUtils() = delete;
+    MetaServiceUtils() = delete;
 
     static std::string spaceKey(GraphSpaceID spaceId);
 
@@ -65,6 +65,8 @@ public:
     static nebula::cpp2::Schema parseSchema(folly::StringPiece rawData);
 
     static std::string indexKey(EntryType type, const std::string& name);
+
+    static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 };
 
 }  // namespace meta

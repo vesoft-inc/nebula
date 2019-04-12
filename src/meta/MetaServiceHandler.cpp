@@ -4,7 +4,7 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "meta/MetaServerUtils.h"
+#include "meta/MetaServiceUtils.h"
 #include "meta/MetaServiceHandler.h"
 #include "meta/processors/CreateSpaceProcessor.h"
 #include "meta/processors/AddHostsProcessor.h"

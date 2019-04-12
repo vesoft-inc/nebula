@@ -11,7 +11,7 @@ add_dependencies(schema_obj base_obj)
 add_library(
     meta_service_handler OBJECT
     MetaServiceHandler.cpp
-    MetaServerUtils.cpp
+    MetaServiceUtils.cpp
     MetaHttpHandler.cpp
     processors/CreateSpaceProcessor.cpp
     processors/AddHostsProcessor.cpp

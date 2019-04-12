@@ -29,7 +29,7 @@ void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
 
 StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID id,
                                                                   const std::string& tagName) {
-    auto indexKey = MetaServerUtils::indexKey(EntryType::TAG, tagName);
+    auto indexKey = MetaServiceUtils::indexKey(EntryType::TAG, tagName);
     std::vector<std::string> keys;
     std::string tagVal;
     TagID tagId;
@@ -44,8 +44,8 @@ StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID i
 
     std::unique_ptr<kvstore::KVIterator> iter;
     ret = kvstore_->range(kDefaultSpaceId_, kDefaultPartId_,
-                          MetaServerUtils::schemaTagKey(id, tagId, MIN_VERSION_HEX),
-                          MetaServerUtils::schemaTagKey(id, tagId, MAX_VERSION_HEX),
+                          MetaServiceUtils::schemaTagKey(id, tagId, MIN_VERSION_HEX),
+                          MetaServiceUtils::schemaTagKey(id, tagId, MAX_VERSION_HEX),
                           &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Tag get error by id : %d !", tagId);

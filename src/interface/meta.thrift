@@ -22,9 +22,8 @@ enum ErrorCode {
 
     // Operation Failure
     E_NO_HOSTS       = -21,
-    E_SPACE_EXISTED  = -22,
+    E_EXISTED        = -22,
     E_NOT_FOUND      = -23,
-    E_TAG_EXISTED    = -24,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -125,7 +124,8 @@ struct GetTagReq {
 }
 
 struct GetTagResp {
-    1: common.Schema    schema,
+    1: ErrorCode        code,
+    2: common.Schema    schema,
 }
 
 // Edge related operations.

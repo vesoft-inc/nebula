@@ -23,14 +23,6 @@ public:
         }
         return false;
     }
-
-    static std::string assembleSegmentKey(const std::string& segment, const std::string& key) {
-        std::string segmentKey;
-        segmentKey.reserve(64);
-        segmentKey.append(segment);
-        segmentKey.append(key.data(), key.size());
-        return segmentKey;
-    }
 };
 
 }  // namespace meta

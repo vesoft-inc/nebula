@@ -15,7 +15,7 @@
 #include "base/StatusOr.h"
 #include "time/Duration.h"
 #include "kvstore/KVStore.h"
-#include "meta/MetaServerUtils.h"
+#include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 
 namespace nebula {

@@ -10,7 +10,7 @@
 #include "meta/client/MetaClient.h"
 #include "meta/test/TestUtils.h"
 #include "network/NetworkUtils.h"
-#include "meta/MetaServerUtils.h"
+#include "meta/MetaServiceUtils.h"
 
 DECLARE_int32(load_data_interval_second);
 
