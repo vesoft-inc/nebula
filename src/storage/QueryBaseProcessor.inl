@@ -131,7 +131,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
             case cpp2::PropOwner::SOURCE:
             case cpp2::PropOwner::DEST: {
                 auto tagId = col.tag_id;
-                auto schema = meta::SchemaManager::getTagSchema(spaceId_, tagId);
+                auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
                 if (!schema) {
                     VLOG(3) << "Can't find spaceId " << spaceId_ << ", tagId " << tagId;
                     return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
@@ -163,8 +163,8 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                     prop.type_.type = nebula::cpp2::SupportedType::INT;
                 } else if (type_ == BoundType::OUT_BOUND) {
                     // Only outBound have properties on edge.
-                    auto schema = meta::SchemaManager::getEdgeSchema(spaceId_,
-                                                                     edgeContext.edgeType_);
+                    auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
+                                                            edgeContext.edgeType_);
                     if (!schema) {
                         return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
@@ -204,7 +204,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     // Will decode the properties according to the schema version
     // stored along with the properties
     if (iter && iter->valid()) {
-        auto reader = RowReader::getTagPropReader(iter->val(), spaceId_, tagId);
+        auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
         this->collectProps(reader.get(), iter->key(), props, collector);
     } else {
         VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
@@ -237,7 +237,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         lastRank = rank;
         std::unique_ptr<RowReader> reader;
         if (type_ == BoundType::OUT_BOUND && !val.empty()) {
-            reader = RowReader::getEdgePropReader(val, spaceId_, edgeType);
+            reader = RowReader::getEdgePropReader(this->schemaMan_, val, spaceId_, edgeType);
         }
         proc(reader.get(), key, props);
     }

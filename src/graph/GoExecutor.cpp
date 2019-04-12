@@ -134,7 +134,7 @@ Status GoExecutor::prepareOver() {
         if (clause == nullptr) {
             LOG(FATAL) << "Over clause shall never be null";
         }
-        edge_ = meta::SchemaManager::toEdgeType(*clause->edge());
+        edge_ = ectx()->schemaManager()->toEdgeType(*clause->edge());
         reversely_ = clause->isReversely();
         if (clause->alias() != nullptr) {
             expCtx_->addAlias(*clause->alias(), AliasKind::Edge, *clause->edge());
@@ -352,7 +352,7 @@ std::vector<storage::cpp2::PropDef> GoExecutor::getStepOutProps() const {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::SOURCE;
         pd.name = tagProp.second;
-        auto tagId = meta::SchemaManager::toTagID(tagProp.first);
+        auto tagId = ectx()->schemaManager()->toTagID(tagProp.first);
         pd.set_tag_id(tagId);
         props.emplace_back(std::move(pd));
     }
@@ -373,7 +373,7 @@ std::vector<storage::cpp2::PropDef> GoExecutor::getDstProps() const {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::DEST;
         pd.name = tagProp.second;
-        auto tagId = meta::SchemaManager::toTagID(tagProp.first);
+        auto tagId = ectx()->schemaManager()->toTagID(tagProp.first);
         pd.set_tag_id(tagId);
         props.emplace_back(std::move(pd));
     }

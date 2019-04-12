@@ -14,96 +14,107 @@
 namespace nebula {
 namespace meta {
 
-class FileBasedSchemaManager;
-
-class SchemaManager : public SchemaProviderIf {
-    friend class FileBasedSchemaManager;
+class SchemaManager {
 public:
-    class SchemaField final : public SchemaProviderIf::Field {
-    public:
-        SchemaField(std::string name, nebula::cpp2::ValueType type)
-            : name_(std::move(name))
-            , type_(std::move(type)) {}
+    static std::unique_ptr<SchemaManager> create();
 
-        const char* getName() const override {
-            return name_.c_str();
-        }
-        const nebula::cpp2::ValueType& getType() const override {
-            return type_;
-        }
-        bool isValid() const override {
-            return true;
-        }
+    virtual std::shared_ptr<const SchemaProviderIf> getTagSchema(
+        GraphSpaceID space, TagID tag, int32_t ver = -1) = 0;
 
-    private:
-        std::string name_;
-        nebula::cpp2::ValueType type_;
-    };
-
-public:
-    static std::shared_ptr<const SchemaProviderIf> getTagSchema(
-        GraphSpaceID space, TagID tag, int32_t ver = -1);
-    static std::shared_ptr<const SchemaProviderIf> getTagSchema(
-        const folly::StringPiece spaceName,
-        const folly::StringPiece tagName,
-        int32_t ver = -1);
+    virtual std::shared_ptr<const SchemaProviderIf> getTagSchema(
+        folly::StringPiece spaceName,
+        folly::StringPiece tagName,
+        int32_t ver = -1) = 0;
     // Returns a negative number when the schema does not exist
-    static int32_t getNewestTagSchemaVer(GraphSpaceID space, TagID tag);
-    static int32_t getNewestTagSchemaVer(const folly::StringPiece spaceName,
-                                         const folly::StringPiece tagName);
+    virtual int32_t getNewestTagSchemaVer(GraphSpaceID space, TagID tag) = 0;
 
-    static std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
-        GraphSpaceID space, EdgeType edge, int32_t ver = -1);
-    static std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
-        const folly::StringPiece spaceName,
-        const folly::StringPiece typeName,
-        int32_t ver = -1);
+    virtual int32_t getNewestTagSchemaVer(folly::StringPiece spaceName,
+                                          folly::StringPiece tagName) = 0;
+
+    virtual std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
+        GraphSpaceID space, EdgeType edge, int32_t ver = -1) = 0;
+
+    virtual std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
+        folly::StringPiece spaceName,
+        folly::StringPiece typeName,
+        int32_t ver = -1) = 0;
     // Returns a negative number when the schema does not exist
-    static int32_t getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge);
-    static int32_t getNewestEdgeSchemaVer(const folly::StringPiece spaceName,
-                                          const folly::StringPiece typeName);
+    virtual int32_t getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) = 0;
 
-    static GraphSpaceID toGraphSpaceID(const folly::StringPiece spaceName);
-    static TagID toTagID(const folly::StringPiece tagName);
-    static EdgeType toEdgeType(const folly::StringPiece typeName);
+    virtual int32_t getNewestEdgeSchemaVer(folly::StringPiece spaceName,
+                                           folly::StringPiece typeName) = 0;
 
-public:
-    int32_t getVersion() const noexcept override;
-    size_t getNumFields() const noexcept override;
+    virtual GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) = 0;
 
-    int64_t getFieldIndex(const folly::StringPiece name) const override;
-    const char* getFieldName(int64_t index) const override;
+    virtual TagID toTagID(folly::StringPiece tagName) = 0;
 
-    const nebula::cpp2::ValueType& getFieldType(int64_t index) const override;
-    const nebula::cpp2::ValueType& getFieldType(const folly::StringPiece name) const override;
+    virtual EdgeType toEdgeType(folly::StringPiece typeName) = 0;
 
-    std::shared_ptr<const SchemaProviderIf::Field> field(int64_t index) const override;
-    std::shared_ptr<const SchemaProviderIf::Field> field(
-        const folly::StringPiece name) const override;
+    virtual void init() = 0;
 
 protected:
-    static void init();
-
     SchemaManager() = default;
+};
+
+class AdHocSchemaManager : public SchemaManager {
+public:
+    AdHocSchemaManager() = default;
+
+    ~AdHocSchemaManager() = default;
+
+    void addTagSchema(GraphSpaceID space,
+                      TagID tag,
+                      std::shared_ptr<SchemaProviderIf> schema);
+
+    void addEdgeSchema(GraphSpaceID space,
+                       EdgeType edge,
+                       std::shared_ptr<SchemaProviderIf> schema);
+
+    std::shared_ptr<const SchemaProviderIf> getTagSchema(
+        GraphSpaceID space, TagID tag, int32_t ver = -1) override;
+
+    std::shared_ptr<const SchemaProviderIf> getTagSchema(
+        folly::StringPiece spaceName,
+        folly::StringPiece tagName,
+        int32_t ver = -1) override;
+    // Returns a negative number when the schema does not exist
+    int32_t getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
+
+    int32_t getNewestTagSchemaVer(folly::StringPiece spaceName,
+                                  folly::StringPiece tagName) override;
+
+    std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
+        GraphSpaceID space, EdgeType edge, int32_t ver = -1) override;
+
+    std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
+        folly::StringPiece spaceName,
+        folly::StringPiece typeName,
+        int32_t ver = -1) override;
+    // Returns a negative number when the schema does not exist
+    int32_t getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
+
+    int32_t getNewestEdgeSchemaVer(folly::StringPiece spaceName,
+                                   folly::StringPiece typeName) override;
+
+    virtual GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName);
+
+    TagID toTagID(folly::StringPiece tagName) override;
+
+    EdgeType toEdgeType(folly::StringPiece typeName) override;
+
+    void init() override {}
 
 protected:
-    int32_t ver_{0};
-
-    // fieldname -> index
-    std::unordered_map<std::string, int64_t> fieldNameIndex_;
-    std::vector<std::shared_ptr<SchemaField>>  fields_;
-
-protected:
-    static folly::RWSpinLock tagLock_;
-    static std::unordered_map<std::pair<GraphSpaceID, TagID>,
-                              // version -> schema
-                              std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>
+    folly::RWSpinLock tagLock_;
+    std::unordered_map<std::pair<GraphSpaceID, TagID>,
+                       // version -> schema
+                       std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>
         tagSchemas_;
 
-    static folly::RWSpinLock edgeLock_;
-    static std::unordered_map<std::pair<GraphSpaceID, EdgeType>,
-                              // version -> schema
-                              std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>
+    folly::RWSpinLock edgeLock_;
+    std::unordered_map<std::pair<GraphSpaceID, EdgeType>,
+                       // version -> schema
+                       std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>
         edgeSchemas_;
 };
 
