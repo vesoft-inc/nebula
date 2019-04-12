@@ -12,7 +12,7 @@
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "meta/AdHocSchemaManager.h"
+#include "meta/SchemaManager.h"
 
 
 DECLARE_string(part_man_type);
@@ -44,6 +44,17 @@ public:
         return kv;
     }
 
+    static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
+        auto* schemaMan = new meta::AdHocSchemaManager();
+        schemaMan->addEdgeSchema(
+            spaceId /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
+        for (auto tagId = 3001; tagId < 3010; tagId++) {
+            schemaMan->addTagSchema(
+                spaceId /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
+        }
+        std::unique_ptr<meta::SchemaManager> sm(schemaMan);
+        return sm;
+    }
 
     static std::vector<cpp2::Vertex> setupVertices(
             const PartitionID partitionID,
@@ -171,13 +182,11 @@ public:
             kvstore::NebulaStore* kvPtr = static_cast<kvstore::NebulaStore*>(
                                         kvstore::KVStore::instance(std::move(options)));
              std::unique_ptr<kvstore::KVStore> kv(kvPtr);
-             meta::AdHocSchemaManager::addEdgeSchema(
-                1 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
-             for (auto tagId = 3001; tagId < 3010; tagId++) {
-                meta::AdHocSchemaManager::addTagSchema(
-                    1 /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
-             }
-             auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(kv.get());
+             auto schemaMan = TestUtils::mockSchemaMan(1);
+             auto handler
+                    = std::make_shared<nebula::storage::StorageServiceHandler>(
+                                                                            kv.get(),
+                                                                            std::move(schemaMan));
              CHECK(!!sc->server_) << "Failed to create the thrift server";
              sc->server_->setInterface(handler);
              sc->server_->setPort(port);
