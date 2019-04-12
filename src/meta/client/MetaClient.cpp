@@ -185,6 +185,7 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
 
 StatusOr<GraphSpaceID>
 MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceIndexByName_.find(name);
     if (it != spaceIndexByName_.end()) {
         return it->second;
