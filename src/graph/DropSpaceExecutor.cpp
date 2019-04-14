@@ -26,6 +26,11 @@ void DropSpaceExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(resp.status());
+            return;
+        }
         auto  ret = resp.value();
         if (!ret) {
             DCHECK(onError_);

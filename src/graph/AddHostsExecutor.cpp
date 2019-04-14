@@ -16,23 +16,28 @@ AddHostsExecutor::AddHostsExecutor(Sentence *sentence,
 
 
 Status AddHostsExecutor::prepare() {
-    host_ = sentence_->hosts();
-    if (host_.size() == 0) {
-        return Status::Error("Add hosts Sentence host address illegal");
+    hosts_ = sentence_->hosts();
+    if (hosts_.size() == 0) {
+        return Status::Error("Host address illegal");
     }
     return Status::OK();
 }
 
 
 void AddHostsExecutor::execute() {
-    auto future = ectx()->getMetaClient()->addHosts(host_);
+    auto future = ectx()->getMetaClient()->addHosts(hosts_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(resp.status());
+            return;
+        }
         auto ret = resp.value();
         if (!ret) {
             DCHECK(onError_);
-            onError_(Status::Error("add hosts failed"));
+            onError_(Status::Error("Add hosts failed"));
             return;
         }
         DCHECK(onFinish_);

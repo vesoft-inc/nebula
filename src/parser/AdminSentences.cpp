@@ -14,9 +14,9 @@ std::string ShowSentence::toString() const {
             return std::string("SHOW HOSTS");
         case ShowType::kUnknown:
         default:
-            LOG(ERROR) << "Show Sentence type illegal.";
-            return std::string("");
+            FLOG_FATAL("Type illegal");
     }
+    return "Unknown";
 }
 
 
@@ -59,8 +59,9 @@ std::string SpaceOptItem::toString() const {
         case REPLICA_FACTOR:
             return folly::stringPrintf("replica_factor = %ld", boost::get<int64_t>(optValue_));
         default:
-            return std::string("");
+             FLOG_FATAL("Space parameter illegal");
     }
+    return "Unknown";
 }
 
 

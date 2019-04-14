@@ -18,7 +18,7 @@ RemoveHostsExecutor::RemoveHostsExecutor(Sentence *sentence,
 Status RemoveHostsExecutor::prepare() {
     host_ = sentence_->hosts();
     if (host_.size() == 0) {
-        return Status::Error("Remove hosts Sentence host address illegal");
+        return Status::Error("Host address illegal");
     }
     return Status::OK();
 }
@@ -29,10 +29,15 @@ void RemoveHostsExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(resp.status());
+            return;
+        }
         auto ret = resp.value();
         if (!ret) {
             DCHECK(onError_);
-            onError_(Status::Error("remove hosts failed"));
+            onError_(Status::Error("Remove hosts failed"));
             return;
         }
         DCHECK(onFinish_);

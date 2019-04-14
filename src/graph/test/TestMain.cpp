@@ -10,13 +10,12 @@
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
 
-DECLARE_string(meta_server_addrs);
-
 using nebula::graph::TestEnv;
 using nebula::graph::gEnv;
-DECLARE_string(meta_server_addrs);
 using nebula::meta::TestUtils;
 using nebula::fs::TempDir;
+
+DECLARE_string(meta_server_addrs);
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
@@ -26,6 +25,7 @@ int main(int argc, char **argv) {
     gEnv = new TestEnv();   // gtest will delete this env object for us
     ::testing::AddGlobalTestEnvironment(gEnv);
 
+    // TODO(YT) use an ephemeral port
     int32_t localMetaPort = 10001;
     FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", localMetaPort);
 

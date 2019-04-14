@@ -27,24 +27,24 @@ void ShowExecutor::execute() {
     auto showType = sentence_->showType();
     switch (showType) {
         case ShowSentence::ShowType::kShowHosts:
-            showHostsExecute();
+            showHosts();
             break;
         case ShowSentence::ShowType::kUnknown:
-            onError_(Status::Error("Show Sentence type unknown"));
+            onError_(Status::Error("Type unknown"));
             break;
         // intentionally no `default'
     }
 }
 
 
-void ShowExecutor::showHostsExecute() {
+void ShowExecutor::showHosts() {
     auto future = ectx()->getMetaClient()->listHosts();
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(Status::Error("remove hosts failed"));
+            onError_(resp.status());
             return;
         }
 

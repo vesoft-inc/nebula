@@ -33,7 +33,7 @@ void ExecutionEngine::execute(RequestContextPtr rctx) {
                                                    schemaManager_.get(),
                                                    storage_.get(),
                                                    metaClient_.get());
-    // TODO(dutor) add support to execution plan
+    // TODO(dutor) add support to plan cache
     auto plan = new ExecutionPlan(std::move(ectx));
 
     plan->execute();

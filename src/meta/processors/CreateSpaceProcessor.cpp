@@ -31,7 +31,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto replicaFactor = req.get_replica_factor();
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaUtils::indexKey(EntryType::SPACE, req.get_space_name()),
-                     std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
+                      std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
     data.emplace_back(MetaUtils::spaceKey(spaceId),
                       MetaUtils::spaceVal(req.get_parts_num(),
                                           replicaFactor,

@@ -24,12 +24,12 @@ public:
     Status MUST_USE_RESULT prepare() override;
 
     void execute() override;
-    void showHostsExecute();
+    void showHosts();
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-    ShowSentence            *sentence_{nullptr};
+    ShowSentence                             *sentence_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>  resp_;
 };
 

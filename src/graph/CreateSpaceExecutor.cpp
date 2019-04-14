@@ -27,10 +27,12 @@ Status CreateSpaceExecutor::prepare() {
                 break;
         }
     }
-    if (partNum_ == 0)
-        return Status::Error("partition_num value illegal");
-    if (replicaFactor_ == 0)
-        return Status::Error("replica_factor value illegal");
+    if (partNum_ == 0) {
+        return Status::Error("Partition_num value illegal");
+    }
+    if (replicaFactor_ == 0) {
+        return Status::Error("Replica_factor value illegal");
+    }
     return Status::OK();
 }
 
@@ -40,6 +42,11 @@ void CreateSpaceExecutor::execute() {
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(resp.status());
+            return;
+        }
         auto spaceId = resp.value();
         if (spaceId <= 0) {
             DCHECK(onError_);

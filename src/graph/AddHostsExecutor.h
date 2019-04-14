@@ -27,7 +27,7 @@ public:
 
 private:
     AddHostsSentence        *sentence_{nullptr};
-    std::vector<HostAddr>    host_;
+    std::vector<HostAddr>    hosts_;
 };
 
 }   // namespace graph
