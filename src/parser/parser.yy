@@ -132,7 +132,8 @@ class GraphScanner;
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
 %type <sentence> maintainance_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence drop_space_sentence
+%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence 
+%type <sentence> drop_space_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -799,21 +800,22 @@ host_list
 create_space_sentence
     : KW_CREATE KW_SPACE LABEL L_PAREN space_opt_list R_PAREN {
         auto sentence = new CreateSpaceSentence($3);
-	    sentence->setOpts($5);
-	    $$ = sentence;
+        sentence->setOpts($5);
+        $$ = sentence;
     }
     ;
+
 space_opt_list
     : space_opt_item {
         $$ = new SpaceOptList();
-	    $$->addOpt($1);
+        $$->addOpt($1);
     }
     | space_opt_list COMMA space_opt_item {
-	    $$ = $1;
-	    $$->addOpt($3);
+        $$ = $1;
+        $$->addOpt($3);
     }
     | space_opt_list COMMA {
-	    $$ = $1;
+        $$ = $1;
     }
     ;
 
@@ -822,7 +824,7 @@ space_opt_list
         $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3); 
     }
     | KW_REPLICA_FACTOR ASSIGN INTEGER {
-	    $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
+        $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
     }
     // TODO(YT) Create Spaces for different engines 
     // KW_ENGINE_TYPE ASSIGN LABEL
