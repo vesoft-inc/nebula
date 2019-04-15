@@ -212,6 +212,7 @@ protected:
         kUnknown = 0,
 
         kPrimary,
+        kFunctionCall,
         kUnary,
         kTypeCasting,
         kArithmetic,
@@ -251,6 +252,7 @@ private:
     // to allow them to call private encode/decode on each other.
     friend class PrimaryExpression;
     friend class UnaryExpression;
+    friend class FunctionCallExpression;
     friend class TypeCastingExpression;
     friend class ArithmeticExpression;
     friend class RelationalExpression;
@@ -600,6 +602,61 @@ private:
 
 private:
     Operand                                     operand_;
+};
+
+
+class ArgumentList final {
+public:
+    void addArgument(Expression *arg) {
+        args_.emplace_back(arg);
+    }
+
+    auto args() {
+        return std::move(args_);
+    }
+
+private:
+    std::vector<std::unique_ptr<Expression>>    args_;
+};
+
+
+class FunctionCallExpression final : public Expression {
+public:
+    FunctionCallExpression() {
+        kind_ = kFunctionCall;
+    }
+
+    FunctionCallExpression(std::string *name, ArgumentList *args) {
+        kind_ = kFunctionCall;
+        name_.reset(name);
+        if (args != nullptr) {
+            args_ = args->args();
+            delete args;
+        }
+    }
+
+    std::string toString() const override;
+
+    VariantType eval() const override;
+
+    Status MUST_USE_RESULT prepare() override;
+
+    void setContext(ExpressionContext *ctx) {
+        context_ = ctx;
+        for (auto &arg : args_) {
+            arg->setContext(ctx);
+        }
+    }
+
+private:
+    void encode(Cord &cord) const override;
+
+    const char* decode(const char *pos, const char *end) override;
+
+private:
+    std::unique_ptr<std::string>                name_;
+    std::vector<std::unique_ptr<Expression>>    args_;
+    std::function<VariantType(const std::vector<VariantType>&)> function_;
 };
 
 
