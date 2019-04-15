@@ -134,7 +134,7 @@ protected:
      /**
      * General multi remove function.
      **/
-     void doRemoves(std::vector<std::string> keys);
+     void doMultiRemove(std::vector<std::string> keys);
 
     /**
      * Get all hosts

@@ -24,7 +24,7 @@ void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     LOG(INFO) << "Remove Tag " << req.get_tag_name();
-    doRemoves(std::move(ret.value()));
+    doMultiRemove(std::move(ret.value()));
 }
 
 StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID id,

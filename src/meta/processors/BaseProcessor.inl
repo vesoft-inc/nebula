@@ -58,7 +58,7 @@ void BaseProcessor<RESP>::doRemove(const std::string& key) {
 }
 
 template<typename RESP>
-void BaseProcessor<RESP>::doRemoves(std::vector<std::string> keys) {
+void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
     kvstore_->asyncMultiRemove(kDefaultSpaceId_, kDefaultPartId_, std::move(keys),
                             [this] (kvstore::ResultCode code, HostAddr leader) {
         UNUSED(leader);
