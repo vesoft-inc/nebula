@@ -246,8 +246,8 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey,
 ResultCode RocksEngine::compact(const std::string& startKey,
                                 const std::string& endKey) {
     rocksdb::CompactRangeOptions options;
-    auto start = rocksdb::Slice(std::move(startKey));
-    auto end = rocksdb::Slice(std::move(endKey));
+    auto start = rocksdb::Slice(startKey);
+    auto end = rocksdb::Slice(endKey);
     rocksdb::Status status = db_->CompactRange(options, &start, &end);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;

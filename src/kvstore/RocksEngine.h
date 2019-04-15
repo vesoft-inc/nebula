@@ -135,8 +135,8 @@ public:
     ResultCode setDBOption(const std::string& configKey,
                            const std::string& configValue) override;
 
-    ResultCode compact(const std::string& startKey = nullptr,
-                       const std::string& endKey = nullptr) override;
+    ResultCode compact(const std::string& startKey,
+                       const std::string& endKey) override;
 
 private:
     std::string partKey(PartitionID partId);

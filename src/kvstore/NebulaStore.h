@@ -99,17 +99,17 @@ public:
                       const std::vector<std::string>& files);
 
     ResultCode setOption(GraphSpaceID spaceId,
-                         const std::string& config_key,
-                         const std::string& config_value);
+                         const std::string& configKey,
+                         const std::string& configValue);
 
     ResultCode setDBOption(GraphSpaceID spaceId,
-                           const std::string& config_key,
-                           const std::string& config_value);
+                           const std::string& configKey,
+                           const std::string& configValue);
 
     ResultCode compact(GraphSpaceID spaceId,
                        PartitionID partId,
-                       const std::string& start = nullptr,
-                       const std::string& end = nullptr);
+                       const std::string& start,
+                       const std::string& end);
 
 private:
     /**
