@@ -245,6 +245,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("123.", TokenType::DOUBLE, 123.),
         CHECK_SEMANTIC_VALUE(".123", TokenType::DOUBLE, 0.123),
         CHECK_SEMANTIC_VALUE("123.456", TokenType::DOUBLE, 123.456),
+        CHECK_SEMANTIC_VALUE("+123.456", TokenType::DOUBLE, 123.456),
+        CHECK_SEMANTIC_VALUE("-123.456", TokenType::DOUBLE, -123.456),
 
         CHECK_SEMANTIC_VALUE("\"Hello\"", TokenType::STRING, "Hello"),
         CHECK_SEMANTIC_VALUE("\"Hello\\\\\"", TokenType::STRING, "Hello\\"),
