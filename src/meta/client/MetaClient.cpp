@@ -106,15 +106,19 @@ folly::Future<StatusOr<Response>> MetaClient::getResponse(
     auto client = clientsMan_->client(active_, evb);
     remoteFunc(client, std::move(req))
          .then(evb, [p = std::move(pro), respGen, this] (folly::Try<RpcResponse>&& t) mutable {
+        // exception occurred during RPC
         if (t.hasException()) {
-            LOG(ERROR) << "Rpc failed!";
-        } else {
-            auto&& resp = t.value();
-            if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
-                p.setValue(this->handleResponse(resp));
-            }
-            p.setValue(respGen(std::move(resp)));
+            p.setValue(Status::Error("RPC in MetaClient: %s", t.exception().what()));
+            return;
         }
+        // errored
+        auto&& resp = t.value();
+        if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
+            p.setValue(this->handleResponse(resp));
+            return;
+        }
+        // succeeded
+        p.setValue(respGen(std::move(resp)));
     });
     return f;
 }

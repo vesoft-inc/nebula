@@ -27,7 +27,8 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
     if (iter && iter->valid()) {
         RowWriter writer(rsWriter.schema());
         PropsCollector collector(&writer);
-        auto reader = RowReader::getEdgePropReader(iter->val(),
+        auto reader = RowReader::getEdgePropReader(schemaMan_,
+                                                   iter->val(),
                                                    spaceId_,
                                                    edgeKey.edge_type);
         this->collectProps(reader.get(), iter->key(), props, &collector);

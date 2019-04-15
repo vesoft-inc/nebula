@@ -18,14 +18,17 @@ class QueryBoundProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse> {
 public:
     static QueryBoundProcessor* instance(kvstore::KVStore* kvstore,
+                                         meta::SchemaManager* schemaMan,
                                          BoundType type = BoundType::OUT_BOUND) {
-        return new QueryBoundProcessor(kvstore, type);
+        return new QueryBoundProcessor(kvstore, schemaMan, type);
     }
 
 protected:
-    explicit QueryBoundProcessor(kvstore::KVStore* kvstore, BoundType type)
+    explicit QueryBoundProcessor(kvstore::KVStore* kvstore,
+                                 meta::SchemaManager* schemaMan,
+                                 BoundType type)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryResponse>(kvstore, type) {}
+                             cpp2::QueryResponse>(kvstore, schemaMan, type) {}
 
     kvstore::ResultCode processVertex(PartitionID partID,
                                       VertexID vId,

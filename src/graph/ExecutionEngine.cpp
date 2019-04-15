@@ -14,7 +14,7 @@ namespace nebula {
 namespace graph {
 
 ExecutionEngine::ExecutionEngine(std::unique_ptr<storage::StorageClient> storage) {
-    schemaManager_ = std::make_unique<SchemaManager>();
+    schemaManager_ = meta::SchemaManager::create();
     storage_ = std::move(storage);
 }
 

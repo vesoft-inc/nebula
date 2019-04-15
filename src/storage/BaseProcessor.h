@@ -18,6 +18,7 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 #include "storage/Collector.h"
+#include "meta/SchemaManager.h"
 #include "time/Duration.h"
 
 namespace nebula {
@@ -26,8 +27,9 @@ namespace storage {
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(kvstore::KVStore* kvstore)
-            : kvstore_(kvstore) {}
+    explicit BaseProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
+            : kvstore_(kvstore)
+            , schemaMan_(schemaMan) {}
 
     virtual ~BaseProcessor() = default;
 
@@ -69,15 +71,16 @@ protected:
     }
 
 protected:
-    kvstore::KVStore* kvstore_ = nullptr;
-    RESP resp_;
-    folly::Promise<RESP> promise_;
-    cpp2::ResponseCommon result_;
+    kvstore::KVStore*       kvstore_ = nullptr;
+    meta::SchemaManager*    schemaMan_ = nullptr;
+    RESP                    resp_;
+    folly::Promise<RESP>    promise_;
+    cpp2::ResponseCommon    result_;
 
-    time::Duration duration_;
+    time::Duration          duration_;
     std::vector<cpp2::ResultCode> codes_;
-    folly::SpinLock lock_;
-    int32_t callingNum_;
+    folly::SpinLock         lock_;
+    int32_t                 callingNum_ = 0;
 };
 
 }  // namespace storage

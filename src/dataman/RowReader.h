@@ -12,6 +12,7 @@
 #include "gen-cpp2/graph_types.h"
 #include "dataman/DataCommon.h"
 #include "meta/SchemaProviderIf.h"
+#include "meta/SchemaManager.h"
 
 namespace nebula {
 
@@ -71,13 +72,17 @@ public:
 
 public:
     static std::unique_ptr<RowReader> getTagPropReader(
+        meta::SchemaManager* schemaMan,
         folly::StringPiece row,
         GraphSpaceID space,
         TagID tag);
+
     static std::unique_ptr<RowReader> getEdgePropReader(
+        meta::SchemaManager* schemaMan,
         folly::StringPiece row,
         GraphSpaceID space,
         EdgeType edge);
+
     static std::unique_ptr<RowReader> getRowReader(
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema);

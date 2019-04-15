@@ -14,6 +14,7 @@
 #include "process/ProcessUtils.h"
 #include "storage/test/TestUtils.h"
 #include "webservice/WebService.h"
+#include "meta/SchemaManager.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
@@ -92,6 +93,7 @@ int main(int argc, char *argv[]) {
         = std::make_unique<nebula::kvstore::MetaServerBasedPartManager>(options.local_);
     std::unique_ptr<nebula::kvstore::KVStore> kvstore(
             nebula::kvstore::KVStore::instance(std::move(options)));
+    auto schemaMan = nebula::meta::SchemaManager::create();
 
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/storage", [] {
@@ -104,7 +106,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get());
+    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), std::move(schemaMan));
     gServer = std::make_unique<apache::thrift::ThriftServer>();
     CHECK(!!gServer) << "Failed to create the thrift server";
 

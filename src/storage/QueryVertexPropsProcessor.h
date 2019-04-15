@@ -15,15 +15,16 @@ namespace storage {
 
 class QueryVertexPropsProcessor : public QueryBoundProcessor {
 public:
-    static QueryVertexPropsProcessor* instance(kvstore::KVStore* kvstore) {
-        return new QueryVertexPropsProcessor(kvstore);
+    static QueryVertexPropsProcessor* instance(kvstore::KVStore* kvstore,
+                                               meta::SchemaManager* schemaMan) {
+        return new QueryVertexPropsProcessor(kvstore, schemaMan);
     }
 
     void process(const cpp2::VertexPropRequest& req);
 
 private:
-    explicit QueryVertexPropsProcessor(kvstore::KVStore* kvstore)
-        : QueryBoundProcessor(kvstore, BoundType::OUT_BOUND) {}
+    explicit QueryVertexPropsProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
+        : QueryBoundProcessor(kvstore, schemaMan, BoundType::OUT_BOUND) {}
 };
 
 }  // namespace storage

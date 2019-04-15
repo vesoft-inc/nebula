@@ -40,8 +40,10 @@ public:
     void process(const cpp2::GetNeighborsRequest& req);
 
 protected:
-    explicit QueryBaseProcessor(kvstore::KVStore* kvstore, BoundType type = BoundType::OUT_BOUND)
-        : BaseProcessor<RESP>(kvstore)
+    explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
+                                meta::SchemaManager* schemaMan,
+                                BoundType type = BoundType::OUT_BOUND)
+        : BaseProcessor<RESP>(kvstore, schemaMan)
         , type_(type) {}
     /**
      * Check whether current operation on the data is valid or not.
