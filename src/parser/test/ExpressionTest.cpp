@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 #include "parser/GQLParser.h"
 #include "parser/SequentialSentences.h"
+#include "parser/FunctionManager.h"
 
 namespace nebula {
 
@@ -491,6 +492,84 @@ TEST_F(ExpressionTest, EdgeReference) {
         ASSERT_TRUE(Expression::isBool(value));
         ASSERT_FALSE(Expression::asBool(value));
     }
+}
+
+
+TEST_F(ExpressionTest, FunctionCall) {
+    GQLParser parser;
+#define TEST_EXPR(expected, op, expr_arg, type)                         \
+    do {                                                                \
+        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg;   \
+        auto parsed = parser.parse(query);                              \
+        ASSERT_TRUE(parsed.ok()) << parsed.status();                    \
+        auto *expr = getFilterExpr(parsed.value().get());               \
+        ASSERT_NE(nullptr, expr);                                       \
+        auto decoded = Expression::decode(Expression::encode(expr));    \
+        ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
+        auto ctx = std::make_unique<ExpressionContext>();               \
+        decoded.value()->setContext(ctx.get());                         \
+        auto status = decoded.value()->prepare();                       \
+        ASSERT_TRUE(status.ok()) << status;                             \
+        auto value = decoded.value()->eval();                           \
+        ASSERT_TRUE(Expression::is##type(value));                       \
+        if (#type == std::string("Double")) {                           \
+            if (#op != std::string("EQ")) {                             \
+                ASSERT_##op(expected, Expression::as##type(value));     \
+            } else {                                                    \
+                ASSERT_DOUBLE_EQ(expected, Expression::as##type(value));\
+            }                                                           \
+        } else {                                                        \
+            ASSERT_##op(expected, Expression::as##type(value));         \
+        }                                                               \
+    } while (false)
+
+    TEST_EXPR(5.0, EQ, abs(5), Double);
+    TEST_EXPR(5.0, EQ, abs(-5), Double);
+
+    TEST_EXPR(3.0, EQ, floor(3.14), Double);
+    TEST_EXPR(-4.0, EQ, floor(-3.14), Double);
+
+    TEST_EXPR(4.0, EQ, ceil(3.14), Double);
+    TEST_EXPR(-3.0, EQ, ceil(-3.14), Double);
+
+    TEST_EXPR(3.0, EQ, round(3.14), Double);
+    TEST_EXPR(-3.0, EQ, round(-3.14), Double);
+    TEST_EXPR(4.0, EQ, round(3.5), Double);
+    TEST_EXPR(-4.0, EQ, round(-3.5), Double);
+
+    TEST_EXPR(3.0, EQ, cbrt(27), Double);
+
+    constexpr auto euler = 2.7182818284590451;
+    TEST_EXPR(euler, EQ, exp(1), Double);
+    TEST_EXPR(1024, EQ, exp2(10), Double);
+
+    TEST_EXPR(2, EQ, log(pow(2.7182818284590451, 2)), Double);
+    TEST_EXPR(10, EQ, log2(1024), Double);
+    TEST_EXPR(3, EQ, log10(1000), Double);
+
+    TEST_EXPR(5.0, EQ, hypot(3, 4), Double);
+    TEST_EXPR(5.0, EQ, sqrt(pow(3, 2) + pow(4, 2)), Double);
+
+    TEST_EXPR(1.0, EQ, hypot(sin(0.5), cos(0.5)), Double);
+    TEST_EXPR(1.0, EQ, (sin(0.5) / cos(0.5)) / tan(0.5), Double);
+
+    TEST_EXPR(0.3, EQ, sin(asin(0.3)), Double);
+    TEST_EXPR(0.3, EQ, cos(acos(0.3)), Double);
+    TEST_EXPR(0.3, EQ, tan(atan(0.3)), Double);
+
+    TEST_EXPR(1024, GT, rand32(1024), Int);
+    TEST_EXPR(0, LE, rand32(1024), Int);
+    TEST_EXPR(4096, GT, rand64(1024, 4096), Int);
+    TEST_EXPR(1024, LE, rand64(1024, 4096), Int);
+
+    TEST_EXPR(1554716753, LT, now(), Int);
+    TEST_EXPR(4773548753, GE, now(), Int);  // failed 102 years later
+
+    TEST_EXPR(0, EQ, strcasecmp("HelLo", "hello"), Int);
+    TEST_EXPR(0, LT, strcasecmp("HelLo", "hell"), Int);
+    TEST_EXPR(0, GT, strcasecmp("HelLo", "World"), Int);
+
+#undef TEST_EXPR
 }
 
 }   // namespace nebula
