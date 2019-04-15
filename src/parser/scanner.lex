@@ -184,8 +184,8 @@ OCT                         ([0-7])
                                 return TokenType::INTEGER;
                             }
 [+-]?{DEC}+                 { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
-{DEC}+\.{DEC}*              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
-{DEC}*\.{DEC}+              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+[+-]?{DEC}+\.{DEC}*         { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+[+-]?{DEC}*\.{DEC}+         { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
 
 \${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 
