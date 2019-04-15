@@ -69,7 +69,7 @@ struct ResponseCommon {
     // Only contains the partition that returns error
     1: required list<ResultCode> failed_codes,
     // Query latency from storage service
-    2: required i32 latency_in_ms,
+    2: required i32 latency_in_us,
 }
 
 struct QueryResponse {

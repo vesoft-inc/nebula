@@ -21,10 +21,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     LOG(INFO) << "Prepare meta...";
-    for (auto tagId = 3001; tagId < 3010; tagId++) {
-        meta::AdHocSchemaManager::addTagSchema(
-            0, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
-    }
+    auto schemaMan = TestUtils::mockSchemaMan();
 
     LOG(INFO) << "Prepare data...";
     for (auto partId = 0; partId < 3; partId++) {
@@ -76,7 +73,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     req.set_return_columns(std::move(tmpColumns));
 
     LOG(INFO) << "Test QueryVertexPropsRequest...";
-    auto* processor = QueryVertexPropsProcessor::instance(kv.get());
+    auto* processor = QueryVertexPropsProcessor::instance(kv.get(), schemaMan.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

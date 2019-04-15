@@ -9,6 +9,7 @@
 #include "meta/processors/ListHostsProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
+#include "meta/processors/RemoveTagProcessor.h"
 #include "meta/processors/AddTagProcessor.h"
 #include "meta/processors/AddEdgeProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
@@ -56,6 +57,12 @@ MetaServiceHandler::future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) {
 folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_addTag(const cpp2::AddTagReq& req) {
     auto* processor = AddTagProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_removeTag(const cpp2::RemoveTagReq& req) {
+    auto* processor = RemoveTagProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

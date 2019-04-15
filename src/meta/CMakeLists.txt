@@ -3,7 +3,7 @@ add_library(
     SchemaManager.cpp
     FileBasedSchemaManager.cpp
     ServerBasedSchemaManager.cpp
-    AdHocSchemaManager.cpp
+    NebulaSchemaProvider.cpp
 )
 add_dependencies(schema_obj base_obj)
 
@@ -21,6 +21,7 @@ add_library(
     processors/AddTagProcessor.cpp
     processors/GetTagProcessor.cpp
     processors/ListTagsProcessor.cpp
+    processors/RemoveTagProcessor.cpp
 )
 
 add_dependencies(

@@ -21,6 +21,12 @@ void SimplePart::asyncRemove(const std::string& key, KVCallback cb) {
     cb(ret, HostAddr(0, 0));
 }
 
+void SimplePart::asyncMultiRemove(std::vector<std::string> keys, KVCallback cb) {
+    CHECK_NOTNULL(engine_);
+    auto ret = engine_->multiRemove(std::move(keys));
+    cb(ret, HostAddr(0, 0));
+}
+
 void SimplePart::asyncRemoveRange(const std::string& start,
                                   const std::string& end,
                                   KVCallback cb) {

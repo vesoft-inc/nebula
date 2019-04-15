@@ -59,6 +59,12 @@ class GraphScanner;
     nebula::EdgeList                       *edge_list;
     nebula::ArgumentList                   *argument_list;
 }
+
+/* destructors */
+%destructor {} <sentences>
+%destructor {} <boolval> <intval> <doubleval> <type>
+%destructor { delete $$; } <*>
+
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_DEFINE KW_VERTEX KW_TTL
@@ -231,7 +237,7 @@ argument_list
     ;
 
 unary_expression
-    : primary_expression {}
+    : primary_expression { $$ = $1; }
     | ADD primary_expression {
         $$ = new UnaryExpression(UnaryExpression::PLUS, $2);
     }
@@ -256,7 +262,7 @@ type_spec
     ;
 
 multiplicative_expression
-    : unary_expression {}
+    : unary_expression { $$ = $1; }
     | multiplicative_expression MUL unary_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::MUL, $3);
     }
@@ -269,7 +275,7 @@ multiplicative_expression
     ;
 
 additive_expression
-    : multiplicative_expression {}
+    : multiplicative_expression { $$ = $1; }
     | additive_expression ADD multiplicative_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::ADD, $3);
     }
@@ -279,7 +285,7 @@ additive_expression
     ;
 
 relational_expression
-    : additive_expression {}
+    : additive_expression { $$ = $1; }
     | relational_expression LT additive_expression {
         $$ = new RelationalExpression($1, RelationalExpression::LT, $3);
     }
@@ -295,7 +301,7 @@ relational_expression
     ;
 
 equality_expression
-    : relational_expression {}
+    : relational_expression { $$ = $1; }
     | equality_expression EQ relational_expression {
         $$ = new RelationalExpression($1, RelationalExpression::EQ, $3);
     }
@@ -305,21 +311,21 @@ equality_expression
     ;
 
 logic_and_expression
-    : equality_expression {}
+    : equality_expression { $$ = $1; }
     | logic_and_expression AND equality_expression {
         $$ = new LogicalExpression($1, LogicalExpression::AND, $3);
     }
     ;
 
 logic_or_expression
-    : logic_and_expression {}
+    : logic_and_expression { $$ = $1; }
     | logic_or_expression OR logic_and_expression {
         $$ = new LogicalExpression($1, LogicalExpression::OR, $3);
     }
     ;
 
 expression
-    : logic_or_expression { }
+    : logic_or_expression { $$ = $1; }
     ;
 
 go_sentence
@@ -523,13 +529,13 @@ describe_edge_sentence
     ;
 
 traverse_sentence
-    : go_sentence {}
-    | match_sentence {}
-    | find_sentence {}
+    : go_sentence { $$ = $1; }
+    | match_sentence { $$ = $1; }
+    | find_sentence { $$ = $1; }
     ;
 
 set_sentence
-    : traverse_sentence {}
+    : traverse_sentence { $$ = $1; }
     | set_sentence KW_UNION traverse_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
     | set_sentence KW_INTERSECT traverse_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
     | set_sentence KW_MINUS traverse_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
@@ -537,7 +543,7 @@ set_sentence
     ;
 
 piped_sentence
-    : set_sentence {}
+    : set_sentence { $$ = $1; }
     | piped_sentence PIPE set_sentence { $$ = new PipedSentence($1, $3); }
     ;
 
@@ -755,30 +761,30 @@ delete_edge_sentence
     ;
 
 mutate_sentence
-    : insert_vertex_sentence {}
-    | insert_edge_sentence {}
-    | update_vertex_sentence {}
-    | update_edge_sentence {}
-    | delete_vertex_sentence {}
-    | delete_edge_sentence {}
+    : insert_vertex_sentence { $$ = $1; }
+    | insert_edge_sentence { $$ = $1; }
+    | update_vertex_sentence { $$ = $1; }
+    | update_edge_sentence { $$ = $1; }
+    | delete_vertex_sentence { $$ = $1; }
+    | delete_edge_sentence { $$ = $1; }
     ;
 
 maintainance_sentence
-    : define_tag_sentence {}
-    | define_edge_sentence {}
-    | alter_tag_sentence {}
-    | alter_edge_sentence {}
-    | describe_tag_sentence {}
-    | describe_edge_sentence {}
-    | show_sentence {}
+    : define_tag_sentence { $$ = $1; }
+    | define_edge_sentence { $$ = $1; }
+    | alter_tag_sentence { $$ = $1; }
+    | alter_edge_sentence { $$ = $1; }
+    | describe_tag_sentence { $$ = $1; }
+    | describe_edge_sentence { $$ = $1; }
+    | show_sentence { $$ = $1; }
     ;
 
 sentence
-    : maintainance_sentence {}
-    | use_sentence {}
-    | piped_sentence {}
-    | assignment_sentence {}
-    | mutate_sentence {}
+    : maintainance_sentence { $$ = $1; }
+    | use_sentence { $$ = $1; }
+    | piped_sentence { $$ = $1; }
+    | assignment_sentence { $$ = $1; }
+    | mutate_sentence { $$ = $1; }
     ;
 
 sentences

@@ -331,12 +331,12 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         if (resp.get_rows() != nullptr) {
             std::cout << "Got " << resp.get_rows()->size()
                       << " rows (Time spent: "
-                      << resp.get_latency_in_ms() << "/"
-                      << dur.elapsedInMSec() << " ms)\n";
+                      << resp.get_latency_in_us() << "/"
+                      << dur.elapsedInUSec() << " us)\n";
         } else {
             std::cout << "Execution succeeded (Time spent: "
-                      << resp.get_latency_in_ms() << "/"
-                      << dur.elapsedInMSec() << " ms)\n";
+                      << resp.get_latency_in_us() << "/"
+                      << dur.elapsedInUSec() << " us)\n";
         }
     } else if (res == cpp2::ErrorCode::E_SYNTAX_ERROR) {
         static const std::regex range("syntax error at 1.([0-9]+)-([0-9]+)");

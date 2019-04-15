@@ -35,6 +35,8 @@ public:
 
     virtual void asyncRemove(const std::string& key, KVCallback cb) = 0;
 
+    virtual void asyncMultiRemove(std::vector<std::string> keys, KVCallback cb) = 0;
+
     virtual void asyncRemoveRange(const std::string& start,
                                   const std::string& end,
                                   KVCallback cb) = 0;
@@ -58,6 +60,8 @@ public:
     void asyncMultiPut(std::vector<KV> keyValues, KVCallback cb) override;
 
     void asyncRemove(const std::string& key, KVCallback cb) override;
+
+    void asyncMultiRemove(std::vector<std::string> keys, KVCallback cb) override;
 
     void asyncRemoveRange(const std::string& start,
                           const std::string& end,

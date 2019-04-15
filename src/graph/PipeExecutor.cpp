@@ -17,12 +17,17 @@ PipeExecutor::PipeExecutor(Sentence *sentence,
 
 
 Status PipeExecutor::prepare() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+
     left_ = makeTraverseExecutor(sentence_->left());
     right_ = makeTraverseExecutor(sentence_->right());
     DCHECK(left_ != nullptr);
     DCHECK(right_ != nullptr);
 
-    auto status = left_->prepare();
+    status = left_->prepare();
     if (!status.ok()) {
         FLOG_ERROR("Prepare executor `%s' failed: %s",
                     left_->name(), status.toString().c_str());
