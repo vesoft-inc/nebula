@@ -87,8 +87,7 @@ public:
     virtual ResultCode setDBOption(const std::string& configKey,
                                    const std::string& configValue) = 0;
 
-    virtual ResultCode compact(const std::string& startKey,
-                               const std::string& endKey) = 0;
+    virtual ResultCode compactAll() = 0;
 
 protected:
     GraphSpaceID spaceId_;

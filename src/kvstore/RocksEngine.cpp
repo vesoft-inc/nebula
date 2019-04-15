@@ -57,8 +57,10 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else if (status.IsNotFound()) {
+        LOG(ERROR) << "Get: " << key << " Not Found";
         return ResultCode::ERR_KEY_NOT_FOUND;
     }
+    LOG(ERROR) << "Failed Get: " << key << " " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -70,6 +72,7 @@ ResultCode RocksEngine::put(std::string key, std::string value) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
+    LOG(ERROR) << "Failed Put: " << key << ":" << value << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -85,6 +88,7 @@ ResultCode RocksEngine::multiPut(std::vector<KV> keyValues) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
+    LOG(ERROR) << "Failed MultiPut: " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -121,6 +125,7 @@ ResultCode RocksEngine::remove(const std::string& key) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
+    LOG(ERROR) << "Failed Remove: " << key << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -135,6 +140,7 @@ ResultCode RocksEngine::multiRemove(std::vector<std::string> keys) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
+    LOG(ERROR) << "Failed MultiRemove: " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -147,6 +153,7 @@ ResultCode RocksEngine::removeRange(const std::string& start,
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
+    LOG(ERROR) << "Failed RemoveRange: " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -209,6 +216,7 @@ ResultCode RocksEngine::ingest(const std::vector<std::string>& files) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
+        LOG(ERROR) << "Failed Ingest: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }
@@ -224,6 +232,7 @@ ResultCode RocksEngine::setOption(const std::string& configKey,
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
+        LOG(ERROR) << "Failed SetOption: " << configKey << ":" << configValue;
         return ResultCode::ERR_INVALID_ARGUMENT;
     }
 }
@@ -239,19 +248,20 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey,
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
+        LOG(ERROR) << "Failed SetDBOption: " << configKey << ":" << configValue;
         return ResultCode::ERR_INVALID_ARGUMENT;
     }
 }
 
-ResultCode RocksEngine::compact(const std::string& startKey,
-                                const std::string& endKey) {
+ResultCode RocksEngine::compactAll() {
     rocksdb::CompactRangeOptions options;
-    auto start = rocksdb::Slice(startKey);
-    auto end = rocksdb::Slice(endKey);
+    auto start = rocksdb::Slice(nullptr);
+    auto end = rocksdb::Slice(nullptr);
     rocksdb::Status status = db_->CompactRange(options, &start, &end);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
+        LOG(ERROR) << "Failed CompactAll: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }

@@ -106,10 +106,7 @@ public:
                            const std::string& configKey,
                            const std::string& configValue);
 
-    ResultCode compact(GraphSpaceID spaceId,
-                       PartitionID partId,
-                       const std::string& start,
-                       const std::string& end);
+    ResultCode compactAll(GraphSpaceID spaceId);
 
 private:
     /**

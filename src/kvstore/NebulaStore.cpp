@@ -54,12 +54,20 @@ DEFINE_string(part_type, "simple", "simple, consensus...");
     } while (false)
 
 /**
- * check spaceId is exist and return related partitions
+ * Check spaceId is exist and return related partitions.
  */
 #define CHECK_AND_RETURN_SPACE_ENGINES(spaceId) \
     auto it = kvs_.find(spaceId); \
     if (UNLIKELY(it == kvs_.end())) { \
         return ResultCode::ERR_SPACE_NOT_FOUND; \
+    }
+
+/**
+ * Check result and return code when it's unsuccess.
+ * */
+#define CHECK_AND_RETURN_CODE() \
+    if (code != ResultCode::SUCCEEDED) { \
+        return code; \
     }
 
 namespace nebula {
@@ -315,9 +323,7 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
             }
         }
         auto code = engine.first->ingest(std::move(extras));
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
-        }
+        CHECK_AND_RETURN_CODE();
     }
     return ResultCode::SUCCEEDED;
 }
@@ -329,9 +335,7 @@ ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
     CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
     for (auto& engine : it->second->engines_) {
         auto code = engine.first->setOption(configKey, configValue);
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
-        }
+        CHECK_AND_RETURN_CODE();
     }
     return ResultCode::SUCCEEDED;
 }
@@ -343,20 +347,19 @@ ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
     CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
     for (auto& engine : it->second->engines_) {
         auto code = engine.first->setDBOption(configKey, configValue);
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
-        }
+        CHECK_AND_RETURN_CODE();
     }
     return ResultCode::SUCCEEDED;
 }
 
 
-ResultCode NebulaStore::compact(GraphSpaceID spaceId,
-                                PartitionID partId,
-                                const std::string& start,
-                                const std::string& end) {
-    CHECK_AND_RETURN_ENGINE(spaceId, partId);
-    return engine->compact(start, end);
+ResultCode NebulaStore::compactAll(GraphSpaceID spaceId) {
+    CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
+    for (auto& engine : it->second->engines_) {
+        auto code = engine.first->compactAll();
+        CHECK_AND_RETURN_CODE();
+    }
+    return ResultCode::SUCCEEDED;
 }
 
 }  // namespace kvstore
