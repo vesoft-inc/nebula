@@ -116,14 +116,14 @@ StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
 }
 
 template<typename RESP>
-StatusOr<TagID> BaseProcessor<RESP>::getTag(const std::string& tagName) {
-    auto indexKey = MetaUtils::indexKey(EntryType::TAG, tagName);
+StatusOr<int32_t> BaseProcessor<RESP>::getElementId(EntryType type, const std::string& tagName) {
+    auto indexKey = MetaUtils::indexKey(type, tagName);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return Status::Error("No Tag!");
+        return Status:: MetaNotExisted("No Element!");
     }
-    return *reinterpret_cast<const TagID *>(val.c_str());
+    return *reinterpret_cast<const int32_t *>(val.c_str());
 }
 
 template<typename RESP>

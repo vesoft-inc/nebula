@@ -132,7 +132,7 @@ MetaServiceHandler::future_removeTag(const cpp2::RemoveTagReq& req) {
 }
 
 folly::Future<cpp2::GetTagResp>
-MetaServiceHandler::future_getTag(const cpp2::GetTagReq &req) {
+MetaServiceHandler::future_getTag(const cpp2::ReadTagReq &req) {
     auto* processor = GetTagProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }

@@ -118,7 +118,7 @@ struct ListTagsResp {
     3: list<TagItem> tags,
 }
 
-struct GetTagReq {
+struct ReadTagReq {
     1: common.GraphSpaceID space_id,
     2: common.TagID        tag_id,
     3: i64                 version,
@@ -263,7 +263,7 @@ service MetaService {
     ExecResp addTag(1: WriteTagReq req);
     ExecResp alterTag(1: WriteTagReq req);
     ExecResp removeTag(1: RemoveTagReq req);
-    GetTagResp getTag(1: GetTagReq req);
+    GetTagResp getTag(1: ReadTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);
 
     ExecResp addEdge(1: AddEdgeReq req);

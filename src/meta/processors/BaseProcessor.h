@@ -91,6 +91,7 @@ protected:
             return cpp2::ErrorCode::SUCCEEDED;
         case Status::kSpaceNotFound:
         case Status::kHostNotFound:
+        case Status::kMetaNotExisted:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -156,7 +157,7 @@ protected:
      * */
     StatusOr<std::vector<nebula::cpp2::HostAddr>> allHosts();
 
-    StatusOr<TagID> getTag(const std::string& tagName);
+    StatusOr<int32_t> getElementId(EntryType type, const std::string& tagName);
     /**
      * Get one auto-increment Id.
      * */

@@ -388,7 +388,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
 
     // test GetTagProcessor
     {
-        cpp2::GetTagReq req;
+        cpp2::ReadTagReq req;
         req.set_space_id(1);
         req.set_tag_id(0);
         req.set_version(version);
@@ -447,7 +447,7 @@ TEST(ProcessorTest, AlterTagTest) {
     auto version = time::TimeUtils::nowInMSeconds();
     TestUtils::mockTag(kv.get(), 1, version);
     // Avoid the same version number with sleep
-    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    sleep(1);
     nebula::cpp2::Schema schema;
     decltype(schema.columns) cols;
     cols.emplace_back(TestUtils::columnDef(0, SupportedType::INT));

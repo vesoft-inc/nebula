@@ -17,7 +17,7 @@ void AlterTagProcessor::process(const cpp2::WriteTagReq& req) {
         return;
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    auto ret = getTag(req.get_tag_name());
+    auto ret = getElementId(EntryType::TAG, req.get_tag_name());
     if (!ret.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
@@ -27,9 +27,8 @@ void AlterTagProcessor::process(const cpp2::WriteTagReq& req) {
 
     // Check the tag belongs to the space
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto code = kvstore_->range(kDefaultSpaceId_, kDefaultPartId_,
-                                MetaUtils::schemaTagKey(req.get_space_id(), tagId, MIN_VERSION_HEX),
-                                MetaUtils::schemaTagKey(req.get_space_id(), tagId, MAX_VERSION_HEX),
+    auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_,
+                                MetaUtils::schemaTagPrefix(req.get_space_id(), tagId),
                                 &iter);
     if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
         LOG(WARNING) << "Tag could not be found " << req.get_tag_name()
