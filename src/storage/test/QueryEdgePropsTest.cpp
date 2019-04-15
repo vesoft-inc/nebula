@@ -13,12 +13,11 @@
 #include "storage/KeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
-#include "meta/AdHocSchemaManager.h"
 
 namespace nebula {
 namespace storage {
 
-void mockData(kvstore::KVStore* kv, std::shared_ptr<meta::SchemaProviderIf> edgeSchema) {
+void mockData(kvstore::KVStore* kv) {
     for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
         for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
@@ -26,7 +25,7 @@ void mockData(kvstore::KVStore* kv, std::shared_ptr<meta::SchemaProviderIf> edge
             for (auto dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = KeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
-                RowWriter writer(edgeSchema);
+                RowWriter writer(nullptr);
                 for (int64_t numInt = 0; numInt < 10; numInt++) {
                     writer << numInt;
                 }
@@ -121,17 +120,15 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     LOG(INFO) << "Prepare meta...";
-    auto edgeSchema = TestUtils::genEdgeSchemaProvider(10, 10);
-    meta::AdHocSchemaManager::addEdgeSchema(0, 101, edgeSchema);
-
+    auto schemaMan = TestUtils::mockSchemaMan();
     LOG(INFO) << "Prepare data...";
-    mockData(kv.get(), edgeSchema);
+    mockData(kv.get());
     LOG(INFO) << "Build EdgePropRequest...";
     cpp2::EdgePropRequest req;
     buildRequest(req);
 
     LOG(INFO) << "Test QueryEdgePropsRequest...";
-    auto* processor = QueryEdgePropsProcessor::instance(kv.get());
+    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMan.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

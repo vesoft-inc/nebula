@@ -3,7 +3,7 @@ add_library(
     SchemaManager.cpp
     FileBasedSchemaManager.cpp
     ServerBasedSchemaManager.cpp
-    AdHocSchemaManager.cpp
+    NebulaSchemaProvider.cpp
 )
 add_dependencies(schema_obj base_obj)
 

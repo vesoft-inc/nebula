@@ -6,14 +6,16 @@
 
 #include "base/Base.h"
 #include "meta/FileBasedSchemaManager.h"
+#include "meta/NebulaSchemaProvider.h"
 #include <folly/Hash.h>
 
 DEFINE_string(schema_file, "", "The full path of the schema file");
 
+DEFINE_bool(graph_id_from_server, false, "get graphID from meta server."
+                                         "This is a temp flag");
 namespace nebula {
 namespace meta {
 
-// static
 void FileBasedSchemaManager::init() {
     DCHECK(!FLAGS_schema_file.empty()) << "Schema file is required";
 
@@ -21,30 +23,28 @@ void FileBasedSchemaManager::init() {
     auto status = conf.parseFromFile(FLAGS_schema_file);
     CHECK(status.ok()) << status;
 
-    CHECK(conf.forEachKey([&conf](const std::string& name) {
-        auto space = toGraphSpaceID(name);
+    CHECK(conf.forEachKey([&conf, this] (const std::string& name) {
+        auto space = this->toGraphSpaceID(name);
         Configuration spaceConf;
         CHECK(conf.fetchAsSubConf(name.c_str(), spaceConf).ok());
-        readOneGraphSpace(space, spaceConf);
+        this->readOneGraphSpace(space, spaceConf);
     }).ok());
 }
 
-
-// static
 void FileBasedSchemaManager::readOneGraphSpace(GraphSpaceID space, const Configuration& conf) {
     Configuration edgeConf;
     if (conf.fetchAsSubConf("edges", edgeConf).ok()) {
-        CHECK(edgeConf.forEachItem([space] (const std::string& name,
-                                             const folly::dynamic& versions) {
+        CHECK(edgeConf.forEachItem([space, this] (const std::string& name,
+                                                  const folly::dynamic& versions) {
             CHECK(versions.isArray());
-            auto type = toEdgeType(name);
+            auto type = this->toEdgeType(name);
             for (auto& edge : versions) {
-                auto schema = readSchema(edge);
+                auto schema = this->readSchema(edge);
                 if (!schema) {
                     // Failed to read the schema
                     LOG(ERROR) << "Failed to read the edge schema " << edge;
                 } else {
-                    edgeSchemas_[std::make_pair(space, type)][schema->getVersion()] = schema;
+                    this->edgeSchemas_[std::make_pair(space, type)][schema->getVersion()] = schema;
                 }
             }
         }).ok());
@@ -52,30 +52,28 @@ void FileBasedSchemaManager::readOneGraphSpace(GraphSpaceID space, const Configu
 
     Configuration tagConf;
     if (conf.fetchAsSubConf("tags", tagConf).ok()) {
-        CHECK(tagConf.forEachItem([space] (const std::string& name,
-                                            const folly::dynamic& versions) {
+        CHECK(tagConf.forEachItem([space, this] (const std::string& name,
+                                                 const folly::dynamic& versions) {
             CHECK(versions.isArray());
-            auto id = toTagID(name);
+            auto id = this->toTagID(name);
             for (auto& tag : versions) {
-                auto schema = readSchema(tag);
+                auto schema = this->readSchema(tag);
                 if (!schema) {
                     // Failed to read the schema
                     LOG(ERROR) << "Failed to read the tag schema " << tag;
                 } else {
-                    tagSchemas_[std::make_pair(space, id)][schema->getVersion()] = schema;
+                    this->tagSchemas_[std::make_pair(space, id)][schema->getVersion()] = schema;
                 }
             }
         }).ok());
     }
 }
 
-
-// static
 std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
         const folly::dynamic& fields) {
     CHECK(fields.isArray());
 
-    std::shared_ptr<SchemaManager> schema(new SchemaManager());
+    std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider());
     for (auto& item : fields) {
         CHECK(item.isString());
 
@@ -98,39 +96,39 @@ std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
                 return std::shared_ptr<SchemaProviderIf>();
             }
         } else {
-            cpp2::ValueType vtype;
+            nebula::cpp2::ValueType vtype;
             if (type == "bool") {
-                vtype.set_type(cpp2::SupportedType::BOOL);
+                vtype.set_type(nebula::cpp2::SupportedType::BOOL);
             } else if (type == "integer") {
-                vtype.set_type(cpp2::SupportedType::INT);
+                vtype.set_type(nebula::cpp2::SupportedType::INT);
             } else if (type == "vertexid") {
-                vtype.set_type(cpp2::SupportedType::VID);
+                vtype.set_type(nebula::cpp2::SupportedType::VID);
             } else if (type == "float") {
-                vtype.set_type(cpp2::SupportedType::FLOAT);
+                vtype.set_type(nebula::cpp2::SupportedType::FLOAT);
             } else if (type == "double") {
-                vtype.set_type(cpp2::SupportedType::DOUBLE);
+                vtype.set_type(nebula::cpp2::SupportedType::DOUBLE);
             } else if (type == "string") {
-                vtype.set_type(cpp2::SupportedType::STRING);
+                vtype.set_type(nebula::cpp2::SupportedType::STRING);
             } else if (type == "timestamp") {
-                vtype.set_type(cpp2::SupportedType::TIMESTAMP);
+                vtype.set_type(nebula::cpp2::SupportedType::TIMESTAMP);
             } else if (type == "year") {
-                vtype.set_type(cpp2::SupportedType::YEAR);
+                vtype.set_type(nebula::cpp2::SupportedType::YEAR);
             } else if (type == "yearmonth") {
-                vtype.set_type(cpp2::SupportedType::YEARMONTH);
+                vtype.set_type(nebula::cpp2::SupportedType::YEARMONTH);
             } else if (type == "date") {
-                vtype.set_type(cpp2::SupportedType::DATE);
+                vtype.set_type(nebula::cpp2::SupportedType::DATE);
             } else if (type == "datetime") {
-                vtype.set_type(cpp2::SupportedType::DATETIME);
+                vtype.set_type(nebula::cpp2::SupportedType::DATETIME);
             } else if (type == "path") {
-                vtype.set_type(cpp2::SupportedType::PATH);
+                vtype.set_type(nebula::cpp2::SupportedType::PATH);
             } else {
                 LOG(ERROR) << "Unsupported type: \"" << type << "\"";
                 return std::shared_ptr<SchemaProviderIf>();
             }
 
             schema->fields_.push_back(
-                std::make_shared<SchemaManager::SchemaField>(fname.toString(),
-                                                             std::move(vtype)));
+                std::make_shared<NebulaSchemaProvider::SchemaField>(fname.toString(),
+                                                                    std::move(vtype)));
             schema->fieldNameIndex_.emplace(fname.toString(),
                                             static_cast<int64_t>(schema->fields_.size() - 1));
         }
@@ -139,22 +137,19 @@ std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
     return std::static_pointer_cast<const SchemaProviderIf>(schema);
 }
 
-
-// static
-GraphSpaceID FileBasedSchemaManager::toGraphSpaceID(const folly::StringPiece spaceName) {
-    return folly::hash::fnv32_buf(spaceName.start(), spaceName.size());
-}
-
-
-// static
-TagID FileBasedSchemaManager::toTagID(const folly::StringPiece tagName) {
-    return folly::hash::fnv32_buf(tagName.start(), tagName.size());
-}
-
-
-// static
-EdgeType FileBasedSchemaManager::toEdgeType(const folly::StringPiece typeName) {
-    return folly::hash::fnv32_buf(typeName.start(), typeName.size());
+std::once_flag initFlag;
+GraphSpaceID FileBasedSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
+    if (FLAGS_graph_id_from_server) {
+        std::call_once(initFlag, [this]() {
+            client_ = std::make_unique<MetaClient>();
+            client_->init();
+        });
+        auto spaceStr = spaceName.str();
+        auto ret = client_->getSpaceIdByNameFromCache(spaceStr);
+        CHECK(ret.ok());
+        return ret.value();
+    }
+    return AdHocSchemaManager::toGraphSpaceID(spaceName);
 }
 
 }  // namespace meta

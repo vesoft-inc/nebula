@@ -15,17 +15,18 @@ namespace storage {
 class QueryEdgePropsProcessor
     : public QueryBaseProcessor<cpp2::EdgePropRequest, cpp2::EdgePropResponse> {
 public:
-    static QueryEdgePropsProcessor* instance(kvstore::KVStore* kvstore) {
-        return new QueryEdgePropsProcessor(kvstore);
+    static QueryEdgePropsProcessor* instance(kvstore::KVStore* kvstore,
+                                             meta::SchemaManager* schemaMan) {
+        return new QueryEdgePropsProcessor(kvstore, schemaMan);
     }
 
     // It is one new method for QueryBaseProcessor.process.
     void process(const cpp2::EdgePropRequest& req);
 
 private:
-    explicit QueryEdgePropsProcessor(kvstore::KVStore* kvstore)
+    explicit QueryEdgePropsProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
         : QueryBaseProcessor<cpp2::EdgePropRequest,
-                             cpp2::EdgePropResponse>(kvstore) {}
+                             cpp2::EdgePropResponse>(kvstore, schemaMan) {}
 
     kvstore::ResultCode collectEdgesProps(PartitionID partId,
                                           const cpp2::EdgeKey& edgeKey,
