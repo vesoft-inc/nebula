@@ -36,7 +36,7 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_TRUE(r.ok());
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
-        EXPECT_EQ(hosts, ret.value());
+        ASSERT_EQ(hosts, ret.value());
     }
     {
         // Test createSpace, listSpaces, getPartsAlloc.
@@ -48,9 +48,9 @@ TEST(MetaClientTest, InterfacesTest) {
         {
             auto ret = client->listSpaces().get();
             ASSERT_TRUE(ret.ok()) << ret.status();
-            EXPECT_EQ(1, ret.value().size());
-            EXPECT_EQ(1, ret.value()[0].first);
-            EXPECT_EQ("default_space", ret.value()[0].second);
+            ASSERT_EQ(1, ret.value().size());
+            ASSERT_EQ(1, ret.value()[0].first);
+            ASSERT_EQ("default_space", ret.value()[0].second);
         }
         {
             auto ret = client->getPartsAlloc(spaceId).get();
@@ -58,8 +58,8 @@ TEST(MetaClientTest, InterfacesTest) {
             for (auto it = ret.value().begin(); it != ret.value().end(); it++) {
                 auto startIndex = it->first;
                 for (auto& h : it->second) {
-                    EXPECT_EQ(startIndex++ % 4, h.first);
-                    EXPECT_EQ(h.first, h.second);
+                    ASSERT_EQ(startIndex++ % 4, h.first);
+                    ASSERT_EQ(h.first, h.second);
                 }
             }
         }
@@ -69,33 +69,33 @@ TEST(MetaClientTest, InterfacesTest) {
         // Test cache interfaces
         // For Host(0, 0) the parts should be 2, 3, 4, 6, 7, 8
         auto partsMap = client->getPartsMapFromCache(HostAddr(0, 0));
-        EXPECT_EQ(1, partsMap.size());
-        EXPECT_EQ(6, partsMap[spaceId].size());
+        ASSERT_EQ(1, partsMap.size());
+        ASSERT_EQ(6, partsMap[spaceId].size());
     }
     {
         auto partMeta = client->getPartMetaFromCache(spaceId, 1);
         int32_t startIndex = 1;
         for (auto& h : partMeta.peers_) {
-            EXPECT_EQ(startIndex++ % 4, h.first);
-            EXPECT_EQ(h.first, h.second);
+            ASSERT_EQ(startIndex++ % 4, h.first);
+            ASSERT_EQ(h.first, h.second);
         }
     }
     {
         auto ret = client->getSpaceIdByNameFromCache("default_space");
         ASSERT_TRUE(ret.ok()) << ret.status();
-        EXPECT_EQ(1, ret.value());
+        ASSERT_EQ(1, ret.value());
     }
     {
         auto ret = client->getSpaceIdByNameFromCache("default_space_1");
         ASSERT_FALSE(ret.ok());
-        EXPECT_EQ(Status::SpaceNotFound(), ret.status());
+        ASSERT_EQ(Status::SpaceNotFound(), ret.status());
     }
     {
         auto ret = client->dropSpace("default_space").get();
         ASSERT_TRUE(ret.ok());
         auto ret1 = client->listSpaces().get();
         ASSERT_TRUE(ret1.ok()) << ret1.status();
-        EXPECT_EQ(0, ret1.value().size());
+        ASSERT_EQ(0, ret1.value().size());
     }
     {
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
@@ -103,7 +103,7 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_TRUE(ret.ok());
         auto ret1 = client->listHosts().get();
         ASSERT_TRUE(ret1.ok());
-        EXPECT_EQ(0, ret1.value().size());
+        ASSERT_EQ(0, ret1.value().size());
     }
     client.reset();
 }
@@ -164,22 +164,22 @@ TEST(MetaClientTest, DiffTest) {
         ASSERT_TRUE(r.ok());
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
-        EXPECT_EQ(hosts, ret.value());
+        ASSERT_EQ(hosts, ret.value());
     }
     {
         auto ret = client->createSpace("default_space", 9, 1).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
     sleep(FLAGS_load_data_interval_second + 1);
-    EXPECT_EQ(1, listener->spaceNum);
-    EXPECT_EQ(9, listener->partNum);
+    ASSERT_EQ(1, listener->spaceNum);
+    ASSERT_EQ(9, listener->partNum);
     {
         auto ret = client->createSpace("default_space_1", 5, 1).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
     sleep(FLAGS_load_data_interval_second + 1);
-    EXPECT_EQ(2, listener->spaceNum);
-    EXPECT_EQ(14, listener->partNum);
+    ASSERT_EQ(2, listener->spaceNum);
+    ASSERT_EQ(14, listener->partNum);
 }
 
 }  // namespace meta
