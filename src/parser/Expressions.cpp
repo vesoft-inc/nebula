@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "base/Cord.h"
 #include "parser/Expressions.h"
+#include "parser/FunctionManager.h"
 
 
 #define THROW_IF_NO_SPACE(POS, END, REQUIRE)                                        \
@@ -71,6 +72,8 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
     switch (intToKind(kind)) {
         case kPrimary:
             return std::make_unique<PrimaryExpression>();
+        case kFunctionCall:
+            return std::make_unique<FunctionCallExpression>();
         case kUnary:
             return std::make_unique<UnaryExpression>();
         case kTypeCasting:
@@ -638,6 +641,88 @@ const char* PrimaryExpression::decode(const char *pos, const char *end) {
         }
         default:
             throw Status::Error("Unknown variant type");
+    }
+    return pos;
+}
+
+
+std::string FunctionCallExpression::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += *name_;
+    buf += "(";
+    for (auto &arg : args_) {
+        buf += arg->toString();
+        buf += ",";
+    }
+    if (!args_.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+
+VariantType FunctionCallExpression::eval() const {
+    std::vector<VariantType> args;
+    args.resize(args_.size());
+    auto eval = [] (auto &expr) {
+        return expr->eval();
+    };
+    std::transform(args_.begin(), args_.end(), args.begin(), eval);
+    return function_(args);
+}
+
+
+Status FunctionCallExpression::prepare() {
+    auto result = FunctionManager::get(*name_, args_.size());
+    if (!result.ok()) {
+        return std::move(result).status();
+    }
+
+    function_ = std::move(result).value();
+
+    auto status = Status::OK();
+    for (auto &arg : args_) {
+        status = arg->prepare();
+        if (!status.ok()) {
+            break;
+        }
+    }
+    return status;
+}
+
+
+void FunctionCallExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+
+    cord << static_cast<uint16_t>(name_->size());
+    cord << *name_;
+
+    cord << static_cast<uint16_t>(args_.size());
+    for (auto &arg : args_) {
+        arg->encode(cord);
+    }
+}
+
+
+const char* FunctionCallExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    auto size = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
+
+    THROW_IF_NO_SPACE(pos, end, size);
+    name_ = std::make_unique<std::string>(pos, size);
+    pos += size;
+
+    auto count = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
+
+    args_.reserve(count);
+    for (auto i = 0u; i < count; i++) {
+        THROW_IF_NO_SPACE(pos, end, 1UL);
+        auto arg = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+        pos = arg->decode(pos, end);
+        args_.emplace_back(std::move(arg));
     }
     return pos;
 }
