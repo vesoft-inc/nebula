@@ -16,6 +16,11 @@ namespace graph {
 ExecutionEngine::ExecutionEngine(std::unique_ptr<storage::StorageClient> storage) {
     schemaManager_ = meta::SchemaManager::create();
     storage_ = std::move(storage);
+
+    // TODO(YT) schemaManager and StorageClient should share one meta client instance
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    metaClient_ = std::make_unique<meta::MetaClient>(threadPool);
+    metaClient_->init();
 }
 
 
@@ -26,7 +31,8 @@ ExecutionEngine::~ExecutionEngine() {
 void ExecutionEngine::execute(RequestContextPtr rctx) {
     auto ectx = std::make_unique<ExecutionContext>(std::move(rctx),
                                                    schemaManager_.get(),
-                                                   storage_.get());
+                                                   storage_.get(),
+                                                   metaClient_.get());
     // TODO(dutor) add support to plan cache
     auto plan = new ExecutionPlan(std::move(ectx));
 

@@ -7,10 +7,11 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/MetaServiceHandler.h"
 #include "meta/processors/CreateSpaceProcessor.h"
+#include "meta/processors/ListSpacesProcessor.h"
+#include "meta/processors/DropSpaceProcessor.h"
 #include "meta/processors/AddHostsProcessor.h"
 #include "meta/processors/ListHostsProcessor.h"
-#include "meta/processors/ListSpacesProcessor.h"
-#include "meta/processors/GetPartsAllocProcessor.h"
+#include "meta/processors/RemoveHostsProcessor.h"
 #include "meta/processors/RemoveTagProcessor.h"
 #include "meta/processors/AddTagProcessor.h"
 #include "meta/processors/AddEdgeProcessor.h"
@@ -23,6 +24,7 @@
 #include "meta/processors/ScanProcessor.h"
 #include "meta/processors/RemoveProcessor.h"
 #include "meta/processors/RemoveRangeProcessor.h"
+#include "meta/processors/GetPartsAllocProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -45,6 +47,12 @@ MetaServiceHandler::future_listSpaces(const cpp2::ListSpacesReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropSpace(const cpp2::DropSpaceReq& req) {
+    auto* processor = DropSpaceProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_addHosts(const cpp2::AddHostsReq& req) {
     auto* processor = AddHostsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
@@ -53,6 +61,12 @@ MetaServiceHandler::future_addHosts(const cpp2::AddHostsReq& req) {
 folly::Future<cpp2::ListHostsResp>
 MetaServiceHandler::future_listHosts(const cpp2::ListHostsReq& req) {
     auto* processor = ListHostsProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_removeHosts(const cpp2::RemoveHostsReq& req) {
+    auto* processor = RemoveHostsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

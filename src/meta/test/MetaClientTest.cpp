@@ -151,6 +151,21 @@ TEST(MetaClientTest, InterfacesTest) {
         auto ret = client->remove("_test_", "key_8").get();
         ASSERT_FALSE(ret.ok());
     }
+    {
+        auto ret = client->dropSpace("default_space").get();
+        ASSERT_TRUE(ret.ok());
+        auto ret1 = client->listSpaces().get();
+        ASSERT_TRUE(ret1.ok()) << ret1.status();
+        ASSERT_EQ(0, ret1.value().size());
+    }
+    {
+        std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+        auto ret = client->removeHosts(hosts).get();
+        ASSERT_TRUE(ret.ok());
+        auto ret1 = client->listHosts().get();
+        ASSERT_TRUE(ret1.ok());
+        ASSERT_EQ(0, ret1.value().size());
+    }
     client.reset();
 }
 

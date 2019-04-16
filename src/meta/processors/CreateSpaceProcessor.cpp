@@ -58,20 +58,6 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
     return pickedHosts;
 }
 
-StatusOr<GraphSpaceID> CreateSpaceProcessor::getSpaceId(const std::string& name) {
-    auto indexKey = MetaServiceUtils::indexKey(EntryType::SPACE, name);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
-        try {
-            return folly::to<GraphSpaceID>(val);
-        } catch (std::exception& e) {
-            LOG(ERROR) << "Convert failed for " << val << ", msg " << e.what();
-        }
-    }
-    return Status::SpaceNotFound();
-}
-
 }  // namespace meta
 }  // namespace nebula
 

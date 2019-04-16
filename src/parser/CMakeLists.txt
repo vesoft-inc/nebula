@@ -20,7 +20,7 @@ add_library(
         MaintainSentences.cpp
         MutateSentences.cpp
         TraverseSentences.cpp
-        ShowSentences.cpp
+        AdminSentences.cpp
 )
 
 add_dependencies(parser_obj base_obj)

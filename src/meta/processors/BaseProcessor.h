@@ -17,9 +17,12 @@
 #include "kvstore/KVStore.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
+#include "network/NetworkUtils.h"
 
 namespace nebula {
 namespace meta {
+
+using nebula::network::NetworkUtils;
 
 class LockUtils {
 public:
@@ -76,6 +79,18 @@ protected:
         case kvstore::ResultCode::SUCCEEDED:
             return cpp2::ErrorCode::SUCCEEDED;
         case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
+            return cpp2::ErrorCode::E_NOT_FOUND;
+        default:
+            return cpp2::ErrorCode::E_UNKNOWN;
+        }
+    }
+
+    cpp2::ErrorCode to(Status status) {
+        switch (status.code()) {
+        case Status::kOk:
+            return cpp2::ErrorCode::SUCCEEDED;
+        case Status::kSpaceNotFound:
+        case Status::kHostNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -150,6 +165,16 @@ protected:
      * Check spaceId exist or not.
      * */
     Status spaceExist(GraphSpaceID spaceId);
+
+    /**
+     * Check multi host_name exists or not.
+     * */
+    Status hostsExist(const std::vector<std::string>& name);
+
+    /**
+     * Return the spaceId for name.
+     * */
+    StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

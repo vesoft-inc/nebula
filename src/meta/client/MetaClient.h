@@ -70,10 +70,16 @@ public:
     listSpaces();
 
     folly::Future<StatusOr<bool>>
+    dropSpace(std::string name);
+
+    folly::Future<StatusOr<bool>>
     addHosts(const std::vector<HostAddr>& hosts);
 
     folly::Future<StatusOr<std::vector<HostAddr>>>
     listHosts();
+
+    folly::Future<StatusOr<bool>>
+    removeHosts(const std::vector<HostAddr>& hosts);
 
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);

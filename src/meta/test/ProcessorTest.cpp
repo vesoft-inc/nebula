@@ -12,8 +12,10 @@
 #include "meta/test/TestUtils.h"
 #include <common/time/TimeUtils.h>
 #include "meta/processors/CreateSpaceProcessor.h"
-#include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
+#include "meta/processors/DropSpaceProcessor.h"
+#include "meta/processors/RemoveHostsProcessor.h"
+#include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/AddTagProcessor.h"
 #include "meta/processors/RemoveTagProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
@@ -45,7 +47,7 @@ TEST(ProcessorTest, AddHostsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         cpp2::ListHostsReq req;
@@ -53,10 +55,10 @@ TEST(ProcessorTest, AddHostsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        EXPECT_EQ(10, resp.hosts.size());
+        ASSERT_EQ(10, resp.hosts.size());
         for (auto i = 0; i < 10; i++) {
-            EXPECT_EQ(i, resp.hosts[i].ip);
-            EXPECT_EQ(i, resp.hosts[i].port);
+            ASSERT_EQ(i, resp.hosts[i].ip);
+            ASSERT_EQ(i, resp.hosts[i].port);
         }
     }
     {
@@ -70,7 +72,7 @@ TEST(ProcessorTest, AddHostsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         cpp2::ListHostsReq req;
@@ -78,11 +80,32 @@ TEST(ProcessorTest, AddHostsTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        EXPECT_EQ(20, resp.hosts.size());
+        ASSERT_EQ(20, resp.hosts.size());
         for (auto i = 0; i < 20; i++) {
-            EXPECT_EQ(i, resp.hosts[i].ip);
-            EXPECT_EQ(i, resp.hosts[i].port);
+            ASSERT_EQ(i, resp.hosts[i].ip);
+            ASSERT_EQ(i, resp.hosts[i].port);
         }
+    }
+    {
+        std::vector<nebula::cpp2::HostAddr> thriftHosts;
+        for (auto i = 0; i < 20; i++) {
+            thriftHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
+        }
+        cpp2::RemoveHostsReq req;
+        req.set_hosts(std::move(thriftHosts));
+        auto* processor = RemoveHostsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+    }
+    {
+        cpp2::ListHostsReq req;
+        auto* processor = ListHostsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(0, resp.hosts.size());
     }
 }
 
@@ -130,6 +153,25 @@ TEST(ProcessorTest, CreateSpaceTest) {
                 ASSERT_EQ(h.get_ip(), h.get_port());
             }
         }
+    }
+    {
+        cpp2::DropSpaceReq req;
+        req.set_space_name("default_space");
+
+        auto* processor = DropSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+    }
+    {
+        cpp2::ListSpacesReq req;
+        auto* processor = ListSpacesProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(0, resp.spaces.size());
     }
 }
 
@@ -338,8 +380,8 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
 
         for (auto t = 0; t < 10; t++) {
             auto tag = tags[t];
-            EXPECT_EQ(t, tag.get_tag_id());
-            EXPECT_EQ(folly::stringPrintf("tag_%d", t), tag.get_tag_name());
+            ASSERT_EQ(t, tag.get_tag_id());
+            ASSERT_EQ(folly::stringPrintf("tag_%d", t), tag.get_tag_name());
         }
     }
 
@@ -359,8 +401,8 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
         std::vector<nebula::cpp2::ColumnDef> cols = schema.get_columns();
         ASSERT_EQ(cols.size(), 2);
         for (auto i = 0; i < 2; i++) {
-            EXPECT_EQ(folly::stringPrintf("tag_%d_col_%d", 0, i), cols[i].get_name());
-            EXPECT_EQ((i < 1 ? SupportedType::INT : SupportedType::STRING),
+            ASSERT_EQ(folly::stringPrintf("tag_%d_col_%d", 0, i), cols[i].get_name());
+            ASSERT_EQ((i < 1 ? SupportedType::INT : SupportedType::STRING),
                       cols[i].get_type().get_type());
         }
     }

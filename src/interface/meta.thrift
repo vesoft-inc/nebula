@@ -70,8 +70,9 @@ struct CreateSpaceReq {
     3: i32 replica_factor,
 }
 
-struct DeleteSpaceReq {
-    1: common.GraphSpaceID space_id,
+struct DropSpaceReq {
+    //common.GraphSpaceID space_id
+    1: string space_name
 }
 
 struct ListSpacesReq {
@@ -255,7 +256,7 @@ struct ScanResp {
 
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
-    ExecResp deleteSpace(1: DeleteSpaceReq req);
+    ExecResp dropSpace(1: DropSpaceReq req);
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
 
