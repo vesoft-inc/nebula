@@ -30,10 +30,16 @@ public:
     future_listSpaces(const cpp2::ListSpacesReq& req) override;
 
     folly::Future<cpp2::ExecResp>
+    future_dropSpace(const cpp2::DropSpaceReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
     future_addHosts(const cpp2::AddHostsReq& req) override;
 
     folly::Future<cpp2::ListHostsResp>
     future_listHosts(const cpp2::ListHostsReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_removeHosts(const cpp2::RemoveHostsReq& req) override;
 
     folly::Future<cpp2::GetPartsAllocResp>
     future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) override;
