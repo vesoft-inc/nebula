@@ -60,7 +60,7 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
         LOG(ERROR) << "Get: " << key << " Not Found";
         return ResultCode::ERR_KEY_NOT_FOUND;
     }
-    LOG(ERROR) << "Failed Get: " << key << " " << status.ToString();
+    LOG(ERROR) << "Get Failed: " << key << " " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -72,7 +72,7 @@ ResultCode RocksEngine::put(std::string key, std::string value) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
-    LOG(ERROR) << "Failed Put: " << key << ":" << value << status.ToString();
+    LOG(ERROR) << "Put Failed: " << key << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -88,7 +88,7 @@ ResultCode RocksEngine::multiPut(std::vector<KV> keyValues) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
-    LOG(ERROR) << "Failed MultiPut: " << status.ToString();
+    LOG(ERROR) << "MultiPut Failed: " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -125,7 +125,7 @@ ResultCode RocksEngine::remove(const std::string& key) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
-    LOG(ERROR) << "Failed Remove: " << key << status.ToString();
+    LOG(ERROR) << "Remove Failed: " << key << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -140,7 +140,7 @@ ResultCode RocksEngine::multiRemove(std::vector<std::string> keys) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
-    LOG(ERROR) << "Failed MultiRemove: " << status.ToString();
+    LOG(ERROR) << "MultiRemove Failed: " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -153,7 +153,7 @@ ResultCode RocksEngine::removeRange(const std::string& start,
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     }
-    LOG(ERROR) << "Failed RemoveRange: " << status.ToString();
+    LOG(ERROR) << "RemoveRange Failed: " << status.ToString();
     return ResultCode::ERR_UNKNOWN;
 }
 
@@ -216,7 +216,7 @@ ResultCode RocksEngine::ingest(const std::vector<std::string>& files) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
-        LOG(ERROR) << "Failed Ingest: " << status.ToString();
+        LOG(ERROR) << "Ingest Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }
@@ -232,7 +232,7 @@ ResultCode RocksEngine::setOption(const std::string& configKey,
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
-        LOG(ERROR) << "Failed SetOption: " << configKey << ":" << configValue;
+        LOG(ERROR) << "SetOption Failed: " << configKey << ":" << configValue;
         return ResultCode::ERR_INVALID_ARGUMENT;
     }
 }
@@ -248,7 +248,7 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey,
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
-        LOG(ERROR) << "Failed SetDBOption: " << configKey << ":" << configValue;
+        LOG(ERROR) << "SetDBOption Failed: " << configKey << ":" << configValue;
         return ResultCode::ERR_INVALID_ARGUMENT;
     }
 }
@@ -261,7 +261,7 @@ ResultCode RocksEngine::compactAll() {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
-        LOG(ERROR) << "Failed CompactAll: " << status.ToString();
+        LOG(ERROR) << "CompactAll Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }

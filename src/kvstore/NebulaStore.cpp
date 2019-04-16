@@ -65,7 +65,7 @@ DEFINE_string(part_type, "simple", "simple, consensus...");
 /**
  * Check result and return code when it's unsuccess.
  * */
-#define CHECK_AND_RETURN_CODE() \
+#define RETURN_ON_FAILURE(code) \
     if (code != ResultCode::SUCCEEDED) { \
         return code; \
     }
@@ -323,7 +323,7 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
             }
         }
         auto code = engine.first->ingest(std::move(extras));
-        CHECK_AND_RETURN_CODE();
+        RETURN_ON_FAILURE(code);
     }
     return ResultCode::SUCCEEDED;
 }
@@ -335,7 +335,7 @@ ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
     CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
     for (auto& engine : it->second->engines_) {
         auto code = engine.first->setOption(configKey, configValue);
-        CHECK_AND_RETURN_CODE();
+        RETURN_ON_FAILURE(code);
     }
     return ResultCode::SUCCEEDED;
 }
@@ -347,7 +347,7 @@ ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
     CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
     for (auto& engine : it->second->engines_) {
         auto code = engine.first->setDBOption(configKey, configValue);
-        CHECK_AND_RETURN_CODE();
+        RETURN_ON_FAILURE(code);
     }
     return ResultCode::SUCCEEDED;
 }
@@ -357,7 +357,7 @@ ResultCode NebulaStore::compactAll(GraphSpaceID spaceId) {
     CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
     for (auto& engine : it->second->engines_) {
         auto code = engine.first->compactAll();
-        CHECK_AND_RETURN_CODE();
+        RETURN_ON_FAILURE(code);
     }
     return ResultCode::SUCCEEDED;
 }
