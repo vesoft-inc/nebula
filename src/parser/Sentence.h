@@ -36,6 +36,10 @@ public:
         kDeleteVertex,
         kDeleteEdge,
         kFind,
+        kAddHosts,
+        kRemoveHosts,
+        kCreateSpace,
+        kDropSpace,
     };
 
     Kind kind() const {
