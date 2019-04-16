@@ -25,10 +25,6 @@ protected:
                                             PartitionID partId,
                                             const std::vector<nebula::cpp2::HostAddr>& hosts,
                                             int32_t replicaFactor);
-    /**
-     * Return the spaceId for name.
-     * */
-    StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
 
 private:
     explicit CreateSpaceProcessor(kvstore::KVStore* kvstore)

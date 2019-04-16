@@ -99,6 +99,7 @@ public:
 
     // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
     STATUS_GENERATOR(SpaceNotFound);
+    STATUS_GENERATOR(HostNotFound);
 
 #undef STATUS_GENERATOR
 
@@ -106,7 +107,6 @@ public:
 
     friend std::ostream& operator<<(std::ostream &os, const Status &status);
 
-private:
     // If some kind of error really needs to be distinguished with others using a specific
     // code, other than a general code and specific msg, you could add a new code below,
     // e.g. kSomeError, and add the cooresponding STATUS_GENERATOR(SomeError)
@@ -123,6 +123,7 @@ private:
         // ...
         // 4xx, for meta service errors
         kSpaceNotFound          = 404,
+        kHostNotFound           = 405,
     };
 
     Code code() const {
@@ -131,6 +132,8 @@ private:
         }
         return reinterpret_cast<const Header*>(state_.get())->code_;
     }
+
+private:
     // REQUIRES: stat_ != nullptr
     uint16_t size() const {
         return reinterpret_cast<const Header*>(state_.get())->size_;

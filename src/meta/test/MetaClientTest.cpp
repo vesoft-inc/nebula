@@ -48,9 +48,9 @@ TEST(MetaClientTest, InterfacesTest) {
         {
             auto ret = client->listSpaces().get();
             ASSERT_TRUE(ret.ok()) << ret.status();
-            ASSERT_EQ(ret.value().size(), 1);
-            ASSERT_EQ(ret.value()[0].first, 1);
-            ASSERT_EQ(ret.value()[0].second, "default_space");
+            ASSERT_EQ(1, ret.value().size());
+            ASSERT_EQ(1, ret.value()[0].first);
+            ASSERT_EQ("default_space", ret.value()[0].second);
         }
         {
             auto ret = client->getPartsAlloc(spaceId).get();
@@ -89,6 +89,21 @@ TEST(MetaClientTest, InterfacesTest) {
         auto ret = client->getSpaceIdByNameFromCache("default_space_1");
         ASSERT_FALSE(ret.ok());
         ASSERT_EQ(Status::SpaceNotFound(), ret.status());
+    }
+    {
+        auto ret = client->dropSpace("default_space").get();
+        ASSERT_TRUE(ret.ok());
+        auto ret1 = client->listSpaces().get();
+        ASSERT_TRUE(ret1.ok()) << ret1.status();
+        ASSERT_EQ(0, ret1.value().size());
+    }
+    {
+        std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+        auto ret = client->removeHosts(hosts).get();
+        ASSERT_TRUE(ret.ok());
+        auto ret1 = client->listHosts().get();
+        ASSERT_TRUE(ret1.ok());
+        ASSERT_EQ(0, ret1.value().size());
     }
     client.reset();
 }
@@ -156,15 +171,15 @@ TEST(MetaClientTest, DiffTest) {
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
     sleep(FLAGS_load_data_interval_second + 1);
-    ASSERT_EQ(listener->spaceNum, 1);
-    ASSERT_EQ(listener->partNum, 9);
+    ASSERT_EQ(1, listener->spaceNum);
+    ASSERT_EQ(9, listener->partNum);
     {
         auto ret = client->createSpace("default_space_1", 5, 1).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
     sleep(FLAGS_load_data_interval_second + 1);
-    ASSERT_EQ(listener->spaceNum, 2);
-    ASSERT_EQ(listener->partNum, 14);
+    ASSERT_EQ(2, listener->spaceNum);
+    ASSERT_EQ(14, listener->partNum);
 }
 
 }  // namespace meta
