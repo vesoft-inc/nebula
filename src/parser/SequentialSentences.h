@@ -10,7 +10,7 @@
 #include "parser/MaintainSentences.h"
 #include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"
-#include "parser/ShowSentences.h"
+#include "parser/AdminSentences.h"
 
 namespace nebula {
 

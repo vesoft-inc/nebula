@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef GRAPH_SHOWEXECUTOR_H_
-#define GRAPH_SHOWEXECUTOR_H_
+#ifndef GRAPH_REMOVEHOSTSEXECUTOR_H_
+#define GRAPH_REMOVEHOSTSEXECUTOR_H_
 
 #include "base/Base.h"
 #include "graph/Executor.h"
@@ -13,27 +13,25 @@
 namespace nebula {
 namespace graph {
 
-class ShowExecutor final : public Executor {
+
+class RemoveHostsExecutor final : public Executor {
 public:
-    ShowExecutor(Sentence *sentence, ExecutionContext *ectx);
+    RemoveHostsExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "ShowExecutor";
+        return "RemoveHostsExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
 
     void execute() override;
-    void showHosts();
-
-    void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-    ShowSentence                             *sentence_{nullptr};
-    std::unique_ptr<cpp2::ExecutionResponse>  resp_;
+    RemoveHostsSentence     *sentence_{nullptr};
+    std::vector<HostAddr>    host_;
 };
 
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // GRAPH_SHOWEXECUTOR_H_
+#endif  // GRAPH_REMOVEHOSTSEXECUTOR_H_
