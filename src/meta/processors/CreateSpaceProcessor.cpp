@@ -11,14 +11,14 @@ namespace meta {
 
 void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-    auto spaceRet = getElementId(EntryType::SPACE, req.get_space_name());
+    auto spaceRet = getSpaceId(req.get_space_name());
     if (spaceRet.ok()) {
         resp_.set_id(to(spaceRet.value(), EntryType::SPACE));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }
-    CHECK_EQ(Status::MetaNotExisted(), spaceRet.status());
+    CHECK_EQ(Status::SpaceNotFound(), spaceRet.status());
     auto ret = allHosts();
     if (!ret.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);

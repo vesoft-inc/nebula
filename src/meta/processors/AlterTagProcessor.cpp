@@ -17,9 +17,9 @@ void AlterTagProcessor::process(const cpp2::WriteTagReq& req) {
         return;
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    auto ret = getElementId(EntryType::TAG, req.get_tag_name());
+    auto ret = getTagId(req.get_tag_name());
     if (!ret.ok()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        resp_.set_code(to(std::move(ret.status())));
         onFinished();
         return;
     }
@@ -28,8 +28,8 @@ void AlterTagProcessor::process(const cpp2::WriteTagReq& req) {
     // Check the tag belongs to the space
     std::unique_ptr<kvstore::KVIterator> iter;
     auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_,
-                                MetaUtils::schemaTagPrefix(req.get_space_id(), tagId),
-                                &iter);
+                                 MetaServiceUtils::schemaTagPrefix(req.get_space_id(), tagId),
+                                 &iter);
     if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
         LOG(WARNING) << "Tag could not be found " << req.get_tag_name()
         << ", spaceId " << req.get_space_id() << ", tagId " << tagId;
@@ -41,8 +41,8 @@ void AlterTagProcessor::process(const cpp2::WriteTagReq& req) {
     std::vector<kvstore::KV> data;
     auto version = time::TimeUtils::nowInMSeconds();
     LOG(INFO) << "Alter Tag " << req.get_tag_name() << ", tagId " << tagId;
-    data.emplace_back(MetaUtils::schemaTagKey(req.get_space_id(), tagId, version),
-                      MetaUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
+    data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),
+                      MetaServiceUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));

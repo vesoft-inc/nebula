@@ -91,7 +91,7 @@ protected:
             return cpp2::ErrorCode::SUCCEEDED;
         case Status::kSpaceNotFound:
         case Status::kHostNotFound:
-        case Status::kMetaNotExisted:
+        case Status::kTagNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -157,7 +157,6 @@ protected:
      * */
     StatusOr<std::vector<nebula::cpp2::HostAddr>> allHosts();
 
-    StatusOr<int32_t> getElementId(EntryType type, const std::string& tagName);
     /**
      * Get one auto-increment Id.
      * */
@@ -177,6 +176,11 @@ protected:
      * Return the spaceId for name.
      * */
     StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
+
+    /**
+     * Return the tagId for name.
+     */
+    StatusOr<TagID> getTagId(const std::string& name);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

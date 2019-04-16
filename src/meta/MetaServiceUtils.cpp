@@ -144,7 +144,7 @@ std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, in
     return key;
 }
 
-std::string MetaUtils::schemaTagPrefix(GraphSpaceID spaceId, TagID tagId) {
+std::string MetaServiceUtils::schemaTagPrefix(GraphSpaceID spaceId, TagID tagId) {
     std::string key;
     key.reserve(kTagsTable.size() + sizeof(GraphSpaceID) + sizeof(TagID));
     key.append(kTagsTable.data(), kTagsTable.size());

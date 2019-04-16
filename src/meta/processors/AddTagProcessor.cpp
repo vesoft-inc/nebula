@@ -17,15 +17,15 @@ void AddTagProcessor::process(const cpp2::WriteTagReq& req) {
         return;
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    auto ret = getElementId(EntryType::TAG, req.get_tag_name());
-    std::vector<kvstore::KV> data;
+    auto ret = getTagId(req.get_tag_name());
     if (ret.ok()) {
         resp_.set_id(to(ret.value(), EntryType::TAG));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }
-    auto version = time::TimeUtils::nowInMSeconds();
+    std::vector<kvstore::KV> data;
+    auto version = INT64_MAX - time::TimeUtils::nowInMSeconds();
     TagID tagId = autoIncrementId();
     data.emplace_back(MetaServiceUtils::indexKey(EntryType::TAG, req.get_tag_name()),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
