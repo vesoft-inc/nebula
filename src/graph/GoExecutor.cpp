@@ -485,6 +485,10 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
         rsWriter->addRow(writer);
     };  // cb
     processFinalResult(rpcResp, cb);
+    // No results populated
+    if (rsWriter == nullptr) {
+        return nullptr;
+    }
     return std::make_unique<InterimResult>(std::move(rsWriter));
 }
 

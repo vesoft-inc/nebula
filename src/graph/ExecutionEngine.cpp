@@ -15,6 +15,7 @@ namespace graph {
 
 ExecutionEngine::ExecutionEngine(std::unique_ptr<storage::StorageClient> storage) {
     schemaManager_ = meta::SchemaManager::create();
+    schemaManager_->init();
     storage_ = std::move(storage);
 
     // TODO(YT) schemaManager and StorageClient should share one meta client instance
