@@ -40,7 +40,7 @@ void mockData(kvstore::KVStore* kv) {
                 // Write multi versions,  we should get the latest version.
                 for (auto version = 0; version < 3; version++) {
                     auto key = KeyUtils::edgeKey(partId, vertexId, 101,
-                                                 dstId - 10001, dstId,
+                                                 0, dstId,
                                                  std::numeric_limits<int>::max() - version);
                     RowWriter writer(nullptr);
                     for (uint64_t numInt = 0; numInt < 10; numInt++) {
@@ -58,7 +58,7 @@ void mockData(kvstore::KVStore* kv) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
                 for (auto version = 0; version < 3; version++) {
                     auto key = KeyUtils::edgeKey(partId, vertexId, -101,
-                                                 srcId - 20001, srcId,
+                                                 0, srcId,
                                                  std::numeric_limits<int>::max() - version);
                     data.emplace_back(std::move(key), "");
                 }
@@ -147,7 +147,7 @@ void checkResponse(cpp2::QueryResponse& resp, bool outBound = true) {
                 // _rank
                 int64_t v;
                 EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(1, v));
-                CHECK_EQ(rowNum, v);
+                CHECK_EQ(0, v);
             }
             if (outBound) {
                 // col_0, col_2 ... col_8
