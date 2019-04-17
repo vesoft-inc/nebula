@@ -58,9 +58,10 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
     } else if (status.IsNotFound()) {
         LOG(ERROR) << "Get: " << key << " Not Found";
         return ResultCode::ERR_KEY_NOT_FOUND;
+    } else {
+        LOG(ERROR) << "Get Failed: " << key << " " << status.ToString();
+        return ResultCode::ERR_UNKNOWN;
     }
-    LOG(ERROR) << "Get Failed: " << key << " " << status.ToString();
-    return ResultCode::ERR_UNKNOWN;
 }
 
 ResultCode RocksEngine::multiGet(const std::vector<std::string>& keys,
@@ -89,9 +90,10 @@ ResultCode RocksEngine::put(std::string key, std::string value) {
     rocksdb::Status status = db_->Put(options, key, value);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
+    } else {
+        LOG(ERROR) << "Put Failed: " << key << status.ToString();
+        return ResultCode::ERR_UNKNOWN;
     }
-    LOG(ERROR) << "Put Failed: " << key << status.ToString();
-    return ResultCode::ERR_UNKNOWN;
 }
 
 
@@ -105,9 +107,10 @@ ResultCode RocksEngine::multiPut(std::vector<KV> keyValues) {
     rocksdb::Status status = db_->Write(options, &updates);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
+    } else {
+        LOG(ERROR) << "MultiPut Failed: " << status.ToString();
+        return ResultCode::ERR_UNKNOWN;
     }
-    LOG(ERROR) << "MultiPut Failed: " << status.ToString();
-    return ResultCode::ERR_UNKNOWN;
 }
 
 
@@ -142,9 +145,10 @@ ResultCode RocksEngine::remove(const std::string& key) {
     auto status = db_->Delete(options, key);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
+    } else {
+        LOG(ERROR) << "Remove Failed: " << key << status.ToString();
+        return ResultCode::ERR_UNKNOWN;
     }
-    LOG(ERROR) << "Remove Failed: " << key << status.ToString();
-    return ResultCode::ERR_UNKNOWN;
 }
 
 ResultCode RocksEngine::multiRemove(std::vector<std::string> keys) {
@@ -157,9 +161,10 @@ ResultCode RocksEngine::multiRemove(std::vector<std::string> keys) {
     rocksdb::Status status = db_->Write(options, &deletes);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
+    } else {
+        LOG(ERROR) << "MultiRemove Failed: " << status.ToString();
+        return ResultCode::ERR_UNKNOWN;
     }
-    LOG(ERROR) << "MultiRemove Failed: " << status.ToString();
-    return ResultCode::ERR_UNKNOWN;
 }
 
 
@@ -170,9 +175,10 @@ ResultCode RocksEngine::removeRange(const std::string& start,
     auto status = db_->DeleteRange(options, db_->DefaultColumnFamily(), start, end);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
+    } else {
+        LOG(ERROR) << "RemoveRange Failed: " << status.ToString();
+        return ResultCode::ERR_UNKNOWN;
     }
-    LOG(ERROR) << "RemoveRange Failed: " << status.ToString();
-    return ResultCode::ERR_UNKNOWN;
 }
 
 
@@ -273,9 +279,7 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey,
 
 ResultCode RocksEngine::compactAll() {
     rocksdb::CompactRangeOptions options;
-    auto start = rocksdb::Slice(nullptr);
-    auto end = rocksdb::Slice(nullptr);
-    rocksdb::Status status = db_->CompactRange(options, &start, &end);
+    rocksdb::Status status = db_->CompactRange(options, nullptr, nullptr);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
