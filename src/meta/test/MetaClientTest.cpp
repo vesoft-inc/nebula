@@ -10,7 +10,7 @@
 #include "meta/client/MetaClient.h"
 #include "meta/test/TestUtils.h"
 #include "network/NetworkUtils.h"
-#include "meta/MetaUtils.h"
+#include "meta/MetaServiceUtils.h"
 
 DECLARE_int32(load_data_interval_second);
 
@@ -89,6 +89,67 @@ TEST(MetaClientTest, InterfacesTest) {
         auto ret = client->getSpaceIdByNameFromCache("default_space_1");
         ASSERT_FALSE(ret.ok());
         ASSERT_EQ(Status::SpaceNotFound(), ret.status());
+    }
+    {
+        // Multi Put Test
+        std::vector<std::pair<std::string, std::string>> pairs;
+        for (auto i = 0; i < 10; i++) {
+            pairs.emplace_back(folly::stringPrintf("key_%d", i),
+                               folly::stringPrintf("value_%d", i));
+        }
+        auto ret = client->multiPut("test", pairs).get();
+        ASSERT_TRUE(ret.ok());
+    }
+    {
+        // Get Test
+        auto ret = client->get("test", "key_0").get();
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ("value_0", ret.value());
+
+        auto missedRet = client->get("test", "missed_key").get();
+        ASSERT_FALSE(missedRet.ok());
+
+        auto emptyRet = client->get("test", "").get();
+        ASSERT_FALSE(emptyRet.ok());
+    }
+    {
+        // Multi Get Test
+        std::vector<std::string> keys;
+        for (auto i = 0; i < 2; i++) {
+            keys.emplace_back(folly::stringPrintf("key_%d", i));
+        }
+        auto ret = client->multiGet("test", keys).get();
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(2, ret.value().size());
+        ASSERT_EQ("value_0", ret.value()[0]);
+        ASSERT_EQ("value_1", ret.value()[1]);
+
+        std::vector<std::string> emptyKeys;
+        auto emptyRet = client->multiGet("test", emptyKeys).get();
+        ASSERT_FALSE(emptyRet.ok());
+    }
+    {
+        // Scan Test
+        auto ret = client->scan("test", "key_0", "key_3").get();
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(3, ret.value().size());
+        ASSERT_EQ("value_0", ret.value()[0]);
+        ASSERT_EQ("value_1", ret.value()[1]);
+        ASSERT_EQ("value_2", ret.value()[2]);
+    }
+    {
+        // Remove Test
+        auto ret = client->remove("test", "key_9").get();
+        ASSERT_TRUE(ret.ok());
+    }
+    {
+        // Remove Range Test
+        auto ret = client->removeRange("test", "key_0", "key_4").get();
+        ASSERT_TRUE(ret.ok());
+    }
+    {
+        auto ret = client->remove("_test_", "key_8").get();
+        ASSERT_FALSE(ret.ok());
     }
     {
         auto ret = client->dropSpace("default_space").get();

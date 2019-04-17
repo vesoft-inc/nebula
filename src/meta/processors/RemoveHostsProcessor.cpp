@@ -15,7 +15,7 @@ void RemoveHostsProcessor::process(const cpp2::RemoveHostsReq& req) {
 
     std::vector<std::string> hostsKey;
     for (auto& h : req.get_hosts()) {
-        hostsKey.emplace_back(MetaUtils::hostKey(h.ip, h.port));
+        hostsKey.emplace_back(MetaServiceUtils::hostKey(h.ip, h.port));
     }
 
     auto hostsRet = hostsExist(hostsKey);
@@ -27,7 +27,7 @@ void RemoveHostsProcessor::process(const cpp2::RemoveHostsReq& req) {
 
     LOG(INFO) << "Remove hosts ";
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
-    doRemove(std::move(hostsKey));
+    doMultiRemove(std::move(hostsKey));
 }
 
 }  // namespace meta

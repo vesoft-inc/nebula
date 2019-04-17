@@ -24,12 +24,12 @@ void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     LOG(INFO) << "Remove Tag " << req.get_tag_name();
-    doRemove(std::move(ret.value()));
+    doMultiRemove(std::move(ret.value()));
 }
 
 StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID id,
                                                                   const std::string& tagName) {
-    auto indexKey = MetaUtils::indexKey(EntryType::TAG, tagName);
+    auto indexKey = MetaServiceUtils::indexKey(EntryType::TAG, tagName);
     std::vector<std::string> keys;
     std::string tagVal;
     TagID tagId;
@@ -44,8 +44,8 @@ StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID i
 
     std::unique_ptr<kvstore::KVIterator> iter;
     ret = kvstore_->range(kDefaultSpaceId_, kDefaultPartId_,
-                          MetaUtils::schemaTagKey(id, tagId, MIN_VERSION_HEX),
-                          MetaUtils::schemaTagKey(id, tagId, MAX_VERSION_HEX),
+                          MetaServiceUtils::schemaTagKey(id, tagId, MIN_VERSION_HEX),
+                          MetaServiceUtils::schemaTagKey(id, tagId, MAX_VERSION_HEX),
                           &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Tag get error by id : %d !", tagId);

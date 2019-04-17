@@ -9,25 +9,25 @@
 #include <folly/String.h>
 #include <fstream>
 #include "fs/TempFile.h"
-#include "meta/MetaUtils.h"
+#include "meta/MetaServiceUtils.h"
 
 namespace nebula {
 namespace meta {
 
-TEST(MetaUtilsTest, SpaceKeyTest) {
-    auto prefix = MetaUtils::spacePrefix();
+TEST(MetaServiceUtilsTest, SpaceKeyTest) {
+    auto prefix = MetaServiceUtils::spacePrefix();
     ASSERT_EQ("__spaces__", prefix);
-    auto spaceKey = MetaUtils::spaceKey(101);
-    ASSERT_EQ(101, MetaUtils::spaceId(spaceKey));
-    auto spaceVal = MetaUtils::spaceVal(100, 3, "default");
-    ASSERT_EQ("default", MetaUtils::spaceName(spaceVal));
+    auto spaceKey = MetaServiceUtils::spaceKey(101);
+    ASSERT_EQ(101, MetaServiceUtils::spaceId(spaceKey));
+    auto spaceVal = MetaServiceUtils::spaceVal(100, 3, "default");
+    ASSERT_EQ("default", MetaServiceUtils::spaceName(spaceVal));
     ASSERT_EQ(100, *reinterpret_cast<const int32_t*>(spaceVal.c_str()));
     ASSERT_EQ(3, *reinterpret_cast<const int32_t*>(spaceVal.c_str() + sizeof(int32_t)));
 }
 
-TEST(MetaUtilsTest, PartKeyTest) {
-    auto partKey = MetaUtils::partKey(0, 1);
-    auto prefix = MetaUtils::partPrefix(0);
+TEST(MetaServiceUtilsTest, PartKeyTest) {
+    auto partKey = MetaServiceUtils::partKey(0, 1);
+    auto prefix = MetaServiceUtils::partPrefix(0);
     ASSERT_EQ("__parts__", prefix.substr(0, prefix.size() - sizeof(GraphSpaceID)));
     ASSERT_EQ(0, *reinterpret_cast<const GraphSpaceID*>(
                         prefix.c_str() + prefix.size() - sizeof(GraphSpaceID)));
@@ -41,9 +41,9 @@ TEST(MetaUtilsTest, PartKeyTest) {
         host.set_port(i * 20 + 2);
         hosts.emplace_back(std::move(host));
     }
-    auto partVal = MetaUtils::partVal(hosts);
+    auto partVal = MetaServiceUtils::partVal(hosts);
     ASSERT_EQ(10 * sizeof(int32_t) * 2, partVal.size());
-    auto result = MetaUtils::parsePartVal(partVal);
+    auto result = MetaServiceUtils::parsePartVal(partVal);
     ASSERT_EQ(hosts.size(), result.size());
     for (int i = 0; i < 10; i++) {
         ASSERT_EQ(i * 20 + 1, result[i].get_ip());
@@ -51,20 +51,20 @@ TEST(MetaUtilsTest, PartKeyTest) {
     }
 }
 
-TEST(MetaUtilsTest, HostKeyTest) {
-    auto hostKey = MetaUtils::hostKey(10, 11);
-    const auto& prefix = MetaUtils::hostPrefix();
+TEST(MetaServiceUtilsTest, HostKeyTest) {
+    auto hostKey = MetaServiceUtils::hostKey(10, 11);
+    const auto& prefix = MetaServiceUtils::hostPrefix();
     ASSERT_EQ("__hosts__", prefix);
     ASSERT_EQ(prefix, hostKey.substr(0, hostKey.size() - 2 * sizeof(int32_t)));
     ASSERT_EQ(10, *reinterpret_cast<const IPv4*>(hostKey.c_str() + prefix.size()));
     ASSERT_EQ(11, *reinterpret_cast<const Port*>(hostKey.c_str() + prefix.size() + sizeof(IPv4)));
 
-    auto addr = MetaUtils::parseHostKey(hostKey);
+    auto addr = MetaServiceUtils::parseHostKey(hostKey);
     ASSERT_EQ(10, addr.get_ip());
     ASSERT_EQ(11, addr.get_port());
 }
 
-TEST(MetaUtilsTest, TagTest) {
+TEST(MetaServiceUtilsTest, TagTest) {
     cpp2::Schema schema;
     decltype(schema.columns) cols;
     for (auto i = 1; i <= 3; i++) {
@@ -92,8 +92,8 @@ TEST(MetaUtilsTest, TagTest) {
         cols.emplace_back(std::move(column));
     }
     schema.set_columns(std::move(cols));
-    auto val = MetaUtils::schemaTagVal("test_tag", schema);
-    auto parsedSchema = MetaUtils::parseSchema(val);
+    auto val = MetaServiceUtils::schemaTagVal("test_tag", schema);
+    auto parsedSchema = MetaServiceUtils::parseSchema(val);
     ASSERT_EQ(parsedSchema, schema);
 }
 

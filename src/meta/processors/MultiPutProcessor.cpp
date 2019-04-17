@@ -4,20 +4,20 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "meta/processors/AddHostsProcessor.h"
+#include "meta/processors/MultiPutProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+void MultiPutProcessor::process(const cpp2::MultiPutReq& req) {
+    CHECK_SEGMENT(req.get_segment());
     std::vector<kvstore::KV> data;
-    for (auto& h : req.get_hosts()) {
-        data.emplace_back(MetaServiceUtils::hostKey(h.ip, h.port), MetaServiceUtils::hostVal());
+    for (auto& pair : req.get_pairs()) {
+        data.emplace_back(MetaServiceUtils::assembleSegmentKey(req.get_segment(), pair.get_key()),
+                          pair.get_value());
     }
     doPut(std::move(data));
 }
 
 }  // namespace meta
 }  // namespace nebula
-
