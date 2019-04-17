@@ -21,8 +21,8 @@ nebula_add_test(file_based_schema_manager_test)
 
 add_executable(
     meta_utils_test
-    MetaUtilsTest.cpp
-    ../MetaUtils.cpp
+    MetaServiceUtilsTest.cpp
+    ../MetaServiceUtils.cpp
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
