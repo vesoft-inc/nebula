@@ -12,15 +12,16 @@ namespace meta {
 void GetTagProcessor::process(const cpp2::GetTagReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
     std::string val;
-    std::string tagKey = MetaUtils::schemaTagKey(req.get_space_id(),
-                                                 req.get_tag_id(),
-                                                 req.get_version());
+    std::string tagKey = MetaServiceUtils::schemaTagKey(req.get_space_id(),
+                                                        req.get_tag_id(),
+                                                        req.get_version());
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, std::move(tagKey), &val);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    resp_.set_schema(MetaUtils::parseSchema(val));
+    resp_.set_schema(MetaServiceUtils::parseSchema(val));
     onFinished();
 }
 }  // namespace meta

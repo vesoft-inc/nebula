@@ -70,10 +70,16 @@ public:
     listSpaces();
 
     folly::Future<StatusOr<bool>>
+    dropSpace(std::string name);
+
+    folly::Future<StatusOr<bool>>
     addHosts(const std::vector<HostAddr>& hosts);
 
     folly::Future<StatusOr<std::vector<HostAddr>>>
     listHosts();
+
+    folly::Future<StatusOr<bool>>
+    removeHosts(const std::vector<HostAddr>& hosts);
 
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);
@@ -93,6 +99,26 @@ public:
                                 GraphSpaceID spaceId);
 
     int32_t partsNum(GraphSpaceID spaceId);
+
+    folly::Future<StatusOr<bool>>
+    multiPut(std::string segment,
+             std::vector<std::pair<std::string, std::string>> pairs);
+
+    folly::Future<StatusOr<std::string>>
+    get(std::string segment, std::string key);
+
+    folly::Future<StatusOr<std::vector<std::string>>>
+    multiGet(std::string segment, std::vector<std::string> keys);
+
+    folly::Future<StatusOr<std::vector<std::string>>>
+    scan(std::string segment, std::string start, std::string end);
+
+    folly::Future<StatusOr<bool>>
+    remove(std::string segment, std::string key);
+
+    folly::Future<StatusOr<bool>>
+    removeRange(std::string segment, std::string start, std::string end);
+
 
 protected:
     void loadDataThreadFunc();

@@ -61,9 +61,14 @@ OVERWRITE                   ([Oo][Vv][Ee][Rr][Ww][Rr][Ii][Tt][Ee])
 TRUE                        ([Tt][Rr][Uu][Ee])
 FALSE                       ([Ff][Aa][Ll][Ss][Ee])
 SHOW                        ([Ss][Hh][Oo][Ww])
+ADD                         ([Aa][Dd][Dd])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
 TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
-
+CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
+PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
+REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
+DROP                        ([Dd][Rr][Oo][Pp])
+REMOVE                      ([Rr][Ee][Mm][Oo][Vv][Ee])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -117,8 +122,14 @@ OCT                         ([0-7])
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {SHOW}                      { return TokenType::KW_SHOW; }
+{ADD}                       { return TokenType::KW_ADD; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
 {TIMESTAMP}                 { return TokenType::KW_TIMESTAMP; }
+{CREATE}                    { return TokenType::KW_CREATE;}
+{PARTITION_NUM}             { return TokenType::KW_PARTITION_NUM; }
+{REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
+{DROP}                      { return TokenType::KW_DROP; }
+{REMOVE}                    { return TokenType::KW_REMOVE; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -184,8 +195,8 @@ OCT                         ([0-7])
                                 return TokenType::INTEGER;
                             }
 [+-]?{DEC}+                 { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
-{DEC}+\.{DEC}*              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
-{DEC}*\.{DEC}+              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+[+-]?{DEC}+\.{DEC}*         { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+[+-]?{DEC}*\.{DEC}+         { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
 
 \${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 

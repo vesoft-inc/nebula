@@ -17,21 +17,21 @@ class ShowExecutor final : public Executor {
 public:
     ShowExecutor(Sentence *sentence, ExecutionContext *ectx);
 
-     const char* name() const override {
+    const char* name() const override {
         return "ShowExecutor";
     }
 
-     Status MUST_USE_RESULT prepare() override;
+    Status MUST_USE_RESULT prepare() override;
 
-     void execute() override;
+    void execute() override;
+    void showHosts();
 
-     void setupResponse(cpp2::ExecutionResponse &resp) override;
+    void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-    ShowSentence     *sentence_{nullptr};
+    ShowSentence                             *sentence_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>  resp_;
 };
-
 
 }   // namespace graph
 }   // namespace nebula

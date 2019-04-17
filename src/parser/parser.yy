@@ -57,6 +57,10 @@ class GraphScanner;
     nebula::UpdateList                     *update_list;
     nebula::UpdateItem                     *update_item;
     nebula::EdgeList                       *edge_list;
+    nebula::ArgumentList                   *argument_list;
+    nebula::HostList                       *host_list;
+    nebula::SpaceOptList                   *space_opt_list;
+    nebula::SpaceOptItem                   *space_opt_item;
 }
 
 /* destructors */
@@ -69,7 +73,8 @@ class GraphScanner;
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_DEFINE KW_VERTEX KW_TTL
 %token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD KW_CREATE
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -91,6 +96,8 @@ class GraphScanner;
 %type <expr> input_ref_expression
 %type <expr> var_ref_expression
 %type <expr> alias_ref_expression
+%type <expr> function_call_expression
+%type <argument_list> argument_list
 %type <type> type_spec
 %type <step_clause> step_clause
 %type <from_clause> from_clause
@@ -109,6 +116,9 @@ class GraphScanner;
 %type <update_list> update_list
 %type <update_item> update_item
 %type <edge_list> edge_list
+%type <host_list> host_list
+%type <space_opt_list> space_opt_list
+%type <space_opt_item> space_opt_item
 
 %type <intval> ttl_spec
 
@@ -122,7 +132,8 @@ class GraphScanner;
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
 %type <sentence> maintainance_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence
+%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence 
+%type <sentence> drop_space_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -166,6 +177,9 @@ primary_expression
     | L_PAREN expression R_PAREN {
         $$ = $2;
     }
+    | function_call_expression {
+        $$ = $1;
+    }
     ;
 
 input_ref_expression
@@ -207,6 +221,26 @@ alias_ref_expression
     }
     | LABEL DOT RANK_PROP {
         $$ = new EdgeRankExpression($1);
+    }
+    ;
+
+function_call_expression
+    : LABEL L_PAREN argument_list R_PAREN {
+        $$ = new FunctionCallExpression($1, $3);
+    }
+    ;
+
+argument_list
+    : %empty {
+        $$ = nullptr;
+    }
+    | expression {
+        $$ = new ArgumentList();
+        $$->addArgument($1);
+    }
+    | argument_list COMMA expression {
+        $$ = $1;
+        $$->addArgument($3);
     }
     ;
 
@@ -700,13 +734,6 @@ update_edge_sentence
     }
     ;
 
-show_sentence
-    : KW_SHOW KW_HOSTS {
-        auto sentence = new ShowSentence(ShowKind::kShowHosts);
-        $$ = sentence;
-    }
-    ;
-
 delete_vertex_sentence
     : KW_DELETE KW_VERTEX id_list where_clause {
         auto sentence = new DeleteVertexSentence($3);
@@ -734,6 +761,81 @@ delete_edge_sentence
     }
     ;
 
+show_sentence
+    : KW_SHOW KW_HOSTS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowHosts);
+    }
+    ;
+
+add_hosts_sentence
+    : KW_ADD KW_HOSTS L_PAREN host_list R_PAREN {
+        auto sentence = new AddHostsSentence();
+        sentence->setHosts($4);
+        $$ = sentence;
+    }
+    ;
+
+remove_hosts_sentence
+    : KW_REMOVE KW_HOSTS L_PAREN host_list R_PAREN {
+        auto sentence = new RemoveHostsSentence();
+        sentence->setHosts($4);
+        $$ = sentence;
+    }
+    ;
+
+host_list
+    : STRING {
+        $$ = new HostList();
+        $$->addHost($1);
+    }
+    | host_list COMMA STRING {
+        $$ = $1;
+        $$->addHost($3);
+    }
+    | host_list COMMA {
+        $$ = $1;
+    }
+    ;
+
+create_space_sentence
+    : KW_CREATE KW_SPACE LABEL L_PAREN space_opt_list R_PAREN {
+        auto sentence = new CreateSpaceSentence($3);
+        sentence->setOpts($5);
+        $$ = sentence;
+    }
+    ;
+
+space_opt_list
+    : space_opt_item {
+        $$ = new SpaceOptList();
+        $$->addOpt($1);
+    }
+    | space_opt_list COMMA space_opt_item {
+        $$ = $1;
+        $$->addOpt($3);
+    }
+    | space_opt_list COMMA {
+        $$ = $1;
+    }
+    ;
+
+ space_opt_item
+    : KW_PARTITION_NUM ASSIGN INTEGER {
+        $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3); 
+    }
+    | KW_REPLICA_FACTOR ASSIGN INTEGER {
+        $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
+    }
+    // TODO(YT) Create Spaces for different engines 
+    // KW_ENGINE_TYPE ASSIGN LABEL
+    ;
+
+drop_space_sentence
+    : KW_DROP KW_SPACE LABEL {
+        $$ = new DropSpaceSentence($3);
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -751,7 +853,11 @@ maintainance_sentence
     | describe_tag_sentence { $$ = $1; }
     | describe_edge_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
-    ;
+    | add_hosts_sentence { $$ = $1; }
+    | remove_hosts_sentence { $$ = $1; }
+    | create_space_sentence { $$ = $1; }
+    | drop_space_sentence { $$ = $1; }
+    ; 
 
 sentence
     : maintainance_sentence { $$ = $1; }

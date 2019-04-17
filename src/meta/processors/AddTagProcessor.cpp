@@ -21,32 +21,28 @@ void AddTagProcessor::process(const cpp2::AddTagReq& req) {
     std::vector<kvstore::KV> data;
     if (ret.ok()) {
         resp_.set_id(to(ret.value(), EntryType::TAG));
-        resp_.set_code(cpp2::ErrorCode::E_TAG_EXISTED);
+        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }
     auto version = time::TimeUtils::nowInMSeconds();
     TagID tagId = autoIncrementId();
-    data.emplace_back(MetaUtils::indexKey(EntryType::TAG, req.get_tag_name()),
+    data.emplace_back(MetaServiceUtils::indexKey(EntryType::TAG, req.get_tag_name()),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
     LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId;
-    data.emplace_back(MetaUtils::schemaTagKey(req.get_space_id(), tagId, version),
-                      MetaUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
+    data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),
+                      MetaServiceUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));
 }
 
 StatusOr<TagID> AddTagProcessor::getTag(const std::string& tagName) {
-    auto indexKey = MetaUtils::indexKey(EntryType::TAG, tagName);
+    auto indexKey = MetaServiceUtils::indexKey(EntryType::TAG, tagName);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
-        try {
-            return folly::to<TagID>(val);
-        } catch (std::exception& e) {
-            LOG(ERROR) << "Convert failed for " << val << ", msg " << e.what();
-        }
+        return *reinterpret_cast<const TagID*>(val.c_str());
     }
     return Status::Error("No Tag!");
 }

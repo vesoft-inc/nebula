@@ -363,4 +363,37 @@ TEST(Parser, Find) {
     }
 }
 
+TEST(Parser, AdminOperation) {
+    {
+        GQLParser parser;
+        std::string query = "add hosts (\"127.0.0.1:1000\", \"127.0.0.1:9000\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "show hosts";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "remove hosts (\"127.0.0.1:1000\", \"127.0.0.1:9000\")";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "create space default_space (partition_num=9, replica_factor=3)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "drop space default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 }   // namespace nebula
