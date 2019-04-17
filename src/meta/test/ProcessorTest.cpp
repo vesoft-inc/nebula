@@ -20,6 +20,12 @@
 #include "meta/processors/RemoveTagProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
+#include "meta/processors/MultiPutProcessor.h"
+#include "meta/processors/GetProcessor.h"
+#include "meta/processors/MultiGetProcessor.h"
+#include "meta/processors/RemoveProcessor.h"
+#include "meta/processors/RemoveRangeProcessor.h"
+#include "meta/processors/ScanProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -216,6 +222,143 @@ TEST(ProcessorTest, AddTagsTest) {
     }
 }
 
+TEST(ProcessorTest, KVOperationTest) {
+    fs::TempDir rootPath("/tmp/KVOperationTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto hostsNum = TestUtils::createSomeHosts(kv.get());
+    UNUSED(hostsNum);
+
+    {
+        cpp2::CreateSpaceReq req;
+        req.set_space_name("default_space");
+        req.set_parts_num(9);
+        req.set_replica_factor(3);
+
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
+    }
+    {
+        // Multi Put Test
+        std::vector<cpp2::Pair> pairs;
+        for (auto i = 0; i < 10; i++) {
+            pairs.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                               folly::stringPrintf("key_%d", i),
+                               folly::stringPrintf("value_%d", i));
+        }
+
+        cpp2::MultiPutReq req;
+        req.set_segment("test");
+        req.set_pairs(std::move(pairs));
+
+        auto* processor = MultiPutProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+    }
+    {
+        // Get Test
+        cpp2::GetReq req;
+        req.set_segment("test");
+        req.set_key("key_0");
+
+        auto* processor = GetProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ("value_0", resp.value);
+
+        cpp2::GetReq missedReq;
+        missedReq.set_segment("test");
+        missedReq.set_key("missed_key");
+
+        auto* missedProcessor = GetProcessor::instance(kv.get());
+        auto missedFuture = missedProcessor->getFuture();
+        missedProcessor->process(missedReq);
+        auto missedResp = std::move(missedFuture).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_KEY_NOT_FOUND, missedResp.code);
+    }
+    {
+        // Multi Get Test
+        std::vector<std::string> keys;
+        for (auto i = 0; i < 2; i++) {
+            keys.emplace_back(std::move(folly::stringPrintf("key_%d", i)));
+        }
+
+        cpp2::MultiGetReq req;
+        req.set_segment("test");
+        req.set_keys(std::move(keys));
+
+        auto* processor = MultiGetProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(2, resp.values.size());
+        ASSERT_EQ("value_0", resp.values[0]);
+        ASSERT_EQ("value_1", resp.values[1]);
+    }
+    {
+        // Scan Test
+        cpp2::ScanReq req;
+        req.set_segment("test");
+        req.set_start("key_1");
+        req.set_end("key_4");
+
+        auto* processor = ScanProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(3, resp.values.size());
+        ASSERT_EQ("value_1", resp.values[0]);
+        ASSERT_EQ("value_2", resp.values[1]);
+        ASSERT_EQ("value_3", resp.values[2]);
+    }
+    {
+        // Remove Test
+        cpp2::RemoveReq req;
+        req.set_segment("test");
+        req.set_key("key_9");
+
+        auto* processor = RemoveProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+    }
+    {
+        // Remove Range Test
+        cpp2::RemoveRangeReq req;
+        req.set_segment("test");
+        req.set_start("key_0");
+        req.set_end("key_4");
+
+        auto* processor = RemoveRangeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+    }
+    {
+        // Illegal Segment Test
+        cpp2::GetReq req;
+        req.set_segment("_test0_");
+        req.set_key("key_8");
+
+        auto* processor = GetProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL, resp.code);
+    }
+}
+
 TEST(ProcessorTest, ListOrGetTagsTest) {
     fs::TempDir rootPath("/tmp/ListTagsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
@@ -287,7 +430,7 @@ TEST(ProcessorTest, RemoveTagTest) {
          std::string tagVal;
          kvstore::ResultCode ret;
          std::unique_ptr<kvstore::KVIterator> iter;
-         ret = kv.get()->get(0, 0, std::move(MetaUtils::indexKey(EntryType::TAG, "tag_1")),
+         ret = kv.get()->get(0, 0, std::move(MetaServiceUtils::indexKey(EntryType::TAG, "tag_1")),
                              &tagVal);
          ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
          ret = kv.get()->prefix(0, 0, "__tags__", &iter);

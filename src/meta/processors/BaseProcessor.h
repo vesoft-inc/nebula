@@ -15,7 +15,8 @@
 #include "base/StatusOr.h"
 #include "time/Duration.h"
 #include "kvstore/KVStore.h"
-#include "meta/MetaUtils.h"
+#include "meta/MetaServiceUtils.h"
+#include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
 
 namespace nebula {
@@ -38,6 +39,16 @@ GENERATE_LOCK(tag);
 
 #undef GENERATE_LOCK
 };
+
+/**
+ * Check segemnt is consist of numbers and letters and should not empty.
+ * */
+#define CHECK_SEGMENT(segment) \
+    if (!MetaCommon::checkSegment(segment)) { \
+        resp_.set_code(cpp2::ErrorCode::E_STORE_SEGMENT_ILLEGAL); \
+        onFinished(); \
+        return; \
+    }
 
 #define MAX_VERSION_HEX 0x7FFFFFFFFFFFFFFF
 #define MIN_VERSION_HEX 0x0000000000000000
@@ -110,9 +121,35 @@ protected:
     void doPut(std::vector<kvstore::KV> data);
 
     /**
+     * General get function.
+     * */
+    StatusOr<std::string> doGet(const std::string& key);
+
+    /**
+     * General multi get function.
+     * */
+    StatusOr<std::vector<std::string>> doMultiGet(const std::vector<std::string>& keys);
+
+    /**
+     * General remove function.
+     * */
+    void doRemove(const std::string& key);
+
+    /**
+     * Remove keys from start to end, doesn't contain end.
+     * */
+    void doRemoveRange(const std::string& start,
+                       const std::string& end);
+
+    /**
+     * Scan keys from start to end, doesn't contain end.
+     * */
+     StatusOr<std::vector<std::string>> doScan(const std::string& start,
+                                               const std::string& end);
+     /**
      * General multi remove function.
      **/
-    void doRemove(std::vector<std::string> keys);
+     void doMultiRemove(std::vector<std::string> keys);
 
     /**
      * Get all hosts

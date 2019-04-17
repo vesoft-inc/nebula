@@ -24,7 +24,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     std::vector<std::string> deleteKeys;
 
-    auto prefix = MetaUtils::partPrefix(spaceId);
+    auto prefix = MetaServiceUtils::partPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -38,11 +38,11 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
         iter->next();
     }
 
-    deleteKeys.emplace_back(MetaUtils::indexKey(EntryType::SPACE, req.get_space_name()));
-    deleteKeys.emplace_back(MetaUtils::spaceKey(spaceId));
+    deleteKeys.emplace_back(MetaServiceUtils::indexKey(EntryType::SPACE, req.get_space_name()));
+    deleteKeys.emplace_back(MetaServiceUtils::spaceKey(spaceId));
 
     // TODO(YT) delete Tag/Edge under the space
-    doRemove(std::move(deleteKeys));
+    doMultiRemove(std::move(deleteKeys));
     // TODO(YT) delete part files of the space
 }
 

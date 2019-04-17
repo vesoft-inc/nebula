@@ -49,6 +49,11 @@ static Status setupSignalHandler();
 
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
+    if (FLAGS_data_path.empty()) {
+        LOG(ERROR) << "Meta Data Path should not empty";
+        return EXIT_FAILURE;
+    }
+
     if (FLAGS_daemonize) {
         google::SetStderrLogging(google::FATAL);
     } else {
@@ -86,8 +91,9 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Failed to start web service: " << status;
         return EXIT_FAILURE;
     }
+    LOG(INFO) << "Starting the meta Daemon on port " << FLAGS_port
+              << ", dataPath " << FLAGS_data_path;
 
-    LOG(INFO) << "Starting the meta Daemon on port " << FLAGS_port;
     auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
     CHECK(result.ok()) << result.status();
     uint32_t localIP;
