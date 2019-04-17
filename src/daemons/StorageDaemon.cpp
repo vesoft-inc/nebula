@@ -94,6 +94,7 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<nebula::kvstore::KVStore> kvstore(
             nebula::kvstore::KVStore::instance(std::move(options)));
     auto schemaMan = nebula::meta::SchemaManager::create();
+    schemaMan->init();
 
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/storage", [] {
