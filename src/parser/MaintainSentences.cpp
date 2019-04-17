@@ -110,4 +110,13 @@ std::string DescribeEdgeSentence::toString() const {
     return buf;
 }
 
+
+std::string YieldSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "YIELD ";
+    buf += yieldColumns_->toString();
+    return buf;
+}
+
 }   // namespace nebula
