@@ -22,9 +22,13 @@ enum ErrorCode {
 
     // Operation Failure
     E_NO_HOSTS       = -21,
-    E_SPACE_EXISTED  = -22,
+    E_EXISTED        = -22,
     E_NOT_FOUND      = -23,
-    E_TAG_EXISTED    = -24,
+
+    // KV Failure
+    E_STORE_FAILURE          = -31,
+    E_STORE_SEGMENT_ILLEGAL  = -32,
+    E_KEY_NOT_FOUND          = -33,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -38,6 +42,11 @@ union ID {
 struct IdName {
     1: ID     id,
     2: string name,
+}
+
+struct Pair {
+    1: string key,
+    2: string value,
 }
 
 struct TagItem {
@@ -116,7 +125,8 @@ struct GetTagReq {
 }
 
 struct GetTagResp {
-    1: common.Schema    schema,
+    1: ErrorCode        code,
+    2: common.Schema    schema,
 }
 
 // Edge related operations.
@@ -183,6 +193,67 @@ struct GetPartsAllocResp {
     3: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
 }
 
+struct MultiPutReq {
+    // segment is used to avoid conflict with system data.
+    // it should be comprised of numbers and letters.
+    1: string     segment,
+    2: list<Pair> pairs,
+}
+
+struct MultiPutResp {
+    1: ErrorCode code,
+}
+
+struct GetReq {
+    1: string segment,
+    2: string key,
+}
+
+ struct GetResp {
+    1: ErrorCode code,
+    2: string    value,
+}
+
+struct MultiGetReq {
+    1: string       segment,
+    2: list<string> keys,
+}
+
+struct MultiGetResp {
+    1: ErrorCode    code,
+    2: list<string> values,
+}
+
+struct RemoveReq {
+    1: string segment,
+    2: string key,
+}
+
+struct RemoveResp {
+    1: ErrorCode code,
+}
+
+struct RemoveRangeReq {
+    1: string segment,
+    2: string start,
+    3: string end,
+}
+
+struct RemoveRangeResp {
+    1: ErrorCode code,
+}
+
+struct ScanReq {
+    1: string segment,
+    2: string start,
+    3: string end,
+}
+
+struct ScanResp {
+    1: ErrorCode code,
+    2: list<string> values,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -204,5 +275,12 @@ service MetaService {
     ListHostsResp listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
+
+    MultiPutResp     multiPut(1: MultiPutReq req);
+    GetResp          get(1: GetReq req);
+    MultiGetResp     multiGet(1: MultiGetReq req);
+    RemoveResp       remove(1: RemoveReq req);
+    RemoveRangeResp  removeRange(1: RemoveRangeReq req);
+    ScanResp         scan(1: ScanReq req);
 }
 
