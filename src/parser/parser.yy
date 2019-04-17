@@ -869,7 +869,7 @@ maintain_sentence
     | drop_space_sentence { $$ = $1; }
     | yield_sentence {
         // Now we take YIELD as a normal mainteinance sentence.
-        // In the future, we might make it able to used in pipe.
+        // In the future, we might make it able to be used in pipe.
         $$ = $1;
     }
     ;
