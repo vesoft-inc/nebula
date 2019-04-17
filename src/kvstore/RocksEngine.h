@@ -100,6 +100,9 @@ public:
     ResultCode get(const std::string& key,
                    std::string* value) override;
 
+    ResultCode multiGet(const std::vector<std::string>& keys,
+                        std::vector<std::string>* values) override;
+
     ResultCode put(std::string key,
                    std::string value) override;
 

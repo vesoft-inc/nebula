@@ -44,6 +44,24 @@ public:
     folly::Future<cpp2::GetPartsAllocResp>
     future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) override;
 
+    folly::Future<cpp2::MultiPutResp>
+    future_multiPut(const cpp2::MultiPutReq& req) override;
+
+    folly::Future<cpp2::GetResp>
+    future_get(const cpp2::GetReq& req) override;
+
+    folly::Future<cpp2::MultiGetResp>
+    future_multiGet(const cpp2::MultiGetReq& req) override;
+
+    folly::Future<cpp2::RemoveResp>
+    future_remove(const cpp2::RemoveReq& req) override;
+
+    folly::Future<cpp2::RemoveRangeResp>
+    future_removeRange(const cpp2::RemoveRangeReq& req) override;
+
+    folly::Future<cpp2::ScanResp>
+    future_scan(const cpp2::ScanReq& req) override;
+
     /**
      * Schema related operations.
      * */
