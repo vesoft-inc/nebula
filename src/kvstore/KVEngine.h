@@ -24,10 +24,14 @@ public:
     virtual ResultCode get(const std::string& key,
                            std::string* value) = 0;
 
+    virtual ResultCode multiGet(const std::vector<std::string>& keys,
+                                std::vector<std::string>* values) = 0;
+
     virtual ResultCode put(std::string key,
                            std::string value) = 0;
 
     virtual ResultCode multiPut(std::vector<KV> keyValues) = 0;
+
     /**
      * Get all results in range [start, end)
      * */

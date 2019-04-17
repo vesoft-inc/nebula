@@ -32,9 +32,9 @@ add_executable(
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:network_obj>
@@ -85,9 +85,9 @@ add_executable(
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:network_obj>
@@ -218,9 +218,9 @@ add_executable(
     StorageClientTest.cpp
     $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:storage_service_handler>
-    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>

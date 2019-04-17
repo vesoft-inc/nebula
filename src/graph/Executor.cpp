@@ -9,7 +9,7 @@
 #include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"
 #include "parser/MaintainSentences.h"
-#include "parser/ShowSentences.h"
+#include "parser/AdminSentences.h"
 #include "graph/GoExecutor.h"
 #include "graph/UseExecutor.h"
 #include "graph/PipeExecutor.h"
@@ -21,8 +21,12 @@
 // #include "graph/DescribeEdgeExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
-#include "graph/ShowExecutor.h"
 #include "graph/AssignmentExecutor.h"
+#include "graph/ShowExecutor.h"
+#include "graph/AddHostsExecutor.h"
+#include "graph/RemoveHostsExecutor.h"
+#include "graph/CreateSpaceExecutor.h"
+#include "graph/DropSpaceExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -73,6 +77,18 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kAssignment:
             executor = std::make_unique<AssignmentExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAddHosts:
+            executor = std::make_unique<AddHostsExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kRemoveHosts:
+            executor = std::make_unique<RemoveHostsExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kCreateSpace:
+            executor = std::make_unique<CreateSpaceExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropSpace:
+            executor = std::make_unique<DropSpaceExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

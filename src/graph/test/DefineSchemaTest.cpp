@@ -119,5 +119,52 @@ TEST_F(DefineSchemaTest, DISABLED_Simple) {
     }
 }
 
+
+TEST_F(DefineSchemaTest, metaCommunication) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "add hosts(\"127.0.0.1:1000\", \"127.0.0.1:1100\")";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "show hosts";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"127.0.0.1", "1000"},
+            {"127.0.0.1", "1100"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "create space default_space(partition_num=9, replica_factor=3)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "drop space default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "remove hosts(\"127.0.0.1:1000\", \"127.0.0.1:1100\")";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "show hosts";
+        client->execute(query, resp);
+        ASSERT_EQ(0, (*(resp.get_rows())).size());
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula

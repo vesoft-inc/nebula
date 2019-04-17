@@ -252,6 +252,12 @@ ResultCode NebulaStore::get(GraphSpaceID spaceId, PartitionID partId,
     return engine->get(key, value);
 }
 
+ResultCode NebulaStore::multiGet(GraphSpaceID spaceId, PartitionID partId,
+                                 const std::vector<std::string>& keys,
+                                 std::vector<std::string>* values) {
+    CHECK_AND_RETURN_ENGINE(spaceId, partId);
+    return engine->multiGet(keys, values);
+}
 
 ResultCode NebulaStore::range(GraphSpaceID spaceId, PartitionID partId,
                               const std::string& start,
