@@ -39,7 +39,7 @@ void AlterTagProcessor::process(const cpp2::WriteTagReq& req) {
     }
 
     std::vector<kvstore::KV> data;
-    auto version = time::TimeUtils::nowInMSeconds();
+    auto version = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInUSeconds();
     LOG(INFO) << "Alter Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));

@@ -25,7 +25,7 @@ void AddTagProcessor::process(const cpp2::WriteTagReq& req) {
         return;
     }
     std::vector<kvstore::KV> data;
-    auto version = INT64_MAX - time::TimeUtils::nowInMSeconds();
+    auto version = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInUSeconds();
     TagID tagId = autoIncrementId();
     data.emplace_back(MetaServiceUtils::indexKey(EntryType::TAG, req.get_tag_name()),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));

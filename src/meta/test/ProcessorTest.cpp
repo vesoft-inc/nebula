@@ -363,7 +363,7 @@ TEST(ProcessorTest, KVOperationTest) {
 TEST(ProcessorTest, ListOrGetTagsTest) {
     fs::TempDir rootPath("/tmp/ListTagsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto version = time::TimeUtils::nowInMSeconds();
+    auto version = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInUSeconds();
     TestUtils::mockTag(kv.get(), 10, version);
 
     // test ListTagsProcessor
@@ -413,7 +413,8 @@ TEST(ProcessorTest, RemoveTagTest) {
      fs::TempDir rootPath("/tmp/RemoveTagTest.XXXXXX");
      std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
      ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
-     TestUtils::mockTag(kv.get(), 1, time::TimeUtils::nowInMSeconds());
+     auto version = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInUSeconds();
+     TestUtils::mockTag(kv.get(), 1, version);
       // remove tag processor test
      {
          cpp2::RemoveTagReq req;
@@ -444,7 +445,7 @@ TEST(ProcessorTest, AlterTagTest) {
     fs::TempDir rootPath("/tmp/AlterTagTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
-    auto version = time::TimeUtils::nowInMSeconds();
+    auto version = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInUSeconds();
     TestUtils::mockTag(kv.get(), 1, version);
     // Avoid the same version number with sleep
     sleep(1);
