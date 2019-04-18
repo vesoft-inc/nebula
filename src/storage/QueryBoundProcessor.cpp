@@ -14,15 +14,13 @@ namespace nebula {
 namespace storage {
 
 kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
-                                                       VertexID vId,
-                                                       std::vector<TagContext>& tagContexts,
-                                                       EdgeContext& edgeContext) {
+                                                       VertexID vId) {
     cpp2::VertexData vResp;
     vResp.set_vertex_id(vId);
-    if (!tagContexts.empty()) {
+    if (!this->tagContexts_.empty()) {
         RowWriter writer;
         PropsCollector collector(&writer);
-        for (auto& tc : tagContexts) {
+        for (auto& tc : this->tagContexts_) {
             VLOG(3) << "partId " << partId << ", vId " << vId
                     << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
             auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_, &collector);
@@ -33,14 +31,14 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
         vResp.set_vertex_data(writer.encode());
     }
 
-    if (!edgeContext.props_.empty()) {
+    if (!this->edgeContext_.props_.empty()) {
         RowSetWriter rsWriter;
         auto ret = collectEdgeProps(partId, vId,
-                                    edgeContext.edgeType_,
-                                    edgeContext.props_,
+                                    this->edgeContext_.edgeType_,
+                                    this->edgeContext_.props_,
                                     [&, this] (RowReader* reader,
                                                folly::StringPiece key,
-                                               std::vector<PropContext>& props) {
+                                               const std::vector<PropContext>& props) {
                                         RowWriter writer(rsWriter.schema());
                                         PropsCollector collector(&writer);
                                         this->collectProps(reader, key, props, &collector);
@@ -53,18 +51,20 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
             vResp.set_edge_data(std::move(rsWriter.data()));
         }
     }
-    vertices_.emplace_back(std::move(vResp));
+    {
+        std::lock_guard<folly::SpinLock> lg(this->lock_);
+        vertices_.emplace_back(std::move(vResp));
+    }
     return kvstore::ResultCode::SUCCEEDED;
 }
 
 
-void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
-                                      EdgeContext& edgeContext, int32_t retNum) {
+void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
     resp_.set_vertices(std::move(vertices_));
-    if (!tagContexts.empty()) {
+    if (!this->tagContexts_.empty()) {
         nebula::cpp2::Schema respTag;
-        respTag.columns.reserve(retNum - edgeContext.props_.size());
-        for (auto& tc : tagContexts) {
+        respTag.columns.reserve(retNum - this->edgeContext_.props_.size());
+        for (auto& tc : this->tagContexts_) {
             for (auto& prop : tc.props_) {
                 respTag.columns.emplace_back(columnDef(std::move(prop.prop_.name),
                                                        prop.type_.type));
@@ -74,11 +74,11 @@ void QueryBoundProcessor::onProcessed(std::vector<TagContext>& tagContexts,
             resp_.set_vertex_schema(std::move(respTag));
         }
     }
-    if (!edgeContext.props_.empty()) {
+    if (!this->edgeContext_.props_.empty()) {
         nebula::cpp2::Schema respEdge;
         decltype(respEdge.columns) cols;
-        cols.reserve(edgeContext.props_.size());
-        for (auto& prop : edgeContext.props_) {
+        cols.reserve(this->edgeContext_.props_.size());
+        for (auto& prop : this->edgeContext_.props_) {
             cols.emplace_back(columnDef(std::move(prop.prop_.name),
                                                   prop.type_.type));
         }

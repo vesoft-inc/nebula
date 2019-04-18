@@ -63,6 +63,7 @@ protected:
 
     void pushResultCode(cpp2::ErrorCode code, PartitionID partId) {
         if (code != cpp2::ErrorCode::SUCCEEDED) {
+            std::lock_guard<folly::SpinLock> lg(this->lock_);
             cpp2::ResultCode thriftRet;
             thriftRet.set_code(code);
             thriftRet.set_part_id(partId);

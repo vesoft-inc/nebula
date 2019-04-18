@@ -30,7 +30,12 @@ enum class BoundType {
 using EdgeProcessor
     = std::function<void(RowReader* reader,
                          folly::StringPiece key,
-                         std::vector<PropContext>& props)>;
+                         const std::vector<PropContext>& props)>;
+struct Bucket {
+    std::vector<std::pair<PartitionID, VertexID>> vertices_;
+};
+
+using OneVertexResp = std::tuple<PartitionID, VertexID, kvstore::ResultCode>;
 
 template<typename REQ, typename RESP>
 class QueryBaseProcessor : public BaseProcessor<RESP> {
@@ -40,55 +45,69 @@ public:
     void process(const cpp2::GetNeighborsRequest& req);
 
 protected:
+    virtual kvstore::ResultCode processVertex(PartitionID partID, VertexID vId) = 0;
+
+    virtual void onProcessFinished(int32_t retNum) = 0;
+
+protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
                                 meta::SchemaManager* schemaMan,
+                                folly::Executor* executor = nullptr,
                                 BoundType type = BoundType::OUT_BOUND)
         : BaseProcessor<RESP>(kvstore, schemaMan)
-        , type_(type) {}
+        , type_(type)
+        , executor_(executor) {}
     /**
      * Check whether current operation on the data is valid or not.
      * */
     bool validOperation(nebula::cpp2::SupportedType vType, cpp2::StatType statType);
 
     /**
-     * Check request meta is illegal or not. Return contexts for tag and edge.
+     * Check request meta is illegal or not and build contexts for tag and edge.
      * */
-    cpp2::ErrorCode checkAndBuildContexts(const REQ& req,
-                                          std::vector<TagContext>& tagContexts,
-                                          EdgeContext& edgeContext);
+    cpp2::ErrorCode checkAndBuildContexts(const REQ& req);
+
     /**
      * collect props in one row, you could define custom behavior by implement your own collector.
      * */
     void collectProps(RowReader* reader,
                       folly::StringPiece key,
-                      std::vector<PropContext>& props,
+                      const std::vector<PropContext>& props,
                       Collector* collector);
-
-    virtual kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
-                                              std::vector<TagContext>& tagContexts,
-                                              EdgeContext& edgeContext) = 0;
-
-    virtual void onProcessed(std::vector<TagContext>& tagContexts,
-                             EdgeContext& edgeContext,
-                             int32_t retNum) = 0;
-
+    /**
+     * Collect props for one vertex tag.
+     * */
     kvstore::ResultCode collectVertexProps(
                             PartitionID partId,
                             VertexID vId,
                             TagID tagId,
-                            std::vector<PropContext>& props,
+                            const std::vector<PropContext>& props,
                             Collector* collector);
-
+    /**
+     * Collect props for one vertex edge.
+     * */
     kvstore::ResultCode collectEdgeProps(
                                PartitionID partId,
                                VertexID vId,
                                EdgeType edgeType,
-                               std::vector<PropContext>& props,
+                               const std::vector<PropContext>& props,
                                EdgeProcessor proc);
+
+    std::vector<Bucket> genBuckets(const cpp2::GetNeighborsRequest& req);
+
+    folly::Future<std::vector<OneVertexResp>> asyncProcessBucket(Bucket bucket);
+
+    int32_t getBucketsNum(int32_t verticesNum, int handlerNum);
 
 protected:
     GraphSpaceID  spaceId_;
     BoundType     type_;
+    std::vector<TagContext> tagContexts_;
+    EdgeContext edgeContext_;
+    folly::Executor* executor_ = nullptr;
+
+public:
+    int32_t handlerNum_  = 1;
 };
 
 }  // namespace storage
