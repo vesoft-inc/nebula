@@ -148,9 +148,24 @@ TEST_F(DefineSchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "show spaces";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"1", "default_space"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "drop space default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "show spaces";
+        client->execute(query, resp);
+        ASSERT_EQ(0, (*(resp.get_rows())).size());
     }
     {
         cpp2::ExecutionResponse resp;
