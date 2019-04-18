@@ -36,7 +36,7 @@ func WithTimeout(duration time.Duration) GraphOption {
     }
 }
 
-func NewClient(address string) (client *GraphClient, err error) {
+func NewClient(address string, opts ...GraphOption) (client *GraphClient, err error) {
     options := defaultGraphOptions
     for _, opt := range opts {
         opt(&options)
