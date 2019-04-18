@@ -10,16 +10,39 @@ import (
     "../../../interface/gen-go/nebula/graph"
     "github.com/facebook/fbthrift/thrift/lib/go/thrift"
     "log"
+    "time"
 )
 
 var logger *log.Logger
 
+type GraphOptions struct {
+    Timeout time.Duration
+}
+
+type GraphOption func(*GraphOptions)
+
+var defaultGraphOptions = GraphOptions{
+    Timeout: 3 * 1000,
+}
+
 type GraphClient struct {
-    graph graph.GraphServiceClient
+    graph  graph.GraphServiceClient
+    option GraphOptions
+}
+
+func WithTimeout(duration time.Duration) GraphOption {
+    return func(options *GraphOptions) {
+        options.Timeout = duration
+    }
 }
 
 func NewClient(address string) (client *GraphClient, err error) {
-    timeoutOption := thrift.SocketTimeout(1000 * 3)
+    options := defaultGraphOptions
+    for _, opt := range opts {
+        opt(&options)
+    }
+
+    timeoutOption := thrift.SocketTimeout(options.Timeout)
     addressOption := thrift.SocketAddr(address)
     transport, err := thrift.NewSocket(timeoutOption, addressOption)
 
