@@ -73,7 +73,10 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     req.set_return_columns(std::move(tmpColumns));
 
     LOG(INFO) << "Test QueryVertexPropsRequest...";
-    auto* processor = QueryVertexPropsProcessor::instance(kv.get(), schemaMan.get());
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
+                                                          schemaMan.get(),
+                                                          executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

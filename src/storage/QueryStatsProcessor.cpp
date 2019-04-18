@@ -67,43 +67,38 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
 }
 
 kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
-                                                       VertexID vId,
-                                                       std::vector<TagContext>& tagContexts,
-                                                       EdgeContext& edgeContext) {
-    for (auto& tc : tagContexts) {
+                                                       VertexID vId) {
+    for (auto& tc : this->tagContexts_) {
         auto ret = this->collectVertexProps(partId, vId, tc.tagId_, tc.props_, &collector_);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
     }
 
-    auto ret = this->collectEdgeProps(partId,
-                                      vId,
-                                      edgeContext.edgeType_,
-                                      edgeContext.props_,
-                                      [&, this] (RowReader* reader,
-                                                 folly::StringPiece key,
-                                                 std::vector<PropContext>& props) {
-                                          this->collectProps(reader, key, props, &collector_);
-                                      });
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return ret;
+    if (!this->edgeContext_.props_.empty()) {
+         return this->collectEdgeProps(partId,
+                                       vId,
+                                       this->edgeContext_.edgeType_,
+                                       this->edgeContext_.props_,
+                                       [&, this] (RowReader* reader,
+                                                  folly::StringPiece key,
+                                                  const std::vector<PropContext>& props) {
+                                           this->collectProps(reader, key, props, &collector_);
+                                       });
     }
     return kvstore::ResultCode::SUCCEEDED;
 }
 
 
-void QueryStatsProcessor::onProcessed(std::vector<TagContext>& tagContexts,
-                                      EdgeContext& edgeContext,
-                                      int32_t retNum) {
+void QueryStatsProcessor::onProcessFinished(int32_t retNum) {
     std::vector<PropContext> props;
     props.reserve(retNum);
-    for (auto& tc : tagContexts) {
+    for (auto& tc : this->tagContexts_) {
         for (auto& prop : tc.props_) {
             props.emplace_back(std::move(prop));
         }
     }
-    for (auto& prop : edgeContext.props_) {
+    for (auto& prop : this->edgeContext_.props_) {
         props.emplace_back(std::move(prop));
     }
     std::sort(props.begin(), props.end(), [](auto& l, auto& r){

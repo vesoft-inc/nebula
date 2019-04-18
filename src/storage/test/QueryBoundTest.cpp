@@ -182,7 +182,8 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     buildRequest(req);
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get());
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -202,7 +203,9 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
     buildRequest(req, false);
 
     LOG(INFO) << "Test QueryInBoundRequest...";
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), BoundType::IN_BOUND);
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
+                                                    executor.get(), BoundType::IN_BOUND);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

@@ -13,6 +13,8 @@
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/SchemaManager.h"
+#include <folly/executors/ThreadPoolExecutor.h>
+#include <folly/executors/CPUThreadPoolExecutor.h>
 
 
 DECLARE_string(part_man_type);
@@ -22,12 +24,12 @@ namespace storage {
 
 class TestUtils {
 public:
-    static kvstore::KVStore* initKV(const char* rootPath) {
+    static kvstore::KVStore* initKV(const char* rootPath, int32_t partNum = 6) {
         auto partMan = std::make_unique<kvstore::MemPartManager>();
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0, 1, 2, 3, 4, 5}
         auto& partsMap = partMan->partsMap();
-        for (auto partId = 0; partId < 6; partId++) {
+        for (auto partId = 0; partId < partNum; partId++) {
             partsMap[0][partId] = PartMeta();
         }
         std::vector<std::string> paths;
