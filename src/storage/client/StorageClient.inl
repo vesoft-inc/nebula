@@ -4,7 +4,6 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "thrift/ThriftClientManager.h"
 #include <folly/Try.h>
 
 namespace nebula {
@@ -15,8 +14,8 @@ namespace {
 template<class Request, class RemoteFunc, class Response>
 struct ResponseContext {
 public:
-    ResponseContext(size_t partsSent, RemoteFunc&& remoteFunc)
-        : resp(partsSent)
+    ResponseContext(size_t reqsSent, RemoteFunc&& remoteFunc)
+        : resp(reqsSent)
         , serverMethod(std::move(remoteFunc)) {}
 
     // Return true if processed all responses
@@ -87,8 +86,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
     for (auto& req : requests) {
         auto& host = req.first;
-        auto client = thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>
-                            ::getClient(host, evb);
+        auto client = clientsMan_->client(host, evb);
         // Result is a pair of <Request&, bool>
         auto res = context->insertRequest(host, std::move(req.second));
         DCHECK(res.second);
@@ -100,7 +98,9 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
             .then(evb, [context, host] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
+                    LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
                     for (auto& part : r.parts) {
+                        VLOG(3) << "Exception! Failed part " << part.first;
                         context->resp.failedParts().emplace(
                             part.first,
                             storage::cpp2::ErrorCode::E_RPC_FAILURE);
@@ -111,6 +111,8 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                     auto& result = resp.get_result();
                     bool hasFailure{false};
                     for (auto& code : result.get_failed_codes()) {
+                        VLOG(3) << "Failure! Failed part " << code.get_part_id()
+                                << ", failed code " << static_cast<int32_t>(code.get_code());
                         hasFailure = true;
                         if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
                             // TODO Need to retry the new leader
@@ -126,7 +128,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                     }
 
                     // Adjust the latency
-                    context->resp.setLatency(result.get_latency_in_ms());
+                    context->resp.setLatency(result.get_latency_in_us());
 
                     // Keep the response
                     context->resp.responses().emplace_back(std::move(resp));

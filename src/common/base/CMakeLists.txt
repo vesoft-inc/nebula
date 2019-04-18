@@ -1,9 +1,11 @@
 add_library(
     base_obj OBJECT
+    Base.cpp
     Cord.cpp
     Configuration.cpp
     Status.cpp
     SanitizerOptions.cpp
+    SignalHandler.cpp
 )
 add_dependencies(base_obj third-party)
 IF(${PCHSupport_FOUND})

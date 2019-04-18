@@ -8,8 +8,7 @@
 #include <gtest/gtest.h>
 #include <folly/String.h>
 #include <fstream>
-#include "meta/PartManager.h"
-#include "meta/SchemaManager.h"
+#include "meta/FileBasedSchemaManager.h"
 #include "fs/TempFile.h"
 
 DECLARE_string(schema_file);
@@ -69,34 +68,36 @@ void prepareSchemaFile() {
 
 
 TEST(FileBasedSchemaManager, readFromSchemaFile) {
-    EXPECT_EQ(1, SchemaManager::getNewestEdgeSchemaVer("space_one", "friend"));
-    EXPECT_EQ(3, SchemaManager::getNewestEdgeSchemaVer("space_one", "transfer"));
+    auto schemaMan = std::make_unique<FileBasedSchemaManager>();
+    schemaMan->init();
+    EXPECT_EQ(1, schemaMan->getNewestEdgeSchemaVer("space_one", "friend"));
+    EXPECT_EQ(3, schemaMan->getNewestEdgeSchemaVer("space_one", "transfer"));
 
-    auto sm1 = SchemaManager::getEdgeSchema("space_one", "friend");
+    auto sm1 = schemaMan->getEdgeSchema("space_one", "friend");
     EXPECT_EQ(1, sm1->getVersion());
     EXPECT_EQ(3, sm1->getNumFields());
     EXPECT_EQ(2, sm1->getFieldIndex("pending"));
-    EXPECT_EQ(cpp2::SupportedType::VID, sm1->getFieldType("origin").type);
+    EXPECT_EQ(nebula::cpp2::SupportedType::VID, sm1->getFieldType("origin").type);
 
-    auto sm2 = SchemaManager::getEdgeSchema("space_one", "transfer");
+    auto sm2 = schemaMan->getEdgeSchema("space_one", "transfer");
     EXPECT_EQ(3, sm2->getVersion());
     EXPECT_EQ(4, sm2->getNumFields());
     EXPECT_EQ(3, sm2->getFieldIndex("amount"));
-    EXPECT_EQ(cpp2::SupportedType::DATE, sm2->getFieldType("time").type);
+    EXPECT_EQ(nebula::cpp2::SupportedType::DATE, sm2->getFieldType("time").type);
 
-    EXPECT_EQ(2, SchemaManager::getNewestTagSchemaVer("space_one", "person"));
+    EXPECT_EQ(2, schemaMan->getNewestTagSchemaVer("space_one", "person"));
 
-    auto sm3 = SchemaManager::getTagSchema("space_one", "person");
+    auto sm3 = schemaMan->getTagSchema("space_one", "person");
     EXPECT_EQ(2, sm3->getVersion());
     EXPECT_EQ(4, sm3->getNumFields());
     EXPECT_EQ(3, sm3->getFieldIndex("address"));
-    EXPECT_EQ(cpp2::SupportedType::STRING, sm3->getFieldType("address").type);
+    EXPECT_EQ(nebula::cpp2::SupportedType::STRING, sm3->getFieldType("address").type);
 
-    auto sm4 = SchemaManager::getTagSchema("space_one", "person", 1);
+    auto sm4 = schemaMan->getTagSchema("space_one", "person", 1);
     EXPECT_EQ(1, sm4->getVersion());
     EXPECT_EQ(3, sm4->getNumFields());
     EXPECT_EQ(2, sm4->getFieldIndex("employer"));
-    EXPECT_EQ(cpp2::SupportedType::STRING, sm4->getFieldType("employer").type);
+    EXPECT_EQ(nebula::cpp2::SupportedType::STRING, sm4->getFieldType("employer").type);
 }
 
 }  // namespace meta

@@ -22,6 +22,15 @@ const std::unordered_map<std::string, PropContext::PropInKeyType> kPropsInKey_ =
     {"_rank", PropContext::PropInKeyType::RANK}
 };
 
+enum class BoundType {
+    IN_BOUND,
+    OUT_BOUND,
+};
+
+using EdgeProcessor
+    = std::function<void(RowReader* reader,
+                         folly::StringPiece key,
+                         std::vector<PropContext>& props)>;
 
 template<typename REQ, typename RESP>
 class QueryBaseProcessor : public BaseProcessor<RESP> {
@@ -31,10 +40,13 @@ public:
     void process(const cpp2::GetNeighborsRequest& req);
 
 protected:
-    explicit QueryBaseProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<RESP>(kvstore) {}
+    explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
+                                meta::SchemaManager* schemaMan,
+                                BoundType type = BoundType::OUT_BOUND)
+        : BaseProcessor<RESP>(kvstore, schemaMan)
+        , type_(type) {}
     /**
-     * Check whether current operatin on the data is valid or not.
+     * Check whether current operation on the data is valid or not.
      * */
     bool validOperation(nebula::cpp2::SupportedType vType, cpp2::StatType statType);
 
@@ -60,8 +72,23 @@ protected:
                              EdgeContext& edgeContext,
                              int32_t retNum) = 0;
 
+    kvstore::ResultCode collectVertexProps(
+                            PartitionID partId,
+                            VertexID vId,
+                            TagID tagId,
+                            std::vector<PropContext>& props,
+                            Collector* collector);
+
+    kvstore::ResultCode collectEdgeProps(
+                               PartitionID partId,
+                               VertexID vId,
+                               EdgeType edgeType,
+                               std::vector<PropContext>& props,
+                               EdgeProcessor proc);
+
 protected:
     GraphSpaceID  spaceId_;
+    BoundType     type_;
 };
 
 }  // namespace storage

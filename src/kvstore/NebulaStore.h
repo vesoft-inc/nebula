@@ -7,9 +7,9 @@
 #ifndef KVSTORE_NEBULASTORE_H_
 #define KVSTORE_NEBULASTORE_H_
 
+#include "base/Base.h"
 #include <gtest/gtest_prod.h>
 #include <folly/RWSpinLock.h>
-#include "base/Base.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/Part.h"
@@ -21,21 +21,21 @@ namespace kvstore {
 // <engine pointer, path>
 using Engine = std::pair<std::unique_ptr<KVEngine>, std::string>;
 
-using PartEngine = std::unordered_map<PartitionID, Engine*>;
-
 struct GraphSpaceKV {
     std::unordered_map<PartitionID, std::unique_ptr<Part>> parts_;
     std::vector<Engine> engines_;
 };
 
+
 class NebulaStore : public KVStore, public Handler {
-    FRIEND_TEST(KVStoreTest, SimpleTest);
-    FRIEND_TEST(KVStoreTest, PartsTest);
+    FRIEND_TEST(NebulaStoreTest, SimpleTest);
+    FRIEND_TEST(NebulaStoreTest, PartsTest);
 
 public:
     explicit NebulaStore(KVOptions options)
-            : partMan_(PartManager::instance())
-            , options_(std::move(options)) {}
+            : options_(std::move(options)) {
+        partMan_ = std::move(options_.partMan_);
+    }
 
     ~NebulaStore() = default;
 
@@ -52,6 +52,11 @@ public:
                    PartitionID  partId,
                    const std::string& key,
                    std::string* value) override;
+
+    ResultCode multiGet(GraphSpaceID spaceId,
+                        PartitionID partId,
+                        const std::vector<std::string>& keys,
+                        std::vector<std::string>* values) override;
 
     /**
      * Get all results in range [start, end)
@@ -83,11 +88,28 @@ public:
                      const std::string& key,
                      KVCallback cb) override;
 
+    void asyncMultiRemove(GraphSpaceID spaceId,
+                          PartitionID  partId,
+                          std::vector<std::string> keys,
+                          KVCallback cb) override;
+
     void asyncRemoveRange(GraphSpaceID spaceId,
                           PartitionID partId,
                           const std::string& start,
                           const std::string& end,
                           KVCallback cb) override;
+
+    ResultCode ingest(GraphSpaceID spaceId,
+                      const std::string& extra,
+                      const std::vector<std::string>& files);
+
+    ResultCode setOption(GraphSpaceID spaceId,
+                         const std::string& config_key,
+                         const std::string& config_value);
+
+    ResultCode setDBOption(GraphSpaceID spaceId,
+                           const std::string& config_key,
+                           const std::string& config_value);
 
 private:
     /**
@@ -96,6 +118,10 @@ private:
     void addSpace(GraphSpaceID spaceId) override;
 
     void addPart(GraphSpaceID spaceId, PartitionID partId) override;
+
+    void removeSpace(GraphSpaceID spaceId) override;
+
+    void removePart(GraphSpaceID spaceId, PartitionID partId) override;
 
 private:
     Engine newEngine(GraphSpaceID spaceId, std::string rootPath);
@@ -106,9 +132,8 @@ private:
 
 private:
     std::unordered_map<GraphSpaceID, std::unique_ptr<GraphSpaceKV>> kvs_;
-    // The lock used to protect kvs_
     folly::RWSpinLock lock_;
-    PartManager* partMan_ = nullptr;
+    std::unique_ptr<PartManager> partMan_{nullptr};
     KVOptions options_;
 };
 

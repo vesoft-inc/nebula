@@ -17,14 +17,18 @@ namespace storage {
 class QueryBoundProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse> {
 public:
-    static QueryBoundProcessor* instance(kvstore::KVStore* kvstore) {
-        return new QueryBoundProcessor(kvstore);
+    static QueryBoundProcessor* instance(kvstore::KVStore* kvstore,
+                                         meta::SchemaManager* schemaMan,
+                                         BoundType type = BoundType::OUT_BOUND) {
+        return new QueryBoundProcessor(kvstore, schemaMan, type);
     }
 
 protected:
-    explicit QueryBoundProcessor(kvstore::KVStore* kvstore)
+    explicit QueryBoundProcessor(kvstore::KVStore* kvstore,
+                                 meta::SchemaManager* schemaMan,
+                                 BoundType type)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryResponse>(kvstore) {}
+                             cpp2::QueryResponse>(kvstore, schemaMan, type) {}
 
     kvstore::ResultCode processVertex(PartitionID partID,
                                       VertexID vId,
@@ -34,18 +38,6 @@ protected:
     void onProcessed(std::vector<TagContext>& tagContexts,
                      EdgeContext& edgeContext,
                      int32_t retNum) override;
-
-    kvstore::ResultCode collectVertexProps(PartitionID partId,
-                                           VertexID vId,
-                                           TagID tagId,
-                                           std::vector<PropContext>& props,
-                                           RowWriter& writer);
-
-    kvstore::ResultCode collectEdgeProps(PartitionID partId,
-                                         VertexID vId,
-                                         EdgeType edgeType,
-                                         std::vector<PropContext>& props,
-                                         RowSetWriter& writer);
 
 private:
     std::vector<cpp2::VertexData> vertices_;

@@ -9,16 +9,17 @@
 #include <rocksdb/db.h>
 #include <rocksdb/slice.h>
 #include <rocksdb/options.h>
-#include "kvstore/RocksdbEngine.h"
+#include "kvstore/RocksEngine.h"
 #include "fs/TempFile.h"
 #include "fs/TempDir.h"
 
 namespace nebula {
 namespace kvstore {
+
 TEST(Load, SSTLoad) {
     rocksdb::Options options;
     rocksdb::SstFileWriter writer(rocksdb::EnvOptions(), options);
-    fs::TempDir rootPath("/tmp/rocksdb_engine_test.XXXXXX");
+    fs::TempDir rootPath("/tmp/load_test.XXXXXX");
     auto file = folly::stringPrintf("%s/%s", rootPath.path(), "data.sst");
     auto s = writer.Open(file);
     ASSERT_TRUE(s.ok());
@@ -26,7 +27,7 @@ TEST(Load, SSTLoad) {
     writer.Put("key", "value");
     writer.Finish();
 
-    auto engine = std::make_unique<RocksdbEngine>(0, rootPath.path());
+    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
     std::vector<std::string> files = {file};
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->ingest(files));
 
@@ -34,8 +35,10 @@ TEST(Load, SSTLoad) {
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->get("key", &result));
     EXPECT_EQ(result, "value");
 }
+
 }   // namespace kvstore
 }   // namespace nebula
+
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

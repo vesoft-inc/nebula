@@ -69,13 +69,13 @@ union ColumnValue {
     11: DateTime datetime;
 
     // Graph specific
-//    PATH = 41;
+    // PATH = 41;
 
     // Container types
-//    LIST = 101;
-//    SET = 102;
-//    MAP = 103;
-//    STRUCT = 104;
+    // LIST = 101;
+    // SET = 102;
+    // MAP = 103;
+    // STRUCT = 104;
 }
 
 
@@ -86,7 +86,7 @@ struct RowValue {
 
 struct ExecutionResponse {
     1: required ErrorCode error_code;
-    2: required i32 latency_in_ms;          // Execution time on server
+    2: required i32 latency_in_us;          // Execution time on server
     3: optional string error_msg;
     4: optional list<binary> column_names;  // Column names
     5: optional list<RowValue> rows;

@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "base/Cord.h"
 #include "parser/Expressions.h"
+#include "parser/FunctionManager.h"
 
 
 #define THROW_IF_NO_SPACE(POS, END, REQUIRE)                                        \
@@ -20,43 +21,11 @@
 
 namespace nebula {
 
-void ExpressionContext::print() const {
-    for (auto &entry : aliasInfo_) {
-        FLOG_INFO("Alias `%s': kind of `%s'",
-                entry.first.c_str(), aliasKindToString(entry.second.kind_).c_str());
-    }
-    if (!srcNodePropNames_.empty()) {
-        auto srclist = std::accumulate(std::next(srcNodePropNames_.begin()),
-                                       srcNodePropNames_.end(),
-                                       *srcNodePropNames_.begin(),
-                                       [] (auto &a, auto &b) { return a + ", " + b; });
-        FLOG_INFO("Referred source node's properties: %s", srclist.c_str());
-    }
-    if (!dstNodePropNames_.empty()) {
-        auto dstlist = std::accumulate(std::next(dstNodePropNames_.begin()),
-                                       dstNodePropNames_.end(),
-                                       *dstNodePropNames_.begin(),
-                                       [] (auto &a, auto &b) { return a + ", " + b; });
-        FLOG_INFO("Referred destination node's properties: %s", dstlist.c_str());
-    }
-    if (!edgePropNames_.empty()) {
-        auto edgelist = std::accumulate(std::next(edgePropNames_.begin()),
-                                        edgePropNames_.end(),
-                                        *edgePropNames_.begin(),
-                                        [] (auto &a, auto &b) { return a + ", " + b; });
-        FLOG_INFO("Referred edge's properties: %s", edgelist.c_str());
-    }
-}
-
 
 Status ExpressionContext::addAliasProp(const std::string &alias, const std::string &prop) {
     auto kind = aliasKind(alias);
     if (kind == AliasKind::Unknown) {
         return Status::Error("Alias `%s' not defined", alias.c_str());
-    }
-    if (kind == AliasKind::SourceNode) {
-        addSrcNodeProp(prop);
-        return Status::OK();
     }
     if (kind == AliasKind::Edge) {
         addEdgeProp(prop);
@@ -103,6 +72,8 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
     switch (intToKind(kind)) {
         case kPrimary:
             return std::make_unique<PrimaryExpression>();
+        case kFunctionCall:
+            return std::make_unique<FunctionCallExpression>();
         case kUnary:
             return std::make_unique<UnaryExpression>();
         case kTypeCasting:
@@ -113,8 +84,6 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
             return std::make_unique<RelationalExpression>();
         case kLogical:
             return std::make_unique<LogicalExpression>();
-        case kSourceId:
-            return std::make_unique<SourceIdExpression>();
         case kSourceProp:
             return std::make_unique<SourcePropertyExpression>();
         case kEdgeRank:
@@ -129,8 +98,6 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
             return std::make_unique<EdgePropertyExpression>();
         case kVariableProp:
             return std::make_unique<VariablePropertyExpression>();
-        case kDestId:
-            return std::make_unique<DestIdExpression>();
         case kDestProp:
             return std::make_unique<DestPropertyExpression>();
         case kInputProp:
@@ -171,7 +138,7 @@ Expression::decode(folly::StringPiece buffer) noexcept {
 std::string InputPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += "$_.";
+    buf += "$-.";
     buf += *prop_;
     return buf;
 }
@@ -219,6 +186,7 @@ VariantType DestPropertyExpression::eval() const {
 
 
 Status DestPropertyExpression::prepare() {
+    context_->addDstTagProp(*tag_, *prop_);
     return Status::OK();
 }
 
@@ -251,46 +219,6 @@ const char* DestPropertyExpression::decode(const char *pos, const char *end) {
         prop_ = std::make_unique<std::string>(pos, size);
         pos += size;
     }
-
-    return pos;
-}
-
-
-std::string DestIdExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$$[";
-    buf += *tag_;
-    buf += "]._id";
-    return buf;
-}
-
-
-VariantType DestIdExpression::eval() const {
-    return context_->getters().getDstTagId();
-}
-
-
-Status DestIdExpression::prepare() {
-    return Status::OK();
-}
-
-
-void DestIdExpression::encode(Cord &cord) const {
-    cord << kindToInt(kind());
-    cord << static_cast<uint16_t>(tag_->size());
-    cord << *tag_;
-}
-
-
-const char* DestIdExpression::decode(const char *pos, const char *end) {
-    THROW_IF_NO_SPACE(pos, end, 2UL);
-    auto size = *reinterpret_cast<const uint16_t*>(pos);
-    pos += 2;
-
-    THROW_IF_NO_SPACE(pos, end, size);
-    tag_ = std::make_unique<std::string>(pos, size);
-    pos += size;
 
     return pos;
 }
@@ -455,7 +383,7 @@ std::string EdgeSrcIdExpression::toString() const {
 
 
 VariantType EdgeSrcIdExpression::eval() const {
-    return context_->getters().getSrcTagId();
+    return context_->getters().getEdgeProp("_src");
 }
 
 
@@ -494,7 +422,7 @@ std::string EdgeDstIdExpression::toString() const {
 
 
 VariantType EdgeDstIdExpression::eval() const {
-    return context_->getters().getDstTagId();
+    return context_->getters().getEdgeProp("_dst");
 }
 
 
@@ -533,7 +461,7 @@ std::string EdgeRankExpression::toString() const {
 
 
 VariantType EdgeRankExpression::eval() const {
-    return context_->getters().getEdgeRank();
+    return context_->getters().getEdgeProp("_rank");
 }
 
 
@@ -565,8 +493,7 @@ const char* EdgeRankExpression::decode(const char *pos, const char *end) {
 std::string SourcePropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += *alias_;
-    buf += "[";
+    buf += "$^[";
     buf += *tag_;
     buf += "].";
     buf += *prop_;
@@ -580,6 +507,7 @@ VariantType SourcePropertyExpression::eval() const {
 
 
 Status SourcePropertyExpression::prepare() {
+    context_->addSrcTagProp(*tag_, *prop_);
     return Status::OK();
 }
 
@@ -612,47 +540,6 @@ const char* SourcePropertyExpression::decode(const char *pos, const char *end) {
         prop_ = std::make_unique<std::string>(pos, size);
         pos += size;
     }
-
-    return pos;
-}
-
-
-std::string SourceIdExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "[";
-    buf += *tag_;
-    buf += "]._id";
-    return buf;
-}
-
-
-VariantType SourceIdExpression::eval() const {
-    return context_->getters().getSrcTagId();
-}
-
-
-Status SourceIdExpression::prepare() {
-    return Status::OK();
-}
-
-
-void SourceIdExpression::encode(Cord &cord) const {
-    cord << kindToInt(kind());
-    cord << static_cast<uint16_t>(tag_->size());
-    cord << *tag_;
-}
-
-
-const char* SourceIdExpression::decode(const char *pos, const char *end) {
-    THROW_IF_NO_SPACE(pos, end, 2UL);
-    auto size = *reinterpret_cast<const uint16_t*>(pos);
-    pos += 2;
-
-    THROW_IF_NO_SPACE(pos, end, size);
-    tag_ = std::make_unique<std::string>(pos, size);
-    pos += size;
 
     return pos;
 }
@@ -759,6 +646,88 @@ const char* PrimaryExpression::decode(const char *pos, const char *end) {
 }
 
 
+std::string FunctionCallExpression::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += *name_;
+    buf += "(";
+    for (auto &arg : args_) {
+        buf += arg->toString();
+        buf += ",";
+    }
+    if (!args_.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+
+VariantType FunctionCallExpression::eval() const {
+    std::vector<VariantType> args;
+    args.resize(args_.size());
+    auto eval = [] (auto &expr) {
+        return expr->eval();
+    };
+    std::transform(args_.begin(), args_.end(), args.begin(), eval);
+    return function_(args);
+}
+
+
+Status FunctionCallExpression::prepare() {
+    auto result = FunctionManager::get(*name_, args_.size());
+    if (!result.ok()) {
+        return std::move(result).status();
+    }
+
+    function_ = std::move(result).value();
+
+    auto status = Status::OK();
+    for (auto &arg : args_) {
+        status = arg->prepare();
+        if (!status.ok()) {
+            break;
+        }
+    }
+    return status;
+}
+
+
+void FunctionCallExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+
+    cord << static_cast<uint16_t>(name_->size());
+    cord << *name_;
+
+    cord << static_cast<uint16_t>(args_.size());
+    for (auto &arg : args_) {
+        arg->encode(cord);
+    }
+}
+
+
+const char* FunctionCallExpression::decode(const char *pos, const char *end) {
+    THROW_IF_NO_SPACE(pos, end, 2UL);
+    auto size = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
+
+    THROW_IF_NO_SPACE(pos, end, size);
+    name_ = std::make_unique<std::string>(pos, size);
+    pos += size;
+
+    auto count = *reinterpret_cast<const uint16_t*>(pos);
+    pos += 2;
+
+    args_.reserve(count);
+    for (auto i = 0u; i < count; i++) {
+        THROW_IF_NO_SPACE(pos, end, 1UL);
+        auto arg = makeExpr(*reinterpret_cast<const uint8_t*>(pos++));
+        pos = arg->decode(pos, end);
+        args_.emplace_back(std::move(arg));
+    }
+    return pos;
+}
+
+
 std::string UnaryExpression::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -831,6 +800,8 @@ std::string columnTypeToString(ColumnType type) {
             return "bigint";
         case BOOL:
             return "bool";
+        case TIMESTAMP:
+            return  "timestamp";
         default:
             return "unknown";
     }

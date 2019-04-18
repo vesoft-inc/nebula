@@ -331,12 +331,12 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         if (resp.get_rows() != nullptr) {
             std::cout << "Got " << resp.get_rows()->size()
                       << " rows (Time spent: "
-                      << resp.get_latency_in_ms() << "/"
-                      << dur.elapsedInMSec() << " ms)\n";
+                      << resp.get_latency_in_us() << "/"
+                      << dur.elapsedInUSec() << " us)\n";
         } else {
             std::cout << "Execution succeeded (Time spent: "
-                      << resp.get_latency_in_ms() << "/"
-                      << dur.elapsedInMSec() << " ms)\n";
+                      << resp.get_latency_in_us() << "/"
+                      << dur.elapsedInUSec() << " us)\n";
         }
     } else if (res == cpp2::ErrorCode::E_SYNTAX_ERROR) {
         static const std::regex range("syntax error at 1.([0-9]+)-([0-9]+)");
@@ -347,12 +347,12 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         if (std::regex_search(*msg, result, range)) {
             auto start = folly::to<size_t>(result[1].str());
             auto end = folly::to<size_t>(result[2].str());
-            verbose = "syntax error near `" + std::string(&cmd[start-1], &cmd[end]) + "'";
+            verbose = "syntax error near `" + std::string(&cmd[start-1], end - start + 1) + "'";
         } else if (std::regex_search(*msg, result, single)) {
             auto start = folly::to<size_t>(result[1].str());
             auto end = start + 8;
             end = end > cmd.size() ? cmd.size() : end;
-            verbose = "syntax error near `" + std::string(&cmd[start-1], &cmd[end]) + "'";
+            verbose = "syntax error near `" + std::string(&cmd[start-1], end - start + 1) + "'";
         }
         std::cout << "[ERROR (" << static_cast<int32_t>(res)
                   << ")]: " << verbose << "\n";

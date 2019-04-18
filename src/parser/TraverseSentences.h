@@ -9,6 +9,7 @@
 #include "base/Base.h"
 #include "parser/Sentence.h"
 #include "parser/Clauses.h"
+#include "parser/MutateSentences.h"
 
 namespace nebula {
 
@@ -79,6 +80,39 @@ public:
 };
 
 
+class FindSentence final : public Sentence {
+public:
+    FindSentence(std::string *type, PropertyList *props) {
+        type_.reset(type);
+        properties_.reset(props);
+        kind_ = Kind::kFind;
+    }
+
+    std::string* type() const {
+        return type_.get();
+    }
+
+    std::vector<std::string*> properties() const {
+        return properties_->properties();
+    }
+
+    void setWhereClause(WhereClause *whereClause) {
+        whereClause_.reset(whereClause);
+    }
+
+    WhereClause* whereClause() const {
+        return whereClause_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>                type_;
+    std::unique_ptr<PropertyList>               properties_;
+    std::unique_ptr<WhereClause>                whereClause_;
+};
+
+
 class UseSentence final : public Sentence {
 public:
     explicit UseSentence(std::string *space) {
@@ -86,8 +120,8 @@ public:
         space_.reset(space);
     }
 
-    const std::string& space() const {
-        return *space_;
+    const std::string* space() const {
+        return space_.get();
     }
 
     std::string toString() const override;
@@ -149,6 +183,14 @@ public:
         kind_ = Kind::kAssignment;
         variable_.reset(variable);
         sentence_.reset(sentence);
+    }
+
+    std::string* var() const {
+        return variable_.get();
+    }
+
+    Sentence* sentence() const {
+        return sentence_.get();
     }
 
     std::string toString() const override;

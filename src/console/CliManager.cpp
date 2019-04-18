@@ -10,6 +10,9 @@
 #include "console/CliManager.h"
 #include "client/cpp/GraphClient.h"
 
+DECLARE_string(u);
+DECLARE_string(p);
+
 namespace nebula {
 namespace graph {
 
@@ -17,6 +20,10 @@ const int32_t kMaxAuthInfoRetries = 3;
 const int32_t kMaxUsernameLen = 16;
 const int32_t kMaxPasswordLen = 24;
 const int32_t kMaxCommandLineLen = 1024;
+
+CliManager::CliManager() {
+    ::using_history();
+}
 
 
 bool CliManager::connect(const std::string& addr,
@@ -32,11 +39,15 @@ bool CliManager::connect(const std::string& addr,
     pass[kMaxPasswordLen] = '\0';
 
     // Make sure username is not empty
-    for (int32_t i = 0; i < kMaxAuthInfoRetries && !strlen(user); i++) {
-        // Need to interactively get the username
-        std::cout << "Username: ";
-        std::cin.getline(user, kMaxUsernameLen);
-        user[kMaxUsernameLen] = '\0';
+    if (FLAGS_u.empty()) {
+        for (int32_t i = 0; i < kMaxAuthInfoRetries && !strlen(user); i++) {
+            // Need to interactively get the username
+            std::cout << "Username: ";
+            std::cin.getline(user, kMaxUsernameLen);
+            user[kMaxUsernameLen] = '\0';
+        }
+    } else {
+        strcpy(user, FLAGS_u.c_str());  // NOLINT
     }
     if (!strlen(user)) {
         std::cout << "Authentication failed: "
@@ -45,11 +56,15 @@ bool CliManager::connect(const std::string& addr,
     }
 
     // Make sure password is not empty
-    for (int32_t i = 0; i < kMaxAuthInfoRetries && !strlen(pass); i++) {
-        // Need to interactively get the password
-        std::cout << "Password: ";
-        std::cin.getline(pass, kMaxPasswordLen);
-        pass[kMaxPasswordLen] = '\0';
+    if (FLAGS_p.empty()) {
+        for (int32_t i = 0; i < kMaxAuthInfoRetries && !strlen(pass); i++) {
+            // Need to interactively get the password
+            std::cout << "Password: ";
+            std::cin.getline(pass, kMaxPasswordLen);
+            pass[kMaxPasswordLen] = '\0';
+        }
+    } else {
+        strcpy(pass, FLAGS_p.c_str());  // NOLINT
     }
     if (!strlen(pass)) {
         std::cout << "Authentication failed: "
@@ -85,26 +100,52 @@ void CliManager::loop() {
     std::string cmd;
     loadHistory();
     while (true) {
-        if (!readLine(cmd)) {
+        std::string line;
+        if (!readLine(line, !cmd.empty())) {
             break;
         }
-        if (cmd.empty()) {
+        if (line.empty()) {
+            cmd.clear();
             continue;
         }
+
+        if (line.back() == '\\') {
+            line.resize(line.size() - 1);
+            if (cmd.empty()) {
+                cmd = line;
+            } else if (cmd.back() == ' ') {
+                cmd += line;
+            } else {
+                cmd = cmd + " " + line;
+            }
+            continue;
+        }
+
+        cmd += line;
+
         if (!cmdProcessor_->process(cmd)) {
             break;
         }
+        cmd.clear();
     }
     saveHistory();
 }
 
 
-bool CliManager::readLine(std::string &line) {
+bool CliManager::readLine(std::string &line, bool linebreak) {
     auto ok = true;
     char prompt[256];
     static auto color = 0u;
-    ::snprintf(prompt, sizeof(prompt), "\033[1;%umnebula> \033[0m", color++ % 6 + 31);
-    auto *input = ::readline(prompt);
+    ::snprintf(prompt, sizeof(prompt),
+                "\001"          // RL_PROMPT_START_IGNORE
+                "\033[1;%um"    // color codes start
+                "\002"          // RL_PROMPT_END_IGNORE
+                "nebula> "      // prompt
+                "\001"          // RL_PROMPT_START_IGNORE
+                "\033[0m"       // restore color code
+                "\002",         // RL_PROMPT_END_IGNORE
+                color++ % 6 + 31);
+    auto *input = ::readline(linebreak ? "": prompt);
 
     do {
         // EOF

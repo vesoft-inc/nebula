@@ -9,6 +9,7 @@
 #include "wal/BufferFlusher.h"
 #include "raftex/RaftexService.h"
 #include "raftex/test/TestShard.h"
+#include "thrift/ThriftClientManager.h"
 
 namespace nebula {
 namespace raftex {

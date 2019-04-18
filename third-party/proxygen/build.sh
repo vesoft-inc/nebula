@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 source ../functions.sh
 
@@ -21,12 +21,12 @@ echo "Start building $PROJECT_NAME with $NEBULA_CXX_COMPILER ($CXX_VER_STR)"
 echo
 
 #
-# Need to modify the original configure.ac to remove the reference of -lfolly
+# Need to modify the original configure.ac to remove the reference of -lfolly -lglog
 #
 # LIBS="$LIBS $BOOST_LDFLAGS -lpthread -pthread -lfolly -lglog"
 # LIBS="$LIBS -ldouble-conversion -lboost_system -lboost_thread"
 # ==>
-# LIBS="$LIBS $BOOST_LDFLAGS -lpthread -pthread -lglog"
+# LIBS="$LIBS $BOOST_LDFLAGS -lpthread -pthread"
 # LIBS="$LIBS -ldouble-conversion -lboost_context -lboost_system -lboost_thread"
 #
 
@@ -44,7 +44,7 @@ fi
 
 if [[ $SOURCE_DIR/configure -nt $SOURCE_DIR/Makefile ||
       $CURR_DIR/build.sh -nt $SOURCE_DIR/Makefile ]]; then
-    if !(PATH=$NEBULA_GPERF_BIN_DIR:$PATH CC=$NEBULA_C_COMPILER CPP="$NEBULA_C_COMPILER -E" CXX=$NEBULA_CXX_COMPILER       CXXFLAGS="-fPIC -DPIC -I$NEBULA_BOOST_ROOT/include -I$NEBULA_OPENSSL_ROOT/include -I$double_conversion_release/include -I$libevent_release/include -I$gflags_release/include -I$glog_release/include -I$folly_release/include -I$wangle_release/include -I$zlib_release/include   $EXTRA_CXXFLAGS"  CPPFLAGS=$CXXFLAGS  CFLAGS=$CXXFLAGS        LDFLAGS="-static-libgcc -static-libstdc++ -L$NEBULA_BOOST_ROOT/lib -L$NEBULA_OPENSSL_ROOT/lib -L$NEBULA_LIBUNWIND_ROOT/lib -L$double_conversion_release/lib -L$libevent_release/lib -L$gflags_release/lib -L$glog_release/lib -L$folly_release/lib -L$wangle_release/lib -L$zlib_release/lib    $EXTRA_LDFLAGS"         LIBS="-lssl -lcrypto -ldl -lunwind"         $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
+    if !(PATH=$NEBULA_GPERF_BIN_DIR:$PATH CC=$NEBULA_C_COMPILER CPP="$NEBULA_C_COMPILER -E" CXX=$NEBULA_CXX_COMPILER       CXXFLAGS="-fPIC -DPIC -I$NEBULA_BOOST_ROOT/include -I$NEBULA_OPENSSL_ROOT/include -I$double_conversion_release/include -I$libevent_release/include -I$gflags_release/include -I$glog_release/include -I$folly_release/include -I$wangle_release/include -I$zlib_release/include   $EXTRA_CXXFLAGS"  CPPFLAGS=$CXXFLAGS  CFLAGS=$CXXFLAGS        LDFLAGS="-static-libgcc -static-libstdc++ -L$NEBULA_BOOST_ROOT/lib -L$NEBULA_OPENSSL_ROOT/lib -L$NEBULA_LIBUNWIND_ROOT/lib -L$double_conversion_release/lib -L$libevent_release/lib -L$gflags_release/lib -L$glog_release/lib -L$folly_release/lib -L$wangle_release/lib -L$zlib_release/lib $EXTRA_LDFLAGS"         LIBS="-lssl -lcrypto -ldl -lglog -lunwind"         $SOURCE_DIR/configure --prefix=$INSTALL_PATH --enable-shared=no); then
         cd $CURR_DIR
         echo
         echo "### $PROJECT_NAME failed to configure the build ###"

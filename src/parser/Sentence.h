@@ -33,6 +33,13 @@ public:
         kInsertVertex,
         kInsertEdge,
         kShow,
+        kDeleteVertex,
+        kDeleteEdge,
+        kFind,
+        kAddHosts,
+        kRemoveHosts,
+        kCreateSpace,
+        kDropSpace,
     };
 
     Kind kind() const {

@@ -24,10 +24,14 @@ public:
     virtual ResultCode get(const std::string& key,
                            std::string* value) = 0;
 
+    virtual ResultCode multiGet(const std::vector<std::string>& keys,
+                                std::vector<std::string>* values) = 0;
+
     virtual ResultCode put(std::string key,
                            std::string value) = 0;
 
     virtual ResultCode multiPut(std::vector<KV> keyValues) = 0;
+
     /**
      * Get all results in range [start, end)
      * */
@@ -42,6 +46,8 @@ public:
                               std::unique_ptr<KVIterator>* iter) = 0;
 
     virtual ResultCode remove(const std::string& key) = 0;
+
+    virtual ResultCode multiRemove(std::vector<std::string> keys) = 0;
 
     /**
      * Remove range [start, end)
@@ -67,6 +73,23 @@ public:
      * Return total parts num
      * */
     virtual int32_t totalPartsNum() = 0;
+
+    /**
+     * Ingest sst files
+     */
+    virtual ResultCode ingest(const std::vector<std::string>& files) = 0;
+
+    /**
+     * Set Config Option
+     */
+    virtual ResultCode setOption(const std::string& config_key,
+                                 const std::string& config_value) = 0;
+
+    /**
+     * Set DB Config Option
+     */
+    virtual ResultCode setDBOption(const std::string& config_key,
+                                   const std::string& config_value) = 0;
 
 protected:
     GraphSpaceID spaceId_;

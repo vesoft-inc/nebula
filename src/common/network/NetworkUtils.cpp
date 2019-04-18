@@ -226,6 +226,16 @@ HostAddr NetworkUtils::toHostAddr(const folly::StringPiece ipPort) {
     return toHostAddr(ipPort.subpiece(0, pos), port);
 }
 
+std::vector<HostAddr> NetworkUtils::toHosts(const std::string& peersStr) {
+    std::vector<HostAddr> hosts;
+    std::vector<std::string> peers;
+    folly::split(",", peersStr, peers, true);
+    hosts.resize(peers.size());
+    std::transform(peers.begin(), peers.end(), hosts.begin(), [](auto& p) {
+        return network::NetworkUtils::toHostAddr(folly::trimWhitespace(p));
+    });
+    return hosts;
+}
 
 std::string NetworkUtils::ipFromHostAddr(const HostAddr& host) {
     return intToIPv4(host.first);
@@ -234,6 +244,22 @@ std::string NetworkUtils::ipFromHostAddr(const HostAddr& host) {
 
 int32_t NetworkUtils::portFromHostAddr(const HostAddr& host) {
     return host.second;
+}
+
+StatusOr<std::string> NetworkUtils::getLocalIP(std::string defaultIP) {
+    if (!defaultIP.empty()) {
+        return defaultIP;
+    }
+    auto result = network::NetworkUtils::listDeviceAndIPv4s();
+    if (!result.ok()) {
+        return std::move(result).status();
+    }
+    for (auto& deviceIP : result.value()) {
+        if (deviceIP.second != "127.0.0.1") {
+            return deviceIP.second;
+        }
+    }
+    return Status::Error("No IPv4 address found!");
 }
 
 }  // namespace network

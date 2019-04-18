@@ -11,6 +11,7 @@
 #include "base/Status.h"
 #include "cpp/helpers.h"
 #include "graph/ExecutionContext.h"
+#include "gen-cpp2/common_types.h"
 
 
 /**
@@ -72,6 +73,15 @@ public:
 
 protected:
     std::unique_ptr<Executor> makeExecutor(Sentence *sentence);
+
+    std::string valueTypeToString(nebula::cpp2::ValueType type);
+
+    Status checkIfGraphSpaceChosen() const {
+        if (ectx()->rctx()->session()->space() == -1) {
+            return Status::Error("Please choose a graph space with `USE SPACE' firstly");
+        }
+        return Status::OK();
+    }
 
 protected:
     ExecutionContext                           *ectx_;

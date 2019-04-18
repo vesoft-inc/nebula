@@ -6,7 +6,10 @@
 
 #include "base/Base.h"
 #include "graph/GoExecutor.h"
-
+#include "meta/SchemaManager.h"
+#include "dataman/RowReader.h"
+#include "dataman/RowSetReader.h"
+#include "dataman/ResultSchemaProvider.h"
 
 namespace nebula {
 namespace graph {
@@ -21,8 +24,12 @@ GoExecutor::GoExecutor(Sentence *sentence, ExecutionContext *ectx) : TraverseExe
 Status GoExecutor::prepare() {
     DCHECK(sentence_ != nullptr);
     Status status;
-    expctx_ = std::make_unique<ExpressionContext>();
+    expCtx_ = std::make_unique<ExpressionContext>();
     do {
+        status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            break;
+        }
         status = prepareStep();
         if (!status.ok()) {
             break;
@@ -43,10 +50,6 @@ Status GoExecutor::prepare() {
         if (!status.ok()) {
             break;
         }
-        status = prepareResultSchema();
-        if (!status.ok()) {
-            break;
-        }
         status = prepareNeededProps();
         if (!status.ok()) {
             break;
@@ -57,53 +60,27 @@ Status GoExecutor::prepare() {
         return status;
     }
 
-    expctx_->print();
-
-    if (!onResult_) {
-        onResult_ = [this] (TraverseRecords records) {
-            this->cacheResult(std::move(records));
-        };
-    }
-
     return status;
 }
 
 
 void GoExecutor::execute() {
     FLOG_INFO("Executing Go: %s", sentence_->toString().c_str());
-    using Result = StatusOr<storage::cpp2::QueryResponse>;
-    auto eprops = expctx_->edgePropNames();
-    auto vprops = expctx_->srcNodePropNames();
-    auto future = ectx()->storage()->getOutBound(starts_, edge_, eprops, vprops);
-    auto *runner = ectx()->rctx()->runner();
-    std::move(future).via(runner).then([this] (Result result) {
-        if (!result.ok()) {
-            auto &resp = ectx()->rctx()->resp();
-            auto status = result.status();
-            resp.set_error_code(cpp2::ErrorCode::E_EXECUTION_ERROR);
-            resp.set_error_msg(status.toString());
-        }
-        if (onFinish_) {
-            onFinish_();
-        }
-    });
+    auto status = setupStarts();
+    if (!status.ok()) {
+        onError_(std::move(status));
+        return;
+    }
+    if (starts_.empty()) {
+        onEmptyInputs();
+        return;
+    }
+    stepOut();
 }
 
 
-void GoExecutor::feedResult(TraverseRecords records) {
-    inputs_.reserve(records.size());
-    for (auto &record : records) {
-        inputs_.push_back(std::move(record));
-    }
-}
-
-
-Status GoExecutor::prepareResultSchema() {
-    resultSchema_ = std::make_unique<ResultSchema>();
-    for (auto *column : yields_) {
-        resultSchema_->addColumn(*column->alias());
-    }
-    return Status::OK();
+void GoExecutor::feedResult(std::unique_ptr<InterimResult> result) {
+    inputs_ = std::move(result);
 }
 
 
@@ -113,6 +90,11 @@ Status GoExecutor::prepareStep() {
         steps_ = clause->steps();
         upto_ = clause->isUpto();
     }
+
+    if (isUpto()) {
+        return Status::Error("`UPTO' not supported yet");
+    }
+
     return Status::OK();
 }
 
@@ -122,14 +104,24 @@ Status GoExecutor::prepareFrom() {
     auto *clause = sentence_->fromClause();
     do {
         if (clause == nullptr) {
-            break;
+            LOG(FATAL) << "From clause shall never be null";
         }
-        auto *alias = clause->alias();
-        if (alias == nullptr) {
-            break;
+        if (!clause->isRef()) {
+            starts_ = clause->srcNodeList()->nodeIds();
+        } else {
+            auto *expr = clause->ref();
+            if (expr->isInputExpression()) {
+                auto *iexpr = static_cast<InputPropertyExpression*>(expr);
+                colname_ = iexpr->prop();
+            } else if (expr->isVariableExpression()) {
+                auto *vexpr = static_cast<VariablePropertyExpression*>(expr);
+                varname_ = vexpr->var();
+                colname_ = vexpr->prop();
+            } else {
+                // No way to happen except memory corruption
+                LOG(FATAL) << "Unknown kind of expression";
+            }
         }
-        expctx_->addAlias(*alias, AliasKind::SourceNode);
-        starts_ = clause->srcNodeList()->nodeIds();
     } while (false);
     return status;
 }
@@ -140,14 +132,21 @@ Status GoExecutor::prepareOver() {
     auto *clause = sentence_->overClause();
     do {
         if (clause == nullptr) {
-            break;
+            LOG(FATAL) << "Over clause shall never be null";
         }
-        edge_ = clause->edge();
+        edge_ = ectx()->schemaManager()->toEdgeType(*clause->edge());
         reversely_ = clause->isReversely();
         if (clause->alias() != nullptr) {
-            expctx_->addAlias(*clause->alias(), AliasKind::Edge, *clause->edge());
+            expCtx_->addAlias(*clause->alias(), AliasKind::Edge, *clause->edge());
+        } else {
+            expCtx_->addAlias(*clause->edge(), AliasKind::Edge, *clause->edge());
         }
     } while (false);
+
+    if (isReversely()) {
+        return Status::Error("`REVERSELY' not supported yet");
+    }
+
     return status;
 }
 
@@ -174,7 +173,7 @@ Status GoExecutor::prepareNeededProps() {
     auto status = Status::OK();
     do {
         if (filter_ != nullptr) {
-            filter_->setContext(expctx_.get());
+            filter_->setContext(expCtx_.get());
             status = filter_->prepare();
             if (!status.ok()) {
                 break;
@@ -184,11 +183,14 @@ Status GoExecutor::prepareNeededProps() {
             break;
         }
         for (auto *col : yields_) {
-            col->expr()->setContext(expctx_.get());
+            col->expr()->setContext(expCtx_.get());
             status = col->expr()->prepare();
             if (!status.ok()) {
                 break;
             }
+        }
+        if (!status.ok()) {
+            break;
         }
     } while (false);
 
@@ -196,13 +198,481 @@ Status GoExecutor::prepareNeededProps() {
 }
 
 
-void GoExecutor::cacheResult(TraverseRecords records) {
-    UNUSED(records);
+Status GoExecutor::setupStarts() {
+    // Literal vertex ids
+    if (!starts_.empty()) {
+        return Status::OK();
+    }
+    // Take one column from a variable
+    if (varname_ != nullptr) {
+        auto *varinput = ectx()->variableHolder()->get(*varname_);
+        if (varinput == nullptr) {
+            return Status::Error("Variable `%s' not defined", varname_->c_str());
+        }
+        starts_ = varinput->getVIDs(*colname_);
+        return Status::OK();
+    }
+    // No error happened, but we are having empty inputs
+    if (inputs_ == nullptr) {
+        return Status::OK();
+    }
+    // Take one column from the input of the pipe
+    DCHECK(colname_ != nullptr);
+    starts_ = inputs_->getVIDs(*colname_);
+    return Status::OK();
 }
 
 
 void GoExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
-    UNUSED(resp);
+    if (resp_ == nullptr) {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    }
+    resp = std::move(*resp_);
+}
+
+
+void GoExecutor::stepOut() {
+    auto space = ectx()->rctx()->session()->space();
+    auto returns = getStepOutProps();
+    auto future = ectx()->storage()->getNeighbors(space,
+                                                  starts_,
+                                                  edge_,
+                                                  !reversely_,
+                                                  "",
+                                                  std::move(returns));
+    auto *runner = ectx()->rctx()->runner();
+    auto cb = [this] (auto &&result) {
+        auto completeness = result.completeness();
+        if (completeness == 0) {
+            DCHECK(onError_);
+            onError_(Status::Error("Get neighbors failed"));
+            return;
+        } else if (completeness != 100) {
+            // TODO(dutor) We ought to let the user know that the execution was partially
+            // performed, even in the case that this happened in the intermediate process.
+            // Or, make this case configurable at runtime.
+            // For now, we just do some logging and keep going.
+            LOG(INFO) << "Get neighbors partially failed: "  << completeness << "%";
+            for (auto &error : result.failedParts()) {
+                LOG(ERROR) << "part: " << error.first
+                           << "error code: " << static_cast<int>(error.second);
+            }
+        }
+        onStepOutResponse(std::move(result));
+    };
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        onError_(Status::Error("Internal error"));
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+
+void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
+    if (isFinalStep()) {
+        if (expCtx_->hasDstTagProp()) {
+            auto dstids = getDstIdsFromResp(rpcResp);
+            if (dstids.empty()) {
+                onEmptyInputs();
+                return;
+            }
+            fetchVertexProps(std::move(dstids), std::move(rpcResp));
+            return;
+        }
+        finishExecution(std::move(rpcResp));
+        return;
+    } else {
+        curStep_++;
+        starts_ = getDstIdsFromResp(rpcResp);
+        if (starts_.empty()) {
+            onEmptyInputs();
+            return;
+        }
+        stepOut();
+    }
+}
+
+
+void GoExecutor::onVertexProps(RpcResponse &&rpcResp) {
+    UNUSED(rpcResp);
+}
+
+
+std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const {
+    std::unordered_set<VertexID> set;
+    for (auto &resp : rpcResp.responses()) {
+        auto *vertices = resp.get_vertices();
+        if (vertices == nullptr) {
+            continue;
+        }
+        auto schema = std::make_shared<ResultSchemaProvider>(resp.edge_schema);
+        for (auto &vdata : *vertices) {
+            RowSetReader rsReader(schema, vdata.edge_data);
+            auto iter = rsReader.begin();
+            while (iter) {
+                VertexID dst;
+                auto rc = iter->getVid("_dst", dst);
+                CHECK(rc == ResultType::SUCCEEDED);
+                set.emplace(dst);
+                ++iter;
+            }
+        }
+    }
+    return std::vector<VertexID>(set.begin(), set.end());
+}
+
+
+void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
+    if (onResult_) {
+        onResult_(setupInterimResult(std::move(rpcResp)));
+    } else {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        setupResponseHeader(*resp_);
+        setupResponseBody(rpcResp, *resp_);
+    }
+    DCHECK(onFinish_);
+    onFinish_();
+}
+
+
+std::vector<storage::cpp2::PropDef> GoExecutor::getStepOutProps() const {
+    std::vector<storage::cpp2::PropDef> props;
+    {
+        storage::cpp2::PropDef pd;
+        pd.owner = storage::cpp2::PropOwner::EDGE;
+        pd.name = "_dst";
+        props.emplace_back(std::move(pd));
+    }
+
+    if (!isFinalStep()) {
+        return props;
+    }
+
+    for (auto &tagProp : expCtx_->srcTagProps()) {
+        storage::cpp2::PropDef pd;
+        pd.owner = storage::cpp2::PropOwner::SOURCE;
+        pd.name = tagProp.second;
+        auto tagId = ectx()->schemaManager()->toTagID(tagProp.first);
+        pd.set_tag_id(tagId);
+        props.emplace_back(std::move(pd));
+    }
+    for (auto &prop : expCtx_->edgeProps()) {
+        storage::cpp2::PropDef pd;
+        pd.owner = storage::cpp2::PropOwner::EDGE;
+        pd.name = prop;
+        props.emplace_back(std::move(pd));
+    }
+
+    return props;
+}
+
+
+std::vector<storage::cpp2::PropDef> GoExecutor::getDstProps() const {
+    std::vector<storage::cpp2::PropDef> props;
+    for (auto &tagProp : expCtx_->dstTagProps()) {
+        storage::cpp2::PropDef pd;
+        pd.owner = storage::cpp2::PropOwner::DEST;
+        pd.name = tagProp.second;
+        auto tagId = ectx()->schemaManager()->toTagID(tagProp.first);
+        pd.set_tag_id(tagId);
+        props.emplace_back(std::move(pd));
+    }
+    return props;
+}
+
+
+void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcResp) {
+    auto space = ectx()->rctx()->session()->space();
+    auto returns = getDstProps();
+    auto future = ectx()->storage()->getVertexProps(space, ids, returns);
+    auto *runner = ectx()->rctx()->runner();
+    auto cb = [this, stepOutResp = std::move(rpcResp)] (auto &&result) mutable {
+        auto completeness = result.completeness();
+        if (completeness == 0) {
+            DCHECK(onError_);
+            onError_(Status::Error("Get dest props failed"));
+            return;
+        } else if (completeness != 100) {
+            LOG(INFO) << "Get neighbors partially failed: "  << completeness << "%";
+            for (auto &error : result.failedParts()) {
+                LOG(ERROR) << "part: " << error.first
+                           << "error code: " << static_cast<int>(error.second);
+            }
+        }
+        if (vertexHolder_ == nullptr) {
+            vertexHolder_ = std::make_unique<VertexHolder>();
+        }
+        for (auto &resp : result.responses()) {
+            vertexHolder_->add(resp);
+        }
+        finishExecution(std::move(stepOutResp));
+        return;
+    };
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        onError_(Status::Error("Internal error"));
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+
+std::vector<std::string> GoExecutor::getResultColumnNames() const {
+    std::vector<std::string> result;
+    result.reserve(yields_.size());
+    for (auto *col : yields_) {
+        if (col->alias() == nullptr) {
+            result.emplace_back(col->expr()->toString());
+        } else {
+            result.emplace_back(*col->alias());
+        }
+    }
+    return result;
+}
+
+
+std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcResp) {
+    // Generic results
+    std::shared_ptr<SchemaWriter> schema;
+    std::unique_ptr<RowSetWriter> rsWriter;
+    using nebula::cpp2::SupportedType;
+    auto cb = [&] (std::vector<VariantType> record) {
+        if (schema == nullptr) {
+            schema = std::make_shared<SchemaWriter>();
+            auto colnames = getResultColumnNames();
+            for (auto i = 0u; i < record.size(); i++) {
+                SupportedType type;
+                switch (record[i].which()) {
+                    case 0:
+                        // all integers in InterimResult are regarded as type of VID
+                        type = SupportedType::VID;
+                        break;
+                    case 1:
+                        type = SupportedType::DOUBLE;
+                        break;
+                    case 2:
+                        type = SupportedType::BOOL;
+                        break;
+                    case 3:
+                        type = SupportedType::STRING;
+                        break;
+                    default:
+                        LOG(FATAL) << "Unknown VariantType: " << record[i].which();
+                }
+                schema->appendCol(colnames[i], type);
+            }   // for
+            rsWriter = std::make_unique<RowSetWriter>(schema);
+        }   // if
+
+        RowWriter writer(schema);
+        for (auto &column : record) {
+            switch (column.which()) {
+                case 0:
+                    writer << boost::get<int64_t>(column);
+                    break;
+                case 1:
+                    writer << boost::get<double>(column);
+                    break;
+                case 2:
+                    writer << boost::get<bool>(column);
+                    break;
+                case 3:
+                    writer << boost::get<std::string>(column);
+                    break;
+                default:
+                    LOG(FATAL) << "Unknown VariantType: " << column.which();
+            }
+        }
+        rsWriter->addRow(writer);
+    };  // cb
+    processFinalResult(rpcResp, cb);
+    // No results populated
+    if (rsWriter == nullptr) {
+        return nullptr;
+    }
+    return std::make_unique<InterimResult>(std::move(rsWriter));
+}
+
+
+void GoExecutor::setupResponseHeader(cpp2::ExecutionResponse &resp) const {
+    resp.set_column_names(getResultColumnNames());
+}
+
+
+VariantType getProp(const std::string &prop,
+                    const RowReader *reader,
+                    ResultSchemaProvider *schema) {
+    using nebula::cpp2::SupportedType;
+    auto type = schema->getFieldType(prop).type;
+    switch (type) {
+        case SupportedType::BOOL: {
+            bool v;
+            reader->getBool(prop, v);
+            return v;
+        }
+        case SupportedType::INT: {
+            int64_t v;
+            reader->getInt(prop, v);
+            return v;
+        }
+        case SupportedType::VID: {
+            VertexID v;
+            reader->getVid(prop, v);
+            return v;
+        }
+        case SupportedType::FLOAT: {
+            float v;
+            reader->getFloat(prop, v);
+            return static_cast<double>(v);
+        }
+        case SupportedType::DOUBLE: {
+            double v;
+            reader->getDouble(prop, v);
+            return v;
+        }
+        case SupportedType::STRING: {
+            folly::StringPiece v;
+            reader->getString(prop, v);
+            return v.toString();
+        }
+        default:
+            LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(type);
+            return "";
+    }
+}
+
+
+void GoExecutor::setupResponseBody(RpcResponse &rpcResp, cpp2::ExecutionResponse &resp) const {
+    std::vector<cpp2::RowValue> rows;
+    auto cb = [&] (std::vector<VariantType> record) {
+        std::vector<cpp2::ColumnValue> row;
+        row.reserve(record.size());
+        for (auto &column : record) {
+            row.emplace_back();
+            switch (column.which()) {
+                case 0:
+                    row.back().set_integer(boost::get<int64_t>(column));
+                    break;
+                case 1:
+                    row.back().set_double_precision(boost::get<double>(column));
+                    break;
+                case 2:
+                    row.back().set_bool_val(boost::get<bool>(column));
+                    break;
+                case 3:
+                    row.back().set_str(boost::get<std::string>(column));
+                    break;
+                default:
+                    LOG(FATAL) << "Unknown VariantType: " << column.which();
+            }
+        }
+        rows.emplace_back();
+        rows.back().set_columns(std::move(row));
+    };
+    processFinalResult(rpcResp, cb);
+    resp.set_rows(std::move(rows));
+}
+
+
+void GoExecutor::onEmptyInputs() {
+    if (onResult_) {
+        onResult_(nullptr);
+    } else if (resp_ == nullptr) {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    }
+    onFinish_();
+}
+
+
+void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
+    auto all = rpcResp.responses();
+    for (auto &resp : all) {
+        if (resp.get_vertices() == nullptr) {
+            continue;
+        }
+        std::shared_ptr<ResultSchemaProvider> vschema;
+        std::shared_ptr<ResultSchemaProvider> eschema;
+        if (resp.get_vertex_schema() != nullptr) {
+            vschema = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
+        }
+        if (resp.get_edge_schema() != nullptr) {
+            eschema = std::make_shared<ResultSchemaProvider>(resp.edge_schema);
+        }
+
+        for (auto &vdata : resp.vertices) {
+            std::unique_ptr<RowReader> vreader;
+            if (vschema != nullptr) {
+                DCHECK(vdata.__isset.vertex_data);
+                vreader = RowReader::getRowReader(vdata.vertex_data, vschema);
+            }
+            DCHECK(vdata.__isset.edge_data);
+            DCHECK(eschema != nullptr);
+            RowSetReader rsReader(eschema, vdata.edge_data);
+            auto iter = rsReader.begin();
+            while (iter) {
+                auto &getters = expCtx_->getters();
+                getters.getEdgeProp = [&] (const std::string &prop) -> VariantType {
+                    return getProp(prop, &*iter, eschema.get());
+                };
+                getters.getSrcTagProp = [&] (const std::string&, const std::string &prop) {
+                    return getProp(prop, vreader.get(), vschema.get());
+                };
+                getters.getDstTagProp = [&] (const std::string&, const std::string &prop) {
+                    auto dst = getProp("_dst", &*iter, eschema.get());
+                    return vertexHolder_->get(boost::get<int64_t>(dst), prop);
+                };
+                // Evaluate filter
+                if (filter_ != nullptr) {
+                    auto value = filter_->eval();
+                    if (!Expression::asBool(value)) {
+                        ++iter;
+                        continue;
+                    }
+                }
+                std::vector<VariantType> record;
+                record.reserve(yields_.size());
+                for (auto *column : yields_) {
+                    auto *expr = column->expr();
+                    // TODO(dutor) `eval' may fail
+                    auto value = expr->eval();
+                    record.emplace_back(std::move(value));
+                }
+                cb(std::move(record));
+                ++iter;
+            }   // while `iter'
+        }   // for `vdata'
+    }   // for `resp'
+}
+
+
+VariantType GoExecutor::VertexHolder::get(VertexID id, const std::string &prop) const {
+    DCHECK(schema_ != nullptr);
+    auto iter = data_.find(id);
+
+    // TODO(dutor) We need a type to represent NULL or non-existing prop
+    CHECK(iter != data_.end());
+
+    auto reader = RowReader::getRowReader(iter->second, schema_);
+
+    return getProp(prop, reader.get(), schema_.get());
+}
+
+
+void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
+    auto *vertices = resp.get_vertices();
+    if (vertices == nullptr) {
+        return;
+    }
+    if (resp.get_vertex_schema() == nullptr) {
+        return;
+    }
+    if (schema_ == nullptr) {
+        schema_ = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
+    }
+
+    for (auto &vdata : *vertices) {
+        DCHECK(vdata.__isset.vertex_data);
+        data_[vdata.vertex_id] = vdata.vertex_data;
+    }
 }
 
 }   // namespace graph

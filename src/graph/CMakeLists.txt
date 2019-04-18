@@ -3,6 +3,7 @@ add_library(
     OBJECT
     GraphFlags.cpp
     GraphService.cpp
+    GraphHttpHandler.cpp
     ClientSession.cpp
     SessionManager.cpp
     ExecutionEngine.cpp
@@ -14,14 +15,21 @@ add_library(
     UseExecutor.cpp
     GoExecutor.cpp
     PipeExecutor.cpp
-    DefineEdgeExecutor.cpp
-    DefineTagExecutor.cpp
+    # DefineEdgeExecutor.cpp
+    # DefineTagExecutor.cpp
     AlterEdgeExecutor.cpp
     AlterTagExecutor.cpp
-    DescribeTagExecutor.cpp
-    DescribeEdgeExecutor.cpp
+    # DescribeTagExecutor.cpp
+    # DescribeEdgeExecutor.cpp
     InsertVertexExecutor.cpp
     InsertEdgeExecutor.cpp
+    AssignmentExecutor.cpp
+    InterimResult.cpp
+    VariableHolder.cpp
+    AddHostsExecutor.cpp
+    RemoveHostsExecutor.cpp
+    CreateSpaceExecutor.cpp
+    DropSpaceExecutor.cpp
     ShowExecutor.cpp
     mock/PropertiesSchema.cpp
     mock/EdgeSchema.cpp
@@ -29,6 +37,15 @@ add_library(
     mock/SchemaManager.cpp
     mock/StorageService.cpp
 )
-add_dependencies(graph_obj base_obj parser_obj graph_thrift_obj)
+add_dependencies(
+    graph_obj
+    base_obj
+    parser_obj
+    graph_thrift_obj
+    ws_obj
+    meta_thrift_obj
+    meta_client
+    schema_obj
+)
 
 add_subdirectory(test)

@@ -1,9 +1,10 @@
+add_compile_options(-Wno-maybe-uninitialized)
 add_custom_command(
     OUTPUT
         gen-cpp2/common_constants.cpp
         gen-cpp2/common_data.cpp
         gen-cpp2/common_types.cpp
-    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./common.thrift"
+    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--strict" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./common.thrift"
     DEPENDS common.thrift
 )
 
@@ -16,7 +17,7 @@ add_custom_command(
         gen-cpp2/graph_constants.cpp
         gen-cpp2/graph_data.cpp
         gen-cpp2/graph_types.cpp
-    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./graph.thrift"
+    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--strict" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./graph.thrift"
     DEPENDS graph.thrift
 )
 
@@ -30,7 +31,7 @@ add_custom_command(
         gen-cpp2/raftex_constants.cpp
         gen-cpp2/raftex_data.cpp
         gen-cpp2/raftex_types.cpp
-    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./raftex.thrift"
+    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--strict" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./raftex.thrift"
     DEPENDS raftex.thrift
 )
 
@@ -44,7 +45,7 @@ add_custom_command(
         gen-cpp2/storage_constants.cpp
         gen-cpp2/storage_data.cpp
         gen-cpp2/storage_types.cpp
-    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./storage.thrift"
+    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--strict" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./storage.thrift"
     DEPENDS storage.thrift
 )
 
@@ -57,7 +58,7 @@ add_custom_command(
         gen-cpp2/meta_constants.cpp
         gen-cpp2/meta_data.cpp
         gen-cpp2/meta_types.cpp
-    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./meta.thrift"
+    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--strict" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./meta.thrift"
     DEPENDS meta.thrift
 )
 
@@ -92,6 +93,13 @@ add_library(
 )
 add_dependencies(raftex_thrift_obj tgt_fbthrift)
 
+add_library(
+    common_thrift_obj OBJECT
+    gen-cpp2/common_constants.cpp
+    gen-cpp2/common_data.cpp
+    gen-cpp2/common_types.cpp
+)
+add_dependencies(common_thrift_obj tgt_fbthrift)
 
 add_library(
     storage_thrift_obj OBJECT
@@ -102,11 +110,8 @@ add_library(
     gen-cpp2/storage_constants.cpp
     gen-cpp2/storage_data.cpp
     gen-cpp2/storage_types.cpp
-    gen-cpp2/common_constants.cpp
-    gen-cpp2/common_data.cpp
-    gen-cpp2/common_types.cpp
 )
-add_dependencies(storage_thrift_obj tgt_fbthrift)
+add_dependencies(storage_thrift_obj common_thrift_obj tgt_fbthrift)
 
 add_library(
     meta_thrift_obj OBJECT
@@ -117,8 +122,5 @@ add_library(
     gen-cpp2/meta_constants.cpp
     gen-cpp2/meta_data.cpp
     gen-cpp2/meta_types.cpp
-    gen-cpp2/common_constants.cpp
-    gen-cpp2/common_data.cpp
-    gen-cpp2/common_types.cpp
 )
-add_dependencies(meta_thrift_obj tgt_fbthrift)
+add_dependencies(meta_thrift_obj common_thrift_obj tgt_fbthrift)

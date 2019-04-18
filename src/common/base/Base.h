@@ -108,6 +108,8 @@ namespace nebula {
 // Host address type and utility functions
 using HostAddr = std::pair<IPv4, Port>;
 
+std::ostream& operator<<(std::ostream &, const HostAddr&);
+
 template<typename Key, typename T>
 using UnorderedMap = typename std::conditional<
     std::is_same<Key, std::string>::value,
@@ -115,6 +117,24 @@ using UnorderedMap = typename std::conditional<
     std::unordered_map<std::string, T>,
     std::unordered_map<Key, T>
 >::type;
+
+struct PartMeta {
+    GraphSpaceID           spaceId_;
+    PartitionID            partId_;
+    std::vector<HostAddr>  peers_;
+
+    bool operator==(const PartMeta& that) const {
+        return this->spaceId_ == that.spaceId_
+                    && this->partId_ == that.partId_
+                    && this->peers_ == that.peers_;
+    }
+
+    bool operator!=(const PartMeta& that) const {
+        return !(*this == that);
+    }
+};
+
+using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
 
 // Useful type traits
 

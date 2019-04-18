@@ -50,20 +50,36 @@ class GraphScanner;
     nebula::YieldColumn                    *yield_column;
     nebula::PropertyList                   *prop_list;
     nebula::ValueList                      *value_list;
+    nebula::VertexRowList                  *vertex_row_list;
+    nebula::VertexRowItem                  *vertex_row_item;
+    nebula::EdgeRowList                    *edge_row_list;
+    nebula::EdgeRowItem                    *edge_row_item;
     nebula::UpdateList                     *update_list;
     nebula::UpdateItem                     *update_item;
+    nebula::EdgeList                       *edge_list;
+    nebula::ArgumentList                   *argument_list;
+    nebula::HostList                       *host_list;
+    nebula::SpaceOptList                   *space_opt_list;
+    nebula::SpaceOptItem                   *space_opt_item;
 }
+
+/* destructors */
+%destructor {} <sentences>
+%destructor {} <boolval> <intval> <doubleval> <type>
+%destructor { delete $$; } <*>
+
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_DEFINE KW_VERTEX KW_TTL
-%token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE
+%token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD KW_CREATE
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
 %token DOT COLON SEMICOLON L_ARROW R_ARROW AT
-%token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF
+%token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
 
 /* token type specification */
 %token <boolval> BOOL
@@ -74,8 +90,14 @@ class GraphScanner;
 %type <expr> expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression
 %type <expr> unary_expression primary_expression equality_expression
-%type <expr> ref_expression input_ref_expression dst_ref_expression var_ref_expression
+%type <expr> ref_expression
+%type <expr> src_ref_expression
+%type <expr> dst_ref_expression
+%type <expr> input_ref_expression
+%type <expr> var_ref_expression
 %type <expr> alias_ref_expression
+%type <expr> function_call_expression
+%type <argument_list> argument_list
 %type <type> type_spec
 %type <step_clause> step_clause
 %type <from_clause> from_clause
@@ -87,22 +109,31 @@ class GraphScanner;
 %type <yield_column> yield_column
 %type <prop_list> prop_list
 %type <value_list> value_list
+%type <vertex_row_list> vertex_row_list
+%type <vertex_row_item> vertex_row_item
+%type <edge_row_list> edge_row_list
+%type <edge_row_item> edge_row_item
 %type <update_list> update_list
 %type <update_item> update_item
+%type <edge_list> edge_list
+%type <host_list> host_list
+%type <space_opt_list> space_opt_list
+%type <space_opt_item> space_opt_item
 
 %type <intval> ttl_spec
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
 
-%type <sentence> go_sentence match_sentence use_sentence
+%type <sentence> go_sentence match_sentence use_sentence find_sentence
 %type <sentence> define_tag_sentence define_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
 %type <sentence> maintainance_sentence insert_vertex_sentence insert_edge_sentence
-%type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence
-%type <sentence> show_sentence
+%type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
+%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence 
+%type <sentence> drop_space_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -131,6 +162,9 @@ primary_expression
     | input_ref_expression {
         $$ = $1;
     }
+    | src_ref_expression {
+        $$ = $1;
+    }
     | dst_ref_expression {
         $$ = $1;
     }
@@ -143,6 +177,9 @@ primary_expression
     | L_PAREN expression R_PAREN {
         $$ = $2;
     }
+    | function_call_expression {
+        $$ = $1;
+    }
     ;
 
 input_ref_expression
@@ -151,11 +188,14 @@ input_ref_expression
     }
     ;
 
-dst_ref_expression
-    : DST_REF L_BRACKET LABEL R_BRACKET DOT ID_PROP {
-        $$ = new DestIdExpression($3);
+src_ref_expression
+    : SRC_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
+        $$ = new SourcePropertyExpression($3, $6);
     }
-    | DST_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
+    ;
+
+dst_ref_expression
+    : DST_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
         $$ = new DestPropertyExpression($3, $6);
     }
     ;
@@ -182,16 +222,30 @@ alias_ref_expression
     | LABEL DOT RANK_PROP {
         $$ = new EdgeRankExpression($1);
     }
-    | LABEL L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new SourcePropertyExpression($1, $3, $6);
+    ;
+
+function_call_expression
+    : LABEL L_PAREN argument_list R_PAREN {
+        $$ = new FunctionCallExpression($1, $3);
     }
-    | LABEL L_BRACKET LABEL R_BRACKET DOT ID_PROP {
-        $$ = new SourceIdExpression($1, $3);
+    ;
+
+argument_list
+    : %empty {
+        $$ = nullptr;
+    }
+    | expression {
+        $$ = new ArgumentList();
+        $$->addArgument($1);
+    }
+    | argument_list COMMA expression {
+        $$ = $1;
+        $$->addArgument($3);
     }
     ;
 
 unary_expression
-    : primary_expression {}
+    : primary_expression { $$ = $1; }
     | ADD primary_expression {
         $$ = new UnaryExpression(UnaryExpression::PLUS, $2);
     }
@@ -212,10 +266,11 @@ type_spec
     | KW_STRING { $$ = ColumnType::STRING; }
     | KW_BOOL { $$ = ColumnType::BOOL; }
     | KW_BIGINT { $$ = ColumnType::BIGINT; }
+    | KW_TIMESTAMP { $$ = ColumnType::TIMESTAMP; }
     ;
 
 multiplicative_expression
-    : unary_expression {}
+    : unary_expression { $$ = $1; }
     | multiplicative_expression MUL unary_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::MUL, $3);
     }
@@ -228,7 +283,7 @@ multiplicative_expression
     ;
 
 additive_expression
-    : multiplicative_expression {}
+    : multiplicative_expression { $$ = $1; }
     | additive_expression ADD multiplicative_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::ADD, $3);
     }
@@ -238,7 +293,7 @@ additive_expression
     ;
 
 relational_expression
-    : additive_expression {}
+    : additive_expression { $$ = $1; }
     | relational_expression LT additive_expression {
         $$ = new RelationalExpression($1, RelationalExpression::LT, $3);
     }
@@ -254,7 +309,7 @@ relational_expression
     ;
 
 equality_expression
-    : relational_expression {}
+    : relational_expression { $$ = $1; }
     | equality_expression EQ relational_expression {
         $$ = new RelationalExpression($1, RelationalExpression::EQ, $3);
     }
@@ -264,21 +319,21 @@ equality_expression
     ;
 
 logic_and_expression
-    : equality_expression {}
+    : equality_expression { $$ = $1; }
     | logic_and_expression AND equality_expression {
         $$ = new LogicalExpression($1, LogicalExpression::AND, $3);
     }
     ;
 
 logic_or_expression
-    : logic_and_expression {}
+    : logic_and_expression { $$ = $1; }
     | logic_or_expression OR logic_and_expression {
         $$ = new LogicalExpression($1, LogicalExpression::OR, $3);
     }
     ;
 
 expression
-    : logic_or_expression { }
+    : logic_or_expression { $$ = $1; }
     ;
 
 go_sentence
@@ -288,6 +343,15 @@ go_sentence
         go->setFromClause($3);
         go->setOverClause($4);
         go->setWhereClause($5);
+        if ($6 == nullptr) {
+            auto *edge = new std::string(*$4->edge());
+            auto *expr = new EdgeDstIdExpression(edge);
+            auto *alias = new std::string("id");
+            auto *col = new YieldColumn(expr, alias);
+            auto *cols = new YieldColumns();
+            cols->addColumn(col);
+            $6 = new YieldClause(cols);
+        }
         go->setYieldClause($6);
         $$ = go;
     }
@@ -304,16 +368,8 @@ from_clause
         auto from = new FromClause($2);
         $$ = from;
     }
-    | KW_FROM id_list KW_AS LABEL {
-        auto from = new FromClause($2, $4);
-        $$ = from;
-    }
     | KW_FROM ref_expression {
         auto from = new FromClause($2);
-        $$ = from;
-    }
-    | KW_FROM ref_expression KW_AS LABEL {
-        auto from = new FromClause($2, $4);
         $$ = from;
     }
     ;
@@ -386,6 +442,14 @@ yield_column
 
 match_sentence
     : KW_MATCH { $$ = new MatchSentence; }
+    ;
+
+find_sentence
+    : KW_FIND prop_list KW_FROM LABEL where_clause {
+        auto sentence = new FindSentence($4, $2);
+        sentence->setWhereClause($5);
+        $$ = sentence;
+    }
     ;
 
 use_sentence
@@ -473,12 +537,13 @@ describe_edge_sentence
     ;
 
 traverse_sentence
-    : go_sentence {}
-    | match_sentence {}
+    : go_sentence { $$ = $1; }
+    | match_sentence { $$ = $1; }
+    | find_sentence { $$ = $1; }
     ;
 
 set_sentence
-    : traverse_sentence {}
+    : traverse_sentence { $$ = $1; }
     | set_sentence KW_UNION traverse_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
     | set_sentence KW_INTERSECT traverse_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
     | set_sentence KW_MINUS traverse_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
@@ -486,7 +551,7 @@ set_sentence
     ;
 
 piped_sentence
-    : set_sentence {}
+    : set_sentence { $$ = $1; }
     | piped_sentence PIPE set_sentence { $$ = new PipedSentence($1, $3); }
     ;
 
@@ -497,11 +562,8 @@ assignment_sentence
     ;
 
 insert_vertex_sentence
-    : KW_INSERT KW_VERTEX LABEL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN INTEGER COLON value_list R_PAREN {
-        $$ = new InsertVertexSentence($9, $3, $5, $11);
-    }
-    | KW_INSERT KW_TAG LABEL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN INTEGER COLON value_list R_PAREN {
-        $$ = new InsertVertexSentence($9, $3, $5, $11);
+    : KW_INSERT KW_VERTEX LABEL L_PAREN prop_list R_PAREN KW_VALUES vertex_row_list {
+        $$ = new InsertVertexSentence($3, $5, $8);
     }
     ;
 
@@ -516,6 +578,23 @@ prop_list
     }
     | prop_list COMMA {
         $$ = $1;
+    }
+    ;
+
+vertex_row_list
+    : vertex_row_item {
+        $$ = new VertexRowList();
+        $$->addRow($1);
+    }
+    | vertex_row_list COMMA vertex_row_item {
+        $1->addRow($3);
+        $$ = $1;
+    }
+    ;
+
+vertex_row_item
+    : L_PAREN INTEGER COLON value_list R_PAREN {
+        $$ = new VertexRowItem($2, $4);
     }
     ;
 
@@ -534,49 +613,40 @@ value_list
     ;
 
 insert_edge_sentence
-    : KW_INSERT KW_EDGE LABEL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN
-      INTEGER R_ARROW INTEGER COLON value_list R_PAREN {
+    : KW_INSERT KW_EDGE LABEL L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setEdge($3);
         sentence->setProps($5);
-        sentence->setSrcId($9);
-        sentence->setDstId($11);
-        sentence->setValues($13);
+        sentence->setRows($8);
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE LABEL L_PAREN prop_list R_PAREN
-      KW_VALUES L_PAREN INTEGER R_ARROW INTEGER COLON value_list R_PAREN {
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE LABEL L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setOverwrite(false);
         sentence->setEdge($5);
         sentence->setProps($7);
-        sentence->setSrcId($11);
-        sentence->setDstId($13);
-        sentence->setValues($15);
+        sentence->setRows($10);
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE LABEL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN
-      INTEGER R_ARROW INTEGER AT INTEGER COLON value_list R_PAREN {
-        auto sentence = new InsertEdgeSentence();
-        sentence->setEdge($3);
-        sentence->setProps($5);
-        sentence->setSrcId($9);
-        sentence->setDstId($11);
-        sentence->setRank($13);
-        sentence->setValues($15);
-        $$ = sentence;
+    ;
+
+edge_row_list
+    : edge_row_item {
+        $$ = new EdgeRowList();
+        $$->addRow($1);
     }
-    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE LABEL L_PAREN prop_list R_PAREN KW_VALUES L_PAREN
-      INTEGER R_ARROW INTEGER AT INTEGER COLON value_list R_PAREN {
-        auto sentence = new InsertEdgeSentence();
-        sentence->setOverwrite(false);
-        sentence->setEdge($5);
-        sentence->setProps($7);
-        sentence->setSrcId($11);
-        sentence->setDstId($13);
-        sentence->setRank($15);
-        sentence->setValues($17);
-        $$ = sentence;
+    | edge_row_list COMMA edge_row_item {
+        $1->addRow($3);
+        $$ = $1;
+    }
+    ;
+
+edge_row_item
+    : L_PAREN INTEGER R_ARROW INTEGER COLON value_list R_PAREN {
+        $$ = new EdgeRowItem($2, $4, $6);
+    }
+    | L_PAREN INTEGER R_ARROW INTEGER AT INTEGER COLON value_list R_PAREN {
+        $$ = new EdgeRowItem($2, $4, $6, $8);
     }
     ;
 
@@ -664,36 +734,137 @@ update_edge_sentence
     }
     ;
 
-show_sentence
-    : KW_SHOW KW_HOSTS {
-        auto sentence = new ShowSentence(ShowKind::kShowHosts);
+delete_vertex_sentence
+    : KW_DELETE KW_VERTEX id_list where_clause {
+        auto sentence = new DeleteVertexSentence($3);
+        sentence->setWhereClause($4);
         $$ = sentence;
     }
     ;
 
+edge_list
+    : INTEGER R_ARROW INTEGER {
+        $$ = new EdgeList();
+        $$->addEdge($1, $3);
+    }
+    | edge_list COMMA INTEGER R_ARROW INTEGER {
+        $$ = $1;
+        $$->addEdge($3, $5);
+    }
+    ;
+
+delete_edge_sentence
+    : KW_DELETE KW_EDGE edge_list where_clause {
+        auto sentence = new DeleteEdgeSentence($3);
+        sentence->setWhereClause($4);
+        $$ = sentence;
+    }
+    ;
+
+show_sentence
+    : KW_SHOW KW_HOSTS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowHosts);
+    }
+    ;
+
+add_hosts_sentence
+    : KW_ADD KW_HOSTS L_PAREN host_list R_PAREN {
+        auto sentence = new AddHostsSentence();
+        sentence->setHosts($4);
+        $$ = sentence;
+    }
+    ;
+
+remove_hosts_sentence
+    : KW_REMOVE KW_HOSTS L_PAREN host_list R_PAREN {
+        auto sentence = new RemoveHostsSentence();
+        sentence->setHosts($4);
+        $$ = sentence;
+    }
+    ;
+
+host_list
+    : STRING {
+        $$ = new HostList();
+        $$->addHost($1);
+    }
+    | host_list COMMA STRING {
+        $$ = $1;
+        $$->addHost($3);
+    }
+    | host_list COMMA {
+        $$ = $1;
+    }
+    ;
+
+create_space_sentence
+    : KW_CREATE KW_SPACE LABEL L_PAREN space_opt_list R_PAREN {
+        auto sentence = new CreateSpaceSentence($3);
+        sentence->setOpts($5);
+        $$ = sentence;
+    }
+    ;
+
+space_opt_list
+    : space_opt_item {
+        $$ = new SpaceOptList();
+        $$->addOpt($1);
+    }
+    | space_opt_list COMMA space_opt_item {
+        $$ = $1;
+        $$->addOpt($3);
+    }
+    | space_opt_list COMMA {
+        $$ = $1;
+    }
+    ;
+
+ space_opt_item
+    : KW_PARTITION_NUM ASSIGN INTEGER {
+        $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3); 
+    }
+    | KW_REPLICA_FACTOR ASSIGN INTEGER {
+        $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
+    }
+    // TODO(YT) Create Spaces for different engines 
+    // KW_ENGINE_TYPE ASSIGN LABEL
+    ;
+
+drop_space_sentence
+    : KW_DROP KW_SPACE LABEL {
+        $$ = new DropSpaceSentence($3);
+    }
+    ;
+
 mutate_sentence
-    : insert_vertex_sentence {}
-    | insert_edge_sentence {}
-    | update_vertex_sentence {}
-    | update_edge_sentence {}
+    : insert_vertex_sentence { $$ = $1; }
+    | insert_edge_sentence { $$ = $1; }
+    | update_vertex_sentence { $$ = $1; }
+    | update_edge_sentence { $$ = $1; }
+    | delete_vertex_sentence { $$ = $1; }
+    | delete_edge_sentence { $$ = $1; }
     ;
 
 maintainance_sentence
-    : define_tag_sentence {}
-    | define_edge_sentence {}
-    | alter_tag_sentence {}
-    | alter_edge_sentence {}
-    | describe_tag_sentence {}
-    | describe_edge_sentence {}
-    | show_sentence {}
-    ;
+    : define_tag_sentence { $$ = $1; }
+    | define_edge_sentence { $$ = $1; }
+    | alter_tag_sentence { $$ = $1; }
+    | alter_edge_sentence { $$ = $1; }
+    | describe_tag_sentence { $$ = $1; }
+    | describe_edge_sentence { $$ = $1; }
+    | show_sentence { $$ = $1; }
+    | add_hosts_sentence { $$ = $1; }
+    | remove_hosts_sentence { $$ = $1; }
+    | create_space_sentence { $$ = $1; }
+    | drop_space_sentence { $$ = $1; }
+    ; 
 
 sentence
-    : maintainance_sentence {}
-    | use_sentence {}
-    | piped_sentence {}
-    | assignment_sentence {}
-    | mutate_sentence {}
+    : maintainance_sentence { $$ = $1; }
+    | use_sentence { $$ = $1; }
+    | piped_sentence { $$ = $1; }
+    | assignment_sentence { $$ = $1; }
+    | mutate_sentence { $$ = $1; }
     ;
 
 sentences

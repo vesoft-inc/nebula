@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "webservice/SetFlagsHandler.h"
+#include "webservice/Common.h"
 #include <folly/Conv.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
@@ -21,7 +22,7 @@ using proxygen::ResponseBuilder;
 void SetFlagsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
         // Unsupported method
-        err_ = ErrorCode::E_UNSUPPORTED_METHOD;
+        err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
 
@@ -31,17 +32,17 @@ void SetFlagsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
         name_ = headers->getDecodedQueryParam("flag");
     } else {
         LOG(ERROR) << "There is no flag specified when setting the flag value";
-        err_ = ErrorCode::E_UNPROCESSABLE;
+        err_ = HttpCode::E_UNPROCESSABLE;
     }
 
     if (headers->hasQueryParam("value")) {
         value_ = headers->getDecodedQueryParam("value");
     } else {
         LOG(ERROR) << "There is no value specified when setting the flag value";
-        err_ = ErrorCode::E_UNPROCESSABLE;
+        err_ = HttpCode::E_UNPROCESSABLE;
     }
 
-    if (err_ == ErrorCode::SUCCEEDED) {
+    if (err_ == HttpCode::SUCCEEDED) {
         VLOG(1) << "Set flag " << name_ << " = " << value_;
     }
 }
@@ -54,12 +55,12 @@ void SetFlagsHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
 
 void SetFlagsHandler::onEOM() noexcept {
     switch (err_) {
-        case ErrorCode::E_UNSUPPORTED_METHOD:
+        case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
                 .status(405, "Method Not Allowed")
                 .sendWithEOM();
             return;
-        case ErrorCode::E_UNPROCESSABLE:
+        case HttpCode::E_UNPROCESSABLE:
             ResponseBuilder(downstream_)
                 .status(400, "Bad Request")
                 .sendWithEOM();

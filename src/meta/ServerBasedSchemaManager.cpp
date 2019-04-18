@@ -14,23 +14,6 @@ DEFINE_string(meta_server, "",
 namespace nebula {
 namespace meta {
 
-// static
-GraphSpaceID ServerBasedSchemaManager::toGraphSpaceID(const folly::StringPiece spaceName) {
-    return folly::hash::fnv32_buf(spaceName.start(), spaceName.size());
-}
-
-
-// static
-TagID ServerBasedSchemaManager::toTagID(const folly::StringPiece tagName) {
-    return folly::hash::fnv32_buf(tagName.start(), tagName.size());
-}
-
-
-// static
-EdgeType ServerBasedSchemaManager::toEdgeType(const folly::StringPiece typeName) {
-    return folly::hash::fnv32_buf(typeName.start(), typeName.size());
-}
-
 }  // namespace meta
 }  // namespace nebula
 

@@ -90,3 +90,11 @@ nebula_link_libraries(
     follybenchmark
     boost_regex
 )
+
+add_executable(signal_handler_test SignalHandlerTest.cpp $<TARGET_OBJECTS:base_obj>)
+nebula_link_libraries(
+    signal_handler_test
+    gtest
+    gtest_main
+)
+nebula_add_test(signal_handler_test)

@@ -12,6 +12,7 @@
 #include "gen-cpp2/graph_types.h"
 #include "dataman/DataCommon.h"
 #include "meta/SchemaProviderIf.h"
+#include "meta/SchemaManager.h"
 
 namespace nebula {
 
@@ -37,6 +38,7 @@ public:
         ResultType getDouble(double& v) const noexcept;
         ResultType getString(folly::StringPiece& v) const noexcept;
         ResultType getVid(int64_t& v) const noexcept;
+        ResultType getTimestamp(int64_t& v) const noexcept;
     private:
         const RowReader* reader_;
         Iterator* iter_;
@@ -70,13 +72,17 @@ public:
 
 public:
     static std::unique_ptr<RowReader> getTagPropReader(
+        meta::SchemaManager* schemaMan,
         folly::StringPiece row,
         GraphSpaceID space,
         TagID tag);
+
     static std::unique_ptr<RowReader> getEdgePropReader(
+        meta::SchemaManager* schemaMan,
         folly::StringPiece row,
         GraphSpaceID space,
         EdgeType edge);
+
     static std::unique_ptr<RowReader> getRowReader(
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema);
@@ -113,6 +119,9 @@ public:
 
     ResultType getVid(const folly::StringPiece name, int64_t& v) const noexcept;
     ResultType getVid(int64_t index, int64_t& v) const noexcept;
+
+    ResultType getTimestamp(const folly::StringPiece name, int64_t& v) const noexcept;
+    ResultType getTimestamp(int64_t index, int64_t& v) const noexcept;
 
     // TODO getPath(const std::string& name) const noexcept;
     // TODO getPath(int64_t index) const noexcept;
@@ -171,7 +180,9 @@ private:
     int32_t readFloat(int64_t offset, float& v) const noexcept;
     int32_t readDouble(int64_t offset, double& v) const noexcept;
     int32_t readString(int64_t offset, folly::StringPiece& v) const noexcept;
+    int32_t readInt64(int64_t offset, int64_t& v) const noexcept;
     int32_t readVid(int64_t offset, int64_t& v) const noexcept;
+    int32_t readTimestamp(int64_t offset, int64_t& v) const noexcept;
 
     // Following methods assume the parameters index and offset are valid
     // When succeeded, offset will advance
@@ -184,7 +195,10 @@ private:
         const noexcept;
     ResultType getString(int64_t index, int64_t& offset, folly::StringPiece& v)
         const noexcept;
+    ResultType getInt64(int64_t index, int64_t& offset, int64_t& v) const noexcept;
     ResultType getVid(int64_t index, int64_t& offset, int64_t& v) const noexcept;
+    ResultType getTimestamp(int64_t index, int64_t& offset, int64_t& v)
+        const noexcept;
 };
 
 }  // namespace nebula

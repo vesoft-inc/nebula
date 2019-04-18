@@ -32,6 +32,7 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
                                 std::vector<kvstore::KV> data) {
     this->kvstore_->asyncMultiPut(spaceId, partId, std::move(data),
                                   [partId, this](kvstore::ResultCode code, HostAddr addr) {
+        VLOG(3) << "partId:" << partId << ", code:" << static_cast<int32_t>(code);
         cpp2::ResultCode thriftResult;
         thriftResult.set_code(to(code));
         thriftResult.set_part_id(partId);
@@ -48,7 +49,6 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
             this->callingNum_--;
             if (this->callingNum_ == 0) {
                 result_.set_failed_codes(std::move(this->codes_));
-                result_.set_latency_in_ms(this->duration_.elapsedInMSec());
                 finished = true;
             }
         }

@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+
+ This source code is licensed under Apache 2.0 License
+  (found in the LICENSE.Apache file in the root directory)
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -6,13 +12,33 @@
 
     <groupId>com.vesoft</groupId>
     <artifactId>native-client</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.1</version>
+
+    <properties>
+        <project.root.dir>../../..</project.root.dir>
+    </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
-            <version>5.17.2</version>
+            <version>5.15.10</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -62,23 +88,59 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
-                        <id>copy-lib</id>
-                        <phase>compile</phase>
+                        <id>copy-resources</id>
+                        <phase>package</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
+                            <encoding>UTF-8</encoding>
+                            <outputDirectory>${basedir}/src/main/resources/</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>lib</directory>
+                                    <directory>_build</directory>
+                                    <includes>
+                                        <include>libnebula_native_client.so</include>
+                                    </includes>
+                                    <filtering>false</filtering>
                                 </resource>
                             </resources>
-                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <configLocation>${project.root.dir}/stylecheck/nebula_java_style_checks.xml</configLocation>
+                    <encoding>UTF-8</encoding>
+                    <failOnViolation>true</failOnViolation>
+                    <linkXRef>false</linkXRef>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <maxAllowedViolations>0</maxAllowedViolations>
+                    <violationSeverity>warning</violationSeverity>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>checkstyle</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>8.18</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

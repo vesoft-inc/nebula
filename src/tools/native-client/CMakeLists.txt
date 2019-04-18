@@ -5,9 +5,11 @@ add_library(nebula_native_client SHARED
             $<TARGET_OBJECTS:dataman_obj>
             $<TARGET_OBJECTS:fs_obj>
             $<TARGET_OBJECTS:base_obj>
-            $<TARGET_OBJECTS:meta_obj>
+            $<TARGET_OBJECTS:schema_obj>
             $<TARGET_OBJECTS:network_obj>
             $<TARGET_OBJECTS:storage_thrift_obj>
+            $<TARGET_OBJECTS:common_thrift_obj>
+            $<TARGET_OBJECTS:thrift_obj>
             src/main/cpp/com_vesoft_client_NativeClient.cpp)
 
 
@@ -24,6 +26,13 @@ target_link_libraries(nebula_native_client
                       -lzstd
                       -levent
                       -ldouble-conversion
-                      -lstdc++
+                      -static-libgcc
+                      -static-libstdc++
                       -lpthread
                       -ldl)
+
+add_custom_target(
+    nebula_native_java_client ALL
+    COMMAND "./build.sh" ">" "./_build.log" "2>&1"
+    DEPENDS nebula_native_client
+)

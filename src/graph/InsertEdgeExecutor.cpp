@@ -6,6 +6,9 @@
 
 #include "base/Base.h"
 #include "graph/InsertEdgeExecutor.h"
+#include "meta/SchemaManager.h"
+#include "storage/client/StorageClient.h"
+#include "dataman/RowWriter.h"
 
 namespace nebula {
 namespace graph {
@@ -17,38 +20,103 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 
 
 Status InsertEdgeExecutor::prepare() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+
     overwritable_ = sentence_->overwritable();
-    srcid_ = sentence_->srcid();
-    dstid_ = sentence_->dstid();
-    edge_ = sentence_->edge();
-    rank_ = sentence_->rank();
+    edge_ = ectx()->schemaManager()->toEdgeType(*sentence_->edge());
     properties_ = sentence_->properties();
-    values_ = sentence_->values();
-    // TODO(dutor) check on property names and types
-    if (properties_.size() != values_.size()) {
-        return Status::Error("Number of property names and values not match");
+    rows_ = sentence_->rows();
+    auto space = ectx()->rctx()->session()->space();
+    schema_ = ectx()->schemaManager()->getEdgeSchema(space, edge_);
+    if (schema_ == nullptr) {
+        return Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
     }
     return Status::OK();
 }
 
 
 void InsertEdgeExecutor::execute() {
-    std::vector<VariantType> values;
-    values.resize(values_.size());
-    auto eval = [] (auto *expr) { return expr->eval(); };
-    std::transform(values_.begin(), values_.end(), values.begin(), eval);
+    std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
+    auto index = 0;
+    for (auto i = 0u; i < rows_.size(); i++) {
+        auto *row = rows_[i];
+        auto src = row->srcid();
+        auto dst = row->dstid();
+        auto rank = row->rank();
+        auto exprs = row->values();
+        std::vector<VariantType> values;
+        values.resize(exprs.size());
+        auto eval = [] (auto *expr) { return expr->eval(); };
+        std::transform(exprs.begin(), exprs.end(), values.begin(), eval);
 
-    auto future = ectx()->storage()->addEdge(edge_, srcid_, dstid_, properties_, values);
+        RowWriter writer(schema_);
+        for (auto &value : values) {
+            switch (value.which()) {
+                case 0:
+                    writer << boost::get<int64_t>(value);
+                    break;
+                case 1:
+                    writer << boost::get<double>(value);
+                    break;
+                case 2:
+                    writer << boost::get<bool>(value);
+                    break;
+                case 3:
+                    writer << boost::get<std::string>(value);
+                    break;
+                default:
+                    LOG(FATAL) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+            }
+        }
+        {
+            auto &out = edges[index++];
+            out.key.set_src(src);
+            out.key.set_dst(dst);
+            out.key.set_ranking(rank);
+            out.key.set_edge_type(edge_);
+            out.props = writer.encode();
+            out.__isset.key = true;
+            out.__isset.props = true;
+        }
+        {
+            auto &in = edges[index++];
+            in.key.set_src(dst);
+            in.key.set_dst(src);
+            in.key.set_ranking(rank);
+            in.key.set_edge_type(-edge_);
+            in.props = "";
+            in.__isset.key = true;
+            in.__isset.props = true;
+        }
+    }
+
+    auto space = ectx()->rctx()->session()->space();
+    auto future = ectx()->storage()->addEdges(space, std::move(edges), overwritable_);
     auto *runner = ectx()->rctx()->runner();
-    std::move(future).via(runner).then([this] (Status status) {
-        if (!status.ok()) {
-            auto &resp = ectx()->rctx()->resp();
-            resp.set_error_code(cpp2::ErrorCode::E_EXECUTION_ERROR);
-            resp.set_error_msg(status.toString());
+
+    auto cb = [this] (auto &&resp) {
+        // For insertion, we regard partial success as failure.
+        auto completeness = resp.completeness();
+        if (completeness != 100) {
+            DCHECK(onError_);
+            onError_(Status::Error("Internal Error"));
+            return;
         }
         DCHECK(onFinish_);
         onFinish_();
-    });
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 }   // namespace graph

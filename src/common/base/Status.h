@@ -11,9 +11,9 @@
 
 /**
  * Status is modeled on the one from levelDB, beyond that,
- * this one adds support on move semantics and formated error messages.
+ * this one adds support on move semantics and formatted error messages.
  *
- * Status is as cheap as raw pointers in the successfull case,
+ * Status is as cheap as raw pointers in the successful case,
  * without any heap memory allocations.
  */
 
@@ -68,7 +68,11 @@ public:
         return Status();
     }
 
-#define STATUS_GENERATOR(ERROR)                        \
+#define STATUS_GENERATOR(ERROR)                         \
+    static Status ERROR() {                             \
+        return Status(k##ERROR, "");                    \
+    }                                                   \
+                                                        \
     static Status ERROR(folly::StringPiece msg) {       \
         return Status(k##ERROR, msg);                   \
     }                                                   \
@@ -93,13 +97,16 @@ public:
     // Graph engine errors
     STATUS_GENERATOR(SyntaxError);
 
+    // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
+    STATUS_GENERATOR(SpaceNotFound);
+    STATUS_GENERATOR(HostNotFound);
+
 #undef STATUS_GENERATOR
 
     std::string toString() const;
 
     friend std::ostream& operator<<(std::ostream &os, const Status &status);
 
-private:
     // If some kind of error really needs to be distinguished with others using a specific
     // code, other than a general code and specific msg, you could add a new code below,
     // e.g. kSomeError, and add the cooresponding STATUS_GENERATOR(SomeError)
@@ -115,7 +122,8 @@ private:
         // 3xx, for storage engine errors
         // ...
         // 4xx, for meta service errors
-        // ...
+        kSpaceNotFound          = 404,
+        kHostNotFound           = 405,
     };
 
     Code code() const {
@@ -124,6 +132,8 @@ private:
         }
         return reinterpret_cast<const Header*>(state_.get())->code_;
     }
+
+private:
     // REQUIRES: stat_ != nullptr
     uint16_t size() const {
         return reinterpret_cast<const Header*>(state_.get())->size_;

@@ -8,26 +8,45 @@
 #include <gtest/gtest.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
+#include "meta/test/TestUtils.h"
 #include "storage/client/StorageClient.h"
-#include "meta/PartManager.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 #include "dataman/RowSetReader.h"
 
+DECLARE_string(meta_server_addrs);
+DECLARE_int32(load_data_interval_second);
+
 namespace nebula {
 namespace storage {
 
-TEST(StorageClientTest, InterfacesTest) {
+TEST(StorageClientTest, VerticesInterfacesTest) {
+    FLAGS_load_data_interval_second = 1;
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
+    GraphSpaceID spaceId = 0;
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto sc = TestUtils::mockServer(rootPath.path());
+    uint32_t localMetaPort = 10001;
+    uint32_t localDataPort = 20002;
+    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", localMetaPort);
 
-    GraphSpaceID spaceId = 0;
-    meta::AdHocPartManagersBuilder::add(spaceId,
-                                        HostAddr(localIp, sc->port_),
-                                        {0, 1, 2, 3, 4, 5});
+    LOG(INFO) << "Start meta server....";
+    std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
+    auto metaServerContext = meta::TestUtils::mockServer(10001, metaPath.c_str());
 
+    LOG(INFO) << "Start data server....";
+    std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
+    auto sc = TestUtils::mockServer(dataPath.c_str(), localIp, localDataPort);
+
+    LOG(INFO) << "Add hosts and create space....";
+    {
+        auto mClient = std::make_unique<meta::MetaClient>();
+        auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
+        ASSERT_TRUE(r.ok());
+        auto ret = mClient->createSpace("default", 10, 1).get();
+        spaceId = ret.value();
+    }
+    sleep(2 * FLAGS_load_data_interval_second + 1);
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto client = std::make_unique<StorageClient>(threadPool);
     // VerticesInterfacesTest(addVertices and getVertexProps)
@@ -183,6 +202,13 @@ TEST(StorageClientTest, InterfacesTest) {
         }
         EXPECT_EQ(it, rsReader.end());
     }
+    LOG(INFO) << "Stop data server...";
+    sc.reset();
+    LOG(INFO) << "Stop data client...";
+    client.reset();
+    LOG(INFO) << "Stop meta server...";
+    metaServerContext.reset();
+    threadPool.reset();
 }
 
 

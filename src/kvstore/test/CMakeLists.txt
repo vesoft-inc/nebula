@@ -2,6 +2,11 @@ add_executable(
     part_test
     PartTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -9,44 +14,65 @@ add_executable(
 nebula_link_libraries(
     part_test
     ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
     gtest
 )
 nebula_add_test(part_test)
 
 add_executable(
-    rocksdb_engine_test
-    RocksdbEngineTest.cpp
+    rocks_engine_test
+    RocksEngineTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
 )
 nebula_link_libraries(
-    rocksdb_engine_test
+    rocks_engine_test
     ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
     gtest
 )
-nebula_add_test(rocksdb_engine_test)
+nebula_add_test(rocks_engine_test)
 
 add_executable(
-    kvstore_test
-    KVStoreTest.cpp
+    nebula_store_test
+    NebulaStoreTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
 )
 nebula_link_libraries(
-    kvstore_test
+    nebula_store_test
     ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
     gtest
 )
-nebula_add_test(kvstore_test)
+nebula_add_test(nebula_store_test)
 
 add_executable(
     load_test
     LoadTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -54,6 +80,24 @@ add_executable(
 nebula_link_libraries(
     load_test
     ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
     gtest
 )
 nebula_add_test(load_test)
+
+add_executable(
+    rocks_engine_config_test
+    RocksEngineConfigTest.cpp
+    ../RocksEngine.cpp
+    ../RocksEngineConfig.cpp
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+nebula_link_libraries(
+    rocks_engine_config_test
+    ${ROCKSDB_LIBRARIES}
+    gtest
+)
+nebula_add_test(rocks_engine_config_test)
+

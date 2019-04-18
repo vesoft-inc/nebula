@@ -9,24 +9,18 @@
 
 #include <gtest/gtest_prod.h>
 #include "base/Base.h"
+#include "meta/client/MetaClient.h"
 
 namespace nebula {
 namespace kvstore {
 
-using MachineID = uint32_t;
-
-struct PartMeta {
-    GraphSpaceID           spaceId_;
-    PartitionID            partId_;
-    std::vector<MachineID> peers_;
-};
-
-using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
 
 class Handler {
 public:
     virtual void addSpace(GraphSpaceID spaceId) = 0;
     virtual void addPart(GraphSpaceID spaceId, PartitionID partId) = 0;
+    virtual void removeSpace(GraphSpaceID spaceId) = 0;
+    virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
 };
 
 /**
@@ -34,17 +28,14 @@ public:
  * */
 class PartManager {
 public:
-    /**
-     *  Singleton instance will be returned
-     * */
-    static PartManager* instance();
+    PartManager() = default;
 
     virtual ~PartManager() = default;
 
     /**
-     * return PartsMap for machineId
+     * return PartsMap for host
      * */
-    virtual PartsMap parts(HostAddr hostAddr) = 0;
+    virtual PartsMap parts(const HostAddr& host) = 0;
 
     /**
      * return PartMeta for <spaceId, partId>
@@ -52,14 +43,14 @@ public:
     virtual PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) = 0;
 
     /**
-     * Check current part exist or not.
+     * Check current part exist or not on host.
      * */
-    virtual bool partExist(GraphSpaceID spaceId, PartitionID partId) = 0;
+    virtual bool partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) = 0;
 
     /**
      * Check current space exist or not.
      * */
-    virtual bool spaceExist(GraphSpaceID spaceId) = 0;
+    virtual bool spaceExist(const HostAddr& host, GraphSpaceID spaceId) = 0;
 
     /**
      * Register Handler
@@ -69,8 +60,6 @@ public:
     }
 
 protected:
-    PartManager() = default;
-    static PartManager* instance_;
     Handler* handler_ = nullptr;
 };
 
@@ -78,19 +67,19 @@ protected:
 : * Memory based PartManager, it is used in UTs now.
  * */
 class MemPartManager final : public PartManager {
-    FRIEND_TEST(KVStoreTest, SimpleTest);
-    FRIEND_TEST(KVStoreTest, PartsTest);
+    FRIEND_TEST(NebulaStoreTest, SimpleTest);
+    FRIEND_TEST(NebulaStoreTest, PartsTest);
 
 public:
     MemPartManager() = default;
 
     ~MemPartManager() = default;
 
-    PartsMap parts(HostAddr hostAddr) override;
+    PartsMap parts(const HostAddr& host) override;
 
     PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
-    void addPart(GraphSpaceID spaceId, PartitionID partId) {
+    void addPart(GraphSpaceID spaceId, PartitionID partId, std::vector<HostAddr> peers = {}) {
         if (partsMap_.find(spaceId) == partsMap_.end()) {
             if (handler_) {
                 handler_->addSpace(spaceId);
@@ -103,26 +92,31 @@ public:
             }
         }
         p[partId] = PartMeta();
+        auto& pm = p[partId];
+        pm.spaceId_ = spaceId;
+        pm.partId_  = partId;
+        pm.peers_ = std::move(peers);
     }
 
-    bool partExist(GraphSpaceID spaceId, PartitionID partId) override {
+    void removePart(GraphSpaceID spaceId, PartitionID partId) {
         auto it = partsMap_.find(spaceId);
-        if (it != partsMap_.end()) {
-            auto partIt = it->second.find(partId);
-            if (partIt != it->second.end()) {
-                return true;
+        CHECK(it != partsMap_.end());
+        if (it->second.find(partId) != it->second.end()) {
+            it->second.erase(partId);
+            if (handler_) {
+                handler_->removePart(spaceId, partId);
+                if (it->second.empty()) {
+                    handler_->removeSpace(spaceId);
+                }
             }
         }
-        return false;
     }
 
-    bool spaceExist(GraphSpaceID spaceId) override {
+    bool partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
+
+    bool spaceExist(const HostAddr& host, GraphSpaceID spaceId) override {
+        UNUSED(host);
         return partsMap_.find(spaceId) != partsMap_.end();
-    }
-
-    void clear() {
-        partsMap_.clear();
-        handler_ = nullptr;
     }
 
     PartsMap& partsMap() {
@@ -131,6 +125,44 @@ public:
 
 private:
     PartsMap partsMap_;
+};
+
+class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedListener {
+public:
+     explicit MetaServerBasedPartManager(HostAddr host);
+
+     ~MetaServerBasedPartManager() {
+        VLOG(3) << "~MetaServerBasedPartManager";
+     }
+
+     PartsMap parts(const HostAddr& host) override;
+
+     PartMeta partMeta(GraphSpaceID spaceId, PartitionID partId) override;
+
+     bool partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
+
+     bool spaceExist(const HostAddr& host, GraphSpaceID spaceId) override;
+
+     /**
+      * Implement the interfaces in MetaChangedListener
+      * */
+     void onSpaceAdded(GraphSpaceID spaceId) override;
+
+     void onSpaceRemoved(GraphSpaceID spaceId) override;
+
+     void onPartAdded(const PartMeta& partMeta) override;
+
+     void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override;
+
+     void onPartUpdated(const PartMeta& partMeta) override;
+
+     HostAddr getLocalHost() override {
+        return localHost_;
+     }
+
+private:
+     std::unique_ptr<meta::MetaClient> client_;
+     HostAddr localHost_;
 };
 
 }  // namespace kvstore

@@ -7,8 +7,6 @@
 #include "base/Base.h"
 #include "meta/SchemaManager.h"
 #include "meta/FileBasedSchemaManager.h"
-#include "meta/ServerBasedSchemaManager.h"
-#include "meta/AdHocSchemaManager.h"
 
 DECLARE_string(schema_file);
 DECLARE_string(meta_server);
@@ -16,51 +14,43 @@ DECLARE_string(meta_server);
 namespace nebula {
 namespace meta {
 
-folly::RWSpinLock SchemaManager::tagLock_;
-std::unordered_map<
-    std::pair<GraphSpaceID, TagID>,
-    std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>> SchemaManager::tagSchemas_;
-
-folly::RWSpinLock SchemaManager::edgeLock_;
-std::unordered_map<
-    std::pair<GraphSpaceID, EdgeType>,
-    std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>> SchemaManager::edgeSchemas_;
-
-std::once_flag schemaInitFlag;
-
-
-// static
-void SchemaManager::init() {
-    std::call_once(schemaInitFlag, []() {
-        if (!FLAGS_schema_file.empty()) {
-            return FileBasedSchemaManager::init();
-        } else if (!FLAGS_meta_server.empty()) {
-            LOG(FATAL) << "ServerBasedSchemaManager has not been implemented";
-        } else {
-            // Memory based SchemaManager
-            return AdHocSchemaManager::init();
-        }
-    });
+std::unique_ptr<SchemaManager> SchemaManager::create() {
+    if (!FLAGS_schema_file.empty()) {
+        std::unique_ptr<SchemaManager> sm(new FileBasedSchemaManager());
+        return sm;
+    } else {
+        std::unique_ptr<SchemaManager> sm(new AdHocSchemaManager());
+        return sm;
+    }
 }
 
+void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
+                                      TagID tag,
+                                      std::shared_ptr<SchemaProviderIf> schema
+                                      ) {
+    folly::RWSpinLock::WriteHolder wh(tagLock_);
+    // Only version 0
+    tagSchemas_[std::make_pair(space, tag)][0] = schema;
+}
 
-// static
-std::shared_ptr<const SchemaProviderIf> SchemaManager::getTagSchema(
-        const folly::StringPiece spaceName,
-        const folly::StringPiece tagName,
+void AdHocSchemaManager::addEdgeSchema(GraphSpaceID space,
+                                       EdgeType edge,
+                                       std::shared_ptr<SchemaProviderIf> schema) {
+    folly::RWSpinLock::WriteHolder wh(edgeLock_);
+    // Only version 0
+    edgeSchemas_[std::make_pair(space, edge)][0] = schema;
+}
+
+std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getTagSchema(
+        folly::StringPiece spaceName,
+        folly::StringPiece tagName,
         int32_t ver) {
-    init();
     return getTagSchema(toGraphSpaceID(spaceName), toTagID(tagName), ver);
 }
 
-
-// static
-std::shared_ptr<const SchemaProviderIf> SchemaManager::getTagSchema(
+std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getTagSchema(
         GraphSpaceID space, TagID tag, int32_t ver) {
-    init();
-
     folly::RWSpinLock::ReadHolder rh(tagLock_);
-
     auto it = tagSchemas_.find(std::make_pair(space, tag));
     if (it == tagSchemas_.end()) {
         // Not found
@@ -88,21 +78,13 @@ std::shared_ptr<const SchemaProviderIf> SchemaManager::getTagSchema(
     }
 }
 
-
-// static
-int32_t SchemaManager::getNewestTagSchemaVer(const folly::StringPiece spaceName,
-                                             const folly::StringPiece tagName) {
-    init();
+int32_t AdHocSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
+                                                  folly::StringPiece tagName) {
     return getNewestTagSchemaVer(toGraphSpaceID(spaceName), toTagID(tagName));
 }
 
-
-// static
-int32_t SchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
-    init();
-
+int32_t AdHocSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
     folly::RWSpinLock::ReadHolder rh(tagLock_);
-
     auto it = tagSchemas_.find(std::make_pair(space, tag));
     if (it == tagSchemas_.end() || it->second.empty()) {
         // Not found
@@ -113,24 +95,16 @@ int32_t SchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
     }
 }
 
-
-// static
-std::shared_ptr<const SchemaProviderIf> SchemaManager::getEdgeSchema(
-        const folly::StringPiece spaceName,
-        const folly::StringPiece typeName,
+std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getEdgeSchema(
+        folly::StringPiece spaceName,
+        folly::StringPiece typeName,
         int32_t ver) {
-    init();
     return getEdgeSchema(toGraphSpaceID(spaceName), toEdgeType(typeName), ver);
 }
 
-
-// static
-std::shared_ptr<const SchemaProviderIf> SchemaManager::getEdgeSchema(
+std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getEdgeSchema(
         GraphSpaceID space, EdgeType edge, int32_t ver) {
-    init();
-
     folly::RWSpinLock::ReadHolder rh(edgeLock_);
-
     auto it = edgeSchemas_.find(std::make_pair(space, edge));
     if (it == edgeSchemas_.end()) {
         // Not found
@@ -158,19 +132,12 @@ std::shared_ptr<const SchemaProviderIf> SchemaManager::getEdgeSchema(
     }
 }
 
-
-// static
-int32_t SchemaManager::getNewestEdgeSchemaVer(const folly::StringPiece spaceName,
-                                              const folly::StringPiece typeName) {
-    init();
+int32_t AdHocSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceName,
+                                                   folly::StringPiece typeName) {
     return getNewestEdgeSchemaVer(toGraphSpaceID(spaceName), toEdgeType(typeName));
 }
 
-
-// static
-int32_t SchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) {
-    init();
-
+int32_t AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) {
     folly::RWSpinLock::ReadHolder rh(edgeLock_);
 
     auto it = edgeSchemas_.find(std::make_pair(space, edge));
@@ -183,116 +150,16 @@ int32_t SchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge)
     }
 }
 
-
-// static
-GraphSpaceID SchemaManager::toGraphSpaceID(const folly::StringPiece spaceName) {
-    if (!FLAGS_schema_file.empty()) {
-        return FileBasedSchemaManager::toGraphSpaceID(spaceName);
-    } else if (!FLAGS_meta_server.empty()) {
-        return ServerBasedSchemaManager::toGraphSpaceID(spaceName);
-    } else {
-        // Memory based
-        return AdHocSchemaManager::toGraphSpaceID(spaceName);
-    }
+GraphSpaceID AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
+    return folly::hash::fnv32_buf(spaceName.start(), spaceName.size());
 }
 
-
-// static
-TagID SchemaManager::toTagID(const folly::StringPiece tagName) {
-    if (!FLAGS_schema_file.empty()) {
-        return FileBasedSchemaManager::toTagID(tagName);
-    } else if (!FLAGS_meta_server.empty()) {
-        return ServerBasedSchemaManager::toTagID(tagName);
-    } else {
-        // Memory based
-        return AdHocSchemaManager::toTagID(tagName);
-    }
+TagID AdHocSchemaManager::toTagID(folly::StringPiece tagName) {
+    return folly::hash::fnv32_buf(tagName.start(), tagName.size());
 }
 
-
-// static
-EdgeType SchemaManager::toEdgeType(const folly::StringPiece typeName) {
-    if (!FLAGS_schema_file.empty()) {
-        return FileBasedSchemaManager::toEdgeType(typeName);
-    } else if (!FLAGS_meta_server.empty()) {
-        return ServerBasedSchemaManager::toEdgeType(typeName);
-    } else {
-        // Memory based
-        return AdHocSchemaManager::toEdgeType(typeName);
-    }
-}
-
-
-int32_t SchemaManager::getVersion() const noexcept {
-    return ver_;
-}
-
-
-size_t SchemaManager::getNumFields() const noexcept {
-    return fields_.size();
-}
-
-
-int64_t SchemaManager::getFieldIndex(const folly::StringPiece name) const {
-    auto it = fieldNameIndex_.find(name.toString());
-    if (it == fieldNameIndex_.end()) {
-        // Not found
-        return -1;
-    } else {
-        return it->second;
-    }
-}
-
-
-const char* SchemaManager::getFieldName(int64_t index) const {
-    CHECK_GE(index, 0) << "Invalid index " << index;
-    CHECK_LT(index, fields_.size()) << "Index is out of range";
-
-    return fields_[index]->getName();
-}
-
-
-const cpp2::ValueType& SchemaManager::getFieldType(int64_t index) const {
-    CHECK_GE(index, 0) << "Invalid index " << index;
-    CHECK_LT(index, fields_.size()) << "Index is out of range";
-
-    return fields_[index]->getType();
-}
-
-
-const cpp2::ValueType& SchemaManager::getFieldType(const folly::StringPiece name)
-        const {
-    auto it = fieldNameIndex_.find(name.toString());
-    CHECK(it != fieldNameIndex_.end())
-        << "Unknown field \"" << name.toString() << "\"";
-    return fields_[it->second]->getType();
-}
-
-
-std::shared_ptr<const SchemaProviderIf::Field> SchemaManager::field(
-        int64_t index) const {
-    if (index < 0) {
-        VLOG(2) << "Invalid index " << index;
-        return nullptr;
-    }
-    if (index >= static_cast<int64_t>(fields_.size())) {
-        VLOG(2) << "Index " << index << " is out of range";
-        return nullptr;
-    }
-
-    return fields_[index];
-}
-
-
-std::shared_ptr<const SchemaProviderIf::Field> SchemaManager::field(
-        const folly::StringPiece name) const {
-    auto it = fieldNameIndex_.find(name.toString());
-    if (it == fieldNameIndex_.end()) {
-        VLOG(2) << "Unknown field \"" << name.toString() << "\"";
-        return nullptr;
-    }
-
-    return fields_[it->second];
+EdgeType AdHocSchemaManager::toEdgeType(folly::StringPiece typeName) {
+    return folly::hash::fnv32_buf(typeName.start(), typeName.size());
 }
 
 }  // namespace meta

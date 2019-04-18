@@ -12,6 +12,7 @@
 #include <rocksdb/compaction_filter.h>
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
+#include "kvstore/PartManager.h"
 
 namespace nebula {
 namespace kvstore {
@@ -27,6 +28,10 @@ struct KVOptions {
      *  it would mix up the data on disk.
      * */
     std::vector<std::string> dataPaths_;
+    /**
+     *  PartManager instance for kvstore.
+     * */
+    std::unique_ptr<PartManager> partMan_{nullptr};
     /**
      * Custom MergeOperator used in rocksdb.merge method.
      * */
@@ -63,6 +68,11 @@ public:
                            PartitionID  partId,
                            const std::string& key,
                            std::string* value) = 0;
+
+    virtual ResultCode multiGet(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                const std::vector<std::string>& keys,
+                                std::vector<std::string>* values) = 0;
     /**
      * Get all results in range [start, end)
      * */
@@ -90,6 +100,11 @@ public:
                              PartitionID partId,
                              const std::string& key,
                              KVCallback cb) = 0;
+
+    virtual void asyncMultiRemove(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  std::vector<std::string> keys,
+                                  KVCallback cb) = 0;
 
     virtual void asyncRemoveRange(GraphSpaceID spaceId,
                                   PartitionID partId,

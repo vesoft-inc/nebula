@@ -44,10 +44,10 @@ enum SupportedType {
     PATH = 41,
 
     // Container types
-//    LIST = 101,
-//    SET = 102,
-//    MAP = 103,      // The key type is always a STRING
-//    STRUCT = 104,
+    // LIST = 101,
+    // SET = 102,
+    // MAP = 103,      // The key type is always a STRING
+    // STRUCT = 104,
 } (cpp.enum_strict)
 
 

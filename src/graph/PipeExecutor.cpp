@@ -17,12 +17,17 @@ PipeExecutor::PipeExecutor(Sentence *sentence,
 
 
 Status PipeExecutor::prepare() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+
     left_ = makeTraverseExecutor(sentence_->left());
     right_ = makeTraverseExecutor(sentence_->right());
     DCHECK(left_ != nullptr);
     DCHECK(right_ != nullptr);
 
-    auto status = left_->prepare();
+    status = left_->prepare();
     if (!status.ok()) {
         FLOG_ERROR("Prepare executor `%s' failed: %s",
                     left_->name(), status.toString().c_str());
@@ -56,9 +61,9 @@ Status PipeExecutor::prepare() {
         };
         left_->setOnFinish(onFinish);
 
-        auto onResult = [this] (TraverseRecords records) {
+        auto onResult = [this] (std::unique_ptr<InterimResult> result) {
             // Feed results from `left_' to `right_'
-            right_->feedResult(std::move(records));
+            right_->feedResult(std::move(result));
         };
         left_->setOnResult(onResult);
 
@@ -73,9 +78,9 @@ Status PipeExecutor::prepare() {
         right_->setOnFinish(onFinish);
 
         if (onResult_) {
-            auto onResult = [this] (TraverseRecords records) {
+            auto onResult = [this] (std::unique_ptr<InterimResult> result) {
                 // This executor takes results of `right_' as results.
-                onResult_(std::move(records));
+                onResult_(std::move(result));
             };
             right_->setOnResult(onResult);
         } else {
@@ -94,8 +99,8 @@ void PipeExecutor::execute() {
 }
 
 
-void PipeExecutor::feedResult(TraverseRecords records) {
-    left_->feedResult(std::move(records));
+void PipeExecutor::feedResult(std::unique_ptr<InterimResult> result) {
+    left_->feedResult(std::move(result));
 }
 
 

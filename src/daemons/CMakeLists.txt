@@ -1,66 +1,101 @@
 add_executable(
     nebula-graphd
     GraphDaemon.cpp
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:storage_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:ws_obj>
+    $<TARGET_OBJECTS:dataman_obj>
 )
 nebula_link_libraries(
     nebula-graphd
+    proxygenhttpserver
+    proxygenlib
     ${THRIFT_LIBRARIES}
     wangle
 )
-install(TARGETS nebula-graphd DESTINATION bin)
 
 
 add_executable(
-    storaged
+    nebula-storaged
     StorageDaemon.cpp
     $<TARGET_OBJECTS:storage_service_handler>
-    $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:ws_obj>
 )
 nebula_link_libraries(
-    storaged
+    nebula-storaged
+    proxygenhttpserver
+    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
 )
+install(TARGETS nebula-storaged DESTINATION bin)
 
 
 add_executable(
-    metad
+    nebula-metad
     MetaDaemon.cpp
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:ws_obj>
 )
 nebula_link_libraries(
-    metad
+    nebula-metad
+    proxygenhttpserver
+    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
+)
+
+
+install(
+    TARGETS nebula-graphd nebula-storaged nebula-metad
+    DESTINATION bin
 )

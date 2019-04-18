@@ -16,14 +16,18 @@ namespace storage {
 class QueryStatsProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryStatsResponse> {
 public:
-    static QueryStatsProcessor* instance(kvstore::KVStore* kvstore) {
-        return new QueryStatsProcessor(kvstore);
+    static QueryStatsProcessor* instance(kvstore::KVStore* kvstore,
+                                         meta::SchemaManager* schemaMan,
+                                         BoundType type = BoundType::OUT_BOUND) {
+        return new QueryStatsProcessor(kvstore, schemaMan, type);
     }
 
 private:
-    explicit QueryStatsProcessor(kvstore::KVStore* kvstore)
+    explicit QueryStatsProcessor(kvstore::KVStore* kvstore,
+                                 meta::SchemaManager* schemaMan,
+                                 BoundType type)
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
-                             cpp2::QueryStatsResponse>(kvstore) {}
+                             cpp2::QueryStatsResponse>(kvstore, schemaMan, type) {}
 
     kvstore::ResultCode processVertex(PartitionID partID,
                                       VertexID vId,
@@ -33,17 +37,6 @@ private:
     void onProcessed(std::vector<TagContext>& tagContexts,
                      EdgeContext& edgeContext,
                      int32_t retNum) override;
-
-    kvstore::ResultCode collectVertexStats(PartitionID partId,
-                                           VertexID vId,
-                                           TagID tagId,
-                                           std::vector<PropContext>& props);
-
-
-    kvstore::ResultCode collectEdgesStats(PartitionID partId,
-                                          VertexID vId,
-                                          EdgeType edgeType,
-                                          std::vector<PropContext>& props);
 
     void calcResult(std::vector<PropContext>&& props);
 

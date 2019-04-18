@@ -16,10 +16,8 @@ namespace nebula {
 namespace thrift {
 
 template<class ClientType>
-std::shared_ptr<ClientType> ThriftClientManager<ClientType>::getClient(
+std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(
         const HostAddr& host, folly::EventBase* evb) {
-    static ThriftClientManager manager;
-
     VLOG(2) << "Getting a client to "
             << network::NetworkUtils::intToIPv4(host.first)
             << ":" << host.second;
@@ -28,8 +26,8 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::getClient(
         evb = folly::EventBaseManager::get()->getEventBase();
     }
 
-    auto it = manager.clientMap_->find(std::make_pair(host, evb));
-    if (it != manager.clientMap_->end()) {
+    auto it = clientMap_->find(std::make_pair(host, evb));
+    if (it != clientMap_->end()) {
         return it->second;
     }
 
@@ -52,8 +50,12 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::getClient(
                 });
             return apache::thrift::HeaderClientChannel::newChannel(socket);
         });
-    auto client = std::make_shared<ClientType>(std::move(channel));
-    manager.clientMap_->emplace(std::make_pair(host, evb), client);
+    std::shared_ptr<ClientType> client(new ClientType(std::move(channel)), [evb](auto* p) {
+        evb->runImmediatelyOrRunInEventBaseThreadAndWait([p] {
+            delete p;
+        });
+    });
+    clientMap_->emplace(std::make_pair(host, evb), client);
     return client;
 }
 

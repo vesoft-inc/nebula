@@ -12,7 +12,9 @@
 #include "process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "graph/GraphService.h"
+#include "graph/GraphHttpHandler.h"
 #include "graph/GraphFlags.h"
+#include "webservice/WebService.h"
 
 using nebula::Status;
 using nebula::ProcessUtils;
@@ -44,12 +46,19 @@ int main(int argc, char *argv[]) {
             return EXIT_SUCCESS;
         }
     }
+
+    folly::init(&argc, &argv, true);
+
     if (FLAGS_flagfile.empty()) {
         printHelp(argv[0]);
         return EXIT_FAILURE;
     }
 
-    folly::init(&argc, &argv, true);
+    if (FLAGS_daemonize) {
+        google::SetStderrLogging(google::FATAL);
+    } else {
+        google::SetStderrLogging(google::INFO);
+    }
 
     // Setup logging
     auto status = setupLogging();
@@ -59,7 +68,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Detect if the server has already been started
-    auto pidPath = FLAGS_log_dir + "/" + FLAGS_pid_file;
+    auto pidPath = FLAGS_pid_file;
     status = ProcessUtils::isPidAvailable(pidPath);
     if (!status.ok()) {
         LOG(ERROR) << status;
@@ -81,10 +90,13 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Setup the signal handlers
-    status = setupSignalHandler();
+    LOG(INFO) << "Starting Graph HTTP Service";
+    nebula::WebService::registerHandler("/graph", [] {
+        return new nebula::graph::GraphHttpHandler();
+    });
+    status = nebula::WebService::start();
     if (!status.ok()) {
-        LOG(ERROR) << status;
+        LOG(ERROR) << "Failed to start web service: " << status;
         return EXIT_FAILURE;
     }
 
@@ -99,10 +111,10 @@ int main(int argc, char *argv[]) {
         localIP = std::move(result).value();
     }
 
-    auto interface = std::make_shared<GraphService>();
     gServer = std::make_unique<apache::thrift::ThriftServer>();
+    auto interface = std::make_shared<GraphService>(gServer->getIOThreadPool());
 
-    gServer->setInterface(interface);
+    gServer->setInterface(std::move(interface));
     gServer->setAddress(localIP, FLAGS_port);
     gServer->setReusePort(FLAGS_reuse_port);
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
@@ -114,8 +126,18 @@ int main(int argc, char *argv[]) {
     gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
     gServer->setListenBacklog(FLAGS_listen_backlog);
     gServer->setThreadStackSizeMB(5);
-    if (FLAGS_num_netio_threads != 0) {
+    if (FLAGS_num_netio_threads > 0) {
         gServer->setNumIOWorkerThreads(FLAGS_num_netio_threads);
+    } else {
+        LOG(WARNING) << "Number netio threads should be greater than zero";
+        return EXIT_FAILURE;
+    }
+
+    // Setup the signal handlers
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
     }
 
     FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);
@@ -145,6 +167,7 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
+            nebula::WebService::stop();
             gServer->stop();
             break;
         default:

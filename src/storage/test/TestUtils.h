@@ -12,7 +12,7 @@
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "meta/AdHocSchemaManager.h"
+#include "meta/SchemaManager.h"
 
 
 DECLARE_string(part_man_type);
@@ -23,15 +23,12 @@ namespace storage {
 class TestUtils {
 public:
     static kvstore::KVStore* initKV(const char* rootPath) {
-        FLAGS_part_man_type = "memory";  // Use MemPartManager.
-        kvstore::MemPartManager* partMan = static_cast<kvstore::MemPartManager*>(
-            kvstore::PartManager::instance());
-
+        auto partMan = std::make_unique<kvstore::MemPartManager>();
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0, 1, 2, 3, 4, 5}
         auto& partsMap = partMan->partsMap();
         for (auto partId = 0; partId < 6; partId++) {
-            partsMap[0][partId] = kvstore::PartMeta();
+            partsMap[0][partId] = PartMeta();
         }
         std::vector<std::string> paths;
         paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
@@ -40,12 +37,24 @@ public:
         kvstore::KVOptions options;
         options.local_ = HostAddr(0, 0);
         options.dataPaths_ = std::move(paths);
+        options.partMan_ = std::move(partMan);
 
         kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
                                         kvstore::KVStore::instance(std::move(options)));
         return kv;
     }
 
+    static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
+        auto* schemaMan = new meta::AdHocSchemaManager();
+        schemaMan->addEdgeSchema(
+            spaceId /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
+        for (auto tagId = 3001; tagId < 3010; tagId++) {
+            schemaMan->addTagSchema(
+                spaceId /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
+        }
+        std::unique_ptr<meta::SchemaManager> sm(schemaMan);
+        return sm;
+    }
 
     static std::vector<cpp2::Vertex> setupVertices(
             const PartitionID partitionID,
@@ -156,18 +165,28 @@ public:
          uint32_t port_;
      };
 
-     static std::unique_ptr<ServerContext> mockServer(const char* dataPath, uint32_t port = 0) {
+     static std::unique_ptr<ServerContext> mockServer(const char* dataPath,
+                                                      uint32_t ip,
+                                                      uint32_t port = 0) {
          auto sc = std::make_unique<ServerContext>();
          sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
          sc->serverT_ = std::make_unique<std::thread>([&]() {
-             std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath));
-             meta::AdHocSchemaManager::addEdgeSchema(
-                0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
-             for (auto tagId = 3001; tagId < 3010; tagId++) {
-                meta::AdHocSchemaManager::addTagSchema(
-                    0 /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
-             }
-             auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(kv.get());
+            std::vector<std::string> paths;
+            paths.push_back(folly::stringPrintf("%s/disk1", dataPath));
+            paths.push_back(folly::stringPrintf("%s/disk2", dataPath));
+            kvstore::KVOptions options;
+            options.local_ = HostAddr(ip, port);
+            options.dataPaths_ = std::move(paths);
+            options.partMan_
+                = std::make_unique<kvstore::MetaServerBasedPartManager>(options.local_);
+            kvstore::NebulaStore* kvPtr = static_cast<kvstore::NebulaStore*>(
+                                        kvstore::KVStore::instance(std::move(options)));
+             std::unique_ptr<kvstore::KVStore> kv(kvPtr);
+             auto schemaMan = TestUtils::mockSchemaMan(1);
+             auto handler
+                    = std::make_shared<nebula::storage::StorageServiceHandler>(
+                                                                            kv.get(),
+                                                                            std::move(schemaMan));
              CHECK(!!sc->server_) << "Failed to create the thrift server";
              sc->server_->setInterface(handler);
              sc->server_->setPort(port);
