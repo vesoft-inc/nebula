@@ -478,7 +478,8 @@ TEST(ProcessorTest, AlterTagTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         auto tags = resp.get_tags();
         ASSERT_EQ(2, tags.size());
-        auto tag = tags[0];
+        // TagItems in vector are unordered.So need to get the latest one by comparing the versions.
+        auto tag = tags[0].version < version ? tags[0] : tags[1];
         EXPECT_EQ(0, tag.get_tag_id());
         EXPECT_EQ(folly::stringPrintf("tag_%d", 0), tag.get_tag_name());
         EXPECT_EQ(schema, tag.get_schema());
