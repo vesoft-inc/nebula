@@ -176,6 +176,18 @@ TEST(RocksEngineTest, OptionTest) {
             engine->setDBOption("max_background_compactions", "bad_value"));
 }
 
+TEST(RocksEngineTest, CompactTest) {
+    fs::TempDir rootPath("/tmp/rocksdb_compact_test.XXXXXX");
+    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    std::vector<KV> data;
+    for (int32_t i = 2; i < 8;  i++) {
+        data.emplace_back(folly::stringPrintf("key_%d", i),
+                          folly::stringPrintf("value_%d", i));
+    }
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->compactAll());
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 
