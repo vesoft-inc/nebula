@@ -3,6 +3,7 @@ add_library(
     Part.cpp
     RocksEngine.cpp
     PartManager.cpp
+    KVStore.cpp
     NebulaStore.cpp
     RocksEngineConfig.cpp
     LogEncoder.cpp

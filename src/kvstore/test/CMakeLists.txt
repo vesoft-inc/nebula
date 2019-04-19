@@ -2,6 +2,8 @@ add_executable(
     part_test
     PartTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:hbase_thrift_obj>
+    $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
@@ -29,6 +31,8 @@ add_executable(
     rocks_engine_test
     RocksEngineTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:hbase_thrift_obj>
+    $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
@@ -56,6 +60,8 @@ add_executable(
     nebula_store_test
     NebulaStoreTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:hbase_thrift_obj>
+    $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
@@ -83,6 +89,8 @@ add_executable(
     load_test
     LoadTest.cpp
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:hbase_thrift_obj>
+    $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>

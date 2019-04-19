@@ -62,6 +62,19 @@ add_custom_command(
     DEPENDS meta.thrift
 )
 
+add_custom_command(
+    OUTPUT
+        gen-cpp2/THBaseService.cpp
+        gen-cpp2/THBaseServiceAsyncClient.cpp
+        gen-cpp2/THBaseService_processmap_binary.cpp
+        gen-cpp2/THBaseService_processmap_compact.cpp
+        gen-cpp2/hbase_constants.cpp
+        gen-cpp2/hbase_data.cpp
+        gen-cpp2/hbase_types.cpp
+    COMMAND "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/bin/thrift1" "--strict" "--allow-neg-enum-vals" "--templates" "${CMAKE_HOME_DIRECTORY}/third-party/fbthrift/_install/include/thrift/templates" "--gen" "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments" "--gen" "java:hashcode" "--gen" "go"   "-o" "." "./hbase.thrift"
+    DEPENDS hbase.thrift
+)
+
 add_custom_target(
     clean-interface
     COMMAND "rm" "-fr" "gen-cpp2" "gen-java" "gen-go" "gen-py"
@@ -124,3 +137,16 @@ add_library(
     gen-cpp2/meta_types.cpp
 )
 add_dependencies(meta_thrift_obj common_thrift_obj tgt_fbthrift)
+
+add_library(
+    hbase_thrift_obj OBJECT
+    gen-cpp2/THBaseService.cpp
+    gen-cpp2/THBaseServiceAsyncClient.cpp
+    gen-cpp2/THBaseService_processmap_binary.cpp
+    gen-cpp2/THBaseService_processmap_compact.cpp
+    gen-cpp2/hbase_constants.cpp
+    gen-cpp2/hbase_data.cpp
+    gen-cpp2/hbase_types.cpp
+)
+add_dependencies(hbase_thrift_obj common_thrift_obj tgt_fbthrift)
+

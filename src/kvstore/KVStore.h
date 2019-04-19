@@ -14,11 +14,18 @@
 #include "kvstore/KVIterator.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/CompactionFilter.h"
+#include "meta/SchemaManager.h"
 
 namespace nebula {
 namespace kvstore {
 
 struct KVOptions {
+    // HBase thrift server address.
+    HostAddr hbaseServer_;
+
+    // In order to store the data(value) of decoded into HBase.
+    std::unique_ptr<meta::SchemaManager> schemaMan_{nullptr};
+
     // Paths for data. It would be used by rocksdb engine.
     // Be careful! We should ensure each "paths" has only one instance,
     // otherwise it would mix up the data on disk.

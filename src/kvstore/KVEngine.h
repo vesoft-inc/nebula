@@ -109,6 +109,9 @@ protected:
     GraphSpaceID spaceId_;
 };
 
+// <engine pointer, path>
+using Engine = std::pair<std::unique_ptr<KVEngine>, std::string>;
+
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_KVENGINE_H_
