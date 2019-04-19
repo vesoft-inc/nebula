@@ -104,12 +104,14 @@ public:
                       const std::vector<std::string>& files);
 
     ResultCode setOption(GraphSpaceID spaceId,
-                         const std::string& config_key,
-                         const std::string& config_value);
+                         const std::string& configKey,
+                         const std::string& configValue);
 
     ResultCode setDBOption(GraphSpaceID spaceId,
-                           const std::string& config_key,
-                           const std::string& config_value);
+                           const std::string& configKey,
+                           const std::string& configValue);
+
+    ResultCode compactAll(GraphSpaceID spaceId);
 
 private:
     /**
