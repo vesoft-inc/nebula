@@ -27,9 +27,9 @@ void AddTagProcessor::process(const cpp2::AddTagReq& req) {
     }
     auto version = time::TimeUtils::nowInMSeconds();
     TagID tagId = autoIncrementId();
+    LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId << ", version " << version;
     data.emplace_back(MetaServiceUtils::indexKey(EntryType::TAG, req.get_tag_name()),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
-    LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);

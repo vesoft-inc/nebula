@@ -184,5 +184,25 @@ StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) 
     return Status::SpaceNotFound();
 }
 
+template<typename RESP>
+StatusOr<TagID> BaseProcessor<RESP>::getTagId(const std::string& name) {
+    auto indexKey = MetaServiceUtils::indexKey(EntryType::TAG, name);
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const TagID*>(ret.value());
+    }
+    return Status::TagNotFound();
+}
+
+template<typename RESP>
+StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(const std::string& name) {
+    auto indexKey = MetaServiceUtils::indexKey(EntryType::EDGE, name);
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const EdgeType*>(ret.value());
+    }
+    return Status::EdgeNotFound();
+}
+
 }  // namespace meta
 }  // namespace nebula
