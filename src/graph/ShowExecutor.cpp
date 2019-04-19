@@ -51,7 +51,7 @@ void ShowExecutor::showHosts() {
             return;
         }
 
-        auto retShowHosts = resp.value();
+        auto retShowHosts = std::move(resp).value();
         std::vector<cpp2::RowValue> rows;
         std::vector<std::string> header;
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
@@ -96,7 +96,7 @@ void ShowExecutor::showSpaces() {
             return;
         }
 
-        auto retShowSpaces = resp.value();
+        auto retShowSpaces = std::move(resp).value();
         std::vector<cpp2::RowValue> rows;
         std::vector<std::string> header;
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
