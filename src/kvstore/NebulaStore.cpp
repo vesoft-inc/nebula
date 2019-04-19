@@ -54,12 +54,22 @@ DEFINE_string(part_type, "simple", "simple, consensus...");
     } while (false)
 
 /**
- * check spaceId is exist and return related partitions
+ * Check spaceId is exist and return related partitions.
  */
-#define CHECK_AND_RETURN_SPACE_ENGINES(spaceId) \
-    auto it = kvs_.find(spaceId); \
-    if (UNLIKELY(it == kvs_.end())) { \
-        return ResultCode::ERR_SPACE_NOT_FOUND; \
+#define RETURN_IF_SPACE_NOT_FOUND(spaceId, it) \
+    it = kvs_.find(spaceId); \
+    do { \
+        if (UNLIKELY(it == kvs_.end())) { \
+            return ResultCode::ERR_SPACE_NOT_FOUND; \
+        } \
+    } while (false)
+
+/**
+ * Check result and return code when it's unsuccess.
+ * */
+#define RETURN_ON_FAILURE(code) \
+    if (code != ResultCode::SUCCEEDED) { \
+        return code; \
     }
 
 namespace nebula {
@@ -305,7 +315,8 @@ void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,
 ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
                                const std::string& extra,
                                const std::vector<std::string>& files) {
-    CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
+    std::unordered_map<GraphSpaceID, std::unique_ptr<GraphSpaceKV>>::iterator it;
+    RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
     for (auto& engine : it->second->engines_) {
         auto parts = engine.first->allParts();
         std::vector<std::string> extras;
@@ -321,37 +332,44 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
             }
         }
         auto code = engine.first->ingest(std::move(extras));
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
-        }
+        RETURN_ON_FAILURE(code);
     }
     return ResultCode::SUCCEEDED;
 }
 
 
 ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
-                                  const std::string& config_key,
-                                  const std::string& config_value) {
-    CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
+                                  const std::string& configKey,
+                                  const std::string& configValue) {
+    std::unordered_map<GraphSpaceID, std::unique_ptr<GraphSpaceKV>>::iterator it;
+    RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
     for (auto& engine : it->second->engines_) {
-        auto code = engine.first->setOption(config_key, config_value);
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
-        }
+        auto code = engine.first->setOption(configKey, configValue);
+        RETURN_ON_FAILURE(code);
     }
     return ResultCode::SUCCEEDED;
 }
 
 
 ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
-                                    const std::string& config_key,
-                                    const std::string& config_value) {
-    CHECK_AND_RETURN_SPACE_ENGINES(spaceId);
+                                    const std::string& configKey,
+                                    const std::string& configValue) {
+    std::unordered_map<GraphSpaceID, std::unique_ptr<GraphSpaceKV>>::iterator it;
+    RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
     for (auto& engine : it->second->engines_) {
-        auto code = engine.first->setDBOption(config_key, config_value);
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
-        }
+        auto code = engine.first->setDBOption(configKey, configValue);
+        RETURN_ON_FAILURE(code);
+    }
+    return ResultCode::SUCCEEDED;
+}
+
+
+ResultCode NebulaStore::compactAll(GraphSpaceID spaceId) {
+    std::unordered_map<GraphSpaceID, std::unique_ptr<GraphSpaceKV>>::iterator it;
+    RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
+    for (auto& engine : it->second->engines_) {
+        auto code = engine.first->compactAll();
+        RETURN_ON_FAILURE(code);
     }
     return ResultCode::SUCCEEDED;
 }
