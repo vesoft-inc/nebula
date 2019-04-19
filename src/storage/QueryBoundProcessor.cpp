@@ -53,7 +53,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
         }
     }
     {
-        std::lock_guard<folly::SpinLock> lg(this->lock_);
+        std::lock_guard<std::mutex> lg(this->lock_);
         vertices_.emplace_back(std::move(vResp));
     }
     return kvstore::ResultCode::SUCCEEDED;

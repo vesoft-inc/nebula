@@ -105,9 +105,6 @@ protected:
     std::vector<TagContext> tagContexts_;
     EdgeContext edgeContext_;
     folly::Executor* executor_ = nullptr;
-
-public:
-    int32_t handlerNum_  = 1;
 };
 
 }  // namespace storage

@@ -10,7 +10,6 @@
 #include "base/Base.h"
 #include "dataman/RowWriter.h"
 #include <boost/variant.hpp>
-#include <folly/SpinLock.h>
 
 namespace nebula {
 namespace storage {
@@ -126,7 +125,7 @@ public:
 
     void collectInt32(ResultType ret, int32_t v, const PropContext& prop) override {
         if (ret == ResultType::SUCCEEDED) {
-            std::lock_guard<folly::SpinLock> lg(lock_);
+            std::lock_guard<std::mutex> lg(lock_);
             prop.sum_ = boost::get<int64_t>(prop.sum_) + v;
             prop.count_++;
         }
@@ -134,7 +133,7 @@ public:
 
     void collectInt64(ResultType ret, int64_t v, const PropContext& prop) override {
         if (ret == ResultType::SUCCEEDED) {
-            std::lock_guard<folly::SpinLock> lg(lock_);
+            std::lock_guard<std::mutex> lg(lock_);
             prop.sum_ = boost::get<int64_t>(prop.sum_) + v;
             prop.count_++;
         }
@@ -142,7 +141,7 @@ public:
 
     void collectFloat(ResultType ret, float v, const PropContext& prop) override {
         if (ret == ResultType::SUCCEEDED) {
-            std::lock_guard<folly::SpinLock> lg(lock_);
+            std::lock_guard<std::mutex> lg(lock_);
             prop.sum_ = boost::get<double>(prop.sum_) + v;
             prop.count_++;
         }
@@ -150,7 +149,7 @@ public:
 
     void collectDouble(ResultType ret, double v, const PropContext& prop) override {
         if (ret == ResultType::SUCCEEDED) {
-            std::lock_guard<folly::SpinLock> lg(lock_);
+            std::lock_guard<std::mutex> lg(lock_);
             prop.sum_ = boost::get<double>(prop.sum_) + v;
             prop.count_++;
         }
@@ -159,13 +158,13 @@ public:
     void collectString(ResultType ret, folly::StringPiece& v, const PropContext& prop) override {
         UNUSED(v);
         if (ret == ResultType::SUCCEEDED) {
-            std::lock_guard<folly::SpinLock> lg(lock_);
+            std::lock_guard<std::mutex> lg(lock_);
             prop.count_++;
         }
     }
 
 private:
-    folly::SpinLock lock_;
+    std::mutex lock_;
 };
 
 }  // namespace storage

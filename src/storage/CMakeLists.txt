@@ -3,6 +3,7 @@ add_library(
     storage_service_handler OBJECT
     StorageServiceHandler.cpp
     KeyUtils.cpp
+    QueryBaseProcessor.cpp
     AddVerticesProcessor.cpp
     AddEdgesProcessor.cpp
     QueryBoundProcessor.cpp
