@@ -71,6 +71,7 @@ add_executable(
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>

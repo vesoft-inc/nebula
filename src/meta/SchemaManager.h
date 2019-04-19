@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include <folly/RWSpinLock.h>
 #include "meta/SchemaProviderIf.h"
+#include "meta/client/MetaClient.h"
 
 namespace nebula {
 namespace meta {
@@ -46,9 +47,14 @@ public:
 
     virtual GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) = 0;
 
-    virtual TagID toTagID(folly::StringPiece tagName) = 0;
+    // ServerBasedSchemaManager need space to get tagID
+    virtual TagID toTagID(folly::StringPiece tagName, GraphSpaceID space = -1) = 0;
 
-    virtual EdgeType toEdgeType(folly::StringPiece typeName) = 0;
+    // ServerBasedSchemaManager need space to get Edge
+    virtual EdgeType toEdgeType(folly::StringPiece typeName, GraphSpaceID space = -1) = 0;
+
+    // storageclient also use metaClient
+    virtual void setMetaClient(MetaClient *client) = 0;
 
     virtual void init() = 0;
 
@@ -98,9 +104,11 @@ public:
 
     virtual GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName);
 
-    TagID toTagID(folly::StringPiece tagName) override;
+    TagID toTagID(folly::StringPiece tagName, GraphSpaceID space = -1) override;
 
-    EdgeType toEdgeType(folly::StringPiece typeName) override;
+    EdgeType toEdgeType(folly::StringPiece typeName, GraphSpaceID space = -1) override;
+
+    void setMetaClient(MetaClient *client) override { UNUSED(client); }
 
     void init() override {}
 

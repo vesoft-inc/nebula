@@ -25,11 +25,11 @@ Status InsertEdgeExecutor::prepare() {
         return status;
     }
 
+    auto space = ectx()->rctx()->session()->space();
     overwritable_ = sentence_->overwritable();
-    edge_ = ectx()->schemaManager()->toEdgeType(*sentence_->edge());
+    edge_ = ectx()->schemaManager()->toEdgeType(*sentence_->edge(), space);
     properties_ = sentence_->properties();
     rows_ = sentence_->rows();
-    auto space = ectx()->rctx()->session()->space();
     schema_ = ectx()->schemaManager()->getEdgeSchema(space, edge_);
     if (schema_ == nullptr) {
         return Status::Error("No schema found for `%s'", sentence_->edge()->c_str());

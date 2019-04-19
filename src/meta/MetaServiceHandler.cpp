@@ -144,7 +144,7 @@ MetaServiceHandler::future_listTags(const cpp2::ListTagsReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_addEdge(const cpp2::AddEdgeReq& req) {
+MetaServiceHandler::future_addEdge(const cpp2::WriteEdgeReq& req) {
     auto* processor = AddEdgeProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }

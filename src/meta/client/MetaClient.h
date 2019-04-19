@@ -22,20 +22,27 @@ namespace meta {
 
 using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAddr>>;
 using SpaceIdName = std::pair<GraphSpaceID, std::string>;
+using TagIDSchemas = std::unordered_map<TagID, std::map<int32_t,
+            std::shared_ptr<const SchemaProviderIf>>>;
+using EdgeTypeSchemas = std::unordered_map<EdgeType, std::map<int32_t,
+            std::shared_ptr<const SchemaProviderIf>>>;
+using TagNameIDSchemas = std::unordered_map<std::pair<TagID, std::string>, std::map<int32_t,
+            std::shared_ptr<const SchemaProviderIf>>>;
+using EdgeNameTypeSchemas = std::unordered_map<std::pair<EdgeType, std::string>, std::map<int32_t,
+            std::shared_ptr<const SchemaProviderIf>>>;
 
 struct SpaceInfoCache {
     std::string spaceName;
     PartsAlloc partsAlloc_;
     std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
-    // Key: <TagID, version>, Value: schema
-    std::unordered_map<std::pair<TagID, int32_t>,
-                       std::shared_ptr<const SchemaProviderIf>> tagSchemas_;
-    // Key: <EdgeType, version>, Value: schema
-    std::unordered_map<std::pair<EdgeType, int32_t>,
-                       std::shared_ptr<const SchemaProviderIf>> edgeSchemas_;
+    TagIDSchemas tagSchemas_;
+    EdgeTypeSchemas edgeSchemas_;
 };
 
 using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;
+using SpaceTagNameIdMap = std::unordered_map<GraphSpaceID, std::unordered_map<std::string, TagID>>;
+using SpaceEdgeNameTypeMap = std::unordered_map<GraphSpaceID,
+                                                std::unordered_map<std::string, EdgeType>>;
 
 class MetaChangedListener {
 public:
@@ -84,8 +91,24 @@ public:
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);
 
+    // TODO(Laura) : We can actively update the cache once we add the schema
+    folly::Future<StatusOr<bool>> addTagSchema(GraphSpaceID spaceId, std::string name,
+                                               std::shared_ptr<SchemaProviderIf> schema);
+
+    folly::Future<StatusOr<TagNameIDSchemas>> listTagSchemas(GraphSpaceID spaceId);
+
+    // TODO(Laura) : We can actively update the cache once we add the schema
+    folly::Future<StatusOr<bool>> addEdgeSchema(GraphSpaceID spaceId, std::string name,
+                                                std::shared_ptr<SchemaProviderIf> schema);
+
+    folly::Future<StatusOr<EdgeNameTypeSchemas>> listEdgeSchemas(GraphSpaceID spaceId);
+
     // These are the interfaces about cache opeartions.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
+
+    StatusOr<TagID> getTagTDByNameFromCache(GraphSpaceID sapce, const std::string& name);
+
+    StatusOr<EdgeType> getEdgeTypeByNameFromCache(GraphSpaceID sapce, const std::string& name);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
@@ -99,6 +122,14 @@ public:
                                 GraphSpaceID spaceId);
 
     int32_t partsNum(GraphSpaceID spaceId);
+
+    StatusOr<std::shared_ptr<const SchemaProviderIf>> getTagSchemeFromCache(GraphSpaceID spaceId,
+                                                                            TagID tagID,
+                                                                            int32_t ver = -1);
+
+    StatusOr<std::shared_ptr<const SchemaProviderIf>> getEdgeSchemeFromCache(GraphSpaceID spaceId,
+                                                                             EdgeType edgeType,
+                                                                             int32_t ver = -1);
 
     folly::Future<StatusOr<bool>>
     multiPut(std::string segment,
@@ -118,7 +149,6 @@ public:
 
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
-
 
 protected:
     void loadDataThreadFunc();
@@ -174,7 +204,9 @@ private:
     HostAddr active_;
     thread::GenericWorker loadDataThread_;
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
-    SpaceNameIdMap  spaceIndexByName_;
+    SpaceNameIdMap        spaceIndexByName_;
+    SpaceTagNameIdMap     spaceTagIndexByName_;
+    SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
     folly::RWSpinLock localCacheLock_;
     MetaChangedListener* listener_{nullptr};
 };

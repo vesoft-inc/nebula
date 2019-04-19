@@ -52,9 +52,11 @@ public:
 
     static nebula::cpp2::HostAddr parseHostKey(folly::StringPiece key);
 
+    static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
+
     static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, int64_t version);
 
-    static std::string schemaEdgeVal(nebula::cpp2::Schema schema);
+    static std::string schemaEdgeVal(const std::string& name, nebula::cpp2::Schema schema);
 
     static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version);
 

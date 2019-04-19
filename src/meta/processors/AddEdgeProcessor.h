@@ -18,13 +18,13 @@ public:
         return new AddEdgeProcessor(kvstore);
     }
 
-    void process(const cpp2::AddEdgeReq& req) {
-        UNUSED(req);
-    }
+    void process(const cpp2::WriteEdgeReq& req);
 
 private:
     explicit AddEdgeProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    StatusOr<EdgeType> getEdge(const std::string& edgeName);
 };
 
 }  // namespace meta

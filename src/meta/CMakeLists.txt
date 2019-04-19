@@ -22,9 +22,11 @@ add_library(
     processors/GetPartsAllocProcessor.cpp
     processors/AddTagProcessor.cpp
     processors/AlterTagProcessor.cpp
+    processors/AddEdgeProcessor.cpp
     processors/GetTagProcessor.cpp
     processors/ListTagsProcessor.cpp
     processors/RemoveTagProcessor.cpp
+    processors/ListEdgesProcessor.cpp
     processors/GetProcessor.cpp
     processors/MultiGetProcessor.cpp
     processors/MultiPutProcessor.cpp
@@ -51,6 +53,6 @@ add_dependencies(
     base_obj
     meta_thrift_obj
     common_thrift_obj
-)
+    dataman_obj)
 
 add_subdirectory(test)

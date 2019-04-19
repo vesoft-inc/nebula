@@ -20,6 +20,7 @@ class ServerBasedSchemaManager : public SchemaManager {
 public:
     ServerBasedSchemaManager() = default;
 
+    // return the newest one if ver less 0
     std::shared_ptr<const SchemaProviderIf> getTagSchema(
         GraphSpaceID space, TagID tag, int32_t ver = -1) override;
 
@@ -33,6 +34,7 @@ public:
     int32_t getNewestTagSchemaVer(folly::StringPiece spaceName,
                                   folly::StringPiece tagName) override;
 
+    // return the newest one if ver less 0
     std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
         GraphSpaceID space, EdgeType edge, int32_t ver = -1) override;
 
@@ -48,11 +50,18 @@ public:
 
     GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) override;
 
-    TagID toTagID(folly::StringPiece tagName) override;
+    TagID toTagID(folly::StringPiece tagName, GraphSpaceID space = -1) override;
 
-    EdgeType toEdgeType(folly::StringPiece typeName) override;
+    EdgeType toEdgeType(folly::StringPiece typeName, GraphSpaceID space = -1) override;
+
+    void setMetaClient(MetaClient *client) override {
+        metaClient_ = client;
+    }
 
     void init() override {}
+
+private:
+    MetaClient             *metaClient_;
 };
 
 }  // namespace meta

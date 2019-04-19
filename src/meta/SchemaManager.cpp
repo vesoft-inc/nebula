@@ -7,9 +7,10 @@
 #include "base/Base.h"
 #include "meta/SchemaManager.h"
 #include "meta/FileBasedSchemaManager.h"
+#include "meta/ServerBasedSchemaManager.h"
 
 DECLARE_string(schema_file);
-DECLARE_string(meta_server);
+DECLARE_string(meta_server_addrs);
 
 namespace nebula {
 namespace meta {
@@ -17,6 +18,9 @@ namespace meta {
 std::unique_ptr<SchemaManager> SchemaManager::create() {
     if (!FLAGS_schema_file.empty()) {
         std::unique_ptr<SchemaManager> sm(new FileBasedSchemaManager());
+        return sm;
+    } else if (!FLAGS_meta_server_addrs.empty()) {
+        std::unique_ptr<SchemaManager> sm(new ServerBasedSchemaManager());
         return sm;
     } else {
         std::unique_ptr<SchemaManager> sm(new AdHocSchemaManager());
@@ -154,11 +158,13 @@ GraphSpaceID AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
     return folly::hash::fnv32_buf(spaceName.start(), spaceName.size());
 }
 
-TagID AdHocSchemaManager::toTagID(folly::StringPiece tagName) {
+TagID AdHocSchemaManager::toTagID(folly::StringPiece tagName, GraphSpaceID space) {
+    UNUSED(space);
     return folly::hash::fnv32_buf(tagName.start(), tagName.size());
 }
 
-EdgeType AdHocSchemaManager::toEdgeType(folly::StringPiece typeName) {
+EdgeType AdHocSchemaManager::toEdgeType(folly::StringPiece typeName, GraphSpaceID space) {
+    UNUSED(space);
     return folly::hash::fnv32_buf(typeName.start(), typeName.size());
 }
 

@@ -10,6 +10,7 @@ add_executable(
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:dataman_obj>
 )
 nebula_link_libraries(
     file_based_schema_manager_test
@@ -51,6 +52,7 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:dataman_obj>
 )
 nebula_link_libraries(
     processor_test
@@ -77,6 +79,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:dataman_obj>
 )
 nebula_link_libraries(
     meta_client_test

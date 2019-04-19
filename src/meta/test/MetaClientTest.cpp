@@ -11,6 +11,7 @@
 #include "meta/test/TestUtils.h"
 #include "network/NetworkUtils.h"
 #include "meta/MetaServiceUtils.h"
+#include "dataman/ResultSchemaProvider.h"
 
 DECLARE_int32(load_data_interval_second);
 
@@ -62,6 +63,59 @@ TEST(MetaClientTest, InterfacesTest) {
                     ASSERT_EQ(h.first, h.second);
                 }
             }
+        }
+        {
+            // addTagSchema
+            nebula::cpp2::Schema schema;
+            for (auto i = 0 ; i < 5; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = "tagIterm" + std::to_string(i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                schema.columns.emplace_back(std::move(column));
+            }
+            auto ret = client->addTagSchema(spaceId, "tagName",
+            std::shared_ptr<SchemaProviderIf>(new ResultSchemaProvider(std::move(schema)))).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
+        }
+        {
+            // addEdgeSchema
+            nebula::cpp2::Schema schema;
+            for (auto i = 0 ; i < 5; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = "edgeIterm" + std::to_string(i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                schema.columns.emplace_back(std::move(column));
+            }
+            auto ret = client->addEdgeSchema(spaceId, "edgeName",
+            std::shared_ptr<SchemaProviderIf>(
+                            new nebula::ResultSchemaProvider(std::move(schema)))).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
+        }
+        {
+            // listTagSchemas
+            auto ret1 = client->listTagSchemas(spaceId).get();
+            ASSERT_TRUE(ret1.ok()) << ret1.status();
+            ASSERT_EQ(ret1.value().size(), 1);
+            ASSERT_NE(ret1.value().begin()->first.first, 0);
+            ASSERT_EQ(ret1.value().begin()->second.begin()->second->getNumFields(), 5);
+
+            // getTagSchemeFromCache
+            sleep(FLAGS_load_data_interval_second + 1);
+            auto ret2 = client->getTagSchemeFromCache(spaceId, ret1.value().begin()->first.first);
+            ASSERT_TRUE(ret2.ok()) << ret2.status();
+            ASSERT_EQ(ret2.value()->getNumFields(), 5);
+        }
+        {
+            // listEdgeSchemas
+            auto ret1 = client->listEdgeSchemas(spaceId).get();
+            ASSERT_TRUE(ret1.ok()) << ret1.status();
+            ASSERT_EQ(ret1.value().size(), 1);
+            ASSERT_NE(ret1.value().begin()->first.first, 0);
+
+            // getEdgeSchemeFromCache
+            auto ret2 = client->getEdgeSchemeFromCache(spaceId, ret1.value().begin()->first.first);
+            ASSERT_TRUE(ret2.ok()) << ret2.status();
+            ASSERT_EQ(ret2.value()->getNumFields(), 5);
         }
     }
     sleep(FLAGS_load_data_interval_second + 1);
@@ -166,6 +220,7 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_TRUE(ret1.ok());
         ASSERT_EQ(0, ret1.value().size());
     }
+
     client.reset();
 }
 

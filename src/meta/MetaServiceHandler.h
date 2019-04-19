@@ -84,7 +84,7 @@ public:
     future_listTags(const cpp2::ListTagsReq& req) override;
 
     folly::Future<cpp2::ExecResp>
-    future_addEdge(const cpp2::AddEdgeReq& req) override;
+    future_addEdge(const cpp2::WriteEdgeReq& req) override;
 
     folly::Future<cpp2::ListEdgesResp>
     future_listEdges(const cpp2::ListEdgesReq& req) override;

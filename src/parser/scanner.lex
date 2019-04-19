@@ -33,7 +33,7 @@ INSERT                      ([Ii][Nn][Ss][Ee][Rr][Tt])
 VALUES                      ([Vv][Aa][Ll][Uu][Ee][Ss])
 YIELD                       ([Yy][Ii][Ee][Ll][Dd])
 RETURN                      ([Rr][Ee][Tt][Uu][Rr][Nn])
-DEFINE                      ([Dd][Ee][Ff][Ii][Nn][Ee])
+CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
 DESCRIBE                    ([Dd][Ee][Ss][Cc][Rr][Ii][Bb][Ee])
 VERTEX                      ([Vv][Ee][Rr][Tt][Ee][Xx])
 EDGE                        ([Ee][Dd][Gg][Ee])
@@ -65,7 +65,6 @@ SHOW                        ([Ss][Hh][Oo][Ww])
 ADD                         ([Aa][Dd][Dd])
 HOSTS                       ([Hh][Oo][Ss][Tt][Ss])
 TIMESTAMP                   ([Tt][Ii][Mm][Ee][Ss][Tt][Aa][Mm][Pp])
-CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
 PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm])
 REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
 DROP                        ([Dd][Rr][Oo][Pp])
@@ -95,7 +94,7 @@ OCT                         ([0-7])
 {VALUES}                    { return TokenType::KW_VALUES; }
 {YIELD}                     { return TokenType::KW_YIELD; }
 {RETURN}                    { return TokenType::KW_RETURN; }
-{DEFINE}                    { return TokenType::KW_DEFINE; }
+{CREATE}                    { return TokenType::KW_CREATE; }
 {DESCRIBE}                  { return TokenType::KW_DESCRIBE; }
 {VERTEX}                    { return TokenType::KW_VERTEX; }
 {EDGE}                      { return TokenType::KW_EDGE; }
