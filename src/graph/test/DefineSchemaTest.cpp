@@ -151,7 +151,7 @@ TEST_F(DefineSchemaTest, metaCommunication) {
         std::string query = "show spaces";
         client->execute(query, resp);
         std::vector<uniform_tuple_t<std::string, 1>> expected{
-            {"1", "default_space"},
+            {"default_space"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
