@@ -20,6 +20,7 @@
 DEFINE_int32(req_parts, 3, "parts requested");
 DEFINE_int32(vrpp, 100, "vertices requested per part");
 DEFINE_int32(handler_num, 10, "vertices requested per part");
+DECLARE_int32(max_handlers_per_req);
 
 std::unique_ptr<nebula::kvstore::KVStore> gKV;
 std::unique_ptr<nebula::meta::AdHocSchemaManager> schema;
@@ -131,6 +132,7 @@ cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
 }  // namespace nebula
 
 void run(int32_t iters, int32_t handlerNum) {
+    FLAGS_max_handlers_per_req = handlerNum;
     auto req = nebula::storage::buildRequest();
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(FLAGS_handler_num);
     for (decltype(iters) i = 0; i < iters; i++) {
@@ -140,7 +142,6 @@ void run(int32_t iters, int32_t handlerNum) {
                                                             schema.get(),
                                                             executor.get(),
                                                             nebula::storage::BoundType::OUT_BOUND);
-        processor->handlerNum_ = handlerNum;
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -172,11 +173,14 @@ int main(int argc, char** argv) {
     return 0;
 }
 /*
+40 processors, Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+req_parts=1, vrpp=100, handler_num=10
 ============================================================================
-/home/daoye/workspace/my/nebula/src/storage/test/QueryBoundBenchmark.cpprelative  time/iter  iters/s
+/data/heng/workspace/nebula/src/storage/test/QueryBoundBenchmark.cpprelative  time/iter  iters/s
 ============================================================================
-query_bound_1                                                3.96ms   252.57
-query_bound_3                                                2.20ms   454.09
-query_bound_10                                               2.05ms   488.90
+query_bound_1                                              112.67ms     8.88
+query_bound_3                                               40.20ms    24.88
+query_bound_10                                              13.43ms    74.47
 ============================================================================
+
 */

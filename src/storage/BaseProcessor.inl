@@ -47,7 +47,7 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
         }
         bool finished = false;
         {
-            std::lock_guard<folly::SpinLock> lg(this->lock_);
+            std::lock_guard<std::mutex> lg(this->lock_);
             if (thriftResult.code != cpp2::ErrorCode::SUCCEEDED) {
                 this->codes_.emplace_back(std::move(thriftResult));
             }

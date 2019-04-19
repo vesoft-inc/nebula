@@ -9,6 +9,8 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 
+DECLARE_int32(max_handlers_per_req);
+DECLARE_int32(min_vertices_num_mp);
 
 namespace nebula {
 namespace storage {
@@ -270,7 +272,7 @@ QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(Bucket bucket) {
 
 template<typename REQ, typename RESP>
 int32_t QueryBaseProcessor<REQ, RESP>::getBucketsNum(int32_t verticesNum, int handlerNum) {
-    if (verticesNum < 3 || verticesNum > 1000) {
+    if (verticesNum < FLAGS_min_vertices_num_mp) {
         return 1;
     }
     return std::min(verticesNum, handlerNum);
@@ -284,10 +286,10 @@ std::vector<Bucket> QueryBaseProcessor<REQ, RESP>::genBuckets(
     for (auto& pv : req.get_parts()) {
         verticesNum += pv.second.size();
     }
-    auto bucketsNum = getBucketsNum(verticesNum, handlerNum_);
+    auto bucketsNum = getBucketsNum(verticesNum, FLAGS_max_handlers_per_req);
     buckets.resize(bucketsNum);
     auto vNumPerBucket = verticesNum / bucketsNum;
-    auto bucketIndex = -1;
+    int32_t bucketIndex = -1;
     for (auto& pv : req.get_parts()) {
         for (auto& vId : pv.second) {
             if (bucketIndex == -1

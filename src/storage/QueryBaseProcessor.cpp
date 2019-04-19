@@ -1,0 +1,15 @@
+/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+ *
+ * This source code is licensed under Apache 2.0 License
+ *  (found in the LICENSE.Apache file in the root directory)
+ */
+#include "storage/QueryBaseProcessor.h"
+
+DEFINE_int32(max_handlers_per_req, 10, "The max handlers used to handle one request");
+DEFINE_int32(min_vertices_num_mp, 3, "The min vertices number for multi-process in one request");
+
+namespace nebula {
+namespace storage {
+
+}  // namespace storage
+}  // namespace nebula
