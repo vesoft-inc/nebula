@@ -42,11 +42,7 @@ StatusOr<EdgeType> AddEdgeProcessor::getEdge(const std::string& edgeName) {
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
-        try {
-            return folly::to<EdgeType>(val);
-        } catch (std::exception& e) {
-            LOG(ERROR) << "Convert failed for " << val << ", msg " << e.what();
-        }
+        return *reinterpret_cast<const EdgeType*>(val.c_str());
     }
     return Status::Error("No Edge!");
 }

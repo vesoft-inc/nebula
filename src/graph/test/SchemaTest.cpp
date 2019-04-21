@@ -116,7 +116,7 @@ TEST_F(DefineSchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE buy(id int, time string)";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     sleep(FLAGS_load_data_interval_second + 1);
     {
@@ -148,8 +148,6 @@ TEST_F(DefineSchemaTest, metaCommunication) {
         EXPECT_TRUE(verifyResult(resp, expected));
     }
     {
-        /* test the same tag in diff space, but now meta server not supported,
-	 * will add a issue(#292) to resolve it */
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE SPACE my_space(partition_num=9, replica_factor=3)";
         auto code = client->execute(query, resp);
@@ -162,6 +160,28 @@ TEST_F(DefineSchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // test different tag and edge in different space
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG animal(name string, kind string)";
+        auto code = client->execute(query, resp);
+        sleep(FLAGS_load_data_interval_second + 1);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_load_data_interval_second + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE TAG animal";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"name", "string"},
+            {"kind", "string"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    /* test the same tag in diff space, but now meta server not supported,
+     * will add a issue(#292) to resolve it */
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG person(name string, interest string)";
@@ -177,6 +197,12 @@ TEST_F(DefineSchemaTest, metaCommunication) {
             {"default_space"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP SPACE my_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;

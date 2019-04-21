@@ -94,7 +94,6 @@ OCT                         ([0-7])
 {VALUES}                    { return TokenType::KW_VALUES; }
 {YIELD}                     { return TokenType::KW_YIELD; }
 {RETURN}                    { return TokenType::KW_RETURN; }
-{CREATE}                    { return TokenType::KW_CREATE; }
 {DESCRIBE}                  { return TokenType::KW_DESCRIBE; }
 {VERTEX}                    { return TokenType::KW_VERTEX; }
 {EDGE}                      { return TokenType::KW_EDGE; }
