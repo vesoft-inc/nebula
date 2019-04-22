@@ -31,10 +31,10 @@ void RemoveHostsExecutor::execute() {
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(resp.status());
+            onError_(std::move(resp).status());
             return;
         }
-        auto ret = resp.value();
+        auto ret = std::move(resp).value();
         if (!ret) {
             DCHECK(onError_);
             onError_(Status::Error("Remove hosts failed"));
