@@ -15,14 +15,16 @@
 --logbufsecs=0
 
 ########## networking ##########
+# Meta server address
+--meta_server_addrs=127.0.0.1:45500
 # Local ip
 --local_ip=127.0.0.1
 # Storage daemon listening port
 --port=44500
 # HTTP service port
---ws_http_port=0
+--ws_http_port=12000
 # HTTP2 service port
---ws_h2_portt=0
+--ws_h2_port=12002
 
 ########## storage ##########
 # Root data path, multiple paths should be splitted by comma.

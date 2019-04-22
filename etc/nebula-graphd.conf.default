@@ -20,6 +20,8 @@
 --stderr_log_file=stderr.log
 
 ########## networking ##########
+# Meta Server Address
+--meta_server_addrs=127.0.0.1:45500
 # Network device to listen on
 --listen_netdev=any
 # Port to listen on
@@ -34,9 +36,9 @@
 --session_idle_timeout_secs=60000
 # The number of threads to accept incoming connections
 --num_accept_threads=1
-# The number of networking IO threads, 0 for number of physical CPU cores
---num_netio_threads=0
+# The number of networking IO threads to process request and return response.
+--num_netio_threads=1
 # HTTP service port
---ws_http_port=0
+--ws_http_port=13000
 # HTTP2 service port
---ws_h2_portt=0
+--ws_h2_portt=13002

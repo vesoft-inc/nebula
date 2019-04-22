@@ -17,12 +17,12 @@
 ########## networking ##########
 # Local ip
 --local_ip=127.0.0.1
-# Storage daemon listening port
---port=44500
+# Meta daemon listening port
+--port=45500
 # HTTP service port
---ws_http_port=0
+--ws_http_port=11000
 # HTTP2 service port
---ws_h2_portt=0
+--ws_h2_portt=11002
 
 ########## storage ##########
 # Root data path, multi paths should be split by comma.For rocksdb engine, one path one instance.
