@@ -6,13 +6,9 @@
 
 #include "storage/StorageHttpHandler.h"
 #include "webservice/Common.h"
-#include "base/StringSwitch.h"
-#include "process/ProcessUtils.h"
-#include "storage/StorageFlags.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
-
 
 namespace nebula {
 namespace storage {
@@ -22,7 +18,6 @@ using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
-using nebula::ProcessUtils;
 
 void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
@@ -35,7 +30,7 @@ void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcep
         returnJson_ = true;
     }
 
-    auto* statusStr = headers->getQueryParamPtr("storage");
+    auto* statusStr = headers->getQueryParamPtr("daemon");
     if (statusStr != nullptr) {
         folly::split(",", *statusStr, statusNames_, true);
     }
@@ -100,23 +95,17 @@ void StorageHttpHandler::addOneStatus(folly::dynamic& vals,
 }
 
 
-std::string StorageHttpHandler::readValue(const std::string& statusName) const {
-    Status ret;
-    switch (StringSwitch(statusName.c_str())) {
-    case "status"_hash:
-        ret = ProcessUtils::isPidRunning(FLAGS_storage_pid_file);
-        if (ret.ok()) {
-            return "running";
-        } else {
-            return "stop";
-        }
-    default:
+std::string StorageHttpHandler::readValue(std::string& statusName) {
+    folly::toLowerAscii(statusName);
+    if (statusName == "status") {
+        return "running";
+    } else {
         return "unknown";
     }
 }
 
 
-void StorageHttpHandler::readAllValue(folly::dynamic& vals) const {
+void StorageHttpHandler::readAllValue(folly::dynamic& vals) {
     for (auto& sn : statusAllNames_) {
         std::string statusValue = readValue(sn);
         addOneStatus(vals, sn, statusValue);
@@ -124,7 +113,7 @@ void StorageHttpHandler::readAllValue(folly::dynamic& vals) const {
 }
 
 
-folly::dynamic StorageHttpHandler::getStatus() const {
+folly::dynamic StorageHttpHandler::getStatus() {
     auto status = folly::dynamic::array();
     if (statusNames_.empty()) {
         // Read all status

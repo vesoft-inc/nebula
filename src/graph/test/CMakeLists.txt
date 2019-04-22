@@ -21,7 +21,6 @@ add_executable(
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:process_obj>
 )
 
 nebula_link_libraries(
@@ -64,7 +63,6 @@ add_executable(
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:process_obj>
 )
 
 nebula_link_libraries(
@@ -102,7 +100,6 @@ add_executable(
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     go_test
@@ -123,7 +120,6 @@ add_executable(
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:graph_http_handler>
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
@@ -143,6 +139,7 @@ add_executable(
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     graph_http_test

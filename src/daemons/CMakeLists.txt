@@ -23,7 +23,6 @@ add_executable(
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:graph_http_handler>
 )
 nebula_link_libraries(
     nebula-graphd
@@ -54,7 +53,6 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:ws_obj>
-    $<TARGET_OBJECTS:storage_http_handler>
 )
 nebula_link_libraries(
     nebula-storaged
@@ -85,7 +83,6 @@ add_executable(
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:ws_obj>
-    $<TARGET_OBJECTS:meta_http_handler>
 )
 nebula_link_libraries(
     nebula-metad

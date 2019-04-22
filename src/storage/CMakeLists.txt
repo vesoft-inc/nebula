@@ -2,6 +2,7 @@ add_library(
     storage_service_handler OBJECT
     StorageServiceHandler.cpp
     KeyUtils.cpp
+    StorageHttpHandler.cpp
     AddVerticesProcessor.cpp
     AddEdgesProcessor.cpp
     QueryBoundProcessor.cpp
@@ -15,7 +16,9 @@ add_dependencies(
     storage_thrift_obj
     kvstore_obj
     dataman_obj
+    thread_obj
     ws_obj
+    stats_obj
 )
 
 
@@ -28,21 +31,6 @@ add_dependencies(
     base_obj
     storage_thrift_obj
     dataman_obj
-)
-
-
-add_library(
-    storage_http_handler OBJECT
-    StorageHttpHandler.cpp
-    StorageFlags.cpp
-)
-add_dependencies(
-    storage_http_handler
-    base_obj
-    process_obj
-    thread_obj
-    ws_obj
-    stats_obj
 )
 
 

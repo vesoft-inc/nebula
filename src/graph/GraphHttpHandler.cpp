@@ -6,13 +6,9 @@
 
 #include "graph/GraphHttpHandler.h"
 #include "webservice/Common.h"
-#include "base/StringSwitch.h"
-#include "process/ProcessUtils.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
-#include "graph/GraphFlags.h"
-
 
 namespace nebula {
 namespace graph {
@@ -22,7 +18,6 @@ using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
-using nebula::ProcessUtils;
 
 void GraphHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
@@ -35,7 +30,7 @@ void GraphHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept 
         returnJson_ = true;
     }
 
-    auto* statusStr = headers->getQueryParamPtr("meta");
+    auto* statusStr = headers->getQueryParamPtr("daemon");
     if (statusStr != nullptr) {
         folly::split(",", *statusStr, statusNames_, true);
     }
@@ -100,23 +95,17 @@ void GraphHttpHandler::addOneStatus(folly::dynamic& vals,
 }
 
 
-std::string GraphHttpHandler::readValue(const std::string& statusName) const {
-    Status ret;
-    switch (StringSwitch(statusName.c_str())) {
-    case "status"_hash:
-        ret = ProcessUtils::isPidRunning(FLAGS_graph_pid_file);
-        if (ret.ok()) {
-            return "running";
-        } else {
-            return "stop";
-        }
-    default:
+std::string GraphHttpHandler::readValue(std::string& statusName) {
+    folly::toLowerAscii(statusName);
+    if (statusName == "status") {
+        return "running";
+    } else {
         return "unknown";
     }
 }
 
 
-void GraphHttpHandler::readAllValue(folly::dynamic& vals) const {
+void GraphHttpHandler::readAllValue(folly::dynamic& vals) {
     for (auto& sn : statusAllNames_) {
         std::string statusValue = readValue(sn);
         addOneStatus(vals, sn, statusValue);
@@ -124,7 +113,7 @@ void GraphHttpHandler::readAllValue(folly::dynamic& vals) const {
 }
 
 
-folly::dynamic GraphHttpHandler::getStatus() const {
+folly::dynamic GraphHttpHandler::getStatus() {
     auto status = folly::dynamic::array();
     if (statusNames_.empty()) {
         // Read all status

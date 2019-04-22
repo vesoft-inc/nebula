@@ -4,9 +4,10 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
+#include "base/Base.h"
 #include "graph/GraphFlags.h"
 
-DEFINE_int32(graph_port, 34500, "Nebula Graph daemon's listen port");
+DEFINE_int32(port, 34500, "Nebula Graph daemon's listen port");
 DEFINE_int32(client_idle_timeout_secs, 0,
                 "Seconds before we close the idle connections, 0 for infinite");
 DEFINE_int32(session_idle_timeout_secs, 600,
@@ -18,9 +19,9 @@ DEFINE_int32(num_accept_threads, 1, "Number of threads to accept incoming connec
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(listen_backlog, 1024, "Backlog of the listen socket");
 DEFINE_string(listen_netdev, "any", "The network device to listen on");
+DEFINE_string(pid_file, "pids/nebula-graphd.pid", "File to hold the process id");
+
 DEFINE_bool(redirect_stdout, true, "Whether to redirect stdout and stderr to separate files");
 DEFINE_string(stdout_log_file, "graphd-stdout.log", "Destination filename of stdout");
 DEFINE_string(stderr_log_file, "graphd-stderr.log", "Destination filename of stderr");
-DEFINE_bool(graph_daemonize, true, "Whether run as a daemon process");
-DEFINE_string(graph_pid_file, "pids/nebula-graph.pid", "File to hold the graph process id");
-DEFINE_string(graph_flag_file, "", "Nebula Graph daemon's config file");
+DEFINE_bool(daemonize, true, "Whether run as a daemon process");

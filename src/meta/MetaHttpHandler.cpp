@@ -6,13 +6,9 @@
 
 #include "meta/MetaHttpHandler.h"
 #include "webservice/Common.h"
-#include "base/StringSwitch.h"
-#include "process/ProcessUtils.h"
-#include "meta/MetaFlags.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
-
 
 namespace nebula {
 namespace meta {
@@ -22,7 +18,6 @@ using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
-using nebula::ProcessUtils;
 
 void MetaHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
@@ -35,7 +30,7 @@ void MetaHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
         returnJson_ = true;
     }
 
-    auto* statusStr = headers->getQueryParamPtr("meta");
+    auto* statusStr = headers->getQueryParamPtr("daemon");
     if (statusStr != nullptr) {
         folly::split(",", *statusStr, statusNames_, true);
     }
@@ -100,23 +95,17 @@ void MetaHttpHandler::addOneStatus(folly::dynamic& vals,
 }
 
 
-std::string MetaHttpHandler::readValue(const std::string& statusName) const {
-    Status ret;
-    switch (StringSwitch(statusName.c_str())) {
-    case "status"_hash:
-        ret = ProcessUtils::isPidRunning(FLAGS_meta_pid_file);
-        if (ret.ok()) {
-            return "running";
-        } else {
-            return "stop";
-        }
-    default:
+std::string MetaHttpHandler::readValue(std::string& statusName) {
+    folly::toLowerAscii(statusName);
+    if (statusName == "status") {
+        return "running";
+    } else {
         return "unknown";
     }
 }
 
 
-void MetaHttpHandler::readAllValue(folly::dynamic& vals) const {
+void MetaHttpHandler::readAllValue(folly::dynamic& vals) {
     for (auto& sn : statusAllNames_) {
         std::string statusValue = readValue(sn);
         addOneStatus(vals, sn, statusValue);
@@ -124,7 +113,7 @@ void MetaHttpHandler::readAllValue(folly::dynamic& vals) const {
 }
 
 
-folly::dynamic MetaHttpHandler::getStatus() const {
+folly::dynamic MetaHttpHandler::getStatus() {
     auto status = folly::dynamic::array();
     if (statusNames_.empty()) {
         // Read all status

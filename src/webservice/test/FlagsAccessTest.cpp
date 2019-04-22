@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 #include <folly/json.h>
 #include "webservice/WebService.h"
-#include "process/ProcessUtils.h"
+#include "webservice/test/TestUtils.h"
 
 DEFINE_int32(int32_test, 10, "Test flag for int32 type");
 DEFINE_int64(int64_test, 10, "Test flag for int64 type");
@@ -34,25 +34,6 @@ public:
         VLOG(1) << "Web service stopped";
     }
 };
-
-
-bool getUrl(const std::string& urlPath, std::string& respBody) {
-    auto url = folly::stringPrintf("http://%s:%d%s",
-                                   FLAGS_ws_ip.c_str(),
-                                   FLAGS_ws_http_port,
-                                   urlPath.c_str());
-    VLOG(1) << "Retrieving url: " << url;
-
-    auto command = folly::stringPrintf("/usr/bin/curl -G \"%s\" 2> /dev/null",
-                                       url.c_str());
-    auto result = ProcessUtils::runCommand(command.c_str());
-    if (!result.ok()) {
-        LOG(ERROR) << "Failed to run curl: " << result.status();
-        return false;
-    }
-    respBody = result.value();
-    return true;
-}
 
 
 TEST(FlagsAccessTest, GetSetTest) {

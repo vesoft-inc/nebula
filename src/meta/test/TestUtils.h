@@ -11,13 +11,10 @@
 #include "meta/processors/AddHostsProcessor.h"
 #include "meta/processors/ListHostsProcessor.h"
 #include "meta/MetaServiceHandler.h"
-#include "process/ProcessUtils.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "interface/gen-cpp2/common_types.h"
-#include "meta/MetaHttpHandler.h"
 
 DECLARE_string(part_man_type);
-DECLARE_string(meta_pid_file);
 
 namespace nebula {
 namespace meta {
@@ -166,15 +163,10 @@ public:
         std::unique_ptr<std::thread> serverT_;
     };
 
-    static std::unique_ptr<ServerContext> mockServer(uint32_t port,
-                                                     const char* dataPath,
-                                                     const std::string pidFile ="") {
+    static std::unique_ptr<ServerContext> mockServer(uint32_t port, const char* dataPath) {
         auto sc = std::make_unique<ServerContext>();
         sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
         sc->serverT_ = std::make_unique<std::thread>([&]() {
-            if (!pidFile.empty()) {
-                ProcessUtils::makePidFile(pidFile);
-            }
             LOG(INFO) << "Starting the meta Daemon on port " << port << ", path " << dataPath;
             std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath));
             auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kv.get());

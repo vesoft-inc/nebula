@@ -11,7 +11,6 @@
 #include "webservice/Common.h"
 #include "proxygen/httpserver/RequestHandler.h"
 
-
 namespace nebula {
 namespace graph {
 
@@ -38,9 +37,9 @@ private:
                       const std::string& statusName,
                       const std::string& statusValue) const;
 
-    std::string readValue(const std::string& statusName) const;
-    void readAllValue(folly::dynamic& vals) const;
-    folly::dynamic getStatus() const;
+    std::string readValue(std::string& statusName);
+    void readAllValue(folly::dynamic& vals);
+    folly::dynamic getStatus();
     std::string toStr(folly::dynamic& vals) const;
 
 private:

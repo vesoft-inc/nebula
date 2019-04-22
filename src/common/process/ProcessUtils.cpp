@@ -48,32 +48,6 @@ Status ProcessUtils::isPidAvailable(const std::string &pidFile) {
 }
 
 
-Status ProcessUtils::isPidRunning(const std::string &pidFile) {
-    // Test existence and readability
-    if (::access(pidFile.c_str(), R_OK) == -1) {
-        return Status::Error("%s: %s", pidFile.c_str(), ::strerror(errno));
-    }
-    // Pidfile is readable
-    static const std::regex pattern("([0-9]+)");
-    fs::FileUtils::FileLineIterator iter(pidFile, &pattern);
-    if (!iter.valid()) {
-        return Status::Error("Pid file is readable but has no valid pid");
-    }
-
-    uint32_t pid = (folly::to<uint32_t>(iter.matched()[1].str()));
-    constexpr auto SIG_OK = 0;
-    if (::kill(pid, SIG_OK) == -1) {
-        // Process already existed but denied to access
-        if (errno == EPERM) {
-            return Status::OK();
-        } else {
-            return Status::Error("Process `%u':%s", pid, ::strerror(errno));
-        }
-    }
-    return Status::OK();
-}
-
-
 Status ProcessUtils::makePidFile(const std::string &pidFile, uint32_t pid) {
     if (pidFile.empty()) {
         return Status::Error("Path to the pid file is empty");
