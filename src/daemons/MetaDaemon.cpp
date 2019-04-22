@@ -12,10 +12,20 @@
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
 #include "kvstore/PartManager.h"
-#include "meta/MetaFlags.h"
 
 using nebula::ProcessUtils;
 using nebula::Status;
+
+DEFINE_int32(port, 45500, "Meta daemon listening port");
+DEFINE_string(data_path, "", "Root data path");
+DEFINE_string(peers, "", "It is a list of IPs split by comma,"
+                         "the ips number equals replica number."
+                         "If empty, it means replica is 1");
+DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
+DECLARE_string(part_man_type);
+
+DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
+DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 
 namespace nebula {
 
@@ -39,26 +49,26 @@ static Status setupSignalHandler();
 
 int main(int argc, char *argv[]) {
     folly::init(&argc, &argv, true);
-    if (FLAGS_meta_data_path.empty()) {
+    if (FLAGS_data_path.empty()) {
         LOG(ERROR) << "Meta Data Path should not empty";
         return EXIT_FAILURE;
     }
 
-    if (FLAGS_meta_daemonize) {
+    if (FLAGS_daemonize) {
         google::SetStderrLogging(google::FATAL);
     } else {
         google::SetStderrLogging(google::INFO);
     }
 
     // Detect if the server has already been started
-    auto pidPath = FLAGS_meta_pid_file;
+    auto pidPath = FLAGS_pid_file;
     auto status = ProcessUtils::isPidAvailable(pidPath);
     if (!status.ok()) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
     }
 
-    if (FLAGS_meta_daemonize) {
+    if (FLAGS_daemonize) {
         status = ProcessUtils::daemonize(pidPath);
         if (!status.ok()) {
             LOG(ERROR) << status;
@@ -73,7 +83,7 @@ int main(int argc, char *argv[]) {
     }
 
     LOG(INFO) << "Starting Meta HTTP Service";
-    nebula::WebService::registerHandler("/get_meta", [] {
+    nebula::WebService::registerHandler("/status", [] {
         return new nebula::meta::MetaHttpHandler();
     });
     status = nebula::WebService::start();
@@ -81,10 +91,10 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Failed to start web service: " << status;
         return EXIT_FAILURE;
     }
-    LOG(INFO) << "Starting the meta Daemon on port " << FLAGS_meta_port
-              << ", dataPath " << FLAGS_meta_data_path;
+    LOG(INFO) << "Starting the meta Daemon on port " << FLAGS_port
+              << ", dataPath " << FLAGS_data_path;
 
-    auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_meta_local_ip);
+    auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
     CHECK(result.ok()) << result.status();
     uint32_t localIP;
     CHECK(nebula::network::NetworkUtils::ipv4ToInt(result.value(), localIP));
@@ -92,11 +102,11 @@ int main(int argc, char *argv[]) {
     auto partMan
         = std::make_unique<nebula::kvstore::MemPartManager>();
     // The meta server has only one space, one part.
-    partMan->addPart(0, 0, nebula::toHosts(FLAGS_meta_peers));
+    partMan->addPart(0, 0, nebula::toHosts(FLAGS_peers));
 
     nebula::kvstore::KVOptions options;
-    options.local_ = nebula::HostAddr(localIP, FLAGS_meta_port);
-    options.dataPaths_ = {FLAGS_meta_data_path};
+    options.local_ = nebula::HostAddr(localIP, FLAGS_port);
+    options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
     std::unique_ptr<nebula::kvstore::KVStore> kvstore(
             nebula::kvstore::KVStore::instance(std::move(options)));
@@ -124,7 +134,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    LOG(INFO) << "The storage Daemon on port " << FLAGS_meta_port << " stopped";
+    LOG(INFO) << "The storage Daemon on port " << FLAGS_port << " stopped";
 }
 
 

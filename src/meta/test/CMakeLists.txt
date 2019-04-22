@@ -31,7 +31,6 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     meta_utils_test
@@ -150,14 +149,13 @@ add_executable(
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:meta_http_handler>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     meta_http_test

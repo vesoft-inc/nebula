@@ -11,7 +11,6 @@
 #include "webservice/Common.h"
 #include "proxygen/httpserver/RequestHandler.h"
 
-
 namespace nebula {
 namespace meta {
 
@@ -38,16 +37,16 @@ private:
                       const std::string& statusName,
                       const std::string& statusValue) const;
 
-    std::string readValue(const std::string& statusName) const;
-    void readAllValue(folly::dynamic& vals) const;
-    folly::dynamic getStatus() const;
+    std::string readValue(std::string& statusName);
+    void readAllValue(folly::dynamic& vals);
+    folly::dynamic getStatus();
     std::string toStr(folly::dynamic& vals) const;
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
     bool returnJson_{false};
     std::vector<std::string> statusNames_;
-    std::vector<std::string> statusAllNames_{"status"};
+    std::vector<std::string> statusAllNames_{"active"};
 };
 
 }  // namespace meta
