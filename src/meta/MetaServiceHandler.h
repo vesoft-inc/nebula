@@ -72,7 +72,7 @@ public:
     future_addTag(const cpp2::WriteTagReq& req) override;
 
     folly::Future<cpp2::ExecResp>
-    future_alterTag(const cpp2::WriteTagReq& req) override;
+    future_alterTag(const cpp2::AlterTagReq& req) override;
 
     folly::Future<cpp2::ExecResp>
     future_removeTag(const cpp2::RemoveTagReq& req) override;

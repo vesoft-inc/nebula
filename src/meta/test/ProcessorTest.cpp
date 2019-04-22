@@ -363,7 +363,7 @@ TEST(ProcessorTest, KVOperationTest) {
 TEST(ProcessorTest, ListOrGetTagsTest) {
     fs::TempDir rootPath("/tmp/ListTagsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto version = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInUSeconds();
+    auto version = std::numeric_limits<int8_t>::max();
     TestUtils::mockTag(kv.get(), 10, version);
 
     // test ListTagsProcessor
@@ -413,7 +413,7 @@ TEST(ProcessorTest, RemoveTagTest) {
      fs::TempDir rootPath("/tmp/RemoveTagTest.XXXXXX");
      std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
      ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
-     auto version = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInUSeconds();
+     auto version = std::numeric_limits<int8_t>::max();
      TestUtils::mockTag(kv.get(), 1, version);
       // remove tag processor test
      {
@@ -445,29 +445,53 @@ TEST(ProcessorTest, AlterTagTest) {
     fs::TempDir rootPath("/tmp/AlterTagTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
-    auto version = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInUSeconds();
+    auto version = std::numeric_limits<int8_t >::max();
     TestUtils::mockTag(kv.get(), 1, version);
-    // Avoid the same version number with sleep
-    sleep(1);
-    nebula::cpp2::Schema schema;
-    decltype(schema.columns) cols;
-    cols.emplace_back(TestUtils::columnDef(0, SupportedType::INT));
-    cols.emplace_back(TestUtils::columnDef(1, SupportedType::FLOAT));
-    cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
-    schema.set_columns(std::move(cols));
     // Alter tag processor test
     {
-        cpp2::WriteTagReq req;
+        cpp2::AlterTagReq req;
+        std::vector<cpp2::AlterTagItem> items;
+        nebula::cpp2::Schema addSch;
+        for (auto i = 0; i < 2; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("tag_%d_col_%d", 0, i + 10);
+            column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
+            addSch.columns.emplace_back(std::move(column));
+        }
+        nebula::cpp2::Schema setSch;
+        for (auto i = 0; i < 2; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("tag_%d_col_%d", 0, i);
+            column.type.type = i < 1 ? SupportedType::BOOL : SupportedType::DOUBLE;
+            setSch.columns.emplace_back(std::move(column));
+        }
+        nebula::cpp2::Schema dropSch;
+        nebula::cpp2::ColumnDef column;
+        column.name = folly::stringPrintf("tag_%d_col_%d", 0, 0);
+        dropSch.columns.emplace_back(std::move(column));
+
+        auto addItem = cpp2::AlterTagItem(FRAGILE,
+                                          nebula::cpp2::AlterTagOp::ADD,
+                                          std::move(addSch));
+        auto setItem = cpp2::AlterTagItem(FRAGILE,
+                                          nebula::cpp2::AlterTagOp::SET,
+                                          std::move(setSch));
+        auto dropItem = cpp2::AlterTagItem(FRAGILE,
+                                           nebula::cpp2::AlterTagOp::DROP,
+                                           std::move(dropSch));
+        items.push_back(std::move(addItem));
+        items.push_back(std::move(setItem));
+        items.push_back(std::move(dropItem));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
-        req.set_schema(schema);
+        req.set_tag_items(items);
         auto* processor = AlterTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
-
+    // verify alter result.
     {
         cpp2::ListTagsReq req;
         req.set_space_id(1);
@@ -482,7 +506,89 @@ TEST(ProcessorTest, AlterTagTest) {
         auto tag = tags[0].version < version ? tags[0] : tags[1];
         EXPECT_EQ(0, tag.get_tag_id());
         EXPECT_EQ(folly::stringPrintf("tag_%d", 0), tag.get_tag_name());
+        EXPECT_EQ(version - 1, tag.version);
+
+        nebula::cpp2::Schema schema;
+        decltype(schema.columns) cols;
+
+        nebula::cpp2::ColumnDef column;
+        column.name = "tag_0_col_1";
+        column.type.type = SupportedType::DOUBLE;
+        cols.emplace_back(std::move(column));
+
+        column.name = "tag_0_col_10";
+        column.type.type = SupportedType::INT;
+        cols.emplace_back(std::move(column));
+
+        column.name = "tag_0_col_11";
+        column.type.type = SupportedType::STRING;
+        cols.emplace_back(std::move(column));
+        schema.set_columns(std::move(cols));
         EXPECT_EQ(schema, tag.get_schema());
+    }
+    // verify ErrorCode of add
+    {
+        cpp2::AlterTagReq req;
+        std::vector<cpp2::AlterTagItem> items;
+        nebula::cpp2::Schema addSch;
+        nebula::cpp2::ColumnDef column;
+        column.name = "tag_0_col_1";
+        column.type.type = SupportedType::INT;
+        addSch.columns.emplace_back(std::move(column));
+        auto addItem = cpp2::AlterTagItem(FRAGILE,
+                                          nebula::cpp2::AlterTagOp::ADD,
+                                          std::move(addSch));
+        items.push_back(std::move(addItem));
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_tag_items(items);
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
+    }
+    // verify ErrorCode of set
+    {
+        cpp2::AlterTagReq req;
+        std::vector<cpp2::AlterTagItem> items;
+        nebula::cpp2::Schema addSch;
+        nebula::cpp2::ColumnDef column;
+        column.name = "tag_0_col_2";
+        column.type.type = SupportedType::INT;
+        addSch.columns.emplace_back(std::move(column));
+        auto addItem = cpp2::AlterTagItem(FRAGILE,
+                                          nebula::cpp2::AlterTagOp::SET,
+                                          std::move(addSch));
+        items.push_back(std::move(addItem));
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_tag_items(items);
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    // verify ErrorCode of drop
+    {
+        cpp2::AlterTagReq req;
+        std::vector<cpp2::AlterTagItem> items;
+        nebula::cpp2::Schema addSch;
+        nebula::cpp2::ColumnDef column;
+        column.name = "tag_0_col_2";
+        column.type.type = SupportedType::INT;
+        addSch.columns.emplace_back(std::move(column));
+        auto addItem = cpp2::AlterTagItem(FRAGILE, nebula::cpp2::AlterTagOp::DROP, addSch);
+        items.push_back(addItem);
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        req.set_tag_items(items);
+        auto* processor = AlterTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
 }
 

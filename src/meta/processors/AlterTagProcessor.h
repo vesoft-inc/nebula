@@ -18,11 +18,15 @@ public:
         return new AlterTagProcessor(kvstore);
     }
 
-    void process(const cpp2::WriteTagReq& req);
+    void process(const cpp2::AlterTagReq& req);
 
 private:
     explicit AlterTagProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    cpp2::ErrorCode alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                     nebula::cpp2::ColumnDef col,
+                                     nebula::cpp2::AlterTagOp op);
 };
 
 }  // namespace meta

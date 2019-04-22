@@ -120,7 +120,7 @@ MetaServiceHandler::future_addTag(const cpp2::WriteTagReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_alterTag(const cpp2::WriteTagReq& req) {
+MetaServiceHandler::future_alterTag(const cpp2::AlterTagReq& req) {
     auto* processor = AlterTagProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }

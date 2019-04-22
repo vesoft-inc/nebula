@@ -52,8 +52,13 @@ struct Pair {
 struct TagItem {
     1: common.TagID         tag_id,
     2: string               tag_name,
-    3: i64                  version,
+    3: byte                 version,
     4: common.Schema        schema,
+}
+
+struct AlterTagItem {
+    1: common.AlterTagOp    op,
+    2: common.Schema        schema,
 }
 
 struct ExecResp {
@@ -102,6 +107,12 @@ struct WriteTagReq {
     3: common.Schema       schema,
 }
 
+struct AlterTagReq {
+    1: common.GraphSpaceID space_id,
+    2: string              tag_name,
+    3: list<AlterTagItem>  tag_items,
+}
+
 struct RemoveTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
@@ -121,7 +132,7 @@ struct ListTagsResp {
 struct ReadTagReq {
     1: common.GraphSpaceID space_id,
     2: common.TagID        tag_id,
-    3: i64                 version,
+    3: byte                version,
 }
 
 struct GetTagResp {
@@ -261,7 +272,7 @@ service MetaService {
     ListSpacesResp listSpaces(1: ListSpacesReq req);
 
     ExecResp addTag(1: WriteTagReq req);
-    ExecResp alterTag(1: WriteTagReq req);
+    ExecResp alterTag(1: AlterTagReq req);
     ExecResp removeTag(1: RemoveTagReq req);
     GetTagResp getTag(1: ReadTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);
