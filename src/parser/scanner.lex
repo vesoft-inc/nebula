@@ -46,6 +46,7 @@ OVER                        ([Oo][Vv][Ee][Rr])
 UPTO                        ([Uu][Pp][Tt][Oo])
 REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
 SPACE                       ([Ss][Pp][Aa][Cc][Ee])
+SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
 TTL                         ([Tt][Tt][Ll])
 INT                         ([Ii][Nn][Tt])
 BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
@@ -107,6 +108,7 @@ OCT                         ([0-7])
 {UPTO}                      { return TokenType::KW_UPTO; }
 {REVERSELY}                 { return TokenType::KW_REVERSELY; }
 {SPACE}                     { return TokenType::KW_SPACE; }
+{SPACES}                    { return TokenType::KW_SPACES; }
 {TTL}                       { return TokenType::KW_TTL; }
 {INT}                       { return TokenType::KW_INT; }
 {BIGINT}                    { return TokenType::KW_BIGINT; }

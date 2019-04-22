@@ -20,6 +20,7 @@ public:
     enum class ShowType : uint32_t {
         kUnknown,
         kShowHosts,
+        kShowSpaces
     };
 
     explicit ShowSentence(ShowType sType) {
@@ -36,6 +37,7 @@ public:
 private:
     ShowType    showType_{ShowType::kUnknown};
 };
+
 
 inline std::ostream& operator<<(std::ostream &os, ShowSentence::ShowType type) {
     return os << static_cast<uint32_t>(type);
