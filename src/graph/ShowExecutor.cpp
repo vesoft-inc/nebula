@@ -47,7 +47,7 @@ void ShowExecutor::showHosts() {
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(resp.status());
+            onError_(std::move(resp).status());
             return;
         }
 
@@ -92,7 +92,7 @@ void ShowExecutor::showSpaces() {
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(resp.status());
+            onError_(std::move(resp).status());
             return;
         }
 
@@ -107,7 +107,7 @@ void ShowExecutor::showSpaces() {
         for (auto &space : retShowSpaces) {
             std::vector<cpp2::ColumnValue> row;
             row.emplace_back();
-            row.back().set_str(space.second);
+            row.back().set_str(std::move(space.second));
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }

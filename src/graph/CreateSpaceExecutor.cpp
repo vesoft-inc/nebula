@@ -44,10 +44,10 @@ void CreateSpaceExecutor::execute() {
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(resp.status());
+            onError_(std::move(resp).status());
             return;
         }
-        auto spaceId = resp.value();
+        auto spaceId = std::move(resp).value();
         if (spaceId <= 0) {
             DCHECK(onError_);
             onError_(Status::Error("Create space failed"));
