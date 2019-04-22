@@ -25,6 +25,7 @@ public:
 
     void execute() override;
     void showHosts();
+    void showSpaces();
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
