@@ -82,14 +82,16 @@ public:
     /**
      * Set Config Option
      */
-    virtual ResultCode setOption(const std::string& config_key,
-                                 const std::string& config_value) = 0;
+    virtual ResultCode setOption(const std::string& configKey,
+                                 const std::string& configValue) = 0;
 
     /**
      * Set DB Config Option
      */
-    virtual ResultCode setDBOption(const std::string& config_key,
-                                   const std::string& config_value) = 0;
+    virtual ResultCode setDBOption(const std::string& configKey,
+                                   const std::string& configValue) = 0;
+
+    virtual ResultCode compactAll() = 0;
 
 protected:
     GraphSpaceID spaceId_;
