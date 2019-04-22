@@ -21,7 +21,7 @@ public:
                 : kvstore_(kv) {}
 
     /**
-     * Parts distributation related operations.
+     * Parts distribution related operations.
      * */
     folly::Future<cpp2::ExecResp>
     future_createSpace(const cpp2::CreateSpaceReq& req) override;
@@ -44,6 +44,9 @@ public:
     folly::Future<cpp2::GetPartsAllocResp>
     future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) override;
 
+    /**
+     * Custom kv related operations.
+     * */
     folly::Future<cpp2::MultiPutResp>
     future_multiPut(const cpp2::MultiPutReq& req) override;
 
