@@ -254,6 +254,82 @@ struct ScanResp {
     2: list<string> values,
 }
 
+enum SchemaType {
+    UNKNOWN  = -1,
+    TAG      = 0,
+    EDGE     = 1,
+} (cpp.enum_strict)
+
+union SchemaVersion {
+    1: common.TagID         tag_id,
+    2: common.EdgeType      edge_type,
+} (cpp.enum_strict)
+
+struct SchemaItem {
+    1: SchemaVersion    version,
+    2: common.Schema    schema,
+}
+
+struct MetaSchema {
+    1: string           name,
+    2: SchemaType       type,
+    3: SchemaItem       item,
+}
+
+struct CreateAndUpdateSchemaRep {
+    1: string           space_name,
+    2: string           schema_name,
+    3: SchemaType       type,
+    4: common.Schema    schema,
+}
+
+struct CreateAndUpdateSchemaResp {
+    1: ErrorCode      code,
+    2: SchemaVersion  version,
+}
+
+struct DeleteSchemaRep {
+    1: string           space_name,
+    2: string           schema_name,
+    3: SchemaType       type,
+}
+
+struct DeleteSchemaResp {
+    1: ErrorCode        code,
+}
+
+struct GetSchemaRep {
+    1: string           space_name,
+    2: string           schema_name,
+    3: SchemaType       type,
+    4: SchemaVersion    version,
+}
+
+struct GetSchemaResp {
+    1: ErrorCode        code,
+    2: common.Schema    schema,
+}
+
+struct ListSchemasRep {
+    1: string           space_name,
+}
+
+struct ListSchemasResp {
+    1: ErrorCode            code,
+    2: list<MetaSchema>     items,
+}
+
+struct ListSchemaVersionsRep {
+    1: string           space_name,
+    2: string           schema_name,
+}
+
+struct ListSchemaVersionsResp {
+    1: ErrorCode                code,
+    2: SchemaType               type,
+    3: list<SchemaItem>         items,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -282,5 +358,25 @@ service MetaService {
     RemoveResp       remove(1: RemoveReq req);
     RemoveRangeResp  removeRange(1: RemoveRangeReq req);
     ScanResp         scan(1: ScanReq req);
+
+    // create schema and update schema have the same struct.
+    // When you update a schema, you can assign a group of fields for the schema.
+    // The field with the same name will be replacement and non-existent field will be appended.
+    // (assume space and schema is fine)
+    CreateAndUpdateSchemaResp createSchema(1: CreateAndUpdateSchemaRep rep);
+    CreateAndUpdateSchemaResp updateSchema(1: CreateAndUpdateSchemaRep rep);
+
+    // delete schema will remove all versions
+    DeleteSchemaResp          deleteSchema(1: DeleteSchemaRep req);
+
+    // get single version schema
+    GetSchemaResp             getSchema(1: GetSchemaRep req);
+
+    // ListSchemas will find the latest schemas in the space.
+    // Both tags and edges.
+    ListSchemasResp           listSchema(1: ListSchemasRep req);
+
+    // ListSchemaVersions will find a schema with all versions int the space.
+    ListSchemaVersionsResp    listSchemaVersions(1: ListSchemaVersionsRep req);
 }
 
