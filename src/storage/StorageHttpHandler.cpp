@@ -6,7 +6,6 @@
 
 #include "storage/StorageHttpHandler.h"
 #include "webservice/Common.h"
-#include "base/StringSwitch.h"
 #include "process/ProcessUtils.h"
 #include "storage/StorageFlags.h"
 #include <proxygen/httpserver/RequestHandler.h>
@@ -35,7 +34,7 @@ void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcep
         returnJson_ = true;
     }
 
-    auto* statusStr = headers->getQueryParamPtr("storage");
+    auto* statusStr = headers->getQueryParamPtr("daemon");
     if (statusStr != nullptr) {
         folly::split(",", *statusStr, statusNames_, true);
     }
@@ -100,17 +99,11 @@ void StorageHttpHandler::addOneStatus(folly::dynamic& vals,
 }
 
 
-std::string StorageHttpHandler::readValue(const std::string& statusName) const {
-    Status ret;
-    switch (StringSwitch(statusName.c_str())) {
-    case "status"_hash:
-        ret = ProcessUtils::isPidRunning(FLAGS_storage_pid_file);
-        if (ret.ok()) {
-            return "running";
-        } else {
-            return "stop";
-        }
-    default:
+std::string StorageHttpHandler::readValue(std::string& statusName) const {
+    folly::toLowerAscii(statusName);
+    if (statusName == "status") {
+        return "running";
+    } else {
         return "unknown";
     }
 }

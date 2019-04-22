@@ -64,16 +64,14 @@ bool getUrl(const std::string& urlPath, std::string& respBody) {
 
 
 TEST_F(GraphHttpHandlerTest, GraphStatusTest) {
-    std::string pidFile = FLAGS_graph_pid_file;
-    FLAGS_graph_pid_file = gEnv->getPidFileName();
     {
         std::string resp;
-        ASSERT_TRUE(getUrl("/get_graph?graph=status", resp));
+        ASSERT_TRUE(getUrl("/status?daemon=status", resp));
         ASSERT_EQ(std::string("status=running\n"), resp);
     }
     {
         std::string resp;
-        ASSERT_TRUE(getUrl("/get_graph?graph=status&returnjson", resp));
+        ASSERT_TRUE(getUrl("/status?daemon=status&returnjson", resp));
         auto json = folly::parseJson(resp);
         ASSERT_TRUE(json.isArray());
         ASSERT_EQ(1UL, json.size());
@@ -93,10 +91,9 @@ TEST_F(GraphHttpHandlerTest, GraphStatusTest) {
 
     {
         std::string resp;
-        ASSERT_TRUE(getUrl("/get_graph123?graph=status", resp));
+        ASSERT_TRUE(getUrl("/status?daemon=status", resp));
         ASSERT_TRUE(resp.empty());
     }
-    FLAGS_graph_pid_file = pidFile;
 }
 
 }  // namespace graph

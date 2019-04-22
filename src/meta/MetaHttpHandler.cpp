@@ -6,7 +6,6 @@
 
 #include "meta/MetaHttpHandler.h"
 #include "webservice/Common.h"
-#include "base/StringSwitch.h"
 #include "process/ProcessUtils.h"
 #include "meta/MetaFlags.h"
 #include <proxygen/httpserver/RequestHandler.h>
@@ -35,7 +34,7 @@ void MetaHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
         returnJson_ = true;
     }
 
-    auto* statusStr = headers->getQueryParamPtr("meta");
+    auto* statusStr = headers->getQueryParamPtr("deamon");
     if (statusStr != nullptr) {
         folly::split(",", *statusStr, statusNames_, true);
     }
@@ -100,17 +99,11 @@ void MetaHttpHandler::addOneStatus(folly::dynamic& vals,
 }
 
 
-std::string MetaHttpHandler::readValue(const std::string& statusName) const {
-    Status ret;
-    switch (StringSwitch(statusName.c_str())) {
-    case "status"_hash:
-        ret = ProcessUtils::isPidRunning(FLAGS_meta_pid_file);
-        if (ret.ok()) {
-            return "running";
-        } else {
-            return "stop";
-        }
-    default:
+std::string MetaHttpHandler::readValue(std::string& statusName) const {
+    folly::toLowerAscii(statusname);
+    if (statusname == "status") {
+        return "running";
+    } else {
         return "unknown";
     }
 }

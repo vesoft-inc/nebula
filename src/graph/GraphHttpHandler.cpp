@@ -6,7 +6,6 @@
 
 #include "graph/GraphHttpHandler.h"
 #include "webservice/Common.h"
-#include "base/StringSwitch.h"
 #include "process/ProcessUtils.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
@@ -35,7 +34,7 @@ void GraphHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept 
         returnJson_ = true;
     }
 
-    auto* statusStr = headers->getQueryParamPtr("meta");
+    auto* statusStr = headers->getQueryParamPtr("daemon");
     if (statusStr != nullptr) {
         folly::split(",", *statusStr, statusNames_, true);
     }
@@ -100,17 +99,11 @@ void GraphHttpHandler::addOneStatus(folly::dynamic& vals,
 }
 
 
-std::string GraphHttpHandler::readValue(const std::string& statusName) const {
-    Status ret;
-    switch (StringSwitch(statusName.c_str())) {
-    case "status"_hash:
-        ret = ProcessUtils::isPidRunning(FLAGS_graph_pid_file);
-        if (ret.ok()) {
-            return "running";
-        } else {
-            return "stop";
-        }
-    default:
+std::string GraphHttpHandler::readValue(std::string& statusName) const {
+    folly::toLowerAscii(statusname);
+    if (statusname == "status") {
+        return "running";
+    } else {
         return "unknown";
     }
 }
