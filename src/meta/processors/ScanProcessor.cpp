@@ -15,6 +15,7 @@ void ScanProcessor::process(const cpp2::ScanReq& req) {
     auto end   = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_end());
     auto result = doScan(start, end);
     if (!result.ok()) {
+        LOG(ERROR) << "Scan Failed";
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
         return;

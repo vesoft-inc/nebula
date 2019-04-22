@@ -18,6 +18,7 @@ void MultiGetProcessor::process(const cpp2::MultiGetReq& req) {
 
     auto result = doMultiGet(std::move(keys));
     if (!result.ok()) {
+        LOG(ERROR) << "MultiGet Failed";
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
         return;

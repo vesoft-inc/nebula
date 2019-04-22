@@ -338,7 +338,7 @@ MetaClient::removeRange(std::string segment, std::string start, std::string end)
 folly::Future<StatusOr<TagID>>
 MetaClient::addTag(int32_t spaceId, std::string tagName, std::vector<SchemaColumn> columns) {
     cpp2::AddTagReq req;
-    req.set_space_id(std::move(spaceId));
+    req.set_space_id(spaceId);
     req.set_tag_name(std::move(tagName));
 
     auto schema = assignSchema(std::move(columns));
@@ -496,35 +496,12 @@ nebula::cpp2::Schema MetaClient::assignSchema(std::vector<SchemaColumn> columns)
                 cols.emplace_back(columnDef);
                 break;
             default:
-                // UNKNOWN
+                LOG(ERROR) << "Column type is illegal";
                 break;
         }
     }
     schema.set_columns(std::move(cols));
     return schema;
-}
-
-PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
-                                   const std::unordered_map<
-                                                GraphSpaceID,
-                                                std::shared_ptr<SpaceInfoCache>>& localCache) {
-    PartsMap partMap;
-    for (auto it = localCache.begin(); it != localCache.end(); it++) {
-        auto spaceId = it->first;
-        auto& cache = it->second;
-        auto partsIt = cache->partsOnHost_.find(host);
-        if (partsIt != cache->partsOnHost_.end()) {
-            for (auto& partId : partsIt->second) {
-                auto partAllocIter = cache->partsAlloc_.find(partId);
-                CHECK(partAllocIter != cache->partsAlloc_.end());
-                auto& partM = partMap[spaceId][partId];
-                partM.spaceId_ = spaceId;
-                partM.partId_  = partId;
-                partM.peers_   = partAllocIter->second;
-            }
-        }
-    }
-    return partMap;
 }
 
 std::vector<SchemaColumn> MetaClient::decomposeSchema(nebula::cpp2::Schema schema) {
@@ -572,6 +549,29 @@ std::vector<SchemaColumn> MetaClient::decomposeSchema(nebula::cpp2::Schema schem
         }
     }
     return result;
+}
+
+PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
+                                   const std::unordered_map<
+                                                GraphSpaceID,
+                                                std::shared_ptr<SpaceInfoCache>>& localCache) {
+    PartsMap partMap;
+    for (auto it = localCache.begin(); it != localCache.end(); it++) {
+        auto spaceId = it->first;
+        auto& cache = it->second;
+        auto partsIt = cache->partsOnHost_.find(host);
+        if (partsIt != cache->partsOnHost_.end()) {
+            for (auto& partId : partsIt->second) {
+                auto partAllocIter = cache->partsAlloc_.find(partId);
+                CHECK(partAllocIter != cache->partsAlloc_.end());
+                auto& partM = partMap[spaceId][partId];
+                partM.spaceId_ = spaceId;
+                partM.partId_  = partId;
+                partM.peers_   = partAllocIter->second;
+            }
+        }
+    }
+    return partMap;
 }
 
 PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {

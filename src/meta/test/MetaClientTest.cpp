@@ -282,6 +282,7 @@ TEST(MetaClientTest, DiffTest) {
         ASSERT_EQ(hosts, ret.value());
     }
     {
+        // Test Create Space and List Spaces
         auto ret = client->createSpace("default_space", 9, 1).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
@@ -295,6 +296,14 @@ TEST(MetaClientTest, DiffTest) {
     sleep(FLAGS_load_data_interval_second + 1);
     ASSERT_EQ(2, listener->spaceNum);
     ASSERT_EQ(14, listener->partNum);
+    {
+        // Test Drop Space
+        auto ret = client->dropSpace("default_space_1").get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+    }
+    sleep(FLAGS_load_data_interval_second + 1);
+    ASSERT_EQ(1, listener->spaceNum);
+    ASSERT_EQ(9, listener->partNum);
 }
 
 }  // namespace meta

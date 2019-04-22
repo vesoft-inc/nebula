@@ -12,6 +12,7 @@ namespace meta {
 
 void AddTagProcessor::process(const cpp2::AddTagReq& req) {
     if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
+        LOG(ERROR) << "Add Tag Failed : Space " << req.get_space_id() << " not found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -20,6 +21,7 @@ void AddTagProcessor::process(const cpp2::AddTagReq& req) {
     auto ret = getTag(req.get_tag_name());
     std::vector<kvstore::KV> data;
     if (ret.ok()) {
+        LOG(ERROR) << "Add Tag Failed :" << req.get_tag_name() << "have existed";
         resp_.set_id(to(ret.value(), EntryType::TAG));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
