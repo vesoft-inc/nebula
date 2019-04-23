@@ -39,13 +39,13 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     }
 
     // Get lasted version of tag
-    auto version = MetaServiceUtils::parseTagVersion(iter->key()) - 1;
+    auto version = MetaServiceUtils::parseTagVersion(iter->key()) + 1;
     auto schema = MetaServiceUtils::parseSchema(iter->val());
     auto columns = schema.get_columns();
-    auto tagItems = req.get_tag_items();
-    for (auto tagItem : tagItems) {
-        auto cols = tagItem.get_schema().get_columns();
-        for (auto col : cols) {
+    auto& tagItems = req.get_tag_items();
+    for (auto& tagItem : tagItems) {
+        auto& cols = tagItem.get_schema().get_columns();
+        for (auto& col : cols) {
             auto retCode = alterColumnDefs(columns, col, tagItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(WARNING) << "Alter tag error";
@@ -66,50 +66,45 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
 }
 
 cpp2::ErrorCode AlterTagProcessor::alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
-                                                    nebula::cpp2::ColumnDef col,
-                                                    nebula::cpp2::AlterTagOp op) {
-    auto colName = col.name;
-    for (auto it = cols.begin(); it != cols.end(); ++it) {
-        switch (op) {
-            case nebula::cpp2::AlterTagOp::ADD :
-                // Add columnDef
-                if (colName == it->get_name()) {
-                    LOG(WARNING) << "Tag column existing : " << colName;
+                                                   const nebula::cpp2::ColumnDef col,
+                                                   const cpp2::AlterTagOp op) {
+    switch (op) {
+        case cpp2::AlterTagOp::ADD :
+        {
+            for (auto it = cols.begin(); it != cols.end(); ++it) {
+                if (it->get_name() == col.get_name()) {
+                    LOG(WARNING) << "Tag column existing : " << col.get_name();
                     return cpp2::ErrorCode::E_EXISTED;
                 }
-                break;
-            case nebula::cpp2::AlterTagOp::SET :
-                // Set columnDef
-                if (colName == it->get_name()) {
+            }
+            cols.push_back(std::move(col));
+            return cpp2::ErrorCode::SUCCEEDED;
+        }
+        case cpp2::AlterTagOp::SET :
+        {
+            for (auto it = cols.begin(); it != cols.end(); ++it) {
+                if (col.get_name() == it->get_name()) {
                     *it = col;
                     return cpp2::ErrorCode::SUCCEEDED;
                 }
-                break;
-            case nebula::cpp2::AlterTagOp::DROP :
-                // Drop columnDef
-                if (colName == it->get_name()) {
+            }
+            break;
+        }
+        case cpp2::AlterTagOp::DROP :
+        {
+            for (auto it = cols.begin(); it != cols.end(); ++it) {
+                if (col.get_name() == it->get_name()) {
                     cols.erase(it);
                     return cpp2::ErrorCode::SUCCEEDED;
                 }
-                break;
-            default :
-                return cpp2::ErrorCode::E_UNKNOWN;
-        }
-    }
-    switch (op) {
-        case nebula::cpp2::AlterTagOp::ADD :
-            // Add columnDef
-            cols.push_back(std::move(col));
+            }
             break;
-        case nebula::cpp2::AlterTagOp::SET :
-        case nebula::cpp2::AlterTagOp::DROP :
-            // Set and Drop columnDef
-            LOG(WARNING) << "Tag column not found : " << colName;
-            return cpp2::ErrorCode::E_NOT_FOUND;
+        }
         default :
             return cpp2::ErrorCode::E_UNKNOWN;
     }
-    return cpp2::ErrorCode::SUCCEEDED;
+    LOG(WARNING) << "Tag column not found : " << col.get_name();
+    return cpp2::ErrorCode::E_NOT_FOUND;
 }
 
 

@@ -50,11 +50,6 @@ enum SupportedType {
     // STRUCT = 104,
 } (cpp.enum_strict)
 
-enum AlterTagOp {
-    ADD = 0x01,
-    SET = 0x02,
-    DROP = 0x03
-} (cpp.enum_strict)
 
 struct ValueType {
     1: SupportedType type;

@@ -99,7 +99,7 @@ public:
         return ret;
     }
 
-    static void mockTag(kvstore::KVStore* kv, int32_t tagNum, int64_t version) {
+    static void mockTag(kvstore::KVStore* kv, int32_t tagNum, int64_t version = 0) {
         std::vector<nebula::kvstore::KV> tags;
         int64_t ver = version;
         for (auto t = 0; t < tagNum; t++) {

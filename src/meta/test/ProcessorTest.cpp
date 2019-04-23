@@ -288,7 +288,7 @@ TEST(ProcessorTest, KVOperationTest) {
         // Multi Get Test
         std::vector<std::string> keys;
         for (auto i = 0; i < 2; i++) {
-            keys.emplace_back(std::move(folly::stringPrintf("key_%d", i)));
+            keys.emplace_back(folly::stringPrintf("key_%d", i));
         }
 
         cpp2::MultiGetReq req;
@@ -363,8 +363,7 @@ TEST(ProcessorTest, KVOperationTest) {
 TEST(ProcessorTest, ListOrGetTagsTest) {
     fs::TempDir rootPath("/tmp/ListTagsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto version = std::numeric_limits<int8_t>::max();
-    TestUtils::mockTag(kv.get(), 10, version);
+    TestUtils::mockTag(kv.get(), 10);
 
     // test ListTagsProcessor
     {
@@ -391,7 +390,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
         cpp2::ReadTagReq req;
         req.set_space_id(1);
         req.set_tag_id(0);
-        req.set_version(version);
+        req.set_version(0);
 
         auto* processor = GetTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -413,8 +412,7 @@ TEST(ProcessorTest, RemoveTagTest) {
      fs::TempDir rootPath("/tmp/RemoveTagTest.XXXXXX");
      std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
      ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
-     auto version = std::numeric_limits<int8_t>::max();
-     TestUtils::mockTag(kv.get(), 1, version);
+     TestUtils::mockTag(kv.get(), 1);
       // remove tag processor test
      {
          cpp2::RemoveTagReq req;
@@ -445,8 +443,7 @@ TEST(ProcessorTest, AlterTagTest) {
     fs::TempDir rootPath("/tmp/AlterTagTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
-    auto version = std::numeric_limits<int8_t >::max();
-    TestUtils::mockTag(kv.get(), 1, version);
+    TestUtils::mockTag(kv.get(), 1);
     // Alter tag processor test
     {
         cpp2::AlterTagReq req;
@@ -471,13 +468,13 @@ TEST(ProcessorTest, AlterTagTest) {
         dropSch.columns.emplace_back(std::move(column));
 
         auto addItem = cpp2::AlterTagItem(FRAGILE,
-                                          nebula::cpp2::AlterTagOp::ADD,
+                                          cpp2::AlterTagOp::ADD,
                                           std::move(addSch));
         auto setItem = cpp2::AlterTagItem(FRAGILE,
-                                          nebula::cpp2::AlterTagOp::SET,
+                                          cpp2::AlterTagOp::SET,
                                           std::move(setSch));
         auto dropItem = cpp2::AlterTagItem(FRAGILE,
-                                           nebula::cpp2::AlterTagOp::DROP,
+                                           cpp2::AlterTagOp::DROP,
                                            std::move(dropSch));
         items.push_back(std::move(addItem));
         items.push_back(std::move(setItem));
@@ -503,10 +500,10 @@ TEST(ProcessorTest, AlterTagTest) {
         auto tags = resp.get_tags();
         ASSERT_EQ(2, tags.size());
         // TagItems in vector are unordered.So need to get the latest one by comparing the versions.
-        auto tag = tags[0].version < version ? tags[0] : tags[1];
+        auto tag = tags[0].version > 0 ? tags[0] : tags[1];
         EXPECT_EQ(0, tag.get_tag_id());
         EXPECT_EQ(folly::stringPrintf("tag_%d", 0), tag.get_tag_name());
-        EXPECT_EQ(version - 1, tag.version);
+        EXPECT_EQ(1, tag.version);
 
         nebula::cpp2::Schema schema;
         decltype(schema.columns) cols;
@@ -536,7 +533,7 @@ TEST(ProcessorTest, AlterTagTest) {
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
         auto addItem = cpp2::AlterTagItem(FRAGILE,
-                                          nebula::cpp2::AlterTagOp::ADD,
+                                          cpp2::AlterTagOp::ADD,
                                           std::move(addSch));
         items.push_back(std::move(addItem));
         req.set_space_id(1);
@@ -558,7 +555,7 @@ TEST(ProcessorTest, AlterTagTest) {
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
         auto addItem = cpp2::AlterTagItem(FRAGILE,
-                                          nebula::cpp2::AlterTagOp::SET,
+                                          cpp2::AlterTagOp::SET,
                                           std::move(addSch));
         items.push_back(std::move(addItem));
         req.set_space_id(1);
@@ -579,7 +576,7 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = "tag_0_col_2";
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
-        auto addItem = cpp2::AlterTagItem(FRAGILE, nebula::cpp2::AlterTagOp::DROP, addSch);
+        auto addItem = cpp2::AlterTagItem(FRAGILE, cpp2::AlterTagOp::DROP, std::move(addSch));
         items.push_back(addItem);
         req.set_space_id(1);
         req.set_tag_name("tag_0");

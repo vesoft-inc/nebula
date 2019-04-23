@@ -25,12 +25,11 @@ void AddTagProcessor::process(const cpp2::WriteTagReq& req) {
         return;
     }
     std::vector<kvstore::KV> data;
-    auto version = std::numeric_limits<int8_t>::max();
     TagID tagId = autoIncrementId();
     data.emplace_back(MetaServiceUtils::indexKey(EntryType::TAG, req.get_tag_name()),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
     LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId;
-    data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),
+    data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, 0),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));

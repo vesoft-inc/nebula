@@ -25,8 +25,8 @@ private:
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
     cpp2::ErrorCode alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
-                                     nebula::cpp2::ColumnDef col,
-                                     nebula::cpp2::AlterTagOp op);
+                                    const nebula::cpp2::ColumnDef col,
+                                    const cpp2::AlterTagOp op);
 };
 
 }  // namespace meta

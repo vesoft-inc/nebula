@@ -33,6 +33,14 @@ enum ErrorCode {
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
 
+
+enum AlterTagOp {
+    ADD = 0x01,
+    SET = 0x02,
+    DROP = 0x03
+} (cpp.enum_strict)
+
+
 union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
@@ -52,12 +60,12 @@ struct Pair {
 struct TagItem {
     1: common.TagID         tag_id,
     2: string               tag_name,
-    3: byte                 version,
+    3: i64                  version,
     4: common.Schema        schema,
 }
 
 struct AlterTagItem {
-    1: common.AlterTagOp    op,
+    1: AlterTagOp           op,
     2: common.Schema        schema,
 }
 
@@ -132,7 +140,7 @@ struct ListTagsResp {
 struct ReadTagReq {
     1: common.GraphSpaceID space_id,
     2: common.TagID        tag_id,
-    3: byte                version,
+    3: i64                 version,
 }
 
 struct GetTagResp {
