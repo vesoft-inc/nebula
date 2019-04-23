@@ -37,7 +37,7 @@ void FileBasedSchemaManager::readOneGraphSpace(GraphSpaceID space, const Configu
         CHECK(edgeConf.forEachItem([space, this] (const std::string& name,
                                                   const folly::dynamic& versions) {
             CHECK(versions.isArray());
-            auto type = this->toEdgeType(name);
+            auto type = this->toEdgeType(space, name);
             for (auto& edge : versions) {
                 auto schema = this->readSchema(edge);
                 if (!schema) {
@@ -55,7 +55,7 @@ void FileBasedSchemaManager::readOneGraphSpace(GraphSpaceID space, const Configu
         CHECK(tagConf.forEachItem([space, this] (const std::string& name,
                                                  const folly::dynamic& versions) {
             CHECK(versions.isArray());
-            auto id = this->toTagID(name);
+            auto id = this->toTagID(space, name);
             for (auto& tag : versions) {
                 auto schema = this->readSchema(tag);
                 if (!schema) {
@@ -150,6 +150,34 @@ GraphSpaceID FileBasedSchemaManager::toGraphSpaceID(folly::StringPiece spaceName
         return ret.value();
     }
     return AdHocSchemaManager::toGraphSpaceID(spaceName);
+}
+
+TagID FileBasedSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {
+    if (FLAGS_graph_id_from_server) {
+        std::call_once(initFlag, [this]() {
+            client_ = std::make_unique<MetaClient>();
+            client_->init();
+        });
+        auto tagStr = tagName.str();
+        auto ret = client_->getTagIDByNameFromCache(space, tagStr);
+        CHECK(ret.ok());
+        return ret.value();
+    }
+    return AdHocSchemaManager::toTagID(space, tagName);
+}
+
+EdgeType FileBasedSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
+    if (FLAGS_graph_id_from_server) {
+        std::call_once(initFlag, [this]() {
+            client_ = std::make_unique<MetaClient>();
+            client_->init();
+        });
+        auto typeStr = typeName.str();
+        auto ret = client_->getEdgeTypeByNameFromCache(space, typeStr);
+        CHECK(ret.ok());
+        return ret.value();
+    }
+    return AdHocSchemaManager::toEdgeType(space, typeName);
 }
 
 }  // namespace meta

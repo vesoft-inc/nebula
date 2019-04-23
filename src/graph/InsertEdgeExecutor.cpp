@@ -27,7 +27,7 @@ Status InsertEdgeExecutor::prepare() {
 
     auto space = ectx()->rctx()->session()->space();
     overwritable_ = sentence_->overwritable();
-    edge_ = ectx()->schemaManager()->toEdgeType(*sentence_->edge(), space);
+    edge_ = ectx()->schemaManager()->toEdgeType(space, *sentence_->edge());
     properties_ = sentence_->properties();
     rows_ = sentence_->rows();
     schema_ = ectx()->schemaManager()->getEdgeSchema(space, edge_);

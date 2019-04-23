@@ -16,6 +16,7 @@ namespace meta {
 
 class NebulaSchemaProvider : public SchemaProviderIf {
     friend class FileBasedSchemaManager;
+    friend class MetaClient;
 public:
     class SchemaField final : public SchemaProviderIf::Field {
     public:

@@ -50,9 +50,9 @@ public:
 
     GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) override;
 
-    TagID toTagID(folly::StringPiece tagName, GraphSpaceID space = -1) override;
+    TagID toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
-    EdgeType toEdgeType(folly::StringPiece typeName, GraphSpaceID space = -1) override;
+    EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
     void setMetaClient(MetaClient *client) override {
         metaClient_ = client;

@@ -22,14 +22,18 @@ namespace meta {
 
 using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAddr>>;
 using SpaceIdName = std::pair<GraphSpaceID, std::string>;
+
+// struct for in cache
 using TagIDSchemas = std::unordered_map<TagID, std::map<int32_t,
             std::shared_ptr<const SchemaProviderIf>>>;
 using EdgeTypeSchemas = std::unordered_map<EdgeType, std::map<int32_t,
             std::shared_ptr<const SchemaProviderIf>>>;
-using TagNameIDSchemas = std::unordered_map<std::pair<TagID, std::string>, std::map<int32_t,
-            std::shared_ptr<const SchemaProviderIf>>>;
-using EdgeNameTypeSchemas = std::unordered_map<std::pair<EdgeType, std::string>, std::map<int32_t,
-            std::shared_ptr<const SchemaProviderIf>>>;
+
+// struct for list interface
+using TagNameIDSchemas = std::unordered_map<std::pair<TagID, std::string>,
+            std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>;
+using EdgeNameTypeSchemas = std::unordered_map<std::pair<EdgeType, std::string>,
+            std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>;
 
 struct SpaceInfoCache {
     std::string spaceName;
@@ -40,7 +44,10 @@ struct SpaceInfoCache {
 };
 
 using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;
-using SpaceTagNameIdMap = std::unordered_map<GraphSpaceID, std::unordered_map<std::string, TagID>>;
+// get tagID via spaceId and tagName
+using SpaceTagNameIdMap = std::unordered_map<GraphSpaceID,
+                                             std::unordered_map<std::string, TagID>>;
+// get edgeType via spaceId and edgeName
 using SpaceEdgeNameTypeMap = std::unordered_map<GraphSpaceID,
                                                 std::unordered_map<std::string, EdgeType>>;
 
@@ -93,22 +100,23 @@ public:
 
     // TODO(Laura) : We can actively update the cache once we add the schema
     folly::Future<StatusOr<bool>> addTagSchema(GraphSpaceID spaceId, std::string name,
-                                               std::shared_ptr<SchemaProviderIf> schema);
+                                               nebula::cpp2::Schema schema);
 
     folly::Future<StatusOr<TagNameIDSchemas>> listTagSchemas(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
     folly::Future<StatusOr<bool>> addEdgeSchema(GraphSpaceID spaceId, std::string name,
-                                                std::shared_ptr<SchemaProviderIf> schema);
+                                                nebula::cpp2::Schema schema);
 
     folly::Future<StatusOr<EdgeNameTypeSchemas>> listEdgeSchemas(GraphSpaceID spaceId);
 
     // These are the interfaces about cache opeartions.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
-    StatusOr<TagID> getTagTDByNameFromCache(GraphSpaceID sapce, const std::string& name);
+    StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& sapce, const std::string& name);
 
-    StatusOr<EdgeType> getEdgeTypeByNameFromCache(GraphSpaceID sapce, const std::string& name);
+    StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& sapce,
+                                                  const std::string& name);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 

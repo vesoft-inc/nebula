@@ -25,7 +25,7 @@ void AddEdgeProcessor::process(const cpp2::WriteEdgeReq& req) {
         onFinished();
         return;
     }
-    auto version = time::TimeUtils::nowInMSeconds();
+    auto version = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInMSeconds();
     EdgeType edgeType = autoIncrementId();
     data.emplace_back(MetaServiceUtils::indexKey(EntryType::EDGE, req.get_edge_name()),
                       std::string(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType)));

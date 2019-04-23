@@ -53,6 +53,6 @@ add_dependencies(
     base_obj
     meta_thrift_obj
     common_thrift_obj
-    dataman_obj)
+    schema_obj)
 
 add_subdirectory(test)

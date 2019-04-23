@@ -25,7 +25,7 @@ Status DescribeTagExecutor::prepare() {
 void DescribeTagExecutor::execute() {
     auto *name = sentence_->name();
     auto space = ectx()->rctx()->session()->space();
-    auto tagId = ectx()->schemaManager()->toTagID(*name, space);
+    auto tagId = ectx()->schemaManager()->toTagID(space, *name);
     auto schema = ectx()->schemaManager()->getTagSchema(space, tagId);
 
     resp_ = std::make_unique<cpp2::ExecutionResponse>();

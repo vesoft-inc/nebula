@@ -7,7 +7,7 @@
 #include "meta/common/MetaCommon.h"
 #include "meta/client/MetaClient.h"
 #include "network/NetworkUtils.h"
-#include "dataman/ResultSchemaProvider.h"
+#include "meta/NebulaSchemaProvider.h"
 
 DEFINE_int32(load_data_interval_second, 2 * 60, "Load data interval, unit: second");
 DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
@@ -282,7 +282,7 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
     return Status::SpaceNotFound();
 }
 
-StatusOr<TagID> MetaClient::getTagTDByNameFromCache(GraphSpaceID space,
+StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
                                                     const std::string& name) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceTagIndexByName_.find(space);
@@ -297,7 +297,7 @@ StatusOr<TagID> MetaClient::getTagTDByNameFromCache(GraphSpaceID space,
     return Status::Error("Tag is not exist!");;
 }
 
-StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(GraphSpaceID space,
+StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                           const std::string& name) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceEdgeIndexByName_.find(space);
@@ -586,21 +586,12 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::addTagSchema(GraphSpaceID spaceId, std::string name,
-                         std::shared_ptr<SchemaProviderIf> schema) {
+MetaClient::addTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
     cpp2::WriteTagReq req;
     req.set_space_id(std::move(spaceId));
     req.set_tag_name(std::move(name));
-    nebula::cpp2::Schema tempSchema;
-    uint32_t numFields = schema->getNumFields();
+    req.set_schema(std::move(schema));
 
-    for (uint32_t index = 0; index < numFields; index++) {
-        nebula::cpp2::ColumnDef column;
-        column.name = std::move(schema->getFieldName(index));
-        column.type = schema->getFieldType(index);
-        tempSchema.columns.emplace_back(std::move(column));
-    }
-    req.set_schema(tempSchema);
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_addTag(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
@@ -615,31 +606,26 @@ folly::Future<StatusOr<TagNameIDSchemas>> MetaClient::listTagSchemas(GraphSpaceI
         return client->future_listTags(request);
     }, [this] (cpp2::ListTagsResp&& resp) -> decltype(auto){
         TagNameIDSchemas tagNameIDSchemas;
-        for (auto it = resp.get_tags().begin(); it != resp.get_tags().end(); it++) {
-            tagNameIDSchemas[std::make_pair(it->tag_id, it->tag_name)].emplace(it->version,
-            std::shared_ptr<meta::SchemaProviderIf>(new ResultSchemaProvider(it->schema)));
+        for (auto& it : resp.get_tags()) {
+            std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider());
+            for (auto& colIt : it.schema.get_columns()) {
+                schema->fields_.push_back(
+                    std::make_shared<NebulaSchemaProvider::SchemaField>(colIt.name, colIt.type));
+                schema->fieldNameIndex_.emplace(colIt.name,
+                                            static_cast<int64_t>(schema->fields_.size() - 1));
+            }
+            tagNameIDSchemas[std::make_pair(it.tag_id, it.tag_name)].emplace(it.version, schema);
         }
         return tagNameIDSchemas;
     });
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::addEdgeSchema(GraphSpaceID spaceId, std::string name,
-                          std::shared_ptr<SchemaProviderIf> schema) {
+MetaClient::addEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
     cpp2::WriteEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
-    nebula::cpp2::Schema tempSchema;
-    uint32_t numFields = schema->getNumFields();
-
-    for (uint32_t index = 0; index < numFields; index++) {
-        nebula::cpp2::ColumnDef column;
-        column.name = std::move(schema->getFieldName(index));
-        column.type = schema->getFieldType(index);
-        tempSchema.columns.emplace_back(std::move(column));
-    }
-
-    req.set_schema(tempSchema);
+    req.set_schema(schema);
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_addEdge(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
@@ -655,9 +641,16 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
         return client->future_listEdges(request);
     }, [this] (cpp2::ListEdgesResp&& resp) -> decltype(auto) {
        EdgeNameTypeSchemas edgeNameTypeSchemas;
-        for (auto it = resp.get_edges().begin(); it != resp.get_edges().end(); it++) {
-            edgeNameTypeSchemas[std::make_pair(it->edge_type, it->edge_name)].emplace(it->version,
-            std::shared_ptr<meta::SchemaProviderIf>(new ResultSchemaProvider(it->schema)));
+        for (auto& it : resp.get_edges()) {
+            std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider());
+            for (auto& colIt : it.schema.get_columns()) {
+                schema->fields_.push_back(
+                    std::make_shared<NebulaSchemaProvider::SchemaField>(colIt.name, colIt.type));
+                schema->fieldNameIndex_.emplace(colIt.name,
+                                            static_cast<int64_t>(schema->fields_.size() - 1));
+            }
+            edgeNameTypeSchemas[std::make_pair(it.edge_type,
+                                               it.edge_name)].emplace(it.version, schema);
         }
         return edgeNameTypeSchemas;
     });

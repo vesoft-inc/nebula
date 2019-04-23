@@ -49,7 +49,8 @@ std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getTagSchema(
         folly::StringPiece spaceName,
         folly::StringPiece tagName,
         int32_t ver) {
-    return getTagSchema(toGraphSpaceID(spaceName), toTagID(tagName), ver);
+    auto space = toGraphSpaceID(spaceName);
+    return getTagSchema(space, toTagID(space, tagName), ver);
 }
 
 std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getTagSchema(
@@ -84,7 +85,8 @@ std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getTagSchema(
 
 int32_t AdHocSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
                                                   folly::StringPiece tagName) {
-    return getNewestTagSchemaVer(toGraphSpaceID(spaceName), toTagID(tagName));
+    auto space = toGraphSpaceID(spaceName);
+    return getNewestTagSchemaVer(space, toTagID(space, tagName));
 }
 
 int32_t AdHocSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
@@ -103,7 +105,8 @@ std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getEdgeSchema(
         folly::StringPiece spaceName,
         folly::StringPiece typeName,
         int32_t ver) {
-    return getEdgeSchema(toGraphSpaceID(spaceName), toEdgeType(typeName), ver);
+    auto space = toGraphSpaceID(spaceName);
+    return getEdgeSchema(space, toEdgeType(space, typeName), ver);
 }
 
 std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getEdgeSchema(
@@ -138,7 +141,8 @@ std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getEdgeSchema(
 
 int32_t AdHocSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceName,
                                                    folly::StringPiece typeName) {
-    return getNewestEdgeSchemaVer(toGraphSpaceID(spaceName), toEdgeType(typeName));
+    auto space = toGraphSpaceID(spaceName);
+    return getNewestEdgeSchemaVer(space, toEdgeType(space, typeName));
 }
 
 int32_t AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) {
@@ -158,12 +162,12 @@ GraphSpaceID AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
     return folly::hash::fnv32_buf(spaceName.start(), spaceName.size());
 }
 
-TagID AdHocSchemaManager::toTagID(folly::StringPiece tagName, GraphSpaceID space) {
+TagID AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {
     UNUSED(space);
     return folly::hash::fnv32_buf(tagName.start(), tagName.size());
 }
 
-EdgeType AdHocSchemaManager::toEdgeType(folly::StringPiece typeName, GraphSpaceID space) {
+EdgeType AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
     UNUSED(space);
     return folly::hash::fnv32_buf(typeName.start(), typeName.size());
 }

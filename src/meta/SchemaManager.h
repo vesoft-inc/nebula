@@ -48,10 +48,10 @@ public:
     virtual GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) = 0;
 
     // ServerBasedSchemaManager need space to get tagID
-    virtual TagID toTagID(folly::StringPiece tagName, GraphSpaceID space = -1) = 0;
+    virtual TagID toTagID(GraphSpaceID space, folly::StringPiece tagName) = 0;
 
     // ServerBasedSchemaManager need space to get Edge
-    virtual EdgeType toEdgeType(folly::StringPiece typeName, GraphSpaceID space = -1) = 0;
+    virtual EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) = 0;
 
     // storageclient also use metaClient
     virtual void setMetaClient(MetaClient *client) = 0;
@@ -104,9 +104,9 @@ public:
 
     virtual GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName);
 
-    TagID toTagID(folly::StringPiece tagName, GraphSpaceID space = -1) override;
+    TagID toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
-    EdgeType toEdgeType(folly::StringPiece typeName, GraphSpaceID space = -1) override;
+    EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
     void setMetaClient(MetaClient *client) override { UNUSED(client); }
 

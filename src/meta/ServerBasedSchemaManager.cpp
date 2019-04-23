@@ -26,7 +26,7 @@ ServerBasedSchemaManager::getTagSchema(folly::StringPiece spaceName,
                                        folly::StringPiece tagName,
                                        int32_t ver) {
     auto space = toGraphSpaceID(spaceName);
-    return getTagSchema(space, toTagID(tagName, space), ver);
+    return getTagSchema(space, toTagID(space, tagName), ver);
 }
 
 // Returns a negative number when the schema does not exist
@@ -43,7 +43,7 @@ int32_t ServerBasedSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagI
 int32_t ServerBasedSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
                                                         folly::StringPiece tagName) {
     auto space = toGraphSpaceID(spaceName);
-    return getNewestTagSchemaVer(space, toTagID(tagName, space));
+    return getNewestTagSchemaVer(space, toTagID(space, tagName));
 }
 
 std::shared_ptr<const SchemaProviderIf>
@@ -62,7 +62,7 @@ std::shared_ptr<const SchemaProviderIf> ServerBasedSchemaManager::getEdgeSchema(
         folly::StringPiece typeName,
         int32_t ver) {
     auto space = toGraphSpaceID(spaceName);
-    return getEdgeSchema(space, toEdgeType(typeName, space), ver);
+    return getEdgeSchema(space, toEdgeType(space, typeName), ver);
 }
 
 // Returns a negative number when the schema does not exist
@@ -80,7 +80,7 @@ int32_t ServerBasedSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space,
 int32_t ServerBasedSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceName,
                                                          folly::StringPiece typeName) {
     auto space = toGraphSpaceID(spaceName);
-    return getNewestEdgeSchemaVer(space, toEdgeType(typeName, space));
+    return getNewestEdgeSchemaVer(space, toEdgeType(space, typeName));
 }
 
 GraphSpaceID ServerBasedSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
@@ -92,17 +92,18 @@ GraphSpaceID ServerBasedSchemaManager::toGraphSpaceID(folly::StringPiece spaceNa
     return -1;
 }
 
-TagID ServerBasedSchemaManager::toTagID(folly::StringPiece tagName, GraphSpaceID space) {
+TagID ServerBasedSchemaManager::toTagID(GraphSpaceID space,
+                                        folly::StringPiece tagName) {
     CHECK(metaClient_);
-    auto ret = metaClient_->getTagTDByNameFromCache(space, tagName.str());
+    auto ret = metaClient_->getTagIDByNameFromCache(space, tagName.str());
     if (ret.ok()) {
         return ret.value();
     }
     return -1;
 }
 
-EdgeType ServerBasedSchemaManager::toEdgeType(folly::StringPiece typeName,
-                                              GraphSpaceID space) {
+EdgeType ServerBasedSchemaManager::toEdgeType(GraphSpaceID space,
+                                              folly::StringPiece typeName) {
     CHECK(metaClient_);
     auto ret = metaClient_->getEdgeTypeByNameFromCache(space, typeName.str());
     if (ret.ok()) {

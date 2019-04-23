@@ -73,8 +73,7 @@ TEST(MetaClientTest, InterfacesTest) {
                 column.type.type = nebula::cpp2::SupportedType::STRING;
                 schema.columns.emplace_back(std::move(column));
             }
-            auto ret = client->addTagSchema(spaceId, "tagName",
-            std::shared_ptr<SchemaProviderIf>(new ResultSchemaProvider(std::move(schema)))).get();
+            auto ret = client->addTagSchema(spaceId, "tagName", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
         {
@@ -86,9 +85,7 @@ TEST(MetaClientTest, InterfacesTest) {
                 column.type.type = nebula::cpp2::SupportedType::STRING;
                 schema.columns.emplace_back(std::move(column));
             }
-            auto ret = client->addEdgeSchema(spaceId, "edgeName",
-            std::shared_ptr<SchemaProviderIf>(
-                            new nebula::ResultSchemaProvider(std::move(schema)))).get();
+            auto ret = client->addEdgeSchema(spaceId, "edgeName", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
         {
