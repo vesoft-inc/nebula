@@ -228,6 +228,12 @@ TEST_F(SchemaTest, metaCommunication) {
         client->execute(query, resp);
         ASSERT_EQ(0, (*(resp.get_rows())).size());
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "refresh cache";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
 }
 
 }   // namespace graph

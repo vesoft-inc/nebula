@@ -76,7 +76,7 @@ class GraphScanner;
 %token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_REFRESH KW_CACHE
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -139,6 +139,7 @@ class GraphScanner;
 %type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
+%type <sentence> refresh_cache_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -868,6 +869,12 @@ drop_space_sentence
     }
     ;
 
+refresh_cache_sentence
+    : KW_REFRESH KW_CACHE {
+        $$ = new RefreshCacheSentence();
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -894,6 +901,7 @@ maintain_sentence
         // In the future, we might make it able to be used in pipe.
         $$ = $1;
     }
+    | refresh_cache_sentence { $$ = $1; }
     ;
 
 sentence

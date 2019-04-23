@@ -28,6 +28,7 @@
 #include "graph/CreateSpaceExecutor.h"
 #include "graph/DropSpaceExecutor.h"
 #include "graph/YieldExecutor.h"
+#include "graph/RefreshCacheExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -89,6 +90,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kYield:
             executor = std::make_unique<YieldExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kRefreshCache:
+            executor = std::make_unique<RefreshCacheExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

@@ -160,8 +160,12 @@ public:
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
 
+    Status refreshCache() {
+        return loadDataThreadFunc();
+    }
+
 protected:
-    void loadDataThreadFunc();
+    Status loadDataThreadFunc();
 
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,

@@ -69,6 +69,8 @@ PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm
 REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
 DROP                        ([Dd][Rr][Oo][Pp])
 REMOVE                      ([Rr][Ee][Mm][Oo][Vv][Ee])
+REFRESH                     ([Rr][Ee][Ff][Rr][Ee][Ss][Hh])
+CACHE                       ([Cc][Aa][Cc][Hh][Ee])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -130,6 +132,8 @@ OCT                         ([0-7])
 {REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
 {DROP}                      { return TokenType::KW_DROP; }
 {REMOVE}                    { return TokenType::KW_REMOVE; }
+{REFRESH}                   { return TokenType::KW_REFRESH; }
+{CACHE}                     { return TokenType::KW_CACHE; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

@@ -255,6 +255,63 @@ TEST(MetaClientTest, InterfacesTest) {
     client.reset();
 }
 
+
+TEST(MetaClientTest, RefreshCacheTest) {
+    FLAGS_load_data_interval_second = 1*60;
+    fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
+    auto sc = TestUtils::mockServer(10001, rootPath.path());
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    uint32_t localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto client = std::make_shared<MetaClient>(threadPool,
+                                               std::vector<HostAddr>{HostAddr(localIp, 10001)});
+    client->init();
+    {
+        // Test addHost, listHosts interface.
+        std::vector<HostAddr> hosts = {{0, 0}};
+        auto r = client->addHosts(hosts).get();
+        ASSERT_TRUE(r.ok());
+        auto ret = client->listHosts().get();
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(hosts, ret.value());
+    }
+    {
+        auto ret = client->createSpace("default_space", 9, 3).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+    }
+    {
+        auto ret = client->listSpaces().get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+        ASSERT_EQ(1, ret.value().size());
+        ASSERT_EQ(1, ret.value()[0].first);
+        ASSERT_EQ("default_space", ret.value()[0].second);
+    }
+    {
+        auto ret = client->getSpaceIdByNameFromCache("default_space");
+        ASSERT_FALSE(ret.ok());
+        ASSERT_EQ(Status::SpaceNotFound(), ret.status());
+    }
+    client->refreshCache();
+    {
+        auto ret = client->getSpaceIdByNameFromCache("default_space");
+        ASSERT_TRUE(ret.ok()) << ret.status();
+        ASSERT_EQ(1, ret.value());
+    }
+    {
+        auto ret = client->createSpace("my_space", 9, 3).get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+    }
+    sleep(FLAGS_load_data_interval_second + 1);
+    {
+        auto ret = client->getSpaceIdByNameFromCache("my_space");
+        ASSERT_TRUE(ret.ok()) << ret.status();
+        ASSERT_EQ(2, ret.value());
+    }
+    client.reset();
+}
+
+
 class TestListener : public MetaChangedListener {
 public:
     void onSpaceAdded(GraphSpaceID spaceId) override {

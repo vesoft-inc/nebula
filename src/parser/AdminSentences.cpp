@@ -99,4 +99,9 @@ std::string DropSpaceSentence::toString() const {
     return buf;
 }
 
+
+std::string RefreshCacheSentence::toString() const {
+    return std::string("REFRESH CACHE");
+}
+
 }   // namespace nebula

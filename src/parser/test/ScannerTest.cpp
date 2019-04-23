@@ -237,6 +237,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("REMOVE", TokenType::KW_REMOVE),
         CHECK_SEMANTIC_TYPE("remove", TokenType::KW_REMOVE),
         CHECK_SEMANTIC_TYPE("Remove", TokenType::KW_REMOVE),
+        CHECK_SEMANTIC_TYPE("REFRESH", TokenType::KW_REFRESH),
+        CHECK_SEMANTIC_TYPE("refresh", TokenType::KW_REFRESH),
+        CHECK_SEMANTIC_TYPE("Refresh", TokenType::KW_REFRESH),
+        CHECK_SEMANTIC_TYPE("CACHE", TokenType::KW_CACHE),
+        CHECK_SEMANTIC_TYPE("cache", TokenType::KW_CACHE),
+        CHECK_SEMANTIC_TYPE("Cache", TokenType::KW_CACHE),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

@@ -234,6 +234,16 @@ private:
     std::unique_ptr<std::string>     spaceName_;
 };
 
+
+class RefreshCacheSentence final : public Sentence {
+public:
+    RefreshCacheSentence() {
+        kind_ = Kind::kRefreshCache;
+    }
+
+    std::string toString() const override;
+};
+
 }   // namespace nebula
 
 #endif  // PARSER_ADMINSENTENCES_H_

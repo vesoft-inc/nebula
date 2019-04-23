@@ -63,11 +63,11 @@ void MetaClient::init() {
                                  &MetaClient::loadDataThreadFunc, this);
 }
 
-void MetaClient::loadDataThreadFunc() {
+Status MetaClient::loadDataThreadFunc() {
     auto ret = listSpaces().get();
     if (!ret.ok()) {
-        LOG(ERROR) << "List space failed, status:" << ret.status();
-        return;
+        LOG(ERROR) << "List space failed!";
+        return Status::Error("List space failed!");
     }
     decltype(localCache_) cache;
     decltype(spaceIndexByName_) spaceIndexByName;
@@ -80,9 +80,8 @@ void MetaClient::loadDataThreadFunc() {
         auto spaceId = space.first;
         auto r = getPartsAlloc(spaceId).get();
         if (!r.ok()) {
-            LOG(ERROR) << "Get parts allocaction failed for spaceId " << spaceId
-                       << ", status " << r.status();
-            return;
+            LOG(ERROR) << "Get parts allocaction failed for spaceId " << spaceId;
+            return Status::Error("Get parts allocaction failed for spaceId");
         }
 
         auto spaceCache = std::make_shared<SpaceInfoCache>();
@@ -116,6 +115,7 @@ void MetaClient::loadDataThreadFunc() {
         spaceNewestEdgeVerMap_ = std::move(spaceNewestEdgeVerMap);
     }
     LOG(INFO) << "Load data completed!";
+    return Status::OK();
 }
 
 bool MetaClient::loadSchemas(GraphSpaceID spaceId,
