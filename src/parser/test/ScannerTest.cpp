@@ -186,6 +186,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("reversely", TokenType::KW_REVERSELY),
         CHECK_SEMANTIC_TYPE("SPACE", TokenType::KW_SPACE),
         CHECK_SEMANTIC_TYPE("space", TokenType::KW_SPACE),
+        CHECK_SEMANTIC_TYPE("SPACES", TokenType::KW_SPACES),
+        CHECK_SEMANTIC_TYPE("spaces", TokenType::KW_SPACES),
         CHECK_SEMANTIC_TYPE("TTL", TokenType::KW_TTL),
         CHECK_SEMANTIC_TYPE("ttl", TokenType::KW_TTL),
         CHECK_SEMANTIC_TYPE("BIGINT", TokenType::KW_BIGINT),
