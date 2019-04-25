@@ -1,5 +1,5 @@
 ## Workflow
-We welcome contributions to Nebula of any kind including documentation, organizaiton, tutorials, blog posts, bug reports, issues, feature requests, feature implementations, pull requests,  helping to manage issues, etc. We created a step by step guide if you're unfamiliar with GitHub or contributing to open source projects in general.
+We welcome contributions to Nebula of any kind including documentation, organizaiton, tutorials, blog posts, bug reports, issues, feature requests, feature implementations, pull requests, helping to manage issues, etc. We created a step by step guide if you're unfamiliar with GitHub or contributing to open source projects in general.
 
 ### Setting Up the Development Environment
 #### Prerequisites
