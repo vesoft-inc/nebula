@@ -28,7 +28,6 @@ enum ErrorCode {
     // KV Failure
     E_STORE_FAILURE          = -31,
     E_STORE_SEGMENT_ILLEGAL  = -32,
-    E_KEY_NOT_FOUND          = -33,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -53,6 +52,13 @@ struct TagItem {
     1: common.TagID         tag_id,
     2: string               tag_name,
     3: i64                  version,
+    4: common.Schema        schema,
+}
+
+struct EdgeItem {
+    1: common.EdgeType      edge_type,
+    2: string               edge_name,
+    3: i32                  version,
     4: common.Schema        schema,
 }
 
@@ -137,8 +143,8 @@ struct AddEdgeReq {
 }
 
 struct RemoveEdgeReq {
-    1: common.GraphSpaceID space_id,
-    2: common.EdgeType     edge_type,
+    1: string   space_name,
+    2: string   edge_name,
 }
 
 struct ListEdgesReq {
@@ -149,17 +155,18 @@ struct ListEdgesResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<IdName> edges,
+    3: list<EdgeItem> edges,
 }
 
 struct GetEdgeReq {
-    1: common.GraphSpaceID space_id,
-    2: common.EdgeType     edge_type,
-    3: i64                 version,
+    1: string  space_name,
+    2: string  edge_name,
+    3: i64     version,
 }
 
 struct GetEdgeResp {
-    1: common.Schema    schema,
+    1: ErrorCode        code,
+    2: common.Schema    schema,
 }
 
 // Host related operations.

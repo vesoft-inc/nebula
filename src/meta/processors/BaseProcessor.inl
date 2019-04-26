@@ -21,6 +21,17 @@ void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
 }
 
 template<typename RESP>
+StatusOr<std::unique_ptr<kvstore::KVIterator>>
+BaseProcessor<RESP>::doPrefix(const std::string& key) {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, key, &iter);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        return Status::Error("Prefix Failed");
+    }
+    return iter;
+}
+
+template<typename RESP>
 StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
     std::string value;
     auto code = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_,
@@ -123,7 +134,7 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, kIdKey, &val);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        CHECK_EQ(ret, kvstore::ResultCode::ERR_KEY_NOT_FOUND);
+        CHECK_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
         id = 1;
     } else {
         id = *reinterpret_cast<const int32_t*>(val.c_str()) + 1;
@@ -182,6 +193,16 @@ StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) 
         return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
     }
     return Status::SpaceNotFound();
+}
+
+template<typename RESP>
+StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId, const std::string& name) {
+    auto indexKey = MetaServiceUtils::edgeIndexKey(spaceId, name);
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const EdgeType*>(ret.value().c_str());
+    }
+    return Status::EdgeNotFound();
 }
 
 }  // namespace meta

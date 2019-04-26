@@ -119,6 +119,11 @@ public:
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
 
+    folly::Future<StatusOr<bool>>
+    getEdge(std::string spaceName, std::string edgeName, int32_t version);
+
+    folly::Future<StatusOr<bool>>
+    removeEdge(std::string spaceName, std::string edgeName);
 
 protected:
     void loadDataThreadFunc();

@@ -36,9 +36,17 @@ public:
 GENERATE_LOCK(space);
 GENERATE_LOCK(id);
 GENERATE_LOCK(tag);
+GENERATE_LOCK(edge);
 
 #undef GENERATE_LOCK
 };
+
+#define CHECK_SPACE_ID_AND_RETURN(spaceID) \
+    if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        onFinished(); \
+        return; \
+    }
 
 /**
  * Check segemnt is consist of numbers and letters and should not empty.
@@ -49,6 +57,33 @@ GENERATE_LOCK(tag);
         onFinished(); \
         return; \
     }
+
+/**
+ * Retrieval space ID by space name and will return when it's not found.
+ * */
+#define GET_SPACE_ID_AND_RETURN(spaceName, spaceId) \
+    auto spaceIdResult = getSpaceId(spaceName); \
+    if (!spaceIdResult.ok()) { \
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        onFinished(); \
+        return; \
+    } else { \
+        spaceId = spaceIdResult.value(); \
+    }
+
+/**
+ *
+ * */
+#define GET_EDGE_TYPE_AND_RETURN(spaceId, edgeName, edgeType) \
+    auto edgeTypeResult = getEdgeType(spaceId, edgeName); \
+    if (!edgeTypeResult.ok()) { \
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        onFinished(); \
+        return; \
+    } else { \
+        edgeType = edgeTypeResult.value(); \
+    }
+
 
 #define MAX_VERSION_HEX 0x7FFFFFFFFFFFFFFF
 #define MIN_VERSION_HEX 0x0000000000000000
@@ -120,6 +155,8 @@ protected:
      * */
     void doPut(std::vector<kvstore::KV> data);
 
+    StatusOr<std::unique_ptr<kvstore::KVIterator>> doPrefix(const std::string& key);
+
     /**
      * General get function.
      * */
@@ -172,9 +209,14 @@ protected:
     Status hostsExist(const std::vector<std::string>& name);
 
     /**
-     * Return the spaceId for name.
+     * Return the spaceId from name.
      * */
     StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
+
+     /**
+     * Return the edgeType from name.
+     * */
+    StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

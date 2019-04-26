@@ -56,6 +56,8 @@ public:
 
     static std::string schemaEdgeVal(nebula::cpp2::Schema schema);
 
+    static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
+
     static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version);
 
     static std::string schemaTagsPrefix(GraphSpaceID spaceId);
@@ -65,6 +67,8 @@ public:
     static nebula::cpp2::Schema parseSchema(folly::StringPiece rawData);
 
     static std::string indexKey(EntryType type, const std::string& name);
+
+    static std::string edgeIndexKey(GraphSpaceID spaceId, const std::string& name);
 
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 };

@@ -18,9 +18,7 @@ public:
         return new AddEdgeProcessor(kvstore);
     }
 
-    void process(const cpp2::AddEdgeReq& req) {
-        UNUSED(req);
-    }
+    void process(const cpp2::AddEdgeReq& req);
 
 private:
     explicit AddEdgeProcessor(kvstore::KVStore* kvstore)

@@ -23,9 +23,7 @@ public:
         return new ListEdgesProcessor(kvstore);
     }
 
-    void process(const cpp2::ListEdgesReq& req) {
-        UNUSED(req);
-    }
+    void process(const cpp2::ListEdgesReq& req);
 
 private:
     explicit ListEdgesProcessor(kvstore::KVStore* kvstore)
