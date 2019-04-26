@@ -525,10 +525,11 @@ bool FileBasedWal::rollbackToLog(LogID id) {
     std::lock_guard<std::mutex> flushGuard(flushMutex_);
     bool foundTarget{false};
 
-    if (id < firstLogId_) {
+    if (id < firstLogId_ || id > lastLogId_) {
         LOG(ERROR) << "Rollback target id " << id
-                   << " is before the first log id in WAL (which is "
-                   << firstLogId_ << ")";
+                   << " is not in the range of ["
+                   << firstLogId_ << ","
+                   << lastLogId_ << "] of WAL";
         return false;
     }
 
@@ -571,7 +572,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
     }
 
     int fd{-1};
-    if (!foundTarget) {
+    while (!foundTarget) {
         LOG(WARNING) << "Need to rollback from files."
                         " This is an expensive operation."
                         " Please make sure it is correct and necessary";
@@ -580,6 +581,12 @@ bool FileBasedWal::rollbackToLog(LogID id) {
         closeCurrFile();
 
         std::lock_guard<std::mutex> g(walFilesMutex_);
+        if (walFiles_.empty()) {
+            CHECK_EQ(id, 0);
+            foundTarget = true;
+            lastLogId_ = 0;
+            break;
+        }
 
         auto it = walFiles_.upper_bound(id);
         CHECK(it != walFiles_.end());
@@ -593,13 +600,20 @@ bool FileBasedWal::rollbackToLog(LogID id) {
             it = walFiles_.erase(it);
         }
 
-        CHECK(!walFiles_.empty());
+        if (walFiles_.empty()) {
+            CHECK_EQ(id, 0);
+            foundTarget = true;
+            lastLogId_ = 0;
+            break;
+        }
+
         fd = open(walFiles_.rbegin()->second->path(), O_RDONLY);
         CHECK_GE(fd, 0) << "Failed to open file \""
                         << walFiles_.rbegin()->second->path()
                         << "\" (" << errno << "): "
                         << strerror(errno);
         lastLogId_ = id;
+        break;
     }
 
     // Find the current log entry

@@ -20,7 +20,7 @@ public:
     explicit InMemoryLogBuffer(LogID firstLogId)
         : firstLogId_(firstLogId) {}
 
-    // Push a new message to the end of the buffrt
+    // Push a new message to the end of the buffer
     void push(TermID term, ClusterID cluster, std::string&& msg);
 
     size_t size() const;
@@ -68,7 +68,7 @@ private:
     // A new file will be created for this buffer
     bool rollover_{false};
 
-    // When a buffer is frozen, no futher write will be allowed.
+    // When a buffer is frozen, no further write will be allowed.
     // It's ready to be flushed out
     std::atomic<bool> frozen_{false};
 
