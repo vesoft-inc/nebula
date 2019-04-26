@@ -10,6 +10,7 @@ add_library(nebula_native_client SHARED
             $<TARGET_OBJECTS:storage_thrift_obj>
             $<TARGET_OBJECTS:common_thrift_obj>
             $<TARGET_OBJECTS:thrift_obj>
+	    $<TARGET_OBJECTS:meta_client>
             src/main/cpp/com_vesoft_client_NativeClient.cpp)
 
 
