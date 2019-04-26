@@ -99,13 +99,13 @@ public:
     getPartsAlloc(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<bool>> addTagSchema(GraphSpaceID spaceId, std::string name,
+    folly::Future<StatusOr<TagID>> addTagSchema(GraphSpaceID spaceId, std::string name,
                                                nebula::cpp2::Schema schema);
 
     folly::Future<StatusOr<TagNameIDSchemas>> listTagSchemas(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<bool>> addEdgeSchema(GraphSpaceID spaceId, std::string name,
+    folly::Future<StatusOr<EdgeType>> addEdgeSchema(GraphSpaceID spaceId, std::string name,
                                                 nebula::cpp2::Schema schema);
 
     folly::Future<StatusOr<EdgeNameTypeSchemas>> listEdgeSchemas(GraphSpaceID spaceId);

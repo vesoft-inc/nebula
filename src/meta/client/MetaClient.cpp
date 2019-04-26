@@ -585,7 +585,7 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
     }
 }
 
-folly::Future<StatusOr<bool>>
+folly::Future<StatusOr<TagID>>
 MetaClient::addTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
     cpp2::WriteTagReq req;
     req.set_space_id(std::move(spaceId));
@@ -594,8 +594,8 @@ MetaClient::addTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::S
 
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_addTag(request);
-    }, [] (cpp2::ExecResp&& resp) -> bool {
-        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, [] (cpp2::ExecResp&& resp) -> TagID {
+        return resp.get_id().get_tag_id();
     });
 }
 
@@ -614,13 +614,14 @@ folly::Future<StatusOr<TagNameIDSchemas>> MetaClient::listTagSchemas(GraphSpaceI
                 schema->fieldNameIndex_.emplace(colIt.name,
                                             static_cast<int64_t>(schema->fields_.size() - 1));
             }
+            schema->ver_ = it.version;
             tagNameIDSchemas[std::make_pair(it.tag_id, it.tag_name)].emplace(it.version, schema);
         }
         return tagNameIDSchemas;
     });
 }
 
-folly::Future<StatusOr<bool>>
+folly::Future<StatusOr<EdgeType>>
 MetaClient::addEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
     cpp2::WriteEdgeReq req;
     req.set_space_id(std::move(spaceId));
@@ -628,8 +629,8 @@ MetaClient::addEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::
     req.set_schema(schema);
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_addEdge(request);
-    }, [] (cpp2::ExecResp&& resp) -> bool {
-        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, [] (cpp2::ExecResp&& resp) -> EdgeType {
+        return resp.get_id().get_edge_type();;
     });
 }
 
@@ -649,6 +650,7 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
                 schema->fieldNameIndex_.emplace(colIt.name,
                                             static_cast<int64_t>(schema->fields_.size() - 1));
             }
+            schema->ver_ = it.version;
             edgeNameTypeSchemas[std::make_pair(it.edge_type,
                                                it.edge_name)].emplace(it.version, schema);
         }

@@ -60,7 +60,7 @@ struct Pair {
 struct TagItem {
     1: common.TagID         tag_id,
     2: string               tag_name,
-    3: i64                  version,
+    3: i32                  version,
     4: common.Schema        schema,
 }
 
@@ -69,10 +69,11 @@ struct AlterTagItem {
     2: common.Schema        schema,
 }
 
+// the type of version uses for pass unit test, after pr #272 merge master, will change the type
 struct EdgeItem {
     1: common.EdgeType      edge_type,
     2: string               edge_name,
-    3: i64                  version,
+    3: i32                  version,
     4: common.Schema        schema,
 }
 

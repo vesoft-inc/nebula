@@ -25,11 +25,10 @@ void AddEdgeProcessor::process(const cpp2::WriteEdgeReq& req) {
         onFinished();
         return;
     }
-    auto version = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInMSeconds();
     EdgeType edgeType = autoIncrementId();
     data.emplace_back(MetaServiceUtils::indexKey(EntryType::EDGE, req.get_edge_name()),
                       std::string(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType)));
-    data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, version),
+    data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, 0),
                       MetaServiceUtils::schemaEdgeVal(req.get_edge_name(), req.get_schema()));
     VLOG(3) << "Add edge schema type = " << edgeType << ", name = " << req.get_edge_name();
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
