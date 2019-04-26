@@ -46,11 +46,12 @@ class SstRecordWriter(sstFileOutput: String) extends RecordWriter[BytesWritable,
     val sstWriterOption = sstFiles.get(value.vertexOrEdge)
     if (sstWriterOption.isEmpty) {
       // initialize a rocksdb
+      System.out.println("初始化rockdb Env...")
       val env = new EnvOptions
       val options = new Options
       options.setCreateIfMissing(true).setCreateMissingColumnFamilies(true)
       sstFileWriter = new SstFileWriter(env, options)
-
+      System.out.println("完成初始化rockdb sstFileWriter...")
       /*
        * create the following dir structure:
        *
