@@ -106,7 +106,7 @@ TEST(Parser, UseNamespace) {
 TEST(Parser, DefineTag) {
     {
         GQLParser parser;
-        std::string query = "DEFINE TAG person(name string, age int TTL = 100, "
+        std::string query = "CREATE TAG person(name string, age int TTL = 100, "
                             "married bool, salary double, create_time timestamp)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
