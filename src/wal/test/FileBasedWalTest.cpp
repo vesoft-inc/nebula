@@ -308,6 +308,44 @@ TEST(FileBasedWal, RollbackToMemory) {
     sleep(2);
 }
 
+TEST(FileBasedWal, RollbackToZero) {
+    // Force to make each file 1MB, each buffer is 1MB, and there are two
+    // buffers at most
+    FileBasedWalPolicy policy;
+    policy.fileSize = 1;
+    policy.bufferSize = 1;
+    policy.numBuffers = 2;
+
+    TempDir walDir("/tmp/testWal.XXXXXX");
+
+    // Create a new WAL, add one log and close it
+    auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    ASSERT_EQ(0, wal->lastLogId());
+    // Rollback
+    ASSERT_TRUE(wal->rollbackToLog(0));
+    ASSERT_EQ(0, wal->lastLogId());
+
+    // Append < 1MB logs in total
+    for (int i = 1; i <= 100; i++) {
+        ASSERT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+            folly::stringPrintf(kLongMsg, i)));
+    }
+    ASSERT_EQ(100, wal->lastLogId());
+    // Rollback
+    ASSERT_TRUE(wal->rollbackToLog(0));
+    ASSERT_EQ(0, wal->lastLogId());
+
+    // Append > 1MB logs in total
+    for (int i = 1; i <= 1000; i++) {
+        ASSERT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+            folly::stringPrintf(kLongMsg, i)));
+    }
+    ASSERT_EQ(1000, wal->lastLogId());
+    // Rollback
+    ASSERT_TRUE(wal->rollbackToLog(0));
+    ASSERT_EQ(0, wal->lastLogId());
+}
+
 }  // namespace wal
 }  // namespace nebula
 

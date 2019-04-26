@@ -102,14 +102,14 @@ public:
     // (from the latest to the earliest)
     // The iteration finishes when the functor returns false or reaches
     // the end
-    // The method returns the number of wal file info being acessed
+    // The method returns the number of wal file info being accessed
     size_t accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> fn) const;
 
     // Iterates through all log buffers in reversed order
     // (from the latest to the earliest)
     // The iteration finishes when the functor returns false or reaches
     // the end
-    // The method returns the number of buffers being acessed
+    // The method returns the number of buffers being accessed
     size_t accessAllBuffers(std::function<bool(BufferPtr buffer)> fn) const;
 
     // Dump a buffer into a WAL file
@@ -170,7 +170,7 @@ private:
     const FileBasedWalPolicy policy_;
     const size_t maxFileSize_;
     const size_t maxBufferSize_;
-    LogID firstLogId_{0};
+    const LogID firstLogId_{0};
     LogID lastLogId_{0};
     TermID lastLogTerm_{0};
 

@@ -106,7 +106,7 @@ public:
         return *this;
     }
 
-    // The iterator becomes invalid when exausting the logs
+    // The iterator becomes invalid when exhausting the logs
     // **OR** running into a CAS log
     bool valid() const override {
         return valid_;
