@@ -22,31 +22,31 @@ import org.slf4j.LoggerFactory
   *
   * after job complete, following dir structure will be generated；
   * worker_node1
-  *       |
-  *       |-sstFileOutput
-  *       |
-  *       |--1
-  *       |  |
-  *       |  |——vertex.data
-  *       |  |--edge.data
-  *       |
-  *       |--2
-  *       |
-  *       |——vertex.data
-  *       |--edge.data
+  * |
+  * |-sstFileOutput
+  * |
+  * |--1
+  * |  |
+  * |  |——vertex.data
+  * |  |--edge.data
+  * |
+  * |--2
+  * |
+  * |——vertex.data
+  * |--edge.data
   * worker_node2
-  *       |
-  *       |-sstFileOutput
-  *       |
-  *       |--1
-  *       |  |
-  *       |  |——vertex.data
-  *       |  |--edge.data
-  *       |
-  *       |--2
-  *       |
-  *       |——vertex.data
-  *       |--edge.data
+  * |
+  * |-sstFileOutput
+  * |
+  * |--1
+  * |  |
+  * |  |——vertex.data
+  * |  |--edge.data
+  * |
+  * |--2
+  * |
+  * |——vertex.data
+  * |--edge.data
   * </p>
   */
 object SparkSstFileGenerator {
@@ -208,7 +208,7 @@ object SparkSstFileGenerator {
             val partitionId: Int = (vertexId % mappingConfiguration.partitions).asInstanceOf[Int]
             val keyEncoded: Array[Byte] = NativeClient.createVertexKey(partitionId, vertexId, tagType, DefaultVersion)
             // use native client
-            val valuesEncoded: Array[Byte] = NativeClient.encoded(values.toArray)
+            val valuesEncoded: Array[Byte] = NativeClient.encode(values.toArray)
             (new BytesWritable(keyEncoded), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded)))
           }
         }
@@ -262,8 +262,10 @@ object SparkSstFileGenerator {
             val srcId = idGeneratorFunction.apply(srcIDString)
             val dstId = idGeneratorFunction.apply(dstIdString)
             // use NativeClient to generate key and encode values
+            System.out.println("开始NativeClient.encode...")
             val keyEncoded = NativeClient.createEdgeKey(partitionId, srcId, edgeType.asInstanceOf[Int], -1L, dstId, DefaultVersion) //TODO: support edge ranking,like create_time desc
-            val valuesEncoded: Array[Byte] = NativeClient.encoded(values.toArray)
+            val valuesEncoded: Array[Byte] = NativeClient.encode(values.toArray)
+            System.out.println("结束NativeClient.encode...")
             (new BytesWritable(keyEncoded), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded), false))
           }
         }
