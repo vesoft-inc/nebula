@@ -43,8 +43,8 @@ libraryDependencies ++= Seq(
 
   //need nebula native client for encoding, need to run mvn install to deploy to local repo before used
   "org.rocksdb" % "rocksdbjni" % "5.17.2",
-  //  "com.vesoft" % "native-client" % "1.0.0"
-  "com.vesoft" % "native-client" % "1.0-SNAPSHOT" changing()
+//  "com.vesoft" % "native-client" % "0.0.1"
+    "com.vesoft" % "native-client" % "1.0-SNAPSHOT" changing()
 )
 
 //CAUTION: when dependency with version of X-SNAPSHOT is updated, you should comment out the following line, and run sbt update

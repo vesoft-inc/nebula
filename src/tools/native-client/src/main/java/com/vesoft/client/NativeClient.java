@@ -23,7 +23,9 @@ public class NativeClient implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(NativeClient.class.getName());
 
     static {
+        System.out.println("开始加载nebula_native_client.so...");
         System.loadLibrary("nebula_native_client");
+        System.out.println("结束加载nebula_native_client.so");
     }
 
     public static class Pair {
@@ -61,13 +63,7 @@ public class NativeClient implements AutoCloseable {
 
     private SstFileWriter writer;
 
-    public NativeClient(String path) {
-        EnvOptions env = new EnvOptions();
-        Options options = new Options();
-        options.setCreateIfMissing(true)
-                .setCreateMissingColumnFamilies(true);
-        new NativeClient(path, env, options);
-    }
+    public NativeClient(String path) { }
 
     public NativeClient(String path, EnvOptions env, Options options) {
         if (path == null || path.trim().length() == 0) {
@@ -157,17 +153,9 @@ public class NativeClient implements AutoCloseable {
         return buffer.array();
     }
 
-    private static native byte[] encode(Object[] values);
+    public static native byte[] encode(Object[] values);
 
-    public static byte[] encoded(Object[] values) {
-        return encode(values);
-    }
-
-    private static native Map<String, byte[]> decode(byte[] encoded, Pair[] fields);
-
-    public static Map<String, byte[]> decoded(byte[] encoded, Pair[] fields) {
-        return decode(encoded, fields);
-    }
+    public static native Map<String, byte[]> decode(byte[] encoded, Pair[] fields);
 
     private boolean checkKey(String key) {
         return Objects.isNull(key) || key.length() == 0;
