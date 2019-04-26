@@ -17,7 +17,7 @@ public:
     /*
      *  xxxProcessor is self-management.
      *  The user should get instance when needed and don't care about the instance deleted.
-     *  The instance should be destoryed inside when onFinished method invoked
+     *  The instance should be destroyed inside when onFinished method invoked
      */
     static AddTagProcessor* instance(kvstore::KVStore* kvstore) {
         return new AddTagProcessor(kvstore);
