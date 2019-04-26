@@ -4,7 +4,7 @@ We welcome contributions to Nebula of any kind including documentation, organiza
 ### Setting Up the Development Environment
 #### Prerequisites
 * Install [Git](https://git-scm.com/) (may be already installed on your system, or available through your OS package manager)
-* The project Nebula is developed using C++14, so it requires a compiler supporting C++14 features
+* The project Nebula is developed using C++14, so it requires a compiler supporting C++14 features. Here we recommend GCC(starting from version 5.0) and Clang(starting from 3.4 )
 
 ### Step 1: Fetching the Sources From GitHub
 
@@ -20,10 +20,10 @@ Define a local working directory:
 working_dir=$HOME/Workspace
 ```
 
-Set `user` to match your github profile name:
+Set `user` to match your Github profile name:
 
 ```sh
-user={your github profile name}
+user={your Github profile name}
 ```
 
 Create your clone:
@@ -33,13 +33,13 @@ mkdir -p $working_dir
 cd $working_dir
 git clone https://github.com/$user/nebula.git
 # the above is recommended
-# or: git clone git@github.com:user/nebula.git
+# or: git clone git@github.com:$user/nebula.git
 
 cd $working_dir/nebula
 git remote add upstream https://github.com/vesoft-inc/nebula.git
 # or: git remote add upstream git@github.com:vesoft-inc/nebula.git
 
-# Never push to upstream master since you do not have writing access.
+# Never push to upstream master since you do not have write access.
 git remote set-url --push upstream no_push
 
 # Confirm that your remotes make sense:
@@ -61,7 +61,7 @@ This hook checks your commits for formatting, building, doc generation, etc.
 cd $working_dir/nebula/.git/hooks
 ln -s ../../cpplint/bin/pre-commit.sh .
 ```
-Sometimes, pre-commit hook can not be executable. In such case, you have to make it executable manually.
+Sometimes, pre-commit hook might not be executable. In such case, you have to make it executable manually.
 
 ```sh
 cd $working_dir/nebula/.git/hooks
