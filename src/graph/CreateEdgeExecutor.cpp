@@ -25,14 +25,14 @@ Status CreateEdgeExecutor::prepare() {
 void CreateEdgeExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
-    auto specs = sentence_->columnSpecs();
+    const auto& specs = sentence_->columnSpecs();
     auto space = ectx()->rctx()->session()->space();
 
     nebula::cpp2::Schema schema;
-    for (auto& iter : specs) {
+    for (auto& spec : specs) {
         nebula::cpp2::ColumnDef column;
-        column.name = *iter->name();
-        column.type.type = columnTypeToSupportedType(iter->type());
+        column.name = *spec->name();
+        column.type.type = columnTypeToSupportedType(spec->type());
         schema.columns.emplace_back(std::move(column));
     }
 

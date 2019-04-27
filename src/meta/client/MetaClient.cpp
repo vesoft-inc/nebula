@@ -289,7 +289,7 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
     if (it == spaceTagIndexByName_.end()) {
         return Status::SpaceNotFound();
     }
-    auto nameIdMap = it->second;
+    auto& nameIdMap = it->second;
     auto nameIt = nameIdMap.find(name);
     if (nameIt != nameIdMap.end()) {
         return nameIt->second;
@@ -304,7 +304,7 @@ StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& sp
     if (it == spaceEdgeIndexByName_.end()) {
         return Status::SpaceNotFound();
     }
-    auto nameTypeMap = it->second;
+    auto& nameTypeMap = it->second;
     auto nameIt = nameTypeMap.find(name);
     if (nameIt != nameTypeMap.end()) {
         return nameIt->second;;
