@@ -26,6 +26,7 @@
 #include "meta/processors/RemoveProcessor.h"
 #include "meta/processors/RemoveRangeProcessor.h"
 #include "meta/processors/ScanProcessor.h"
+#include "meta/processors/PartialScanProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -316,6 +317,41 @@ TEST(ProcessorTest, KVOperationTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(3, resp.values.size());
+        ASSERT_EQ("value_1", resp.values["testkey_1"]);
+        ASSERT_EQ("value_2", resp.values["testkey_2"]);
+        ASSERT_EQ("value_3", resp.values["testkey_3"]);
+    }
+    {
+        // Partial Scan Test
+        cpp2::PartialScanReq keyReq;
+        keyReq.set_segment("test");
+        keyReq.set_start("key_1");
+        keyReq.set_end("key_4");
+        keyReq.set_type("key");
+
+        auto* processor = PartialScanProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(keyReq);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(3, resp.values.size());
+        ASSERT_EQ("testkey_1", resp.values[0]);
+        ASSERT_EQ("testkey_2", resp.values[1]);
+        ASSERT_EQ("testkey_3", resp.values[2]);
+    }
+    {
+        cpp2::PartialScanReq valueReq;
+        valueReq.set_segment("test");
+        valueReq.set_start("key_1");
+        valueReq.set_end("key_4");
+        valueReq.set_type("value");
+
+        auto* processor = PartialScanProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(valueReq);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(3, resp.values.size());
         ASSERT_EQ("value_1", resp.values[0]);
         ASSERT_EQ("value_2", resp.values[1]);
         ASSERT_EQ("value_3", resp.values[2]);
@@ -363,7 +399,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
     fs::TempDir rootPath("/tmp/ListTagsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto version = time::TimeUtils::nowInMSeconds();
-    TestUtils::mockTag(kv.get(), 10, version);
+    TestUtils::mockTag(kv.get(), 1, 10, version);
 
     // test ListTagsProcessor
     {
@@ -412,7 +448,7 @@ TEST(ProcessorTest, RemoveTagTest) {
      fs::TempDir rootPath("/tmp/RemoveTagTest.XXXXXX");
      std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
      ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
-     TestUtils::mockTag(kv.get(), 1, time::TimeUtils::nowInMSeconds());
+     TestUtils::mockTag(kv.get(), 1, 1, time::TimeUtils::nowInMSeconds());
       // remove tag processor test
      {
          cpp2::RemoveTagReq req;
@@ -430,7 +466,7 @@ TEST(ProcessorTest, RemoveTagTest) {
          std::string tagVal;
          kvstore::ResultCode ret;
          std::unique_ptr<kvstore::KVIterator> iter;
-         ret = kv.get()->get(0, 0, std::move(MetaServiceUtils::indexKey(EntryType::TAG, "tag_1")),
+         ret = kv.get()->get(0, 0, std::move(MetaServiceUtils::tagIndexKey(1, "tag_1")),
                              &tagVal);
          ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
          ret = kv.get()->prefix(0, 0, "__tags__", &iter);

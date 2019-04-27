@@ -99,7 +99,7 @@ public:
         return ret;
     }
 
-    static void mockTag(kvstore::KVStore* kv, int32_t tagNum, int64_t version) {
+    static void mockTag(kvstore::KVStore* kv, int32_t spaceId, int32_t tagNum, int64_t version) {
         std::vector<nebula::kvstore::KV> tags;
         int64_t ver = version;
         for (auto t = 0; t < tagNum; t++) {
@@ -113,8 +113,8 @@ public:
             }
             auto tagName = folly::stringPrintf("tag_%d", tagId);
             auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
-            tags.emplace_back(MetaServiceUtils::indexKey(EntryType::TAG, tagName), tagIdVal);
-            tags.emplace_back(MetaServiceUtils::schemaTagKey(1, tagId, ver++),
+            tags.emplace_back(MetaServiceUtils::tagIndexKey(spaceId, tagName), tagIdVal);
+            tags.emplace_back(MetaServiceUtils::schemaTagKey(spaceId, tagId, ver++),
                               MetaServiceUtils::schemaTagVal(tagName, srcsch));
         }
 

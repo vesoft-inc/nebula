@@ -141,11 +141,25 @@ protected:
     void doRemoveRange(const std::string& start,
                        const std::string& end);
 
+
     /**
-     * Scan keys from start to end, doesn't contain end.
+     * Scan keys from start to end, doesn't contain end. Finally return both keys and values.
      * */
-     StatusOr<std::vector<std::string>> doScan(const std::string& start,
-                                               const std::string& end);
+    StatusOr<std::map<std::string, std::string>> doScan(const std::string& start,
+                                                        const std::string& end);
+
+    /**
+     * Scan keys from start to end, doesn't contain end. Finally return keys.
+     * */
+     StatusOr<std::vector<std::string>> doScanKey(const std::string& start,
+                                                  const std::string& end);
+
+    /**
+     * Scan keys from start to end, doesn't contain end. Finally return values.
+     * */
+     StatusOr<std::vector<std::string>> doScanValue(const std::string& start,
+                                                    const std::string& end);
+
      /**
      * General multi remove function.
      **/
@@ -175,6 +189,16 @@ protected:
      * Return the spaceId for name.
      * */
     StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
+
+    /**
+     * Return the tagId from name.
+     * */
+    StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
+
+    /**
+     * Return the edgeType from name.
+     * */
+    StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

@@ -15,13 +15,13 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
     std::string tagKey = MetaServiceUtils::schemaTagKey(req.get_space_id(),
                                                         req.get_tag_id(),
                                                         req.get_version());
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, std::move(tagKey), &val);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    auto ret = doGet(std::move(tagKey));
+    if (!ret.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    resp_.set_schema(MetaServiceUtils::parseSchema(val));
+    resp_.set_schema(MetaServiceUtils::parseSchema(ret.value()));
     onFinished();
 }
 }  // namespace meta

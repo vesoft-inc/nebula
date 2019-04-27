@@ -172,11 +172,34 @@ nebula::cpp2::Schema MetaServiceUtils::parseSchema(folly::StringPiece rawData) {
     return schema;
 }
 
-std::string MetaServiceUtils::indexKey(EntryType type, const std::string& name) {
+std::string MetaServiceUtils::spaceIndexKey(const std::string& name) {
     std::string key;
     key.reserve(128);
     key.append(kIndexTable.data(), kIndexTable.size());
-    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    EntryType type = EntryType::SPACE;
+    key.append(reinterpret_cast<const char*>(&type), sizeof(EntryType::SPACE));
+    key.append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::tagIndexKey(GraphSpaceID spaceId, const std::string& name) {
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    EntryType type = EntryType::TAG;
+    key.append(reinterpret_cast<const char*>(&type), sizeof(EntryType::TAG));
+    key.append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::edgeIndexKey(GraphSpaceID spaceId, const std::string& name) {
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    EntryType type = EntryType::EDGE;
+    key.append(reinterpret_cast<const char*>(&type), sizeof(EntryType::EDGE));
     key.append(name);
     return key;
 }

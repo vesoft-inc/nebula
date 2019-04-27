@@ -79,13 +79,46 @@ void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
 }
 
 template<typename RESP>
-StatusOr<std::vector<std::string>> BaseProcessor<RESP>::doScan(const std::string& start,
-                                                               const std::string& end) {
+StatusOr<std::map<std::string, std::string>> BaseProcessor<RESP>::doScan(const std::string& start,
+                                                                         const std::string& end) {
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto code = kvstore_->range(kDefaultSpaceId_, kDefaultPartId_,
-                                start, end, &iter);
+    auto code = kvstore_->range(kDefaultSpaceId_, kDefaultPartId_, start, end, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Scan Failed");
+    }
+
+    std::map<std::string, std::string> result;
+    while (iter->valid()) {
+        result.insert(std::make_pair(iter->key(), iter->val()));
+        iter->next();
+    }
+    return result;
+}
+
+template<typename RESP>
+StatusOr<std::vector<std::string>> BaseProcessor<RESP>::doScanKey(const std::string& start,
+                                                                  const std::string& end) {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto code = kvstore_->range(kDefaultSpaceId_, kDefaultPartId_, start, end, &iter);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        return Status::Error("Scan Key Failed");
+    }
+
+    std::vector<std::string> keys;
+    while (iter->valid()) {
+        keys.emplace_back(iter->key());
+        iter->next();
+    }
+    return keys;
+}
+
+template<typename RESP>
+StatusOr<std::vector<std::string>> BaseProcessor<RESP>::doScanValue(const std::string& start,
+                                                                    const std::string& end) {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto code = kvstore_->range(kDefaultSpaceId_, kDefaultPartId_, start, end, &iter);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        return Status::Error("Scan Value Failed");
     }
 
     std::vector<std::string> values;
@@ -120,13 +153,12 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
     folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     static const std::string kIdKey = "__id__";
     int32_t id;
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, kIdKey, &val);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        CHECK_EQ(ret, kvstore::ResultCode::ERR_KEY_NOT_FOUND);
+    auto ret = doGet(kIdKey);
+    if (!ret.ok()) {
+        CHECK_EQ(ret.status(), Status::Error("Key Not Found"));
         id = 1;
     } else {
-        id = *reinterpret_cast<const int32_t*>(val.c_str()) + 1;
+        id = *reinterpret_cast<const int32_t*>(ret.value().c_str()) + 1;
     }
     std::vector<kvstore::KV> data;
     data.emplace_back(kIdKey,
@@ -143,9 +175,8 @@ template<typename RESP>
 Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto spaceKey = MetaServiceUtils::spaceKey(spaceId);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, spaceKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
+    auto ret = doGet(spaceKey);
+    if (ret.ok()) {
         return Status::OK();
     }
     return Status::SpaceNotFound();
@@ -154,10 +185,9 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 template<typename RESP>
 Status BaseProcessor<RESP>::hostsExist(const std::vector<std::string> &hostsKey) {
     for (const auto& hostKey : hostsKey) {
-        std::string val;
-        auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, hostKey , &val);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+        auto ret = doGet(hostKey);
+        if (!ret.ok()) {
+            if (ret.status() == Status::Error("Key Not Found")) {
                 nebula::cpp2::HostAddr host = MetaServiceUtils::parseHostKey(hostKey);
                 std::string ip = NetworkUtils::intToIPv4(host.get_ip());
                 int32_t port = host.get_port();
@@ -165,7 +195,7 @@ Status BaseProcessor<RESP>::hostsExist(const std::vector<std::string> &hostsKey)
                         << " not exist";
                 return Status::HostNotFound();
             } else {
-                VLOG(3) << "Unknown Error ,, ret = " << static_cast<int32_t>(ret);
+                VLOG(3) << "Unknown Error ,, ret = " << ret.status().toString();
                 return Status::Error("Unknown error!");
             }
         }
@@ -175,13 +205,32 @@ Status BaseProcessor<RESP>::hostsExist(const std::vector<std::string> &hostsKey)
 
 template<typename RESP>
 StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) {
-    auto indexKey = MetaServiceUtils::indexKey(EntryType::SPACE, name);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
-        return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
+    auto indexKey = MetaServiceUtils::spaceIndexKey(name);
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const GraphSpaceID*>(ret.value().c_str());
     }
     return Status::SpaceNotFound();
+}
+
+template<typename RESP>
+StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::string& name) {
+    auto indexKey = MetaServiceUtils::tagIndexKey(spaceId, name);
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const TagID*>(ret.value().c_str());
+    }
+    return Status::TagNotFound();
+}
+
+template<typename RESP>
+StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId, const std::string& name) {
+    auto indexKey = MetaServiceUtils::edgeIndexKey(spaceId, name);
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const EdgeType*>(ret.value().c_str());
+    }
+    return Status::EdgeNotFound();
 }
 
 }  // namespace meta

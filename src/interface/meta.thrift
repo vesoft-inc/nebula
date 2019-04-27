@@ -250,8 +250,20 @@ struct ScanReq {
 }
 
 struct ScanResp {
-    1: ErrorCode code,
-    2: list<string> values,
+    1: ErrorCode            code,
+    2: map<string, string>  values,
+}
+
+struct PartialScanReq {
+    1: string    segment,
+    2: string    start,
+    3: string    end,
+    4: string    type,
+}
+
+struct PartialScanResp {
+    1: ErrorCode     code,
+    2: list<string>  values,
 }
 
 service MetaService {
@@ -282,5 +294,6 @@ service MetaService {
     RemoveResp       remove(1: RemoveReq req);
     RemoveRangeResp  removeRange(1: RemoveRangeReq req);
     ScanResp         scan(1: ScanReq req);
+    PartialScanResp  partialScan(1: PartialScanReq req);
 }
 

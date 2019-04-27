@@ -289,7 +289,7 @@ MetaClient::multiGet(std::string segment, std::vector<std::string> keys) {
                 });
 }
 
-folly::Future<StatusOr<std::vector<std::string>>>
+folly::Future<StatusOr<std::map<std::string, std::string>>>
 MetaClient::scan(std::string segment, std::string start, std::string end) {
     CHECK_SEGMENT_AND_RETURN_STATUS(segment);
     CHECK_PARAMETER_AND_RETURN_STATUS(start);
@@ -300,7 +300,33 @@ MetaClient::scan(std::string segment, std::string start, std::string end) {
     req.set_end(std::move(end));
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_scan(request);
-            }, [] (cpp2::ScanResp&& resp) -> std::vector<std::string> {
+            }, [] (cpp2::ScanResp&& resp) -> std::map<std::string, std::string> {
+                std::map<std::string, std::string> result;
+                auto values = resp.get_values();
+                for (auto iter = values.begin(); iter != values.end(); iter++) {
+                    result.insert(std::make_pair(iter->first, iter->second));
+                }
+                return result;
+            });
+}
+
+folly::Future<StatusOr<std::vector<std::string>>>
+MetaClient::partialScan(std::string segment, std::string start, std::string end, std::string type) {
+    CHECK_SEGMENT_AND_RETURN_STATUS(segment);
+    CHECK_PARAMETER_AND_RETURN_STATUS(start);
+    CHECK_PARAMETER_AND_RETURN_STATUS(end);
+    cpp2::PartialScanReq req;
+    req.set_segment(std::move(segment));
+    req.set_start(std::move(start));
+    req.set_end(std::move(end));
+    if (type == "key" || type == "value") {
+        req.set_type(std::move(type));
+    } else {
+        return Status::Error("Partial Scan Type Error");
+    }
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_partialScan(request);
+            }, [] (cpp2::PartialScanResp&& resp) -> std::vector<std::string> {
                 return resp.get_values();
             });
 }
@@ -445,7 +471,7 @@ bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
 int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
-    CHECK(it != localCache_.end());
+    CHECK(it != localCache_.end()) << spaceId << "," << localCache_.size();
     return it->second->partsAlloc_.size();
 }
 

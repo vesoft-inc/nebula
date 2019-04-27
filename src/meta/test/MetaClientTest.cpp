@@ -133,9 +133,32 @@ TEST(MetaClientTest, InterfacesTest) {
         auto ret = client->scan("test", "key_0", "key_3").get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(3, ret.value().size());
+        ASSERT_EQ("value_0", ret.value()["testkey_0"]);
+        ASSERT_EQ("value_1", ret.value()["testkey_1"]);
+        ASSERT_EQ("value_2", ret.value()["testkey_2"]);
+    }
+    {
+        // Partial Scan Key Test
+        auto ret = client->partialScan("test", "key_0", "key_3", "key").get();
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(3, ret.value().size());
+        ASSERT_EQ("testkey_0", ret.value()[0]);
+        ASSERT_EQ("testkey_1", ret.value()[1]);
+        ASSERT_EQ("testkey_2", ret.value()[2]);
+    }
+    {
+        // Partial Scan Value Test
+        auto ret = client->partialScan("test", "key_0", "key_3", "value").get();
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(3, ret.value().size());
         ASSERT_EQ("value_0", ret.value()[0]);
         ASSERT_EQ("value_1", ret.value()[1]);
         ASSERT_EQ("value_2", ret.value()[2]);
+    }
+    {
+        // Partial Scan Failed Test
+        auto ret = client->partialScan("test", "key_0", "key_3", "missed_type").get();
+        ASSERT_FALSE(ret.ok());
     }
     {
         // Remove Test
