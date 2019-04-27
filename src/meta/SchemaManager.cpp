@@ -78,6 +78,40 @@ std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getTagSchema(
     }
 }
 
+bool AdHocSchemaManager::removeTagSchema(folly::StringPiece spaceName,
+                                         folly::StringPiece tagName,
+                                         int32_t version) {
+    return removeTagSchema(toGraphSpaceID(spaceName), toTagID(tagName), version);
+}
+
+bool AdHocSchemaManager::removeTagSchema(GraphSpaceID space, TagID tag, int32_t version) {
+    folly::RWSpinLock::ReadHolder rh(tagLock_);
+    auto key = std::make_pair(space, tag);
+    auto it = tagSchemas_.find(key);
+    if (it == tagSchemas_.end()) {
+        return false;
+    } else {
+        if (version < 0) {
+            if (it->second.empty()) {
+                return false;
+            } else {
+                auto latestVersionKey = it->second.rbegin()->first;
+                tagSchemas_[key].erase(latestVersionKey);
+                return true;
+            }
+        } else {
+            auto verIt = it->second.find(version);
+            if (verIt == it->second.end()) {
+                return false;
+            } else {
+                auto versionKey = verIt->first;
+                tagSchemas_[key].erase(versionKey);
+                return true;
+            }
+        }
+    }
+}
+
 int32_t AdHocSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
                                                   folly::StringPiece tagName) {
     return getNewestTagSchemaVer(toGraphSpaceID(spaceName), toTagID(tagName));
@@ -127,6 +161,40 @@ std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getEdgeSchema(
                 return std::shared_ptr<const SchemaProviderIf>();
             } else {
                 return verIt->second;
+            }
+        }
+    }
+}
+
+bool AdHocSchemaManager::removeEdgeSchema(folly::StringPiece spaceName,
+                                          folly::StringPiece edgeName,
+                                          int32_t version) {
+    return removeEdgeSchema(toGraphSpaceID(spaceName), toEdgeType(edgeName), version);
+}
+
+bool AdHocSchemaManager::removeEdgeSchema(GraphSpaceID space, EdgeType edge, int32_t version) {
+    folly::RWSpinLock::ReadHolder rh(edgeLock_);
+    auto key = std::make_pair(space, edge);
+    auto it = edgeSchemas_.find(key);
+    if (it == edgeSchemas_.end()) {
+        return false;
+    } else {
+        if (version < 0) {
+            if (it->second.empty()) {
+                return false;
+            } else {
+                auto latestVersionKey = it->second.rbegin()->first;
+                edgeSchemas_[key].erase(latestVersionKey);
+                return true;
+            }
+        } else {
+            auto verIt = it->second.find(version);
+            if (verIt == it->second.end()) {
+                return false;
+            } else {
+                auto versionKey = verIt->first;
+                edgeSchemas_[key].erase(versionKey);
+                return true;
             }
         }
     }

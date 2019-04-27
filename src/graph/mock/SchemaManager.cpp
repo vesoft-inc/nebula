@@ -56,6 +56,19 @@ const TagSchema* SchemaManager::getTagSchema(const std::string &name) {
     return &iter->second;
 }
 
+void SchemaManager::removeTagSchema(const std::string &name) {
+    auto position = tags_.find(name);
+    if (position != tags_.end()) {
+        tags_.erase(position);
+    }
+}
+
+void SchemaManager::removeEdgeSchema(const std::string &name) {
+    auto position = edges_.find(name);
+    if (position != edges_.end()) {
+        edges_.erase(position);
+    }
+}
 
 void SchemaManager::print() const {
     for (auto &entry : edges_) {

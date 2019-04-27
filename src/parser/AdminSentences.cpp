@@ -14,6 +14,10 @@ std::string ShowSentence::toString() const {
             return std::string("SHOW HOSTS");
         case ShowType::kShowSpaces:
             return std::string("SHOW SPACES");
+        case ShowType::kShowTags:
+            return std::string("SHOW TAGS");
+        case ShowType::kShowEdges:
+            return std::string("SHOW EDGES");
         case ShowType::kUnknown:
         default:
             FLOG_FATAL("Type illegal");

@@ -19,6 +19,8 @@
 #include "graph/AlterEdgeExecutor.h"
 // #include "graph/DescribeTagExecutor.h"
 // #include "graph/DescribeEdgeExecutor.h"
+#include "graph/RemoveTagExecutor.h"
+#include "graph/RemoveEdgeExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "graph/AssignmentExecutor.h"
@@ -66,6 +68,12 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             executor = std::make_unique<DescribeEdgeExecutor>(sentence, ectx());
             break;
         */
+        case Sentence::Kind::kRemoveTag:
+             executor = std::make_unique<RemoveTagExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kRemoveEdge:
+             executor = std::make_unique<RemoveEdgeExecutor>(sentence, ectx());
+             break;
         case Sentence::Kind::kInsertVertex:
             executor = std::make_unique<InsertVertexExecutor>(sentence, ectx());
             break;

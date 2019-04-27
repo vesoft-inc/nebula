@@ -30,6 +30,8 @@ public:
         kAlterEdge,
         kDescribeTag,
         kDescribeEdge,
+        kRemoveTag,
+        kRemoveEdge,
         kInsertVertex,
         kInsertEdge,
         kShow,

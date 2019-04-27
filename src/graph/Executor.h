@@ -21,6 +21,14 @@
 namespace nebula {
 namespace graph {
 
+#define LOG_AND_PROCESS_ERROR() \
+     auto error = [this] (auto &&e) { \
+        LOG(ERROR) << "Exception caught: " << e.what(); \
+        DCHECK(onError_); \
+        onError_(Status::Error("Internal error")); \
+        return;\
+    };
+
 class Executor : public cpp::NonCopyable, public cpp::NonMovable {
 public:
     explicit Executor(ExecutionContext *ectx) {

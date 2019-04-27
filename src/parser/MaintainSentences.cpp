@@ -110,4 +110,17 @@ std::string DescribeEdgeSentence::toString() const {
     return buf;
 }
 
+std::string RemoveTagSentence::toString() const {
+    std::string buf = "REMOVE TAG ";
+    buf += *name_;
+    return buf;
+}
+
+
+std::string RemoveEdgeSentence::toString() const {
+    std::string buf = "REMOVE EDGE ";
+    buf += *name_;
+    return buf;
+}
+
 }   // namespace nebula

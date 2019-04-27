@@ -28,6 +28,10 @@ public:
 
     const TagSchema* getTagSchema(const std::string &name);
 
+    void removeTagSchema(const std::string &name);
+
+    void removeEdgeSchema(const std::string &name);
+
     void print() const;
 
 private:

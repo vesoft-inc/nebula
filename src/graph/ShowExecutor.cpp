@@ -32,6 +32,11 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowSpaces:
             showSpaces();
             break;
+        case ShowSentence::ShowType::kShowTags:
+            showTags();
+            break;
+        case ShowSentence::ShowType::kShowEdges:
+            showEdges();
         case ShowSentence::ShowType::kUnknown:
             onError_(Status::Error("Type unknown"));
             break;
@@ -74,13 +79,7 @@ void ShowExecutor::showHosts() {
         onFinish_();
     };
 
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
-        return;
-    };
-
+    LOG_AND_PROCESS_ERROR();
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
@@ -117,14 +116,16 @@ void ShowExecutor::showSpaces() {
         onFinish_();
     };
 
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
-        return;
-    };
-
+    LOG_AND_PROCESS_ERROR();
     std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showTags() {
+    // TODO(darion) support show tags via MetaClient
+}
+
+void ShowExecutor::showEdges() {
+    // TODO(darion) support show edges via MetaClient
 }
 
 void ShowExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

@@ -20,7 +20,9 @@ public:
     enum class ShowType : uint32_t {
         kUnknown,
         kShowHosts,
-        kShowSpaces
+        kShowSpaces,
+        kShowTags,
+        kShowEdges
     };
 
     explicit ShowSentence(ShowType sType) {

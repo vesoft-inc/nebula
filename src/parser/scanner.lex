@@ -37,6 +37,7 @@ DEFINE                      ([Dd][Ee][Ff][Ii][Nn][Ee])
 DESCRIBE                    ([Dd][Ee][Ss][Cc][Rr][Ii][Bb][Ee])
 VERTEX                      ([Vv][Ee][Rr][Tt][Ee][Xx])
 EDGE                        ([Ee][Dd][Gg][Ee])
+EDGES                       ([Ee][Dd][Gg][Ee][Ss])
 UPDATE                      ([Uu][Pp][Dd][Aa][Tt][Ee])
 DELETE                      ([Dd][Ee][Ll][Ee][Tt][Ee])
 FIND                        ([Ff][Ii][Nn][Dd])
@@ -54,6 +55,7 @@ DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
 STRING                      ([Ss][Tt][Rr][Ii][Nn][Gg])
 BOOL                        ([Bb][Oo][Oo][Ll])
 TAG                         ([Tt][Aa][Gg])
+TAGS                        ([Tt][Aa][Gg][Ss])
 UNION                       ([Uu][Nn][Ii][Oo][Nn])
 INTERSECT                   ([Ii][Nn][Tt][Ee][Rr][Ss][Ee][Cc][Tt])
 MINUS                       ([Mm][Ii][Nn][Uu][Ss])
@@ -99,6 +101,7 @@ OCT                         ([0-7])
 {DESCRIBE}                  { return TokenType::KW_DESCRIBE; }
 {VERTEX}                    { return TokenType::KW_VERTEX; }
 {EDGE}                      { return TokenType::KW_EDGE; }
+{EDGES}                     { return TokenType::KW_EDGES; }
 {UPDATE}                    { return TokenType::KW_UPDATE; }
 {DELETE}                    { return TokenType::KW_DELETE; }
 {FIND}                      { return TokenType::KW_FIND; }
@@ -116,6 +119,7 @@ OCT                         ([0-7])
 {STRING}                    { return TokenType::KW_STRING; }
 {BOOL}                      { return TokenType::KW_BOOL; }
 {TAG}                       { return TokenType::KW_TAG; }
+{TAGS}                      { return TokenType::KW_TAGS; }
 {UNION}                     { return TokenType::KW_UNION; }
 {INTERSECT}                 { return TokenType::KW_INTERSECT; }
 {MINUS}                     { return TokenType::KW_MINUS; }

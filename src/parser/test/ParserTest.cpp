@@ -396,6 +396,18 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "show tags";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "show edges";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "drop space default_space";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();

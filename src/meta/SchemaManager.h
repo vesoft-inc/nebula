@@ -25,6 +25,15 @@ public:
         folly::StringPiece spaceName,
         folly::StringPiece tagName,
         int32_t ver = -1) = 0;
+
+    virtual bool removeTagSchema(GraphSpaceID space,
+                                 TagID tag,
+                                 int32_t ver = -1) = 0;
+
+    virtual bool removeTagSchema(folly::StringPiece spaceName,
+                                 folly::StringPiece tagName,
+                                 int32_t ver = -1) = 0;
+
     // Returns a negative number when the schema does not exist
     virtual int32_t getNewestTagSchemaVer(GraphSpaceID space, TagID tag) = 0;
 
@@ -38,6 +47,15 @@ public:
         folly::StringPiece spaceName,
         folly::StringPiece typeName,
         int32_t ver = -1) = 0;
+
+    virtual bool removeEdgeSchema(GraphSpaceID space,
+                                  EdgeType edge,
+                                  int32_t ver = -1) = 0;
+
+    virtual bool removeEdgeSchema(folly::StringPiece spaceName,
+                                  folly::StringPiece edgeName,
+                                  int32_t ver = -1) = 0;
+
     // Returns a negative number when the schema does not exist
     virtual int32_t getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) = 0;
 
@@ -77,6 +95,15 @@ public:
         folly::StringPiece spaceName,
         folly::StringPiece tagName,
         int32_t ver = -1) override;
+
+    bool removeTagSchema(GraphSpaceID space,
+                         TagID tag,
+                         int32_t ver = -1) override;
+
+    bool removeTagSchema(folly::StringPiece spaceName,
+                         folly::StringPiece tagName,
+                         int32_t ver = -1) override;
+
     // Returns a negative number when the schema does not exist
     int32_t getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
 
@@ -90,6 +117,15 @@ public:
         folly::StringPiece spaceName,
         folly::StringPiece typeName,
         int32_t ver = -1) override;
+
+    bool removeEdgeSchema(GraphSpaceID space,
+                          EdgeType edge,
+                          int32_t ver = -1) override;
+
+    bool removeEdgeSchema(folly::StringPiece spaceName,
+                          folly::StringPiece edgeName,
+                          int32_t ver = -1) override;
+
     // Returns a negative number when the schema does not exist
     int32_t getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
 
