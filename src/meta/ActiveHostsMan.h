@@ -17,18 +17,18 @@ namespace meta {
 
 struct HostInfo {
     HostInfo() = default;
-    explicit HostInfo(int64_t lastHeartBeatTimeSeconds)
-        : lastHeartBeatTimeSeconds_(lastHeartBeatTimeSeconds) {}
+    explicit HostInfo(int64_t lastHBTimeInSec)
+        : lastHBTimeInSec_(lastHBTimeInSec) {}
 
     bool operator==(const HostInfo& that) const {
-        return this->lastHeartBeatTimeSeconds_ == that.lastHeartBeatTimeSeconds_;
+        return this->lastHBTimeInSec_ == that.lastHBTimeInSec_;
     }
 
     bool operator!=(const HostInfo& that) const {
         return !(*this == that);
     }
 
-    int64_t lastHeartBeatTimeSeconds_ = 0;
+    int64_t lastHBTimeInSec_ = 0;
 };
 
 class ActiveHostsMan final {
@@ -37,11 +37,12 @@ class ActiveHostsMan final {
 public:
     ActiveHostsMan(int32_t intervalSeconds, int32_t expiredSeconds)
         : intervalSeconds_(intervalSeconds)
-        , expiredSeconds_(expiredSeconds) {
+        , expirationInSeconds_(expiredSeconds) {
         CHECK(checkThread_.start());
         checkThread_.addTimerTask(intervalSeconds * 1000,
                                   intervalSeconds * 1000,
-                                  &ActiveHostsMan::cleanExpiredHosts, this);
+                                  &ActiveHostsMan::cleanExpiredHosts,
+                                  this);
     }
 
     ~ActiveHostsMan() {
@@ -56,7 +57,7 @@ public:
             folly::RWSpinLock::UpgradedHolder uh(&lock_);
             hostsMap_.emplace(std::move(hostAddr), std::move(info));
         } else {
-            it->second.lastHeartBeatTimeSeconds_ = info.lastHeartBeatTimeSeconds_;
+            it->second.lastHBTimeInSec_ = info.lastHBTimeInSec_;
         }
     }
 
@@ -77,9 +78,9 @@ protected:
         folly::RWSpinLock::WriteHolder rh(&lock_);
         auto it = hostsMap_.begin();
         while (it != hostsMap_.end()) {
-            if ((now - it->second.lastHeartBeatTimeSeconds_) > expiredSeconds_) {
+            if ((now - it->second.lastHBTimeInSec_) > expirationInSeconds_) {
                 LOG(INFO) << it->first << " expired! last hb time "
-                          << it->second.lastHeartBeatTimeSeconds_;
+                          << it->second.lastHBTimeInSec_;
                 it = hostsMap_.erase(it);
             } else {
                 it++;
@@ -92,7 +93,7 @@ private:
     std::unordered_map<HostAddr, HostInfo> hostsMap_;
     thread::GenericWorker checkThread_;
     int32_t intervalSeconds_ = 0;
-    int32_t expiredSeconds_ = 5 * 60;
+    int32_t expirationInSeconds_ = 5 * 60;
 };
 }  // namespace meta
 }  // namespace nebula

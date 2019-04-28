@@ -20,11 +20,17 @@ TEST(ActiveHostsManTest, NormalTest) {
     ASSERT_EQ(3, ahMan.getActiveHosts().size());
     ahMan.updateHostInfo(HostAddr(0, 0), HostInfo(now + 2));
     ASSERT_EQ(3, ahMan.getActiveHosts().size());
-    ASSERT_EQ(HostInfo(now + 2),  ahMan.hostsMap_[HostAddr(0, 0)]);
+    {
+        folly::RWSpinLock::ReadHolder rh(&ahMan.lock_);
+        ASSERT_EQ(HostInfo(now + 2),  ahMan.hostsMap_[HostAddr(0, 0)]);
+    }
 
     sleep(3);
     ASSERT_EQ(1, ahMan.getActiveHosts().size());
-    ASSERT_EQ(HostInfo(now + 2),  ahMan.hostsMap_[HostAddr(0, 0)]);
+    {
+        folly::RWSpinLock::ReadHolder rh(&ahMan.lock_);
+        ASSERT_EQ(HostInfo(now + 2),  ahMan.hostsMap_[HostAddr(0, 0)]);
+    }
 }
 
 }  // namespace meta
