@@ -29,7 +29,7 @@ void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
 
 StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID id,
                                                                   const std::string& tagName) {
-    auto indexKey = MetaServiceUtils::indexKey(EntryType::TAG, tagName);
+    auto indexKey = MetaServiceUtils::indexTagKey(id, tagName);
     std::vector<std::string> keys;
     std::string tagVal;
     TagID tagId;

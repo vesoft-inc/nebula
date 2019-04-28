@@ -187,7 +187,7 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "CREATE TAG person(name string, interest string)";
         auto code = client->execute(query, resp);
         sleep(FLAGS_load_data_interval_second + 1);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
