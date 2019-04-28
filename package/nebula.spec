@@ -1,6 +1,6 @@
 #
 # Create a SRPM which can be used to build nebula
-# 
+#
 #
 
 %global project_name nebula
@@ -8,7 +8,7 @@
 Name:     %{project_name}
 Version:  @VERSION@
 Release:  @RELEASE@%{?dist}
-Summary:  %{project_name} 
+Summary:  %{project_name}
 License:  GPL
 # the url to get tar.gz
 #URL:      http://
@@ -44,7 +44,7 @@ BuildRequires:   readline-devel
 BuildRequires:   python
 BuildRequires:   java-1.8.0-openjdk
 BuildRequires:   java-1.8.0-openjdk-devel
-Requires:        krb5
+#Requires:        krb5
 
 %description
 A high performance distributed graph database
@@ -54,7 +54,7 @@ A high performance distributed graph database
 
 %build
 cmake ./
-make -j
+make -j2
 
 %install
 rm -rf %{buildroot}
@@ -69,13 +69,13 @@ metad is a daemon for manage metadata
 %package graphd
 Summary: graph daemon
 Group: Applications/Databases
-%description graphd 
+%description graphd
 graphd is a daemon for handle graph data
 
 %package storaged
 Summary: storaged daemon
 Group: Applications/Databases
-%description storaged 
+%description storaged
 storaged is a daemon for storage all data
 
 %package nebula
@@ -89,16 +89,18 @@ Group: Applications/Databases
 %description storage_perf
 
 
-#################################################################################
-# the files include exe, config file, scriptlets
-#################################################################################
-# metad rpm 
+# the files include exe, config file, scripts
+# base rpm include files
+%files
+%{_datadir}/nebula.service
+%{_datadir}/utils.sh
+
+# metad rpm include files
 %files metad
 %defattr(-,root,root,-)
 %{_bindir}/nebula-metad
+%{_sysconfdir}/nebula-metad.conf.default
 %{_datadir}/nebula-metad.service
-
-# TODO : add daemon to systemctl
 
 # after install , arg 1:install new packet, arg 2: update exist packet
 #%%post metad
@@ -112,14 +114,12 @@ Group: Applications/Databases
 #%%postun metad
 #%%systemd_postun nebula-metad.service
 
-# graphd rpm
+# graphd rpm include files
 %files graphd
 %defattr(-,root,root,-)
 %{_bindir}/nebula-graphd
-%config(noreplace) %{_sysconfdir}/nebula-graphd.conf.default
+%config%{_sysconfdir}/nebula-graphd.conf.default
 %{_datadir}/nebula-graphd.service
-
-# TODO : add daemon to systemctl
 
 #%%post graphd
 #%%systemd_post nebula-graphd.service
@@ -130,9 +130,11 @@ Group: Applications/Databases
 #%%postun graphd
 #%%systemd_postun nebula-graphd.service
 
+# storaged rpm include files
 %files storaged
 %defattr(-,root,root,-)
 %{_bindir}/nebula-storaged
+%config%{_sysconfdir}/nebula-storaged.conf.default
 %{_datadir}/nebula-storaged.service
 
 #%%post storaged
