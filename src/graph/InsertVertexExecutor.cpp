@@ -53,7 +53,7 @@ void InsertVertexExecutor::execute() {
         auto expressions = row->values();
         std::vector<VariantType> values;
 
-        values.resize(expressions.size());
+        values.reserve(expressions.size());
         for (auto *expr : expressions) {
             values.emplace_back(expr->eval());
         }

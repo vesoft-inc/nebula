@@ -33,7 +33,8 @@ Status YieldExecutor::prepare() {
 
 void YieldExecutor::execute() {
     auto size = yields_.size();
-    std::vector<VariantType> values(size);
+    std::vector<VariantType> values;
+    values.reserve(size);
 
     for (auto *col : yields_) {
         values.emplace_back(col->expr()->eval());
