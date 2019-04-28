@@ -452,12 +452,13 @@ int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
 void MetaClient::diff(const std::unordered_map<GraphSpaceID,
                                                std::shared_ptr<SpaceInfoCache>>& newCache) {
     if (listener_ == nullptr) {
+        VLOG(3) << "Listener is null!";
         return;
     }
     auto localHost = listener_->getLocalHost();
     auto newPartsMap = doGetPartsMap(localHost, newCache);
     auto oldPartsMap = getPartsMapFromCache(localHost);
-    VLOG(1) << "Let's check if any new parts added/updated....";
+    VLOG(1) << "Let's check if any new parts added/updated for " << localHost;
     for (auto it = newPartsMap.begin(); it != newPartsMap.end(); it++) {
         auto spaceId = it->first;
         const auto& newParts = it->second;
