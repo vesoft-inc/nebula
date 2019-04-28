@@ -35,10 +35,9 @@ void YieldExecutor::execute() {
     auto size = yields_.size();
     std::vector<VariantType> values(size);
 
-    auto eval = [] (auto *col) {
-        return col->expr()->eval();
-    };
-    std::transform(yields_.begin(), yields_.end(), values.begin(), eval);
+    for (auto *col : yields_) {
+        values.emplace_back(col->expr()->eval());
+    }
 
     std::vector<cpp2::RowValue> rows;
     rows.emplace_back();
