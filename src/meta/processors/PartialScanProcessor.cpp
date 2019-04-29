@@ -9,7 +9,7 @@
 namespace nebula {
 namespace meta {
 
-void PartialScanProcessor::process(const cpp2::PartialScanReq& req) {
+void PartialScanProcessor::process(const cpp2::KeyOrValueScanReq& req) {
     CHECK_SEGMENT(req.get_segment());
     auto start = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_start());
     auto end   = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_end());

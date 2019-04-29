@@ -144,19 +144,19 @@ MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFacto
     req.set_parts_num(partsNum);
     req.set_replica_factor(replicaFactor);
     return getResponse(std::move(req), [] (auto client, auto request) {
-                return client->future_createSpace(request);
-            }, [] (cpp2::ExecResp&& resp) -> GraphSpaceID {
-                return resp.get_id().get_space_id();
-            });
+                   return client->future_createSpace(request);
+               }, [] (cpp2::ExecResp&& resp) -> GraphSpaceID {
+                   return resp.get_id().get_space_id();
+               });
 }
 
 folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
     cpp2::ListSpacesReq req;
     return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_listSpaces(request);
-                }, [this] (cpp2::ListSpacesResp&& resp) -> decltype(auto) {
-                    return this->toSpaceIdName(resp.get_spaces());
-                });
+                   return client->future_listSpaces(request);
+               }, [this] (cpp2::ListSpacesResp&& resp) -> decltype(auto) {
+                   return this->toSpaceIdName(resp.get_spaces());
+               });
 }
 
 
@@ -164,10 +164,10 @@ folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name) {
     cpp2::DropSpaceReq req;
     req.set_space_name(std::move(name));
     return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_dropSpace(request);
-                }, [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
+                   return client->future_dropSpace(request);
+               }, [] (cpp2::ExecResp&& resp) -> bool {
+                   return resp.code == cpp2::ErrorCode::SUCCEEDED;
+               });
 }
 
 
@@ -192,10 +192,10 @@ folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& 
 folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::listHosts() {
     cpp2::ListHostsReq req;
     return getResponse(std::move(req), [] (auto client, auto request) {
-                return client->future_listHosts(request);
-            }, [this] (cpp2::ListHostsResp&& resp) -> decltype(auto) {
-                return this->to(resp.hosts);
-            });
+                   return client->future_listHosts(request);
+               }, [this] (cpp2::ListHostsResp&& resp) -> decltype(auto) {
+                   return this->to(resp.hosts);
+               });
 }
 
 folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr>& hosts) {
@@ -223,12 +223,12 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
     return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_getPartsAlloc(request);
                 }, [this] (cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
-        std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
-        for (auto it = resp.parts.begin(); it != resp.parts.end(); it++) {
-            parts.emplace(it->first, to(it->second));
-        }
-        return parts;
-    });
+                    std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
+                    for (auto it = resp.parts.begin(); it != resp.parts.end(); it++) {
+                        parts.emplace(it->first, to(it->second));
+                    }
+                    return parts;
+                });
 }
 
 StatusOr<GraphSpaceID>
@@ -238,7 +238,7 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
     if (it != spaceIndexByName_.end()) {
         return it->second;
     }
-    return Status::SpaceNotFound();
+    return Status::NotFound();
 }
 
 folly::Future<StatusOr<bool>>
@@ -255,10 +255,10 @@ MetaClient::multiPut(std::string segment,
     req.set_segment(std::move(segment));
     req.set_pairs(std::move(data));
     return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_multiPut(request);
-                }, [] (cpp2::MultiPutResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
+                   return client->future_multiPut(request);
+               }, [] (cpp2::MultiPutResp&& resp) -> bool {
+                   return resp.code == cpp2::ErrorCode::SUCCEEDED;
+               });
 }
 
 folly::Future<StatusOr<std::string>>
@@ -269,10 +269,10 @@ MetaClient::get(std::string segment, std::string key) {
     req.set_segment(std::move(segment));
     req.set_key(std::move(key));
     return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_get(request);
-                }, [] (cpp2::GetResp&& resp) -> std::string {
-                    return resp.get_value();
-                });
+                   return client->future_get(request);
+               }, [] (cpp2::GetResp&& resp) -> std::string {
+                   return resp.get_value();
+               });
 }
 
 folly::Future<StatusOr<std::vector<std::string>>>
@@ -283,13 +283,13 @@ MetaClient::multiGet(std::string segment, std::vector<std::string> keys) {
     req.set_segment(std::move(segment));
     req.set_keys(std::move(keys));
     return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_multiGet(request);
-                }, [] (cpp2::MultiGetResp&& resp) -> std::vector<std::string> {
-                    return resp.get_values();
-                });
+                   return client->future_multiGet(request);
+               }, [] (cpp2::MultiGetResp&& resp) -> std::vector<std::string> {
+                   return resp.get_values();
+               });
 }
 
-folly::Future<StatusOr<std::map<std::string, std::string>>>
+folly::Future<StatusOr<std::unordered_map<std::string, std::string>>>
 MetaClient::scan(std::string segment, std::string start, std::string end) {
     CHECK_SEGMENT_AND_RETURN_STATUS(segment);
     CHECK_PARAMETER_AND_RETURN_STATUS(start);
@@ -299,36 +299,42 @@ MetaClient::scan(std::string segment, std::string start, std::string end) {
     req.set_start(std::move(start));
     req.set_end(std::move(end));
     return getResponse(std::move(req), [] (auto client, auto request) {
-                return client->future_scan(request);
-            }, [] (cpp2::ScanResp&& resp) -> std::map<std::string, std::string> {
-                std::map<std::string, std::string> result;
-                auto values = resp.get_values();
-                for (auto iter = values.begin(); iter != values.end(); iter++) {
-                    result.insert(std::make_pair(iter->first, iter->second));
-                }
-                return result;
-            });
+                   return client->future_scan(request);
+               }, [] (cpp2::ScanResp&& resp) -> std::unordered_map<std::string, std::string> {
+                   return std::move(resp).get_values();
+               });
 }
 
 folly::Future<StatusOr<std::vector<std::string>>>
-MetaClient::partialScan(std::string segment, std::string start, std::string end, std::string type) {
+MetaClient::scanKey(std::string segment, std::string start, std::string end) {
     CHECK_SEGMENT_AND_RETURN_STATUS(segment);
     CHECK_PARAMETER_AND_RETURN_STATUS(start);
     CHECK_PARAMETER_AND_RETURN_STATUS(end);
-    cpp2::PartialScanReq req;
+    cpp2::ScanReq req;
     req.set_segment(std::move(segment));
     req.set_start(std::move(start));
     req.set_end(std::move(end));
-    if (type == "key" || type == "value") {
-        req.set_type(std::move(type));
-    } else {
-        return Status::Error("Partial Scan Type Error");
-    }
     return getResponse(std::move(req), [] (auto client, auto request) {
-                return client->future_partialScan(request);
-            }, [] (cpp2::PartialScanResp&& resp) -> std::vector<std::string> {
-                return resp.get_values();
-            });
+                   return client->future_scanKey(request);
+               }, [] (cpp2::KeyOrValueScanResp&& resp) -> std::vector<std::string> {
+                   return std::move(resp).get_values();
+               });
+}
+
+folly::Future<StatusOr<std::vector<std::string>>>
+MetaClient::scanValue(std::string segment, std::string start, std::string end) {
+    CHECK_SEGMENT_AND_RETURN_STATUS(segment);
+    CHECK_PARAMETER_AND_RETURN_STATUS(start);
+    CHECK_PARAMETER_AND_RETURN_STATUS(end);
+    cpp2::ScanReq req;
+    req.set_segment(std::move(segment));
+    req.set_start(std::move(start));
+    req.set_end(std::move(end));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                   return client->future_scanValue(request);
+               }, [] (cpp2::KeyOrValueScanResp&& resp) -> std::vector<std::string> {
+                   return std::move(resp).get_values();
+               });
 }
 
 folly::Future<StatusOr<bool>>
@@ -339,10 +345,10 @@ MetaClient::remove(std::string segment, std::string key) {
     req.set_segment(std::move(segment));
     req.set_key(std::move(key));
     return getResponse(std::move(req), [] (auto client, auto request) {
-                return client->future_remove(request);
-            }, [] (cpp2::RemoveResp&& resp) -> bool {
-                return resp.code == cpp2::ErrorCode::SUCCEEDED;
-            });
+                   return client->future_remove(request);
+               }, [] (cpp2::RemoveResp&& resp) -> bool {
+                   return resp.code == cpp2::ErrorCode::SUCCEEDED;
+               });
 }
 
 folly::Future<StatusOr<bool>>
@@ -355,10 +361,10 @@ MetaClient::removeRange(std::string segment, std::string start, std::string end)
     req.set_start(std::move(start));
     req.set_end(std::move(end));
     return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_removeRange(request);
-                }, [] (cpp2::RemoveRangeResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
+                   return client->future_removeRange(request);
+               }, [] (cpp2::RemoveRangeResp&& resp) -> bool {
+                   return resp.code == cpp2::ErrorCode::SUCCEEDED;
+               });
 }
 
 std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& tHosts) {

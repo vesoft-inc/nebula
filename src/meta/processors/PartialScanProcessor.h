@@ -12,17 +12,17 @@
 namespace nebula {
 namespace meta {
 
-class PartialScanProcessor : public BaseProcessor<cpp2::PartialScanResp> {
+class PartialScanProcessor : public BaseProcessor<cpp2::KeyOrValueScanResp> {
 public:
     static PartialScanProcessor* instance(kvstore::KVStore* kvstore) {
         return new PartialScanProcessor(kvstore);
     }
 
-    void process(const cpp2::PartialScanReq& req);
+    void process(const cpp2::KeyOrValueScanReq& req);
 
 private:
     explicit PartialScanProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::PartialScanResp>(kvstore) {}
+            : BaseProcessor<cpp2::KeyOrValueScanResp>(kvstore) {}
 };
 
 }  // namespace meta

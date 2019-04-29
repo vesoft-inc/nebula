@@ -26,7 +26,8 @@
 #include "meta/processors/RemoveProcessor.h"
 #include "meta/processors/RemoveRangeProcessor.h"
 #include "meta/processors/ScanProcessor.h"
-#include "meta/processors/PartialScanProcessor.h"
+#include "meta/processors/ScanKeyProcessor.h"
+#include "meta/processors/ScanValueProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -282,7 +283,7 @@ TEST(ProcessorTest, KVOperationTest) {
         auto missedFuture = missedProcessor->getFuture();
         missedProcessor->process(missedReq);
         auto missedResp = std::move(missedFuture).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_KEY_NOT_FOUND, missedResp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, missedResp.code);
     }
     {
         // Multi Get Test
@@ -322,14 +323,13 @@ TEST(ProcessorTest, KVOperationTest) {
         ASSERT_EQ("value_3", resp.values["testkey_3"]);
     }
     {
-        // Partial Scan Test
-        cpp2::PartialScanReq keyReq;
+        // Partial Scan Key Test
+        cpp2::ScanReq keyReq;
         keyReq.set_segment("test");
         keyReq.set_start("key_1");
         keyReq.set_end("key_4");
-        keyReq.set_type("key");
 
-        auto* processor = PartialScanProcessor::instance(kv.get());
+        auto* processor = ScanKeyProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(keyReq);
         auto resp = std::move(f).get();
@@ -340,13 +340,13 @@ TEST(ProcessorTest, KVOperationTest) {
         ASSERT_EQ("testkey_3", resp.values[2]);
     }
     {
-        cpp2::PartialScanReq valueReq;
+        // Partial Scan Value Test
+        cpp2::ScanReq valueReq;
         valueReq.set_segment("test");
         valueReq.set_start("key_1");
         valueReq.set_end("key_4");
-        valueReq.set_type("value");
 
-        auto* processor = PartialScanProcessor::instance(kv.get());
+        auto* processor = ScanValueProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(valueReq);
         auto resp = std::move(f).get();

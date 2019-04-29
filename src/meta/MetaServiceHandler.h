@@ -65,8 +65,11 @@ public:
     folly::Future<cpp2::ScanResp>
     future_scan(const cpp2::ScanReq& req) override;
 
-    folly::Future<cpp2::PartialScanResp>
-    future_partialScan(const cpp2::PartialScanReq& req) override;
+    folly::Future<cpp2::KeyOrValueScanResp>
+    future_scanKey(const cpp2::ScanReq& req) override;
+
+    folly::Future<cpp2::KeyOrValueScanResp>
+    future_scanValue(const cpp2::ScanReq& req) override;
 
     /**
      * Schema related operations.

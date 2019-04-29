@@ -98,10 +98,7 @@ public:
     STATUS_GENERATOR(SyntaxError);
 
     // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
-    STATUS_GENERATOR(SpaceNotFound);
-    STATUS_GENERATOR(HostNotFound);
-    STATUS_GENERATOR(TagNotFound);
-    STATUS_GENERATOR(EdgeNotFound);
+    STATUS_GENERATOR(NotFound);
 
 #undef STATUS_GENERATOR
 
@@ -124,10 +121,7 @@ public:
         // 3xx, for storage engine errors
         // ...
         // 4xx, for meta service errors
-        kSpaceNotFound          = 404,
-        kHostNotFound           = 405,
-        kTagNotFound            = 406,
-        kEdgeNotFound           = 407,
+        kNotFound                = 404,
     };
 
     Code code() const {

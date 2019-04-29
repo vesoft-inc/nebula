@@ -4,18 +4,20 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "meta/processors/ScanProcessor.h"
+#include "meta/processors/ScanValueProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-void ScanProcessor::process(const cpp2::ScanReq& req) {
+void ScanValueProcessor::process(const cpp2::ScanReq& req) {
     CHECK_SEGMENT(req.get_segment());
-    auto start = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_start());
-    auto end   = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_end());
-    auto result = doScan(start, end);
+    auto start  = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_start());
+    auto end    = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_end());
+    auto result = doScanValue(start, end);
+
     if (!result.ok()) {
-        LOG(ERROR) << "Scan Failed " << result.status();
+        LOG(ERROR) << "Scan Value Failed from " << req.get_start()
+                   << " to " << req.get_end() << " " << result.status();
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
         return;
@@ -27,3 +29,4 @@ void ScanProcessor::process(const cpp2::ScanReq& req) {
 
 }  // namespace meta
 }  // namespace nebula
+

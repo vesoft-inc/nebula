@@ -11,7 +11,7 @@ namespace nebula {
 namespace meta {
 
 void AddTagProcessor::process(const cpp2::AddTagReq& req) {
-    if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
+    if (spaceExist(req.get_space_id()) == Status::NotFound()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;

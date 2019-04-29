@@ -30,7 +30,8 @@ add_library(
     processors/RemoveProcessor.cpp
     processors/RemoveRangeProcessor.cpp
     processors/ScanProcessor.cpp
-    processors/PartialScanProcessor.cpp
+    processors/ScanKeyProcessor.cpp
+    processors/ScanValueProcessor.cpp
 )
 
 add_dependencies(

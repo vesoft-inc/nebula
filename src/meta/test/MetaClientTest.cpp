@@ -88,7 +88,7 @@ TEST(MetaClientTest, InterfacesTest) {
     {
         auto ret = client->getSpaceIdByNameFromCache("default_space_1");
         ASSERT_FALSE(ret.ok());
-        ASSERT_EQ(Status::SpaceNotFound(), ret.status());
+        ASSERT_EQ(Status::NotFound(), ret.status());
     }
     {
         // Multi Put Test
@@ -139,7 +139,7 @@ TEST(MetaClientTest, InterfacesTest) {
     }
     {
         // Partial Scan Key Test
-        auto ret = client->partialScan("test", "key_0", "key_3", "key").get();
+        auto ret = client->scanKey("test", "key_0", "key_3").get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(3, ret.value().size());
         ASSERT_EQ("testkey_0", ret.value()[0]);
@@ -148,17 +148,12 @@ TEST(MetaClientTest, InterfacesTest) {
     }
     {
         // Partial Scan Value Test
-        auto ret = client->partialScan("test", "key_0", "key_3", "value").get();
+        auto ret = client->scanValue("test", "key_0", "key_3").get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(3, ret.value().size());
         ASSERT_EQ("value_0", ret.value()[0]);
         ASSERT_EQ("value_1", ret.value()[1]);
         ASSERT_EQ("value_2", ret.value()[2]);
-    }
-    {
-        // Partial Scan Failed Test
-        auto ret = client->partialScan("test", "key_0", "key_3", "missed_type").get();
-        ASSERT_FALSE(ret.ok());
     }
     {
         // Remove Test

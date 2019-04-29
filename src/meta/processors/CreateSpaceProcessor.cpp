@@ -18,7 +18,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         onFinished();
         return;
     }
-    CHECK_EQ(Status::SpaceNotFound(), spaceRet.status());
+    CHECK(spaceRet.status().isNotFound());
     auto ret = allHosts();
     if (!ret.ok()) {
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);

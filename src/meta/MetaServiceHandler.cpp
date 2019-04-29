@@ -22,7 +22,8 @@
 #include "meta/processors/GetProcessor.h"
 #include "meta/processors/MultiGetProcessor.h"
 #include "meta/processors/ScanProcessor.h"
-#include "meta/processors/PartialScanProcessor.h"
+#include "meta/processors/ScanKeyProcessor.h"
+#include "meta/processors/ScanValueProcessor.h"
 #include "meta/processors/RemoveProcessor.h"
 #include "meta/processors/RemoveRangeProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
@@ -101,9 +102,15 @@ MetaServiceHandler::future_scan(const cpp2::ScanReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::PartialScanResp>
-MetaServiceHandler::future_partialScan(const cpp2::PartialScanReq& req) {
-    auto* processor = PartialScanProcessor::instance(kvstore_);
+folly::Future<cpp2::KeyOrValueScanResp>
+MetaServiceHandler::future_scanKey(const cpp2::ScanReq& req) {
+    auto* processor = ScanKeyProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::KeyOrValueScanResp>
+MetaServiceHandler::future_scanValue(const cpp2::ScanReq& req) {
+    auto* processor = ScanValueProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

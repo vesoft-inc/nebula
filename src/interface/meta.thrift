@@ -28,7 +28,6 @@ enum ErrorCode {
     // KV Failure
     E_STORE_FAILURE          = -31,
     E_STORE_SEGMENT_ILLEGAL  = -32,
-    E_KEY_NOT_FOUND          = -33,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
@@ -250,18 +249,11 @@ struct ScanReq {
 }
 
 struct ScanResp {
-    1: ErrorCode            code,
-    2: map<string, string>  values,
+    1: ErrorCode                                                 code,
+    2: map<string, string>(cpp.template = "std::unordered_map")  values,
 }
 
-struct PartialScanReq {
-    1: string    segment,
-    2: string    start,
-    3: string    end,
-    4: string    type,
-}
-
-struct PartialScanResp {
+struct KeyOrValueScanResp {
     1: ErrorCode     code,
     2: list<string>  values,
 }
@@ -288,12 +280,13 @@ service MetaService {
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
 
-    MultiPutResp     multiPut(1: MultiPutReq req);
-    GetResp          get(1: GetReq req);
-    MultiGetResp     multiGet(1: MultiGetReq req);
-    RemoveResp       remove(1: RemoveReq req);
-    RemoveRangeResp  removeRange(1: RemoveRangeReq req);
-    ScanResp         scan(1: ScanReq req);
-    PartialScanResp  partialScan(1: PartialScanReq req);
+    MultiPutResp        multiPut(1: MultiPutReq req);
+    GetResp             get(1: GetReq req);
+    MultiGetResp        multiGet(1: MultiGetReq req);
+    RemoveResp          remove(1: RemoveReq req);
+    RemoveRangeResp     removeRange(1: RemoveRangeReq req);
+    ScanResp            scan(1: ScanReq req);
+    KeyOrValueScanResp  scanKey(1: ScanReq req);
+    KeyOrValueScanResp  scanValue(1: ScanReq req);
 }
 

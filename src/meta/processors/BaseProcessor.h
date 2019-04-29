@@ -89,8 +89,7 @@ protected:
         switch (status.code()) {
         case Status::kOk:
             return cpp2::ErrorCode::SUCCEEDED;
-        case Status::kSpaceNotFound:
-        case Status::kHostNotFound:
+        case Status::kNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -138,15 +137,13 @@ protected:
     /**
      * Remove keys from start to end, doesn't contain end.
      * */
-    void doRemoveRange(const std::string& start,
-                       const std::string& end);
-
+    void doRemoveRange(const std::string& start, const std::string& end);
 
     /**
      * Scan keys from start to end, doesn't contain end. Finally return both keys and values.
      * */
-    StatusOr<std::map<std::string, std::string>> doScan(const std::string& start,
-                                                        const std::string& end);
+    StatusOr<std::unordered_map<std::string, std::string>> doScan(const std::string& start,
+                                                                  const std::string& end);
 
     /**
      * Scan keys from start to end, doesn't contain end. Finally return keys.

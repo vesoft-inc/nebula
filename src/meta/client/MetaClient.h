@@ -110,11 +110,14 @@ public:
     folly::Future<StatusOr<std::vector<std::string>>>
     multiGet(std::string segment, std::vector<std::string> keys);
 
-    folly::Future<StatusOr<std::map<std::string, std::string>>>
+    folly::Future<StatusOr<std::unordered_map<std::string, std::string>>>
     scan(std::string segment, std::string start, std::string end);
 
     folly::Future<StatusOr<std::vector<std::string>>>
-    partialScan(std::string segment, std::string start, std::string end, std::string type);
+    scanKey(std::string segment, std::string start, std::string end);
+
+    folly::Future<StatusOr<std::vector<std::string>>>
+    scanValue(std::string segment, std::string start, std::string end);
 
     folly::Future<StatusOr<bool>>
     remove(std::string segment, std::string key);
