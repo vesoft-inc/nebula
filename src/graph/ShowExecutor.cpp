@@ -32,6 +32,11 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowSpaces:
             showSpaces();
             break;
+        case ShowSentence::ShowType::kShowUsers:
+        case ShowSentence::ShowType::kShowUser:
+        case ShowSentence::ShowType::kShowPrivileges:
+            // TODO(boshengchen)
+            break;
         case ShowSentence::ShowType::kUnknown:
             onError_(Status::Error("Type unknown"));
             break;

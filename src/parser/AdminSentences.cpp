@@ -14,6 +14,12 @@ std::string ShowSentence::toString() const {
             return std::string("SHOW HOSTS");
         case ShowType::kShowSpaces:
             return std::string("SHOW SPACES");
+        case ShowType::kShowUsers:
+            return std::string("SHOW USERS");
+        case ShowType::kShowUser:
+            return folly::stringPrintf("SHOW USER %s", name_.get()->data());
+        case ShowType::kShowPrivileges:
+            return folly::stringPrintf("SHOW PRIVILEGE %s", name_.get()->data());
         case ShowType::kUnknown:
         default:
             FLOG_FATAL("Type illegal");

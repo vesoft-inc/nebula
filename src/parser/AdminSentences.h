@@ -20,22 +20,34 @@ public:
     enum class ShowType : uint32_t {
         kUnknown,
         kShowHosts,
-        kShowSpaces
+        kShowSpaces,
+        kShowUsers,
+        kShowUser,
+        kShowPrivileges
     };
 
     explicit ShowSentence(ShowType sType) {
         kind_ = Kind::kShow;
         showType_ = std::move(sType);
     }
-
+    ShowSentence(ShowType sType, std::string *name) {
+        kind_ = Kind::kShow;
+        name_.reset(name);
+        showType_ = std::move(sType);
+    }
     std::string toString() const override;
 
     ShowType showType() const {
         return showType_;
     }
 
+    std::string* getName() {
+        return name_.get();
+    }
+
 private:
-    ShowType    showType_{ShowType::kUnknown};
+    ShowType                      showType_{ShowType::kUnknown};
+    std::unique_ptr<std::string>  name_;
 };
 
 
