@@ -21,6 +21,7 @@ add_library(
     processors/DropSpaceProcessor.cpp
     processors/GetPartsAllocProcessor.cpp
     processors/AddTagProcessor.cpp
+    processors/AlterTagProcessor.cpp
     processors/GetTagProcessor.cpp
     processors/ListTagsProcessor.cpp
     processors/RemoveTagProcessor.cpp

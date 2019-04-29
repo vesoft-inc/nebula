@@ -33,6 +33,14 @@ enum ErrorCode {
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
 
+
+enum AlterTagOp {
+    ADD = 0x01,
+    SET = 0x02,
+    DROP = 0x03
+} (cpp.enum_strict)
+
+
 union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
@@ -54,6 +62,11 @@ struct TagItem {
     2: string               tag_name,
     3: i64                  version,
     4: common.Schema        schema,
+}
+
+struct AlterTagItem {
+    1: AlterTagOp           op,
+    2: common.Schema        schema,
 }
 
 struct ExecResp {
@@ -96,10 +109,16 @@ struct GetSpaceResp {
 }
 
 // Tags related operations
-struct AddTagReq {
+struct WriteTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
     3: common.Schema       schema,
+}
+
+struct AlterTagReq {
+    1: common.GraphSpaceID space_id,
+    2: string              tag_name,
+    3: list<AlterTagItem>  tag_items,
 }
 
 struct RemoveTagReq {
@@ -118,7 +137,7 @@ struct ListTagsResp {
     3: list<TagItem> tags,
 }
 
-struct GetTagReq {
+struct ReadTagReq {
     1: common.GraphSpaceID space_id,
     2: common.TagID        tag_id,
     3: i64                 version,
@@ -260,9 +279,10 @@ service MetaService {
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
 
-    ExecResp addTag(1: AddTagReq req);
+    ExecResp addTag(1: WriteTagReq req);
+    ExecResp alterTag(1: AlterTagReq req);
     ExecResp removeTag(1: RemoveTagReq req);
-    GetTagResp getTag(1: GetTagReq req);
+    GetTagResp getTag(1: ReadTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);
 
     ExecResp addEdge(1: AddEdgeReq req);
