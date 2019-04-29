@@ -14,6 +14,7 @@
 #include "meta/processors/RemoveHostsProcessor.h"
 #include "meta/processors/RemoveTagProcessor.h"
 #include "meta/processors/AddTagProcessor.h"
+#include "meta/processors/AlterTagProcessor.h"
 #include "meta/processors/AddEdgeProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
@@ -113,8 +114,14 @@ MetaServiceHandler::future_removeRange(const cpp2::RemoveRangeReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_addTag(const cpp2::AddTagReq& req) {
+MetaServiceHandler::future_addTag(const cpp2::WriteTagReq& req) {
     auto* processor = AddTagProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_alterTag(const cpp2::AlterTagReq& req) {
+    auto* processor = AlterTagProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
@@ -125,7 +132,7 @@ MetaServiceHandler::future_removeTag(const cpp2::RemoveTagReq& req) {
 }
 
 folly::Future<cpp2::GetTagResp>
-MetaServiceHandler::future_getTag(const cpp2::GetTagReq &req) {
+MetaServiceHandler::future_getTag(const cpp2::ReadTagReq &req) {
     auto* processor = GetTagProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }

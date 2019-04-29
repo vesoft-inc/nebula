@@ -23,13 +23,11 @@ public:
         return new AddTagProcessor(kvstore);
     }
 
-    void process(const cpp2::AddTagReq& req);
+    void process(const cpp2::WriteTagReq& req);
 
 private:
     explicit AddTagProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
-
-    StatusOr<TagID> getTag(const std::string& tagName);
 };
 
 }  // namespace meta
