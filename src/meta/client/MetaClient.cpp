@@ -45,6 +45,7 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
                                     meta::cpp2::MetaServiceAsyncClient>>();
     updateActiveHost();
     loadDataThreadFunc();
+    LOG(INFO) << "Create meta client to " << active_;
 }
 
  MetaClient::~MetaClient() {
@@ -64,7 +65,7 @@ void MetaClient::init() {
 void MetaClient::loadDataThreadFunc() {
     auto ret = listSpaces().get();
     if (!ret.ok()) {
-        LOG(ERROR) << "List space failed!";
+        LOG(ERROR) << "List space failed, status:" << ret.status();
         return;
     }
     decltype(localCache_) cache;
@@ -73,7 +74,8 @@ void MetaClient::loadDataThreadFunc() {
         auto spaceId = space.first;
         auto r = getPartsAlloc(spaceId).get();
         if (!r.ok()) {
-            LOG(ERROR) << "Get parts allocaction failed for spaceId " << spaceId;
+            LOG(ERROR) << "Get parts allocaction failed for spaceId " << spaceId
+                       << ", status " << r.status();
             return;
         }
         auto spaceCache = std::make_shared<SpaceInfoCache>();
@@ -122,7 +124,8 @@ folly::Future<StatusOr<Response>> MetaClient::getResponse(
          .then(evb, [p = std::move(pro), respGen, this] (folly::Try<RpcResponse>&& t) mutable {
         // exception occurred during RPC
         if (t.hasException()) {
-            p.setValue(Status::Error("RPC in MetaClient: %s", t.exception().what()));
+            p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
+                                                         t.exception().what().c_str())));
             return;
         }
         // errored
