@@ -134,8 +134,8 @@ Status GoExecutor::prepareOver() {
         if (clause == nullptr) {
             LOG(FATAL) << "Over clause shall never be null";
         }
-        auto space = ectx()->rctx()->session()->space();
-        edge_ = ectx()->schemaManager()->toEdgeType(space, *clause->edge());
+        auto spaceId = ectx()->rctx()->session()->space();
+        edgeType_ = ectx()->schemaManager()->toEdgeType(spaceId, *clause->edge());
         reversely_ = clause->isReversely();
         if (clause->alias() != nullptr) {
             expCtx_->addAlias(*clause->alias(), AliasKind::Edge, *clause->edge());
@@ -237,7 +237,7 @@ void GoExecutor::stepOut() {
     auto returns = getStepOutProps();
     auto future = ectx()->storage()->getNeighbors(space,
                                                   starts_,
-                                                  edge_,
+                                                  edgeType_,
                                                   !reversely_,
                                                   "",
                                                   std::move(returns));

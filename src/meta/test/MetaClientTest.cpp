@@ -91,19 +91,21 @@ TEST(MetaClientTest, InterfacesTest) {
         }
 
         auto schemaMan = std::make_unique<ServerBasedSchemaManager>();
-        schemaMan->init();
-        schemaMan->setMetaClient(client.get());
+        schemaMan->init(client.get());
         {
             // listTagSchemas
             auto ret1 = client->listTagSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
             ASSERT_EQ(ret1.value().size(), 1);
-            ASSERT_NE(ret1.value().begin()->first.first, 0);
-            ASSERT_EQ(ret1.value().begin()->second.begin()->second->getNumFields(), 5);
+            ASSERT_NE(ret1.value().begin()->tag_id, 0);
+            ASSERT_EQ(ret1.value().begin()->schema.columns.size(), 5);
 
             // getTagSchemeFromCache
             sleep(FLAGS_load_data_interval_second + 1);
-            auto ret2 = client->getTagSchemeFromCache(spaceId, ret1.value().begin()->first.first);
+            auto ver = client->getNewestTagVerFromCache(spaceId,
+                                                        ret1.value().begin()->tag_id);
+            auto ret2 = client->getTagSchemeFromCache(spaceId,
+                                                      ret1.value().begin()->tag_id, ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
 
@@ -124,10 +126,13 @@ TEST(MetaClientTest, InterfacesTest) {
             auto ret1 = client->listEdgeSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
             ASSERT_EQ(ret1.value().size(), 1);
-            ASSERT_NE(ret1.value().begin()->first.first, 0);
+            ASSERT_NE(ret1.value().begin()->edge_type, 0);
 
             // getEdgeSchemeFromCache
-            auto ret2 = client->getEdgeSchemeFromCache(spaceId, ret1.value().begin()->first.first);
+            auto ver = client->getNewestEdgeVerFromCache(spaceId,
+                                                         ret1.value().begin()->edge_type);
+            auto ret2 = client->getEdgeSchemeFromCache(spaceId,
+                                                       ret1.value().begin()->edge_type, ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
 

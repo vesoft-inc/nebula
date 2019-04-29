@@ -80,7 +80,7 @@ public:
     CreateTagSentence(std::string *name, ColumnSpecificationList *columns) {
         name_.reset(name);
         columns_.reset(columns);
-        kind_ = Kind::kDefineTag;
+        kind_ = Kind::kCreateTag;
     }
 
     std::string toString() const override;
@@ -105,7 +105,7 @@ public:
                        ColumnSpecificationList *columns) {
         name_.reset(name);
         columns_.reset(columns);
-        kind_ = Kind::kDefineEdge;
+        kind_ = Kind::kCreateEdge;
     }
 
     std::string toString() const override;

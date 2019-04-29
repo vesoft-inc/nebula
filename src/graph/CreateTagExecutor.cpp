@@ -26,7 +26,7 @@ void CreateTagExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
     const auto& specs = sentence_->columnSpecs();
-    auto space = ectx()->rctx()->session()->space();
+    auto spaceId = ectx()->rctx()->session()->space();
 
     nebula::cpp2::Schema schema;
     for (auto& spec : specs) {
@@ -36,7 +36,7 @@ void CreateTagExecutor::execute() {
         schema.columns.emplace_back(std::move(column));
     }
 
-    auto future = mc->addTagSchema(space, *name, schema);
+    auto future = mc->addTagSchema(spaceId, *name, schema);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

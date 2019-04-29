@@ -45,10 +45,10 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kPipe:
             executor = std::make_unique<PipeExecutor>(sentence, ectx());
             break;
-        case Sentence::Kind::kDefineTag:
+        case Sentence::Kind::kCreateTag:
             executor = std::make_unique<CreateTagExecutor>(sentence, ectx());
             break;
-        case Sentence::Kind::kDefineEdge:
+        case Sentence::Kind::kCreateEdge:
             executor = std::make_unique<CreateEdgeExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kAlterTag:

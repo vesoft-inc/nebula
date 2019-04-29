@@ -24,16 +24,10 @@ using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAddr>>;
 using SpaceIdName = std::pair<GraphSpaceID, std::string>;
 
 // struct for in cache
-using TagIDSchemas = std::unordered_map<TagID, std::map<int32_t,
-            std::shared_ptr<const SchemaProviderIf>>>;
-using EdgeTypeSchemas = std::unordered_map<EdgeType, std::map<int32_t,
-            std::shared_ptr<const SchemaProviderIf>>>;
-
-// struct for list interface
-using TagNameIDSchemas = std::unordered_map<std::pair<TagID, std::string>,
-            std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>;
-using EdgeNameTypeSchemas = std::unordered_map<std::pair<EdgeType, std::string>,
-            std::map<int32_t, std::shared_ptr<const SchemaProviderIf>>>;
+using TagIDSchemas = std::unordered_map<std::pair<TagID, int32_t>,
+            std::shared_ptr<const SchemaProviderIf>>;
+using EdgeTypeSchemas = std::unordered_map<std::pair<EdgeType, int32_t>,
+            std::shared_ptr<const SchemaProviderIf>>;
 
 struct SpaceInfoCache {
     std::string spaceName;
@@ -45,11 +39,13 @@ struct SpaceInfoCache {
 
 using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;
 // get tagID via spaceId and tagName
-using SpaceTagNameIdMap = std::unordered_map<GraphSpaceID,
-                                             std::unordered_map<std::string, TagID>>;
+using SpaceTagNameIdMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, TagID>;
 // get edgeType via spaceId and edgeName
-using SpaceEdgeNameTypeMap = std::unordered_map<GraphSpaceID,
-                                                std::unordered_map<std::string, EdgeType>>;
+using SpaceEdgeNameTypeMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, EdgeType>;
+// get newest tag ver via spaceId and TagID
+using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, int32_t>;
+// get newest edge ver via spaceId and edgeType
+using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, int32_t>;
 
 class MetaChangedListener {
 public:
@@ -102,21 +98,25 @@ public:
     folly::Future<StatusOr<TagID>> addTagSchema(GraphSpaceID spaceId, std::string name,
                                                nebula::cpp2::Schema schema);
 
-    folly::Future<StatusOr<TagNameIDSchemas>> listTagSchemas(GraphSpaceID spaceId);
+    folly::Future<StatusOr<std::vector<cpp2::TagItem>>> listTagSchemas(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
     folly::Future<StatusOr<EdgeType>> addEdgeSchema(GraphSpaceID spaceId, std::string name,
                                                 nebula::cpp2::Schema schema);
 
-    folly::Future<StatusOr<EdgeNameTypeSchemas>> listEdgeSchemas(GraphSpaceID spaceId);
+    folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>> listEdgeSchemas(GraphSpaceID spaceId);
 
     // These are the interfaces about cache opeartions.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
-    StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& sapce, const std::string& name);
+    StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
-    StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& sapce,
+    StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                   const std::string& name);
+
+    int32_t getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
+
+    int32_t getNewestEdgeVerFromCache(const GraphSpaceID& space, const EdgeType& edgeType);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
@@ -160,6 +160,13 @@ public:
 
 protected:
     void loadDataThreadFunc();
+
+    bool loadSchema(GraphSpaceID spaceId,
+                    std::shared_ptr<SpaceInfoCache> spaceInfoCache,
+                    SpaceTagNameIdMap &tagNameIdMap,
+                    SpaceEdgeNameTypeMap &edgeNameTypeMap,
+                    SpaceNewestTagVerMap &newestTagVerMap,
+                    SpaceNewestEdgeVerMap &newestEdgeVerMap);
 
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
@@ -215,6 +222,8 @@ private:
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
+    SpaceNewestTagVerMap  spaceNewestTagVerMap_;
+    SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     folly::RWSpinLock localCacheLock_;
     MetaChangedListener* listener_{nullptr};
 };

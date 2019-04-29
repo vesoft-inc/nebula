@@ -13,7 +13,7 @@ DECLARE_int32(load_data_interval_second);
 namespace nebula {
 namespace graph {
 
-class DefineSchemaTest : public TestBase {
+class SchemaTest : public TestBase {
 protected:
     void SetUp() override {
         TestBase::SetUp();
@@ -26,7 +26,7 @@ protected:
     }
 };
 
-TEST_F(DefineSchemaTest, metaCommunication) {
+TEST_F(SchemaTest, metaCommunication) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
     {

@@ -20,18 +20,12 @@ class FileBasedSchemaManager final : public AdHocSchemaManager {
 public:
     FileBasedSchemaManager() = default;
 
-    void init() override;
+    void init(MetaClient *client = nullptr) override;
 
 private:
     void readOneGraphSpace(GraphSpaceID space, const Configuration& conf);
 
     std::shared_ptr<const SchemaProviderIf> readSchema(const folly::dynamic& fields);
-
-    GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) override;
-
-    TagID toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
-
-    EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
 private:
     std::unique_ptr<MetaClient> client_;

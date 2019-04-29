@@ -53,10 +53,7 @@ public:
     // ServerBasedSchemaManager need space to get Edge
     virtual EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) = 0;
 
-    // storageclient also use metaClient
-    virtual void setMetaClient(MetaClient *client) = 0;
-
-    virtual void init() = 0;
+    virtual void init(MetaClient *client = nullptr) = 0;
 
 protected:
     SchemaManager() = default;
@@ -108,9 +105,7 @@ public:
 
     EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
-    void setMetaClient(MetaClient *client) override { UNUSED(client); }
-
-    void init() override {}
+    void init(MetaClient *client = nullptr) override { UNUSED(client); }
 
 protected:
     folly::RWSpinLock tagLock_;

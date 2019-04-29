@@ -103,7 +103,7 @@ TEST(Parser, UseNamespace) {
     }
 }
 
-TEST(Parser, DefineTag) {
+TEST(Parser, CreateTag) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG person(name string, age int TTL = 100, "

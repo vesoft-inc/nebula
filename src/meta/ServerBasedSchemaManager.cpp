@@ -10,9 +10,18 @@
 namespace nebula {
 namespace meta {
 
+void ServerBasedSchemaManager::init(MetaClient *client) {
+    CHECK(client);
+    metaClient_ = client;
+}
+
 std::shared_ptr<const SchemaProviderIf>
 ServerBasedSchemaManager::getTagSchema(GraphSpaceID space, TagID tag, int32_t ver) {
     CHECK(metaClient_);
+    // ver less 0, get the newest ver
+    if (ver < 0) {
+        ver = getNewestTagSchemaVer(space, tag);
+    }
     auto ret = metaClient_->getTagSchemeFromCache(space, tag, ver);
     if (ret.ok()) {
         return ret.value();
@@ -32,12 +41,7 @@ ServerBasedSchemaManager::getTagSchema(folly::StringPiece spaceName,
 // Returns a negative number when the schema does not exist
 int32_t ServerBasedSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
     CHECK(metaClient_);
-    auto ret = metaClient_->getTagSchemeFromCache(space, tag);
-    if (ret.ok()) {
-        return ret.value()->getVersion();
-    }
-
-    return -1;
+    return  metaClient_->getNewestTagVerFromCache(space, tag);
 }
 
 int32_t ServerBasedSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
@@ -49,6 +53,11 @@ int32_t ServerBasedSchemaManager::getNewestTagSchemaVer(folly::StringPiece space
 std::shared_ptr<const SchemaProviderIf>
 ServerBasedSchemaManager::getEdgeSchema(GraphSpaceID space, EdgeType edge, int32_t ver) {
     CHECK(metaClient_);
+    // ver less 0, get the newest ver
+    if (ver < 0) {
+        ver = getNewestEdgeSchemaVer(space, edge);
+    }
+
     auto ret = metaClient_->getEdgeSchemeFromCache(space, edge, ver);
     if (ret.ok()) {
         return ret.value();
@@ -69,12 +78,7 @@ std::shared_ptr<const SchemaProviderIf> ServerBasedSchemaManager::getEdgeSchema(
 int32_t ServerBasedSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space,
                                                          EdgeType edge) {
     CHECK(metaClient_);
-    auto ret = metaClient_->getEdgeSchemeFromCache(space, edge);
-    if (ret.ok()) {
-        return ret.value()->getVersion();
-    }
-
-    return -1;
+    return  metaClient_->getNewestEdgeVerFromCache(space, edge);
 }
 
 int32_t ServerBasedSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceName,

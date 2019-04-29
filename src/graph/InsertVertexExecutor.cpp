@@ -32,9 +32,9 @@ Status InsertVertexExecutor::prepare() {
     if (rows_.empty()) {
         return Status::Error("VALUES cannot be empty");
     }
-    auto space = ectx()->rctx()->session()->space();
-    tagId_ = ectx()->schemaManager()->toTagID(space, *vertex_);
-    schema_ = ectx()->schemaManager()->getTagSchema(space, tagId_);
+    auto spaceId = ectx()->rctx()->session()->space();
+    tagId_ = ectx()->schemaManager()->toTagID(spaceId, *vertex_);
+    schema_ = ectx()->schemaManager()->getTagSchema(spaceId, tagId_);
     if (schema_ == nullptr) {
         return Status::Error("No schema found for `%s'", vertex_->c_str());
     }

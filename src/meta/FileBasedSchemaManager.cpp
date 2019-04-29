@@ -11,12 +11,11 @@
 
 DEFINE_string(schema_file, "", "The full path of the schema file");
 
-DEFINE_bool(graph_id_from_server, false, "get graphID from meta server."
-                                         "This is a temp flag");
 namespace nebula {
 namespace meta {
 
-void FileBasedSchemaManager::init() {
+void FileBasedSchemaManager::init(MetaClient *client) {
+    UNUSED(client);
     DCHECK(!FLAGS_schema_file.empty()) << "Schema file is required";
 
     Configuration conf;
@@ -135,49 +134,6 @@ std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
     }
 
     return std::static_pointer_cast<const SchemaProviderIf>(schema);
-}
-
-std::once_flag initFlag;
-GraphSpaceID FileBasedSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
-    if (FLAGS_graph_id_from_server) {
-        std::call_once(initFlag, [this]() {
-            client_ = std::make_unique<MetaClient>();
-            client_->init();
-        });
-        auto spaceStr = spaceName.str();
-        auto ret = client_->getSpaceIdByNameFromCache(spaceStr);
-        CHECK(ret.ok());
-        return ret.value();
-    }
-    return AdHocSchemaManager::toGraphSpaceID(spaceName);
-}
-
-TagID FileBasedSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {
-    if (FLAGS_graph_id_from_server) {
-        std::call_once(initFlag, [this]() {
-            client_ = std::make_unique<MetaClient>();
-            client_->init();
-        });
-        auto tagStr = tagName.str();
-        auto ret = client_->getTagIDByNameFromCache(space, tagStr);
-        CHECK(ret.ok());
-        return ret.value();
-    }
-    return AdHocSchemaManager::toTagID(space, tagName);
-}
-
-EdgeType FileBasedSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
-    if (FLAGS_graph_id_from_server) {
-        std::call_once(initFlag, [this]() {
-            client_ = std::make_unique<MetaClient>();
-            client_->init();
-        });
-        auto typeStr = typeName.str();
-        auto ret = client_->getEdgeTypeByNameFromCache(space, typeStr);
-        CHECK(ret.ok());
-        return ret.value();
-    }
-    return AdHocSchemaManager::toEdgeType(space, typeName);
 }
 
 }  // namespace meta

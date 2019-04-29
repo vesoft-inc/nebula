@@ -17,7 +17,7 @@ void AddEdgeProcessor::process(const cpp2::WriteEdgeReq& req) {
         return;
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
-    auto ret = getEdge(req.get_edge_name());
+    auto ret = getEdgeType(req.get_edge_name());
     std::vector<kvstore::KV> data;
     if (ret.ok()) {
         resp_.set_id(to(ret.value(), EntryType::EDGE));
@@ -36,7 +36,7 @@ void AddEdgeProcessor::process(const cpp2::WriteEdgeReq& req) {
     doPut(std::move(data));
 }
 
-StatusOr<EdgeType> AddEdgeProcessor::getEdge(const std::string& edgeName) {
+StatusOr<EdgeType> AddEdgeProcessor::getEdgeType(const std::string& edgeName) {
     auto indexKey = MetaServiceUtils::indexKey(EntryType::EDGE, edgeName);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);

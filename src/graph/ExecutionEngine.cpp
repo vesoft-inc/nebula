@@ -20,8 +20,7 @@ ExecutionEngine::ExecutionEngine(std::unique_ptr<storage::StorageClient> storage
     metaClient_->init();
 
     schemaManager_ = meta::SchemaManager::create();
-    schemaManager_->init();
-    schemaManager_->setMetaClient(metaClient_.get());
+    schemaManager_->init(metaClient_.get());
     storage_ = std::move(storage);
 }
 

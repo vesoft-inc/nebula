@@ -54,11 +54,7 @@ public:
 
     EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
-    void setMetaClient(MetaClient *client) override {
-        metaClient_ = client;
-    }
-
-    void init() override {}
+    void init(MetaClient *client) override;
 
 private:
     MetaClient             *metaClient_;

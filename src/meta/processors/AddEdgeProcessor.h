@@ -24,7 +24,7 @@ private:
     explicit AddEdgeProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    StatusOr<EdgeType> getEdge(const std::string& edgeName);
+    StatusOr<EdgeType> getEdgeType(const std::string& edgeName);
 };
 
 }  // namespace meta
