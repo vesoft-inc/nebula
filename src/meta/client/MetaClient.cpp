@@ -94,11 +94,11 @@ void MetaClient::loadDataThreadFunc() {
 
         // loadSchemas
         if (!loadSchemas(spaceId,
-                        spaceCache,
-                        spaceTagIndexByName,
-                        spaceEdgeIndexByName,
-                        spaceNewestTagVerMap,
-                        spaceNewestEdgeVerMap)) {
+                         spaceCache,
+                         spaceTagIndexByName,
+                         spaceEdgeIndexByName,
+                         spaceNewestTagVerMap,
+                         spaceNewestEdgeVerMap)) {
             return;
         }
 
@@ -119,11 +119,11 @@ void MetaClient::loadDataThreadFunc() {
 }
 
 bool MetaClient::loadSchemas(GraphSpaceID spaceId,
-                    std::shared_ptr<SpaceInfoCache> spaceInfoCache,
-                    SpaceTagNameIdMap &tagNameIdMap,
-                    SpaceEdgeNameTypeMap &edgeNameTypeMap,
-                    SpaceNewestTagVerMap &newestTagVerMap,
-                    SpaceNewestEdgeVerMap &newestEdgeVerMap) {
+                             std::shared_ptr<SpaceInfoCache> spaceInfoCache,
+                             SpaceTagNameIdMap &tagNameIdMap,
+                             SpaceEdgeNameTypeMap &edgeNameTypeMap,
+                             SpaceNewestTagVerMap &newestTagVerMap,
+                             SpaceNewestEdgeVerMap &newestEdgeVerMap) {
     auto tagRet = listTagSchemas(spaceId).get();
     if (!tagRet.ok()) {
         LOG(ERROR) << "Get tag schemas failed for spaceId " << spaceId;

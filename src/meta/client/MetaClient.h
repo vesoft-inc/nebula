@@ -25,9 +25,9 @@ using SpaceIdName = std::pair<GraphSpaceID, std::string>;
 
 // struct for in cache
 using TagIDSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
-            std::shared_ptr<const SchemaProviderIf>>;
+                                        std::shared_ptr<const SchemaProviderIf>>;
 using EdgeTypeSchemas = std::unordered_map<std::pair<EdgeType, SchemaVer>,
-            std::shared_ptr<const SchemaProviderIf>>;
+                                           std::shared_ptr<const SchemaProviderIf>>;
 
 struct SpaceInfoCache {
     std::string spaceName;
@@ -95,14 +95,16 @@ public:
     getPartsAlloc(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<TagID>> createTagSchema(GraphSpaceID spaceId, std::string name,
-                                               nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<TagID>> createTagSchema(GraphSpaceID spaceId,
+                                                   std::string name,
+                                                   nebula::cpp2::Schema schema);
 
     folly::Future<StatusOr<std::vector<cpp2::TagItem>>> listTagSchemas(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<EdgeType>> createEdgeSchema(GraphSpaceID spaceId, std::string name,
-                                                nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<EdgeType>> createEdgeSchema(GraphSpaceID spaceId,
+                                                       std::string name,
+                                                       nebula::cpp2::Schema schema);
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>> listEdgeSchemas(GraphSpaceID spaceId);
 
@@ -162,11 +164,11 @@ protected:
     void loadDataThreadFunc();
 
     bool loadSchemas(GraphSpaceID spaceId,
-                    std::shared_ptr<SpaceInfoCache> spaceInfoCache,
-                    SpaceTagNameIdMap &tagNameIdMap,
-                    SpaceEdgeNameTypeMap &edgeNameTypeMap,
-                    SpaceNewestTagVerMap &newestTagVerMap,
-                    SpaceNewestEdgeVerMap &newestEdgeVerMap);
+                     std::shared_ptr<SpaceInfoCache> spaceInfoCache,
+                     SpaceTagNameIdMap &tagNameIdMap,
+                     SpaceEdgeNameTypeMap &edgeNameTypeMap,
+                     SpaceNewestTagVerMap &newestTagVerMap,
+                     SpaceNewestEdgeVerMap &newestEdgeVerMap);
 
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
@@ -198,10 +200,9 @@ protected:
              class Response =
                 typename std::result_of<RespGenerator(RpcResponse)>::type
     >
-    folly::Future<StatusOr<Response>> getResponse(
-                                    Request req,
-                                    RemoteFunc remoteFunc,
-                                    RespGenerator respGen);
+    folly::Future<StatusOr<Response>> getResponse(Request req,
+                                                  RemoteFunc remoteFunc,
+                                                  RespGenerator respGen);
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 

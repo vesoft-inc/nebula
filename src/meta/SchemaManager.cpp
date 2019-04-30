@@ -45,16 +45,17 @@ void AdHocSchemaManager::addEdgeSchema(GraphSpaceID space,
     edgeSchemas_[std::make_pair(space, edge)][0] = schema;
 }
 
-std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getTagSchema(
-        folly::StringPiece spaceName,
-        folly::StringPiece tagName,
-        SchemaVer ver) {
+std::shared_ptr<const SchemaProviderIf>
+AdHocSchemaManager::getTagSchema(folly::StringPiece spaceName,
+                                 folly::StringPiece tagName,
+                                 SchemaVer ver) {
     auto space = toGraphSpaceID(spaceName);
     return getTagSchema(space, toTagID(space, tagName), ver);
 }
 
-std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getTagSchema(
-        GraphSpaceID space, TagID tag, SchemaVer ver) {
+std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getTagSchema(GraphSpaceID space,
+                                                                         TagID tag,
+                                                                         SchemaVer ver) {
     folly::RWSpinLock::ReadHolder rh(tagLock_);
     auto it = tagSchemas_.find(std::make_pair(space, tag));
     if (it == tagSchemas_.end()) {
@@ -84,7 +85,7 @@ std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getTagSchema(
 }
 
 SchemaVer AdHocSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
-                                                  folly::StringPiece tagName) {
+                                                    folly::StringPiece tagName) {
     auto space = toGraphSpaceID(spaceName);
     return getNewestTagSchemaVer(space, toTagID(space, tagName));
 }
@@ -101,16 +102,18 @@ SchemaVer AdHocSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID ta
     }
 }
 
-std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getEdgeSchema(
-        folly::StringPiece spaceName,
-        folly::StringPiece typeName,
-        SchemaVer ver) {
+std::shared_ptr<const SchemaProviderIf>
+AdHocSchemaManager::getEdgeSchema(folly::StringPiece spaceName,
+                                  folly::StringPiece typeName,
+                                  SchemaVer ver) {
     auto space = toGraphSpaceID(spaceName);
     return getEdgeSchema(space, toEdgeType(space, typeName), ver);
 }
 
-std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getEdgeSchema(
-        GraphSpaceID space, EdgeType edge, SchemaVer ver) {
+std::shared_ptr<const SchemaProviderIf>
+AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
+                                  EdgeType edge,
+                                  SchemaVer ver) {
     folly::RWSpinLock::ReadHolder rh(edgeLock_);
     auto it = edgeSchemas_.find(std::make_pair(space, edge));
     if (it == edgeSchemas_.end()) {
@@ -140,7 +143,7 @@ std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getEdgeSchema(
 }
 
 SchemaVer AdHocSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceName,
-                                                   folly::StringPiece typeName) {
+                                                     folly::StringPiece typeName) {
     auto space = toGraphSpaceID(spaceName);
     return getNewestEdgeSchemaVer(space, toEdgeType(space, typeName));
 }

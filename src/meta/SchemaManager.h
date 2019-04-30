@@ -19,38 +19,38 @@ class SchemaManager {
 public:
     static std::unique_ptr<SchemaManager> create();
 
-    virtual std::shared_ptr<const SchemaProviderIf> getTagSchema(
-        GraphSpaceID space, TagID tag, SchemaVer ver = -1) = 0;
+    virtual std::shared_ptr<const SchemaProviderIf> getTagSchema(GraphSpaceID space,
+                                                                 TagID tag,
+                                                                 SchemaVer ver = -1) = 0;
 
-    virtual std::shared_ptr<const SchemaProviderIf> getTagSchema(
-        folly::StringPiece spaceName,
-        folly::StringPiece tagName,
-        SchemaVer ver = -1) = 0;
+    virtual std::shared_ptr<const SchemaProviderIf> getTagSchema(folly::StringPiece spaceName,
+                                                                 folly::StringPiece tagName,
+                                                                 SchemaVer ver = -1) = 0;
+
     // Returns a negative number when the schema does not exist
     virtual SchemaVer getNewestTagSchemaVer(GraphSpaceID space, TagID tag) = 0;
 
     virtual SchemaVer getNewestTagSchemaVer(folly::StringPiece spaceName,
-                                          folly::StringPiece tagName) = 0;
+                                            folly::StringPiece tagName) = 0;
 
-    virtual std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
-        GraphSpaceID space, EdgeType edge, SchemaVer ver = -1) = 0;
+    virtual std::shared_ptr<const SchemaProviderIf> getEdgeSchema(GraphSpaceID space,
+                                                                  EdgeType edge,
+                                                                  SchemaVer ver = -1) = 0;
 
-    virtual std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
-        folly::StringPiece spaceName,
-        folly::StringPiece typeName,
-        SchemaVer ver = -1) = 0;
+    virtual std::shared_ptr<const SchemaProviderIf> getEdgeSchema(folly::StringPiece spaceName,
+                                                                  folly::StringPiece typeName,
+                                                                  SchemaVer ver = -1) = 0;
+
     // Returns a negative number when the schema does not exist
     virtual SchemaVer getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) = 0;
 
     virtual SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
-                                           folly::StringPiece typeName) = 0;
+                                             folly::StringPiece typeName) = 0;
 
     virtual GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) = 0;
 
-    // ServerBasedSchemaManager need space to get tagID
     virtual TagID toTagID(GraphSpaceID space, folly::StringPiece tagName) = 0;
 
-    // ServerBasedSchemaManager need space to get Edge
     virtual EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) = 0;
 
     virtual void init(MetaClient *client = nullptr) = 0;
@@ -73,31 +73,33 @@ public:
                        EdgeType edge,
                        std::shared_ptr<SchemaProviderIf> schema);
 
-    std::shared_ptr<const SchemaProviderIf> getTagSchema(
-        GraphSpaceID space, TagID tag, SchemaVer ver = -1) override;
+    std::shared_ptr<const SchemaProviderIf> getTagSchema(GraphSpaceID space,
+                                                         TagID tag,
+                                                         SchemaVer ver = -1) override;
 
-    std::shared_ptr<const SchemaProviderIf> getTagSchema(
-        folly::StringPiece spaceName,
-        folly::StringPiece tagName,
-        SchemaVer ver = -1) override;
+    std::shared_ptr<const SchemaProviderIf> getTagSchema(folly::StringPiece spaceName,
+                                                         folly::StringPiece tagName,
+                                                         SchemaVer ver = -1) override;
+
     // Returns a negative number when the schema does not exist
     SchemaVer getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
 
     SchemaVer getNewestTagSchemaVer(folly::StringPiece spaceName,
-                                  folly::StringPiece tagName) override;
+                                    folly::StringPiece tagName) override;
 
-    std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
-        GraphSpaceID space, EdgeType edge, SchemaVer ver = -1) override;
+    std::shared_ptr<const SchemaProviderIf> getEdgeSchema(GraphSpaceID space,
+                                                          EdgeType edge,
+                                                          SchemaVer ver = -1) override;
 
-    std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
-        folly::StringPiece spaceName,
-        folly::StringPiece typeName,
-        SchemaVer ver = -1) override;
+    std::shared_ptr<const SchemaProviderIf> getEdgeSchema(folly::StringPiece spaceName,
+                                                          folly::StringPiece typeName,
+                                                          SchemaVer ver = -1) override;
+
     // Returns a negative number when the schema does not exist
     SchemaVer getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
 
     SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
-                                   folly::StringPiece typeName) override;
+                                     folly::StringPiece typeName) override;
 
     virtual GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName);
 
