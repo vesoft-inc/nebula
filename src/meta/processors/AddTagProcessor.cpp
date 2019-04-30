@@ -10,7 +10,7 @@
 namespace nebula {
 namespace meta {
 
-void AddTagProcessor::process(const cpp2::AddTagReq& req) {
+void AddTagProcessor::process(const cpp2::WriteTagReq& req) {
     if (spaceExist(req.get_space_id()) == Status::NotFound()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
@@ -24,18 +24,15 @@ void AddTagProcessor::process(const cpp2::AddTagReq& req) {
         onFinished();
         return;
     }
-
-    auto version = time::TimeUtils::nowInMSeconds();
     TagID tagId = autoIncrementId();
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::tagIndexKey(req.get_space_id(), req.get_tag_name()),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
     LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId;
-    data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),
+    data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, 0),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));
 }
-
 }  // namespace meta
 }  // namespace nebula

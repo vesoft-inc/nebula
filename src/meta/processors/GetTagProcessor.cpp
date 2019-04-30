@@ -9,7 +9,7 @@
 namespace nebula {
 namespace meta {
 
-void GetTagProcessor::process(const cpp2::GetTagReq& req) {
+void GetTagProcessor::process(const cpp2::ReadTagReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
     std::string val;
     std::string tagKey = MetaServiceUtils::schemaTagKey(req.get_space_id(),

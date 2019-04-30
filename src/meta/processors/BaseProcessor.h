@@ -50,8 +50,8 @@ GENERATE_LOCK(tag);
         return; \
     }
 
-#define MAX_VERSION_HEX 0x7FFFFFFFFFFFFFFF
-#define MIN_VERSION_HEX 0x0000000000000000
+#define MAX_VERSION std::numeric_limits<int64_t>::max()
+#define MIN_VERSION std::numeric_limits<int64_t>::min()
 
 template<typename RESP>
 class BaseProcessor {

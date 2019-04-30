@@ -26,7 +26,7 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
         auto key = iter->key();
         auto val = iter->val();
         auto tagID = *reinterpret_cast<const TagID *>(key.data() + prefix.size());
-        auto vers = *reinterpret_cast<const int64_t *>(key.data() + prefix.size() + sizeof(TagID));
+        auto vers = MetaServiceUtils::parseTagVersion(key);
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto tagName = val.subpiece(sizeof(int32_t), nameLen).str();
         auto schema = MetaServiceUtils::parseSchema(val);
