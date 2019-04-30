@@ -134,10 +134,11 @@ class GraphScanner;
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
-%type <sentence> maintainance_sentence insert_vertex_sentence insert_edge_sentence
+%type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence 
+%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence
 %type <sentence> drop_space_sentence
+%type <sentence> yield_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -441,6 +442,12 @@ yield_column
     }
     | expression KW_AS LABEL {
         $$ = new YieldColumn($1, $3);
+    }
+    ;
+
+yield_sentence
+    : KW_YIELD yield_columns {
+        $$ = new YieldSentence($2);
     }
     ;
 
@@ -846,12 +853,12 @@ space_opt_list
 
  space_opt_item
     : KW_PARTITION_NUM ASSIGN INTEGER {
-        $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3); 
+        $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3);
     }
     | KW_REPLICA_FACTOR ASSIGN INTEGER {
         $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
     }
-    // TODO(YT) Create Spaces for different engines 
+    // TODO(YT) Create Spaces for different engines
     // KW_ENGINE_TYPE ASSIGN LABEL
     ;
 
@@ -870,7 +877,7 @@ mutate_sentence
     | delete_edge_sentence { $$ = $1; }
     ;
 
-maintainance_sentence
+maintain_sentence
     : define_tag_sentence { $$ = $1; }
     | define_edge_sentence { $$ = $1; }
     | alter_tag_sentence { $$ = $1; }
@@ -882,10 +889,15 @@ maintainance_sentence
     | remove_hosts_sentence { $$ = $1; }
     | create_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
-    ; 
+    | yield_sentence {
+        // Now we take YIELD as a normal maintenance sentence.
+        // In the future, we might make it able to be used in pipe.
+        $$ = $1;
+    }
+    ;
 
 sentence
-    : maintainance_sentence { $$ = $1; }
+    : maintain_sentence { $$ = $1; }
     | use_sentence { $$ = $1; }
     | piped_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }

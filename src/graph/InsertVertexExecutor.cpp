@@ -50,11 +50,13 @@ void InsertVertexExecutor::execute() {
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto id = row->id();
-        auto exprs = row->values();
+        auto expressions = row->values();
         std::vector<VariantType> values;
-        values.resize(exprs.size());
-        auto eval = [] (auto *expr) { return expr->eval(); };
-        std::transform(exprs.begin(), exprs.end(), values.begin(), eval);
+
+        values.reserve(expressions.size());
+        for (auto *expr : expressions) {
+            values.emplace_back(expr->eval());
+        }
 
         auto &vertex = vertices[i];
         std::vector<Tag> tags(1);
