@@ -11,43 +11,33 @@ namespace meta {
 
 void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
     if (spaceExist(req.get_space_id()) == Status::NotFound()) {
+        LOG(ERROR) << "RemoveTag Space " << req.get_space_id() << " Not Found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
+
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    auto ret = getTagKeys(req.get_space_id(), req.get_tag_name());
-    if (!ret.ok()) {
+    auto indexKey = MetaServiceUtils::tagIndexKey(req.get_space_id(), req.get_tag_name());
+    auto indexResult = doGet(indexKey);
+    if (!indexResult.ok()) {
+        LOG(ERROR) << "RemoveTag Space " << req.get_space_id() << " TagName "
+                   << req.get_tag_name() << " Not Found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    LOG(INFO) << "Remove Tag " << req.get_tag_name();
-    doMultiRemove(std::move(ret.value()));
+
+    auto tagID = *reinterpret_cast<const TagID *>(indexResult.value().data());
+    kvstore_->asyncRemove(kDefaultSpaceId_, kDefaultPartId_, indexKey,
+                          [] (kvstore::ResultCode code, HostAddr leader) {
+        UNUSED(code);
+        UNUSED(leader);
+    });
+    doRemoveRange(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagID, MIN_VERSION_HEX),
+                  MetaServiceUtils::schemaTagKey(req.get_space_id(), tagID, MAX_VERSION_HEX));
 }
 
-StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID id,
-                                                                  const std::string& tagName) {
-    auto indexKey = MetaServiceUtils::tagIndexKey(id, tagName);
-    TagID tagId;
-    auto indexValue = doGet(indexKey);
-    if (indexValue.ok()) {
-        tagId = *reinterpret_cast<const TagID *>(indexValue.value().data());
-        resp_.set_id(to(tagId, EntryType::TAG));
-    } else {
-        return Status::Error("No Tag!");
-    }
-
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = doScanKey(MetaServiceUtils::schemaTagKey(id, tagId, MIN_VERSION_HEX),
-                         MetaServiceUtils::schemaTagKey(id, tagId, MAX_VERSION_HEX));
-    if (!ret.ok()) {
-        return Status::Error("Tag get error by id : %d !", tagId);
-    }
-    auto keys = ret.value();
-    keys.emplace_back(indexKey);
-    return keys;
-}
 
 }  // namespace meta
 }  // namespace nebula
