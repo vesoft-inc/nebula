@@ -25,9 +25,9 @@ void UseExecutor::execute() {
     auto *session = ectx()->rctx()->session();
 
     // TODO(dutor) Check space's validness and map to type of integer
-    auto space = ectx()->schemaManager()->toGraphSpaceID(*sentence_->space());
-    session->setSpace(*sentence_->space(), space);
-    FLOG_INFO("Graph space switched to `%s', space id: %d", sentence_->space()->c_str(), space);
+    auto spaceId = ectx()->schemaManager()->toGraphSpaceID(*sentence_->space());
+    session->setSpace(*sentence_->space(), spaceId);
+    FLOG_INFO("Graph space switched to `%s', space id: %d", sentence_->space()->c_str(), spaceId);
 
     onFinish_();
 }

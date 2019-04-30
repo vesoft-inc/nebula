@@ -24,9 +24,9 @@ using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAddr>>;
 using SpaceIdName = std::pair<GraphSpaceID, std::string>;
 
 // struct for in cache
-using TagIDSchemas = std::unordered_map<std::pair<TagID, int32_t>,
+using TagIDSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
             std::shared_ptr<const SchemaProviderIf>>;
-using EdgeTypeSchemas = std::unordered_map<std::pair<EdgeType, int32_t>,
+using EdgeTypeSchemas = std::unordered_map<std::pair<EdgeType, SchemaVer>,
             std::shared_ptr<const SchemaProviderIf>>;
 
 struct SpaceInfoCache {
@@ -43,9 +43,9 @@ using SpaceTagNameIdMap = std::unordered_map<std::pair<GraphSpaceID, std::string
 // get edgeType via spaceId and edgeName
 using SpaceEdgeNameTypeMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, EdgeType>;
 // get newest tag ver via spaceId and TagID
-using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, int32_t>;
+using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, SchemaVer>;
 // get newest edge ver via spaceId and edgeType
-using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, int32_t>;
+using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 
 class MetaChangedListener {
 public:
@@ -114,9 +114,9 @@ public:
     StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                   const std::string& name);
 
-    int32_t getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
+    SchemaVer getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
 
-    int32_t getNewestEdgeVerFromCache(const GraphSpaceID& space, const EdgeType& edgeType);
+    SchemaVer getNewestEdgeVerFromCache(const GraphSpaceID& space, const EdgeType& edgeType);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
@@ -133,11 +133,11 @@ public:
 
     StatusOr<std::shared_ptr<const SchemaProviderIf>> getTagSchemeFromCache(GraphSpaceID spaceId,
                                                                             TagID tagID,
-                                                                            int32_t ver = -1);
+                                                                            SchemaVer ver = -1);
 
     StatusOr<std::shared_ptr<const SchemaProviderIf>> getEdgeSchemeFromCache(GraphSpaceID spaceId,
                                                                              EdgeType edgeType,
-                                                                             int32_t ver = -1);
+                                                                             SchemaVer ver = -1);
 
     folly::Future<StatusOr<bool>>
     multiPut(std::string segment,
