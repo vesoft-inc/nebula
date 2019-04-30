@@ -6,6 +6,7 @@
 #ifndef PARSER_MAINTAINSENTENCES_H_
 #define PARSER_MAINTAINSENTENCES_H_
 
+#include <interface/gen-cpp2/common_types.h>
 #include "base/Base.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
@@ -14,6 +15,10 @@ namespace nebula {
 
 class ColumnSpecification final {
 public:
+    explicit ColumnSpecification(std::string *name) {
+        name_.reset(name);
+    }
+
     ColumnSpecification(ColumnType type, std::string *name) {
         type_ = type;
         name_.reset(name);
@@ -133,11 +138,66 @@ private:
 };
 
 
+class AlterTagOptItem final {
+public:
+    enum OptionType : uint8_t {
+        ADD = 0x01,
+        SET = 0x02,
+        DROP = 0x03
+    };
+
+    AlterTagOptItem(OptionType op, ColumnSpecificationList *columns) {
+        optType_ = op;
+        columns_.reset(columns);
+    }
+
+    std::vector<ColumnSpecification*> columnSpecs() const {
+        return columns_->columnSpecs();
+    }
+
+    OptionType getOptType() {
+        return optType_;
+    }
+
+    std::string getOptTypeStr() const {
+        return typeid(optType_).name();
+    }
+
+    std::string toString() const;
+
+private:
+    OptionType                                  optType_;
+    std::unique_ptr<ColumnSpecificationList>    columns_;
+};
+
+
+class AlterTagOptList final {
+public:
+    AlterTagOptList() = default;
+    void addOpt(AlterTagOptItem *item) {
+        alterTagitems_.emplace_back(item);
+    }
+
+    std::vector<AlterTagOptItem*> alterTagItems() const {
+        std::vector<AlterTagOptItem*> result;
+        result.resize(alterTagitems_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(alterTagitems_.begin(), alterTagitems_.end(), result.begin(), get);
+        return result;
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::unique_ptr<AlterTagOptItem>>    alterTagitems_;
+};
+
+
 class AlterTagSentence final : public Sentence {
 public:
-    AlterTagSentence(std::string *name, ColumnSpecificationList *columns) {
+    AlterTagSentence(std::string *name, AlterTagOptList *opts) {
         name_.reset(name);
-        columns_.reset(columns);
+        opts_.reset(opts);
         kind_ = Kind::kAlterTag;
     }
 
@@ -147,13 +207,13 @@ public:
         return name_.get();
     }
 
-    std::vector<ColumnSpecification*> columnSpecs() const {
-        return columns_->columnSpecs();
+    std::vector<AlterTagOptItem*> tagOptList() const {
+        return opts_->alterTagItems();
     }
 
 private:
-    std::unique_ptr<std::string>                name_;
-    std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<std::string>        name_;
+    std::unique_ptr<AlterTagOptList>    opts_;
 };
 
 

@@ -181,7 +181,18 @@ StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) 
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
     }
-    return Status::SpaceNotFound();
+    return Status::SpaceNotFound(folly::stringPrintf("Space %s not found", name.c_str()));
+}
+
+template<typename RESP>
+StatusOr<TagID> BaseProcessor<RESP>::getTagId(const std::string& name) {
+    auto indexKey = MetaServiceUtils::indexKey(EntryType::TAG, name);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return *reinterpret_cast<const TagID*>(val.c_str());
+    }
+    return Status::TagNotFound(folly::stringPrintf("Tag %s not found", name.c_str()));
 }
 
 }  // namespace meta

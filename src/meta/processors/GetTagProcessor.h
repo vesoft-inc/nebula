@@ -18,7 +18,7 @@ public:
         return new GetTagProcessor(kvstore);
     }
 
-    void process(const cpp2::GetTagReq& req);
+    void process(const cpp2::ReadTagReq& req);
 
 private:
     explicit GetTagProcessor(kvstore::KVStore* kvstore)

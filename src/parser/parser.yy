@@ -61,6 +61,8 @@ class GraphScanner;
     nebula::HostList                       *host_list;
     nebula::SpaceOptList                   *space_opt_list;
     nebula::SpaceOptItem                   *space_opt_item;
+    nebula::AlterTagOptList                *alter_tag_opt_list;
+    nebula::AlterTagOptItem                *alter_tag_opt_item;
 }
 
 /* destructors */
@@ -119,6 +121,8 @@ class GraphScanner;
 %type <host_list> host_list
 %type <space_opt_list> space_opt_list
 %type <space_opt_item> space_opt_item
+%type <alter_tag_opt_list> alter_tag_opt_list
+%type <alter_tag_opt_item> alter_tag_opt_item
 
 %type <intval> ttl_spec
 
@@ -476,14 +480,31 @@ define_tag_sentence
     ;
 
 alter_tag_sentence
-    : KW_ALTER KW_TAG LABEL L_PAREN R_PAREN {
-        $$ = new AlterTagSentence($3, new ColumnSpecificationList());
+    : KW_ALTER KW_TAG LABEL alter_tag_opt_list {
+        $$ = new AlterTagSentence($3, $4);
     }
-    | KW_ALTER KW_TAG LABEL L_PAREN column_spec_list R_PAREN {
-        $$ = new AlterTagSentence($3, $5);
+    ;
+
+alter_tag_opt_list
+    : alter_tag_opt_item {
+        $$ = new AlterTagOptList();
+        $$->addOpt($1);
     }
-    | KW_ALTER KW_TAG LABEL L_PAREN column_spec_list COMMA R_PAREN {
-        $$ = new AlterTagSentence($3, $5);
+    | alter_tag_opt_list COMMA alter_tag_opt_item {
+        $$ = $1;
+        $$->addOpt($3);
+    }
+    ;
+
+alter_tag_opt_item
+    : KW_ADD L_PAREN column_spec_list R_PAREN {
+        $$ = new AlterTagOptItem(AlterTagOptItem::ADD, $3);
+    }
+    | KW_SET L_PAREN column_spec_list R_PAREN {
+      $$ = new AlterTagOptItem(AlterTagOptItem::SET, $3);
+    }
+    | KW_DROP L_PAREN column_spec_list R_PAREN {
+      $$ = new AlterTagOptItem(AlterTagOptItem::DROP, $3);
     }
     ;
 
@@ -523,7 +544,8 @@ column_spec_list
     ;
 
 column_spec
-    : LABEL type_spec { $$ = new ColumnSpecification($2, $1); }
+    : LABEL { $$ = new ColumnSpecification($1); }
+    | LABEL type_spec { $$ = new ColumnSpecification($2, $1); }
     | LABEL type_spec ttl_spec { $$ = new ColumnSpecification($2, $1, $3); }
     ;
 
