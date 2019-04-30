@@ -31,6 +31,7 @@ add_library(
     CreateSpaceExecutor.cpp
     DropSpaceExecutor.cpp
     ShowExecutor.cpp
+    YieldExecutor.cpp
     mock/PropertiesSchema.cpp
     mock/EdgeSchema.cpp
     mock/TagSchema.cpp

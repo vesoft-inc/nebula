@@ -658,6 +658,7 @@ std::string FunctionCallExpression::toString() const {
     if (!args_.empty()) {
         buf.resize(buf.size() - 1);
     }
+    buf += ")";
     return buf;
 }
 
