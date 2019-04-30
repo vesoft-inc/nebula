@@ -92,8 +92,8 @@ void MetaClient::loadDataThreadFunc() {
         spaceCache->partsAlloc_ = std::move(partsAlloc);
         VLOG(3) << "Load space " << spaceId << ", parts num:" << spaceCache->partsAlloc_.size();
 
-        // loadSchema
-        if (!loadSchema(spaceId,
+        // loadSchemas
+        if (!loadSchemas(spaceId,
                         spaceCache,
                         spaceTagIndexByName,
                         spaceEdgeIndexByName,
@@ -118,7 +118,7 @@ void MetaClient::loadDataThreadFunc() {
     LOG(INFO) << "Load data completed!";
 }
 
-bool MetaClient::loadSchema(GraphSpaceID spaceId,
+bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                     std::shared_ptr<SpaceInfoCache> spaceInfoCache,
                     SpaceTagNameIdMap &tagNameIdMap,
                     SpaceEdgeNameTypeMap &edgeNameTypeMap,
@@ -631,14 +631,14 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
 }
 
 folly::Future<StatusOr<TagID>>
-MetaClient::addTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
-    cpp2::WriteTagReq req;
+MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
+    cpp2::CreateTagReq req;
     req.set_space_id(std::move(spaceId));
     req.set_tag_name(std::move(name));
     req.set_schema(std::move(schema));
 
     return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_addTag(request);
+        return client->future_createTag(request);
     }, [] (cpp2::ExecResp&& resp) -> TagID {
         return resp.get_id().get_tag_id();
     });
@@ -651,19 +651,18 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listTags(request);
     }, [this] (cpp2::ListTagsResp&& resp) -> decltype(auto){
-        auto tags = resp.get_tags();
-        return tags;
+        return std::move(resp).get_tags();
     });
 }
 
 folly::Future<StatusOr<EdgeType>>
-MetaClient::addEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
-    cpp2::WriteEdgeReq req;
+MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
+    cpp2::CreateEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
     req.set_schema(schema);
     return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_addEdge(request);
+        return client->future_createEdge(request);
     }, [] (cpp2::ExecResp&& resp) -> EdgeType {
         return resp.get_id().get_edge_type();
     });
@@ -676,8 +675,7 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listEdges(request);
     }, [this] (cpp2::ListEdgesResp&& resp) -> decltype(auto) {
-        auto edges = resp.get_edges();
-        return edges;
+        return std::move(resp).get_edges();
     });
 }
 

@@ -36,7 +36,7 @@ void CreateEdgeExecutor::execute() {
         schema.columns.emplace_back(std::move(column));
     }
 
-    auto future = mc->addEdgeSchema(spaceId, *name, schema);
+    auto future = mc->createEdgeSchema(spaceId, *name, schema);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

@@ -36,7 +36,7 @@ void CreateTagExecutor::execute() {
         schema.columns.emplace_back(std::move(column));
     }
 
-    auto future = mc->addTagSchema(spaceId, *name, schema);
+    auto future = mc->createTagSchema(spaceId, *name, schema);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

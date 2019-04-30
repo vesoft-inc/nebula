@@ -147,6 +147,13 @@ std::string MetaServiceUtils::schemaEdgeVal(const std::string& name, nebula::cpp
     return val;
 }
 
+int64_t MetaServiceUtils::parseEdgeVersion(folly::StringPiece key) {
+    auto offset = kEdgesTable.size() + sizeof(GraphSpaceID) + sizeof(EdgeType);
+    int64_t ver = std::numeric_limits<int64_t>::max() -
+                 *reinterpret_cast<const int64_t*>(key.begin() + offset);
+    return ver;
+}
+
 std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version) {
     int64_t storageVer = std::numeric_limits<int64_t>::max() - version;
     std::string key;
@@ -181,7 +188,6 @@ std::string MetaServiceUtils::schemaTagsPrefix(GraphSpaceID spaceId) {
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
     return key;
 }
-
 
 std::string MetaServiceUtils::schemaTagVal(const std::string& name, nebula::cpp2::Schema schema) {
     int32_t len = name.size();

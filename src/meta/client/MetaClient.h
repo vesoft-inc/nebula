@@ -95,13 +95,13 @@ public:
     getPartsAlloc(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<TagID>> addTagSchema(GraphSpaceID spaceId, std::string name,
+    folly::Future<StatusOr<TagID>> createTagSchema(GraphSpaceID spaceId, std::string name,
                                                nebula::cpp2::Schema schema);
 
     folly::Future<StatusOr<std::vector<cpp2::TagItem>>> listTagSchemas(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<EdgeType>> addEdgeSchema(GraphSpaceID spaceId, std::string name,
+    folly::Future<StatusOr<EdgeType>> createEdgeSchema(GraphSpaceID spaceId, std::string name,
                                                 nebula::cpp2::Schema schema);
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>> listEdgeSchemas(GraphSpaceID spaceId);
@@ -161,7 +161,7 @@ public:
 protected:
     void loadDataThreadFunc();
 
-    bool loadSchema(GraphSpaceID spaceId,
+    bool loadSchemas(GraphSpaceID spaceId,
                     std::shared_ptr<SpaceInfoCache> spaceInfoCache,
                     SpaceTagNameIdMap &tagNameIdMap,
                     SpaceEdgeNameTypeMap &edgeNameTypeMap,

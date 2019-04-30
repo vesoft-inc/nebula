@@ -180,6 +180,11 @@ protected:
      */
     StatusOr<TagID> getTagId(const std::string& name);
 
+    /**
+     * Return the edgeType for name.
+     */
+    StatusOr<EdgeType> getEdgeType(const std::string& name);
+
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;

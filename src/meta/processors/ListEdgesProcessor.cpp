@@ -26,8 +26,7 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
         auto key = iter->key();
         auto val = iter->val();
         auto edgeType = *reinterpret_cast<const EdgeType *>(key.data() + prefix.size());
-        auto vers = *reinterpret_cast<const int64_t *>(key.data() +
-                                                       prefix.size() + sizeof(EdgeType));
+        auto vers = MetaServiceUtils::parseEdgeVersion(key);
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto edgeName = val.subpiece(sizeof(int32_t), nameLen).str();
         auto schema = MetaServiceUtils::parseSchema(val);
@@ -39,8 +38,6 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
     resp_.set_edges(std::move(edges));
     onFinished();
 }
-
-
 }  // namespace meta
 }  // namespace nebula
 

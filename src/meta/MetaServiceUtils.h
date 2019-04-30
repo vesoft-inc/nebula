@@ -58,6 +58,8 @@ public:
 
     static std::string schemaEdgeVal(const std::string& name, nebula::cpp2::Schema schema);
 
+    static int64_t parseEdgeVersion(folly::StringPiece key);
+
     static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version);
 
     static int64_t parseTagVersion(folly::StringPiece key);

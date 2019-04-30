@@ -66,7 +66,7 @@ TEST(MetaClientTest, InterfacesTest) {
             }
         }
         {
-            // addTagSchema
+            // createTagSchema
             nebula::cpp2::Schema schema;
             for (auto i = 0 ; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
@@ -74,11 +74,11 @@ TEST(MetaClientTest, InterfacesTest) {
                 column.type.type = nebula::cpp2::SupportedType::STRING;
                 schema.columns.emplace_back(std::move(column));
             }
-            auto ret = client->addTagSchema(spaceId, "tagName", schema).get();
+            auto ret = client->createTagSchema(spaceId, "tagName", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
         {
-            // addEdgeSchema
+            // createEdgeSchema
             nebula::cpp2::Schema schema;
             for (auto i = 0 ; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
@@ -86,7 +86,7 @@ TEST(MetaClientTest, InterfacesTest) {
                 column.type.type = nebula::cpp2::SupportedType::STRING;
                 schema.columns.emplace_back(std::move(column));
             }
-            auto ret = client->addEdgeSchema(spaceId, "edgeName", schema).get();
+            auto ret = client->createEdgeSchema(spaceId, "edgeName", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
 
