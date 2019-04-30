@@ -40,6 +40,7 @@ public:
         kRemoveHosts,
         kCreateSpace,
         kDropSpace,
+        kYield,
     };
 
     Kind kind() const {
