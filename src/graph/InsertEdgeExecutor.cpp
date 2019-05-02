@@ -46,11 +46,13 @@ void InsertEdgeExecutor::execute() {
         auto src = row->srcid();
         auto dst = row->dstid();
         auto rank = row->rank();
-        auto exprs = row->values();
+        auto expressions = row->values();
         std::vector<VariantType> values;
-        values.resize(exprs.size());
-        auto eval = [] (auto *expr) { return expr->eval(); };
-        std::transform(exprs.begin(), exprs.end(), values.begin(), eval);
+
+        values.reserve(expressions.size());
+        for (auto *expr : expressions) {
+            values.emplace_back(expr->eval());
+        }
 
         RowWriter writer(schema_);
         for (auto &value : values) {
