@@ -30,28 +30,12 @@ void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
 
     auto tagID = *reinterpret_cast<const TagID *>(indexResult.value().data());
     kvstore_->asyncRemove(kDefaultSpaceId_, kDefaultPartId_, indexKey,
-                          [] (kvstore::ResultCode code, HostAddr leader) {
-        UNUSED(code);
+                          [this] (kvstore::ResultCode code, HostAddr leader) {
+        this->resp_.set_code(to(code));
         UNUSED(leader);
     });
     doRemoveRange(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagID, MAX_VERSION),
                   MetaServiceUtils::schemaTagKey(req.get_space_id(), tagID, MIN_VERSION));
-
-    /**
-    kvstore_->asyncRemoveRange(kDefaultSpaceId_, kDefaultPartId_,
-                               MetaServiceUtils::schemaTagKey(req.get_space_id(), tagID, std::numeric_limits<int64_t>::max()),
-                               MetaServiceUtils::schemaTagKey(req.get_space_id(), tagID, std::numeric_limits<int64_t>::min()),
-                               [this] (kvstore::ResultCode code, HostAddr leader) {
-       UNUSED(code);
-       UNUSED(leader);
-       });
-    kvstore_->asyncRemove(kDefaultSpaceId_, kDefaultPartId_, indexKey,
-                          [this] (kvstore::ResultCode code, HostAddr leader) {
-       UNUSED(leader);
-       this->resp_.set_code(to(code));
-       this->onFinished();
-       });
-       **/
 }
 
 
