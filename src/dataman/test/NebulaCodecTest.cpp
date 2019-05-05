@@ -28,9 +28,6 @@ TEST(NebulaCodec, encode) {
     EXPECT_EQ(boost::any_cast<double>(v[3]), 3.14);
     EXPECT_EQ(boost::any_cast<std::string>(v[4]), "hi");
 
-    dataman::NebulaCodecImpl codec;
-    std::string encoded = codec.encode(v);
-
     SchemaWriter schemaWriter;
     schemaWriter.appendCol("i_field", cpp2::SupportedType::INT);
     schemaWriter.appendCol("b_field", cpp2::SupportedType::BOOL);
@@ -39,6 +36,9 @@ TEST(NebulaCodec, encode) {
     schemaWriter.appendCol("s_field", cpp2::SupportedType::STRING);
 
     auto schema = std::make_shared<ResultSchemaProvider>(schemaWriter.moveSchema());
+    dataman::NebulaCodecImpl codec;
+    std::string encoded = codec.encode(v, schema);
+
     auto reader = RowReader::getRowReader(encoded, schema);
     EXPECT_EQ(5, reader->numFields());
 
@@ -122,16 +122,17 @@ TEST(NebulaCodec, decode) {
     encoded.append(reinterpret_cast<char*>(buffer), s_size);
     encoded.append(str_value, strlen(str_value));
 
-    std::vector<std::pair<std::string, cpp2::SupportedType>> fields;
-    fields.push_back(std::make_pair("b_field", cpp2::SupportedType::BOOL));
-    fields.push_back(std::make_pair("i_field", cpp2::SupportedType::INT));
-    fields.push_back(std::make_pair("v_field", cpp2::SupportedType::VID));
-    fields.push_back(std::make_pair("f_field", cpp2::SupportedType::FLOAT));
-    fields.push_back(std::make_pair("d_field", cpp2::SupportedType::DOUBLE));
-    fields.push_back(std::make_pair("s_field", cpp2::SupportedType::STRING));
+    SchemaWriter schemaWriter;
+    schemaWriter.appendCol("b_field", cpp2::SupportedType::BOOL);
+    schemaWriter.appendCol("i_field", cpp2::SupportedType::INT);
+    schemaWriter.appendCol("v_field", cpp2::SupportedType::VID);
+    schemaWriter.appendCol("f_field", cpp2::SupportedType::FLOAT);
+    schemaWriter.appendCol("d_field", cpp2::SupportedType::DOUBLE);
+    schemaWriter.appendCol("s_field", cpp2::SupportedType::STRING);
+    auto schema = std::make_shared<ResultSchemaProvider>(schemaWriter.moveSchema());
 
     dataman::NebulaCodecImpl codec;
-    auto result = codec.decode(encoded, fields);
+    auto result = codec.decode(encoded, schema);
 
     EXPECT_TRUE(boost::any_cast<bool>(result.value()["b_field"]));
     EXPECT_EQ(boost::any_cast<int>(result.value()["i_field"]), 64);
@@ -141,17 +142,16 @@ TEST(NebulaCodec, decode) {
     EXPECT_EQ(boost::any_cast<std::string>(result.value()["s_field"]), "Hello World!");
 
     // check empty encoded string
-    auto empty_encoded = codec.decode("", fields);
+    auto empty_encoded = codec.decode("", schema);
     ASSERT_FALSE(empty_encoded.ok());
     ASSERT_FALSE(empty_encoded.status().ok());
     ASSERT_EQ("encoded string is empty", empty_encoded.status().toString());
 
     // check empty schema
-    std::vector<std::pair<std::string, cpp2::SupportedType>> empty_fields;
-    auto empty_schema = codec.decode(encoded, empty_fields);
+    auto empty_schema = codec.decode(encoded, nullptr);
     ASSERT_FALSE(empty_schema.ok());
     ASSERT_FALSE(empty_schema.status().ok());
-    ASSERT_EQ("fields is not set", empty_schema.status().toString());
+    ASSERT_EQ("schema is not set", empty_schema.status().toString());
 }
 }  // namespace nebula
 
