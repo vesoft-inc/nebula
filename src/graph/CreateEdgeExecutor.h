@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef GRAPH_DEFINEEDGEEXECUTOR_H_
-#define GRAPH_DEFINEEDGEEXECUTOR_H_
+#ifndef GRAPH_CREATEEDGEEXECUTOR_H_
+#define GRAPH_CREATEEDGEEXECUTOR_H_
 
 #include "base/Base.h"
 #include "graph/Executor.h"
@@ -13,12 +13,12 @@
 namespace nebula {
 namespace graph {
 
-class DefineEdgeExecutor final : public Executor {
+class CreateEdgeExecutor final : public Executor {
 public:
-    DefineEdgeExecutor(Sentence *sentence, ExecutionContext *ectx);
+    CreateEdgeExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "DefineEdgeExecutor";
+        return "CreateEdgeExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -26,7 +26,7 @@ public:
     void execute() override;
 
 private:
-    DefineEdgeSentence                         *sentence_{nullptr};
+    CreateEdgeSentence                         *sentence_{nullptr};
 };
 
 }   // namespace graph

@@ -75,12 +75,12 @@ private:
 };
 
 
-class DefineTagSentence final : public Sentence {
+class CreateTagSentence final : public Sentence {
 public:
-    DefineTagSentence(std::string *name, ColumnSpecificationList *columns) {
+    CreateTagSentence(std::string *name, ColumnSpecificationList *columns) {
         name_.reset(name);
         columns_.reset(columns);
-        kind_ = Kind::kDefineTag;
+        kind_ = Kind::kCreateTag;
     }
 
     std::string toString() const override;
@@ -99,17 +99,13 @@ private:
 };
 
 
-class DefineEdgeSentence final : public Sentence {
+class CreateEdgeSentence final : public Sentence {
 public:
-    DefineEdgeSentence(std::string *name,
-                       std::string *src,
-                       std::string *dst,
+    CreateEdgeSentence(std::string *name,
                        ColumnSpecificationList *columns) {
         name_.reset(name);
-        src_.reset(src);
-        dst_.reset(dst);
         columns_.reset(columns);
-        kind_ = Kind::kDefineEdge;
+        kind_ = Kind::kCreateEdge;
     }
 
     std::string toString() const override;
@@ -118,22 +114,12 @@ public:
         return name_.get();
     }
 
-    std::string* src() const {
-        return src_.get();
-    }
-
-    std::string* dst() const {
-        return dst_.get();
-    }
-
     std::vector<ColumnSpecification*> columnSpecs() const {
         return columns_->columnSpecs();
     }
 
 private:
     std::unique_ptr<std::string>                name_;
-    std::unique_ptr<std::string>                src_;
-    std::unique_ptr<std::string>                dst_;
     std::unique_ptr<ColumnSpecificationList>    columns_;
 };
 
