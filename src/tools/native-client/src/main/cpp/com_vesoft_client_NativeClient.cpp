@@ -13,6 +13,8 @@
 #include "com_vesoft_client_NativeClient.h"
 
 #include "base/Base.h"
+#include "dataman/SchemaWriter.h"
+#include "dataman/ResultSchemaProvider.h"
 #include "dataman/include/NebulaCodec.h"
 #include "dataman/NebulaCodecImpl.h"
 
@@ -86,7 +88,7 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_client_NativeClient_decode(JNIEnv *env
     jmethodID getClazz = env->GetMethodID(clz, "getClazz", "()Ljava/lang/String;");
 
     auto len = env->GetArrayLength(pairs);
-    std::vector<std::pair<std::string, nebula::cpp2::SupportedType>> fields;
+    nebula::SchemaWriter schemaWriter;
     for (int i = 0; i < len; i++) {
         jobject o = env->GetObjectArrayElement(pairs, i);
         jstring fieldValue = static_cast<jstring>(env->CallObjectMethod(o, getField));
@@ -97,17 +99,17 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_client_NativeClient_decode(JNIEnv *env
         folly::StringPiece clazz(clazzArray);
 
         if (clazz == "java.lang.Boolean") {
-            fields.emplace_back(std::move(field), nebula::cpp2::SupportedType::BOOL);
+            schemaWriter.appendCol(std::move(field), nebula::cpp2::SupportedType::BOOL);
         } else if (clazz == "java.lang.Integer") {
-            fields.emplace_back(std::move(field), nebula::cpp2::SupportedType::INT);
+            schemaWriter.appendCol(std::move(field), nebula::cpp2::SupportedType::INT);
         } else if (clazz == "java.lang.Long") {
-            fields.emplace_back(std::move(field), nebula::cpp2::SupportedType::VID);
+            schemaWriter.appendCol(std::move(field), nebula::cpp2::SupportedType::VID);
         } else if (clazz == "java.lang.Float") {
-            fields.emplace_back(std::move(field), nebula::cpp2::SupportedType::FLOAT);
+            schemaWriter.appendCol(std::move(field), nebula::cpp2::SupportedType::FLOAT);
         } else if (clazz == "java.lang.Double") {
-            fields.emplace_back(std::move(field), nebula::cpp2::SupportedType::DOUBLE);
+            schemaWriter.appendCol(std::move(field), nebula::cpp2::SupportedType::DOUBLE);
         } else if (clazz == "[B") {
-            fields.emplace_back(std::move(field), nebula::cpp2::SupportedType::STRING);
+            schemaWriter.appendCol(std::move(field), nebula::cpp2::SupportedType::STRING);
         } else {
             // Type Error
             LOG(FATAL) << "Type Error : " << clazz;
@@ -115,13 +117,14 @@ JNIEXPORT jobject JNICALL Java_com_vesoft_client_NativeClient_decode(JNIEnv *env
         env->ReleaseStringUTFChars(fieldValue, fieldArray);
         env->ReleaseStringUTFChars(clazzValue, clazzArray);
     }
+    auto schema = std::make_shared<nebula::ResultSchemaProvider>(schemaWriter.moveSchema());
 
     jbyte* b = env->GetByteArrayElements(encoded, nullptr);
     const char* bytes = reinterpret_cast<const char*>(b);
     int size = env->GetArrayLength(encoded);
     auto encodedString = std::string(bytes, size);
     nebula::dataman::NebulaCodecImpl codec;
-    auto result = codec.decode(std::move(encodedString), fields);
+    auto result = codec.decode(std::move(encodedString), schema);
     env->ReleaseByteArrayElements(encoded, b, 0);
     jclass hashMapClazz = env->FindClass("java/util/HashMap");
     jmethodID hashMapInit = env->GetMethodID(hashMapClazz, "<init>", "()V");
