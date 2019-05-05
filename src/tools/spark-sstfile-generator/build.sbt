@@ -24,12 +24,23 @@ libraryDependencies ++= Seq(
   //  "com.databricks" %% "spark-csv" % "1.5.0" % "provided",
   //  "org.apache.spark" %% "spark-hive" % "1.6.2" % "provided",
 
-  // compatible with spark 1.6.0
-  "org.apache.spark" %% "spark-core" % "1.6.0" % "provided",
+  // compatible with spark 1.6.0 & hadoop 2.6.0
+  "org.apache.spark" %% "spark-core" % "1.6.0" % "provided"
+    exclude("org.apache.hadoop", "hadoop-client"),
+
   "org.apache.spark" %% "spark-sql" % "1.6.0" % "provided",
-  "org.apache.spark" %% "spark-yarn" % "1.6.0" % "provided",
+  "org.apache.spark" %% "spark-yarn" % "1.6.0" % "provided"
+    exclude("org.apache.hadoop", "hadoop-yarn-api")
+    exclude("org.apache.hadoop", "hadoop-yarn-common")
+    exclude("org.apache.hadoop", "hadoop-client"),
+
   "com.databricks" %% "spark-csv" % "1.5.0" % "provided",
   "org.apache.spark" %% "spark-hive" % "1.6.0" % "provided",
+
+  "org.apache.hadoop" % "hadoop-common" % "2.6.0" % "provided",
+  "org.apache.hadoop" % "hadoop-client" % "2.6.0" % "provided",
+  "org.apache.hadoop" % "hadoop-yarn-api" % "2.6.0" % "provided",
+  "org.apache.hadoop" % "hadoop-yarn-common" % "2.6.0" % "provided",
 
   //cmd line parsing
   "commons-cli" % "commons-cli" % "1.4",
@@ -43,7 +54,7 @@ libraryDependencies ++= Seq(
 
   //need nebula native client for encoding, need to run mvn install to deploy to local repo before used
   "org.rocksdb" % "rocksdbjni" % "5.17.2",
-  //  "com.vesoft" % "native-client" % "0.0.1"
+  // "com.vesoft" % "native-client" % "0.0.1"
   "com.vesoft" % "native-client" % "1.0-SNAPSHOT" changing()
 )
 

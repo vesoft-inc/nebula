@@ -19,9 +19,7 @@ public class NativeClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(NativeClient.class.getName());
 
     static {
-        System.out.println("开始加载nebula_native_client.so...");
         System.loadLibrary("nebula_native_client");
-        System.out.println("结束加载nebula_native_client.so");
     }
 
     public static class Pair {
