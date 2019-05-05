@@ -1,12 +1,14 @@
 # Nebula Graph Query Language (nGQL)
 
+## About nGQL
+NGQL is a declarative, textual query language like SQL, but for graphs. Unlike SQL, nGQL is all about expressing graph patterns. NGQL is a work in progress. We will add more features and further simplify the existing ones.
 ## Goals
 - Easy to learn
 - Easy to understand
 - To focus on the online queries, also to provide the foundation for the offline computation
 
 ## Features
-- Syntax is close to SQL, but not exactly same (Easy to learn)
+- Syntax is close to SQL, but not exactly the same (Easy to learn)
 - Expandable
 - Case insensitive
 - Support basic graph traverse
@@ -61,7 +63,7 @@
 ### Type Conversion
 - A simple typed value can be implicitly converted into a list
 - A list can be implicitly converted into a one-column tuple list
- - "<type\>\_list" would be used as the column name
+ - "<type\>\_list" can be used as the column name
 
 ### Common BNF
 <simple\_type> ::= **vid** | **integer** | **double** | **float** | **bool** | **string** | **path** | **timestamp** | **year** | **month** | **date** | **datetime**
@@ -127,7 +129,7 @@ The following statement defines a **new** edge type
 #### Modify an edge type
 
 #### Insert vertices
-The following statement insert one or more vertices
+The following statement inserts one or more vertices
 
 <span style="color:blue">**INSERT VERTEX**</span> [<span style="color:blue">**NO OVERWRITE**</span>] "("<br/>
 <span style="indent:20">[ <vertex\_id> [ <span style="color:blue">**WITH**</span> <tag\_name> [(<prop\_list>)] <span style="color:blue">**VALUES**</span> (<prop\_value\_list>) ]+ ]+</span><br/>
@@ -139,7 +141,7 @@ The following statement insert one or more vertices
 
 #### Insert edges
 
-The following statement insert one or more edges
+The following statement inserts one or more edges
 
 <span style="color:blue">**INSERT EDGE**</span> [<span style="color:blue">**NO OVERWRITE**</span>] <edge\_type\_name> [(<prop\_list>)] <span style="color:blue">**VALUES**</span> (<edge\_value>)+
 
@@ -199,7 +201,7 @@ When going out for more than one step, <span style="color:blue">**WHERE**</span>
 GO 2 STEPS FROM me OVER friend WHERE birthday > "1988/1/1"
 ```
 
-Obviously, you will probably guess the meaning of the query is to get all my fof (friend of friend) whose birthday is after 1988/1/1. You are absolutely right. We will not apply the filter to my friends (the first step)
+Obviously, you will probably guess the meaning of the query is to get all my fof (friend of friend) whose birthday is after 1988/1/1. You are absolutely right. We will not apply the filter to my friends (in the first step)
 
 Here is another example
 
@@ -207,7 +209,7 @@ Here is another example
 GO UPTO 3 STEPS FROM me OVER friend WHERE birthday > "1988/1/1/"
 ```
 
-This query tries to find any friend of me whose birthday is after 1988/1/1. If it finds at least one, it will return all the results. If it cannot find one, it will check my friends of friends to see if anyone's birthday is after 1988/1/1. It returns all results if non-empty, otherwise it will check my friends of friends of friends.
+This query tries to find any friend of me whose birthday is after 1988/1/1. If it finds at least one, it will return all the results. If it cannot find any, it will check my friends of friends to see if anyone's birthday is after 1988/1/1. It will return all the non-empty results, otherwise it will check my friends of friends of friends.
 
 So, similarly, next query tries to find anyone whose birthday is after 1988/1/1 starting from my 3-hop friends, and finishing at my 5-hop friends
 
