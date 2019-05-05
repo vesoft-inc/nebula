@@ -10,6 +10,7 @@ add_executable(
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:schema_obj>
 )
 nebula_link_libraries(
     part_test
@@ -32,6 +33,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:schema_obj>
 )
 nebula_link_libraries(
     rocks_engine_test
@@ -54,6 +56,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:schema_obj>
 )
 nebula_link_libraries(
     nebula_store_test
@@ -76,6 +79,7 @@ add_executable(
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:schema_obj>
 )
 nebula_link_libraries(
     load_test
