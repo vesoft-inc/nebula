@@ -4,13 +4,13 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "meta/processors/AddTagProcessor.h"
+#include "meta/processors/CreateTagProcessor.h"
 #include "time/TimeUtils.h"
 
 namespace nebula {
 namespace meta {
 
-void AddTagProcessor::process(const cpp2::WriteTagReq& req) {
+void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();

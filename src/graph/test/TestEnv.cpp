@@ -7,6 +7,8 @@
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 
+DECLARE_int32(load_data_interval_second);
+
 namespace nebula {
 namespace graph {
 
@@ -22,6 +24,7 @@ TestEnv::~TestEnv() {
 
 
 void TestEnv::SetUp() {
+    FLAGS_load_data_interval_second = 1;
     using ThriftServer = apache::thrift::ThriftServer;
     server_ = std::make_unique<ThriftServer>();
     auto interface = std::make_shared<GraphService>(server_->getIOThreadPool());

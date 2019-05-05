@@ -9,10 +9,10 @@
 
 namespace nebula {
 
-std::string DefineTagSentence::toString() const {
+std::string CreateTagSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "DEFINE TAG ";
+    buf += "CREATE TAG ";
     buf += *name_;
     buf += " (";
     for (auto *col : columns_->columnSpecs()) {
@@ -31,10 +31,10 @@ std::string DefineTagSentence::toString() const {
 }
 
 
-std::string DefineEdgeSentence::toString() const {
+std::string CreateEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "DEFINE EDGE ";
+    buf += "CREATE EDGE ";
     buf += *name_;
     buf += " (";
     for (auto &col : columns_->columnSpecs()) {
@@ -132,6 +132,15 @@ std::string DescribeTagSentence::toString() const {
 std::string DescribeEdgeSentence::toString() const {
     std::string buf = "DESCRIBE EDGE ";
     buf += *name_;
+    return buf;
+}
+
+
+std::string YieldSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "YIELD ";
+    buf += yieldColumns_->toString();
     return buf;
 }
 

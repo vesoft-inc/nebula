@@ -212,15 +212,15 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 2;
         attr.body_ = [] (const auto &args) {
             if (args.empty()) {
-                return static_cast<int64_t>(folly::Random::rand32());
+                return static_cast<int64_t>(folly::Random::rand64());
             } else if (args.size() == 1UL) {
                 auto max = Expression::asInt(args[0]);
-                return static_cast<int64_t>(folly::Random::rand32(max));
+                return static_cast<int64_t>(folly::Random::rand64(max));
             }
             DCHECK_EQ(2UL, args.size());
             auto min = Expression::asInt(args[0]);
             auto max = Expression::asInt(args[1]);
-            return static_cast<int64_t>(folly::Random::rand32(min, max));
+            return static_cast<int64_t>(folly::Random::rand64(min, max));
         };
     }
     {
@@ -241,6 +241,16 @@ FunctionManager::FunctionManager() {
             auto &left = Expression::asString(args[0]);
             auto &right = Expression::asString(args[1]);
             return static_cast<int64_t>(::strcasecmp(left.c_str(), right.c_str()));
+        };
+    }
+    {
+        // 64bit signed hash value
+        auto &attr = functions_["hash"];
+        attr.minArity_ = 1;
+        attr.maxArity_ = 1;
+        attr.body_ = [] (const auto &args) {
+            auto &str = Expression::asString(args[0]);
+            return static_cast<int64_t>(std::hash<std::string>()(str));
         };
     }
 }
