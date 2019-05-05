@@ -15,11 +15,16 @@ namespace storage {
 
 StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool)
         : ioThreadPool_(threadPool) {
-    client_ = std::make_unique<meta::MetaClient>();
-    client_->init();
     clientsMan_
         = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
 }
+
+
+void StorageClient::init(meta::MetaClient *client) {
+    CHECK(client);
+    client_ = client;
+}
+
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVertices(
         GraphSpaceID space,
@@ -225,7 +230,9 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         });
 }
 
+
 PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
+    CHECK(client_);
     auto parts = client_->partsNum(spaceId);
     auto s = ID_HASH(id, parts);
     CHECK_GE(s, 0U);

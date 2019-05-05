@@ -83,6 +83,8 @@ public:
         VLOG(3) << "~StorageClient";
     }
 
+    void init(meta::MetaClient *client);
+
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,
         std::vector<storage::cpp2::Vertex> vertices,
@@ -125,10 +127,9 @@ public:
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
 
-
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
-    std::unique_ptr<meta::MetaClient> client_;
+    meta::MetaClient *client_{nullptr};
     std::unique_ptr<thrift::ThriftClientManager<
                         storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
 
