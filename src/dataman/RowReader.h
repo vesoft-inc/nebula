@@ -7,7 +7,6 @@
 #ifndef DATAMAN_ROWREADER_H_
 #define DATAMAN_ROWREADER_H_
 
-#include "base/Base.h"
 #include <gtest/gtest_prod.h>
 #include "gen-cpp2/graph_types.h"
 #include "dataman/DataCommon.h"

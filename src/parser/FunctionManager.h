@@ -7,7 +7,6 @@
 #ifndef PARSER_FUNCTIONMANAGER_H_
 #define PARSER_FUNCTIONMANAGER_H_
 
-#include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
 #include "parser/Expressions.h"

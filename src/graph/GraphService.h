@@ -7,7 +7,6 @@
 #ifndef GRAPH_GRAPHSERVICE_H_
 #define GRAPH_GRAPHSERVICE_H_
 
-#include "base/Base.h"
 #include "gen-cpp2/GraphService.h"
 #include "graph/SessionManager.h"
 #include "graph/ExecutionEngine.h"

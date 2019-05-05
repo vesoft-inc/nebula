@@ -4,7 +4,6 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "base/Base.h"
 #include "graph/GraphFlags.h"
 
 DEFINE_int32(port, 34500, "Nebula Graph daemon's listen port");

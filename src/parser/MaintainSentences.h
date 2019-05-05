@@ -7,7 +7,6 @@
 #define PARSER_MAINTAINSENTENCES_H_
 
 #include <interface/gen-cpp2/common_types.h>
-#include "base/Base.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 

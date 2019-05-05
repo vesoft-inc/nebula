@@ -7,7 +7,6 @@
 #ifndef DATAMAN_SCHEMAWRITER_H_
 #define DATAMAN_SCHEMAWRITER_H_
 
-#include "base/Base.h"
 #include "dataman/ResultSchemaProvider.h"
 
 namespace nebula {

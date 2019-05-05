@@ -4,7 +4,6 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "base/Base.h"
 #include "meta/SchemaManager.h"
 #include "meta/FileBasedSchemaManager.h"
 #include "meta/ServerBasedSchemaManager.h"

@@ -4,7 +4,6 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "base/Base.h"
 #include <gtest/gtest.h>
 #include "parser/GQLParser.h"
 

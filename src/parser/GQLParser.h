@@ -6,7 +6,6 @@
 #ifndef PARSER_GQLPARSER_H_
 #define PARSER_GQLPARSER_H_
 
-#include "base/Base.h"
 #include "base/StatusOr.h"
 #include "GraphParser.hpp"
 #include "GraphScanner.h"

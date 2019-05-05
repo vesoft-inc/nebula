@@ -15,11 +15,13 @@ void ScanProcessor::process(const cpp2::ScanReq& req) {
     auto end   = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_end());
     auto result = doScan(start, end);
     if (!result.ok()) {
-        LOG(ERROR) << "Scan Failed " << result.status();
+        LOG(ERROR) << "Scan Failed from " << req.get_start()
+                   << " to " << req.get_end() << " " << result.status();
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
         return;
     }
+    LOG(INFO) << "Scan from " << start << " to " << end;
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_values(std::move(result.value()));
     onFinished();

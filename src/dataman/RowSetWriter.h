@@ -7,7 +7,6 @@
 #ifndef DATAMAN_ROWSETWRITER_H_
 #define DATAMAN_ROWSETWRITER_H_
 
-#include "base/Base.h"
 #include "gen-cpp2/graph_types.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/RowWriter.h"

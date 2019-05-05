@@ -7,7 +7,6 @@
 #ifndef GRAPH_EXECUTIONPLAN_H_
 #define GRAPH_EXECUTIONPLAN_H_
 
-#include "base/Base.h"
 #include "base/Status.h"
 #include "cpp/helpers.h"
 #include "parser/GQLParser.h"

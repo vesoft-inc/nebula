@@ -6,7 +6,6 @@
 #ifndef PARSER_EXPRESSIONS_H_
 #define PARSER_EXPRESSIONS_H_
 
-#include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
 #include <boost/variant.hpp>

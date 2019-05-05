@@ -11,13 +11,13 @@ namespace nebula {
 namespace meta {
 
 void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
-    if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
+    if (spaceExist(req.get_space_id()) == Status::NotFound()) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
-    auto ret = getEdgeType(req.get_edge_name());
+    auto ret = getEdgeType(req.get_space_id(), req.get_edge_name());
     if (ret.ok()) {
         resp_.set_id(to(ret.value(), EntryType::EDGE));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
@@ -26,7 +26,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     }
     std::vector<kvstore::KV> data;
     EdgeType edgeType = autoIncrementId();
-    data.emplace_back(MetaServiceUtils::indexKey(EntryType::EDGE, req.get_edge_name()),
+    data.emplace_back(MetaServiceUtils::edgeIndexKey(req.get_space_id(), req.get_edge_name()),
                       std::string(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType)));
     data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, 0),
                       MetaServiceUtils::schemaEdgeVal(req.get_edge_name(), req.get_schema()));

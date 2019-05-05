@@ -22,6 +22,7 @@ void ScanValueProcessor::process(const cpp2::ScanReq& req) {
         onFinished();
         return;
     }
+    LOG(INFO) << "Scan Value from " << start << " to " << end;
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_values(std::move(result.value()));
     onFinished();

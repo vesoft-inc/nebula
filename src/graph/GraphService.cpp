@@ -4,7 +4,6 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "base/Base.h"
 #include "graph/GraphService.h"
 #include "time/Duration.h"
 #include "graph/RequestContext.h"

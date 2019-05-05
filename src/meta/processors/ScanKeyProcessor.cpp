@@ -16,12 +16,13 @@ void ScanKeyProcessor::process(const cpp2::ScanReq& req) {
     auto result  = doScanKey(start, end);
 
     if (!result.ok()) {
-        LOG(ERROR) << "Scan Key Failed from " << req.get_start()
-                   << " to " << req.get_end() << " " << result.status();
+        LOG(ERROR) << "Scan Key Failed from " << start
+                   << " to " << end << " " << result.status();
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
         return;
     }
+    LOG(INFO) << "Scan Key from " << start << " to " << end;
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_values(std::move(result.value()));
     onFinished();

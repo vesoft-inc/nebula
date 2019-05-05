@@ -6,7 +6,6 @@
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
 
-#include "base/Base.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 #include "network/NetworkUtils.h"

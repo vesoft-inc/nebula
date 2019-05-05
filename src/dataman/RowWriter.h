@@ -7,7 +7,6 @@
 #ifndef DATAMAN_ROWWRITER_H_
 #define DATAMAN_ROWWRITER_H_
 
-#include "base/Base.h"
 #include "base/Cord.h"
 #include "dataman/SchemaWriter.h"
 
