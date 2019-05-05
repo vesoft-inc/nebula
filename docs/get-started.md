@@ -49,6 +49,8 @@ Please make sure the services are working.
  
 Run `bin/nebula --port=3699 --u=user --p=password` to connect to the graph server.
 
+You can use `./start-console.sh` to start console in easy mode.
+
 ```
 Welcome to Nebula Graph (Version 0.1)
 
