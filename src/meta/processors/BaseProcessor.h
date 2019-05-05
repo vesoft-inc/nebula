@@ -148,19 +148,19 @@ protected:
     /**
      * Scan keys from start to end, doesn't contain end. Finally return keys.
      * */
-     StatusOr<std::vector<std::string>> doScanKey(const std::string& start,
-                                                  const std::string& end);
+    StatusOr<std::vector<std::string>> doScanKey(const std::string& start,
+                                                 const std::string& end);
 
     /**
      * Scan keys from start to end, doesn't contain end. Finally return values.
      * */
-     StatusOr<std::vector<std::string>> doScanValue(const std::string& start,
-                                                    const std::string& end);
+    StatusOr<std::vector<std::string>> doScanValue(const std::string& start,
+                                                   const std::string& end);
 
-     /**
+    /**
      * General multi remove function.
-     **/
-     void doMultiRemove(std::vector<std::string> keys);
+     * */
+    void doMultiRemove(std::vector<std::string> keys);
 
     /**
      * Get all hosts

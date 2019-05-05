@@ -187,7 +187,7 @@ Status BaseProcessor<RESP>::hostsExist(const std::vector<std::string> &hostsKey)
     for (const auto& hostKey : hostsKey) {
         auto ret = doGet(hostKey);
         if (!ret.ok()) {
-            if (ret.status() == Status::Error("Key Not Found")) {
+            if (ret.status().isNotFound()) {
                 return Status::NotFound();
             } else {
                 VLOG(3) << "Unknown Error , ret = " << ret.status();
