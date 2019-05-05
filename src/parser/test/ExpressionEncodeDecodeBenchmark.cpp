@@ -29,6 +29,9 @@ size_t Encode(size_t iters, std::string query) {
     BENCHMARK_SUSPEND {
         GQLParser parser;
         result = parser.parse(query);
+        if (!result.ok()) {
+             return 0;
+        }
         expr = getFilterExpr(result.value().get());
     }
 
@@ -50,6 +53,9 @@ size_t Decode(size_t iters, std::string query) {
     BENCHMARK_SUSPEND {
         GQLParser parser;
         auto result = parser.parse(query);
+        if (!result.ok()) {
+             return 0;
+        }
         auto *expr = getFilterExpr(result.value().get());
         buffer = Expression::encode(expr);
     }

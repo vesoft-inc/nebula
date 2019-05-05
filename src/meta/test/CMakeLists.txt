@@ -51,6 +51,7 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:schema_obj>
 )
 nebula_link_libraries(
     processor_test
@@ -77,6 +78,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:schema_obj>
 )
 nebula_link_libraries(
     meta_client_test

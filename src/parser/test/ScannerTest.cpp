@@ -166,8 +166,6 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("yield", TokenType::KW_YIELD),
         CHECK_SEMANTIC_TYPE("RETURN", TokenType::KW_RETURN),
         CHECK_SEMANTIC_TYPE("return", TokenType::KW_RETURN),
-        CHECK_SEMANTIC_TYPE("DEFINE", TokenType::KW_DEFINE),
-        CHECK_SEMANTIC_TYPE("define", TokenType::KW_DEFINE),
         CHECK_SEMANTIC_TYPE("VERTEX", TokenType::KW_VERTEX),
         CHECK_SEMANTIC_TYPE("vertex", TokenType::KW_VERTEX),
         CHECK_SEMANTIC_TYPE("EDGE", TokenType::KW_EDGE),
