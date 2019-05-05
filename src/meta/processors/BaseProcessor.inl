@@ -228,5 +228,15 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId, const 
     return Status::NotFound();
 }
 
+template<typename RESP>
+StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(const std::string& name) {
+    auto indexKey = MetaServiceUtils::indexKey(EntryType::EDGE, name);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return *reinterpret_cast<const TagID*>(val.c_str());
+    }
+    return Status::EdgeNotFound(folly::stringPrintf("Edge %s not found", name.c_str()));
+}
 }  // namespace meta
 }  // namespace nebula

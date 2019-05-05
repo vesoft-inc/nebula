@@ -21,6 +21,8 @@ typedef i64 (cpp.type = "nebula::VertexID") VertexID
 typedef i32 (cpp.type = "nebula::IPv4") IPv4
 typedef i32 (cpp.type = "nebula::Port") Port
 
+typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
+
 // These are all data types supported in the graph properties
 enum SupportedType {
     UNKNOWN = 0,
@@ -49,7 +51,6 @@ enum SupportedType {
     // MAP = 103,      // The key type is always a STRING
     // STRUCT = 104,
 } (cpp.enum_strict)
-
 
 struct ValueType {
     1: SupportedType type;

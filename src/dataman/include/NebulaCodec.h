@@ -21,11 +21,13 @@ typedef boost::any Value;
 
 class NebulaCodec {
 public:
-    virtual std::string encode(std::vector<Value> values) = 0;
+    virtual std::string encode(std::vector<Value> values,
+                               std::shared_ptr<const meta::SchemaProviderIf> schema
+                                   = std::shared_ptr<const meta::SchemaProviderIf>()) = 0;
 
     virtual StatusOr<std::unordered_map<std::string, Value>>
     decode(std::string encoded,
-           std::vector<std::pair<std::string, cpp2::SupportedType>> fields) = 0;
+           std::shared_ptr<const meta::SchemaProviderIf> schema) = 0;
 };
 
 }  // namespace dataman

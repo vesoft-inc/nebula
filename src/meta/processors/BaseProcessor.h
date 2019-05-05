@@ -36,6 +36,7 @@ public:
 GENERATE_LOCK(space);
 GENERATE_LOCK(id);
 GENERATE_LOCK(tag);
+GENERATE_LOCK(edge);
 
 #undef GENERATE_LOCK
 };
@@ -196,6 +197,11 @@ protected:
      * Return the edgeType from name.
      * */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
+
+    /**
+     * Return the edgeType for name.
+     */
+    StatusOr<EdgeType> getEdgeType(const std::string& name);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
