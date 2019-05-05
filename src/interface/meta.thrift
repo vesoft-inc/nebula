@@ -60,13 +60,20 @@ struct Pair {
 struct TagItem {
     1: common.TagID         tag_id,
     2: string               tag_name,
-    3: i64                  version,
+    3: common.SchemaVer     version,
     4: common.Schema        schema,
 }
 
 struct AlterTagItem {
     1: AlterTagOp           op,
     2: common.Schema        schema,
+}
+
+struct EdgeItem {
+    1: common.EdgeType      edge_type,
+    2: string               edge_name,
+    3: common.SchemaVer     version,
+    4: common.Schema        schema,
 }
 
 struct ExecResp {
@@ -109,7 +116,7 @@ struct GetSpaceResp {
 }
 
 // Tags related operations
-struct WriteTagReq {
+struct CreateTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
     3: common.Schema       schema,
@@ -149,7 +156,7 @@ struct GetTagResp {
 }
 
 // Edge related operations.
-struct AddEdgeReq {
+struct CreateEdgeReq {
     1: common.GraphSpaceID space_id,
     2: string              edge_name,
     3: common.Schema       schema,
@@ -168,7 +175,7 @@ struct ListEdgesResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<IdName> edges,
+    3: list<EdgeItem> edges,
 }
 
 struct GetEdgeReq {
@@ -279,13 +286,13 @@ service MetaService {
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
 
-    ExecResp addTag(1: WriteTagReq req);
+    ExecResp createTag(1: CreateTagReq req);
     ExecResp alterTag(1: AlterTagReq req);
     ExecResp removeTag(1: RemoveTagReq req);
     GetTagResp getTag(1: ReadTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);
 
-    ExecResp addEdge(1: AddEdgeReq req);
+    ExecResp createEdge(1: CreateEdgeReq req);
     ExecResp removeEdge(1: RemoveEdgeReq req);
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);

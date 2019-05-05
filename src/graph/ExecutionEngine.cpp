@@ -14,14 +14,14 @@ namespace nebula {
 namespace graph {
 
 ExecutionEngine::ExecutionEngine(std::unique_ptr<storage::StorageClient> storage) {
-    schemaManager_ = meta::SchemaManager::create();
-    schemaManager_->init();
-    storage_ = std::move(storage);
-
     // TODO(YT) schemaManager and StorageClient should share one meta client instance
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     metaClient_ = std::make_unique<meta::MetaClient>(threadPool);
     metaClient_->init();
+
+    schemaManager_ = meta::SchemaManager::create();
+    schemaManager_->init(metaClient_.get());
+    storage_ = std::move(storage);
 }
 
 

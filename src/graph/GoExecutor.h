@@ -166,7 +166,7 @@ private:
     uint32_t                                    curStep_{1};
     bool                                        upto_{false};
     bool                                        reversely_{false};
-    EdgeType                                    edge_;
+    EdgeType                                    edgeType_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
     Expression                                 *filter_{nullptr};
