@@ -38,20 +38,46 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     auto version = MetaServiceUtils::parseEdgeVersion(iter->key()) + 1;
     auto schema = MetaServiceUtils::parseSchema(iter->val());
     auto columns = schema.get_columns();
-    auto& edgeItems = req.get_edge_items();
-    for (auto& edgeItem : edgeItems) {
-        auto& cols = edgeItem.get_schema().get_columns();
+    auto prop = schema.get_schema_prop();
+
+    // update schema option
+    auto& schemaOptions = req.get_schema_options();
+    for (auto& schemaOption : schemaOptions) {
+        auto& cols = schemaOption.get_schema().get_columns();
         for (auto& col : cols) {
-            auto retCode = MetaServiceUtils::alterColumnDefs(columns, col, edgeItem.op);
+            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, schemaOption.type);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-                LOG(WARNING) << "Alter edge error " << static_cast<int32_t>(retCode);
+                LOG(WARNING) << "Alter edge option error " << static_cast<int32_t>(retCode);
                 resp_.set_code(retCode);
                 onFinished();
                 return;
             }
         }
     }
+
+    // update schema property
+    auto& schemaProps = req.get_schema_props();
+    for (auto& schemaProp : schemaProps) {
+        auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, schemaProp);
+        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+            LOG(WARNING) << "Alter edge property error " << static_cast<int32_t>(retCode);
+            resp_.set_code(retCode);
+            onFinished();
+            return;
+        }
+    }
+
+    auto retProp = MetaServiceUtils::checkSchemaTTLProp(prop);
+    if (!retProp.ok()) {
+        LOG(WARNING) << "Implicit ttl_col not support";
+        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
+        onFinished();
+        return;
+    }
+
     schema.set_columns(std::move(columns));
+    schema.set_schema_prop(std::move(prop));
+
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter edge " << req.get_edge_name() << ", edgeTye " << edgeType;
     data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, version),

@@ -26,7 +26,9 @@ public:
     void execute() override;
 
 private:
-    AlterTagSentence                           *sentence_{nullptr};
+    AlterTagSentence                                   *sentence_{nullptr};
+    std::vector<nebula::meta::cpp2::AlterSchemaOption>  options_;
+    std::vector<nebula::meta::cpp2::AlterSchemaProp>    schemaProps_;
 };
 
 }   // namespace graph

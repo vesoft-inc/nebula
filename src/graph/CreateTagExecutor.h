@@ -25,8 +25,13 @@ public:
 
     void execute() override;
 
+    Status setTTLDuration(SchemaPropItem* schemaProp);
+
+    Status setTTLCol(SchemaPropItem* schemaProp);
+
 private:
     CreateTagSentence                          *sentence_{nullptr};
+    nebula::cpp2::Schema                        schema_;
 };
 
 }   // namespace graph

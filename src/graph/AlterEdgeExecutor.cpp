@@ -17,21 +17,18 @@ AlterEdgeExecutor::AlterEdgeExecutor(Sentence *sentence,
 
 
 Status AlterEdgeExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
-}
+    auto status = checkIfGraphSpaceChosen();
 
+    if (!status.ok()) {
+        return status;
+    }
 
-void AlterEdgeExecutor::execute() {
-    auto *mc = ectx()->getMetaClient();
-    auto *name = sentence_->name();
-    const auto& schemaOpts = sentence_->schemaOptList();
-    auto spaceId = ectx()->rctx()->session()->space();
+    const auto& schemaOpts = sentence_->getSchemaOpts();
 
-    std::vector<nebula::meta::cpp2::AlterSchemaItem> schemaItems;
     for (auto& schemaOpt : schemaOpts) {
-        nebula::meta::cpp2::AlterSchemaItem schemaItem;
-        auto opType = schemaOpt->toType();
-        schemaItem.set_op(std::move(opType));
+        nebula::meta::cpp2::AlterSchemaOption schemaOption;
+        auto opType = schemaOpt->toOptionType();
+        schemaOption.set_type(std::move(opType));
         const auto& specs = schemaOpt->columnSpecs();
         nebula::cpp2::Schema schema;
         for (auto& spec : specs) {
@@ -40,11 +37,50 @@ void AlterEdgeExecutor::execute() {
             column.type.type = columnTypeToSupportedType(spec->type());
             schema.columns.emplace_back(std::move(column));
         }
-        schemaItem.set_schema(std::move(schema));
-        schemaItems.emplace_back(std::move(schemaItem));
+        schemaOption.set_schema(std::move(schema));
+        options_.emplace_back(std::move(schemaOption));
     }
 
-    auto future = mc->alterEdgeSchema(spaceId, *name, std::move(schemaItems));
+    const auto& schemaProps = sentence_->getSchemaProps();
+
+    for (auto& schemaProp : schemaProps) {
+        nebula::meta::cpp2::AlterSchemaProp alterSchemaProp;
+        auto propType = schemaProp->getPropType();
+        StatusOr<int64_t> retInt;
+        StatusOr<std::string> retStr;
+        switch (propType) {
+            case SchemaPropItem::TTL_DURATION:
+                retInt = schemaProp->getTtlDuration();
+                if (!retInt.ok()) {
+                   return retInt.status();
+                }
+                alterSchemaProp.set_value(folly::to<std::string>(retInt.value()));
+                break;
+            case SchemaPropItem::TTL_COL:
+                // The legality of the column name need be to check in meta
+                retStr = schemaProp->getTtlCol();
+                if (!retStr.ok()) {
+                   return retStr.status();
+                }
+                alterSchemaProp.set_value(retStr.value());
+                break;
+            default:
+                return Status::Error("Property type not support");
+        }
+        alterSchemaProp.set_type(std::move(schemaProp->toPropType()));
+        schemaProps_.emplace_back(std::move(alterSchemaProp));
+    }
+
+    return Status::OK();
+}
+
+
+void AlterEdgeExecutor::execute() {
+    auto *mc = ectx()->getMetaClient();
+    auto *name = sentence_->name();
+    auto spaceId = ectx()->rctx()->session()->space();
+
+    auto future = mc->alterEdgeSchema(spaceId, *name, std::move(options_), std::move(schemaProps_));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

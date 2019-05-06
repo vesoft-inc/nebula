@@ -24,6 +24,19 @@ std::string SchemaPropItem::toString() const {
 }
 
 
+nebula::meta::cpp2::AlterSchemaPropType
+SchemaPropItem::toPropType() {
+    switch (propType_) {
+        case TTL_DURATION:
+            return nebula::meta::cpp2::AlterSchemaPropType::TTL_DURATION;
+        case TTL_COL:
+            return nebula::meta::cpp2::AlterSchemaPropType::TTL_COL;
+        default:
+            return nebula::meta::cpp2::AlterSchemaPropType::UNKNOWN;
+    }
+}
+
+
  std::string SchemaPropList::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -117,17 +130,17 @@ std::string AlterSchemaOptItem::toString() const {
 }
 
 
-nebula::meta::cpp2::AlterSchemaOp
-AlterSchemaOptItem::toType() {
+nebula::meta::cpp2::AlterSchemaOptionType
+AlterSchemaOptItem::toOptionType() {
     switch (optType_) {
         case ADD:
-            return nebula::meta::cpp2::AlterSchemaOp::ADD;
+            return nebula::meta::cpp2::AlterSchemaOptionType::ADD;
         case CHANGE:
-            return nebula::meta::cpp2::AlterSchemaOp::CHANGE;
+            return nebula::meta::cpp2::AlterSchemaOptionType::CHANGE;
         case DROP:
-            return nebula::meta::cpp2::AlterSchemaOp::DROP;
+            return nebula::meta::cpp2::AlterSchemaOptionType::DROP;
         default:
-            return nebula::meta::cpp2::AlterSchemaOp::UNKNOWN;
+            return nebula::meta::cpp2::AlterSchemaOptionType::UNKNOWN;
     }
 }
 

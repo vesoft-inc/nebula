@@ -107,7 +107,8 @@ public:
     folly::Future<StatusOr<TagID>>
     alterTagSchema(GraphSpaceID spaceId,
                    std::string name,
-                   std::vector<cpp2::AlterSchemaItem> items);
+                   std::vector<cpp2::AlterSchemaOption> options,
+                   std::vector<cpp2::AlterSchemaProp> props);
 
     folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
     listTagSchemas(GraphSpaceID spaceId);
@@ -125,7 +126,8 @@ public:
     folly::Future<StatusOr<bool>>
     alterEdgeSchema(GraphSpaceID spaceId,
                     std::string name,
-                    std::vector<cpp2::AlterSchemaItem> items);
+                    std::vector<cpp2::AlterSchemaOption> options,
+                    std::vector<cpp2::AlterSchemaProp> props);
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
     listEdgeSchemas(GraphSpaceID spaceId);

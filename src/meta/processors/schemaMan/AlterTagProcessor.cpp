@@ -38,20 +38,46 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     auto version = MetaServiceUtils::parseTagVersion(iter->key()) + 1;
     auto schema = MetaServiceUtils::parseSchema(iter->val());
     auto columns = schema.get_columns();
-    auto& tagItems = req.get_tag_items();
-    for (auto& tagItem : tagItems) {
-        auto& cols = tagItem.get_schema().get_columns();
+    auto prop = schema.get_schema_prop();
+
+    // update schema option
+    auto& schemaOptions = req.get_schema_options();
+    for (auto& schemaOption : schemaOptions) {
+        auto& cols = schemaOption.get_schema().get_columns();
         for (auto& col : cols) {
-            auto retCode = MetaServiceUtils::alterColumnDefs(columns, col, tagItem.op);
+            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, schemaOption.type);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-                LOG(WARNING) << "Alter tag error " << static_cast<int32_t>(retCode);
+                LOG(WARNING) << "Alter tag option error " << static_cast<int32_t>(retCode);
                 resp_.set_code(retCode);
                 onFinished();
                 return;
             }
         }
     }
+
+    // update schema property
+    auto& schemaProps = req.get_schema_props();
+    for (auto& schemaProp : schemaProps) {
+        auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, std::move(schemaProp));
+        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+            LOG(WARNING) << "Alter tag property error " << static_cast<int32_t>(retCode);
+            resp_.set_code(retCode);
+            onFinished();
+            return;
+        }
+    }
+
+    auto retProp = MetaServiceUtils::checkSchemaTTLProp(prop);
+    if (!retProp.ok()) {
+        LOG(WARNING) << "Implicit ttl_col not support";
+        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
+        onFinished();
+        return;
+    }
+
     schema.set_columns(std::move(columns));
+    schema.set_schema_prop(std::move(prop));
+
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),

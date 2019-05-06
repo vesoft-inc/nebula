@@ -65,7 +65,7 @@ public:
 
     enum PropType : uint8_t {
         TTL_DURATION,
-        TTL_COL,
+        TTL_COL
     };
 
     SchemaPropItem(PropType op, int64_t val) {
@@ -104,6 +104,8 @@ public:
     PropType getPropType() {
         return propType_;
     }
+
+    nebula::meta::cpp2::AlterSchemaPropType toPropType();
 
     std::string toString() const;
 
@@ -254,7 +256,7 @@ public:
         return optType_;
     }
 
-    nebula::meta::cpp2::AlterSchemaOp toType();
+    nebula::meta::cpp2::AlterSchemaOptionType toOptionType();
 
     std::string toString() const;
 
@@ -303,7 +305,7 @@ public:
         return name_.get();
     }
 
-    std::vector<AlterSchemaOptItem*> schemaOptList() const {
+    std::vector<AlterSchemaOptItem*> getSchemaOpts() const {
         return opts_->alterSchemaItems();
     }
 
@@ -335,7 +337,7 @@ public:
         return name_.get();
     }
 
-    std::vector<AlterSchemaOptItem*> schemaOptList() const {
+    std::vector<AlterSchemaOptItem*> getSchemaOpts() const {
         return opts_->alterSchemaItems();
     }
 

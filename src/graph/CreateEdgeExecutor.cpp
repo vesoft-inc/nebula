@@ -18,25 +18,96 @@ CreateEdgeExecutor::CreateEdgeExecutor(Sentence *sentence,
 
 
 Status CreateEdgeExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    auto status = checkIfGraphSpaceChosen();
+
+    if (!status.ok()) {
+        return status;
+    }
+
+    const auto& specs = sentence_->columnSpecs();
+    const auto& schemaProps = sentence_->getSchemaProps();
+
+    for (auto& spec : specs) {
+        nebula::cpp2::ColumnDef column;
+        column.name = *spec->name();
+        column.type.type = columnTypeToSupportedType(spec->type());
+        schema_.columns.emplace_back(std::move(column));
+    }
+
+    // set schema_.schema_prop default
+    // 0 means infinity
+    schema_.schema_prop.set_ttl_duration(0);
+    schema_.schema_prop.set_ttl_col("");
+
+    if (schemaProps.size() != 0) {
+        for (auto& schemaProp : schemaProps) {
+            switch (schemaProp->getPropType()) {
+                case SchemaPropItem::TTL_DURATION:
+                    status = setTTLDuration(schemaProp);
+                    if (!status.ok()) {
+                        return status;
+                    }
+                    break;
+                case SchemaPropItem::TTL_COL:
+                    status = setTTLCol(schemaProp);
+                    if (!status.ok()) {
+                        return status;
+                    }
+                    break;
+            }
+        }
+        if (schema_.schema_prop.ttl_duration != 0) {
+            // Disable implicit TTL mode
+            if (schema_.schema_prop.ttl_col.empty()) {
+                return Status::Error("implicit ttl_col not support");
+            }
+
+            if (schema_.schema_prop.ttl_duration < 0) {
+                schema_.schema_prop.set_ttl_duration(0);
+            }
+        }
+    }
+
+     return Status::OK();
+}
+
+
+Status CreateEdgeExecutor::setTTLDuration(SchemaPropItem* schemaProp) {
+    auto ret = schemaProp->getTtlDuration();
+    if (!ret.ok()) {
+        return ret.status();
+    }
+
+    auto ttlDuration = ret.value();
+    schema_.schema_prop.set_ttl_duration(ttlDuration);
+    return Status::OK();
+}
+
+
+Status CreateEdgeExecutor::setTTLCol(SchemaPropItem* schemaProp) {
+    auto ret = schemaProp->getTtlCol();
+    if (!ret.ok()) {
+        return ret.status();
+    }
+
+    auto  ttlColName = ret.value();
+    // check the legality of the ttl column name
+    for (auto& col : schema_.columns) {
+        if (col.name == ttlColName) {
+            schema_.schema_prop.set_ttl_col(ttlColName);
+            return Status::OK();
+        }
+    }
+    return Status::Error("Ttl column name not exist in columns");
 }
 
 
 void CreateEdgeExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
-    const auto& specs = sentence_->columnSpecs();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    nebula::cpp2::Schema schema;
-    for (auto& spec : specs) {
-        nebula::cpp2::ColumnDef column;
-        column.name = *spec->name();
-        column.type.type = columnTypeToSupportedType(spec->type());
-        schema.columns.emplace_back(std::move(column));
-    }
-
-    auto future = mc->createEdgeSchema(spaceId, *name, schema);
+    auto future = mc->createEdgeSchema(spaceId, *name, schema_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
