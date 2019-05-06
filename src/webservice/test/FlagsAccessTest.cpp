@@ -15,6 +15,7 @@ DEFINE_int64(int64_test, 10, "Test flag for int64 type");
 DEFINE_bool(bool_test, false, "Test flag for bool type");
 DEFINE_double(double_test, 3.14159, "Test flag for double type");
 DEFINE_string(string_test, "Hello World", "Test flag for string type");
+DEFINE_uint32(crash_test, 1024, "The flag could not be read, test for issue #312");
 
 namespace nebula {
 
@@ -70,8 +71,10 @@ TEST(FlagsAccessTest, GetSetTest) {
     ASSERT_EQ("true", resp);
     ASSERT_TRUE(getUrl("/get_flags?flags=int64_test", resp));
     EXPECT_EQ(std::string("int64_test=20\n"), resp);
-}
 
+    ASSERT_TRUE(getUrl("/get_flags", resp));
+    ASSERT_TRUE(resp.find("crash_test=nullptr") != std::string::npos);
+}
 
 TEST(FlagsAccessTest, JsonTest) {
     std::string resp;
