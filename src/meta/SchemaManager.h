@@ -17,6 +17,8 @@ namespace meta {
 
 class SchemaManager {
 public:
+    virtual ~SchemaManager() = default;
+
     static std::unique_ptr<SchemaManager> create();
 
     virtual std::shared_ptr<const SchemaProviderIf> getTagSchema(GraphSpaceID space,
