@@ -404,7 +404,7 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "refresh cache";
+        std::string query = "refresh meta cache";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

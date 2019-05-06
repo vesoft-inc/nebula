@@ -41,7 +41,7 @@ public:
         kCreateSpace,
         kDropSpace,
         kYield,
-        kRefreshCache
+        kRefreshMetaCache
     };
 
     Kind kind() const {

@@ -70,6 +70,7 @@ REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo]
 DROP                        ([Dd][Rr][Oo][Pp])
 REMOVE                      ([Rr][Ee][Mm][Oo][Vv][Ee])
 REFRESH                     ([Rr][Ee][Ff][Rr][Ee][Ss][Hh])
+META                        ([Mm][Ee][Tt][Aa])
 CACHE                       ([Cc][Aa][Cc][Hh][Ee])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
@@ -133,6 +134,7 @@ OCT                         ([0-7])
 {DROP}                      { return TokenType::KW_DROP; }
 {REMOVE}                    { return TokenType::KW_REMOVE; }
 {REFRESH}                   { return TokenType::KW_REFRESH; }
+{META}                      { return TokenType::KW_META; }
 {CACHE}                     { return TokenType::KW_CACHE; }
 
 "."                         { return TokenType::DOT; }

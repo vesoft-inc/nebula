@@ -81,7 +81,7 @@ Status MetaClient::loadDataThreadFunc() {
         auto r = getPartsAlloc(spaceId).get();
         if (!r.ok()) {
             LOG(ERROR) << "Get parts allocaction failed for spaceId " << spaceId;
-            return Status::Error("Get parts allocaction failed for spaceId");
+            return Status::Error("Get parts allocaction failed");
         }
 
         auto spaceCache = std::make_shared<SpaceInfoCache>();
@@ -98,7 +98,7 @@ Status MetaClient::loadDataThreadFunc() {
                          spaceEdgeIndexByName,
                          spaceNewestTagVerMap,
                          spaceNewestEdgeVerMap)) {
-            return;
+            return Status::Error("Get schema failed");;
         }
 
         cache.emplace(spaceId, spaceCache);
@@ -230,6 +230,19 @@ folly::Future<StatusOr<Response>> MetaClient::getResponse(
         // succeeded
         p.setValue(respGen(std::move(resp)));
     });
+    return f;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::refreshCache() {
+    folly::Promise<StatusOr<bool>> pro;
+    auto f = pro.getFuture();
+    auto ret = loadDataThreadFunc();
+
+    if (ret == Status::OK()) {
+        pro.setValue(true);
+    } else {
+        pro.setValue(ret);
+    }
     return f;
 }
 

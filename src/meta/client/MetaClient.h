@@ -160,9 +160,8 @@ public:
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
 
-    Status refreshCache() {
-        return loadDataThreadFunc();
-    }
+    folly::Future<StatusOr<bool>>
+    refreshCache();
 
 protected:
     Status loadDataThreadFunc();

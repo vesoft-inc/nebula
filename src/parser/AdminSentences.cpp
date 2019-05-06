@@ -100,8 +100,8 @@ std::string DropSpaceSentence::toString() const {
 }
 
 
-std::string RefreshCacheSentence::toString() const {
-    return std::string("REFRESH CACHE");
+std::string RefreshMetaCacheSentence::toString() const {
+    return std::string("REFRESH META CACHE");
 }
 
 }   // namespace nebula

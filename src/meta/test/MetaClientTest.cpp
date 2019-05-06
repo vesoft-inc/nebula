@@ -257,7 +257,7 @@ TEST(MetaClientTest, InterfacesTest) {
 
 
 TEST(MetaClientTest, RefreshCacheTest) {
-    FLAGS_load_data_interval_second = 1*60;
+    FLAGS_load_data_interval_second = 30;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
     auto sc = TestUtils::mockServer(10001, rootPath.path());
 
@@ -292,7 +292,10 @@ TEST(MetaClientTest, RefreshCacheTest) {
         ASSERT_FALSE(ret.ok());
         ASSERT_EQ(Status::SpaceNotFound(), ret.status());
     }
-    client->refreshCache();
+    {
+        auto ret = client->refreshCache().get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+    }
     {
         auto ret = client->getSpaceIdByNameFromCache("default_space");
         ASSERT_TRUE(ret.ok()) << ret.status();

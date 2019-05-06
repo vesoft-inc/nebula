@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef GRAPH_REFRESHCACHEEXECUTOR_H_
-#define GRAPH_REFRESHCACHEEXECUTOR_H_
+#ifndef GRAPH_REFRESHMETACACHEEXECUTOR_H_
+#define GRAPH_REFRESHMETACACHEEXECUTOR_H_
 
 #include "base/Base.h"
 #include "graph/Executor.h"
@@ -13,12 +13,12 @@
 namespace nebula {
 namespace graph {
 
-class RefreshCacheExecutor final : public Executor {
+class RefreshMetaCacheExecutor final : public Executor {
 public:
-    RefreshCacheExecutor(Sentence *sentence, ExecutionContext *ectx);
+    RefreshMetaCacheExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "RefreshCacheExecutor";
+        return "RefreshMetaCacheExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -26,10 +26,10 @@ public:
     void execute() override;
 
 private:
-    RefreshCacheSentence                             *sentence_{nullptr};
+    RefreshMetaCacheSentence            *sentence_{nullptr};
 };
 
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // GRAPH_REFRESHCACHEEXECUTOR_H_
+#endif  // GRAPH_REFRESHMETACACHEEXECUTOR_H_

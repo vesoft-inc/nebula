@@ -235,10 +235,10 @@ private:
 };
 
 
-class RefreshCacheSentence final : public Sentence {
+class RefreshMetaCacheSentence final : public Sentence {
 public:
-    RefreshCacheSentence() {
-        kind_ = Kind::kRefreshCache;
+    RefreshMetaCacheSentence() {
+        kind_ = Kind::kRefreshMetaCache;
     }
 
     std::string toString() const override;
