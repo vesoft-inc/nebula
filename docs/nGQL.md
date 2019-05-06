@@ -1,7 +1,7 @@
 # Nebula Graph Query Language (nGQL)
 
 ## About nGQL
-NGQL is a declarative, textual query language like SQL, but for graphs. Unlike SQL, nGQL is all about expressing graph patterns. NGQL is a work in progress. We will add more features and further simplify the existing ones.
+`NGQL` is a declarative, textual query language like SQL, but for graphs. Unlike SQL, nGQL is all about expressing graph patterns. NGQL is a work in progress. We will add more features and further simplify the existing ones.
 ## Goals
 - Easy to learn
 - Easy to understand
