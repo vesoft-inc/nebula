@@ -81,6 +81,16 @@ public:
                              const std::string& start,
                              const std::string& end,
                              std::unique_ptr<KVIterator>* iter) = 0;
+    /**
+     * Since the `range' interface will hold references to its 3rd & 4th parameter, in `iter',
+     * thus the arguments must outlive `iter'.
+     * Here we forbid one to invoke `range' with rvalues, which is the common mistake.
+     */
+    virtual ResultCode range(GraphSpaceID spaceId,
+                             PartitionID  partId,
+                             std::string&& start,
+                             std::string&& end,
+                             std::unique_ptr<KVIterator>* iter) = delete;
 
     /**
      * Get all results with prefix.
@@ -89,6 +99,13 @@ public:
                               PartitionID  partId,
                               const std::string& prefix,
                               std::unique_ptr<KVIterator>* iter) = 0;
+    /**
+     * To forbid to pass rvalue via the `prefix' parameter.
+     */
+    virtual ResultCode prefix(GraphSpaceID spaceId,
+                              PartitionID  partId,
+                              std::string&& prefix,
+                              std::unique_ptr<KVIterator>* iter) = delete;
 
 
     virtual void asyncMultiPut(GraphSpaceID spaceId,
