@@ -70,6 +70,8 @@ class GraphScanner;
     nebula::WithUserOptItem                *with_user_opt_item;
     nebula::RoleTypeClause                 *role_type_clause;
     nebula::AclItemClause                  *acl_item_clause;
+    nebula::SchemaOptList                  *create_schema_opt_list;
+    nebula::SchemaOptItem                  *create_schema_opt_item;
 }
 
 /* destructors */
@@ -79,7 +81,7 @@ class GraphScanner;
 
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_TTL
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
 %token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
@@ -87,6 +89,8 @@ class GraphScanner;
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY
+%token KW_COMMENT KW_ENCRYPT KW_COMPRESS KW_CHARACTER KW_COLLATE KW_TTL_DURATION
+%token KW_TTL_COL KW_ENGINE
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -136,8 +140,8 @@ class GraphScanner;
 %type <space_opt_item> space_opt_item
 %type <alter_tag_opt_list> alter_tag_opt_list
 %type <alter_tag_opt_item> alter_tag_opt_item
-
-%type <intval> ttl_spec port
+%type <create_schema_opt_list> create_schema_opt_list
+%type <create_schema_opt_item> create_schema_opt_item
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -487,15 +491,63 @@ use_sentence
     : KW_USE KW_SPACE LABEL { $$ = new UseSentence($3); }
     ;
 
+create_schema_opt_list
+    : %empty {
+        $$ = nullptr;
+    }
+    | create_schema_opt_item {
+        $$ = new SchemaOptList();
+        $$->addOpt($1);
+    }
+    | create_schema_opt_list COMMA create_schema_opt_item {
+        $$ = $1;
+        $$->addOpt($3);
+    }
+    ;
+
+ create_schema_opt_item
+    : KW_COMMENT ASSIGN STRING {
+        $$ = new SchemaOptItem(SchemaOptItem::COMMENT, *$3);
+        delete $3;
+    }
+    | KW_ENGINE ASSIGN  LABEL {
+        $$ = new SchemaOptItem(SchemaOptItem::ENGINE, *$3);
+        delete $3;
+    }
+    | KW_ENCRYPT ASSIGN STRING {
+        $$ = new SchemaOptItem(SchemaOptItem::ENCRYPT, *$3);
+        delete $3;
+    }
+    | KW_COMPRESS ASSIGN STRING {
+        $$ = new SchemaOptItem(SchemaOptItem::COMPRESS, *$3);
+        delete $3;
+    }
+    | KW_CHARACTER KW_SET ASSIGN LABEL {
+        $$ = new SchemaOptItem(SchemaOptItem::CHARACTER_SET, *$4);
+        delete $4;
+    }
+    | KW_COLLATE ASSIGN LABEL {
+        $$ = new SchemaOptItem(SchemaOptItem::COLLATE, *$3);
+        delete $3;
+    }
+    | KW_TTL_DURATION ASSIGN INTEGER {
+        $$ = new SchemaOptItem(SchemaOptItem::TTL_DURATION, $3);
+    }
+    | KW_TTL_COL ASSIGN LABEL {
+        $$ = new SchemaOptItem(SchemaOptItem::TTL_COL, *$3);
+        delete $3;
+    }
+    ;
+
 create_tag_sentence
-    : KW_CREATE KW_TAG LABEL L_PAREN R_PAREN {
-        $$ = new CreateTagSentence($3, new ColumnSpecificationList());
+    : KW_CREATE KW_TAG LABEL L_PAREN R_PAREN  create_schema_opt_list {
+        $$ = new CreateTagSentence($3, new ColumnSpecificationList(), $6);
     }
-    | KW_CREATE KW_TAG LABEL L_PAREN column_spec_list R_PAREN {
-        $$ = new CreateTagSentence($3, $5);
+    | KW_CREATE KW_TAG LABEL L_PAREN column_spec_list R_PAREN create_schema_opt_list {
+        $$ = new CreateTagSentence($3, $5, $7);
     }
-    | KW_CREATE KW_TAG LABEL L_PAREN column_spec_list COMMA R_PAREN {
-        $$ = new CreateTagSentence($3, $5);
+    | KW_CREATE KW_TAG LABEL L_PAREN column_spec_list COMMA R_PAREN create_schema_opt_list {
+        $$ = new CreateTagSentence($3, $5, $8);
     }
     ;
 
@@ -529,14 +581,14 @@ alter_tag_opt_item
     ;
 
 create_edge_sentence
-    : KW_CREATE KW_EDGE LABEL L_PAREN R_PAREN {
-        $$ = new CreateEdgeSentence($3,  new ColumnSpecificationList());
+    : KW_CREATE KW_EDGE LABEL L_PAREN R_PAREN create_schema_opt_list {
+        $$ = new CreateEdgeSentence($3,  new ColumnSpecificationList(), $6);
     }
-    | KW_CREATE KW_EDGE LABEL L_PAREN column_spec_list R_PAREN {
-        $$ = new CreateEdgeSentence($3, $5);
+    | KW_CREATE KW_EDGE LABEL L_PAREN column_spec_list R_PAREN create_schema_opt_list {
+        $$ = new CreateEdgeSentence($3, $5, $7);
     }
-    | KW_CREATE KW_EDGE LABEL L_PAREN column_spec_list COMMA R_PAREN {
-        $$ = new CreateEdgeSentence($3, $5);
+    | KW_CREATE KW_EDGE LABEL L_PAREN column_spec_list COMMA R_PAREN create_schema_opt_list {
+        $$ = new CreateEdgeSentence($3, $5, $8);
     }
     ;
 
@@ -566,12 +618,8 @@ column_spec_list
 column_spec
     : LABEL { $$ = new ColumnSpecification($1); }
     | LABEL type_spec { $$ = new ColumnSpecification($2, $1); }
-    | LABEL type_spec ttl_spec { $$ = new ColumnSpecification($2, $1, $3); }
     ;
 
-ttl_spec
-    : KW_TTL ASSIGN INTEGER { $$ = $3; }
-    ;
 
 describe_tag_sentence
     : KW_DESCRIBE KW_TAG LABEL {
@@ -1079,7 +1127,7 @@ maintain_sentence
     | change_password_sentence { $$ = $1; }
     | grant_sentence { $$ = $1; }
     | revoke_sentence { $$ = $1; }
-    ; 
+    ;
 
 sentence
     : maintain_sentence { $$ = $1; }

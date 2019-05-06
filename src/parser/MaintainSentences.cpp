@@ -9,6 +9,52 @@
 
 namespace nebula {
 
+std::string SchemaOptItem::toString() const {
+    switch (optType_) {
+        case COMMENT:
+            return folly::stringPrintf("comment = \"%s\"",
+                                       boost::get<std::string>(optValue_).c_str());
+        case ENGINE:
+            return folly::stringPrintf("engine = %s",
+                                       boost::get<std::string>(optValue_).c_str());
+        case ENCRYPT:
+            return folly::stringPrintf("encrypt = \"%s\"",
+                                       boost::get<std::string>(optValue_).c_str());
+        case COMPRESS:
+            return folly::stringPrintf("compress = \"%s\"",
+                                       boost::get<std::string>(optValue_).c_str());
+        case CHARACTER_SET:
+            return folly::stringPrintf("character set = %s",
+                                       boost::get<std::string>(optValue_).c_str());
+        case COLLATE:
+            return folly::stringPrintf("collate = %s",
+                                       boost::get<std::string>(optValue_).c_str());
+        case TTL_DURATION:
+            return folly::stringPrintf("ttl_duration = %ld",
+                                       boost::get<int64_t>(optValue_));
+        case TTL_COL:
+            return folly::stringPrintf("ttl_col = %s",
+                                       boost::get<std::string>(optValue_).c_str());
+        default:
+            FLOG_FATAL("Space parameter illegal");
+    }
+    return "Unknown";
+}
+
+
+ std::string SchemaOptList::toString() const {
+    std::string buf;
+    buf.reserve(512);
+    for (auto &item : items_) {
+        buf += " ";
+        buf += item->toString();
+        buf += ",";
+    }
+    buf.resize(buf.size() - 1);
+    return buf;
+}
+
+
 std::string CreateTagSentence::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -20,16 +66,15 @@ std::string CreateTagSentence::toString() const {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
-        if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
-        }
         buf += ",";
     }
     if (!colSpecs.empty()) {
         buf.resize(buf.size() - 1);
     }
     buf += ")";
+    if (schemaOpts_ != nullptr) {
+        buf +=  schemaOpts_->toString();
+    }
     return buf;
 }
 
@@ -45,16 +90,15 @@ std::string CreateEdgeSentence::toString() const {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
-        if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
-        }
         buf += ",";
     }
     if (!colSpecs.empty()) {
         buf.resize(buf.size() - 1);
     }
     buf += ")";
+    if (schemaOpts_ != nullptr) {
+        buf +=  schemaOpts_->toString();
+    }
     return buf;
 }
 
@@ -69,10 +113,6 @@ std::string AlterTagOptItem::toString() const {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
-        if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
-        }
         buf += ",";
     }
     if (!colSpecs.empty()) {

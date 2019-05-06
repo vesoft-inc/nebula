@@ -24,6 +24,7 @@ public:
         name_.reset(name);
     }
 
+    #if 0
     ColumnSpecification(ColumnType type, std::string *name, int64_t ttl) {
         hasTTL_ = true;
         ttl_ = ttl;
@@ -38,6 +39,7 @@ public:
     int64_t ttl() const {
         return ttl_;
     }
+    #endif
 
     ColumnType type() const {
         return type_;
@@ -48,8 +50,8 @@ public:
     }
 
 private:
-    bool                                        hasTTL_{false};
-    int64_t                                     ttl_;
+    // bool                                        hasTTL_{false};
+    // int64_t                                     ttl_;
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
 };
@@ -75,11 +77,179 @@ private:
 };
 
 
+class SchemaOptItem final {
+public:
+    using Value = boost::variant<int64_t, bool, std::string>;
+
+    enum OptionType : uint8_t {
+        COMMENT,
+        ENGINE,
+        ENCRYPT,
+        COMPRESS,
+        CHARACTER_SET,
+        COLLATE,
+        TTL_DURATION,
+        TTL_COL
+    };
+
+    SchemaOptItem(OptionType op, int64_t val) {
+        optType_ = op;
+        optValue_ = val;
+    }
+
+    SchemaOptItem(OptionType op, bool val) {
+        optType_ = op;
+        optValue_ = val;
+    }
+
+    SchemaOptItem(OptionType op, std::string val) {
+        optType_ = op;
+        optValue_ = std::move(val);
+    }
+
+    int64_t asInt() {
+        return boost::get<int64_t>(optValue_);
+    }
+
+    std::string& asString() {
+        return boost::get<std::string>(optValue_);
+    }
+
+    bool asBool() {
+        switch (optValue_.which()) {
+            case 0:
+                return asInt() != 0;
+            case 1:
+                return boost::get<bool>(optValue_);
+            case 2:
+                return asString().empty();
+            default:
+                DCHECK(false);
+        }
+        return false;
+    }
+
+    bool isInt() {
+        return optValue_.which() == 0;
+    }
+
+    bool isBool() {
+        return optValue_.which() == 1;
+    }
+
+    bool isString() {
+        return optValue_.which() == 2;
+    }
+
+    std::string getComment() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "Comment value illegal.";
+            return "";
+        }
+    }
+
+    std::string getEngine() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "Engine value illegal.";
+            return "";
+        }
+    }
+
+    std::string getEncrypt() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "Encrypt value illegal.";
+            return "";
+        }
+    }
+
+     std::string getCompress() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "Compress value illegal.";
+            return "";
+        }
+    }
+
+     std::string getCharacterSet() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "Character set value illegal.";
+            return "";
+        }
+    }
+
+     std::string getCollate() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "Collate value illegal.";
+            return "";
+        }
+    }
+
+     int64_t getTtlDuration() {
+        if (isInt()) {
+            return asInt();
+        } else {
+            LOG(ERROR) << "Ttl_duration value illegal.";
+            return 0;
+        }
+    }
+
+     std::string getTtlCol() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "Ttl_col value illegal.";
+            return "";
+        }
+    }
+
+     OptionType getOptType() {
+        return optType_;
+    }
+
+     std::string toString() const;
+
+ private:
+    Value        optValue_;
+    OptionType   optType_;
+};
+
+
+class SchemaOptList final {
+public:
+    void addOpt(SchemaOptItem *item) {
+        items_.emplace_back(item);
+    }
+
+     std::vector<std::unique_ptr<SchemaOptItem>> getOpt() {
+        return std::move(items_);
+    }
+
+     std::string toString() const;
+
+ private:
+    std::vector<std::unique_ptr<SchemaOptItem>>    items_;
+};
+
+
 class CreateTagSentence final : public Sentence {
 public:
-    CreateTagSentence(std::string *name, ColumnSpecificationList *columns) {
+    CreateTagSentence(std::string *name,
+                      ColumnSpecificationList *columns,
+                      SchemaOptList *schemaOpts) {
         name_.reset(name);
         columns_.reset(columns);
+        schemaOpts_.reset(schemaOpts);
         kind_ = Kind::kCreateTag;
     }
 
@@ -93,18 +263,25 @@ public:
         return columns_->columnSpecs();
     }
 
+    std::vector<std::unique_ptr<SchemaOptItem>> getSchemaOpts() {
+        return schemaOpts_->getOpt();
+    }
+
 private:
     std::unique_ptr<std::string>                name_;
     std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<SchemaOptList>              schemaOpts_;
 };
 
 
 class CreateEdgeSentence final : public Sentence {
 public:
     CreateEdgeSentence(std::string *name,
-                       ColumnSpecificationList *columns) {
+                       ColumnSpecificationList *columns
+                       SchemaOptList *schemaOpts) {
         name_.reset(name);
         columns_.reset(columns);
+        schemaOpts_.reset(schemaOpts);
         kind_ = Kind::kCreateEdge;
     }
 
@@ -118,9 +295,14 @@ public:
         return columns_->columnSpecs();
     }
 
+    std::vector<std::unique_ptr<SchemaOptItem>> getSchemaOpts() {
+        return schemaOpts_->getOpt();
+    }
+
 private:
     std::unique_ptr<std::string>                name_;
     std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<SchemaOptList>              schemaOpts_;
 };
 
 
