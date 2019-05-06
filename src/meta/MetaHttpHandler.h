@@ -46,7 +46,7 @@ private:
     HttpCode err_{HttpCode::SUCCEEDED};
     bool returnJson_{false};
     std::vector<std::string> statusNames_;
-    std::vector<std::string> statusAllNames_{"active"};
+    std::vector<std::string> statusAllNames_{"status"};
 };
 
 }  // namespace meta

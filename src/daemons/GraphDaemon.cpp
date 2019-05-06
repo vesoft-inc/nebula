@@ -91,6 +91,7 @@ int main(int argc, char *argv[]) {
     }
 
     LOG(INFO) << "Starting Graph HTTP Service";
+    // http://127.0.0.1:XXXX/status is equivalent to http://127.0.0.1:XXXX
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::graph::GraphHttpHandler();
     });

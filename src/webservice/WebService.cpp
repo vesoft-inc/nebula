@@ -32,8 +32,12 @@ public:
 
     proxygen::RequestHandler* onRequest(proxygen::RequestHandler*,
                                         proxygen::HTTPMessage* msg) noexcept override {
-        VLOG(2) << "Got request \"" << msg->getPath() << "\"";
-        auto it = handlerGenMap_.find(msg->getPath());
+        std::string path = msg->getPath();
+        if (path == "/") {
+            path = "/status";
+        }
+        VLOG(2) << "Got request \"" << path << "\"";
+        auto it = handlerGenMap_.find(path);
         if (it != handlerGenMap_.end()) {
             return it->second();
         }
