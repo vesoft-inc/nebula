@@ -50,7 +50,6 @@ UPTO                        ([Uu][Pp][Tt][Oo])
 REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
 SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
-TTL                         ([Tt][Tt][Ll])
 INT                         ([Ii][Nn][Tt])
 BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
@@ -95,6 +94,14 @@ ON                          ([Oo][Nn])
 ROLES                       ([Rr][Oo][Ll][Ee][Ss])
 BY                          ([Bb][Yy])
 IN                          ([Ii][Nn])
+TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
+TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
+COMMENT                     ([Cc][Oo][Mm][Mm][Ee][Nn][Tt])
+ENGINE                      ([Ee][Nn][Gg][Ii][Nn][Ee])
+ENCRYPT                     ([Ee][Nn][Cc][Rr][Yy][Pp][Tt])
+COMPRESS                    ([Cc][Oo][Mm][Pp][Rr][Ee][Ss][Ss])
+CHARACTER                   ([Cc][Hh][Aa][Rr][Aa][Cc][Tt][Ee][Rr])
+COLLATE                     ([Cc][Oo][Ll][Ll][Aa][Tt][Ee])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -136,7 +143,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {REVERSELY}                 { return TokenType::KW_REVERSELY; }
 {SPACE}                     { return TokenType::KW_SPACE; }
 {SPACES}                    { return TokenType::KW_SPACES; }
-{TTL}                       { return TokenType::KW_TTL; }
 {INT}                       { return TokenType::KW_INT; }
 {BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
@@ -149,8 +155,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {MINUS}                     { return TokenType::KW_MINUS; }
 {NO}                        { return TokenType::KW_NO; }
 {OVERWRITE}                 { return TokenType::KW_OVERWRITE; }
-{TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
-{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {SHOW}                      { return TokenType::KW_SHOW; }
 {ADD}                       { return TokenType::KW_ADD; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
@@ -182,6 +186,16 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {ROLES}                     { return TokenType::KW_ROLES; }
 {BY}                        { return TokenType::KW_BY; }
 {IN}                        { return TokenType::KW_IN; }
+{TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
+{TTL_COL}                   { return TokenType::KW_TTL_COL; }
+{COMMENT}                   { return TokenType::KW_COMMENT; }
+{ENGINE}                    { return TokenType::KW_ENGINE; }
+{ENCRYPT}                   { return TokenType::KW_ENCRYPT; }
+{COMPRESS}                  { return TokenType::KW_COMPRESS; }
+{CHARACTER}                 { return TokenType::KW_CHARACTER; }
+{COLLATE}                   { return TokenType::KW_COLLATE; }
+{TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
+{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
