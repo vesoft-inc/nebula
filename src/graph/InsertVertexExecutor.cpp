@@ -26,15 +26,15 @@ Status InsertVertexExecutor::prepare() {
 
     overwritable_ = sentence_->overwritable();
     vertex_ = sentence_->vertex();
-    tagId_ = ectx()->schemaManager()->toTagID(*vertex_);
     properties_ = sentence_->properties();
     rows_ = sentence_->rows();
     // TODO(dutor) check on property names and types
     if (rows_.empty()) {
         return Status::Error("VALUES cannot be empty");
     }
-    auto space = ectx()->rctx()->session()->space();
-    schema_ = ectx()->schemaManager()->getTagSchema(space, tagId_);
+    auto spaceId = ectx()->rctx()->session()->space();
+    tagId_ = ectx()->schemaManager()->toTagID(spaceId, *vertex_);
+    schema_ = ectx()->schemaManager()->getTagSchema(spaceId, tagId_);
     if (schema_ == nullptr) {
         return Status::Error("No schema found for `%s'", vertex_->c_str());
     }
