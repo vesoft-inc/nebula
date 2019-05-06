@@ -159,7 +159,7 @@ public:
      }
 
 private:
-     meta::MetaClient *client_;
+     meta::MetaClient *client_{nullptr};
      HostAddr localHost_;
 };
 
