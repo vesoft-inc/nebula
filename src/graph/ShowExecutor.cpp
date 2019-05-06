@@ -34,7 +34,7 @@ void ShowExecutor::execute() {
             break;
         case ShowSentence::ShowType::kShowUsers:
         case ShowSentence::ShowType::kShowUser:
-        case ShowSentence::ShowType::kShowPrivileges:
+        case ShowSentence::ShowType::kShowRoles:
             // TODO(boshengchen)
             break;
         case ShowSentence::ShowType::kUnknown:

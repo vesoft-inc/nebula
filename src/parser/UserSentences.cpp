@@ -34,18 +34,16 @@ std::string WithUserOptItem::toString() const {
         case OptionType::PHONE :
             return folly::stringPrintf("PHONE \"%s\"", optValue_.get()->data());
         default:
-            FLOG_FATAL("User parameter illegal");
+            return "Unknown";
     }
-    return "Unknown";
 }
 
 
 std::string WithUserOptList::toString() const {
     std::string buf;
     buf.reserve(256);
-    for (uint32_t i = 0; i < items_.size(); i++) {
-        auto &item = items_[i];
-        if (i > 0) {
+    for (auto& item : items_) {
+        if (!buf.empty()) {
             buf += ", ";
         }
         buf += item->toString();
@@ -65,9 +63,8 @@ std::string RoleTypeClause::toString() const {
         case RoleType::GUEST :
             return std::string("GUEST");
         default:
-            FLOG_FATAL("Role type illegal");
+            return "Unknown";
     }
-    return "Unknown";
 }
 
 

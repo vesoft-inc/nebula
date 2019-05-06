@@ -84,7 +84,7 @@ class GraphScanner;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
-%token KW_PRIVILEGE KW_BY
+%token KW_ROLES KW_BY
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -819,8 +819,8 @@ show_sentence
     | KW_SHOW KW_USER LABEL {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowUser, $3);
     }
-    | KW_SHOW KW_PRIVILEGE LABEL {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowPrivileges, $3);
+    | KW_SHOW KW_ROLES KW_IN LABEL {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowRoles, $4);
     }
     ;
 

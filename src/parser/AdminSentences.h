@@ -23,7 +23,7 @@ public:
         kShowSpaces,
         kShowUsers,
         kShowUser,
-        kShowPrivileges
+        kShowRoles
     };
 
     explicit ShowSentence(ShowType sType) {

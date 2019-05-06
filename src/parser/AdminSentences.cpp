@@ -18,8 +18,8 @@ std::string ShowSentence::toString() const {
             return std::string("SHOW USERS");
         case ShowType::kShowUser:
             return folly::stringPrintf("SHOW USER %s", name_.get()->data());
-        case ShowType::kShowPrivileges:
-            return folly::stringPrintf("SHOW PRIVILEGE %s", name_.get()->data());
+        case ShowType::kShowRoles:
+            return folly::stringPrintf("SHOW ROLES IN %s", name_.get()->data());
         case ShowType::kUnknown:
         default:
             FLOG_FATAL("Type illegal");

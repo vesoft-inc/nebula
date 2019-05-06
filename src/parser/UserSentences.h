@@ -16,7 +16,8 @@ namespace nebula {
 class MissingOkClause final {
 public:
     enum MissingType : uint8_t {
-        IF_EXIST, IF_NOT_EXIST
+        IF_EXIST,
+        IF_NOT_EXIST
     };
 
     explicit MissingOkClause(bool isMissing) {

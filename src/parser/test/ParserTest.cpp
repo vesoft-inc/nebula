@@ -458,7 +458,7 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "SHOW PRIVILEGE spacename";
+        std::string query = "SHOW ROLES IN spacename";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();

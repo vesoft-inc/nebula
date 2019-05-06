@@ -88,8 +88,9 @@ GUEST                       ([Gg][Uu][Ee][Ss][Tt])
 GRANT                       ([Gg][Rr][Aa][Nn][Tt])
 REVOKE                      ([Rr][Ee][Vv][Oo][Kk][Ee])
 ON                          ([Oo][Nn])
-PRIVILEGE                   ([Pp][Rr][Ii][Vv][Ii][Ll][Ee][Gg][Ee])
+ROLES                       ([Rr][Oo][Ll][Ee][Ss])
 BY                          ([Bb][Yy])
+IN                          ([Ii][Nn])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -170,8 +171,9 @@ OCT                         ([0-7])
 {GRANT}                     { return TokenType::KW_GRANT; }
 {REVOKE}                    { return TokenType::KW_REVOKE; }
 {ON}                        { return TokenType::KW_ON; }
-{PRIVILEGE}                 { return TokenType::KW_PRIVILEGE; }
+{ROLES}                     { return TokenType::KW_ROLES; }
 {BY}                        { return TokenType::KW_BY; }
+{IN}                        { return TokenType::KW_IN; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
