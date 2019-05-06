@@ -116,6 +116,16 @@ EdgeType ServerBasedSchemaManager::toEdgeType(GraphSpaceID space,
     return -1;
 }
 
+Status ServerBasedSchemaManager::checkSpaceExist(folly::StringPiece spaceName) {
+    CHECK(metaClient_);
+    // Check from the cache, if space not exists, schemas also not exist
+    auto ret = metaClient_->getSpaceIdByNameFromCache(spaceName.str());
+    if (!ret.ok()) {
+        return Status::Error("Space not exist");
+    }
+    return Status::OK();
+}
+
 }  // namespace meta
 }  // namespace nebula
 

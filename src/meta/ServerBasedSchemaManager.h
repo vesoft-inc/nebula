@@ -54,6 +54,8 @@ public:
 
     EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
+    Status checkSpaceExist(folly::StringPiece spaceName) override;
+
     void init(MetaClient *client) override;
 
 private:

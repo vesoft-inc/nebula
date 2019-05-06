@@ -32,17 +32,29 @@ void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
                                       TagID tag,
                                       std::shared_ptr<SchemaProviderIf> schema
                                       ) {
-    folly::RWSpinLock::WriteHolder wh(tagLock_);
-    // Only version 0
-    tagSchemas_[std::make_pair(space, tag)][0] = schema;
+    {
+        folly::RWSpinLock::WriteHolder wh(tagLock_);
+        // Only version 0
+        tagSchemas_[std::make_pair(space, tag)][0] = schema;
+    }
+    {
+        folly::RWSpinLock::WriteHolder wh(spaceLock_);
+        spaces_.emplace(space);
+    }
 }
 
 void AdHocSchemaManager::addEdgeSchema(GraphSpaceID space,
                                        EdgeType edge,
                                        std::shared_ptr<SchemaProviderIf> schema) {
-    folly::RWSpinLock::WriteHolder wh(edgeLock_);
-    // Only version 0
-    edgeSchemas_[std::make_pair(space, edge)][0] = schema;
+    {
+        folly::RWSpinLock::WriteHolder wh(edgeLock_);
+        // Only version 0
+        edgeSchemas_[std::make_pair(space, edge)][0] = schema;
+    }
+    {
+        folly::RWSpinLock::WriteHolder wh(spaceLock_);
+        spaces_.emplace(space);
+    }
 }
 
 std::shared_ptr<const SchemaProviderIf>
@@ -173,6 +185,15 @@ TagID AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName
 EdgeType AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
     UNUSED(space);
     return folly::hash::fnv32_buf(typeName.start(), typeName.size());
+}
+
+Status AdHocSchemaManager::checkSpaceExist(folly::StringPiece spaceName) {
+    folly::RWSpinLock::ReadHolder rh(spaceLock_);
+    auto it = spaces_.find(toGraphSpaceID(spaceName));
+    if (it == spaces_.end()) {
+        return Status::Error("Space not exist");
+    }
+    return Status::OK();
 }
 
 }  // namespace meta

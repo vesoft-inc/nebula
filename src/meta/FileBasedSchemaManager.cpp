@@ -27,6 +27,7 @@ void FileBasedSchemaManager::init(MetaClient *client) {
         Configuration spaceConf;
         CHECK(conf.fetchAsSubConf(name.c_str(), spaceConf).ok());
         this->readOneGraphSpace(space, spaceConf);
+        this->spaces_.emplace(space);
     }).ok());
 }
 
