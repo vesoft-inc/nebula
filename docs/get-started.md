@@ -22,7 +22,7 @@ docker --version
 
 If `docker` is not found, please see [here](https://docs.docker.com/install/) for more information to install docker.
 
-After that, using `docker pull vesoft/nebula-graph` to get `nebula` image and `docker images` that can display images status.
+After that, using `docker pull vesoft/nebula-graph:latest` to get `nebula` image and `docker images` that can display images status.
 
 ---
 
@@ -30,14 +30,18 @@ After that, using `docker pull vesoft/nebula-graph` to get `nebula` image and `d
 
 When `nebula` image is ready, run
 
-`docker run -it vesoft/nebula-graph /bin/bash`
+`docker run -it vesoft/nebula-graph:latest /bin/bash`
 
 to start and login the docker container.
 After login in the container, you're in the `root` directory and you should use `cd ~/nebula-graph/` to switch to the nebula home directory.
 
 Run `./start-all.sh` to start meta service, storage service and graph service.
 
-`ps -ef | grep nebula` will display the servie's running status.
+Run
+
+`ps -ef | grep nebula`
+
+to display the servie's running status.
 
 Please make sure the services are working.
 
@@ -45,11 +49,13 @@ Please make sure the services are working.
 
 `--port` is used for specifying the graph server port and the default value is `3699`.
 
-`--u` and `--p` are use to specify the user name and password, `user` and `password` are the default authority.
+`--u` and `--p` are used to specify the user name and password, `user` and `password` are the default authority.
  
 Run `bin/nebula --port=3699 --u=user --p=password` to connect to the graph server.
 
-You can use `./start-console.sh` to start console in easy mode.
+One easier way to start console is to run
+
+`./start-console.sh`.
 
 ```
 Welcome to Nebula Graph (Version 0.1)
@@ -66,7 +72,7 @@ Execution succeeded (Time spent: 154/793 us)
 
 ---
 
-### Step 3 Simple Query
+### Step 3 Simple Query Demo
 
 This query comes from a vertex walk up an edge.
 
@@ -84,7 +90,7 @@ nebula> go from 5209979940224249985 over like
 ........................
 ```
 
-This query comes from a vertex walk up an edge and the target's age should be greater than or equal to 30, also rename the columns as `Player`, `Friend` and `Age`.
+This query comes from a vertex walk up an edge and the target's age should be greater than or equal to 30, also renames the columns as `Player`, `Friend` and `Age`.
 
 ```
 nebula> go from 5209979940224249985 over like where $$[player].age >= 30 YIELD $^[player].name as Player, $$[player].name as Friend, $$[player].age As Age
@@ -102,7 +108,13 @@ nebula> go from 5209979940224249985 over like where $$[player].age >= 30 YIELD $
 
 This query comes from a vertex walk up an edge and the target's age should be greater than or equal to 30.
 
-Using the result set's `id` field, go over `serve` and retrieval `Player`, `FromYear`, `ToYear` and `Team`.
+Setting output result as input, query `Player Name`, `FromYear`, `ToYear` and `Team Name` with input's `id`.
+
+In this query, `$^` is delegated the source vertex and `$$` is the target vertex. 
+
+`$-` is used to indicate the input from pipeline.
+
+(reference to `regular expressions`, using the special ^ (hat) and $ (dollar sign) metacharacters to describe the start and the end of the line.)
 
 ```
 nebula> go from 5209979940224249985 over like where $$[player].age >= 30 | go from $-.id over serve yield $^[player].name As Player, serve.start_year as FromYear, serve.end_year as ToYear, $$[team].name as Team
