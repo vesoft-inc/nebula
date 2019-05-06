@@ -25,8 +25,6 @@ TestEnv::~TestEnv() {
 
 void TestEnv::SetUp() {
     FLAGS_load_data_interval_second = 1;
-    pidFile_ = std::make_unique<fs::TempFile>("/tmp/nebula-graph-tmp.pid.XXXXXX");
-
     using ThriftServer = apache::thrift::ThriftServer;
     server_ = std::make_unique<ThriftServer>();
     auto interface = std::make_shared<GraphService>(server_->getIOThreadPool());

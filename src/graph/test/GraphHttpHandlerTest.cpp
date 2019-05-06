@@ -29,6 +29,7 @@ protected:
         WebService::registerHandler("/status", [] {
             return new graph::GraphHttpHandler();
         });
+
         auto status = WebService::start();
         ASSERT_TRUE(status.ok()) << status;
     }
@@ -43,6 +44,16 @@ protected:
 
 
 TEST_F(GraphHttpHandlerTest, GraphStatusTest) {
+    {
+        std::string resp;
+        ASSERT_TRUE(getUrl("/status", resp));
+        ASSERT_EQ(std::string("status=running\n"), resp);
+    }
+    {
+        std::string resp;
+        ASSERT_TRUE(getUrl("", resp));
+        ASSERT_EQ(std::string("status=running\n"), resp);
+    }
     {
         std::string resp;
         ASSERT_TRUE(getUrl("/status?daemon=status", resp));

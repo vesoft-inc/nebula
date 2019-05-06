@@ -156,6 +156,7 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:schema_obj>
 )
 nebula_link_libraries(
     meta_http_test
