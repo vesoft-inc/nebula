@@ -13,16 +13,27 @@
 namespace nebula {
 namespace storage {
 
-StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool)
+StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool,
+                             meta::MetaClient *client)
         : ioThreadPool_(threadPool) {
+    if (nullptr == client) {
+        LOG(INFO) << "MetaClient is nullptr, create new one";
+        static auto clientPtr = std::make_unique<meta::MetaClient>();
+        clientPtr->init();
+        client_ = clientPtr.get();
+    } else {
+        client_ = client;
+    }
     clientsMan_
         = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
 }
 
 
-void StorageClient::init(meta::MetaClient *client) {
-    CHECK(client);
-    client_ = client;
+StorageClient::~StorageClient() {
+    VLOG(3) << "~StorageClient";
+    if (nullptr != client_) {
+        client_ = nullptr;
+    }
 }
 
 

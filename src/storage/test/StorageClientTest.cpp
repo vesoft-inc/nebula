@@ -48,8 +48,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     sleep(2 * FLAGS_load_data_interval_second + 1);
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    auto client = std::make_unique<StorageClient>(threadPool);
-    client->init(mClient.get());
+    auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
     // VerticesInterfacesTest(addVertices and getVertexProps)
     {
         LOG(INFO) << "Prepare vertices data...";

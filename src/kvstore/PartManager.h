@@ -129,11 +129,9 @@ private:
 
 class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedListener {
 public:
-     explicit MetaServerBasedPartManager(HostAddr host);
+     explicit MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client = nullptr);
 
-     ~MetaServerBasedPartManager() {
-        VLOG(3) << "~MetaServerBasedPartManager";
-     }
+     ~MetaServerBasedPartManager();
 
      PartsMap parts(const HostAddr& host) override;
 
@@ -161,7 +159,7 @@ public:
      }
 
 private:
-     std::unique_ptr<meta::MetaClient> client_;
+     meta::MetaClient *client_;
      HostAddr localHost_;
 };
 

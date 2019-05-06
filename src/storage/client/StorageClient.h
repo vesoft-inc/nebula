@@ -78,12 +78,9 @@ private:
  */
 class StorageClient final {
 public:
-    explicit StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool);
-    ~StorageClient() {
-        VLOG(3) << "~StorageClient";
-    }
-
-    void init(meta::MetaClient *client);
+    explicit StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
+                           meta::MetaClient *client = nullptr);
+    ~StorageClient();
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,

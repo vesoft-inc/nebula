@@ -19,6 +19,7 @@ class ServerBasedSchemaManager : public SchemaManager {
     friend class SchemaManager;
 public:
     ServerBasedSchemaManager() = default;
+    ~ServerBasedSchemaManager();
 
     // return the newest one if ver less 0
     std::shared_ptr<const SchemaProviderIf> getTagSchema(
