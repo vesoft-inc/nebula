@@ -16,7 +16,7 @@
 #include "meta/processors/DropSpaceProcessor.h"
 #include "meta/processors/RemoveHostsProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
-#include "meta/processors/AddTagProcessor.h"
+#include "meta/processors/CreateTagProcessor.h"
 #include "meta/processors/RemoveTagProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
@@ -176,7 +176,7 @@ TEST(ProcessorTest, CreateSpaceTest) {
     }
 }
 
-TEST(ProcessorTest, AddTagsTest) {
+TEST(ProcessorTest, CreateTagsTest) {
     fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
@@ -199,22 +199,22 @@ TEST(ProcessorTest, AddTagsTest) {
     cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
     schema.set_columns(std::move(cols));
     {
-        cpp2::WriteTagReq req;
+        cpp2::CreateTagReq req;
         req.set_space_id(0);
         req.set_tag_name("default_tag");
         req.set_schema(schema);
-        auto* processor = AddTagProcessor::instance(kv.get());
+        auto* processor = CreateTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.code);
     }
     {
-        cpp2::WriteTagReq req;
+        cpp2::CreateTagReq req;
         req.set_space_id(1);
         req.set_tag_name("default_tag");
         req.set_schema(schema);
-        auto* processor = AddTagProcessor::instance(kv.get());
+        auto* processor = CreateTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -433,7 +433,8 @@ TEST(ProcessorTest, RemoveTagTest) {
          ret = kv.get()->get(0, 0, std::move(MetaServiceUtils::indexKey(EntryType::TAG, "tag_1")),
                              &tagVal);
          ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
-         ret = kv.get()->prefix(0, 0, "__tags__", &iter);
+         std::string tagPrefix = "__tags__";
+         ret = kv.get()->prefix(0, 0, tagPrefix, &iter);
          ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
          ASSERT_FALSE(iter->valid());
      }

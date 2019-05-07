@@ -20,39 +20,46 @@ class ServerBasedSchemaManager : public SchemaManager {
 public:
     ServerBasedSchemaManager() = default;
 
+    // return the newest one if ver less 0
     std::shared_ptr<const SchemaProviderIf> getTagSchema(
-        GraphSpaceID space, TagID tag, int32_t ver = -1) override;
+        GraphSpaceID space, TagID tag, SchemaVer ver = -1) override;
 
     std::shared_ptr<const SchemaProviderIf> getTagSchema(
         folly::StringPiece spaceName,
         folly::StringPiece tagName,
-        int32_t ver = -1) override;
+        SchemaVer ver = -1) override;
     // Returns a negative number when the schema does not exist
-    int32_t getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
+    SchemaVer getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
 
-    int32_t getNewestTagSchemaVer(folly::StringPiece spaceName,
+    SchemaVer getNewestTagSchemaVer(folly::StringPiece spaceName,
                                   folly::StringPiece tagName) override;
 
+    // return the newest one if ver less 0
     std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
-        GraphSpaceID space, EdgeType edge, int32_t ver = -1) override;
+        GraphSpaceID space, EdgeType edge, SchemaVer ver = -1) override;
 
     std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
         folly::StringPiece spaceName,
         folly::StringPiece typeName,
-        int32_t ver = -1) override;
+        SchemaVer ver = -1) override;
     // Returns a negative number when the schema does not exist
-    int32_t getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
+    SchemaVer getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
 
-    int32_t getNewestEdgeSchemaVer(folly::StringPiece spaceName,
+    SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
                                    folly::StringPiece typeName) override;
 
     GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) override;
 
-    TagID toTagID(folly::StringPiece tagName) override;
+    TagID toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
-    EdgeType toEdgeType(folly::StringPiece typeName) override;
+    EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
-    void init() override {}
+    Status checkSpaceExist(folly::StringPiece spaceName) override;
+
+    void init(MetaClient *client) override;
+
+private:
+    MetaClient             *metaClient_{nullptr};
 };
 
 }  // namespace meta

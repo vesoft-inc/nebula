@@ -40,8 +40,8 @@ add_executable(
     TestMain.cpp
     TestEnv.cpp
     TestBase.cpp
-    DefineSchemaTest.cpp
     YieldTest.cpp
+    SchemaTest.cpp
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:graph_obj>
