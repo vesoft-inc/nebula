@@ -12,15 +12,9 @@ namespace nebula {
 namespace fs {
 
 TEST(FileUtils, readLink) {
-    {
-        auto result = FileUtils::readLink("/proc/self/exe");
-        ASSERT_TRUE(result.ok()) << result.status();
-        ASSERT_NE(std::string::npos, result.value().find("file_utils_test")) << result.value();
-    }
-    {
-        auto result = FileUtils::readLink("/proc/1/exe");
-        ASSERT_FALSE(result.ok());
-    }
+    auto result = FileUtils::readLink("/proc/self/exe");
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_NE(std::string::npos, result.value().find("file_utils_test")) << result.value();
 }
 
 
