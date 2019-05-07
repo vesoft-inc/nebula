@@ -4,13 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef STORAGE_KEYUTILS_H_
-#define STORAGE_KEYUTILS_H_
+#ifndef COMMON_BASE_NEBULAKEYUTILS_H_
+#define COMMON_BASE_NEBULAKEYUTILS_H_
 
 #include "base/Base.h"
 
 namespace nebula {
-namespace storage {
 
 /**
  * VertexKeyUtils:
@@ -29,9 +28,9 @@ using Edge = std::tuple<VertexID, EdgeType, VertexID, EdgeRanking>;
 /**
  * This class supply some utils for transition between Vertex/Edge and key in kvstore.
  * */
-class KeyUtils final {
+class NebulaKeyUtils final {
 public:
-    ~KeyUtils() = default;
+    ~NebulaKeyUtils() = default;
     /**
      * Generate vertex key for kv store
      * */
@@ -62,6 +61,12 @@ public:
         return rawKey.size() == kVertexLen;
     }
 
+    static int32_t getTagId(folly::StringPiece rawKey) {
+        CHECK_EQ(rawKey.size(), kVertexLen);
+        auto offset = sizeof(PartitionID) + sizeof(VertexID);
+        return readInt<int32_t>(rawKey.data() + offset, sizeof(TagID));
+    }
+
     static bool isEdge(const std::string& rawKey) {
         return rawKey.size() == kEdgeLen;
     }
@@ -71,7 +76,6 @@ public:
         return readInt<int64_t>(rawKey.data() + sizeof(PartitionID),
                                 rawKey.size() - sizeof(PartitionID));
     }
-
 
     static int64_t getDstId(folly::StringPiece rawKey) {
         CHECK_EQ(rawKey.size(), kEdgeLen);
@@ -102,7 +106,7 @@ public:
     }
 
 private:
-    KeyUtils() = delete;
+    NebulaKeyUtils() = delete;
 
 private:
     static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(VertexID)
@@ -112,7 +116,6 @@ private:
                                       + sizeof(EdgeRanking) + sizeof(EdgeVersion);
 };
 
-}  // namespace storage
 }  // namespace nebula
-#endif  // STORAGE_KEYUTILS_H_
+#endif  // COMMON_BASE_NEBULAKEYUTILS_H_
 
