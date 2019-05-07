@@ -208,11 +208,36 @@ nebula::cpp2::Schema MetaServiceUtils::parseSchema(folly::StringPiece rawData) {
     return schema;
 }
 
-std::string MetaServiceUtils::indexKey(EntryType type, const std::string& name) {
+std::string MetaServiceUtils::indexSpaceKey(const std::string& name) {
     std::string key;
     key.reserve(128);
     key.append(kIndexTable.data(), kIndexTable.size());
+    EntryType type = EntryType::SPACE;
     key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::indexTagKey(GraphSpaceID spaceId,
+                                          const std::string& name) {
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    EntryType type = EntryType::TAG;
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::indexEdgeKey(GraphSpaceID spaceId,
+                                           const std::string& name) {
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    EntryType type = EntryType::EDGE;
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     key.append(name);
     return key;
 }
