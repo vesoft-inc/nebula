@@ -86,7 +86,7 @@ std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
 
         if (fname == "__version") {
             try {
-                schema->ver_ = folly::to<int64_t>(type);
+                schema->ver_ = folly::to<SchemaVer>(type);
                 if (schema->ver_ < 0) {
                     LOG(ERROR) << "Invalid schema version: " << schema->ver_;
                     return std::shared_ptr<SchemaProviderIf>();
