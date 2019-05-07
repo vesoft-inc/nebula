@@ -34,7 +34,7 @@ public:
     explicit ResultSchemaProvider(cpp2::Schema);
     virtual ~ResultSchemaProvider() = default;
 
-    int64_t getVersion() const noexcept override {
+    SchemaVer getVersion() const noexcept override {
         return schemaVer_;
     }
 
@@ -51,14 +51,14 @@ public:
         const folly::StringPiece name) const override;
 
 protected:
-    int64_t schemaVer_{0};
+    SchemaVer schemaVer_{0};
 
     ColumnDefs columns_;
     // Map of Hash64(field_name) -> array index
     UnorderedMap<uint64_t, int64_t> nameIndex_;
 
     // Default constructor, only used by SchemaWriter
-    explicit ResultSchemaProvider(int64_t ver = 0) : schemaVer_(ver) {}
+    explicit ResultSchemaProvider(SchemaVer ver = 0) : schemaVer_(ver) {}
 };
 
 }  // namespace nebula
