@@ -98,6 +98,12 @@ TEST(FileBasedSchemaManager, readFromSchemaFile) {
     EXPECT_EQ(3, sm4->getNumFields());
     EXPECT_EQ(2, sm4->getFieldIndex("employer"));
     EXPECT_EQ(nebula::cpp2::SupportedType::STRING, sm4->getFieldType("employer").type);
+
+    auto status1 = schemaMan->checkSpaceExist("space_one");
+    EXPECT_TRUE(status1.ok());
+
+    auto status2 = schemaMan->checkSpaceExist("myspace");
+    EXPECT_FALSE(status2.ok());
 }
 
 }  // namespace meta
