@@ -72,6 +72,8 @@ class GraphScanner;
     nebula::AclItemClause                  *acl_item_clause;
     nebula::SchemaOptList                  *create_schema_opt_list;
     nebula::SchemaOptItem                  *create_schema_opt_item;
+    nebula::SchemaOptList                  *alter_schema_opt_list;
+    nebula::SchemaOptItem                  *alter_schema_opt_item;
 }
 
 /* destructors */
@@ -142,6 +144,8 @@ class GraphScanner;
 %type <alter_tag_opt_item> alter_tag_opt_item
 %type <create_schema_opt_list> create_schema_opt_list
 %type <create_schema_opt_item> create_schema_opt_item
+%type <alter_schema_opt_list> alter_schema_opt_list
+%type <alter_schema_opt_item> alter_schema_opt_item
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -506,7 +510,15 @@ create_schema_opt_list
     ;
 
  create_schema_opt_item
-    : KW_COMMENT ASSIGN STRING {
+    : KW_TTL_DURATION ASSIGN INTEGER {
+        $$ = new SchemaOptItem(SchemaOptItem::TTL_DURATION, $3);
+    }
+    | KW_TTL_COL ASSIGN LABEL {
+        $$ = new SchemaOptItem(SchemaOptItem::TTL_COL, *$3);
+        delete $3;
+    }
+    // TODO(YT) The following features will be supported in the future
+    | KW_COMMENT ASSIGN STRING {
         $$ = new SchemaOptItem(SchemaOptItem::COMMENT, *$3);
         delete $3;
     }
@@ -530,17 +542,10 @@ create_schema_opt_list
         $$ = new SchemaOptItem(SchemaOptItem::COLLATE, *$3);
         delete $3;
     }
-    | KW_TTL_DURATION ASSIGN INTEGER {
-        $$ = new SchemaOptItem(SchemaOptItem::TTL_DURATION, $3);
-    }
-    | KW_TTL_COL ASSIGN LABEL {
-        $$ = new SchemaOptItem(SchemaOptItem::TTL_COL, *$3);
-        delete $3;
-    }
     ;
 
 create_tag_sentence
-    : KW_CREATE KW_TAG LABEL L_PAREN R_PAREN  create_schema_opt_list {
+    : KW_CREATE KW_TAG LABEL L_PAREN R_PAREN create_schema_opt_list {
         $$ = new CreateTagSentence($3, new ColumnSpecificationList(), $6);
     }
     | KW_CREATE KW_TAG LABEL L_PAREN column_spec_list R_PAREN create_schema_opt_list {
@@ -552,8 +557,43 @@ create_tag_sentence
     ;
 
 alter_tag_sentence
-    : KW_ALTER KW_TAG LABEL alter_tag_opt_list {
-        $$ = new AlterTagSentence($3, $4);
+    : KW_ALTER KW_TAG LABEL alter_schema_opt_list {
+        $$ = new AlterTagSentence($3, $4, nullptr);
+    }
+    | KW_ALTER KW_TAG LABEL alter_tag_opt_list {
+        $$ = new AlterTagSentence($3, nullptr, $4);
+    }
+    | KW_ALTER KW_TAG LABEL alter_schema_opt_list alter_tag_opt_list {
+        $$ = new AlterTagSentence($3, $4, $5);
+    }
+    | KW_ALTER KW_TAG LABEL alter_tag_opt_list alter_schema_opt_list {
+        $$ = new AlterTagSentence($3, $5, $4);
+    }
+    ;
+
+alter_schema_opt_list
+    : alter_schema_opt_item {
+        $$ = new SchemaOptList();
+        $$->addOpt($1);
+    }
+    | alter_schema_opt_list COMMA alter_schema_opt_item {
+        $$ = $1;
+        $$->addOpt($3);
+    }
+    ;
+
+alter_schema_opt_item
+    : KW_TTL_DURATION ASSIGN INTEGER {
+        $$ = new SchemaOptItem(SchemaOptItem::TTL_DURATION, $3);
+    }
+    | KW_TTL_COL ASSIGN LABEL {
+        $$ = new SchemaOptItem(SchemaOptItem::TTL_COL, *$3);
+        delete $3;
+    }
+    // TODO(YT) The next feature will be supported in the future
+    | KW_COMMENT ASSIGN STRING {
+        $$ = new SchemaOptItem(SchemaOptItem::COMMENT, *$3);
+        delete $3;
     }
     ;
 
@@ -593,14 +633,14 @@ create_edge_sentence
     ;
 
 alter_edge_sentence
-    : KW_ALTER KW_EDGE LABEL L_PAREN R_PAREN {
-        $$ = new AlterEdgeSentence($3, new ColumnSpecificationList());
+    : KW_ALTER KW_EDGE LABEL L_PAREN R_PAREN alter_schema_opt_list {
+        $$ = new AlterEdgeSentence($3, new ColumnSpecificationList(), $6);
     }
-    | KW_ALTER KW_EDGE LABEL L_PAREN column_spec_list R_PAREN {
-        $$ = new AlterEdgeSentence($3, $5);
+    | KW_ALTER KW_EDGE LABEL L_PAREN column_spec_list R_PAREN alter_schema_opt_list {
+        $$ = new AlterEdgeSentence($3, $5, $7);
     }
-    | KW_ALTER KW_EDGE LABEL L_PAREN column_spec_list COMMA R_PAREN {
-        $$ = new AlterEdgeSentence($3, $5);
+    | KW_ALTER KW_EDGE LABEL L_PAREN column_spec_list COMMA R_PAREN alter_schema_opt_list {
+        $$ = new AlterEdgeSentence($3, $5, $8);
     }
     ;
 
@@ -619,7 +659,6 @@ column_spec
     : LABEL { $$ = new ColumnSpecification($1); }
     | LABEL type_spec { $$ = new ColumnSpecification($2, $1); }
     ;
-
 
 describe_tag_sentence
     : KW_DESCRIBE KW_TAG LABEL {

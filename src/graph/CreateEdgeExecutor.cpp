@@ -18,14 +18,15 @@ CreateEdgeExecutor::CreateEdgeExecutor(Sentence *sentence,
 
 
 Status CreateEdgeExecutor::prepare() {
-    auto status = checkIfGraphSpaceChosen();
+    return checkIfGraphSpaceChosen();
+}
 
-    if (!status.ok()) {
-        return status;
-    }
 
+void CreateEdgeExecutor::execute() {
+    auto *mc = ectx()->getMetaClient();
+    auto *name = sentence_->name();
     const auto& specs = sentence_->columnSpecs();
-    auto& schemaOpts = sentence_->getSchemaOpts();
+    auto spaceId = ectx()->rctx()->session()->space();
 
     nebula::cpp2::Schema schema;
     for (auto& spec : specs) {
@@ -34,46 +35,6 @@ Status CreateEdgeExecutor::prepare() {
         column.type.type = columnTypeToSupportedType(spec->type());
         schema.columns.emplace_back(std::move(column));
     }
-
-    if (schemaOpts.size() != 0) {
-        for (auto& schemaOpt : schemaOpts) {
-            switch (schemaOpt->getOptType()) {
-                case SchemaOptItem::COMMENT:
-                    schema.options.set_comment(schemaOpt->getComment());
-                    break;
-                case SchemaOptItem::ENGINE:
-                    schema.options.set_engine(schemaOpt->getEngine());
-                    break;
-                case SchemaOptItem::ENCRYPT:
-                    schema.options.set_encrypt(schemaOpt->getEncrypt());
-                    break;
-                case SchemaOptItem::COMPRESS:
-                    schema.options.set_compress(schemaOpt->getCompress());
-                    break;
-                case SchemaOptItem::CHARACTER_SET:
-                    schema.options.set_character_set(schemaOpt->getCharacterSet());
-                    break;
-                case SchemaOptItem::COLLATE:
-                    schema.options.set_collate(schemaOpt->getCollate());
-                    break;
-                case SchemaOptItem::TTL_DURATION:
-                    schema.options.set_ttl_duration(schemaOpt->getTtlDuration());
-                    break;
-                case SchemaOptItem::TTL_COl:
-                    schema.options.set_ttl_col(schemaOpt->getTtlCol());
-                    break;
-            }
-        }
-    }
-
-    return Status::OK();
-}
-
-
-void CreateEdgeExecutor::execute() {
-    auto *mc = ectx()->getMetaClient();
-    auto *name = sentence_->name();
-    auto spaceId = ectx()->rctx()->session()->space();
 
     auto future = mc->createEdgeSchema(spaceId, *name, schema);
     auto *runner = ectx()->rctx()->runner();

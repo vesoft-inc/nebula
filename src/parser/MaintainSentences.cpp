@@ -11,6 +11,13 @@ namespace nebula {
 
 std::string SchemaOptItem::toString() const {
     switch (optType_) {
+        case TTL_DURATION:
+            return folly::stringPrintf("ttl_duration = %ld",
+                                       boost::get<int64_t>(optValue_));
+        case TTL_COL:
+            return folly::stringPrintf("ttl_col = %s",
+                                       boost::get<std::string>(optValue_).c_str());
+        // TODO(YT) The following features will be supported in the future
         case COMMENT:
             return folly::stringPrintf("comment = \"%s\"",
                                        boost::get<std::string>(optValue_).c_str());
@@ -29,14 +36,8 @@ std::string SchemaOptItem::toString() const {
         case COLLATE:
             return folly::stringPrintf("collate = %s",
                                        boost::get<std::string>(optValue_).c_str());
-        case TTL_DURATION:
-            return folly::stringPrintf("ttl_duration = %ld",
-                                       boost::get<int64_t>(optValue_));
-        case TTL_COL:
-            return folly::stringPrintf("ttl_col = %s",
-                                       boost::get<std::string>(optValue_).c_str());
         default:
-            FLOG_FATAL("Space parameter illegal");
+            FLOG_FATAL("Schema option illegal");
     }
     return "Unknown";
 }
@@ -141,6 +142,12 @@ std::string AlterTagSentence::toString() const {
     buf.reserve(256);
     buf += "ALTER TAG ";
     buf += *name_;
+    if (schemaOpts_ != nullptr) {
+        buf +=  schemaOpts_->toString();
+    }
+    if (opts_ == nullptr) {
+        return buf;
+    }
     for (auto &tagOpt : opts_->alterTagItems()) {
         buf += " ";
         buf += tagOpt->toString();
@@ -160,16 +167,15 @@ std::string AlterEdgeSentence::toString() const {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
-        if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
-        }
         buf += ",";
     }
     if (!colSpecs.empty()) {
         buf.resize(buf.size() - 1);
     }
     buf += ")";
+    if (schemaOpts_ != nullptr) {
+        buf +=  schemaOpts_->toString();
+    }
     return buf;
 }
 

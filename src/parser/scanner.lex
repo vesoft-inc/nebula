@@ -69,6 +69,7 @@ REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo]
 DROP                        ([Dd][Rr][Oo][Pp])
 REMOVE                      ([Rr][Ee][Mm][Oo][Vv][Ee])
 <<<<<<< HEAD
+<<<<<<< HEAD
 IF                          ([Ii][Ff])
 NOT                         ([Nn][Oo][Tt])
 EXISTS                      ([Ee][Xx][Ii][Ss][Tt][Ss])
@@ -91,16 +92,14 @@ ON                          ([Oo][Nn])
 ROLES                       ([Rr][Oo][Ll][Ee][Ss])
 BY                          ([Bb][Yy])
 IN                          ([Ii][Nn])
-=======
+TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
+TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
 COMMENT                     ([Cc][Oo][Mm][Mm][Ee][Nn][Tt])
 ENGINE                      ([Ee][Nn][Gg][Ii][Nn][Ee])
 ENCRYPT                     ([Ee][Nn][Cc][Rr][Yy][Pp][Tt])
 COMPRESS                    ([Cc][Oo][Mm][Pp][Rr][Ee][Ss][Ss])
 CHARACTER                   ([Cc][Hh][Aa][Rr][Aa][Cc][Tt][Ee][Rr])
 COLLATE                     ([Cc][Oo][Ll][Ll][Aa][Tt][Ee])
-TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
-TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
->>>>>>> support time to live
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -182,14 +181,14 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {ROLES}                     { return TokenType::KW_ROLES; }
 {BY}                        { return TokenType::KW_BY; }
 {IN}                        { return TokenType::KW_IN; }
+{TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
+{TTL_COL}                   { return TokenType::KW_TTL_COL; }
 {COMMENT}                   { return TokenType::KW_COMMENT; }
-{ENGINE}                    { return ToeknType::KW_ENGINE; }
+{ENGINE}                    { return TokenType::KW_ENGINE; }
 {ENCRYPT}                   { return TokenType::KW_ENCRYPT; }
 {COMPRESS}                  { return TokenType::KW_COMPRESS; }
 {CHARACTER}                 { return TokenType::KW_CHARACTER; }
 {COLLATE}                   { return TokenType::KW_COLLATE; }
-{TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
-{TTL_COL}                   { return TokenType::KW_TTL_COL; }
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 

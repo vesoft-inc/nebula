@@ -12,20 +12,6 @@
 
 namespace nebula {
 
-class SchemaOption  final {
-public:
-private:
-    std::string comment_;
-    std::string engine_;
-    std::string encrypt_;
-    std::string compress_;
-    std::string characterSet_;
-    std::string collate_;
-    std::string ttlDuration_;
-    std::string ttlCol_;
-};
-
-
 class ResultSchemaProvider : public meta::SchemaProviderIf {
     using ColumnDefs = std::vector<cpp2::ColumnDef>;
 

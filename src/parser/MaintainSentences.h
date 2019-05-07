@@ -24,23 +24,6 @@ public:
         name_.reset(name);
     }
 
-    #if 0
-    ColumnSpecification(ColumnType type, std::string *name, int64_t ttl) {
-        hasTTL_ = true;
-        ttl_ = ttl;
-        type_ = type;
-        name_.reset(name);
-    }
-
-    bool hasTTL() const {
-        return hasTTL_;
-    }
-
-    int64_t ttl() const {
-        return ttl_;
-    }
-    #endif
-
     ColumnType type() const {
         return type_;
     }
@@ -50,8 +33,6 @@ public:
     }
 
 private:
-    // bool                                        hasTTL_{false};
-    // int64_t                                     ttl_;
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
 };
@@ -82,14 +63,14 @@ public:
     using Value = boost::variant<int64_t, bool, std::string>;
 
     enum OptionType : uint8_t {
+        TTL_DURATION,
+        TTL_COL,
         COMMENT,
         ENGINE,
         ENCRYPT,
         COMPRESS,
         CHARACTER_SET,
-        COLLATE,
-        TTL_DURATION,
-        TTL_COL
+        COLLATE
     };
 
     SchemaOptItem(OptionType op, int64_t val) {
@@ -141,6 +122,24 @@ public:
         return optValue_.which() == 2;
     }
 
+    int64_t getTtlDuration() {
+        if (isInt()) {
+            return asInt();
+        } else {
+            LOG(ERROR) << "Ttl_duration value illegal.";
+            return 0;
+        }
+    }
+
+    std::string getTtlCol() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "Ttl_col value illegal.";
+            return "";
+        }
+    }
+
     std::string getComment() {
         if (isString()) {
             return asString();
@@ -168,7 +167,7 @@ public:
         }
     }
 
-     std::string getCompress() {
+    std::string getCompress() {
         if (isString()) {
             return asString();
         } else {
@@ -177,7 +176,7 @@ public:
         }
     }
 
-     std::string getCharacterSet() {
+    std::string getCharacterSet() {
         if (isString()) {
             return asString();
         } else {
@@ -186,7 +185,7 @@ public:
         }
     }
 
-     std::string getCollate() {
+    std::string getCollate() {
         if (isString()) {
             return asString();
         } else {
@@ -195,29 +194,11 @@ public:
         }
     }
 
-     int64_t getTtlDuration() {
-        if (isInt()) {
-            return asInt();
-        } else {
-            LOG(ERROR) << "Ttl_duration value illegal.";
-            return 0;
-        }
-    }
-
-     std::string getTtlCol() {
-        if (isString()) {
-            return asString();
-        } else {
-            LOG(ERROR) << "Ttl_col value illegal.";
-            return "";
-        }
-    }
-
-     OptionType getOptType() {
+    OptionType getOptType() {
         return optType_;
     }
 
-     std::string toString() const;
+    std::string toString() const;
 
  private:
     Value        optValue_;
@@ -231,11 +212,11 @@ public:
         items_.emplace_back(item);
     }
 
-     std::vector<std::unique_ptr<SchemaOptItem>> getOpt() {
+    std::vector<std::unique_ptr<SchemaOptItem>> getOpt() {
         return std::move(items_);
     }
 
-     std::string toString() const;
+    std::string toString() const;
 
  private:
     std::vector<std::unique_ptr<SchemaOptItem>>    items_;
@@ -277,7 +258,7 @@ private:
 class CreateEdgeSentence final : public Sentence {
 public:
     CreateEdgeSentence(std::string *name,
-                       ColumnSpecificationList *columns
+                       ColumnSpecificationList *columns,
                        SchemaOptList *schemaOpts) {
         name_.reset(name);
         columns_.reset(columns);
@@ -363,8 +344,11 @@ private:
 
 class AlterTagSentence final : public Sentence {
 public:
-    AlterTagSentence(std::string *name, AlterTagOptList *opts) {
+    AlterTagSentence(std::string *name,
+                     SchemaOptList *schemaOpts,
+                     AlterTagOptList *opts) {
         name_.reset(name);
+        schemaOpts_.reset(schemaOpts);
         opts_.reset(opts);
         kind_ = Kind::kAlterTag;
     }
@@ -379,17 +363,25 @@ public:
         return opts_->alterTagItems();
     }
 
+    std::vector<std::unique_ptr<SchemaOptItem>> getSchemaOpts() {
+        return schemaOpts_->getOpt();
+    }
+
 private:
     std::unique_ptr<std::string>        name_;
     std::unique_ptr<AlterTagOptList>    opts_;
+    std::unique_ptr<SchemaOptList>      schemaOpts_;
 };
 
 
 class AlterEdgeSentence final : public Sentence {
 public:
-    AlterEdgeSentence(std::string *name, ColumnSpecificationList *columns) {
+    AlterEdgeSentence(std::string *name,
+                      ColumnSpecificationList *columns,
+                      SchemaOptList *schemaOpts) {
         name_.reset(name);
         columns_.reset(columns);
+        schemaOpts_.reset(schemaOpts);
         kind_ = Kind::kAlterEdge;
     }
 
@@ -403,9 +395,14 @@ public:
         return columns_->columnSpecs();
     }
 
+    std::vector<std::unique_ptr<SchemaOptItem>> getSchemaOpts() {
+        return schemaOpts_->getOpt();
+    }
+
 private:
     std::unique_ptr<std::string>                name_;
     std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<SchemaOptList>              schemaOpts_;
 };
 
 
