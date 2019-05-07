@@ -15,11 +15,13 @@ namespace dataman {
 
 class NebulaCodecImpl : public NebulaCodec {
 public:
-    std::string encode(std::vector<Value> values) override;
+    std::string encode(std::vector<Value> values,
+                       std::shared_ptr<const meta::SchemaProviderIf> schema
+                           = std::shared_ptr<const meta::SchemaProviderIf>()) override;
 
     StatusOr<std::unordered_map<std::string, Value>>
     decode(std::string encoded,
-           std::vector<std::pair<std::string, cpp2::SupportedType>> fields) override;
+           std::shared_ptr<const meta::SchemaProviderIf> schema) override;
 };
 
 }  // namespace dataman

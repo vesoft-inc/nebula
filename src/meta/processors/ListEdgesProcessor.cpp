@@ -4,15 +4,15 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "meta/processors/ListTagsProcessor.h"
+#include "meta/processors/ListEdgesProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
+void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
     auto spaceId = req.get_space_id();
-    auto prefix = MetaServiceUtils::schemaTagsPrefix(spaceId);
+    auto prefix = MetaServiceUtils::schemaEdgesPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     resp_.set_code(to(ret));
@@ -20,23 +20,24 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
         onFinished();
         return;
     }
-    decltype(resp_.tags) tags;
+    decltype(resp_.edges) edges;
     while (iter->valid()) {
-        cpp2::TagItem tag;
+        cpp2::EdgeItem tag;
         auto key = iter->key();
         auto val = iter->val();
-        auto tagID = *reinterpret_cast<const TagID *>(key.data() + prefix.size());
-        auto vers = MetaServiceUtils::parseTagVersion(key);
+        auto edgeType = *reinterpret_cast<const EdgeType *>(key.data() + prefix.size());
+        auto vers = MetaServiceUtils::parseEdgeVersion(key);
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
-        auto tagName = val.subpiece(sizeof(int32_t), nameLen).str();
+        auto edgeName = val.subpiece(sizeof(int32_t), nameLen).str();
         auto schema = MetaServiceUtils::parseSchema(val);
-        cpp2::TagItem tagItem(apache::thrift::FragileConstructor::FRAGILE,
-                              tagID, tagName, vers, schema);
-        tags.emplace_back(std::move(tagItem));
+        cpp2::EdgeItem edgeItem(apache::thrift::FragileConstructor::FRAGILE,
+                                edgeType, edgeName, vers, schema);
+        edges.emplace_back(std::move(edgeItem));
         iter->next();
     }
-    resp_.set_tags(std::move(tags));
+    resp_.set_edges(std::move(edges));
     onFinished();
 }
 }  // namespace meta
 }  // namespace nebula
+

@@ -69,19 +69,22 @@ public:
      * Schema related operations.
      * */
     folly::Future<cpp2::ExecResp>
-    future_addTag(const cpp2::AddTagReq& req) override;
+    future_createTag(const cpp2::CreateTagReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_alterTag(const cpp2::AlterTagReq& req) override;
 
     folly::Future<cpp2::ExecResp>
     future_removeTag(const cpp2::RemoveTagReq& req) override;
 
     folly::Future<cpp2::GetTagResp>
-    future_getTag(const cpp2::GetTagReq &req) override;
+    future_getTag(const cpp2::ReadTagReq &req) override;
 
     folly::Future<cpp2::ListTagsResp>
     future_listTags(const cpp2::ListTagsReq& req) override;
 
     folly::Future<cpp2::ExecResp>
-    future_addEdge(const cpp2::AddEdgeReq& req) override;
+    future_createEdge(const cpp2::CreateEdgeReq& req) override;
 
     folly::Future<cpp2::ListEdgesResp>
     future_listEdges(const cpp2::ListEdgesReq& req) override;

@@ -30,7 +30,7 @@ private:
     using EdgeSchema = std::shared_ptr<const meta::SchemaProviderIf>;
     InsertEdgeSentence                         *sentence_{nullptr};
     bool                                        overwritable_{true};
-    EdgeType                                    edge_{0};
+    EdgeType                                    edgeType_{0};
     EdgeSchema                                  schema_;
     std::vector<std::string*>                   properties_;
     std::vector<EdgeRowItem*>                   rows_;

@@ -116,6 +116,14 @@ nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
     return host;
 }
 
+std::string MetaServiceUtils::schemaEdgesPrefix(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(kEdgesTable.size() + sizeof(GraphSpaceID));
+    key.append(kEdgesTable.data(), kEdgesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    return key;
+}
+
 std::string MetaServiceUtils::schemaEdgeKey(GraphSpaceID spaceId,
                                             EdgeType edgeType,
                                             int64_t version) {
@@ -128,19 +136,48 @@ std::string MetaServiceUtils::schemaEdgeKey(GraphSpaceID spaceId,
     return key;
 }
 
-std::string MetaServiceUtils::schemaEdgeVal(nebula::cpp2::Schema schema) {
-    std::string val;
-    apache::thrift::CompactSerializer::serialize(schema, &val);
+std::string MetaServiceUtils::schemaEdgeVal(const std::string& name, nebula::cpp2::Schema schema) {
+    int32_t len = name.size();
+    std::string val, sval;
+    apache::thrift::CompactSerializer::serialize(schema, &sval);
+    val.reserve(sizeof(int32_t) + name.size() + sval.size());
+    val.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+    val.append(name);
+    val.append(sval);
     return val;
 }
 
+int64_t MetaServiceUtils::parseEdgeVersion(folly::StringPiece key) {
+    auto offset = kEdgesTable.size() + sizeof(GraphSpaceID) + sizeof(EdgeType);
+    int64_t ver = std::numeric_limits<int64_t>::max() -
+                 *reinterpret_cast<const int64_t*>(key.begin() + offset);
+    return ver;
+}
+
 std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version) {
+    int64_t storageVer = std::numeric_limits<int64_t>::max() - version;
     std::string key;
     key.reserve(128);
     key.append(kTagsTable.data(), kTagsTable.size());
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
     key.append(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
-    key.append(reinterpret_cast<const char*>(&version), sizeof(version));
+    key.append(reinterpret_cast<const char*>(&storageVer), sizeof(version));
+    return key;
+}
+
+int64_t MetaServiceUtils::parseTagVersion(folly::StringPiece key) {
+    auto offset = kTagsTable.size() + sizeof(GraphSpaceID) + sizeof(TagID);
+    int64_t ver = std::numeric_limits<int64_t>::max() -
+                 *reinterpret_cast<const int64_t*>(key.begin() + offset);
+    return ver;
+}
+
+std::string MetaServiceUtils::schemaTagPrefix(GraphSpaceID spaceId, TagID tagId) {
+    std::string key;
+    key.reserve(128);
+    key.append(kTagsTable.data(), kTagsTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    key.append(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
     return key;
 }
 
@@ -151,7 +188,6 @@ std::string MetaServiceUtils::schemaTagsPrefix(GraphSpaceID spaceId) {
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
     return key;
 }
-
 
 std::string MetaServiceUtils::schemaTagVal(const std::string& name, nebula::cpp2::Schema schema) {
     int32_t len = name.size();

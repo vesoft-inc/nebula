@@ -43,10 +43,8 @@ StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID i
     }
 
     std::unique_ptr<kvstore::KVIterator> iter;
-    ret = kvstore_->range(kDefaultSpaceId_, kDefaultPartId_,
-                          MetaServiceUtils::schemaTagKey(id, tagId, MIN_VERSION_HEX),
-                          MetaServiceUtils::schemaTagKey(id, tagId, MAX_VERSION_HEX),
-                          &iter);
+    auto key = MetaServiceUtils::schemaTagPrefix(id, tagId);
+    ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, key, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Tag get error by id : %d !", tagId);
     }
