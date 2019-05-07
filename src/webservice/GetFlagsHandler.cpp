@@ -122,6 +122,9 @@ void GetFlagsHandler::addOneFlag(folly::dynamic& vals,
             if (verbose_) {
                 flag["default"] = info->default_value;
             }
+        } else {
+            flag["value"] = nullptr;
+            LOG(ERROR) << "Don't support converting the type [" << flagname << ":" << type << "]!";
         }
         if (verbose_) {
             flag["type"] = info->type;
@@ -184,10 +187,14 @@ std::string GetFlagsHandler::toStr(folly::dynamic& vals) {
                << "\n";
         } else {
             auto& val = fi["value"];
-            ss << fi["name"].asString() << "="
-               << (val.isString() ? "\"" : "")
-               << val.asString()
-               << (val.isString() ? "\"\n" : "\n");
+            if (val != nullptr) {
+                ss << fi["name"].asString() << "="
+                   << (val.isString() ? "\"" : "")
+                   << val.asString()
+                   << (val.isString() ? "\"\n" : "\n");
+            } else {
+                ss << fi["name"].asString() << "=nullptr\n";
+            }
         }
     }
     return ss.str();
