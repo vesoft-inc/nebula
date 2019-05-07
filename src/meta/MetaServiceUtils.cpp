@@ -127,12 +127,13 @@ std::string MetaServiceUtils::schemaEdgesPrefix(GraphSpaceID spaceId) {
 std::string MetaServiceUtils::schemaEdgeKey(GraphSpaceID spaceId,
                                             EdgeType edgeType,
                                             int64_t version) {
+    int64_t storageVer = std::numeric_limits<int64_t>::max() - version;
     std::string key;
     key.reserve(128);
     key.append(kEdgesTable.data(), kEdgesTable.size());
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
     key.append(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType));
-    key.append(reinterpret_cast<const char*>(&version), sizeof(version));
+    key.append(reinterpret_cast<const char*>(&storageVer), sizeof(storageVer));
     return key;
 }
 
