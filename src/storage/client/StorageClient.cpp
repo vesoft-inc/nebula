@@ -19,7 +19,8 @@ StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> thread
     if (nullptr == client) {
         LOG(INFO) << "MetaClient is nullptr, create new one";
         static auto clientPtr = std::make_unique<meta::MetaClient>();
-        clientPtr->init();
+        static std::once_flag flag;
+        std::call_once(flag, std::bind(&meta::MetaClient::init, clientPtr.get()));
         client_ = clientPtr.get();
     } else {
         client_ = client;
