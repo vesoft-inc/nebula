@@ -132,7 +132,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
 
     auto edgeRet = listEdgeSchemas(spaceId).get();
     if (!edgeRet.ok()) {
-        LOG(ERROR) << "Get tag schemas failed for spaceId " << spaceId << ", " << edgeRet.status();
+        LOG(ERROR) << "Get edge schemas failed for spaceId " << spaceId << ", " << edgeRet.status();
         return false;
     }
 
