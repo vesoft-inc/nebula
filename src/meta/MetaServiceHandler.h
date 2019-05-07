@@ -89,6 +89,12 @@ public:
     folly::Future<cpp2::ListEdgesResp>
     future_listEdges(const cpp2::ListEdgesReq& req) override;
 
+    /**
+     * HeartBeat
+     * */
+    folly::Future<cpp2::HBResp>
+    future_heartBeat(const cpp2::HBReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
 };
