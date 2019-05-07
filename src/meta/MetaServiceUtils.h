@@ -72,7 +72,11 @@ public:
 
     static nebula::cpp2::Schema parseSchema(folly::StringPiece rawData);
 
-    static std::string indexKey(EntryType type, const std::string& name);
+    static std::string indexSpaceKey(const std::string& name);
+
+    static std::string indexTagKey(GraphSpaceID spaceId, const std::string& name);
+
+    static std::string indexEdgeKey(GraphSpaceID spaceId, const std::string& name);
 
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 };

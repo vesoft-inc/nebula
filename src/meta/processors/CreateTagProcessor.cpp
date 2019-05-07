@@ -17,16 +17,16 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
         return;
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    auto ret = getTagId(req.get_tag_name());
+    auto ret = getTagId(req.get_space_id(), req.get_tag_name());
+    std::vector<kvstore::KV> data;
     if (ret.ok()) {
         resp_.set_id(to(ret.value(), EntryType::TAG));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }
-    std::vector<kvstore::KV> data;
     TagID tagId = autoIncrementId();
-    data.emplace_back(MetaServiceUtils::indexKey(EntryType::TAG, req.get_tag_name()),
+    data.emplace_back(MetaServiceUtils::indexTagKey(req.get_space_id(), req.get_tag_name()),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
     LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, 0),
@@ -35,5 +35,6 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));
 }
+
 }  // namespace meta
 }  // namespace nebula
