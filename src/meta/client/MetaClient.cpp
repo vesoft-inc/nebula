@@ -49,7 +49,7 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
     LOG(INFO) << "Create meta client to " << active_;
 }
 
- MetaClient::~MetaClient() {
+MetaClient::~MetaClient() {
     loadDataThread_.stop();
     loadDataThread_.wait();
     VLOG(3) << "~MetaClient";
