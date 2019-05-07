@@ -10,9 +10,22 @@
 namespace nebula {
 namespace meta {
 
+ServerBasedSchemaManager::~ServerBasedSchemaManager() {
+    if (nullptr != metaClient_) {
+        metaClient_ = nullptr;
+    }
+}
+
 void ServerBasedSchemaManager::init(MetaClient *client) {
-    CHECK(client);
-    metaClient_ = client;
+    if (nullptr == client) {
+        LOG(INFO) << "MetaClient is nullptr, create new one";
+        static auto clientPtr = std::make_unique<meta::MetaClient>();
+        static std::once_flag flag;
+        std::call_once(flag, std::bind(&meta::MetaClient::init, clientPtr.get()));
+        metaClient_ = clientPtr.get();
+    } else {
+        metaClient_ = client;
+    }
 }
 
 std::shared_ptr<const SchemaProviderIf>

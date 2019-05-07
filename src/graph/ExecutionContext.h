@@ -40,7 +40,7 @@ public:
         variableHolder_ = std::make_unique<VariableHolder>();
     }
 
-    ~ExecutionContext() = default;
+    ~ExecutionContext();
 
     RequestContext<cpp2::ExecutionResponse>* rctx() const {
         return rctx_.get();
