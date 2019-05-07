@@ -443,15 +443,13 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
 }
 
 
-folly::Future<RaftPart::AppendLogResponses>
-RaftPart::replicateLogs(
-        folly::EventBase* eb,
-        AppendLogsIterator iter,
-        TermID currTerm,
-        LogID lastLogId,
-        LogID committedId,
-        TermID prevLogTerm,
-        LogID prevLogId) {
+void RaftPart::replicateLogs(folly::EventBase* eb,
+                             AppendLogsIterator iter,
+                             TermID currTerm,
+                             LogID lastLogId,
+                             LogID committedId,
+                             TermID prevLogTerm,
+                             LogID prevLogId) {
     using namespace folly;  // NOLINT since the fancy overload of | operator
 
     decltype(peerHosts_) hosts;
@@ -465,7 +463,7 @@ RaftPart::replicateLogs(
             cachingPromise_.setValue(AppendLogResult::E_STOPPED);
             logs_.clear();
             replicatingLogs_ = false;
-            return folly::Future<AppendLogResponses>::makeEmpty();
+            return;
         }
 
         if (role_ != Role::LEADER) {
@@ -475,7 +473,7 @@ RaftPart::replicateLogs(
             cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
             logs_.clear();
             replicatingLogs_ = false;
-            return folly::Future<AppendLogResponses>::makeEmpty();
+            return;
         }
 
         hosts = peerHosts_;
@@ -494,11 +492,11 @@ RaftPart::replicateLogs(
                                   committedId,
                                   prevLogTerm,
                                   prevLogId);
-        return folly::Future<AppendLogResponses>::makeEmpty();
+        return;
     }
 
     using PeerHostEntry = typename decltype(peerHosts_)::element_type::value_type;
-    return collectNSucceeded(
+    collectNSucceeded(
         gen::from(*hosts)
         | gen::map([self = shared_from_this(),
                     eb,

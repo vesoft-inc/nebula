@@ -272,7 +272,7 @@ private:
 
     void appendLogsInternal(AppendLogsIterator iter);
 
-    folly::Future<AppendLogResponses> replicateLogs(
+    void replicateLogs(
         folly::EventBase* eb,
         AppendLogsIterator iter,
         TermID currTerm,
