@@ -1,6 +1,13 @@
 set(ADDITIONAL_MAKE_CLEAN_FILES "_build/")
 
 macro(build_external tgtName)
+    if (GLIBC_VERSION VERSION_LESS "2.17")
+        set(GETTIME_NEEDS_POSIX_MACRO "true")
+        set(GETTIME_LDFLAGS "-lrt")
+    else()
+        set(GETTIME_NEEDS_POSIX_MACRO)
+        set(GETTIME_LDFLAGS)
+    endif()
     add_custom_target(
         ${tgtName}
         COMMAND
@@ -13,6 +20,8 @@ macro(build_external tgtName)
             NEBULA_OPENSSL_ROOT=${NEBULA_OPENSSL_ROOT}
             NEBULA_BOOST_ROOT=${NEBULA_BOOST_ROOT}
             NEBULA_GPERF_BIN_DIR=${NEBULA_GPERF_BIN_DIR}
+            NEBULA_GETTIME_NEEDS_POSIX_MACRO=${GETTIME_NEEDS_POSIX_MACRO}
+            NEBULA_GETTIME_LDFLAGS=${GETTIME_LDFLAGS}
             "./build.sh" "-j${THIRD_PARTY_JOBS}" ">" "./_build.log" "2>&1"
         DEPENDS ${ARGN}
     )

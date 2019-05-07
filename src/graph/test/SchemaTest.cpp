@@ -45,6 +45,13 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // test nonexistent space
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "USE SPACE default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3)";

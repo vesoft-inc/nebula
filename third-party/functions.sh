@@ -100,6 +100,6 @@ function prepareBuild() {
     fi
 
     EXTRA_CXXFLAGS="-O2"
-    EXTRA_LDFLAGS=
+    EXTRA_LDFLAGS="$NEBULA_GETTIME_LDFLAGS"
 }
 
