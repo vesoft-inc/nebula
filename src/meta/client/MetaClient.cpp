@@ -126,13 +126,13 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                              SpaceNewestEdgeVerMap &newestEdgeVerMap) {
     auto tagRet = listTagSchemas(spaceId).get();
     if (!tagRet.ok()) {
-        LOG(ERROR) << "Get tag schemas failed for spaceId " << spaceId;
+        LOG(ERROR) << "Get tag schemas failed for spaceId " << spaceId << ", " << tagRet.status();
         return false;
     }
 
     auto edgeRet = listEdgeSchemas(spaceId).get();
     if (!edgeRet.ok()) {
-        LOG(ERROR) << "Get edge schemas failed for spaceId " << spaceId;
+        LOG(ERROR) << "Get edge schemas failed for spaceId " << spaceId << ", " << edgeRet.status();
         return false;
     }
 
@@ -160,6 +160,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         } else {
             newestTagVerMap.emplace(std::make_pair(spaceId, tagIt.tag_id), tagIt.version);
         }
+        VLOG(3) << "Load Tag Schema Space " << spaceId << ", ID " << tagIt.tag_id
+                << ", Name " << tagIt.tag_name << ", Version " << tagIt.version << " Successfully!";
     }
 
     for (auto& edgeIt : edgeItemVec) {
@@ -182,6 +184,9 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         } else {
             newestEdgeVerMap.emplace(std::make_pair(spaceId, edgeIt.edge_type), edgeIt.version);
         }
+        VLOG(3) << "Load Edge Schema Space " << spaceId << ", Type " << edgeIt.edge_type
+                << ", Name " << edgeIt.edge_name << ", Version " << edgeIt.version
+                << " Successfully!";
     }
 
     spaceInfoCache->tagSchemas_ = std::move(tagIdSchemas);
@@ -702,10 +707,13 @@ StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemeFromC
     auto spaceIt = localCache_.find(spaceId);
     if (spaceIt == localCache_.end()) {
         // Not found
+        VLOG(3) << "Space " << spaceId << " not found!";
         return std::shared_ptr<const SchemaProviderIf>();
     } else {
         auto edgeIt = spaceIt->second->edgeSchemas_.find(std::make_pair(edgeType, ver));
         if (edgeIt == spaceIt->second->edgeSchemas_.end()) {
+            VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << ", version "
+                    << ver << " not found!";
             return std::shared_ptr<const SchemaProviderIf>();
         } else {
             return edgeIt->second;

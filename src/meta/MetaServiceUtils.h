@@ -54,15 +54,15 @@ public:
 
     static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
 
-    static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, int64_t version);
+    static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer version);
 
     static std::string schemaEdgeVal(const std::string& name, nebula::cpp2::Schema schema);
 
-    static int64_t parseEdgeVersion(folly::StringPiece key);
+    static SchemaVer parseEdgeVersion(folly::StringPiece key);
 
-    static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version);
+    static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, SchemaVer version);
 
-    static int64_t parseTagVersion(folly::StringPiece key);
+    static SchemaVer parseTagVersion(folly::StringPiece key);
 
     static std::string schemaTagPrefix(GraphSpaceID spaceId, TagID tagId);
 
