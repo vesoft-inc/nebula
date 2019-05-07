@@ -175,7 +175,7 @@ Status BaseProcessor<RESP>::hostsExist(const std::vector<std::string> &hostsKey)
 
 template<typename RESP>
 StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) {
-    auto indexKey = MetaServiceUtils::indexKey(EntryType::SPACE, name);
+    auto indexKey = MetaServiceUtils::indexSpaceKey(name);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
@@ -185,8 +185,8 @@ StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) 
 }
 
 template<typename RESP>
-StatusOr<TagID> BaseProcessor<RESP>::getTagId(const std::string& name) {
-    auto indexKey = MetaServiceUtils::indexKey(EntryType::TAG, name);
+StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::string& name) {
+    auto indexKey = MetaServiceUtils::indexTagKey(spaceId, name);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
@@ -196,8 +196,8 @@ StatusOr<TagID> BaseProcessor<RESP>::getTagId(const std::string& name) {
 }
 
 template<typename RESP>
-StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(const std::string& name) {
-    auto indexKey = MetaServiceUtils::indexKey(EntryType::EDGE, name);
+StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId, const std::string& name) {
+    auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, name);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
