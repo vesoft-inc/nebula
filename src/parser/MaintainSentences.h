@@ -218,7 +218,7 @@ public:
 
     std::string toString() const;
 
- private:
+private:
     std::vector<std::unique_ptr<SchemaOptItem>>    items_;
 };
 
