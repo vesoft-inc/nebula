@@ -26,6 +26,10 @@ echo
 
 cd $SOURCE_DIR
 
+if [[ -n $NEBULA_GETTIME_NEEDS_POSIX_MACRO ]]; then
+    EXTRA_CXXFLAGS="$EXTRA_CXXFLAGS -DFOLLY_HAVE_CLOCK_GETTIME -D__USE_POSIX199309"
+fi
+
 compiler_flags="-fPIC -DPIC -DFOLLY_HAVE_LIBDWARF_DWARF_H -DFOLLY_HAVE_MEMRCHR -Wno-noexcept-type -Wno-error=parentheses -Wno-error=shadow=compatible-local  $EXTRA_CXXFLAGS"
 exe_linker_flags="-static-libgcc -static-libstdc++ $EXTRA_LDFLAGS"
 NEBULA_INCLUDE_DIRS="$double_conversion_release/include;$libevent_release/include;$gflags_release/include;$glog_release/include;$zstd_release/include;$zlib_release/include;$snappy_release/include;$NEBULA_INCLUDE_DIRS"
