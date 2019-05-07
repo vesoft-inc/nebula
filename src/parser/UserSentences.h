@@ -32,7 +32,7 @@ public:
         type_ = type;
     }
 
-    MissingType getType() {
+    const MissingType getType() {
         return type_;
     }
 
@@ -55,11 +55,11 @@ public:
         optValue_.reset(val);
     }
 
-    std::string* getValue() {
+    const std::string* getValue() {
         return optValue_.get();
     }
 
-    OptionType getOptType() {
+    const OptionType getOptType() {
         return optType_;
     }
 
@@ -98,7 +98,7 @@ public:
         roleType_ = roleType;
     }
 
-    RoleType getOptType() {
+    const RoleType getOptType() {
         return roleType_;
     }
 
@@ -125,11 +125,11 @@ public:
         type_.reset(type);
     }
 
-    RoleTypeClause::RoleType getRoleType() {
+    const RoleTypeClause::RoleType getRoleType() {
         return type_->getOptType();
     }
 
-    std::string* getSpaceName() {
+    const std::string* getSpaceName() {
         return spaceName_.get();
     }
 
@@ -154,11 +154,11 @@ public:
         return missingOkClause_->isMissing();
     }
 
-    std::string* getAccount() {
+    const std::string* getAccount() {
         return account_.get();
     }
 
-    std::string* getPasswoed() {
+    const std::string* getPasswoed() {
         return password_.get();
     }
 
@@ -174,7 +174,7 @@ public:
         withUserOpts_.reset(withUserOpts);
     }
 
-    std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
+    const std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
         return withUserOpts_->getOpt();
     }
 
@@ -195,7 +195,7 @@ public:
         kind_ = Kind::kAlterUser;
     }
 
-    std::string* getAccount() {
+    const std::string* getAccount() {
         return account_.get();
     }
 
@@ -203,7 +203,7 @@ public:
         withUserOpts_.reset(withUserOpts);
     }
 
-    std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
+    const std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
         return withUserOpts_->getOpt();
     }
 
@@ -234,7 +234,7 @@ public:
         missingOkClause_->setType(type);
     }
 
-    std::string* getAccount() {
+    const std::string* getAccount() {
         return account_.get();
     }
 
@@ -262,15 +262,15 @@ public:
         oldPwd_.reset(oldPwd);
     }
 
-    std::string* getAccount() {
+    const std::string* getAccount() {
         return account_.get();
     }
 
-    std::string* getNewPwd() {
+    const std::string* getNewPwd() {
         return newPwd_.get();
     }
 
-    std::string* getOldPwd() {
+    const std::string* getOldPwd() {
         return oldPwd_.get();
     }
 
@@ -299,11 +299,11 @@ public:
         aclItemClause_.reset(aclItemClause);
     }
 
-    AclItemClause* getAclItemClause() {
+    const AclItemClause* getAclItemClause() {
         return aclItemClause_.get();
     }
 
-    std::string* getAccount() {
+    const std::string* getAccount() {
         return account_.get();
     }
 
@@ -326,11 +326,11 @@ public:
         aclItemClause_.reset(aclItemClause);
     }
 
-    AclItemClause* getAclItemClause() {
+    const AclItemClause* getAclItemClause() {
         return aclItemClause_.get();
     }
 
-    std::string* getAccount() {
+    const std::string* getAccount() {
         return account_.get();
     }
 

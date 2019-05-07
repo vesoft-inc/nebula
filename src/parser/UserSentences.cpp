@@ -9,29 +9,27 @@
 namespace nebula {
 
 std::string MissingOkClause::toString() const {
-    if (isMissing_) {
-        switch (type_) {
-            case MissingType::IF_EXIST :
-                return std::string("IF EXISTS");
-            case MissingType::IF_NOT_EXIST :
-                return std::string("IF NOT EXISTS");
-            default:
-                FLOG_FATAL("Type illegal");
-        }
+    if (!isMissing_) {
+        return "";
     }
-    return "";
+
+    if (type_ == MissingType::IF_EXIST) {
+        return std::string("IF EXISTS");
+    } else {
+        return std::string("IF NOT EXISTS");
+    }
 }
 
 
 std::string WithUserOptItem::toString() const {
     switch (optType_) {
-        case OptionType::FIRST :
+        case OptionType::FIRST:
             return folly::stringPrintf("FIRSTNAME \"%s\"", optValue_.get()->data());
-        case OptionType::LAST :
+        case OptionType::LAST:
             return folly::stringPrintf("LASTNAME \"%s\"", optValue_.get()->data());
-        case OptionType::EMAIL :
+        case OptionType::EMAIL:
             return folly::stringPrintf("EMAIL \"%s\"", optValue_.get()->data());
-        case OptionType::PHONE :
+        case OptionType::PHONE:
             return folly::stringPrintf("PHONE \"%s\"", optValue_.get()->data());
         default:
             return "Unknown";
@@ -54,13 +52,13 @@ std::string WithUserOptList::toString() const {
 
 std::string RoleTypeClause::toString() const {
     switch (roleType_) {
-        case RoleType::GOD :
+        case RoleType::GOD:
             return std::string("GOD");
-        case RoleType::ADMIN :
+        case RoleType::ADMIN:
             return std::string("ADMIN");
-        case RoleType::USER :
+        case RoleType::USER:
             return std::string("USER");
-        case RoleType::GUEST :
+        case RoleType::GUEST:
             return std::string("GUEST");
         default:
             return "Unknown";

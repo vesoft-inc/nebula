@@ -1,0 +1,1297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+    <generated>
+      <config projectName="Nebula Graph" targetName="clean-third-party" />
+      <config projectName="Nebula Graph" targetName="clean-mstch" />
+      <config projectName="Nebula Graph" targetName="kvstore_obj" />
+      <config projectName="Nebula Graph" targetName="importer" />
+      <config projectName="Nebula Graph" targetName="query_engine_test" />
+      <config projectName="Nebula Graph" targetName="clean-fatal" />
+      <config projectName="Nebula Graph" targetName="parser_obj" />
+      <config projectName="Nebula Graph" targetName="log_cas_test" />
+      <config projectName="Nebula Graph" targetName="tgt_jemalloc" />
+      <config projectName="Nebula Graph" targetName="row_reader_bm" />
+      <config projectName="Nebula Graph" targetName="nebula-storaged" />
+      <config projectName="Nebula Graph" targetName="edge_props_test" />
+      <config projectName="Nebula Graph" targetName="tgt_snappy" />
+      <config projectName="Nebula Graph" targetName="raftex_thrift_obj" />
+      <config projectName="Nebula Graph" targetName="key_utils_test" />
+      <config projectName="Nebula Graph" targetName="scanner_test" />
+      <config projectName="Nebula Graph" targetName="distclean" />
+      <config projectName="Nebula Graph" targetName="query_stats_test" />
+      <config projectName="Nebula Graph" targetName="network_utils_bm" />
+      <config projectName="Nebula Graph" targetName="time_obj" />
+      <config projectName="Nebula Graph" targetName="tgt_gflags" />
+      <config projectName="Nebula Graph" targetName="concurrent_test" />
+      <config projectName="Nebula Graph" targetName="parser_test" />
+      <config projectName="Nebula Graph" targetName="clean-fbthrift" />
+      <config projectName="Nebula Graph" targetName="log_append_test" />
+      <config projectName="Nebula Graph" targetName="tgt_folly" />
+      <config projectName="Nebula Graph" targetName="clean-googletest" />
+      <config projectName="Nebula Graph" targetName="file_based_wal_test" />
+      <config projectName="Nebula Graph" targetName="client_cpp_obj" />
+      <config projectName="Nebula Graph" targetName="clean-libevent" />
+      <config projectName="Nebula Graph" targetName="schema_obj" />
+      <config projectName="Nebula Graph" targetName="meta_service_handler" />
+      <config projectName="Nebula Graph" targetName="part_test" />
+      <config projectName="Nebula Graph" targetName="base_obj_gch" />
+      <config projectName="Nebula Graph" targetName="clean-zlib" />
+      <config projectName="Nebula Graph" targetName="row_writer_test" />
+      <config projectName="Nebula Graph" targetName="row_updater_test" />
+      <config projectName="Nebula Graph" targetName="clean-java-client" />
+      <config projectName="Nebula Graph" targetName="clean-all" />
+      <config projectName="Nebula Graph" targetName="expression_encode_decode_bm" />
+      <config projectName="Nebula Graph" targetName="load_test" />
+      <config projectName="Nebula Graph" targetName="row_writer_bm" />
+      <config projectName="Nebula Graph" targetName="rocks_engine_config_test" />
+      <config projectName="Nebula Graph" targetName="graph_obj" />
+      <config projectName="Nebula Graph" targetName="tgt_zstd" />
+      <config projectName="Nebula Graph" targetName="query_bound_test" />
+      <config projectName="Nebula Graph" targetName="tgt_double-conversion" />
+      <config projectName="Nebula Graph" targetName="add_vertices_test" />
+      <config projectName="Nebula Graph" targetName="stats_manager_bm" />
+      <config projectName="Nebula Graph" targetName="signal_handler_test" />
+      <config projectName="Nebula Graph" targetName="tgt_rocksdb" />
+      <config projectName="Nebula Graph" targetName="clean-bzip2" />
+      <config projectName="Nebula Graph" targetName="either_or_test" />
+      <config projectName="Nebula Graph" targetName="common_thrift_obj" />
+      <config projectName="Nebula Graph" targetName="process_test" />
+      <config projectName="Nebula Graph" targetName="process_obj" />
+      <config projectName="Nebula Graph" targetName="tgt_wangle" />
+      <config projectName="Nebula Graph" targetName="network_utils_test" />
+      <config projectName="Nebula Graph" targetName="meta_client" />
+      <config projectName="Nebula Graph" targetName="temp_file_test" />
+      <config projectName="Nebula Graph" targetName="clean-gflags" />
+      <config projectName="Nebula Graph" targetName="cord_bm" />
+      <config projectName="Nebula Graph" targetName="storage_service_handler_test" />
+      <config projectName="Nebula Graph" targetName="file_utils_test" />
+      <config projectName="Nebula Graph" targetName="clean-rocksdb" />
+      <config projectName="Nebula Graph" targetName="clean-interface" />
+      <config projectName="Nebula Graph" targetName="configuration_test" />
+      <config projectName="Nebula Graph" targetName="file_based_schema_manager_test" />
+      <config projectName="Nebula Graph" targetName="clean-pch" />
+      <config projectName="Nebula Graph" targetName="storage_thrift_obj" />
+      <config projectName="Nebula Graph" targetName="cord_test" />
+      <config projectName="Nebula Graph" targetName="clean-double-conversion" />
+      <config projectName="Nebula Graph" targetName="duration_bm" />
+      <config projectName="Nebula Graph" targetName="tgt_mstch" />
+      <config projectName="Nebula Graph" targetName="nebula-graphd" />
+      <config projectName="Nebula Graph" targetName="rocks_engine_test" />
+      <config projectName="Nebula Graph" targetName="clean-folly" />
+      <config projectName="Nebula Graph" targetName="tgt_googletest" />
+      <config projectName="Nebula Graph" targetName="tgt_fatal" />
+      <config projectName="Nebula Graph" targetName="graph_thrift_obj" />
+      <config projectName="Nebula Graph" targetName="storage_perf" />
+      <config projectName="Nebula Graph" targetName="nebula" />
+      <config projectName="Nebula Graph" targetName="clean-zstd" />
+      <config projectName="Nebula Graph" targetName="tgt_libevent" />
+      <config projectName="Nebula Graph" targetName="tgt_fbthrift" />
+      <config projectName="Nebula Graph" targetName="clean-glog" />
+      <config projectName="Nebula Graph" targetName="tgt_zlib" />
+      <config projectName="Nebula Graph" targetName="clean-build" />
+      <config projectName="Nebula Graph" targetName="tgt_proxygen" />
+      <config projectName="Nebula Graph" targetName="concurrent_obj" />
+      <config projectName="Nebula Graph" targetName="stats_manager_test" />
+      <config projectName="Nebula Graph" targetName="storage_client_test" />
+      <config projectName="Nebula Graph" targetName="nebula_store_test" />
+      <config projectName="Nebula Graph" targetName="thread_obj" />
+      <config projectName="Nebula Graph" targetName="murmurhash2_test" />
+      <config projectName="Nebula Graph" targetName="meta_utils_test" />
+      <config projectName="Nebula Graph" targetName="status_test" />
+      <config projectName="Nebula Graph" targetName="meta_client_test" />
+      <config projectName="Nebula Graph" targetName="processor_test" />
+      <config projectName="Nebula Graph" targetName="add_edges_test" />
+      <config projectName="Nebula Graph" targetName="clean-wangle" />
+      <config projectName="Nebula Graph" targetName="error_or_test" />
+      <config projectName="Nebula Graph" targetName="leader_election_test" />
+      <config projectName="Nebula Graph" targetName="tgt_glog" />
+      <config projectName="Nebula Graph" targetName="clean-snappy" />
+      <config projectName="Nebula Graph" targetName="nebula-metad" />
+      <config projectName="Nebula Graph" targetName="rowset_reader_writer_test" />
+      <config projectName="Nebula Graph" targetName="expression_test" />
+      <config projectName="Nebula Graph" targetName="fs_obj" />
+      <config projectName="Nebula Graph" targetName="ws_obj" />
+      <config projectName="Nebula Graph" targetName="flags_access_test" />
+      <config projectName="Nebula Graph" targetName="nebula_codec_test" />
+      <config projectName="Nebula Graph" targetName="clean-proxygen" />
+      <config projectName="Nebula Graph" targetName="status_or_test" />
+      <config projectName="Nebula Graph" targetName="duration_test" />
+      <config projectName="Nebula Graph" targetName="hash_bm" />
+      <config projectName="Nebula Graph" targetName="storage_client" />
+      <config projectName="Nebula Graph" targetName="meta_thrift_obj" />
+      <config projectName="Nebula Graph" targetName="go_test" />
+      <config projectName="Nebula Graph" targetName="wal_obj" />
+      <config projectName="Nebula Graph" targetName="vertex_props_test" />
+      <config projectName="Nebula Graph" targetName="network_obj" />
+      <config projectName="Nebula Graph" targetName="storage_service_handler" />
+      <config projectName="Nebula Graph" targetName="thread_test" />
+      <config projectName="Nebula Graph" targetName="raftex_obj" />
+      <config projectName="Nebula Graph" targetName="base_obj" />
+      <config projectName="Nebula Graph" targetName="stats_obj" />
+      <config projectName="Nebula Graph" targetName="third-party" />
+      <config projectName="Nebula Graph" targetName="dataman_obj" />
+      <config projectName="Nebula Graph" targetName="console_obj" />
+      <config projectName="Nebula Graph" targetName="session_manager_test" />
+      <config projectName="Nebula Graph" targetName="stats_read_test" />
+      <config projectName="Nebula Graph" targetName="java-client" />
+      <config projectName="Nebula Graph" targetName="temp_dir_test" />
+      <config projectName="Nebula Graph" targetName="tgt_bzip2" />
+      <config projectName="Nebula Graph" targetName="clean-jemalloc" />
+      <config projectName="Nebula Graph" targetName="row_reader_test" />
+      <config projectName="Nebula Graph" targetName="thrift_obj" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Default" GENERATION_DIR="." />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="b9606734-20bb-47b5-a9d6-0264c5c08c35" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/src/parser/UserSentences.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/UserSentences.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/UserSentences.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/UserSentences.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/parser.yy" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/parser.yy" afterDir="false" />
+    </list>
+    <ignored path="$PROJECT_DIR$/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/dataman/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/gflags/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/process/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/fs/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/tools/importer/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/network/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/parser/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/webservice/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/proxygen/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/storage/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/wal/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/libevent/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/snappy/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/wangle/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/base/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/client/java/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/thread/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/meta/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/time/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/base/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/double-conversion/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/kvstore/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/thrift/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/stats/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/storage/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/scripts/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/folly/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/rocksdb/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/raftex/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/daemons/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/dataman/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/zlib/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/concurrent/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/network/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/thread/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/fatal/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/process/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/interface/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/kvstore/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/raftex/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/bzip2/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/webservice/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/client/cpp/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/parser/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/tools/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/zstd/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/tools/storage-perf/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/wal/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/meta/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/googletest/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/mstch/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/fbthrift/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/concurrent/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/console/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/glog/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/graph/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/time/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/etc/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/client/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/stats/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/graph/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/src/common/fs/test/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/third-party/jemalloc/CMakeFiles/" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Default" />
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/graph/test/SchemaTest.cpp">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="315">
+              <caret line="26" column="2" lean-forward="true" selection-start-line="26" selection-start-column="2" selection-end-line="26" selection-end-column="2" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/parser/UserSentences.cpp">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="795">
+              <caret line="62" column="16" selection-start-line="62" selection-start-column="16" selection-end-line="62" selection-end-column="16" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/parser/UserSentences.h">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-130">
+              <caret line="80" column="23" selection-start-line="80" selection-start-column="23" selection-end-line="80" selection-end-column="23" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file:///usr/include/c++/8/bits/move.h">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="324">
+              <caret line="98" column="4" selection-start-line="98" selection-start-column="4" selection-end-line="98" selection-end-column="4" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/parser/parser.yy">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="714">
+              <caret line="936" column="101" lean-forward="true" selection-start-line="936" selection-start-column="101" selection-end-line="936" selection-end-column="101" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file:///usr/include/c++/8/bits/unique_ptr.h">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="305">
+              <caret line="341" column="6" selection-start-line="341" selection-start-column="6" selection-end-line="341" selection-end-column="6" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>folly::to</find>
+      <find>WithUserOptItem</find>
+    </findStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/src/parser/UserSentences.cpp" />
+        <option value="$PROJECT_DIR$/src/parser/parser.yy" />
+        <option value="$PROJECT_DIR$/src/parser/UserSentences.h" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="562" />
+    <option name="y" value="212" />
+    <option name="width" value="802" />
+    <option name="height" value="746" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="Nebula Graph" type="b2602c69:ProjectViewProjectNode" />
+              <item name="user_sentences" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Nebula Graph" type="b2602c69:ProjectViewProjectNode" />
+              <item name="user_sentences" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Nebula Graph" type="b2602c69:ProjectViewProjectNode" />
+              <item name="user_sentences" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="parser" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Nebula Graph" type="b2602c69:ProjectViewProjectNode" />
+              <item name="user_sentences" type="462c0819:PsiDirectoryNode" />
+              <item name="stylecheck" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Application.configuration_test">
+    <configuration name="add_edges_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="add_edges_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="add_edges_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="add_vertices_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="add_vertices_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="add_vertices_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="base_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="base_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="base_obj_gch" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="base_obj_gch" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-all" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-all" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-build" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-build" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-bzip2" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-bzip2" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-double-conversion" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-double-conversion" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-fatal" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-fatal" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-fbthrift" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-fbthrift" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-folly" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-folly" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-gflags" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-gflags" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-glog" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-glog" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-googletest" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-googletest" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-interface" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-interface" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-java-client" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-java-client" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-jemalloc" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-jemalloc" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-libevent" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-libevent" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-mstch" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-mstch" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-pch" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-pch" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-proxygen" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-proxygen" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-rocksdb" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-rocksdb" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-snappy" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-snappy" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-third-party" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-third-party" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-wangle" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-wangle" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-zlib" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-zlib" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="clean-zstd" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="clean-zstd" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="client_cpp_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="client_cpp_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="common_thrift_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="common_thrift_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="concurrent_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="concurrent_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="concurrent_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="concurrent_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="concurrent_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="configuration_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="configuration_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="configuration_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="console_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="console_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="cord_bm" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="cord_bm" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="cord_bm">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="cord_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="cord_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="cord_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="dataman_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="dataman_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="distclean" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="distclean" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="duration_bm" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="duration_bm" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="duration_bm">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="duration_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="duration_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="duration_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="edge_props_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="edge_props_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="edge_props_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="either_or_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="either_or_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="either_or_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="error_or_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="error_or_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="error_or_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="expression_encode_decode_bm" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="expression_encode_decode_bm" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="expression_encode_decode_bm">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="expression_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="expression_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="expression_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="file_based_schema_manager_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="file_based_schema_manager_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="file_based_schema_manager_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="file_based_wal_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="file_based_wal_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="file_based_wal_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="file_utils_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="file_utils_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="file_utils_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="flags_access_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="flags_access_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="flags_access_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="fs_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="fs_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="go_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="go_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="go_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="graph_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="graph_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="graph_thrift_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="graph_thrift_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="hash_bm" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="hash_bm" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="hash_bm">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="importer" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="importer" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="java-client" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="java-client" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="key_utils_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="key_utils_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="key_utils_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="kvstore_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="kvstore_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="leader_election_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="leader_election_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="leader_election_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="load_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="load_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="load_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="log_append_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="log_append_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="log_append_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="log_cas_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="log_cas_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="log_cas_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="meta_client" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="meta_client" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="meta_client_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="meta_client_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="meta_client_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="meta_service_handler" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="meta_service_handler" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="meta_thrift_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="meta_thrift_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="meta_utils_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="meta_utils_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="meta_utils_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="murmurhash2_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="murmurhash2_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="murmurhash2_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="nebula-graphd" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="nebula-graphd" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="nebula-graphd">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="nebula-metad" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="nebula-metad" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="nebula-metad">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="nebula-storaged" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="nebula-storaged" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="nebula-storaged">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="nebula" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="nebula" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="nebula">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="nebula_codec_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="nebula_codec_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="nebula_codec_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="nebula_store_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="nebula_store_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="nebula_store_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="network_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="network_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="network_utils_bm" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="network_utils_bm" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="network_utils_bm">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="network_utils_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="network_utils_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="network_utils_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="parser_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="parser_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="parser_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="parser_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="parser_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="part_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="part_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="part_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="process_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="process_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="process_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="process_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="process_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="processor_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="processor_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="processor_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="query_bound_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="query_bound_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="query_bound_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="query_engine_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="query_engine_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="query_engine_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="query_stats_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="query_stats_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="query_stats_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="raftex_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="raftex_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="raftex_thrift_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="raftex_thrift_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="rocks_engine_config_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="rocks_engine_config_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="rocks_engine_config_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="rocks_engine_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="rocks_engine_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="rocks_engine_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="row_reader_bm" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="row_reader_bm" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="row_reader_bm">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="row_reader_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="row_reader_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="row_reader_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="row_updater_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="row_updater_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="row_updater_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="row_writer_bm" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="row_writer_bm" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="row_writer_bm">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="row_writer_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="row_writer_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="row_writer_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="rowset_reader_writer_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="rowset_reader_writer_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="rowset_reader_writer_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="scanner_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="scanner_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="scanner_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="schema_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="schema_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="session_manager_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="session_manager_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="session_manager_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="signal_handler_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="signal_handler_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="signal_handler_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="stats_manager_bm" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="stats_manager_bm" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="stats_manager_bm">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="stats_manager_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="stats_manager_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="stats_manager_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="stats_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="stats_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="stats_read_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="stats_read_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="stats_read_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="status_or_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="status_or_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="status_or_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="status_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="status_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="status_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="storage_client" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="storage_client" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="storage_client_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="storage_client_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="storage_client_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="storage_perf" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="storage_perf" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="storage_perf">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="storage_service_handler" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="storage_service_handler" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="storage_service_handler_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="storage_service_handler_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="storage_service_handler_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="storage_thrift_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="storage_thrift_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="temp_dir_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="temp_dir_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="temp_dir_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="temp_file_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="temp_file_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="temp_file_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_bzip2" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_bzip2" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_double-conversion" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_double-conversion" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_fatal" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_fatal" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_fbthrift" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_fbthrift" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_folly" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_folly" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_gflags" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_gflags" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_glog" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_glog" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_googletest" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_googletest" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_jemalloc" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_jemalloc" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_libevent" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_libevent" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_mstch" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_mstch" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_proxygen" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_proxygen" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_rocksdb" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_rocksdb" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_snappy" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_snappy" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_wangle" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_wangle" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_zlib" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_zlib" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="tgt_zstd" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="tgt_zstd" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="third-party" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="third-party" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="thread_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="thread_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="thread_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="thread_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="thread_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="thrift_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="thrift_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="time_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="time_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="vertex_props_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="vertex_props_test" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="vertex_props_test">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="wal_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="wal_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ws_obj" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="ws_obj" CONFIG_NAME="Default">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="Application.clean-all" />
+      <item itemvalue="Application.clean-build" />
+      <item itemvalue="Application.distclean" />
+      <item itemvalue="Application.client_cpp_obj" />
+      <item itemvalue="Application.clean-java-client" />
+      <item itemvalue="Application.java-client" />
+      <item itemvalue="Application.base_obj" />
+      <item itemvalue="Application.base_obj_gch" />
+      <item itemvalue="Application.clean-pch" />
+      <item itemvalue="Application.configuration_test" />
+      <item itemvalue="Application.cord_bm" />
+      <item itemvalue="Application.cord_test" />
+      <item itemvalue="Application.either_or_test" />
+      <item itemvalue="Application.error_or_test" />
+      <item itemvalue="Application.hash_bm" />
+      <item itemvalue="Application.murmurhash2_test" />
+      <item itemvalue="Application.signal_handler_test" />
+      <item itemvalue="Application.status_or_test" />
+      <item itemvalue="Application.status_test" />
+      <item itemvalue="Application.concurrent_obj" />
+      <item itemvalue="Application.concurrent_test" />
+      <item itemvalue="Application.fs_obj" />
+      <item itemvalue="Application.file_utils_test" />
+      <item itemvalue="Application.temp_dir_test" />
+      <item itemvalue="Application.temp_file_test" />
+      <item itemvalue="Application.network_obj" />
+      <item itemvalue="Application.network_utils_bm" />
+      <item itemvalue="Application.network_utils_test" />
+      <item itemvalue="Application.process_obj" />
+      <item itemvalue="Application.process_test" />
+      <item itemvalue="Application.stats_obj" />
+      <item itemvalue="Application.stats_manager_bm" />
+      <item itemvalue="Application.stats_manager_test" />
+      <item itemvalue="Application.thread_obj" />
+      <item itemvalue="Application.thread_test" />
+      <item itemvalue="Application.thrift_obj" />
+      <item itemvalue="Application.time_obj" />
+      <item itemvalue="Application.duration_bm" />
+      <item itemvalue="Application.duration_test" />
+      <item itemvalue="Application.console_obj" />
+      <item itemvalue="Application.nebula" />
+      <item itemvalue="Application.nebula-graphd" />
+      <item itemvalue="Application.nebula-metad" />
+      <item itemvalue="Application.nebula-storaged" />
+      <item itemvalue="Application.dataman_obj" />
+      <item itemvalue="Application.nebula_codec_test" />
+      <item itemvalue="Application.row_reader_bm" />
+      <item itemvalue="Application.row_reader_test" />
+      <item itemvalue="Application.row_updater_test" />
+      <item itemvalue="Application.row_writer_bm" />
+      <item itemvalue="Application.row_writer_test" />
+      <item itemvalue="Application.rowset_reader_writer_test" />
+      <item itemvalue="Application.graph_obj" />
+      <item itemvalue="Application.go_test" />
+      <item itemvalue="Application.query_engine_test" />
+      <item itemvalue="Application.session_manager_test" />
+      <item itemvalue="Application.clean-interface" />
+      <item itemvalue="Application.common_thrift_obj" />
+      <item itemvalue="Application.graph_thrift_obj" />
+      <item itemvalue="Application.meta_thrift_obj" />
+      <item itemvalue="Application.raftex_thrift_obj" />
+      <item itemvalue="Application.storage_thrift_obj" />
+      <item itemvalue="Application.kvstore_obj" />
+      <item itemvalue="Application.load_test" />
+      <item itemvalue="Application.nebula_store_test" />
+      <item itemvalue="Application.part_test" />
+      <item itemvalue="Application.rocks_engine_config_test" />
+      <item itemvalue="Application.rocks_engine_test" />
+      <item itemvalue="Application.meta_client" />
+      <item itemvalue="Application.meta_service_handler" />
+      <item itemvalue="Application.schema_obj" />
+      <item itemvalue="Application.file_based_schema_manager_test" />
+      <item itemvalue="Application.meta_client_test" />
+      <item itemvalue="Application.meta_utils_test" />
+      <item itemvalue="Application.processor_test" />
+      <item itemvalue="Application.parser_obj" />
+      <item itemvalue="Application.expression_encode_decode_bm" />
+      <item itemvalue="Application.expression_test" />
+      <item itemvalue="Application.parser_test" />
+      <item itemvalue="Application.scanner_test" />
+      <item itemvalue="Application.raftex_obj" />
+      <item itemvalue="Application.leader_election_test" />
+      <item itemvalue="Application.log_append_test" />
+      <item itemvalue="Application.log_cas_test" />
+      <item itemvalue="Application.storage_client" />
+      <item itemvalue="Application.storage_service_handler" />
+      <item itemvalue="Application.add_edges_test" />
+      <item itemvalue="Application.add_vertices_test" />
+      <item itemvalue="Application.edge_props_test" />
+      <item itemvalue="Application.key_utils_test" />
+      <item itemvalue="Application.query_bound_test" />
+      <item itemvalue="Application.query_stats_test" />
+      <item itemvalue="Application.storage_client_test" />
+      <item itemvalue="Application.storage_service_handler_test" />
+      <item itemvalue="Application.vertex_props_test" />
+      <item itemvalue="Application.importer" />
+      <item itemvalue="Application.storage_perf" />
+      <item itemvalue="Application.wal_obj" />
+      <item itemvalue="Application.file_based_wal_test" />
+      <item itemvalue="Application.ws_obj" />
+      <item itemvalue="Application.flags_access_test" />
+      <item itemvalue="Application.stats_read_test" />
+      <item itemvalue="Application.clean-third-party" />
+      <item itemvalue="Application.third-party" />
+      <item itemvalue="Application.clean-bzip2" />
+      <item itemvalue="Application.tgt_bzip2" />
+      <item itemvalue="Application.clean-double-conversion" />
+      <item itemvalue="Application.tgt_double-conversion" />
+      <item itemvalue="Application.clean-fatal" />
+      <item itemvalue="Application.tgt_fatal" />
+      <item itemvalue="Application.clean-fbthrift" />
+      <item itemvalue="Application.tgt_fbthrift" />
+      <item itemvalue="Application.clean-folly" />
+      <item itemvalue="Application.tgt_folly" />
+      <item itemvalue="Application.clean-gflags" />
+      <item itemvalue="Application.tgt_gflags" />
+      <item itemvalue="Application.clean-glog" />
+      <item itemvalue="Application.tgt_glog" />
+      <item itemvalue="Application.clean-googletest" />
+      <item itemvalue="Application.tgt_googletest" />
+      <item itemvalue="Application.clean-jemalloc" />
+      <item itemvalue="Application.tgt_jemalloc" />
+      <item itemvalue="Application.clean-libevent" />
+      <item itemvalue="Application.tgt_libevent" />
+      <item itemvalue="Application.clean-mstch" />
+      <item itemvalue="Application.tgt_mstch" />
+      <item itemvalue="Application.clean-proxygen" />
+      <item itemvalue="Application.tgt_proxygen" />
+      <item itemvalue="Application.clean-rocksdb" />
+      <item itemvalue="Application.tgt_rocksdb" />
+      <item itemvalue="Application.clean-snappy" />
+      <item itemvalue="Application.tgt_snappy" />
+      <item itemvalue="Application.clean-wangle" />
+      <item itemvalue="Application.tgt_wangle" />
+      <item itemvalue="Application.clean-zlib" />
+      <item itemvalue="Application.tgt_zlib" />
+      <item itemvalue="Application.clean-zstd" />
+      <item itemvalue="Application.tgt_zstd" />
+    </list>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b9606734-20bb-47b5-a9d6-0264c5c08c35" name="Default Changelist" comment="" />
+      <created>1557126270721</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1557126270721</updated>
+      <workItem from="1557126274360" duration="240000" />
+      <workItem from="1557216434308" duration="2889000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TimeTrackingManager">
+    <option name="totallyTimeSpent" value="3129000" />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="0" y="27" width="1920" height="1173" extended-state="6" />
+    <editor active="true" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.25320512" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Database Changes" order="7" />
+      <window_info anchor="bottom" id="Terminal" order="8" />
+      <window_info anchor="bottom" id="Event Log" order="9" side_tool="true" />
+      <window_info anchor="bottom" id="Version Control" order="10" />
+      <window_info anchor="bottom" id="CMake" order="11" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="Database" order="3" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/graph/test/SchemaTest.cpp</url>
+          <line>29</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/src/graph/test/SchemaTest.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="26" column="2" lean-forward="true" selection-start-line="26" selection-start-column="2" selection-end-line="26" selection-end-column="2" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/parser/UserSentences.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="795">
+          <caret line="62" column="16" selection-start-line="62" selection-start-column="16" selection-end-line="62" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/include/c++/8/bits/unique_ptr.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="305">
+          <caret line="341" column="6" selection-start-line="341" selection-start-column="6" selection-end-line="341" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/parser/parser.yy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="714">
+          <caret line="936" column="101" lean-forward="true" selection-start-line="936" selection-start-column="101" selection-end-line="936" selection-end-column="101" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/include/c++/8/bits/move.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="324">
+          <caret line="98" column="4" selection-start-line="98" selection-start-column="4" selection-end-line="98" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/parser/UserSentences.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-130">
+          <caret line="80" column="23" selection-start-line="80" selection-start-column="23" selection-end-line="80" selection-end-column="23" />
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>

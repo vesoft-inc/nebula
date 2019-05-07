@@ -137,7 +137,7 @@ class GraphScanner;
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
 
-%type <missing_ok_clause> missing_ok_clause;
+%type <missing_ok_clause> missing_ok_clause
 %type <with_user_opt_list> with_user_opt_list
 %type <with_user_opt_item> with_user_opt_item
 %type <role_type_clause> role_type_clause
@@ -934,7 +934,7 @@ create_user_sentence
         sentence->setMissingType(MissingOkClause::IF_NOT_EXIST);
         $$ = sentence;
     }
-    |KW_CREATE KW_USER missing_ok_clause LABEL KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
+    | KW_CREATE KW_USER missing_ok_clause LABEL KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
         auto sentence = new CreateUserSentence($4, $7);
         sentence->setMissingOkClause($3);
         sentence->setMissingType(MissingOkClause::IF_NOT_EXIST);
