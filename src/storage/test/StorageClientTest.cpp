@@ -39,16 +39,16 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     auto sc = TestUtils::mockServer(dataPath.c_str(), localIp, localDataPort);
 
     LOG(INFO) << "Add hosts and create space....";
-    {
-        auto mClient = std::make_unique<meta::MetaClient>();
-        auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
-        ASSERT_TRUE(r.ok());
-        auto ret = mClient->createSpace("default", 10, 1).get();
-        spaceId = ret.value();
-    }
+    auto mClient = std::make_unique<meta::MetaClient>();
+    mClient->init();
+    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
+    ASSERT_TRUE(r.ok());
+    auto ret = mClient->createSpace("default", 10, 1).get();
+    spaceId = ret.value();
     sleep(2 * FLAGS_load_data_interval_second + 1);
+
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    auto client = std::make_unique<StorageClient>(threadPool);
+    auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
     // VerticesInterfacesTest(addVertices and getVertexProps)
     {
         LOG(INFO) << "Prepare vertices data...";

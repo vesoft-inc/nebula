@@ -10,6 +10,19 @@
 namespace nebula {
 namespace graph {
 
+ExecutionContext::~ExecutionContext() {
+    if (nullptr != sm_) {
+        sm_ = nullptr;
+    }
+
+    if (nullptr != storage_) {
+        storage_ = nullptr;
+    }
+
+    if (nullptr != metaClient_) {
+        metaClient_ = nullptr;
+    }
+}
 
 }   // namespace graph
 }   // namespace nebula
