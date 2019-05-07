@@ -13,13 +13,30 @@
 namespace nebula {
 namespace storage {
 
-StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool)
+StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool,
+                             meta::MetaClient *client)
         : ioThreadPool_(threadPool) {
-    client_ = std::make_unique<meta::MetaClient>();
-    client_->init();
+    if (nullptr == client) {
+        LOG(INFO) << "MetaClient is nullptr, create new one";
+        static auto clientPtr = std::make_unique<meta::MetaClient>();
+        static std::once_flag flag;
+        std::call_once(flag, std::bind(&meta::MetaClient::init, clientPtr.get()));
+        client_ = clientPtr.get();
+    } else {
+        client_ = client;
+    }
     clientsMan_
         = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
 }
+
+
+StorageClient::~StorageClient() {
+    VLOG(3) << "~StorageClient";
+    if (nullptr != client_) {
+        client_ = nullptr;
+    }
+}
+
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVertices(
         GraphSpaceID space,
@@ -225,7 +242,9 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         });
 }
 
+
 PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
+    CHECK(client_);
     auto parts = client_->partsNum(spaceId);
     auto s = ID_HASH(id, parts);
     CHECK_GE(s, 0U);
