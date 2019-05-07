@@ -140,7 +140,7 @@ public:
 
 
 protected:
-    // Private constructor to prevent from instantiating directly
+    // Protected constructor to prevent from instantiating directly
     RaftPart(ClusterID clusterId,
              GraphSpaceID spaceId,
              PartitionID partId,
@@ -235,6 +235,7 @@ private:
      * be put into the log batch, but will not be added to WAL
      ****************************************************************/
     folly::Future<AppendLogResult> sendHeartbeat();
+    void doneHeartbeat();
 
     /****************************************************
      *
@@ -254,7 +255,9 @@ private:
     // The methed will fill up the request object and return TRUE
     // if the election should continue. Otherwise the method will
     // return FALSE
-    bool prepareElectionRequest(cpp2::AskForVoteRequest& req);
+    bool prepareElectionRequest(
+        cpp2::AskForVoteRequest& req,
+        std::shared_ptr<std::unordered_map<HostAddr, std::shared_ptr<Host>>>& hosts);
 
     // The method returns the partition's role after the election
     Role processElectionResponses(const ElectionResponses& results);
