@@ -648,6 +648,21 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
         return resp.get_id().get_tag_id();
     });
 }
+folly::Future<StatusOr<TagID>>
+MetaClient::alterTagSchema(GraphSpaceID spaceId,
+                           std::string name,
+                           std::vector<cpp2::AlterTagItem> tagItems) {
+    cpp2::AlterTagReq req;
+    req.set_space_id(std::move(spaceId));
+    req.set_tag_name(std::move(name));
+    req.set_tag_items(std::move(tagItems));
+
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_alterTag(request);
+    }, [] (cpp2::ExecResp&& resp) -> TagID {
+        return resp.get_id().get_tag_id();
+    });
+}
 
 folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
 MetaClient::listTagSchemas(GraphSpaceID spaceId) {
@@ -655,7 +670,7 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
     req.set_space_id(std::move(spaceId));
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listTags(request);
-    }, [this] (cpp2::ListTagsResp&& resp) -> decltype(auto){
+    }, [] (cpp2::ListTagsResp&& resp) -> decltype(auto){
         return std::move(resp).get_tags();
     });
 }
@@ -679,7 +694,7 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     req.set_space_id(std::move(spaceId));
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listEdges(request);
-    }, [this] (cpp2::ListEdgesResp&& resp) -> decltype(auto) {
+    }, [] (cpp2::ListEdgesResp&& resp) -> decltype(auto) {
         return std::move(resp).get_edges();
     });
 }
