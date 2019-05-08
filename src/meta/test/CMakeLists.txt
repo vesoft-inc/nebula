@@ -51,6 +51,7 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:schema_obj>
 )
 nebula_link_libraries(
     processor_test
@@ -77,6 +78,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:schema_obj>
 )
 nebula_link_libraries(
     meta_client_test
@@ -89,4 +91,20 @@ nebula_link_libraries(
 )
 
 nebula_add_test(meta_client_test)
+
+add_executable(
+    active_hosts_man_test
+    ActiveHostsManTest.cpp
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+)
+nebula_link_libraries(
+    active_hosts_man_test
+    gtest
+)
+
+nebula_add_test(active_hosts_man_test)
 

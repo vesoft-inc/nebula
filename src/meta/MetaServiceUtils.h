@@ -52,13 +52,21 @@ public:
 
     static nebula::cpp2::HostAddr parseHostKey(folly::StringPiece key);
 
+    static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
+
     static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, int64_t version);
 
-    static std::string schemaEdgeVal(nebula::cpp2::Schema schema);
+    static std::string schemaEdgeVal(const std::string& name, nebula::cpp2::Schema schema);
+
+    static int64_t parseEdgeVersion(folly::StringPiece key);
 
     static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
 
     static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version);
+
+    static int64_t parseTagVersion(folly::StringPiece key);
+
+    static std::string schemaTagPrefix(GraphSpaceID spaceId, TagID tagId);
 
     static std::string schemaTagsPrefix(GraphSpaceID spaceId);
 
@@ -66,7 +74,11 @@ public:
 
     static nebula::cpp2::Schema parseSchema(folly::StringPiece rawData);
 
-    static std::string indexKey(EntryType type, const std::string& name);
+    static std::string indexSpaceKey(const std::string& name);
+
+    static std::string indexTagKey(GraphSpaceID spaceId, const std::string& name);
+
+    static std::string indexEdgeKey(GraphSpaceID spaceId, const std::string& name);
 
     static std::string edgeIndexKey(GraphSpaceID spaceId, const std::string& name);
 

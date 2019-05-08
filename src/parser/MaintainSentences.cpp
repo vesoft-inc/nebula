@@ -9,10 +9,10 @@
 
 namespace nebula {
 
-std::string DefineTagSentence::toString() const {
+std::string CreateTagSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "DEFINE TAG ";
+    buf += "CREATE TAG ";
     buf += *name_;
     buf += " (";
     for (auto *col : columns_->columnSpecs()) {
@@ -31,10 +31,10 @@ std::string DefineTagSentence::toString() const {
 }
 
 
-std::string DefineEdgeSentence::toString() const {
+std::string CreateEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "DEFINE EDGE ";
+    buf += "CREATE EDGE ";
     buf += *name_;
     buf += " (";
     for (auto &col : columns_->columnSpecs()) {
@@ -53,12 +53,11 @@ std::string DefineEdgeSentence::toString() const {
 }
 
 
-std::string AlterTagSentence::toString() const {
+std::string AlterTagOptItem::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "ALTER TAG ";
-    buf += *name_;
-    buf += "(";
+    buf += getOptTypeStr();
+    buf += " (";
     for (auto &col : columns_->columnSpecs()) {
         buf += *col->name();
         buf += " ";
@@ -71,6 +70,32 @@ std::string AlterTagSentence::toString() const {
     }
     buf.resize(buf.size() - 1);
     buf += ")";
+    return buf;
+}
+
+
+std::string AlterTagOptList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (uint32_t i = 0; i < alterTagitems_.size(); i++) {
+        auto &item = alterTagitems_[i];
+        if (i > 0) {
+            buf += ",";
+        }
+        buf += item->toString();
+    }
+    return buf;
+}
+
+std::string AlterTagSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "ALTER TAG ";
+    buf += *name_;
+    for (auto &tagOpt : opts_->alterTagItems()) {
+        buf += " ";
+        buf += tagOpt->toString();
+    }
     return buf;
 }
 
@@ -107,6 +132,15 @@ std::string DescribeTagSentence::toString() const {
 std::string DescribeEdgeSentence::toString() const {
     std::string buf = "DESCRIBE EDGE ";
     buf += *name_;
+    return buf;
+}
+
+
+std::string YieldSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "YIELD ";
+    buf += yieldColumns_->toString();
     return buf;
 }
 

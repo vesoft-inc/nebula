@@ -12,8 +12,6 @@
 #include "graph/RequestContext.h"
 #include "gen-cpp2/GraphService.h"
 #include "meta/SchemaManager.h"
-#include "graph/mock/SchemaManager.h"
-#include "graph/mock/StorageService.h"
 #include "meta/client/MetaClient.h"
 #include "network/NetworkUtils.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
@@ -33,8 +31,10 @@ namespace graph {
 
 class ExecutionEngine final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    explicit ExecutionEngine(std::unique_ptr<storage::StorageClient> storage);
+    ExecutionEngine();
     ~ExecutionEngine();
+
+    Status init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
 
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
     void execute(RequestContextPtr rctx);

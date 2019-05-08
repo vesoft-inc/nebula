@@ -11,12 +11,11 @@
 
 DEFINE_string(schema_file, "", "The full path of the schema file");
 
-DEFINE_bool(graph_id_from_server, false, "get graphID from meta server."
-                                         "This is a temp flag");
 namespace nebula {
 namespace meta {
 
-void FileBasedSchemaManager::init() {
+void FileBasedSchemaManager::init(MetaClient *client) {
+    UNUSED(client);
     DCHECK(!FLAGS_schema_file.empty()) << "Schema file is required";
 
     Configuration conf;
@@ -28,6 +27,7 @@ void FileBasedSchemaManager::init() {
         Configuration spaceConf;
         CHECK(conf.fetchAsSubConf(name.c_str(), spaceConf).ok());
         this->readOneGraphSpace(space, spaceConf);
+        this->spaces_.emplace(space);
     }).ok());
 }
 
@@ -37,7 +37,7 @@ void FileBasedSchemaManager::readOneGraphSpace(GraphSpaceID space, const Configu
         CHECK(edgeConf.forEachItem([space, this] (const std::string& name,
                                                   const folly::dynamic& versions) {
             CHECK(versions.isArray());
-            auto type = this->toEdgeType(name);
+            auto type = this->toEdgeType(space, name);
             for (auto& edge : versions) {
                 auto schema = this->readSchema(edge);
                 if (!schema) {
@@ -55,7 +55,7 @@ void FileBasedSchemaManager::readOneGraphSpace(GraphSpaceID space, const Configu
         CHECK(tagConf.forEachItem([space, this] (const std::string& name,
                                                  const folly::dynamic& versions) {
             CHECK(versions.isArray());
-            auto id = this->toTagID(name);
+            auto id = this->toTagID(space, name);
             for (auto& tag : versions) {
                 auto schema = this->readSchema(tag);
                 if (!schema) {
@@ -135,21 +135,6 @@ std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
     }
 
     return std::static_pointer_cast<const SchemaProviderIf>(schema);
-}
-
-std::once_flag initFlag;
-GraphSpaceID FileBasedSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
-    if (FLAGS_graph_id_from_server) {
-        std::call_once(initFlag, [this]() {
-            client_ = std::make_unique<MetaClient>();
-            client_->init();
-        });
-        auto spaceStr = spaceName.str();
-        auto ret = client_->getSpaceIdByNameFromCache(spaceStr);
-        CHECK(ret.ok());
-        return ret.value();
-    }
-    return AdHocSchemaManager::toGraphSpaceID(spaceName);
 }
 
 }  // namespace meta

@@ -126,6 +126,7 @@ protected:
             return cpp2::ErrorCode::SUCCEEDED;
         case Status::kSpaceNotFound:
         case Status::kHostNotFound:
+        case Status::kTagNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -213,9 +214,14 @@ protected:
      * */
     StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
 
-     /**
+    /**
+     * Return the tagId from name.
+     */
+    StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
+
+    /**
      * Return the edgeType from name.
-     * */
+     */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
 protected:

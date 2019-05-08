@@ -4,28 +4,28 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef META_ADDEDGEPROCESSOR_H_
-#define META_ADDEDGEPROCESSOR_H_
+#ifndef META_CREATEEDGEPROCESSOR_H_
+#define META_CREATEEDGEPROCESSOR_H_
 
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-class AddEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {
+class CreateEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
-    static AddEdgeProcessor* instance(kvstore::KVStore* kvstore) {
-        return new AddEdgeProcessor(kvstore);
+    static CreateEdgeProcessor* instance(kvstore::KVStore* kvstore) {
+        return new CreateEdgeProcessor(kvstore);
     }
 
-    void process(const cpp2::AddEdgeReq& req);
+    void process(const cpp2::CreateEdgeReq& req);
 
 private:
-    explicit AddEdgeProcessor(kvstore::KVStore* kvstore)
+    explicit CreateEdgeProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_ADDEDGEPROCESSOR_H_
+#endif  // META_CREATEEDGEPROCESSOR_H_
