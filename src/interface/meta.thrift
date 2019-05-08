@@ -34,9 +34,10 @@ enum ErrorCode {
 
 
 enum AlterOp {
-    ADD  = 0x01,
-    SET  = 0x02,
-    DROP = 0x03
+    ADD     = 0x01,
+    SET     = 0x02,
+    DROP    = 0x03
+    UNKNOWN = 0x04,
 } (cpp.enum_strict)
 
 

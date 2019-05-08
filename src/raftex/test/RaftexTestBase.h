@@ -59,6 +59,7 @@ void waitUntilLeaderElected(
         std::shared_ptr<test::TestShard>& leader);
 
 void setupRaft(
+        int32_t numCopies,
         fs::TempDir& walRoot,
         std::shared_ptr<thread::GenericThreadPool>& workers,
         std::vector<std::string>& wals,
@@ -85,7 +86,7 @@ public:
     void SetUp() {
         walRoot_ = std::make_unique<fs::TempDir>(
             folly::stringPrintf("/tmp/%s.XXXXXX", testName_.c_str()).c_str());
-        setupRaft(*walRoot_, workers_, wals_, allHosts_, services_, copies_, leader_);
+        setupRaft(3, *walRoot_, workers_, wals_, allHosts_, services_, copies_, leader_);
 
         // Check all hosts agree on the same leader
         checkLeadership(copies_, leader_);

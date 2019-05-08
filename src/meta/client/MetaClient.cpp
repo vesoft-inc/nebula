@@ -126,13 +126,13 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                              SpaceNewestEdgeVerMap &newestEdgeVerMap) {
     auto tagRet = listTagSchemas(spaceId).get();
     if (!tagRet.ok()) {
-        LOG(ERROR) << "Get tag schemas failed for spaceId " << spaceId;
+        LOG(ERROR) << "Get tag schemas failed for spaceId " << spaceId << ", " << tagRet.status();
         return false;
     }
 
     auto edgeRet = listEdgeSchemas(spaceId).get();
     if (!edgeRet.ok()) {
-        LOG(ERROR) << "Get edge schemas failed for spaceId " << spaceId;
+        LOG(ERROR) << "Get edge schemas failed for spaceId " << spaceId << ", " << edgeRet.status();
         return false;
     }
 
@@ -160,6 +160,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         } else {
             newestTagVerMap.emplace(std::make_pair(spaceId, tagIt.tag_id), tagIt.version);
         }
+        VLOG(3) << "Load Tag Schema Space " << spaceId << ", ID " << tagIt.tag_id
+                << ", Name " << tagIt.tag_name << ", Version " << tagIt.version << " Successfully!";
     }
 
     for (auto& edgeIt : edgeItemVec) {
@@ -182,6 +184,9 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         } else {
             newestEdgeVerMap.emplace(std::make_pair(spaceId, edgeIt.edge_type), edgeIt.version);
         }
+        VLOG(3) << "Load Edge Schema Space " << spaceId << ", Type " << edgeIt.edge_type
+                << ", Name " << edgeIt.edge_name << ", Version " << edgeIt.version
+                << " Successfully!";
     }
 
     spaceInfoCache->tagSchemas_ = std::move(tagIdSchemas);
@@ -643,6 +648,21 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
         return resp.get_id().get_tag_id();
     });
 }
+folly::Future<StatusOr<TagID>>
+MetaClient::alterTagSchema(GraphSpaceID spaceId,
+                           std::string name,
+                           std::vector<cpp2::AlterTagItem> tagItems) {
+    cpp2::AlterTagReq req;
+    req.set_space_id(std::move(spaceId));
+    req.set_tag_name(std::move(name));
+    req.set_tag_items(std::move(tagItems));
+
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_alterTag(request);
+    }, [] (cpp2::ExecResp&& resp) -> TagID {
+        return resp.get_id().get_tag_id();
+    });
+}
 
 folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
 MetaClient::listTagSchemas(GraphSpaceID spaceId) {
@@ -650,7 +670,7 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
     req.set_space_id(std::move(spaceId));
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listTags(request);
-    }, [this] (cpp2::ListTagsResp&& resp) -> decltype(auto){
+    }, [] (cpp2::ListTagsResp&& resp) -> decltype(auto){
         return std::move(resp).get_tags();
     });
 }
@@ -674,7 +694,7 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     req.set_space_id(std::move(spaceId));
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listEdges(request);
-    }, [this] (cpp2::ListEdgesResp&& resp) -> decltype(auto) {
+    }, [] (cpp2::ListEdgesResp&& resp) -> decltype(auto) {
         return std::move(resp).get_edges();
     });
 }
@@ -729,10 +749,13 @@ StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemeFromC
     auto spaceIt = localCache_.find(spaceId);
     if (spaceIt == localCache_.end()) {
         // Not found
+        VLOG(3) << "Space " << spaceId << " not found!";
         return std::shared_ptr<const SchemaProviderIf>();
     } else {
         auto edgeIt = spaceIt->second->edgeSchemas_.find(std::make_pair(edgeType, ver));
         if (edgeIt == spaceIt->second->edgeSchemas_.end()) {
+            VLOG(3) << "Space " << spaceId << ", EdgeType " << edgeType << ", version "
+                    << ver << " not found!";
             return std::shared_ptr<const SchemaProviderIf>();
         } else {
             return edgeIt->second;

@@ -101,6 +101,11 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
     listTagSchemas(GraphSpaceID spaceId);
 
+    // TODO(boshengchen) need refresh tagNameIdMap and newestTagVerMap
+    folly::Future<StatusOr<TagID>> alterTagSchema(GraphSpaceID spaceId,
+                                                  std::string name,
+                                                  std::vector<cpp2::AlterTagItem> tagItems);
+
     // TODO(Laura) : We can actively update the cache once we add the schema
     folly::Future<StatusOr<EdgeType>>
     createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);

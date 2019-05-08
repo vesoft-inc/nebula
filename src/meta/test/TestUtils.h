@@ -99,9 +99,9 @@ public:
         return ret;
     }
 
-    static void mockTag(kvstore::KVStore* kv, int32_t tagNum, int64_t version = 0) {
+    static void mockTag(kvstore::KVStore* kv, int32_t tagNum, SchemaVer version = 0) {
         std::vector<nebula::kvstore::KV> tags;
-        int64_t ver = version;
+        SchemaVer ver = version;
         for (auto t = 0; t < tagNum; t++) {
             TagID tagId = t;
             nebula::cpp2::Schema srcsch;
