@@ -50,7 +50,7 @@ public:
         checkThread_.wait();
     }
 
-    void updateHostInfo(HostAddr hostAddr, HostInfo info) {
+    void updateHostInfo(const HostAddr& hostAddr, const HostInfo& info) {
         folly::RWSpinLock::ReadHolder rh(&lock_);
         auto it = hostsMap_.find(hostAddr);
         if (it == hostsMap_.end()) {

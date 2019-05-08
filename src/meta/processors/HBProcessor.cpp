@@ -7,6 +7,11 @@
 
 #include "meta/processors/HBProcessor.h"
 
+DEFINE_int32(expired_hosts_check_interval_sec, 20,
+             "Check the expired hosts at the interval");
+DEFINE_int32(expired_threshold_sec, 10 * 60,
+             "Hosts will be expired in this time if no heartbeat received");
+
 namespace nebula {
 namespace meta {
 
