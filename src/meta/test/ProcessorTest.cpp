@@ -468,9 +468,9 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = folly::stringPrintf("tag_%d_col_%d", 0, 0);
         dropSch.columns.emplace_back(std::move(column));
 
-        items.emplace_back(FRAGILE, cpp2::AlterOp::ADD, std::move(addSch));
-        items.emplace_back(FRAGILE, cpp2::AlterOp::SET, std::move(setSch));
-        items.emplace_back(FRAGILE, cpp2::AlterOp::DROP, std::move(dropSch));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::ADD, std::move(addSch));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::SET, std::move(setSch));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(dropSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -525,7 +525,7 @@ TEST(ProcessorTest, AlterTagTest) {
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
         auto addItem = cpp2::AlterTagItem(FRAGILE,
-                                          cpp2::AlterOp::ADD,
+                                          cpp2::AlterSchemaOp::ADD,
                                           std::move(addSch));
         items.push_back(std::move(addItem));
         req.set_space_id(1);
@@ -547,7 +547,7 @@ TEST(ProcessorTest, AlterTagTest) {
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
         auto addItem = cpp2::AlterTagItem(FRAGILE,
-                                          cpp2::AlterOp::SET,
+                                          cpp2::AlterSchemaOp::SET,
                                           std::move(addSch));
         items.push_back(std::move(addItem));
         req.set_space_id(1);
@@ -568,7 +568,7 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = "tag_0_col_2";
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
-        items.emplace_back(FRAGILE, cpp2::AlterOp::DROP, std::move(addSch));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(addSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);

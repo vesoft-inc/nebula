@@ -102,9 +102,8 @@ public:
     listTagSchemas(GraphSpaceID spaceId);
 
     // TODO(boshengchen) need refresh tagNameIdMap and newestTagVerMap
-    folly::Future<StatusOr<TagID>> alterTagSchema(GraphSpaceID spaceId,
-                                                  std::string name,
-                                                  std::vector<cpp2::AlterTagItem> tagItems);
+    folly::Future<StatusOr<TagID>>
+    alterTagSchema(GraphSpaceID spaceId, std::string name, std::vector<cpp2::AlterTagItem> items);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
     folly::Future<StatusOr<EdgeType>>
@@ -114,10 +113,10 @@ public:
     listEdgeSchemas(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    getEdgeSchema(GraphSpaceID spaceId, std::string edgeName, SchemaVer version);
+    getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version);
 
     folly::Future<StatusOr<bool>>
-    removeEdgeSchema(GraphSpaceID spaceId, std::string edgeName);
+    removeEdgeSchema(GraphSpaceID spaceId, std::string name);
 
     // These are the interfaces about cache opeartions.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
@@ -170,12 +169,6 @@ public:
 
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
-
-    folly::Future<StatusOr<bool>>
-    getEdge(std::string spaceName, std::string edgeName, SchemaVer version);
-
-    folly::Future<StatusOr<bool>>
-    removeEdge(std::string spaceName, std::string edgeName);
 
 protected:
     void loadDataThreadFunc();

@@ -151,6 +151,12 @@ MetaServiceHandler::future_getEdge(const cpp2::GetEdgeReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ListEdgesResp>
+MetaServiceHandler::future_listEdges(const cpp2::ListEdgesReq& req) {
+    auto* processor = ListEdgesProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_createEdge(const cpp2::CreateEdgeReq& req) {
     auto* processor = CreateEdgeProcessor::instance(kvstore_);

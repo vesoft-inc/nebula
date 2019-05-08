@@ -65,17 +65,17 @@ void AlterTagExecutor::execute() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-nebula::meta::cpp2::AlterTagOp
+nebula::meta::cpp2::AlterSchemaOp
 AlterTagExecutor::getTagOpType(const AlterTagOptItem::OptionType type) {
     switch (type) {
         case AlterTagOptItem::OptionType::ADD :
-            return nebula::meta::cpp2::AlterTagOp::ADD;
+            return nebula::meta::cpp2::AlterSchemaOp::ADD;
         case AlterTagOptItem::OptionType::SET :
-            return nebula::meta::cpp2::AlterTagOp::SET;
+            return nebula::meta::cpp2::AlterSchemaOp::SET;
         case AlterTagOptItem::OptionType::DROP :
-            return nebula::meta::cpp2::AlterTagOp::DROP;
+            return nebula::meta::cpp2::AlterSchemaOp::DROP;
         default:
-            return nebula::meta::cpp2::AlterTagOp::UNKNOWN;
+            return nebula::meta::cpp2::AlterSchemaOp::UNKNOWN;
     }
 }
 }   // namespace graph

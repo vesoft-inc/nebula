@@ -651,11 +651,11 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
 folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
                            std::string name,
-                           std::vector<cpp2::AlterTagItem> tagItems) {
+                           std::vector<cpp2::AlterTagItem> items) {
     cpp2::AlterTagReq req;
     req.set_space_id(std::move(spaceId));
     req.set_tag_name(std::move(name));
-    req.set_tag_items(std::move(tagItems));
+    req.set_tag_items(std::move(items));
 
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_alterTag(request);
@@ -700,11 +700,11 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string edgeName, SchemaVer version) {
-    CHECK_PARAMETER_AND_RETURN_STATUS(edgeName);
+MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version) {
+    CHECK_PARAMETER_AND_RETURN_STATUS(name);
     cpp2::GetEdgeReq req;
     req.set_space_id(std::move(spaceId));
-    req.set_edge_name(std::move(edgeName));
+    req.set_edge_name(std::move(name));
     req.set_version(version);
     return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_getEdge(request);
@@ -714,11 +714,11 @@ MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string edgeName, SchemaVer 
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::removeEdgeSchema(GraphSpaceID spaceId, std::string edgeName) {
-    CHECK_PARAMETER_AND_RETURN_STATUS(edgeName);
+MetaClient::removeEdgeSchema(GraphSpaceID spaceId, std::string name) {
+    CHECK_PARAMETER_AND_RETURN_STATUS(name);
     cpp2::RemoveEdgeReq req;
     req.set_space_id(std::move(spaceId));
-    req.set_edge_name(std::move(edgeName));
+    req.set_edge_name(std::move(name));
     return getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_removeEdge(request);
                 }, [] (cpp2::ExecResp&& resp) -> bool {

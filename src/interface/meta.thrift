@@ -33,7 +33,7 @@ enum ErrorCode {
 } (cpp.enum_strict)
 
 
-enum AlterOp {
+enum AlterSchemaOp {
     ADD     = 0x01,
     SET     = 0x02,
     DROP    = 0x03
@@ -65,7 +65,7 @@ struct TagItem {
 }
 
 struct AlterTagItem {
-    1: AlterOp              op,
+    1: AlterSchemaOp        op,
     2: common.Schema        schema,
 }
 
@@ -77,7 +77,7 @@ struct EdgeItem {
 }
 
 struct AlterEdgeItem {
-    1: AlterOp              op,
+    1: AlterSchemaOp        op,
     2: common.Schema        schema,
 }
 

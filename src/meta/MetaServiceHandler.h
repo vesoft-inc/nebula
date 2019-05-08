@@ -86,6 +86,9 @@ public:
     folly::Future<cpp2::GetEdgeResp>
     future_getEdge(const cpp2::GetEdgeReq& req) override;
 
+    folly::Future<cpp2::ListEdgesResp>
+    future_listEdges(const cpp2::ListEdgesReq& req) override;
+
     folly::Future<cpp2::ExecResp>
     future_createEdge(const cpp2::CreateEdgeReq& req) override;
 
