@@ -10,7 +10,7 @@
 namespace nebula {
 namespace meta {
 
-int32_t NebulaSchemaProvider::getVersion() const noexcept {
+SchemaVer NebulaSchemaProvider::getVersion() const noexcept {
     return ver_;
 }
 
