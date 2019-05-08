@@ -8,19 +8,6 @@
 
 namespace nebula {
 
-std::string MissingOkClause::toString() const {
-    if (!isMissing_) {
-        return "";
-    }
-
-    if (type_ == MissingType::IF_EXIST) {
-        return std::string("IF EXISTS");
-    } else {
-        return std::string("IF NOT EXISTS");
-    }
-}
-
-
 std::string WithUserOptItem::toString() const {
     switch (optType_) {
         case OptionType::FIRST:
@@ -83,8 +70,9 @@ std::string CreateUserSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf = "CREATE USER ";
-    buf += missingOkClause_->toString().data();
-    buf += " ";
+    if (missingOk_) {
+        buf += "IF NOT EXISTS ";
+    }
     buf += account_->data();
     buf += " WITH PASSWORD \"";
     buf += password_->data();
@@ -112,8 +100,9 @@ std::string DropUserSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf = "DROP USER ";
-    buf += missingOkClause_->toString();
-    buf += " ";
+    if (missingOk_) {
+        buf += "IF EXISTS ";
+    }
     buf += account_->data();
     return buf;
 }

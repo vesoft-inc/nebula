@@ -63,7 +63,6 @@ class GraphScanner;
     nebula::SpaceOptItem                   *space_opt_item;
     nebula::AlterTagOptList                *alter_tag_opt_list;
     nebula::AlterTagOptItem                *alter_tag_opt_item;
-    nebula::MissingOkClause                *missing_ok_clause;
     nebula::WithUserOptList                *with_user_opt_list;
     nebula::WithUserOptItem                *with_user_opt_item;
     nebula::RoleTypeClause                 *role_type_clause;
@@ -137,7 +136,6 @@ class GraphScanner;
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
 
-%type <missing_ok_clause> missing_ok_clause
 %type <with_user_opt_list> with_user_opt_list
 %type <with_user_opt_item> with_user_opt_item
 %type <role_type_clause> role_type_clause
@@ -895,12 +893,6 @@ drop_space_sentence
 
 //  User manager sentences.
 
-missing_ok_clause
-    : %empty { $$ = new MissingOkClause(false); }
-    | KW_IF KW_NOT KW_EXISTS { $$ = new MissingOkClause(true); }
-    | KW_IF KW_EXISTS { $$ = new MissingOkClause(true); }
-    ;
-
 with_user_opt_item
     : KW_FIRSTNAME STRING {
         $$ = new WithUserOptItem(WithUserOptItem::FIRST, $2);
@@ -928,17 +920,23 @@ with_user_opt_list
     ;
 
 create_user_sentence
-    : KW_CREATE KW_USER missing_ok_clause LABEL KW_WITH KW_PASSWORD STRING {
-        auto sentence = new CreateUserSentence($4, $7);
-        sentence->setMissingOkClause($3);
-        sentence->setMissingType(MissingOkClause::IF_NOT_EXIST);
+    : KW_CREATE KW_USER LABEL KW_WITH KW_PASSWORD STRING {
+        $$ = new CreateUserSentence($3, $6);
+    }
+    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS LABEL KW_WITH KW_PASSWORD STRING {
+        auto sentence = new CreateUserSentence($6, $9);
+        sentence->setMissingOk(true);
         $$ = sentence;
     }
-    | KW_CREATE KW_USER missing_ok_clause LABEL KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
-        auto sentence = new CreateUserSentence($4, $7);
-        sentence->setMissingOkClause($3);
-        sentence->setMissingType(MissingOkClause::IF_NOT_EXIST);
-        sentence->setOpts($9);
+    | KW_CREATE KW_USER LABEL KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
+        auto sentence = new CreateUserSentence($3, $6);
+        sentence->setOpts($8);
+        $$ = sentence;
+    }
+    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS LABEL KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
+        auto sentence = new CreateUserSentence($6, $9);
+        sentence->setMissingOk(true);
+        sentence->setOpts($11);
         $$ = sentence;
     }
 
@@ -951,10 +949,12 @@ alter_user_sentence
     ;
 
 drop_user_sentence
-    : KW_DROP KW_USER missing_ok_clause LABEL {
-        auto sentence = new DropUserSentence($4);
-        sentence->setMissingOkClause($3);
-        sentence->setMissingType(MissingOkClause::IF_EXIST);
+    : KW_DROP KW_USER LABEL {
+        $$ = new DropUserSentence($3);
+    }
+    | KW_DROP KW_USER KW_IF KW_EXISTS LABEL {
+        auto sentence = new DropUserSentence($5);
+        sentence->setMissingOk(true);
         $$ = sentence;
     }
     ;

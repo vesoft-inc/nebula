@@ -13,41 +13,13 @@
 
 namespace nebula {
 
-class MissingOkClause final {
-public:
-    enum MissingType : uint8_t {
-        IF_EXIST,
-        IF_NOT_EXIST
-    };
-
-    explicit MissingOkClause(bool isMissing) {
-        isMissing_ = isMissing;
-    }
-
-    bool isMissing() {
-        return isMissing_;
-    }
-
-    void setType(MissingType type) {
-        type_ = type;
-    }
-
-    const MissingType getType() {
-        return type_;
-    }
-
-    std::string toString() const;
-
-private:
-    bool isMissing_;
-    MissingType type_;
-};
-
-
 class WithUserOptItem final {
 public:
     enum OptionType : uint8_t {
-        FIRST, LAST, EMAIL, PHONE
+        FIRST,
+        LAST,
+        EMAIL,
+        PHONE
     };
 
     WithUserOptItem(OptionType op, std::string *val) {
@@ -77,7 +49,7 @@ public:
         items_.emplace_back(item);
     }
 
-    std::vector<std::unique_ptr<WithUserOptItem>> getOpt() {
+    std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
         return std::move(items_);
     }
 
@@ -91,7 +63,10 @@ private:
 class RoleTypeClause final {
 public:
     enum RoleType : uint8_t {
-        GOD, ADMIN, USER, GUEST
+        GOD,
+        ADMIN,
+        USER,
+        GUEST
     };
 
     explicit RoleTypeClause(RoleType roleType) {
@@ -136,9 +111,9 @@ public:
     std::string toString() const;
 
 private:
-    bool isSet_;
-    std::unique_ptr<RoleTypeClause> type_;
-    std::unique_ptr<std::string> spaceName_;
+    bool                                  isSet_;
+    std::unique_ptr<RoleTypeClause>       type_;
+    std::unique_ptr<std::string>          spaceName_;
 };
 
 
@@ -150,24 +125,20 @@ public:
         kind_ = Kind::kCreateUser;
     }
 
-    bool isMissing() {
-        return missingOkClause_->isMissing();
-    }
-
     const std::string* getAccount() {
         return account_.get();
     }
 
-    const std::string* getPasswoed() {
+    const std::string* getPassword() {
         return password_.get();
     }
 
-    void setMissingOkClause(MissingOkClause* missingOkClause) {
-        missingOkClause_.reset(missingOkClause);
+    void setMissingOk(bool missingOk) {
+        missingOk_ = missingOk;
     }
 
-    void setMissingType(MissingOkClause::MissingType type) {
-        missingOkClause_->setType(type);
+    bool getMissingOk() {
+        return missingOk_;
     }
 
     void setOpts(WithUserOptList* withUserOpts) {
@@ -175,16 +146,16 @@ public:
     }
 
     const std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
-        return withUserOpts_->getOpt();
+        return withUserOpts_->getOpts();
     }
 
     std::string toString() const override;
 
 private:
+    bool                                  missingOk_{false};
     std::unique_ptr<std::string>          account_;
     std::unique_ptr<std::string>          password_;
     std::unique_ptr<WithUserOptList>      withUserOpts_;
-    std::unique_ptr<MissingOkClause>      missingOkClause_;
 };
 
 
@@ -204,7 +175,7 @@ public:
     }
 
     const std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
-        return withUserOpts_->getOpt();
+        return withUserOpts_->getOpts();
     }
 
     std::string toString() const override;
@@ -222,16 +193,12 @@ public:
         kind_ = Kind::kDropUser;
     }
 
-    bool isMissing() {
-        return missingOkClause_->isMissing();
+    void setMissingOk(bool missingOk) {
+        missingOk_ = missingOk;
     }
 
-    void setMissingOkClause(MissingOkClause *missingOkClause) {
-        missingOkClause_.reset(missingOkClause);
-    }
-
-    void setMissingType(MissingOkClause::MissingType type) {
-        missingOkClause_->setType(type);
+    bool getMissingOk() {
+        return missingOk_;
     }
 
     const std::string* getAccount() {
@@ -241,8 +208,8 @@ public:
     std::string toString() const override;
 
 private:
+    bool                                  missingOk_{false};
     std::unique_ptr<std::string>          account_;
-    std::unique_ptr<MissingOkClause>      missingOkClause_;
 };
 
 
