@@ -30,7 +30,7 @@ public:
 
     std::string toString() const override;
 
-    ShowType showType() const {
+    const ShowType showType() const {
         return showType_;
     }
 
@@ -52,7 +52,7 @@ public:
 
     std::string toString() const;
 
-    std::vector<HostAddr> toHosts() const {
+    const std::vector<HostAddr> toHosts() const {
         std::vector<HostAddr> result;
         result.resize(hostStrs_.size());
         auto getHostAddr = [] (const auto &ptr) {
@@ -77,7 +77,7 @@ public:
         hosts_.reset(hosts);
     }
 
-    std::vector<HostAddr> hosts() const {
+    const std::vector<HostAddr> hosts() const {
         return hosts_->toHosts();
     }
 
@@ -98,7 +98,7 @@ public:
         hosts_.reset(hosts);
     }
 
-    std::vector<HostAddr> hosts() const {
+    const std::vector<HostAddr> hosts() const {
         return hosts_->toHosts();
     }
 
@@ -161,7 +161,7 @@ public:
         }
     }
 
-    OptionType getOptType() {
+    const OptionType getOptType() {
         return optType_;
     }
 
@@ -197,7 +197,7 @@ public:
         kind_ = Kind::kCreateSpace;
     }
 
-    std::string* spaceName() {
+    const std::string* spaceName() const {
         return spaceName_.get();
     }
 
@@ -205,7 +205,7 @@ public:
         spaceOpts_.reset(spaceOpts);
     }
 
-    std::vector<std::unique_ptr<SpaceOptItem>> getOpts() {
+    const std::vector<std::unique_ptr<SpaceOptItem>> getOpts() {
         return spaceOpts_->getOpt();
     }
 
@@ -224,7 +224,7 @@ public:
         kind_ = Kind::kDropSpace;
     }
 
-    std::string* spaceName() {
+    const std::string* spaceName() const {
         return spaceName_.get();
     }
 

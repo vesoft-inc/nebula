@@ -29,7 +29,7 @@ public:
 private:
     AssignmentSentence                         *sentence_{nullptr};
     std::unique_ptr<TraverseExecutor>           executor_;
-    std::string                                *var_;
+    const std::string                          *var_;
 };
 
 

@@ -20,7 +20,7 @@ public:
 
     std::string toString() const;
 
-    std::vector<std::string*> properties() const {
+    const std::vector<std::string*> properties() const {
         std::vector<std::string*> result;
         result.resize(properties_.size());
         auto get = [] (const auto &ptr) { return ptr.get(); };
@@ -41,7 +41,7 @@ public:
 
     std::string toString() const;
 
-    std::vector<Expression*> values() const {
+    const std::vector<Expression*> values() const {
         std::vector<Expression*> result;
         result.resize(values_.size());
         auto get = [] (const auto &ptr) { return ptr.get(); };
@@ -65,7 +65,7 @@ public:
         return id_;
     }
 
-    std::vector<Expression*> values() const {
+    const std::vector<Expression*> values() const {
         return values_->values();
     }
 
@@ -91,7 +91,7 @@ public:
      * In the future, we might do deep copy to the plan,
      * of course excluding the volatile arguments in queries.
      */
-    std::vector<VertexRowItem*> rows() const {
+    const std::vector<VertexRowItem*> rows() const {
         std::vector<VertexRowItem*> result;
         result.resize(rows_.size());
         auto get = [] (const auto &ptr) { return ptr.get(); };
@@ -121,15 +121,15 @@ public:
         return overwritable_;
     }
 
-    std::string* vertex() const {
+    const std::string* vertex() const {
         return vertex_.get();
     }
 
-    std::vector<std::string*> properties() const {
+    const std::vector<std::string*> properties() const {
         return properties_->properties();
     }
 
-    std::vector<VertexRowItem*> rows() const {
+    const std::vector<VertexRowItem*> rows() const {
         return rows_->rows();
     }
 
@@ -171,7 +171,7 @@ public:
         return rank_;
     }
 
-    std::vector<Expression*> values() const {
+    const std::vector<Expression*> values() const {
         return values_->values();
     }
 
@@ -191,7 +191,7 @@ public:
         rows_.emplace_back(row);
     }
 
-    std::vector<EdgeRowItem*> rows() const {
+    const std::vector<EdgeRowItem*> rows() const {
         std::vector<EdgeRowItem*> result;
         result.resize(rows_.size());
         auto get = [] (const auto &ptr) { return ptr.get(); };
@@ -223,7 +223,7 @@ public:
         edge_.reset(edge);
     }
 
-    std::string* edge() const {
+    const std::string* edge() const {
         return edge_.get();
     }
 
@@ -231,7 +231,7 @@ public:
         properties_.reset(props);
     }
 
-    std::vector<std::string*> properties() const {
+    const std::vector<std::string*> properties() const {
         return properties_->properties();
     }
 
@@ -239,7 +239,7 @@ public:
         rows_.reset(rows);
     }
 
-    std::vector<EdgeRowItem*> rows() const {
+    const std::vector<EdgeRowItem*> rows() const {
         return rows_->rows();
     }
 
@@ -363,7 +363,7 @@ public:
         kind_ = Kind::kDeleteVertex;
     }
 
-    SourceNodeList* srcNodeLists() const {
+    const SourceNodeList* srcNodeLists() const {
         return srcNodeList_.get();
     }
 
@@ -371,7 +371,7 @@ public:
         whereClause_.reset(clause);
     }
 
-    WhereClause* whereClause() const {
+    const WhereClause* whereClause() const {
         return whereClause_.get();
     }
 
@@ -405,7 +405,7 @@ public:
         kind_ = Kind::kDeleteEdge;
     }
 
-    EdgeList* edgeList() const {
+    const EdgeList* edgeList() const {
         return edgeList_.get();
     }
 
@@ -413,7 +413,7 @@ public:
         whereClause_.reset(clause);
     }
 
-    WhereClause* whereClause() const {
+    const WhereClause* whereClause() const {
         return whereClause_.get();
     }
 

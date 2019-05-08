@@ -27,7 +27,7 @@ public:
 
 private:
     CreateSpaceSentence     *sentence_{nullptr};
-    std::string             *spaceName_{nullptr};
+    const std::string       *spaceName_{nullptr};
     int32_t                  partNum_{0};
     int32_t                  replicaFactor_{0};
 };
