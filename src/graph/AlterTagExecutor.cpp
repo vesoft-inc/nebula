@@ -44,7 +44,7 @@ void AlterTagExecutor::execute() {
         tagItems.emplace_back(std::move(tagItem));
     }
 
-    auto future = mc->alterTagSchema(spaceId, *name, tagItems);
+    auto future = mc->alterTagSchema(spaceId, *name, std::move(tagItems));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

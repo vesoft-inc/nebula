@@ -99,7 +99,7 @@ public:
                                                    std::string name,
                                                    nebula::cpp2::Schema schema);
 
-    // TODO(boshengchen) need refresh newestTagVerMap , tagNameIdMap and newestTagVerMap
+    // TODO(boshengchen) need refresh tagNameIdMap and newestTagVerMap
     folly::Future<StatusOr<TagID>> alterTagSchema(GraphSpaceID spaceId,
                                                   std::string name,
                                                   std::vector<cpp2::AlterTagItem> tagItems);
