@@ -131,7 +131,7 @@ public:
         }
     }
 
-    std::string getTtlCol() {
+    const std::string getTtlCol() {
         if (isString()) {
             return asString();
         } else {
@@ -140,7 +140,7 @@ public:
         }
     }
 
-    std::string getComment() {
+    const std::string getComment() {
         if (isString()) {
             return asString();
         } else {
@@ -149,7 +149,7 @@ public:
         }
     }
 
-    std::string getEngine() {
+    const std::string getEngine() {
         if (isString()) {
             return asString();
         } else {
@@ -158,7 +158,7 @@ public:
         }
     }
 
-    std::string getEncrypt() {
+    const std::string getEncrypt() {
         if (isString()) {
             return asString();
         } else {
@@ -167,7 +167,7 @@ public:
         }
     }
 
-    std::string getCompress() {
+    const std::string getCompress() {
         if (isString()) {
             return asString();
         } else {
@@ -176,7 +176,7 @@ public:
         }
     }
 
-    std::string getCharacterSet() {
+    const std::string getCharacterSet() {
         if (isString()) {
             return asString();
         } else {
@@ -185,7 +185,7 @@ public:
         }
     }
 
-    std::string getCollate() {
+    const std::string getCollate() {
         if (isString()) {
             return asString();
         } else {
@@ -212,8 +212,12 @@ public:
         items_.emplace_back(item);
     }
 
-    std::vector<std::unique_ptr<SchemaOptItem>> getOpt() {
-        return std::move(items_);
+    std::vector<SchemaOptItem*> getOpts() const {
+        std::vector<SchemaOptItem*> result;
+        result.resize(items_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(items_.begin(), items_.end(), result.begin(), get);
+        return result;
     }
 
     std::string toString() const;
@@ -244,8 +248,8 @@ public:
         return columns_->columnSpecs();
     }
 
-    std::vector<std::unique_ptr<SchemaOptItem>> getSchemaOpts() {
-        return schemaOpts_->getOpt();
+    std::vector<SchemaOptItem*> getSchemaOpts() {
+        return schemaOpts_->getOpts();
     }
 
 private:
@@ -276,8 +280,8 @@ public:
         return columns_->columnSpecs();
     }
 
-    std::vector<std::unique_ptr<SchemaOptItem>> getSchemaOpts() {
-        return schemaOpts_->getOpt();
+    std::vector<SchemaOptItem*> getSchemaOpts() {
+        return schemaOpts_->getOpts();
     }
 
 private:
@@ -363,8 +367,8 @@ public:
         return opts_->alterTagItems();
     }
 
-    std::vector<std::unique_ptr<SchemaOptItem>> getSchemaOpts() {
-        return schemaOpts_->getOpt();
+    std::vector<SchemaOptItem*> getSchemaOpts() {
+        return schemaOpts_->getOpts();
     }
 
 private:
@@ -395,8 +399,8 @@ public:
         return columns_->columnSpecs();
     }
 
-    std::vector<std::unique_ptr<SchemaOptItem>> getSchemaOpts() {
-        return schemaOpts_->getOpt();
+    std::vector<SchemaOptItem*> getSchemaOpts() {
+        return schemaOpts_->getOpts();
     }
 
 private:
