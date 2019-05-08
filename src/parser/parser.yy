@@ -598,6 +598,9 @@ insert_vertex_sentence
     : KW_INSERT KW_VERTEX vertex_tag_list KW_VALUES vertex_row_list {
         $$ = new InsertVertexSentence($3, $5);
     }
+    | KW_INSERT KW_VERTEX KW_NO KW_OVERWRITE vertex_tag_list KW_VALUES vertex_row_list {
+        $$ = new InsertVertexSentence($5, $7, false /* not overwritable */);
+    }
     ;
 
 vertex_tag_list
