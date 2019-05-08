@@ -15,17 +15,18 @@ std::string CreateTagSentence::toString() const {
     buf += "CREATE TAG ";
     buf += *name_;
     buf += " (";
+    std::vector<std::string> colStrs;
     for (auto *col : columns_->columnSpecs()) {
-        buf += *col->name();
-        buf += " ";
-        buf += columnTypeToString(col->type());
+        std::string colStr = *col->name();
+        colStr += " ";
+        colStr += columnTypeToString(col->type());
         if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
+            colStr += " TTL = ";
+            colStr += std::to_string(col->ttl());
         }
-        buf += ",";
+        colStrs.push_back(colStr);
     }
-    buf.resize(buf.size() - 1);
+    buf += folly::join(",", colStrs);
     buf += ")";
     return buf;
 }
@@ -37,17 +38,18 @@ std::string CreateEdgeSentence::toString() const {
     buf += "CREATE EDGE ";
     buf += *name_;
     buf += " (";
+    std::vector<std::string> colStrs;
     for (auto &col : columns_->columnSpecs()) {
-        buf += *col->name();
-        buf += " ";
-        buf += columnTypeToString(col->type());
+        std::string colStr = *col->name();
+        colStr += " ";
+        colStr += columnTypeToString(col->type());
         if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
+            colStr += " TTL = ";
+            colStr += std::to_string(col->ttl());
         }
-        buf += ",";
+        colStrs.push_back(colStr);
     }
-    buf.resize(buf.size() - 1);
+    buf += folly::join(",", colStrs);
     buf += ")";
     return buf;
 }
@@ -58,33 +60,29 @@ std::string AlterTagOptItem::toString() const {
     buf.reserve(256);
     buf += getOptTypeStr();
     buf += " (";
+    std::vector<std::string> colStrs;
     for (auto &col : columns_->columnSpecs()) {
-        buf += *col->name();
-        buf += " ";
-        buf += columnTypeToString(col->type());
+        std::string colStr = *col->name();
+        colStr += " ";
+        colStr += columnTypeToString(col->type());
         if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
+            colStr += " TTL = ";
+            colStr += std::to_string(col->ttl());
         }
-        buf += ",";
+        colStrs.push_back(colStr);
     }
-    buf.resize(buf.size() - 1);
+    buf += folly::join(",", colStrs);
     buf += ")";
     return buf;
 }
 
 
 std::string AlterTagOptList::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    for (uint32_t i = 0; i < alterTagitems_.size(); i++) {
-        auto &item = alterTagitems_[i];
-        if (i > 0) {
-            buf += ",";
-        }
-        buf += item->toString();
+    std::vector<std::string> alterTagStrs;
+    for (auto &item : alterTagitems_) {
+        alterTagStrs.push_back(item->toString());
     }
-    return buf;
+    return folly::join(",", alterTagStrs);;
 }
 
 std::string AlterTagSentence::toString() const {
@@ -106,17 +104,18 @@ std::string AlterEdgeSentence::toString() const {
     buf += "ALTER EDGE ";
     buf += *name_;
     buf += "(";
+    std::vector<std::string> colStrs;
     for (auto &col : columns_->columnSpecs()) {
-        buf += *col->name();
-        buf += " ";
-        buf += columnTypeToString(col->type());
+        std::string colStr = *col->name();
+        colStr += " ";
+        colStr += columnTypeToString(col->type());
         if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
+            colStr += " TTL = ";
+            colStr += std::to_string(col->ttl());
         }
-        buf += ",";
+        colStrs.push_back(colStr);
     }
-    buf.resize(buf.size() - 1);
+    buf += folly::join(",", colStrs);
     buf += ")";
     return buf;
 }

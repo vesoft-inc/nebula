@@ -651,13 +651,12 @@ std::string FunctionCallExpression::toString() const {
     buf.reserve(256);
     buf += *name_;
     buf += "(";
+
+    std::vector<std::string> argStrs;
     for (auto &arg : args_) {
-        buf += arg->toString();
-        buf += ",";
+        argStrs.push_back(arg->toString());
     }
-    if (!args_.empty()) {
-        buf.resize(buf.size() - 1);
-    }
+    buf += folly::join(",", argStrs);
     buf += ")";
     return buf;
 }

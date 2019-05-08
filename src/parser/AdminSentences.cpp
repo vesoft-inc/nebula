@@ -37,7 +37,9 @@ std::string HostList::toString() const {
         buf += std::to_string(host->second);
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -76,14 +78,11 @@ std::string SpaceOptItem::toString() const {
 
 
 std::string SpaceOptList::toString() const {
-    std::string buf;
-    buf.reserve(256);
+    std::vector<std::string> spaceOpts;
     for (auto &item : items_) {
-        buf += item->toString();
-        buf += ",";
+        spaceOpts.push_back(item->toString());
     }
-    buf.resize(buf.size()-1);
-    return buf;
+    retutrn  = folly::join(",", spaceOpts);
 }
 
 
