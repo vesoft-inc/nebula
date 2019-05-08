@@ -68,25 +68,15 @@ If the answers to the above are YES, then Nebula would be a great fit for your a
 
 ## Nebula compared to other DBs
 
- | Nebula Graph | Dgraph | TigerGraph | JanusGraph | Neo4j
-- | :-: | -:
-Goal | General Online Graph DB | Knowledge Graph DB | General Online Graph DB | General Offline Graph DB | General Online Graph DB
-Perf. (2-hop) | < 10ms | 10 - 20ms | 10 - 20ms | ~100ms | < 10ms
-Perf. (2-hop with filters) | ~10ms | >20ms | >20ms | > 100ms | < 20ms
-Arch. | Symmetrically distributed | Symmetrically distributed | Asymmetrically distributed | External | Nondistributed
-Storage | RocksDB | Badger | In-house? | Hbase / Cassandra | In-memory / Disk persistence
-Query Lang. | SQL-like | GraphQL (XML based) | Functional GQL | Gremlin | Cyther
-ACID | Yes | Yes | No? | Yes | No
-
-| | Nebula Graph | Dgraph | TigerGraph | JanusGraph | Neo4j
-|------|---|
-| Goal | General Online Graph DB | Knowledge Graph DB | General Online Graph DB | General Offline Graph DB | General Online Graph DB
-| Perf. (2-hop) | < 10ms | 10 - 20ms | 10 - 20ms | ~100ms | < 10ms
-| Perf. (2-hop with filters) | ~10ms | >20ms | >20ms | > 100ms | < 20ms
-| Arch. | Symmetrically distributed | Symmetrically distributed | Asymmetrically distributed | External | Nondistributed
-| Storage | RocksDB | Badger | In-house? | Hbase / Cassandra | In-memory / Disk persistence
-| Query Lang. | SQL-like | GraphQL (XML based) | Functional GQL | Gremlin | Cyther
-| ACID | Yes | Yes | No? | Yes | No
+|    | Nebula Graph | Dgraph | TigerGraph | JanusGraph | Neo4j |
+| --- | ----         | ---    | ----       | ---------- | ----- |
+| Goal | General Online Graph DB | Knowledge Graph DB | General Online Graph DB | General Offline Graph DB | General Online Graph DB |
+| Perf. (2-hop) | < 10ms | 10 - 20ms | 10 - 20ms | ~100ms | < 10ms |
+| Perf. (2-hop with filters) | ~10ms | >20ms | >20ms | > 100ms | < 20ms |
+| Arch. | Symmetrically distributed | Symmetrically distributed | Asymmetrically distributed | External | Nondistributed |
+| Storage | RocksDB | Badger | In-house? | Hbase / Cassandra | In-memory / Disk persistence |
+| Query Lang. | SQL-like | GraphQL (XML based) | Functional GQL | Gremlin | Cyther|
+| ACID | Yes | Yes | No? | Yes | No |
 
 
 ## Users
