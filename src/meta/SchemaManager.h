@@ -55,6 +55,8 @@ public:
 
     virtual EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) = 0;
 
+    virtual Status checkSpaceExist(folly::StringPiece spaceName) = 0;
+
     virtual void init(MetaClient *client = nullptr) = 0;
 
 protected:
@@ -109,6 +111,8 @@ public:
 
     EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
+    Status checkSpaceExist(folly::StringPiece spaceName) override;
+
     void init(MetaClient *client = nullptr) override { UNUSED(client); }
 
 protected:
@@ -123,6 +127,9 @@ protected:
                        // version -> schema
                        std::map<SchemaVer, std::shared_ptr<const SchemaProviderIf>>>
         edgeSchemas_;
+
+    folly::RWSpinLock spaceLock_;
+    std::set<GraphSpaceID> spaces_;
 };
 
 }  // namespace meta

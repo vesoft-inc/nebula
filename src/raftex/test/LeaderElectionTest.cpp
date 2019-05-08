@@ -19,9 +19,9 @@
 namespace nebula {
 namespace raftex {
 
-TEST(LeaderElection, ElectionAfterBoot) {
-    LOG(INFO) << "=====> Start ElectionAfterBoot test";
-    fs::TempDir walRoot("/tmp/election_after_boot.XXXXXX");
+TEST(LeaderElection, ElectionWithThreeCopies) {
+    LOG(INFO) << "=====> Start ElectionWithThreeCopies test";
+    fs::TempDir walRoot("/tmp/election_with_three_copies.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
     std::vector<HostAddr> allHosts;
@@ -29,14 +29,35 @@ TEST(LeaderElection, ElectionAfterBoot) {
     std::vector<std::shared_ptr<test::TestShard>> copies;
 
     std::shared_ptr<test::TestShard> leader;
-    setupRaft(walRoot, workers, wals, allHosts, services, copies, leader);
+    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
     finishRaft(services, copies, workers, leader);
 
-    LOG(INFO) << "<===== Done ElectionAfterBoot test";
+    LOG(INFO) << "<===== Done ElectionWithThreeCopies test";
+}
+
+
+TEST(LeaderElection, ElectionWithOneCopy) {
+    LOG(INFO) << "=====> Start ElectionWithOneCopy test";
+    fs::TempDir walRoot("/tmp/election_with_one_copy.XXXXXX");
+    std::shared_ptr<thread::GenericThreadPool> workers;
+    std::vector<std::string> wals;
+    std::vector<HostAddr> allHosts;
+    std::vector<std::shared_ptr<RaftexService>> services;
+    std::vector<std::shared_ptr<test::TestShard>> copies;
+
+    std::shared_ptr<test::TestShard> leader;
+    setupRaft(1, walRoot, workers, wals, allHosts, services, copies, leader);
+
+    // Check all hosts agree on the same leader
+    checkLeadership(copies, leader);
+
+    finishRaft(services, copies, workers, leader);
+
+    LOG(INFO) << "<===== Done ElectionWithOneCopy test";
 }
 
 
@@ -51,7 +72,7 @@ TEST(LeaderElection, LeaderCrash) {
     std::vector<std::shared_ptr<test::TestShard>> copies;
 
     std::shared_ptr<test::TestShard> leader;
-    setupRaft(walRoot, workers, wals, allHosts, services, copies, leader);
+    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);

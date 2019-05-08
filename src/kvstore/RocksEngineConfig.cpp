@@ -35,9 +35,9 @@ DEFINE_string(rocksdb_block_based_table_options,
               "BlockBasedTableOptions, each option will be given "
               "as <option_name>:<option_value> separated by ;");
 
-DEFINE_uint32(batch_reserved_bytes,
-              4 * 1024,
-              "default reserved bytes for one batch operation");
+DEFINE_int32(batch_reserved_bytes,
+             4 * 1024,
+             "default reserved bytes for one batch operation");
 
 DEFINE_string(part_man_type,
               "memory",

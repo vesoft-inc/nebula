@@ -12,6 +12,7 @@
 #   NEBULA_GPERF_BIN_DIR    -- Specify the full path to the directory
 #                              containing gperf binary
 #   NEBULA_FLEX_ROOT        -- Specify the root directory for flex
+#   NEBULA_BISON_ROOT       -- Specify the root directory for bison
 #   NEBULA_READLINE_ROOT    -- Specify the root directory for readline
 #   NEBULA_NCURSES_ROOT     -- Specify the root directory for ncurses
 #   NEBULA_KRB5_ROOT        -- Specify the root directory for KRB5
@@ -118,6 +119,12 @@ if(NOT ${NEBULA_FLEX_ROOT} STREQUAL "")
     list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_FLEX_ROOT}/bin)
 endif()
 
+if(NOT ${NEBULA_BISON_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_BISON_ROOT: " ${NEBULA_BISON_ROOT})
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_BISON_ROOT}/lib)
+    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_BISON_ROOT}/bin)
+endif()
+
 if(NOT ${NEBULA_GPERF_BIN_DIR} STREQUAL "")
     message(STATUS "Specified NEBULA_GPERF_BIN_DIR: " ${NEBULA_GPERF_BIN_DIR})
     list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_GPERF_BIN_DIR})
@@ -127,10 +134,12 @@ option(asan "Whether to turn AddressSanitizer ON or OFF" OFF)
 
 message(STATUS "ASAN: ${asan}")
 
-
-message(STATUS "CMAKE_INCLUDE_PATH: " ${CMAKE_INCLUDE_PATH})
-message(STATUS "CMAKE_LIBRARY_PATH: " ${CMAKE_LIBRARY_PATH})
-message(STATUS "CMAKE_PROGRAM_PATH: " ${CMAKE_PROGRAM_PATH})
+string(REPLACE ";" ":" INCLUDE_PATH_STR "${CMAKE_INCLUDE_PATH}")
+string(REPLACE ";" ":" LIBRARY_PATH_STR "${CMAKE_LIBRARY_PATH}")
+string(REPLACE ";" ":" PROGRAM_PATH_STR "${CMAKE_PROGRAM_PATH}")
+message(STATUS "CMAKE_INCLUDE_PATH: " ${INCLUDE_PATH_STR})
+message(STATUS "CMAKE_LIBRARY_PATH: " ${LIBRARY_PATH_STR})
+message(STATUS "CMAKE_PROGRAM_PATH: " ${PROGRAM_PATH_STR})
 
 find_package(Boost REQUIRED)
 find_package(OpenSSL REQUIRED)
@@ -146,7 +155,6 @@ if(NOT asan AND NOT ENABLE_NATIVE)
     find_package(PCHSupport)
     add_compile_options(-Winvalid-pch)
 endif()
-
 
 add_compile_options(-Wall)
 add_compile_options(-Werror)
@@ -248,6 +256,22 @@ else()
     set(JEMALLOC_LIB jemalloc)
 endif()
 
+execute_process(
+    COMMAND ldd --version
+    COMMAND head -1
+    COMMAND cut -d ")" -f 2
+    COMMAND cut -d " " -f 2
+    OUTPUT_VARIABLE GLIBC_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+message(STATUS "Glibc version is " ${GLIBC_VERSION})
+
+if (GLIBC_VERSION VERSION_LESS "2.17")
+    set(GETTIME_LIB rt)
+else()
+    set(GETTIME_LIB)
+endif()
+
 # A wrapper for target_link_libraries()
 macro(nebula_link_libraries target)
     target_link_libraries(
@@ -270,6 +294,7 @@ macro(nebula_link_libraries target)
         ${JEMALLOC_LIB}
         ${LIBUNWIND_LIBRARIES}
         dl
+        ${GETTIME_LIB}
         -pthread
     )
 endmacro(nebula_link_libraries)

@@ -31,8 +31,10 @@ namespace graph {
 
 class ExecutionEngine final : public cpp::NonCopyable, public cpp::NonMovable {
 public:
-    explicit ExecutionEngine(std::unique_ptr<storage::StorageClient> storage);
+    ExecutionEngine();
     ~ExecutionEngine();
+
+    Status init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
 
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
     void execute(RequestContextPtr rctx);
