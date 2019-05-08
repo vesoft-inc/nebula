@@ -37,7 +37,8 @@ enum ErrorCode {
 enum AlterTagOp {
     ADD = 0x01,
     SET = 0x02,
-    DROP = 0x03
+    DROP = 0x03,
+    UNKNOWN = 0x04,
 } (cpp.enum_strict)
 
 
