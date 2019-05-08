@@ -147,7 +147,7 @@ struct ListTagsResp {
 struct ReadTagReq {
     1: common.GraphSpaceID space_id,
     2: common.TagID        tag_id,
-    3: i64                 version,
+    3: common.SchemaVer    version,
 }
 
 struct GetTagResp {
@@ -181,7 +181,7 @@ struct ListEdgesResp {
 struct GetEdgeReq {
     1: common.GraphSpaceID space_id,
     2: common.EdgeType     edge_type,
-    3: i64                 version,
+    3: common.SchemaVer    version,
 }
 
 struct GetEdgeResp {
