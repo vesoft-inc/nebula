@@ -51,7 +51,11 @@ Please make sure the services are working.
 
 `--u` and `--p` are used to specify the user name and password, `user` and `password` are the default authority.
  
-Run `bin/nebula --port=3699 --u=user --p=password` to connect to the graph server.
+Run
+
+`bin/nebula --port=3699 --u=user --p=password`
+
+to connect to the graph server.
 
 One easier way to start console is to run
 
@@ -181,6 +185,20 @@ The Schema looks like :
 		}
 	}
 }
+```
+
+You can create both tag and edge's schema:
+
+```
+// create tags schema: players and teams:
+create TAG player(name string, age int)
+
+create TAG team(name string)
+
+// create edges schema: players and teams:
+create EDGE like(likeness int)
+
+create EDGE serve(start_year int, end_year int)
 ```
 
 The insert sentences look like the following commands.
