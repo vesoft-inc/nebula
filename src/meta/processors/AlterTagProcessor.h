@@ -26,7 +26,7 @@ private:
 
     cpp2::ErrorCode alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
                                     const nebula::cpp2::ColumnDef col,
-                                    const cpp2::AlterTagOp op);
+                                    const cpp2::AlterOp op);
 };
 
 }  // namespace meta

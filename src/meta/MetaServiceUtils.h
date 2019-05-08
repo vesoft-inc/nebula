@@ -60,8 +60,6 @@ public:
 
     static int64_t parseEdgeVersion(folly::StringPiece key);
 
-    static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
-
     static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version);
 
     static int64_t parseTagVersion(folly::StringPiece key);
@@ -79,8 +77,6 @@ public:
     static std::string indexTagKey(GraphSpaceID spaceId, const std::string& name);
 
     static std::string indexEdgeKey(GraphSpaceID spaceId, const std::string& name);
-
-    static std::string edgeIndexKey(GraphSpaceID spaceId, const std::string& name);
 
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 };

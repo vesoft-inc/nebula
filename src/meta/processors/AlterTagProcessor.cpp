@@ -66,9 +66,9 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
 
 cpp2::ErrorCode AlterTagProcessor::alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
                                                    const nebula::cpp2::ColumnDef col,
-                                                   const cpp2::AlterTagOp op) {
+                                                   const cpp2::AlterOp op) {
     switch (op) {
-        case cpp2::AlterTagOp::ADD :
+        case cpp2::AlterOp::ADD :
         {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (it->get_name() == col.get_name()) {
@@ -79,7 +79,7 @@ cpp2::ErrorCode AlterTagProcessor::alterColumnDefs(std::vector<nebula::cpp2::Col
             cols.push_back(std::move(col));
             return cpp2::ErrorCode::SUCCEEDED;
         }
-        case cpp2::AlterTagOp::SET :
+        case cpp2::AlterOp::SET :
         {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (col.get_name() == it->get_name()) {
@@ -89,7 +89,7 @@ cpp2::ErrorCode AlterTagProcessor::alterColumnDefs(std::vector<nebula::cpp2::Col
             }
             break;
         }
-        case cpp2::AlterTagOp::DROP :
+        case cpp2::AlterOp::DROP :
         {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (col.get_name() == it->get_name()) {

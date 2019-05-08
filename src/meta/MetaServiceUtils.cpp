@@ -136,14 +136,6 @@ std::string MetaServiceUtils::schemaEdgeKey(GraphSpaceID spaceId,
     return key;
 }
 
-std::string MetaServiceUtils::schemaEdgesPrefix(GraphSpaceID spaceId) {
-    std::string key;
-    key.reserve(kEdgesTable.size() + sizeof(GraphSpaceID));
-    key.append(kEdgesTable.data(), kEdgesTable.size());
-    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
-    return key;
-}
-
 std::string MetaServiceUtils::schemaEdgeVal(const std::string& name, nebula::cpp2::Schema schema) {
     int32_t len = name.size();
     std::string val, sval;

@@ -28,7 +28,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     TagID tagId = autoIncrementId();
     data.emplace_back(MetaServiceUtils::indexTagKey(req.get_space_id(), req.get_tag_name()),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
-    LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId;
+    VLOG(3) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, 0),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);

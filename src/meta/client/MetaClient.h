@@ -95,18 +95,24 @@ public:
     getPartsAlloc(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<TagID>> createTagSchema(GraphSpaceID spaceId,
-                                                   std::string name,
-                                                   nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<TagID>>
+    createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
 
-    folly::Future<StatusOr<std::vector<cpp2::TagItem>>> listTagSchemas(GraphSpaceID spaceId);
+    folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
+    listTagSchemas(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<EdgeType>> createEdgeSchema(GraphSpaceID spaceId,
-                                                       std::string name,
-                                                       nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<EdgeType>>
+    createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
 
-    folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>> listEdgeSchemas(GraphSpaceID spaceId);
+    folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
+    listEdgeSchemas(GraphSpaceID spaceId);
+
+    folly::Future<StatusOr<bool>>
+    getEdgeSchema(GraphSpaceID spaceId, std::string edgeName, SchemaVer version);
+
+    folly::Future<StatusOr<bool>>
+    removeEdgeSchema(GraphSpaceID spaceId, std::string edgeName);
 
     // These are the interfaces about cache opeartions.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
@@ -161,7 +167,7 @@ public:
     removeRange(std::string segment, std::string start, std::string end);
 
     folly::Future<StatusOr<bool>>
-    getEdge(std::string spaceName, std::string edgeName, int32_t version);
+    getEdge(std::string spaceName, std::string edgeName, SchemaVer version);
 
     folly::Future<StatusOr<bool>>
     removeEdge(std::string spaceName, std::string edgeName);

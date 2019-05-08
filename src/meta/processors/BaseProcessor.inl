@@ -208,7 +208,7 @@ StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::s
 
 template<typename RESP>
 StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId, const std::string& name) {
-    auto indexKey = MetaServiceUtils::edgeIndexKey(spaceId, name);
+    auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, name);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
         return *reinterpret_cast<const EdgeType*>(ret.value().c_str());

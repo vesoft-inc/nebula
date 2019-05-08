@@ -30,9 +30,8 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto tagName = val.subpiece(sizeof(int32_t), nameLen).str();
         auto schema = MetaServiceUtils::parseSchema(val);
-        cpp2::TagItem tagItem(apache::thrift::FragileConstructor::FRAGILE,
-                              tagID, tagName, vers, schema);
-        tags.emplace_back(std::move(tagItem));
+        tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                          tagID, tagName, vers, schema);
         iter->next();
     }
     resp_.set_tags(std::move(tags));

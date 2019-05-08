@@ -33,9 +33,9 @@ enum ErrorCode {
 } (cpp.enum_strict)
 
 
-enum AlterTagOp {
-    ADD = 0x01,
-    SET = 0x02,
+enum AlterOp {
+    ADD  = 0x01,
+    SET  = 0x02,
     DROP = 0x03
 } (cpp.enum_strict)
 
@@ -64,7 +64,7 @@ struct TagItem {
 }
 
 struct AlterTagItem {
-    1: AlterTagOp           op,
+    1: AlterOp              op,
     2: common.Schema        schema,
 }
 
@@ -75,11 +75,9 @@ struct EdgeItem {
     4: common.Schema        schema,
 }
 
-struct EdgeItem {
-    1: common.EdgeType      edge_type,
-    2: string               edge_name,
-    3: i32                  version,
-    4: common.Schema        schema,
+struct AlterEdgeItem {
+    1: AlterOp              op,
+    2: common.Schema        schema,
 }
 
 struct ExecResp {
@@ -150,10 +148,10 @@ struct ListTagsResp {
     3: list<TagItem> tags,
 }
 
-struct ReadTagReq {
+struct GetTagReq {
     1: common.GraphSpaceID space_id,
     2: common.TagID        tag_id,
-    3: i64                 version,
+    3: common.SchemaVer    version,
 }
 
 struct GetTagResp {
@@ -168,9 +166,15 @@ struct CreateEdgeReq {
     3: common.Schema       schema,
 }
 
+struct AlterEdgeReq {
+     1: common.GraphSpaceID   space_id,
+     2: string                edge_name,
+     3: list<AlterEdgeItem>   edge_items,
+}
+
 struct RemoveEdgeReq {
-    1: string   space_name,
-    2: string   edge_name,
+    1: common.GraphSpaceID  space_id,
+    2: string               edge_name,
 }
 
 struct ListEdgesReq {
@@ -185,9 +189,9 @@ struct ListEdgesResp {
 }
 
 struct GetEdgeReq {
-    1: string  space_name,
-    2: string  edge_name,
-    3: i64     version,
+    1: common.GraphSpaceID  space_id,
+    2: string               edge_name,
+    3: common.SchemaVer     version,
 }
 
 struct GetEdgeResp {
@@ -296,10 +300,11 @@ service MetaService {
     ExecResp createTag(1: CreateTagReq req);
     ExecResp alterTag(1: AlterTagReq req);
     ExecResp removeTag(1: RemoveTagReq req);
-    GetTagResp getTag(1: ReadTagReq req);
+    GetTagResp getTag(1: GetTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);
 
     ExecResp createEdge(1: CreateEdgeReq req);
+    ExecResp alterEdge(1: AlterEdgeReq req);
     ExecResp removeEdge(1: RemoveEdgeReq req);
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);

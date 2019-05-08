@@ -26,7 +26,6 @@ add_library(
     processors/GetTagProcessor.cpp
     processors/ListTagsProcessor.cpp
     processors/RemoveTagProcessor.cpp
-    processors/AddEdgeProcessor.cpp
     processors/GetEdgeProcessor.cpp
     processors/ListEdgesProcessor.cpp
     processors/RemoveEdgeProcessor.cpp

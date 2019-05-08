@@ -10,10 +10,8 @@ namespace nebula {
 namespace meta {
 
 void RemoveEdgeProcessor::process(const cpp2::RemoveEdgeReq& req) {
-    GraphSpaceID spaceId;
     EdgeType edgeType;
-    GET_SPACE_ID_AND_RETURN(req.get_space_name(), spaceId);
-    GET_EDGE_TYPE_AND_RETURN(spaceId, req.get_edge_name(), edgeType);
+    GET_EDGE_TYPE_AND_RETURN(req.get_space_id(), req.get_edge_name(), edgeType);
 UNUSED(edgeType);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
 }

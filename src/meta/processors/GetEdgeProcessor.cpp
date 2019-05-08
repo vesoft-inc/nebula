@@ -10,25 +10,23 @@ namespace nebula {
 namespace meta {
 
 void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
-    GraphSpaceID spaceId;
     EdgeType edgeType;
-    GET_SPACE_ID_AND_RETURN(req.get_space_name(), spaceId);
-    GET_EDGE_TYPE_AND_RETURN(spaceId, req.get_edge_name(), edgeType);
+    GET_EDGE_TYPE_AND_RETURN(req.get_space_id(), req.get_edge_name(), edgeType);
 
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
-    std::string edgeKey = MetaServiceUtils::schemaEdgeKey(spaceId,
+    std::string edgeKey = MetaServiceUtils::schemaEdgeKey(req.get_space_id(),
                                                           edgeType,
                                                           req.get_version());
     auto ret = doGet(std::move(edgeKey));
     if (!ret.ok()) {
-        LOG(ERROR) << "Get Edge Failed : SpaceName " << req.get_space_name() << ", EdgeName "
+        LOG(ERROR) << "Get Edge Failed : Space " << req.get_space_id() << ", Edge "
                    << req.get_edge_name() << ", version " << req.get_version();
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    LOG(INFO) << "Get Edge : SpaceName" << req.get_space_name() << ", EdgeName "
-              << req.get_edge_name() << ", version " << req.get_version();
+    VLOG(3) << "Get Edge : Space" << req.get_space_id() << ", Edge "
+            << req.get_edge_name() << ", version " << req.get_version();
     resp_.set_schema(MetaServiceUtils::parseSchema(ret.value()));
     onFinished();
 }

@@ -451,35 +451,6 @@ MetaClient::removeRange(std::string segment, std::string start, std::string end)
                 });
 }
 
-folly::Future<StatusOr<bool>>
-MetaClient::getEdge(std::string spaceName, std::string edgeName, int32_t version) {
-    CHECK_PARAMETER_AND_RETURN_STATUS(spaceName);
-    CHECK_PARAMETER_AND_RETURN_STATUS(edgeName);
-    cpp2::GetEdgeReq req;
-    req.set_space_name(std::move(spaceName));
-    req.set_edge_name(std::move(edgeName));
-    req.set_version(version);
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_getEdge(request);
-                }, [] (cpp2::GetEdgeResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
-}
-
-folly::Future<StatusOr<bool>>
-MetaClient::removeEdge(std::string spaceName, std::string edgeName) {
-    CHECK_PARAMETER_AND_RETURN_STATUS(spaceName);
-    CHECK_PARAMETER_AND_RETURN_STATUS(edgeName);
-    cpp2::RemoveEdgeReq req;
-    req.set_space_name(std::move(spaceName));
-    req.set_edge_name(std::move(edgeName));
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_removeEdge(request);
-                }, [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
-}
-
 std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& tHosts) {
     std::vector<HostAddr> hosts;
     hosts.resize(tHosts.size());
@@ -706,6 +677,33 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     }, [this] (cpp2::ListEdgesResp&& resp) -> decltype(auto) {
         return std::move(resp).get_edges();
     });
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string edgeName, SchemaVer version) {
+    CHECK_PARAMETER_AND_RETURN_STATUS(edgeName);
+    cpp2::GetEdgeReq req;
+    req.set_space_id(std::move(spaceId));
+    req.set_edge_name(std::move(edgeName));
+    req.set_version(version);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_getEdge(request);
+                }, [] (cpp2::GetEdgeResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
+                });
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::removeEdgeSchema(GraphSpaceID spaceId, std::string edgeName) {
+    CHECK_PARAMETER_AND_RETURN_STATUS(edgeName);
+    cpp2::RemoveEdgeReq req;
+    req.set_space_id(std::move(spaceId));
+    req.set_edge_name(std::move(edgeName));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_removeEdge(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
+                });
 }
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>>
