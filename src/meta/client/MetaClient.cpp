@@ -655,7 +655,7 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
     req.set_space_id(std::move(spaceId));
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listTags(request);
-    }, [this] (cpp2::ListTagsResp&& resp) -> decltype(auto){
+    }, [] (cpp2::ListTagsResp&& resp) -> decltype(auto){
         return std::move(resp).get_tags();
     });
 }
@@ -679,7 +679,7 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     req.set_space_id(std::move(spaceId));
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listEdges(request);
-    }, [this] (cpp2::ListEdgesResp&& resp) -> decltype(auto) {
+    }, [] (cpp2::ListEdgesResp&& resp) -> decltype(auto) {
         return std::move(resp).get_edges();
     });
 }
