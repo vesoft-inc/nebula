@@ -2,7 +2,7 @@
 
 High-performance, Distributed, Open source Graph Database.
 
-Nebula is a horizontally scalable and distributed graph database, providing ACID transactions, consistent replication and linearizable reads. Nebula uses nGQL, a declarative, textual query language like SQL. 
+Nebula is a horizontally scalable and distributed graph database, providing ACID transactions, consistent replication and linearizable reads. Nebula uses nGQL, a declarative, textual query language like SQL.
 
 Nebula's goal is to provide reading, writing, and computing with high concurrency, low latency for super large scale networks. Nebula is an open source project and we are looking forward to working with the community to popularize and promote the graph database.
 
@@ -77,6 +77,17 @@ Arch. | Symmetrically distributed | Symmetrically distributed | Asymmetrically d
 Storage | RocksDB | Badger | In-house? | Hbase / Cassandra | In-memory / Disk persistence
 Query Lang. | SQL-like | GraphQL (XML based) | Functional GQL | Gremlin | Cyther
 ACID | Yes | Yes | No? | Yes | No
+
+| | Nebula Graph | Dgraph | TigerGraph | JanusGraph | Neo4j
+|------|---|
+| Goal | General Online Graph DB | Knowledge Graph DB | General Online Graph DB | General Offline Graph DB | General Online Graph DB
+| Perf. (2-hop) | < 10ms | 10 - 20ms | 10 - 20ms | ~100ms | < 10ms
+| Perf. (2-hop with filters) | ~10ms | >20ms | >20ms | > 100ms | < 20ms
+| Arch. | Symmetrically distributed | Symmetrically distributed | Asymmetrically distributed | External | Nondistributed
+| Storage | RocksDB | Badger | In-house? | Hbase / Cassandra | In-memory / Disk persistence
+| Query Lang. | SQL-like | GraphQL (XML based) | Functional GQL | Gremlin | Cyther
+| ACID | Yes | Yes | No? | Yes | No
+
 
 ## Users
 - ** Nebula official documentation is present at** *** our official website.
