@@ -24,6 +24,9 @@ DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DEFINE_bool(mock_server, true, "start mock server");
 DEFINE_bool(daemonize, true, "Whether to run the process as a daemon");
 DEFINE_string(pid_file, "pids/nebula-storaged.pid", "File to hold the process id");
+DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
+                                     "the format looks like ip1:port1, ip2:port2, ip3:port3");
+DEFINE_int32(io_handlers, 10, "io handlers");
 
 using nebula::Status;
 using nebula::HostAddr;
@@ -72,23 +75,37 @@ int main(int argc, char *argv[]) {
     }
 
     if (FLAGS_data_path.empty()) {
-        LOG(FATAL) << "Storage Data Path should not empty";
-        return -1;
+        LOG(ERROR) << "Storage Data Path should not empty";
+        return EXIT_FAILURE;
     }
-    LOG(INFO) << "Starting the storage Daemon on port " << FLAGS_port
-              << ", dataPath " << FLAGS_data_path;
 
+    auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
+    if (!result.ok()) {
+        LOG(ERROR) << "Get localIp failed, ip " << FLAGS_local_ip
+                   << ", status:" << result.status();
+        return EXIT_FAILURE;
+    }
+    uint32_t localIP;
+    if (!NetworkUtils::ipv4ToInt(result.value(), localIP)) {
+        LOG(ERROR) << "Convert ip failed, ipstr:" << result.value();
+        return EXIT_FAILURE;
+    }
+
+    if (FLAGS_meta_server_addrs.empty()) {
+        LOG(ERROR) << "meta_server_addrs flag should be set!";
+        return EXIT_FAILURE;
+    }
     std::vector<std::string> paths;
     folly::split(",", FLAGS_data_path, paths, true);
     std::transform(paths.begin(), paths.end(), paths.begin(), [](auto& p) {
         return folly::trimWhitespace(p).str();
     });
-    auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
-    CHECK(result.ok()) << result.status();
-    uint32_t localIP;
-    CHECK(NetworkUtils::ipv4ToInt(result.value(), localIP));
 
-    auto metaClient = std::make_unique<nebula::meta::MetaClient>();
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_handlers);
+    auto addrs = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
+    auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
+                                                                 std::move(addrs),
+                                                                 true);
     metaClient->init();
 
     nebula::kvstore::KVOptions options;
@@ -111,11 +128,6 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Failed to start web service: " << status;
         return EXIT_FAILURE;
     }
-
-    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), std::move(schemaMan));
-    gServer = std::make_unique<apache::thrift::ThriftServer>();
-    CHECK(!!gServer) << "Failed to create the thrift server";
-
     // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
@@ -123,11 +135,19 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    gServer->setInterface(std::move(handler));
-    gServer->setPort(FLAGS_port);
-    gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
-
-    gServer->serve();  // Will wait until the server shuts down
+    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), std::move(schemaMan));
+    try {
+        LOG(INFO) << "Start storage daemon on port " << FLAGS_port;
+        gServer = std::make_unique<apache::thrift::ThriftServer>();
+        gServer->setInterface(std::move(handler));
+        gServer->setPort(FLAGS_port);
+        gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
+        gServer->setIOThreadPool(ioThreadPool);
+        gServer->serve();  // Will wait until the server shuts down
+    } catch (const std::exception& e) {
+        LOG(ERROR) << "Start thrift server failed, error:" << e.what();
+        return EXIT_FAILURE;
+    }
 
     LOG(INFO) << "The storage Daemon on port " << FLAGS_port << " stopped";
 }

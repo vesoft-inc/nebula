@@ -20,6 +20,7 @@ namespace meta {
 
 class HBProcessor : public BaseProcessor<cpp2::HBResp> {
     FRIEND_TEST(HBProcessorTest, HBTest);
+    FRIEND_TEST(MetaClientTest, HeartbeatTest);
 
 public:
     static HBProcessor* instance(kvstore::KVStore* kvstore) {
