@@ -208,13 +208,10 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    /* test the same tag in diff space, but now meta server not supported,
-     * will add a issue(#292) to resolve it */
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG person(name string, interest string)";
         auto code = client->execute(query, resp);
-        sleep(FLAGS_load_data_interval_second + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
