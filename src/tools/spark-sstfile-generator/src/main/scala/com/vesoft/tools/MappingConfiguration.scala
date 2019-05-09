@@ -2,7 +2,7 @@ package com.vesoft.tools
 
 import play.api.libs.json.{Reads, Writes, _}
 
-import scala.io.Source
+import scala.io.{Codec, Source}
 import scala.language.implicitConversions
 
 /**
@@ -185,7 +185,7 @@ object Edge {
 /**
   * a mapping file in-memory representation
   *
-  * @param databaseName graphspace name this mapping configuration for
+  * @param databaseName graphspace name for this mapping configuration
   * @param partitions   partition number of this graphspace
   * @param tags         tag's mapping
   * @param edges        edge's mapping
@@ -244,11 +244,12 @@ object MappingConfiguration {
   /**
     * construct from a mapping file
     *
-    * @param mappingFile mapping file, could be embedded in jar, or will be provided through "--files" option, and sepcified the application arg "---mapping_file_input"(--mi for short) at the same time
+    * @param mappingFile mapping file, should be provided through "--files" option, and specified the application arg "---mapping_file_input"(--mi for short) at the same time,
+    *                    this file will be consumed as a classpath resource
     * @return MappingConfiguration instance
     */
   def apply(mappingFile: String): MappingConfiguration = {
-    val bufferedSource = Source.fromInputStream(getClass.getResourceAsStream("/" + mappingFile))
+    val bufferedSource = Source.fromFile(mappingFile)(Codec("UTF-8"))
     val toString = bufferedSource.mkString
     val config = Json.parse(toString).as[MappingConfiguration]
     bufferedSource.close

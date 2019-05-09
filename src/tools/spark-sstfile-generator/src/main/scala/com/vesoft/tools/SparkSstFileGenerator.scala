@@ -10,6 +10,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{Partitioner, SparkConf, SparkContext}
 import org.slf4j.LoggerFactory
 
@@ -33,6 +34,11 @@ object SparkSstFileGenerator {
     * configuration key for sst file output
     */
   val SSF_OUTPUT_DIR_CONF_KEY = "nebula.graph.spark.sst.file.dir"
+
+  /**
+    * mapper output compression
+    */
+  val MR_MAP_OUTPUT_COMPRESS_KEY = "mapreduce.map.output.compress"
 
   /**
     * cmd line's options, which's name following the convention: input will suffix with "i", output will suffix with "o"
@@ -71,7 +77,7 @@ object SparkSstFileGenerator {
     val latestDate = CliOption.builder("di").longOpt("latest_date_input")
       .required()
       .hasArg()
-      .desc("latest date to query")
+      .desc("latest date to query,date format YYYY-MM-dd")
       .build
 
     val repartitionNumber = CliOption.builder("ri").longOpt("repartition_number_input")
@@ -87,7 +93,7 @@ object SparkSstFileGenerator {
 
     val charset = CliOption.builder("hi").longOpt("string_value_charset_input")
       .hasArg()
-      .desc("when the value is of type String,what charset is used when encoded,default UTF-8")
+      .desc("when the value is of type String,what charset is used when encoded,default to UTF-8")
       .build
 
     val opts = new Options()
@@ -223,6 +229,8 @@ object SparkSstFileGenerator {
 
     // to pass sst file dir to SstFileOutputFormat
     sc.hadoopConfiguration.set(SSF_OUTPUT_DIR_CONF_KEY, sstFileOutput)
+    sc.hadoopConfiguration.set(MR_MAP_OUTPUT_COMPRESS_KEY, "org.apache.hadoop.io.compress.SnappyCodec")
+
     // disable hadoop output compression, cause rocksdb can't recognize it
     sc.hadoopConfiguration.set(FileOutputFormat.COMPRESS, "false")
 
@@ -233,12 +241,6 @@ object SparkSstFileGenerator {
       case Some("hash_primary_key") => (key: String) => FNVHash.hash64(key)
       case Some(a@_) => throw new IllegalStateException(s"not supported key generator=${a}")
       case None => (key: String) => FNVHash.hash64(key)
-    }
-
-    // implicit ordering for BytesWritable,sstfile's key must be in strictly order
-    implicit val orderingBytesWritable = new Ordering[BytesWritable] {
-      override def compare(a: BytesWritable, b: BytesWritable) =
-        a.compareTo(b)
     }
 
     //1) handle vertex, encode all column except PK column as a single Tag's properties,RDD[(PartitionID,(KeyEncoded,ValuesEncoded))]
@@ -283,7 +285,7 @@ object SparkSstFileGenerator {
             //use vertexId as partition key
             (PartitionIdAndBytesEncoded(partitionId.toLong, new BytesWritable(keyEncoded)), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded)))
           }
-        }
+        }.persist(StorageLevel.DISK_ONLY)
       }
     }.fold(sc.emptyRDD[(PartitionIdAndBytesEncoded, PartitionIdAndValueBinaryWritable)])(_ ++ _) //TODO: too slow to concat RDD
 
@@ -350,8 +352,7 @@ object SparkSstFileGenerator {
             (PartitionIdAndBytesEncoded(id, new BytesWritable(keyEncoded)), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded), false))
           }
         }
-      }
-
+      }.persist(StorageLevel.DISK_ONLY)
     }.fold(sc.emptyRDD[(PartitionIdAndBytesEncoded, PartitionIdAndValueBinaryWritable)])(_ ++ _)
 
     val sortedEdgesKVEncoded = edgesKVEncoded.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber)).map(v => (v._1.valueEncoded, v._2))
