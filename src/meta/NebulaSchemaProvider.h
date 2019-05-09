@@ -16,6 +16,7 @@ namespace meta {
 
 class NebulaSchemaProvider : public SchemaProviderIf {
     friend class FileBasedSchemaManager;
+    friend class MetaClient;
 public:
     class SchemaField final : public SchemaProviderIf::Field {
     public:
@@ -39,7 +40,7 @@ public:
     };
 
 public:
-    int32_t getVersion() const noexcept override;
+    SchemaVer getVersion() const noexcept override;
     size_t getNumFields() const noexcept override;
 
     int64_t getFieldIndex(const folly::StringPiece name) const override;
@@ -56,7 +57,7 @@ protected:
     NebulaSchemaProvider() = default;
 
 protected:
-    int32_t ver_{0};
+    SchemaVer ver_{-1};
 
     // fieldname -> index
     std::unordered_map<std::string, int64_t> fieldNameIndex_;

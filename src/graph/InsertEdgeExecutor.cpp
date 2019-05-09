@@ -25,12 +25,12 @@ Status InsertEdgeExecutor::prepare() {
         return status;
     }
 
+    auto spaceId = ectx()->rctx()->session()->space();
     overwritable_ = sentence_->overwritable();
-    edge_ = ectx()->schemaManager()->toEdgeType(*sentence_->edge());
+    edgeType_ = ectx()->schemaManager()->toEdgeType(spaceId, *sentence_->edge());
     properties_ = sentence_->properties();
     rows_ = sentence_->rows();
-    auto space = ectx()->rctx()->session()->space();
-    schema_ = ectx()->schemaManager()->getEdgeSchema(space, edge_);
+    schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType_);
     if (schema_ == nullptr) {
         return Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
     }
@@ -46,11 +46,13 @@ void InsertEdgeExecutor::execute() {
         auto src = row->srcid();
         auto dst = row->dstid();
         auto rank = row->rank();
-        auto exprs = row->values();
+        auto expressions = row->values();
         std::vector<VariantType> values;
-        values.resize(exprs.size());
-        auto eval = [] (auto *expr) { return expr->eval(); };
-        std::transform(exprs.begin(), exprs.end(), values.begin(), eval);
+
+        values.reserve(expressions.size());
+        for (auto *expr : expressions) {
+            values.emplace_back(expr->eval());
+        }
 
         RowWriter writer(schema_);
         for (auto &value : values) {
@@ -76,7 +78,7 @@ void InsertEdgeExecutor::execute() {
             out.key.set_src(src);
             out.key.set_dst(dst);
             out.key.set_ranking(rank);
-            out.key.set_edge_type(edge_);
+            out.key.set_edge_type(edgeType_);
             out.props = writer.encode();
             out.__isset.key = true;
             out.__isset.props = true;
@@ -86,7 +88,7 @@ void InsertEdgeExecutor::execute() {
             in.key.set_src(dst);
             in.key.set_dst(src);
             in.key.set_ranking(rank);
-            in.key.set_edge_type(-edge_);
+            in.key.set_edge_type(-edgeType_);
             in.props = "";
             in.__isset.key = true;
             in.__isset.props = true;

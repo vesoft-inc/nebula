@@ -36,6 +36,7 @@ public:
 GENERATE_LOCK(space);
 GENERATE_LOCK(id);
 GENERATE_LOCK(tag);
+GENERATE_LOCK(edge);
 
 #undef GENERATE_LOCK
 };
@@ -49,9 +50,6 @@ GENERATE_LOCK(tag);
         onFinished(); \
         return; \
     }
-
-#define MAX_VERSION_HEX 0x7FFFFFFFFFFFFFFF
-#define MIN_VERSION_HEX 0x0000000000000000
 
 template<typename RESP>
 class BaseProcessor {
@@ -91,6 +89,7 @@ protected:
             return cpp2::ErrorCode::SUCCEEDED;
         case Status::kSpaceNotFound:
         case Status::kHostNotFound:
+        case Status::kTagNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -175,6 +174,16 @@ protected:
      * Return the spaceId for name.
      * */
     StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
+
+    /**
+     * Return the tagId for name.
+     */
+    StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
+
+    /**
+     * Return the edgeType for name.
+     */
+    StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

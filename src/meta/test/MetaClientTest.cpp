@@ -11,6 +11,8 @@
 #include "meta/test/TestUtils.h"
 #include "network/NetworkUtils.h"
 #include "meta/MetaServiceUtils.h"
+#include "meta/ServerBasedSchemaManager.h"
+#include "dataman/ResultSchemaProvider.h"
 
 DECLARE_int32(load_data_interval_second);
 
@@ -62,6 +64,89 @@ TEST(MetaClientTest, InterfacesTest) {
                     ASSERT_EQ(h.first, h.second);
                 }
             }
+        }
+        {
+            // createTagSchema
+            nebula::cpp2::Schema schema;
+            for (auto i = 0 ; i < 5; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = "tagItem" + std::to_string(i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                schema.columns.emplace_back(std::move(column));
+            }
+            auto ret = client->createTagSchema(spaceId, "tagName", schema).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
+        }
+        {
+            // createEdgeSchema
+            nebula::cpp2::Schema schema;
+            for (auto i = 0 ; i < 5; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = "edgeItem" + std::to_string(i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                schema.columns.emplace_back(std::move(column));
+            }
+            auto ret = client->createEdgeSchema(spaceId, "edgeName", schema).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
+        }
+
+        auto schemaMan = std::make_unique<ServerBasedSchemaManager>();
+        schemaMan->init(client.get());
+        {
+            // listTagSchemas
+            auto ret1 = client->listTagSchemas(spaceId).get();
+            ASSERT_TRUE(ret1.ok()) << ret1.status();
+            ASSERT_EQ(ret1.value().size(), 1);
+            ASSERT_NE(ret1.value().begin()->tag_id, 0);
+            ASSERT_EQ(ret1.value().begin()->schema.columns.size(), 5);
+
+            // getTagSchemeFromCache
+            sleep(FLAGS_load_data_interval_second + 1);
+            auto ver = client->getNewestTagVerFromCache(spaceId,
+                                                        ret1.value().begin()->tag_id);
+            auto ret2 = client->getTagSchemeFromCache(spaceId,
+                                                      ret1.value().begin()->tag_id, ver);
+            ASSERT_TRUE(ret2.ok()) << ret2.status();
+            ASSERT_EQ(ret2.value()->getNumFields(), 5);
+
+            // ServerBasedSchemaManager test
+            TagID tagId = schemaMan->toTagID(spaceId, "tagName");
+            ASSERT_NE(-1, tagId);
+            auto outSchema = schemaMan->getTagSchema(spaceId, tagId);
+            ASSERT_EQ(5, outSchema->getNumFields());
+            ASSERT_STREQ("tagItem0", outSchema->getFieldName(0));
+            auto version = schemaMan->getNewestTagSchemaVer(spaceId, tagId);
+            auto outSchema1 = schemaMan->getTagSchema(spaceId, tagId, version);
+            ASSERT_TRUE(outSchema1 != nullptr);
+            ASSERT_EQ(5, outSchema1->getNumFields());
+            ASSERT_STREQ("tagItem0", outSchema1->getFieldName(0));
+        }
+        {
+            // listEdgeSchemas
+            auto ret1 = client->listEdgeSchemas(spaceId).get();
+            ASSERT_TRUE(ret1.ok()) << ret1.status();
+            ASSERT_EQ(ret1.value().size(), 1);
+            ASSERT_NE(ret1.value().begin()->edge_type, 0);
+
+            // getEdgeSchemeFromCache
+            auto ver = client->getNewestEdgeVerFromCache(spaceId,
+                                                         ret1.value().begin()->edge_type);
+            auto ret2 = client->getEdgeSchemeFromCache(spaceId,
+                                                       ret1.value().begin()->edge_type, ver);
+            ASSERT_TRUE(ret2.ok()) << ret2.status();
+            ASSERT_EQ(ret2.value()->getNumFields(), 5);
+
+            // ServerBasedSchemaManager test
+            EdgeType edgeType = schemaMan->toEdgeType(spaceId, "edgeName");
+            ASSERT_NE(-1, edgeType);
+            auto outSchema = schemaMan->getEdgeSchema(spaceId, edgeType);
+            ASSERT_EQ(5, outSchema->getNumFields());
+            ASSERT_STREQ("edgeItem0", outSchema->getFieldName(0));
+            auto version = schemaMan->getNewestEdgeSchemaVer(spaceId, edgeType);
+            auto outSchema1 = schemaMan->getEdgeSchema(spaceId, edgeType, version);
+            ASSERT_TRUE(outSchema1 != nullptr);
+            ASSERT_EQ(5, outSchema1->getNumFields());
+            ASSERT_STREQ("edgeItem0", outSchema1->getFieldName(0));
         }
     }
     sleep(FLAGS_load_data_interval_second + 1);
@@ -166,6 +251,7 @@ TEST(MetaClientTest, InterfacesTest) {
         ASSERT_TRUE(ret1.ok());
         ASSERT_EQ(0, ret1.value().size());
     }
+
     client.reset();
 }
 

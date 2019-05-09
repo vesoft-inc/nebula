@@ -13,14 +13,14 @@
 #include "graph/GoExecutor.h"
 #include "graph/UseExecutor.h"
 #include "graph/PipeExecutor.h"
-// #include "graph/DefineTagExecutor.h"
-// #include "graph/DefineEdgeExecutor.h"
+#include "graph/CreateTagExecutor.h"
+#include "graph/CreateEdgeExecutor.h"
 #include "graph/AlterTagExecutor.h"
 #include "graph/AlterEdgeExecutor.h"
-// #include "graph/DescribeTagExecutor.h"
-// #include "graph/DescribeEdgeExecutor.h"
 #include "graph/RemoveTagExecutor.h"
 #include "graph/RemoveEdgeExecutor.h"
+#include "graph/DescribeTagExecutor.h"
+#include "graph/DescribeEdgeExecutor.h"
 #include "graph/InsertVertexExecutor.h"
 #include "graph/InsertEdgeExecutor.h"
 #include "graph/AssignmentExecutor.h"
@@ -29,6 +29,7 @@
 #include "graph/RemoveHostsExecutor.h"
 #include "graph/CreateSpaceExecutor.h"
 #include "graph/DropSpaceExecutor.h"
+#include "graph/YieldExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -46,28 +47,24 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kPipe:
             executor = std::make_unique<PipeExecutor>(sentence, ectx());
             break;
-        /*
-        case Sentence::Kind::kDefineTag:
-            executor = std::make_unique<DefineTagExecutor>(sentence, ectx());
+        case Sentence::Kind::kCreateTag:
+            executor = std::make_unique<CreateTagExecutor>(sentence, ectx());
             break;
-        case Sentence::Kind::kDefineEdge:
-            executor = std::make_unique<DefineEdgeExecutor>(sentence, ectx());
+        case Sentence::Kind::kCreateEdge:
+            executor = std::make_unique<CreateEdgeExecutor>(sentence, ectx());
             break;
-        */
         case Sentence::Kind::kAlterTag:
             executor = std::make_unique<AlterTagExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kAlterEdge:
             executor = std::make_unique<AlterEdgeExecutor>(sentence, ectx());
             break;
-        /*
         case Sentence::Kind::kDescribeTag:
             executor = std::make_unique<DescribeTagExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kDescribeEdge:
             executor = std::make_unique<DescribeEdgeExecutor>(sentence, ectx());
             break;
-        */
         case Sentence::Kind::kRemoveTag:
              executor = std::make_unique<RemoveTagExecutor>(sentence, ectx());
              break;
@@ -98,6 +95,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kDropSpace:
             executor = std::make_unique<DropSpaceExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kYield:
+            executor = std::make_unique<YieldExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
             break;
@@ -122,6 +122,23 @@ std::string Executor::valueTypeToString(nebula::cpp2::ValueType type) {
             return "timestamp";
         default:
             return "unknown";
+    }
+}
+
+nebula::cpp2::SupportedType Executor::columnTypeToSupportedType(ColumnType type) {
+    switch (type) {
+        case BOOL:
+            return nebula::cpp2::SupportedType::BOOL;
+        case INT:
+            return nebula::cpp2::SupportedType::INT;
+        case DOUBLE:
+            return nebula::cpp2::SupportedType::DOUBLE;
+        case STRING:
+            return nebula::cpp2::SupportedType::STRING;
+        case TIMESTAMP:
+            return nebula::cpp2::SupportedType::TIMESTAMP;
+        default:
+            return nebula::cpp2::SupportedType::UNKNOWN;
     }
 }
 

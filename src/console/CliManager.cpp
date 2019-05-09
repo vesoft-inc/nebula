@@ -5,6 +5,8 @@
  */
 
 #include "base/Base.h"
+#include <termios.h>
+#include <unistd.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "console/CliManager.h"
@@ -60,8 +62,14 @@ bool CliManager::connect(const std::string& addr,
         for (int32_t i = 0; i < kMaxAuthInfoRetries && !strlen(pass); i++) {
             // Need to interactively get the password
             std::cout << "Password: ";
+            termios oldTerminal;
+            tcgetattr(STDIN_FILENO, &oldTerminal);
+            termios newTerminal = oldTerminal;
+            newTerminal.c_lflag &= ~ECHO;
+            tcsetattr(STDIN_FILENO, TCSANOW, &newTerminal);
             std::cin.getline(pass, kMaxPasswordLen);
             pass[kMaxPasswordLen] = '\0';
+            tcsetattr(STDIN_FILENO, TCSANOW, &oldTerminal);
         }
     } else {
         strcpy(pass, FLAGS_p.c_str());  // NOLINT

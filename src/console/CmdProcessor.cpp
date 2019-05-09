@@ -36,6 +36,10 @@ void CmdProcessor::calColumnWidths(
         return;
     }
 
+    if (resp.get_rows() == nullptr) {
+        return;
+    }
+
     std::vector<cpp2::ColumnValue::Type> types(
         widths.size(), cpp2::ColumnValue::Type::__EMPTY__);
     formats.resize(widths.size());

@@ -61,6 +61,8 @@ class GraphScanner;
     nebula::HostList                       *host_list;
     nebula::SpaceOptList                   *space_opt_list;
     nebula::SpaceOptItem                   *space_opt_item;
+    nebula::AlterTagOptList                *alter_tag_opt_list;
+    nebula::AlterTagOptItem                *alter_tag_opt_item;
 }
 
 /* destructors */
@@ -70,10 +72,10 @@ class GraphScanner;
 
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_DEFINE KW_VERTEX KW_TTL
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_TTL
 %token KW_EDGE KW_EDGES KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD KW_CREATE
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -119,6 +121,8 @@ class GraphScanner;
 %type <host_list> host_list
 %type <space_opt_list> space_opt_list
 %type <space_opt_item> space_opt_item
+%type <alter_tag_opt_list> alter_tag_opt_list
+%type <alter_tag_opt_item> alter_tag_opt_item
 
 %type <intval> ttl_spec
 
@@ -126,15 +130,16 @@ class GraphScanner;
 %type <colspeclist> column_spec_list
 
 %type <sentence> go_sentence match_sentence use_sentence find_sentence
-%type <sentence> define_tag_sentence define_edge_sentence
+%type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
 %type <sentence> remove_tag_sentence remove_edge_sentence
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
-%type <sentence> maintainance_sentence insert_vertex_sentence insert_edge_sentence
+%type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence 
+%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence
 %type <sentence> drop_space_sentence
+%type <sentence> yield_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -441,6 +446,12 @@ yield_column
     }
     ;
 
+yield_sentence
+    : KW_YIELD yield_columns {
+        $$ = new YieldSentence($2);
+    }
+    ;
+
 match_sentence
     : KW_MATCH { $$ = new MatchSentence; }
     ;
@@ -457,39 +468,56 @@ use_sentence
     : KW_USE KW_SPACE LABEL { $$ = new UseSentence($3); }
     ;
 
-define_tag_sentence
-    : KW_DEFINE KW_TAG LABEL L_PAREN R_PAREN {
-        $$ = new DefineTagSentence($3, new ColumnSpecificationList());
+create_tag_sentence
+    : KW_CREATE KW_TAG LABEL L_PAREN R_PAREN {
+        $$ = new CreateTagSentence($3, new ColumnSpecificationList());
     }
-    | KW_DEFINE KW_TAG LABEL L_PAREN column_spec_list R_PAREN {
-        $$ = new DefineTagSentence($3, $5);
+    | KW_CREATE KW_TAG LABEL L_PAREN column_spec_list R_PAREN {
+        $$ = new CreateTagSentence($3, $5);
     }
-    | KW_DEFINE KW_TAG LABEL L_PAREN column_spec_list COMMA R_PAREN {
-        $$ = new DefineTagSentence($3, $5);
+    | KW_CREATE KW_TAG LABEL L_PAREN column_spec_list COMMA R_PAREN {
+        $$ = new CreateTagSentence($3, $5);
     }
     ;
 
 alter_tag_sentence
-    : KW_ALTER KW_TAG LABEL L_PAREN R_PAREN {
-        $$ = new AlterTagSentence($3, new ColumnSpecificationList());
-    }
-    | KW_ALTER KW_TAG LABEL L_PAREN column_spec_list R_PAREN {
-        $$ = new AlterTagSentence($3, $5);
-    }
-    | KW_ALTER KW_TAG LABEL L_PAREN column_spec_list COMMA R_PAREN {
-        $$ = new AlterTagSentence($3, $5);
+    : KW_ALTER KW_TAG LABEL alter_tag_opt_list {
+        $$ = new AlterTagSentence($3, $4);
     }
     ;
 
-define_edge_sentence
-    : KW_DEFINE KW_EDGE LABEL LABEL R_ARROW LABEL L_PAREN R_PAREN {
-        $$ = new DefineEdgeSentence($3, $4, $6, new ColumnSpecificationList());
+alter_tag_opt_list
+    : alter_tag_opt_item {
+        $$ = new AlterTagOptList();
+        $$->addOpt($1);
     }
-    | KW_DEFINE KW_EDGE LABEL LABEL R_ARROW LABEL L_PAREN column_spec_list R_PAREN {
-        $$ = new DefineEdgeSentence($3, $4, $6, $8);
+    | alter_tag_opt_list COMMA alter_tag_opt_item {
+        $$ = $1;
+        $$->addOpt($3);
     }
-    | KW_DEFINE KW_EDGE LABEL LABEL R_ARROW LABEL L_PAREN column_spec_list COMMA R_PAREN {
-        $$ = new DefineEdgeSentence($3, $4, $6, $8);
+    ;
+
+alter_tag_opt_item
+    : KW_ADD L_PAREN column_spec_list R_PAREN {
+        $$ = new AlterTagOptItem(AlterTagOptItem::ADD, $3);
+    }
+    | KW_SET L_PAREN column_spec_list R_PAREN {
+      $$ = new AlterTagOptItem(AlterTagOptItem::SET, $3);
+    }
+    | KW_DROP L_PAREN column_spec_list R_PAREN {
+      $$ = new AlterTagOptItem(AlterTagOptItem::DROP, $3);
+    }
+    ;
+
+create_edge_sentence
+    : KW_CREATE KW_EDGE LABEL L_PAREN R_PAREN {
+        $$ = new CreateEdgeSentence($3,  new ColumnSpecificationList());
+    }
+    | KW_CREATE KW_EDGE LABEL L_PAREN column_spec_list R_PAREN {
+        $$ = new CreateEdgeSentence($3, $5);
+    }
+    | KW_CREATE KW_EDGE LABEL L_PAREN column_spec_list COMMA R_PAREN {
+        $$ = new CreateEdgeSentence($3, $5);
     }
     ;
 
@@ -517,7 +545,8 @@ column_spec_list
     ;
 
 column_spec
-    : LABEL type_spec { $$ = new ColumnSpecification($2, $1); }
+    : LABEL { $$ = new ColumnSpecification($1); }
+    | LABEL type_spec { $$ = new ColumnSpecification($2, $1); }
     | LABEL type_spec ttl_spec { $$ = new ColumnSpecification($2, $1, $3); }
     ;
 
@@ -843,12 +872,12 @@ space_opt_list
 
  space_opt_item
     : KW_PARTITION_NUM ASSIGN INTEGER {
-        $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3); 
+        $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3);
     }
     | KW_REPLICA_FACTOR ASSIGN INTEGER {
         $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
     }
-    // TODO(YT) Create Spaces for different engines 
+    // TODO(YT) Create Spaces for different engines
     // KW_ENGINE_TYPE ASSIGN LABEL
     ;
 
@@ -867,9 +896,9 @@ mutate_sentence
     | delete_edge_sentence { $$ = $1; }
     ;
 
-maintainance_sentence
-    : define_tag_sentence { $$ = $1; }
-    | define_edge_sentence { $$ = $1; }
+maintain_sentence
+    : create_tag_sentence { $$ = $1; }
+    | create_edge_sentence { $$ = $1; }
     | alter_tag_sentence { $$ = $1; }
     | alter_edge_sentence { $$ = $1; }
     | describe_tag_sentence { $$ = $1; }
@@ -881,10 +910,15 @@ maintainance_sentence
     | remove_hosts_sentence { $$ = $1; }
     | create_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
-    ; 
+    | yield_sentence {
+        // Now we take YIELD as a normal maintenance sentence.
+        // In the future, we might make it able to be used in pipe.
+        $$ = $1;
+    }
+    ;
 
 sentence
-    : maintainance_sentence { $$ = $1; }
+    : maintain_sentence { $$ = $1; }
     | use_sentence { $$ = $1; }
     | piped_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }
