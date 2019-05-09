@@ -215,7 +215,9 @@ std::string DeleteVertexSentence::toString() const {
 std::string EdgeList::toString() const {
     std::vector<std::string> edgeStrs;
     for (auto edge : edges_) {
-        std::string edgeStr = std::to_string(edge.first);
+        std::string edgeStr;
+        edgeStr.reserve(256);
+        edgeStr = std::to_string(edge.first);
         edgeStr += "->";
         edgeStr += std::to_string(edge.second);
         edgeStrs.push_back(edgeStr);

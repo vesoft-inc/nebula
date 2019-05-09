@@ -82,7 +82,7 @@ std::string SpaceOptList::toString() const {
     for (auto &item : items_) {
         spaceOpts.push_back(item->toString());
     }
-    retutrn  = folly::join(",", spaceOpts);
+    return folly::join(",", spaceOpts);
 }
 
 

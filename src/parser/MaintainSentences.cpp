@@ -17,7 +17,9 @@ std::string CreateTagSentence::toString() const {
     buf += " (";
     std::vector<std::string> colStrs;
     for (auto *col : columns_->columnSpecs()) {
-        std::string colStr = *col->name();
+        std::string colStr;
+        colStr.reserve(256);
+        colStr = *col->name();
         colStr += " ";
         colStr += columnTypeToString(col->type());
         if (col->hasTTL()) {
@@ -40,7 +42,9 @@ std::string CreateEdgeSentence::toString() const {
     buf += " (";
     std::vector<std::string> colStrs;
     for (auto &col : columns_->columnSpecs()) {
-        std::string colStr = *col->name();
+        std::string colStr;
+        colStr.reserve(256);
+        colStr = *col->name();
         colStr += " ";
         colStr += columnTypeToString(col->type());
         if (col->hasTTL()) {
@@ -62,7 +66,9 @@ std::string AlterTagOptItem::toString() const {
     buf += " (";
     std::vector<std::string> colStrs;
     for (auto &col : columns_->columnSpecs()) {
-        std::string colStr = *col->name();
+        std::string colStr;
+        colStr.reserve(256);
+        colStr = *col->name();
         colStr += " ";
         colStr += columnTypeToString(col->type());
         if (col->hasTTL()) {
@@ -106,7 +112,9 @@ std::string AlterEdgeSentence::toString() const {
     buf += "(";
     std::vector<std::string> colStrs;
     for (auto &col : columns_->columnSpecs()) {
-        std::string colStr = *col->name();
+        std::string colStr;
+        colStr.reserve(256);
+        colStr = *col->name();
         colStr += " ";
         colStr += columnTypeToString(col->type());
         if (col->hasTTL()) {

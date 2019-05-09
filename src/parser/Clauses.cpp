@@ -63,9 +63,9 @@ std::string WhereClause::toString() const {
 
 std::string YieldColumns::toString() const {
     std::vector<std::string> colStrs;
-
     for (auto &col : columns_) {
         std::string colStr;
+        colStr.reserve(256);
         auto *expr = col->expr();
         colStr = expr->toString();
         if (col->alias() != nullptr) {
