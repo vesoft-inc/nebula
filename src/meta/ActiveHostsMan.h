@@ -38,6 +38,11 @@ public:
     ActiveHostsMan(int32_t intervalSeconds, int32_t expiredSeconds)
         : intervalSeconds_(intervalSeconds)
         , expirationInSeconds_(expiredSeconds) {
+        CHECK_GT(intervalSeconds, 0)
+            << "intervalSeconds " << intervalSeconds << " should > 0!";
+        CHECK_GE(expiredSeconds, intervalSeconds)
+            << "expiredSeconds " << expiredSeconds
+            << " should >= intervalSeconds " << intervalSeconds;
         CHECK(checkThread_.start());
         checkThread_.addTimerTask(intervalSeconds * 1000,
                                   intervalSeconds * 1000,

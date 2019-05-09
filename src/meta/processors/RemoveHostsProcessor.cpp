@@ -17,7 +17,7 @@ void RemoveHostsProcessor::process(const cpp2::RemoveHostsReq& req) {
         auto hostKey = MetaServiceUtils::hostKey(h.ip, h.port);
         auto ret = hostExist(hostKey);
         if (!ret.ok()) {
-            LOG(WARNING) << "The host [" << h.ip << ":" << h.port << "] not existed!";
+            LOG(WARNING) << "The host " << HostAddr(h.ip, h.port) << " not existed!";
             resp_.set_code(to(ret));
             onFinished();
             return;
