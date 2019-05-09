@@ -24,6 +24,9 @@ DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DEFINE_bool(mock_server, true, "start mock server");
 DEFINE_bool(daemonize, true, "Whether to run the process as a daemon");
 DEFINE_string(pid_file, "pids/nebula-storaged.pid", "");
+DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
+                                     "the format looks like ip1:port1, ip2:port2, ip3:port3");
+DEFINE_int32(io_handlers, 10, "io handlers");
 
 using nebula::Status;
 
@@ -72,7 +75,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (FLAGS_data_path.empty()) {
-        LOG(FATAL) << "Storage Data Path should not empty";
+        LOG(ERROR) << "Storage Data Path should not empty";
         return -1;
     }
     LOG(INFO) << "Starting the storage Daemon on port " << FLAGS_port
@@ -88,7 +91,15 @@ int main(int argc, char *argv[]) {
     uint32_t localIP;
     CHECK(NetworkUtils::ipv4ToInt(result.value(), localIP));
 
-    auto metaClient = std::make_unique<nebula::meta::MetaClient>();
+    if (FLAGS_meta_server_addrs.empty()) {
+        LOG(ERROR) << "meta_server_addrs flag should be set!";
+        return -1;
+    }
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_handlers);
+    auto addrs = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
+    auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
+                                                                 std::move(addrs),
+                                                                 true);
     metaClient->init();
 
     nebula::kvstore::KVOptions options;
@@ -114,7 +125,10 @@ int main(int argc, char *argv[]) {
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), std::move(schemaMan));
     gServer = std::make_unique<apache::thrift::ThriftServer>();
-    CHECK(!!gServer) << "Failed to create the thrift server";
+    if (!!gServer) {
+        LOG(ERROR) << "Failed to create the thrift server";
+        return -1;
+    }
 
     // Setup the signal handlers
     status = setupSignalHandler();
@@ -126,7 +140,7 @@ int main(int argc, char *argv[]) {
     gServer->setInterface(std::move(handler));
     gServer->setPort(FLAGS_port);
     gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
-
+    gServer->setIOThreadPool(ioThreadPool);
     gServer->serve();  // Will wait until the server shuts down
 
     LOG(INFO) << "The storage Daemon on port " << FLAGS_port << " stopped";

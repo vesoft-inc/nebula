@@ -35,17 +35,8 @@ bool MemPartManager::partExist(const HostAddr& host, GraphSpaceID spaceId, Parti
 
 MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client)
     : localHost_(std::move(host)) {
-    if (nullptr == client) {
-        LOG(INFO) << "MetaClient is nullptr, create new one";
-        // multi instances use one metaclient
-        static auto clientPtr = std::make_unique<meta::MetaClient>();
-        static std::once_flag flag;
-        std::call_once(flag, std::bind(&meta::MetaClient::init, clientPtr.get()));
-        client_ = clientPtr.get();
-    } else {
-        client_ = client;
-    }
-
+    client_ = client;
+    CHECK_NOTNULL(client_);
     client_->registerListener(this);
 }
 

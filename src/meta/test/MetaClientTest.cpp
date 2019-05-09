@@ -13,8 +13,10 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/ServerBasedSchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
+#include "meta/processors/HBProcessor.h"
 
 DECLARE_int32(load_data_interval_second);
+DECLARE_int32(heartbeat_interval_sec);
 
 namespace nebula {
 namespace meta {
@@ -399,6 +401,34 @@ TEST(MetaClientTest, DiffTest) {
     sleep(FLAGS_load_data_interval_second + 1);
     ASSERT_EQ(1, listener->spaceNum);
     ASSERT_EQ(9, listener->partNum);
+}
+
+TEST(MetaClientTest, HeartbeatTest) {
+    FLAGS_load_data_interval_second = 5;
+    FLAGS_heartbeat_interval_sec = 1;
+    fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
+    auto sc = TestUtils::mockServer(10001, rootPath.path());
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    uint32_t localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto listener = std::make_unique<TestListener>();
+    auto client = std::make_shared<MetaClient>(threadPool,
+                                               std::vector<HostAddr>{HostAddr(localIp, 10001)},
+                                               true);  // send heartbeat
+    client->registerListener(listener.get());
+    client->init();
+    {
+        // Test addHost, listHosts interface.
+        std::vector<HostAddr> hosts = {{0, 0}};
+        auto r = client->addHosts(hosts).get();
+        ASSERT_TRUE(r.ok());
+        auto ret = client->listHosts().get();
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(hosts, ret.value());
+    }
+    sleep(FLAGS_heartbeat_interval_sec + 1);
+    ASSERT_EQ(1, HBProcessor::hostsMan()->getActiveHosts().size());
 }
 
 }  // namespace meta

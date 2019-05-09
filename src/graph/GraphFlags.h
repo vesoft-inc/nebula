@@ -24,6 +24,7 @@ DECLARE_bool(redirect_stdout);
 DECLARE_string(stdout_log_file);
 DECLARE_string(stderr_log_file);
 DECLARE_bool(daemonize);
+DECLARE_string(meta_server_addrs);
 
 
 #endif  // GRAPH_GRAPHFLAGS_H_

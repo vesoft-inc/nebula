@@ -27,10 +27,10 @@ void TestEnv::SetUp() {
     FLAGS_load_data_interval_second = 1;
     using ThriftServer = apache::thrift::ThriftServer;
     server_ = std::make_unique<ThriftServer>();
+    server_->getIOThreadPool()->setNumThreads(1);
     auto interface = std::make_shared<GraphService>(server_->getIOThreadPool());
     server_->setInterface(std::move(interface));
     server_->setPort(0);    // Let the system choose an available port for us
-
     auto serve = [this] {
         server_->serve();
     };

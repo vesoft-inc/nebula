@@ -6,26 +6,14 @@
 
 #include "base/Base.h"
 #include "meta/SchemaManager.h"
-#include "meta/FileBasedSchemaManager.h"
 #include "meta/ServerBasedSchemaManager.h"
-
-DECLARE_string(schema_file);
-DECLARE_string(meta_server_addrs);
 
 namespace nebula {
 namespace meta {
 
 std::unique_ptr<SchemaManager> SchemaManager::create() {
-    if (!FLAGS_schema_file.empty()) {
-        std::unique_ptr<SchemaManager> sm(new FileBasedSchemaManager());
-        return sm;
-    } else if (!FLAGS_meta_server_addrs.empty()) {
-        std::unique_ptr<SchemaManager> sm(new ServerBasedSchemaManager());
-        return sm;
-    } else {
-        std::unique_ptr<SchemaManager> sm(new AdHocSchemaManager());
-        return sm;
-    }
+    auto sm = std::unique_ptr<SchemaManager>(new ServerBasedSchemaManager());
+    return sm;
 }
 
 void AdHocSchemaManager::addTagSchema(GraphSpaceID space,

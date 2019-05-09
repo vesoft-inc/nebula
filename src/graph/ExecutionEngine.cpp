@@ -10,6 +10,8 @@
 #include "graph/ExecutionPlan.h"
 #include "storage/client/StorageClient.h"
 
+DECLARE_string(meta_server_addrs);
+
 namespace nebula {
 namespace graph {
 
@@ -22,7 +24,11 @@ ExecutionEngine::~ExecutionEngine() {
 
 
 Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
-    metaClient_ = std::make_unique<meta::MetaClient>();
+    if (FLAGS_meta_server_addrs.empty()) {
+        return Status::Error("The meta_server_addrs flag should not be empty!");
+    }
+    auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
+    metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs));
     metaClient_->init();
 
     schemaManager_ = meta::SchemaManager::create();
