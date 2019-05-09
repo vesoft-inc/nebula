@@ -248,7 +248,7 @@ public:
         return columns_->columnSpecs();
     }
 
-    std::vector<SchemaOptItem*> getSchemaOpts() {
+    std::vector<SchemaOptItem*> getSchemaOpts() const {
         return schemaOpts_->getOpts();
     }
 
@@ -280,7 +280,7 @@ public:
         return columns_->columnSpecs();
     }
 
-    std::vector<SchemaOptItem*> getSchemaOpts() {
+    std::vector<SchemaOptItem*> getSchemaOpts() const {
         return schemaOpts_->getOpts();
     }
 
@@ -349,11 +349,11 @@ private:
 class AlterTagSentence final : public Sentence {
 public:
     AlterTagSentence(std::string *name,
-                     SchemaOptList *schemaOpts,
-                     AlterTagOptList *opts) {
+                     AlterTagOptList *opts,
+                     SchemaOptList *schemaOpts) {
         name_.reset(name);
-        schemaOpts_.reset(schemaOpts);
         opts_.reset(opts);
+        schemaOpts_.reset(schemaOpts);
         kind_ = Kind::kAlterTag;
     }
 
@@ -367,7 +367,7 @@ public:
         return opts_->alterTagItems();
     }
 
-    std::vector<SchemaOptItem*> getSchemaOpts() {
+    std::vector<SchemaOptItem*> getSchemaOpts() const {
         return schemaOpts_->getOpts();
     }
 
@@ -378,13 +378,68 @@ private:
 };
 
 
+class AlterEdgeOptItem final {
+public:
+    enum OptionType : uint8_t {
+        ADD = 0x01,
+        CHANGE = 0x02,
+        DROP = 0x03
+    };
+
+    AlterEdgeOptItem(OptionType op, ColumnSpecificationList *columns) {
+        optType_ = op;
+        columns_.reset(columns);
+    }
+
+    std::vector<ColumnSpecification*> columnSpecs() const {
+        return columns_->columnSpecs();
+    }
+
+    OptionType getOptType() {
+        return optType_;
+    }
+
+    std::string getOptTypeStr() const {
+        return typeid(optType_).name();
+    }
+
+    std::string toString() const;
+
+private:
+    OptionType                                  optType_;
+    std::unique_ptr<ColumnSpecificationList>    columns_;
+};
+
+
+class AlterEdgeOptList final {
+public:
+    AlterEdgeOptList() = default;
+    void addOpt(AlterEdgeOptItem *item) {
+        alterEdgeitems_.emplace_back(item);
+    }
+
+    std::vector<AlterEdgeOptItem*> alterEdgeItems() const {
+        std::vector<AlterEdgeOptItem*> result;
+        result.resize(alterEdgeitems_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(alterEdgeitems_.begin(), alterEdgeitems_.end(), result.begin(), get);
+        return result;
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::unique_ptr<AlterEdgeOptItem>>    alterEdgeitems_;
+};
+
+
 class AlterEdgeSentence final : public Sentence {
 public:
     AlterEdgeSentence(std::string *name,
-                      ColumnSpecificationList *columns,
+                      AlterEdgeOptList *opts,
                       SchemaOptList *schemaOpts) {
         name_.reset(name);
-        columns_.reset(columns);
+        opts_.reset(opts);
         schemaOpts_.reset(schemaOpts);
         kind_ = Kind::kAlterEdge;
     }
@@ -395,17 +450,17 @@ public:
         return name_.get();
     }
 
-    std::vector<ColumnSpecification*> columnSpecs() const {
-        return columns_->columnSpecs();
+    std::vector<AlterEdgeOptItem*> columnSpecs() const {
+        return opts_->alterEdgeItems();
     }
 
-    std::vector<SchemaOptItem*> getSchemaOpts() {
+    std::vector<SchemaOptItem*> getSchemaOpts() const {
         return schemaOpts_->getOpts();
     }
 
 private:
     std::unique_ptr<std::string>                name_;
-    std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<AlterEdgeOptList>           opts_;
     std::unique_ptr<SchemaOptList>              schemaOpts_;
 };
 

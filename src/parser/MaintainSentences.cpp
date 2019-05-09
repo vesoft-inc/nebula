@@ -45,13 +45,15 @@ std::string SchemaOptItem::toString() const {
 
  std::string SchemaOptList::toString() const {
     std::string buf;
-    buf.reserve(512);
+    buf.reserve(256);
     for (auto &item : items_) {
         buf += " ";
         buf += item->toString();
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -137,6 +139,7 @@ std::string AlterTagOptList::toString() const {
     return buf;
 }
 
+
 std::string AlterTagSentence::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -156,12 +159,11 @@ std::string AlterTagSentence::toString() const {
 }
 
 
-std::string AlterEdgeSentence::toString() const {
+std::string AlterEdgeOptItem::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "ALTER EDGE ";
-    buf += *name_;
-    buf += "(";
+    buf += getOptTypeStr();
+    buf += " (";
     auto colSpecs = std::move(columns_->columnSpecs());
     for (auto &col : colSpecs) {
         buf += *col->name();
@@ -173,8 +175,38 @@ std::string AlterEdgeSentence::toString() const {
         buf.resize(buf.size() - 1);
     }
     buf += ")";
+    return buf;
+}
+
+
+std::string AlterEdgeOptList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &item : alterEdgeitems_) {
+        buf += item->toString();
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+
+std::string AlterEdgeSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "ALTER EDGE ";
+    buf += *name_;
     if (schemaOpts_ != nullptr) {
         buf +=  schemaOpts_->toString();
+    }
+    if (opts_ == nullptr) {
+        return buf;
+    }
+    for (auto &edgeOpt : opts_->alterEdgeItems()) {
+        buf += " ";
+        buf += edgeOpt->toString();
     }
     return buf;
 }

@@ -70,6 +70,8 @@ class GraphScanner;
     nebula::WithUserOptItem                *with_user_opt_item;
     nebula::RoleTypeClause                 *role_type_clause;
     nebula::AclItemClause                  *acl_item_clause;
+    nebula::AlterEdgeOptList               *alter_edge_opt_list;
+    nebula::AlterEdgeOptItem               *alter_edge_opt_item;
     nebula::SchemaOptList                  *create_schema_opt_list;
     nebula::SchemaOptItem                  *create_schema_opt_item;
     nebula::SchemaOptList                  *alter_schema_opt_list;
@@ -142,10 +144,14 @@ class GraphScanner;
 %type <space_opt_item> space_opt_item
 %type <alter_tag_opt_list> alter_tag_opt_list
 %type <alter_tag_opt_item> alter_tag_opt_item
+%type <alter_edge_opt_list> alter_edge_opt_list
+%type <alter_edge_opt_item> alter_edge_opt_item
 %type <create_schema_opt_list> create_schema_opt_list
 %type <create_schema_opt_item> create_schema_opt_item
 %type <alter_schema_opt_list> alter_schema_opt_list
 %type <alter_schema_opt_item> alter_schema_opt_item
+
+%type <intval> port
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -546,27 +552,36 @@ create_schema_opt_list
 
 create_tag_sentence
     : KW_CREATE KW_TAG LABEL L_PAREN R_PAREN create_schema_opt_list {
+        if ($6 == nullptr) {
+            $6 = new SchemaOptList();
+        }
         $$ = new CreateTagSentence($3, new ColumnSpecificationList(), $6);
     }
     | KW_CREATE KW_TAG LABEL L_PAREN column_spec_list R_PAREN create_schema_opt_list {
+        if ($7 == nullptr) {
+            $7 = new SchemaOptList();
+        }
         $$ = new CreateTagSentence($3, $5, $7);
     }
     | KW_CREATE KW_TAG LABEL L_PAREN column_spec_list COMMA R_PAREN create_schema_opt_list {
+        if ($8 == nullptr) {
+            $8 = new SchemaOptList();
+        }
         $$ = new CreateTagSentence($3, $5, $8);
     }
     ;
 
 alter_tag_sentence
     : KW_ALTER KW_TAG LABEL alter_schema_opt_list {
-        $$ = new AlterTagSentence($3, $4, nullptr);
+        $$ = new AlterTagSentence($3, new AlterTagOptList(), $4);
     }
     | KW_ALTER KW_TAG LABEL alter_tag_opt_list {
-        $$ = new AlterTagSentence($3, nullptr, $4);
-    }
-    | KW_ALTER KW_TAG LABEL alter_schema_opt_list alter_tag_opt_list {
-        $$ = new AlterTagSentence($3, $4, $5);
+        $$ = new AlterTagSentence($3, $4, new SchemaOptList());
     }
     | KW_ALTER KW_TAG LABEL alter_tag_opt_list alter_schema_opt_list {
+        $$ = new AlterTagSentence($3, $4, $5);
+    }
+    | KW_ALTER KW_TAG LABEL alter_schema_opt_list alter_tag_opt_list {
         $$ = new AlterTagSentence($3, $5, $4);
     }
     ;
@@ -622,25 +637,60 @@ alter_tag_opt_item
 
 create_edge_sentence
     : KW_CREATE KW_EDGE LABEL L_PAREN R_PAREN create_schema_opt_list {
+        if ($6 == nullptr) {
+            $6 = new SchemaOptList();
+        }
         $$ = new CreateEdgeSentence($3,  new ColumnSpecificationList(), $6);
     }
     | KW_CREATE KW_EDGE LABEL L_PAREN column_spec_list R_PAREN create_schema_opt_list {
+        if ($7 == nullptr) {
+            $7 = new SchemaOptList();
+        }
         $$ = new CreateEdgeSentence($3, $5, $7);
     }
     | KW_CREATE KW_EDGE LABEL L_PAREN column_spec_list COMMA R_PAREN create_schema_opt_list {
+        if ($8 == nullptr) {
+            $8 = new SchemaOptList();
+        }
         $$ = new CreateEdgeSentence($3, $5, $8);
     }
     ;
 
 alter_edge_sentence
-    : KW_ALTER KW_EDGE LABEL L_PAREN R_PAREN alter_schema_opt_list {
-        $$ = new AlterEdgeSentence($3, new ColumnSpecificationList(), $6);
+    : KW_ALTER KW_EDGE LABEL alter_schema_opt_list {
+        $$ = new AlterEdgeSentence($3, new AlterEdgeOptList(), $4);
     }
-    | KW_ALTER KW_EDGE LABEL L_PAREN column_spec_list R_PAREN alter_schema_opt_list {
-        $$ = new AlterEdgeSentence($3, $5, $7);
+    | KW_ALTER KW_EDGE LABEL alter_edge_opt_list {
+        $$ = new AlterEdgeSentence($3, $4, new SchemaOptList());
     }
-    | KW_ALTER KW_EDGE LABEL L_PAREN column_spec_list COMMA R_PAREN alter_schema_opt_list {
-        $$ = new AlterEdgeSentence($3, $5, $8);
+    | KW_ALTER KW_EDGE LABEL alter_edge_opt_list alter_schema_opt_list {
+        $$ = new AlterEdgeSentence($3, $4, $5);
+    }
+    | KW_ALTER KW_EDGE LABEL alter_schema_opt_list alter_edge_opt_list {
+        $$ = new AlterEdgeSentence($3, $5, $4);
+    }
+    ;
+
+alter_edge_opt_list
+    : alter_edge_opt_item {
+        $$ = new AlterEdgeOptList();
+        $$->addOpt($1);
+    }
+    | alter_edge_opt_list COMMA alter_edge_opt_item {
+        $$ = $1;
+        $$->addOpt($3);
+    }
+    ;
+
+alter_edge_opt_item
+    : KW_ADD L_PAREN column_spec_list R_PAREN {
+        $$ = new AlterEdgeOptItem(AlterEdgeOptItem::ADD, $3);
+    }
+    | KW_CHANGE L_PAREN column_spec_list R_PAREN {
+      $$ = new AlterEdgeOptItem(AlterEdgeOptItem::CHANGE, $3);
+    }
+    | KW_DROP L_PAREN column_spec_list R_PAREN {
+      $$ = new AlterEdgeOptItem(AlterEdgeOptItem::DROP, $3);
     }
     ;
 
