@@ -37,45 +37,6 @@ struct SpaceInfoCache {
     EdgeTypeSchemas edgeSchemas_;
 };
 
-enum class SchemaColumnType {
-    BOOL      = 0,
-    INT       = 1,
-    STRING    = 2,
-    VID       = 3,
-    FLOAT     = 4,
-    DOUBLE    = 5,
-    TIMESTAMP = 6,
-    YEAR      = 7,
-    YEARMONTH = 8,
-    DATE      = 9,
-    DATETIME  = 10,
-    PATH      = 11,
-};
-
-struct SchemaColumn {
-    std::string      name;
-    SchemaColumnType type;
-
-    SchemaColumn(std::string n, SchemaColumnType t) {
-        this->name = n;
-        this->type = t;
-    }
-};
-
-struct Tag {
-    int32_t                     tagId;
-    std::string                 tagName;
-    int64_t                     version;
-    std::vector<SchemaColumn>   schema;
-
-    Tag(int32_t i, std::string n, int64_t v, std::vector<SchemaColumn> s) {
-        this->tagId = i;
-        this->tagName = n;
-        this->version = v;
-        this->schema = s;
-    }
-};
-
 using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;
 // get tagID via spaceId and tagName
 using SpaceTagNameIdMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, TagID>;
@@ -134,23 +95,28 @@ public:
     getPartsAlloc(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<TagID>> createTagSchema(GraphSpaceID spaceId,
-                                                   std::string name,
-                                                   nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<TagID>>
+    createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
 
     // TODO(boshengchen) need refresh tagNameIdMap and newestTagVerMap
-    folly::Future<StatusOr<TagID>> alterTagSchema(GraphSpaceID spaceId,
-                                                  std::string name,
-                                                  std::vector<cpp2::AlterTagItem> tagItems);
+    folly::Future<StatusOr<TagID>>
+    alterTagSchema(GraphSpaceID spaceId, std::string name, std::vector<cpp2::AlterTagItem> items);
 
-    folly::Future<StatusOr<std::vector<cpp2::TagItem>>> listTagSchemas(GraphSpaceID spaceId);
+    folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
+    listTagSchemas(GraphSpaceID spaceId);
+
+    folly::Future<StatusOr<bool>>
+    removeTagSchema(int32_t spaceId, std::string name);
+
+    folly::Future<StatusOr<nebula::cpp2::Schema>>
+    getTagSchema(int32_t spaceId, int32_t tagId, int64_t version);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<EdgeType>> createEdgeSchema(GraphSpaceID spaceId,
-                                                       std::string name,
-                                                       nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<EdgeType>>
+    createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
 
-    folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>> listEdgeSchemas(GraphSpaceID spaceId);
+    folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
+    listEdgeSchemas(GraphSpaceID spaceId);
 
     // These are the interfaces about cache opeartions.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
@@ -186,8 +152,7 @@ public:
                                                                              SchemaVer ver = -1);
 
     folly::Future<StatusOr<bool>>
-    multiPut(std::string segment,
-             std::vector<std::pair<std::string, std::string>> pairs);
+    multiPut(std::string segment, std::vector<std::pair<std::string, std::string>> pairs);
 
     folly::Future<StatusOr<std::string>>
     get(std::string segment, std::string key);
@@ -203,18 +168,6 @@ public:
 
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
-
-    folly::Future<StatusOr<TagID>>
-    addTag(int32_t spaceId, std::string name, std::vector<SchemaColumn> columns);
-
-    folly::Future<StatusOr<bool>>
-    removeTag(int32_t spaceId, std::string name);
-
-    folly::Future<StatusOr<std::vector<SchemaColumn>>>
-    getTag(int32_t spaceId, int32_t tagId, int64_t version);
-
-    folly::Future<StatusOr<std::vector<nebula::meta::Tag>>>
-    listTags(int32_t spaceId);
 
 protected:
     void loadDataThreadFunc();
@@ -268,10 +221,6 @@ protected:
                            const std::unordered_map<
                                         GraphSpaceID,
                                         std::shared_ptr<SpaceInfoCache>>& localCache);
-
-    nebula::cpp2::Schema assignSchema(std::vector<SchemaColumn> columns);
-
-    std::vector<SchemaColumn> decomposeSchema(nebula::cpp2::Schema schema);
 
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;

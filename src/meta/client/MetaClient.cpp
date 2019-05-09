@@ -456,64 +456,6 @@ MetaClient::removeRange(std::string segment, std::string start, std::string end)
                 });
 }
 
-folly::Future<StatusOr<TagID>>
-MetaClient::addTag(int32_t spaceId, std::string tagName, std::vector<SchemaColumn> columns) {
-    cpp2::CreateTagReq req;
-    req.set_space_id(spaceId);
-    req.set_tag_name(std::move(tagName));
-
-    auto schema = assignSchema(std::move(columns));
-    req.set_schema(std::move(schema));
-
-    return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_createTag(request);
-    }, [] (cpp2::ExecResp&& resp) -> int32_t {
-        return resp.get_id().get_tag_id();
-    });
-}
-
-folly::Future<StatusOr<bool>>
-MetaClient::removeTag(int32_t spaceId, std::string tagName) {
-    cpp2::RemoveTagReq req;
-    req.set_space_id(spaceId);
-    req.set_tag_name(std::move(tagName));
-    return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_removeTag(request);
-    }, [] (cpp2::ExecResp&& resp) -> bool {
-        return resp.code == cpp2::ErrorCode::SUCCEEDED;
-    });
-}
-
-folly::Future<StatusOr<std::vector<nebula::meta::SchemaColumn>>>
-MetaClient::getTag(int32_t spaceId, int32_t tagId, int64_t version) {
-    cpp2::GetTagReq req;
-    req.set_space_id(spaceId);
-    req.set_tag_id(tagId);
-    req.set_version(version);
-    return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_getTag(request);
-    }, [this] (cpp2::GetTagResp&& resp) -> std::vector<nebula::meta::SchemaColumn> {
-        return this->decomposeSchema(resp.get_schema());
-    });
-}
-
-folly::Future<StatusOr<std::vector<nebula::meta::Tag>>>
-MetaClient::listTags(int32_t spaceId) {
-    cpp2::ListTagsReq req;
-    req.set_space_id(spaceId);
-    return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_listTags(request);
-    }, [this] (cpp2::ListTagsResp&& resp) -> std::vector<nebula::meta::Tag> {
-        std::vector<nebula::meta::Tag> tags;
-        for (auto& tag : resp.get_tags()) {
-            auto schema =  this->decomposeSchema(tag.get_schema());
-            tags.emplace_back(tag.get_tag_id(), tag.get_tag_name(),
-                              tag.get_version(), schema);
-        }
-        return tags;
-    });
-}
-
 std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& tHosts) {
     std::vector<HostAddr> hosts;
     hosts.resize(tHosts.size());
@@ -546,130 +488,6 @@ Status MetaClient::handleResponse(const RESP& resp) {
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
     }
-}
-
-nebula::cpp2::Schema MetaClient::assignSchema(std::vector<SchemaColumn> columns) {
-    using nebula::meta::SchemaColumnType;
-    nebula::cpp2::Schema schema;
-    decltype(schema.columns) cols;
-
-    for (auto column : columns) {
-        nebula::cpp2::ValueType valueType;
-        nebula::cpp2::ColumnDef columnDef;
-        columnDef.set_name(std::move(column.name));
-        switch (column.type) {
-            case SchemaColumnType::BOOL:
-                valueType.set_type(nebula::cpp2::SupportedType::BOOL);
-                columnDef.set_type(std::move(valueType));
-                cols.emplace_back(columnDef);
-                break;
-            case SchemaColumnType::INT:
-                valueType.set_type(nebula::cpp2::SupportedType::INT);
-                columnDef.set_type(std::move(valueType));
-                cols.emplace_back(columnDef);
-                break;
-            case SchemaColumnType::STRING:
-                valueType.set_type(nebula::cpp2::SupportedType::STRING);
-                columnDef.set_type(std::move(valueType));
-                cols.emplace_back(columnDef);
-                break;
-            case SchemaColumnType::VID:
-                valueType.set_type(nebula::cpp2::SupportedType::VID);
-                columnDef.set_type(std::move(valueType));
-                break;
-            case SchemaColumnType::FLOAT:
-                valueType.set_type(nebula::cpp2::SupportedType::FLOAT);
-                columnDef.set_type(std::move(valueType));
-                break;
-            case SchemaColumnType::DOUBLE:
-                valueType.set_type(nebula::cpp2::SupportedType::DOUBLE);
-                columnDef.set_type(std::move(valueType));
-                cols.emplace_back(columnDef);
-                break;
-            case SchemaColumnType::TIMESTAMP:
-                valueType.set_type(nebula::cpp2::SupportedType::TIMESTAMP);
-                columnDef.set_type(std::move(valueType));
-                cols.emplace_back(columnDef);
-                break;
-            case SchemaColumnType::YEAR:
-                valueType.set_type(nebula::cpp2::SupportedType::YEAR);
-                columnDef.set_type(std::move(valueType));
-                cols.emplace_back(columnDef);
-                break;
-            case SchemaColumnType::YEARMONTH:
-                valueType.set_type(nebula::cpp2::SupportedType::YEARMONTH);
-                columnDef.set_type(std::move(valueType));
-                cols.emplace_back(columnDef);
-                break;
-            case SchemaColumnType::DATE:
-                valueType.set_type(nebula::cpp2::SupportedType::DATE);
-                columnDef.set_type(std::move(valueType));
-                cols.emplace_back(columnDef);
-                break;
-            case SchemaColumnType::DATETIME:
-                valueType.set_type(nebula::cpp2::SupportedType::DATETIME);
-                columnDef.set_type(std::move(valueType));
-                cols.emplace_back(columnDef);
-                break;
-            case SchemaColumnType::PATH:
-                valueType.set_type(nebula::cpp2::SupportedType::PATH);
-                columnDef.set_type(std::move(valueType));
-                cols.emplace_back(columnDef);
-                break;
-            default:
-                LOG(ERROR) << "Column type is illegal";
-                break;
-        }
-    }
-    schema.set_columns(std::move(cols));
-    return schema;
-}
-
-std::vector<SchemaColumn> MetaClient::decomposeSchema(nebula::cpp2::Schema schema) {
-    std::vector<SchemaColumn> result;
-    for (auto& column : schema.get_columns()) {
-        switch (column.type.type) {
-            case nebula::cpp2::SupportedType::BOOL:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::BOOL);
-                break;
-            case nebula::cpp2::SupportedType::INT:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::INT);
-                break;
-            case nebula::cpp2::SupportedType::VID:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::VID);
-                break;
-            case nebula::cpp2::SupportedType::FLOAT:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::FLOAT);
-                break;
-            case nebula::cpp2::SupportedType::DOUBLE:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::DOUBLE);
-                break;
-            case nebula::cpp2::SupportedType::STRING:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::STRING);
-                break;
-            case nebula::cpp2::SupportedType::TIMESTAMP:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::TIMESTAMP);
-                break;
-            case nebula::cpp2::SupportedType::YEAR:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::YEAR);
-                break;
-            case nebula::cpp2::SupportedType::YEARMONTH:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::YEARMONTH);
-                break;
-            case nebula::cpp2::SupportedType::DATE:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::DATE);
-                break;
-            case nebula::cpp2::SupportedType::DATETIME:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::DATETIME);
-                break;
-            case nebula::cpp2::SupportedType::PATH:
-                result.emplace_back(column.get_name(), nebula::meta::SchemaColumnType::PATH);
-                break;
-            default:
-                break;
-        }
-    }
-    return result;
 }
 
 PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
@@ -854,6 +672,31 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
         return client->future_listTags(request);
     }, [] (cpp2::ListTagsResp&& resp) -> decltype(auto){
         return std::move(resp).get_tags();
+    });
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::removeTagSchema(int32_t spaceId, std::string tagName) {
+    cpp2::RemoveTagReq req;
+    req.set_space_id(spaceId);
+    req.set_tag_name(std::move(tagName));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_removeTag(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    });
+}
+
+folly::Future<StatusOr<nebula::cpp2::Schema>>
+MetaClient::getTagSchema(int32_t spaceId, int32_t tagId, int64_t version) {
+    cpp2::GetTagReq req;
+    req.set_space_id(spaceId);
+    req.set_tag_id(tagId);
+    req.set_version(version);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_getTag(request);
+    }, [] (cpp2::GetTagResp&& resp) -> nebula::cpp2::Schema {
+        return std::move(resp).get_schema();
     });
 }
 

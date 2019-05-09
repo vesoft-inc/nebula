@@ -12,7 +12,7 @@ namespace meta {
 
 void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
-        LOG(ERROR) << "Add Tag Failed : Space " << req.get_space_id() << " not found";
+        LOG(ERROR) << "Create Tag Failed : Space " << req.get_space_id() << " not found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -21,7 +21,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     auto ret = getTagId(req.get_space_id(), req.get_tag_name());
     std::vector<kvstore::KV> data;
     if (ret.ok()) {
-        LOG(ERROR) << "Add Tag Failed :" << req.get_tag_name() << "have existed";
+        LOG(ERROR) << "Create Tag Failed :" << req.get_tag_name() << " have existed";
         resp_.set_id(to(ret.value(), EntryType::TAG));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
@@ -30,7 +30,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     TagID tagId = autoIncrementId();
     data.emplace_back(MetaServiceUtils::indexTagKey(req.get_space_id(), req.get_tag_name()),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
-    LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId;
+    LOG(INFO) << "Create Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, 0),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);

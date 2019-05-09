@@ -19,6 +19,10 @@ DECLARE_int32(load_data_interval_second);
 namespace nebula {
 namespace meta {
 
+using nebula::cpp2::SupportedType;
+using nebula::cpp2::ValueType;
+using apache::thrift::FragileConstructor::FRAGILE;
+
 TEST(MetaClientTest, InterfacesTest) {
     FLAGS_load_data_interval_second = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
@@ -277,34 +281,37 @@ TEST(MetaClientTest, TagTest) {
     int64_t version;
 
     {
-        std::vector<SchemaColumn> columns;
-        columns.emplace_back("column_i", SchemaColumnType::INT);
-        columns.emplace_back("column_s", SchemaColumnType::STRING);
-        columns.emplace_back("column_d", SchemaColumnType::DOUBLE);
-        auto result = client->addTag(spaceId, "test_tag", columns).get();
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        columns.emplace_back(FRAGILE, "column_i",
+                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
+        columns.emplace_back(FRAGILE, "column_d",
+                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr));
+        columns.emplace_back(FRAGILE, "column_s",
+                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+        nebula::cpp2::Schema schema;
+        auto result = client->createTagSchema(spaceId, "test_tag", schema).get();
         ASSERT_TRUE(result.ok());
         id = result.value();
     }
     {
-        auto result = client->listTags(spaceId).get();
+        auto result = client->listTagSchemas(spaceId).get();
         ASSERT_TRUE(result.ok());
         auto tags = result.value();
         ASSERT_EQ(1, tags.size());
-        ASSERT_EQ(id, tags[0].tagId);
-        ASSERT_EQ("test_tag", tags[0].tagName);
-        version = tags[0].version;
+        ASSERT_EQ(id, tags[0].get_tag_id());
+        ASSERT_EQ("test_tag", tags[0].get_tag_name());
+        version = tags[0].get_version();
     }
     {
-        auto result = client->getTag(spaceId, id, version).get();
-        ASSERT_TRUE(result.ok());
-        ASSERT_EQ(3, result.value().size());
-    }
-    {
-        auto result = client->removeTag(spaceId, "test_tag").get();
+        auto result = client->getTagSchema(spaceId, id, version).get();
         ASSERT_TRUE(result.ok());
     }
     {
-        auto result = client->getTag(spaceId, id, version).get();
+        auto result = client->removeTagSchema(spaceId, "test_tag").get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        auto result = client->getTagSchema(spaceId, id, version).get();
         ASSERT_FALSE(result.ok());
     }
 }
