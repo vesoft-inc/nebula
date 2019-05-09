@@ -19,7 +19,12 @@ ShowExecutor::ShowExecutor(Sentence *sentence,
 
 
 Status ShowExecutor::prepare() {
-    return Status::OK();
+    if (sentence_->showType() == ShowSentence::ShowType::kShowTags ||
+        sentence_->showType() == ShowSentence::ShowType::kShowEdges) {
+        return checkIfGraphSpaceChosen();
+    } else {
+        return Status::OK();
+    }
 }
 
 
@@ -121,11 +126,37 @@ void ShowExecutor::showSpaces() {
 }
 
 void ShowExecutor::showTags() {
-    // TODO(darion) support show tags via MetaClient
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto future = ectx()->getMetaClient()->listTagSchemas(spaceId);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(resp).status());
+            return;
+        }
+    };
+
+    LOG_AND_PROCESS_ERROR();
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 void ShowExecutor::showEdges() {
-    // TODO(darion) support show edges via MetaClient
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto future = ectx()->getMetaClient()->listEdgeSchemas(spaceId);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(resp).status());
+            return;
+        }
+    };
+
+    LOG_AND_PROCESS_ERROR();
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 void ShowExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

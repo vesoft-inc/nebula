@@ -151,7 +151,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         schema->ver_ = tagIt.version;
         tagIdSchemas.emplace(std::make_pair(tagIt.tag_id, tagIt.version), schema);
         tagNameIdMap.emplace(std::make_pair(spaceId, tagIt.tag_name), tagIt.tag_id);
-        // get the newest version
+        // get the latest tag version
         auto it = newestTagVerMap.find(std::make_pair(spaceId, tagIt.tag_id));
         if (it != newestTagVerMap.end()) {
             if (it->second < tagIt.version) {
@@ -175,7 +175,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         schema->ver_ = edgeIt.version;
         edgeTypeSchemas.emplace(std::make_pair(edgeIt.edge_type, edgeIt.version), schema);
         edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.edge_name), edgeIt.edge_type);
-        // get the newest version
+        // get the latest edge version
         auto it = newestEdgeVerMap.find(std::make_pair(spaceId, edgeIt.edge_type));
         if (it != newestEdgeVerMap.end()) {
             if (it->second < edgeIt.version) {

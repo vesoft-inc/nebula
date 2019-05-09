@@ -30,8 +30,7 @@ std::unique_ptr<SchemaManager> SchemaManager::create() {
 
 void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
                                       TagID tag,
-                                      std::shared_ptr<SchemaProviderIf> schema
-                                      ) {
+                                      std::shared_ptr<SchemaProviderIf> schema) {
     {
         folly::RWSpinLock::WriteHolder wh(tagLock_);
         // Only version 0
@@ -96,40 +95,6 @@ std::shared_ptr<const SchemaProviderIf> AdHocSchemaManager::getTagSchema(GraphSp
     }
 }
 
-bool AdHocSchemaManager::removeTagSchema(folly::StringPiece spaceName,
-                                         folly::StringPiece tagName,
-                                         SchemaVer version) {
-    return removeTagSchema(toGraphSpaceID(spaceName), toTagID(tagName), version);
-}
-
-bool AdHocSchemaManager::removeTagSchema(GraphSpaceID space, TagID tag, SchemaVer version) {
-    folly::RWSpinLock::ReadHolder rh(tagLock_);
-    auto key = std::make_pair(space, tag);
-    auto it = tagSchemas_.find(key);
-    if (it == tagSchemas_.end()) {
-        return false;
-    } else {
-        if (version < 0) {
-            if (it->second.empty()) {
-                return false;
-            } else {
-                auto latestVersionKey = it->second.rbegin()->first;
-                tagSchemas_[key].erase(latestVersionKey);
-                return true;
-            }
-        } else {
-            auto verIt = it->second.find(version);
-            if (verIt == it->second.end()) {
-                return false;
-            } else {
-                auto versionKey = verIt->first;
-                tagSchemas_[key].erase(versionKey);
-                return true;
-            }
-        }
-    }
-}
-
 SchemaVer AdHocSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
                                                     folly::StringPiece tagName) {
     auto space = toGraphSpaceID(spaceName);
@@ -157,11 +122,11 @@ AdHocSchemaManager::getEdgeSchema(folly::StringPiece spaceName,
 }
 
 std::shared_ptr<const SchemaProviderIf>
-AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
+AdHocSchemaManager::getEdgeSchema(GraphSpaceID spaceId,
                                   EdgeType edge,
                                   SchemaVer ver) {
-    folly::RWSpinLock::ReadHolder rh(edgeLock_);
-    auto it = edgeSchemas_.find(std::make_pair(space, edge));
+    folly::RWSpinLock::WriteHolder wh(edgeLock_);
+    auto it = edgeSchemas_.find(std::make_pair(spaceId, edge));
     if (it == edgeSchemas_.end()) {
         // Not found
         return std::shared_ptr<const SchemaProviderIf>();
@@ -183,40 +148,6 @@ AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
                 return std::shared_ptr<const SchemaProviderIf>();
             } else {
                 return verIt->second;
-            }
-        }
-    }
-}
-
-bool AdHocSchemaManager::removeEdgeSchema(folly::StringPiece spaceName,
-                                          folly::StringPiece edgeName,
-                                          SchemaVer version) {
-    return removeEdgeSchema(toGraphSpaceID(spaceName), toEdgeType(edgeName), version);
-}
-
-bool AdHocSchemaManager::removeEdgeSchema(GraphSpaceID space, EdgeType edge, SchemaVer version) {
-    folly::RWSpinLock::ReadHolder rh(edgeLock_);
-    auto key = std::make_pair(space, edge);
-    auto it = edgeSchemas_.find(key);
-    if (it == edgeSchemas_.end()) {
-        return false;
-    } else {
-        if (version < 0) {
-            if (it->second.empty()) {
-                return false;
-            } else {
-                auto latestVersionKey = it->second.rbegin()->first;
-                edgeSchemas_[key].erase(latestVersionKey);
-                return true;
-            }
-        } else {
-            auto verIt = it->second.find(version);
-            if (verIt == it->second.end()) {
-                return false;
-            } else {
-                auto versionKey = verIt->first;
-                edgeSchemas_[key].erase(versionKey);
-                return true;
             }
         }
     }

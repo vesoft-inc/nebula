@@ -29,15 +29,6 @@ public:
                                                                  folly::StringPiece tagName,
                                                                  SchemaVer ver = -1) = 0;
 
-
-    virtual bool removeTagSchema(GraphSpaceID space,
-                                 TagID tag,
-                                 SchemaVer version = -1) = 0;
-
-    virtual bool removeTagSchema(folly::StringPiece spaceName,
-                                 folly::StringPiece tagName,
-                                 SchemaVer version = -1) = 0;
-
     // Returns a negative number when the schema does not exist
     virtual SchemaVer getNewestTagSchemaVer(GraphSpaceID space, TagID tag) = 0;
 
@@ -51,15 +42,6 @@ public:
     virtual std::shared_ptr<const SchemaProviderIf> getEdgeSchema(folly::StringPiece spaceName,
                                                                   folly::StringPiece typeName,
                                                                   SchemaVer ver = -1) = 0;
-
-
-    virtual bool removeEdgeSchema(GraphSpaceID space,
-                                  EdgeType edge,
-                                  SchemaVer version = -1) = 0;
-
-    virtual bool removeEdgeSchema(folly::StringPiece spaceName,
-                                  folly::StringPiece edgeName,
-                                  SchemaVer version = -1) = 0;
 
     // Returns a negative number when the schema does not exist
     virtual SchemaVer getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) = 0;
@@ -97,28 +79,12 @@ public:
 
     std::shared_ptr<const SchemaProviderIf> getTagSchema(GraphSpaceID space,
                                                          TagID tag,
-                                                         SchemaVer ver = -1) override;
+                                                         SchemaVer version = -1) override;
 
     std::shared_ptr<const SchemaProviderIf> getTagSchema(folly::StringPiece spaceName,
                                                          folly::StringPiece tagName,
-                                                         SchemaVer ver = -1) override;
+                                                         SchemaVer version = -1) override;
 
-<<<<<<< HEAD
-    std::shared_ptr<const SchemaProviderIf> getTagSchema(
-        folly::StringPiece spaceName,
-        folly::StringPiece tagName,
-        int32_t ver = -1) override;
-
-    bool removeTagSchema(GraphSpaceID space,
-                         TagID tag,
-                         int32_t ver = -1) override;
-
-    bool removeTagSchema(folly::StringPiece spaceName,
-                         folly::StringPiece tagName,
-                         int32_t ver = -1) override;
-
-=======
->>>>>>> master
     // Returns a negative number when the schema does not exist
     SchemaVer getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
 
@@ -127,28 +93,12 @@ public:
 
     std::shared_ptr<const SchemaProviderIf> getEdgeSchema(GraphSpaceID space,
                                                           EdgeType edge,
-                                                          SchemaVer ver = -1) override;
+                                                          SchemaVer version = -1) override;
 
     std::shared_ptr<const SchemaProviderIf> getEdgeSchema(folly::StringPiece spaceName,
                                                           folly::StringPiece typeName,
-                                                          SchemaVer ver = -1) override;
+                                                          SchemaVer version = -1) override;
 
-<<<<<<< HEAD
-    std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
-        folly::StringPiece spaceName,
-        folly::StringPiece typeName,
-        int32_t ver = -1) override;
-
-    bool removeEdgeSchema(GraphSpaceID space,
-                          EdgeType edge,
-                          int32_t ver = -1) override;
-
-    bool removeEdgeSchema(folly::StringPiece spaceName,
-                          folly::StringPiece edgeName,
-                          int32_t ver = -1) override;
-
-=======
->>>>>>> master
     // Returns a negative number when the schema does not exist
     SchemaVer getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
 

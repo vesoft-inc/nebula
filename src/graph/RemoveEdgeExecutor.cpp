@@ -15,17 +15,15 @@ RemoveEdgeExecutor::RemoveEdgeExecutor(Sentence *sentence,
 }
 
 Status RemoveEdgeExecutor::prepare() {
-    return Status::OK();
+    return checkIfGraphSpaceChosen();
 }
 
 void RemoveEdgeExecutor::execute() {
-    auto *sm = ectx()->schemaManager();
+    auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
-    auto space = ectx()->rctx()->session()->space();
-    auto edgeType = ectx()->schemaManager()->toEdgeType(*name);
-    sm->removeEdgeSchema(space, edgeType);
-    DCHECK(onFinish_);
-    onFinish_();
+    auto spaceId = ectx()->rctx()->session()->space();
+    // dependent on MetaClient's removeEdge
+    UNUSED(mc); UNUSED(name); UNUSED(spaceId);
 }
 
 }   // namespace graph

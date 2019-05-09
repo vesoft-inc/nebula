@@ -15,17 +15,36 @@ RemoveTagExecutor::RemoveTagExecutor(Sentence *sentence,
 }
 
 Status RemoveTagExecutor::prepare() {
-    return Status::OK();
+    return checkIfGraphSpaceChosen();
 }
 
 void RemoveTagExecutor::execute() {
-    auto *sm = ectx()->schemaManager();
+    auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
-    auto space = ectx()->rctx()->session()->space();
-    auto tagId = ectx()->schemaManager()->toTagID(*name);
-    sm->removeTagSchema(space, tagId);
-    DCHECK(onFinish_);
-    onFinish_();
+    auto spaceId = ectx()->rctx()->session()->space();
+    UNUSED(mc); UNUSED(name); UNUSED(spaceId);
+
+    // TODO dependent on MetaClient's removeTagSchema (pull/295)
+    /**
+    auto future = mc->removeTagSchema(spaceId, *name);
+    auto *runner = ectx()->rctx()->runner();
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(resp).status());
+            return;
+        }
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+    **/
 }
 
 }   // namespace graph

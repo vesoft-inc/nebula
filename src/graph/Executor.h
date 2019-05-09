@@ -22,7 +22,7 @@ namespace nebula {
 namespace graph {
 
 #define LOG_AND_PROCESS_ERROR() \
-     auto error = [this] (auto &&e) { \
+    auto error = [this] (auto &&e) { \
         LOG(ERROR) << "Exception caught: " << e.what(); \
         DCHECK(onError_); \
         onError_(Status::Error("Internal error")); \
@@ -94,7 +94,7 @@ protected:
     }
 
 protected:
-    ExecutionContext                           *ectx_;
+    ExecutionContext                            *ectx_;
     std::function<void()>                       onFinish_;
     std::function<void(Status)>                 onError_;
 };
