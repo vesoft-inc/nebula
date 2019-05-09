@@ -24,9 +24,9 @@ public:
         kUse,
         kMatch,
         kAssignment,
-        kDefineTag,
+        kCreateTag,
         kAlterTag,
-        kDefineEdge,
+        kCreateEdge,
         kAlterEdge,
         kDescribeTag,
         kDescribeEdge,
@@ -40,6 +40,7 @@ public:
         kRemoveHosts,
         kCreateSpace,
         kDropSpace,
+        kYield,
     };
 
     Kind kind() const {

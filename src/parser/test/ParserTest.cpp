@@ -103,10 +103,10 @@ TEST(Parser, UseNamespace) {
     }
 }
 
-TEST(Parser, DefineTag) {
+TEST(Parser, CreateTag) {
     {
         GQLParser parser;
-        std::string query = "DEFINE TAG person(name string, age int TTL = 100, "
+        std::string query = "CREATE TAG person(name string, age int TTL = 100, "
                             "married bool, salary double, create_time timestamp)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -116,7 +116,9 @@ TEST(Parser, DefineTag) {
 TEST(Parser, AlterTag) {
     {
         GQLParser parser;
-        std::string query = "ALTER TAG person(age int TTL = 200)";
+        std::string query = "ALTER TAG person ADD (col1 int TTL = 200, col2 string), "
+                            "SET (col3 int TTL = 200, col4 string), "
+                            "DROP (col5, col6)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -385,6 +387,12 @@ TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
         std::string query = "create space default_space (partition_num=9, replica_factor=3)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "show spaces";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

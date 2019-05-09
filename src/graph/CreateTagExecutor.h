@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef GRAPH_DEFINETAGEXECUTOR_H_
-#define GRAPH_DEFINETAGEXECUTOR_H_
+#ifndef GRAPH_CREATETAGEXECUTOR_H_
+#define GRAPH_CREATETAGEXECUTOR_H_
 
 #include "base/Base.h"
 #include "graph/Executor.h"
@@ -13,12 +13,12 @@
 namespace nebula {
 namespace graph {
 
-class DefineTagExecutor final : public Executor {
+class CreateTagExecutor final : public Executor {
 public:
-    DefineTagExecutor(Sentence *sentence, ExecutionContext *ectx);
+    CreateTagExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "DefineTagExecutor";
+        return "CreateTagExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -26,7 +26,7 @@ public:
     void execute() override;
 
 private:
-    DefineTagSentence                          *sentence_{nullptr};
+    CreateTagSentence                          *sentence_{nullptr};
 };
 
 }   // namespace graph

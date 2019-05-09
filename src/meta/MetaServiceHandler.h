@@ -21,7 +21,7 @@ public:
                 : kvstore_(kv) {}
 
     /**
-     * Parts distributation related operations.
+     * Parts distribution related operations.
      * */
     folly::Future<cpp2::ExecResp>
     future_createSpace(const cpp2::CreateSpaceReq& req) override;
@@ -44,6 +44,9 @@ public:
     folly::Future<cpp2::GetPartsAllocResp>
     future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) override;
 
+    /**
+     * Custom kv related operations.
+     * */
     folly::Future<cpp2::MultiPutResp>
     future_multiPut(const cpp2::MultiPutReq& req) override;
 
@@ -66,7 +69,10 @@ public:
      * Schema related operations.
      * */
     folly::Future<cpp2::ExecResp>
-    future_addTag(const cpp2::AddTagReq& req) override;
+    future_createTag(const cpp2::CreateTagReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_alterTag(const cpp2::AlterTagReq& req) override;
 
     folly::Future<cpp2::ExecResp>
     future_removeTag(const cpp2::RemoveTagReq& req) override;
@@ -78,7 +84,7 @@ public:
     future_listTags(const cpp2::ListTagsReq& req) override;
 
     folly::Future<cpp2::ExecResp>
-    future_addEdge(const cpp2::AddEdgeReq& req) override;
+    future_createEdge(const cpp2::CreateEdgeReq& req) override;
 
     folly::Future<cpp2::ListEdgesResp>
     future_listEdges(const cpp2::ListEdgesReq& req) override;

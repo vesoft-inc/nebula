@@ -4,13 +4,13 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#include "meta/processors/AddTagProcessor.h"
+#include "meta/processors/CreateTagProcessor.h"
 #include "time/TimeUtils.h"
 
 namespace nebula {
 namespace meta {
 
-void AddTagProcessor::process(const cpp2::AddTagReq& req) {
+void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
         LOG(ERROR) << "Add Tag Failed : Space " << req.get_space_id() << " not found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -18,7 +18,7 @@ void AddTagProcessor::process(const cpp2::AddTagReq& req) {
         return;
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    auto ret = getTag(req.get_tag_name());
+    auto ret = getTagId(req.get_space_id(), req.get_tag_name());
     std::vector<kvstore::KV> data;
     if (ret.ok()) {
         LOG(ERROR) << "Add Tag Failed :" << req.get_tag_name() << "have existed";
@@ -27,26 +27,15 @@ void AddTagProcessor::process(const cpp2::AddTagReq& req) {
         onFinished();
         return;
     }
-    auto version = time::TimeUtils::nowInMSeconds();
     TagID tagId = autoIncrementId();
-    LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId << ", version " << version;
-    data.emplace_back(MetaServiceUtils::indexKey(EntryType::TAG, req.get_tag_name()),
+    data.emplace_back(MetaServiceUtils::indexTagKey(req.get_space_id(), req.get_tag_name()),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
-    data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),
+    LOG(INFO) << "Add Tag " << req.get_tag_name() << ", tagId " << tagId;
+    data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, 0),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));
-}
-
-StatusOr<TagID> AddTagProcessor::getTag(const std::string& tagName) {
-    auto indexKey = MetaServiceUtils::indexKey(EntryType::TAG, tagName);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
-        return *reinterpret_cast<const TagID*>(val.c_str());
-    }
-    return Status::Error("No Tag!");
 }
 
 }  // namespace meta

@@ -110,6 +110,7 @@ void waitUntilLeaderElected(
 
 
 void setupRaft(
+        int32_t numCopies,
         fs::TempDir& walRoot,
         std::shared_ptr<thread::GenericThreadPool>& workers,
         std::vector<std::string>& wals,
@@ -124,7 +125,7 @@ void setupRaft(
     workers->start(4);
 
     // Set up WAL folders (Create one extra for leader crash test)
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < numCopies + 1; ++i) {
         wals.emplace_back(
             folly::stringPrintf("%s/copy%d",
                                 walRoot.path(),
@@ -133,7 +134,7 @@ void setupRaft(
     }
 
     // Set up services
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < numCopies; ++i) {
         services.push_back(RaftexService::createService(nullptr));
         services.back()->waitUntilReady();
         uint16_t port = services.back()->getServerPort();

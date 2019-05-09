@@ -106,7 +106,7 @@ public:
         return *this;
     }
 
-    // The iterator becomes invalid when exausting the logs
+    // The iterator becomes invalid when exhausting the logs
     // **OR** running into a CAS log
     bool valid() const override {
         return valid_;
@@ -443,15 +443,13 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
 }
 
 
-folly::Future<RaftPart::AppendLogResponses>
-RaftPart::replicateLogs(
-        folly::EventBase* eb,
-        AppendLogsIterator iter,
-        TermID currTerm,
-        LogID lastLogId,
-        LogID committedId,
-        TermID prevLogTerm,
-        LogID prevLogId) {
+void RaftPart::replicateLogs(folly::EventBase* eb,
+                             AppendLogsIterator iter,
+                             TermID currTerm,
+                             LogID lastLogId,
+                             LogID committedId,
+                             TermID prevLogTerm,
+                             LogID prevLogId) {
     using namespace folly;  // NOLINT since the fancy overload of | operator
 
     decltype(peerHosts_) hosts;
@@ -465,7 +463,7 @@ RaftPart::replicateLogs(
             cachingPromise_.setValue(AppendLogResult::E_STOPPED);
             logs_.clear();
             replicatingLogs_ = false;
-            return folly::Future<AppendLogResponses>::makeEmpty();
+            return;
         }
 
         if (role_ != Role::LEADER) {
@@ -475,7 +473,7 @@ RaftPart::replicateLogs(
             cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
             logs_.clear();
             replicatingLogs_ = false;
-            return folly::Future<AppendLogResponses>::makeEmpty();
+            return;
         }
 
         hosts = peerHosts_;
@@ -483,8 +481,22 @@ RaftPart::replicateLogs(
 
     VLOG(2) << idStr_ << "About to replicate logs to all peer hosts";
 
+    if (!hosts || hosts->empty()) {
+        // No peer
+        VLOG(2) << idStr_ << "The leader has no peer";
+        processAppendLogResponses(AppendLogResponses(),
+                                  eb,
+                                  std::move(iter),
+                                  currTerm,
+                                  lastLogId,
+                                  committedId,
+                                  prevLogTerm,
+                                  prevLogId);
+        return;
+    }
+
     using PeerHostEntry = typename decltype(peerHosts_)::element_type::value_type;
-    return collectNSucceeded(
+    collectNSucceeded(
         gen::from(*hosts)
         | gen::map([self = shared_from_this(),
                     eb,
@@ -659,7 +671,8 @@ bool RaftPart::needToStartElection() {
 
 
 bool RaftPart::prepareElectionRequest(
-        cpp2::AskForVoteRequest& req) {
+        cpp2::AskForVoteRequest& req,
+        std::shared_ptr<std::unordered_map<HostAddr, std::shared_ptr<Host>>>& hosts) {
     std::lock_guard<std::mutex> g(raftLock_);
 
     // Make sure the partition is running
@@ -681,6 +694,8 @@ bool RaftPart::prepareElectionRequest(
     req.set_term(++proposedTerm_);  // Bump up the proposed term
     req.set_last_log_id(lastLogId_);
     req.set_last_log_term(lastLogTerm_);
+
+    hosts = peerHosts_;
 
     return true;
 }
@@ -729,7 +744,8 @@ bool RaftPart::leaderElection() {
     using namespace folly;  // NOLINT since the fancy overload of | operator
 
     cpp2::AskForVoteRequest voteReq;
-    if (!prepareElectionRequest(voteReq)) {
+    decltype(peerHosts_) hosts;
+    if (!prepareElectionRequest(voteReq, hosts)) {
         return false;
     }
 
@@ -745,42 +761,49 @@ bool RaftPart::leaderElection() {
             << ", candidatePort = " << voteReq.get_candidate_port()
             << ")";
 
-    auto eb = ioThreadPool_->getEventBase();
-    auto futures = collectNSucceeded(
-        gen::from(*peerHosts_)
-        | gen::map([eb, self = shared_from_this(), &voteReq] (
-                decltype(peerHosts_)::element_type::value_type& host) {
-            VLOG(2) << self->idStr_
-                    << "Sending AskForVoteRequest to "
-                    << NetworkUtils::intToIPv4(host.first.first)
-                    << ":" << host.first.second;
-            return via(
-                eb,
-                [&voteReq, &host] ()
-                        -> Future<cpp2::AskForVoteResponse> {
-                    return host.second->askForVote(voteReq);
-                });
-        })
-        | gen::as<std::vector>(),
-        // Number of succeeded required
-        quorum_,
-        // Result evaluator
-        [](cpp2::AskForVoteResponse& resp) {
-            return resp.get_error_code()
-                == cpp2::ErrorCode::SUCCEEDED;
-        });
+    auto resps = ElectionResponses();
+    if (!hosts || hosts->empty()) {
+        VLOG(2) << idStr_ << "No peer found, I will be the leader";
+    } else {
+        auto eb = ioThreadPool_->getEventBase();
+        auto futures = collectNSucceeded(
+            gen::from(*hosts)
+            | gen::map([eb, self = shared_from_this(), &voteReq] (
+                    decltype(peerHosts_)::element_type::value_type& host) {
+                VLOG(2) << self->idStr_
+                        << "Sending AskForVoteRequest to "
+                        << NetworkUtils::intToIPv4(host.first.first)
+                        << ":" << host.first.second;
+                return via(
+                    eb,
+                    [&voteReq, &host] ()
+                            -> Future<cpp2::AskForVoteResponse> {
+                        return host.second->askForVote(voteReq);
+                    });
+            })
+            | gen::as<std::vector>(),
+            // Number of succeeded required
+            quorum_,
+            // Result evaluator
+            [](cpp2::AskForVoteResponse& resp) {
+                return resp.get_error_code()
+                    == cpp2::ErrorCode::SUCCEEDED;
+            });
 
-    VLOG(2) << idStr_
-            << "AskForVoteRequest has been sent to all peers"
-               ", waiting for responses";
-    futures.wait();
-    CHECK(!futures.hasException())
-        << "Got exception -- "
-        << futures.result().exception().what().toStdString();
-    VLOG(2) << idStr_ << "Got AskForVote response back";
+        VLOG(2) << idStr_
+                << "AskForVoteRequest has been sent to all peers"
+                   ", waiting for responses";
+        futures.wait();
+        CHECK(!futures.hasException())
+            << "Got exception -- "
+            << futures.result().exception().what().toStdString();
+        VLOG(2) << idStr_ << "Got AskForVote response back";
+
+        resps = std::move(futures).get();
+    }
 
     // Process the responses
-    switch (processElectionResponses(std::move(futures).get())) {
+    switch (processElectionResponses(resps)) {
         case Role::LEADER: {
             // Elected
             LOG(INFO) << idStr_
@@ -1199,6 +1222,12 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::sendHeartbeat() {
         hosts = peerHosts_;
     }
 
+    if (!hosts || hosts->empty()) {
+        VLOG(2) << idStr_ << "No peer to send the heartbeat";
+        doneHeartbeat();
+        return AppendLogResult::SUCCEEDED;
+    }
+
     auto eb = ioThreadPool_->getEventBase();
 
     using PeerHostEntry = typename decltype(peerHosts_)::element_type::value_type;
@@ -1233,38 +1262,43 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::sendHeartbeat() {
             VLOG(2) << self->idStr_ << "Done with heartbeats";
             CHECK(!result.hasException());
 
-            decltype(self->logs_) swappedOutLogs;
-            LogID firstId = 0;
-            {
-                std::lock_guard<std::mutex> g(self->raftLock_);
-                CHECK(self->replicatingLogs_);
-                if (self->logs_.size() > 0) {
-                    // continue to replicate the logs
-                    self->sendingPromise_ = std::move(self->cachingPromise_);
-                    self->cachingPromise_.reset();
-                    std::swap(swappedOutLogs, self->logs_);
-                    firstId = lastLogId_ + 1;
-                } else {
-                    self->replicatingLogs_ = false;
-                }
-            }
-            if (!swappedOutLogs.empty()) {
-                AppendLogsIterator it(
-                    firstId,
-                    std::move(swappedOutLogs),
-                    [this] (const std::string& msg) -> std::string {
-                        auto res = compareAndSet(msg);
-                        if (res.empty()) {
-                            // Failed
-                            sendingPromise_.setOneSingleValue(
-                                AppendLogResult::E_CAS_FAILURE);
-                        }
-                        return res;
-                    });
-                self->appendLogsInternal(std::move(it));
-            }
+            self->doneHeartbeat();
             return AppendLogResult::SUCCEEDED;
         });
+}
+
+
+void RaftPart::doneHeartbeat() {
+    decltype(logs_) swappedOutLogs;
+    LogID firstId = 0;
+    {
+        std::lock_guard<std::mutex> g(raftLock_);
+        CHECK(replicatingLogs_);
+        if (logs_.size() > 0) {
+            // continue to replicate the logs
+            sendingPromise_ = std::move(cachingPromise_);
+            cachingPromise_.reset();
+            std::swap(swappedOutLogs, logs_);
+            firstId = lastLogId_ + 1;
+        } else {
+            replicatingLogs_ = false;
+        }
+    }
+    if (!swappedOutLogs.empty()) {
+        AppendLogsIterator it(
+            firstId,
+            std::move(swappedOutLogs),
+            [this] (const std::string& msg) -> std::string {
+                auto res = compareAndSet(msg);
+                if (res.empty()) {
+                    // Failed
+                    sendingPromise_.setOneSingleValue(
+                        AppendLogResult::E_CAS_FAILURE);
+                }
+                return res;
+            });
+        appendLogsInternal(std::move(it));
+    }
 }
 
 }  // namespace raftex

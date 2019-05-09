@@ -116,31 +116,67 @@ nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
     return host;
 }
 
+std::string MetaServiceUtils::schemaEdgesPrefix(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(kEdgesTable.size() + sizeof(GraphSpaceID));
+    key.append(kEdgesTable.data(), kEdgesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    return key;
+}
+
 std::string MetaServiceUtils::schemaEdgeKey(GraphSpaceID spaceId,
                                             EdgeType edgeType,
-                                            int64_t version) {
+                                            SchemaVer version) {
+    auto storageVer = std::numeric_limits<SchemaVer>::max() - version;
     std::string key;
     key.reserve(128);
     key.append(kEdgesTable.data(), kEdgesTable.size());
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
     key.append(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType));
-    key.append(reinterpret_cast<const char*>(&version), sizeof(version));
+    key.append(reinterpret_cast<const char*>(&storageVer), sizeof(storageVer));
     return key;
 }
 
-std::string MetaServiceUtils::schemaEdgeVal(nebula::cpp2::Schema schema) {
-    std::string val;
-    apache::thrift::CompactSerializer::serialize(schema, &val);
+std::string MetaServiceUtils::schemaEdgeVal(const std::string& name, nebula::cpp2::Schema schema) {
+    auto len = name.size();
+    std::string val, sval;
+    apache::thrift::CompactSerializer::serialize(schema, &sval);
+    val.reserve(sizeof(int32_t) + name.size() + sval.size());
+    val.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+    val.append(name);
+    val.append(sval);
     return val;
 }
 
-std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version) {
+SchemaVer MetaServiceUtils::parseEdgeVersion(folly::StringPiece key) {
+    auto offset = kEdgesTable.size() + sizeof(GraphSpaceID) + sizeof(EdgeType);
+    return std::numeric_limits<SchemaVer>::max() -
+          *reinterpret_cast<const SchemaVer*>(key.begin() + offset);
+}
+
+std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, SchemaVer version) {
+    auto storageVer = std::numeric_limits<SchemaVer>::max() - version;
     std::string key;
     key.reserve(128);
     key.append(kTagsTable.data(), kTagsTable.size());
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
     key.append(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
-    key.append(reinterpret_cast<const char*>(&version), sizeof(version));
+    key.append(reinterpret_cast<const char*>(&storageVer), sizeof(version));
+    return key;
+}
+
+SchemaVer MetaServiceUtils::parseTagVersion(folly::StringPiece key) {
+    auto offset = kTagsTable.size() + sizeof(GraphSpaceID) + sizeof(TagID);
+    return std::numeric_limits<SchemaVer>::max() -
+          *reinterpret_cast<const SchemaVer*>(key.begin() + offset);
+}
+
+std::string MetaServiceUtils::schemaTagPrefix(GraphSpaceID spaceId, TagID tagId) {
+    std::string key;
+    key.reserve(128);
+    key.append(kTagsTable.data(), kTagsTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    key.append(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
     return key;
 }
 
@@ -151,7 +187,6 @@ std::string MetaServiceUtils::schemaTagsPrefix(GraphSpaceID spaceId) {
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
     return key;
 }
-
 
 std::string MetaServiceUtils::schemaTagVal(const std::string& name, nebula::cpp2::Schema schema) {
     int32_t len = name.size();
@@ -172,11 +207,36 @@ nebula::cpp2::Schema MetaServiceUtils::parseSchema(folly::StringPiece rawData) {
     return schema;
 }
 
-std::string MetaServiceUtils::indexKey(EntryType type, const std::string& name) {
+std::string MetaServiceUtils::indexSpaceKey(const std::string& name) {
     std::string key;
     key.reserve(128);
     key.append(kIndexTable.data(), kIndexTable.size());
+    EntryType type = EntryType::SPACE;
     key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::indexTagKey(GraphSpaceID spaceId,
+                                          const std::string& name) {
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    EntryType type = EntryType::TAG;
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::indexEdgeKey(GraphSpaceID spaceId,
+                                           const std::string& name) {
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    EntryType type = EntryType::EDGE;
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     key.append(name);
     return key;
 }

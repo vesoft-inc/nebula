@@ -12,6 +12,8 @@ std::string ShowSentence::toString() const {
     switch (showType_) {
         case ShowType::kShowHosts:
             return std::string("SHOW HOSTS");
+        case ShowType::kShowSpaces:
+            return std::string("SHOW SPACES");
         case ShowType::kUnknown:
         default:
             FLOG_FATAL("Type illegal");
