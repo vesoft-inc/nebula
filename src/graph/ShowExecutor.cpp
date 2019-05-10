@@ -129,6 +129,7 @@ void ShowExecutor::showTags() {
     auto spaceId = ectx()->rctx()->session()->space();
     auto future = ectx()->getMetaClient()->listTagSchemas(spaceId);
     auto *runner = ectx()->rctx()->runner();
+    resp_ = std::make_unique<cpp2::ExecutionResponse>();
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
@@ -136,6 +137,22 @@ void ShowExecutor::showTags() {
             onError_(std::move(resp).status());
             return;
         }
+
+        auto value = std::move(resp).value();
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Name"};
+        resp_->set_column_names(std::move(header));
+
+        for (auto &tag : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(1);
+            row[0].set_str(tag.get_tag_name());
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        DCHECK(onFinish_);
+        onFinish_();
     };
 
     LOG_AND_PROCESS_ERROR();
@@ -153,6 +170,22 @@ void ShowExecutor::showEdges() {
             onError_(std::move(resp).status());
             return;
         }
+
+        auto value = std::move(resp).value();
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Name"};
+        resp_->set_column_names(std::move(header));
+
+        for (auto &edge : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(1);
+            row[0].set_str(edge.get_edge_name());
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        DCHECK(onFinish_);
+        onFinish_();
     };
 
     LOG_AND_PROCESS_ERROR();

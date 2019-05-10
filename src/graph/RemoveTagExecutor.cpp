@@ -22,11 +22,8 @@ void RemoveTagExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
-    UNUSED(mc); UNUSED(name); UNUSED(spaceId);
-
-    // TODO dependent on MetaClient's removeTagSchema (pull/295)
-    /**
     auto future = mc->removeTagSchema(spaceId, *name);
+
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
@@ -37,14 +34,15 @@ void RemoveTagExecutor::execute() {
         DCHECK(onFinish_);
         onFinish_();
     };
+
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
         onError_(Status::Error("Internal error"));
         return;
     };
+
     std::move(future).via(runner).thenValue(cb).thenError(error);
-    **/
 }
 
 }   // namespace graph
