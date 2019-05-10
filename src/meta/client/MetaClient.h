@@ -95,23 +95,28 @@ public:
     getPartsAlloc(GraphSpaceID spaceId);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<TagID>> createTagSchema(GraphSpaceID spaceId,
-                                                   std::string name,
-                                                   nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<TagID>>
+    createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
 
     // TODO(boshengchen) need refresh tagNameIdMap and newestTagVerMap
-    folly::Future<StatusOr<TagID>> alterTagSchema(GraphSpaceID spaceId,
-                                                  std::string name,
-                                                  std::vector<cpp2::AlterTagItem> tagItems);
+    folly::Future<StatusOr<TagID>>
+    alterTagSchema(GraphSpaceID spaceId, std::string name, std::vector<cpp2::AlterTagItem> items);
 
-    folly::Future<StatusOr<std::vector<cpp2::TagItem>>> listTagSchemas(GraphSpaceID spaceId);
+    folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
+    listTagSchemas(GraphSpaceID spaceId);
+
+    folly::Future<StatusOr<bool>>
+    removeTagSchema(int32_t spaceId, std::string name);
+
+    folly::Future<StatusOr<nebula::cpp2::Schema>>
+    getTagSchema(int32_t spaceId, int32_t tagId, int64_t version);
 
     // TODO(Laura) : We can actively update the cache once we add the schema
-    folly::Future<StatusOr<EdgeType>> createEdgeSchema(GraphSpaceID spaceId,
-                                                       std::string name,
-                                                       nebula::cpp2::Schema schema);
+    folly::Future<StatusOr<EdgeType>>
+    createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
 
-    folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>> listEdgeSchemas(GraphSpaceID spaceId);
+    folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
+    listEdgeSchemas(GraphSpaceID spaceId);
 
     // These are the interfaces about cache opeartions.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
@@ -147,8 +152,7 @@ public:
                                                                              SchemaVer ver = -1);
 
     folly::Future<StatusOr<bool>>
-    multiPut(std::string segment,
-             std::vector<std::pair<std::string, std::string>> pairs);
+    multiPut(std::string segment, std::vector<std::pair<std::string, std::string>> pairs);
 
     folly::Future<StatusOr<std::string>>
     get(std::string segment, std::string key);
