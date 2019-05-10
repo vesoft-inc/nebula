@@ -4,28 +4,28 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef META_ALTERTAGPROCESSOR_H_
-#define META_ALTERTAGPROCESSOR_H_
+#ifndef META_ALTEREDGEPROCESSOR_H_
+#define META_ALTEREDGEPROCESSOR_H_
 
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-class AlterTagProcessor : public BaseProcessor<cpp2::ExecResp> {
+class AlterEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
-    static AlterTagProcessor* instance(kvstore::KVStore* kvstore) {
-        return new AlterTagProcessor(kvstore);
+    static AlterEdgeProcessor* instance(kvstore::KVStore* kvstore) {
+        return new AlterEdgeProcessor(kvstore);
     }
 
-    void process(const cpp2::AlterTagReq& req);
+    void process(const cpp2::AlterEdgeReq& req);
 
 private:
-    explicit AlterTagProcessor(kvstore::KVStore* kvstore)
+    explicit AlterEdgeProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta
 }  // namespace nebula
-#endif  // META_ALTERTAGPROCESSOR_H_
+#endif  // META_ALTEREDGEPROCESSOR_H_
 
