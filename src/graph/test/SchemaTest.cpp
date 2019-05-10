@@ -67,7 +67,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG person(name string, email string, "
+        std::string query = "CREATE TAG person(name string, email_addr string, "
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
         sleep(FLAGS_load_data_interval_second + 1);
@@ -81,7 +81,7 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"name", "string"},
-            {"email", "string"},
+            {"email_addr", "string"},
             {"age", "int"},
             {"gender", "string"},
             {"row_timestamp", "timestamp"},

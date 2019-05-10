@@ -48,6 +48,8 @@ class GraphScanner;
     nebula::YieldClause                    *yield_clause;
     nebula::YieldColumns                   *yield_columns;
     nebula::YieldColumn                    *yield_column;
+    nebula::VertexTagList                  *vertex_tag_list;
+    nebula::VertexTagItem                  *vertex_tag_item;
     nebula::PropertyList                   *prop_list;
     nebula::ValueList                      *value_list;
     nebula::VertexRowList                  *vertex_row_list;
@@ -63,6 +65,10 @@ class GraphScanner;
     nebula::SpaceOptItem                   *space_opt_item;
     nebula::AlterTagOptList                *alter_tag_opt_list;
     nebula::AlterTagOptItem                *alter_tag_opt_item;
+    nebula::WithUserOptList                *with_user_opt_list;
+    nebula::WithUserOptItem                *with_user_opt_item;
+    nebula::RoleTypeClause                 *role_type_clause;
+    nebula::AclItemClause                  *acl_item_clause;
 }
 
 /* destructors */
@@ -76,7 +82,10 @@ class GraphScanner;
 %token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_CHANGE
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
+%token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
+%token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
+%token KW_ROLES KW_BY
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -109,6 +118,8 @@ class GraphScanner;
 %type <yield_clause> yield_clause
 %type <yield_columns> yield_columns
 %type <yield_column> yield_column
+%type <vertex_tag_list> vertex_tag_list
+%type <vertex_tag_item> vertex_tag_item
 %type <prop_list> prop_list
 %type <value_list> value_list
 %type <vertex_row_list> vertex_row_list
@@ -129,6 +140,11 @@ class GraphScanner;
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
 
+%type <with_user_opt_list> with_user_opt_list
+%type <with_user_opt_item> with_user_opt_item
+%type <role_type_clause> role_type_clause
+%type <acl_item_clause> acl_item_clause
+
 %type <sentence> go_sentence match_sentence use_sentence find_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
@@ -139,6 +155,8 @@ class GraphScanner;
 %type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
+%type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
+%type <sentence> grant_sentence revoke_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -591,8 +609,31 @@ assignment_sentence
     ;
 
 insert_vertex_sentence
-    : KW_INSERT KW_VERTEX LABEL L_PAREN prop_list R_PAREN KW_VALUES vertex_row_list {
-        $$ = new InsertVertexSentence($3, $5, $8);
+    : KW_INSERT KW_VERTEX vertex_tag_list KW_VALUES vertex_row_list {
+        $$ = new InsertVertexSentence($3, $5);
+    }
+    | KW_INSERT KW_VERTEX KW_NO KW_OVERWRITE vertex_tag_list KW_VALUES vertex_row_list {
+        $$ = new InsertVertexSentence($5, $7, false /* not overwritable */);
+    }
+    ;
+
+vertex_tag_list
+    : vertex_tag_item {
+        $$ = new VertexTagList();
+        $$->addTagItem($1);
+    }
+    | vertex_tag_list COMMA vertex_tag_item {
+        $$ = $1;
+        $$->addTagItem($3);
+    }
+    ;
+
+vertex_tag_item
+    : LABEL {
+        $$ = new VertexTagItem($1);
+    }
+    | LABEL L_PAREN prop_list R_PAREN {
+        $$ = new VertexTagItem($1, $3);
     }
     ;
 
@@ -622,8 +663,8 @@ vertex_row_list
     ;
 
 vertex_row_item
-    : L_PAREN INTEGER COLON value_list R_PAREN {
-        $$ = new VertexRowItem($2, $4);
+    : INTEGER COLON L_PAREN value_list R_PAREN {
+        $$ = new VertexRowItem($1, $4);
     }
     ;
 
@@ -671,11 +712,11 @@ edge_row_list
     ;
 
 edge_row_item
-    : L_PAREN INTEGER R_ARROW INTEGER COLON value_list R_PAREN {
-        $$ = new EdgeRowItem($2, $4, $6);
+    : INTEGER R_ARROW INTEGER COLON L_PAREN value_list R_PAREN {
+        $$ = new EdgeRowItem($1, $3, $6);
     }
-    | L_PAREN INTEGER R_ARROW INTEGER AT INTEGER COLON value_list R_PAREN {
-        $$ = new EdgeRowItem($2, $4, $6, $8);
+    | INTEGER R_ARROW INTEGER AT INTEGER COLON L_PAREN value_list R_PAREN {
+        $$ = new EdgeRowItem($1, $3, $5, $8);
     }
     ;
 
@@ -797,6 +838,15 @@ show_sentence
     | KW_SHOW KW_SPACES {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowSpaces);
     }
+    | KW_SHOW KW_USERS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowUsers);
+    }
+    | KW_SHOW KW_USER LABEL {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowUser, $3);
+    }
+    | KW_SHOW KW_ROLES KW_IN LABEL {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowRoles, $4);
+    }
     ;
 
 add_hosts_sentence
@@ -868,6 +918,121 @@ drop_space_sentence
     }
     ;
 
+//  User manager sentences.
+
+with_user_opt_item
+    : KW_FIRSTNAME STRING {
+        $$ = new WithUserOptItem(WithUserOptItem::FIRST, $2);
+    }
+    | KW_LASTNAME STRING {
+        $$ = new WithUserOptItem(WithUserOptItem::LAST, $2);
+    }
+    | KW_EMAIL STRING {
+        $$ = new WithUserOptItem(WithUserOptItem::EMAIL, $2);
+    }
+    | KW_PHONE STRING {
+        $$ = new WithUserOptItem(WithUserOptItem::PHONE, $2);
+    }
+    ;
+
+with_user_opt_list
+    : with_user_opt_item {
+        $$ = new WithUserOptList();
+        $$->addOpt($1);
+    }
+    | with_user_opt_list COMMA with_user_opt_item {
+        $$ = $1;
+        $$->addOpt($3);
+    }
+    ;
+
+create_user_sentence
+    : KW_CREATE KW_USER LABEL KW_WITH KW_PASSWORD STRING {
+        $$ = new CreateUserSentence($3, $6);
+    }
+    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS LABEL KW_WITH KW_PASSWORD STRING {
+        auto sentence = new CreateUserSentence($6, $9);
+        sentence->setMissingOk(true);
+        $$ = sentence;
+    }
+    | KW_CREATE KW_USER LABEL KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
+        auto sentence = new CreateUserSentence($3, $6);
+        sentence->setOpts($8);
+        $$ = sentence;
+    }
+    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS LABEL KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
+        auto sentence = new CreateUserSentence($6, $9);
+        sentence->setMissingOk(true);
+        sentence->setOpts($11);
+        $$ = sentence;
+    }
+
+alter_user_sentence
+    : KW_ALTER KW_USER LABEL KW_WITH with_user_opt_list {
+        auto sentence = new AlterUserSentence($3);
+        sentence->setOpts($5);
+        $$ = sentence;
+    }
+    ;
+
+drop_user_sentence
+    : KW_DROP KW_USER LABEL {
+        $$ = new DropUserSentence($3);
+    }
+    | KW_DROP KW_USER KW_IF KW_EXISTS LABEL {
+        auto sentence = new DropUserSentence($5);
+        sentence->setMissingOk(true);
+        $$ = sentence;
+    }
+    ;
+
+change_password_sentence
+    : KW_CHANGE KW_PASSWORD LABEL KW_TO STRING {
+        auto sentence = new ChangePasswordSentence($3, $5);
+        $$ = sentence;
+    }
+    | KW_CHANGE KW_PASSWORD LABEL KW_FROM STRING KW_TO STRING {
+        auto sentence = new ChangePasswordSentence($3, $5, $7);
+        $$ = sentence;
+    }
+    ;
+
+role_type_clause
+    : KW_GOD { $$ = new RoleTypeClause(RoleTypeClause::GOD); }
+    | KW_ADMIN { $$ = new RoleTypeClause(RoleTypeClause::ADMIN); }
+    | KW_USER { $$ = new RoleTypeClause(RoleTypeClause::USER); }
+    | KW_GUEST { $$ = new RoleTypeClause(RoleTypeClause::GUEST); }
+    ;
+
+acl_item_clause
+    : KW_ROLE role_type_clause KW_ON LABEL {
+        auto sentence = new AclItemClause(true, $4);
+        sentence->setRoleTypeClause($2);
+        $$ = sentence;
+    }
+    | role_type_clause KW_ON LABEL {
+        auto sentence = new AclItemClause(false, $3);
+        sentence->setRoleTypeClause($1);
+        $$ = sentence;
+    }
+    ;
+
+grant_sentence
+    : KW_GRANT acl_item_clause KW_TO LABEL {
+        auto sentence = new GrantSentence($4);
+        sentence->setAclItemClause($2);
+        $$ = sentence;
+    }
+    ;
+
+revoke_sentence
+    : KW_REVOKE acl_item_clause KW_FROM LABEL {
+        auto sentence = new RevokeSentence($4);
+        sentence->setAclItemClause($2);
+        $$ = sentence;
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -895,6 +1060,13 @@ maintain_sentence
         $$ = $1;
     }
     ;
+    | create_user_sentence { $$ = $1; }
+    | alter_user_sentence { $$ = $1; }
+    | drop_user_sentence { $$ = $1; }
+    | change_password_sentence { $$ = $1; }
+    | grant_sentence { $$ = $1; }
+    | revoke_sentence { $$ = $1; }
+    ; 
 
 sentence
     : maintain_sentence { $$ = $1; }

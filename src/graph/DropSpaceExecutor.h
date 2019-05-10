@@ -27,7 +27,7 @@ public:
 
 private:
     DropSpaceSentence       *sentence_{nullptr};
-    std::string             *spaceName_{nullptr};
+    const std::string       *spaceName_{nullptr};
 };
 
 }   // namespace graph

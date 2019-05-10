@@ -31,7 +31,6 @@ private:
     InsertVertexSentence                       *sentence_{nullptr};
     bool                                        overwritable_{true};
     TagID                                       tagId_{0};
-    std::string                                *vertex_{nullptr};
     TagSchema                                   schema_;
     std::vector<std::string*>                   properties_;
     std::vector<VertexRowItem*>                 rows_;

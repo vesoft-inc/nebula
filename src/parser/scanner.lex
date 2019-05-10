@@ -69,7 +69,28 @@ PARTITION_NUM               ([Pp][Aa][Rr][Tt][Ii][Tt][Ii][[Oo][Nn][_][Nn][Uu][Mm
 REPLICA_FACTOR              ([Rr][Ee][Pp][Ll][Ii][Cc][Aa][_][Ff][Aa][Cc][Tt][Oo][Rr])
 DROP                        ([Dd][Rr][Oo][Pp])
 REMOVE                      ([Rr][Ee][Mm][Oo][Vv][Ee])
+IF                          ([Ii][Ff])
+NOT                         ([Nn][Oo][Tt])
+EXISTS                      ([Ee][Xx][Ii][Ss][Tt][Ss])
+WITH                        ([Ww][Ii][Tt][Hh])
+FIRSTNAME                   ([Ff][Ii][Rr][Ss][Tt][Nn][Aa][Mm][Ee])
+LASTNAME                    ([Ll][Aa][Ss][Tt][Nn][Aa][Mm][Ee])
+EMAIL                       ([Ee][Mm][Aa][Ii][Ll])
+PHONE                       ([Pp][Hh][Oo][Nn][Ee])
+USER                        ([Uu][Ss][Ee][Rr])
+USERS                       ([Uu][Ss][Ee][Rr][Ss])
+PASSWORD                    ([Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd])
 CHANGE                      ([Cc][Hh][Aa][Nn][Gg][Ee])
+ROLE                        ([Rr][Oo][Ll][Ee])
+GOD                         ([Gg][Oo][Dd])
+ADMIN                       ([Aa][Dd][Mm][Ii][Nn])
+GUEST                       ([Gg][Uu][Ee][Ss][Tt])
+GRANT                       ([Gg][Rr][Aa][Nn][Tt])
+REVOKE                      ([Rr][Ee][Vv][Oo][Kk][Ee])
+ON                          ([Oo][Nn])
+ROLES                       ([Rr][Oo][Ll][Ee][Ss])
+BY                          ([Bb][Yy])
+IN                          ([Ii][Nn])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -131,7 +152,28 @@ OCT                         ([0-7])
 {REPLICA_FACTOR}            { return TokenType::KW_REPLICA_FACTOR; }
 {DROP}                      { return TokenType::KW_DROP; }
 {REMOVE}                    { return TokenType::KW_REMOVE; }
+{IF}                        { return TokenType::KW_IF; }
+{NOT}                       { return TokenType::KW_NOT; }
+{EXISTS}                    { return TokenType::KW_EXISTS; }
+{WITH}                      { return TokenType::KW_WITH; }
+{FIRSTNAME}                 { return TokenType::KW_FIRSTNAME; }
+{LASTNAME}                  { return TokenType::KW_LASTNAME; }
+{EMAIL}                     { return TokenType::KW_EMAIL; }
+{PHONE}                     { return TokenType::KW_PHONE; }
+{USER}                      { return TokenType::KW_USER; }
+{USERS}                     { return TokenType::KW_USERS; }
+{PASSWORD}                  { return TokenType::KW_PASSWORD; }
 {CHANGE}                    { return TokenType::KW_CHANGE; }
+{ROLE}                      { return TokenType::KW_ROLE; }
+{GOD}                       { return TokenType::KW_GOD; }
+{ADMIN}                     { return TokenType::KW_ADMIN; }
+{GUEST}                     { return TokenType::KW_GUEST; }
+{GRANT}                     { return TokenType::KW_GRANT; }
+{REVOKE}                    { return TokenType::KW_REVOKE; }
+{ON}                        { return TokenType::KW_ON; }
+{ROLES}                     { return TokenType::KW_ROLES; }
+{BY}                        { return TokenType::KW_BY; }
+{IN}                        { return TokenType::KW_IN; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
