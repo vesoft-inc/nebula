@@ -26,6 +26,7 @@ void FileBasedSchemaManager::init(MetaClient *client) {
         Configuration spaceConf;
         CHECK(conf.fetchAsSubConf(name.c_str(), spaceConf).ok());
         this->readOneGraphSpace(space, spaceConf);
+        this->spaces_.emplace(space);
     }).ok());
 }
 
@@ -82,9 +83,14 @@ std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
         folly::StringPiece fname = folly::trimWhitespace(parts[0]);
         folly::StringPiece type = folly::trimWhitespace(parts[1]);
 
+        if (schema->getFieldIndex(fname) != -1) {
+            LOG(ERROR) << "Field \"" << fname.toString() << "\" has existed";
+            return std::shared_ptr<SchemaProviderIf>();
+        }
+
         if (fname == "__version") {
             try {
-                schema->ver_ = folly::to<int32_t>(type);
+                schema->ver_ = folly::to<SchemaVer>(type);
                 if (schema->ver_ < 0) {
                     LOG(ERROR) << "Invalid schema version: " << schema->ver_;
                     return std::shared_ptr<SchemaProviderIf>();
@@ -124,11 +130,7 @@ std::shared_ptr<const SchemaProviderIf> FileBasedSchemaManager::readSchema(
                 return std::shared_ptr<SchemaProviderIf>();
             }
 
-            schema->fields_.push_back(
-                std::make_shared<NebulaSchemaProvider::SchemaField>(fname.toString(),
-                                                                    std::move(vtype)));
-            schema->fieldNameIndex_.emplace(fname.toString(),
-                                            static_cast<int64_t>(schema->fields_.size() - 1));
+            schema->addField(fname, std::move(vtype));
         }
     }
 

@@ -163,7 +163,7 @@ std::unique_ptr<RowReader> RowReader::getEdgePropReader(
 std::unique_ptr<RowReader> RowReader::getRowReader(
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema) {
-    int32_t ver = getSchemaVer(row);
+    SchemaVer ver = getSchemaVer(row);
     CHECK_EQ(ver, schema->getVersion());
     return std::unique_ptr<RowReader>(new RowReader(row, std::move(schema)));
 }
@@ -267,7 +267,7 @@ int32_t RowReader::numFields() const noexcept {
 }
 
 
-int32_t RowReader::schemaVer() const noexcept {
+SchemaVer RowReader::schemaVer() const noexcept {
     return schema_->getVersion();
 }
 

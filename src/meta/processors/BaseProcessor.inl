@@ -200,7 +200,7 @@ Status BaseProcessor<RESP>::hostsExist(const std::vector<std::string> &hostsKey)
 
 template<typename RESP>
 StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) {
-    auto indexKey = MetaServiceUtils::spaceIndexKey(name);
+    auto indexKey = MetaServiceUtils::indexSpaceKey(name);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
         return *reinterpret_cast<const GraphSpaceID*>(ret.value().c_str());
@@ -210,7 +210,7 @@ StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) 
 
 template<typename RESP>
 StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::string& name) {
-    auto indexKey = MetaServiceUtils::tagIndexKey(spaceId, name);
+    auto indexKey = MetaServiceUtils::indexTagKey(spaceId, name);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
         return *reinterpret_cast<const TagID*>(ret.value().c_str());
@@ -220,7 +220,7 @@ StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::s
 
 template<typename RESP>
 StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId, const std::string& name) {
-    auto indexKey = MetaServiceUtils::edgeIndexKey(spaceId, name);
+    auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, name);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
         return *reinterpret_cast<const EdgeType*>(ret.value().c_str());

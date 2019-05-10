@@ -15,6 +15,7 @@
 #include "storage/test/TestUtils.h"
 #include "webservice/WebService.h"
 #include "meta/SchemaManager.h"
+#include "meta/client/MetaClient.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
@@ -43,6 +44,7 @@ int main(int argc, char *argv[]) {
     using nebula::storage::StorageServiceHandler;
     using nebula::kvstore::KVStore;
     using nebula::meta::SchemaManager;
+    using nebula::meta::MetaClient;
     using nebula::network::NetworkUtils;
     using nebula::ProcessUtils;
 
@@ -86,15 +88,18 @@ int main(int argc, char *argv[]) {
     uint32_t localIP;
     CHECK(NetworkUtils::ipv4ToInt(result.value(), localIP));
 
+    auto metaClient = std::make_unique<nebula::meta::MetaClient>();
+    metaClient->init();
+
     nebula::kvstore::KVOptions options;
     options.local_ = HostAddr(localIP, FLAGS_port);
     options.dataPaths_ = std::move(paths);
-    options.partMan_
-        = std::make_unique<nebula::kvstore::MetaServerBasedPartManager>(options.local_);
+    options.partMan_ = std::make_unique<nebula::kvstore::MetaServerBasedPartManager>(
+            options.local_, metaClient.get());
     std::unique_ptr<nebula::kvstore::KVStore> kvstore(
             nebula::kvstore::KVStore::instance(std::move(options)));
     auto schemaMan = nebula::meta::SchemaManager::create();
-    schemaMan->init();
+    schemaMan->init(metaClient.get());
 
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/storage", [] {

@@ -11,14 +11,14 @@ namespace meta {
 
 void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
     if (spaceExist(req.get_space_id()) == Status::NotFound()) {
-        LOG(ERROR) << "RemoveTag Space " << req.get_space_id() << " Not Found";
+        LOG(ERROR) << "Remove Tag Failed : Space " << req.get_space_id() << " not found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
 
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    auto indexKey = MetaServiceUtils::tagIndexKey(req.get_space_id(), req.get_tag_name());
+    auto indexKey = MetaServiceUtils::indexTagKey(req.get_space_id(), req.get_tag_name());
     auto indexResult = doGet(indexKey);
     if (!indexResult.ok()) {
         LOG(ERROR) << "RemoveTag Space " << req.get_space_id() << " TagName "

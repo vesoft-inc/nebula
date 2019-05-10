@@ -120,7 +120,7 @@ private:
     writeInt(T v);
 
     // Calculate the number of bytes occupied (ignore the leading 0s)
-    int32_t calcOccupiedBytes(uint64_t v) const noexcept;
+    int64_t calcOccupiedBytes(uint64_t v) const noexcept;
 };
 
 }  // namespace nebula

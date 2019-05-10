@@ -422,7 +422,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
 
     // test GetTagProcessor
     {
-        cpp2::ReadTagReq req;
+        cpp2::GetTagReq req;
         req.set_space_id(1);
         req.set_tag_id(0);
         req.set_version(0);
@@ -460,15 +460,16 @@ TEST(ProcessorTest, RemoveTagTest) {
          ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
      }
 
-      // check tag data has been deleted.
+     // check tag data has been deleted.
      {
          std::string tagVal;
          kvstore::ResultCode ret;
          std::unique_ptr<kvstore::KVIterator> iter;
-         ret = kv->get(0, 0, std::move(MetaServiceUtils::tagIndexKey(1, "tag_1")),
-                             &tagVal);
+         ret = kv->get(0, 0, std::move(MetaServiceUtils::indexTagKey(1, "tag_1")), &tagVal);
          ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
-         ret = kv->prefix(0, 0, "__tags__", &iter);
+         std::string tagPrefix = "__tags__";
+         ret = kv->prefix(0, 0, tagPrefix, &iter);
+         ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
          ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
          ASSERT_FALSE(iter->valid());
      }
@@ -624,6 +625,108 @@ TEST(ProcessorTest, AlterTagTest) {
     }
 }
 
+TEST(ProcessorTest, SameNameTagsTest) {
+    fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    {
+        cpp2::CreateSpaceReq req;
+        req.set_space_name("first_space");
+        req.set_parts_num(9);
+        req.set_replica_factor(1);
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
+    }
+    {
+        cpp2::CreateSpaceReq req;
+        req.set_space_name("second_space");
+        req.set_parts_num(9);
+        req.set_replica_factor(1);
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(2, resp.get_id().get_space_id());
+    }
+
+    // Add same tag name in different space
+    nebula::cpp2::Schema schema;
+    decltype(schema.columns) cols;
+    cols.emplace_back(TestUtils::columnDef(0, SupportedType::INT));
+    cols.emplace_back(TestUtils::columnDef(1, SupportedType::FLOAT));
+    cols.emplace_back(TestUtils::columnDef(2, SupportedType::STRING));
+    schema.set_columns(std::move(cols));
+    {
+        cpp2::CreateTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(3, resp.get_id().get_tag_id());
+    }
+    {
+        cpp2::CreateTagReq req;
+        req.set_space_id(2);
+        req.set_tag_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(4, resp.get_id().get_tag_id());
+    }
+
+    // Remove Test
+    {
+        cpp2::RemoveTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("default_tag");
+        auto* processor = RemoveTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+
+    // List Test
+    {
+        cpp2::ListTagsReq req;
+        req.set_space_id(1);
+        auto* processor = ListTagsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        decltype(resp.tags) tags;
+        tags = resp.get_tags();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(0, tags.size());
+    }
+    {
+        cpp2::ListTagsReq req;
+        req.set_space_id(2);
+        auto* processor = ListTagsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        decltype(resp.tags) tags;
+        tags = resp.get_tags();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(1, tags.size());
+
+        ASSERT_EQ(4, tags[0].get_tag_id());
+        ASSERT_EQ("default_tag", tags[0].get_tag_name());
+    }
+}
 }  // namespace meta
 }  // namespace nebula
 

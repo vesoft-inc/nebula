@@ -36,7 +36,8 @@ enum ErrorCode {
 enum AlterTagOp {
     ADD = 0x01,
     SET = 0x02,
-    DROP = 0x03
+    DROP = 0x03,
+    UNKNOWN = 0x04,
 } (cpp.enum_strict)
 
 
@@ -143,10 +144,10 @@ struct ListTagsResp {
     3: list<TagItem> tags,
 }
 
-struct ReadTagReq {
+struct GetTagReq {
     1: common.GraphSpaceID space_id,
     2: common.TagID        tag_id,
-    3: i64                 version,
+    3: common.SchemaVer    version,
 }
 
 struct GetTagResp {
@@ -180,7 +181,7 @@ struct ListEdgesResp {
 struct GetEdgeReq {
     1: common.GraphSpaceID space_id,
     2: common.EdgeType     edge_type,
-    3: i64                 version,
+    3: common.SchemaVer    version,
 }
 
 struct GetEdgeResp {
@@ -293,7 +294,7 @@ service MetaService {
     ExecResp createTag(1: CreateTagReq req);
     ExecResp alterTag(1: AlterTagReq req);
     ExecResp removeTag(1: RemoveTagReq req);
-    GetTagResp getTag(1: ReadTagReq req);
+    GetTagResp getTag(1: GetTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);
 
     ExecResp createEdge(1: CreateEdgeReq req);

@@ -19,6 +19,7 @@ class ServerBasedSchemaManager : public SchemaManager {
     friend class SchemaManager;
 public:
     ServerBasedSchemaManager() = default;
+    ~ServerBasedSchemaManager();
 
     // return the newest one if ver less 0
     std::shared_ptr<const SchemaProviderIf> getTagSchema(
@@ -53,6 +54,8 @@ public:
     TagID toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
     EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
+
+    Status checkSpaceExist(folly::StringPiece spaceName) override;
 
     void init(MetaClient *client) override;
 

@@ -88,7 +88,7 @@ public:
 
     virtual ~RowReader() = default;
 
-    int32_t schemaVer() const noexcept;
+    SchemaVer schemaVer() const noexcept;
     int32_t numFields() const noexcept;
 
     Iterator begin() const noexcept;

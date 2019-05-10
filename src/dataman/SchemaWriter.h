@@ -13,7 +13,7 @@ namespace nebula {
 
 class SchemaWriter : public ResultSchemaProvider {
 public:
-    explicit SchemaWriter(int32_t ver = 0) : ResultSchemaProvider(ver) {}
+    explicit SchemaWriter(SchemaVer ver = 0) : ResultSchemaProvider(ver) {}
 
     // Move the schema out of the writer
     cpp2::Schema moveSchema() noexcept;

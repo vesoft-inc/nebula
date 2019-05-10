@@ -23,8 +23,8 @@ RowWriter::RowWriter(std::shared_ptr<const SchemaProviderIf> schema)
 
 
 int64_t RowWriter::size() const noexcept {
-    int32_t offsetBytes = calcOccupiedBytes(cord_.size());
-    int32_t verBytes = 0;
+    auto offsetBytes = calcOccupiedBytes(cord_.size());
+    SchemaVer verBytes = 0;
     if (schema_->getVersion() > 0) {
         verBytes = calcOccupiedBytes(schema_->getVersion());
     }
@@ -51,12 +51,12 @@ void RowWriter::encodeTo(std::string& encoded) noexcept {
     }
 
     // Header information
-    int32_t offsetBytes = calcOccupiedBytes(cord_.size());
+    auto offsetBytes = calcOccupiedBytes(cord_.size());
     char header = offsetBytes - 1;
 
-    int32_t ver = schema_->getVersion();
+    SchemaVer ver = schema_->getVersion();
     if (ver > 0) {
-        int32_t verBytes = calcOccupiedBytes(ver);
+        auto verBytes = calcOccupiedBytes(ver);
         header |= verBytes << 5;
         encoded.append(&header, 1);
         // Schema version is stored in Little Endian
@@ -83,8 +83,8 @@ Schema RowWriter::moveSchema() {
 }
 
 
-int32_t RowWriter::calcOccupiedBytes(uint64_t v) const noexcept {
-    int32_t bytes = 0;
+int64_t RowWriter::calcOccupiedBytes(uint64_t v) const noexcept {
+    int64_t bytes = 0;
     do {
         bytes++;
         v >>= 8;

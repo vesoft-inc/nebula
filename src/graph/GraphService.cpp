@@ -15,8 +15,8 @@ namespace graph {
 
 GraphService::GraphService(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
     sessionManager_ = std::make_unique<SessionManager>();
-    auto storage = std::make_unique<storage::StorageClient>(ioExecutor);
-    executionEngine_ = std::make_unique<ExecutionEngine>(std::move(storage));
+    executionEngine_ = std::make_unique<ExecutionEngine>();
+    executionEngine_->init(ioExecutor);
     authenticator_ = std::make_unique<SimpleAuthenticator>();
 }
 

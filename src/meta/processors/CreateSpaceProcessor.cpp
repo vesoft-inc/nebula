@@ -13,6 +13,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     auto spaceRet = getSpaceId(req.get_space_name());
     if (spaceRet.ok()) {
+        LOG(ERROR) << "Create Space Failed : Space " << req.get_space_name() << " have existed!";
         resp_.set_id(to(spaceRet.value(), EntryType::SPACE));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
@@ -21,6 +22,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     CHECK(spaceRet.status().isNotFound());
     auto ret = allHosts();
     if (!ret.ok()) {
+        LOG(ERROR) << "Create Space Failed : No Hosts!";
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
         onFinished();
         return;
@@ -30,7 +32,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto hosts = ret.value();
     auto replicaFactor = req.get_replica_factor();
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::spaceIndexKey(req.get_space_name()),
+    data.emplace_back(MetaServiceUtils::indexSpaceKey(req.get_space_name()),
                       std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
     data.emplace_back(MetaServiceUtils::spaceKey(spaceId),
                       MetaServiceUtils::spaceVal(req.get_parts_num(),

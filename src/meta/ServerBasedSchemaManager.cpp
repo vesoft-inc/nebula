@@ -10,9 +10,22 @@
 namespace nebula {
 namespace meta {
 
+ServerBasedSchemaManager::~ServerBasedSchemaManager() {
+    if (nullptr != metaClient_) {
+        metaClient_ = nullptr;
+    }
+}
+
 void ServerBasedSchemaManager::init(MetaClient *client) {
-    CHECK(client);
-    metaClient_ = client;
+    if (nullptr == client) {
+        LOG(INFO) << "MetaClient is nullptr, create new one";
+        static auto clientPtr = std::make_unique<meta::MetaClient>();
+        static std::once_flag flag;
+        std::call_once(flag, std::bind(&meta::MetaClient::init, clientPtr.get()));
+        metaClient_ = clientPtr.get();
+    } else {
+        metaClient_ = client;
+    }
 }
 
 std::shared_ptr<const SchemaProviderIf>
@@ -45,13 +58,14 @@ SchemaVer ServerBasedSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, Ta
 }
 
 SchemaVer ServerBasedSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
-                                                        folly::StringPiece tagName) {
+                                                          folly::StringPiece tagName) {
     auto space = toGraphSpaceID(spaceName);
     return getNewestTagSchemaVer(space, toTagID(space, tagName));
 }
 
 std::shared_ptr<const SchemaProviderIf>
 ServerBasedSchemaManager::getEdgeSchema(GraphSpaceID space, EdgeType edge, SchemaVer ver) {
+    VLOG(3) << "Get Edge Schema Space " << space << ", EdgeType " << edge << ", Version " << ver;
     CHECK(metaClient_);
     // ver less 0, get the newest ver
     if (ver < 0) {
@@ -76,13 +90,13 @@ std::shared_ptr<const SchemaProviderIf> ServerBasedSchemaManager::getEdgeSchema(
 
 // Returns a negative number when the schema does not exist
 SchemaVer ServerBasedSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space,
-                                                         EdgeType edge) {
+                                                           EdgeType edge) {
     CHECK(metaClient_);
     return  metaClient_->getNewestEdgeVerFromCache(space, edge);
 }
 
 SchemaVer ServerBasedSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceName,
-                                                         folly::StringPiece typeName) {
+                                                           folly::StringPiece typeName) {
     auto space = toGraphSpaceID(spaceName);
     return getNewestEdgeSchemaVer(space, toEdgeType(space, typeName));
 }
@@ -114,6 +128,16 @@ EdgeType ServerBasedSchemaManager::toEdgeType(GraphSpaceID space,
         return ret.value();
     }
     return -1;
+}
+
+Status ServerBasedSchemaManager::checkSpaceExist(folly::StringPiece spaceName) {
+    CHECK(metaClient_);
+    // Check from the cache, if space not exists, schemas also not exist
+    auto ret = metaClient_->getSpaceIdByNameFromCache(spaceName.str());
+    if (!ret.ok()) {
+        return Status::Error("Space not exist");
+    }
+    return Status::OK();
 }
 
 }  // namespace meta
