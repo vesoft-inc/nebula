@@ -40,6 +40,7 @@ public:
         kRemoveHosts,
         kCreateSpace,
         kDropSpace,
+        kDescribeSpace,
         kYield,
     };
 

@@ -252,6 +252,16 @@ folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
                 });
 }
 
+folly::Future<StatusOr<cpp2::SpaceItem>>
+MetaClient::getSpace(GraphSpaceID spaceId) {
+    cpp2::GetSpaceReq req;
+    req.set_space_id(spaceId);
+    return  getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_getSpace(request);
+                }, [] (cpp2::GetSpaceResp&& resp) -> decltype(auto) {
+                    return std::move(resp).get_item();
+                });
+}
 
 folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name) {
     cpp2::DropSpaceReq req;

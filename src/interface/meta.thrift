@@ -53,6 +53,13 @@ struct IdName {
     2: string name,
 }
 
+struct SpaceItem {
+    1: common.GraphSpaceID  space_id,
+    2: string               space_name,
+    3: i32                  partition_num,
+    4: i32                  replica_factor,
+}
+
 struct Pair {
     1: string key,
     2: string value,
@@ -111,9 +118,8 @@ struct GetSpaceReq {
 }
 
 struct GetSpaceResp {
-    1: IdName space,
-    2: i32    parts_num,
-    3: i32    replica_factor,
+    1: ErrorCode   code,
+    2: SpaceItem   item,
 }
 
 // Tags related operations

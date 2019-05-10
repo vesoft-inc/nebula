@@ -6,7 +6,6 @@
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
 
-#include "base/Base.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 #include "network/NetworkUtils.h"
@@ -222,6 +221,24 @@ public:
     explicit DropSpaceSentence(std::string *spaceName) {
         spaceName_.reset(spaceName);
         kind_ = Kind::kDropSpace;
+    }
+
+    std::string* spaceName() {
+        return spaceName_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>     spaceName_;
+};
+
+
+class DescribeSpaceSentence final : public Sentence {
+public:
+    explicit DescribeSpaceSentence(std::string *spaceName) {
+        spaceName_.reset(spaceName);
+        kind_ = Kind::kDescribeSpace;
     }
 
     std::string* spaceName() {

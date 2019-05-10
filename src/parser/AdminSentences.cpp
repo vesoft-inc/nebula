@@ -99,4 +99,12 @@ std::string DropSpaceSentence::toString() const {
     return buf;
 }
 
+std::string DescribeSpaceSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "DESCRIBE SPACE ";
+    buf += *spaceName_;
+    return buf;
+}
+
 }   // namespace nebula
