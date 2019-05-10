@@ -11,6 +11,7 @@ namespace meta {
 
 void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
     if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
+        LOG(ERROR) << "Remove Tag Failed : Space " << req.get_space_id() << " not found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -18,6 +19,7 @@ void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto ret = getTagKeys(req.get_space_id(), req.get_tag_name());
     if (!ret.ok()) {
+        LOG(ERROR) << "Remove Tag Failed : " << req.get_tag_name() << " not found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
