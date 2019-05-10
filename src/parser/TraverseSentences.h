@@ -39,23 +39,23 @@ public:
         yieldClause_.reset(clause);
     }
 
-    StepClause* stepClause() const {
+    const StepClause* stepClause() const {
         return stepClause_.get();
     }
 
-    FromClause* fromClause() const {
+    const FromClause* fromClause() const {
         return fromClause_.get();
     }
 
-    OverClause* overClause() const {
+    const OverClause* overClause() const {
         return overClause_.get();
     }
 
-    WhereClause* whereClause() const {
+    const WhereClause* whereClause() const {
         return whereClause_.get();
     }
 
-    YieldClause* yieldClause() const {
+    const YieldClause* yieldClause() const {
         return yieldClause_.get();
     }
 
@@ -88,7 +88,7 @@ public:
         kind_ = Kind::kFind;
     }
 
-    std::string* type() const {
+    const std::string* type() const {
         return type_.get();
     }
 
@@ -100,7 +100,7 @@ public:
         whereClause_.reset(whereClause);
     }
 
-    WhereClause* whereClause() const {
+    const WhereClause* whereClause() const {
         return whereClause_.get();
     }
 
@@ -185,7 +185,7 @@ public:
         sentence_.reset(sentence);
     }
 
-    std::string* var() const {
+    const std::string* var() const {
         return variable_.get();
     }
 
