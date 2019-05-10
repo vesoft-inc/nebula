@@ -28,7 +28,7 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-    DescribeSpaceExecutor                      *sentence_{nullptr};
+    DescribeSpaceSentence                      *sentence_{nullptr};
     std::string                                *tag_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
 };
