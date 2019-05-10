@@ -14,6 +14,7 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto ret = allHosts();
     if (!ret.ok()) {
+        LOG(ERROR) << "List Hosts Failed : No hosts";
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
         onFinished();
         return;
