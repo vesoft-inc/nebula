@@ -15,6 +15,7 @@ void GetProcessor::process(const cpp2::GetReq& req) {
     auto key = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_key());
     auto result = doGet(key);
     if (!result.ok()) {
+        LOG(ERROR) << "Get Failed :" << key << " not found!";
         resp_.set_code(cpp2::ErrorCode::E_KEY_NOT_FOUND);
         onFinished();
         return;
