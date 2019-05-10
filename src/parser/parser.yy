@@ -852,7 +852,7 @@ show_sentence
     ;
 
 add_hosts_sentence
-    : KW_ADD KW_HOSTS L_PAREN host_list R_PAREN {
+    : KW_ADD KW_HOSTS host_list {
         auto sentence = new AddHostsSentence();
         sentence->setHosts($4);
         $$ = sentence;
@@ -860,7 +860,7 @@ add_hosts_sentence
     ;
 
 remove_hosts_sentence
-    : KW_REMOVE KW_HOSTS L_PAREN host_list R_PAREN {
+    : KW_REMOVE KW_HOSTS host_list {
         auto sentence = new RemoveHostsSentence();
         sentence->setHosts($4);
         $$ = sentence;
