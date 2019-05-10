@@ -76,7 +76,7 @@ class GraphScanner;
 %token KW_EDGE KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_CHANGE
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -500,8 +500,8 @@ alter_tag_opt_item
     : KW_ADD L_PAREN column_spec_list R_PAREN {
         $$ = new AlterTagOptItem(AlterTagOptItem::ADD, $3);
     }
-    | KW_SET L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterTagOptItem(AlterTagOptItem::SET, $3);
+    | KW_CHANGE L_PAREN column_spec_list R_PAREN {
+      $$ = new AlterTagOptItem(AlterTagOptItem::CHANGE, $3);
     }
     | KW_DROP L_PAREN column_spec_list R_PAREN {
       $$ = new AlterTagOptItem(AlterTagOptItem::DROP, $3);

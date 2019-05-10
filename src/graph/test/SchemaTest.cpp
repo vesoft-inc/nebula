@@ -116,7 +116,7 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG account "
                             "ADD (col1 int TTL = 200, col2 string), "
-                            "SET (balance string), "
+                            "CHANGE (balance string), "
                             "DROP (id)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

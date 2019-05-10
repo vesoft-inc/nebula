@@ -27,9 +27,9 @@ void AlterTagExecutor::execute() {
     const auto& tagOpts = sentence_->tagOptList();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    std::vector<nebula::meta::cpp2::AlterTagItem> tagItems;
+    std::vector<nebula::meta::cpp2::AlterSchemaItem> tagItems;
     for (auto& tagOpt : tagOpts) {
-        nebula::meta::cpp2::AlterTagItem tagItem;
+        nebula::meta::cpp2::AlterSchemaItem tagItem;
         auto opType = getTagOpType(tagOpt->getOptType());
         tagItem.set_op(std::move(opType));
         const auto& specs = tagOpt->columnSpecs();
@@ -65,17 +65,17 @@ void AlterTagExecutor::execute() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-nebula::meta::cpp2::AlterTagOp
+nebula::meta::cpp2::AlterSchemaOp
 AlterTagExecutor::getTagOpType(const AlterTagOptItem::OptionType type) {
     switch (type) {
         case AlterTagOptItem::OptionType::ADD :
-            return nebula::meta::cpp2::AlterTagOp::ADD;
-        case AlterTagOptItem::OptionType::SET :
-            return nebula::meta::cpp2::AlterTagOp::SET;
+            return nebula::meta::cpp2::AlterSchemaOp::ADD;
+        case AlterTagOptItem::OptionType::CHANGE :
+            return nebula::meta::cpp2::AlterSchemaOp::CHANGE;
         case AlterTagOptItem::OptionType::DROP :
-            return nebula::meta::cpp2::AlterTagOp::DROP;
+            return nebula::meta::cpp2::AlterSchemaOp::DROP;
         default:
-            return nebula::meta::cpp2::AlterTagOp::UNKNOWN;
+            return nebula::meta::cpp2::AlterSchemaOp::UNKNOWN;
     }
 }
 }   // namespace graph

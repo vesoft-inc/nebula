@@ -128,7 +128,7 @@ class AlterTagOptItem final {
 public:
     enum OptionType : uint8_t {
         ADD = 0x01,
-        SET = 0x02,
+        CHANGE = 0x02,
         DROP = 0x03
     };
 
