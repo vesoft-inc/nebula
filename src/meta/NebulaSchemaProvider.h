@@ -16,7 +16,6 @@ namespace meta {
 
 class NebulaSchemaProvider : public SchemaProviderIf {
     friend class FileBasedSchemaManager;
-    friend class MetaClient;
 public:
     class SchemaField final : public SchemaProviderIf::Field {
     public:
@@ -40,6 +39,8 @@ public:
     };
 
 public:
+    explicit NebulaSchemaProvider(SchemaVer ver) : ver_(ver) {}
+
     SchemaVer getVersion() const noexcept override;
     size_t getNumFields() const noexcept override;
 
@@ -52,6 +53,8 @@ public:
     std::shared_ptr<const SchemaProviderIf::Field> field(int64_t index) const override;
     std::shared_ptr<const SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
+
+    void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type);
 
 protected:
     NebulaSchemaProvider() = default;

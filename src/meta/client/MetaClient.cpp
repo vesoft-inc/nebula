@@ -80,7 +80,7 @@ void MetaClient::loadDataThreadFunc() {
         auto spaceId = space.first;
         auto r = getPartsAlloc(spaceId).get();
         if (!r.ok()) {
-            LOG(ERROR) << "Get parts allocaction failed for spaceId " << spaceId
+            LOG(ERROR) << "Get parts allocation failed for spaceId " << spaceId
                        << ", status " << r.status();
             return;
         }
@@ -141,14 +141,10 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     TagIDSchemas tagIdSchemas;
     EdgeTypeSchemas edgeTypeSchemas;
     for (auto& tagIt : tagItemVec) {
-        std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider());
-        for (auto& colIt : tagIt.schema.get_columns()) {
-            schema->fields_.push_back(
-                std::make_shared<NebulaSchemaProvider::SchemaField>(colIt.name, colIt.type));
-            schema->fieldNameIndex_.emplace(colIt.name,
-                                            static_cast<int64_t>(schema->fields_.size() - 1));
+        std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(tagIt.version));
+        for (auto colIt : tagIt.schema.get_columns()) {
+            schema->addField(colIt.name, std::move(colIt.type));
         }
-        schema->ver_ = tagIt.version;
         tagIdSchemas.emplace(std::make_pair(tagIt.tag_id, tagIt.version), schema);
         tagNameIdMap.emplace(std::make_pair(spaceId, tagIt.tag_name), tagIt.tag_id);
         // get the newest version
@@ -165,14 +161,10 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     }
 
     for (auto& edgeIt : edgeItemVec) {
-        std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider());
-        for (auto& colIt : edgeIt.schema.get_columns()) {
-            schema->fields_.push_back(
-                std::make_shared<NebulaSchemaProvider::SchemaField>(colIt.name, colIt.type));
-            schema->fieldNameIndex_.emplace(colIt.name,
-                                            static_cast<int64_t>(schema->fields_.size() - 1));
+        std::shared_ptr<NebulaSchemaProvider> schema(new NebulaSchemaProvider(edgeIt.version));
+        for (auto colIt : edgeIt.schema.get_columns()) {
+            schema->addField(colIt.name, std::move(colIt.type));
         }
-        schema->ver_ = edgeIt.version;
         edgeTypeSchemas.emplace(std::make_pair(edgeIt.edge_type, edgeIt.version), schema);
         edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.edge_name), edgeIt.edge_type);
         // get the newest version
