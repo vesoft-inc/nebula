@@ -332,6 +332,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("+123.456", TokenType::DOUBLE, 123.456),
         CHECK_SEMANTIC_VALUE("-123.456", TokenType::DOUBLE, -123.456),
 
+        CHECK_SEMANTIC_VALUE("127.0.0.1", TokenType::IPV4, 0x7F000001),
+
         CHECK_SEMANTIC_VALUE("\"Hello\"", TokenType::STRING, "Hello"),
         CHECK_SEMANTIC_VALUE("\"Hello\\\\\"", TokenType::STRING, "Hello\\"),
         CHECK_SEMANTIC_VALUE("\"He\\nllo\"", TokenType::STRING, "He\nllo"),

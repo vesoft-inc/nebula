@@ -61,6 +61,7 @@ class GraphScanner;
     nebula::EdgeList                       *edge_list;
     nebula::ArgumentList                   *argument_list;
     nebula::HostList                       *host_list;
+    nebula::HostAddr                       *host_item;
     nebula::SpaceOptList                   *space_opt_list;
     nebula::SpaceOptItem                   *space_opt_item;
     nebula::AlterTagOptList                *alter_tag_opt_list;
@@ -94,7 +95,7 @@ class GraphScanner;
 
 /* token type specification */
 %token <boolval> BOOL
-%token <intval> INTEGER
+%token <intval> INTEGER IPV4
 %token <doubleval> DOUBLE
 %token <strval> STRING VARIABLE LABEL
 
@@ -130,12 +131,13 @@ class GraphScanner;
 %type <update_item> update_item
 %type <edge_list> edge_list
 %type <host_list> host_list
+%type <host_item> host_item
 %type <space_opt_list> space_opt_list
 %type <space_opt_item> space_opt_item
 %type <alter_tag_opt_list> alter_tag_opt_list
 %type <alter_tag_opt_item> alter_tag_opt_item
 
-%type <intval> ttl_spec
+%type <intval> ttl_spec port
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -866,11 +868,11 @@ remove_hosts_sentence
     ;
 
 host_list
-    : STRING {
+    : host_item {
         $$ = new HostList();
         $$->addHost($1);
     }
-    | host_list COMMA STRING {
+    | host_list COMMA host_item {
         $$ = $1;
         $$->addHost($3);
     }
@@ -878,6 +880,17 @@ host_list
         $$ = $1;
     }
     ;
+
+host_item
+    : IPV4 COLON port {
+        $$ = new nebula::HostAddr();
+        $$->first = $1;
+        $$->second = $3;
+    }
+    /* TODO(dutor) Support hostname and IPv6 */
+    ;
+
+port : INTEGER { $$ = $1; }
 
 create_space_sentence
     : KW_CREATE KW_SPACE LABEL L_PAREN space_opt_list R_PAREN {
