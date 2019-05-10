@@ -33,6 +33,51 @@ private:
 };
 
 
+class VertexTagItem final {
+ public:
+     explicit VertexTagItem(std::string *tagName, PropertyList *properties = nullptr) {
+         tagName_.reset(tagName);
+         properties_.reset(properties);
+     }
+
+     std::string toString() const;
+
+     std::string* tagName() const {
+         return tagName_.get();
+     }
+
+     std::vector<std::string*> properties() const {
+         return properties_->properties();
+     }
+
+ private:
+     std::unique_ptr<std::string>               tagName_;
+     std::unique_ptr<PropertyList>              properties_;
+};
+
+
+class VertexTagList final {
+ public:
+     void addTagItem(VertexTagItem *tagItem) {
+         tagItems_.emplace_back(tagItem);
+     }
+
+     std::string toString() const;
+
+     std::vector<VertexTagItem*> tagItems() const {
+         std::vector<VertexTagItem*> result;
+         result.reserve(tagItems_.size());
+         for (auto &item : tagItems_) {
+             result.emplace_back(item.get());
+         }
+         return result;
+     }
+
+ private:
+     std::vector<std::unique_ptr<VertexTagItem>>    tagItems_;
+};
+
+
 class ValueList final {
 public:
     void addValue(Expression *value) {
@@ -108,10 +153,10 @@ private:
 
 class InsertVertexSentence final : public Sentence {
 public:
-    InsertVertexSentence(std::string *vertex, PropertyList *props,
-                         VertexRowList *rows, bool overwritable = true) {
-        vertex_.reset(vertex);
-        properties_.reset(props);
+    InsertVertexSentence(VertexTagList *tagList,
+                         VertexRowList *rows,
+                         bool overwritable = true) {
+        tagList_.reset(tagList);
         rows_.reset(rows);
         overwritable_ = overwritable;
         kind_ = Kind::kInsertVertex;
@@ -121,12 +166,8 @@ public:
         return overwritable_;
     }
 
-    const std::string* vertex() const {
-        return vertex_.get();
-    }
-
-    std::vector<std::string*> properties() const {
-        return properties_->properties();
+    auto tagItems() const {
+        return tagList_->tagItems();
     }
 
     std::vector<VertexRowItem*> rows() const {
@@ -137,9 +178,7 @@ public:
 
 private:
     bool                                        overwritable_{true};
-    int64_t                                     id_;
-    std::unique_ptr<std::string>                vertex_;
-    std::unique_ptr<PropertyList>               properties_;
+    std::unique_ptr<VertexTagList>              tagList_;
     std::unique_ptr<VertexRowList>              rows_;
 };
 

@@ -48,6 +48,8 @@ class GraphScanner;
     nebula::YieldClause                    *yield_clause;
     nebula::YieldColumns                   *yield_columns;
     nebula::YieldColumn                    *yield_column;
+    nebula::VertexTagList                  *vertex_tag_list;
+    nebula::VertexTagItem                  *vertex_tag_item;
     nebula::PropertyList                   *prop_list;
     nebula::ValueList                      *value_list;
     nebula::VertexRowList                  *vertex_row_list;
@@ -116,6 +118,8 @@ class GraphScanner;
 %type <yield_clause> yield_clause
 %type <yield_columns> yield_columns
 %type <yield_column> yield_column
+%type <vertex_tag_list> vertex_tag_list
+%type <vertex_tag_item> vertex_tag_item
 %type <prop_list> prop_list
 %type <value_list> value_list
 %type <vertex_row_list> vertex_row_list
@@ -605,8 +609,31 @@ assignment_sentence
     ;
 
 insert_vertex_sentence
-    : KW_INSERT KW_VERTEX LABEL L_PAREN prop_list R_PAREN KW_VALUES vertex_row_list {
-        $$ = new InsertVertexSentence($3, $5, $8);
+    : KW_INSERT KW_VERTEX vertex_tag_list KW_VALUES vertex_row_list {
+        $$ = new InsertVertexSentence($3, $5);
+    }
+    | KW_INSERT KW_VERTEX KW_NO KW_OVERWRITE vertex_tag_list KW_VALUES vertex_row_list {
+        $$ = new InsertVertexSentence($5, $7, false /* not overwritable */);
+    }
+    ;
+
+vertex_tag_list
+    : vertex_tag_item {
+        $$ = new VertexTagList();
+        $$->addTagItem($1);
+    }
+    | vertex_tag_list COMMA vertex_tag_item {
+        $$ = $1;
+        $$->addTagItem($3);
+    }
+    ;
+
+vertex_tag_item
+    : LABEL {
+        $$ = new VertexTagItem($1);
+    }
+    | LABEL L_PAREN prop_list R_PAREN {
+        $$ = new VertexTagItem($1, $3);
     }
     ;
 
@@ -636,8 +663,8 @@ vertex_row_list
     ;
 
 vertex_row_item
-    : L_PAREN INTEGER COLON value_list R_PAREN {
-        $$ = new VertexRowItem($2, $4);
+    : INTEGER COLON L_PAREN value_list R_PAREN {
+        $$ = new VertexRowItem($1, $4);
     }
     ;
 
@@ -685,11 +712,11 @@ edge_row_list
     ;
 
 edge_row_item
-    : L_PAREN INTEGER R_ARROW INTEGER COLON value_list R_PAREN {
-        $$ = new EdgeRowItem($2, $4, $6);
+    : INTEGER R_ARROW INTEGER COLON L_PAREN value_list R_PAREN {
+        $$ = new EdgeRowItem($1, $3, $6);
     }
-    | L_PAREN INTEGER R_ARROW INTEGER AT INTEGER COLON value_list R_PAREN {
-        $$ = new EdgeRowItem($2, $4, $6, $8);
+    | INTEGER R_ARROW INTEGER AT INTEGER COLON L_PAREN value_list R_PAREN {
+        $$ = new EdgeRowItem($1, $3, $5, $8);
     }
     ;
 
