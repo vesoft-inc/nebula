@@ -178,12 +178,12 @@ protected:
     /**
      * Return the tagId for name.
      */
-    StatusOr<TagID> getTagId(const std::string& name);
+    StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
 
     /**
      * Return the edgeType for name.
      */
-    StatusOr<EdgeType> getEdgeType(const std::string& name);
+    StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

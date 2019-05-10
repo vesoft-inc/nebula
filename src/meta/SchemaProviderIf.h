@@ -87,7 +87,7 @@ public:
 public:
     virtual ~SchemaProviderIf() = default;
 
-    virtual int32_t getVersion() const noexcept = 0;
+    virtual SchemaVer getVersion() const noexcept = 0;
     virtual size_t getNumFields() const noexcept = 0;
 
     virtual int64_t getFieldIndex(const folly::StringPiece name) const = 0;

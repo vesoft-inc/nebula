@@ -17,7 +17,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
         return;
     }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
-    auto ret = getTagId(req.get_tag_name());
+    auto ret = getTagId(req.get_space_id(), req.get_tag_name());
     if (!ret.ok()) {
         resp_.set_code(to(ret.status()));
         onFinished();
