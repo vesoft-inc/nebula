@@ -28,7 +28,7 @@ void RemoveEdgeProcessor::process(const cpp2::RemoveEdgeReq& req) {
 }
 
 StatusOr<std::vector<std::string>> RemoveEdgeProcessor::getEdgeKeys(GraphSpaceID id,
-                                                                  const std::string& edgeName) {
+                                                                    const std::string& edgeName) {
     auto indexKey = MetaServiceUtils::indexEdgeKey(id, edgeName);
     std::vector<std::string> keys;
     std::string edgeVal;

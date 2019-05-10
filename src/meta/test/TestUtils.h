@@ -142,7 +142,7 @@ public:
                                            sizeof(edgeType));
             edges.emplace_back(MetaServiceUtils::indexEdgeKey(1, edgeName), edgeTypeVal);
             edges.emplace_back(MetaServiceUtils::schemaEdgeKey(1, edgeType, ver++),
-                              MetaServiceUtils::schemaEdgeVal(edgeName, srcsch));
+                               MetaServiceUtils::schemaEdgeVal(edgeName, srcsch));
         }
 
         kv->asyncMultiPut(0, 0, std::move(edges),

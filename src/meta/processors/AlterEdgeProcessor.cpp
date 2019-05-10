@@ -16,7 +16,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         onFinished();
         return;
     }
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
     auto ret = getEdgeType(req.get_space_id(), req.get_edge_name());
     if (!ret.ok()) {
         resp_.set_code(to(ret.status()));
@@ -31,7 +31,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, edgePrefix, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
         LOG(WARNING) << "Edge could not be found " << req.get_edge_name()
-        << ", spaceId " << req.get_space_id() << ", edgeType " << edgeType;
+                     << ", spaceId " << req.get_space_id() << ", edgeType " << edgeType;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -47,7 +47,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         for (auto& col : cols) {
             auto retCode = MetaServiceUtils::alterColumnDefs(columns, col, edgeItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-                LOG(WARNING) << "Alter edge error";
+                LOG(WARNING) << "Alter edge error " << static_cast<int32_t>(retCode);
                 resp_.set_code(retCode);
                 onFinished();
                 return;

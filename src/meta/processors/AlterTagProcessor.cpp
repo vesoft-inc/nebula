@@ -31,7 +31,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, tagPrefix, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
         LOG(WARNING) << "Tag could not be found " << req.get_tag_name()
-        << ", spaceId " << req.get_space_id() << ", tagId " << tagId;
+                     << ", spaceId " << req.get_space_id() << ", tagId " << tagId;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -47,7 +47,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
         for (auto& col : cols) {
             auto retCode = MetaServiceUtils::alterColumnDefs(columns, col, tagItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-                LOG(WARNING) << "Alter tag error";
+                LOG(WARNING) << "Alter tag error " << static_cast<int32_t>(retCode);
                 resp_.set_code(retCode);
                 onFinished();
                 return;

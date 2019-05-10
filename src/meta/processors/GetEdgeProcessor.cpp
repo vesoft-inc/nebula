@@ -13,8 +13,8 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
     std::string val;
     std::string edgeKey = MetaServiceUtils::schemaEdgeKey(req.get_space_id(),
-                                                        req.get_edge_type(),
-                                                        req.get_version());
+                                                          req.get_edge_type(),
+                                                          req.get_version());
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, std::move(edgeKey), &val);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);

@@ -548,9 +548,9 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
             std::vector<nebula::cpp2::ColumnDef> cols = schema.get_columns();
             ASSERT_EQ(cols.size(), 2);
             for (auto i = 0; i < 2; i++) {
-            ASSERT_EQ(folly::stringPrintf("edge_%d_col_%d", t, i), cols[i].get_name());
-            ASSERT_EQ((i < 1 ? SupportedType::INT : SupportedType::STRING),
-            cols[i].get_type().get_type());
+                ASSERT_EQ(folly::stringPrintf("edge_%d_col_%d", t, i), cols[i].get_name());
+                ASSERT_EQ((i < 1 ? SupportedType::INT : SupportedType::STRING),
+                cols[i].get_type().get_type());
             }
         }
     }
@@ -736,8 +736,8 @@ TEST(ProcessorTest, AlterTagTest) {
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
         auto addItem = cpp2::AlterSchemaItem(FRAGILE,
-                                          cpp2::AlterSchemaOp::ADD,
-                                          std::move(addSch));
+                                             cpp2::AlterSchemaOp::ADD,
+                                             std::move(addSch));
         items.push_back(std::move(addItem));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
@@ -948,8 +948,8 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
         auto addItem = cpp2::AlterSchemaItem(FRAGILE,
-                                          cpp2::AlterSchemaOp::ADD,
-                                          std::move(addSch));
+                                             cpp2::AlterSchemaOp::ADD,
+                                             std::move(addSch));
         items.emplace_back(std::move(addItem));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
