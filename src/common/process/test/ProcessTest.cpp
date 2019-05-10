@@ -43,7 +43,7 @@ TEST(ProcessUtils, isPidAvailable) {
     }
     {
         // pid file which contains pid of current process
-        auto pidFile = "/tmp/process_test.pid";
+        auto pidFile = "/tmp/maybe-non-existing-dir/process_test.pid";
         auto status = ProcessUtils::makePidFile(pidFile);
         ASSERT_TRUE(status.ok()) << status;
         status = ProcessUtils::isPidAvailable(pidFile);

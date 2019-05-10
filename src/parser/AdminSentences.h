@@ -196,7 +196,7 @@ public:
         kind_ = Kind::kCreateSpace;
     }
 
-    std::string* spaceName() {
+    const std::string* spaceName() const {
         return spaceName_.get();
     }
 
@@ -223,7 +223,7 @@ public:
         kind_ = Kind::kDropSpace;
     }
 
-    std::string* spaceName() {
+    const std::string* spaceName() const {
         return spaceName_.get();
     }
 
