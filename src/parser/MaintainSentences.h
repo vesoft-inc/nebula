@@ -39,7 +39,7 @@ public:
         return ttl_;
     }
 
-    const ColumnType type() const {
+    ColumnType type() const {
         return type_;
     }
 
@@ -62,7 +62,7 @@ public:
         columns_.emplace_back(column);
     }
 
-    const std::vector<ColumnSpecification*> columnSpecs() const {
+    std::vector<ColumnSpecification*> columnSpecs() const {
         std::vector<ColumnSpecification*> result;
         result.resize(columns_.size());
         auto get = [] (auto &ptr) { return ptr.get(); };
@@ -89,7 +89,7 @@ public:
         return name_.get();
     }
 
-    const std::vector<ColumnSpecification*> columnSpecs() const {
+    std::vector<ColumnSpecification*> columnSpecs() const {
         return columns_->columnSpecs();
     }
 
@@ -114,7 +114,7 @@ public:
         return name_.get();
     }
 
-    const std::vector<ColumnSpecification*> columnSpecs() const {
+    std::vector<ColumnSpecification*> columnSpecs() const {
         return columns_->columnSpecs();
     }
 
@@ -137,15 +137,15 @@ public:
         columns_.reset(columns);
     }
 
-    const std::vector<ColumnSpecification*> columnSpecs() const {
+    std::vector<ColumnSpecification*> columnSpecs() const {
         return columns_->columnSpecs();
     }
 
-    const OptionType getOptType() const {
+    OptionType getOptType() {
         return optType_;
     }
 
-    const std::string getOptTypeStr() const {
+    std::string getOptTypeStr() const {
         return typeid(optType_).name();
     }
 
@@ -164,7 +164,7 @@ public:
         alterTagitems_.emplace_back(item);
     }
 
-    const std::vector<AlterTagOptItem*> alterTagItems() const {
+    std::vector<AlterTagOptItem*> alterTagItems() const {
         std::vector<AlterTagOptItem*> result;
         result.resize(alterTagitems_.size());
         auto get = [] (auto &ptr) { return ptr.get(); };
@@ -193,7 +193,7 @@ public:
         return name_.get();
     }
 
-    const std::vector<AlterTagOptItem*> tagOptList() const {
+    std::vector<AlterTagOptItem*> tagOptList() const {
         return opts_->alterTagItems();
     }
 
@@ -217,7 +217,7 @@ public:
         return name_.get();
     }
 
-    const std::vector<ColumnSpecification*> columnSpecs() const {
+    std::vector<ColumnSpecification*> columnSpecs() const {
         return columns_->columnSpecs();
     }
 
@@ -270,7 +270,7 @@ class YieldSentence final : public Sentence {
          kind_ = Kind::kYield;
      }
 
-     const std::vector<YieldColumn*> columns() const {
+     std::vector<YieldColumn*> columns() const {
          return yieldColumns_->columns();
      }
 

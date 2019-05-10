@@ -92,7 +92,7 @@ public:
         return type_.get();
     }
 
-    const std::vector<std::string*> properties() const {
+    std::vector<std::string*> properties() const {
         return properties_->properties();
     }
 

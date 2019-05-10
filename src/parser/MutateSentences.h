@@ -20,7 +20,7 @@ public:
 
     std::string toString() const;
 
-    const std::vector<std::string*> properties() const {
+    std::vector<std::string*> properties() const {
         std::vector<std::string*> result;
         result.resize(properties_.size());
         auto get = [] (const auto &ptr) { return ptr.get(); };
@@ -41,7 +41,7 @@ public:
 
     std::string toString() const;
 
-    const std::vector<Expression*> values() const {
+    std::vector<Expression*> values() const {
         std::vector<Expression*> result;
         result.resize(values_.size());
         auto get = [] (const auto &ptr) { return ptr.get(); };
@@ -65,7 +65,7 @@ public:
         return id_;
     }
 
-    const std::vector<Expression*> values() const {
+    std::vector<Expression*> values() const {
         return values_->values();
     }
 
@@ -91,7 +91,7 @@ public:
      * In the future, we might do deep copy to the plan,
      * of course excluding the volatile arguments in queries.
      */
-    const std::vector<VertexRowItem*> rows() const {
+    std::vector<VertexRowItem*> rows() const {
         std::vector<VertexRowItem*> result;
         result.resize(rows_.size());
         auto get = [] (const auto &ptr) { return ptr.get(); };
@@ -125,11 +125,11 @@ public:
         return vertex_.get();
     }
 
-    const std::vector<std::string*> properties() const {
+    std::vector<std::string*> properties() const {
         return properties_->properties();
     }
 
-    const std::vector<VertexRowItem*> rows() const {
+    std::vector<VertexRowItem*> rows() const {
         return rows_->rows();
     }
 
@@ -171,7 +171,7 @@ public:
         return rank_;
     }
 
-    const std::vector<Expression*> values() const {
+    std::vector<Expression*> values() const {
         return values_->values();
     }
 
@@ -191,7 +191,7 @@ public:
         rows_.emplace_back(row);
     }
 
-    const std::vector<EdgeRowItem*> rows() const {
+    std::vector<EdgeRowItem*> rows() const {
         std::vector<EdgeRowItem*> result;
         result.resize(rows_.size());
         auto get = [] (const auto &ptr) { return ptr.get(); };
@@ -231,7 +231,7 @@ public:
         properties_.reset(props);
     }
 
-    const std::vector<std::string*> properties() const {
+    std::vector<std::string*> properties() const {
         return properties_->properties();
     }
 
@@ -239,7 +239,7 @@ public:
         rows_.reset(rows);
     }
 
-    const std::vector<EdgeRowItem*> rows() const {
+    std::vector<EdgeRowItem*> rows() const {
         return rows_->rows();
     }
 
