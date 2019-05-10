@@ -830,7 +830,11 @@ host_list
     ;
 
 create_space_sentence
-    : KW_CREATE KW_SPACE LABEL L_PAREN space_opt_list R_PAREN {
+    : KW_CREATE KW_SPACE LABEL {
+        auto sentence = new CreateSpaceSentence($3);
+        $$ = sentence;
+    }
+    | KW_CREATE KW_SPACE LABEL L_PAREN space_opt_list R_PAREN {
         auto sentence = new CreateSpaceSentence($3);
         sentence->setOpts($5);
         $$ = sentence;

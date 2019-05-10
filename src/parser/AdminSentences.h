@@ -206,6 +206,9 @@ public:
     }
 
     std::vector<std::unique_ptr<SpaceOptItem>> getOpts() {
+        if (spaceOpts_ == nullptr) {
+            return {};
+        }
         return spaceOpts_->getOpt();
     }
 
