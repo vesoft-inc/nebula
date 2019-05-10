@@ -667,6 +667,31 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
     });
 }
 
+folly::Future<StatusOr<bool>>
+MetaClient::removeTagSchema(int32_t spaceId, std::string tagName) {
+    cpp2::RemoveTagReq req;
+    req.set_space_id(spaceId);
+    req.set_tag_name(std::move(tagName));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_removeTag(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    });
+}
+
+folly::Future<StatusOr<nebula::cpp2::Schema>>
+MetaClient::getTagSchema(int32_t spaceId, int32_t tagId, int64_t version) {
+    cpp2::GetTagReq req;
+    req.set_space_id(spaceId);
+    req.set_tag_id(tagId);
+    req.set_version(version);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_getTag(request);
+    }, [] (cpp2::GetTagResp&& resp) -> nebula::cpp2::Schema {
+        return std::move(resp).get_schema();
+    });
+}
+
 folly::Future<StatusOr<EdgeType>>
 MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
     cpp2::CreateEdgeReq req;

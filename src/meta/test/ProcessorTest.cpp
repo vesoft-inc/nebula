@@ -387,7 +387,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
 
     // test GetTagProcessor
     {
-        cpp2::ReadTagReq req;
+        cpp2::GetTagReq req;
         req.set_space_id(1);
         req.set_tag_id(0);
         req.set_version(0);
