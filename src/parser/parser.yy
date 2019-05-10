@@ -518,8 +518,8 @@ alter_tag_opt_item
     : KW_ADD L_PAREN column_spec_list R_PAREN {
         $$ = new AlterTagOptItem(AlterTagOptItem::ADD, $3);
     }
-    | KW_SET L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterTagOptItem(AlterTagOptItem::SET, $3);
+    | KW_CHANGE L_PAREN column_spec_list R_PAREN {
+      $$ = new AlterTagOptItem(AlterTagOptItem::CHANGE, $3);
     }
     | KW_DROP L_PAREN column_spec_list R_PAREN {
       $$ = new AlterTagOptItem(AlterTagOptItem::DROP, $3);

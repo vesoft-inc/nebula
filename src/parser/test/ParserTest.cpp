@@ -117,7 +117,7 @@ TEST(Parser, AlterTag) {
     {
         GQLParser parser;
         std::string query = "ALTER TAG person ADD (col1 int TTL = 200, col2 string), "
-                            "SET (col3 int TTL = 200, col4 string), "
+                            "CHANGE (col3 int TTL = 200, col4 string), "
                             "DROP (col5, col6)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();

@@ -120,6 +120,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("tagItem0", outSchema->getFieldName(0));
             auto version = schemaMan->getNewestTagSchemaVer(spaceId, tagId);
+            ASSERT_EQ(0, version);
             auto outSchema1 = schemaMan->getTagSchema(spaceId, tagId, version);
             ASSERT_TRUE(outSchema1 != nullptr);
             ASSERT_EQ(5, outSchema1->getNumFields());
@@ -147,6 +148,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("edgeItem0", outSchema->getFieldName(0));
             auto version = schemaMan->getNewestEdgeSchemaVer(spaceId, edgeType);
+            ASSERT_EQ(0, version);
             auto outSchema1 = schemaMan->getEdgeSchema(spaceId, edgeType, version);
             ASSERT_TRUE(outSchema1 != nullptr);
             ASSERT_EQ(5, outSchema1->getNumFields());
