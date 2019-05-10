@@ -121,7 +121,7 @@ public:
         return overwritable_;
     }
 
-    std::string* vertex() const {
+    const std::string* vertex() const {
         return vertex_.get();
     }
 
@@ -223,7 +223,7 @@ public:
         edge_.reset(edge);
     }
 
-    std::string* edge() const {
+    const std::string* edge() const {
         return edge_.get();
     }
 
@@ -363,7 +363,7 @@ public:
         kind_ = Kind::kDeleteVertex;
     }
 
-    SourceNodeList* srcNodeLists() const {
+    const SourceNodeList* srcNodeLists() const {
         return srcNodeList_.get();
     }
 
@@ -371,7 +371,7 @@ public:
         whereClause_.reset(clause);
     }
 
-    WhereClause* whereClause() const {
+    const WhereClause* whereClause() const {
         return whereClause_.get();
     }
 
@@ -405,7 +405,7 @@ public:
         kind_ = Kind::kDeleteEdge;
     }
 
-    EdgeList* edgeList() const {
+    const EdgeList* edgeList() const {
         return edgeList_.get();
     }
 
@@ -413,7 +413,7 @@ public:
         whereClause_.reset(clause);
     }
 
-    WhereClause* whereClause() const {
+    const WhereClause* whereClause() const {
         return whereClause_.get();
     }
 
