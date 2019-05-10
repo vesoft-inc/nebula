@@ -42,7 +42,7 @@ public:
         return type_;
     }
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -84,7 +84,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -109,7 +109,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -188,7 +188,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -212,7 +212,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -235,7 +235,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -253,7 +253,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
