@@ -49,17 +49,28 @@ Status ProcessUtils::isPidAvailable(const std::string &pidFile) {
 
 
 Status ProcessUtils::makePidFile(const std::string &pidFile, uint32_t pid) {
-    // TODO(dutor) mkdir -p `dirname pidFile`
+    if (pidFile.empty()) {
+        return Status::Error("Path to the pid file is empty");
+    }
+    // Create hosting directory if not exists
+    auto dirname = fs::FileUtils::dirname(pidFile.c_str());
+    if (!fs::FileUtils::makeDir(dirname)) {
+        return Status::Error("Failed to create: `%s'", dirname.c_str());
+    }
+    // Open or create pid file
     auto *file = ::fopen(pidFile.c_str(), "w");
     if (file == nullptr) {
         return Status::Error("Open or create `%s': %s", pidFile.c_str(), ::strerror(errno));
     }
+
     if (pid == 0) {
         pid = ::getpid();
     }
+
     ::fprintf(file, "%u\n", pid);
     ::fflush(file);
     ::fclose(file);
+
     return Status::OK();
 }
 
