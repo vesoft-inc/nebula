@@ -104,11 +104,11 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_NE(ret1.value().begin()->tag_id, 0);
             ASSERT_EQ(ret1.value().begin()->schema.columns.size(), 5);
 
-            // getTagSchemeFromCache
+            // getTagSchemaFromCache
             sleep(FLAGS_load_data_interval_second + 1);
             auto ver = client->getNewestTagVerFromCache(spaceId,
                                                         ret1.value().begin()->tag_id);
-            auto ret2 = client->getTagSchemeFromCache(spaceId,
+            auto ret2 = client->getTagSchemaFromCache(spaceId,
                                                       ret1.value().begin()->tag_id, ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
@@ -133,10 +133,10 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(ret1.value().size(), 1);
             ASSERT_NE(ret1.value().begin()->edge_type, 0);
 
-            // getEdgeSchemeFromCache
+            // getEdgeSchemaFromCache
             auto ver = client->getNewestEdgeVerFromCache(spaceId,
                                                          ret1.value().begin()->edge_type);
-            auto ret2 = client->getEdgeSchemeFromCache(spaceId,
+            auto ret2 = client->getEdgeSchemaFromCache(spaceId,
                                                        ret1.value().begin()->edge_type, ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
