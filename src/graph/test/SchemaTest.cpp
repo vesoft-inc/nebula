@@ -377,6 +377,20 @@ TEST_F(SchemaTest, metaCommunication) {
         client->execute(query, resp);
         ASSERT_EQ(0, (*(resp.get_rows())).size());
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_with_default_options";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_load_data_interval_secs + 1);
+    {
+        // TODO To verify the space options are applied correctly.
+        cpp2::ExecutionResponse resp;
+        std::string query = "USE space_with_default_options";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
 }
 
 }   // namespace graph

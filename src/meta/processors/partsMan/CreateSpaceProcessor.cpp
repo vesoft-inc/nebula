@@ -7,6 +7,9 @@
 #include "meta/processors/partsMan/CreateSpaceProcessor.h"
 #include "meta/ActiveHostsMan.h"
 
+DEFINE_int32(default_parts_num, 1024, "The default number of parts when a space is created");
+DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space is created");
+
 namespace nebula {
 namespace meta {
 
@@ -35,6 +38,12 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto spaceName = properties.get_space_name();
     auto partitionNum = properties.get_partition_num();
     auto replicaFactor = properties.get_replica_factor();
+    if (partitionNum == 0) {
+        partitionNum = FLAGS_default_parts_num;
+    }
+    if (replicaFactor == 0) {
+        replicaFactor = FLAGS_default_replica_factor;
+    }
     VLOG(3) << "Create space " << spaceName << ", id " << spaceId;
     if ((int32_t)hosts.size() < replicaFactor) {
         LOG(ERROR) << "Not enough hosts existed for replica "
@@ -43,6 +52,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         onFinished();
         return;
     }
+
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::indexSpaceKey(spaceName),
                       std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
