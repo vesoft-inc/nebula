@@ -798,9 +798,9 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 1);
         dropSch.columns.emplace_back(std::move(column));
 
-        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
-                                              cpp2::AlterSchemaOp::DROP,
-                                              std::move(dropSch));
+        auto dropItem = cpp2::AlterEdgeItem(FRAGILE,
+                                            cpp2::AlterSchemaOp::DROP,
+                                            std::move(dropSch));
         items.emplace_back(std::move(dropItem));
         req.set_space_id(1);
         req.set_edge_name("edge_0");

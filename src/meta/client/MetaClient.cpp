@@ -705,6 +705,20 @@ MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp
     });
 }
 
+folly::Future<StatusOr<bool>>
+MetaClient::alterEdge(GraphSpaceID spaceId, std::string name,
+                      std::vector<cpp2::AlterEdgeItem> items) {
+    cpp2::AlterEdgeReq req;
+    req.set_space_id(std::move(spaceId));
+    req.set_edge_name(std::move(name));
+    req.set_edge_items(std::move(items));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_alterEdge(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    });
+}
+
 folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
 MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     cpp2::ListEdgesReq req;
