@@ -14,7 +14,7 @@ Containers allow a developer to package up an application with all of the parts 
 such as libraries and other dependencies, and ship it all out as one package.
 By doing so, the developer can rest assured that the application will run on any other `Linux` machine regardless of any customized settings that machine might have that could differ from the machine used for writing and testing the code.
 
-First of all, you should make sure `docker` have installed on your machine. Open a terminal and run the following command :
+First of all, you should make sure that `docker` has been installed on your machine. Open a terminal and run the following command :
 
 ```
 docker --version
@@ -32,8 +32,8 @@ When `nebula` image is ready, run
 
 `docker run -it vesoft/nebula-graph:latest /bin/bash`
 
-to start and login the docker container.
-After login in the container, you're in the `root` directory and you should use `cd ~/nebula-graph/` to switch to the nebula home directory.
+to start and log in to the docker container.
+After login, you're in the `root` directory and you should use `cd ~/nebula-graph/` to switch to the nebula home directory.
 
 Run `./start-all.sh` to start meta service, storage service and graph service.
 
@@ -41,7 +41,7 @@ Run
 
 `ps -ef | grep nebula`
 
-to display the servie's running status.
+to display the services' running status.
 
 Please make sure the services are working.
 
@@ -49,11 +49,11 @@ Please make sure the services are working.
 
 `--port` is used for specifying the graph server port and the default value is `3699`.
 
-`--u` and `--p` are used to specify the user name and password, `user` and `password` are the default authority.
+`-u` and `-p` are used to specify the user name and password, `user` and `password` are the default authority.
 
 Run
 
-`bin/nebula --port=3699 --u=user --p=password`
+`bin/nebula --port=3699 -u=user -p=password`
 
 to connect to the graph server.
 
@@ -67,7 +67,7 @@ Welcome to Nebula Graph (Version 0.1)
 nebula>
 ```
 
-Before query the dataset, you should switch to an existed graph space.
+Before query the dataset, you should switch to an existing graph space.
 
 ```
 nebula> use space nba
@@ -146,7 +146,7 @@ Currently you can create your own graph space, such as :
 CREATE space myspace(partition_num=1, replica_factor=1)
 ```
 
-When you start `Nebula Graph`, a set of vertex and edge have already existed.
+When you start `Nebula Graph`, a set of vertices and edges have already existed.
 Currently the default schema is `nba`.
 
 The graph space describes the relationship between players and teams.
@@ -204,7 +204,7 @@ CREATE EDGE serve(start_year int, end_year int)
 The insert sentences look like the following commands.
 
 ```
-// Insert some vertexs: players and teams:
+// Insert some vertices: players and teams:
 INSERT VERTEX player(name, age) VALUES -8379929135833483044:("Amar'e Stoudemire", 36)
 
 INSERT VERTEX team(name) VALUES -9110170398241263635:("Magic")
