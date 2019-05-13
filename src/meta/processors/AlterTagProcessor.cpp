@@ -11,11 +11,7 @@ namespace nebula {
 namespace meta {
 
 void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
-    if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
+    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto ret = getTagId(req.get_space_id(), req.get_tag_name());
     if (!ret.ok()) {

@@ -11,12 +11,7 @@ namespace nebula {
 namespace meta {
 
 void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
-    if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
-        LOG(ERROR) << "Create Tag Failed : Space " << req.get_space_id() << " not found";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
+    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto ret = getTagId(req.get_space_id(), req.get_tag_name());
     std::vector<kvstore::KV> data;
