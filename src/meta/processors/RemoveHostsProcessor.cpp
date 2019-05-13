@@ -12,20 +12,18 @@ namespace meta {
 
 void RemoveHostsProcessor::process(const cpp2::RemoveHostsReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-
     std::vector<std::string> hostsKey;
     for (auto& h : req.get_hosts()) {
-        hostsKey.emplace_back(MetaServiceUtils::hostKey(h.ip, h.port));
+        auto hostKey = MetaServiceUtils::hostKey(h.ip, h.port);
+        auto ret = hostExist(hostKey);
+        if (!ret.ok()) {
+            LOG(WARNING) << "The host " << HostAddr(h.ip, h.port) << " not existed!";
+            resp_.set_code(to(ret));
+            onFinished();
+            return;
+        }
+        hostsKey.emplace_back(std::move(hostKey));
     }
-
-    auto hostsRet = hostsExist(hostsKey);
-    if (!hostsRet.ok()) {
-        resp_.set_code(to(std::move(hostsRet)));
-        onFinished();
-        return;
-    }
-
-    LOG(INFO) << "Remove hosts ";
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     doMultiRemove(std::move(hostsKey));
 }

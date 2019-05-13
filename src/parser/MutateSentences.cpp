@@ -15,7 +15,9 @@ std::string PropertyList::toString() const {
         buf += *prop;
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -43,8 +45,9 @@ std::string VertexTagList::toString() const {
         buf += item->toString();
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
-
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -56,7 +59,9 @@ std::string ValueList::toString() const {
         buf += expr->toString();
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -80,7 +85,9 @@ std::string VertexRowList::toString() const {
         buf += item->toString();
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -123,7 +130,9 @@ std::string EdgeRowList::toString() const {
         buf += item->toString();
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -161,7 +170,9 @@ std::string UpdateList::toString() const {
         buf += item->toString();
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -236,7 +247,9 @@ std::string EdgeList::toString() const {
         buf += std::to_string(edge.second);
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 

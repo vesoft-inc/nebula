@@ -174,9 +174,9 @@ protected:
     Status spaceExist(GraphSpaceID spaceId);
 
     /**
-     * Check multi host_name exists or not.
+     * Check host has been registered or not.
      * */
-    Status hostsExist(const std::vector<std::string>& name);
+    Status hostExist(const std::string& hostKey);
 
     /**
      * Return the spaceId for name.
