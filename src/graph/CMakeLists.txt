@@ -32,11 +32,6 @@ add_library(
     DropSpaceExecutor.cpp
     ShowExecutor.cpp
     YieldExecutor.cpp
-    mock/PropertiesSchema.cpp
-    mock/EdgeSchema.cpp
-    mock/TagSchema.cpp
-    mock/SchemaManager.cpp
-    mock/StorageService.cpp
 )
 add_dependencies(
     graph_obj

@@ -11,6 +11,7 @@
 #include "parser/TraverseSentences.h"
 #include "parser/MutateSentences.h"
 #include "parser/AdminSentences.h"
+#include "parser/UserSentences.h"
 
 namespace nebula {
 

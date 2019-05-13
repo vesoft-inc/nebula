@@ -24,19 +24,28 @@ Status InsertVertexExecutor::prepare() {
         return status;
     }
 
-    overwritable_ = sentence_->overwritable();
-    vertex_ = sentence_->vertex();
-    properties_ = sentence_->properties();
+    // TODO(dutor) To support multi-tag insertion
+    auto tagItems = sentence_->tagItems();
+    if (tagItems.size() > 1) {
+        return Status::Error("Multi-tag not supported yet");
+    }
+
+    auto *tagName = tagItems[0]->tagName();
+    properties_ = tagItems[0]->properties();
+
     rows_ = sentence_->rows();
-    // TODO(dutor) check on property names and types
+    // TODO(dutor) To check whether the number of props and values matches.
     if (rows_.empty()) {
         return Status::Error("VALUES cannot be empty");
     }
+
+    overwritable_ = sentence_->overwritable();
+
     auto spaceId = ectx()->rctx()->session()->space();
-    tagId_ = ectx()->schemaManager()->toTagID(spaceId, *vertex_);
+    tagId_ = ectx()->schemaManager()->toTagID(spaceId, *tagName);
     schema_ = ectx()->schemaManager()->getTagSchema(spaceId, tagId_);
     if (schema_ == nullptr) {
-        return Status::Error("No schema found for `%s'", vertex_->c_str());
+        return Status::Error("No schema found for `%s'", tagName->c_str());
     }
     return Status::OK();
 }

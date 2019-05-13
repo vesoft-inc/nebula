@@ -19,6 +19,10 @@ DECLARE_int32(load_data_interval_second);
 namespace nebula {
 namespace meta {
 
+using nebula::cpp2::SupportedType;
+using nebula::cpp2::ValueType;
+using apache::thrift::FragileConstructor::FRAGILE;
+
 TEST(MetaClientTest, InterfacesTest) {
     FLAGS_load_data_interval_second = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
@@ -116,6 +120,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("tagItem0", outSchema->getFieldName(0));
             auto version = schemaMan->getNewestTagSchemaVer(spaceId, tagId);
+            ASSERT_EQ(0, version);
             auto outSchema1 = schemaMan->getTagSchema(spaceId, tagId, version);
             ASSERT_TRUE(outSchema1 != nullptr);
             ASSERT_EQ(5, outSchema1->getNumFields());
@@ -143,6 +148,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("edgeItem0", outSchema->getFieldName(0));
             auto version = schemaMan->getNewestEdgeSchemaVer(spaceId, edgeType);
+            ASSERT_EQ(0, version);
             auto outSchema1 = schemaMan->getEdgeSchema(spaceId, edgeType, version);
             ASSERT_TRUE(outSchema1 != nullptr);
             ASSERT_EQ(5, outSchema1->getNumFields());
@@ -255,6 +261,63 @@ TEST(MetaClientTest, InterfacesTest) {
     client.reset();
 }
 
+TEST(MetaClientTest, TagTest) {
+    FLAGS_load_data_interval_second = 1;
+    fs::TempDir rootPath("/tmp/MetaClientTagTest.XXXXXX");
+    auto sc = TestUtils::mockServer(10001, rootPath.path());
+
+    GraphSpaceID spaceId = 0;
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    uint32_t localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto client = std::make_shared<MetaClient>(threadPool,
+                                               std::vector<HostAddr>{HostAddr(localIp, 10001)});
+    client->init();
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    auto r = client->addHosts(hosts).get();
+    ASSERT_TRUE(r.ok());
+    auto ret = client->createSpace("default_space", 9, 3).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    spaceId = ret.value();
+    TagID id;
+    int64_t version;
+
+    {
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        columns.emplace_back(FRAGILE, "column_i",
+                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
+        columns.emplace_back(FRAGILE, "column_d",
+                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr));
+        columns.emplace_back(FRAGILE, "column_s",
+                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+        nebula::cpp2::Schema schema;
+        auto result = client->createTagSchema(spaceId, "test_tag", schema).get();
+        ASSERT_TRUE(result.ok());
+        id = result.value();
+    }
+    {
+        auto result = client->listTagSchemas(spaceId).get();
+        ASSERT_TRUE(result.ok());
+        auto tags = result.value();
+        ASSERT_EQ(1, tags.size());
+        ASSERT_EQ(id, tags[0].get_tag_id());
+        ASSERT_EQ("test_tag", tags[0].get_tag_name());
+        version = tags[0].get_version();
+    }
+    {
+        auto result = client->getTagSchema(spaceId, id, version).get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        auto result = client->removeTagSchema(spaceId, "test_tag").get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        auto result = client->getTagSchema(spaceId, id, version).get();
+        ASSERT_FALSE(result.ok());
+    }
+}
+
 class TestListener : public MetaChangedListener {
 public:
     void onSpaceAdded(GraphSpaceID spaceId) override {
@@ -314,6 +377,7 @@ TEST(MetaClientTest, DiffTest) {
         ASSERT_EQ(hosts, ret.value());
     }
     {
+        // Test Create Space and List Spaces
         auto ret = client->createSpace("default_space", 9, 1).get();
         ASSERT_TRUE(ret.ok()) << ret.status();
     }
@@ -327,6 +391,14 @@ TEST(MetaClientTest, DiffTest) {
     sleep(FLAGS_load_data_interval_second + 1);
     ASSERT_EQ(2, listener->spaceNum);
     ASSERT_EQ(14, listener->partNum);
+    {
+        // Test Drop Space
+        auto ret = client->dropSpace("default_space_1").get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+    }
+    sleep(FLAGS_load_data_interval_second + 1);
+    ASSERT_EQ(1, listener->spaceNum);
+    ASSERT_EQ(9, listener->partNum);
 }
 
 }  // namespace meta
