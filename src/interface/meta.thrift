@@ -166,9 +166,9 @@ struct CreateEdgeReq {
 }
 
 struct AlterEdgeReq {
-     1: common.GraphSpaceID     space_id,
-     2: string                  edge_name,
-     3: list<AlterSchemaItem>   edge_items,
+    1: common.GraphSpaceID     space_id,
+    2: string                  edge_name,
+    3: list<AlterSchemaItem>   edge_items,
 }
 
 struct GetEdgeReq {

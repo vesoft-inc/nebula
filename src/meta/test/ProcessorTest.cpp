@@ -457,6 +457,7 @@ TEST(ProcessorTest, KVOperationTest) {
 TEST(ProcessorTest, ListOrGetTagsTest) {
     fs::TempDir rootPath("/tmp/ListTagsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockTag(kv.get(), 10);
 
     // test ListTagsProcessor
@@ -507,6 +508,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
 TEST(ProcessorTest, ListOrGetEdgesTest) {
     fs::TempDir rootPath("/tmp/ListEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockEdge(kv.get(), 10);
 
     // test ListEdgesProcessor
@@ -792,7 +794,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::AlterEdgeReq req;
         nebula::cpp2::Schema dropSch;
         nebula::cpp2::ColumnDef column;
-        std::vector<cpp2::AlterEdgeItem> items;
+        std::vector<cpp2::AlterSchemaItem> items;
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 0);
         dropSch.columns.emplace_back(std::move(column));
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 1);

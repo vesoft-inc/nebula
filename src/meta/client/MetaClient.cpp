@@ -729,7 +729,7 @@ MetaClient::alterEdge(GraphSpaceID spaceId, std::string name,
         return client->future_alterEdge(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
-    });
+    }, true);
 }
 
 folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
@@ -743,17 +743,17 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     });
 }
 
-folly::Future<StatusOr<bool>>
+folly::Future<StatusOr<nebula::cpp2::Schema>>
 MetaClient::getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer version) {
     cpp2::GetEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_type(edgeType);
     req.set_version(version);
     return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_getEdge(request);
-                }, [] (cpp2::GetEdgeResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
+        return client->future_getEdge(request);
+    }, [] (cpp2::GetEdgeResp&& resp) -> nebula::cpp2::Schema {
+        return std::move(resp).get_schema();
+    });
 }
 
 folly::Future<StatusOr<bool>>
@@ -762,10 +762,10 @@ MetaClient::removeEdgeSchema(GraphSpaceID spaceId, std::string name) {
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
     return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_removeEdge(request);
-                }, [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
+        return client->future_removeEdge(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
 }
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>>

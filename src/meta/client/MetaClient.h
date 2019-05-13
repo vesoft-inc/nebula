@@ -122,7 +122,7 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
     listEdgeSchemas(GraphSpaceID spaceId);
 
-    folly::Future<StatusOr<bool>>
+    folly::Future<StatusOr<nebula::cpp2::Schema>>
     getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer version);
 
     folly::Future<StatusOr<bool>>
