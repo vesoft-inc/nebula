@@ -117,7 +117,7 @@ public:
     createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
 
     folly::Future<StatusOr<bool>>
-    alterEdge(GraphSpaceID spaceId, std::string name, std::vector<cpp2::AlterEdgeItem> items);
+    alterEdge(GraphSpaceID spaceId, std::string name, std::vector<cpp2::AlterSchemaItem> items);
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
     listEdgeSchemas(GraphSpaceID spaceId);

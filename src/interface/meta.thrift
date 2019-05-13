@@ -76,11 +76,6 @@ struct EdgeItem {
     4: common.Schema        schema,
 }
 
-struct AlterEdgeItem {
-    1: AlterSchemaOp        op,
-    2: common.Schema        schema,
-}
-
 struct ExecResp {
     1: ErrorCode        code,
     2: ID               id,
@@ -160,6 +155,19 @@ struct GetTagResp {
     2: common.Schema    schema,
 }
 
+// Edge related operations.
+struct CreateEdgeReq {
+    1: common.GraphSpaceID space_id,
+    2: string              edge_name,
+    3: common.Schema       schema,
+}
+
+struct AlterEdgeReq {
+     1: common.GraphSpaceID     space_id,
+     2: string                  edge_name,
+     3: list<AlterSchemaItem>   edge_items,
+}
+
 struct GetEdgeReq {
     1: common.GraphSpaceID space_id,
     2: common.EdgeType     edge_type,
@@ -169,19 +177,6 @@ struct GetEdgeReq {
 struct GetEdgeResp {
     1: ErrorCode        code,
     2: common.Schema    schema,
-}
-
-// Edge related operations.
-struct CreateEdgeReq {
-    1: common.GraphSpaceID space_id,
-    2: string              edge_name,
-    3: common.Schema       schema,
-}
-
-struct AlterEdgeReq {
-     1: common.GraphSpaceID   space_id,
-     2: string                edge_name,
-     3: list<AlterEdgeItem>   edge_items,
 }
 
 struct RemoveEdgeReq {

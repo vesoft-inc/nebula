@@ -57,36 +57,6 @@ GENERATE_LOCK(edge);
         return; \
     }
 
-/**
- * Retrieval space ID by space name and will return when it's not found.
- * */
-#define GET_SPACE_ID_AND_RETURN(spaceName, spaceId) \
-    auto spaceIdResult = getSpaceId(spaceName); \
-    if (!spaceIdResult.ok()) { \
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
-        onFinished(); \
-        return; \
-    } else { \
-        spaceId = spaceIdResult.value(); \
-    }
-
-/**
- *
- * */
-#define GET_EDGE_TYPE_AND_RETURN(spaceId, edgeName, edgeType) \
-    auto edgeTypeResult = getEdgeType(spaceId, edgeName); \
-    if (!edgeTypeResult.ok()) { \
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
-        onFinished(); \
-        return; \
-    } else { \
-        edgeType = edgeTypeResult.value(); \
-    }
-
-
-#define MAX_VERSION_HEX 0x7FFFFFFFFFFFFFFF
-#define MIN_VERSION_HEX 0x0000000000000000
-
 template<typename RESP>
 class BaseProcessor {
 public:
@@ -209,17 +179,17 @@ protected:
     Status hostsExist(const std::vector<std::string>& name);
 
     /**
-     * Return the spaceId from name.
+     * Return the spaceId for name.
      * */
     StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
 
     /**
-     * Return the tagId from name.
+     * Return the tagId for name.
      */
     StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
 
     /**
-     * Return the edgeType from name.
+     * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
