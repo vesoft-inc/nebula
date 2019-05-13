@@ -152,25 +152,13 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 }
 
 template<typename RESP>
-Status BaseProcessor<RESP>::hostsExist(const std::vector<std::string> &hostsKey) {
-    for (const auto& hostKey : hostsKey) {
-        std::string val;
-        auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, hostKey , &val);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
-                nebula::cpp2::HostAddr host = MetaServiceUtils::parseHostKey(hostKey);
-                std::string ip = NetworkUtils::intToIPv4(host.get_ip());
-                int32_t port = host.get_port();
-                VLOG(3) << "Error, host IP " << ip << " port " << port
-                        << " not exist";
-                return Status::HostNotFound();
-            } else {
-                VLOG(3) << "Unknown Error ,, ret = " << static_cast<int32_t>(ret);
-                return Status::Error("Unknown error!");
-            }
-        }
+Status BaseProcessor<RESP>::hostExist(const std::string& hostKey) {
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, hostKey , &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return Status::OK();
     }
-    return Status::OK();
+    return Status::HostNotFound();
 }
 
 template<typename RESP>

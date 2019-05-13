@@ -36,6 +36,7 @@ add_library(
     processors/RemoveProcessor.cpp
     processors/RemoveRangeProcessor.cpp
     processors/ScanProcessor.cpp
+    processors/HBProcessor.cpp
 )
 
 add_dependencies(
