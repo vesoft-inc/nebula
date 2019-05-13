@@ -10,11 +10,7 @@ namespace nebula {
 namespace meta {
 
 void RemoveEdgeProcessor::process(const cpp2::RemoveEdgeReq& req) {
-    if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
+    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
     auto ret = getEdgeKeys(req.get_space_id(), req.get_edge_name());
     if (!ret.ok()) {

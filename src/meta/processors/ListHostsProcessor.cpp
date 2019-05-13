@@ -19,7 +19,6 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
         onFinished();
         return;
     }
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_hosts(std::move(ret.value()));
     onFinished();
 }

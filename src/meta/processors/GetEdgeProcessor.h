@@ -27,4 +27,5 @@ private:
 
 }  // namespace meta
 }  // namespace nebula
+
 #endif  // META_GETEDGEPROCESSOR_H_

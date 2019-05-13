@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef NEBULA_GRAPH_REMOVEEDGEPROCESSOR_H
-#define NEBULA_GRAPH_REMOVEEDGEPROCESSOR_H
+#ifndef META_REMOVEEDGEPROCESSOR_H_
+#define META_REMOVEEDGEPROCESSOR_H_
 
 #include "meta/processors/BaseProcessor.h"
 
@@ -29,4 +29,5 @@ private:
 
 }  // namespace meta
 }  // namespace nebula
-#endif  // NEBULA_GRAPH_REMOVEEDGEPROCESSOR_H
+
+#endif  // META_REMOVEEDGEPROCESSOR_H_

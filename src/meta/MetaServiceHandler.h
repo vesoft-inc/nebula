@@ -83,11 +83,17 @@ public:
     folly::Future<cpp2::ListTagsResp>
     future_listTags(const cpp2::ListTagsReq& req) override;
 
-    folly::Future<cpp2::ExecResp>
-    future_createEdge(const cpp2::CreateEdgeReq& req) override;
+    folly::Future<cpp2::GetEdgeResp>
+    future_getEdge(const cpp2::GetEdgeReq& req) override;
 
     folly::Future<cpp2::ListEdgesResp>
     future_listEdges(const cpp2::ListEdgesReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_createEdge(const cpp2::CreateEdgeReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_removeEdge(const cpp2::RemoveEdgeReq& req) override;
 
     /**
      * HeartBeat
