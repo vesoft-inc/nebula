@@ -22,7 +22,16 @@ std::string StepClause::toString() const {
 }
 
 std::string SourceNodeList::toString() const {
-    return folly::join(",", nodes_);
+    std::string buf;
+    buf.reserve(256);
+    for (auto id : nodes_) {
+        buf += std::to_string(id);
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
 }
 
 std::string FromClause::toString() const {
@@ -62,19 +71,21 @@ std::string WhereClause::toString() const {
 }
 
 std::string YieldColumns::toString() const {
-    std::vector<std::string> colStrs;
+    std::string buf;
+    buf.reserve(256);
     for (auto &col : columns_) {
-        std::string colStr;
-        colStr.reserve(256);
         auto *expr = col->expr();
-        colStr = expr->toString();
+        buf += expr->toString();
         if (col->alias() != nullptr) {
-            colStr += " AS ";
-            colStr += *col->alias();
+            buf += " AS ";
+            buf += *col->alias();
         }
-        colStrs.push_back(colStr);
+        buf += ",";
     }
-    return folly::join(",", colStrs);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
 }
 
 std::string YieldClause::toString() const {

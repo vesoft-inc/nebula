@@ -78,11 +78,16 @@ std::string SpaceOptItem::toString() const {
 
 
 std::string SpaceOptList::toString() const {
-    std::vector<std::string> spaceOpts;
+    std::string buf;
+    buf.reserve(256);
     for (auto &item : items_) {
-        spaceOpts.push_back(item->toString());
+        buf += item->toString();
+        buf += ",";
     }
-    return folly::join(",", spaceOpts);
+    if (!buf.empty()) {
+        buf.resize(buf.size()-1);
+    }
+    return buf;
 }
 
 

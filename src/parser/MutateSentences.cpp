@@ -9,11 +9,16 @@
 namespace nebula {
 
 std::string PropertyList::toString() const {
-    std::vector<std::string> propStrs;
+    std::string buf;
+    buf.reserve(256);
     for (auto &prop : properties_) {
-        propStrs.push_back(*prop);
+        buf += *prop;
+        buf += ",";
     }
-    return folly::join(",", propStrs);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
 }
 
 
@@ -40,18 +45,24 @@ std::string VertexTagList::toString() const {
         buf += item->toString();
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
-
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
 
 std::string ValueList::toString() const {
-    std::vector<std::string> valueStrs;
+    std::string buf;
+    buf.reserve(256);
     for (auto &expr : values_) {
-        valueStrs.push_back(expr->toString());
+        buf += expr->toString();
+        buf += ",";
     }
-    return folly::join(",", valueStrs);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
 }
 
 
@@ -68,11 +79,16 @@ std::string VertexRowItem::toString() const {
 
 
 std::string VertexRowList::toString() const {
-    std::vector<std::string> vertexRowStrs;
+    std::string buf;
+    buf.reserve(256);
     for (auto &item : rows_) {
-        vertexRowStrs.push_back(item->toString());
+        buf += item->toString();
+        buf += ",";
     }
-    return folly::join(",", vertexRowStrs);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
 }
 
 
@@ -108,11 +124,16 @@ std::string EdgeRowItem::toString() const {
 
 
 std::string EdgeRowList::toString() const {
-    std::vector<std::string> edgeRowStrs;
+    std::string buf;
+    buf.reserve(256);
     for (auto &item : rows_) {
-        edgeRowStrs.push_back(item->toString());
+        buf += item->toString();
+        buf += ",";
     }
-    return folly::join(",", edgeRowStrs);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
 }
 
 
@@ -143,11 +164,16 @@ std::string UpdateItem::toString() const {
 
 
 std::string UpdateList::toString() const {
-    std::vector<std::string> updateItemstrs;
+    std::string buf;
+    buf.reserve(256);
     for (auto &item : items_) {
-        updateItemstrs.push_back(item->toString());
+        buf += item->toString();
+        buf += ",";
     }
-    return folly::join(",", updateItemstrs);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
 }
 
 
@@ -213,16 +239,18 @@ std::string DeleteVertexSentence::toString() const {
 }
 
 std::string EdgeList::toString() const {
-    std::vector<std::string> edgeStrs;
+    std::string buf;
+    buf.reserve(256);
     for (auto edge : edges_) {
-        std::string edgeStr;
-        edgeStr.reserve(256);
-        edgeStr = std::to_string(edge.first);
-        edgeStr += "->";
-        edgeStr += std::to_string(edge.second);
-        edgeStrs.push_back(edgeStr);
+        buf += std::to_string(edge.first);
+        buf += "->";
+        buf += std::to_string(edge.second);
+        buf += ",";
     }
-    return folly::join(",", edgeStrs);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
 }
 
 std::string DeleteEdgeSentence::toString() const {
