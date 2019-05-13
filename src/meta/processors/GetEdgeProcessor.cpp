@@ -10,26 +10,20 @@ namespace nebula {
 namespace meta {
 
 void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
-    EdgeType edgeType;
-    GET_EDGE_TYPE_AND_RETURN(req.get_space_id(), req.get_edge_name(), edgeType);
-
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
+    std::string val;
     std::string edgeKey = MetaServiceUtils::schemaEdgeKey(req.get_space_id(),
-                                                          edgeType,
+                                                          req.get_edge_type(),
                                                           req.get_version());
-    auto ret = doGet(std::move(edgeKey));
-    if (!ret.ok()) {
-        LOG(ERROR) << "Get Edge Failed : Space " << req.get_space_id() << ", Edge "
-                   << req.get_edge_name() << ", version " << req.get_version();
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, std::move(edgeKey), &val);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    VLOG(3) << "Get Edge : Space" << req.get_space_id() << ", Edge "
-            << req.get_edge_name() << ", version " << req.get_version();
-    resp_.set_schema(MetaServiceUtils::parseSchema(ret.value()));
+    resp_.set_schema(MetaServiceUtils::parseSchema(val));
     onFinished();
 }
-
 }  // namespace meta
 }  // namespace nebula
+

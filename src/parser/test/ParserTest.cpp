@@ -117,7 +117,7 @@ TEST(Parser, AlterTag) {
     {
         GQLParser parser;
         std::string query = "ALTER TAG person ADD (col1 int TTL = 200, col2 string), "
-                            "SET (col3 int TTL = 200, col4 string), "
+                            "CHANGE (col3 int TTL = 200, col4 string), "
                             "DROP (col5, col6)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -179,7 +179,7 @@ TEST(Parser, InsertVertex) {
     {
         GQLParser parser;
         std::string query = "INSERT VERTEX person(name,age,married,salary,create_time) "
-                            "VALUES(12345: \"dutor\", 30, true, 3.14, 1551331900)";
+                            "VALUES 12345:(\"dutor\", 30, true, 3.14, 1551331900)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -227,28 +227,28 @@ TEST(Parser, InsertEdge) {
     {
         GQLParser parser;
         std::string query = "INSERT EDGE transfer(amount, time) "
-                            "VALUES(12345 -> 54321: 3.75, 1537408527)";
+                            "VALUES 12345->54321:(3.75, 1537408527)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
         std::string query = "INSERT EDGE NO OVERWRITE transfer(amount, time) "
-                            "VALUES(12345 -> 54321: 3.75, 1537408527)";
+                            "VALUES 12345->54321:(3.75, 1537408527)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
         std::string query = "INSERT EDGE transfer(amount, time) "
-                            "VALUES(12345 -> 54321 @1537408527: 3.75, 1537408527)";
+                            "VALUES 12345->54321@1537408527:(3.75, 1537408527)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
         std::string query = "INSERT EDGE NO OVERWRITE transfer(amount, time) "
-                            "VALUES(12345 -> 54321 @1537408527: 3.75, 1537408527)";
+                            "VALUES 12345->54321@1537408527:(3.75, 1537408527)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -401,6 +401,100 @@ TEST(Parser, AdminOperation) {
         std::string query = "drop space default_space";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+
+TEST(Parser, UserOperation) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE USER user1 WITH PASSWORD \"aaa\" ";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\" , "
+                            "FIRSTNAME \"a\", LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "ALTER USER user1 WITH FIRSTNAME \"a\","
+                            " LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "DROP USER user1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "DROP USER IF EXISTS user1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CHANGE PASSWORD account FROM \"old password\" TO \"new password\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "GRANT ROLE ADMIN ON spacename TO account";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "REVOKE ROLE ADMIN ON spacename FROM account";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW ROLES IN spacename";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW USER account";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW USERS";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+        auto& sentence = result.value();
+        EXPECT_EQ(query, sentence->toString());
     }
 }
 

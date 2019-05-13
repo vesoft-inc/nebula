@@ -21,12 +21,13 @@ add_library(
     processors/DropSpaceProcessor.cpp
     processors/GetPartsAllocProcessor.cpp
     processors/CreateTagProcessor.cpp
-    processors/AlterTagProcessor.cpp
     processors/CreateEdgeProcessor.cpp
+    processors/AlterTagProcessor.cpp
+    processors/AlterEdgeProcessor.cpp
     processors/GetTagProcessor.cpp
+    processors/GetEdgeProcessor.cpp
     processors/ListTagsProcessor.cpp
     processors/RemoveTagProcessor.cpp
-    processors/GetEdgeProcessor.cpp
     processors/ListEdgesProcessor.cpp
     processors/RemoveEdgeProcessor.cpp
     processors/GetProcessor.cpp

@@ -10,10 +10,50 @@ namespace nebula {
 namespace meta {
 
 void RemoveEdgeProcessor::process(const cpp2::RemoveEdgeReq& req) {
-    EdgeType edgeType;
-    GET_EDGE_TYPE_AND_RETURN(req.get_space_id(), req.get_edge_name(), edgeType);
-UNUSED(edgeType);
+    if (spaceExist(req.get_space_id()) == Status::SpaceNotFound()) {
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
+    }
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
+    auto ret = getEdgeKeys(req.get_space_id(), req.get_edge_name());
+    if (!ret.ok()) {
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+        onFinished();
+        return;
+    }
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    LOG(INFO) << "Remove Edge " << req.get_edge_name();
+    doMultiRemove(std::move(ret.value()));
+}
+
+StatusOr<std::vector<std::string>> RemoveEdgeProcessor::getEdgeKeys(GraphSpaceID id,
+                                                                    const std::string& edgeName) {
+    auto indexKey = MetaServiceUtils::indexEdgeKey(id, edgeName);
+    std::vector<std::string> keys;
+    std::string edgeVal;
+    EdgeType edgeType;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &edgeVal);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        edgeType = *reinterpret_cast<const EdgeType *>(edgeVal.data());
+        resp_.set_id(to(edgeType, EntryType::EDGE));
+        keys.emplace_back(indexKey);
+    } else {
+        return Status::Error("No Edge!");
+    }
+
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto key = MetaServiceUtils::schemaEdgePrefix(id, edgeType);
+    ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, key, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return Status::Error("Edge get error by id : %d !", edgeType);
+    }
+
+    while (iter->valid()) {
+        keys.emplace_back(iter->key());
+        iter->next();
+    }
+    return keys;
 }
 
 }  // namespace meta

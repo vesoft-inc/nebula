@@ -4,8 +4,8 @@
  *  (found in the LICENSE.Apache file in the root directory)
  */
 
-#ifndef META_GETEDGESSPROCESSOR_H_
-#define META_GETEDGESSPROCESSOR_H_
+#ifndef META_GETEDGEPROCESSOR_H_
+#define META_GETEDGEPROCESSOR_H_
 
 #include "meta/processors/BaseProcessor.h"
 
@@ -20,7 +20,7 @@ public:
 
     void process(const cpp2::GetEdgeReq& req);
 
- private:
+private:
     explicit GetEdgeProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::GetEdgeResp>(kvstore) {}
 };
@@ -28,4 +28,4 @@ public:
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_GETEDGESSPROCESSOR_H_
+#endif  // META_GETEDGEPROCESSOR_H_

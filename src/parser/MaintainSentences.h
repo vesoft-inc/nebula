@@ -43,7 +43,7 @@ public:
         return type_;
     }
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -85,7 +85,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -110,7 +110,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -128,7 +128,7 @@ class AlterTagOptItem final {
 public:
     enum OptionType : uint8_t {
         ADD = 0x01,
-        SET = 0x02,
+        CHANGE = 0x02,
         DROP = 0x03
     };
 
@@ -189,7 +189,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -213,7 +213,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -236,7 +236,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -254,7 +254,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 

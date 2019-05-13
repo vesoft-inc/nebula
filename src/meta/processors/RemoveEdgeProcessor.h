@@ -20,9 +20,11 @@ public:
 
     void process(const cpp2::RemoveEdgeReq& req);
 
- private:
+private:
     explicit RemoveEdgeProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+    StatusOr<std::vector<std::string>> getEdgeKeys(GraphSpaceID id, const std::string& edgeName);
 };
 
 }  // namespace meta

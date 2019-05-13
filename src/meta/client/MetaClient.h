@@ -99,8 +99,9 @@ public:
     createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
 
     // TODO(boshengchen) need refresh tagNameIdMap and newestTagVerMap
-    folly::Future<StatusOr<TagID>>
-    alterTagSchema(GraphSpaceID spaceId, std::string name, std::vector<cpp2::AlterTagItem> items);
+    folly::Future<StatusOr<TagID>> alterTagSchema(GraphSpaceID spaceId,
+                                                  std::string name,
+                                                  std::vector<cpp2::AlterSchemaItem> items);
 
     folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
     listTagSchemas(GraphSpaceID spaceId);
@@ -119,7 +120,7 @@ public:
     listEdgeSchemas(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version);
+    getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer version);
 
     folly::Future<StatusOr<bool>>
     removeEdgeSchema(GraphSpaceID spaceId, std::string name);

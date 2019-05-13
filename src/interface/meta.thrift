@@ -34,9 +34,9 @@ enum ErrorCode {
 
 
 enum AlterSchemaOp {
-    ADD     = 0x01,
-    SET     = 0x02,
-    DROP    = 0x03
+    ADD    = 0x01,
+    CHANGE = 0x02,
+    DROP   = 0x03,
     UNKNOWN = 0x04,
 } (cpp.enum_strict)
 
@@ -64,7 +64,7 @@ struct TagItem {
     4: common.Schema        schema,
 }
 
-struct AlterTagItem {
+struct AlterSchemaItem {
     1: AlterSchemaOp        op,
     2: common.Schema        schema,
 }
@@ -128,9 +128,9 @@ struct CreateTagReq {
 }
 
 struct AlterTagReq {
-    1: common.GraphSpaceID space_id,
-    2: string              tag_name,
-    3: list<AlterTagItem>  tag_items,
+    1: common.GraphSpaceID    space_id,
+    2: string                 tag_name,
+    3: list<AlterSchemaItem>  tag_items,
 }
 
 struct RemoveTagReq {
@@ -160,6 +160,17 @@ struct GetTagResp {
     2: common.Schema    schema,
 }
 
+struct GetEdgeReq {
+    1: common.GraphSpaceID space_id,
+    2: common.EdgeType     edge_type,
+    3: common.SchemaVer    version,
+}
+
+struct GetEdgeResp {
+    1: ErrorCode        code,
+    2: common.Schema    schema,
+}
+
 // Edge related operations.
 struct CreateEdgeReq {
     1: common.GraphSpaceID space_id,
@@ -174,8 +185,8 @@ struct AlterEdgeReq {
 }
 
 struct RemoveEdgeReq {
-    1: common.GraphSpaceID  space_id,
-    2: string               edge_name,
+    1: common.GraphSpaceID space_id,
+    2: string              edge_name,
 }
 
 struct ListEdgesReq {
@@ -187,17 +198,6 @@ struct ListEdgesResp {
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
     3: list<EdgeItem> edges,
-}
-
-struct GetEdgeReq {
-    1: common.GraphSpaceID  space_id,
-    2: string               edge_name,
-    3: common.SchemaVer     version,
-}
-
-struct GetEdgeResp {
-    1: ErrorCode        code,
-    2: common.Schema    schema,
 }
 
 // Host related operations.

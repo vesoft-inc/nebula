@@ -15,11 +15,9 @@ AlterTagExecutor::AlterTagExecutor(Sentence *sentence,
     sentence_ = static_cast<AlterTagSentence*>(sentence);
 }
 
-
 Status AlterTagExecutor::prepare() {
     return checkIfGraphSpaceChosen();
 }
-
 
 void AlterTagExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
@@ -27,9 +25,9 @@ void AlterTagExecutor::execute() {
     const auto& tagOpts = sentence_->tagOptList();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    std::vector<nebula::meta::cpp2::AlterTagItem> tagItems;
+    std::vector<nebula::meta::cpp2::AlterSchemaItem> tagItems;
     for (auto& tagOpt : tagOpts) {
-        nebula::meta::cpp2::AlterTagItem tagItem;
+        nebula::meta::cpp2::AlterSchemaItem tagItem;
         auto opType = getTagOpType(tagOpt->getOptType());
         tagItem.set_op(std::move(opType));
         const auto& specs = tagOpt->columnSpecs();
@@ -70,8 +68,8 @@ AlterTagExecutor::getTagOpType(const AlterTagOptItem::OptionType type) {
     switch (type) {
         case AlterTagOptItem::OptionType::ADD :
             return nebula::meta::cpp2::AlterSchemaOp::ADD;
-        case AlterTagOptItem::OptionType::SET :
-            return nebula::meta::cpp2::AlterSchemaOp::SET;
+        case AlterTagOptItem::OptionType::CHANGE :
+            return nebula::meta::cpp2::AlterSchemaOp::CHANGE;
         case AlterTagOptItem::OptionType::DROP :
             return nebula::meta::cpp2::AlterSchemaOp::DROP;
         default:
