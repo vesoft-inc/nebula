@@ -70,6 +70,8 @@ class GraphScanner;
     nebula::WithUserOptItem                *with_user_opt_item;
     nebula::RoleTypeClause                 *role_type_clause;
     nebula::AclItemClause                  *acl_item_clause;
+    nebula::AlterEdgeOptList               *alter_edge_opt_list;
+    nebula::AlterEdgeOptItem               *alter_edge_opt_item;
 }
 
 /* destructors */
@@ -136,6 +138,8 @@ class GraphScanner;
 %type <space_opt_item> space_opt_item
 %type <alter_tag_opt_list> alter_tag_opt_list
 %type <alter_tag_opt_item> alter_tag_opt_item
+%type <alter_edge_opt_list> alter_edge_opt_list
+%type <alter_edge_opt_item> alter_edge_opt_item
 
 %type <intval> ttl_spec port
 
@@ -542,14 +546,31 @@ create_edge_sentence
     ;
 
 alter_edge_sentence
-    : KW_ALTER KW_EDGE LABEL L_PAREN R_PAREN {
-        $$ = new AlterEdgeSentence($3, new ColumnSpecificationList());
+    : KW_ALTER KW_EDGE LABEL alter_edge_opt_list {
+        $$ = new AlterEdgeSentence($3, $4);
     }
-    | KW_ALTER KW_EDGE LABEL L_PAREN column_spec_list R_PAREN {
-        $$ = new AlterEdgeSentence($3, $5);
+    ;
+
+alter_edge_opt_list
+    : alter_edge_opt_item {
+        $$ = new AlterEdgeOptList();
+        $$->addOpt($1);
     }
-    | KW_ALTER KW_EDGE LABEL L_PAREN column_spec_list COMMA R_PAREN {
-        $$ = new AlterEdgeSentence($3, $5);
+    | alter_edge_opt_list COMMA alter_edge_opt_item {
+        $$ = $1;
+        $$->addOpt($3);
+    }
+    ;
+
+alter_edge_opt_item
+    : KW_ADD L_PAREN column_spec_list R_PAREN {
+        $$ = new AlterEdgeOptItem(AlterEdgeOptItem::ADD, $3);
+    }
+    | KW_CHANGE L_PAREN column_spec_list R_PAREN {
+        $$ = new AlterEdgeOptItem(AlterEdgeOptItem::CHANGE, $3);
+    }
+    | KW_DROP L_PAREN column_spec_list R_PAREN {
+        $$ = new AlterEdgeOptItem(AlterEdgeOptItem::DROP, $3);
     }
     ;
 
@@ -1100,7 +1121,7 @@ maintain_sentence
     | change_password_sentence { $$ = $1; }
     | grant_sentence { $$ = $1; }
     | revoke_sentence { $$ = $1; }
-    ; 
+    ;
 
 sentence
     : maintain_sentence { $$ = $1; }
