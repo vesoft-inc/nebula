@@ -689,7 +689,7 @@ MetaClient::removeTagSchema(int32_t spaceId, std::string tagName) {
         return client->future_removeTag(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
-    });
+    }, true);
 }
 
 folly::Future<StatusOr<nebula::cpp2::Schema>>
