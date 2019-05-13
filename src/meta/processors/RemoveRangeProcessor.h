@@ -12,7 +12,7 @@
 namespace nebula {
 namespace meta {
 
-class RemoveRangeProcessor : public BaseProcessor<cpp2::RemoveRangeResp> {
+class RemoveRangeProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
     static RemoveRangeProcessor* instance(kvstore::KVStore* kvstore) {
         return new RemoveRangeProcessor(kvstore);
@@ -22,7 +22,7 @@ public:
 
 private:
     explicit RemoveRangeProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::RemoveRangeResp>(kvstore) {}
+        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta
