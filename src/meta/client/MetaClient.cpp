@@ -656,11 +656,11 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
 folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
                            std::string name,
-                           std::vector<cpp2::AlterSchemaItem> tagItems) {
+                           std::vector<cpp2::AlterSchemaItem> items) {
     cpp2::AlterTagReq req;
     req.set_space_id(std::move(spaceId));
     req.set_tag_name(std::move(name));
-    req.set_tag_items(std::move(tagItems));
+    req.set_tag_items(std::move(items));
 
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_alterTag(request);
@@ -718,6 +718,20 @@ MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp
     }, true);
 }
 
+folly::Future<StatusOr<bool>>
+MetaClient::alterEdge(GraphSpaceID spaceId, std::string name,
+                      std::vector<cpp2::AlterSchemaItem> items) {
+    cpp2::AlterEdgeReq req;
+    req.set_space_id(std::move(spaceId));
+    req.set_edge_name(std::move(name));
+    req.set_edge_items(std::move(items));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_alterEdge(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
+}
+
 folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
 MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     cpp2::ListEdgesReq req;
@@ -727,6 +741,31 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     }, [] (cpp2::ListEdgesResp&& resp) -> decltype(auto) {
         return std::move(resp).get_edges();
     });
+}
+
+folly::Future<StatusOr<nebula::cpp2::Schema>>
+MetaClient::getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer version) {
+    cpp2::GetEdgeReq req;
+    req.set_space_id(std::move(spaceId));
+    req.set_edge_type(edgeType);
+    req.set_version(version);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_getEdge(request);
+    }, [] (cpp2::GetEdgeResp&& resp) -> nebula::cpp2::Schema {
+        return std::move(resp).get_schema();
+    });
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::removeEdgeSchema(GraphSpaceID spaceId, std::string name) {
+    cpp2::RemoveEdgeReq req;
+    req.set_space_id(std::move(spaceId));
+    req.set_edge_name(std::move(name));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_removeEdge(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
 }
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>>

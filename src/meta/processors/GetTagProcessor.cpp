@@ -10,6 +10,7 @@ namespace nebula {
 namespace meta {
 
 void GetTagProcessor::process(const cpp2::GetTagReq& req) {
+    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
     std::string tagKey = MetaServiceUtils::schemaTagKey(req.get_space_id(),
                                                         req.get_tag_id(),
