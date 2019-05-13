@@ -858,6 +858,7 @@ show_sentence
     }
     | KW_SHOW KW_EDGES {
          $$ = new ShowSentence(ShowSentence::ShowType::kShowEdges);
+    }
     | KW_SHOW KW_USERS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowUsers);
     }

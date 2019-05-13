@@ -89,7 +89,12 @@ void ShowExecutor::showHosts() {
         onFinish_();
     };
 
-    LOG_AND_PROCESS_ERROR();
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
@@ -126,7 +131,12 @@ void ShowExecutor::showSpaces() {
         onFinish_();
     };
 
-    LOG_AND_PROCESS_ERROR();
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
@@ -160,7 +170,12 @@ void ShowExecutor::showTags() {
         onFinish_();
     };
 
-    LOG_AND_PROCESS_ERROR();
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
@@ -193,7 +208,12 @@ void ShowExecutor::showEdges() {
         onFinish_();
     };
 
-    LOG_AND_PROCESS_ERROR();
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 

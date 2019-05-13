@@ -22,7 +22,7 @@ public:
         kShowHosts,
         kShowSpaces,
         kShowTags,
-        kShowEdges
+        kShowEdges,
         kShowUsers,
         kShowUser,
         kShowRoles
