@@ -28,7 +28,9 @@ std::string SourceNodeList::toString() const {
         buf += std::to_string(id);
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -80,7 +82,9 @@ std::string YieldColumns::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
