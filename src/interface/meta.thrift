@@ -24,6 +24,7 @@ enum ErrorCode {
     E_NO_HOSTS       = -21,
     E_EXISTED        = -22,
     E_NOT_FOUND      = -23,
+    E_INVALID_HOST   = -24,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -288,6 +289,15 @@ struct ScanResp {
     2: list<string> values,
 }
 
+struct HBResp {
+    1: ErrorCode code,
+    2: common.HostAddr  leader,
+}
+
+struct HBReq {
+    1: common.HostAddr host,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -317,5 +327,7 @@ service MetaService {
     RemoveResp       remove(1: RemoveReq req);
     RemoveRangeResp  removeRange(1: RemoveRangeReq req);
     ScanResp         scan(1: ScanReq req);
+
+    HBResp           heartBeat(1: HBReq req);
 }
 
