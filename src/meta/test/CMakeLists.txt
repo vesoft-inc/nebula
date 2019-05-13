@@ -65,6 +65,32 @@ nebula_link_libraries(
 nebula_add_test(processor_test)
 
 add_executable(
+    hb_processor_test
+    HBProcessorTest.cpp
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:schema_obj>
+)
+nebula_link_libraries(
+    hb_processor_test
+    proxygenhttpserver
+    proxygenlib
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    gtest
+)
+nebula_add_test(hb_processor_test)
+
+add_executable(
     meta_client_test
     MetaClientTest.cpp
     $<TARGET_OBJECTS:meta_client>

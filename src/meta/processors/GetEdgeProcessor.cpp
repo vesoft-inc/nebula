@@ -10,6 +10,7 @@ namespace nebula {
 namespace meta {
 
 void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
+    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
     std::string val;
     std::string edgeKey = MetaServiceUtils::schemaEdgeKey(req.get_space_id(),

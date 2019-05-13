@@ -15,11 +15,9 @@ AlterTagExecutor::AlterTagExecutor(Sentence *sentence,
     sentence_ = static_cast<AlterTagSentence*>(sentence);
 }
 
-
 Status AlterTagExecutor::prepare() {
     return checkIfGraphSpaceChosen();
 }
-
 
 void AlterTagExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
