@@ -31,8 +31,10 @@ std::string ShowSentence::toString() const {
 std::string HostList::toString() const {
     std::string buf;
     buf.reserve(256);
-    for (auto &host : hostStrs_) {
-        buf += *host;
+    for (auto &host : hosts_) {
+        buf += network::NetworkUtils::intToIPv4(host->first);
+        buf += ":";
+        buf += std::to_string(host->second);
         buf += ",";
     }
     buf.resize(buf.size() - 1);

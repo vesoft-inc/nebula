@@ -57,24 +57,23 @@ inline std::ostream& operator<<(std::ostream &os, ShowSentence::ShowType type) {
 
 class HostList final {
 public:
-    void addHost(std::string *hoststr) {
-        hostStrs_.emplace_back(hoststr);
+    void addHost(HostAddr *addr) {
+        hosts_.emplace_back(addr);
     }
 
     std::string toString() const;
 
-    std::vector<HostAddr> toHosts() const {
+    std::vector<HostAddr> hosts() const {
         std::vector<HostAddr> result;
-        result.resize(hostStrs_.size());
-        auto getHostAddr = [] (const auto &ptr) {
-            return network::NetworkUtils::toHostAddr(folly::trimWhitespace(*(ptr.get())));
-        };
-        std::transform(hostStrs_.begin(), hostStrs_.end(), result.begin(), getHostAddr);
+        result.reserve(hosts_.size());
+        for (auto &host : hosts_) {
+            result.emplace_back(*host);
+        }
         return result;
     }
 
 private:
-    std::vector<std::unique_ptr<std::string>>   hostStrs_;
+    std::vector<std::unique_ptr<HostAddr>>      hosts_;
 };
 
 
@@ -89,7 +88,7 @@ public:
     }
 
     std::vector<HostAddr> hosts() const {
-        return hosts_->toHosts();
+        return hosts_->hosts();
     }
 
     std::string toString() const override;
@@ -110,7 +109,7 @@ public:
     }
 
     std::vector<HostAddr> hosts() const {
-        return hosts_->toHosts();
+        return hosts_->hosts();
     }
 
     std::string toString() const override;
