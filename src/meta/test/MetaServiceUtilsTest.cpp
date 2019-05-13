@@ -34,9 +34,9 @@ TEST(MetaServiceUtilsTest, PartKeyTest) {
     ASSERT_EQ(prefix, partKey.substr(0, partKey.size() - sizeof(PartitionID)));
     ASSERT_EQ(1, *reinterpret_cast<const PartitionID*>(partKey.c_str() + prefix.size()));
 
-    std::vector<cpp2::HostAddr> hosts;
+    std::vector<nebula::cpp2::HostAddr> hosts;
     for (int i = 0; i < 10; i++) {
-        cpp2::HostAddr host;
+        nebula::cpp2::HostAddr host;
         host.set_ip(i * 20 + 1);
         host.set_port(i * 20 + 2);
         hosts.emplace_back(std::move(host));
@@ -65,13 +65,13 @@ TEST(MetaServiceUtilsTest, HostKeyTest) {
 }
 
 TEST(MetaServiceUtilsTest, TagTest) {
-    cpp2::Schema schema;
+    nebula::cpp2::Schema schema;
     decltype(schema.columns) cols;
     for (auto i = 1; i <= 3; i++) {
         nebula::cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", i));
         nebula::cpp2::ValueType vType;
-        vType.set_type(cpp2::SupportedType::INT);
+        vType.set_type(nebula::cpp2::SupportedType::INT);
         column.set_type(std::move(vType));
         cols.emplace_back(std::move(column));
     }
@@ -79,7 +79,7 @@ TEST(MetaServiceUtilsTest, TagTest) {
         nebula::cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", i));
         nebula::cpp2::ValueType vType;
-        vType.set_type(cpp2::SupportedType::FLOAT);
+        vType.set_type(nebula::cpp2::SupportedType::FLOAT);
         column.set_type(std::move(vType));
         cols.emplace_back(std::move(column));
     }
@@ -87,7 +87,7 @@ TEST(MetaServiceUtilsTest, TagTest) {
         nebula::cpp2::ColumnDef column;
         column.set_name(folly::stringPrintf("col_%d", i));
         nebula::cpp2::ValueType vType;
-        vType.set_type(cpp2::SupportedType::STRING);
+        vType.set_type(nebula::cpp2::SupportedType::STRING);
         column.set_type(std::move(vType));
         cols.emplace_back(std::move(column));
     }

@@ -18,6 +18,12 @@ std::string ShowSentence::toString() const {
             return std::string("SHOW TAGS");
         case ShowType::kShowEdges:
             return std::string("SHOW EDGES");
+        case ShowType::kShowUsers:
+            return std::string("SHOW USERS");
+        case ShowType::kShowUser:
+            return folly::stringPrintf("SHOW USER %s", name_.get()->data());
+        case ShowType::kShowRoles:
+            return folly::stringPrintf("SHOW ROLES IN %s", name_.get()->data());
         case ShowType::kUnknown:
         default:
             FLOG_FATAL("Type illegal");
@@ -29,8 +35,10 @@ std::string ShowSentence::toString() const {
 std::string HostList::toString() const {
     std::string buf;
     buf.reserve(256);
-    for (auto &host : hostStrs_) {
-        buf += *host;
+    for (auto &host : hosts_) {
+        buf += network::NetworkUtils::intToIPv4(host->first);
+        buf += ":";
+        buf += std::to_string(host->second);
         buf += ",";
     }
     buf.resize(buf.size() - 1);

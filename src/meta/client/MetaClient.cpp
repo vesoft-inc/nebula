@@ -643,7 +643,7 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
 folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
                            std::string name,
-                           std::vector<cpp2::AlterTagItem> tagItems) {
+                           std::vector<cpp2::AlterSchemaItem> tagItems) {
     cpp2::AlterTagReq req;
     req.set_space_id(std::move(spaceId));
     req.set_tag_name(std::move(name));

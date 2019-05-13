@@ -8,7 +8,7 @@
 #define META_METAUTILS_H_
 
 #include "base/Base.h"
-#include "interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {
@@ -52,6 +52,8 @@ public:
 
     static nebula::cpp2::HostAddr parseHostKey(folly::StringPiece key);
 
+    static std::string schemaEdgePrefix(GraphSpaceID spaceId, EdgeType edgeType);
+
     static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
 
     static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer version);
@@ -79,6 +81,10 @@ public:
     static std::string indexEdgeKey(GraphSpaceID spaceId, const std::string& name);
 
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
+
+    static cpp2::ErrorCode alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                           const nebula::cpp2::ColumnDef col,
+                                           const cpp2::AlterSchemaOp op);
 };
 
 }  // namespace meta

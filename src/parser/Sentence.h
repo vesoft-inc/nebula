@@ -43,6 +43,12 @@ public:
         kCreateSpace,
         kDropSpace,
         kYield,
+        kCreateUser,
+        kDropUser,
+        kAlterUser,
+        kGrant,
+        kRevoke,
+        kChangePassword,
     };
 
     Kind kind() const {

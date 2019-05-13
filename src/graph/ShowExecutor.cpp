@@ -42,6 +42,11 @@ void ShowExecutor::execute() {
             break;
         case ShowSentence::ShowType::kShowEdges:
             showEdges();
+        case ShowSentence::ShowType::kShowUsers:
+        case ShowSentence::ShowType::kShowUser:
+        case ShowSentence::ShowType::kShowRoles:
+            // TODO(boshengchen)
+            break;
         case ShowSentence::ShowType::kUnknown:
             onError_(Status::Error("Type unknown"));
             break;

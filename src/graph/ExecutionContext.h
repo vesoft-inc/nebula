@@ -13,7 +13,6 @@
 #include "parser/SequentialSentences.h"
 #include "meta/SchemaManager.h"
 #include "graph/VariableHolder.h"
-#include "graph/mock/StorageService.h"
 #include "meta/client/MetaClient.h"
 
 /**
