@@ -26,6 +26,7 @@
 #include "meta/processors/RemoveProcessor.h"
 #include "meta/processors/RemoveRangeProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
+#include "meta/processors/HBProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -152,6 +153,12 @@ MetaServiceHandler::future_createEdge(const cpp2::CreateEdgeReq& req) {
 folly::Future<cpp2::ListEdgesResp>
 MetaServiceHandler::future_listEdges(const cpp2::ListEdgesReq& req) {
     auto* processor = ListEdgesProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::HBResp>
+MetaServiceHandler::future_heartBeat(const cpp2::HBReq& req) {
+    auto* processor = HBProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
