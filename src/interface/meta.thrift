@@ -119,8 +119,9 @@ struct GetSpaceReq {
 }
 
 struct GetSpaceResp {
-    1: ErrorCode   code,
-    2: SpaceItem   item,
+    1: ErrorCode         code,
+    2: common.HostAddr   leader,
+    3: SpaceItem         item,
 }
 
 // Tags related operations
