@@ -78,7 +78,7 @@ MetaServiceHandler::future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::MultiPutResp>
+folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_multiPut(const cpp2::MultiPutReq& req) {
     auto* processor = MultiPutProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
@@ -102,13 +102,13 @@ MetaServiceHandler::future_scan(const cpp2::ScanReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::RemoveResp>
+folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_remove(const cpp2::RemoveReq& req) {
     auto* processor = RemoveProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::RemoveRangeResp>
+folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_removeRange(const cpp2::RemoveRangeReq& req) {
     auto* processor = RemoveRangeProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
