@@ -99,6 +99,7 @@ class GraphScanner;
 %token <doubleval> DOUBLE
 %token <strval> STRING VARIABLE LABEL
 
+%type <strval> name_label unreserved_keyword
 %type <expr> expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression
 %type <expr> unary_expression primary_expression equality_expression
@@ -165,6 +166,40 @@ class GraphScanner;
 %start sentences
 
 %%
+
+name_label
+    : LABEL { $$ = $1; }
+    | unreserved_keyword { $$ = $1; }
+    ;
+
+unreserved_keyword
+    : KW_SPACE              { $$ = new std::string("SPACE"); }
+    | KW_TAG                { $$ = new std::string("TAG"); }
+    | KW_VERTEX             { $$ = new std::string("VERTEX"); }
+    | KW_EDGE               { $$ = new std::string("EDGE"); }
+    | KW_INT                { $$ = new std::string("INT"); }
+    | KW_BIGINT             { $$ = new std::string("BIGINT"); }
+    | KW_DOUBLE             { $$ = new std::string("DOUBLE"); }
+    | KW_STRING             { $$ = new std::string("STRING"); }
+    | KW_BOOL               { $$ = new std::string("BOOL"); }
+    | KW_MINUS              { $$ = new std::string("MINUS"); }
+    | KW_DESCRIBE           { $$ = new std::string("DESCRIBE"); }
+    | KW_HOSTS              { $$ = new std::string("HOSTS"); }
+    | KW_TIMESTAMP          { $$ = new std::string("TIMESTAMP"); }
+    | KW_SPACES             { $$ = new std::string("SPACES"); }
+    | KW_FIRSTNAME          { $$ = new std::string("FIRSTNAME"); }
+    | KW_LASTNAME           { $$ = new std::string("LASTNAME"); }
+    | KW_EMAIL              { $$ = new std::string("EMAIL"); }
+    | KW_PHONE              { $$ = new std::string("PHONE"); }
+    | KW_USER               { $$ = new std::string("USER"); }
+    | KW_USERS              { $$ = new std::string("USERS"); }
+    | KW_PASSWORD           { $$ = new std::string("PASSWORD"); }
+    | KW_CHANGE             { $$ = new std::string("CHANGE"); }
+    | KW_ROLE               { $$ = new std::string("ROLE"); }
+    | KW_GOD                { $$ = new std::string("GOD"); }
+    | KW_ADMIN              { $$ = new std::string("ADMIN"); }
+    | KW_GUEST              { $$ = new std::string("GUEST"); }
+    ;
 
 primary_expression
     : INTEGER {
@@ -250,7 +285,7 @@ alias_ref_expression
     ;
 
 function_call_expression
-    : LABEL L_PAREN argument_list R_PAREN {
+    : name_label L_PAREN argument_list R_PAREN {
         $$ = new FunctionCallExpression($1, $3);
     }
     ;
@@ -420,16 +455,16 @@ id_list
     ;
 
 over_clause
-    : KW_OVER LABEL {
+    : KW_OVER name_label {
         $$ = new OverClause($2);
     }
-    | KW_OVER LABEL KW_REVERSELY {
+    | KW_OVER name_label KW_REVERSELY {
         $$ = new OverClause($2, nullptr, true);
     }
-    | KW_OVER LABEL KW_AS LABEL {
+    | KW_OVER name_label KW_AS name_label {
         $$ = new OverClause($2, $4);
     }
-    | KW_OVER LABEL KW_AS LABEL KW_REVERSELY {
+    | KW_OVER name_label KW_AS name_label KW_REVERSELY {
         $$ = new OverClause($2, $4, true);
     }
     ;
@@ -460,7 +495,7 @@ yield_column
     : expression {
         $$ = new YieldColumn($1);
     }
-    | expression KW_AS LABEL {
+    | expression KW_AS name_label {
         $$ = new YieldColumn($1, $3);
     }
     ;
@@ -476,7 +511,7 @@ match_sentence
     ;
 
 find_sentence
-    : KW_FIND prop_list KW_FROM LABEL where_clause {
+    : KW_FIND prop_list KW_FROM name_label where_clause {
         auto sentence = new FindSentence($4, $2);
         sentence->setWhereClause($5);
         $$ = sentence;
@@ -484,17 +519,17 @@ find_sentence
     ;
 
 use_sentence
-    : KW_USE KW_SPACE LABEL { $$ = new UseSentence($3); }
+    : KW_USE KW_SPACE name_label { $$ = new UseSentence($3); }
     ;
 
 create_tag_sentence
-    : KW_CREATE KW_TAG LABEL L_PAREN R_PAREN {
+    : KW_CREATE KW_TAG name_label L_PAREN R_PAREN {
         $$ = new CreateTagSentence($3, new ColumnSpecificationList());
     }
-    | KW_CREATE KW_TAG LABEL L_PAREN column_spec_list R_PAREN {
+    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list R_PAREN {
         $$ = new CreateTagSentence($3, $5);
     }
-    | KW_CREATE KW_TAG LABEL L_PAREN column_spec_list COMMA R_PAREN {
+    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list COMMA R_PAREN {
         $$ = new CreateTagSentence($3, $5);
     }
     ;
@@ -529,25 +564,25 @@ alter_tag_opt_item
     ;
 
 create_edge_sentence
-    : KW_CREATE KW_EDGE LABEL L_PAREN R_PAREN {
+    : KW_CREATE KW_EDGE name_label L_PAREN R_PAREN {
         $$ = new CreateEdgeSentence($3,  new ColumnSpecificationList());
     }
-    | KW_CREATE KW_EDGE LABEL L_PAREN column_spec_list R_PAREN {
+    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list R_PAREN {
         $$ = new CreateEdgeSentence($3, $5);
     }
-    | KW_CREATE KW_EDGE LABEL L_PAREN column_spec_list COMMA R_PAREN {
+    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list COMMA R_PAREN {
         $$ = new CreateEdgeSentence($3, $5);
     }
     ;
 
 alter_edge_sentence
-    : KW_ALTER KW_EDGE LABEL L_PAREN R_PAREN {
+    : KW_ALTER KW_EDGE name_label L_PAREN R_PAREN {
         $$ = new AlterEdgeSentence($3, new ColumnSpecificationList());
     }
-    | KW_ALTER KW_EDGE LABEL L_PAREN column_spec_list R_PAREN {
+    | KW_ALTER KW_EDGE name_label L_PAREN column_spec_list R_PAREN {
         $$ = new AlterEdgeSentence($3, $5);
     }
-    | KW_ALTER KW_EDGE LABEL L_PAREN column_spec_list COMMA R_PAREN {
+    | KW_ALTER KW_EDGE name_label L_PAREN column_spec_list COMMA R_PAREN {
         $$ = new AlterEdgeSentence($3, $5);
     }
     ;
@@ -564,9 +599,9 @@ column_spec_list
     ;
 
 column_spec
-    : LABEL { $$ = new ColumnSpecification($1); }
-    | LABEL type_spec { $$ = new ColumnSpecification($2, $1); }
-    | LABEL type_spec ttl_spec { $$ = new ColumnSpecification($2, $1, $3); }
+    : name_label { $$ = new ColumnSpecification($1); }
+    | name_label type_spec { $$ = new ColumnSpecification($2, $1); }
+    | name_label type_spec ttl_spec { $$ = new ColumnSpecification($2, $1, $3); }
     ;
 
 ttl_spec
@@ -574,13 +609,13 @@ ttl_spec
     ;
 
 describe_tag_sentence
-    : KW_DESCRIBE KW_TAG LABEL {
+    : KW_DESCRIBE KW_TAG name_label {
         $$ = new DescribeTagSentence($3);
     }
     ;
 
 describe_edge_sentence
-    : KW_DESCRIBE KW_EDGE LABEL {
+    : KW_DESCRIBE KW_EDGE name_label {
         $$ = new DescribeEdgeSentence($3);
     }
     ;
@@ -631,20 +666,20 @@ vertex_tag_list
     ;
 
 vertex_tag_item
-    : LABEL {
+    : name_label {
         $$ = new VertexTagItem($1);
     }
-    | LABEL L_PAREN prop_list R_PAREN {
+    | name_label L_PAREN prop_list R_PAREN {
         $$ = new VertexTagItem($1, $3);
     }
     ;
 
 prop_list
-    : LABEL {
+    : name_label {
         $$ = new PropertyList();
         $$->addProp($1);
     }
-    | prop_list COMMA LABEL {
+    | prop_list COMMA name_label {
         $$ = $1;
         $$->addProp($3);
     }
@@ -685,14 +720,14 @@ value_list
     ;
 
 insert_edge_sentence
-    : KW_INSERT KW_EDGE LABEL L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
+    : KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setEdge($3);
         sentence->setProps($5);
         sentence->setRows($8);
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE LABEL L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setOverwrite(false);
         sentence->setEdge($5);
@@ -754,7 +789,7 @@ update_list
     ;
 
 update_item
-    : LABEL ASSIGN expression {
+    : name_label ASSIGN expression {
         $$ = new UpdateItem($1, $3);
     }
     ;
@@ -843,10 +878,10 @@ show_sentence
     | KW_SHOW KW_USERS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowUsers);
     }
-    | KW_SHOW KW_USER LABEL {
+    | KW_SHOW KW_USER name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowUser, $3);
     }
-    | KW_SHOW KW_ROLES KW_IN LABEL {
+    | KW_SHOW KW_ROLES KW_IN name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowRoles, $4);
     }
     ;
@@ -893,7 +928,7 @@ host_item
 port : INTEGER { $$ = $1; }
 
 create_space_sentence
-    : KW_CREATE KW_SPACE LABEL L_PAREN space_opt_list R_PAREN {
+    : KW_CREATE KW_SPACE name_label L_PAREN space_opt_list R_PAREN {
         auto sentence = new CreateSpaceSentence($3);
         sentence->setOpts($5);
         $$ = sentence;
@@ -922,7 +957,7 @@ space_opt_list
         $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
     }
     // TODO(YT) Create Spaces for different engines
-    // KW_ENGINE_TYPE ASSIGN LABEL
+    // KW_ENGINE_TYPE ASSIGN name_label
     ;
 
 drop_space_sentence
@@ -960,20 +995,20 @@ with_user_opt_list
     ;
 
 create_user_sentence
-    : KW_CREATE KW_USER LABEL KW_WITH KW_PASSWORD STRING {
+    : KW_CREATE KW_USER name_label KW_WITH KW_PASSWORD STRING {
         $$ = new CreateUserSentence($3, $6);
     }
-    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS LABEL KW_WITH KW_PASSWORD STRING {
+    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS name_label KW_WITH KW_PASSWORD STRING {
         auto sentence = new CreateUserSentence($6, $9);
         sentence->setMissingOk(true);
         $$ = sentence;
     }
-    | KW_CREATE KW_USER LABEL KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
+    | KW_CREATE KW_USER name_label KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
         auto sentence = new CreateUserSentence($3, $6);
         sentence->setOpts($8);
         $$ = sentence;
     }
-    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS LABEL KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
+    | KW_CREATE KW_USER KW_IF KW_NOT KW_EXISTS name_label KW_WITH KW_PASSWORD STRING COMMA with_user_opt_list {
         auto sentence = new CreateUserSentence($6, $9);
         sentence->setMissingOk(true);
         sentence->setOpts($11);
@@ -981,7 +1016,7 @@ create_user_sentence
     }
 
 alter_user_sentence
-    : KW_ALTER KW_USER LABEL KW_WITH with_user_opt_list {
+    : KW_ALTER KW_USER name_label KW_WITH with_user_opt_list {
         auto sentence = new AlterUserSentence($3);
         sentence->setOpts($5);
         $$ = sentence;
@@ -989,10 +1024,10 @@ alter_user_sentence
     ;
 
 drop_user_sentence
-    : KW_DROP KW_USER LABEL {
+    : KW_DROP KW_USER name_label {
         $$ = new DropUserSentence($3);
     }
-    | KW_DROP KW_USER KW_IF KW_EXISTS LABEL {
+    | KW_DROP KW_USER KW_IF KW_EXISTS name_label {
         auto sentence = new DropUserSentence($5);
         sentence->setMissingOk(true);
         $$ = sentence;
@@ -1000,11 +1035,11 @@ drop_user_sentence
     ;
 
 change_password_sentence
-    : KW_CHANGE KW_PASSWORD LABEL KW_TO STRING {
+    : KW_CHANGE KW_PASSWORD name_label KW_TO STRING {
         auto sentence = new ChangePasswordSentence($3, $5);
         $$ = sentence;
     }
-    | KW_CHANGE KW_PASSWORD LABEL KW_FROM STRING KW_TO STRING {
+    | KW_CHANGE KW_PASSWORD name_label KW_FROM STRING KW_TO STRING {
         auto sentence = new ChangePasswordSentence($3, $5, $7);
         $$ = sentence;
     }
@@ -1018,12 +1053,12 @@ role_type_clause
     ;
 
 acl_item_clause
-    : KW_ROLE role_type_clause KW_ON LABEL {
+    : KW_ROLE role_type_clause KW_ON name_label {
         auto sentence = new AclItemClause(true, $4);
         sentence->setRoleTypeClause($2);
         $$ = sentence;
     }
-    | role_type_clause KW_ON LABEL {
+    | role_type_clause KW_ON name_label {
         auto sentence = new AclItemClause(false, $3);
         sentence->setRoleTypeClause($1);
         $$ = sentence;
@@ -1031,7 +1066,7 @@ acl_item_clause
     ;
 
 grant_sentence
-    : KW_GRANT acl_item_clause KW_TO LABEL {
+    : KW_GRANT acl_item_clause KW_TO name_label {
         auto sentence = new GrantSentence($4);
         sentence->setAclItemClause($2);
         $$ = sentence;
@@ -1039,7 +1074,7 @@ grant_sentence
     ;
 
 revoke_sentence
-    : KW_REVOKE acl_item_clause KW_FROM LABEL {
+    : KW_REVOKE acl_item_clause KW_FROM name_label {
         auto sentence = new RevokeSentence($4);
         sentence->setAclItemClause($2);
         $$ = sentence;
