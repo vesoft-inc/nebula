@@ -29,16 +29,15 @@ enum ErrorCode {
     // KV Failure
     E_STORE_FAILURE          = -31,
     E_STORE_SEGMENT_ILLEGAL  = -32,
-    E_KEY_NOT_FOUND          = -33,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
 
 
 enum AlterSchemaOp {
-    ADD = 0x01,
+    ADD    = 0x01,
     CHANGE = 0x02,
-    DROP = 0x03,
+    DROP   = 0x03,
     UNKNOWN = 0x04,
 } (cpp.enum_strict)
 
@@ -159,28 +158,29 @@ struct GetTagResp {
     3: common.Schema    schema,
 }
 
+// Edge related operations.
+struct CreateEdgeReq {
+    1: common.GraphSpaceID space_id,
+    2: string              edge_name,
+    3: common.Schema       schema,
+}
+
+struct AlterEdgeReq {
+    1: common.GraphSpaceID     space_id,
+    2: string                  edge_name,
+    3: list<AlterSchemaItem>   edge_items,
+}
+
 struct GetEdgeReq {
     1: common.GraphSpaceID space_id,
     2: common.EdgeType     edge_type,
     3: common.SchemaVer    version,
 }
 
-struct AlterEdgeReq {
-    1: common.GraphSpaceID      space_id,
-    2: string                   edge_name,
-    3: list<AlterSchemaItem>    edge_items,
-}
-
 struct GetEdgeResp {
     1: ErrorCode        code,
-    2: common.Schema    schema,
-}
-
-// Edge related operations.
-struct CreateEdgeReq {
-    1: common.GraphSpaceID space_id,
-    2: string              edge_name,
-    3: common.Schema       schema,
+    2: common.HostAddr  leader,
+    3: common.Schema    schema,
 }
 
 struct RemoveEdgeReq {
@@ -304,6 +304,7 @@ service MetaService {
     ListTagsResp listTags(1: ListTagsReq req);
 
     ExecResp createEdge(1: CreateEdgeReq req);
+    ExecResp alterEdge(1: AlterEdgeReq req);
     ExecResp removeEdge(1: RemoveEdgeReq req);
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);

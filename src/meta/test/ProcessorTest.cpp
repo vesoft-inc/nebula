@@ -376,7 +376,7 @@ TEST(ProcessorTest, KVOperationTest) {
         auto missedFuture = missedProcessor->getFuture();
         missedProcessor->process(missedReq);
         auto missedResp = std::move(missedFuture).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_KEY_NOT_FOUND, missedResp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, missedResp.code);
     }
     {
         // Multi Get Test
@@ -457,6 +457,7 @@ TEST(ProcessorTest, KVOperationTest) {
 TEST(ProcessorTest, ListOrGetTagsTest) {
     fs::TempDir rootPath("/tmp/ListTagsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockTag(kv.get(), 10);
 
     // test ListTagsProcessor
@@ -507,6 +508,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
 TEST(ProcessorTest, ListOrGetEdgesTest) {
     fs::TempDir rootPath("/tmp/ListEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockEdge(kv.get(), 10);
 
     // test ListEdgesProcessor
@@ -670,18 +672,9 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = folly::stringPrintf("tag_%d_col_%d", 0, 0);
         dropSch.columns.emplace_back(std::move(column));
 
-        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
-                                             cpp2::AlterSchemaOp::ADD,
-                                             std::move(addSch));
-        auto setItem = cpp2::AlterSchemaItem(FRAGILE,
-                                             cpp2::AlterSchemaOp::CHANGE,
-                                             std::move(setSch));
-        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
-                                              cpp2::AlterSchemaOp::DROP,
-                                              std::move(dropSch));
-        items.emplace_back(std::move(addItem));
-        items.emplace_back(std::move(setItem));
-        items.emplace_back(std::move(dropItem));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::ADD, std::move(addSch));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::CHANGE, std::move(setSch));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(dropSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -779,8 +772,7 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = "tag_0_col_2";
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
-        auto addItem = cpp2::AlterSchemaItem(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(addSch));
-        items.push_back(addItem);
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(addSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);

@@ -20,7 +20,7 @@ const std::string kIndexTable  = "__index__";   // NOLINT
 
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
-    key.reserve(256);
+    key.reserve(128);
     key.append(kSpacesTable.data(), kSpacesTable.size());
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
     return key;

@@ -40,6 +40,13 @@ GENERATE_LOCK(edge);
 #undef GENERATE_LOCK
 };
 
+#define CHECK_SPACE_ID_AND_RETURN(spaceID) \
+    if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        onFinished(); \
+        return; \
+    }
+
 /**
  * Check segemnt is consist of numbers and letters and should not empty.
  * */
@@ -117,6 +124,8 @@ protected:
      * General put function.
      * */
     void doPut(std::vector<kvstore::KV> data);
+
+    StatusOr<std::unique_ptr<kvstore::KVIterator>> doPrefix(const std::string& key);
 
     /**
      * General get function.
