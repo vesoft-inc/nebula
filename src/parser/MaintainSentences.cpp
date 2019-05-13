@@ -15,7 +15,8 @@ std::string CreateTagSentence::toString() const {
     buf += "CREATE TAG ";
     buf += *name_;
     buf += " (";
-    for (auto *col : columns_->columnSpecs()) {
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto *col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
@@ -25,7 +26,9 @@ std::string CreateTagSentence::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!colSpecs.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     buf += ")";
     return buf;
 }
@@ -37,7 +40,8 @@ std::string CreateEdgeSentence::toString() const {
     buf += "CREATE EDGE ";
     buf += *name_;
     buf += " (";
-    for (auto &col : columns_->columnSpecs()) {
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
@@ -47,7 +51,9 @@ std::string CreateEdgeSentence::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!colSpecs.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     buf += ")";
     return buf;
 }
@@ -58,7 +64,8 @@ std::string AlterTagOptItem::toString() const {
     buf.reserve(256);
     buf += getOptTypeStr();
     buf += " (";
-    for (auto &col : columns_->columnSpecs()) {
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
@@ -68,7 +75,9 @@ std::string AlterTagOptItem::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!colSpecs.empty()) {
+       buf.resize(buf.size() - 1);
+    }
     buf += ")";
     return buf;
 }
@@ -106,7 +115,8 @@ std::string AlterEdgeSentence::toString() const {
     buf += "ALTER EDGE ";
     buf += *name_;
     buf += "(";
-    for (auto &col : columns_->columnSpecs()) {
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
@@ -116,7 +126,9 @@ std::string AlterEdgeSentence::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!colSpecs.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     buf += ")";
     return buf;
 }

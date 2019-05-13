@@ -47,7 +47,7 @@ public:
     /**
      * Custom kv related operations.
      * */
-    folly::Future<cpp2::MultiPutResp>
+    folly::Future<cpp2::ExecResp>
     future_multiPut(const cpp2::MultiPutReq& req) override;
 
     folly::Future<cpp2::GetResp>
@@ -56,10 +56,10 @@ public:
     folly::Future<cpp2::MultiGetResp>
     future_multiGet(const cpp2::MultiGetReq& req) override;
 
-    folly::Future<cpp2::RemoveResp>
+    folly::Future<cpp2::ExecResp>
     future_remove(const cpp2::RemoveReq& req) override;
 
-    folly::Future<cpp2::RemoveRangeResp>
+    folly::Future<cpp2::ExecResp>
     future_removeRange(const cpp2::RemoveRangeReq& req) override;
 
     folly::Future<cpp2::ScanResp>
@@ -88,6 +88,12 @@ public:
 
     folly::Future<cpp2::ListEdgesResp>
     future_listEdges(const cpp2::ListEdgesReq& req) override;
+
+    /**
+     * HeartBeat
+     * */
+    folly::Future<cpp2::HBResp>
+    future_heartBeat(const cpp2::HBReq& req) override;
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;

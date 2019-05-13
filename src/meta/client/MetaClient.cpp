@@ -14,19 +14,6 @@ DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
                                      "the format looks like ip1:port1, ip2:port2, ip3:port3");
 DEFINE_int32(meta_client_io_threads, 3, "meta client io threads");
 
-/**
- * check argument is empty
- */
-#define CHECK_PARAMETER_AND_RETURN_STATUS(argument) \
-    if (argument.empty()) { \
-        return Status::Error("argument is invalid!"); \
-    }
-
-#define CHECK_SEGMENT_AND_RETURN_STATUS(segment) \
-    if (!nebula::meta::MetaCommon::checkSegment(segment)) { \
-        return Status::Error("segment is invalid!"); \
-    }
-
 namespace nebula {
 namespace meta {
 
@@ -44,8 +31,7 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
     CHECK(!addrs_.empty());
     clientsMan_ = std::make_shared<thrift::ThriftClientManager<
                                     meta::cpp2::MetaServiceAsyncClient>>();
-    updateActiveHost();
-    loadDataThreadFunc();
+    updateHost();
     LOG(INFO) << "Create meta client to " << active_;
 }
 
@@ -56,6 +42,7 @@ MetaClient::~MetaClient() {
 }
 
 void MetaClient::init() {
+    loadDataThreadFunc();
     CHECK(loadDataThread_.start());
     size_t delayMS = FLAGS_load_data_interval_second * 1000 + folly::Random::rand32(900);
     loadDataThread_.addTimerTask(delayMS,
@@ -205,17 +192,24 @@ template<typename Request,
 folly::Future<StatusOr<Response>> MetaClient::getResponse(
                                      Request req,
                                      RemoteFunc remoteFunc,
-                                     RespGenerator respGen) {
+                                     RespGenerator respGen,
+                                     bool toLeader) {
     folly::Promise<StatusOr<Response>> pro;
     auto f = pro.getFuture();
     auto* evb = ioThreadPool_->getEventBase();
-    auto client = clientsMan_->client(active_, evb);
+    HostAddr host;
+    {
+        folly::RWSpinLock::ReadHolder holder(&hostLock_);
+        host = toLeader ? leader_ : active_;
+    }
+    auto client = clientsMan_->client(host, evb);
     remoteFunc(client, std::move(req))
          .then(evb, [p = std::move(pro), respGen, this] (folly::Try<RpcResponse>&& t) mutable {
         // exception occurred during RPC
         if (t.hasException()) {
             p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
                                                          t.exception().what().c_str())));
+            updateHost();
             return;
         }
         // errored
@@ -228,224 +222,6 @@ folly::Future<StatusOr<Response>> MetaClient::getResponse(
         p.setValue(respGen(std::move(resp)));
     });
     return f;
-}
-
-folly::Future<StatusOr<GraphSpaceID>>
-MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFactor) {
-    cpp2::CreateSpaceReq req;
-    req.set_space_name(std::move(name));
-    req.set_parts_num(partsNum);
-    req.set_replica_factor(replicaFactor);
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                return client->future_createSpace(request);
-            }, [] (cpp2::ExecResp&& resp) -> GraphSpaceID {
-                return resp.get_id().get_space_id();
-            });
-}
-
-folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
-    cpp2::ListSpacesReq req;
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_listSpaces(request);
-                }, [this] (cpp2::ListSpacesResp&& resp) -> decltype(auto) {
-                    return this->toSpaceIdName(resp.get_spaces());
-                });
-}
-
-
-folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name) {
-    cpp2::DropSpaceReq req;
-    req.set_space_name(std::move(name));
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_dropSpace(request);
-                }, [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
-}
-
-
-folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
-    std::vector<nebula::cpp2::HostAddr> thriftHosts;
-    thriftHosts.resize(hosts.size());
-    std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
-        nebula::cpp2::HostAddr th;
-        th.set_ip(h.first);
-        th.set_port(h.second);
-        return th;
-    });
-    cpp2::AddHostsReq req;
-    req.set_hosts(std::move(thriftHosts));
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_addHosts(request);
-                }, [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
-}
-
-folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::listHosts() {
-    cpp2::ListHostsReq req;
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                return client->future_listHosts(request);
-            }, [this] (cpp2::ListHostsResp&& resp) -> decltype(auto) {
-                return this->to(resp.hosts);
-            });
-}
-
-folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr>& hosts) {
-    std::vector<nebula::cpp2::HostAddr> thriftHosts;
-    thriftHosts.resize(hosts.size());
-    std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
-        nebula::cpp2::HostAddr th;
-        th.set_ip(h.first);
-        th.set_port(h.second);
-        return th;
-    });
-    cpp2::RemoveHostsReq req;
-    req.set_hosts(std::move(thriftHosts));
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_removeHosts(request);
-                }, [] (cpp2::ExecResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
-}
-
-folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
-MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
-    cpp2::GetPartsAllocReq req;
-    req.set_space_id(spaceId);
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_getPartsAlloc(request);
-                }, [this] (cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
-        std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
-        for (auto it = resp.parts.begin(); it != resp.parts.end(); it++) {
-            parts.emplace(it->first, to(it->second));
-        }
-        return parts;
-    });
-}
-
-StatusOr<GraphSpaceID>
-MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
-    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-    auto it = spaceIndexByName_.find(name);
-    if (it != spaceIndexByName_.end()) {
-        return it->second;
-    }
-    return Status::SpaceNotFound();
-}
-
-StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
-                                                    const std::string& name) {
-    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-    auto it = spaceTagIndexByName_.find(make_pair(space, name));
-    if (it == spaceTagIndexByName_.end()) {
-        return Status::Error("Tag is not exist!");
-    }
-    return it->second;
-}
-
-StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& space,
-                                                          const std::string& name) {
-    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-    auto it = spaceEdgeIndexByName_.find(make_pair(space, name));
-    if (it == spaceEdgeIndexByName_.end()) {
-        return Status::Error("Edge is no exist!");
-    }
-    return it->second;
-}
-
-folly::Future<StatusOr<bool>>
-MetaClient::multiPut(std::string segment,
-                     std::vector<std::pair<std::string, std::string>> pairs) {
-    CHECK_SEGMENT_AND_RETURN_STATUS(segment);
-    CHECK_PARAMETER_AND_RETURN_STATUS(pairs);
-    cpp2::MultiPutReq req;
-    std::vector<cpp2::Pair> data;
-    for (auto& element : pairs) {
-        data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                          std::move(element.first), std::move(element.second));
-    }
-    req.set_segment(std::move(segment));
-    req.set_pairs(std::move(data));
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_multiPut(request);
-                }, [] (cpp2::MultiPutResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
-}
-
-folly::Future<StatusOr<std::string>>
-MetaClient::get(std::string segment, std::string key) {
-    CHECK_SEGMENT_AND_RETURN_STATUS(segment);
-    CHECK_PARAMETER_AND_RETURN_STATUS(key);
-    cpp2::GetReq req;
-    req.set_segment(std::move(segment));
-    req.set_key(std::move(key));
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_get(request);
-                }, [] (cpp2::GetResp&& resp) -> std::string {
-                    return resp.get_value();
-                });
-}
-
-folly::Future<StatusOr<std::vector<std::string>>>
-MetaClient::multiGet(std::string segment, std::vector<std::string> keys) {
-    CHECK_SEGMENT_AND_RETURN_STATUS(segment);
-    CHECK_PARAMETER_AND_RETURN_STATUS(keys);
-    cpp2::MultiGetReq req;
-    req.set_segment(std::move(segment));
-    req.set_keys(std::move(keys));
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_multiGet(request);
-                }, [] (cpp2::MultiGetResp&& resp) -> std::vector<std::string> {
-                    return resp.get_values();
-                });
-}
-
-folly::Future<StatusOr<std::vector<std::string>>>
-MetaClient::scan(std::string segment, std::string start, std::string end) {
-    CHECK_SEGMENT_AND_RETURN_STATUS(segment);
-    CHECK_PARAMETER_AND_RETURN_STATUS(start);
-    CHECK_PARAMETER_AND_RETURN_STATUS(end);
-    cpp2::ScanReq req;
-    req.set_segment(std::move(segment));
-    req.set_start(std::move(start));
-    req.set_end(std::move(end));
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                return client->future_scan(request);
-            }, [] (cpp2::ScanResp&& resp) -> std::vector<std::string> {
-                return resp.get_values();
-            });
-}
-
-folly::Future<StatusOr<bool>>
-MetaClient::remove(std::string segment, std::string key) {
-    CHECK_SEGMENT_AND_RETURN_STATUS(segment);
-    CHECK_PARAMETER_AND_RETURN_STATUS(key);
-    cpp2::RemoveReq req;
-    req.set_segment(std::move(segment));
-    req.set_key(std::move(key));
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                return client->future_remove(request);
-            }, [] (cpp2::RemoveResp&& resp) -> bool {
-                return resp.code == cpp2::ErrorCode::SUCCEEDED;
-            });
-}
-
-folly::Future<StatusOr<bool>>
-MetaClient::removeRange(std::string segment, std::string start, std::string end) {
-    CHECK_SEGMENT_AND_RETURN_STATUS(segment);
-    CHECK_PARAMETER_AND_RETURN_STATUS(start);
-    CHECK_PARAMETER_AND_RETURN_STATUS(end);
-    cpp2::RemoveRangeReq req;
-    req.set_segment(std::move(segment));
-    req.set_start(std::move(start));
-    req.set_end(std::move(end));
-    return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_removeRange(request);
-                }, [] (cpp2::RemoveRangeResp&& resp) -> bool {
-                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
-                });
 }
 
 std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& tHosts) {
@@ -475,8 +251,14 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("existed!");
         case cpp2::ErrorCode::E_NOT_FOUND:
             return Status::Error("not existed!");
-        case cpp2::ErrorCode::E_LEADER_CHANGED:
+        case cpp2::ErrorCode::E_LEADER_CHANGED: {
+            HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
+            {
+                folly::RWSpinLock::WriteHolder holder(hostLock_);
+                leader_ = leader;
+            }
             return Status::Error("Leader changed!");
+        }
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
     }
@@ -503,63 +285,6 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
         }
     }
     return partMap;
-}
-
-PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
-    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-    return doGetPartsMap(host, localCache_);
-}
-
-PartMeta MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId) {
-    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-    auto it = localCache_.find(spaceId);
-    CHECK(it != localCache_.end());
-    auto& cache = it->second;
-    auto partAllocIter = cache->partsAlloc_.find(partId);
-    CHECK(partAllocIter != cache->partsAlloc_.end());
-    PartMeta pm;
-    pm.spaceId_ = spaceId;
-    pm.partId_  = partId;
-    pm.peers_   = partAllocIter->second;
-    return pm;
-}
-
-bool MetaClient::checkPartExistInCache(const HostAddr& host,
-                                       GraphSpaceID spaceId,
-                                       PartitionID partId) {
-    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-    auto it = localCache_.find(spaceId);
-    if (it != localCache_.end()) {
-        auto partsIt = it->second->partsOnHost_.find(host);
-        if (partsIt != it->second->partsOnHost_.end()) {
-            for (auto& pId : partsIt->second) {
-                if (pId == partId) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
-
-bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
-                                        GraphSpaceID spaceId) {
-    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-    auto it = localCache_.find(spaceId);
-    if (it != localCache_.end()) {
-        auto partsIt = it->second->partsOnHost_.find(host);
-        if (partsIt != it->second->partsOnHost_.end() && !partsIt->second.empty()) {
-            return true;
-        }
-    }
-    return false;
-}
-
-int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
-    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-    auto it = localCache_.find(spaceId);
-    CHECK(it != localCache_.end());
-    return it->second->partsAlloc_.size();
 }
 
 void MetaClient::diff(const std::unordered_map<GraphSpaceID,
@@ -627,6 +352,294 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
     }
 }
 
+
+/// ================================== public methods =================================
+
+folly::Future<StatusOr<GraphSpaceID>>
+MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFactor) {
+    cpp2::CreateSpaceReq req;
+    req.set_space_name(std::move(name));
+    req.set_parts_num(partsNum);
+    req.set_replica_factor(replicaFactor);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_createSpace(request);
+            }, [] (cpp2::ExecResp&& resp) -> GraphSpaceID {
+                return resp.get_id().get_space_id();
+            }, true);
+}
+
+folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
+    cpp2::ListSpacesReq req;
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_listSpaces(request);
+                }, [this] (cpp2::ListSpacesResp&& resp) -> decltype(auto) {
+                    return this->toSpaceIdName(resp.get_spaces());
+                });
+}
+
+
+folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name) {
+    cpp2::DropSpaceReq req;
+    req.set_space_name(std::move(name));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_dropSpace(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
+                }, true);
+}
+
+
+folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
+    std::vector<nebula::cpp2::HostAddr> thriftHosts;
+    thriftHosts.resize(hosts.size());
+    std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
+        nebula::cpp2::HostAddr th;
+        th.set_ip(h.first);
+        th.set_port(h.second);
+        return th;
+    });
+    cpp2::AddHostsReq req;
+    req.set_hosts(std::move(thriftHosts));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_addHosts(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
+                }, true);
+}
+
+folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::listHosts() {
+    cpp2::ListHostsReq req;
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_listHosts(request);
+            }, [this] (cpp2::ListHostsResp&& resp) -> decltype(auto) {
+                return this->to(resp.hosts);
+            });
+}
+
+folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr>& hosts) {
+    std::vector<nebula::cpp2::HostAddr> thriftHosts;
+    thriftHosts.resize(hosts.size());
+    std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
+        nebula::cpp2::HostAddr th;
+        th.set_ip(h.first);
+        th.set_port(h.second);
+        return th;
+    });
+    cpp2::RemoveHostsReq req;
+    req.set_hosts(std::move(thriftHosts));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_removeHosts(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
+                }, true);
+}
+
+folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
+MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
+    cpp2::GetPartsAllocReq req;
+    req.set_space_id(spaceId);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_getPartsAlloc(request);
+                }, [this] (cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
+                    std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
+                    for (auto it = resp.parts.begin(); it != resp.parts.end(); it++) {
+                        parts.emplace(it->first, to(it->second));
+                    }
+                    return parts;
+                });
+}
+
+StatusOr<GraphSpaceID>
+MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = spaceIndexByName_.find(name);
+    if (it != spaceIndexByName_.end()) {
+        return it->second;
+    }
+    return Status::SpaceNotFound();
+}
+
+StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
+                                                    const std::string& name) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = spaceTagIndexByName_.find(make_pair(space, name));
+    if (it == spaceTagIndexByName_.end()) {
+        return Status::Error("Tag is not exist!");
+    }
+    return it->second;
+}
+
+StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& space,
+                                                          const std::string& name) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = spaceEdgeIndexByName_.find(make_pair(space, name));
+    if (it == spaceEdgeIndexByName_.end()) {
+        return Status::Error("Edge is no exist!");
+    }
+    return it->second;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::multiPut(std::string segment,
+                     std::vector<std::pair<std::string, std::string>> pairs) {
+    if (!nebula::meta::MetaCommon::checkSegment(segment)
+            || pairs.empty()) {
+        return Status::Error("arguments invalid!");
+    }
+    cpp2::MultiPutReq req;
+    std::vector<cpp2::Pair> data;
+    for (auto& element : pairs) {
+        data.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                          std::move(element.first), std::move(element.second));
+    }
+    req.set_segment(std::move(segment));
+    req.set_pairs(std::move(data));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_multiPut(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
+                }, true);
+}
+
+folly::Future<StatusOr<std::string>>
+MetaClient::get(std::string segment, std::string key) {
+    if (!nebula::meta::MetaCommon::checkSegment(segment)
+            || key.empty()) {
+        return Status::Error("arguments invalid!");
+    }
+    cpp2::GetReq req;
+    req.set_segment(std::move(segment));
+    req.set_key(std::move(key));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_get(request);
+                }, [] (cpp2::GetResp&& resp) -> std::string {
+                    return resp.get_value();
+                });
+}
+
+folly::Future<StatusOr<std::vector<std::string>>>
+MetaClient::multiGet(std::string segment, std::vector<std::string> keys) {
+    if (!nebula::meta::MetaCommon::checkSegment(segment)
+            || keys.empty()) {
+        return Status::Error("arguments invalid!");
+    }
+    cpp2::MultiGetReq req;
+    req.set_segment(std::move(segment));
+    req.set_keys(std::move(keys));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_multiGet(request);
+                }, [] (cpp2::MultiGetResp&& resp) -> std::vector<std::string> {
+                    return resp.get_values();
+                });
+}
+
+folly::Future<StatusOr<std::vector<std::string>>>
+MetaClient::scan(std::string segment, std::string start, std::string end) {
+    if (!nebula::meta::MetaCommon::checkSegment(segment)
+            || start.empty() || end.empty()) {
+        return Status::Error("arguments invalid!");
+    }
+    cpp2::ScanReq req;
+    req.set_segment(std::move(segment));
+    req.set_start(std::move(start));
+    req.set_end(std::move(end));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_scan(request);
+            }, [] (cpp2::ScanResp&& resp) -> std::vector<std::string> {
+                return resp.get_values();
+            });
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::remove(std::string segment, std::string key) {
+    if (!nebula::meta::MetaCommon::checkSegment(segment)
+            || key.empty()) {
+        return Status::Error("arguments invalid!");
+    }
+    cpp2::RemoveReq req;
+    req.set_segment(std::move(segment));
+    req.set_key(std::move(key));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_remove(request);
+            }, [] (cpp2::ExecResp&& resp) -> bool {
+                return resp.code == cpp2::ErrorCode::SUCCEEDED;
+            }, true);
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::removeRange(std::string segment, std::string start, std::string end) {
+    if (!nebula::meta::MetaCommon::checkSegment(segment)
+            || start.empty() || end.empty()) {
+        return Status::Error("arguments invalid!");
+    }
+    cpp2::RemoveRangeReq req;
+    req.set_segment(std::move(segment));
+    req.set_start(std::move(start));
+    req.set_end(std::move(end));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_removeRange(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
+                }, true);
+}
+
+PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    return doGetPartsMap(host, localCache_);
+}
+
+PartMeta MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(spaceId);
+    CHECK(it != localCache_.end());
+    auto& cache = it->second;
+    auto partAllocIter = cache->partsAlloc_.find(partId);
+    CHECK(partAllocIter != cache->partsAlloc_.end());
+    PartMeta pm;
+    pm.spaceId_ = spaceId;
+    pm.partId_  = partId;
+    pm.peers_   = partAllocIter->second;
+    return pm;
+}
+
+bool MetaClient::checkPartExistInCache(const HostAddr& host,
+                                       GraphSpaceID spaceId,
+                                       PartitionID partId) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(spaceId);
+    if (it != localCache_.end()) {
+        auto partsIt = it->second->partsOnHost_.find(host);
+        if (partsIt != it->second->partsOnHost_.end()) {
+            for (auto& pId : partsIt->second) {
+                if (pId == partId) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
+                                        GraphSpaceID spaceId) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(spaceId);
+    if (it != localCache_.end()) {
+        auto partsIt = it->second->partsOnHost_.find(host);
+        if (partsIt != it->second->partsOnHost_.end() && !partsIt->second.empty()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(spaceId);
+    CHECK(it != localCache_.end());
+    return it->second->partsAlloc_.size();
+}
+
 folly::Future<StatusOr<TagID>>
 MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
     cpp2::CreateTagReq req;
@@ -638,7 +651,7 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
         return client->future_createTag(request);
     }, [] (cpp2::ExecResp&& resp) -> TagID {
         return resp.get_id().get_tag_id();
-    });
+    }, true);
 }
 folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
@@ -653,7 +666,7 @@ MetaClient::alterTagSchema(GraphSpaceID spaceId,
         return client->future_alterTag(request);
     }, [] (cpp2::ExecResp&& resp) -> TagID {
         return resp.get_id().get_tag_id();
-    });
+    }, true);
 }
 
 folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
@@ -676,7 +689,7 @@ MetaClient::removeTagSchema(int32_t spaceId, std::string tagName) {
         return client->future_removeTag(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
-    });
+    }, true);
 }
 
 folly::Future<StatusOr<nebula::cpp2::Schema>>
@@ -702,7 +715,7 @@ MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp
         return client->future_createEdge(request);
     }, [] (cpp2::ExecResp&& resp) -> EdgeType {
         return resp.get_id().get_edge_type();
-    });
+    }, true);
 }
 
 folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
@@ -717,7 +730,7 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
 }
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>>
-MetaClient::getTagSchemeFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver) {
+MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto spaceIt = localCache_.find(spaceId);
     if (spaceIt == localCache_.end()) {
@@ -733,7 +746,7 @@ MetaClient::getTagSchemeFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer v
     }
 }
 
-StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemeFromCache(
+StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemaFromCache(
         GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto spaceIt = localCache_.find(spaceId);

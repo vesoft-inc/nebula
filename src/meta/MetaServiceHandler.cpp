@@ -26,6 +26,7 @@
 #include "meta/processors/RemoveProcessor.h"
 #include "meta/processors/RemoveRangeProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
+#include "meta/processors/HBProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -77,7 +78,7 @@ MetaServiceHandler::future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::MultiPutResp>
+folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_multiPut(const cpp2::MultiPutReq& req) {
     auto* processor = MultiPutProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
@@ -101,13 +102,13 @@ MetaServiceHandler::future_scan(const cpp2::ScanReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::RemoveResp>
+folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_remove(const cpp2::RemoveReq& req) {
     auto* processor = RemoveProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::RemoveRangeResp>
+folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_removeRange(const cpp2::RemoveRangeReq& req) {
     auto* processor = RemoveRangeProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
@@ -152,6 +153,12 @@ MetaServiceHandler::future_createEdge(const cpp2::CreateEdgeReq& req) {
 folly::Future<cpp2::ListEdgesResp>
 MetaServiceHandler::future_listEdges(const cpp2::ListEdgesReq& req) {
     auto* processor = ListEdgesProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::HBResp>
+MetaServiceHandler::future_heartBeat(const cpp2::HBReq& req) {
+    auto* processor = HBProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

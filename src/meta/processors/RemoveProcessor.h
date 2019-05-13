@@ -12,7 +12,10 @@
 namespace nebula {
 namespace meta {
 
-class RemoveProcessor : public BaseProcessor<cpp2::RemoveResp> {
+/**
+ * Remove some rows in custorm kv operations.
+ * */
+class RemoveProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
     static RemoveProcessor* instance(kvstore::KVStore* kvstore) {
         return new RemoveProcessor(kvstore);
@@ -22,7 +25,7 @@ public:
 
 private:
     explicit RemoveProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::RemoveResp>(kvstore) {}
+            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta
