@@ -209,10 +209,7 @@ folly::Future<StatusOr<Response>> MetaClient::getResponse(
         if (t.hasException()) {
             p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
                                                          t.exception().what().c_str())));
-            {
-                folly::RWSpinLock::WriteHolder holder(hostLock_);
-                updateHost();
-            }
+            updateHost();
             return;
         }
         // errored

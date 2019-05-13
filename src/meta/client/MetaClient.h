@@ -183,6 +183,7 @@ protected:
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
     void updateHost() {
+        folly::RWSpinLock::WriteHolder holder(hostLock_);
         leader_ = active_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
