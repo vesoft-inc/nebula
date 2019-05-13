@@ -96,6 +96,7 @@ LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
 HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
+IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
 
 %%
@@ -225,6 +226,14 @@ OCT                         ([0-7])
                                     yyterminate();
                                 }
                                 return TokenType::LABEL;
+                            }
+{IP_OCTET}(\.{IP_OCTET}){3} {
+                                uint32_t octets[4] = {0};
+                                sscanf(yytext, "%i.%i.%i.%i", &octets[3], &octets[2], &octets[1], &octets[0]);
+                                // The bytes order conforms to the one used in NetworkUtils
+                                uint32_t ipv4 = (octets[3] << 24) | (octets[2] << 16) | (octets[1] << 8) | octets[0];
+                                yylval->intval = ipv4;
+                                return TokenType::IPV4;
                             }
 0[Xx]{HEX}+                 {
                                 int64_t val = 0;
