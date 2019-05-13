@@ -37,7 +37,9 @@ std::string HostList::toString() const {
         buf += std::to_string(host->second);
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -82,7 +84,9 @@ std::string SpaceOptList::toString() const {
         buf += item->toString();
         buf += ",";
     }
-    buf.resize(buf.size()-1);
+    if (!buf.empty()) {
+        buf.resize(buf.size()-1);
+    }
     return buf;
 }
 
