@@ -22,8 +22,27 @@ void RemoveEdgeExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
-    // dependent on MetaClient's removeEdge
-    UNUSED(mc); UNUSED(name); UNUSED(spaceId);
+    auto future = mc->removeEdgeSchema(spaceId, *name);
+
+    auto *runner = ectx()->rctx()->runner();
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(resp).status());
+            return;
+        }
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+        return;
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 }   // namespace graph
