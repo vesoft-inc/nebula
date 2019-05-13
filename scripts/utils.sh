@@ -114,7 +114,7 @@ function get_log_dir_from_config {
 # To create the logging directory if absent
 # args: <path to directory>
 function make_log_dir_if_absent {
-    [[ -d ${1} ]] || make -p ${1} >/dev/null
+    [[ -d ${1} ]] || mkdir -p ${1} >/dev/null
 }
 
 
