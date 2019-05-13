@@ -203,11 +203,67 @@ private:
 };
 
 
+class AlterEdgeOptItem final {
+public:
+    enum OptionType : uint8_t {
+        ADD = 0x01,
+        CHANGE = 0x02,
+        DROP = 0x03
+    };
+
+     AlterEdgeOptItem(OptionType op, ColumnSpecificationList *columns) {
+        optType_ = op;
+        columns_.reset(columns);
+    }
+
+     std::vector<ColumnSpecification*> columnSpecs() const {
+        return columns_->columnSpecs();
+    }
+
+     OptionType getOptType() {
+        return optType_;
+    }
+
+     std::string getOptTypeStr() const {
+        return typeid(optType_).name();
+    }
+
+     std::string toString() const;
+
+ private:
+    OptionType                                  optType_;
+    std::unique_ptr<ColumnSpecificationList>    columns_;
+};
+
+
+class AlterEdgeOptList final {
+public:
+    AlterEdgeOptList() = default;
+    void addOpt(AlterEdgeOptItem *item) {
+        alterEdgeitems_.emplace_back(item);
+    }
+
+     std::vector<AlterEdgeOptItem*> alterEdgeItems() const {
+        std::vector<AlterEdgeOptItem*> result;
+        result.resize(alterEdgeitems_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(alterEdgeitems_.begin(), alterEdgeitems_.end(), result.begin(), get);
+        return result;
+    }
+
+     std::string toString() const;
+
+ private:
+    std::vector<std::unique_ptr<AlterEdgeOptItem>>    alterEdgeitems_;
+};
+
+
 class AlterEdgeSentence final : public Sentence {
 public:
-    AlterEdgeSentence(std::string *name, ColumnSpecificationList *columns) {
+    AlterEdgeSentence(std::string *name,
+                      AlterEdgeOptList *opts) {
         name_.reset(name);
-        columns_.reset(columns);
+        opts_.reset(opts);
         kind_ = Kind::kAlterEdge;
     }
 
@@ -217,13 +273,13 @@ public:
         return name_.get();
     }
 
-    std::vector<ColumnSpecification*> columnSpecs() const {
-        return columns_->columnSpecs();
+    std::vector<AlterEdgeOptItem*> edgeOptList() const {
+        return opts_->alterEdgeItems();
     }
 
 private:
     std::unique_ptr<std::string>                name_;
-    std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<AlterEdgeOptList>           opts_;
 };
 
 

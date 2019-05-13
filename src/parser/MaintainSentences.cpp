@@ -93,6 +93,7 @@ std::string AlterTagOptList::toString() const {
     return buf;
 }
 
+
 std::string AlterTagSentence::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -105,21 +106,17 @@ std::string AlterTagSentence::toString() const {
     return buf;
 }
 
-std::string AlterEdgeSentence::toString() const {
+
+std::string AlterEdgeOptItem::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "ALTER EDGE ";
-    buf += *name_;
-    buf += "(";
+    buf += getOptTypeStr();
+    buf += " (";
     auto colSpecs = std::move(columns_->columnSpecs());
     for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
-        if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
-        }
         buf += ",";
     }
     if (!colSpecs.empty()) {
@@ -128,6 +125,34 @@ std::string AlterEdgeSentence::toString() const {
     buf += ")";
     return buf;
 }
+
+
+std::string AlterEdgeOptList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &item : alterEdgeitems_) {
+        buf += item->toString();
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+
+std::string AlterEdgeSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "ALTER EDGE ";
+    buf += *name_;
+    for (auto &edgeOpt : opts_->alterEdgeItems()) {
+        buf += " ";
+        buf += edgeOpt->toString();
+    }
+    return buf;
+}
+
 
 std::string DescribeTagSentence::toString() const {
     return folly::stringPrintf("DESCRIBE TAG %s", name_.get()->c_str());
