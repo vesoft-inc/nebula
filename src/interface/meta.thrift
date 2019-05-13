@@ -80,6 +80,7 @@ struct EdgeItem {
 
 struct ExecResp {
     1: ErrorCode        code,
+    // For custom kv operations, it is useless.
     2: ID               id,
     // Valid if ret equals E_LEADER_CHANGED.
     3: common.HostAddr  leader,
@@ -154,7 +155,8 @@ struct GetTagReq {
 
 struct GetTagResp {
     1: ErrorCode        code,
-    2: common.Schema    schema,
+    2: common.HostAddr  leader,
+    3: common.Schema    schema,
 }
 
 struct GetEdgeReq {
@@ -235,10 +237,6 @@ struct MultiPutReq {
     2: list<Pair> pairs,
 }
 
-struct MultiPutResp {
-    1: ErrorCode code,
-}
-
 struct GetReq {
     1: string segment,
     2: string key,
@@ -246,7 +244,8 @@ struct GetReq {
 
  struct GetResp {
     1: ErrorCode code,
-    2: string    value,
+    2: common.HostAddr  leader,
+    3: string    value,
 }
 
 struct MultiGetReq {
@@ -256,7 +255,8 @@ struct MultiGetReq {
 
 struct MultiGetResp {
     1: ErrorCode    code,
-    2: list<string> values,
+    2: common.HostAddr  leader,
+    3: list<string> values,
 }
 
 struct RemoveReq {
@@ -264,18 +264,10 @@ struct RemoveReq {
     2: string key,
 }
 
-struct RemoveResp {
-    1: ErrorCode code,
-}
-
 struct RemoveRangeReq {
     1: string segment,
     2: string start,
     3: string end,
-}
-
-struct RemoveRangeResp {
-    1: ErrorCode code,
 }
 
 struct ScanReq {
@@ -286,7 +278,8 @@ struct ScanReq {
 
 struct ScanResp {
     1: ErrorCode code,
-    2: list<string> values,
+    2: common.HostAddr  leader,
+    3: list<string> values,
 }
 
 struct HBResp {
@@ -321,12 +314,12 @@ service MetaService {
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
 
-    MultiPutResp     multiPut(1: MultiPutReq req);
-    GetResp          get(1: GetReq req);
-    MultiGetResp     multiGet(1: MultiGetReq req);
-    RemoveResp       remove(1: RemoveReq req);
-    RemoveRangeResp  removeRange(1: RemoveRangeReq req);
-    ScanResp         scan(1: ScanReq req);
+    ExecResp multiPut(1: MultiPutReq req);
+    GetResp get(1: GetReq req);
+    MultiGetResp multiGet(1: MultiGetReq req);
+    ExecResp remove(1: RemoveReq req);
+    ExecResp removeRange(1: RemoveRangeReq req);
+    ScanResp scan(1: ScanReq req);
 
     HBResp           heartBeat(1: HBReq req);
 }
