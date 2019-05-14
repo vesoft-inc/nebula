@@ -133,11 +133,11 @@ The following statement inserts one or more vertices
 
 <span style="color:blue">**INSERT VERTEX**</span> [<span style="color:blue">**NO OVERWRITE**</span>] <tag\_list> <span style="color:blue">**VALUES**</span> <vertex\_list> <br/>
 
-<tag\_list> ::= <tag\_name>(<prop\_list>) (, <tag\_name>(<prop\_list>))+ <br/>
-<vertex\_list> ::= <vertex\_id>:<prop\_value\_list> (, <vertex\_id>:<prop\_value\_list>)+ <br/>
+<tag\_list> ::= <tag\_name>(<prop\_list>) (, <tag\_name>(<prop\_list>))\* <br/>
+<vertex\_list> ::= <vertex\_id>:(<prop\_value\_list>) (, <vertex\_id>:(<prop\_value\_list>))\* <br/>
 <vertex\_id> ::= **vid** <br/>
-<prop\_list> ::= <prop\_name> (, <prop\_name>)+ <br/>
-<prop\_value\_list> ::= **VALUE** (, **VALUE**)+ <br/>
+<prop\_list> ::= <prop\_name> (, <prop\_name>)\* <br/>
+<prop\_value\_list> ::= **VALUE** (, **VALUE**)\* <br/>
 
 #### Insert edges
 
