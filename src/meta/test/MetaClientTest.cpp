@@ -97,8 +97,8 @@ TEST(MetaClientTest, InterfacesTest) {
         auto schemaMan = std::make_unique<ServerBasedSchemaManager>();
         schemaMan->init(client.get());
         {
-            // listTagSchemas
-            auto ret1 = client->listTagSchemas(spaceId).get();
+            // listTagsSchemas
+            auto ret1 = client->listTagsSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
             ASSERT_EQ(ret1.value().size(), 1);
             ASSERT_NE(ret1.value().begin()->tag_id, 0);
@@ -127,8 +127,8 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_STREQ("tagItem0", outSchema1->getFieldName(0));
         }
         {
-            // listEdgeSchemas
-            auto ret1 = client->listEdgeSchemas(spaceId).get();
+            // listEdgesSchemas
+            auto ret1 = client->listEdgesSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
             ASSERT_EQ(ret1.value().size(), 1);
             ASSERT_NE(ret1.value().begin()->edge_type, 0);
@@ -296,7 +296,7 @@ TEST(MetaClientTest, TagTest) {
         id = result.value();
     }
     {
-        auto result = client->listTagSchemas(spaceId).get();
+        auto result = client->listTagsSchemas(spaceId).get();
         ASSERT_TRUE(result.ok());
         auto tags = result.value();
         ASSERT_EQ(1, tags.size());

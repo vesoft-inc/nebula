@@ -40,7 +40,11 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
 
     LOG(INFO) << "Add hosts and create space....";
     auto mClient = std::make_unique<meta::MetaClient>();
-    mClient->init();
+    auto status = mClient->init();
+    if (!status.ok()) {
+        LOG(ERROR) << "Init MetaClient failed : " << status;
+        return;
+    }
     auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
     ASSERT_TRUE(r.ok());
     auto ret = mClient->createSpace("default", 10, 1).get();

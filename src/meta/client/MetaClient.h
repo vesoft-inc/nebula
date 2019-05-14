@@ -64,7 +64,7 @@ public:
 
     virtual ~MetaClient();
 
-    void init();
+    Status init();
 
     void registerListener(MetaChangedListener* listener) {
         listener_ = listener;
@@ -105,7 +105,7 @@ public:
                    std::vector<cpp2::AlterSchemaItem> tagItems);
 
     folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
-    listTagSchemas(GraphSpaceID spaceId);
+    listTagsSchemas(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
     removeTagSchema(int32_t spaceId, std::string name);
@@ -120,7 +120,7 @@ public:
     alterEdge(GraphSpaceID spaceId, std::string name, std::vector<cpp2::AlterSchemaItem> items);
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
-    listEdgeSchemas(GraphSpaceID spaceId);
+    listEdgesSchemas(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<nebula::cpp2::Schema>>
     getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer version);

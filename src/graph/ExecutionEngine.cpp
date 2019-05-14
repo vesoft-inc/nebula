@@ -23,7 +23,10 @@ ExecutionEngine::~ExecutionEngine() {
 
 Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
     metaClient_ = std::make_unique<meta::MetaClient>();
-    metaClient_->init();
+    auto status = metaClient_->init();
+    if (!status.ok()) {
+        return Status::Error("MetaClient init failed");
+    }
 
     schemaManager_ = meta::SchemaManager::create();
     schemaManager_->init(metaClient_.get());

@@ -28,6 +28,10 @@ void TestEnv::SetUp() {
     using ThriftServer = apache::thrift::ThriftServer;
     server_ = std::make_unique<ThriftServer>();
     auto interface = std::make_shared<GraphService>(server_->getIOThreadPool());
+    auto status = interface->init();
+    if (!status.ok()) {
+        LOG(INFO) << "TestEnv::SetUp init failed" << status;
+    }
     server_->setInterface(std::move(interface));
     server_->setPort(0);    // Let the system choose an available port for us
 

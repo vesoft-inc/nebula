@@ -35,10 +35,13 @@ public:
 
     const char* getErrorStr(cpp2::ErrorCode result);
 
+    Status init();
+
 private:
-    std::unique_ptr<SessionManager>             sessionManager_;
-    std::unique_ptr<ExecutionEngine>            executionEngine_;
-    std::unique_ptr<Authenticator>              authenticator_;
+    std::unique_ptr<SessionManager>               sessionManager_;
+    std::unique_ptr<ExecutionEngine>              executionEngine_;
+    std::unique_ptr<Authenticator>                authenticator_;
+    std::shared_ptr<folly::IOThreadPoolExecutor>  ioExecutor_;
 };
 
 }  // namespace graph

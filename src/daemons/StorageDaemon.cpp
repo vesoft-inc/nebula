@@ -89,7 +89,11 @@ int main(int argc, char *argv[]) {
     CHECK(NetworkUtils::ipv4ToInt(result.value(), localIP));
 
     auto metaClient = std::make_unique<nebula::meta::MetaClient>();
-    metaClient->init();
+    status = metaClient->init();
+    if (!status.ok()) {
+        LOG(ERROR) << "Init MetaClient failed : " << status;
+        return EXIT_FAILURE;
+    }
 
     nebula::kvstore::KVOptions options;
     options.local_ = HostAddr(localIP, FLAGS_port);

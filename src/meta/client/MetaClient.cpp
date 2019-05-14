@@ -25,13 +25,6 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
         ioThreadPool_
             = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_meta_client_io_threads);
     }
-    if (addrs_.empty() && !FLAGS_meta_server_addrs.empty()) {
-        addrs_ = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
-    }
-    CHECK(!addrs_.empty());
-    clientsMan_ = std::make_shared<thrift::ThriftClientManager<
-                                    meta::cpp2::MetaServiceAsyncClient>>();
-    updateHost();
     LOG(INFO) << "Create meta client to " << active_;
 }
 
@@ -41,13 +34,24 @@ MetaClient::~MetaClient() {
     VLOG(3) << "~MetaClient";
 }
 
-void MetaClient::init() {
+Status MetaClient::init() {
+    if (addrs_.empty() && !FLAGS_meta_server_addrs.empty()) {
+        addrs_ = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
+    }
+    if (addrs_.empty()) {
+        LOG(WARNING) << "FLAGS_meta_server_addrs is empty";
+        return Status::Error("FLAGS_meta_server_addrs is empty");
+    }
+    clientsMan_ = std::make_shared<thrift::ThriftClientManager<
+                                    meta::cpp2::MetaServiceAsyncClient>>();
+    updateHost();
     loadDataThreadFunc();
     CHECK(loadDataThread_.start());
     size_t delayMS = FLAGS_load_data_interval_second * 1000 + folly::Random::rand32(900);
     loadDataThread_.addTimerTask(delayMS,
                                  FLAGS_load_data_interval_second * 1000,
                                  &MetaClient::loadDataThreadFunc, this);
+    return Status::OK();
 }
 
 void MetaClient::loadDataThreadFunc() {
@@ -111,13 +115,13 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                              SpaceEdgeNameTypeMap &edgeNameTypeMap,
                              SpaceNewestTagVerMap &newestTagVerMap,
                              SpaceNewestEdgeVerMap &newestEdgeVerMap) {
-    auto tagRet = listTagSchemas(spaceId).get();
+    auto tagRet = listTagsSchemas(spaceId).get();
     if (!tagRet.ok()) {
         LOG(ERROR) << "Get tag schemas failed for spaceId " << spaceId << ", " << tagRet.status();
         return false;
     }
 
-    auto edgeRet = listEdgeSchemas(spaceId).get();
+    auto edgeRet = listEdgesSchemas(spaceId).get();
     if (!edgeRet.ok()) {
         LOG(ERROR) << "Get edge schemas failed for spaceId " << spaceId << ", " << edgeRet.status();
         return false;
@@ -670,7 +674,7 @@ MetaClient::alterTagSchema(GraphSpaceID spaceId,
 }
 
 folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
-MetaClient::listTagSchemas(GraphSpaceID spaceId) {
+MetaClient::listTagsSchemas(GraphSpaceID spaceId) {
     cpp2::ListTagsReq req;
     req.set_space_id(std::move(spaceId));
     return getResponse(std::move(req), [] (auto client, auto request) {
@@ -733,7 +737,7 @@ MetaClient::alterEdge(GraphSpaceID spaceId, std::string name,
 }
 
 folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
-MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
+MetaClient::listEdgesSchemas(GraphSpaceID spaceId) {
     cpp2::ListEdgesReq req;
     req.set_space_id(std::move(spaceId));
     return getResponse(std::move(req), [] (auto client, auto request) {

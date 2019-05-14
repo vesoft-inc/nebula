@@ -145,7 +145,7 @@ void ShowExecutor::showSpaces() {
 
 void ShowExecutor::showTags() {
     auto spaceId = ectx()->rctx()->session()->space();
-    auto future = ectx()->getMetaClient()->listTagSchemas(spaceId);
+    auto future = ectx()->getMetaClient()->listTagsSchemas(spaceId);
     auto *runner = ectx()->rctx()->runner();
     resp_ = std::make_unique<cpp2::ExecutionResponse>();
 
@@ -186,7 +186,7 @@ void ShowExecutor::showTags() {
 
 void ShowExecutor::showEdges() {
     auto spaceId = ectx()->rctx()->session()->space();
-    auto future = ectx()->getMetaClient()->listEdgeSchemas(spaceId);
+    auto future = ectx()->getMetaClient()->listEdgesSchemas(spaceId);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
