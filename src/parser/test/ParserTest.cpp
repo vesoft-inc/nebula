@@ -97,7 +97,7 @@ TEST(Parser, Go) {
 TEST(Parser, UseNamespace) {
     {
         GQLParser parser;
-        std::string query = "USE SPACE ns";
+        std::string query = "USE ns";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

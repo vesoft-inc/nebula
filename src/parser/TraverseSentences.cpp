@@ -55,7 +55,7 @@ std::string FindSentence::toString() const {
 }
 
 std::string UseSentence::toString() const {
-    return "USE SPACE " + *space_;
+    return "USE " + *space_;
 }
 
 std::string SetSentence::toString() const {

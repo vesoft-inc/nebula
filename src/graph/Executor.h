@@ -80,7 +80,7 @@ protected:
 
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {
-            return Status::Error("Please choose a graph space with `USE SPACE' firstly");
+            return Status::Error("Please choose a graph space with `USE spaceName' firstly");
         }
         return Status::OK();
     }
