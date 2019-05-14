@@ -12,7 +12,7 @@
 #   path to the ``gperf`` program
 #
 # ``GPERF_BIN_DIR``
-#   path to the directoey that holds ``gperf`` program
+#   path to the directory that holds ``gperf`` program
 #
 # ``GPERF_VERSION``
 #   version of ``gperf``
@@ -33,7 +33,7 @@ if(GPERF_EXECUTABLE)
   STRING(REGEX REPLACE "/gperf$" "" GPERF_BIN_DIR ${GPERF_EXECUTABLE})
 
   # the gperf commands should be executed with the C locale, otherwise
-  # the message (which are parsed) may be translated
+  # the message (which is parsed) may be translated
   set(_gperf_SAVED_LC_ALL "$ENV{LC_ALL}")
   set(ENV{LC_ALL} C)
 
@@ -59,4 +59,3 @@ mark_as_advanced(GPERF_EXECUTABLE GPERF_BIN_DIR)
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(GPERF REQUIRED_VARS  GPERF_EXECUTABLE
                                         VERSION_VAR GPERF_VERSION)
-
