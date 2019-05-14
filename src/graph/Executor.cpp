@@ -17,8 +17,8 @@
 #include "graph/CreateEdgeExecutor.h"
 #include "graph/AlterTagExecutor.h"
 #include "graph/AlterEdgeExecutor.h"
-#include "graph/RemoveTagExecutor.h"
-#include "graph/RemoveEdgeExecutor.h"
+#include "graph/DropTagExecutor.h"
+#include "graph/DropEdgeExecutor.h"
 #include "graph/DescribeTagExecutor.h"
 #include "graph/DescribeEdgeExecutor.h"
 #include "graph/InsertVertexExecutor.h"
@@ -26,7 +26,7 @@
 #include "graph/AssignmentExecutor.h"
 #include "graph/ShowExecutor.h"
 #include "graph/AddHostsExecutor.h"
-#include "graph/RemoveHostsExecutor.h"
+#include "graph/DropHostsExecutor.h"
 #include "graph/CreateSpaceExecutor.h"
 #include "graph/DropSpaceExecutor.h"
 #include "graph/YieldExecutor.h"
@@ -65,11 +65,11 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kDescribeEdge:
             executor = std::make_unique<DescribeEdgeExecutor>(sentence, ectx());
             break;
-        case Sentence::Kind::kRemoveTag:
-             executor = std::make_unique<RemoveTagExecutor>(sentence, ectx());
+        case Sentence::Kind::kDropTag:
+             executor = std::make_unique<DropTagExecutor>(sentence, ectx());
              break;
-        case Sentence::Kind::kRemoveEdge:
-             executor = std::make_unique<RemoveEdgeExecutor>(sentence, ectx());
+        case Sentence::Kind::kDropEdge:
+             executor = std::make_unique<DropEdgeExecutor>(sentence, ectx());
              break;
         case Sentence::Kind::kInsertVertex:
             executor = std::make_unique<InsertVertexExecutor>(sentence, ectx());
@@ -86,8 +86,8 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kAddHosts:
             executor = std::make_unique<AddHostsExecutor>(sentence, ectx());
             break;
-        case Sentence::Kind::kRemoveHosts:
-            executor = std::make_unique<RemoveHostsExecutor>(sentence, ectx());
+        case Sentence::Kind::kDropHosts:
+            executor = std::make_unique<DropHostsExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kCreateSpace:
             executor = std::make_unique<CreateSpaceExecutor>(sentence, ectx());

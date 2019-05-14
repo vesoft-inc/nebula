@@ -416,7 +416,7 @@ folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::listHosts() {
             });
 }
 
-folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr>& hosts) {
+folly::Future<StatusOr<bool>> MetaClient::dropHosts(const std::vector<HostAddr>& hosts) {
     std::vector<nebula::cpp2::HostAddr> thriftHosts;
     thriftHosts.resize(hosts.size());
     std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
@@ -425,10 +425,10 @@ folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr
         th.set_port(h.second);
         return th;
     });
-    cpp2::RemoveHostsReq req;
+    cpp2::DropHostsReq req;
     req.set_hosts(std::move(thriftHosts));
     return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_removeHosts(request);
+                    return client->future_dropHosts(request);
                 }, [] (cpp2::ExecResp&& resp) -> bool {
                     return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 }, true);
@@ -681,12 +681,12 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::removeTagSchema(int32_t spaceId, std::string tagName) {
-    cpp2::RemoveTagReq req;
+MetaClient::dropTagSchema(int32_t spaceId, std::string tagName) {
+    cpp2::DropTagReq req;
     req.set_space_id(spaceId);
     req.set_tag_name(std::move(tagName));
     return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_removeTag(request);
+        return client->future_dropTag(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);
@@ -757,12 +757,12 @@ MetaClient::getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer vers
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::removeEdgeSchema(GraphSpaceID spaceId, std::string name) {
-    cpp2::RemoveEdgeReq req;
+MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
+    cpp2::DropEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
     return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_removeEdge(request);
+        return client->future_dropEdge(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);

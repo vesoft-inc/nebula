@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef GRAPH_REMOVEHOSTSEXECUTOR_H_
@@ -14,12 +14,12 @@ namespace nebula {
 namespace graph {
 
 
-class RemoveHostsExecutor final : public Executor {
+class DropHostsExecutor final : public Executor {
 public:
-    RemoveHostsExecutor(Sentence *sentence, ExecutionContext *ectx);
+    DropHostsExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "RemoveHostsExecutor";
+        return "DropHostsExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -27,7 +27,7 @@ public:
     void execute() override;
 
 private:
-    RemoveHostsSentence     *sentence_{nullptr};
+    DropHostsSentence     *sentence_{nullptr};
     std::vector<HostAddr>    host_;
 };
 
@@ -35,3 +35,4 @@ private:
 }   // namespace nebula
 
 #endif  // GRAPH_REMOVEHOSTSEXECUTOR_H_
+

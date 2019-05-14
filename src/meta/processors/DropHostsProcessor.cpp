@@ -1,16 +1,16 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/RemoveHostsProcessor.h"
+#include "meta/processors/DropHostsProcessor.h"
 
 namespace nebula {
 namespace meta {
 
 
-void RemoveHostsProcessor::process(const cpp2::RemoveHostsReq& req) {
+void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     std::vector<std::string> hostsKey;
     for (auto& h : req.get_hosts()) {
@@ -30,4 +30,5 @@ void RemoveHostsProcessor::process(const cpp2::RemoveHostsReq& req) {
 
 }  // namespace meta
 }  // namespace nebula
+
 

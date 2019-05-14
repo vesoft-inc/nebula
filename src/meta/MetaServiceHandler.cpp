@@ -11,8 +11,8 @@
 #include "meta/processors/DropSpaceProcessor.h"
 #include "meta/processors/AddHostsProcessor.h"
 #include "meta/processors/ListHostsProcessor.h"
-#include "meta/processors/RemoveHostsProcessor.h"
-#include "meta/processors/RemoveTagProcessor.h"
+#include "meta/processors/DropHostsProcessor.h"
+#include "meta/processors/DropTagProcessor.h"
 #include "meta/processors/CreateTagProcessor.h"
 #include "meta/processors/AlterTagProcessor.h"
 #include "meta/processors/CreateEdgeProcessor.h"
@@ -20,7 +20,7 @@
 #include "meta/processors/GetEdgeProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
 #include "meta/processors/ListEdgesProcessor.h"
-#include "meta/processors/RemoveEdgeProcessor.h"
+#include "meta/processors/DropEdgeProcessor.h"
 #include "meta/processors/MultiPutProcessor.h"
 #include "meta/processors/GetProcessor.h"
 #include "meta/processors/MultiGetProcessor.h"
@@ -69,8 +69,8 @@ MetaServiceHandler::future_listHosts(const cpp2::ListHostsReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_removeHosts(const cpp2::RemoveHostsReq& req) {
-    auto* processor = RemoveHostsProcessor::instance(kvstore_);
+MetaServiceHandler::future_dropHosts(const cpp2::DropHostsReq& req) {
+    auto* processor = DropHostsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
@@ -129,8 +129,8 @@ MetaServiceHandler::future_alterTag(const cpp2::AlterTagReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_removeTag(const cpp2::RemoveTagReq& req) {
-    auto* processor = RemoveTagProcessor::instance(kvstore_);
+MetaServiceHandler::future_dropTag(const cpp2::DropTagReq& req) {
+    auto* processor = DropTagProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
@@ -165,8 +165,8 @@ MetaServiceHandler::future_createEdge(const cpp2::CreateEdgeReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_removeEdge(const cpp2::RemoveEdgeReq& req) {
-    auto* processor = RemoveEdgeProcessor::instance(kvstore_);
+MetaServiceHandler::future_dropEdge(const cpp2::DropEdgeReq& req) {
+    auto* processor = DropEdgeProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

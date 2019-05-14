@@ -251,7 +251,7 @@ TEST(MetaClientTest, InterfacesTest) {
     }
     {
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-        auto ret = client->removeHosts(hosts).get();
+        auto ret = client->dropHosts(hosts).get();
         ASSERT_TRUE(ret.ok());
         auto ret1 = client->listHosts().get();
         ASSERT_TRUE(ret1.ok());
@@ -309,7 +309,7 @@ TEST(MetaClientTest, TagTest) {
         ASSERT_TRUE(result.ok());
     }
     {
-        auto result = client->removeTagSchema(spaceId, "test_tag").get();
+        auto result = client->dropTagSchema(spaceId, "test_tag").get();
         ASSERT_TRUE(result.ok());
     }
     {

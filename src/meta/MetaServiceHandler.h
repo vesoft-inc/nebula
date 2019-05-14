@@ -39,7 +39,7 @@ public:
     future_listHosts(const cpp2::ListHostsReq& req) override;
 
     folly::Future<cpp2::ExecResp>
-    future_removeHosts(const cpp2::RemoveHostsReq& req) override;
+    future_dropHosts(const cpp2::DropHostsReq& req) override;
 
     folly::Future<cpp2::GetPartsAllocResp>
     future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) override;
@@ -75,7 +75,7 @@ public:
     future_alterTag(const cpp2::AlterTagReq& req) override;
 
     folly::Future<cpp2::ExecResp>
-    future_removeTag(const cpp2::RemoveTagReq& req) override;
+    future_dropTag(const cpp2::DropTagReq& req) override;
 
     folly::Future<cpp2::GetTagResp>
     future_getTag(const cpp2::GetTagReq &req) override;
@@ -83,17 +83,17 @@ public:
     folly::Future<cpp2::ListTagsResp>
     future_listTags(const cpp2::ListTagsReq& req) override;
 
+    folly::Future<cpp2::ExecResp>
+    future_createEdge(const cpp2::CreateEdgeReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_dropEdge(const cpp2::DropEdgeReq& req) override;
+
     folly::Future<cpp2::GetEdgeResp>
     future_getEdge(const cpp2::GetEdgeReq& req) override;
 
     folly::Future<cpp2::ListEdgesResp>
     future_listEdges(const cpp2::ListEdgesReq& req) override;
-
-    folly::Future<cpp2::ExecResp>
-    future_createEdge(const cpp2::CreateEdgeReq& req) override;
-
-    folly::Future<cpp2::ExecResp>
-    future_removeEdge(const cpp2::RemoveEdgeReq& req) override;
 
     /**
      * HeartBeat

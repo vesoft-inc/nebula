@@ -262,11 +262,11 @@ private:
     std::unique_ptr<std::string>                name_;
 };
 
-class RemoveTagSentence final : public Sentence {
+class DropTagSentence final : public Sentence {
 public:
-    explicit RemoveTagSentence(std::string *name) {
+    explicit DropTagSentence(std::string *name) {
         name_.reset(name);
-        kind_ = Kind::kRemoveTag;
+        kind_ = Kind::kDropTag;
     }
 
     std::string toString() const override;
@@ -280,11 +280,11 @@ private:
 };
 
 
-class RemoveEdgeSentence final : public Sentence {
+class DropEdgeSentence final : public Sentence {
 public:
-    explicit RemoveEdgeSentence(std::string *name) {
+    explicit DropEdgeSentence(std::string *name) {
         name_.reset(name);
-        kind_ = Kind::kRemoveEdge;
+        kind_ = Kind::kDropEdge;
     }
 
     std::string toString() const override;

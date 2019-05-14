@@ -1,28 +1,28 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "graph/RemoveTagExecutor.h"
+#include "graph/DropEdgeExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-RemoveTagExecutor::RemoveTagExecutor(Sentence *sentence,
-                                     ExecutionContext *ectx) : Executor(ectx) {
-    sentence_ = static_cast<RemoveTagSentence*>(sentence);
+DropEdgeExecutor::DropEdgeExecutor(Sentence *sentence,
+                                   ExecutionContext *ectx) : Executor(ectx) {
+    sentence_ = static_cast<DropEdgeSentence*>(sentence);
 }
 
-Status RemoveTagExecutor::prepare() {
+Status DropEdgeExecutor::prepare() {
     return checkIfGraphSpaceChosen();
 }
 
-void RemoveTagExecutor::execute() {
+void DropEdgeExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto future = mc->removeTagSchema(spaceId, *name);
+    auto future = mc->dropEdgeSchema(spaceId, *name);
 
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
@@ -47,3 +47,4 @@ void RemoveTagExecutor::execute() {
 
 }   // namespace graph
 }   // namespace nebula
+

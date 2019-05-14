@@ -1,21 +1,21 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "graph/RemoveHostsExecutor.h"
+#include "graph/DropHostsExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-RemoveHostsExecutor::RemoveHostsExecutor(Sentence *sentence,
-                                         ExecutionContext *ectx) : Executor(ectx) {
-    sentence_ = static_cast<RemoveHostsSentence*>(sentence);
+DropHostsExecutor::DropHostsExecutor(Sentence *sentence,
+                                     ExecutionContext *ectx) : Executor(ectx) {
+    sentence_ = static_cast<DropHostsSentence*>(sentence);
 }
 
 
-Status RemoveHostsExecutor::prepare() {
+Status DropHostsExecutor::prepare() {
     host_ = sentence_->hosts();
     if (host_.size() == 0) {
         return Status::Error("Host address illegal");
@@ -24,8 +24,8 @@ Status RemoveHostsExecutor::prepare() {
 }
 
 
-void RemoveHostsExecutor::execute() {
-    auto future = ectx()->getMetaClient()->removeHosts(host_);
+void DropHostsExecutor::execute() {
+    auto future = ectx()->getMetaClient()->dropHosts(host_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
@@ -37,7 +37,7 @@ void RemoveHostsExecutor::execute() {
         auto ret = std::move(resp).value();
         if (!ret) {
             DCHECK(onError_);
-            onError_(Status::Error("Remove hosts failed"));
+            onError_(Status::Error("Drop hosts failed"));
             return;
         }
         DCHECK(onFinish_);
@@ -56,3 +56,4 @@ void RemoveHostsExecutor::execute() {
 
 }   // namespace graph
 }   // namespace nebula
+

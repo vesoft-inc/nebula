@@ -19,8 +19,8 @@ add_library(
     CreateTagExecutor.cpp
     AlterEdgeExecutor.cpp
     AlterTagExecutor.cpp
-    RemoveTagExecutor.cpp
-    RemoveEdgeExecutor.cpp
+    DropTagExecutor.cpp
+    DropEdgeExecutor.cpp
     DescribeTagExecutor.cpp
     DescribeEdgeExecutor.cpp
     InsertVertexExecutor.cpp
@@ -29,7 +29,7 @@ add_library(
     InterimResult.cpp
     VariableHolder.cpp
     AddHostsExecutor.cpp
-    RemoveHostsExecutor.cpp
+    DropHostsExecutor.cpp
     CreateSpaceExecutor.cpp
     DropSpaceExecutor.cpp
     ShowExecutor.cpp

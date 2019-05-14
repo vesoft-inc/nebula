@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef GRAPH_REMOVEEDGEEXECUTOR_H
@@ -13,12 +13,12 @@
 namespace nebula {
 namespace graph {
 
-class RemoveEdgeExecutor final : public Executor {
+class DropEdgeExecutor final : public Executor {
 public:
-    RemoveEdgeExecutor(Sentence *sentence, ExecutionContext *context);
+    DropEdgeExecutor(Sentence *sentence, ExecutionContext *context);
 
     const char* name() const override {
-        return "RemoveEdgeExecutor";
+        return "DropEdgeExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -26,11 +26,12 @@ public:
     void execute() override;
 
 private:
-    RemoveEdgeSentence *sentence_{nullptr};
+    DropEdgeSentence *sentence_{nullptr};
 };
 
 }   // namespace graph
 }   // namespace nebula
 
 #endif  // GRAPH_REMOVEEDGEEXECUTOR_H
+
 

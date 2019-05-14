@@ -151,11 +151,11 @@ class GraphScanner;
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
-%type <sentence> remove_tag_sentence remove_edge_sentence
+%type <sentence> drop_tag_sentence drop_edge_sentence
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence
+%type <sentence> show_sentence add_hosts_sentence drop_hosts_sentence create_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -586,15 +586,15 @@ describe_edge_sentence
     }
     ;
 
-remove_tag_sentence
-    : KW_REMOVE KW_TAG LABEL {
-        $$ = new RemoveTagSentence($3);
+drop_tag_sentence
+    : KW_DROP KW_TAG LABEL {
+        $$ = new DropTagSentence($3);
     }
     ;
 
-remove_edge_sentence
-    : KW_REMOVE KW_EDGE LABEL {
-        $$ = new RemoveEdgeSentence($3);
+drop_edge_sentence
+    : KW_DROP KW_EDGE LABEL {
+        $$ = new DropEdgeSentence($3);
     }
     ;
 
@@ -878,9 +878,9 @@ add_hosts_sentence
     }
     ;
 
-remove_hosts_sentence
-    : KW_REMOVE KW_HOSTS host_list {
-        auto sentence = new RemoveHostsSentence();
+drop_hosts_sentence
+    : KW_DROP KW_HOSTS host_list {
+        auto sentence = new DropHostsSentence();
         sentence->setHosts($3);
         $$ = sentence;
     }
@@ -1081,11 +1081,11 @@ maintain_sentence
     | alter_edge_sentence { $$ = $1; }
     | describe_tag_sentence { $$ = $1; }
     | describe_edge_sentence { $$ = $1; }
-    | remove_tag_sentence { $$ = $1; }
-    | remove_edge_sentence { $$ = $1; }
+    | drop_tag_sentence { $$ = $1; }
+    | drop_edge_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
     | add_hosts_sentence { $$ = $1; }
-    | remove_hosts_sentence { $$ = $1; }
+    | drop_hosts_sentence { $$ = $1; }
     | create_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
     | yield_sentence {
