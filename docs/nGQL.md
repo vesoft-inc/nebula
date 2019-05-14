@@ -1,7 +1,7 @@
 # Nebula Graph Query Language (nGQL)
 
 ## About nGQL
-`NGQL` is a declarative, textual query language like SQL, but for graphs. Unlike SQL, nGQL is all about expressing graph patterns. NGQL is a work in progress. We will add more features and further simplify the existing ones.
+`nGQL` is a declarative, textual query language like SQL, but for graphs. Unlike SQL, nGQL is all about expressing graph patterns. nGQL is a work in progress. We will add more features and further simplify the existing ones.
 ## Goals
 - Easy to learn
 - Easy to understand
@@ -98,7 +98,7 @@
 #### Choose a graph space
 Nebula supports multiple graph spaces. Data in different graph spaces are physically isolated. Before executing a query, a graph space needs to be selected using the following statement
 
-<span style="color:blue">**USE **</span>  <graphspace_name>
+<span style="color:blue">**USE**</span>  <graphspace_name>
 
 #### Return a data set
 Simply return a single value or a data set
@@ -131,13 +131,13 @@ The following statement defines a **new** edge type
 #### Insert vertices
 The following statement inserts one or more vertices
 
-<span style="color:blue">**INSERT VERTEX**</span> [<span style="color:blue">**NO OVERWRITE**</span>] "("<br/>
-<span style="indent:20">[ <vertex\_id> [ <span style="color:blue">**WITH**</span> <tag\_name> [(<prop\_list>)] <span style="color:blue">**VALUES**</span> (<prop\_value\_list>) ]+ ]+</span><br/>
-")"
+<span style="color:blue">**INSERT VERTEX**</span> [<span style="color:blue">**NO OVERWRITE**</span>] <tag\_list> <span style="color:blue">**VALUES**</span> <vertex\_list> <br/>
 
-<vertex\_id> ::= **vid**
-<prop\_list> ::= <prop\_name> (, <prop\_name>)+
-<prop\_value\_list> ::= **VALUE** (, **VALUE**)*
+<tag\_list> ::= <tag\_name>(<prop\_list>) (, <tag\_name>(<prop\_list>))+ <br/>
+<vertex\_list> ::= <vertex\_id>:<prop\_value\_list> (, <vertex\_id>:<prop\_value\_list>)+ <br/>
+<vertex\_id> ::= **vid** <br/>
+<prop\_list> ::= <prop\_name> (, <prop\_name>)+ <br/>
+<prop\_value\_list> ::= **VALUE** (, **VALUE**)+ <br/>
 
 #### Insert edges
 
