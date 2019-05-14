@@ -42,9 +42,9 @@ using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;
 using SpaceTagNameIdMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, TagID>;
 // get edgeType via spaceId and edgeName
 using SpaceEdgeNameTypeMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, EdgeType>;
-// get newest tag ver via spaceId and TagID
+// get latest tag version via spaceId and TagID
 using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, SchemaVer>;
-// get newest edge ver via spaceId and edgeType
+// get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 
 class MetaChangedListener {
