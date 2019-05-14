@@ -501,14 +501,8 @@ TEST(Parser, UserOperation) {
 TEST(Parser, UnreservedKeywords) {
     {
         GQLParser parser;
-        std::string query = "CREATE TAG TAG("
-                            "string string, "
-                            "int int, "
-                            "bigint bigint, "
-                            "double double, "
-                            "bool bool, "
-                            "TIMESTAMP TIMESTAMP, "
-                            ")";
+        std::string query = "CREATE TAG TAG(space string, spaces string, "
+                            "email string, password string)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

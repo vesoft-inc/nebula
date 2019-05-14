@@ -177,15 +177,7 @@ unreserved_keyword
     | KW_TAG                { $$ = new std::string("TAG"); }
     | KW_VERTEX             { $$ = new std::string("VERTEX"); }
     | KW_EDGE               { $$ = new std::string("EDGE"); }
-    | KW_INT                { $$ = new std::string("INT"); }
-    | KW_BIGINT             { $$ = new std::string("BIGINT"); }
-    | KW_DOUBLE             { $$ = new std::string("DOUBLE"); }
-    | KW_STRING             { $$ = new std::string("STRING"); }
-    | KW_BOOL               { $$ = new std::string("BOOL"); }
-    | KW_MINUS              { $$ = new std::string("MINUS"); }
-    | KW_DESCRIBE           { $$ = new std::string("DESCRIBE"); }
     | KW_HOSTS              { $$ = new std::string("HOSTS"); }
-    | KW_TIMESTAMP          { $$ = new std::string("TIMESTAMP"); }
     | KW_SPACES             { $$ = new std::string("SPACES"); }
     | KW_FIRSTNAME          { $$ = new std::string("FIRSTNAME"); }
     | KW_LASTNAME           { $$ = new std::string("LASTNAME"); }
@@ -194,7 +186,6 @@ unreserved_keyword
     | KW_USER               { $$ = new std::string("USER"); }
     | KW_USERS              { $$ = new std::string("USERS"); }
     | KW_PASSWORD           { $$ = new std::string("PASSWORD"); }
-    | KW_CHANGE             { $$ = new std::string("CHANGE"); }
     | KW_ROLE               { $$ = new std::string("ROLE"); }
     | KW_GOD                { $$ = new std::string("GOD"); }
     | KW_ADMIN              { $$ = new std::string("ADMIN"); }
