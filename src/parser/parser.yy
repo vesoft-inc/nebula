@@ -485,7 +485,7 @@ find_sentence
     ;
 
 use_sentence
-    : KW_USE KW_SPACE LABEL { $$ = new UseSentence($3); }
+    : KW_USE LABEL { $$ = new UseSentence($2); }
     ;
 
 create_tag_sentence
