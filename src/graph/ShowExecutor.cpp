@@ -169,6 +169,7 @@ void ShowExecutor::showTags() {
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
+        resp_->set_rows(std::move(rows));
         DCHECK(onFinish_);
         onFinish_();
     };
@@ -208,6 +209,7 @@ void ShowExecutor::showEdges() {
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
+        resp_->set_rows(std::move(rows));
         DCHECK(onFinish_);
         onFinish_();
     };
