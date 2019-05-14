@@ -624,10 +624,10 @@ AssertionResult GoTest::prepareData() {
 
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "USE SPACE nba";
+        std::string query = "USE nba";
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
-            return TestError() << "USE SPACE nba failed"
+            return TestError() << "USE nba failed"
                                << static_cast<int32_t>(code);
         }
     }
