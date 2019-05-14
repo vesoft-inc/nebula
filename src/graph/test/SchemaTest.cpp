@@ -177,6 +177,18 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "SHOW EDGES";
+        auto code = client->execute(query, resp);
+        sleep(FLAGS_load_data_interval_second + 1);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"buy"},
+            {"education"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "CREATE SPACE my_space(partition_num=9, replica_factor=3)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -220,6 +232,11 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         sleep(FLAGS_load_data_interval_second + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"animal"},
+            {"person"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
