@@ -94,6 +94,33 @@ TEST(Parser, Go) {
     }
 }
 
+TEST(Parser, SpaceOperation) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE space_without_options()";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DROP SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 TEST(Parser, UseNamespace) {
     {
         GQLParser parser;
@@ -368,54 +395,41 @@ TEST(Parser, Find) {
 TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
-        std::string query = "add hosts 127.0.0.1:1000, 127.0.0.1:9000";
+        std::string query = "ADD HOSTS 127.0.0.1:1000, 127.0.0.1:9000";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "show hosts";
+        std::string query = "SHOW HOSTS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "remove hosts 127.0.0.1:1000, 127.0.0.1:9000";
+        std::string query = "REMOVE HOSTS 127.0.0.1:1000, 127.0.0.1:9000";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "create space default_space (partition_num=9, replica_factor=3)";
+        std::string query = "SHOW SPACES";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "show spaces";
+        std::string query = "SHOW TAGS";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "show tags";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
-        std::string query = "show edges";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
-        std::string query = "drop space default_space";
+        std::string query = "SHOW EDGES";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
 }
-
 
 TEST(Parser, UserOperation) {
     {

@@ -45,16 +45,22 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // test nonexistent space
     {
+        // test nonexistent space
         cpp2::ExecutionResponse resp;
-        std::string query = "USE default_space";
+        std::string query = "USE not_exist_space";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_without_options()";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -95,7 +101,7 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
-        // test exist
+        // test tag have exist
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG account(id int, balance double)";
         auto code = client->execute(query, resp);
@@ -134,13 +140,20 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
+        // test tag not exist
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE TAG not_exist";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE buy(id int, time string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
-        // test exist
+        // test edge have exist
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE buy(id int, time string)";
         auto code = client->execute(query, resp);
@@ -156,6 +169,13 @@ TEST_F(SchemaTest, metaCommunication) {
             {"time", "string"},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // test edge not exist
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE EDGE not_exist";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -240,7 +260,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "REMOVE TAG person ";
+        std::string query = "REMOVE TAG person";
         auto code = client->execute(query, resp);
         sleep(FLAGS_load_data_interval_second + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -253,7 +273,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "show spaces";
+        std::string query = "SHOW SPACES";
         client->execute(query, resp);
         std::vector<uniform_tuple_t<std::string, 1>> expected{
             {"default_space"},
@@ -268,7 +288,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "show spaces";
+        std::string query = "SHOW SPACES";
         client->execute(query, resp);
         ASSERT_EQ(0, (*(resp.get_rows())).size());
     }
