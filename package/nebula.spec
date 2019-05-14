@@ -9,7 +9,7 @@ Name:     %{project_name}
 Version:  @VERSION@
 Release:  @RELEASE@%{?dist}
 Summary:  %{project_name}
-License:  GPL
+License:  Apache 2.0 + Common Clause 1.0
 # the url to get tar.gz
 #URL:      http://
 # tar name, this is a temp name
