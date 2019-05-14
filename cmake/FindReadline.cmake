@@ -1,4 +1,4 @@
-# - Try to find readline include dirs and libraries
+# - Try to find readline includes dirs and libraries
 #
 # Usage of this module as follows:
 #
@@ -14,7 +14,7 @@
 # Variables defined by this module:
 #
 #  READLINE_FOUND            System has readline, include and lib dirs found
-#  Readline_INCLUDE_DIR      The readline include directories.
+#  Readline_INCLUDE_DIR      The readline includes directories.
 #  Readline_LIBRARY          The readline library.
 
 find_path(Readline_ROOT_DIR
