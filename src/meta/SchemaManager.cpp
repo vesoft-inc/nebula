@@ -122,11 +122,11 @@ AdHocSchemaManager::getEdgeSchema(folly::StringPiece spaceName,
 }
 
 std::shared_ptr<const SchemaProviderIf>
-AdHocSchemaManager::getEdgeSchema(GraphSpaceID spaceId,
+AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
                                   EdgeType edge,
                                   SchemaVer ver) {
-    folly::RWSpinLock::WriteHolder wh(edgeLock_);
-    auto it = edgeSchemas_.find(std::make_pair(spaceId, edge));
+    folly::RWSpinLock::ReadHolder rh(edgeLock_);
+    auto it = edgeSchemas_.find(std::make_pair(space, edge));
     if (it == edgeSchemas_.end()) {
         // Not found
         return std::shared_ptr<const SchemaProviderIf>();

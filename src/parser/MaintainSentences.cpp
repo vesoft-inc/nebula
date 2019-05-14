@@ -33,7 +33,6 @@ std::string CreateTagSentence::toString() const {
     return buf;
 }
 
-
 std::string CreateEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -58,7 +57,6 @@ std::string CreateEdgeSentence::toString() const {
     return buf;
 }
 
-
 std::string AlterTagOptItem::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -81,7 +79,6 @@ std::string AlterTagOptItem::toString() const {
     buf += ")";
     return buf;
 }
-
 
 std::string AlterTagOptList::toString() const {
     std::string buf;
@@ -108,7 +105,6 @@ std::string AlterTagSentence::toString() const {
     return buf;
 }
 
-
 std::string AlterEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -133,31 +129,21 @@ std::string AlterEdgeSentence::toString() const {
     return buf;
 }
 
-
 std::string DescribeTagSentence::toString() const {
-    std::string buf = "DESCRIBE TAG ";
-    buf += *name_;
-    return buf;
+    return folly::stringPrintf("DESCRIBE TAG %s", name_.get()->c_str());
 }
 
-
 std::string DescribeEdgeSentence::toString() const {
-    std::string buf = "DESCRIBE EDGE ";
-    buf += *name_;
-    return buf;
+    return folly::stringPrintf("DESCRIBE EDGE %s", name_.get()->c_str());
 }
 
 std::string RemoveTagSentence::toString() const {
-    std::string buf = "REMOVE TAG ";
-    buf += *name_;
-    return buf;
+    return folly::stringPrintf("REMOVE TAG %s", name_.get()->c_str());
 }
 
 
 std::string RemoveEdgeSentence::toString() const {
-    std::string buf = "REMOVE EDGE ";
-    buf += *name_;
-    return buf;
+    return folly::stringPrintf("REMOVE TAG %s", name_.get()->c_str());
 }
 
 std::string YieldSentence::toString() const {

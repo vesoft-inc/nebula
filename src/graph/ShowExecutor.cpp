@@ -42,6 +42,7 @@ void ShowExecutor::execute() {
             break;
         case ShowSentence::ShowType::kShowEdges:
             showEdges();
+            break;
         case ShowSentence::ShowType::kShowUsers:
         case ShowSentence::ShowType::kShowUser:
         case ShowSentence::ShowType::kShowRoles:
@@ -92,7 +93,8 @@ void ShowExecutor::showHosts() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -134,7 +136,8 @@ void ShowExecutor::showSpaces() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -173,7 +176,8 @@ void ShowExecutor::showTags() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -211,7 +215,8 @@ void ShowExecutor::showEdges() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
