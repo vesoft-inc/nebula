@@ -563,8 +563,8 @@ TEST(ProcessorTest, DropTagTest) {
      std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
      ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
      TestUtils::mockTag(kv.get(), 1);
-      // remove tag processor test
      {
+         // remove tag processor test
          cpp2::DropTagReq req;
          req.set_space_id(1);
          req.set_tag_name("tag_0");
@@ -574,9 +574,8 @@ TEST(ProcessorTest, DropTagTest) {
          auto resp = std::move(f).get();
          ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
      }
-
-     // check tag data has been deleted.
      {
+         // check tag data has been deleted.
          std::string tagVal;
          kvstore::ResultCode ret;
          std::unique_ptr<kvstore::KVIterator> iter;

@@ -27,7 +27,7 @@ public:
     void execute() override;
 
 private:
-    DropHostsSentence     *sentence_{nullptr};
+    DropHostsSentence       *sentence_{nullptr};
     std::vector<HostAddr>    host_;
 };
 

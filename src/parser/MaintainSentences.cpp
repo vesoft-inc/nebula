@@ -138,11 +138,11 @@ std::string DescribeEdgeSentence::toString() const {
 }
 
 std::string DropTagSentence::toString() const {
-    return folly::stringPrintf("REMOVE TAG %s", name_.get()->c_str());
+    return folly::stringPrintf("DROP TAG %s", name_.get()->c_str());
 }
 
 std::string DropEdgeSentence::toString() const {
-    return folly::stringPrintf("REMOVE EDGE %s", name_.get()->c_str());
+    return folly::stringPrintf("DROP EDGE %s", name_.get()->c_str());
 }
 
 std::string YieldSentence::toString() const {

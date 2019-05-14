@@ -240,7 +240,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "REMOVE TAG person ";
+        std::string query = "DROP TAG person ";
         auto code = client->execute(query, resp);
         sleep(FLAGS_load_data_interval_second + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -274,7 +274,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "REMOVE HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
+        std::string query = "DROP HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
