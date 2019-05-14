@@ -21,6 +21,8 @@ public:
         kUnknown,
         kShowHosts,
         kShowSpaces,
+        kShowTags,
+        kShowEdges,
         kShowUsers,
         kShowUser,
         kShowRoles
