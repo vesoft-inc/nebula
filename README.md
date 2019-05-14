@@ -1,6 +1,6 @@
-## Nebula Graph
+## Nebula
 
-**Nebula Graph** is a distributed, scalable, lightening-fast graph database. It is the only solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
+**Nebula** is a distributed, scalable, lightening-fast graph database. It is the only solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
 
 **Nebula's** goal is to provide reading, writing, and computing with high concurrency, low latency for super large scale graphs. Nebula is an open source project and we are looking forward to working with the community to popularize and promote the graph database.
 
@@ -12,11 +12,11 @@ As a graph database, **Nebula** has these features
 * SQL-like query language
 
 ## How can I get Nebula ##
-**Nebula** source code is available here on the [`GitHub`](https://github.com/vesoft-inc/nebula). The currently release is version 0.1. Please refer the [`Release Notes`]() here for details. You can also download [`docker` ](https://www.docker.com/get-started)image to try it.
+**Nebula** source code is available here on [`GitHub`](https://github.com/vesoft-inc/nebula). The currently release is version 0.1. Please refer the `Release Notes` here for details. You can also download [`docker` ](https://www.docker.com/get-started)image to try it.
 More details on how to get Nebula image click [`Get Started`](https://github.com/vesoft-inc/nebula/blob/master/docs/get-started.md).
 
 ## How can I contribute ##
-As the team behind the **Nebula Graph**, we fully commit to the community and all-in to the open source project. All the core features are and will be implemented in the open source repository.
+As the team behind **Nebula**, we fully commit to the community and all-in to the open source project. All the core features are and will be implemented in the open source repository.
 
 We also encourage the community to involve the project. There are a few ways you can contribute:
 
@@ -32,4 +32,5 @@ In order to prevent cloud providers monetarizing from the project without contri
 
 ## Contact
 - Please use [`GitHub issue tracker`](https://github.com/vesoft-inc/nebula/issues) for filling bugs or feature requests.
-- Please e-mail us at info@vesoft.com if you have any problems.
+- Please e-mail us at ``` info@vesoft.com ``` if you have any problems.
+- Join [![](https://img.shields.io/badge/slack-nebula-519dd9.svg)](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200).
