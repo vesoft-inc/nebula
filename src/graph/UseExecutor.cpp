@@ -26,14 +26,13 @@ void UseExecutor::execute() {
 
     auto spaceName = *sentence_->space();
     // Check from the cache, if space not exists, schemas also not exist
-    auto status = ectx()->schemaManager()->checkSpaceExist(spaceName);
-    if (!status.ok()) {
+    auto spaceId = ectx()->schemaManager()->toGraphSpaceID(spaceName);
+    if (spaceId < 0) {
         DCHECK(onError_);
         onError_(Status::Error("Space not found for `%s'", spaceName.c_str()));
         return;
     }
 
-    auto spaceId = ectx()->schemaManager()->toGraphSpaceID(spaceName);
     session->setSpace(*sentence_->space(), spaceId);
     FLOG_INFO("Graph space switched to `%s', space id: %d", sentence_->space()->c_str(), spaceId);
 

@@ -9,7 +9,8 @@
 #include "graph/test/TestBase.h"
 #include "fs/TempFile.h"
 
-DECLARE_string(schema_file);
+
+DECLARE_int32(load_data_interval_second);
 
 namespace nebula {
 namespace graph {
@@ -37,11 +38,14 @@ protected:
 
     static void TearDownTestCase() {
         client_.reset();
+        ASSERT_TRUE(removeData());
     }
 
     static AssertionResult prepareSchema();
 
     static AssertionResult prepareData();
+
+    static AssertionResult removeData();
 
     class Player final {
     public:
@@ -294,43 +298,64 @@ GoTest::VertexHolder<GoTest::Team> GoTest::teams_ = {
 
 // static
 AssertionResult GoTest::prepareSchema() {
-    schemaFile_ = std::make_unique<fs::TempFile>("/tmp/go_test.XXXXXX");
-    std::ofstream file(schemaFile_->path());
-    if (!file.good()) {
-        return TestError() << "Failed to open: " << schemaFile_->path();
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "ADD HOSTS 127.0.0.1:1111";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
     }
-    file << "{\n"
-            "     \"nba\": {\n"
-            "         \"tags\": {\n"
-            "             \"player\": [\n"
-            "                 [\n"
-            "                     \"name: string\",\n"
-            "                     \"age: integer\"\n"
-            "                 ]\n"
-            "             ],\n"
-            "             \"team\": [\n"
-            "                 [\n"
-            "                     \"name: string\"\n"
-            "                 ]\n"
-            "             ]\n"
-            "         },\n"
-            "         \"edges\": {\n"
-            "             \"serve\": [\n"
-            "                 [\n"
-            "                     \"start_year: integer\",\n"
-            "                     \"end_year: integer\"\n"
-            "                 ]\n"
-            "             ],\n"
-            "             \"like\": [\n"
-            "                 [\n"
-            "                     \"likeness: integer\"\n"
-            "                 ]\n"
-            "             ]\n"
-            "         }\n"
-            "     }\n"
-            "}\n";
-    file.close();
-    FLAGS_schema_file = schemaFile_->path();
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE SPACE nba(partition_num=1, replica_factor=1)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    sleep(FLAGS_load_data_interval_second + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "USE SPACE nba";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG player(name string, age int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG team(name string)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE EDGE serve(start_year int, end_year int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE EDGE like(likeness int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    sleep(FLAGS_load_data_interval_second + 1);
     return TestOK();
 }
 
@@ -735,6 +760,26 @@ AssertionResult GoTest::prepareData() {
     return TestOK();
 }
 
+AssertionResult GoTest::removeData() {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "REMOVE HOSTS 127.0.0.1:1111";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "DROP SPACE nba";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+
+    return TestOK();
+}
 
 TEST_F(GoTest, DISABLED_OneStepOutBound) {
     {

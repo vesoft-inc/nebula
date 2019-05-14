@@ -1,7 +1,6 @@
 add_library(
     schema_obj OBJECT
     SchemaManager.cpp
-    FileBasedSchemaManager.cpp
     ServerBasedSchemaManager.cpp
     NebulaSchemaProvider.cpp
 )

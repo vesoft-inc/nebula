@@ -68,7 +68,8 @@ add_executable(
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:fs_obj>)
+    $<TARGET_OBJECTS:fs_obj>
+)
 nebula_link_libraries(
     storage_service_handler_test
     ${ROCKSDB_LIBRARIES}
@@ -107,6 +108,7 @@ nebula_add_test(add_edges_test)
 
 add_executable(
     query_bound_test
+    AdHocSchemaManager.cpp
     QueryBoundTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
@@ -134,6 +136,7 @@ nebula_add_test(query_bound_test)
 
 add_executable(
     vertex_props_test
+    AdHocSchemaManager.cpp
     QueryVertexPropsTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
@@ -161,6 +164,7 @@ nebula_add_test(vertex_props_test)
 
 add_executable(
     edge_props_test
+    AdHocSchemaManager.cpp
     QueryEdgePropsTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
@@ -188,6 +192,7 @@ nebula_add_test(edge_props_test)
 
 add_executable(
     query_stats_test
+    AdHocSchemaManager.cpp
     QueryStatsTest.cpp
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
@@ -215,6 +220,7 @@ nebula_add_test(query_stats_test)
 
 add_executable(
     storage_client_test
+    AdHocSchemaManager.cpp
     StorageClientTest.cpp
     $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:storage_service_handler>

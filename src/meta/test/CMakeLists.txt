@@ -1,23 +1,3 @@
-add_executable(
-    file_based_schema_manager_test
-    FileBasedSchemaManagerTest.cpp
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:network_obj>
-)
-nebula_link_libraries(
-    file_based_schema_manager_test
-    ${THRIFT_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(file_based_schema_manager_test)
 
 add_executable(
     meta_utils_test
