@@ -27,11 +27,11 @@ Status CreateSpaceExecutor::prepare() {
                 break;
         }
     }
-    if (partNum_ == 0) {
-        return Status::Error("Partition_num value illegal");
+    if (partNum_ <= 0) {
+        return Status::Error("Partition_num value should be greater than zero");
     }
-    if (replicaFactor_ == 0) {
-        return Status::Error("Replica_factor value illegal");
+    if (replicaFactor_ <= 0) {
+        return Status::Error("Replica_factor value should be greater than zero");
     }
     return Status::OK();
 }

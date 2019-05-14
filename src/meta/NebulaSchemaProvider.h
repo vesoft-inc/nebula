@@ -39,7 +39,9 @@ public:
     };
 
 public:
-    int32_t getVersion() const noexcept override;
+    explicit NebulaSchemaProvider(SchemaVer ver) : ver_(ver) {}
+
+    SchemaVer getVersion() const noexcept override;
     size_t getNumFields() const noexcept override;
 
     int64_t getFieldIndex(const folly::StringPiece name) const override;
@@ -52,11 +54,13 @@ public:
     std::shared_ptr<const SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
 
+    void addField(folly::StringPiece name, nebula::cpp2::ValueType&& type);
+
 protected:
     NebulaSchemaProvider() = default;
 
 protected:
-    int32_t ver_{0};
+    SchemaVer ver_{-1};
 
     // fieldname -> index
     std::unordered_map<std::string, int64_t> fieldNameIndex_;

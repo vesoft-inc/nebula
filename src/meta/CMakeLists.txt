@@ -20,16 +20,23 @@ add_library(
     processors/ListSpacesProcessor.cpp
     processors/DropSpaceProcessor.cpp
     processors/GetPartsAllocProcessor.cpp
-    processors/AddTagProcessor.cpp
+    processors/CreateTagProcessor.cpp
+    processors/CreateEdgeProcessor.cpp
+    processors/AlterTagProcessor.cpp
+    processors/AlterEdgeProcessor.cpp
     processors/GetTagProcessor.cpp
+    processors/GetEdgeProcessor.cpp
     processors/ListTagsProcessor.cpp
+    processors/ListEdgesProcessor.cpp
     processors/RemoveTagProcessor.cpp
+    processors/RemoveEdgeProcessor.cpp
     processors/GetProcessor.cpp
     processors/MultiGetProcessor.cpp
     processors/MultiPutProcessor.cpp
     processors/RemoveProcessor.cpp
     processors/RemoveRangeProcessor.cpp
     processors/ScanProcessor.cpp
+    processors/HBProcessor.cpp
 )
 
 add_dependencies(
@@ -50,6 +57,6 @@ add_dependencies(
     base_obj
     meta_thrift_obj
     common_thrift_obj
-)
+    schema_obj)
 
 add_subdirectory(test)

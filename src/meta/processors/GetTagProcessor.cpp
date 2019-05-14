@@ -10,18 +10,23 @@ namespace nebula {
 namespace meta {
 
 void GetTagProcessor::process(const cpp2::GetTagReq& req) {
+    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
-    std::string val;
     std::string tagKey = MetaServiceUtils::schemaTagKey(req.get_space_id(),
                                                         req.get_tag_id(),
                                                         req.get_version());
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, std::move(tagKey), &val);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    auto ret = doGet(std::move(tagKey));
+    if (!ret.ok()) {
+        LOG(ERROR) << "Get Tag SpaceID: " << req.get_space_id() << ", tagID: " << req.get_tag_id()
+                   << ", version " << req.get_version() << " Not Found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    resp_.set_schema(MetaServiceUtils::parseSchema(val));
+    LOG(INFO) << "Get Tag SpaceID: " << req.get_space_id() << ", tagID: " << req.get_tag_id()
+              << ", version " << req.get_version();
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    resp_.set_schema(MetaServiceUtils::parseSchema(ret.value()));
     onFinished();
 }
 }  // namespace meta

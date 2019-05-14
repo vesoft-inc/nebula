@@ -157,7 +157,7 @@ void NebulaStore::init() {
             }
         }
     }
-    LOG(INFO) << "Init data from partManager...";
+    LOG(INFO) << "Init data from partManager for " << options_.local_;
     auto partsMap = partMan_->parts(options_.local_);
     for (auto& entry : partsMap) {
         auto spaceId = entry.first;

@@ -38,7 +38,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
         iter->next();
     }
 
-    deleteKeys.emplace_back(MetaServiceUtils::indexKey(EntryType::SPACE, req.get_space_name()));
+    deleteKeys.emplace_back(MetaServiceUtils::indexSpaceKey(req.get_space_name()));
     deleteKeys.emplace_back(MetaServiceUtils::spaceKey(spaceId));
 
     // TODO(YT) delete Tag/Edge under the space

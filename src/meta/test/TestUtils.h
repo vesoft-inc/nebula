@@ -93,15 +93,15 @@ public:
         data.emplace_back(MetaServiceUtils::spaceKey(id), "test_space");
         kv->asyncMultiPut(0, 0, std::move(data),
                           [&] (kvstore::ResultCode code, HostAddr leader) {
-                              ret = (code == kvstore::ResultCode::SUCCEEDED);
-                              UNUSED(leader);
-                          });
+            ret = (code == kvstore::ResultCode::SUCCEEDED);
+            UNUSED(leader);
+        });
         return ret;
     }
 
-    static void mockTag(kvstore::KVStore* kv, int32_t tagNum, int64_t version) {
+    static void mockTag(kvstore::KVStore* kv, int32_t tagNum, SchemaVer version = 0) {
         std::vector<nebula::kvstore::KV> tags;
-        int64_t ver = version;
+        SchemaVer ver = version;
         for (auto t = 0; t < tagNum; t++) {
             TagID tagId = t;
             nebula::cpp2::Schema srcsch;
@@ -113,16 +113,43 @@ public:
             }
             auto tagName = folly::stringPrintf("tag_%d", tagId);
             auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
-            tags.emplace_back(MetaServiceUtils::indexKey(EntryType::TAG, tagName), tagIdVal);
+            tags.emplace_back(MetaServiceUtils::indexTagKey(1, tagName), tagIdVal);
             tags.emplace_back(MetaServiceUtils::schemaTagKey(1, tagId, ver++),
                               MetaServiceUtils::schemaTagVal(tagName, srcsch));
         }
 
         kv->asyncMultiPut(0, 0, std::move(tags),
                                 [] (kvstore::ResultCode code, HostAddr leader) {
-                                    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
-                                    UNUSED(leader);
-                                });
+            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            UNUSED(leader);
+        });
+    }
+
+    static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum, SchemaVer version = 0) {
+        std::vector<nebula::kvstore::KV> edges;
+        SchemaVer ver = version;
+        for (auto t = 0; t < edgeNum; t++) {
+            EdgeType edgeType = t;
+            nebula::cpp2::Schema srcsch;
+            for (auto i = 0; i < 2; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = folly::stringPrintf("edge_%d_col_%d", edgeType, i);
+                column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
+                srcsch.columns.emplace_back(std::move(column));
+            }
+            auto edgeName = folly::stringPrintf("edge_%d", edgeType);
+            auto edgeTypeVal = std::string(reinterpret_cast<const char*>(&edgeType),
+                                           sizeof(edgeType));
+            edges.emplace_back(MetaServiceUtils::indexEdgeKey(1, edgeName), edgeTypeVal);
+            edges.emplace_back(MetaServiceUtils::schemaEdgeKey(1, edgeType, ver++),
+                               MetaServiceUtils::schemaEdgeVal(edgeName, srcsch));
+        }
+
+        kv->asyncMultiPut(0, 0, std::move(edges),
+                                [] (kvstore::ResultCode code, HostAddr leader) {
+            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            UNUSED(leader);
+        });
     }
 
     struct ServerContext {

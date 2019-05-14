@@ -25,19 +25,20 @@
 namespace nebula {
 namespace dataman {
 
-std::string NebulaCodecImpl::encode(std::vector<Value> values) {
-    RowWriter writer(nullptr);
-    for (auto&  value : values) {
+std::string NebulaCodecImpl::encode(std::vector<Value> values,
+                                    std::shared_ptr<const meta::SchemaProviderIf> schema) {
+    RowWriter writer(schema);
+    for (auto& value : values) {
         if (value.type() == typeid(int)) {
-            writer <<  boost::any_cast<int>(value);
+            writer << boost::any_cast<int>(value);
         } else if (value.type() == typeid(std::string)) {
-            writer <<  boost::any_cast<std::string>(value);
+            writer << boost::any_cast<std::string>(value);
         } else if (value.type() == typeid(double)) {
-            writer <<  boost::any_cast<double>(value);
+            writer << boost::any_cast<double>(value);
         } else if (value.type() == typeid(float)) {
-            writer <<  boost::any_cast<float>(value);
+            writer << boost::any_cast<float>(value);
         } else if (value.type() == typeid(bool)) {
-            writer <<  boost::any_cast<bool>(value);
+            writer << boost::any_cast<bool>(value);
         } else {
             LOG(ERROR) << "Value Type :" << value.type().name() << std::endl;
         }
@@ -46,28 +47,24 @@ std::string NebulaCodecImpl::encode(std::vector<Value> values) {
     return result;
 }
 
+
 StatusOr<std::unordered_map<std::string, Value>>
 NebulaCodecImpl::decode(std::string encoded,
-                        std::vector<std::pair<std::string, cpp2::SupportedType>> fields) {
+                        std::shared_ptr<const meta::SchemaProviderIf> schema) {
     if (encoded.empty()) {
         return Status::Error("encoded string is empty");
     }
-    if (fields.size() == 0) {
-        return Status::Error("fields is not set");
-    }
-
-    auto schema = std::make_shared<SchemaWriter>();
-    for (auto iter = fields.begin(); iter != fields.end(); iter++) {
-        schema->appendCol(iter->first, iter->second);
+    if (!schema) {
+        return Status::Error("schema is not set");
     }
 
     folly::StringPiece piece;
     ResultType code;
     auto reader = RowReader::getRowReader(encoded, schema);
     std::unordered_map<std::string, Value> result;
-    for (auto iter = fields.begin(); iter != fields.end(); iter++) {
-        auto field = iter->first;
-        switch (iter->second) {
+    for (size_t index = 0; index < schema->getNumFields(); index++) {
+        auto field = schema->getFieldName(index);
+        switch (schema->getFieldType(index).get_type()) {
             case cpp2::SupportedType::BOOL:
                 bool b;
                 code = reader->getBool(field, b);

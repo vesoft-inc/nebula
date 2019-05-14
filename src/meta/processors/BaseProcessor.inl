@@ -21,6 +21,17 @@ void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
 }
 
 template<typename RESP>
+StatusOr<std::unique_ptr<kvstore::KVIterator>>
+BaseProcessor<RESP>::doPrefix(const std::string& key) {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, key, &iter);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        return Status::Error("Prefix Failed");
+    }
+    return iter;
+}
+
+template<typename RESP>
 StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
     std::string value;
     auto code = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_,
@@ -123,7 +134,7 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, kIdKey, &val);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        CHECK_EQ(ret, kvstore::ResultCode::ERR_KEY_NOT_FOUND);
+        CHECK_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
         id = 1;
     } else {
         id = *reinterpret_cast<const int32_t*>(val.c_str()) + 1;
@@ -152,36 +163,45 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 }
 
 template<typename RESP>
-Status BaseProcessor<RESP>::hostsExist(const std::vector<std::string> &hostsKey) {
-    for (const auto& hostKey : hostsKey) {
-        std::string val;
-        auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, hostKey , &val);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
-                nebula::cpp2::HostAddr host = MetaServiceUtils::parseHostKey(hostKey);
-                std::string ip = NetworkUtils::intToIPv4(host.get_ip());
-                int32_t port = host.get_port();
-                VLOG(3) << "Error, host IP " << ip << " port " << port
-                        << " not exist";
-                return Status::HostNotFound();
-            } else {
-                VLOG(3) << "Unknown Error ,, ret = " << static_cast<int32_t>(ret);
-                return Status::Error("Unknown error!");
-            }
-        }
+Status BaseProcessor<RESP>::hostExist(const std::string& hostKey) {
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, hostKey , &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return Status::OK();
     }
-    return Status::OK();
+    return Status::HostNotFound();
 }
 
 template<typename RESP>
 StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) {
-    auto indexKey = MetaServiceUtils::indexKey(EntryType::SPACE, name);
+    auto indexKey = MetaServiceUtils::indexSpaceKey(name);
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
     }
-    return Status::SpaceNotFound();
+    return Status::SpaceNotFound(folly::stringPrintf("Space %s not found", name.c_str()));
+}
+
+template<typename RESP>
+StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::string& name) {
+    auto indexKey = MetaServiceUtils::indexTagKey(spaceId, name);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return *reinterpret_cast<const TagID*>(val.c_str());
+    }
+    return Status::TagNotFound(folly::stringPrintf("Tag %s not found", name.c_str()));
+}
+
+template<typename RESP>
+StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId, const std::string& name) {
+    auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, name);
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const EdgeType*>(ret.value().c_str());
+    }
+    return Status::EdgeNotFound(folly::stringPrintf("Edge %s not found", name.c_str()));
 }
 
 }  // namespace meta

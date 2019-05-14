@@ -9,13 +9,14 @@
 
 namespace nebula {
 
-std::string DefineTagSentence::toString() const {
+std::string CreateTagSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "DEFINE TAG ";
+    buf += "CREATE TAG ";
     buf += *name_;
     buf += " (";
-    for (auto *col : columns_->columnSpecs()) {
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto *col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
@@ -25,19 +26,21 @@ std::string DefineTagSentence::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!colSpecs.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     buf += ")";
     return buf;
 }
 
-
-std::string DefineEdgeSentence::toString() const {
+std::string CreateEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "DEFINE EDGE ";
+    buf += "CREATE EDGE ";
     buf += *name_;
     buf += " (";
-    for (auto &col : columns_->columnSpecs()) {
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
@@ -47,33 +50,60 @@ std::string DefineEdgeSentence::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!colSpecs.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     buf += ")";
     return buf;
 }
 
+std::string AlterTagOptItem::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += getOptTypeStr();
+    buf += " (";
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto &col : colSpecs) {
+        buf += *col->name();
+        buf += " ";
+        buf += columnTypeToString(col->type());
+        if (col->hasTTL()) {
+            buf += " TTL = ";
+            buf += std::to_string(col->ttl());
+        }
+        buf += ",";
+    }
+    if (!colSpecs.empty()) {
+       buf.resize(buf.size() - 1);
+    }
+    buf += ")";
+    return buf;
+}
+
+std::string AlterTagOptList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (uint32_t i = 0; i < alterTagitems_.size(); i++) {
+        auto &item = alterTagitems_[i];
+        if (i > 0) {
+            buf += ",";
+        }
+        buf += item->toString();
+    }
+    return buf;
+}
 
 std::string AlterTagSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "ALTER TAG ";
     buf += *name_;
-    buf += "(";
-    for (auto &col : columns_->columnSpecs()) {
-        buf += *col->name();
+    for (auto &tagOpt : opts_->alterTagItems()) {
         buf += " ";
-        buf += columnTypeToString(col->type());
-        if (col->hasTTL()) {
-            buf += " TTL = ";
-            buf += std::to_string(col->ttl());
-        }
-        buf += ",";
+        buf += tagOpt->toString();
     }
-    buf.resize(buf.size() - 1);
-    buf += ")";
     return buf;
 }
-
 
 std::string AlterEdgeSentence::toString() const {
     std::string buf;
@@ -81,7 +111,8 @@ std::string AlterEdgeSentence::toString() const {
     buf += "ALTER EDGE ";
     buf += *name_;
     buf += "(";
-    for (auto &col : columns_->columnSpecs()) {
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
@@ -91,22 +122,35 @@ std::string AlterEdgeSentence::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!colSpecs.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     buf += ")";
     return buf;
 }
 
-
 std::string DescribeTagSentence::toString() const {
-    std::string buf = "DESCRIBE TAG ";
-    buf += *name_;
-    return buf;
+    return folly::stringPrintf("DESCRIBE TAG %s", name_.get()->c_str());
+}
+
+std::string DescribeEdgeSentence::toString() const {
+    return folly::stringPrintf("DESCRIBE EDGE %s", name_.get()->c_str());
+}
+
+std::string RemoveTagSentence::toString() const {
+    return folly::stringPrintf("REMOVE TAG %s", name_.get()->c_str());
 }
 
 
-std::string DescribeEdgeSentence::toString() const {
-    std::string buf = "DESCRIBE EDGE ";
-    buf += *name_;
+std::string RemoveEdgeSentence::toString() const {
+    return folly::stringPrintf("REMOVE TAG %s", name_.get()->c_str());
+}
+
+std::string YieldSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "YIELD ";
+    buf += yieldColumns_->toString();
     return buf;
 }
 

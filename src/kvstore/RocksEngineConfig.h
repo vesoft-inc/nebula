@@ -31,7 +31,7 @@ DECLARE_bool(rocksdb_disable_wal);
 // BlockBasedTable block_cache
 DECLARE_int64(block_cache);
 
-DECLARE_uint32(batch_reserved_bytes);
+DECLARE_int32(batch_reserved_bytes);
 
 DECLARE_string(part_man_type);
 

@@ -11,7 +11,6 @@
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 #include <folly/SharedMutex.h>
-#include "interface/gen-cpp2/meta_types.h"
 #include "base/StatusOr.h"
 #include "time/Duration.h"
 #include "kvstore/KVStore.h"
@@ -36,9 +35,17 @@ public:
 GENERATE_LOCK(space);
 GENERATE_LOCK(id);
 GENERATE_LOCK(tag);
+GENERATE_LOCK(edge);
 
 #undef GENERATE_LOCK
 };
+
+#define CHECK_SPACE_ID_AND_RETURN(spaceID) \
+    if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        onFinished(); \
+        return; \
+    }
 
 /**
  * Check segemnt is consist of numbers and letters and should not empty.
@@ -49,9 +56,6 @@ GENERATE_LOCK(tag);
         onFinished(); \
         return; \
     }
-
-#define MAX_VERSION_HEX 0x7FFFFFFFFFFFFFFF
-#define MIN_VERSION_HEX 0x0000000000000000
 
 template<typename RESP>
 class BaseProcessor {
@@ -91,6 +95,7 @@ protected:
             return cpp2::ErrorCode::SUCCEEDED;
         case Status::kSpaceNotFound:
         case Status::kHostNotFound:
+        case Status::kTagNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -119,6 +124,8 @@ protected:
      * General put function.
      * */
     void doPut(std::vector<kvstore::KV> data);
+
+    StatusOr<std::unique_ptr<kvstore::KVIterator>> doPrefix(const std::string& key);
 
     /**
      * General get function.
@@ -167,14 +174,24 @@ protected:
     Status spaceExist(GraphSpaceID spaceId);
 
     /**
-     * Check multi host_name exists or not.
+     * Check host has been registered or not.
      * */
-    Status hostsExist(const std::vector<std::string>& name);
+    Status hostExist(const std::string& hostKey);
 
     /**
      * Return the spaceId for name.
      * */
     StatusOr<GraphSpaceID> getSpaceId(const std::string& name);
+
+    /**
+     * Return the tagId for name.
+     */
+    StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
+
+    /**
+     * Return the edgeType for name.
+     */
+    StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

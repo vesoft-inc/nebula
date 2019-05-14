@@ -27,6 +27,9 @@ public:
 
 private:
     AlterTagSentence                           *sentence_{nullptr};
+
+    nebula::meta::cpp2::AlterSchemaOp
+    getTagOpType(const AlterTagOptItem::OptionType type);
 };
 
 }   // namespace graph

@@ -21,6 +21,7 @@ add_library(
         MutateSentences.cpp
         TraverseSentences.cpp
         AdminSentences.cpp
+        UserSentences.cpp
 )
 
 add_dependencies(parser_obj base_obj)

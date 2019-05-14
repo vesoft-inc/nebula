@@ -13,7 +13,6 @@
 #include "parser/SequentialSentences.h"
 #include "meta/SchemaManager.h"
 #include "graph/VariableHolder.h"
-#include "graph/mock/StorageService.h"
 #include "meta/client/MetaClient.h"
 
 /**
@@ -40,7 +39,7 @@ public:
         variableHolder_ = std::make_unique<VariableHolder>();
     }
 
-    ~ExecutionContext() = default;
+    ~ExecutionContext();
 
     RequestContext<cpp2::ExecutionResponse>* rctx() const {
         return rctx_.get();

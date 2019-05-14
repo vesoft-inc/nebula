@@ -76,15 +76,17 @@ protected:
 
     std::string valueTypeToString(nebula::cpp2::ValueType type);
 
+    nebula::cpp2::SupportedType columnTypeToSupportedType(ColumnType type);
+
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {
-            return Status::Error("Please choose a graph space with `USE SPACE' firstly");
+            return Status::Error("Please choose a graph space with `USE spaceName' firstly");
         }
         return Status::OK();
     }
 
 protected:
-    ExecutionContext                           *ectx_;
+    ExecutionContext                            *ectx_;
     std::function<void()>                       onFinish_;
     std::function<void(Status)>                 onError_;
 };

@@ -15,12 +15,14 @@ add_library(
     UseExecutor.cpp
     GoExecutor.cpp
     PipeExecutor.cpp
-    # DefineEdgeExecutor.cpp
-    # DefineTagExecutor.cpp
+    CreateEdgeExecutor.cpp
+    CreateTagExecutor.cpp
     AlterEdgeExecutor.cpp
     AlterTagExecutor.cpp
-    # DescribeTagExecutor.cpp
-    # DescribeEdgeExecutor.cpp
+    RemoveTagExecutor.cpp
+    RemoveEdgeExecutor.cpp
+    DescribeTagExecutor.cpp
+    DescribeEdgeExecutor.cpp
     InsertVertexExecutor.cpp
     InsertEdgeExecutor.cpp
     AssignmentExecutor.cpp
@@ -31,11 +33,7 @@ add_library(
     CreateSpaceExecutor.cpp
     DropSpaceExecutor.cpp
     ShowExecutor.cpp
-    mock/PropertiesSchema.cpp
-    mock/EdgeSchema.cpp
-    mock/TagSchema.cpp
-    mock/SchemaManager.cpp
-    mock/StorageService.cpp
+    YieldExecutor.cpp
 )
 add_dependencies(
     graph_obj

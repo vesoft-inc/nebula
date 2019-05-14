@@ -24,14 +24,23 @@ enum ErrorCode {
     E_NO_HOSTS       = -21,
     E_EXISTED        = -22,
     E_NOT_FOUND      = -23,
+    E_INVALID_HOST   = -24,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
     E_STORE_SEGMENT_ILLEGAL  = -32,
-    E_KEY_NOT_FOUND          = -33,
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
+
+
+enum AlterSchemaOp {
+    ADD    = 0x01,
+    CHANGE = 0x02,
+    DROP   = 0x03,
+    UNKNOWN = 0x04,
+} (cpp.enum_strict)
+
 
 union ID {
     1: common.GraphSpaceID  space_id,
@@ -52,12 +61,25 @@ struct Pair {
 struct TagItem {
     1: common.TagID         tag_id,
     2: string               tag_name,
-    3: i64                  version,
+    3: common.SchemaVer     version,
+    4: common.Schema        schema,
+}
+
+struct AlterSchemaItem {
+    1: AlterSchemaOp        op,
+    2: common.Schema        schema,
+}
+
+struct EdgeItem {
+    1: common.EdgeType      edge_type,
+    2: string               edge_name,
+    3: common.SchemaVer     version,
     4: common.Schema        schema,
 }
 
 struct ExecResp {
     1: ErrorCode        code,
+    // For custom kv operations, it is useless.
     2: ID               id,
     // Valid if ret equals E_LEADER_CHANGED.
     3: common.HostAddr  leader,
@@ -96,10 +118,16 @@ struct GetSpaceResp {
 }
 
 // Tags related operations
-struct AddTagReq {
+struct CreateTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
     3: common.Schema       schema,
+}
+
+struct AlterTagReq {
+    1: common.GraphSpaceID    space_id,
+    2: string                 tag_name,
+    3: list<AlterSchemaItem>  tag_items,
 }
 
 struct RemoveTagReq {
@@ -121,24 +149,43 @@ struct ListTagsResp {
 struct GetTagReq {
     1: common.GraphSpaceID space_id,
     2: common.TagID        tag_id,
-    3: i64                 version,
+    3: common.SchemaVer    version,
 }
 
 struct GetTagResp {
     1: ErrorCode        code,
-    2: common.Schema    schema,
+    2: common.HostAddr  leader,
+    3: common.Schema    schema,
 }
 
 // Edge related operations.
-struct AddEdgeReq {
+struct CreateEdgeReq {
     1: common.GraphSpaceID space_id,
     2: string              edge_name,
     3: common.Schema       schema,
 }
 
-struct RemoveEdgeReq {
+struct AlterEdgeReq {
+    1: common.GraphSpaceID     space_id,
+    2: string                  edge_name,
+    3: list<AlterSchemaItem>   edge_items,
+}
+
+struct GetEdgeReq {
     1: common.GraphSpaceID space_id,
     2: common.EdgeType     edge_type,
+    3: common.SchemaVer    version,
+}
+
+struct GetEdgeResp {
+    1: ErrorCode        code,
+    2: common.HostAddr  leader,
+    3: common.Schema    schema,
+}
+
+struct RemoveEdgeReq {
+    1: common.GraphSpaceID space_id,
+    2: string              edge_name,
 }
 
 struct ListEdgesReq {
@@ -149,17 +196,7 @@ struct ListEdgesResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<IdName> edges,
-}
-
-struct GetEdgeReq {
-    1: common.GraphSpaceID space_id,
-    2: common.EdgeType     edge_type,
-    3: i64                 version,
-}
-
-struct GetEdgeResp {
-    1: common.Schema    schema,
+    3: list<EdgeItem> edges,
 }
 
 // Host related operations.
@@ -200,10 +237,6 @@ struct MultiPutReq {
     2: list<Pair> pairs,
 }
 
-struct MultiPutResp {
-    1: ErrorCode code,
-}
-
 struct GetReq {
     1: string segment,
     2: string key,
@@ -211,7 +244,8 @@ struct GetReq {
 
  struct GetResp {
     1: ErrorCode code,
-    2: string    value,
+    2: common.HostAddr  leader,
+    3: string    value,
 }
 
 struct MultiGetReq {
@@ -221,7 +255,8 @@ struct MultiGetReq {
 
 struct MultiGetResp {
     1: ErrorCode    code,
-    2: list<string> values,
+    2: common.HostAddr  leader,
+    3: list<string> values,
 }
 
 struct RemoveReq {
@@ -229,18 +264,10 @@ struct RemoveReq {
     2: string key,
 }
 
-struct RemoveResp {
-    1: ErrorCode code,
-}
-
 struct RemoveRangeReq {
     1: string segment,
     2: string start,
     3: string end,
-}
-
-struct RemoveRangeResp {
-    1: ErrorCode code,
 }
 
 struct ScanReq {
@@ -251,7 +278,17 @@ struct ScanReq {
 
 struct ScanResp {
     1: ErrorCode code,
-    2: list<string> values,
+    2: common.HostAddr  leader,
+    3: list<string> values,
+}
+
+struct HBResp {
+    1: ErrorCode code,
+    2: common.HostAddr  leader,
+}
+
+struct HBReq {
+    1: common.HostAddr host,
 }
 
 service MetaService {
@@ -260,12 +297,14 @@ service MetaService {
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
 
-    ExecResp addTag(1: AddTagReq req);
+    ExecResp createTag(1: CreateTagReq req);
+    ExecResp alterTag(1: AlterTagReq req);
     ExecResp removeTag(1: RemoveTagReq req);
     GetTagResp getTag(1: GetTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);
 
-    ExecResp addEdge(1: AddEdgeReq req);
+    ExecResp createEdge(1: CreateEdgeReq req);
+    ExecResp alterEdge(1: AlterEdgeReq req);
     ExecResp removeEdge(1: RemoveEdgeReq req);
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
@@ -276,11 +315,13 @@ service MetaService {
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
 
-    MultiPutResp     multiPut(1: MultiPutReq req);
-    GetResp          get(1: GetReq req);
-    MultiGetResp     multiGet(1: MultiGetReq req);
-    RemoveResp       remove(1: RemoveReq req);
-    RemoveRangeResp  removeRange(1: RemoveRangeReq req);
-    ScanResp         scan(1: ScanReq req);
+    ExecResp multiPut(1: MultiPutReq req);
+    GetResp get(1: GetReq req);
+    MultiGetResp multiGet(1: MultiGetReq req);
+    ExecResp remove(1: RemoveReq req);
+    ExecResp removeRange(1: RemoveRangeReq req);
+    ScanResp scan(1: ScanReq req);
+
+    HBResp           heartBeat(1: HBReq req);
 }
 

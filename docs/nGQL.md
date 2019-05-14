@@ -98,7 +98,7 @@
 #### Choose a graph space
 Nebula supports multiple graph spaces. Data in different graph spaces are physically isolated. Before executing a query, a graph space needs to be selected using the following statement
 
-<span style="color:blue">**USE GRAPH SPACE**</span>  <graphspace_name>
+<span style="color:blue">**USE **</span>  <graphspace_name>
 
 #### Return a data set
 Simply return a single value or a data set

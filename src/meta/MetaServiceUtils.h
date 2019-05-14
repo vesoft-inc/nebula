@@ -8,7 +8,7 @@
 #define META_METAUTILS_H_
 
 #include "base/Base.h"
-#include "interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace meta {
@@ -52,11 +52,21 @@ public:
 
     static nebula::cpp2::HostAddr parseHostKey(folly::StringPiece key);
 
-    static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, int64_t version);
+    static std::string schemaEdgePrefix(GraphSpaceID spaceId, EdgeType edgeType);
 
-    static std::string schemaEdgeVal(nebula::cpp2::Schema schema);
+    static std::string schemaEdgesPrefix(GraphSpaceID spaceId);
 
-    static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, int64_t version);
+    static std::string schemaEdgeKey(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer version);
+
+    static std::string schemaEdgeVal(const std::string& name, nebula::cpp2::Schema schema);
+
+    static SchemaVer parseEdgeVersion(folly::StringPiece key);
+
+    static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, SchemaVer version);
+
+    static SchemaVer parseTagVersion(folly::StringPiece key);
+
+    static std::string schemaTagPrefix(GraphSpaceID spaceId, TagID tagId);
 
     static std::string schemaTagsPrefix(GraphSpaceID spaceId);
 
@@ -64,9 +74,17 @@ public:
 
     static nebula::cpp2::Schema parseSchema(folly::StringPiece rawData);
 
-    static std::string indexKey(EntryType type, const std::string& name);
+    static std::string indexSpaceKey(const std::string& name);
+
+    static std::string indexTagKey(GraphSpaceID spaceId, const std::string& name);
+
+    static std::string indexEdgeKey(GraphSpaceID spaceId, const std::string& name);
 
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
+
+    static cpp2::ErrorCode alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                           const nebula::cpp2::ColumnDef col,
+                                           const cpp2::AlterSchemaOp op);
 };
 
 }  // namespace meta

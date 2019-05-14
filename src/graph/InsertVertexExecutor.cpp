@@ -24,19 +24,28 @@ Status InsertVertexExecutor::prepare() {
         return status;
     }
 
-    overwritable_ = sentence_->overwritable();
-    vertex_ = sentence_->vertex();
-    tagId_ = ectx()->schemaManager()->toTagID(*vertex_);
-    properties_ = sentence_->properties();
+    // TODO(dutor) To support multi-tag insertion
+    auto tagItems = sentence_->tagItems();
+    if (tagItems.size() > 1) {
+        return Status::Error("Multi-tag not supported yet");
+    }
+
+    auto *tagName = tagItems[0]->tagName();
+    properties_ = tagItems[0]->properties();
+
     rows_ = sentence_->rows();
-    // TODO(dutor) check on property names and types
+    // TODO(dutor) To check whether the number of props and values matches.
     if (rows_.empty()) {
         return Status::Error("VALUES cannot be empty");
     }
-    auto space = ectx()->rctx()->session()->space();
-    schema_ = ectx()->schemaManager()->getTagSchema(space, tagId_);
+
+    overwritable_ = sentence_->overwritable();
+
+    auto spaceId = ectx()->rctx()->session()->space();
+    tagId_ = ectx()->schemaManager()->toTagID(spaceId, *tagName);
+    schema_ = ectx()->schemaManager()->getTagSchema(spaceId, tagId_);
     if (schema_ == nullptr) {
-        return Status::Error("No schema found for `%s'", vertex_->c_str());
+        return Status::Error("No schema found for `%s'", tagName->c_str());
     }
     return Status::OK();
 }
@@ -50,11 +59,13 @@ void InsertVertexExecutor::execute() {
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto id = row->id();
-        auto exprs = row->values();
+        auto expressions = row->values();
         std::vector<VariantType> values;
-        values.resize(exprs.size());
-        auto eval = [] (auto *expr) { return expr->eval(); };
-        std::transform(exprs.begin(), exprs.end(), values.begin(), eval);
+
+        values.reserve(expressions.size());
+        for (auto *expr : expressions) {
+            values.emplace_back(expr->eval());
+        }
 
         auto &vertex = vertices[i];
         std::vector<Tag> tags(1);

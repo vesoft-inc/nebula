@@ -15,7 +15,39 @@ std::string PropertyList::toString() const {
         buf += *prop;
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+
+std::string VertexTagItem::toString() const {
+    std::string buf;
+    buf.reserve(256);
+
+    buf += *tagName_;
+    if (properties_ != nullptr) {
+        buf += "(";
+        buf += properties_->toString();
+        buf += ")";
+    }
+
+    return buf;
+}
+
+
+std::string VertexTagList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+
+    for (auto &item : tagItems_) {
+        buf += item->toString();
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -27,7 +59,9 @@ std::string ValueList::toString() const {
         buf += expr->toString();
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -35,9 +69,9 @@ std::string ValueList::toString() const {
 std::string VertexRowItem::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "(";
     buf += std::to_string(id_);
-    buf += ": ";
+    buf += ":";
+    buf += "(";
     buf += values_->toString();
     buf += ")";
     return buf;
@@ -51,7 +85,9 @@ std::string VertexRowList::toString() const {
         buf += item->toString();
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -60,10 +96,8 @@ std::string InsertVertexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "INSERT VERTEX ";
-    buf += *vertex_;
-    buf += "(";
-    buf += properties_->toString();
-    buf += ") VALUES";
+    buf += tagList_->toString();
+    buf += " VALUES ";
     buf += rows_->toString();
     return buf;
 }
@@ -72,15 +106,17 @@ std::string InsertVertexSentence::toString() const {
 std::string EdgeRowItem::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "(";
+
     buf += std::to_string(srcid_);
-    buf += " -> ";
+    buf += "->";
     buf += std::to_string(dstid_);
     if (rank_ != 0) {
-        buf += " @";
+        buf += "@";
         buf += std::to_string(rank_);
     }
-    buf += ": ";
+    buf += ":";
+
+    buf += "(";
     buf += values_->toString();
     buf += ")";
     return buf;
@@ -94,7 +130,9 @@ std::string EdgeRowList::toString() const {
         buf += item->toString();
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -132,7 +170,9 @@ std::string UpdateList::toString() const {
         buf += item->toString();
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 
@@ -207,7 +247,9 @@ std::string EdgeList::toString() const {
         buf += std::to_string(edge.second);
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     return buf;
 }
 

@@ -33,11 +33,27 @@ bool MemPartManager::partExist(const HostAddr& host, GraphSpaceID spaceId, Parti
     return false;
 }
 
-MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr host)
+MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client)
     : localHost_(std::move(host)) {
-    client_ = std::make_unique<meta::MetaClient>();
+    if (nullptr == client) {
+        LOG(INFO) << "MetaClient is nullptr, create new one";
+        // multi instances use one metaclient
+        static auto clientPtr = std::make_unique<meta::MetaClient>();
+        static std::once_flag flag;
+        std::call_once(flag, std::bind(&meta::MetaClient::init, clientPtr.get()));
+        client_ = clientPtr.get();
+    } else {
+        client_ = client;
+    }
+
     client_->registerListener(this);
-    client_->init();
+}
+
+MetaServerBasedPartManager::~MetaServerBasedPartManager() {
+    VLOG(3) << "~MetaServerBasedPartManager";
+    if (nullptr != client_) {
+        client_ = nullptr;
+    }
 }
 
 PartsMap MetaServerBasedPartManager::parts(const HostAddr& hostAddr) {
@@ -60,23 +76,35 @@ bool MetaServerBasedPartManager::spaceExist(const HostAddr& host,
 }
 
 void MetaServerBasedPartManager::onSpaceAdded(GraphSpaceID spaceId) {
-    CHECK_NOTNULL(handler_);
-    handler_->addSpace(spaceId);
+    if (handler_ != nullptr) {
+        handler_->addSpace(spaceId);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
 }
 
 void MetaServerBasedPartManager::onSpaceRemoved(GraphSpaceID spaceId) {
-    CHECK_NOTNULL(handler_);
-    handler_->removeSpace(spaceId);
+    if (handler_ != nullptr) {
+        handler_->removeSpace(spaceId);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
 }
 
 void MetaServerBasedPartManager::onPartAdded(const PartMeta& partMeta) {
-    CHECK_NOTNULL(handler_);
-    handler_->addPart(partMeta.spaceId_, partMeta.partId_);
+    if (handler_ != nullptr) {
+        handler_->addPart(partMeta.spaceId_, partMeta.partId_);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
 }
 
 void MetaServerBasedPartManager::onPartRemoved(GraphSpaceID spaceId, PartitionID partId) {
-    CHECK_NOTNULL(handler_);
-    handler_->removePart(spaceId, partId);
+    if (handler_ != nullptr) {
+        handler_->removePart(spaceId, partId);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
 }
 
 void MetaServerBasedPartManager::onPartUpdated(const PartMeta& partMeta) {

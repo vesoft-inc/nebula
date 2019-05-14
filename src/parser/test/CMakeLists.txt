@@ -3,6 +3,8 @@ add_executable(
     ParserTest.cpp
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:fs_obj>
 )
 nebula_link_libraries(
     parser_test
@@ -17,6 +19,8 @@ add_executable(
     ScannerTest.cpp
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:fs_obj>
 )
 nebula_link_libraries(
     scanner_test
@@ -33,6 +37,8 @@ add_executable(
     ExpressionTest.cpp
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:fs_obj>
 )
 nebula_link_libraries(
     expression_test
@@ -45,8 +51,10 @@ nebula_add_test(expression_test)
 add_executable(
     expression_encode_decode_bm
     ExpressionEncodeDecodeBenchmark.cpp
-    $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:fs_obj>
 )
 nebula_link_libraries(
     expression_encode_decode_bm

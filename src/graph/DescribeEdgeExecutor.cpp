@@ -24,9 +24,9 @@ Status DescribeEdgeExecutor::prepare() {
 
 void DescribeEdgeExecutor::execute() {
     auto *name = sentence_->name();
-    auto space = ectx()->rctx()->session()->space();
-    auto edgeType = ectx()->schemaManager()->toEdgeType(*name);
-    auto schema = ectx()->schemaManager()->getEdgeSchema(space, *name);
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto edgeType = ectx()->schemaManager()->toEdgeType(spaceId, *name);
+    auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType);
     resp_ = std::make_unique<cpp2::ExecutionResponse>();
 
     do {
@@ -34,7 +34,7 @@ void DescribeEdgeExecutor::execute() {
             onError_(Status::Error("Schema not found for edge `%s'", name->c_str()));
             return;
         }
-        std::vector<std::string> header{"Column", "Type"};
+        std::vector<std::string> header{"Field", "Type"};
         resp_->set_column_names(std::move(header));
         uint32_t numFields = schema->getNumFields();
         std::vector<cpp2::RowValue> rows;

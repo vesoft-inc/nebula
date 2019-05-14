@@ -24,9 +24,9 @@ Status DescribeTagExecutor::prepare() {
 
 void DescribeTagExecutor::execute() {
     auto *name = sentence_->name();
-    auto space = ectx()->rctx()->session()->space();
-    auto tagId = ectx()->schemaManager()->toTagID(*name);
-    auto schema = ectx()->schemaManager()->getTagSchema(space, *name);
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto tagId = ectx()->schemaManager()->toTagID(spaceId, *name);
+    auto schema = ectx()->schemaManager()->getTagSchema(spaceId, tagId);
 
     resp_ = std::make_unique<cpp2::ExecutionResponse>();
 
@@ -35,7 +35,7 @@ void DescribeTagExecutor::execute() {
             onError_(Status::Error("Schema not found for tag `%s'", name->c_str()));
             return;
         }
-        std::vector<std::string> header{"Column", "Type"};
+        std::vector<std::string> header{"Field", "Type"};
         resp_->set_column_names(std::move(header));
         uint32_t numFields = schema->getNumFields();
         std::vector<cpp2::RowValue> rows;
