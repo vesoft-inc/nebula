@@ -262,6 +262,41 @@ private:
     std::unique_ptr<std::string>                name_;
 };
 
+class RemoveTagSentence final : public Sentence {
+public:
+    explicit RemoveTagSentence(std::string *name) {
+        name_.reset(name);
+        kind_ = Kind::kRemoveTag;
+    }
+
+    std::string toString() const override;
+
+    std::string* name() const {
+        return name_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                name_;
+};
+
+
+class RemoveEdgeSentence final : public Sentence {
+public:
+    explicit RemoveEdgeSentence(std::string *name) {
+        name_.reset(name);
+        kind_ = Kind::kRemoveEdge;
+    }
+
+    std::string toString() const override;
+
+    std::string* name() const {
+        return name_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                name_;
+};
+
 
 class YieldSentence final : public Sentence {
  public:
