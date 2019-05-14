@@ -1,7 +1,7 @@
 # Nebula Graph Query Language (nGQL)
 
 ## About nGQL
-`nGQL` is a declarative, textual query language like SQL, but for graphs. Unlike SQL, nGQL is all about expressing graph patterns. nGQL is a work in progress. We will add more features and further simplify the existing ones.
+`nGQL` is a declarative, textual query language like SQL, but for graphs. Unlike SQL, nGQL is all about expressing graph patterns. nGQL is a work in progress. We will add more features and further simplify the existing ones. There might be inconsistency between the syntax specs and implementation for the time being.
 ## Goals
 - Easy to learn
 - Easy to understand
@@ -107,22 +107,22 @@ Simply return a single value or a data set
 
 <return\_value\_decl> ::= **vid** | <vid\_list> | <tuple\_list\_decl> | <var\>
 
-#### Define a tag
+#### Create a tag
 The following statement defines a **new** tag
 
-<span style="color:blue">**DEFINE TAG**</span> <tag\_name> (<prop\_def\_list>)
+<span style="color:blue">**CREATE TAG**</span> <tag\_name> (<prop\_def\_list>)
 
-<tag\_name> ::= <label\>
-<prop\_def\_list> ::= <prop\_def>+
-<prop\_def> ::= <prop\_name> <type\>
-<prop\_name> ::= <label\>
+<tag\_name> ::= <label\> <br>
+<prop\_def\_list> ::= <prop\_def>+ <br>
+<prop\_def> ::= <prop\_name>,<type\> <br>
+<prop\_name> ::= <label\> <br>
 
 #### Modify a tag type
 
-#### Define an edge type
+#### Create an edge type
 The following statement defines a **new** edge type
 
-<span style="color:blue">**DEFINE EDGE**</span> <edge\_type\_name> (<prop\_def\_list>)
+<span style="color:blue">**CREATE EDGE**</span> <edge\_type\_name> (<prop\_def\_list>)
 
 <edge\_type\_name> := <label\>
 
