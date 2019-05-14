@@ -35,7 +35,7 @@ void DescribeTagExecutor::execute() {
             onError_(Status::Error("Schema not found for tag `%s'", name->c_str()));
             return;
         }
-        std::vector<std::string> header{"Column", "Type"};
+        std::vector<std::string> header{"Field", "Type"};
         resp_->set_column_names(std::move(header));
         uint32_t numFields = schema->getNumFields();
         std::vector<cpp2::RowValue> rows;
