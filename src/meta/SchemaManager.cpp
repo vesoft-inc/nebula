@@ -30,8 +30,7 @@ std::unique_ptr<SchemaManager> SchemaManager::create() {
 
 void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
                                       TagID tag,
-                                      std::shared_ptr<SchemaProviderIf> schema
-                                      ) {
+                                      std::shared_ptr<SchemaProviderIf> schema) {
     {
         folly::RWSpinLock::WriteHolder wh(tagLock_);
         // Only version 0
