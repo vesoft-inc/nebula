@@ -763,7 +763,7 @@ AssertionResult GoTest::prepareData() {
 AssertionResult GoTest::removeData() {
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "REMOVE HOSTS 127.0.0.1:1111";
+        std::string cmd = "DROP SPACE nba";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
@@ -771,7 +771,7 @@ AssertionResult GoTest::removeData() {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "DROP SPACE nba";
+        std::string cmd = "REMOVE HOSTS 127.0.0.1:1111";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
