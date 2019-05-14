@@ -70,7 +70,7 @@ nebula>
 Before query the dataset, you should switch to an existing graph space.
 
 ```
-nebula> use space nba
+nebula> use nba
 Execution succeeded (Time spent: 154/793 us)
 ```
 
@@ -155,36 +155,38 @@ In the graph space, there are two tags (player and team) and two edges (serve an
 The Schema looks like :
 
 ```
-{
-	"nba": {
-		"tags": {
-			"player": [
-				[
-					"name: string",
-					"age: integer"
-				]
-			],
-			"team": [
-				[
-					"name: string"
-				]
-			]
-		},
-		"edges": {
-			"serve": [
-				[
-					"start_year: integer",
-					"end_year: integer"
-				]
-			],
-			"like": [
-				[
-					"likeness: integer"
-				]
-			]
-		}
-	}
-}
+Tag team:
+==================
+| Field |   Type |
+==================
+|  name | string |
+------------------
+
+Tag player:
+==================
+| Field |   Type |
+==================
+|  name | string |
+------------------
+|   age |    int |
+------------------
+
+Edge serve:
+=====================
+|      Field | Type |
+=====================
+| start_year |  int |
+---------------------
+|   end_year |  int |
+---------------------
+
+Edge like:
+===================
+|    Field | Type |
+===================
+| likeness |  int |
+-------------------
+
 ```
 
 You can create both tag and edge's schema:
@@ -201,6 +203,14 @@ CREATE EDGE like(likeness int)
 CREATE EDGE serve(start_year int, end_year int)
 ```
 
+You could describe the schema created, for example:
+
+```
+DESCRIBE TAG player
+
+DESCRIBE EDGE serve
+```
+
 The insert sentences look like the following commands.
 
 ```
@@ -213,6 +223,5 @@ INSERT VERTEX team(name) VALUES -9110170398241263635:("Magic")
 INSERT EDGE like(likeness) VALUES -8379929135833483044 -> 6663720087669302163:(90)
 
 INSERT EDGE serve(start_year, end_year) VALUES -8379929135833483044 -> 868103967282670864:(2002, 2010)
-
 ```
 
