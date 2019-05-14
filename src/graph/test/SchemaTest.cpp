@@ -48,7 +48,7 @@ TEST_F(SchemaTest, metaCommunication) {
     // test nonexistent space
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "USE SPACE default_space";
+        std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -61,7 +61,7 @@ TEST_F(SchemaTest, metaCommunication) {
     sleep(FLAGS_load_data_interval_second + 1);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "USE SPACE default_space";
+        std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -184,7 +184,7 @@ TEST_F(SchemaTest, metaCommunication) {
     sleep(FLAGS_load_data_interval_second + 1);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "USE SPACE my_space";
+        std::string query = "USE my_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
