@@ -25,18 +25,23 @@ namespace meta {
 using nebula::cpp2::SupportedType;
 using nebula::cpp2::ValueType;
 using apache::thrift::FragileConstructor::FRAGILE;
+using nebula::network::NetworkUtils;
 
 TEST(MetaClientTest, InterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockServer(10001, rootPath.path());
+
+    // use an ephemeral port
+    int32_t localMetaPort = NetworkUtils::getAvailablePort();
+    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
 
     GraphSpaceID spaceId = 0;
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     uint32_t localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, 10001)});
+        std::vector<HostAddr>{HostAddr(localIp, localMetaPort)});
+
     client->init();
     {
         // Test addHost, listHosts interface.
@@ -267,14 +272,18 @@ TEST(MetaClientTest, InterfacesTest) {
 TEST(MetaClientTest, TagTest) {
     FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTagTest.XXXXXX");
-    auto sc = TestUtils::mockServer(10001, rootPath.path());
+
+    // use an ephemeral port
+    int32_t localMetaPort = NetworkUtils::getAvailablePort();
+    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
 
     GraphSpaceID spaceId = 0;
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, 10001)});
+       std::vector<HostAddr>{HostAddr(localIp, localMetaPort)});
+
     client->init();
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
@@ -360,14 +369,18 @@ public:
 TEST(MetaClientTest, DiffTest) {
     FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockServer(10001, rootPath.path());
+
+    // use an ephemeral port
+    int32_t localMetaPort = NetworkUtils::getAvailablePort();
+    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, 10001)});
+        std::vector<HostAddr>{HostAddr(localIp, localMetaPort)});
+
     client->registerListener(listener.get());
     client->init();
     {

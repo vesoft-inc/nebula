@@ -9,25 +9,26 @@
 #include "graph/test/TestEnv.h"
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
+#include "network/NetworkUtils.h"
 
 using nebula::graph::TestEnv;
 using nebula::graph::gEnv;
 using nebula::meta::TestUtils;
 using nebula::fs::TempDir;
+using nebula::network::NetworkUtils;
 
 DECLARE_string(meta_server_addrs);
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
-    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:44503");
     google::SetStderrLogging(google::INFO);
 
     gEnv = new TestEnv();   // gtest will delete this env object for us
     ::testing::AddGlobalTestEnvironment(gEnv);
 
-    // TODO(YT) use an ephemeral port
-    int32_t localMetaPort = 10001;
+    // use an ephemeral port
+    int32_t localMetaPort = NetworkUtils::getAvailablePort();
     FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", localMetaPort);
 
     // need to start meta server
