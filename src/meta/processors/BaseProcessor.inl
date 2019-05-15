@@ -224,5 +224,76 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
     return Status::EdgeNotFound(folly::stringPrintf("Edge %s not found", name.c_str()));
 }
 
+template<typename RESP>
+StatusOr<UserID> BaseProcessor<RESP>::getUserId(const std::string& account) {
+    auto indexKey = MetaServiceUtils::indexUserKey(account);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return *reinterpret_cast<const UserID*>(val.c_str());
+    }
+    return Status::UserNotFound(folly::stringPrintf("User %s not found", account.c_str()));
+}
+
+template<typename RESP>
+StatusOr<std::shared_ptr<NebulaSchemaProvider>> BaseProcessor<RESP>::getUserSchema() {
+    auto ret = getTagId(0, GLOBAL_USER_SCHEMA_TAG);
+    if (!ret.ok()) {
+        return Status::TagNotFound(folly::stringPrintf("Tag %s not found", GLOBAL_USER_SCHEMA_TAG));
+    }
+
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto tagPrefix = MetaServiceUtils::schemaTagPrefix(0, ret.value());
+    auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, tagPrefix, &iter);
+    if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
+        return Status:: TagNotFound(folly::stringPrintf("Tag %s not found",
+                                                        GLOBAL_USER_SCHEMA_TAG));
+    }
+
+    // Get last version of tag
+    auto version = MetaServiceUtils::parseTagVersion(iter->key());
+    auto schema = MetaServiceUtils::parseSchema(iter->val());
+    auto& columns = schema.get_columns();
+
+    std::shared_ptr<NebulaSchemaProvider> schemaProv(new NebulaSchemaProvider(version));
+    for (auto& column : columns) {
+        schemaProv->addField(column.get_name(),
+                             const_cast<nebula::cpp2::ValueType &&>(column.get_type()));
+    }
+
+    return schemaProv;
+}
+
+template<typename RESP>
+bool BaseProcessor<RESP>::checkPassword(UserID userId, const std::string& password) {
+    auto userKey = MetaServiceUtils::userKey(userId);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, userKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        auto len = *reinterpret_cast<const int32_t *>(val.data());
+        return password == val.substr(sizeof(int32_t), len);
+    }
+    return false;
+}
+
+template<typename RESP>
+StatusOr<std::string> BaseProcessor<RESP>::getUserAccount(UserID userId) {
+    auto key = MetaServiceUtils::userKey(userId);
+    std::string value;
+    auto code = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_,
+                              key, &value);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        return Status::UserNotFound(folly::stringPrintf("User not found by id %d", userId));
+    }
+
+    auto schema = getUserSchema();
+    if (!schema.ok()) {
+        return Status::TagNotFound("Global user tag not found.");
+    }
+
+    auto user = MetaServiceUtils::parseUserItem(value, schema.value());
+    return user.get_account();
+}
+
 }  // namespace meta
 }  // namespace nebula

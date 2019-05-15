@@ -107,6 +107,39 @@ public:
     folly::Future<cpp2::HBResp>
     future_heartBeat(const cpp2::HBReq& req) override;
 
+    /**
+     * User manager
+     **/
+    folly::Future<cpp2::ExecResp>
+    future_createUser(const cpp2::CreateUserReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_dropUser(const cpp2::DropUserReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_alterUser(const cpp2::AlterUserReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_grantRole(const cpp2::GrantRoleReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_revokeRole(const cpp2::RevokeRoleReq& req) override;
+
+    folly::Future<cpp2::GetUserResp>
+    future_getUser(const cpp2::GetUserReq& req) override;
+
+    folly::Future<cpp2::ListUsersResp>
+    future_listUsers(const cpp2::ListUsersReq& req) override;
+
+    folly::Future<cpp2::ListRolesResp>
+    future_listRoles(const cpp2::ListRolesReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_changePassword(const cpp2::ChangePasswordReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_checkPassword(const cpp2::CheckPasswordReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
 };
