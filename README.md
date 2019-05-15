@@ -32,5 +32,4 @@ In order to prevent cloud providers monetarizing from the project without contri
 
 ## Contact
 - Please use [`GitHub issue tracker`](https://github.com/vesoft-inc/nebula/issues) for filling bugs or feature requests.
-- Please e-mail us at ``` info@vesoft.com ``` if you have any problems.
 - Join [![](https://img.shields.io/badge/slack-nebula-519dd9.svg)](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200).
