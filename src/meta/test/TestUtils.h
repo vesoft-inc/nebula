@@ -161,6 +161,7 @@ public:
 
         std::unique_ptr<apache::thrift::ThriftServer> server_;
         std::unique_ptr<std::thread> serverT_;
+        uint32_t port_;
     };
 
     static std::unique_ptr<ServerContext> mockServer(uint32_t port, const char* dataPath) {
@@ -177,7 +178,12 @@ public:
 
             LOG(INFO) << "Stop the server...";
         });
-        sleep(1);
+        while (!sc->server_->getServeEventBase()
+               || !sc->server_->getServeEventBase()->isRunning()) {
+        }
+        sc->port_ = sc->server_->getAddress().getPort();
+        LOG(INFO) << "Starting the Meta Daemon on port " << sc->port_
+                  << ", path " << dataPath;
         return sc;
     }
 };

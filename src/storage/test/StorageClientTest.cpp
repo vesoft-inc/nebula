@@ -28,14 +28,16 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
-    // use an ephemeral port
-    uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();;
-    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();;
-    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", localMetaPort);
+    // Let the system choose an available port for us
+    uint32_t localMetaPort = 0;
+
+    // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
+    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
 
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
     auto metaServerContext = meta::TestUtils::mockServer(localMetaPort, metaPath.c_str());
+    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", metaServerContext->port_);
 
     LOG(INFO) << "Create meta client...";
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);

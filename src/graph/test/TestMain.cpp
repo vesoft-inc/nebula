@@ -9,13 +9,11 @@
 #include "graph/test/TestEnv.h"
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
-#include "network/NetworkUtils.h"
 
 using nebula::graph::TestEnv;
 using nebula::graph::gEnv;
 using nebula::meta::TestUtils;
 using nebula::fs::TempDir;
-using nebula::network::NetworkUtils;
 
 DECLARE_string(meta_server_addrs);
 
@@ -27,13 +25,12 @@ int main(int argc, char **argv) {
     gEnv = new TestEnv();   // gtest will delete this env object for us
     ::testing::AddGlobalTestEnvironment(gEnv);
 
-    // use an ephemeral port
-    int32_t localMetaPort = NetworkUtils::getAvailablePort();
-    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", localMetaPort);
-
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
     // need to start meta server
     TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
     auto metaServer = TestUtils::mockServer(localMetaPort, rootPath.path());
 
+    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", metaServer->port_);
     return RUN_ALL_TESTS();
 }
