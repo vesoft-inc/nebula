@@ -14,7 +14,7 @@
 #include "process/ProcessUtils.h"
 #include "storage/test/TestUtils.h"
 #include "webservice/WebService.h"
-#include "meta/SchemaManager.h"
+#include "meta/ServerBasedSchemaManager.h"
 #include "meta/client/MetaClient.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
             options.local_, metaClient.get());
     std::unique_ptr<nebula::kvstore::KVStore> kvstore(
             nebula::kvstore::KVStore::instance(std::move(options)));
-    auto schemaMan = nebula::meta::SchemaManager::create();
+    auto schemaMan = std::make_unique<nebula::meta::ServerBasedSchemaManager>();
     schemaMan->init(metaClient.get());
 
     LOG(INFO) << "Starting Storage HTTP Service";

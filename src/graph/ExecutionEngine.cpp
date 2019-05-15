@@ -9,6 +9,7 @@
 #include "graph/ExecutionContext.h"
 #include "graph/ExecutionPlan.h"
 #include "storage/client/StorageClient.h"
+#include "meta/ServerBasedSchemaManager.h"
 
 namespace nebula {
 namespace graph {
@@ -25,7 +26,7 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
     metaClient_ = std::make_unique<meta::MetaClient>();
     metaClient_->init();
 
-    schemaManager_ = meta::SchemaManager::create();
+    schemaManager_ = std::make_unique<meta::ServerBasedSchemaManager>();
     schemaManager_->init(metaClient_.get());
     storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
     return Status::OK();

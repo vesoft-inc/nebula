@@ -16,7 +16,6 @@ namespace nebula {
 namespace meta {
 
 class ServerBasedSchemaManager : public SchemaManager {
-    friend class SchemaManager;
 public:
     ServerBasedSchemaManager() = default;
     ~ServerBasedSchemaManager();

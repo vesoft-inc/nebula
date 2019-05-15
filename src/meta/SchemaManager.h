@@ -17,9 +17,9 @@ namespace meta {
 
 class SchemaManager {
 public:
-    virtual ~SchemaManager() = default;
+    SchemaManager() = default;
 
-    static std::unique_ptr<SchemaManager> create();
+    virtual ~SchemaManager() = default;
 
     virtual std::shared_ptr<const SchemaProviderIf> getTagSchema(GraphSpaceID space,
                                                                  TagID tag,
@@ -56,9 +56,6 @@ public:
     virtual EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) = 0;
 
     virtual void init(MetaClient *client = nullptr) = 0;
-
-protected:
-    SchemaManager() = default;
 };
 }  // namespace meta
 }  // namespace nebula
