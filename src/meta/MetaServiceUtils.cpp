@@ -5,6 +5,9 @@
  */
 
 #include "meta/MetaServiceUtils.h"
+#include "dataman/RowWriter.h"
+#include "dataman/RowUpdater.h"
+#include "dataman/RowReader.h"
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
@@ -17,6 +20,8 @@ const std::string kHostsTable  = "__hosts__";   // NOLINT
 const std::string kTagsTable   = "__tags__";    // NOLINT
 const std::string kEdgesTable  = "__edges__";   // NOLINT
 const std::string kIndexTable  = "__index__";   // NOLINT
+const std::string kUsersTable  = "__user__";    // NOLINT
+const std::string kRolesTable  = "__role__";    // NOLINT
 
 const std::string kHostOnline = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";     // NOLINT
@@ -307,6 +312,130 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
     }
     LOG(WARNING) << "Column not found : " << col.get_name();
     return cpp2::ErrorCode::E_NOT_FOUND;
+}
+
+std::string MetaServiceUtils::indexUserKey(const std::string& account) {
+    std::string key;
+    EntryType type = EntryType::USER;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(account);
+    return key;
+}
+
+std::string MetaServiceUtils::userKey(UserID userId) {
+    std::string key;
+    key.reserve(64);
+    key.append(kUsersTable.data(), kUsersTable.size());
+    key.append(reinterpret_cast<const char*>(&userId), sizeof(userId));
+    return key;
+}
+
+std::string MetaServiceUtils::userVal(const std::string& password,
+                                      const cpp2::UserItem& userItem,
+                                      std::shared_ptr<const SchemaProviderIf> schema) {
+    auto len = password.size();
+    std::string val;
+    RowWriter writer(std::move(schema));
+    writer << userItem.get_account()
+           << userItem.get_first_name()
+           << userItem.get_last_name()
+           << userItem.get_email()
+           << userItem.get_phone();
+    std::string encoded(writer.encode());
+    val.reserve(sizeof(int32_t) + len + encoded.size());
+    val.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+    val.append(password);
+    val.append(encoded);
+    return val;
+}
+
+folly::StringPiece MetaServiceUtils::userItemVal(folly::StringPiece rawVal) {
+    auto offset = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(rawVal.begin());
+    return rawVal.subpiece(offset, rawVal.size() - offset);
+}
+
+std::string MetaServiceUtils::replaceUserVal(const cpp2::UserItem& user, folly::StringPiece val,
+                                             std::shared_ptr<SchemaProviderIf> schema) {
+    auto reader = RowReader::getRowReader(MetaServiceUtils::userItemVal(val), schema);
+    RowUpdater updater(move(reader), schema);
+
+    if (user.__isset.first_name) {
+        updater.setString(GLOBAL_USER_ITEM_FIRSTNAME, user.first_name);
+    }
+    if (user.__isset.last_name) {
+        updater.setString(GLOBAL_USER_ITEM_LASTNAME, user.get_last_name());
+    }
+    if (user.__isset.email) {
+        updater.setString(GLOBAL_USER_ITEM_EMAIL, user.get_email());
+    }
+    if (user.__isset.phone) {
+        updater.setString(GLOBAL_USER_ITEM_PHONE, user.get_phone());
+    }
+    auto newVal = updater.encode();
+    auto len = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(val.begin());
+    std::string userVal;
+    userVal.reserve(len + newVal.size());
+    userVal.append(val.subpiece(0, len).str());
+    userVal.append(newVal);
+    return userVal;
+}
+
+std::string MetaServiceUtils::roleKey(GraphSpaceID spaceId, UserID userId) {
+    std::string key;
+    key.reserve(64);
+    key.append(kRolesTable.data(), kRolesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&userId), sizeof(UserID));
+    return key;
+}
+
+std::string MetaServiceUtils::roleVal(cpp2::RoleType roleType) {
+    std::string val;
+    val.reserve(64);
+    val.append(reinterpret_cast<const char*>(&roleType), sizeof(roleType));
+    return val;
+}
+
+std::string MetaServiceUtils::changePassword(folly::StringPiece val, folly::StringPiece newPwd) {
+    auto pwdLen = newPwd.size();
+    auto len = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(val.begin());
+    auto userVal = val.subpiece(len, val.size() - len);
+    std::string newVal;
+    newVal.reserve(sizeof(int32_t) + pwdLen+ userVal.size());
+    newVal.append(reinterpret_cast<const char*>(&pwdLen), sizeof(int32_t));
+    newVal.append(newPwd.str());
+    newVal.append(userVal.str());
+    return newVal;
+}
+
+cpp2::UserItem MetaServiceUtils::parseUserItem(folly::StringPiece val,
+                                               std::shared_ptr<SchemaProviderIf> schema) {
+    auto reader = RowReader::getRowReader(userItemVal(val), schema);
+    folly::StringPiece accont, first, last, email, phone;
+    reader->getString(GLOBAL_USER_ITEM_ACCOUNT, accont);
+    reader->getString(GLOBAL_USER_ITEM_FIRSTNAME, first);
+    reader->getString(GLOBAL_USER_ITEM_LASTNAME, last);
+    reader->getString(GLOBAL_USER_ITEM_EMAIL, email);
+    reader->getString(GLOBAL_USER_ITEM_PHONE, phone);
+    cpp2::UserItem userItem(apache::thrift::FragileConstructor::FRAGILE,
+                            accont.str(), first.str(), last.str(), email.str(), phone.str());
+    return userItem;
+}
+
+std::string MetaServiceUtils::roleSpacePrefix(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(64);
+    key.append(kRolesTable.data(), kRolesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    return key;
+}
+
+UserID MetaServiceUtils::parseUserId(folly::StringPiece val) {
+    return *reinterpret_cast<const UserID *>(val.begin() +
+                                             kRolesTable.size() +
+                                             sizeof(GraphSpaceID));
 }
 
 }  // namespace meta

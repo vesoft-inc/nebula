@@ -31,6 +31,9 @@ enum ErrorCode {
     E_STORE_FAILURE          = -31,
     E_STORE_SEGMENT_ILLEGAL  = -32,
 
+    E_INVALID_PASSWORD       = -41,
+    E_INPROPER_ROLE          = -42,
+
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
 
@@ -43,10 +46,19 @@ enum AlterSchemaOp {
 } (cpp.enum_strict)
 
 
+enum RoleType {
+    GOD    = 0x01,
+    ADMIN  = 0x02,
+    USER   = 0x03,
+    GUEST  = 0x04,
+} (cpp.enum_strict)
+
+
 union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
+    4: common.UserID        user_id,
 }
 
 struct IdName {
@@ -98,6 +110,19 @@ enum HostStatus {
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
+
+struct UserItem {
+    1: string account,
+    2: string first_name,
+    3: string last_name,
+    4: string email,
+    5: string phone,
+}
+
+struct RoleItem {
+    1: string account,
+    2: string space,
+    3: RoleType RoleType,
 }
 
 struct ExecResp {
@@ -311,6 +336,63 @@ struct HBReq {
     1: common.HostAddr host,
 }
 
+struct CreateUserReq {
+    1: UserItem user,
+    2: string encoded_pwd,
+    3: bool missing_ok,
+}
+
+struct DropUserReq {
+    1: string account,
+    2: bool missing_ok,
+}
+
+struct AlterUserReq {
+    1: UserItem user_item,
+}
+
+struct GrantRoleReq {
+    1: RoleItem role_item,
+}
+
+struct RevokeRoleReq {
+    1: RoleItem role_item,
+}
+
+struct GetUserReq {
+    1: string account,
+}
+
+struct GetUserResp {
+    1: UserItem user_item,
+}
+
+struct ListUsersReq {
+}
+
+struct ListUsersResp {
+    1: list<UserItem> users,
+}
+
+struct ListRolesReq {
+    1: string space,
+}
+
+struct ListRolesResp {
+    1: list<RoleItem> roles,
+}
+
+struct ChangePasswordReq {
+    1: string account,
+    2: string new_encoded_pwd,
+    3: string old_encoded_pwd,
+}
+
+struct CheckPasswordReq {
+    1: string account,
+    2: string encoded_pwd,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -343,5 +425,17 @@ service MetaService {
     ScanResp scan(1: ScanReq req);
 
     HBResp           heartBeat(1: HBReq req);
+
+    ExecResp createUser(1: CreateUserReq req);
+    ExecResp dropUser(1: DropUserReq req);
+    ExecResp alterUser(1: AlterUserReq req);
+    ExecResp grantRole(1: GrantRoleReq req);
+    ExecResp revokeRole(1: RevokeRoleReq req);
+    GetUserResp getUser(1: GetUserReq req);
+    ListUsersResp listUsers(1: ListUsersReq req);
+    ListRolesResp listRoles(1: ListRolesReq req);
+    ExecResp changePassword(1: ChangePasswordReq req);
+    ExecResp checkPassword(1: CheckPasswordReq req);
+
 }
 

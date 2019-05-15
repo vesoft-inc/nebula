@@ -41,6 +41,16 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     deleteKeys.emplace_back(MetaServiceUtils::indexSpaceKey(req.get_space_name()));
     deleteKeys.emplace_back(MetaServiceUtils::spaceKey(spaceId));
 
+    // delete related role data.
+    auto rolePrefix = MetaServiceUtils::roleSpacePrefix(spaceRet.value());
+    std::unique_ptr<kvstore::KVIterator> roleIter;
+    auto roleRet = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, rolePrefix, &roleIter);
+    if (roleRet == kvstore::ResultCode::SUCCEEDED) {
+        while (roleIter->valid()) {
+            deleteKeys.emplace_back(roleIter->key());
+            roleIter->next();
+        }
+    }
     // TODO(YT) delete Tag/Edge under the space
     doMultiRemove(std::move(deleteKeys));
     // TODO(YT) delete part files of the space

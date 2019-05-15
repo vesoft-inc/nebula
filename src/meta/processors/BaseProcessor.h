@@ -16,6 +16,7 @@
 #include "kvstore/KVStore.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
+#include "meta/NebulaSchemaProvider.h"
 #include "network/NetworkUtils.h"
 
 namespace nebula {
@@ -39,6 +40,7 @@ GENERATE_LOCK(space);
 GENERATE_LOCK(id);
 GENERATE_LOCK(tag);
 GENERATE_LOCK(edge);
+GENERATE_LOCK(user);
 
 #undef GENERATE_LOCK
 };
@@ -118,6 +120,9 @@ protected:
             break;
         case EntryType::EDGE:
             thriftID.set_edge_type(static_cast<EdgeType>(id));
+            break;
+        case EntryType::USER:
+            thriftID.set_user_id(static_cast<UserID>(id));
             break;
         }
         return thriftID;
@@ -202,6 +207,14 @@ protected:
      * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
+
+    StatusOr<UserID> getUserId(const std::string& account);
+
+    StatusOr<std::shared_ptr<NebulaSchemaProvider>> getUserSchema();
+
+    bool checkPassword(UserID userId, const std::string& password);
+
+    StatusOr<std::string> getUserAccount(UserID userId);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
