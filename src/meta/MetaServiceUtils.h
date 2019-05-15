@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "base/Status.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "SchemaProviderIf.h"
 
 namespace nebula {
 namespace meta {
