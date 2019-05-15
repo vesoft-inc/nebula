@@ -312,7 +312,8 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
 
 bool CmdProcessor::processClientCmd(folly::StringPiece cmd,
                                     bool& readyToExit) {
-    if (cmd == "exit") {
+    normalize(cmd);
+    if (cmd == "exit" || cmd== "quit") {
         readyToExit = true;
         return true;
     } else {
@@ -379,6 +380,14 @@ bool CmdProcessor::process(folly::StringPiece cmd) {
     processServerCmd(cmd);
 
     return true;
+}
+
+void CmdProcessor::normalize(folly::StringPiece &command) {
+    command  = folly::trimWhitespace(command);
+    if (command.endsWith(";")) {
+        command = command.subpiece(0, command.size() - 1);
+        command = folly::trimWhitespace(command);
+    }
 }
 
 }  // namespace graph
