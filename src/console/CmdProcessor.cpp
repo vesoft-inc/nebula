@@ -384,7 +384,7 @@ bool CmdProcessor::process(folly::StringPiece cmd) {
 
 void CmdProcessor::normalize(folly::StringPiece &command) {
     command  = folly::trimWhitespace(command);
-    if (command.endsWith(";")) {
+    while (command.endsWith(";")) {
         command = command.subpiece(0, command.size() - 1);
         command = folly::trimWhitespace(command);
     }
