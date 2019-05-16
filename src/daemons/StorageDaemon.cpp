@@ -85,31 +85,37 @@ int main(int argc, char *argv[]) {
                    << ", status:" << result.status();
         return EXIT_FAILURE;
     }
-    uint32_t localIP;
-    if (!NetworkUtils::ipv4ToInt(result.value(), localIP)) {
-        LOG(ERROR) << "Convert ip failed, ipstr:" << result.value();
+    auto hostRet = nebula::network::NetworkUtils::toHostAddr(result.value(), FLAGS_port);
+    if (!hostRet.ok()) {
+        LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();
+        return EXIT_FAILURE;
+    }
+    auto& localHost = hostRet.value();
+    auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
+    if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
+        LOG(ERROR) << "Can't get metaServer address, status:" << metaAddrsRet.status()
+                   << ", FLAGS_meta_server_addrs:" << FLAGS_meta_server_addrs;
         return EXIT_FAILURE;
     }
 
-    if (FLAGS_meta_server_addrs.empty()) {
-        LOG(ERROR) << "meta_server_addrs flag should be set!";
-        return EXIT_FAILURE;
-    }
     std::vector<std::string> paths;
     folly::split(",", FLAGS_data_path, paths, true);
     std::transform(paths.begin(), paths.end(), paths.begin(), [](auto& p) {
         return folly::trimWhitespace(p).str();
     });
+    if (paths.empty()) {
+         LOG(ERROR) << "Bad data_path format:" << FLAGS_data_path;
+         return EXIT_FAILURE;
+    }
 
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_handlers);
-    auto addrs = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
     auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
-                                                                 std::move(addrs),
+                                                                 std::move(metaAddrsRet.value()),
                                                                  true);
     metaClient->init();
 
     nebula::kvstore::KVOptions options;
-    options.local_ = HostAddr(localIP, FLAGS_port);
+    options.local_ = localHost;
     options.dataPaths_ = std::move(paths);
     options.partMan_ = std::make_unique<nebula::kvstore::MetaServerBasedPartManager>(
             options.local_, metaClient.get());
@@ -137,7 +143,7 @@ int main(int argc, char *argv[]) {
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), std::move(schemaMan));
     try {
-        LOG(INFO) << "Start storage daemon on port " << FLAGS_port;
+        nebula::operator<<(operator<<(LOG(INFO), "The storage deamon start on "), localHost);
         gServer = std::make_unique<apache::thrift::ThriftServer>();
         gServer->setInterface(std::move(handler));
         gServer->setPort(FLAGS_port);
@@ -149,7 +155,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    LOG(INFO) << "The storage Daemon on port " << FLAGS_port << " stopped";
+    LOG(INFO) << "The storage Daemon stopped";
 }
 
 

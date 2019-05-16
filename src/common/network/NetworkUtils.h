@@ -34,9 +34,9 @@ public:
     static uint16_t getAvailablePort();
 
     // Convert the given IP (must be in the form of "xx.xx.xx.xx") and Port to a HostAddr
-    static HostAddr toHostAddr(const folly::StringPiece ip, int32_t port);
+    static StatusOr<HostAddr> toHostAddr(folly::StringPiece ip, int32_t port);
     // Convert the given IP/Port (must be in the form of "xx.xx.xx.xx:pp") to a HostAddr
-    static HostAddr toHostAddr(const folly::StringPiece ipPort);
+    static StatusOr<HostAddr> toHostAddr(folly::StringPiece ipPort);
     // Retrieve the string-form IP from the given HostAddr
     static std::string ipFromHostAddr(const HostAddr& host);
     // Retrieve the port number from the given HostAddr
@@ -57,7 +57,8 @@ public:
 
     // Convert peers str which is a list of ipPort joined with comma into HostAddr list.
     // (Peers str format example: 192.168.1.1:10001, 192.168.1.2:10001)
-    static std::vector<HostAddr> toHosts(const std::string& peersStr);
+    // Return Status::Error if peersStr is invalid.
+    static StatusOr<std::vector<HostAddr>> toHosts(const std::string& peersStr);
 
 private:
 };

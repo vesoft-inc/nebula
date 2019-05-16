@@ -35,8 +35,11 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
 
     LOG(INFO) << "Create meta client...";
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    auto addrs = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
-    auto mClient = std::make_unique<meta::MetaClient>(threadPool, std::move(addrs), true);
+    auto addrsRet
+        = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
+    CHECK(addrsRet.ok()) << addrsRet.status();
+    auto mClient
+        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
     mClient->init();
 
     LOG(INFO) << "Start data server....";

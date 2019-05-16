@@ -24,11 +24,11 @@ ExecutionEngine::~ExecutionEngine() {
 
 
 Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
-    if (FLAGS_meta_server_addrs.empty()) {
-        return Status::Error("The meta_server_addrs flag should not be empty!");
-    }
     auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
-    metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs));
+    if (!addrs.ok()) {
+        return addrs.status();
+    }
+    metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()));
     metaClient_->init();
 
     schemaManager_ = meta::SchemaManager::create();
