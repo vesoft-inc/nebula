@@ -345,7 +345,7 @@ IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git/")
     )
     execute_process(
         COMMAND
-        "ln" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/cpplint/bin/pre-commit.sh ${PRE_COMMIT_HOOK}
+        "ln" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/.linters/cpp/hooks/pre-commit.sh ${PRE_COMMIT_HOOK}
         RESULT_VARIABLE retcode
     )
     IF(${retcode} EQUAL 0)
