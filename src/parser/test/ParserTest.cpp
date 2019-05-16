@@ -410,6 +410,18 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "DESCRIBE SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DESC SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "drop space default_space";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
