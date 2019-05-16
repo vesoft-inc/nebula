@@ -123,7 +123,7 @@ TEST(ProcessorTest, CreateSpaceTest) {
     {
         cpp2::CreateSpaceReq req;
         req.set_space_name("default_space");
-        req.set_parts_num(9);
+        req.set_partition_num(9);
         req.set_replica_factor(3);
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
@@ -189,7 +189,7 @@ TEST(ProcessorTest, CreateTagTest) {
     {
         cpp2::CreateSpaceReq req;
         req.set_space_name("default_space");
-        req.set_parts_num(9);
+        req.set_partition_num(9);
         req.set_replica_factor(1);
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -237,7 +237,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
     {
         cpp2::CreateSpaceReq req;
         req.set_space_name("first_space");
-        req.set_parts_num(9);
+        req.set_partition_num(9);
         req.set_replica_factor(1);
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -250,7 +250,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         // create second space
         cpp2::CreateSpaceReq req;
         req.set_space_name("second_space");
-        req.set_parts_num(9);
+        req.set_partition_num(9);
         req.set_replica_factor(1);
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -326,7 +326,7 @@ TEST(ProcessorTest, KVOperationTest) {
     {
         cpp2::CreateSpaceReq req;
         req.set_space_name("default_space");
-        req.set_parts_num(9);
+        req.set_partition_num(9);
         req.set_replica_factor(3);
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
@@ -1003,7 +1003,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
     {
         cpp2::CreateSpaceReq req;
         req.set_space_name("first_space");
-        req.set_parts_num(9);
+        req.set_partition_num(9);
         req.set_replica_factor(1);
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -1015,7 +1015,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
     {
         cpp2::CreateSpaceReq req;
         req.set_space_name("second_space");
-        req.set_parts_num(9);
+        req.set_partition_num(9);
         req.set_replica_factor(1);
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();

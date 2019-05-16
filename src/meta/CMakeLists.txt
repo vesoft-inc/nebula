@@ -17,19 +17,20 @@ add_library(
     processors/ListHostsProcessor.cpp
     processors/RemoveHostsProcessor.cpp
     processors/CreateSpaceProcessor.cpp
+    processors/GetSpaceProcessor.cpp
     processors/ListSpacesProcessor.cpp
     processors/DropSpaceProcessor.cpp
     processors/GetPartsAllocProcessor.cpp
     processors/CreateTagProcessor.cpp
-    processors/CreateEdgeProcessor.cpp
     processors/AlterTagProcessor.cpp
-    processors/AlterEdgeProcessor.cpp
-    processors/GetTagProcessor.cpp
-    processors/GetEdgeProcessor.cpp
-    processors/ListTagsProcessor.cpp
-    processors/ListEdgesProcessor.cpp
     processors/RemoveTagProcessor.cpp
+    processors/ListTagsProcessor.cpp
+    processors/GetTagProcessor.cpp
+    processors/CreateEdgeProcessor.cpp
+    processors/AlterEdgeProcessor.cpp
     processors/RemoveEdgeProcessor.cpp
+    processors/ListEdgesProcessor.cpp
+    processors/GetEdgeProcessor.cpp
     processors/GetProcessor.cpp
     processors/MultiGetProcessor.cpp
     processors/MultiPutProcessor.cpp

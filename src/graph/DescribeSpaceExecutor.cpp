@@ -17,14 +17,16 @@ DescribeSpaceExecutor::DescribeSpaceExecutor(Sentence *sentence,
 }
 
 Status DescribeSpaceExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    return Status::OK();;
 }
 
 void DescribeSpaceExecutor::execute() {
-    auto spaceId = ectx()->rctx()->session()->space();
-    auto spaceItem = ectx()->getMetaClient()->getSpace(spaceId).get();
+    auto *mc = ectx()->getMetaClient();
+    auto *name = sentence_->spaceName();
+    auto spaceId = ectx()->schemaManager()->toGraphSpaceID(*name);
+    auto spaceItem = mc->getSpace(spaceId).get();
     if (!spaceItem.ok()) {
-        onError_(Status::Error("Space not found `%s'", name->c_str()));
+        onError_(Status::Error("Space not found `%d`", spaceId));
         return;
     }
 
@@ -35,18 +37,18 @@ void DescribeSpaceExecutor::execute() {
     std::vector<cpp2::RowValue> rows;
     std::vector<cpp2::ColumnValue> row;
     row.resize(4);
-    row[0].set_integer(spaceItem.value()->get_space_id());
-    row[1].set_str(spaceItem.value()->get_space_name());
-    row[2].set_integer(spaceItem.value()->get_partition_num());
-    row[3].set_integer(spaceItem.value()->get_replica_factor());
+    row[0].set_integer(spaceItem.value().get_space_id());
 
+    auto properties = spaceItem.value().get_properties();
+    row[1].set_str(properties.get_space_name());
+    row[2].set_integer(properties.get_partition_num());
+    row[3].set_integer(properties.get_replica_factor());
+
+    rows.emplace_back();
     rows.back().set_columns(std::move(row));
     resp_->set_rows(std::move(rows));
     DCHECK(onFinish_);
     onFinish_();
-
-
-    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 void DescribeSpaceExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

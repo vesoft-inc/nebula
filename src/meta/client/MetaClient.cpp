@@ -359,7 +359,7 @@ folly::Future<StatusOr<GraphSpaceID>>
 MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFactor) {
     cpp2::CreateSpaceReq req;
     req.set_space_name(std::move(name));
-    req.set_parts_num(partsNum);
+    req.set_partition_num(partsNum);
     req.set_replica_factor(replicaFactor);
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_createSpace(request);

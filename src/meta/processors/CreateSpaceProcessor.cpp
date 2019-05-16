@@ -28,17 +28,22 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     }
     auto spaceId = autoIncrementId();
-    VLOG(3) << "Create space " << req.get_space_name() << ", id " << spaceId;
     auto hosts = ret.value();
+    auto spaceName = req.get_space_name();
+    auto partitionNum = req.get_partition_num();
     auto replicaFactor = req.get_replica_factor();
+    cpp2::SpaceProperties properties;
+    properties.set_space_name(spaceName);
+    properties.set_partition_num(partitionNum);
+    properties.set_replica_factor(replicaFactor);
+    VLOG(3) << "Create space " << spaceName << ", id " << spaceId;
+
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::indexSpaceKey(req.get_space_name()),
+    data.emplace_back(MetaServiceUtils::indexSpaceKey(spaceName),
                       std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
     data.emplace_back(MetaServiceUtils::spaceKey(spaceId),
-                      MetaServiceUtils::spaceVal(req.get_parts_num(),
-                                                 replicaFactor,
-                                                 req.get_space_name()));
-    for (auto partId = 1; partId <= req.get_parts_num(); partId++) {
+                      MetaServiceUtils::spaceVal(properties));
+    for (auto partId = 1; partId <= req.get_partition_num(); partId++) {
         auto partHosts = pickHosts(partId, hosts, replicaFactor);
         data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                           MetaServiceUtils::partVal(partHosts));

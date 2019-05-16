@@ -26,15 +26,16 @@ std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     return key;
 }
 
-std::string MetaServiceUtils::spaceVal(int32_t partsNum,
-                                       int32_t replicaFactor,
-                                       const std::string& name) {
+std::string MetaServiceUtils::spaceVal(cpp2::SpaceProperties properties) {
     std::string val;
-    val.reserve(256);
-    val.append(reinterpret_cast<const char*>(&partsNum), sizeof(partsNum));
-    val.append(reinterpret_cast<const char*>(&replicaFactor), sizeof(replicaFactor));
-    val.append(name);
+    apache::thrift::CompactSerializer::serialize(properties, &val);
     return val;
+}
+
+cpp2::SpaceProperties  MetaServiceUtils::parseSpace(folly::StringPiece rawData) {
+    cpp2::SpaceProperties properties;
+    apache::thrift::CompactSerializer::deserialize(rawData, properties);
+    return properties;
 }
 
 const std::string& MetaServiceUtils::spacePrefix() {
@@ -45,8 +46,16 @@ GraphSpaceID MetaServiceUtils::spaceId(folly::StringPiece rawKey) {
     return *reinterpret_cast<const GraphSpaceID*>(rawKey.data() + kSpacesTable.size());
 }
 
-folly::StringPiece MetaServiceUtils::spaceName(folly::StringPiece rawVal) {
-    return rawVal.subpiece(sizeof(int32_t)*2);
+std::string MetaServiceUtils::spaceName(folly::StringPiece rawVal) {
+    return parseSpace(rawVal).get_space_name();
+}
+
+int32_t MetaServiceUtils::spacePartitionNum(folly::StringPiece rawVal) {
+    return parseSpace(rawVal).get_partition_num();
+}
+
+int32_t MetaServiceUtils::spaceReplicaFactor(folly::StringPiece rawVal) {
+    return parseSpace(rawVal).get_replica_factor();
 }
 
 std::string MetaServiceUtils::partKey(GraphSpaceID spaceId, PartitionID partId) {
