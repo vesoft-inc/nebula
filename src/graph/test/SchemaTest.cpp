@@ -121,6 +121,13 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER TAG account "
+                            "DROP (id)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     sleep(FLAGS_load_data_interval_second + 1);
     {
         cpp2::ExecutionResponse resp;
@@ -195,6 +202,13 @@ TEST_F(SchemaTest, metaCommunication) {
                             "DROP (id, time)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER EDGE education "
+                            "DROP (id, time)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     sleep(FLAGS_load_data_interval_second + 1);
     {

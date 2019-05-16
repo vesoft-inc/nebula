@@ -57,7 +57,7 @@ std::string CreateEdgeSentence::toString() const {
     return buf;
 }
 
-std::string AlterTagOptItem::toString() const {
+std::string AlterSchemaOptItem::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += getOptTypeStr();
@@ -80,57 +80,24 @@ std::string AlterTagOptItem::toString() const {
     return buf;
 }
 
-std::string AlterTagOptList::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    for (uint32_t i = 0; i < alterTagitems_.size(); i++) {
-        auto &item = alterTagitems_[i];
-        if (i > 0) {
-            buf += ",";
-        }
-        buf += item->toString();
+nebula::meta::cpp2::AlterSchemaOp
+AlterSchemaOptItem::toType() {
+    switch (optType_) {
+        case ADD:
+            return nebula::meta::cpp2::AlterSchemaOp::ADD;
+        case CHANGE:
+            return nebula::meta::cpp2::AlterSchemaOp::CHANGE;
+        case DROP:
+            return nebula::meta::cpp2::AlterSchemaOp::DROP;
+        default:
+            return nebula::meta::cpp2::AlterSchemaOp::UNKNOWN;
     }
-    return buf;
 }
 
-
-std::string AlterTagSentence::toString() const {
+std::string AlterSchemaOptList::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "ALTER TAG ";
-    buf += *name_;
-    for (auto &tagOpt : opts_->alterTagItems()) {
-        buf += " ";
-        buf += tagOpt->toString();
-    }
-    return buf;
-}
-
-
-std::string AlterEdgeOptItem::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    buf += getOptTypeStr();
-    buf += " (";
-    auto colSpecs = std::move(columns_->columnSpecs());
-    for (auto &col : colSpecs) {
-        buf += *col->name();
-        buf += " ";
-        buf += columnTypeToString(col->type());
-        buf += ",";
-    }
-    if (!colSpecs.empty()) {
-        buf.resize(buf.size() - 1);
-    }
-    buf += ")";
-    return buf;
-}
-
-
-std::string AlterEdgeOptList::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    for (auto &item : alterEdgeitems_) {
+    for (auto &item : alterSchemaItems_) {
         buf += item->toString();
         buf += ",";
     }
@@ -140,13 +107,24 @@ std::string AlterEdgeOptList::toString() const {
     return buf;
 }
 
+std::string AlterTagSentence::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "ALTER TAG ";
+    buf += *name_;
+    for (auto &tagOpt : opts_->alterSchemaItems()) {
+        buf += " ";
+        buf += tagOpt->toString();
+    }
+    return buf;
+}
 
 std::string AlterEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "ALTER EDGE ";
     buf += *name_;
-    for (auto &edgeOpt : opts_->alterEdgeItems()) {
+    for (auto &edgeOpt : opts_->alterSchemaItems()) {
         buf += " ";
         buf += edgeOpt->toString();
     }

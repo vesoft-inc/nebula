@@ -27,8 +27,6 @@ public:
 
 private:
     AlterEdgeSentence                          *sentence_{nullptr};
-    nebula::meta::cpp2::AlterSchemaOp
-    getEdgeOpType(const AlterEdgeOptItem::OptionType type);
 };
 
 }   // namespace graph

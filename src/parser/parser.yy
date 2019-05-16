@@ -64,14 +64,12 @@ class GraphScanner;
     nebula::HostAddr                       *host_item;
     nebula::SpaceOptList                   *space_opt_list;
     nebula::SpaceOptItem                   *space_opt_item;
-    nebula::AlterTagOptList                *alter_tag_opt_list;
-    nebula::AlterTagOptItem                *alter_tag_opt_item;
+    nebula::AlterSchemaOptList             *alter_schema_opt_list;
+    nebula::AlterSchemaOptItem             *alter_schema_opt_item;
     nebula::WithUserOptList                *with_user_opt_list;
     nebula::WithUserOptItem                *with_user_opt_item;
     nebula::RoleTypeClause                 *role_type_clause;
     nebula::AclItemClause                  *acl_item_clause;
-    nebula::AlterEdgeOptList               *alter_edge_opt_list;
-    nebula::AlterEdgeOptItem               *alter_edge_opt_item;
 }
 
 /* destructors */
@@ -136,10 +134,8 @@ class GraphScanner;
 %type <host_item> host_item
 %type <space_opt_list> space_opt_list
 %type <space_opt_item> space_opt_item
-%type <alter_tag_opt_list> alter_tag_opt_list
-%type <alter_tag_opt_item> alter_tag_opt_item
-%type <alter_edge_opt_list> alter_edge_opt_list
-%type <alter_edge_opt_item> alter_edge_opt_item
+%type <alter_schema_opt_list> alter_schema_opt_list
+%type <alter_schema_opt_item> alter_schema_opt_item
 
 %type <intval> ttl_spec port
 
@@ -505,31 +501,31 @@ create_tag_sentence
     ;
 
 alter_tag_sentence
-    : KW_ALTER KW_TAG LABEL alter_tag_opt_list {
+    : KW_ALTER KW_TAG LABEL alter_schema_opt_list {
         $$ = new AlterTagSentence($3, $4);
     }
     ;
 
-alter_tag_opt_list
-    : alter_tag_opt_item {
-        $$ = new AlterTagOptList();
+alter_schema_opt_list
+    : alter_schema_opt_item {
+        $$ = new AlterSchemaOptList();
         $$->addOpt($1);
     }
-    | alter_tag_opt_list COMMA alter_tag_opt_item {
+    | alter_schema_opt_list COMMA alter_schema_opt_item {
         $$ = $1;
         $$->addOpt($3);
     }
     ;
 
-alter_tag_opt_item
+alter_schema_opt_item
     : KW_ADD L_PAREN column_spec_list R_PAREN {
-        $$ = new AlterTagOptItem(AlterTagOptItem::ADD, $3);
+        $$ = new AlterSchemaOptItem(AlterSchemaOptItem::ADD, $3);
     }
     | KW_CHANGE L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterTagOptItem(AlterTagOptItem::CHANGE, $3);
+      $$ = new AlterSchemaOptItem(AlterSchemaOptItem::CHANGE, $3);
     }
     | KW_DROP L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterTagOptItem(AlterTagOptItem::DROP, $3);
+      $$ = new AlterSchemaOptItem(AlterSchemaOptItem::DROP, $3);
     }
     ;
 
@@ -546,31 +542,8 @@ create_edge_sentence
     ;
 
 alter_edge_sentence
-    : KW_ALTER KW_EDGE LABEL alter_edge_opt_list {
+    : KW_ALTER KW_EDGE LABEL alter_schema_opt_list {
         $$ = new AlterEdgeSentence($3, $4);
-    }
-    ;
-
-alter_edge_opt_list
-    : alter_edge_opt_item {
-        $$ = new AlterEdgeOptList();
-        $$->addOpt($1);
-    }
-    | alter_edge_opt_list COMMA alter_edge_opt_item {
-        $$ = $1;
-        $$->addOpt($3);
-    }
-    ;
-
-alter_edge_opt_item
-    : KW_ADD L_PAREN column_spec_list R_PAREN {
-        $$ = new AlterEdgeOptItem(AlterEdgeOptItem::ADD, $3);
-    }
-    | KW_CHANGE L_PAREN column_spec_list R_PAREN {
-        $$ = new AlterEdgeOptItem(AlterEdgeOptItem::CHANGE, $3);
-    }
-    | KW_DROP L_PAREN column_spec_list R_PAREN {
-        $$ = new AlterEdgeOptItem(AlterEdgeOptItem::DROP, $3);
     }
     ;
 

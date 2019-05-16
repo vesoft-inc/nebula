@@ -24,15 +24,15 @@ Status AlterEdgeExecutor::prepare() {
 void AlterEdgeExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
-    const auto& edgeOpts = sentence_->edgeOptList();
+    const auto& schemaOpts = sentence_->schemaOptList();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    std::vector<nebula::meta::cpp2::AlterSchemaItem> edgeItems;
-    for (auto& edgeOpt : edgeOpts) {
-        nebula::meta::cpp2::AlterSchemaItem edgeItem;
-        auto opType = getEdgeOpType(edgeOpt->getOptType());
-        edgeItem.set_op(std::move(opType));
-        const auto& specs = edgeOpt->columnSpecs();
+    std::vector<nebula::meta::cpp2::AlterSchemaItem> schemaItems;
+    for (auto& schemaOpt : schemaOpts) {
+        nebula::meta::cpp2::AlterSchemaItem schemaItem;
+        auto opType = schemaOpt->toType();
+        schemaItem.set_op(std::move(opType));
+        const auto& specs = schemaOpt->columnSpecs();
         nebula::cpp2::Schema schema;
         for (auto& spec : specs) {
             nebula::cpp2::ColumnDef column;
@@ -40,11 +40,11 @@ void AlterEdgeExecutor::execute() {
             column.type.type = columnTypeToSupportedType(spec->type());
             schema.columns.emplace_back(std::move(column));
         }
-        edgeItem.set_schema(std::move(schema));
-        edgeItems.emplace_back(std::move(edgeItem));
+        schemaItem.set_schema(std::move(schema));
+        schemaItems.emplace_back(std::move(schemaItem));
     }
 
-    auto future = mc->alterEdge(spaceId, *name, std::move(edgeItems));
+    auto future = mc->alterEdgeSchema(spaceId, *name, std::move(schemaItems));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
@@ -63,21 +63,6 @@ void AlterEdgeExecutor::execute() {
     };
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
-}
-
-
-nebula::meta::cpp2::AlterSchemaOp
-AlterEdgeExecutor::getEdgeOpType(const AlterEdgeOptItem::OptionType type) {
-    switch (type) {
-        case AlterEdgeOptItem::OptionType::ADD :
-            return nebula::meta::cpp2::AlterSchemaOp::ADD;
-        case AlterEdgeOptItem::OptionType::CHANGE :
-            return nebula::meta::cpp2::AlterSchemaOp::CHANGE;
-        case AlterEdgeOptItem::OptionType::DROP :
-            return nebula::meta::cpp2::AlterSchemaOp::DROP;
-        default:
-            return nebula::meta::cpp2::AlterSchemaOp::UNKNOWN;
-    }
 }
 
 }   // namespace graph
