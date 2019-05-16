@@ -5,7 +5,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-CPPLINT=`dirname $0`/../../../.linters/cpp/cpplint.py
+CPPLINT=`dirname $0`/../../.linters/cpp/cpplint.py
 
 if [ $# -eq 0 ];then
     # Since cpplint.py could only apply on our working tree,
