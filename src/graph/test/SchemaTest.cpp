@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -48,7 +48,7 @@ TEST_F(SchemaTest, metaCommunication) {
     // test nonexistent space
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "USE SPACE default_space";
+        std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -67,7 +67,7 @@ TEST_F(SchemaTest, metaCommunication) {
     sleep(FLAGS_load_data_interval_second + 1);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "USE SPACE default_space";
+        std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -183,6 +183,18 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "SHOW EDGES";
+        auto code = client->execute(query, resp);
+        sleep(FLAGS_load_data_interval_second + 1);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"buy"},
+            {"education"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "CREATE SPACE my_space(partition_num=9, replica_factor=3)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -190,7 +202,7 @@ TEST_F(SchemaTest, metaCommunication) {
     sleep(FLAGS_load_data_interval_second + 1);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "USE SPACE my_space";
+        std::string query = "USE my_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -218,6 +230,25 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG person(name string, interest string)";
         auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW TAGS";
+        auto code = client->execute(query, resp);
+        sleep(FLAGS_load_data_interval_second + 1);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"animal"},
+            {"person"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REMOVE TAG person ";
+        auto code = client->execute(query, resp);
+        sleep(FLAGS_load_data_interval_second + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {

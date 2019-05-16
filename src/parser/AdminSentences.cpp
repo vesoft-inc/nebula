@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "parser/AdminSentences.h"
@@ -14,6 +14,10 @@ std::string ShowSentence::toString() const {
             return std::string("SHOW HOSTS");
         case ShowType::kShowSpaces:
             return std::string("SHOW SPACES");
+        case ShowType::kShowTags:
+            return std::string("SHOW TAGS");
+        case ShowType::kShowEdges:
+            return std::string("SHOW EDGES");
         case ShowType::kShowUsers:
             return std::string("SHOW USERS");
         case ShowType::kShowUser:

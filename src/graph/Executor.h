@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef GRAPH_EXECUTOR_H_
@@ -80,13 +80,13 @@ protected:
 
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {
-            return Status::Error("Please choose a graph space with `USE SPACE' firstly");
+            return Status::Error("Please choose a graph space with `USE spaceName' firstly");
         }
         return Status::OK();
     }
 
 protected:
-    ExecutionContext                           *ectx_;
+    ExecutionContext                            *ectx_;
     std::function<void()>                       onFinish_;
     std::function<void(Status)>                 onError_;
 };

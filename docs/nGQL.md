@@ -1,12 +1,14 @@
 # Nebula Graph Query Language (nGQL)
 
+## About nGQL
+`nGQL` is a declarative, textual query language like SQL, but for graphs. Unlike SQL, nGQL is all about expressing graph patterns. nGQL is a work in progress. We will add more features and further simplify the existing ones. There might be inconsistency between the syntax specs and implementation for the time being.
 ## Goals
 - Easy to learn
 - Easy to understand
 - To focus on the online queries, also to provide the foundation for the offline computation
 
 ## Features
-- Syntax is close to SQL, but not exactly same (Easy to learn)
+- Syntax is close to SQL, but not exactly the same (Easy to learn)
 - Expandable
 - Case insensitive
 - Support basic graph traverse
@@ -61,7 +63,7 @@
 ### Type Conversion
 - A simple typed value can be implicitly converted into a list
 - A list can be implicitly converted into a one-column tuple list
- - "<type\>\_list" would be used as the column name
+ - "<type\>\_list" can be used as the column name
 
 ### Common BNF
 <simple\_type> ::= **vid** | **integer** | **double** | **float** | **bool** | **string** | **path** | **timestamp** | **year** | **month** | **date** | **datetime**
@@ -96,7 +98,7 @@
 #### Choose a graph space
 Nebula supports multiple graph spaces. Data in different graph spaces are physically isolated. Before executing a query, a graph space needs to be selected using the following statement
 
-<span style="color:blue">**USE GRAPH SPACE**</span>  <graphspace_name>
+<span style="color:blue">**USE**</span>  <graphspace_name>
 
 #### Return a data set
 Simply return a single value or a data set
@@ -105,41 +107,41 @@ Simply return a single value or a data set
 
 <return\_value\_decl> ::= **vid** | <vid\_list> | <tuple\_list\_decl> | <var\>
 
-#### Define a tag
+#### Create a tag
 The following statement defines a **new** tag
 
-<span style="color:blue">**DEFINE TAG**</span> <tag\_name> (<prop\_def\_list>)
+<span style="color:blue">**CREATE TAG**</span> <tag\_name> (<prop\_def\_list>)
 
-<tag\_name> ::= <label\>
-<prop\_def\_list> ::= <prop\_def>+
-<prop\_def> ::= <prop\_name> <type\>
-<prop\_name> ::= <label\>
+<tag\_name> ::= <label\> <br>
+<prop\_def\_list> ::= <prop\_def>+ <br>
+<prop\_def> ::= <prop\_name>,<type\> <br>
+<prop\_name> ::= <label\> <br>
 
 #### Modify a tag type
 
-#### Define an edge type
+#### Create an edge type
 The following statement defines a **new** edge type
 
-<span style="color:blue">**DEFINE EDGE**</span> <edge\_type\_name> (<prop\_def\_list>)
+<span style="color:blue">**CREATE EDGE**</span> <edge\_type\_name> (<prop\_def\_list>)
 
 <edge\_type\_name> := <label\>
 
 #### Modify an edge type
 
 #### Insert vertices
-The following statement insert one or more vertices
+The following statement inserts one or more vertices
 
-<span style="color:blue">**INSERT VERTEX**</span> [<span style="color:blue">**NO OVERWRITE**</span>] "("<br/>
-<span style="indent:20">[ <vertex\_id> [ <span style="color:blue">**WITH**</span> <tag\_name> [(<prop\_list>)] <span style="color:blue">**VALUES**</span> (<prop\_value\_list>) ]+ ]+</span><br/>
-")"
+<span style="color:blue">**INSERT VERTEX**</span> [<span style="color:blue">**NO OVERWRITE**</span>] <tag\_list> <span style="color:blue">**VALUES**</span> <vertex\_list> <br/>
 
-<vertex\_id> ::= **vid**
-<prop\_list> ::= <prop\_name> (, <prop\_name>)+
-<prop\_value\_list> ::= **VALUE** (, **VALUE**)*
+<tag\_list> ::= <tag\_name>(<prop\_list>) (, <tag\_name>(<prop\_list>))\* <br/>
+<vertex\_list> ::= <vertex\_id>:(<prop\_value\_list>) (, <vertex\_id>:(<prop\_value\_list>))\* <br/>
+<vertex\_id> ::= **vid** <br/>
+<prop\_list> ::= <prop\_name> (, <prop\_name>)\* <br/>
+<prop\_value\_list> ::= **VALUE** (, **VALUE**)\* <br/>
 
 #### Insert edges
 
-The following statement insert one or more edges
+The following statement inserts one or more edges
 
 <span style="color:blue">**INSERT EDGE**</span> [<span style="color:blue">**NO OVERWRITE**</span>] <edge\_type\_name> [(<prop\_list>)] <span style="color:blue">**VALUES**</span> (<edge\_value>)+
 
@@ -153,9 +155,9 @@ The following statement updates a vertex
 [<span style="color:blue">**WHERE**</span> <conditions\>]
 [<span style="color:blue">**YIELD**</span> <field\_list>]
 
-<update\_decl> ::= <update\_form1> | <update\_form2>
-<update\_form1> ::= <prop\_name> = <expression\> {,<prop\_name> = <expression\>}+
-<update\_form2> ::= (<prop\_list>) = (<value\_list>) | (<prop\_list>) = <var\>
+<update\_decl> ::= <update\_form1> | <update\_form2> <br>
+<update\_form1> ::= <prop\_name> = <expression\> {,<prop\_name> = <expression\>}+ <br>
+<update\_form2> ::= (<prop\_list>) = (<value\_list>) | (<prop\_list>) = <var\> <br>
 
 #### Update an edge
 The following statement updates an edge
@@ -175,17 +177,17 @@ Navigate from given vertices to their neighbors according to the given condition
 [<span style="color:blue">**WHERE**</span> <filter\_list>]
 [<span style="color:blue">**YIELD**</span> <field\_list>]
 
-<steps\_decl> ::= **integer** | **integer** <span style="color:blue">**TO**</span> **integer** | <span style="color:blue">**UPTO**</span> **interger**
+<steps\_decl> ::= **integer** | **integer** <span style="color:blue">**TO**</span> **integer** | <span style="color:blue">**UPTO**</span> **interger** <br>
 <data\_set\_decl> ::= [data\_set] [[<span style="color:blue">**AS**</span>] <label\>]<br/>
 <data\_set> ::= **vid** | <vid\_list> | <tuple\_list\_decl> | <var\><br/>
 <edge\_type\_decl> ::= <edge\_type\_list> [<span style="color:blue">**AS**</span> <label\>]
-<edge\_type\_list> ::= <edge\_type> {, <edge\_type>}\*
-<edge\_type> ::= <label\>
+<edge\_type\_list> ::= <edge\_type> {, <edge\_type>}\* <br>
+<edge\_type> ::= <label\> <br>
 
-<filter\_list> ::= <filter\> {<span style="color:blue">**AND**</span> | <span style="color:blue">**OR**</span> <filter\>}\*
-<filter\> ::= <expression\> <span style="color:blue">**>**</span> | <span style="color:blue">**>=**</span> | <span style="color:blue">**<**</span> | <span style="color:blue">**<=**</span> | <span style="color:blue">**==**</span> | <span style="color:blue">**!=**</span> <expression\> | <expression\> <span style="color:blue">**IN**</span> <value\_list\>
-<field\_list> ::= <return\_field> {, <return\_field>}\*
-<return\_field> ::= <expression\> [<span style="color:blue">**AS**</span> <label\>]
+<filter\_list> ::= <filter\> {<span style="color:blue">**AND**</span> | <span style="color:blue">**OR**</span> <filter\>}\* <br>
+<filter\> ::= <expression\> <span style="color:blue">**>**</span> | <span style="color:blue">**>=**</span> | <span style="color:blue">**<**</span> | <span style="color:blue">**<=**</span> | <span style="color:blue">**==**</span> | <span style="color:blue">**!=**</span> <expression\> | <expression\> <span style="color:blue">**IN**</span> <value\_list\> <br>
+<field\_list> ::= <return\_field> {, <return\_field>}\* <br>
+<return\_field> ::= <expression\> [<span style="color:blue">**AS**</span> <label\>] <br>
 
 <span style="color:blue">**WHERE**</span> clause only applies to the results that are going to be returned. It will not be applied to the intermediate results (See the detail description of the <span style="color:blue">**STEP[S]**</span> clause)
 
@@ -199,7 +201,7 @@ When going out for more than one step, <span style="color:blue">**WHERE**</span>
 GO 2 STEPS FROM me OVER friend WHERE birthday > "1988/1/1"
 ```
 
-Obviously, you will probably guess the meaning of the query is to get all my fof (friend of friend) whose birthday is after 1988/1/1. You are absolutely right. We will not apply the filter to my friends (the first step)
+Obviously, you will probably guess the meaning of the query is to get all my fof (friend of friend) whose birthday is after 1988/1/1. You are absolutely right. We will not apply the filter to my friends (in the first step)
 
 Here is another example
 
@@ -207,7 +209,7 @@ Here is another example
 GO UPTO 3 STEPS FROM me OVER friend WHERE birthday > "1988/1/1/"
 ```
 
-This query tries to find any friend of me whose birthday is after 1988/1/1. If it finds at least one, it will return all the results. If it cannot find one, it will check my friends of friends to see if anyone's birthday is after 1988/1/1. It returns all results if non-empty, otherwise it will check my friends of friends of friends.
+This query tries to find any friend of me whose birthday is after 1988/1/1. If it finds at least one, it will return all the results. If it cannot find any, it will check my friends of friends to see if anyone's birthday is after 1988/1/1. It will return all the non-empty results, otherwise it will check my friends of friends of friends.
 
 So, similarly, next query tries to find anyone whose birthday is after 1988/1/1 starting from my 3-hop friends, and finishing at my 5-hop friends
 
@@ -238,10 +240,10 @@ The following statement does a pattern match, and can return tuple list or paths
 ### Property Reference
 It's common to refer a property in the statement, such as in <span style="color:blue">**WHERE**</span> clause and <span style="color:blue">**YIELD**</span> clause. In nGQL, the reference to a property is defined as
 
-<property_ref> ::= <object\> "." <prop\_name>
-<object\> ::= <alias\_name> | <alias\_with\_tag> | <var\>
-<alias\_name> ::= <label\>
-<alias\_wiht\_tag> ::= <alias\_name> '[' <tag\_name> "]"
+<property_ref> ::= <object\> "." <prop\_name> <br>
+<object\> ::= <alias\_name> | <alias\_with\_tag> | <var\> <br>
+<alias\_name> ::= <label\> <br>
+<alias\_wiht\_tag> ::= <alias\_name> '[' <tag\_name> "]" <br>
 
 <var\> always starts with "$". There are two special variables: $_ and $$.
 

@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -97,7 +97,7 @@ TEST(Parser, Go) {
 TEST(Parser, UseNamespace) {
     {
         GQLParser parser;
-        std::string query = "USE SPACE ns";
+        std::string query = "USE ns";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -393,6 +393,18 @@ TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
         std::string query = "show spaces";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "show tags";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "show edges";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

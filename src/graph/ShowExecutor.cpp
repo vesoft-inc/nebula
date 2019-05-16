@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "graph/ShowExecutor.h"
@@ -19,7 +19,12 @@ ShowExecutor::ShowExecutor(Sentence *sentence,
 
 
 Status ShowExecutor::prepare() {
-    return Status::OK();
+    if (sentence_->showType() == ShowSentence::ShowType::kShowTags ||
+        sentence_->showType() == ShowSentence::ShowType::kShowEdges) {
+        return checkIfGraphSpaceChosen();
+    } else {
+        return Status::OK();
+    }
 }
 
 
@@ -31,6 +36,12 @@ void ShowExecutor::execute() {
             break;
         case ShowSentence::ShowType::kShowSpaces:
             showSpaces();
+            break;
+        case ShowSentence::ShowType::kShowTags:
+            showTags();
+            break;
+        case ShowSentence::ShowType::kShowEdges:
+            showEdges();
             break;
         case ShowSentence::ShowType::kShowUsers:
         case ShowSentence::ShowType::kShowUser:
@@ -82,10 +93,10 @@ void ShowExecutor::showHosts() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
         return;
     };
-
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
@@ -125,10 +136,91 @@ void ShowExecutor::showSpaces() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
-        onError_(Status::Error("Internal error"));
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
         return;
     };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
 
+void ShowExecutor::showTags() {
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto future = ectx()->getMetaClient()->listTagSchemas(spaceId);
+    auto *runner = ectx()->rctx()->runner();
+    resp_ = std::make_unique<cpp2::ExecutionResponse>();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(resp).status());
+            return;
+        }
+
+        auto value = std::move(resp).value();
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Name"};
+        resp_->set_column_names(std::move(header));
+
+        for (auto &tag : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(1);
+            row[0].set_str(tag.get_tag_name());
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
+        return;
+    };
+    std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showEdges() {
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto future = ectx()->getMetaClient()->listEdgeSchemas(spaceId);
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(resp).status());
+            return;
+        }
+
+        auto value = std::move(resp).value();
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Name"};
+        resp_->set_column_names(std::move(header));
+
+        for (auto &edge : value) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(1);
+            row[0].set_str(edge.get_edge_name());
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+        resp_->set_rows(std::move(rows));
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
+                                                   e.what().c_str())));
+        return;
+    };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 

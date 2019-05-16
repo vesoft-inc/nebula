@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "meta/common/MetaCommon.h"
@@ -134,7 +134,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         }
         tagIdSchemas.emplace(std::make_pair(tagIt.tag_id, tagIt.version), schema);
         tagNameIdMap.emplace(std::make_pair(spaceId, tagIt.tag_name), tagIt.tag_id);
-        // get the newest version
+        // get the latest tag version
         auto it = newestTagVerMap.find(std::make_pair(spaceId, tagIt.tag_id));
         if (it != newestTagVerMap.end()) {
             if (it->second < tagIt.version) {
@@ -154,7 +154,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         }
         edgeTypeSchemas.emplace(std::make_pair(edgeIt.edge_type, edgeIt.version), schema);
         edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.edge_name), edgeIt.edge_type);
-        // get the newest version
+        // get the latest edge version
         auto it = newestEdgeVerMap.find(std::make_pair(spaceId, edgeIt.edge_type));
         if (it != newestEdgeVerMap.end()) {
             if (it->second < edgeIt.version) {

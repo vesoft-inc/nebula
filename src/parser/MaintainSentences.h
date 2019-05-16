@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #ifndef PARSER_MAINTAINSENTENCES_H_
 #define PARSER_MAINTAINSENTENCES_H_
@@ -255,6 +255,41 @@ public:
     std::string toString() const override;
 
     const std::string* name() const {
+        return name_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                name_;
+};
+
+class RemoveTagSentence final : public Sentence {
+public:
+    explicit RemoveTagSentence(std::string *name) {
+        name_.reset(name);
+        kind_ = Kind::kRemoveTag;
+    }
+
+    std::string toString() const override;
+
+    std::string* name() const {
+        return name_.get();
+    }
+
+private:
+    std::unique_ptr<std::string>                name_;
+};
+
+
+class RemoveEdgeSentence final : public Sentence {
+public:
+    explicit RemoveEdgeSentence(std::string *name) {
+        name_.reset(name);
+        kind_ = Kind::kRemoveEdge;
+    }
+
+    std::string toString() const override;
+
+    std::string* name() const {
         return name_.get();
     }
 
