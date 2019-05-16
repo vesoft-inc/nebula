@@ -68,7 +68,7 @@
 ### Common BNF
 <simple\_type> ::= **vid** | **integer** | **double** | **float** | **bool** | **string** | **path** | **timestamp** | **year** | **month** | **date** | **datetime**
 
-<composit_type> ::=
+<composite_type> ::=
 
 <type\> ::= <simple_type> | <composite\_type>
 
@@ -78,7 +78,7 @@
 
 <underscore\_label> ::= ("\_")* <label\>
 
-<field\_name> ::= <lable\>
+<field\_name> ::= <label\>
 
 <field\_def\_list> ::= <field\_def> (, <field\_def>)\*
 
@@ -177,7 +177,7 @@ Navigate from given vertices to their neighbors according to the given condition
 [<span style="color:blue">**WHERE**</span> <filter\_list>]
 [<span style="color:blue">**YIELD**</span> <field\_list>]
 
-<steps\_decl> ::= **integer** | **integer** <span style="color:blue">**TO**</span> **integer** | <span style="color:blue">**UPTO**</span> **interger** <br>
+<steps\_decl> ::= **integer** | **integer** <span style="color:blue">**TO**</span> **integer** | <span style="color:blue">**UPTO**</span> **integer** <br>
 <data\_set\_decl> ::= [data\_set] [[<span style="color:blue">**AS**</span>] <label\>]<br/>
 <data\_set> ::= **vid** | <vid\_list> | <tuple\_list\_decl> | <var\><br/>
 <edge\_type\_decl> ::= <edge\_type\_list> [<span style="color:blue">**AS**</span> <label\>]
@@ -228,7 +228,7 @@ Following statements looks for vertices or edges that match certain conditions
 <span style="color:blue">**WHERE**</span> <filter\_list>
 [<span style="color:blue">**YIELD**</span> <field\_list>]
 
-#### Pattern mactch
+#### Pattern match
 The following statement does a pattern match, and can return tuple list or paths
 
 <span style="color:blue">**MATCH**</span>
@@ -243,7 +243,7 @@ It's common to refer a property in the statement, such as in <span style="color:
 <property_ref> ::= <object\> "." <prop\_name> <br>
 <object\> ::= <alias\_name> | <alias\_with\_tag> | <var\> <br>
 <alias\_name> ::= <label\> <br>
-<alias\_wiht\_tag> ::= <alias\_name> '[' <tag\_name> "]" <br>
+<alias\_with\_tag> ::= <alias\_name> '[' <tag\_name> "]" <br>
 
 <var\> always starts with "$". There are two special variables: $_ and $$.
 
