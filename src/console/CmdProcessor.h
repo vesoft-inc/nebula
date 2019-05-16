@@ -45,6 +45,8 @@ private:
                    const std::string& rowLine,
                    const std::vector<size_t>& widths,
                    const std::vector<std::string>& formats) const;
+
+    void normalize(folly::StringPiece &command);
 };
 
 }  // namespace graph
