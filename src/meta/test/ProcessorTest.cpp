@@ -619,7 +619,6 @@ TEST(ProcessorTest, RemoveTagTest) {
          ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
          std::string tagPrefix = "__tags__";
          ret = kv->prefix(0, 0, tagPrefix, &iter);
-         ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
          ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
          ASSERT_FALSE(iter->valid());
      }
@@ -734,7 +733,7 @@ TEST(ProcessorTest, AlterTagTest) {
         auto tag = tags[0].version > 0 ? tags[0] : tags[1];
         EXPECT_EQ(0, tag.get_tag_id());
         EXPECT_EQ(folly::stringPrintf("tag_%d", 0), tag.get_tag_name());
-        EXPECT_EQ(1, tag.version);
+        EXPECT_EQ(2, tag.version);
 
         nebula::cpp2::Schema schema;
         decltype(schema.columns) cols;
