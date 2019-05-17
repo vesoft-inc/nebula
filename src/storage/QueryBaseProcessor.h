@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
 #include "storage/Collector.h"
+#include "filter/Expressions.h"
 
 namespace nebula {
 namespace storage {
@@ -45,6 +46,7 @@ protected:
                                 BoundType type = BoundType::OUT_BOUND)
         : BaseProcessor<RESP>(kvstore, schemaMan)
         , type_(type) {}
+
     /**
      * Check whether current operation on the data is valid or not.
      * */
@@ -89,6 +91,8 @@ protected:
 protected:
     GraphSpaceID  spaceId_;
     BoundType     type_;
+    std::unique_ptr<ExpressionContext> expCtx_;
+    std::unique_ptr<Expression> exp_;
 };
 
 }  // namespace storage

@@ -8,7 +8,7 @@
 #include "storage/KeyUtils.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
-
+#include "storage/CommonUtils.h"
 
 namespace nebula {
 namespace storage {
@@ -164,7 +164,7 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 } else if (type_ == BoundType::OUT_BOUND) {
                     // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
-                                                            edgeContext.edgeType_);
+                                                                  edgeContext.edgeType_);
                     if (!schema) {
                         return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
@@ -205,6 +205,18 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     // stored along with the properties
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
+        if (exp_ != nullptr) {
+            auto& getters = expCtx_->getters();
+            getters.getSrcTagProp = [&] (const std::string&,
+                                         const std::string& prop) -> VariantType {
+                return RowReader::getProp(reader.get(), prop);
+            };
+            auto value = exp_->eval();
+            if (!Expression::asBool(value)) {
+                VLOG(1) << "Filter the vertex (" << vId << ", " << tagId << ")";
+                return kvstore::ResultCode::SUCCEEDED;
+            }
+        }
         this->collectProps(reader.get(), iter->key(), props, collector);
     } else {
         VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
@@ -242,6 +254,21 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         std::unique_ptr<RowReader> reader;
         if (type_ == BoundType::OUT_BOUND && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_, val, spaceId_, edgeType);
+            if (exp_ != nullptr) {
+                auto& getters = expCtx_->getters();
+                getters.getEdgeProp = [&] (const std::string &prop) -> VariantType {
+                    return RowReader::getProp(reader.get(), prop);
+                };
+                getters.getEdgeRank = [&] () -> VariantType {
+                    return rank;
+                };
+                auto value = exp_->eval();
+                if (!Expression::asBool(value)) {
+                    VLOG(1) << "Filter the edge "
+                            << vId << "-> " << dstId << "@" << rank << ":" << edgeType;
+                    continue;
+                }
+            }
         }
         proc(reader.get(), key, props);
         if (firstLoop) {
@@ -269,7 +296,42 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
         return;
     }
 
-    // const auto& filter = req.get_filter();
+    const auto& filterStr = req.get_filter();
+    if (!filterStr.empty()) {
+        StatusOr<std::unique_ptr<Expression>> expRet = Expression::decode(filterStr);
+        bool checkExp = false;
+        do {
+            if (!expRet.ok()) {
+                break;
+            }
+            exp_ = std::move(expRet).value();
+            if (!CommonUtils::checkExp(exp_.get())) {
+                break;
+            }
+            expCtx_ = std::make_unique<ExpressionContext>();
+            exp_->setContext(expCtx_.get());
+            auto& getters = expCtx_->getters();
+            getters.getDstTagProp = [] (const std::string&, const std::string&) -> VariantType{
+                LOG(FATAL) << "Unsupport get dst tag prop!";
+                return false;
+            };
+            getters.getInputProp = [] (const std::string&) -> VariantType {
+                LOG(FATAL) << "Unsupport get input prop!";
+                return false;
+            };
+
+            checkExp = true;
+        } while (false);
+
+        if (!checkExp) {
+            for (auto& p : req.get_parts()) {
+                this->pushResultCode(cpp2::ErrorCode::E_INVALID_FILTER, p.first);
+            }
+            this->onFinished();
+            return;
+        }
+    }
+
     std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partV) {
         auto partId = partV.first;
         kvstore::ResultCode ret;

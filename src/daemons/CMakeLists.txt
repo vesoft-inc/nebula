@@ -46,6 +46,7 @@ add_executable(
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>

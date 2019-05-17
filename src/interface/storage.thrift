@@ -29,6 +29,8 @@ enum ErrorCode {
     E_TAG_PROP_NOT_FOUND = -22,
     E_IMPROPER_DATA_TYPE = -23,
 
+    // Invalid request
+    E_INVALID_FILTER = -31,
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 

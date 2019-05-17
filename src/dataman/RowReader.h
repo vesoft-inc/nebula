@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include <gtest/gtest_prod.h>
 #include "gen-cpp2/graph_types.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "dataman/DataCommon.h"
 #include "meta/SchemaProviderIf.h"
 #include "meta/SchemaManager.h"
@@ -87,6 +88,46 @@ public:
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema);
 
+    static VariantType getProp(const RowReader* reader,
+                               const std::string& prop) {
+        auto& vType = reader->getSchema()->getFieldType(prop);
+        switch (vType.type) {
+            case nebula::cpp2::SupportedType::BOOL: {
+                bool v;
+                reader->getBool(prop, v);
+                return v;
+            }
+            case nebula::cpp2::SupportedType::INT: {
+                int64_t v;
+                reader->getInt(prop, v);
+                return v;
+            }
+            case nebula::cpp2::SupportedType::VID: {
+                VertexID v;
+                reader->getVid(prop, v);
+                return v;
+            }
+            case nebula::cpp2::SupportedType::FLOAT: {
+                float v;
+                reader->getFloat(prop, v);
+                return static_cast<double>(v);
+            }
+            case nebula::cpp2::SupportedType::DOUBLE: {
+                double v;
+                reader->getDouble(prop, v);
+                return v;
+            }
+            case nebula::cpp2::SupportedType::STRING: {
+                folly::StringPiece v;
+                reader->getString(prop, v);
+                return v.toString();
+            }
+            default:
+                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.type);
+                return "";
+        }
+    }
+
     virtual ~RowReader() = default;
 
     SchemaVer schemaVer() const noexcept;
@@ -122,6 +163,10 @@ public:
 
     ResultType getTimestamp(const folly::StringPiece name, int64_t& v) const noexcept;
     ResultType getTimestamp(int64_t index, int64_t& v) const noexcept;
+
+    const meta::SchemaProviderIf* getSchema() const {
+        return schema_.get();
+    }
 
     // TODO getPath(const std::string& name) const noexcept;
     // TODO getPath(int64_t index) const noexcept;
