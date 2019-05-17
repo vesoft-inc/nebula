@@ -148,7 +148,7 @@ struct AddVerticesRequest {
     1: common.GraphSpaceID space_id,
     // partId => vertices
     2: map<common.PartitionID, list<Vertex>>(cpp.template = "std::unordered_map") parts,
-    // If true, it equals an upset operation.
+    // If true, it equals an upsert operation.
     3: bool overwritable,
 }
 
@@ -156,7 +156,7 @@ struct AddEdgesRequest {
     1: common.GraphSpaceID space_id,
     // partId => edges
     2: map<common.PartitionID, list<Edge>>(cpp.template = "std::unordered_map") parts,
-    // If true, it equals an upset operation.
+    // If true, it equals an upsert operation.
     3: bool overwritable,
 }
 

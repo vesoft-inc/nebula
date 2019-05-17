@@ -178,8 +178,8 @@ public:
 
             LOG(INFO) << "Stop the server...";
         });
-        while (!sc->server_->getServeEventBase()
-               || !sc->server_->getServeEventBase()->isRunning()) {
+        while (!sc->server_->getServeEventBase() ||
+               !sc->server_->getServeEventBase()->isRunning()) {
         }
         sc->port_ = sc->server_->getAddress().getPort();
         LOG(INFO) << "Starting the Meta Daemon on port " << sc->port_

@@ -165,7 +165,8 @@ public:
         uint32_t port_;
     };
 
-    static std::unique_ptr<ServerContext> mockServer(const char* dataPath,
+    static std::unique_ptr<ServerContext> mockServer(meta::MetaClient* mClient,
+                                                     const char* dataPath,
                                                      uint32_t ip,
                                                      uint32_t port = 0) {
         auto sc = std::make_unique<ServerContext>();

@@ -33,7 +33,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
     auto metaServerContext = meta::TestUtils::mockServer(localMetaPort, metaPath.c_str());
-    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", metaServerContext->port_);
+    localMetaPort =  metaServerContext->port_;
 
     LOG(INFO) << "Create meta client...";
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
