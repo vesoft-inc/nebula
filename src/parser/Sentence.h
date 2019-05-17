@@ -7,7 +7,7 @@
 #define PARSER_SENTENCE_H_
 
 #include "base/Base.h"
-#include "parser/Expressions.h"
+#include "filter/Expressions.h"
 
 namespace nebula {
 
