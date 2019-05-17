@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "graph/test/TestEnv.h"
@@ -30,7 +30,7 @@ TEST_F(SchemaTest, metaCommunication) {
     ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ADD HOSTS(\"127.0.0.1:1000\", \"127.0.0.1:1100\")";
+        std::string query = "ADD HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -47,7 +47,7 @@ TEST_F(SchemaTest, metaCommunication) {
     // test nonexistent space
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "USE SPACE default_space";
+        std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -60,13 +60,13 @@ TEST_F(SchemaTest, metaCommunication) {
     sleep(FLAGS_load_data_interval_second + 1);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "USE SPACE default_space";
+        std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG person(name string, email string, "
+        std::string query = "CREATE TAG person(name string, email_addr string, "
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
         sleep(FLAGS_load_data_interval_second + 1);
@@ -80,7 +80,7 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"name", "string"},
-            {"email", "string"},
+            {"email_addr", "string"},
             {"age", "int"},
             {"gender", "string"},
             {"row_timestamp", "timestamp"},
@@ -115,7 +115,7 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG account "
                             "ADD (col1 int TTL = 200, col2 string), "
-                            "SET (balance string), "
+                            "CHANGE (balance string), "
                             "DROP (id)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -176,6 +176,18 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "SHOW EDGES";
+        auto code = client->execute(query, resp);
+        sleep(FLAGS_load_data_interval_second + 1);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"buy"},
+            {"education"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "CREATE SPACE my_space(partition_num=9, replica_factor=3)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -183,7 +195,7 @@ TEST_F(SchemaTest, metaCommunication) {
     sleep(FLAGS_load_data_interval_second + 1);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "USE SPACE my_space";
+        std::string query = "USE my_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -207,11 +219,27 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    /* test the same tag in diff space, but now meta server not supported,
-     * will add a issue(#292) to resolve it */
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG person(name string, interest string)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW TAGS";
+        auto code = client->execute(query, resp);
+        sleep(FLAGS_load_data_interval_second + 1);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"animal"},
+            {"person"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "REMOVE TAG person ";
         auto code = client->execute(query, resp);
         sleep(FLAGS_load_data_interval_second + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -245,7 +273,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "REMOVE HOSTS(\"127.0.0.1:1000\", \"127.0.0.1:1100\")";
+        std::string query = "REMOVE HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

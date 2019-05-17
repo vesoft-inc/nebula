@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -35,7 +35,7 @@ void DescribeTagExecutor::execute() {
             onError_(Status::Error("Schema not found for tag `%s'", name->c_str()));
             return;
         }
-        std::vector<std::string> header{"Column", "Type"};
+        std::vector<std::string> header{"Field", "Type"};
         resp_->set_column_names(std::move(header));
         uint32_t numFields = schema->getNumFields();
         std::vector<cpp2::RowValue> rows;

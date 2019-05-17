@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
@@ -19,22 +19,36 @@ public:
     enum class ShowType : uint32_t {
         kUnknown,
         kShowHosts,
-        kShowSpaces
+        kShowSpaces,
+        kShowTags,
+        kShowEdges,
+        kShowUsers,
+        kShowUser,
+        kShowRoles
     };
 
     explicit ShowSentence(ShowType sType) {
         kind_ = Kind::kShow;
         showType_ = std::move(sType);
     }
-
+    ShowSentence(ShowType sType, std::string *name) {
+        kind_ = Kind::kShow;
+        name_.reset(name);
+        showType_ = std::move(sType);
+    }
     std::string toString() const override;
 
     ShowType showType() const {
         return showType_;
     }
 
+    std::string* getName() {
+        return name_.get();
+    }
+
 private:
-    ShowType    showType_{ShowType::kUnknown};
+    ShowType                      showType_{ShowType::kUnknown};
+    std::unique_ptr<std::string>  name_;
 };
 
 
@@ -45,24 +59,23 @@ inline std::ostream& operator<<(std::ostream &os, ShowSentence::ShowType type) {
 
 class HostList final {
 public:
-    void addHost(std::string *hoststr) {
-        hostStrs_.emplace_back(hoststr);
+    void addHost(HostAddr *addr) {
+        hosts_.emplace_back(addr);
     }
 
     std::string toString() const;
 
-    std::vector<HostAddr> toHosts() const {
+    std::vector<HostAddr> hosts() const {
         std::vector<HostAddr> result;
-        result.resize(hostStrs_.size());
-        auto getHostAddr = [] (const auto &ptr) {
-            return network::NetworkUtils::toHostAddr(folly::trimWhitespace(*(ptr.get())));
-        };
-        std::transform(hostStrs_.begin(), hostStrs_.end(), result.begin(), getHostAddr);
+        result.reserve(hosts_.size());
+        for (auto &host : hosts_) {
+            result.emplace_back(*host);
+        }
         return result;
     }
 
 private:
-    std::vector<std::unique_ptr<std::string>>   hostStrs_;
+    std::vector<std::unique_ptr<HostAddr>>      hosts_;
 };
 
 
@@ -77,7 +90,7 @@ public:
     }
 
     std::vector<HostAddr> hosts() const {
-        return hosts_->toHosts();
+        return hosts_->hosts();
     }
 
     std::string toString() const override;
@@ -98,7 +111,7 @@ public:
     }
 
     std::vector<HostAddr> hosts() const {
-        return hosts_->toHosts();
+        return hosts_->hosts();
     }
 
     std::string toString() const override;

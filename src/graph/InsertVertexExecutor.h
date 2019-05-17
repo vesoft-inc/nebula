@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef GRAPH_INSERTVERTEXEXECUTOR_H_
@@ -31,7 +31,6 @@ private:
     InsertVertexSentence                       *sentence_{nullptr};
     bool                                        overwritable_{true};
     TagID                                       tagId_{0};
-    const std::string                          *vertex_{nullptr};
     TagSchema                                   schema_;
     std::vector<std::string*>                   properties_;
     std::vector<VertexRowItem*>                 rows_;

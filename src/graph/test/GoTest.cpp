@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -624,10 +624,10 @@ AssertionResult GoTest::prepareData() {
 
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "USE SPACE nba";
+        std::string query = "USE nba";
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
-            return TestError() << "USE SPACE nba failed"
+            return TestError() << "USE nba failed"
                                << static_cast<int32_t>(code);
         }
     }

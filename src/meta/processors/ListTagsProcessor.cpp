@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "meta/processors/ListTagsProcessor.h"
@@ -10,6 +10,7 @@ namespace nebula {
 namespace meta {
 
 void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
+    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
     auto spaceId = req.get_space_id();
     auto prefix = MetaServiceUtils::schemaTagsPrefix(spaceId);
@@ -30,9 +31,8 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto tagName = val.subpiece(sizeof(int32_t), nameLen).str();
         auto schema = MetaServiceUtils::parseSchema(val);
-        cpp2::TagItem tagItem(apache::thrift::FragileConstructor::FRAGILE,
-                              tagID, tagName, vers, schema);
-        tags.emplace_back(std::move(tagItem));
+        tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                          tagID, tagName, vers, schema);
         iter->next();
     }
     resp_.set_tags(std::move(tags));

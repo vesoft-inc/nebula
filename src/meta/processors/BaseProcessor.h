@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef META_BASEPROCESSOR_H_
@@ -11,7 +11,6 @@
 #include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
 #include <folly/SharedMutex.h>
-#include "interface/gen-cpp2/meta_types.h"
 #include "base/StatusOr.h"
 #include "time/Duration.h"
 #include "kvstore/KVStore.h"
@@ -40,6 +39,13 @@ GENERATE_LOCK(edge);
 
 #undef GENERATE_LOCK
 };
+
+#define CHECK_SPACE_ID_AND_RETURN(spaceID) \
+    if (spaceExist(spaceID) == Status::NotFound()) { \
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        onFinished(); \
+        return; \
+    }
 
 /**
  * Check segemnt is consist of numbers and letters and should not empty.
@@ -120,6 +126,8 @@ protected:
      * */
     void doPut(std::vector<kvstore::KV> data);
 
+    StatusOr<std::unique_ptr<kvstore::KVIterator>> doPrefix(const std::string& key);
+
     /**
      * General get function.
      * */
@@ -179,9 +187,9 @@ protected:
     Status spaceExist(GraphSpaceID spaceId);
 
     /**
-     * Check multi host_name exists or not.
+     * Check host has been registered or not.
      * */
-    Status hostsExist(const std::vector<std::string>& name);
+    Status hostExist(const std::string& hostKey);
 
     /**
      * Return the spaceId for name.

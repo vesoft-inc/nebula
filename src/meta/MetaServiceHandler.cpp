@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "meta/MetaServiceUtils.h"
@@ -17,8 +17,10 @@
 #include "meta/processors/AlterTagProcessor.h"
 #include "meta/processors/CreateEdgeProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
+#include "meta/processors/GetEdgeProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
 #include "meta/processors/ListEdgesProcessor.h"
+#include "meta/processors/RemoveEdgeProcessor.h"
 #include "meta/processors/MultiPutProcessor.h"
 #include "meta/processors/GetProcessor.h"
 #include "meta/processors/MultiGetProcessor.h"
@@ -28,6 +30,7 @@
 #include "meta/processors/RemoveProcessor.h"
 #include "meta/processors/RemoveRangeProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
+#include "meta/processors/HBProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -79,7 +82,7 @@ MetaServiceHandler::future_getPartsAlloc(const cpp2::GetPartsAllocReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::MultiPutResp>
+folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_multiPut(const cpp2::MultiPutReq& req) {
     auto* processor = MultiPutProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
@@ -115,13 +118,13 @@ MetaServiceHandler::future_scanValue(const cpp2::ScanReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::RemoveResp>
+folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_remove(const cpp2::RemoveReq& req) {
     auto* processor = RemoveProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::RemoveRangeResp>
+folly::Future<cpp2::ExecResp>
 MetaServiceHandler::future_removeRange(const cpp2::RemoveRangeReq& req) {
     auto* processor = RemoveRangeProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
@@ -157,15 +160,33 @@ MetaServiceHandler::future_listTags(const cpp2::ListTagsReq& req) {
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_createEdge(const cpp2::CreateEdgeReq& req) {
-    auto* processor = CreateEdgeProcessor::instance(kvstore_);
+folly::Future<cpp2::GetEdgeResp>
+MetaServiceHandler::future_getEdge(const cpp2::GetEdgeReq& req) {
+    auto* processor = GetEdgeProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
 folly::Future<cpp2::ListEdgesResp>
 MetaServiceHandler::future_listEdges(const cpp2::ListEdgesReq& req) {
     auto* processor = ListEdgesProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_createEdge(const cpp2::CreateEdgeReq& req) {
+    auto* processor = CreateEdgeProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_removeEdge(const cpp2::RemoveEdgeReq& req) {
+    auto* processor = RemoveEdgeProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::HBResp>
+MetaServiceHandler::future_heartBeat(const cpp2::HBReq& req) {
+    auto* processor = HBProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

@@ -1,7 +1,7 @@
-# Copyright (c) 2019 - present, VE Software Inc. All rights reserved
+# Copyright (c) 2018 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License
-# (found in the LICENSE.Apache file in the root directory)
+# This source code is licensed under Apache 2.0 License,
+# attached with Common Clause Condition 1.0, found in the LICENSES directory.
 #
 # The build can be controlled by defining following variables on the
 # <cmake> command line
@@ -345,7 +345,7 @@ IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git/")
     )
     execute_process(
         COMMAND
-        "ln" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/cpplint/bin/pre-commit.sh ${PRE_COMMIT_HOOK}
+        "ln" "-s" ${CMAKE_CURRENT_SOURCE_DIR}/.linters/cpp/hooks/pre-commit.sh ${PRE_COMMIT_HOOK}
         RESULT_VARIABLE retcode
     )
     IF(${retcode} EQUAL 0)

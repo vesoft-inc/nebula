@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef META_REMOVERANGEPROCESSOR_H_
@@ -12,7 +12,7 @@
 namespace nebula {
 namespace meta {
 
-class RemoveRangeProcessor : public BaseProcessor<cpp2::RemoveRangeResp> {
+class RemoveRangeProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
     static RemoveRangeProcessor* instance(kvstore::KVStore* kvstore) {
         return new RemoveRangeProcessor(kvstore);
@@ -22,7 +22,7 @@ public:
 
 private:
     explicit RemoveRangeProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::RemoveRangeResp>(kvstore) {}
+        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

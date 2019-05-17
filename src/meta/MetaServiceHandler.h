@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef META_METASERVICEHANDLER_H_
@@ -47,7 +47,7 @@ public:
     /**
      * Custom kv related operations.
      * */
-    folly::Future<cpp2::MultiPutResp>
+    folly::Future<cpp2::ExecResp>
     future_multiPut(const cpp2::MultiPutReq& req) override;
 
     folly::Future<cpp2::GetResp>
@@ -56,10 +56,10 @@ public:
     folly::Future<cpp2::MultiGetResp>
     future_multiGet(const cpp2::MultiGetReq& req) override;
 
-    folly::Future<cpp2::RemoveResp>
+    folly::Future<cpp2::ExecResp>
     future_remove(const cpp2::RemoveReq& req) override;
 
-    folly::Future<cpp2::RemoveRangeResp>
+    folly::Future<cpp2::ExecResp>
     future_removeRange(const cpp2::RemoveRangeReq& req) override;
 
     folly::Future<cpp2::ScanResp>
@@ -89,11 +89,23 @@ public:
     folly::Future<cpp2::ListTagsResp>
     future_listTags(const cpp2::ListTagsReq& req) override;
 
-    folly::Future<cpp2::ExecResp>
-    future_createEdge(const cpp2::CreateEdgeReq& req) override;
+    folly::Future<cpp2::GetEdgeResp>
+    future_getEdge(const cpp2::GetEdgeReq& req) override;
 
     folly::Future<cpp2::ListEdgesResp>
     future_listEdges(const cpp2::ListEdgesReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_createEdge(const cpp2::CreateEdgeReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_removeEdge(const cpp2::RemoveEdgeReq& req) override;
+
+    /**
+     * HeartBeat
+     * */
+    folly::Future<cpp2::HBResp>
+    future_heartBeat(const cpp2::HBReq& req) override;
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;

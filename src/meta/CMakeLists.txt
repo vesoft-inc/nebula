@@ -21,12 +21,15 @@ add_library(
     processors/DropSpaceProcessor.cpp
     processors/GetPartsAllocProcessor.cpp
     processors/CreateTagProcessor.cpp
-    processors/AlterTagProcessor.cpp
     processors/CreateEdgeProcessor.cpp
+    processors/AlterTagProcessor.cpp
+    processors/AlterEdgeProcessor.cpp
     processors/GetTagProcessor.cpp
+    processors/GetEdgeProcessor.cpp
     processors/ListTagsProcessor.cpp
-    processors/RemoveTagProcessor.cpp
     processors/ListEdgesProcessor.cpp
+    processors/RemoveTagProcessor.cpp
+    processors/RemoveEdgeProcessor.cpp
     processors/GetProcessor.cpp
     processors/MultiGetProcessor.cpp
     processors/MultiPutProcessor.cpp
@@ -35,6 +38,7 @@ add_library(
     processors/ScanProcessor.cpp
     processors/ScanKeyProcessor.cpp
     processors/ScanValueProcessor.cpp
+    processors/HBProcessor.cpp
 )
 
 add_dependencies(

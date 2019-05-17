@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -56,10 +56,10 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else if (status.IsNotFound()) {
-        LOG(ERROR) << "Get: " << key << " Not Found";
+        VLOG(3) << "Get: " << key << " Not Found";
         return ResultCode::ERR_KEY_NOT_FOUND;
     } else {
-        LOG(ERROR) << "Get Failed: " << key << " " << status.ToString();
+        VLOG(3) << "Get Failed: " << key << " " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }
@@ -91,7 +91,7 @@ ResultCode RocksEngine::put(std::string key, std::string value) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
-        LOG(ERROR) << "Put Failed: " << key << status.ToString();
+        VLOG(3) << "Put Failed: " << key << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }
@@ -108,7 +108,7 @@ ResultCode RocksEngine::multiPut(std::vector<KV> keyValues) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
-        LOG(ERROR) << "MultiPut Failed: " << status.ToString();
+        VLOG(3) << "MultiPut Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }
@@ -146,7 +146,7 @@ ResultCode RocksEngine::remove(const std::string& key) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
-        LOG(ERROR) << "Remove Failed: " << key << status.ToString();
+        VLOG(3) << "Remove Failed: " << key << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }
@@ -162,7 +162,7 @@ ResultCode RocksEngine::multiRemove(std::vector<std::string> keys) {
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
-        LOG(ERROR) << "MultiRemove Failed: " << status.ToString();
+        VLOG(3) << "MultiRemove Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }
@@ -176,7 +176,7 @@ ResultCode RocksEngine::removeRange(const std::string& start,
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
-        LOG(ERROR) << "RemoveRange Failed: " << status.ToString();
+        VLOG(3) << "RemoveRange Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }

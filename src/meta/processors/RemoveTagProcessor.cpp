@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "meta/processors/RemoveTagProcessor.h"
@@ -10,13 +10,7 @@ namespace nebula {
 namespace meta {
 
 void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
-    if (spaceExist(req.get_space_id()) == Status::NotFound()) {
-        LOG(ERROR) << "Remove Tag Failed : Space " << req.get_space_id() << " not found";
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
-    }
-
+    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto indexKey = MetaServiceUtils::indexTagKey(req.get_space_id(), req.get_tag_name());
     auto indexResult = doGet(indexKey);

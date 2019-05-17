@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef META_METACLIENT_H_
@@ -42,9 +42,9 @@ using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;
 using SpaceTagNameIdMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, TagID>;
 // get edgeType via spaceId and edgeName
 using SpaceEdgeNameTypeMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, EdgeType>;
-// get newest tag ver via spaceId and TagID
+// get latest tag version via spaceId and TagID
 using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, SchemaVer>;
-// get newest edge ver via spaceId and edgeType
+// get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 
 class MetaChangedListener {
@@ -70,6 +70,7 @@ public:
         listener_ = listener;
     }
 
+    // Operations for parts
     /**
      * TODO(dangleptr): Use one struct to represent space description.
      * */
@@ -94,13 +95,14 @@ public:
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);
 
-    // TODO(Laura) : We can actively update the cache once we add the schema
+    // Operations for schema
     folly::Future<StatusOr<TagID>>
     createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
 
-    // TODO(boshengchen) need refresh tagNameIdMap and newestTagVerMap
     folly::Future<StatusOr<TagID>>
-    alterTagSchema(GraphSpaceID spaceId, std::string name, std::vector<cpp2::AlterTagItem> items);
+    alterTagSchema(GraphSpaceID spaceId,
+                   std::string name,
+                   std::vector<cpp2::AlterSchemaItem> tagItems);
 
     folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
     listTagSchemas(GraphSpaceID spaceId);
@@ -111,14 +113,48 @@ public:
     folly::Future<StatusOr<nebula::cpp2::Schema>>
     getTagSchema(int32_t spaceId, int32_t tagId, int64_t version);
 
-    // TODO(Laura) : We can actively update the cache once we add the schema
     folly::Future<StatusOr<EdgeType>>
     createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
+
+    folly::Future<StatusOr<bool>>
+    alterEdge(GraphSpaceID spaceId, std::string name, std::vector<cpp2::AlterSchemaItem> items);
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
     listEdgeSchemas(GraphSpaceID spaceId);
 
-    // These are the interfaces about cache opeartions.
+    folly::Future<StatusOr<nebula::cpp2::Schema>>
+    getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer version);
+
+    folly::Future<StatusOr<bool>>
+    removeEdgeSchema(GraphSpaceID spaceId, std::string name);
+
+    // Operations for custom kv
+    folly::Future<StatusOr<bool>>
+    multiPut(std::string segment,
+             std::vector<std::pair<std::string, std::string>> pairs);
+
+    folly::Future<StatusOr<std::string>>
+    get(std::string segment, std::string key);
+
+    folly::Future<StatusOr<std::vector<std::string>>>
+    multiGet(std::string segment, std::vector<std::string> keys);
+
+    folly::Future<StatusOr<std::unordered_map<std::string, std::string>>>
+    scan(std::string segment, std::string start, std::string end);
+
+    folly::Future<StatusOr<std::vector<std::string>>>
+    scanKey(std::string segment, std::string start, std::string end);
+
+    folly::Future<StatusOr<std::vector<std::string>>>
+    scanValue(std::string segment, std::string start, std::string end);
+
+    folly::Future<StatusOr<bool>>
+    remove(std::string segment, std::string key);
+
+    folly::Future<StatusOr<bool>>
+    removeRange(std::string segment, std::string start, std::string end);
+
+    // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
@@ -143,37 +179,11 @@ public:
 
     int32_t partsNum(GraphSpaceID spaceId);
 
-    StatusOr<std::shared_ptr<const SchemaProviderIf>> getTagSchemeFromCache(GraphSpaceID spaceId,
-                                                                            TagID tagID,
-                                                                            SchemaVer ver = -1);
+    StatusOr<std::shared_ptr<const SchemaProviderIf>>
+    getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver = -1);
 
-    StatusOr<std::shared_ptr<const SchemaProviderIf>> getEdgeSchemeFromCache(GraphSpaceID spaceId,
-                                                                             EdgeType edgeType,
-                                                                             SchemaVer ver = -1);
-
-    folly::Future<StatusOr<bool>>
-    multiPut(std::string segment, std::vector<std::pair<std::string, std::string>> pairs);
-
-    folly::Future<StatusOr<std::string>>
-    get(std::string segment, std::string key);
-
-    folly::Future<StatusOr<std::vector<std::string>>>
-    multiGet(std::string segment, std::vector<std::string> keys);
-
-    folly::Future<StatusOr<std::unordered_map<std::string, std::string>>>
-    scan(std::string segment, std::string start, std::string end);
-
-    folly::Future<StatusOr<std::vector<std::string>>>
-    scanKey(std::string segment, std::string start, std::string end);
-
-    folly::Future<StatusOr<std::vector<std::string>>>
-    scanValue(std::string segment, std::string start, std::string end);
-
-    folly::Future<StatusOr<bool>>
-    remove(std::string segment, std::string key);
-
-    folly::Future<StatusOr<bool>>
-    removeRange(std::string segment, std::string start, std::string end);
+    StatusOr<std::shared_ptr<const SchemaProviderIf>>
+    getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
 protected:
     void loadDataThreadFunc();
@@ -187,23 +197,15 @@ protected:
 
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
-    void updateActiveHost() {
-        active_ = addrs_[folly::Random::rand64(addrs_.size())];
+    void updateHost() {
+        folly::RWSpinLock::WriteHolder holder(hostLock_);
+        leader_ = active_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
     void diff(const std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>& newCache);
 
     template<typename RESP>
     Status handleResponse(const RESP& resp);
-
-    template<class Request,
-             class RemoteFunc,
-             class Response =
-                typename std::result_of<
-                    RemoteFunc(std::shared_ptr<meta::cpp2::MetaServiceAsyncClient>, Request)
-                >::type::value_type
-    >
-    Response collectResponse(Request req, RemoteFunc remoteFunc);
 
     template<class Request,
              class RemoteFunc,
@@ -217,7 +219,8 @@ protected:
     >
     folly::Future<StatusOr<Response>> getResponse(Request req,
                                                   RemoteFunc remoteFunc,
-                                                  RespGenerator respGen);
+                                                  RespGenerator respGen,
+                                                  bool toLeader = false);
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
@@ -232,7 +235,10 @@ private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>> clientsMan_;
     std::vector<HostAddr> addrs_;
+    // The lock used to protect active_ and leader_.
+    folly::RWSpinLock hostLock_;
     HostAddr active_;
+    HostAddr leader_;
     thread::GenericWorker loadDataThread_;
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
     SpaceNameIdMap        spaceIndexByName_;

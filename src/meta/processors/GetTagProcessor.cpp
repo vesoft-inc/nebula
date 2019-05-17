@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "meta/processors/GetTagProcessor.h"
@@ -10,6 +10,7 @@ namespace nebula {
 namespace meta {
 
 void GetTagProcessor::process(const cpp2::GetTagReq& req) {
+    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
     std::string tagKey = MetaServiceUtils::schemaTagKey(req.get_space_id(),
                                                         req.get_tag_id(),

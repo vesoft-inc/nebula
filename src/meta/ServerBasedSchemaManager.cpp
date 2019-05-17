@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -35,7 +35,7 @@ ServerBasedSchemaManager::getTagSchema(GraphSpaceID space, TagID tag, SchemaVer 
     if (ver < 0) {
         ver = getNewestTagSchemaVer(space, tag);
     }
-    auto ret = metaClient_->getTagSchemeFromCache(space, tag, ver);
+    auto ret = metaClient_->getTagSchemaFromCache(space, tag, ver);
     if (ret.ok()) {
         return ret.value();
     }
@@ -72,7 +72,7 @@ ServerBasedSchemaManager::getEdgeSchema(GraphSpaceID space, EdgeType edge, Schem
         ver = getNewestEdgeSchemaVer(space, edge);
     }
 
-    auto ret = metaClient_->getEdgeSchemeFromCache(space, edge, ver);
+    auto ret = metaClient_->getEdgeSchemaFromCache(space, edge, ver);
     if (ret.ok()) {
         return ret.value();
     }

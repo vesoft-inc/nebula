@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef META_SERVERBASEDSCHEMAMANAGER_H_
@@ -29,11 +29,12 @@ public:
         folly::StringPiece spaceName,
         folly::StringPiece tagName,
         SchemaVer ver = -1) override;
+
     // Returns a negative number when the schema does not exist
     SchemaVer getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
 
     SchemaVer getNewestTagSchemaVer(folly::StringPiece spaceName,
-                                  folly::StringPiece tagName) override;
+                                    folly::StringPiece tagName) override;
 
     // return the newest one if ver less 0
     std::shared_ptr<const SchemaProviderIf> getEdgeSchema(
@@ -43,11 +44,12 @@ public:
         folly::StringPiece spaceName,
         folly::StringPiece typeName,
         SchemaVer ver = -1) override;
+
     // Returns a negative number when the schema does not exist
     SchemaVer getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
 
     SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
-                                   folly::StringPiece typeName) override;
+                                     folly::StringPiece typeName) override;
 
     GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) override;
 

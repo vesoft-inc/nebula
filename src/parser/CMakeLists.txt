@@ -13,16 +13,15 @@ add_library(
         OBJECT
         ${FLEX_Scanner_OUTPUTS}
         ${BISON_Parser_OUTPUTS}
-        Expressions.cpp
-        FunctionManager.cpp
         Clauses.cpp
         SequentialSentences.cpp
         MaintainSentences.cpp
         MutateSentences.cpp
         TraverseSentences.cpp
         AdminSentences.cpp
+        UserSentences.cpp
 )
 
-add_dependencies(parser_obj base_obj)
+add_dependencies(parser_obj base_obj filter_obj)
 
 add_subdirectory(test)

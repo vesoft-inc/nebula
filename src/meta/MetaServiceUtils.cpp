@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "meta/MetaServiceUtils.h"
@@ -20,7 +20,7 @@ const std::string kIndexTable  = "__index__";   // NOLINT
 
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
-    key.reserve(256);
+    key.reserve(128);
     key.append(kSpacesTable.data(), kSpacesTable.size());
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
     return key;
@@ -114,6 +114,15 @@ nebula::cpp2::HostAddr MetaServiceUtils::parseHostKey(folly::StringPiece key) {
     nebula::cpp2::HostAddr host;
     memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
     return host;
+}
+
+std::string MetaServiceUtils::schemaEdgePrefix(GraphSpaceID spaceId, EdgeType edgeType) {
+    std::string key;
+    key.reserve(128);
+    key.append(kEdgesTable.data(), kEdgesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    key.append(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType));
+    return key;
 }
 
 std::string MetaServiceUtils::schemaEdgesPrefix(GraphSpaceID spaceId) {
@@ -248,6 +257,48 @@ std::string MetaServiceUtils::assembleSegmentKey(const std::string& segment,
     segmentKey.append(segment);
     segmentKey.append(key.data(), key.size());
     return segmentKey;
+}
+
+cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                                  const nebula::cpp2::ColumnDef col,
+                                                  const cpp2::AlterSchemaOp op) {
+    switch (op) {
+        case cpp2::AlterSchemaOp::ADD :
+        {
+            for (auto it = cols.begin(); it != cols.end(); ++it) {
+                if (it->get_name() == col.get_name()) {
+                    LOG(WARNING) << "Column existing : " << col.get_name();
+                    return cpp2::ErrorCode::E_EXISTED;
+                }
+            }
+            cols.emplace_back(std::move(col));
+            return cpp2::ErrorCode::SUCCEEDED;
+        }
+        case cpp2::AlterSchemaOp::CHANGE :
+        {
+            for (auto it = cols.begin(); it != cols.end(); ++it) {
+                if (col.get_name() == it->get_name()) {
+                    *it = col;
+                    return cpp2::ErrorCode::SUCCEEDED;
+                }
+            }
+            break;
+        }
+        case cpp2::AlterSchemaOp::DROP :
+        {
+            for (auto it = cols.begin(); it != cols.end(); ++it) {
+                if (col.get_name() == it->get_name()) {
+                    cols.erase(it);
+                    return cpp2::ErrorCode::SUCCEEDED;
+                }
+            }
+            break;
+        }
+        default :
+            return cpp2::ErrorCode::E_UNKNOWN;
+    }
+    LOG(WARNING) << "Column not found : " << col.get_name();
+    return cpp2::ErrorCode::E_NOT_FOUND;
 }
 
 }  // namespace meta

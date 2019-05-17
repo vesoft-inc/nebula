@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -17,6 +17,8 @@
 #include "graph/CreateEdgeExecutor.h"
 #include "graph/AlterTagExecutor.h"
 #include "graph/AlterEdgeExecutor.h"
+#include "graph/RemoveTagExecutor.h"
+#include "graph/RemoveEdgeExecutor.h"
 #include "graph/DescribeTagExecutor.h"
 #include "graph/DescribeEdgeExecutor.h"
 #include "graph/InsertVertexExecutor.h"
@@ -63,6 +65,12 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kDescribeEdge:
             executor = std::make_unique<DescribeEdgeExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kRemoveTag:
+             executor = std::make_unique<RemoveTagExecutor>(sentence, ectx());
+             break;
+        case Sentence::Kind::kRemoveEdge:
+             executor = std::make_unique<RemoveEdgeExecutor>(sentence, ectx());
+             break;
         case Sentence::Kind::kInsertVertex:
             executor = std::make_unique<InsertVertexExecutor>(sentence, ectx());
             break;

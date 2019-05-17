@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "kvstore/PartManager.h"
 
@@ -76,23 +76,35 @@ bool MetaServerBasedPartManager::spaceExist(const HostAddr& host,
 }
 
 void MetaServerBasedPartManager::onSpaceAdded(GraphSpaceID spaceId) {
-    CHECK_NOTNULL(handler_);
-    handler_->addSpace(spaceId);
+    if (handler_ != nullptr) {
+        handler_->addSpace(spaceId);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
 }
 
 void MetaServerBasedPartManager::onSpaceRemoved(GraphSpaceID spaceId) {
-    CHECK_NOTNULL(handler_);
-    handler_->removeSpace(spaceId);
+    if (handler_ != nullptr) {
+        handler_->removeSpace(spaceId);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
 }
 
 void MetaServerBasedPartManager::onPartAdded(const PartMeta& partMeta) {
-    CHECK_NOTNULL(handler_);
-    handler_->addPart(partMeta.spaceId_, partMeta.partId_);
+    if (handler_ != nullptr) {
+        handler_->addPart(partMeta.spaceId_, partMeta.partId_);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
 }
 
 void MetaServerBasedPartManager::onPartRemoved(GraphSpaceID spaceId, PartitionID partId) {
-    CHECK_NOTNULL(handler_);
-    handler_->removePart(spaceId, partId);
+    if (handler_ != nullptr) {
+        handler_->removePart(spaceId, partId);
+    } else {
+        VLOG(1) << "handler_ is nullptr!";
+    }
 }
 
 void MetaServerBasedPartManager::onPartUpdated(const PartMeta& partMeta) {

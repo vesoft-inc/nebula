@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "meta/SchemaManager.h"
@@ -29,8 +29,7 @@ std::unique_ptr<SchemaManager> SchemaManager::create() {
 
 void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
                                       TagID tag,
-                                      std::shared_ptr<SchemaProviderIf> schema
-                                      ) {
+                                      std::shared_ptr<SchemaProviderIf> schema) {
     {
         folly::RWSpinLock::WriteHolder wh(tagLock_);
         // Only version 0

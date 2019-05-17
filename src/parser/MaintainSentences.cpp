@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "parser/MaintainSentences.h"
@@ -14,7 +14,8 @@ std::string CreateTagSentence::toString() const {
     buf += "CREATE TAG ";
     buf += *name_;
     buf += " (";
-    for (auto *col : columns_->columnSpecs()) {
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto *col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
@@ -24,11 +25,12 @@ std::string CreateTagSentence::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!colSpecs.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     buf += ")";
     return buf;
 }
-
 
 std::string CreateEdgeSentence::toString() const {
     std::string buf;
@@ -36,7 +38,8 @@ std::string CreateEdgeSentence::toString() const {
     buf += "CREATE EDGE ";
     buf += *name_;
     buf += " (";
-    for (auto &col : columns_->columnSpecs()) {
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
@@ -46,18 +49,20 @@ std::string CreateEdgeSentence::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!colSpecs.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     buf += ")";
     return buf;
 }
-
 
 std::string AlterTagOptItem::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += getOptTypeStr();
     buf += " (";
-    for (auto &col : columns_->columnSpecs()) {
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
@@ -67,11 +72,12 @@ std::string AlterTagOptItem::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!colSpecs.empty()) {
+       buf.resize(buf.size() - 1);
+    }
     buf += ")";
     return buf;
 }
-
 
 std::string AlterTagOptList::toString() const {
     std::string buf;
@@ -98,14 +104,14 @@ std::string AlterTagSentence::toString() const {
     return buf;
 }
 
-
 std::string AlterEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "ALTER EDGE ";
     buf += *name_;
     buf += "(";
-    for (auto &col : columns_->columnSpecs()) {
+    auto colSpecs = std::move(columns_->columnSpecs());
+    for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
         buf += columnTypeToString(col->type());
@@ -115,25 +121,29 @@ std::string AlterEdgeSentence::toString() const {
         }
         buf += ",";
     }
-    buf.resize(buf.size() - 1);
+    if (!colSpecs.empty()) {
+        buf.resize(buf.size() - 1);
+    }
     buf += ")";
     return buf;
 }
 
-
 std::string DescribeTagSentence::toString() const {
-    std::string buf = "DESCRIBE TAG ";
-    buf += *name_;
-    return buf;
+    return folly::stringPrintf("DESCRIBE TAG %s", name_.get()->c_str());
 }
-
 
 std::string DescribeEdgeSentence::toString() const {
-    std::string buf = "DESCRIBE EDGE ";
-    buf += *name_;
-    return buf;
+    return folly::stringPrintf("DESCRIBE EDGE %s", name_.get()->c_str());
 }
 
+std::string RemoveTagSentence::toString() const {
+    return folly::stringPrintf("REMOVE TAG %s", name_.get()->c_str());
+}
+
+
+std::string RemoveEdgeSentence::toString() const {
+    return folly::stringPrintf("REMOVE TAG %s", name_.get()->c_str());
+}
 
 std::string YieldSentence::toString() const {
     std::string buf;

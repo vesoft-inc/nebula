@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef META_MULTIPUTPROCESSOR_H_
@@ -12,7 +12,7 @@
 namespace nebula {
 namespace meta {
 
-class MultiPutProcessor : public BaseProcessor<cpp2::MultiPutResp> {
+class MultiPutProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
     static MultiPutProcessor* instance(kvstore::KVStore* kvstore) {
         return new MultiPutProcessor(kvstore);
@@ -22,7 +22,7 @@ public:
 
 private:
     explicit MultiPutProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::MultiPutResp>(kvstore) {}
+            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

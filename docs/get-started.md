@@ -14,7 +14,7 @@ Containers allow a developer to package up an application with all of the parts 
 such as libraries and other dependencies, and ship it all out as one package.
 By doing so, the developer can rest assured that the application will run on any other `Linux` machine regardless of any customized settings that machine might have that could differ from the machine used for writing and testing the code.
 
-First of all, you should make sure `docker` have installed on your machine. Open a terminal and run the following command :
+First of all, you should make sure that `docker` has been installed on your machine. Open a terminal and run the following command :
 
 ```
 docker --version
@@ -32,8 +32,8 @@ When `nebula` image is ready, run
 
 `docker run -it vesoft/nebula-graph:latest /bin/bash`
 
-to start and login the docker container.
-After login in the container, you're in the `root` directory and you should use `cd ~/nebula-graph/` to switch to the nebula home directory.
+to start and log in to the docker container.
+After login, you're in the `root` directory and you should use `cd ~/nebula-graph/` to switch to the nebula home directory.
 
 Run `./start-all.sh` to start meta service, storage service and graph service.
 
@@ -41,7 +41,7 @@ Run
 
 `ps -ef | grep nebula`
 
-to display the servie's running status.
+to display the services' running status.
 
 Please make sure the services are working.
 
@@ -49,11 +49,11 @@ Please make sure the services are working.
 
 `--port` is used for specifying the graph server port and the default value is `3699`.
 
-`--u` and `--p` are used to specify the user name and password, `user` and `password` are the default authority.
- 
+`-u` and `-p` are used to specify the user name and password, `user` and `password` are the default authority.
+
 Run
 
-`bin/nebula --port=3699 --u=user --p=password`
+`bin/nebula --port=3699 -u=user -p=password`
 
 to connect to the graph server.
 
@@ -67,10 +67,10 @@ Welcome to Nebula Graph (Version 0.1)
 nebula>
 ```
 
-Before query the dataset, you should switch to an existed graph space.
+Before query the dataset, you should switch to an existing graph space.
 
 ```
-nebula> use space nba
+nebula> use nba
 Execution succeeded (Time spent: 154/793 us)
 ```
 
@@ -81,7 +81,7 @@ Execution succeeded (Time spent: 154/793 us)
 This query comes from a vertex walk up an edge.
 
 ```
-nebula> go from 5209979940224249985 over like
+nebula> GO FROM 5209979940224249985 OVER like
 ========================
 |                   id |
 ========================
@@ -97,7 +97,7 @@ nebula> go from 5209979940224249985 over like
 This query comes from a vertex walk up an edge and the target's age should be greater than or equal to 30, also renames the columns as `Player`, `Friend` and `Age`.
 
 ```
-nebula> go from 5209979940224249985 over like where $$[player].age >= 30 YIELD $^[player].name as Player, $$[player].name as Friend, $$[player].age As Age
+nebula> GO FROM 5209979940224249985 OVER like WHERE $$[player].age >= 30 YIELD $^[player].name AS Player, $$[player].name AS Friend, $$[player].age AS Age
 =============================================
 |          Player |            Friend | Age |
 =============================================
@@ -114,14 +114,14 @@ This query comes from a vertex walk up an edge and the target's age should be gr
 
 Setting output result as input, query `Player Name`, `FromYear`, `ToYear` and `Team Name` with input's `id`.
 
-In this query, `$^` is delegated the source vertex and `$$` is the target vertex. 
+In this query, `$^` is delegated the source vertex and `$$` is the target vertex.
 
 `$-` is used to indicate the input from pipeline.
 
 (reference to `regular expressions`, using the special ^ (hat) and $ (dollar sign) metacharacters to describe the start and the end of the line.)
 
 ```
-nebula> go from 5209979940224249985 over like where $$[player].age >= 30 | go from $-.id over serve yield $^[player].name As Player, serve.start_year as FromYear, serve.end_year as ToYear, $$[team].name as Team
+nebula> GO FROM 5209979940224249985 OVER like WHERE $$[player].age >= 30 | GO FROM $-.id OVER serve YIELD $^[player].name AS Player, serve.start_year AS FromYear, serve.end_year AS ToYear, $$[team].name AS Team
 =====================================================
 |            Player | FromYear | ToYear |      Team |
 =====================================================
@@ -143,10 +143,10 @@ For more detail about Query Language, please see [Traverse The Graph](../docs/nG
 Currently you can create your own graph space, such as :
 
 ```
-Create space mySpace(partition_num=1, replica_factor=1)
+CREATE space myspace(partition_num=1, replica_factor=1)
 ```
 
-When you start `Nebula Graph`, a set of vertex and edge have already existed.
+When you start `Nebula Graph`, a set of vertices and edges have already existed.
 Currently the default schema is `nba`.
 
 The graph space describes the relationship between players and teams.
@@ -155,64 +155,73 @@ In the graph space, there are two tags (player and team) and two edges (serve an
 The Schema looks like :
 
 ```
-{
-	"nba": {
-		"tags": {
-			"player": [
-				[
-					"name: string",
-					"age: integer"
-				]
-			],
-			"team": [
-				[
-					"name: string"
-				]
-			]
-		},
-		"edges": {
-			"serve": [
-				[
-					"start_year: integer",
-					"end_year: integer"
-				]
-			],
-			"like": [
-				[
-					"likeness: integer"
-				]
-			]
-		}
-	}
-}
+Tag team:
+==================
+| Field |   Type |
+==================
+|  name | string |
+------------------
+
+Tag player:
+==================
+| Field |   Type |
+==================
+|  name | string |
+------------------
+|   age |    int |
+------------------
+
+Edge serve:
+=====================
+|      Field | Type |
+=====================
+| start_year |  int |
+---------------------
+|   end_year |  int |
+---------------------
+
+Edge like:
+===================
+|    Field | Type |
+===================
+| likeness |  int |
+-------------------
+
 ```
 
 You can create both tag and edge's schema:
 
 ```
 // create tags schema: players and teams:
-create TAG player(name string, age int)
+CREATE TAG player(name string, age int)
 
-create TAG team(name string)
+CREATE TAG team(name string)
 
 // create edges schema: players and teams:
-create EDGE like(likeness int)
+CREATE EDGE like(likeness int)
 
-create EDGE serve(start_year int, end_year int)
+CREATE EDGE serve(start_year int, end_year int)
+```
+
+You could describe the schema created, for example:
+
+```
+DESCRIBE TAG player
+
+DESCRIBE EDGE serve
 ```
 
 The insert sentences look like the following commands.
 
 ```
-// Insert some vertexs: players and teams:
-INSERT VERTEX player(name, age) VALUES(-8379929135833483044: "Amar'e Stoudemire",36)
+// Insert some vertices: players and teams:
+INSERT VERTEX player(name, age) VALUES -8379929135833483044:("Amar'e Stoudemire", 36)
 
-INSERT VERTEX team(name) VALUES(-9110170398241263635: "Magic")
+INSERT VERTEX team(name) VALUES -9110170398241263635:("Magic")
 
 // Insert some edges: likes and serves:
-INSERT EDGE like(likeness) VALUES(-8379929135833483044 -> 6663720087669302163: 90)
+INSERT EDGE like(likeness) VALUES -8379929135833483044 -> 6663720087669302163:(90)
 
-INSERT EDGE serve(start_year, end_year) VALUES(-8379929135833483044 -> 868103967282670864: 2002, 2010)
-
+INSERT EDGE serve(start_year, end_year) VALUES -8379929135833483044 -> 868103967282670864:(2002, 2010)
 ```
 

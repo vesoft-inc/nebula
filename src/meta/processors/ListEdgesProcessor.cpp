@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "meta/processors/ListEdgesProcessor.h"
@@ -10,6 +10,7 @@ namespace nebula {
 namespace meta {
 
 void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
+    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
     auto spaceId = req.get_space_id();
     auto prefix = MetaServiceUtils::schemaEdgesPrefix(spaceId);
@@ -30,9 +31,8 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
         auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
         auto edgeName = val.subpiece(sizeof(int32_t), nameLen).str();
         auto schema = MetaServiceUtils::parseSchema(val);
-        cpp2::EdgeItem edgeItem(apache::thrift::FragileConstructor::FRAGILE,
-                                edgeType, edgeName, vers, schema);
-        edges.emplace_back(std::move(edgeItem));
+        edges.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                           edgeType, edgeName, vers, schema);
         iter->next();
     }
     resp_.set_edges(std::move(edges));

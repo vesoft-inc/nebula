@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef META_ACTIVEHOSTSMAN_H_
@@ -38,6 +38,11 @@ public:
     ActiveHostsMan(int32_t intervalSeconds, int32_t expiredSeconds)
         : intervalSeconds_(intervalSeconds)
         , expirationInSeconds_(expiredSeconds) {
+        CHECK_GT(intervalSeconds, 0)
+            << "intervalSeconds " << intervalSeconds << " should > 0!";
+        CHECK_GE(expiredSeconds, intervalSeconds)
+            << "expiredSeconds " << expiredSeconds
+            << " should >= intervalSeconds " << intervalSeconds;
         CHECK(checkThread_.start());
         checkThread_.addTimerTask(intervalSeconds * 1000,
                                   intervalSeconds * 1000,
@@ -50,7 +55,7 @@ public:
         checkThread_.wait();
     }
 
-    void updateHostInfo(HostAddr hostAddr, HostInfo info) {
+    void updateHostInfo(const HostAddr& hostAddr, const HostInfo& info) {
         folly::RWSpinLock::ReadHolder rh(&lock_);
         auto it = hostsMap_.find(hostAddr);
         if (it == hostsMap_.end()) {

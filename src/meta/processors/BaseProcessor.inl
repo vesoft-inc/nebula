@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "meta/MetaServiceUtils.h"
@@ -18,6 +18,17 @@ void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
         this->resp_.set_code(to(code));
         this->onFinished();
     });
+}
+
+template<typename RESP>
+StatusOr<std::unique_ptr<kvstore::KVIterator>>
+BaseProcessor<RESP>::doPrefix(const std::string& key) {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, key, &iter);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        return Status::Error("Prefix Failed");
+    }
+    return iter;
 }
 
 template<typename RESP>
@@ -183,19 +194,13 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 }
 
 template<typename RESP>
-Status BaseProcessor<RESP>::hostsExist(const std::vector<std::string> &hostsKey) {
-    for (const auto& hostKey : hostsKey) {
-        auto ret = doGet(hostKey);
-        if (!ret.ok()) {
-            if (ret.status().isNotFound()) {
-                return Status::NotFound();
-            } else {
-                VLOG(3) << "Unknown Error , ret = " << ret.status();
-                return Status::Error("Unknown error!");
-            }
-        }
+Status BaseProcessor<RESP>::hostExist(const std::string& hostKey) {
+    std::string val;
+    auto ret = doGet(hostKey);
+    if (ret.ok()) {
+        return Status::OK();
     }
-    return Status::OK();
+    return Status::NotFound();
 }
 
 template<typename RESP>

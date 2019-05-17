@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include <gtest/gtest.h>
@@ -104,11 +104,11 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_NE(ret1.value().begin()->tag_id, 0);
             ASSERT_EQ(ret1.value().begin()->schema.columns.size(), 5);
 
-            // getTagSchemeFromCache
+            // getTagSchemaFromCache
             sleep(FLAGS_load_data_interval_second + 1);
             auto ver = client->getNewestTagVerFromCache(spaceId,
                                                         ret1.value().begin()->tag_id);
-            auto ret2 = client->getTagSchemeFromCache(spaceId,
+            auto ret2 = client->getTagSchemaFromCache(spaceId,
                                                       ret1.value().begin()->tag_id, ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
@@ -120,6 +120,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("tagItem0", outSchema->getFieldName(0));
             auto version = schemaMan->getNewestTagSchemaVer(spaceId, tagId);
+            ASSERT_EQ(0, version);
             auto outSchema1 = schemaMan->getTagSchema(spaceId, tagId, version);
             ASSERT_TRUE(outSchema1 != nullptr);
             ASSERT_EQ(5, outSchema1->getNumFields());
@@ -132,10 +133,10 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(ret1.value().size(), 1);
             ASSERT_NE(ret1.value().begin()->edge_type, 0);
 
-            // getEdgeSchemeFromCache
+            // getEdgeSchemaFromCache
             auto ver = client->getNewestEdgeVerFromCache(spaceId,
                                                          ret1.value().begin()->edge_type);
-            auto ret2 = client->getEdgeSchemeFromCache(spaceId,
+            auto ret2 = client->getEdgeSchemaFromCache(spaceId,
                                                        ret1.value().begin()->edge_type, ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
@@ -147,6 +148,7 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("edgeItem0", outSchema->getFieldName(0));
             auto version = schemaMan->getNewestEdgeSchemaVer(spaceId, edgeType);
+            ASSERT_EQ(0, version);
             auto outSchema1 = schemaMan->getEdgeSchema(spaceId, edgeType, version);
             ASSERT_TRUE(outSchema1 != nullptr);
             ASSERT_EQ(5, outSchema1->getNumFields());

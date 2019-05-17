@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -119,6 +119,33 @@ public:
         }
 
         kv->asyncMultiPut(0, 0, std::move(tags),
+                                [] (kvstore::ResultCode code, HostAddr leader) {
+            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            UNUSED(leader);
+        });
+    }
+
+    static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum, SchemaVer version = 0) {
+        std::vector<nebula::kvstore::KV> edges;
+        SchemaVer ver = version;
+        for (auto t = 0; t < edgeNum; t++) {
+            EdgeType edgeType = t;
+            nebula::cpp2::Schema srcsch;
+            for (auto i = 0; i < 2; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = folly::stringPrintf("edge_%d_col_%d", edgeType, i);
+                column.type.type = i < 1 ? SupportedType::INT : SupportedType::STRING;
+                srcsch.columns.emplace_back(std::move(column));
+            }
+            auto edgeName = folly::stringPrintf("edge_%d", edgeType);
+            auto edgeTypeVal = std::string(reinterpret_cast<const char*>(&edgeType),
+                                           sizeof(edgeType));
+            edges.emplace_back(MetaServiceUtils::indexEdgeKey(1, edgeName), edgeTypeVal);
+            edges.emplace_back(MetaServiceUtils::schemaEdgeKey(1, edgeType, ver++),
+                               MetaServiceUtils::schemaEdgeVal(edgeName, srcsch));
+        }
+
+        kv->asyncMultiPut(0, 0, std::move(edges),
                                 [] (kvstore::ResultCode code, HostAddr leader) {
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
             UNUSED(leader);
