@@ -13,13 +13,14 @@
 #include "meta/processors/AddHostsProcessor.h"
 #include "meta/processors/ListHostsProcessor.h"
 #include "meta/processors/RemoveHostsProcessor.h"
-#include "meta/processors/RemoveTagProcessor.h"
 #include "meta/processors/CreateTagProcessor.h"
 #include "meta/processors/AlterTagProcessor.h"
-#include "meta/processors/CreateEdgeProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
-#include "meta/processors/GetEdgeProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
+#include "meta/processors/RemoveTagProcessor.h"
+#include "meta/processors/CreateEdgeProcessor.h"
+#include "meta/processors/AlterEdgeProcessor.h"
+#include "meta/processors/GetEdgeProcessor.h"
 #include "meta/processors/ListEdgesProcessor.h"
 #include "meta/processors/RemoveEdgeProcessor.h"
 #include "meta/processors/MultiPutProcessor.h"
@@ -153,6 +154,24 @@ MetaServiceHandler::future_listTags(const cpp2::ListTagsReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_createEdge(const cpp2::CreateEdgeReq& req) {
+    auto* processor = CreateEdgeProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_alterEdge(const cpp2::AlterEdgeReq& req) {
+    auto* processor = AlterEdgeProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_removeEdge(const cpp2::RemoveEdgeReq& req) {
+    auto* processor = RemoveEdgeProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::GetEdgeResp>
 MetaServiceHandler::future_getEdge(const cpp2::GetEdgeReq& req) {
     auto* processor = GetEdgeProcessor::instance(kvstore_);
@@ -162,18 +181,6 @@ MetaServiceHandler::future_getEdge(const cpp2::GetEdgeReq& req) {
 folly::Future<cpp2::ListEdgesResp>
 MetaServiceHandler::future_listEdges(const cpp2::ListEdgesReq& req) {
     auto* processor = ListEdgesProcessor::instance(kvstore_);
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_createEdge(const cpp2::CreateEdgeReq& req) {
-    auto* processor = CreateEdgeProcessor::instance(kvstore_);
-    RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_removeEdge(const cpp2::RemoveEdgeReq& req) {
-    auto* processor = RemoveEdgeProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

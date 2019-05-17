@@ -132,6 +132,13 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER TAG account "
+                            "DROP (id)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     sleep(FLAGS_load_data_interval_second + 1);
     {
         cpp2::ExecutionResponse resp;
@@ -195,6 +202,34 @@ TEST_F(SchemaTest, metaCommunication) {
         std::vector<uniform_tuple_t<std::string, 1>> expected{
             {"buy"},
             {"education"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER EDGE education "
+                            "ADD (col1 int TTL = 200, col2 string), "
+                            "CHANGE (school int), "
+                            "DROP (id, time)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER EDGE education "
+                            "DROP (id, time)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_load_data_interval_second + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE EDGE education";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+                {"col1", "int"},
+                {"col2", "string"},
+                {"school", "int"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
