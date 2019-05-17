@@ -1,0 +1,33 @@
+add_compile_options(-Wno-parentheses)
+add_executable(
+    expression_test
+    ExpressionTest.cpp
+    $<TARGET_OBJECTS:filter_obj>
+    $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+nebula_link_libraries(
+    expression_test
+    gtest
+    gtest_main
+)
+target_include_directories(expression_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
+nebula_add_test(expression_test)
+
+add_executable(
+    expression_encode_decode_bm
+    ExpressionEncodeDecodeBenchmark.cpp
+    $<TARGET_OBJECTS:filter_obj>
+    $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+nebula_link_libraries(
+    expression_encode_decode_bm
+    follybenchmark
+    boost_regex
+)
