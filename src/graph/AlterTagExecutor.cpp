@@ -22,15 +22,15 @@ Status AlterTagExecutor::prepare() {
 void AlterTagExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
-    const auto& tagOpts = sentence_->tagOptList();
+    const auto& schemaOpts = sentence_->schemaOptList();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    std::vector<nebula::meta::cpp2::AlterSchemaItem> tagItems;
-    for (auto& tagOpt : tagOpts) {
-        nebula::meta::cpp2::AlterSchemaItem tagItem;
-        auto opType = getTagOpType(tagOpt->getOptType());
-        tagItem.set_op(std::move(opType));
-        const auto& specs = tagOpt->columnSpecs();
+    std::vector<nebula::meta::cpp2::AlterSchemaItem> schemaItems;
+    for (auto& schemaOpt : schemaOpts) {
+        nebula::meta::cpp2::AlterSchemaItem schemaItem;
+        auto opType = schemaOpt->toType();
+        schemaItem.set_op(std::move(opType));
+        const auto& specs = schemaOpt->columnSpecs();
         nebula::cpp2::Schema schema;
         for (auto& spec : specs) {
             nebula::cpp2::ColumnDef column;
@@ -38,11 +38,11 @@ void AlterTagExecutor::execute() {
             column.type.type = columnTypeToSupportedType(spec->type());
             schema.columns.emplace_back(std::move(column));
         }
-        tagItem.set_schema(std::move(schema));
-        tagItems.emplace_back(std::move(tagItem));
+        schemaItem.set_schema(std::move(schema));
+        schemaItems.emplace_back(std::move(schemaItem));
     }
 
-    auto future = mc->alterTagSchema(spaceId, *name, std::move(tagItems));
+    auto future = mc->alterTagSchema(spaceId, *name, std::move(schemaItems));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
@@ -63,18 +63,5 @@ void AlterTagExecutor::execute() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-nebula::meta::cpp2::AlterSchemaOp
-AlterTagExecutor::getTagOpType(const AlterTagOptItem::OptionType type) {
-    switch (type) {
-        case AlterTagOptItem::OptionType::ADD :
-            return nebula::meta::cpp2::AlterSchemaOp::ADD;
-        case AlterTagOptItem::OptionType::CHANGE :
-            return nebula::meta::cpp2::AlterSchemaOp::CHANGE;
-        case AlterTagOptItem::OptionType::DROP :
-            return nebula::meta::cpp2::AlterSchemaOp::DROP;
-        default:
-            return nebula::meta::cpp2::AlterSchemaOp::UNKNOWN;
-    }
-}
 }   // namespace graph
 }   // namespace nebula

@@ -124,6 +124,27 @@ TEST(Parser, AlterTag) {
     }
 }
 
+TEST(Parser, CreateEdge) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE e1(name string, age int, "
+                            "married bool, salary double, create_time timestamp)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, AlterEdge) {
+    {
+        GQLParser parser;
+        std::string query = "ALTER EDGE e1 ADD (col1 int, col2 string), "
+                            "CHANGE (col3 int, col4 string), "
+                            "DROP (col5, col6)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 TEST(Parser, Set) {
     {
         GQLParser parser;
