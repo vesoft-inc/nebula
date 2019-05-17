@@ -255,9 +255,9 @@ TEST(ProcessorTest, CreateEdgeTest) {
         ASSERT_EQ(1, resp.get_id().get_space_id());
    }
    {
-        // create second space
+        // create another space
         cpp2::SpaceProperties properties;
-        properties.set_space_name("default_space");
+        properties.set_space_name("another_space");
         properties.set_partition_num(9);
         properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
