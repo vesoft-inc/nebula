@@ -17,6 +17,7 @@ add_executable(
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:thrift_obj>

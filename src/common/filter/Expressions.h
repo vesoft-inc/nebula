@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#ifndef PARSER_EXPRESSIONS_H_
-#define PARSER_EXPRESSIONS_H_
+#ifndef COMMON_FILTER_EXPRESSIONS_H_
+#define COMMON_FILTER_EXPRESSIONS_H_
 
 #include "base/Base.h"
 #include "base/StatusOr.h"
@@ -870,4 +870,4 @@ private:
 
 }   // namespace nebula
 
-#endif  // PARSER_EXPRESSIONS_H_
+#endif  // COMMON_FILTER_EXPRESSIONS_H_
