@@ -192,8 +192,12 @@ public:
         items_.emplace_back(item);
     }
 
-    std::vector<std::unique_ptr<SpaceOptItem>> getOpt() {
-        return std::move(items_);
+    std::vector<SpaceOptItem*> getOpts() const {
+        std::vector<SpaceOptItem*> result;
+        result.resize(items_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(items_.begin(), items_.end(), result.begin(), get);
+        return result;
     }
 
     std::string toString() const;
@@ -218,8 +222,8 @@ public:
         spaceOpts_.reset(spaceOpts);
     }
 
-    std::vector<std::unique_ptr<SpaceOptItem>> getOpts() {
-        return spaceOpts_->getOpt();
+    std::vector<SpaceOptItem*> getOpts() {
+        return spaceOpts_->getOpts();
     }
 
     std::string toString() const override;
