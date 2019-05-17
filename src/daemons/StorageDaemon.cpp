@@ -23,9 +23,16 @@ DEFINE_string(data_path, "", "Root data path, multi paths should be split by com
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DEFINE_bool(mock_server, true, "start mock server");
 DEFINE_bool(daemonize, true, "Whether to run the process as a daemon");
-DEFINE_string(pid_file, "pids/nebula-storaged.pid", "");
+DEFINE_string(pid_file, "pids/nebula-storaged.pid", "File to hold the process id");
 
 using nebula::Status;
+using nebula::HostAddr;
+using nebula::storage::StorageServiceHandler;
+using nebula::kvstore::KVStore;
+using nebula::meta::SchemaManager;
+using nebula::meta::MetaClient;
+using nebula::network::NetworkUtils;
+using nebula::ProcessUtils;
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
@@ -40,13 +47,6 @@ int main(int argc, char *argv[]) {
     } else {
         google::SetStderrLogging(google::INFO);
     }
-    using nebula::HostAddr;
-    using nebula::storage::StorageServiceHandler;
-    using nebula::kvstore::KVStore;
-    using nebula::meta::SchemaManager;
-    using nebula::meta::MetaClient;
-    using nebula::network::NetworkUtils;
-    using nebula::ProcessUtils;
 
     // Detect if the server has already been started
     auto pidPath = FLAGS_pid_file;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     schemaMan->init(metaClient.get());
 
     LOG(INFO) << "Starting Storage HTTP Service";
-    nebula::WebService::registerHandler("/storage", [] {
+    nebula::WebService::registerHandler("/status", [] {
         return new nebula::storage::StorageHttpHandler();
     });
 
