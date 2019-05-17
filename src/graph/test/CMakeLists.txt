@@ -15,6 +15,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:storage_client>
@@ -57,6 +58,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:storage_client>
@@ -95,6 +97,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:storage_client>
     $<TARGET_OBJECTS:meta_client>
