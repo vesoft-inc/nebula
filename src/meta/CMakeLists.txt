@@ -39,25 +39,28 @@ add_library(
     processors/ScanProcessor.cpp
     processors/HBProcessor.cpp
 )
-
 add_dependencies(
     meta_service_handler
     base_obj
     meta_thrift_obj
     common_thrift_obj
     kvstore_obj
+    thread_obj
+    ws_obj
+    stats_obj
 )
+
 
 add_library(
     meta_client OBJECT
     client/MetaClient.cpp
 )
-
 add_dependencies(
     meta_client
     base_obj
     meta_thrift_obj
     common_thrift_obj
     schema_obj)
+
 
 add_subdirectory(test)

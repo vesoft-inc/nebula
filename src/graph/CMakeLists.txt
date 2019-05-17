@@ -1,6 +1,5 @@
 add_library(
-    graph_obj
-    OBJECT
+    graph_obj OBJECT
     GraphFlags.cpp
     GraphService.cpp
     GraphHttpHandler.cpp
@@ -45,6 +44,8 @@ add_dependencies(
     meta_thrift_obj
     meta_client
     schema_obj
+    stats_obj
 )
+
 
 add_subdirectory(test)
