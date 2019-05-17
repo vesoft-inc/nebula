@@ -121,10 +121,12 @@ TEST(ProcessorTest, CreateSpaceTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("default_space");
-        req.set_partition_num(9);
-        req.set_replica_factor(3);
+        req.set_properties(properties);
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -187,10 +189,13 @@ TEST(ProcessorTest, CreateTagTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("default_space");
-        req.set_partition_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(properties);
+
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -235,10 +240,13 @@ TEST(ProcessorTest, CreateEdgeTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("first_space");
-        req.set_partition_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(properties);
+
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -248,10 +256,13 @@ TEST(ProcessorTest, CreateEdgeTest) {
    }
    {
         // create second space
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("second_space");
-        req.set_partition_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(properties);
+
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -324,10 +335,12 @@ TEST(ProcessorTest, KVOperationTest) {
     UNUSED(hostsNum);
 
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("default_space");
-        req.set_partition_num(9);
-        req.set_replica_factor(3);
+        req.set_properties(properties);
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -1001,10 +1014,12 @@ TEST(ProcessorTest, SameNameTagsTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("first_space");
-        req.set_partition_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(properties);
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1013,10 +1028,12 @@ TEST(ProcessorTest, SameNameTagsTest) {
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("second_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(1);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("second_space");
-        req.set_partition_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(properties);
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);

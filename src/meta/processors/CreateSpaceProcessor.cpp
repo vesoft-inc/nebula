@@ -11,9 +11,11 @@ namespace meta {
 
 void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-    auto spaceRet = getSpaceId(req.get_space_name());
+    auto properties = req.get_properties();
+    auto spaceRet = getSpaceId(properties.get_space_name());
     if (spaceRet.ok()) {
-        LOG(ERROR) << "Create Space Failed : Space " << req.get_space_name() << " have existed!";
+        LOG(ERROR) << "Create Space Failed : Space " << properties.get_space_name()
+                   << " have existed!";
         resp_.set_id(to(spaceRet.value(), EntryType::SPACE));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
@@ -29,13 +31,9 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     }
     auto spaceId = autoIncrementId();
     auto hosts = ret.value();
-    auto spaceName = req.get_space_name();
-    auto partitionNum = req.get_partition_num();
-    auto replicaFactor = req.get_replica_factor();
-    cpp2::SpaceProperties properties;
-    properties.set_space_name(spaceName);
-    properties.set_partition_num(partitionNum);
-    properties.set_replica_factor(replicaFactor);
+    auto spaceName = properties.get_space_name();
+    auto partitionNum = properties.get_partition_num();
+    auto replicaFactor = properties.get_replica_factor();
     VLOG(3) << "Create space " << spaceName << ", id " << spaceId;
 
     std::vector<kvstore::KV> data;
@@ -43,7 +41,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
                       std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
     data.emplace_back(MetaServiceUtils::spaceKey(spaceId),
                       MetaServiceUtils::spaceVal(properties));
-    for (auto partId = 1; partId <= req.get_partition_num(); partId++) {
+    for (auto partId = 1; partId <= partitionNum; partId++) {
         auto partHosts = pickHosts(partId, hosts, replicaFactor);
         data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                           MetaServiceUtils::partVal(partHosts));

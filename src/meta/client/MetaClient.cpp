@@ -357,10 +357,12 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
 
 folly::Future<StatusOr<GraphSpaceID>>
 MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFactor) {
+    cpp2::SpaceProperties properties;
+    properties.set_space_name(std::move(name));
+    properties.set_partition_num(partsNum);
+    properties.set_replica_factor(replicaFactor);
     cpp2::CreateSpaceReq req;
-    req.set_space_name(std::move(name));
-    req.set_partition_num(partsNum);
-    req.set_replica_factor(replicaFactor);
+    req.set_properties(properties);
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_createSpace(request);
             }, [] (cpp2::ExecResp&& resp) -> GraphSpaceID {
