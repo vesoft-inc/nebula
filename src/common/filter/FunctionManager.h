@@ -4,13 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef PARSER_FUNCTIONMANAGER_H_
-#define PARSER_FUNCTIONMANAGER_H_
+#ifndef COMMON_FILTER_FUNCTIONMANAGER_H_
+#define COMMON_FILTER_FUNCTIONMANAGER_H_
 
 #include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
-#include "parser/Expressions.h"
+#include "filter/Expressions.h"
 
 /**
  * FunctionManager is for managing builtin and dynamic-loaded functions,
@@ -66,4 +66,4 @@ private:
 
 }   // namespace nebula
 
-#endif  // PARSER_FUNCTIONMANAGER_H_
+#endif  // COMMON_FILTER_FUNCTIONMANAGER_H_

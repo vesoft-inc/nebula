@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "parser/FunctionManager.h"
+#include "filter/FunctionManager.h"
 #include "time/TimeUtils.h"
 
 namespace nebula {
