@@ -679,6 +679,7 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
         return resp.get_id().get_tag_id();
     }, true);
 }
+
 folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
                            std::string name,
@@ -745,8 +746,9 @@ MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::alterEdge(GraphSpaceID spaceId, std::string name,
-                      std::vector<cpp2::AlterSchemaItem> items) {
+MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
+                            std::string name,
+                            std::vector<cpp2::AlterSchemaItem> items) {
     cpp2::AlterEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
