@@ -63,7 +63,6 @@ nebula_link_libraries(
     ${THRIFT_LIBRARIES}
     wangle
 )
-install(TARGETS nebula-storaged DESTINATION bin)
 
 
 add_executable(

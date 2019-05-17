@@ -19,6 +19,7 @@ nebula_link_libraries(
 )
 nebula_add_test(file_based_schema_manager_test)
 
+
 add_executable(
     meta_utils_test
     MetaServiceUtilsTest.cpp
@@ -38,6 +39,7 @@ nebula_link_libraries(
 )
 nebula_add_test(meta_utils_test)
 
+
 add_executable(
     processor_test
     ProcessorTest.cpp
@@ -52,6 +54,7 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     processor_test
@@ -63,6 +66,7 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(processor_test)
+
 
 add_executable(
     hb_processor_test
@@ -105,6 +109,7 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:process_obj>
 )
 nebula_link_libraries(
     meta_client_test
@@ -115,8 +120,8 @@ nebula_link_libraries(
     wangle
     gtest
 )
-
 nebula_add_test(meta_client_test)
+
 
 add_executable(
     active_hosts_man_test
@@ -134,3 +139,32 @@ nebula_link_libraries(
 
 nebula_add_test(active_hosts_man_test)
 
+
+add_executable(
+    meta_http_test
+    MetaHttpHandlerTest.cpp
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:ws_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:schema_obj>
+)
+nebula_link_libraries(
+    meta_http_test
+    proxygenhttpserver
+    proxygenlib
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    gtest
+)
+nebula_add_test(meta_http_test)
