@@ -30,7 +30,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.0.0</version>
                 <configuration>
-                    <configLocation>${project.root.dir}/stylecheck/nebula_java_style_checks.xml</configLocation>
+                    <configLocation>${project.root.dir}/.linters/java/nebula_java_style_checks.xml</configLocation>
                     <excludes>
                         com/vesoft/nebula/graph/RowValue.java,
                         com/vesoft/nebula/graph/GraphService.java,

@@ -5,7 +5,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-CPPLINT=`dirname $0`/../../cpplint/cpplint.py
+CPPLINT=`dirname $0`/../../.linters/cpp/cpplint.py
 
 if [ $# -eq 0 ];then
     # Since cpplint.py could only apply on our working tree,
@@ -21,7 +21,8 @@ else
     CHECK_FILES=$(find $@ -not \( -path src/CMakeFiles -prune \) \
                           -not \( -path src/interface/gen-cpp2 -prune \) \
                           -name "*.[h]" -o -name "*.cpp" -o -name '*.inl' \
-                          | grep -v 'GraphScanner.*' | grep -v 'GraphParser.*')
+                          | grep -v 'GraphScanner.*' | grep -v 'GraphParser.*' \
+                          | grep -v 'com_vesoft_client_NativeClient.h')
 fi
 
 # No changes on interested files
