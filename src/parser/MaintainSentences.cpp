@@ -60,7 +60,17 @@ std::string CreateEdgeSentence::toString() const {
 std::string AlterSchemaOptItem::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += getOptTypeStr();
+    switch (optType_) {
+        case ADD:
+            buf += "ADD";
+            break;
+        case CHANGE:
+            buf += "CHANGE";
+            break;
+        case DROP:
+            buf += "DROP";
+            break;
+    }
     buf += " (";
     auto colSpecs = std::move(columns_->columnSpecs());
     for (auto &col : colSpecs) {

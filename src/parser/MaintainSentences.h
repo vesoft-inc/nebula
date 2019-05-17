@@ -146,10 +146,6 @@ public:
         return optType_;
     }
 
-    std::string getOptTypeStr() const {
-        return typeid(optType_).name();
-    }
-
     nebula::meta::cpp2::AlterSchemaOp toType();
 
     std::string toString() const;
