@@ -175,9 +175,6 @@ name_label
 
 unreserved_keyword
      : KW_SPACE              { $$ = new std::string("SPACE"); }
-     | KW_TAG                { $$ = new std::string("TAG"); }
-     | KW_VERTEX             { $$ = new std::string("VERTEX"); }
-     | KW_EDGE               { $$ = new std::string("EDGE"); }
      | KW_HOSTS              { $$ = new std::string("HOSTS"); }
      | KW_SPACES             { $$ = new std::string("SPACES"); }
      | KW_FIRSTNAME          { $$ = new std::string("FIRSTNAME"); }
@@ -188,6 +185,7 @@ unreserved_keyword
      | KW_USERS              { $$ = new std::string("USERS"); }
      | KW_PASSWORD           { $$ = new std::string("PASSWORD"); }
      | KW_ROLE               { $$ = new std::string("ROLE"); }
+     | KW_ROLES              { $$ = new std::string("ROLES"); }
      | KW_GOD                { $$ = new std::string("GOD"); }
      | KW_ADMIN              { $$ = new std::string("ADMIN"); }
      | KW_GUEST              { $$ = new std::string("GUEST"); }
