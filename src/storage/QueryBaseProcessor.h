@@ -10,6 +10,8 @@
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
 #include "storage/Collector.h"
+#include "filter/Expressions.h"
+#include "storage/CommonUtils.h"
 
 namespace nebula {
 namespace storage {
@@ -45,11 +47,6 @@ public:
     void process(const cpp2::GetNeighborsRequest& req);
 
 protected:
-    virtual kvstore::ResultCode processVertex(PartitionID partID, VertexID vId) = 0;
-
-    virtual void onProcessFinished(int32_t retNum) = 0;
-
-protected:
     explicit QueryBaseProcessor(kvstore::KVStore* kvstore,
                                 meta::SchemaManager* schemaMan,
                                 folly::Executor* executor = nullptr,
@@ -66,22 +63,27 @@ protected:
      * Check request meta is illegal or not and build contexts for tag and edge.
      * */
     cpp2::ErrorCode checkAndBuildContexts(const REQ& req);
-
     /**
      * collect props in one row, you could define custom behavior by implement your own collector.
      * */
     void collectProps(RowReader* reader,
                       folly::StringPiece key,
                       const std::vector<PropContext>& props,
+                      FilterContext* fcontext,
                       Collector* collector);
-    /**
-     * Collect props for one vertex tag.
-     * */
+
+    virtual kvstore::ResultCode processVertex(PartitionID partID,
+                                              VertexID vId,
+                                              FilterContext* fcontext) = 0;
+
+    virtual void onProcessFinished(int32_t retNum) = 0;
+
     kvstore::ResultCode collectVertexProps(
                             PartitionID partId,
                             VertexID vId,
                             TagID tagId,
                             const std::vector<PropContext>& props,
+                            FilterContext* fcontext,
                             Collector* collector);
     /**
      * Collect props for one vertex edge.
@@ -91,6 +93,7 @@ protected:
                                VertexID vId,
                                EdgeType edgeType,
                                const std::vector<PropContext>& props,
+                               FilterContext* fcontext,
                                EdgeProcessor proc);
 
     std::vector<Bucket> genBuckets(const cpp2::GetNeighborsRequest& req);
@@ -99,9 +102,13 @@ protected:
 
     int32_t getBucketsNum(int32_t verticesNum, int32_t minVerticesPerBucket, int32_t handlerNum);
 
+    bool checkExp(const Expression* exp);
+
 protected:
     GraphSpaceID  spaceId_;
     BoundType     type_;
+    std::unique_ptr<ExpressionContext> expCtx_;
+    std::unique_ptr<Expression> exp_;
     std::vector<TagContext> tagContexts_;
     EdgeContext edgeContext_;
     folly::Executor* executor_ = nullptr;

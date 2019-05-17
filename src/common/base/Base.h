@@ -137,6 +137,7 @@ struct PartMeta {
 
 using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartMeta>>;
 
+using VariantType = boost::variant<int64_t, double, bool, std::string>;
 // Useful type traits
 
 // Tell if `T' is copy-constructible
