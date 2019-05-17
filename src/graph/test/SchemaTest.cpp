@@ -210,7 +210,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE education";
