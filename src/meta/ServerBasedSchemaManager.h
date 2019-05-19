@@ -16,7 +16,6 @@ namespace nebula {
 namespace meta {
 
 class ServerBasedSchemaManager : public SchemaManager {
-    friend class SchemaManager;
 public:
     ServerBasedSchemaManager() = default;
     ~ServerBasedSchemaManager();
@@ -51,13 +50,11 @@ public:
     SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
                                      folly::StringPiece typeName) override;
 
-    GraphSpaceID toGraphSpaceID(folly::StringPiece spaceName) override;
+    StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
     TagID toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
     EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
-
-    Status checkSpaceExist(folly::StringPiece spaceName) override;
 
     void init(MetaClient *client) override;
 

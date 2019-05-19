@@ -15,7 +15,7 @@
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "meta/SchemaManager.h"
+#include "AdHocSchemaManager.h"
 
 
 DECLARE_string(part_man_type);
@@ -48,7 +48,7 @@ public:
     }
 
     static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
-        auto* schemaMan = new meta::AdHocSchemaManager();
+        auto* schemaMan = new AdHocSchemaManager();
         schemaMan->addEdgeSchema(
             spaceId /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
         for (auto tagId = 3001; tagId < 3010; tagId++) {
