@@ -8,9 +8,10 @@ add_library(
     RocksEngineConfig.cpp
     LogEncoder.cpp
 )
-add_dependencies(kvstore_obj base_obj meta_client)
+add_dependencies(kvstore_obj base_obj meta_client hbasestore_obj)
 
 add_subdirectory(raftex)
 add_subdirectory(wal)
+add_subdirectory(hbase)
 add_subdirectory(test)
 

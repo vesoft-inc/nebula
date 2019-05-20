@@ -6,13 +6,13 @@
 
 #include "base/Base.h"
 #include "kvstore/NebulaStore.h"
-#include "kvstore/HBaseStore.h"
+#include "kvstore/hbase/HBaseStore.h"
 
 namespace nebula {
 namespace kvstore {
 
 // static
-KVStore* KVStore::instance(KVOptions options, std::string engineType) {
+KVStore* KVStore::instance(KVOptions options, const std::string& engineType) {
     if (engineType == "rocksdb") {
         auto* instance = new NebulaStore(std::move(options));
         static_cast<NebulaStore*>(instance)->init();

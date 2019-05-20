@@ -5,9 +5,8 @@
  */
 
 #include "base/Base.h"
-#include "kvstore/HBaseClient.h"
+#include "kvstore/hbase/HBaseClient.h"
 #include "network/NetworkUtils.h"
-#include "storage/KeyUtils.h"
 
 #include <folly/io/async/EventBaseManager.h>
 #include <thrift/lib/cpp2/async/RequestChannel.h>
@@ -19,7 +18,6 @@
 namespace nebula {
 namespace kvstore {
 
-using nebula::storage::KeyUtils;
 const char* kColumnFamilyName = "cf";
 
 HBaseClient::HBaseClient(const HostAddr& host) {

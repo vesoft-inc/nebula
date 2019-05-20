@@ -5,8 +5,8 @@
  */
 
 #include "base/Base.h"
-#include "kvstore/HBaseStore.h"
-#include "kvstore/HBaseEngine.h"
+#include "kvstore/hbase/HBaseStore.h"
+#include "kvstore/hbase/HBaseEngine.h"
 #include <folly/Likely.h>
 #include "network/NetworkUtils.h"
 

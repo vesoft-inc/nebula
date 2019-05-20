@@ -10,7 +10,7 @@
 #include "base/Base.h"
 #include "meta/SchemaProviderIf.h"
 #include "meta/SchemaManager.h"
-#include "kvstore/HBaseClient.h"
+#include "kvstore/hbase/HBaseClient.h"
 #include "kvstore/KVEngine.h"
 #include <gtest/gtest_prod.h>
 

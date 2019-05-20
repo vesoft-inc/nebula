@@ -5,16 +5,14 @@
  */
 
 #include "base/Base.h"
-#include "kvstore/HBaseEngine.h"
-#include "storage/KeyUtils.h"
+#include "base/NebulaKeyUtils.h"
+#include "kvstore/hbase/HBaseEngine.h"
 #include "dataman/NebulaCodecImpl.h"
 #include "network/NetworkUtils.h"
 #include "kvstore/KVStore.h"
 
 namespace nebula {
 namespace kvstore {
-
-using nebula::storage::KeyUtils;
 
 const char* kHBaseTableNamePrefix = "Nebula_Graph_Space_";
 const char* kSchemaVersionColumnName = "__sv__";
@@ -52,14 +50,14 @@ std::shared_ptr<const meta::SchemaProviderIf> HBaseEngine::getSchema(const std::
                                                                      SchemaVer version) {
     std::shared_ptr<const meta::SchemaProviderIf> schema;
     folly::StringPiece rawKey = key;
-    if (KeyUtils::isVertex(key)) {
-        auto tagId = KeyUtils::getTagId(rawKey);
+    if (NebulaKeyUtils::isVertex(key)) {
+        auto tagId = NebulaKeyUtils::getTagId(rawKey);
         if (version == -1) {
             version = this->schemaMan_->getNewestTagSchemaVer(spaceId_, tagId);
         }
         schema = this->schemaMan_->getTagSchema(spaceId_, tagId, version);
-    } else if (KeyUtils::isEdge(key)) {
-        auto edgeTypeId = KeyUtils::getEdgeType(rawKey);
+    } else if (NebulaKeyUtils::isEdge(key)) {
+        auto edgeTypeId = NebulaKeyUtils::getEdgeType(rawKey);
         if (version == -1) {
             version = this->schemaMan_->getNewestEdgeSchemaVer(spaceId_, edgeTypeId);
         }
@@ -242,7 +240,7 @@ ResultCode HBaseEngine::prefix(const std::string& prefix,
     }
     ResultCode code = this->range(startRowKey, endRowKey, storageIter);
     if (code == ResultCode::ERR_IO_ERROR) {
-        LOG(ERROR) << "Prefix Failed: the HBase I/O error.";
+        LOG(ERROR) << "Prefix " << prefix << " Failed: the HBase I/O error.";
     }
     return code;
 }
@@ -321,7 +319,7 @@ std::vector<PartitionID> HBaseEngine::allParts() {
 ResultCode HBaseEngine::ingest(const std::vector<std::string>& files) {
     UNUSED(files);
     LOG(INFO) << "HBaseEngine does not support the \"ingest\" method.";
-    return ResultCode::ERR_UNKNOWN;
+    return ResultCode::ERR_NOT_SUPPORT;
 }
 
 
@@ -330,7 +328,7 @@ ResultCode HBaseEngine::setOption(const std::string& config_key,
     UNUSED(config_key);
     UNUSED(config_value);
     LOG(INFO) << "HBaseEngine does not support the \"setOption\" method.";
-    return ResultCode::ERR_UNKNOWN;
+    return ResultCode::ERR_NOT_SUPPORT;
 }
 
 
@@ -339,13 +337,13 @@ ResultCode HBaseEngine::setDBOption(const std::string& config_key,
     UNUSED(config_key);
     UNUSED(config_value);
     LOG(INFO) << "HBaseEngine does not support the \"setDBOption\" method.";
-    return ResultCode::ERR_UNKNOWN;
+    return ResultCode::ERR_NOT_SUPPORT;
 }
 
 
 ResultCode HBaseEngine::compactAll() {
     LOG(INFO) << "HBaseEngine does not support the \"compactAll\" method.";
-    return ResultCode::ERR_UNKNOWN;
+    return ResultCode::ERR_NOT_SUPPORT;
 }
 
 }  // namespace kvstore
