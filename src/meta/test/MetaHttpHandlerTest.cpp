@@ -13,7 +13,7 @@
 #include "meta/test/TestUtils.h"
 #include "fs/TempDir.h"
 
-DECLARE_int32(load_data_interval_second);
+DECLARE_int32(load_data_interval_secs);
 DECLARE_string(pid_file);
 
 namespace nebula {
@@ -42,7 +42,7 @@ public:
 
 
 TEST(MetaHttpHandlerTest, MetaStatusTest) {
-    FLAGS_load_data_interval_second = 1;
+    FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
     auto sc = TestUtils::mockServer(10001, rootPath.path());
 

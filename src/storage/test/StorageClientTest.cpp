@@ -15,39 +15,44 @@
 #include "dataman/RowSetReader.h"
 
 DECLARE_string(meta_server_addrs);
-DECLARE_int32(load_data_interval_second);
+DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace storage {
 
 TEST(StorageClientTest, VerticesInterfacesTest) {
-    FLAGS_load_data_interval_second = 1;
+    FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     GraphSpaceID spaceId = 0;
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     uint32_t localMetaPort = 10001;
     uint32_t localDataPort = 20002;
-    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", localMetaPort);
 
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
     auto metaServerContext = meta::TestUtils::mockServer(10001, metaPath.c_str());
 
+    LOG(INFO) << "Create meta client...";
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    auto addrsRet
+        = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
+    CHECK(addrsRet.ok()) << addrsRet.status();
+    auto mClient
+        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
+    mClient->init();
+
     LOG(INFO) << "Start data server....";
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
-    auto sc = TestUtils::mockServer(dataPath.c_str(), localIp, localDataPort);
+    auto sc = TestUtils::mockServer(mClient.get(), dataPath.c_str(), localIp, localDataPort);
 
     LOG(INFO) << "Add hosts and create space....";
-    auto mClient = std::make_unique<meta::MetaClient>();
-    mClient->init();
     auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
     ASSERT_TRUE(r.ok());
     auto ret = mClient->createSpace("default", 10, 1).get();
     spaceId = ret.value();
-    sleep(2 * FLAGS_load_data_interval_second + 1);
+    sleep(2 * FLAGS_load_data_interval_secs + 1);
 
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
     // VerticesInterfacesTest(addVertices and getVertexProps)
     {
