@@ -13,6 +13,8 @@ cpp_include "base/ThriftTypes.h"
 
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
 typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
+typedef i32 (cpp.type = "nebula::TagIndexID") TagIndexID
+typedef i32 (cpp.type = "nebula::EdgeIndexID") EdgeIndexID
 typedef i32 (cpp.type = "nebula::TagID") TagID
 typedef i32 (cpp.type = "nebula::EdgeType") EdgeType
 typedef i64 (cpp.type = "nebula::EdgeRanking") EdgeRanking

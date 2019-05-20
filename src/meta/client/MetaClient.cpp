@@ -770,6 +770,50 @@ MetaClient::removeEdgeSchema(GraphSpaceID spaceId, std::string name) {
     }, true);
 }
 
+folly::Future<StatusOr<TagIndexID>>
+MetaClient::createTagIndex(GraphSpaceID spaceID, std::string name, std::vector<std::string> fields) {
+    cpp2::CreateTagIndexReq req;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::dropTagIndex(GraphSpaceID spaceId, std::string name) {
+    cpp2::DropTagIndexReq req;
+
+}
+
+folly::Future<StatusOr<cpp2::IndexFields>>
+MetaClient::getTagIndex(GraphSpaceID spaceId, std::string name) {
+    cpp2::RemoveEdgeReq req;
+
+}
+
+folly::Future<StatusOr<std::vector<cpp2::TagIndexItem>>>
+MetaClient::listTagIndexes(GraphSpaceID spaceId) {
+    cpp2::RemoveEdgeReq req;
+}
+
+folly::Future<StatusOr<EdgeIndexID>>
+MetaClient::createEdgeIndex(GraphSpaceID spaceID, std::string name, std::vector<std::string> fields) {
+    cpp2::RemoveEdgeReq req;
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::dropEdgeIndex(GraphSpaceID spaceId, std::string name) {
+    cpp2::RemoveEdgeReq req;
+}
+
+folly::Future<StatusOr<nebula::meta::cpp2::IndexFields>>
+MetaClient::getEdgeIndex(GraphSpaceID spaceId, std::string name) {
+    cpp2::RemoveEdgeReq req;
+
+}
+
+folly::Future<StatusOr<std::vector<cpp2::EdgeIndexItem>>>
+MetaClient::listEdgeIndexes(GraphSpaceID spaceId) {
+    cpp2::RemoveEdgeReq req;
+
+}
+
 StatusOr<std::shared_ptr<const SchemaProviderIf>>
 MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);

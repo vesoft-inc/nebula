@@ -47,6 +47,11 @@ using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, 
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 
+// cache for index
+using IndexFields = std::vector<std::string>;
+using VertexIndexFieldsCache = std::unordered_map<VertextIndexID, IndexFields>;
+using EdgeIndexFieldsCache = std::unordered_map<EdgeIndexID, IndexFields>;
+
 class MetaChangedListener {
 public:
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
@@ -129,6 +134,31 @@ public:
 
     folly::Future<StatusOr<bool>>
     removeEdgeSchema(GraphSpaceID spaceId, std::string name);
+
+    // Operations for index
+    folly::Future<StatusOr<TagIndexID>>
+    createTagIndex(GraphSpaceID spaceID, std::string name, std::vector<std::string> fields);
+
+    folly::Future<StatusOr<bool>>
+    removeTagIndex(GraphSpaceID spaceId, std::string name);
+
+    folly::Future<StatusOr<cpp2::IndexFields>>
+    getTagIndex(GraphSpaceID spaceId, std::string name);
+
+    folly::Future<StatusOr<std::vector<cpp2::TagIndexItem>>>
+    listTagIndexes(GraphSpaceID spaceId);
+
+    folly::Future<StatusOr<EdgeIndexID>>
+    createEdgeIndex(GraphSpaceID spaceID, std::string name, std::vector<std::string> fields);
+
+    folly::Future<StatusOr<bool>>
+    dropEdgeIndex(GraphSpaceID spaceId, std::string name);
+
+    folly::Future<StatusOr<nebula::meta::cpp2::IndexFields>>
+    getEdgeIndex(GraphSpaceID spaceId, std::string name);
+
+    folly::Future<StatusOr<std::vector<cpp2::EdgeIndexItem>>>
+    listEdgeIndexes(GraphSpaceID spaceId);
 
     // Operations for custom kv
     folly::Future<StatusOr<bool>>

@@ -77,6 +77,24 @@ struct EdgeItem {
     4: common.Schema        schema,
 }
 
+struct IndexFields {
+    1: list<string>  fields
+}
+
+struct TagIndexItem {
+    1: common.TagIndexID    index_id,
+    2: string               index_name,
+    3: string               tag_name,
+    4: IndexFields          fields,
+}
+
+struct EdgeIndexItem {
+    1: common.EdgeIndexID        index_id,
+    2: string                    index_name,
+    3: string                    edge_name,
+    4: IndexFields               fields,
+}
+
 struct ExecResp {
     1: ErrorCode        code,
     // For custom kv operations, it is useless.
@@ -291,6 +309,56 @@ struct HBReq {
     1: common.HostAddr host,
 }
 
+struct CreateTagIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: TagIndexItem        item,
+}
+
+struct DropTagIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+}
+
+struct GetTagIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+}
+
+struct ListTagIndexesReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ListTagIndexesResp {
+    1: ErrorCode              code,
+    2: common.HostAddr        leader,
+    3: list<TagIndexItem>     items,
+}
+
+struct CreateEdgeIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: EdgeIndexItem       item,
+}
+
+struct DropEdgeIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+}
+
+struct GetEdgeIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+}
+
+struct ListEdgeIndexesReq {
+    1: common.GraphSpaceID space_id,
+}
+
+struct ListEdgeIndexesResp {
+    1: ErrorCode              code,
+    2: common.HostAddr        leader,
+    3: list<EdgeIndexItem>    items,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -321,6 +389,14 @@ service MetaService {
     ExecResp remove(1: RemoveReq req);
     ExecResp removeRange(1: RemoveRangeReq req);
     ScanResp scan(1: ScanReq req);
+
+    ExecResp             createTagIndex(1:CreateTagIndexReq req);
+    ExecResp             dropTagIndex(1:DropTagIndexReq req );
+    ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req);
+
+    ExecResp             createEdgeIndex(1:CreateEdgeIndexReq req);
+    ExecResp             dropEdgeIndex(1:DropEdgeIndexReq req );
+    ListEdgeIndexesResp  listEdgeIndexes(1:ListEdgeIndexesReq req);
 
     HBResp           heartBeat(1: HBReq req);
 }
