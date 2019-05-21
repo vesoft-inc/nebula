@@ -109,6 +109,7 @@ std::unordered_set<uint16_t> NetworkUtils::getPortsInUse() {
     while (iter.valid()) {
         auto &sm = iter.matched();
         inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+        ++iter;
     }
     return std::move(inUse);
 }
