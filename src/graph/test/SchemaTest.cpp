@@ -69,7 +69,7 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE default_space";
