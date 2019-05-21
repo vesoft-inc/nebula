@@ -171,10 +171,12 @@ public:
         options.dataPaths_ = std::move(paths);
         options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
                          options.local_, mClient);
-        auto updataPortHandler = static_cast<kvstore::MetaServerBasedPartManager*>(
-                               options.partMan_.get());
+        // Save MetaServerBasedPartManager to update port when ThriftServer setup
+        auto partManagerPtr = static_cast<kvstore::MetaServerBasedPartManager*>(
+                         options.partMan_.get());
         kvstore::NebulaStore* kvPtr = static_cast<kvstore::NebulaStore*>(
                                     kvstore::KVStore::instance(std::move(options)));
+        // keep KVStore can't free out of this function
         sc->KVStore_ = std::unique_ptr<kvstore::KVStore>(kvPtr);
         std::unique_ptr<meta::SchemaManager> schemaMan;
         if (!realMetaServer) {
@@ -187,7 +189,7 @@ public:
         auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
                      sc->KVStore_.get(), std::move(schemaMan));
         test::mockCommon(sc.get(), "storage", port, handler);
-        updataPortHandler->setLocalHost(HostAddr(ip, sc->port_));
+        partManagerPtr->setLocalHost(HostAddr(ip, sc->port_));
         return sc;
     }
 };

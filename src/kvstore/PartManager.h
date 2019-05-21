@@ -158,7 +158,10 @@ public:
         return localHost_;
      }
 
-     // for UTS
+     /**
+      * for UTS, because the port is choosed by system,
+      * we should update port after thrift setup
+      * */
      void setLocalHost(HostAddr localHost) {
         localHost_ = std::move(localHost);
      }
