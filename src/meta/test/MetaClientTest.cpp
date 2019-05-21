@@ -33,7 +33,7 @@ TEST(MetaClientTest, InterfacesTest) {
 
     // Let the system choose an available port for us
     uint32_t localMetaPort = 0;
-    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     GraphSpaceID spaceId = 0;
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
@@ -271,7 +271,7 @@ TEST(MetaClientTest, TagTest) {
 
     // Let the system choose an available port for us
     int32_t localMetaPort = 0;
-    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     GraphSpaceID spaceId = 0;
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
@@ -369,7 +369,7 @@ TEST(MetaClientTest, DiffTest) {
 
     // Let the system choose an available port for us
     int32_t localMetaPort = 0;
-    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     uint32_t localIp;
@@ -419,7 +419,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     FLAGS_load_data_interval_secs = 5;
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockServer(10001, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(10001, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     uint32_t localIp;

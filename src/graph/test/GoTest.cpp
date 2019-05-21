@@ -8,8 +8,7 @@
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
 
-
-DECLARE_int32(load_data_interval_second);
+DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -28,6 +27,7 @@ protected:
 
     static void SetUpTestCase() {
         client_ = gEnv->getClient();
+        storagePort_ = gEnv->storageServerPort();
 
         ASSERT_NE(nullptr, client_);
 
@@ -192,10 +192,13 @@ protected:
     };
 
 protected:
+    static uint16_t                             storagePort_;
     static std::unique_ptr<GraphClient>         client_;
     static VertexHolder<Player>                 players_;
     static VertexHolder<Team>                   teams_;
 };
+
+uint16_t GoTest::storagePort_ = 0;
 
 std::unique_ptr<GraphClient> GoTest::client_;
 
@@ -297,7 +300,7 @@ GoTest::VertexHolder<GoTest::Team> GoTest::teams_ = {
 AssertionResult GoTest::prepareSchema() {
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "ADD HOSTS 127.0.0.1:10002";
+        std::string cmd = folly::stringPrintf("ADD HOSTS 127.0.0.1:%u", storagePort_);
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
@@ -311,7 +314,7 @@ AssertionResult GoTest::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "USE nba";
@@ -352,7 +355,7 @@ AssertionResult GoTest::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     return TestOK();
 }
 
@@ -768,7 +771,7 @@ AssertionResult GoTest::removeData() {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "REMOVE HOSTS 127.0.0.1:10002";
+        std::string cmd = folly::stringPrintf("REMOVE HOSTS 127.0.0.1:%u", storagePort_);
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
@@ -778,7 +781,7 @@ AssertionResult GoTest::removeData() {
     return TestOK();
 }
 
-TEST_F(GoTest, DISABLED_OneStepOutBound) {
+TEST_F(GoTest, OneStepOutBound) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve";

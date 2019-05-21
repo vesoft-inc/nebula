@@ -158,6 +158,11 @@ public:
         return localHost_;
      }
 
+     // for UTS
+     void setLocalHost(HostAddr localHost) {
+        localHost_ = std::move(localHost);
+     }
+
 private:
      meta::MetaClient *client_{nullptr};
      HostAddr localHost_;
