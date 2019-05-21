@@ -61,6 +61,7 @@ TEST(NetworkUtils, listDeviceAndIPv4s) {
     ASSERT_NE(result.value().end(), result.value().find("lo"));
 }
 
+
 TEST(NetworkUtils, intIPv4Conversion) {
     uint32_t ip;
     ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
@@ -70,6 +71,19 @@ TEST(NetworkUtils, intIPv4Conversion) {
     uint32_t converted;
     ASSERT_TRUE(NetworkUtils::ipv4ToInt(NetworkUtils::intToIPv4(ip), converted));
     EXPECT_EQ(converted, ip);
+}
+
+
+TEST(NetworkUtils, getDynamicPortRange) {
+    uint16_t low, high;
+    ASSERT_TRUE(NetworkUtils::getDynamicPortRange(low, high));
+    ASSERT_NE(low, high);
+}
+
+
+TEST(NetworkUtils, getAvailablePort) {
+    auto port = NetworkUtils::getAvailablePort();
+    ASSERT_GT(port, 0);
 }
 
 }   // namespace network
