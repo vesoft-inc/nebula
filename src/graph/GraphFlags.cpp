@@ -25,3 +25,5 @@ DEFINE_bool(redirect_stdout, true, "Whether to redirect stdout and stderr to sep
 DEFINE_string(stdout_log_file, "graphd-stdout.log", "Destination filename of stdout");
 DEFINE_string(stderr_log_file, "graphd-stderr.log", "Destination filename of stderr");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
+DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
+                                     "the format looks like ip1:port1, ip2:port2, ip3:port3");
