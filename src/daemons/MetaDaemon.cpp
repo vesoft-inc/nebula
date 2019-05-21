@@ -17,6 +17,7 @@ using nebula::ProcessUtils;
 using nebula::Status;
 
 DEFINE_int32(port, 45500, "Meta daemon listening port");
+DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path");
 DEFINE_string(peers, "", "It is a list of IPs split by comma,"
                          "the ips number equals replica number."
@@ -120,6 +121,7 @@ int main(int argc, char *argv[]) {
         gServer = std::make_unique<apache::thrift::ThriftServer>();
         gServer->setInterface(std::move(handler));
         gServer->setPort(FLAGS_port);
+        gServer->setReusePort(FLAGS_reuse_port);
         gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception &e) {
