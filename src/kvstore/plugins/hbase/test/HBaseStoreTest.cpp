@@ -6,13 +6,11 @@
 
 #include "base/Base.h"
 #include "base/NebulaKeyUtils.h"
-#include <gtest/gtest.h>
-#include "kvstore/NebulaStore.h"
-#include "kvstore/PartManager.h"
-#include "kvstore/hbase/test/TestUtils.h"
-#include "kvstore/hbase/HBaseStore.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
+#include "kvstore/plugins/hbase/HBaseStore.h"
+#include "kvstore/plugins/hbase/test/TestUtils.h"
+#include <gtest/gtest.h>
 
 /**
  * TODO(zhangguoqing) Add a test runner to provide HBase/thrift2 service.
@@ -24,42 +22,14 @@ namespace nebula {
 namespace kvstore {
 
 TEST(HBaseStoreTest, SimpleTest) {
-    auto partMan = std::make_unique<MemPartManager>();
-    // GraphSpaceID =>  {PartitionIDs}
-    // 0 => {0, 1, 2, 3, 4, 5}
-    // 1 => {0, 1, 2, 3, 4, 5}
-    // 2 => {0, 1, 2, 3, 4, 5}
-    for (auto spaceId = 0; spaceId < 3; spaceId++) {
-        for (auto partId = 0; partId < 6; partId++) {
-            partMan->partsMap_[spaceId][partId] = PartMeta();
-        }
-    }
-    LOG(INFO) << "Total space num " << partMan->partsMap_.size()
-              << ", " << partMan->parts(HostAddr(0, 0)).size();
+    KVOptions options;
     auto schemaMan = TestUtils::mockSchemaMan();
     auto sm = schemaMan.get();
     CHECK_NOTNULL(sm);
-    std::unique_ptr<HBaseStore> hbaseStore;
-    KVOptions options;
     options.hbaseServer_ = HostAddr(0, 9096);
     options.schemaMan_ = std::move(schemaMan);
-    options.local_ = HostAddr(0, 0);
-    options.partMan_ = std::move(partMan);
-
-    hbaseStore.reset(static_cast<HBaseStore*>(KVStore::instance(std::move(options), "hbase")));
-    EXPECT_EQ(3, hbaseStore->kvs_.size());
-    EXPECT_EQ(6, hbaseStore->kvs_[0]->parts_.size());
-    EXPECT_EQ(6, hbaseStore->kvs_[1]->parts_.size());
-    EXPECT_EQ(6, hbaseStore->kvs_[2]->parts_.size());
-
-    hbaseStore->asyncMultiPut(3, 0, {{"key", "val"}}, [](ResultCode code, HostAddr addr) {
-        UNUSED(addr);
-        EXPECT_EQ(ResultCode::ERR_SPACE_NOT_FOUND, code);
-    });
-    hbaseStore->asyncMultiPut(1, 6, {{"key", "val"}}, [](ResultCode code, HostAddr addr) {
-        UNUSED(addr);
-        EXPECT_EQ(ResultCode::ERR_PART_NOT_FOUND, code);
-    });
+    auto hbaseStore = std::make_unique<HBaseStore>(std::move(options));
+    hbaseStore->init();
 
     LOG(INFO) << "Put some data then read them...";
     GraphSpaceID spaceId = 0;
@@ -102,15 +72,20 @@ TEST(HBaseStoreTest, SimpleTest) {
         edgeData.emplace_back(edgeKey, edgeValue);
     }
 
-    hbaseStore->asyncMultiPut(spaceId, partId, edgeData, [](ResultCode code, HostAddr addr){
-        UNUSED(addr);
+    hbaseStore->asyncMultiPut(spaceId, partId, edgeData, [](ResultCode code) {
         EXPECT_EQ(ResultCode::SUCCEEDED, code);
     });
 
+    std::vector<std::string> retEdgeValues;
+    EXPECT_EQ(ResultCode::SUCCEEDED,
+              hbaseStore->multiGet(spaceId, partId, edgeKeys, &retEdgeValues));
+    EXPECT_EQ(20, retEdgeValues.size());
+
     auto checkPrefix = [&](const std::string& prefix,
-                           int32_t expectedFrom, int32_t expectedTotal) {
-        LOG(INFO) << "prefix " << prefix
-                  << ", expectedFrom " << expectedFrom << ", expectedTotal " << expectedTotal;
+                           int32_t expectedFrom,
+                           int32_t expectedTotal) {
+        LOG(INFO) << "prefix " << prefix << ", expectedFrom "
+                  << expectedFrom << ", expectedTotal " << expectedTotal;
         std::unique_ptr<KVIterator> iter;
         EXPECT_EQ(ResultCode::SUCCEEDED, hbaseStore->prefix(spaceId, partId, prefix, &iter));
         int num = 0;
@@ -132,11 +107,15 @@ TEST(HBaseStoreTest, SimpleTest) {
     std::string prefix3 = NebulaKeyUtils::prefix(partId, srcId, edgeType + 1, rank, dstId);
     checkPrefix(prefix3, 10, 10);
 
-    hbaseStore->asyncMultiRemove(spaceId, partId, edgeKeys, [](ResultCode code, HostAddr addr){
-        UNUSED(addr);
+    hbaseStore->asyncRemovePrefix(spaceId, partId, prefix3, [](ResultCode code) {
         EXPECT_EQ(ResultCode::SUCCEEDED, code);
     });
-    std::vector<std::string> retEdgeValues;
+
+    hbaseStore->asyncMultiRemove(spaceId, partId, edgeKeys, [](ResultCode code) {
+        EXPECT_EQ(ResultCode::SUCCEEDED, code);
+    });
+
+    retEdgeValues.clear();
     EXPECT_EQ(ResultCode::ERR_UNKNOWN,
               hbaseStore->multiGet(spaceId, partId, edgeKeys, &retEdgeValues));
     EXPECT_EQ(0, retEdgeValues.size());
@@ -153,5 +132,4 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-
 

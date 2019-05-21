@@ -5,8 +5,8 @@
  */
 
 #include "base/Base.h"
-#include "kvstore/hbase/HBaseClient.h"
 #include "network/NetworkUtils.h"
+#include "kvstore/plugins/hbase/HBaseClient.h"
 #include <gtest/gtest.h>
 
 /**

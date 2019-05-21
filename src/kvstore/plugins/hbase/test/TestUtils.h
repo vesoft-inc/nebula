@@ -8,6 +8,7 @@
 #include "meta/SchemaProviderIf.h"
 #include "meta/SchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
+#include "storage/test/AdHocSchemaManager.h"
 
 namespace nebula {
 namespace kvstore {
@@ -15,7 +16,7 @@ namespace kvstore {
 class TestUtils {
 public:
     static std::unique_ptr<meta::SchemaManager> mockSchemaMan() {
-        auto* schemaMan = new meta::AdHocSchemaManager();
+        auto* schemaMan = new storage::AdHocSchemaManager();
         for (GraphSpaceID spaceId = 0; spaceId < 3; spaceId++) {
             schemaMan->addEdgeSchema(
                 spaceId, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
@@ -31,9 +32,7 @@ public:
     }
 
 private:
-    /**
-     * It will generate SchemaProvider with some int fields and string fields
-     * */
+    // It will generate SchemaProvider with some int fields and string fields
     static std::shared_ptr<meta::SchemaProviderIf> genEdgeSchemaProvider(
             int32_t intFieldsNum,
             int32_t stringFieldsNum) {
@@ -55,9 +54,7 @@ private:
     }
 
 
-    /**
-     * It will generate tag SchemaProvider with some int fields and string fields
-     * */
+    // It will generate tag SchemaProvider with some int fields and string fields
     static std::shared_ptr<meta::SchemaProviderIf> genTagSchemaProvider(
             TagID tagId,
             int32_t intFieldsNum,

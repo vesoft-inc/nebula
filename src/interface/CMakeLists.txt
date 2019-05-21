@@ -62,7 +62,6 @@ add_custom_command(
     DEPENDS meta.thrift
 )
 
-
 add_custom_target(
     clean-interface
     COMMAND "rm" "-fr" "gen-cpp2" "gen-java" "gen-go" "gen-py"

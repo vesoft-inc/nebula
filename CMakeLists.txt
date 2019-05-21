@@ -219,7 +219,6 @@ include_directories(SYSTEM ${Readline_INCLUDE_DIR})
 include_directories(AFTER ${NEBULA_HOME}/src)
 include_directories(AFTER src/common)
 include_directories(AFTER src/interface)
-include_directories(AFTER src/kvstore/hbase)
 
 link_directories(
     ${NEBULA_HOME}/third-party/bzip2/_install/lib

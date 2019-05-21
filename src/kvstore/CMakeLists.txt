@@ -3,15 +3,15 @@ add_library(
     Part.cpp
     RocksEngine.cpp
     PartManager.cpp
-    KVStore.cpp
     NebulaStore.cpp
     RocksEngineConfig.cpp
     LogEncoder.cpp
 )
-add_dependencies(kvstore_obj base_obj meta_client hbasestore_obj)
+add_dependencies(kvstore_obj base_obj meta_client)
 
 add_subdirectory(raftex)
 add_subdirectory(wal)
-add_subdirectory(hbase)
 add_subdirectory(test)
+
+add_subdirectory(plugins)
 

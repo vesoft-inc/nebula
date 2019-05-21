@@ -4,12 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef KVSTORE_HBASECLIENT_H_
-#define KVSTORE_HBASECLIENT_H_
+#ifndef KVSTORE_PLUGINS_HBASE_HBASECLIENT_H_
+#define KVSTORE_PLUGINS_HBASE_HBASECLIENT_H_
 
 #include "base/Base.h"
-#include "kvstore/Common.h"
 #include "thrift/ThriftClientManager.h"
+#include "kvstore/Common.h"
 #include "gen-cpp2/hbase_types.h"
 #include "gen-cpp2/THBaseServiceAsyncClient.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
@@ -61,5 +61,5 @@ private:
 
 }  // namespace kvstore
 }  // namespace nebula
-#endif  // BTSTORE_HBASECLIENT_H_
+#endif  // KVSTORE_PLUGINS_HBASE_HBASECLIENT_H_
 

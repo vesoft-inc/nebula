@@ -2,8 +2,6 @@ set(storage_test_deps
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:hbasestore_obj>
-    $<TARGET_OBJECTS:hbase_thrift_obj>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>

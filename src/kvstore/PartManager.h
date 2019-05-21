@@ -71,7 +71,6 @@ protected:
 class MemPartManager final : public PartManager {
     FRIEND_TEST(NebulaStoreTest, SimpleTest);
     FRIEND_TEST(NebulaStoreTest, PartsTest);
-    FRIEND_TEST(HBaseStoreTest, SimpleTest);
 
 public:
     MemPartManager() = default;

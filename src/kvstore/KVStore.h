@@ -23,7 +23,7 @@ struct KVOptions {
     // HBase thrift server address.
     HostAddr hbaseServer_;
 
-    // In order to store the data(value) of decoded into HBase.
+    // SchemaManager instance, help the hbasestore to encode/decode data.
     std::unique_ptr<meta::SchemaManager> schemaMan_{nullptr};
 
     // Paths for data. It would be used by rocksdb engine.
