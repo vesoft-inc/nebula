@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
@@ -192,8 +192,12 @@ public:
         items_.emplace_back(item);
     }
 
-    std::vector<std::unique_ptr<SpaceOptItem>> getOpt() {
-        return std::move(items_);
+    std::vector<SpaceOptItem*> getOpts() const {
+        std::vector<SpaceOptItem*> result;
+        result.resize(items_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(items_.begin(), items_.end(), result.begin(), get);
+        return result;
     }
 
     std::string toString() const;
@@ -218,8 +222,8 @@ public:
         spaceOpts_.reset(spaceOpts);
     }
 
-    std::vector<std::unique_ptr<SpaceOptItem>> getOpts() {
-        return spaceOpts_->getOpt();
+    std::vector<SpaceOptItem*> getOpts() {
+        return spaceOpts_->getOpts();
     }
 
     std::string toString() const override;

@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "meta/common/MetaCommon.h"
@@ -9,26 +9,19 @@
 #include "network/NetworkUtils.h"
 #include "meta/NebulaSchemaProvider.h"
 
-DEFINE_int32(load_data_interval_second, 2 * 60, "Load data interval, unit: second");
-DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
-                                     "the format looks like ip1:port1, ip2:port2, ip3:port3");
-DEFINE_int32(meta_client_io_threads, 3, "meta client io threads");
+DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
+DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 
 namespace nebula {
 namespace meta {
 
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                       std::vector<HostAddr> addrs)
+                       std::vector<HostAddr> addrs,
+                       bool sendHeartBeat)
     : ioThreadPool_(ioThreadPool)
-    , addrs_(std::move(addrs)) {
-    if (ioThreadPool_ == nullptr) {
-        ioThreadPool_
-            = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_meta_client_io_threads);
-    }
-    if (addrs_.empty() && !FLAGS_meta_server_addrs.empty()) {
-        addrs_ = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
-    }
-    CHECK(!addrs_.empty());
+    , addrs_(std::move(addrs))
+    , sendHeartBeat_(sendHeartBeat) {
+    CHECK(ioThreadPool_ != nullptr && !addrs_.empty());
     clientsMan_ = std::make_shared<thrift::ThriftClientManager<
                                     meta::cpp2::MetaServiceAsyncClient>>();
     updateHost();
@@ -36,21 +29,47 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
 }
 
 MetaClient::~MetaClient() {
-    loadDataThread_.stop();
-    loadDataThread_.wait();
+    bgThread_.stop();
+    bgThread_.wait();
     VLOG(3) << "~MetaClient";
 }
 
 void MetaClient::init() {
     loadDataThreadFunc();
-    CHECK(loadDataThread_.start());
-    size_t delayMS = FLAGS_load_data_interval_second * 1000 + folly::Random::rand32(900);
-    loadDataThread_.addTimerTask(delayMS,
-                                 FLAGS_load_data_interval_second * 1000,
-                                 &MetaClient::loadDataThreadFunc, this);
+    CHECK(bgThread_.start());
+    {
+        size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
+        LOG(INFO) << "Register timer task for load data!";
+        bgThread_.addTimerTask(delayMS,
+                               FLAGS_load_data_interval_secs * 1000,
+                               &MetaClient::loadDataThreadFunc, this);
+    }
+    if (sendHeartBeat_) {
+        LOG(INFO) << "Register time task for heartbeat!";
+        size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
+        bgThread_.addTimerTask(delayMS,
+                               FLAGS_heartbeat_interval_secs * 1000,
+                               &MetaClient::heartBeatThreadFunc, this);
+    }
+}
+
+void MetaClient::heartBeatThreadFunc() {
+    if (listener_ == nullptr) {
+        VLOG(1) << "Can't send heartbeat due to listener_ is nullptr!";
+        return;
+    }
+    auto ret = heartbeat().get();
+    if (!ret.ok()) {
+        LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
+        return;
+    }
 }
 
 void MetaClient::loadDataThreadFunc() {
+    if (ioThreadPool_->numThreads() <= 0) {
+        LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
+        return;
+    }
     auto ret = listSpaces().get();
     if (!ret.ok()) {
         LOG(ERROR) << "List space failed, status:" << ret.status();
@@ -236,7 +255,7 @@ std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& 
 std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames) {
     std::vector<SpaceIdName> idNames;
     idNames.resize(tIdNames.size());
-    std::transform(tIdNames.begin(), tIdNames.end(), idNames.begin(), [] (const auto& tin) {
+    std::transform(tIdNames.begin(), tIdNames.end(), idNames.begin(), [](const auto& tin) {
         return SpaceIdName(tin.id.get_space_id(), tin.name);
     });
     return idNames;
@@ -653,6 +672,7 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
         return resp.get_id().get_tag_id();
     }, true);
 }
+
 folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
                            std::string name,
@@ -719,8 +739,9 @@ MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::alterEdge(GraphSpaceID spaceId, std::string name,
-                      std::vector<cpp2::AlterSchemaItem> items) {
+MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
+                            std::string name,
+                            std::vector<cpp2::AlterSchemaItem> items) {
     cpp2::AlterEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
@@ -822,6 +843,21 @@ SchemaVer MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& space,
         return -1;
     }
     return it->second;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
+    CHECK_NOTNULL(listener_);
+    auto localHost = listener_->getLocalHost();
+    cpp2::HBReq req;
+    nebula::cpp2::HostAddr thriftHost;
+    thriftHost.set_ip(localHost.first);
+    thriftHost.set_port(localHost.second);
+    req.set_host(std::move(thriftHost));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_heartBeat(request);
+    }, [] (cpp2::HBResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
 }
 
 }  // namespace meta

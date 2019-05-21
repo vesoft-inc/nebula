@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -9,6 +9,8 @@
 #include "graph/ExecutionContext.h"
 #include "graph/ExecutionPlan.h"
 #include "storage/client/StorageClient.h"
+
+DECLARE_string(meta_server_addrs);
 
 namespace nebula {
 namespace graph {
@@ -22,7 +24,11 @@ ExecutionEngine::~ExecutionEngine() {
 
 
 Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
-    metaClient_ = std::make_unique<meta::MetaClient>();
+    auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
+    if (!addrs.ok()) {
+        return addrs.status();
+    }
+    metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()));
     metaClient_->init();
 
     schemaManager_ = meta::SchemaManager::create();

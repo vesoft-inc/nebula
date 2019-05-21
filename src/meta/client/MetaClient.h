@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef META_METACLIENT_H_
@@ -59,8 +59,9 @@ public:
 
 class MetaClient {
 public:
-    explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool = nullptr,
-                        std::vector<HostAddr> addrs = {});
+    explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
+                        std::vector<HostAddr> addrs,
+                        bool sendHeartBeat = false);
 
     virtual ~MetaClient();
 
@@ -102,7 +103,7 @@ public:
     folly::Future<StatusOr<TagID>>
     alterTagSchema(GraphSpaceID spaceId,
                    std::string name,
-                   std::vector<cpp2::AlterSchemaItem> tagItems);
+                   std::vector<cpp2::AlterSchemaItem> items);
 
     folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
     listTagSchemas(GraphSpaceID spaceId);
@@ -117,7 +118,9 @@ public:
     createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema);
 
     folly::Future<StatusOr<bool>>
-    alterEdge(GraphSpaceID spaceId, std::string name, std::vector<cpp2::AlterSchemaItem> items);
+    alterEdgeSchema(GraphSpaceID spaceId,
+                    std::string name,
+                    std::vector<cpp2::AlterSchemaItem> items);
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
     listEdgeSchemas(GraphSpaceID spaceId);
@@ -182,12 +185,16 @@ public:
 protected:
     void loadDataThreadFunc();
 
+    void heartBeatThreadFunc();
+
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
                      SpaceTagNameIdMap &tagNameIdMap,
                      SpaceEdgeNameTypeMap &edgeNameTypeMap,
                      SpaceNewestTagVerMap &newestTagVerMap,
                      SpaceNewestEdgeVerMap &newestEdgeVerMap);
+
+    folly::Future<StatusOr<bool>> heartbeat();
 
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
@@ -228,20 +235,21 @@ protected:
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>> clientsMan_;
+    std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
     std::vector<HostAddr> addrs_;
     // The lock used to protect active_ and leader_.
     folly::RWSpinLock hostLock_;
     HostAddr active_;
     HostAddr leader_;
-    thread::GenericWorker loadDataThread_;
-    std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
+    thread::GenericWorker bgThread_;
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
-    folly::RWSpinLock localCacheLock_;
-    MetaChangedListener* listener_{nullptr};
+    folly::RWSpinLock     localCacheLock_;
+    MetaChangedListener*  listener_{nullptr};
+    bool                  sendHeartBeat_ = false;
 };
 }  // namespace meta
 }  // namespace nebula

@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -109,6 +109,7 @@ std::unordered_set<uint16_t> NetworkUtils::getPortsInUse() {
     while (iter.valid()) {
         auto &sm = iter.matched();
         inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
+        ++iter;
     }
     return std::move(inUse);
 }
@@ -204,36 +205,42 @@ std::string NetworkUtils::intToIPv4(uint32_t ip) {
     return buf;
 }
 
-
-HostAddr NetworkUtils::toHostAddr(const folly::StringPiece ip, int32_t port) {
+StatusOr<HostAddr> NetworkUtils::toHostAddr(folly::StringPiece ip, int32_t port) {
     uint32_t ipV4;
-    CHECK(ipv4ToInt(ip.toString(), ipV4));
+    if (!ipv4ToInt(ip.toString(), ipV4)) {
+        return Status::Error("Bad ip format:%s", ip.start());
+    }
     return std::make_pair(ipV4, port);
 }
 
-
-HostAddr NetworkUtils::toHostAddr(const folly::StringPiece ipPort) {
+StatusOr<HostAddr> NetworkUtils::toHostAddr(folly::StringPiece ipPort) {
     auto pos = ipPort.find(':');
-    CHECK_NE(pos, folly::StringPiece::npos);
+    if (pos == folly::StringPiece::npos) {
+        return Status::Error("Bad peer format: %s", ipPort.start());
+    }
 
     int32_t port;
     try {
         port = folly::to<int32_t>(ipPort.subpiece(pos + 1));
     } catch (const std::exception& ex) {
-        LOG(FATAL) << "Bad ipPort: " << ex.what();
+        return Status::Error("Bad port number, error: %s", ex.what());
     }
 
     return toHostAddr(ipPort.subpiece(0, pos), port);
 }
 
-std::vector<HostAddr> NetworkUtils::toHosts(const std::string& peersStr) {
+StatusOr<std::vector<HostAddr>> NetworkUtils::toHosts(const std::string& peersStr) {
     std::vector<HostAddr> hosts;
     std::vector<std::string> peers;
     folly::split(",", peersStr, peers, true);
-    hosts.resize(peers.size());
-    std::transform(peers.begin(), peers.end(), hosts.begin(), [](auto& p) {
-        return network::NetworkUtils::toHostAddr(folly::trimWhitespace(p));
-    });
+    hosts.reserve(peers.size());
+    for (auto& peerStr : peers) {
+        auto hostAddr = network::NetworkUtils::toHostAddr(folly::trimWhitespace(peerStr));
+        if (!hostAddr.ok()) {
+            return hostAddr.status();
+        }
+        hosts.emplace_back(hostAddr.value());
+    }
     return hosts;
 }
 

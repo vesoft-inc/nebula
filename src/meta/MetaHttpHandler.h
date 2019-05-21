@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #ifndef META_METAHTTPHANDLER_H_
@@ -13,6 +13,8 @@
 
 namespace nebula {
 namespace meta {
+
+using nebula::HttpCode;
 
 class MetaHttpHandler : public proxygen::RequestHandler {
 public:
@@ -31,9 +33,20 @@ public:
     void onError(proxygen::ProxygenError error) noexcept override;
 
 private:
-    nebula::HttpCode err_{nebula::HttpCode::SUCCEEDED};
-    std::string name;
-    std::string value;
+    void addOneStatus(folly::dynamic& vals,
+                      const std::string& statusName,
+                      const std::string& statusValue) const;
+
+    std::string readValue(std::string& statusName);
+    void readAllValue(folly::dynamic& vals);
+    folly::dynamic getStatus();
+    std::string toStr(folly::dynamic& vals) const;
+
+private:
+    HttpCode err_{HttpCode::SUCCEEDED};
+    bool returnJson_{false};
+    std::vector<std::string> statusNames_;
+    std::vector<std::string> statusAllNames_{"status"};
 };
 
 }  // namespace meta

@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -312,7 +312,8 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
 
 bool CmdProcessor::processClientCmd(folly::StringPiece cmd,
                                     bool& readyToExit) {
-    if (cmd == "exit") {
+    normalize(cmd);
+    if (cmd == "exit" || cmd== "quit") {
         readyToExit = true;
         return true;
     } else {
@@ -379,6 +380,14 @@ bool CmdProcessor::process(folly::StringPiece cmd) {
     processServerCmd(cmd);
 
     return true;
+}
+
+void CmdProcessor::normalize(folly::StringPiece &command) {
+    command  = folly::trimWhitespace(command);
+    while (command.endsWith(";")) {
+        command = command.subpiece(0, command.size() - 1);
+        command = folly::trimWhitespace(command);
+    }
 }
 
 }  // namespace graph

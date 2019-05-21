@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -32,8 +32,12 @@ public:
 
     proxygen::RequestHandler* onRequest(proxygen::RequestHandler*,
                                         proxygen::HTTPMessage* msg) noexcept override {
-        VLOG(2) << "Got request \"" << msg->getPath() << "\"";
-        auto it = handlerGenMap_.find(msg->getPath());
+        std::string path = msg->getPath();
+        if (path == "/") {
+            path = "/status";
+        }
+        VLOG(2) << "Got request \"" << path << "\"";
+        auto it = handlerGenMap_.find(path);
         if (it != handlerGenMap_.end()) {
             return it->second();
         }

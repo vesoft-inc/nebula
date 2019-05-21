@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -43,12 +43,15 @@ TEST(ProcessUtils, isPidAvailable) {
     }
     {
         // pid file which contains pid of current process
-        auto pidFile = "/tmp/maybe-non-existing-dir/process_test.pid";
+        auto pidFile = folly::stringPrintf("/tmp/non-existing-dir-%d/process_test.pid", ::getpid());
+        SCOPE_EXIT {
+            ::unlink(pidFile.c_str());
+            ::rmdir(fs::FileUtils::dirname(pidFile.c_str()).c_str());
+        };
         auto status = ProcessUtils::makePidFile(pidFile);
         ASSERT_TRUE(status.ok()) << status;
         status = ProcessUtils::isPidAvailable(pidFile);
         ASSERT_FALSE(status.ok());
-        ::unlink(pidFile);
     }
     {
         // pid file not exist
@@ -68,14 +71,16 @@ TEST(ProcessUtils, isPidAvailable) {
                 }
             }
         };
-        auto pidFile = "/tmp/process_test.pid";
+        auto pidFile = folly::stringPrintf("/tmp/process_test-%d.pid", ::getpid());
+        SCOPE_EXIT {
+            ::unlink(pidFile.c_str());
+        };
         auto status = ProcessUtils::makePidFile(pidFile, genPid());
         ASSERT_TRUE(status.ok()) << status;
         // there are chances that the chosen pid was occupied already,
         // but the chances are negligible, so be it.
         status = ProcessUtils::isPidAvailable(pidFile);
         ASSERT_TRUE(status.ok()) << status;
-        ::unlink(pidFile);
     }
 }
 

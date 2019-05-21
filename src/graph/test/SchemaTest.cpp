@@ -1,14 +1,14 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
 
-DECLARE_int32(load_data_interval_second);
+DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -64,7 +64,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE default_space";
@@ -76,10 +76,10 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "CREATE TAG person(name string, email_addr string, "
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
-        sleep(FLAGS_load_data_interval_second + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG person";
@@ -107,7 +107,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG account";
@@ -127,7 +127,14 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER TAG account "
+                            "DROP (id)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG account";
@@ -159,7 +166,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE buy";
@@ -183,7 +190,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE education";
@@ -199,7 +206,7 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW EDGES";
         auto code = client->execute(query, resp);
-        sleep(FLAGS_load_data_interval_second + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 1>> expected{
             {"buy"},
@@ -209,11 +216,39 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "ALTER EDGE education "
+                            "ADD (col1 int TTL = 200, col2 string), "
+                            "CHANGE (school int), "
+                            "DROP (id, time)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER EDGE education "
+                            "DROP (id, time)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_load_data_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE EDGE education";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+                {"col1", "int"},
+                {"col2", "string"},
+                {"school", "int"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "CREATE SPACE my_space(partition_num=9, replica_factor=3)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE my_space";
@@ -225,10 +260,10 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG animal(name string, kind string)";
         auto code = client->execute(query, resp);
-        sleep(FLAGS_load_data_interval_second + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_second + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG animal";
@@ -250,7 +285,7 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW TAGS";
         auto code = client->execute(query, resp);
-        sleep(FLAGS_load_data_interval_second + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 1>> expected{
             {"animal"},
@@ -262,7 +297,7 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "REMOVE TAG person";
         auto code = client->execute(query, resp);
-        sleep(FLAGS_load_data_interval_second + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {

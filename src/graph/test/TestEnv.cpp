@@ -1,13 +1,13 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 
-DECLARE_int32(load_data_interval_second);
+DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -24,13 +24,13 @@ TestEnv::~TestEnv() {
 
 
 void TestEnv::SetUp() {
-    FLAGS_load_data_interval_second = 1;
+    FLAGS_load_data_interval_secs = 1;
     using ThriftServer = apache::thrift::ThriftServer;
     server_ = std::make_unique<ThriftServer>();
+    server_->getIOThreadPool()->setNumThreads(1);
     auto interface = std::make_shared<GraphService>(server_->getIOThreadPool());
     server_->setInterface(std::move(interface));
     server_->setPort(0);    // Let the system choose an available port for us
-
     auto serve = [this] {
         server_->serve();
     };

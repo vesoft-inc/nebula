@@ -1,13 +1,13 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
 #include "base/Cord.h"
-#include "parser/Expressions.h"
-#include "parser/FunctionManager.h"
+#include "filter/Expressions.h"
+#include "filter/FunctionManager.h"
 
 
 #define THROW_IF_NO_SPACE(POS, END, REQUIRE)                                        \

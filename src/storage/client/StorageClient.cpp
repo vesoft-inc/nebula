@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -15,16 +15,9 @@ namespace storage {
 
 StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> threadPool,
                              meta::MetaClient *client)
-        : ioThreadPool_(threadPool) {
-    if (nullptr == client) {
-        LOG(INFO) << "MetaClient is nullptr, create new one";
-        static auto clientPtr = std::make_unique<meta::MetaClient>();
-        static std::once_flag flag;
-        std::call_once(flag, std::bind(&meta::MetaClient::init, clientPtr.get()));
-        client_ = clientPtr.get();
-    } else {
-        client_ = client;
-    }
+        : ioThreadPool_(threadPool)
+        , client_(client) {
+    CHECK_NOTNULL(client_);
     clientsMan_
         = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
 }

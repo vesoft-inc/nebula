@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -161,6 +161,7 @@ public:
 
         std::unique_ptr<apache::thrift::ThriftServer> server_;
         std::unique_ptr<std::thread> serverT_;
+        uint32_t port_;
     };
 
     static std::unique_ptr<ServerContext> mockServer(uint32_t port, const char* dataPath) {
@@ -177,7 +178,12 @@ public:
 
             LOG(INFO) << "Stop the server...";
         });
-        sleep(1);
+        while (!sc->server_->getServeEventBase() ||
+               !sc->server_->getServeEventBase()->isRunning()) {
+        }
+        sc->port_ = sc->server_->getAddress().getPort();
+        LOG(INFO) << "Starting the Meta Daemon on port " << sc->port_
+                  << ", path " << dataPath;
         return sc;
     }
 };

@@ -1,7 +1,7 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
@@ -145,6 +145,27 @@ TEST(Parser, AlterTag) {
         GQLParser parser;
         std::string query = "ALTER TAG person ADD (col1 int TTL = 200, col2 string), "
                             "CHANGE (col3 int TTL = 200, col4 string), "
+                            "DROP (col5, col6)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, CreateEdge) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE e1(name string, age int, "
+                            "married bool, salary double, create_time timestamp)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, AlterEdge) {
+    {
+        GQLParser parser;
+        std::string query = "ALTER EDGE e1 ADD (col1 int, col2 string), "
+                            "CHANGE (col3 int, col4 string), "
                             "DROP (col5, col6)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -521,6 +542,16 @@ TEST(Parser, UserOperation) {
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
         EXPECT_EQ(query, sentence->toString());
+    }
+}
+
+TEST(Parser, UnreservedKeywords) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG TAG1(space string, spaces string, "
+                            "email string, password string, roles string)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
     }
 }
 

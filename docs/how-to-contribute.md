@@ -53,7 +53,7 @@ This hook checks your commits for formatting, building, doc generation, etc.
 
 ```sh
 cd $working_dir/nebula/.git/hooks
-ln -s ../../cpplint/bin/pre-commit.sh .
+ln -s ../../.linters/cpp/hooks/pre-commit.sh pre-commit
 ```
 Sometime, pre-commit hook can not be executable. In such case, you have to make it executable manually.
 

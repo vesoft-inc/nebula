@@ -1,31 +1,19 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
 #include "base/Base.h"
 #include "meta/SchemaManager.h"
-#include "meta/FileBasedSchemaManager.h"
 #include "meta/ServerBasedSchemaManager.h"
-
-DECLARE_string(schema_file);
-DECLARE_string(meta_server_addrs);
 
 namespace nebula {
 namespace meta {
 
 std::unique_ptr<SchemaManager> SchemaManager::create() {
-    if (!FLAGS_schema_file.empty()) {
-        std::unique_ptr<SchemaManager> sm(new FileBasedSchemaManager());
-        return sm;
-    } else if (!FLAGS_meta_server_addrs.empty()) {
-        std::unique_ptr<SchemaManager> sm(new ServerBasedSchemaManager());
-        return sm;
-    } else {
-        std::unique_ptr<SchemaManager> sm(new AdHocSchemaManager());
-        return sm;
-    }
+    auto sm = std::unique_ptr<SchemaManager>(new ServerBasedSchemaManager());
+    return sm;
 }
 
 void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
