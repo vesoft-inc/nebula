@@ -58,6 +58,34 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
     });
 }
 
+template<typename RESP>
+std::string BaseProcessor<RESP>::assembleValues(std::vector<cpp2::PropValue> values) {
+    nebula::RowWriter writer;
+    for (auto &value : values) {
+        switch (value.getType()) {
+            case cpp2::PropValue::Type::bool_val:
+                VLOG(3) << "Assemble bool " << value.get_bool_val();
+                writer << value.get_bool_val();
+                break;
+            case cpp2::PropValue::Type::int_val:
+                VLOG(3) << "Assemble int " << value.get_int_val();
+                writer << value.get_int_val();
+                break;
+            case cpp2::PropValue::Type::double_val:
+                VLOG(3) << "Assemble double " << value.get_double_val();
+                writer << value.get_double_val();
+                break;
+            case cpp2::PropValue::Type::string_val:
+                VLOG(3) << "Assemble string " << value.get_string_val();
+                writer << value.get_string_val();
+                break;
+            default:
+                LOG(FATAL) << "Unknown value type: " << value.getType();
+                break;
+        }
+    }
+    return writer.encode();
+}
 
 }  // namespace storage
 }  // namespace nebula

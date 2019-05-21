@@ -23,7 +23,8 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
         std::for_each(partEdges.second.begin(), partEdges.second.end(), [&](auto& edge){
             auto key = KeyUtils::edgeKey(partId, edge.key.src, edge.key.edge_type,
                                          edge.key.ranking, edge.key.dst, version);
-            data.emplace_back(std::move(key), std::move(edge.get_props()));
+            auto values = assembleValues(edge.get_props_value());
+            data.emplace_back(std::move(key), std::move(values));
         });
         doPut(spaceId, partId, std::move(data));
     });

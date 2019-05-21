@@ -34,7 +34,7 @@ StorageClient::~StorageClient() {
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVertices(
         GraphSpaceID space,
         std::vector<cpp2::Vertex> vertices,
-        bool overwritable,
+        bool overWritable,
         folly::EventBase* evb) {
     auto clusters = clusterIdsToHosts(
         space,
@@ -48,7 +48,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVert
         auto& host = c.first;
         auto& req = requests[host];
         req.set_space_id(space);
-        req.set_overwritable(overwritable);
+        req.set_over_writable(overWritable);
         req.set_parts(std::move(c.second));
     }
 
@@ -65,7 +65,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVert
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdges(
         GraphSpaceID space,
         std::vector<storage::cpp2::Edge> edges,
-        bool overwritable,
+        bool overWritable,
         folly::EventBase* evb) {
     auto clusters = clusterIdsToHosts(
         space,
@@ -79,7 +79,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
         auto& host = c.first;
         auto& req = requests[host];
         req.set_space_id(space);
-        req.set_overwritable(overwritable);
+        req.set_over_writable(overWritable);
         req.set_parts(std::move(c.second));
     }
 

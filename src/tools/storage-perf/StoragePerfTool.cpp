@@ -35,7 +35,7 @@ public:
                   << ", qpsPerThread " << qpsPerThread
                   << ", task interval ms " << interval;
         std::vector<std::unique_ptr<thread::GenericWorker>> threads;
-        for (int32_t i = 0; i < FLAGS_threads; i++) {
+        for (auto i = 0; i < FLAGS_threads; i++) {
             auto t = std::make_unique<thread::GenericWorker>();
             threads.emplace_back(std::move(t));
         }
@@ -105,14 +105,19 @@ private:
         decltype(v.tags) tags;
         storage::cpp2::Tag tag;
         tag.set_tag_id(defaultTagId_);
-        RowWriter writer;
-        for (uint64_t numInt = 0; numInt < 3; numInt++) {
-            writer << numInt;
+        std::vector<std::string> names;
+        std::vector<cpp2::PropValue> values;
+        values.resize(6);
+        for (auto i = 0; i < 3; i++) {
+            names.emplace_back(folly::stringPrintf("col_%d", i));
+            values[i].set_int_val(i);
         }
-        for (auto numString = 3; numString < 6; numString++) {
-            writer << folly::stringPrintf("tag_string_col_%d", numString);
+        for (auto i = 3; i < 6; i++) {
+            names.emplace_back(folly::stringPrintf("col_%d", i));
+            values[i].set_string_val(folly::stringPrintf("tag_string_col_%d", i));
         }
-        tag.set_props(writer.encode());
+        tag.set_props_name(std::move(names));
+        tag.set_props_value(std::move(values));
         tags.emplace_back(std::move(tag));
         v.set_tags(std::move(tags));
         vertices.emplace_back(std::move(v));
@@ -129,14 +134,19 @@ private:
         eKey.set_dst(vId + 1);
         eKey.set_ranking(0);
         edge.set_key(std::move(eKey));
-        RowWriter writer(nullptr);
-        for (uint64_t numInt = 0; numInt < 10; numInt++) {
-            writer << numInt;
+        std::vector<std::string> names;
+        std::vector<cpp2::PropValue> values;
+        values.resize(6);
+        for (auto i = 0; i < 10; i++) {
+            names.emplace_back(folly::stringPrintf("col_%d", i));
+            values[i].set_int_val(i);
         }
-        for (auto numString = 10; numString < 20; numString++) {
-            writer << folly::stringPrintf("string_col_%d", numString);
+        for (auto i = 10; i < 20; i++) {
+            names.emplace_back(folly::stringPrintf("col_%d", i));
+            values[i].set_string_val(folly::stringPrintf("tag_string_col_%d", i));
         }
-        edge.set_props(writer.encode());
+        edge.set_props_name(std::move(names));
+        edge.set_props_value(std::move(values));
         edges.emplace_back(std::move(edge));
         return edges;
     }

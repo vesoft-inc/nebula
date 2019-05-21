@@ -69,10 +69,13 @@ public:
               TagID tagID = 0;
               std::vector<cpp2::Tag> tags;
               while (tagID < tagsNum) {
-                    tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      tagID,
-                                      folly::stringPrintf("%d_%ld_%d",
-                                                          partitionID, vertexID, tagID++));
+                  std::vector<std::string> names;
+                  std::vector<cpp2::PropValue> values;
+                  values.resize(1);
+                  values[0].set_string_val(folly::stringPrintf("%d_%ld_%d",
+                                                               partitionID, vertexID, tagID++));
+                  tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                    tagID, std::move(names), std::move(values));
                }
                vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                      vertexID++,

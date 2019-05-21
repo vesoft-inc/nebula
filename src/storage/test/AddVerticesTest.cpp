@@ -22,7 +22,7 @@ TEST(AddVerticesTest, SimpleTest) {
     LOG(INFO) << "Build AddVerticesRequest...";
     cpp2::AddVerticesRequest req;
     req.space_id = 0;
-    req.overwritable = true;
+    req.over_writable = true;
     // partId => List<Vertex>
     // Vertex => {Id, List<VertexProp>}
     // VertexProp => {tagId, tags}
@@ -31,9 +31,13 @@ TEST(AddVerticesTest, SimpleTest) {
         for (auto vertexId = partId * 10; vertexId < 10 * (partId + 1); vertexId++) {
             std::vector<cpp2::Tag> tags;
             for (auto tagId = 0; tagId < 10; tagId++) {
+                std::vector<std::string> names;
+                names.emplace_back(folly::stringPrintf("column_%d", tagId));
+                std::vector<cpp2::PropValue> values;
+                values.resize(1);
+                values[0].set_string_val(folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
                 tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                   tagId,
-                                   folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
+                                  tagId, std::move(names), std::move(values));
             }
             vertices.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                   vertexId,
@@ -56,7 +60,9 @@ TEST(AddVerticesTest, SimpleTest) {
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             TagID tagId = 0;
             while (iter->valid()) {
-                EXPECT_EQ(folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId), iter->val());
+                nebula::RowWriter writer;
+                writer << folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId);
+                EXPECT_EQ(writer.encode(), iter->val());
                 tagId++;
                 iter->next();
             }

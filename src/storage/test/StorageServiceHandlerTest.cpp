@@ -19,7 +19,7 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     fs::TempDir rootPath("/tmp/FutureAddVerticesTest.XXXXXX");
     cpp2::AddVerticesRequest req;
     req.set_space_id(0);
-    req.overwritable = true;
+    req.over_writable = true;
 
     LOG(INFO) << "Build FutureAddVerticesTest...";
     req.parts.emplace(0, TestUtils::setupVertices(0, 10, 10));
@@ -40,7 +40,9 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kvstore->prefix(0, 1, prefix, &iter));
     TagID tagId = 0;
     while (iter->valid()) {
-        ASSERT_EQ(folly::stringPrintf("%d_%d_%d", 1, 19, tagId), iter->val());
+        nebula::RowWriter writer;
+        writer << folly::stringPrintf("%d_%d_%d", 1, 19, tagId);
+        ASSERT_EQ(writer.encode(), iter->val());
         tagId++;
         iter->next();
     }

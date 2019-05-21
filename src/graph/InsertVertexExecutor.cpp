@@ -54,45 +54,53 @@ Status InsertVertexExecutor::prepare() {
 void InsertVertexExecutor::execute() {
     using storage::cpp2::Vertex;
     using storage::cpp2::Tag;
+    using storage::cpp2::PropValue;
 
     std::vector<Vertex> vertices(rows_.size());
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto id = row->id();
         auto expressions = row->values();
-        std::vector<VariantType> values;
+        std::vector<std::string> names;
+        std::vector<PropValue> values;
 
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
-            values.emplace_back(expr->eval());
+            auto value = expr->eval();
+            PropValue propValue;
+            switch (value.which()) {
+                case 0:
+                    propValue.set_int_val(boost::get<int64_t>(value));
+                    values.emplace_back(std::move(propValue));
+                    break;
+                case 1:
+                    propValue.set_double_val(boost::get<double>(value));
+                    values.emplace_back(std::move(propValue));
+                    break;
+                case 2:
+                    propValue.set_bool_val(boost::get<bool>(value));
+                    values.emplace_back(std::move(propValue));
+                    break;
+                case 3:
+                    propValue.set_string_val(boost::get<std::string>(value));
+                    values.emplace_back(std::move(propValue));
+                    break;
+                default:
+                    LOG(FATAL) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+                    onError_(Status::Error("Unknown value type"));
+                    return;
+            }
         }
 
         auto &vertex = vertices[i];
         std::vector<Tag> tags(1);
         auto &tag = tags[0];
-        RowWriter writer(schema_);
-
-        for (auto &value : values) {
-            switch (value.which()) {
-                case 0:
-                    writer << boost::get<int64_t>(value);
-                    break;
-                case 1:
-                    writer << boost::get<double>(value);
-                    break;
-                case 2:
-                    writer << boost::get<bool>(value);
-                    break;
-                case 3:
-                    writer << boost::get<std::string>(value);
-                    break;
-                default:
-                    LOG(FATAL) << "Unknown value type: " << static_cast<uint32_t>(value.which());
-            }
-        }
-
         tag.set_tag_id(tagId_);
-        tag.set_props(writer.encode());
+        for (auto property : properties_) {
+            names.emplace_back(*property);
+        }
+        tag.set_props_name(names);
+        tag.set_props_value(values);
         vertex.set_id(id);
         vertex.set_tags(std::move(tags));
     }

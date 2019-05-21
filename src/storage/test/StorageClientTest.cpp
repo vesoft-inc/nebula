@@ -58,23 +58,27 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     {
         LOG(INFO) << "Prepare vertices data...";
         std::vector<storage::cpp2::Vertex> vertices;
-        for (int32_t vId = 0; vId < 10; vId++) {
+        for (auto vId = 0; vId < 10; vId++) {
             cpp2::Vertex v;
             v.set_id(vId);
             decltype(v.tags) tags;
-            for (int32_t tagId = 3001; tagId < 3010; tagId++) {
-                cpp2::Tag t;
-                t.set_tag_id(tagId);
-                // Generate some tag props.
-                RowWriter writer;
-                for (uint64_t numInt = 0; numInt < 3; numInt++) {
-                    writer << numInt;
+            for (auto tagId = 3001; tagId < 3010; tagId++) {
+                cpp2::Tag tag;
+                tag.set_tag_id(tagId);
+                std::vector<std::string> names;
+                std::vector<cpp2::PropValue> values;
+                values.resize(6);
+                for (auto i = 0; i < 3; i++) {
+                    names.emplace_back(folly::stringPrintf("col_%d", i));
+                    values[i].set_int_val(i);
                 }
-                for (auto numString = 3; numString < 6; numString++) {
-                    writer << folly::stringPrintf("tag_string_col_%d", numString);
+                for (auto i = 3; i < 6; i++) {
+                    names.emplace_back(folly::stringPrintf("col_%d", i));
+                    values[i].set_string_val(folly::stringPrintf("tag_string_col_%d", i));
                 }
-                t.set_props(writer.encode());
-                tags.emplace_back(std::move(t));
+                tag.set_props_name(names);
+                tag.set_props_value(std::move(values));
+                tags.emplace_back(std::move(tag));
             }
             v.set_tags(std::move(tags));
             vertices.emplace_back(std::move(v));
@@ -87,10 +91,10 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     {
         std::vector<VertexID> vIds;
         std::vector<cpp2::PropDef> retCols;
-        for (int32_t vId = 0; vId < 10; vId++) {
+        for (auto vId = 0; vId < 10; vId++) {
             vIds.emplace_back(vId);
         }
-        for (int i = 0; i < 3; i++) {
+        for (auto i = 0; i < 3; i++) {
             retCols.emplace_back(
                 TestUtils::propDef(cpp2::PropOwner::SOURCE,
                                    folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
@@ -128,7 +132,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     {
         LOG(INFO) << "Prepare edges data...";
         std::vector<storage::cpp2::Edge> edges;
-        for (uint64_t srcId = 0; srcId < 10; srcId++) {
+        for (auto srcId = 0; srcId < 10; srcId++) {
             cpp2::Edge edge;
             // Set the edge key.
             decltype(edge.key) edgeKey;
@@ -137,15 +141,20 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             edgeKey.set_dst(srcId*100 + 2);
             edgeKey.set_ranking(srcId*100 + 3);
             edge.set_key(std::move(edgeKey));
+            std::vector<cpp2::PropValue> values;
+            std::vector<std::string> names;
+            values.resize(20);
             // Generate some edge props.
-            RowWriter writer;
-            for (int32_t iInt = 0; iInt < 10; iInt++) {
-                writer << iInt;
+            for (auto i = 0; i < 10; i++) {
+                names.emplace_back(folly::stringPrintf("col_%d", i));
+                values[i].set_int_val(i);
             }
-            for (int32_t iString = 10; iString < 20; iString++) {
-                writer << folly::stringPrintf("string_col_%d", iString);
+            for (auto i = 10; i < 20; i++) {
+                names.emplace_back(folly::stringPrintf("col_%d", i));
+                values[i].set_string_val(folly::stringPrintf("edge_string_col_%d", i));
             }
-            edge.set_props(writer.encode());
+            edge.set_props_name(names);
+            edge.set_props_value(values);
             edges.emplace_back(std::move(edge));
         }
         auto f = client->addEdges(spaceId, std::move(edges), true);
@@ -156,7 +165,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     {
         std::vector<storage::cpp2::EdgeKey> edgeKeys;
         std::vector<cpp2::PropDef> retCols;
-        for (uint64_t srcId = 0; srcId < 10; srcId++) {
+        for (auto srcId = 0; srcId < 10; srcId++) {
             // Set the edge key.
             cpp2::EdgeKey edgeKey;
             edgeKey.set_src(srcId);
@@ -165,7 +174,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             edgeKey.set_ranking(srcId*100 + 3);
             edgeKeys.emplace_back(std::move(edgeKey));
         }
-        for (int i = 0; i < 20; i++) {
+        for (auto i = 0; i < 20; i++) {
             retCols.emplace_back(
                 TestUtils::propDef(cpp2::PropOwner::EDGE,
                                    folly::stringPrintf("col_%d", i)));
@@ -193,7 +202,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 } else if (index >= 13) {  // the last 10 STRING fields
                     folly::StringPiece stringCol;
                     EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getString(stringCol));
-                    EXPECT_EQ(folly::stringPrintf("string_col_%d", index - 3), stringCol);
+                    EXPECT_EQ(folly::stringPrintf("edge_string_col_%d", index - 3),
+                              stringCol.toString());
                 } else {  // the middle 10 INT fields
                     int32_t intCol;
                     EXPECT_EQ(ResultType::SUCCEEDED, fieldIt->getInt(intCol));

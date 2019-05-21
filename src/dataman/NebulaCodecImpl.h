@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef NEBULA_GRAPH_NEBULACODECIMPL_H
-#define NEBULA_GRAPH_NEBULACODECIMPL_H
+#ifndef DATAMAN_NEBULACODECIMPL_H
+#define DATAMAN_NEBULACODECIMPL_H
 
 #include "base/StatusOr.h"
 #include "dataman/include/NebulaCodec.h"
@@ -27,4 +27,4 @@ public:
 }  // namespace dataman
 }  // namespace nebula
 
-#endif  // NEBULA_GRAPH_NEBULACODECIMPL_H
+#endif  // DATAMAN_NEBULACODECIMPL_H

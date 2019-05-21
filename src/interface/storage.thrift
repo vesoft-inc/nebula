@@ -32,7 +32,6 @@ enum ErrorCode {
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
-
 enum PropOwner {
     SOURCE = 1,
     DEST = 2,
@@ -44,6 +43,13 @@ struct PropDef {
     2: common.TagID tag_id,       // Only valid when owner is SOURCE or DEST
     3: string name,      // Property name
     4: StatType stat,    // calc stats when setted.
+}
+
+union PropValue {
+    1: bool    bool_val,
+    2: i64     int_val,
+    3: double  double_val,
+    4: string  string_val,
 }
 
 enum StatType {
@@ -89,7 +95,6 @@ struct EdgePropResponse {
     3: optional binary data,
 }
 
-
 struct QueryStatsResponse {
     1: required ResponseCommon result,
     2: optional common.Schema schema,
@@ -97,13 +102,14 @@ struct QueryStatsResponse {
 }
 
 struct Tag {
-    1: common.TagID tag_id,
-    2: binary props,
+    1: common.TagID      tag_id,
+    2: list<string>      props_name,
+    3: list<PropValue>   props_value,
 }
 
 struct Vertex {
     1: common.VertexID id,
-    2: list<Tag> tags,
+    2: list<Tag>       tags,
 }
 
 struct EdgeKey {
@@ -116,8 +122,9 @@ struct EdgeKey {
 }
 
 struct Edge {
-    1: EdgeKey key,
-    2: binary props,
+    1: EdgeKey           key,
+    2: list<string>      props_name,
+    3: list<PropValue>   props_value,
 }
 
 struct GetNeighborsRequest {
@@ -149,7 +156,7 @@ struct AddVerticesRequest {
     // partId => vertices
     2: map<common.PartitionID, list<Vertex>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
-    3: bool overwritable,
+    3: bool over_writable,
 }
 
 struct AddEdgesRequest {
@@ -157,7 +164,7 @@ struct AddEdgesRequest {
     // partId => edges
     2: map<common.PartitionID, list<Edge>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
-    3: bool overwritable,
+    3: bool over_writable,
 }
 
 service StorageService {

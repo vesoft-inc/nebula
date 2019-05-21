@@ -59,14 +59,15 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                 collector->collectInt64(ResultType::SUCCEEDED, KeyUtils::getRank(key), prop);
                 continue;
         }
+
         if (reader != nullptr) {
             const auto& name = prop.prop_.get_name();
             switch (prop.type_.type) {
                 case nebula::cpp2::SupportedType::INT: {
                     int64_t v;
                     auto ret = reader->getInt<int64_t>(name, v);
-                    VLOG(3) << "collect " << name << ", value = " << v;
                     collector->collectInt64(ret, v, prop);
+                    VLOG(3) << "collect " << name << ", value = " << v;
                     break;
                 }
                 case nebula::cpp2::SupportedType::VID: {
@@ -105,7 +106,7 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
                     break;
                 }
                 default: {
-                    VLOG(1) << "Unsupport stats!";
+                    LOG(ERROR) << "Unsupport stats!";
                     break;
                 }
             }  // switch

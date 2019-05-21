@@ -14,7 +14,6 @@ namespace nebula {
 namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
-    VLOG(3) << "Receive AddVerticesRequest...";
     auto now = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInUSeconds();
     const auto& partVertices = req.get_parts();
     auto spaceId = req.get_space_id();
@@ -27,9 +26,10 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
         std::for_each(vertices.begin(), vertices.end(), [&](auto& v){
             const auto& tags = v.get_tags();
             std::for_each(tags.begin(), tags.end(), [&](auto& tag) {
-                auto key = KeyUtils::vertexKey(partId, v.get_id(),
-                                               tag.get_tag_id(), now);
-                data.emplace_back(std::move(key), std::move(tag.get_props()));
+                auto tagId = tag.get_tag_id();
+                auto key = KeyUtils::vertexKey(partId, v.get_id(), tagId, now);
+                auto values  = assembleValues(tag.get_props_value());
+                data.emplace_back(std::move(key), std::move(values));
             });
         });
         doPut(spaceId, partId, std::move(data));

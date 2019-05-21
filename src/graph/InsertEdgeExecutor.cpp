@@ -39,6 +39,7 @@ Status InsertEdgeExecutor::prepare() {
 
 
 void InsertEdgeExecutor::execute() {
+    using storage::cpp2::PropValue;
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
@@ -47,41 +48,50 @@ void InsertEdgeExecutor::execute() {
         auto dst = row->dstid();
         auto rank = row->rank();
         auto expressions = row->values();
-        std::vector<VariantType> values;
+        std::vector<std::string> names;
+        std::vector<PropValue> values;
 
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
-            values.emplace_back(expr->eval());
-        }
-
-        RowWriter writer(schema_);
-        for (auto &value : values) {
+            auto value = expr->eval();
+            PropValue propValue;
             switch (value.which()) {
                 case 0:
-                    writer << boost::get<int64_t>(value);
+                    propValue.set_int_val(boost::get<int64_t>(value));
+                    values.emplace_back(std::move(propValue));
                     break;
                 case 1:
-                    writer << boost::get<double>(value);
+                    propValue.set_double_val(boost::get<double>(value));
+                    values.emplace_back(std::move(propValue));
                     break;
                 case 2:
-                    writer << boost::get<bool>(value);
+                    propValue.set_bool_val(boost::get<bool>(value));
+                    values.emplace_back(std::move(propValue));
                     break;
                 case 3:
-                    writer << boost::get<std::string>(value);
+                    propValue.set_string_val(boost::get<std::string>(value));
+                    values.emplace_back(std::move(propValue));
                     break;
                 default:
                     LOG(FATAL) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+                    onError_(Status::Error("Unknown value type"));
+                    return;
             }
         }
+
         {
             auto &out = edges[index++];
             out.key.set_src(src);
             out.key.set_dst(dst);
             out.key.set_ranking(rank);
             out.key.set_edge_type(edgeType_);
-            out.props = writer.encode();
+            for (auto property : properties_) {
+                names.emplace_back(*property);
+            }
+            out.props_name  = names;
+            out.props_value = values;
             out.__isset.key = true;
-            out.__isset.props = true;
+            out.__isset.props_value = true;
         }
         {
             auto &in = edges[index++];
@@ -89,9 +99,8 @@ void InsertEdgeExecutor::execute() {
             in.key.set_dst(src);
             in.key.set_ranking(rank);
             in.key.set_edge_type(-edgeType_);
-            in.props = "";
             in.__isset.key = true;
-            in.__isset.props = true;
+            in.__isset.props_value = true;
         }
     }
 
