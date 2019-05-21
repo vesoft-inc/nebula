@@ -103,12 +103,6 @@ TEST(Parser, SpaceOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3)";
-        auto result = parser.parse(query);
-        ASSERT_FALSE(result.ok());
-    }
-    {
-        GQLParser parser;
         std::string query = "CREATE SPACE space_without_options()";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
