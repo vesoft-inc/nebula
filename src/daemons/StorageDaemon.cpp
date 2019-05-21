@@ -18,6 +18,7 @@
 #include "meta/client/MetaClient.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
+DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
                              "For rocksdb engine, one path one instance.");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
@@ -147,6 +148,7 @@ int main(int argc, char *argv[]) {
         gServer = std::make_unique<apache::thrift::ThriftServer>();
         gServer->setInterface(std::move(handler));
         gServer->setPort(FLAGS_port);
+        gServer->setReusePort(FLAGS_reuse_port);
         gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
         gServer->setIOThreadPool(ioThreadPool);
         gServer->serve();  // Will wait until the server shuts down
