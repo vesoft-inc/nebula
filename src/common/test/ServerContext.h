@@ -55,7 +55,6 @@ static void mockCommon(test::ServerContext *sc,
            !sc->server_->getServeEventBase()->isRunning()) {
     }
     sc->port_ = sc->server_->getAddress().getPort();
-    LOG(INFO) << "Starting the " << name << " on port " << sc->port_;
 }
 
 }   // namespace test

@@ -42,10 +42,10 @@ void TestEnv::SetUp() {
     uint32_t localIp;
     nebula::network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     storageServer_ = nebula::storage::TestUtils::mockStorageServer(mClient_.get(),
-                                                            storageRootPath_.path(),
-                                                            localIp,
-                                                            0,
-                                                            true);
+                                                                   storageRootPath_.path(),
+                                                                   localIp,
+                                                                   0,
+                                                                   true);
 
     // Create graphServer
     graphServer_ = TestUtils::mockGraphServer(0);

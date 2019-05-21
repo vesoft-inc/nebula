@@ -173,6 +173,8 @@ public:
         sc->KVStore_ = std::unique_ptr<kvstore::KVStore>(TestUtils::initKV(dataPath));
         auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->KVStore_.get());
         test::mockCommon(sc.get(), "meta", port, handler);
+        LOG(INFO) << "Starting the Meta Daemon on port " << sc->port_
+                  << ", path " << dataPath;
         return sc;
     }
 };

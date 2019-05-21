@@ -190,6 +190,8 @@ public:
                      sc->KVStore_.get(), std::move(schemaMan));
         test::mockCommon(sc.get(), "storage", port, handler);
         partManagerPtr->setLocalHost(HostAddr(ip, sc->port_));
+        LOG(INFO) << "Starting the storage Daemon on port " << sc->port_
+                  << ", path " << dataPath;
         return sc;
     }
 };

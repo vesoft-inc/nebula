@@ -36,10 +36,10 @@ public:
 private:
     nebula::fs::TempDir                             metaRootPath_{"/tmp/MetaTest.XXXXXX"};
     nebula::fs::TempDir                             storageRootPath_{"/tmp/StorageTest.XXXXXX"};
-    std::unique_ptr<test::ServerContext>            metaServer_;
-    std::unique_ptr<test::ServerContext>            storageServer_;
-    std::unique_ptr<test::ServerContext>            graphServer_;
-    std::unique_ptr<meta::MetaClient>               mClient_;
+    std::unique_ptr<test::ServerContext>            metaServer_{nullptr};
+    std::unique_ptr<test::ServerContext>            storageServer_{nullptr};
+    std::unique_ptr<test::ServerContext>            graphServer_{nullptr};
+    std::unique_ptr<meta::MetaClient>               mClient_{nullptr};
 };
 
 
