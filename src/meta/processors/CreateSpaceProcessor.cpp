@@ -11,7 +11,7 @@ namespace meta {
 
 void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-    auto properties = req.get_properties();
+    auto& properties = req.get_properties();
     auto spaceRet = getSpaceId(properties.get_space_name());
     if (spaceRet.ok()) {
         LOG(ERROR) << "Create Space Failed : Space " << properties.get_space_name()

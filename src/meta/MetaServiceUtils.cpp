@@ -50,14 +50,6 @@ std::string MetaServiceUtils::spaceName(folly::StringPiece rawVal) {
     return parseSpace(rawVal).get_space_name();
 }
 
-int32_t MetaServiceUtils::spacePartitionNum(folly::StringPiece rawVal) {
-    return parseSpace(rawVal).get_partition_num();
-}
-
-int32_t MetaServiceUtils::spaceReplicaFactor(folly::StringPiece rawVal) {
-    return parseSpace(rawVal).get_replica_factor();
-}
-
 std::string MetaServiceUtils::partKey(GraphSpaceID spaceId, PartitionID partId) {
     std::string key;
     key.reserve(128);

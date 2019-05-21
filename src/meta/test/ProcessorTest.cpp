@@ -126,7 +126,7 @@ TEST(ProcessorTest, CreateSpaceTest) {
         properties.set_partition_num(9);
         properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_properties(properties);
+        req.set_properties(std::move(properties));
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -194,7 +194,7 @@ TEST(ProcessorTest, CreateTagTest) {
         properties.set_partition_num(9);
         properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_properties(properties);
+        req.set_properties(std::move(properties));
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -245,7 +245,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         properties.set_partition_num(9);
         properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_properties(properties);
+        req.set_properties(std::move(properties));
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -261,7 +261,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
         properties.set_partition_num(9);
         properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_properties(properties);
+        req.set_properties(std::move(properties));
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -340,7 +340,7 @@ TEST(ProcessorTest, KVOperationTest) {
         properties.set_partition_num(9);
         properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_properties(properties);
+        req.set_properties(std::move(properties));
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -1019,7 +1019,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         properties.set_partition_num(9);
         properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_properties(properties);
+        req.set_properties(std::move(properties));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1033,7 +1033,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         properties.set_partition_num(9);
         properties.set_replica_factor(1);
         cpp2::CreateSpaceReq req;
-        req.set_properties(properties);
+        req.set_properties(std::move(properties));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);

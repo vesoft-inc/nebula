@@ -25,8 +25,8 @@ TEST(MetaServiceUtilsTest, SpaceKeyTest) {
     properties.set_replica_factor(3);
     auto spaceVal = MetaServiceUtils::spaceVal(properties);
     ASSERT_EQ("default", MetaServiceUtils::spaceName(spaceVal));
-    ASSERT_EQ(100, MetaServiceUtils::spacePartitionNum(spaceVal));
-    ASSERT_EQ(3, MetaServiceUtils::spaceReplicaFactor(spaceVal));
+    ASSERT_EQ(100, MetaServiceUtils::parseSpace(spaceVal).get_partition_num());
+    ASSERT_EQ(3, MetaServiceUtils::parseSpace(spaceVal).get_replica_factor());
 }
 
 TEST(MetaServiceUtilsTest, PartKeyTest) {

@@ -35,10 +35,6 @@ public:
 
     static std::string spaceName(folly::StringPiece rawVal);
 
-    static int32_t spacePartitionNum(folly::StringPiece rawVal);
-
-    static int32_t spaceReplicaFactor(folly::StringPiece rawVal);
-
     static std::string partKey(GraphSpaceID spaceId, PartitionID partId);
 
     static std::string partVal(const std::vector<nebula::cpp2::HostAddr>& hosts);

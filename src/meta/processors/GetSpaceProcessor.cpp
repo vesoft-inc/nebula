@@ -20,7 +20,7 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
         onFinished();
         return;
     }
-    auto  properties = MetaServiceUtils::parseSpace(ret.value());
+    auto properties = MetaServiceUtils::parseSpace(ret.value());
     VLOG(3) << "Get Space SpaceID: " << req.get_space_id() << ", Name "
             << properties.get_space_name() << ", Partition Num "
             << properties.get_partition_num() << ", Replica Factor "

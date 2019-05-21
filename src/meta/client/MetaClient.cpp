@@ -362,7 +362,7 @@ MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFacto
     properties.set_partition_num(partsNum);
     properties.set_replica_factor(replicaFactor);
     cpp2::CreateSpaceReq req;
-    req.set_properties(properties);
+    req.set_properties(std::move(properties));
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_createSpace(request);
             }, [] (cpp2::ExecResp&& resp) -> GraphSpaceID {
