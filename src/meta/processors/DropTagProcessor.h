@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_REMOVETAGPROCESSOR_H
-#define META_REMOVETAGPROCESSOR_H
+#ifndef META_DROPTAGPROCESSOR_H
+#define META_DROPTAGPROCESSOR_H
 
 #include "meta/processors/BaseProcessor.h"
 
@@ -30,4 +30,4 @@ private:
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_REMOVETAGPROCESSOR_H
+#endif  // META_DROPTAGPROCESSOR_H
