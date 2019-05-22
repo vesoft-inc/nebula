@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_REMOVEEDGEPROCESSOR_H_
-#define META_REMOVEEDGEPROCESSOR_H_
+#ifndef META_DROPEDGEPROCESSOR_H_
+#define META_DROPEDGEPROCESSOR_H_
 
 #include "meta/processors/BaseProcessor.h"
 
@@ -30,5 +30,5 @@ private:
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_REMOVEEDGEPROCESSOR_H_
+#endif  // META_DROPEDGEPROCESSOR_H_
 
