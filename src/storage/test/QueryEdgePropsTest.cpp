@@ -5,12 +5,12 @@
  */
 
 #include "base/Base.h"
+#include "base/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/QueryEdgePropsProcessor.h"
-#include "storage/KeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
@@ -24,7 +24,7 @@ void mockData(kvstore::KVStore* kv) {
             // Generate 7 edges for each source vertex id
             for (auto dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
-                auto key = KeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
+                auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
                 RowWriter writer(nullptr);
                 for (int64_t numInt = 0; numInt < 10; numInt++) {
                     writer << numInt;

@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #include "storage/QueryBaseProcessor.h"
+#include "base/NebulaKeyUtils.h"
 #include <algorithm>
-#include "storage/KeyUtils.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 
@@ -43,20 +43,24 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
             case PropContext::PropInKeyType::NONE:
                 break;
             case PropContext::PropInKeyType::SRC:
-                VLOG(3) << "collect _src, value = " << KeyUtils::getSrcId(key);
-                collector->collectInt64(ResultType::SUCCEEDED, KeyUtils::getSrcId(key), prop);
+                VLOG(3) << "collect _src, value = " << NebulaKeyUtils::getSrcId(key);
+                collector->collectInt64(ResultType::SUCCEEDED,
+                                        NebulaKeyUtils::getSrcId(key), prop);
                 continue;
             case PropContext::PropInKeyType::DST:
-                VLOG(3) << "collect _dst, value = " << KeyUtils::getDstId(key);
-                collector->collectInt64(ResultType::SUCCEEDED, KeyUtils::getDstId(key), prop);
+                VLOG(3) << "collect _dst, value = " << NebulaKeyUtils::getDstId(key);
+                collector->collectInt64(ResultType::SUCCEEDED,
+                                        NebulaKeyUtils::getDstId(key), prop);
                 continue;
             case PropContext::PropInKeyType::TYPE:
-                VLOG(3) << "collect _type, value = " << KeyUtils::getEdgeType(key);
-                collector->collectInt32(ResultType::SUCCEEDED, KeyUtils::getEdgeType(key), prop);
+                VLOG(3) << "collect _type, value = " << NebulaKeyUtils::getEdgeType(key);
+                collector->collectInt32(ResultType::SUCCEEDED,
+                                        NebulaKeyUtils::getEdgeType(key), prop);
                 continue;
             case PropContext::PropInKeyType::RANK:
-                VLOG(3) << "collect _rank, value = " << KeyUtils::getRank(key);
-                collector->collectInt64(ResultType::SUCCEEDED, KeyUtils::getRank(key), prop);
+                VLOG(3) << "collect _rank, value = " << NebulaKeyUtils::getRank(key);
+                collector->collectInt64(ResultType::SUCCEEDED,
+                                        NebulaKeyUtils::getRank(key), prop);
                 continue;
         }
         if (reader != nullptr) {
@@ -194,7 +198,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
                             TagID tagId,
                             std::vector<PropContext>& props,
                             Collector* collector) {
-    auto prefix = KeyUtils::prefix(partId, vId, tagId);
+    auto prefix = NebulaKeyUtils::prefix(partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
@@ -219,7 +223,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                                EdgeType edgeType,
                                                std::vector<PropContext>& props,
                                                EdgeProcessor proc) {
-    auto prefix = KeyUtils::prefix(partId, vId, edgeType);
+    auto prefix = NebulaKeyUtils::prefix(partId, vId, edgeType);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = this->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
@@ -231,8 +235,8 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
     for (; iter->valid(); iter->next()) {
         auto key = iter->key();
         auto val = iter->val();
-        auto rank = KeyUtils::getRank(key);
-        auto dstId = KeyUtils::getDstId(key);
+        auto rank = NebulaKeyUtils::getRank(key);
+        auto dstId = NebulaKeyUtils::getDstId(key);
         if (!firstLoop && rank == lastRank && lastDstId == dstId) {
             VLOG(3) << "Only get the latest version for each edge.";
             continue;
