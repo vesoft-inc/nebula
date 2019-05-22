@@ -23,6 +23,8 @@ public:
         kShowSpaces,
         kShowTags,
         kShowEdges,
+        kShowTagIndexes,
+        kShowEdgeIndexes,
         kShowUsers,
         kShowUser,
         kShowRoles

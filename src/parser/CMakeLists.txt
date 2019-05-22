@@ -14,6 +14,7 @@ add_library(
         ${FLEX_Scanner_OUTPUTS}
         ${BISON_Parser_OUTPUTS}
         Clauses.cpp
+        IndexSentences.cpp
         SequentialSentences.cpp
         MaintainSentences.cpp
         MutateSentences.cpp

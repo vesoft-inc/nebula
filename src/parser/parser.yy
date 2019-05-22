@@ -82,7 +82,7 @@ class GraphScanner;
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_TTL
 %token KW_EDGE KW_EDGES KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD KW_INDEX KW_INDEXS
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
@@ -153,6 +153,9 @@ class GraphScanner;
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
 %type <sentence> remove_tag_sentence remove_edge_sentence
+%type <sentence> create_tag_index_sentence create_edge_index_sentence
+%type <sentence> drop_tag_index_sentence drop_edge_index_sentence
+%type <sentence> describe_tag_index_sentence describe_edge_index_sentence
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
@@ -616,6 +619,42 @@ remove_edge_sentence
     }
     ;
 
+create_tag_index_sentence
+    : KW_CREATE KW_TAG KW_INDEX name_label KW_ON name_label L_PAREN name_label R_PAREN {
+        $$ = new CreateTagIndexSentence($4, $6, $8);
+    }
+    ;
+
+create_edge_index_sentence
+    : KW_CREATE KW_EDGE KW_INDEX name_label KW_ON name_label L_PAREN name_label R_PAREN {
+        $$ = new CreateEdgeIndexSentence($4, $6, $8);
+    }
+    ;
+
+drop_tag_index_sentence
+    : KW_DROP KW_TAG KW_INDEX name_label {
+        $$ = new DropTagIndexSentence($4);
+    }
+    ;
+
+drop_edge_index_sentence
+    : KW_DROP KW_EDGE KW_INDEX name_label {
+        $$ = new DropEdgeIndexSentence($4);
+    }
+    ;
+
+describe_tag_index_sentence
+    : KW_DESCRIBE KW_TAG KW_INDEX name_label {
+        $$ = new DescribeTagIndexSentence($4);
+    }
+    ;
+
+describe_edge_index_sentence
+    : KW_DESCRIBE KW_EDGE KW_INDEX name_label {
+        $$ = new DescribeEdgeIndexSentence($4);
+    }
+    ;
+
 traverse_sentence
     : go_sentence { $$ = $1; }
     | match_sentence { $$ = $1; }
@@ -877,6 +916,12 @@ show_sentence
     | KW_SHOW KW_EDGES {
          $$ = new ShowSentence(ShowSentence::ShowType::kShowEdges);
     }
+    | KW_SHOW KW_TAG KW_INDEXS {
+         $$ = new ShowSentence(ShowSentence::ShowType::kShowTagIndexes);
+    }
+    | KW_SHOW KW_EDGE KW_INDEXS {
+         $$ = new ShowSentence(ShowSentence::ShowType::kShowEdgeIndexes);
+    }
     | KW_SHOW KW_USERS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowUsers);
     }
@@ -1101,6 +1146,12 @@ maintain_sentence
     | describe_edge_sentence { $$ = $1; }
     | remove_tag_sentence { $$ = $1; }
     | remove_edge_sentence { $$ = $1; }
+    | create_tag_index_sentence { $$ = $1; }
+    | create_edge_index_sentence { $$ = $1; }
+    | drop_tag_index_sentence { $$ = $1; }
+    | drop_edge_index_sentence { $$ = $1; }
+    | describe_tag_index_sentence { $$ = $1;}
+    | describe_edge_index_sentence { $$ = $1;}
     | show_sentence { $$ = $1; }
     | add_hosts_sentence { $$ = $1; }
     | remove_hosts_sentence { $$ = $1; }

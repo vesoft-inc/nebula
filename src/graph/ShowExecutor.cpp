@@ -43,6 +43,12 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowEdges:
             showEdges();
             break;
+        case ShowSentence::ShowType::kShowTagIndexes:
+            showTagIndexes();
+            break;
+        case ShowSentence::ShowType::kShowEdgeIndexes:
+            showEdgeIndexes();
+            break;
         case ShowSentence::ShowType::kShowUsers:
         case ShowSentence::ShowType::kShowUser:
         case ShowSentence::ShowType::kShowRoles:
@@ -222,6 +228,12 @@ void ShowExecutor::showEdges() {
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showTagIndexes() {
+}
+
+void ShowExecutor::showEdgeIndexes() {
 }
 
 void ShowExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

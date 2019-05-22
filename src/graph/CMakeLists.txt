@@ -15,15 +15,21 @@ add_library(
     GoExecutor.cpp
     PipeExecutor.cpp
     CreateEdgeExecutor.cpp
-    CreateTagExecutor.cpp
     AlterEdgeExecutor.cpp
+    RemoveEdgeExecutor.cpp
+    DescribeEdgeExecutor.cpp
+    CreateTagExecutor.cpp
     AlterTagExecutor.cpp
     RemoveTagExecutor.cpp
-    RemoveEdgeExecutor.cpp
     DescribeTagExecutor.cpp
-    DescribeEdgeExecutor.cpp
     InsertVertexExecutor.cpp
     InsertEdgeExecutor.cpp
+    CreateEdgeIndexExecutor.cpp
+    DropEdgeIndexExecutor.cpp
+    DescribeEdgeIndexExecutor.cpp
+    CreateTagIndexExecutor.cpp
+    DropTagIndexExecutor.cpp
+    DescribeTagIndexExecutor.cpp
     AssignmentExecutor.cpp
     InterimResult.cpp
     VariableHolder.cpp
