@@ -4,14 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/KeyUtils.h"
+#include "base/NebulaKeyUtils.h"
 
 namespace nebula {
-namespace storage {
 
 // static
-std::string KeyUtils::vertexKey(PartitionID partId, VertexID vId,
-                                TagID tagId, TagVersion ts) {
+std::string NebulaKeyUtils::vertexKey(PartitionID partId, VertexID vId,
+                                      TagID tagId, TagVersion ts) {
     std::string key;
     key.reserve(kVertexLen);
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
@@ -22,12 +21,12 @@ std::string KeyUtils::vertexKey(PartitionID partId, VertexID vId,
 }
 
 // static
-std::string KeyUtils::edgeKey(PartitionID partId,
-                              VertexID srcId,
-                              EdgeType type,
-                              EdgeRanking rank,
-                              VertexID dstId,
-                              EdgeVersion ts) {
+std::string NebulaKeyUtils::edgeKey(PartitionID partId,
+                                    VertexID srcId,
+                                    EdgeType type,
+                                    EdgeRanking rank,
+                                    VertexID dstId,
+                                    EdgeVersion ts) {
     std::string key;
     key.reserve(kEdgeLen);
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
@@ -40,7 +39,7 @@ std::string KeyUtils::edgeKey(PartitionID partId,
 }
 
 // static
-std::string KeyUtils::prefix(PartitionID partId, VertexID srcId, EdgeType type) {
+std::string NebulaKeyUtils::prefix(PartitionID partId, VertexID srcId, EdgeType type) {
     std::string key;
     key.reserve(sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType));
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
@@ -50,7 +49,7 @@ std::string KeyUtils::prefix(PartitionID partId, VertexID srcId, EdgeType type) 
 }
 
 // static
-std::string KeyUtils::prefix(PartitionID partId, VertexID vId) {
+std::string NebulaKeyUtils::prefix(PartitionID partId, VertexID vId) {
     std::string key;
     key.reserve(sizeof(PartitionID) + sizeof(VertexID));
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
@@ -59,8 +58,8 @@ std::string KeyUtils::prefix(PartitionID partId, VertexID vId) {
 }
 
 // static
-std::string KeyUtils::prefix(PartitionID partId, VertexID src, EdgeType type,
-                             EdgeRanking ranking, VertexID dst) {
+std::string NebulaKeyUtils::prefix(PartitionID partId, VertexID src, EdgeType type,
+                                   EdgeRanking ranking, VertexID dst) {
     std::string key;
     key.reserve(sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType)
                 + sizeof(VertexID) + sizeof(EdgeRanking));
@@ -72,6 +71,5 @@ std::string KeyUtils::prefix(PartitionID partId, VertexID src, EdgeType type,
     return key;
 }
 
-}  // namespace storage
 }  // namespace nebula
 
