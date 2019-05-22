@@ -34,6 +34,12 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
         this->collectProps(reader.get(), iter->key(), props, nullptr, &collector);
         rsWriter.addRow(writer);
 
+        // Check if the schema has TTL
+        if (!checkDataExpiredForTTL(reader.get())) {
+            this->collectProps(reader.get(), iter->key(), props, nullptr, &collector);
+            rsWriter.addRow(writer);
+        }
+
         iter->next();
     }
     return ret;

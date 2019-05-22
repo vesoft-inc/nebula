@@ -180,7 +180,8 @@ protected:
 
     template <typename Tuple>
     AssertionResult verifyResult(const cpp2::ExecutionResponse &resp,
-                                 std::vector<Tuple> &expected, bool sortEnable = true) {
+                                 std::vector<Tuple> &expected,
+                                 bool sortEnable = true) {
         if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
             auto *errmsg = resp.get_error_msg();
             return TestError() << "Query failed with `"

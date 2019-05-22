@@ -80,13 +80,29 @@ public:
     static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
         auto* schemaMan = new AdHocSchemaManager();
         for (auto edgeType = 101; edgeType < 110; edgeType++) {
-            schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
+            schemaMan->addEdgeSchema(spaceId /*space id*/,
+			             edgeType /*edge type*/,
                                      TestUtils::genEdgeSchemaProvider(10, 10));
         }
-        for (auto tagId = 3001; tagId < 3010; tagId++) {
-            schemaMan->addTagSchema(
-                spaceId /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
+
+	for (auto tagId = 3001; tagId < 3010; tagId++) {
+            schemaMan->addTagSchema(spaceId /*space id*/,
+                                    tagId,
+                                    TestUtils::genTagSchemaProvider(tagId, 3, 3));
         }
+        std::unique_ptr<meta::SchemaManager> sm(schemaMan);
+        return sm;
+    }
+
+    static std::unique_ptr<meta::SchemaManager> mockSchemaWithTTLMan(GraphSpaceID spaceId = 0) {
+        auto* schemaMan = new AdHocSchemaManager();
+        schemaMan->addEdgeSchema(spaceId /*space id*/,
+                                 101 /*edge type*/,
+                                 TestUtils::genEdgeSchemaWithTTLProvider(10, 10));
+        auto tagId = 3001;
+        schemaMan->addTagSchema(spaceId /*space id*/,
+                                tagId,
+                                TestUtils::genTagSchemaWithTTLProvider(tagId, 3, 3));
         std::unique_ptr<meta::SchemaManager> sm(schemaMan);
         return sm;
     }
@@ -116,7 +132,6 @@ public:
         return vertices;
     }
 
-
     /**
      * It will generate SchemaProvider with some int fields and string fields
      * */
@@ -139,6 +154,32 @@ public:
         return std::make_shared<ResultSchemaProvider>(std::move(schema));
     }
 
+    /**
+     * It will generate SchemaProvider with some int fields and string fields and ttl
+     * */
+    static std::shared_ptr<meta::SchemaProviderIf> genEdgeSchemaWithTTLProvider(
+            int32_t intFieldsNum,
+            int32_t stringFieldsNum) {
+        nebula::cpp2::Schema schema;
+        for (auto i = 0; i < intFieldsNum; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("col_%d", i);
+            column.type.type = nebula::cpp2::SupportedType::INT;
+            schema.columns.emplace_back(std::move(column));
+        }
+        for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("col_%d", i);
+            column.type.type = nebula::cpp2::SupportedType::STRING;
+            schema.columns.emplace_back(std::move(column));
+        }
+        nebula::cpp2::SchemaProp prop;
+        prop.set_ttl_duration(200);
+        prop.set_ttl_col("col_0");
+        schema.set_schema_prop(std::move(prop));
+        return std::shared_ptr<meta::SchemaProviderIf>(
+            new ResultSchemaProvider(std::move(schema)));
+    }
 
     /**
      * It will generate tag SchemaProvider with some int fields and string fields
@@ -169,6 +210,34 @@ public:
         prop.set_owner(cpp2::PropOwner::SOURCE);
         prop.id.set_tag_id(tagId);
         return prop;
+    }
+
+    /**
+     * It will generate tag SchemaProvider with some int fields and string fields and ttl
+     * */
+    static std::shared_ptr<meta::SchemaProviderIf> genTagSchemaWithTTLProvider(
+            TagID tagId,
+            int32_t intFieldsNum,
+            int32_t stringFieldsNum) {
+        nebula::cpp2::Schema schema;
+        for (auto i = 0; i < intFieldsNum; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+            column.type.type = nebula::cpp2::SupportedType::INT;
+            schema.columns.emplace_back(std::move(column));
+        }
+        for (auto i = intFieldsNum; i < intFieldsNum + stringFieldsNum; i++) {
+            nebula::cpp2::ColumnDef column;
+            column.name = folly::stringPrintf("tag_%d_col_%d", tagId, i);
+            column.type.type = nebula::cpp2::SupportedType::STRING;
+            schema.columns.emplace_back(std::move(column));
+        }
+        nebula::cpp2::SchemaProp prop;
+        prop.set_ttl_duration(200);
+        prop.set_ttl_col(folly::stringPrintf("tag_%d_col_0", tagId));
+        schema.set_schema_prop(std::move(prop));
+        return std::shared_ptr<meta::SchemaProviderIf>(
+            new ResultSchemaProvider(std::move(schema)));
     }
 
     static cpp2::PropDef edgePropDef(std::string name, EdgeType eType) {

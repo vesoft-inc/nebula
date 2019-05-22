@@ -110,19 +110,22 @@ Simply return a single value or a data set
 #### Create a tag
 The following statement defines a **new** tag
 
-<span style="color:blue">**CREATE TAG**</span> <tag\_name> (<prop\_def\_list>)
+<span style="color:blue">**CREATE TAG**</span> <tag\_name> (<prop\_def\_list>) <schema\_prop\_list>
 
 <tag\_name> ::= <label\> <br>
 <prop\_def\_list> ::= <prop\_def>+ <br>
 <prop\_def> ::= <prop\_name>,<type\> <br>
 <prop\_name> ::= <label\> <br>
 
+<schema\_prop\_list> ::= <schema\_prop>+ <br>
+<schema\_prop> ::= ttl\_duration = <var\> | ttl\_col = <prop\_name> <br>
+
 #### Modify a tag type
 
 #### Create an edge type
 The following statement defines a **new** edge type
 
-<span style="color:blue">**CREATE EDGE**</span> <edge\_type\_name> (<prop\_def\_list>)
+<span style="color:blue">**CREATE EDGE**</span> <edge\_type\_name> (<prop\_def\_list>) <schema\_prop\_list>
 
 <edge\_type\_name> := <label\>
 

@@ -50,6 +50,9 @@ public:
     std::shared_ptr<const meta::SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
 
+    // Add due to UnitTest
+    const cpp2::SchemaProp getProp() const override;
+
 protected:
     SchemaVer schemaVer_{0};
 
@@ -59,6 +62,8 @@ protected:
 
     // Default constructor, only used by SchemaWriter
     explicit ResultSchemaProvider(SchemaVer ver = 0) : schemaVer_(ver) {}
+
+    cpp2::SchemaProp                schemaProp_;
 };
 
 }  // namespace nebula

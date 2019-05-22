@@ -106,6 +106,81 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     }
 }
 
+
+TEST(QueryVertexPropsTest, TTLTest) {
+    fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMan = TestUtils::mockSchemaWithTTLMan();
+
+    LOG(INFO) << "Prepare data...";
+    for (auto partId = 0; partId < 3; partId++) {
+        std::vector<kvstore::KV> data;
+        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            auto tagId = 3001;
+            auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
+            RowWriter writer;
+            for (int64_t numInt = 0; numInt < 3; numInt++) {
+                // all data expired, 1546272000 timestamp representation "2019-1-1 0:0:0"
+                writer << numInt + 1546272000;
+            }
+            for (auto numString = 3; numString < 6; numString++) {
+                writer << folly::stringPrintf("tag_string_col_%d", numString);
+            }
+            auto val = writer.encode();
+            data.emplace_back(std::move(key), std::move(val));
+        }
+        kv->asyncMultiPut(
+            0,
+            partId,
+            std::move(data),
+            [&](kvstore::ResultCode code) {
+                EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            });
+    }
+
+    LOG(INFO) << "Build VertexPropsRequest...";
+    cpp2::VertexPropRequest req;
+    req.set_space_id(0);
+    decltype(req.parts) tmpIds;
+    for (auto partId = 0; partId < 3; partId++) {
+        for (auto vertexId =  partId * 10;
+             vertexId < (partId + 1) * 10;
+             vertexId++) {
+            tmpIds[partId].push_back(vertexId);
+        }
+    }
+    req.set_parts(std::move(tmpIds));
+    // Return tag props col_0
+    decltype(req.return_columns) tmpColumns;
+    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE,
+                                               folly::stringPrintf("tag_%d_col_%d", 3001, 0),
+                                               3001));
+    req.set_return_columns(std::move(tmpColumns));
+
+    LOG(INFO) << "Test QueryVertexPropsRequest...";
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
+                                                          schemaMan.get(),
+                                                          executor.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(0, resp.result.failed_codes.size());
+
+    EXPECT_EQ(1, resp.vertex_schema.columns.size());
+    auto tagProvider = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
+    EXPECT_EQ(30, resp.vertices.size());
+
+    for (auto& vp : resp.vertices) {
+        auto tagReader = RowReader::getRowReader(vp.vertex_data, tagProvider);
+        EXPECT_EQ(1, tagReader->numFields());
+        EXPECT_EQ(0, tagReader->getData().size());
+    }
+}
+
 }  // namespace storage
 }  // namespace nebula
 

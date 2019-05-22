@@ -103,6 +103,8 @@ protected:
     int32_t getBucketsNum(int32_t verticesNum, int32_t minVerticesPerBucket, int32_t handlerNum);
 
     bool checkExp(const Expression* exp);
+    
+    bool checkDataExpiredForTTL(RowReader* reader);
 
 protected:
     GraphSpaceID  spaceId_;

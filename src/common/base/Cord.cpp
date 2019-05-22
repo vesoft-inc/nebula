@@ -112,8 +112,9 @@ size_t Cord::appendTo(std::string& str) const {
     }
 
     // Last block
-    str.append(tail_, blockPt_);
-
+    if (tail_) {
+        str.append(tail_, blockPt_);
+    }
     return len_;
 }
 
