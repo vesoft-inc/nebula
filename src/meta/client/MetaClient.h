@@ -59,8 +59,9 @@ public:
 
 class MetaClient {
 public:
-    explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool = nullptr,
-                        std::vector<HostAddr> addrs = {});
+    explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
+                        std::vector<HostAddr> addrs,
+                        bool sendHeartBeat = false);
 
     virtual ~MetaClient();
 
@@ -184,12 +185,16 @@ public:
 protected:
     void loadDataThreadFunc();
 
+    void heartBeatThreadFunc();
+
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
                      SpaceTagNameIdMap &tagNameIdMap,
                      SpaceEdgeNameTypeMap &edgeNameTypeMap,
                      SpaceNewestTagVerMap &newestTagVerMap,
                      SpaceNewestEdgeVerMap &newestEdgeVerMap);
+
+    folly::Future<StatusOr<bool>> heartbeat();
 
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
@@ -230,20 +235,21 @@ protected:
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>> clientsMan_;
+    std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
     std::vector<HostAddr> addrs_;
     // The lock used to protect active_ and leader_.
     folly::RWSpinLock hostLock_;
     HostAddr active_;
     HostAddr leader_;
-    thread::GenericWorker loadDataThread_;
-    std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
+    thread::GenericWorker bgThread_;
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
-    folly::RWSpinLock localCacheLock_;
-    MetaChangedListener* listener_{nullptr};
+    folly::RWSpinLock     localCacheLock_;
+    MetaChangedListener*  listener_{nullptr};
+    bool                  sendHeartBeat_ = false;
 };
 }  // namespace meta
 }  // namespace nebula
