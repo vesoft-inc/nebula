@@ -25,9 +25,10 @@ ExecutionEngine::~ExecutionEngine() {
 
 Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
     auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
-    if (!addrs.ok()) {
+    if (!addrs.ok() || addrs.value().empty()) {
         return addrs.status();
     }
+
     metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()));
     metaClient_->init();
 

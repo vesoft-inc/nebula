@@ -22,7 +22,7 @@ namespace graph {
 
 class GraphService final : public cpp2::GraphServiceSvIf {
 public:
-    explicit GraphService(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
+    GraphService();
     ~GraphService();
     folly::Future<cpp2::AuthResponse> future_authenticate(
         const std::string& username,
@@ -34,6 +34,8 @@ public:
     future_execute(int64_t sessionId, const std::string& stmt) override;
 
     const char* getErrorStr(cpp2::ErrorCode result);
+
+    Status init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor);
 
 private:
     std::unique_ptr<SessionManager>             sessionManager_;

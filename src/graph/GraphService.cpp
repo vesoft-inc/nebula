@@ -14,16 +14,18 @@
 namespace nebula {
 namespace graph {
 
-GraphService::GraphService(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
+GraphService::GraphService() {
     sessionManager_ = std::make_unique<SessionManager>();
     executionEngine_ = std::make_unique<ExecutionEngine>();
-    executionEngine_->init(std::move(ioExecutor));
     authenticator_ = std::make_unique<SimpleAuthenticator>();
 }
 
 
 GraphService::~GraphService() = default;
 
+Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
+    return executionEngine_->init(std::move(ioExecutor));
+}
 
 folly::Future<cpp2::AuthResponse> GraphService::future_authenticate(
         const std::string& username,
