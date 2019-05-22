@@ -28,8 +28,8 @@ add_library(
     processors/GetEdgeProcessor.cpp
     processors/ListTagsProcessor.cpp
     processors/ListEdgesProcessor.cpp
-    processors/RemoveTagProcessor.cpp
-    processors/RemoveEdgeProcessor.cpp
+    processors/DropTagProcessor.cpp
+    processors/DropEdgeProcessor.cpp
     processors/GetProcessor.cpp
     processors/MultiGetProcessor.cpp
     processors/MultiPutProcessor.cpp

@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_REMOVEEDGEEXECUTOR_H
-#define GRAPH_REMOVEEDGEEXECUTOR_H
+#ifndef GRAPH_DROPEDGEEXECUTOR_H
+#define GRAPH_DROPEDGEEXECUTOR_H
 
 #include "base/Base.h"
 #include "graph/Executor.h"
@@ -13,12 +13,12 @@
 namespace nebula {
 namespace graph {
 
-class RemoveEdgeExecutor final : public Executor {
+class DropEdgeExecutor final : public Executor {
 public:
-    RemoveEdgeExecutor(Sentence *sentence, ExecutionContext *context);
+    DropEdgeExecutor(Sentence *sentence, ExecutionContext *context);
 
     const char* name() const override {
-        return "RemoveEdgeExecutor";
+        return "DropEdgeExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -26,11 +26,10 @@ public:
     void execute() override;
 
 private:
-    RemoveEdgeSentence *sentence_{nullptr};
+    DropEdgeSentence *sentence_{nullptr};
 };
 
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // GRAPH_REMOVEEDGEEXECUTOR_H
-
+#endif  // GRAPH_DROPEDGEEXECUTOR_H

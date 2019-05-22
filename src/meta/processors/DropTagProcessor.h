@@ -4,24 +4,24 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef NEBULA_GRAPH_REMOVETAGPROCESSOR_H
-#define NEBULA_GRAPH_REMOVETAGPROCESSOR_H
+#ifndef META_DROPTAGPROCESSOR_H
+#define META_DROPTAGPROCESSOR_H
 
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-class RemoveTagProcessor : public BaseProcessor<cpp2::ExecResp> {
+class DropTagProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
-    static RemoveTagProcessor* instance(kvstore::KVStore* kvstore) {
-        return new RemoveTagProcessor(kvstore);
+    static DropTagProcessor* instance(kvstore::KVStore* kvstore) {
+        return new DropTagProcessor(kvstore);
     }
 
-    void process(const cpp2::RemoveTagReq& req);
+    void process(const cpp2::DropTagReq& req);
 
 private:
-    explicit RemoveTagProcessor(kvstore::KVStore* kvstore)
+    explicit DropTagProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
     StatusOr<std::vector<std::string>> getTagKeys(GraphSpaceID id, const std::string& tagName);
@@ -29,4 +29,5 @@ private:
 
 }  // namespace meta
 }  // namespace nebula
-#endif  // NEBULA_GRAPH_REMOVETAGPROCESSOR_H
+
+#endif  // META_DROPTAGPROCESSOR_H

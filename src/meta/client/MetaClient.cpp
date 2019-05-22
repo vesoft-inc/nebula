@@ -701,12 +701,12 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::removeTagSchema(int32_t spaceId, std::string tagName) {
-    cpp2::RemoveTagReq req;
+MetaClient::dropTagSchema(int32_t spaceId, std::string tagName) {
+    cpp2::DropTagReq req;
     req.set_space_id(spaceId);
     req.set_tag_name(std::move(tagName));
     return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_removeTag(request);
+        return client->future_dropTag(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);
@@ -778,12 +778,12 @@ MetaClient::getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer vers
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::removeEdgeSchema(GraphSpaceID spaceId, std::string name) {
-    cpp2::RemoveEdgeReq req;
+MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
+    cpp2::DropEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
     return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_removeEdge(request);
+        return client->future_dropEdge(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);

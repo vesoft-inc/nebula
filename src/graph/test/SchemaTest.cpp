@@ -275,7 +275,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "REMOVE TAG person ";
+        std::string query = "DROP TAG person ";
         auto code = client->execute(query, resp);
         sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

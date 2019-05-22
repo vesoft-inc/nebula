@@ -12,23 +12,23 @@
 #include "meta/processors/AddHostsProcessor.h"
 #include "meta/processors/ListHostsProcessor.h"
 #include "meta/processors/RemoveHostsProcessor.h"
+#include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/CreateTagProcessor.h"
 #include "meta/processors/AlterTagProcessor.h"
+#include "meta/processors/DropTagProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
-#include "meta/processors/RemoveTagProcessor.h"
 #include "meta/processors/CreateEdgeProcessor.h"
 #include "meta/processors/AlterEdgeProcessor.h"
+#include "meta/processors/DropEdgeProcessor.h"
 #include "meta/processors/GetEdgeProcessor.h"
 #include "meta/processors/ListEdgesProcessor.h"
-#include "meta/processors/RemoveEdgeProcessor.h"
 #include "meta/processors/MultiPutProcessor.h"
 #include "meta/processors/GetProcessor.h"
 #include "meta/processors/MultiGetProcessor.h"
 #include "meta/processors/ScanProcessor.h"
 #include "meta/processors/RemoveProcessor.h"
 #include "meta/processors/RemoveRangeProcessor.h"
-#include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/HBProcessor.h"
 
 #define RETURN_FUTURE(processor) \
@@ -130,8 +130,8 @@ MetaServiceHandler::future_alterTag(const cpp2::AlterTagReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_removeTag(const cpp2::RemoveTagReq& req) {
-    auto* processor = RemoveTagProcessor::instance(kvstore_);
+MetaServiceHandler::future_dropTag(const cpp2::DropTagReq& req) {
+    auto* processor = DropTagProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
@@ -160,8 +160,8 @@ MetaServiceHandler::future_alterEdge(const cpp2::AlterEdgeReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_removeEdge(const cpp2::RemoveEdgeReq& req) {
-    auto* processor = RemoveEdgeProcessor::instance(kvstore_);
+MetaServiceHandler::future_dropEdge(const cpp2::DropEdgeReq& req) {
+    auto* processor = DropEdgeProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
