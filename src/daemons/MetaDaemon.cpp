@@ -96,11 +96,6 @@ int main(int argc, char *argv[]) {
     }
     auto& localhost = hostAddrRet.value();
 
-    auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_peers);
-    if (!peersRet.ok()) {
-        LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
-        return EXIT_FAILURE;
-    }
     // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
@@ -111,7 +106,16 @@ int main(int argc, char *argv[]) {
     auto partMan
         = std::make_unique<nebula::kvstore::MemPartManager>();
     // The meta server has only one space, one part.
-    partMan->addPart(0, 0, std::move(peersRet.value()));
+    if (FLAGS_peers.empty()) {
+        partMan->addPart(0, 0, {});
+    } else {
+        auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_peers);
+        if (!peersRet.ok()) {
+            LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
+            return EXIT_FAILURE;
+        }
+        partMan->addPart(0, 0, std::move(peersRet.value()));
+    }
 
     // Generic thread pool
     auto workers = std::make_shared<nebula::thread::GenericThreadPool>();
