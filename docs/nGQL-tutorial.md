@@ -50,13 +50,13 @@ ADD HOSTS 192.168.8.5:65500
 
 ```
 SHOW HOSTS
-=============================
-|          Ip |  Port | Status |
-=============================
-| 192.168.8.5 | 65500 | online |
------------------------
+=================================
+| Ip          | Port  | Status  |
+=================================
+| 192.168.8.5 | 65500 | online  |
+---------------------------------
 | 192.168.8.1 | 65500 | offline |
------------------------
+---------------------------------
 ```
 
 * Remove hosts
@@ -79,9 +79,9 @@ REMOVE HOSTS $storage_ip1:$storage_port1, $storage_ip2:$storage_port2,...
 
 Graph spaces are physically isolated like the database in MySQL.
 
-| | CREATE | DROP | USE | DESCRIBE | SHOW |
-|---| --- | --- | ----- | -------- | ---- |
-| SPACE | √ | √  | √    | v0.2     | √    |
+| | CREATE | DROP | USE | DESCRIBE | SHOW | SHOW CREATE |
+|---| --- | --- | ----- | -------- | ---- | ----------- |
+| SPACE | √ | √  | √    | v0.2     | √    | v0.2        |
 
 Create space with CREATE, drop space with DROP, choose which space to use with USE, list available spaces with SHOW. DESCRIBE will be released in v0.2.
 
@@ -92,10 +92,19 @@ Following are some examples:
 ```
 SHOW SPACES
 ================
-|         Name |
+| Name         |
 ================
 | myspace_test |
 ----------------
+```
+
+```
+SHOW CREATE SPACES myspace_test
+====================================================================================
+| Space        | Create Space                                                      |
+====================================================================================
+| myspace_test | CREATE SPACE myspace_test (partition_num = 1, replica_factor = 1) |
+------------------------------------------------------------------------------------
 ```
 
 * Drop a space
@@ -123,12 +132,12 @@ USE myspace_test
 
 Schema is used to manage the properties of vertices and edges (name and type of each field). In Nebula, a vertex can be labeled by multiple tags.
 
-|    | CREATE | DROP | ALTER | DESCRIBE | SHOW | TTL | LOAD | DUMP |
-|:-: | :-: | :-: |:-: | :-: | :-: | :-: |:-: | :-: |
-|TAG | √      | v0.2 |    v0.2  |      √   |   √  |  v0.3  | v0.2    |  v0.3   |
-|EDGE| √      |v0.2  |  v0.2 |  √       |  √   |v0.3 | v0.2 | v0.3 |
+|    | CREATE | DROP | ALTER | DESCRIBE | SHOW | TTL | LOAD | DUMP | SHOW CREATE |
+|:-: | :-: | :-: |:-: | :-: | :-: | :-: |:-: | :-: | :-: |
+|TAG | √      | v0.2 |    v0.2  |      √   |   √  |  v0.3  | v0.2    |  v0.3   | v0.2 |
+|EDGE| √      |v0.2  |  v0.2 |  √       |  √   |v0.3 | v0.2 | v0.3 | v0.2 |
 
-You can use CREATE, DROP, ALTER, DESCRIBE to create, drop, alter, view a schema.
+You can use CREATE, DROP, ALTER, DESCRIBE, SHOW CREATE to create, drop, alter, view a schema.
 Following are some examples:
 
 ```
@@ -137,6 +146,25 @@ CREATE TAG player(name string, age int);
 
 ```
 DESCRIBE TAG player;
+==================
+| Field | Type   |
+==================
+| name  | string |
+------------------
+| age   | int    |
+------------------
+```
+
+```
+SHOW CREATE TAG player;
+==========================================================================================
+| Tag    | Create Tag                                                                    |
+==========================================================================================
+| player | CREATE TAG player (
+  name string,
+  age int
+) ttl_duration = 0, ttl_col = "" |
+------------------------------------------------------------------------------------------
 ```
 
 ```
@@ -153,6 +181,25 @@ CREATE EDGE serve (start_year int, end_year int);
 
 ```
 DESCRIBE EDGE serve;
+=====================
+| Field      | Type |
+=====================
+| start_year | int  |
+---------------------
+| end_year   | int  |
+---------------------
+```
+
+```
+SHOW CREATE EDGE serve;
+=================================================================================================
+| Edge  | Create Edge                                                                           |
+=================================================================================================
+| serve | CREATE EDGE serve (
+  start_year int,
+  end_year int
+) ttl_duration = 0, ttl_col = "" |
+-------------------------------------------------------------------------------------------------
 ```
 
 ```
