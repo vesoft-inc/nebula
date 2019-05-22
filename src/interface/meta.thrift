@@ -130,7 +130,7 @@ struct AlterTagReq {
     3: list<AlterSchemaItem>  tag_items,
 }
 
-struct RemoveTagReq {
+struct DropTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
 }
@@ -183,7 +183,7 @@ struct GetEdgeResp {
     3: common.Schema    schema,
 }
 
-struct RemoveEdgeReq {
+struct DropEdgeReq {
     1: common.GraphSpaceID space_id,
     2: string              edge_name,
 }
@@ -299,13 +299,13 @@ service MetaService {
 
     ExecResp createTag(1: CreateTagReq req);
     ExecResp alterTag(1: AlterTagReq req);
-    ExecResp removeTag(1: RemoveTagReq req);
+    ExecResp dropTag(1: DropTagReq req);
     GetTagResp getTag(1: GetTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);
 
     ExecResp createEdge(1: CreateEdgeReq req);
     ExecResp alterEdge(1: AlterEdgeReq req);
-    ExecResp removeEdge(1: RemoveEdgeReq req);
+    ExecResp dropEdge(1: DropEdgeReq req);
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 

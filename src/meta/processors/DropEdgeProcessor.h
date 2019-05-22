@@ -4,24 +4,24 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_REMOVEEDGEPROCESSOR_H_
-#define META_REMOVEEDGEPROCESSOR_H_
+#ifndef META_DROPEDGEPROCESSOR_H_
+#define META_DROPEDGEPROCESSOR_H_
 
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-class RemoveEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {
+class DropEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
-    static RemoveEdgeProcessor* instance(kvstore::KVStore* kvstore) {
-        return new RemoveEdgeProcessor(kvstore);
+    static DropEdgeProcessor* instance(kvstore::KVStore* kvstore) {
+        return new DropEdgeProcessor(kvstore);
     }
 
-    void process(const cpp2::RemoveEdgeReq& req);
+    void process(const cpp2::DropEdgeReq& req);
 
 private:
-    explicit RemoveEdgeProcessor(kvstore::KVStore* kvstore)
+    explicit DropEdgeProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
     StatusOr<std::vector<std::string>> getEdgeKeys(GraphSpaceID id, const std::string& edgeName);
@@ -30,4 +30,5 @@ private:
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_REMOVEEDGEPROCESSOR_H_
+#endif  // META_DROPEDGEPROCESSOR_H_
+
