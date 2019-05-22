@@ -156,7 +156,7 @@ class GraphScanner;
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence add_hosts_sentence drop_hosts_sentence create_space_sentence
+%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -896,9 +896,9 @@ add_hosts_sentence
     }
     ;
 
-drop_hosts_sentence
-    : KW_DROP KW_HOSTS host_list {
-        auto sentence = new DropHostsSentence();
+remove_hosts_sentence
+    : KW_REMOVE KW_HOSTS host_list {
+        auto sentence = new RemoveHostsSentence();
         sentence->setHosts($3);
         $$ = sentence;
     }
@@ -1103,7 +1103,7 @@ maintain_sentence
     | drop_edge_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
     | add_hosts_sentence { $$ = $1; }
-    | drop_hosts_sentence { $$ = $1; }
+    | remove_hosts_sentence { $$ = $1; }
     | create_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
     | yield_sentence {

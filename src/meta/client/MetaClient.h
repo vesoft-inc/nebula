@@ -90,7 +90,7 @@ public:
     listHosts();
 
     folly::Future<StatusOr<bool>>
-    dropHosts(const std::vector<HostAddr>& hosts);
+    removeHosts(const std::vector<HostAddr>& hosts);
 
     folly::Future<StatusOr<PartsAlloc>>
     getPartsAlloc(GraphSpaceID spaceId);

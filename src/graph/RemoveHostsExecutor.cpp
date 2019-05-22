@@ -4,18 +4,18 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "graph/DropHostsExecutor.h"
+#include "graph/RemoveHostsExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-DropHostsExecutor::DropHostsExecutor(Sentence *sentence,
-                                     ExecutionContext *ectx) : Executor(ectx) {
-    sentence_ = static_cast<DropHostsSentence*>(sentence);
+RemoveHostsExecutor::RemoveHostsExecutor(Sentence *sentence,
+                                         ExecutionContext *ectx) : Executor(ectx) {
+    sentence_ = static_cast<RemoveHostsSentence*>(sentence);
 }
 
 
-Status DropHostsExecutor::prepare() {
+Status RemoveHostsExecutor::prepare() {
     host_ = sentence_->hosts();
     if (host_.size() == 0) {
         return Status::Error("Host address illegal");
@@ -24,8 +24,8 @@ Status DropHostsExecutor::prepare() {
 }
 
 
-void DropHostsExecutor::execute() {
-    auto future = ectx()->getMetaClient()->dropHosts(host_);
+void RemoveHostsExecutor::execute() {
+    auto future = ectx()->getMetaClient()->removeHosts(host_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
@@ -37,7 +37,7 @@ void DropHostsExecutor::execute() {
         auto ret = std::move(resp).value();
         if (!ret) {
             DCHECK(onError_);
-            onError_(Status::Error("Drop hosts failed"));
+            onError_(Status::Error("Remove hosts failed"));
             return;
         }
         DCHECK(onFinish_);

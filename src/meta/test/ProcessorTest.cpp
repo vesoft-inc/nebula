@@ -15,7 +15,7 @@
 #include "meta/processors/ListSpacesProcessor.h"
 #include "meta/processors/ListSpacesProcessor.h"
 #include "meta/processors/DropSpaceProcessor.h"
-#include "meta/processors/DropHostsProcessor.h"
+#include "meta/processors/RemoveHostsProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/CreateTagProcessor.h"
 #include "meta/processors/CreateEdgeProcessor.h"
@@ -98,9 +98,9 @@ TEST(ProcessorTest, AddHostsTest) {
         for (auto i = 0; i < 20; i++) {
             thriftHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
         }
-        cpp2::DropHostsReq req;
+        cpp2::RemoveHostsReq req;
         req.set_hosts(std::move(thriftHosts));
-        auto* processor = DropHostsProcessor::instance(kv.get());
+        auto* processor = RemoveHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

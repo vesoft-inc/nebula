@@ -14,12 +14,12 @@ namespace nebula {
 namespace graph {
 
 
-class DropHostsExecutor final : public Executor {
+class RemoveHostsExecutor final : public Executor {
 public:
-    DropHostsExecutor(Sentence *sentence, ExecutionContext *ectx);
+    RemoveHostsExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {
-        return "DropHostsExecutor";
+        return "RemoveHostsExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -27,7 +27,7 @@ public:
     void execute() override;
 
 private:
-    DropHostsSentence       *sentence_{nullptr};
+    RemoveHostsSentence     *sentence_{nullptr};
     std::vector<HostAddr>    host_;
 };
 

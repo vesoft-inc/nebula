@@ -101,10 +101,10 @@ private:
 };
 
 
-class DropHostsSentence final : public Sentence {
+class RemoveHostsSentence final : public Sentence {
 public:
-    DropHostsSentence() {
-        kind_ = Kind::kDropHosts;
+    RemoveHostsSentence() {
+        kind_ = Kind::kRemoveHosts;
     }
 
     void setHosts(HostList *hosts) {

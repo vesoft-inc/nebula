@@ -12,21 +12,21 @@
 namespace nebula {
 namespace meta {
 
-class DropHostsProcessor : public BaseProcessor<cpp2::ExecResp> {
+class RemoveHostsProcessor : public BaseProcessor<cpp2::ExecResp> {
 public:
     /*
      *  xxxProcessor is self-management.
      *  The user should get instance when needed and don't care about the instance deleted.
      *  The instance should be destroyed inside when onFinished method invoked
      */
-    static DropHostsProcessor* instance(kvstore::KVStore* kvstore) {
-        return new DropHostsProcessor(kvstore);
+    static RemoveHostsProcessor* instance(kvstore::KVStore* kvstore) {
+        return new RemoveHostsProcessor(kvstore);
     }
 
-    void process(const cpp2::DropHostsReq& req);
+    void process(const cpp2::RemoveHostsReq& req);
 
 private:
-    explicit DropHostsProcessor(kvstore::KVStore* kvstore)
+    explicit RemoveHostsProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 

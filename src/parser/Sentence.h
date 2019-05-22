@@ -39,7 +39,7 @@ public:
         kDeleteEdge,
         kFind,
         kAddHosts,
-        kDropHosts,
+        kRemoveHosts,
         kCreateSpace,
         kDropSpace,
         kYield,

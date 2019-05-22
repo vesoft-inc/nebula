@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_REMOVETAGEXECUTOR_H
-#define GRAPH_REMOVETAGEXECUTOR_H
+#ifndef GRAPH_DROPTAGEXECUTOR_H
+#define GRAPH_DROPTAGEXECUTOR_H
 
 #include "base/Base.h"
 #include "graph/Executor.h"
@@ -32,6 +32,4 @@ private:
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // GRAPH_REMOVETAGEXECUTOR_H
-
-
+#endif  // GRAPH_DROPTAGEXECUTOR_H

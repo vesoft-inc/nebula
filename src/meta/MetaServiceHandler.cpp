@@ -11,7 +11,7 @@
 #include "meta/processors/DropSpaceProcessor.h"
 #include "meta/processors/AddHostsProcessor.h"
 #include "meta/processors/ListHostsProcessor.h"
-#include "meta/processors/DropHostsProcessor.h"
+#include "meta/processors/RemoveHostsProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/CreateTagProcessor.h"
 #include "meta/processors/AlterTagProcessor.h"
@@ -70,8 +70,8 @@ MetaServiceHandler::future_listHosts(const cpp2::ListHostsReq& req) {
 }
 
 folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_dropHosts(const cpp2::DropHostsReq& req) {
-    auto* processor = DropHostsProcessor::instance(kvstore_);
+MetaServiceHandler::future_removeHosts(const cpp2::RemoveHostsReq& req) {
+    auto* processor = RemoveHostsProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

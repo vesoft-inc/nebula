@@ -15,7 +15,7 @@ add_library(
     MetaHttpHandler.cpp
     processors/AddHostsProcessor.cpp
     processors/ListHostsProcessor.cpp
-    processors/DropHostsProcessor.cpp
+    processors/RemoveHostsProcessor.cpp
     processors/CreateSpaceProcessor.cpp
     processors/ListSpacesProcessor.cpp
     processors/DropSpaceProcessor.cpp

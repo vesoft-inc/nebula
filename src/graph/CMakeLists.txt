@@ -29,7 +29,7 @@ add_library(
     InterimResult.cpp
     VariableHolder.cpp
     AddHostsExecutor.cpp
-    DropHostsExecutor.cpp
+    RemoveHostsExecutor.cpp
     CreateSpaceExecutor.cpp
     DropSpaceExecutor.cpp
     ShowExecutor.cpp

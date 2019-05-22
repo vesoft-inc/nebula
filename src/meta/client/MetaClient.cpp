@@ -416,7 +416,7 @@ folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::listHosts() {
             });
 }
 
-folly::Future<StatusOr<bool>> MetaClient::dropHosts(const std::vector<HostAddr>& hosts) {
+folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr>& hosts) {
     std::vector<nebula::cpp2::HostAddr> thriftHosts;
     thriftHosts.resize(hosts.size());
     std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
@@ -425,10 +425,10 @@ folly::Future<StatusOr<bool>> MetaClient::dropHosts(const std::vector<HostAddr>&
         th.set_port(h.second);
         return th;
     });
-    cpp2::DropHostsReq req;
+    cpp2::RemoveHostsReq req;
     req.set_hosts(std::move(thriftHosts));
     return getResponse(std::move(req), [] (auto client, auto request) {
-                    return client->future_dropHosts(request);
+                    return client->future_removeHosts(request);
                 }, [] (cpp2::ExecResp&& resp) -> bool {
                     return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 }, true);

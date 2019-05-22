@@ -58,7 +58,7 @@ std::string AddHostsSentence::toString() const {
 }
 
 
-std::string DropHostsSentence::toString() const {
+std::string RemoveHostsSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "REMOVE HOSTS (";

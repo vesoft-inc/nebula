@@ -4,13 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/DropHostsProcessor.h"
+#include "meta/processors/RemoveHostsProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-
-void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
+void RemoveHostsProcessor::process(const cpp2::RemoveHostsReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     std::vector<std::string> hostsKey;
     for (auto& h : req.get_hosts()) {

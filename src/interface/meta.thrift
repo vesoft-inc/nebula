@@ -214,7 +214,7 @@ struct ListHostsResp {
     3: list<common.HostAddr> hosts,
 }
 
-struct DropHostsReq {
+struct RemoveHostsReq {
     1: list<common.HostAddr> hosts;
 }
 
@@ -310,7 +310,7 @@ service MetaService {
     ListEdgesResp listEdges(1: ListEdgesReq req);
 
     ExecResp addHosts(1: AddHostsReq req);
-    ExecResp dropHosts(1: DropHostsReq req);
+    ExecResp removeHosts(1: RemoveHostsReq req);
     ListHostsResp listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);

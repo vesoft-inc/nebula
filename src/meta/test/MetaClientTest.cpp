@@ -251,7 +251,7 @@ TEST(MetaClientTest, InterfacesTest) {
     }
     {
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-        auto ret = client->dropHosts(hosts).get();
+        auto ret = client->removeHosts(hosts).get();
         ASSERT_TRUE(ret.ok());
         auto ret1 = client->listHosts().get();
         ASSERT_TRUE(ret1.ok());

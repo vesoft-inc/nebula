@@ -309,7 +309,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DROP HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
+        std::string query = "REMOVE HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
