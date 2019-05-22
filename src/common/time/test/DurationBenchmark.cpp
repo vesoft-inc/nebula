@@ -13,41 +13,6 @@ using std::chrono::steady_clock;
 using std::chrono::duration_cast;
 using std::chrono::milliseconds;
 
-decltype(steady_clock::now()) scThen;
-decltype(steady_clock::now()) scNow;
-
-Duration dur(false);
-
-
-void prepareDuration() {
-    // steady_clock
-    scThen = steady_clock::now();
-    usleep(123456);
-    scNow = steady_clock::now();
-
-    // Duration
-    dur.reset();
-    usleep(123456);
-    dur.pause();
-}
-
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(steady_clock_ticks_to_msec, iters) {
-    for (uint32_t i = 0; i < iters; i++) {
-        auto diff = (duration_cast<milliseconds>(scNow - scThen)).count();
-        folly::doNotOptimizeAway(diff);
-    }
-}
-BENCHMARK_RELATIVE(duration_ticks_to_msec, iters) {
-    for (uint32_t i = 0; i < iters; i++) {
-        auto diff = dur.elapsedInMSec();
-        folly::doNotOptimizeAway(diff);
-    }
-}
-
-BENCHMARK_DRAW_LINE();
 
 BENCHMARK(stead_clock_timer, iters) {
     for (uint32_t i = 0; i < iters; i++) {
@@ -65,13 +30,9 @@ BENCHMARK_RELATIVE(duration_timer, iters) {
     }
 }
 
-BENCHMARK_DRAW_LINE();
-
 
 int main(int argc, char** argv) {
     folly::init(&argc, &argv, true);
-
-    prepareDuration();
 
     folly::runBenchmarks();
     return 0;
@@ -79,5 +40,14 @@ int main(int argc, char** argv) {
 
 
 /*
- Tested on Intel Core i5-4300U (4 cores) with 8GB RAM
+
+ Tested on Intel Core i7-8650U (8 cores) with 16GB RAM
+
+============================================================================
+DurationBenchmark.cpp                           relative  time/iter  iters/s
+============================================================================
+stead_clock_timer                                            1.35us  742.59K
+duration_timer                                  7024.98%    19.17ns   52.17M
+============================================================================
+
 */
