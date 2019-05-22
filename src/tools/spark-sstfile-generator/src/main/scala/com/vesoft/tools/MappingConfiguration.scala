@@ -8,9 +8,9 @@ import scala.language.implicitConversions
 /**
   * column mapping
   *
-  * @param columnName column
-  * @param propertyName
-  * @param `type`     map to graph's data type
+  * @param columnName   column
+  * @param propertyName what's the property name
+  * @param `type`       map to graph's data type
   */
 case class Column(columnName: String, propertyName: String, `type`: String = "string")
 
@@ -38,7 +38,7 @@ object Column {
           val tp = (mappingContent \ "type").get.as[String]
           JsSuccess(Column(columnName, propertyName, tp))
         }
-        case a@_ => throw new IllegalStateException(s"illegal mapping format:${a}")
+        case a@_ => throw new IllegalStateException(s"Illegal mapping format:${a}")
       }
     }
   }
@@ -130,10 +130,6 @@ case class Edge(override val tableName: String, override val name: String, fromF
   def allColumnNames(): Option[Seq[String]] = columnMappings.map(columns => columns.map(_.columnName))
 }
 
-import play.api.libs.json._
-
-import scala.language.implicitConversions
-
 object Edge {
   implicit val EdgeWrites: Writes[Edge] = new Writes[Edge] {
     override def writes(edge: Edge): JsValue = {
@@ -185,8 +181,8 @@ object Edge {
 /**
   * a mapping file in-memory representation
   *
-  * @param databaseName graphspace name for this mapping configuration
-  * @param partitions   partition number of this graphspace
+  * @param databaseName hive database name for this mapping configuration
+  * @param partitions   partition number of the target graphspace
   * @param tags         tag's mapping
   * @param edges        edge's mapping
   * @param keyPolicy    policy which used to generate unique id, default=hash_primary_key
@@ -231,12 +227,12 @@ object MappingConfiguration {
           // make sure all edge reference existing tags
           val allReferencedTag = (edges.map(_.fromReferenceTag) ++ edges.map(_.toReferenceTag)).distinct
           if (tags.map(_.name).intersect(allReferencedTag).size != allReferencedTag.size) {
-            throw new IllegalStateException(s"edge's from/to tag reference non-existing tag")
+            throw new IllegalStateException("Edge's from/to tag reference non-existing tag")
           }
 
           JsSuccess(MappingConfiguration(graphSpaceName, partitions, tags, edges, keyPolicy))
         }
-        case a@_ => throw new IllegalStateException(s"illegal mapping format:${a}")
+        case a@_ => throw new IllegalStateException(s"Illegal mapping format:${a}")
       }
     }
   }

@@ -2,6 +2,8 @@ package com.vesoft.tools
 
 import java.io.File
 
+import com.vesoft.tools.VertexOrEdgeEnum.VertexOrEdgeEnum
+import javax.xml.bind.DatatypeConverter
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.BytesWritable
@@ -15,46 +17,42 @@ import org.slf4j.LoggerFactory
 import scala.collection.mutable
 
 /**
-  * custom outputFormat, which generate a sub dir per partition per worker:
+  * Custom outputFormat, which generate a sub dir per partition per worker:
   *
   * worker_node1
   * |
   * |-sstFileOutput
-  * |
-  * |--1
-  * |  |
-  * |  |——vertex.data
-  * |  |--edge.data
-  * |
-  * |--2
-  * |
-  * |——vertex.data
-  * |--edge.data
+  *     |
+  *     |--1
+  *     |  |
+  *     |  |——vertex-${FIRST_KEY}.data
+  *     |  |--edge-${FIRST_KEY}.data
+  *     |
+  *     |--2
+  *        |
+  *        |——vertex-${FIRST_KEY}.data
+  *        |--edge-${FIRST_KEY}.data
   * worker_node2
   * |
   * |-sstFileOutput
-  * |
-  * |--1
-  * |  |
-  * |  |——vertex.data
-  * |  |--edge.data
-  * |
-  * |--2
-  * |
-  * |——vertex.data
-  * |--edge.data
+  *     |
+  *     |--1
+  *     |  |
+  *     |  |——vertex-${FIRST_KEY}.data
+  *     |  |--edge-${FIRST_KEY}.data
+  *     |
+  *     |--2
+  *        |
+  *        |——vertex-${FIRST_KEY}.data
+  *        |--edge-${FIRST_KEY}.data
   */
 class SstFileOutputFormat extends FileOutputFormat[BytesWritable, PartitionIdAndValueBinaryWritable] {
-  private[this] val log = LoggerFactory.getLogger(this.getClass)
-
   override def getRecordWriter(job: TaskAttemptContext): RecordWriter[BytesWritable, PartitionIdAndValueBinaryWritable] = {
-    // make sure to disable "mapreduce.output.fileoutputformat.compress"
     if (FileOutputFormat.getCompressOutput(job)) {
       job.getConfiguration.setBoolean(FileOutputFormat.COMPRESS, false)
     }
 
     val sstFileOutput = job.getConfiguration.get(SparkSstFileGenerator.SSF_OUTPUT_DIR_CONF_KEY)
-    log.debug(s"SstFileOutputFormat read sstFileOutput=${sstFileOutput}")
     new SstRecordWriter(sstFileOutput, job.getConfiguration)
   }
 
@@ -79,10 +77,10 @@ class SstRecordWriter(sstFileOutput: String, configuration: Configuration) exten
   /**
     * all sst files opened, (vertexOrEdge,partitionId)->SstFileWriter
     */
-  private var sstFiles = mutable.Map.empty[(Boolean, Int), SstFileWriter]
+  private var sstFiles = mutable.Map.empty[(VertexOrEdgeEnum, Int), SstFileWriter]
 
   /**
-    * need local file system only, for rocksdb sstFileWriter can't write to remote file system(only can back up to HDFS)
+    * need local file system only, for rocksdb sstFileWriter can't write to remote file system(only can back up to HDFS) for now
     */
   private val fileSystem = FileSystem.get(new Configuration(false))
 
@@ -94,7 +92,7 @@ class SstRecordWriter(sstFileOutput: String, configuration: Configuration) exten
     var sstFileWriter: SstFileWriter = null
 
     //cache per partition per vertex/edge type sstfile writer
-    val sstWriterOptional = sstFiles.get((value.vertexOrEdge, value.partitionId))
+    val sstWriterOptional = sstFiles.get((value.vertexOrEdgeEnum, value.partitionId))
     if (sstWriterOptional.isEmpty) {
       /**
         * https://github.com/facebook/rocksdb/wiki/Creating-and-Ingesting-SST-files
@@ -111,10 +109,11 @@ class SstRecordWriter(sstFileOutput: String, configuration: Configuration) exten
       // TODO: prove setWritableFileMaxBufferSize is working?
       options = new Options().setCreateIfMissing(true).setCreateMissingColumnFamilies(true).setWritableFileMaxBufferSize(1024 * 100).setMaxBackgroundFlushes(5).prepareForBulkLoad()
       sstFileWriter = new SstFileWriter(env, options)
-      val subDir = if (value.vertexOrEdge) "vertex" else "edge"
 
       //TODO: rolling to another file when file size > some THRESHOLD, or some other criteria
-      var sstFile = s"${sstFileOutput}${File.separator}${value.partitionId}${File.separator}${subDir}.data".toLowerCase
+      // Each partition can generated multiple sst files, among which keys will be ordered, and keys could overlap between different sst files.
+      // All these sst files will be  `hdfs -copyFromLocal` to the same HDFS dir(and consumed by subsequent nebula `load` command), so we need different suffixes to distinguish between them.
+      var sstFile = s"${sstFileOutput}${File.separator}${value.partitionId}${File.separator}${value.vertexOrEdgeEnum}-${DatatypeConverter.printHexBinary(key.getBytes)}.data".toLowerCase
       val path = new Path(sstFile)
       if (!fileSystem.exists(path)) {
         fileSystem.create(path)
@@ -126,13 +125,13 @@ class SstRecordWriter(sstFileOutput: String, configuration: Configuration) exten
         }
       }
 
-      // sstfile is prechecked by SparkSstFileGenerator, so no bother to recheck
+      // sstfile is pre-checked by SparkSstFileGenerator, so no bother to recheck
       if (sstFile.startsWith("file://")) {
         sstFile = sstFile.substring(7)
       }
 
       sstFileWriter.open(sstFile)
-      sstFiles += (value.vertexOrEdge, value.partitionId) -> sstFileWriter
+      sstFiles += (value.vertexOrEdgeEnum, value.partitionId) -> sstFileWriter
     } else {
       assert(sstWriterOptional.isDefined)
       sstFileWriter = sstWriterOptional.get
@@ -150,7 +149,7 @@ class SstRecordWriter(sstFileOutput: String, configuration: Configuration) exten
       }
       catch {
         case e: Exception => {
-          log.error("error when close a sst file", e)
+          log.error("Error when close a sst file", e)
         }
       }
     }

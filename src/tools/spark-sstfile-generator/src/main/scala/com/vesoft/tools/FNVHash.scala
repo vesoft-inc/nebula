@@ -2,7 +2,8 @@ package com.vesoft.tools
 
 /**
   * FNV hash util
-  * reference http://www.avanderw.co.za/fnv-hash-in-java/
+  *
+  * @link http://www.isthe.com/chongo/tech/comp/fnv/index.html
   */
 object FNVHash {
   //some prime number

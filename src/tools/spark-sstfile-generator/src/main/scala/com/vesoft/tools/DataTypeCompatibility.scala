@@ -16,7 +16,7 @@ object DataTypeCompatibility {
     "DATETIME" -> Set("DATE", "TIMESTAMP"),
     "YEARMONTH" -> Set("DATE")
 
-    //TODO(qianyong) "binary" -> ?
+    //TODO "binary" -> ?
   )
 
   /**
