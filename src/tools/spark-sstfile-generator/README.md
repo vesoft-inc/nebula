@@ -18,7 +18,7 @@ sbt|1.2.8
 # Spark-submit command line reference
 This is what we used in production environment: 
 ```bash
-${SPARK_HOME}/bin/spark-submit --master yarn --queue fmprod --conf spark.executor.instances=24 --conf spark.executor.memory=90g --conf spark.executor.cores=2  --conf spark.executorEnv.LD_LIBRARY_PATH='/soft/server/nebula_native_client:/usr/local/lib:/usr/local/lib64' --conf spark.driver.extraJavaOptions='-Djava.library.path=/soft/server/nebula_native_client/:/usr/local/lib64:/usr/local/lib' --class com.vesoft.tools.SparkSstFileGenerator --files mapping.json nebula-spark-sstfile-generator.jar -li "2019-05-06" -mi mapping.json -pi dt -so nebula_output
+${SPARK_HOME}/bin/spark-submit --master yarn --queue fmprod --conf spark.executor.instances=24 --conf spark.executor.memory=90g --conf spark.executor.cores=2  --conf spark.executorEnv.LD_LIBRARY_PATH='/soft/server/nebula_native_client:/usr/local/lib:/usr/local/lib64' --conf spark.driver.extraJavaOptions='-Djava.library.path=/soft/server/nebula_native_client/:/usr/local/lib64:/usr/local/lib' --class com.vesoft.tools.SparkSstFileGenerator --files mapping.json nebula-spark-sstfile-generator.jar -di "2019-05-13" -mi mapping.json -pi dt -so file://home/hdp/nebula_output
 ```
 The application options are described as following.
 
@@ -28,14 +28,14 @@ We keep a convention when naming the option,those suffix with _i_ will be an INP
 ```bash
 usage: nebula spark sst file generator
  -ci,--default_column_mapping_policy <arg>   If omitted, what policy to use when mapping column to property,all columns except primary_key's column will be mapped to tag's property with the same name by default
- -di,--latest_date_input <arg>               Latest date to query, date format YYYY-MM-dd
+ -di,--latest_date_input <arg>               Latest date to query,date format YYYY-MM-dd
  -hi,--string_value_charset_input <arg>      When the value is of type String,what charset is used when encoded,default to UTF-8
  -li,--limit_input <arg>                     Return at most this number of edges/vertex, usually used in POC stage, when omitted, fetch all data.
  -mi,--mapping_file_input <arg>              Hive tables to nebula graph schema mapping file
  -pi,--date_partition_input <arg>            A partition field of type String of hive table, which represent a Date, and has format of YYY-MM-dd
  -ri,--repartition_number_input <arg>        Repartition number. Some optimization trick to improve generation speed and data skewness. Need tuning to suit your data.
- -so,--sst_file_output <arg>                 Where the generated sst files will be put, must be local file
- -ti,--datasource_type_input <arg>           Data source types support, support only hive in so far, default=hive
+ -so,--sst_file_output <arg>                 Where the generated sst files will be put, must be local directory, which starts with file:///
+ -ti,--datasource_type_input <arg>           Data source types supported, must be among [hive|hbase|csv] for now, default=hive
 ```
 
 # Mapping file format

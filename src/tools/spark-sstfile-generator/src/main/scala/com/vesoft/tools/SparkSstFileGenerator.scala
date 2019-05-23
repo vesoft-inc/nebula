@@ -40,7 +40,7 @@ object SparkSstFileGenerator {
   lazy val options: Options = {
     val dataSourceTypeInput = CliOption.builder("ti").longOpt("datasource_type_input")
       .hasArg()
-      .desc("Data source types support, must be among [hive|hbase|csv] for now, default=hive")
+      .desc("Data source types supported, must be among [hive|hbase|csv] for now, default=hive")
       .build
 
     val defaultColumnMapPolicy = CliOption.builder("ci").longOpt("default_column_mapping_policy")
@@ -58,7 +58,7 @@ object SparkSstFileGenerator {
     val sstFileOutput = CliOption.builder("so").longOpt("sst_file_output")
       .required()
       .hasArg()
-      .desc("Where the generated sst files will be put, must be local file")
+      .desc("Where the generated sst files will be put, must be local directory, which starts with file:///")
       .build
 
     val datePartitionKey = CliOption.builder("pi").longOpt("date_partition_input")
@@ -170,7 +170,7 @@ object SparkSstFileGenerator {
 
     // make sure use local file system to write sst file
     if (!sstFileOutput.toLowerCase.startsWith("file://")) {
-      throw new IllegalArgumentException("Argument: -si --sst_file_output must be start with file://")
+      throw new IllegalArgumentException("Argument: -so --sst_file_output must be start with file://")
     }
 
     val limitOption: String = cmd.getOptionValue("li")
