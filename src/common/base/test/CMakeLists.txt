@@ -98,3 +98,15 @@ nebula_link_libraries(
     gtest_main
 )
 nebula_add_test(signal_handler_test)
+
+add_executable(
+    nebulakey_utils_test
+    NebulaKeyUtilsTest.cpp
+    $<TARGET_OBJECTS:base_obj>
+)
+nebula_link_libraries(
+    nebulakey_utils_test
+    gtest
+    gtest_main
+)
+nebula_add_test(nebulakey_utils_test)

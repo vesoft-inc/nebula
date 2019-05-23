@@ -5,7 +5,7 @@ add_library(
     ServerBasedSchemaManager.cpp
     NebulaSchemaProvider.cpp
 )
-add_dependencies(schema_obj base_obj)
+add_dependencies(schema_obj base_obj common_thrift_obj meta_thrift_obj)
 
 
 add_library(

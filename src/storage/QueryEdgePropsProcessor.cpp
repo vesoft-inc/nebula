@@ -5,9 +5,9 @@
  */
 
 #include "storage/QueryEdgePropsProcessor.h"
+#include "base/NebulaKeyUtils.h"
 #include <algorithm>
 #include "time/Duration.h"
-#include "storage/KeyUtils.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 
@@ -19,8 +19,8 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
                                        const cpp2::EdgeKey& edgeKey,
                                        std::vector<PropContext>& props,
                                        RowSetWriter& rsWriter) {
-    auto prefix = KeyUtils::prefix(partId, edgeKey.src, edgeKey.edge_type,
-                                   edgeKey.ranking, edgeKey.dst);
+    auto prefix = NebulaKeyUtils::prefix(partId, edgeKey.src, edgeKey.edge_type,
+                                         edgeKey.ranking, edgeKey.dst);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(spaceId_, partId, prefix, &iter);
     // Only use the latest version.
