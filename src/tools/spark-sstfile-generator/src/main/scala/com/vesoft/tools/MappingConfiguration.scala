@@ -8,9 +8,9 @@ import scala.language.implicitConversions
 /**
   * column mapping
   *
-  * @param columnName   column
-  * @param propertyName what's the property name
-  * @param `type`       map to graph's data type
+  * @param columnName   hive column name
+  * @param propertyName what's the property name this column maps to
+  * @param `type`       map to which data type of nebula graph
   */
 case class Column(columnName: String, propertyName: String, `type`: String = "string")
 
