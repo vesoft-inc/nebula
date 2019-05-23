@@ -23,14 +23,13 @@ add_library(
     processors/GetPartsAllocProcessor.cpp
     processors/CreateTagProcessor.cpp
     processors/AlterTagProcessor.cpp
-    processors/RemoveTagProcessor.cpp
-    processors/ListTagsProcessor.cpp
-    processors/GetTagProcessor.cpp
-    processors/CreateEdgeProcessor.cpp
     processors/AlterEdgeProcessor.cpp
-    processors/RemoveEdgeProcessor.cpp
-    processors/ListEdgesProcessor.cpp
+    processors/GetTagProcessor.cpp
     processors/GetEdgeProcessor.cpp
+    processors/ListTagsProcessor.cpp
+    processors/ListEdgesProcessor.cpp
+    processors/DropTagProcessor.cpp
+    processors/DropEdgeProcessor.cpp
     processors/GetProcessor.cpp
     processors/MultiGetProcessor.cpp
     processors/MultiPutProcessor.cpp

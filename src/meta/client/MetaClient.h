@@ -112,7 +112,7 @@ public:
     listTagSchemas(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    removeTagSchema(int32_t spaceId, std::string name);
+    dropTagSchema(int32_t spaceId, std::string name);
 
     folly::Future<StatusOr<nebula::cpp2::Schema>>
     getTagSchema(int32_t spaceId, int32_t tagId, int64_t version);
@@ -132,7 +132,7 @@ public:
     getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer version);
 
     folly::Future<StatusOr<bool>>
-    removeEdgeSchema(GraphSpaceID spaceId, std::string name);
+    dropEdgeSchema(GraphSpaceID spaceId, std::string name);
 
     // Operations for custom kv
     folly::Future<StatusOr<bool>>

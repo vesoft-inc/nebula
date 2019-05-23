@@ -152,7 +152,7 @@ class GraphScanner;
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
-%type <sentence> remove_tag_sentence remove_edge_sentence
+%type <sentence> drop_tag_sentence drop_edge_sentence
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
@@ -604,15 +604,15 @@ describe_edge_sentence
     }
     ;
 
-remove_tag_sentence
-    : KW_REMOVE KW_TAG name_label {
-        $$ = new RemoveTagSentence($3);
+drop_tag_sentence
+    : KW_DROP KW_TAG name_label {
+        $$ = new DropTagSentence($3);
     }
     ;
 
-remove_edge_sentence
-    : KW_REMOVE KW_EDGE name_label {
-        $$ = new RemoveEdgeSentence($3);
+drop_edge_sentence
+    : KW_DROP KW_EDGE name_label {
+        $$ = new DropEdgeSentence($3);
     }
     ;
 
@@ -1105,8 +1105,8 @@ maintain_sentence
     | alter_edge_sentence { $$ = $1; }
     | describe_tag_sentence { $$ = $1; }
     | describe_edge_sentence { $$ = $1; }
-    | remove_tag_sentence { $$ = $1; }
-    | remove_edge_sentence { $$ = $1; }
+    | drop_tag_sentence { $$ = $1; }
+    | drop_edge_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
     | add_hosts_sentence { $$ = $1; }
     | remove_hosts_sentence { $$ = $1; }
