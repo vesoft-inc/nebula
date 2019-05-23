@@ -156,7 +156,7 @@ class GraphScanner;
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence
+%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence describe_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -937,6 +937,12 @@ create_space_sentence
     }
     ;
 
+describe_space_sentence
+    : KW_DESCRIBE KW_SPACE LABEL {
+        $$ = new DescribeSpaceSentence($3);
+    }
+    ;
+
 space_opt_list
     : space_opt_item {
         $$ = new SpaceOptList();
@@ -1105,6 +1111,7 @@ maintain_sentence
     | add_hosts_sentence { $$ = $1; }
     | remove_hosts_sentence { $$ = $1; }
     | create_space_sentence { $$ = $1; }
+    | describe_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
     | yield_sentence {
         // Now we take YIELD as a normal maintenance sentence.
