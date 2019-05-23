@@ -30,105 +30,18 @@ usage: nebula spark sst file generator
  -ci,--default_column_mapping_policy <arg>   If omitted, what policy to use when mapping column to property,all columns except primary_key's column will be mapped to tag's property with the same name by default
  -di,--latest_date_input <arg>               Latest date to query,date format YYYY-MM-dd
  -hi,--string_value_charset_input <arg>      When the value is of type String,what charset is used when encoded,default to UTF-8
+ -ho,--hdfs_sst_file_output <arg>            Which hdfs directory will those sstfiles be put, should not starts with file:///
  -li,--limit_input <arg>                     Return at most this number of edges/vertex, usually used in POC stage, when omitted, fetch all data.
  -mi,--mapping_file_input <arg>              Hive tables to nebula graph schema mapping file
  -pi,--date_partition_input <arg>            A partition field of type String of hive table, which represent a Date, and has format of YYY-MM-dd
  -ri,--repartition_number_input <arg>        Repartition number. Some optimization trick to improve generation speed and data skewness. Need tuning to suit your data.
- -so,--sst_file_output <arg>                 Where the generated sst files will be put, must be local directory, which starts with file:///
+ -so,--local_sst_file_output <arg>           Where the generated sst files will be put on local directory, should starts with file:///
  -ti,--datasource_type_input <arg>           Data source types supported, must be among [hive|hbase|csv] for now, default=hive
 ```
 
-# Mapping file format
+# Mapping file schema
 
-When used in production, it should be modified according to your scenario, and strip the comment, for the json parser used here lacks the capability of handling comments
-This mapping file should be provided through spark-submit command line argument --files, which will be loaded by spark worker.
-
-```json
-{
-  // [required], graphspace name
-  "space_one": {
-    // [optional], encoding algorithm used when convert business key to vertex key, only support `hash_primary_key` in so far, could be omitted, or used as it's
-    "key_policy": "hash_primary_key",
-    // [required],graphspace partition number
-    "partitions": 3,
-    // [optional,but a mapping file should at least contain one tag or edge],vertex tags' mapping array
-    "tags": [
-      {
-        // [required],tag's datasource table name
-        "table_name": "dmt_risk_graph_idmp_node_s_d",
-        // [required],tag's name
-        "tag_name": "mac",
-        // [required],date partition key used by datasource table
-        "date_partition_key": "dt",
-        // [optional],if one datasource table maps to multiple tags, which column would be used as discrimination columns
-        "type_partition_key": "flag",
-        // [required],tag's datasource table's pimary key column 
-        "primary_key": "node",
-        // [optional], tag's property mappings, not all columns in source table will be used as properties. When omitted, all columns will be used as its properties except those specified by primary_key,date_partition_key and type_partition_key
-        "mappings": [
-          {
-            // [required],tag's property name 
-            "src_pri_value": {
-              // [required],datasource table column's name, which hold this property's value
-              "name": "src_pri_value",
-              // [optional],datasource table column's type, will be used to do type conversion to graph's native data type, default to string. The charset used default to UTF-8, could be changed through command line option '--string_value_charset_input','-hi' for short 
-              "type": "string"
-            }
-          }
-        ]
-      },
-      {
-        "table_name": "dmt_risk_graph_idmp_node_s_d",
-        "tag_name": "user_pin",
-        "date_partition_key": "dt",
-        "type_partition_key": "flag",
-        "primary_key": "node",
-        "mappings": [
-          {
-            "src_pri_value": {
-              "name": "src_pri_value",
-              "type": "string"
-            }
-          }
-        ]
-      }
-    ],
-    // [optional,but a mapping file should at least contain one tag or edge],edges' mapping array
-    "edges": [
-      {
-        // [required],edge's datasource table name
-        "table_name": "dmt_risk_graph_idmp_edge_s_d",
-        // [required],edge's name
-        "edge_name": "pin2mac",
-        // same as Tag's
-        "date_partition_key": "dt",
-        // same as Tag's
-        "type_partition_key": "flag",
-        // [required],edge's FROM column
-        "from_foreign_key_column": "from_node",
-        // [required],what edge's FROM column represent, would be used as a cross reference
-        "from_tag": "user_pin",
-        // [required],edge's TO column
-        "to_foreign_key_column": "to_node",
-        // [required],what edge's TO column represent, would be used as a cross reference
-        "to_tag": "mac",
-        // [optional], edge's property mappings,not all columns in source table will be used as properties. When omitted, all columns will be used as its properties except those specified by from_foreign_key_column,to_foreign_key_column、date_partition_key and type_partition_key
-        "mappings": [
-          {
-            // [required],edge's property name 
-            "src_pri_value": {
-              // [required],datasource table column's name, which hold this property's value
-              "name": "src_pri_value",
-              // [optional],datasource table column's type, will be used to do type conversion to graph's native data type, default to string. The charset used default to UTF-8, could be changed through command line option '--string_value_charset_input','-hi' for short 
-              "type": "string"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+Mapping file are json format.File Schema is provided as [mapping-schema.json](mapping-schema.json) according to [Json Schema Standard](http://json-schema.org). We provide an example mapping file: [mapping.json](mapping.json)
 
 # FAQ
 ## How to use libnebula-native-client.so under CentOS6.5(2.6.32-431 x86-64)

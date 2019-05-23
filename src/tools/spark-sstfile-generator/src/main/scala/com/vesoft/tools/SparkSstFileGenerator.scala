@@ -32,7 +32,8 @@ object SparkSstFileGenerator {
   /**
     * configuration key for sst file output
     */
-  val SSF_OUTPUT_DIR_CONF_KEY = "nebula.graph.spark.sst.file.dir"
+  val SSF_OUTPUT_LOCAL_DIR_CONF_KEY = "nebula.graph.spark.sst.file.local.dir"
+  val SSF_OUTPUT_HDFS_DIR_CONF_KEY = "nebula.graph.spark.sst.file.hdfs.dir"
 
   /**
     * cmd line's options, which's name following the convention: input will suffix with "i", output will suffix with "o"
@@ -55,10 +56,16 @@ object SparkSstFileGenerator {
       .desc("Hive tables to nebula graph schema mapping file")
       .build
 
-    val sstFileOutput = CliOption.builder("so").longOpt("sst_file_output")
+    val localSstFileOutput = CliOption.builder("so").longOpt("local_sst_file_output")
       .required()
       .hasArg()
-      .desc("Where the generated sst files will be put, must be local directory, which starts with file:///")
+      .desc("Where the generated sst files will be put on local directory, should starts with file:///")
+      .build
+
+    val hdfsSstFileOutput = CliOption.builder("ho").longOpt("hdfs_sst_file_output")
+      .required()
+      .hasArg()
+      .desc("Which hdfs directory will those sstfiles be put, should not starts with file:///")
       .build
 
     val datePartitionKey = CliOption.builder("pi").longOpt("date_partition_input")
@@ -94,7 +101,8 @@ object SparkSstFileGenerator {
     opts.addOption(defaultColumnMapPolicy)
     opts.addOption(dataSourceTypeInput)
     opts.addOption(mappingFileInput)
-    opts.addOption(sstFileOutput)
+    opts.addOption(localSstFileOutput)
+    opts.addOption(hdfsSstFileOutput)
     opts.addOption(datePartitionKey)
     opts.addOption(latestDate)
     opts.addOption(repartitionNumber)
@@ -163,15 +171,25 @@ object SparkSstFileGenerator {
     }
 
     val mappingFileInput: String = cmd.getOptionValue("mi")
-    var sstFileOutput: String = cmd.getOptionValue("so")
-    while (sstFileOutput.endsWith("/")) {
-      sstFileOutput = sstFileOutput.stripSuffix("/")
+    var localSstFileOutput: String = cmd.getOptionValue("so")
+    while (localSstFileOutput.endsWith("/")) {
+      localSstFileOutput = localSstFileOutput.stripSuffix("/")
     }
 
     // make sure use local file system to write sst file
-    if (!sstFileOutput.toLowerCase.startsWith("file://")) {
-      throw new IllegalArgumentException("Argument: -so --sst_file_output must be start with file://")
+    if (!localSstFileOutput.toLowerCase.startsWith("file://")) {
+      throw new IllegalArgumentException("Argument: -so --local_sst_file_output should start with file://")
     }
+
+    var hdfsSstFileOutput: String = cmd.getOptionValue("ho")
+    while (hdfsSstFileOutput.endsWith("/")) {
+      hdfsSstFileOutput = hdfsSstFileOutput.stripSuffix("/")
+    }
+
+    if (hdfsSstFileOutput.toLowerCase.startsWith("file://")) {
+      throw new IllegalArgumentException("Argument: -ho --hdfs_sst_file_output should not start with file://")
+    }
+
 
     val limitOption: String = cmd.getOptionValue("li")
     val limit = if (limitOption != null && limitOption.nonEmpty) {
@@ -229,7 +247,8 @@ object SparkSstFileGenerator {
     val sqlContext = new HiveContext(sc)
 
     // to pass sst file dir to SstFileOutputFormat
-    sc.hadoopConfiguration.set(SSF_OUTPUT_DIR_CONF_KEY, sstFileOutput)
+    sc.hadoopConfiguration.set(SSF_OUTPUT_LOCAL_DIR_CONF_KEY, localSstFileOutput)
+    sc.hadoopConfiguration.set(SSF_OUTPUT_HDFS_DIR_CONF_KEY, hdfsSstFileOutput)
 
     // disable file output compression, because rocksdb can't recognize it
     sc.hadoopConfiguration.set(FileOutputFormat.COMPRESS, "false")
@@ -283,7 +302,7 @@ object SparkSstFileGenerator {
             log.debug(s"Tag(partition=${partitionId}): " + DatatypeConverter.printHexBinary(keyEncoded) + " = " + DatatypeConverter.printHexBinary(valuesEncoded))
             (PartitionIdAndBytesEncoded(partitionId.toLong, new BytesWritable(keyEncoded)), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded)))
           }
-        }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber)).map(v => (v._1.valueEncoded, v._2)).saveAsNewAPIHadoopFile(sstFileOutput, classOf[BytesWritable], classOf[PartitionIdAndValueBinaryWritable], classOf[SstFileOutputFormat])
+        }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber)).map(v => (v._1.valueEncoded, v._2)).saveAsNewAPIHadoopFile(localSstFileOutput, classOf[BytesWritable], classOf[PartitionIdAndValueBinaryWritable], classOf[SstFileOutputFormat])
       }
     }
 
@@ -333,17 +352,12 @@ object SparkSstFileGenerator {
             (PartitionIdAndBytesEncoded(id, new BytesWritable(keyEncoded)), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded), VertexOrEdgeEnum.Edge))
           }
         }
-      }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber)).map(v => (v._1.valueEncoded, v._2)).saveAsNewAPIHadoopFile(sstFileOutput, classOf[BytesWritable], classOf[PartitionIdAndValueBinaryWritable], classOf[SstFileOutputFormat])
+      }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber)).map(v => (v._1.valueEncoded, v._2)).saveAsNewAPIHadoopFile(localSstFileOutput, classOf[BytesWritable], classOf[PartitionIdAndValueBinaryWritable], classOf[SstFileOutputFormat])
     }
   }
 
   /**
     * extract value from a column
-    *
-    * @param row RDD row
-    * @param col
-    * @param charset
-    * @return
     */
   private def valueExtractor(row: Row, col: Column, charset: String) = {
     col.`type`.toUpperCase match {

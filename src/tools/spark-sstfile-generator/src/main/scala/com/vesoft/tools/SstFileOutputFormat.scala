@@ -15,6 +15,7 @@ import org.rocksdb.{EnvOptions, Options, SstFileWriter}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
+import scala.sys.process._
 
 /**
   * Custom outputFormat, which generate a sub dir per partition per worker:
@@ -52,7 +53,7 @@ class SstFileOutputFormat extends FileOutputFormat[BytesWritable, PartitionIdAnd
       job.getConfiguration.setBoolean(FileOutputFormat.COMPRESS, false)
     }
 
-    val sstFileOutput = job.getConfiguration.get(SparkSstFileGenerator.SSF_OUTPUT_DIR_CONF_KEY)
+    val sstFileOutput = job.getConfiguration.get(SparkSstFileGenerator.SSF_OUTPUT_LOCAL_DIR_CONF_KEY)
     new SstRecordWriter(sstFileOutput, job.getConfiguration)
   }
 
@@ -68,21 +69,28 @@ class SstFileOutputFormat extends FileOutputFormat[BytesWritable, PartitionIdAnd
 /**
   * custom outputFormat, which generate a sub dir per partition per worker
   *
-  * @param sstFileOutput spark conf item,which points to the location where rocksdb sst files will be put
-  * @param configuration hadoop configuration
+  * @param localSstFileOutput spark conf item,which points to the local dir where rocksdb sst files will be put
+  * @param configuration      hadoop configuration
   */
-class SstRecordWriter(sstFileOutput: String, configuration: Configuration) extends RecordWriter[BytesWritable, PartitionIdAndValueBinaryWritable] {
+class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) extends RecordWriter[BytesWritable, PartitionIdAndValueBinaryWritable] {
   private[this] val log = LoggerFactory.getLogger(this.getClass)
 
   /**
-    * all sst files opened, (vertexOrEdge,partitionId)->SstFileWriter
+    * all sst files opened, (vertexOrEdge,partitionId)->(SstFileWriter,localSstFilePath,hdfsParentPath)
     */
-  private var sstFiles = mutable.Map.empty[(VertexOrEdgeEnum, Int), SstFileWriter]
+  private var sstFilesMap = mutable.Map.empty[(VertexOrEdgeEnum, Int), (SstFileWriter, String, String)]
 
   /**
     * need local file system only, for rocksdb sstFileWriter can't write to remote file system(only can back up to HDFS) for now
     */
   private val fileSystem = FileSystem.get(new Configuration(false))
+
+  /**
+    * which dir in hdfs to put sst files
+    */
+  private val hdfsParentDir = configuration.get(SparkSstFileGenerator.SSF_OUTPUT_HDFS_DIR_CONF_KEY)
+
+  log.debug(s"SstRecordWriter read hdfs dir:${hdfsParentDir}")
 
   // all RocksObject should be closed
   private var env: EnvOptions = _
@@ -92,7 +100,7 @@ class SstRecordWriter(sstFileOutput: String, configuration: Configuration) exten
     var sstFileWriter: SstFileWriter = null
 
     //cache per partition per vertex/edge type sstfile writer
-    val sstWriterOptional = sstFiles.get((value.vertexOrEdgeEnum, value.partitionId))
+    val sstWriterOptional = sstFilesMap.get((value.vertexOrEdgeEnum, value.partitionId))
     if (sstWriterOptional.isEmpty) {
       /**
         * https://github.com/facebook/rocksdb/wiki/Creating-and-Ingesting-SST-files
@@ -110,11 +118,13 @@ class SstRecordWriter(sstFileOutput: String, configuration: Configuration) exten
       options = new Options().setCreateIfMissing(true).setCreateMissingColumnFamilies(true).setWritableFileMaxBufferSize(1024 * 100).setMaxBackgroundFlushes(5).prepareForBulkLoad()
       sstFileWriter = new SstFileWriter(env, options)
 
-      //TODO: rolling to another file when file size > some THRESHOLD, or some other criteria
+      // TODO: rolling to another file when file size > some THRESHOLD, or some other criteria
       // Each partition can generated multiple sst files, among which keys will be ordered, and keys could overlap between different sst files.
       // All these sst files will be  `hdfs -copyFromLocal` to the same HDFS dir(and consumed by subsequent nebula `load` command), so we need different suffixes to distinguish between them.
-      var sstFile = s"${sstFileOutput}${File.separator}${value.partitionId}${File.separator}${value.vertexOrEdgeEnum}-${DatatypeConverter.printHexBinary(key.getBytes)}.data".toLowerCase
-      val path = new Path(sstFile)
+      val hdfsDirectory = s"${File.separator}${value.partitionId}${File.separator}"
+
+      var localSstFile = s"${localSstFileOutput}${hdfsDirectory}${value.vertexOrEdgeEnum}-${DatatypeConverter.printHexBinary(key.getBytes)}.data".toLowerCase
+      val path = new Path(localSstFile)
       if (!fileSystem.exists(path)) {
         fileSystem.create(path)
       }
@@ -126,15 +136,15 @@ class SstRecordWriter(sstFileOutput: String, configuration: Configuration) exten
       }
 
       // sstfile is pre-checked by SparkSstFileGenerator, so no bother to recheck
-      if (sstFile.startsWith("file://")) {
-        sstFile = sstFile.substring(7)
+      if (localSstFile.startsWith("file://")) {
+        localSstFile = localSstFile.substring(7)
       }
 
-      sstFileWriter.open(sstFile)
-      sstFiles += (value.vertexOrEdgeEnum, value.partitionId) -> sstFileWriter
+      sstFileWriter.open(localSstFile)
+      sstFilesMap += (value.vertexOrEdgeEnum, value.partitionId) -> (sstFileWriter, localSstFile, hdfsDirectory)
     } else {
       assert(sstWriterOptional.isDefined)
-      sstFileWriter = sstWriterOptional.get
+      sstFileWriter = sstWriterOptional.get._1
     }
 
     //TODO: could be batched?
@@ -142,10 +152,12 @@ class SstRecordWriter(sstFileOutput: String, configuration: Configuration) exten
   }
 
   override def close(context: TaskAttemptContext): Unit = {
-    sstFiles.values.foreach { sstFile =>
+    sstFilesMap.values.foreach { case (sstFile, localSstFile, hdfsDirectory) =>
       try {
         sstFile.finish()
         sstFile.close()
+
+        runHdfsCopyFromLocal(localSstFile, hdfsDirectory)
       }
       catch {
         case e: Exception => {
@@ -160,6 +172,20 @@ class SstRecordWriter(sstFileOutput: String, configuration: Configuration) exten
 
     if (options != null) {
       options.close()
+    }
+  }
+
+  /**
+    * assembly a hdfs dfs -copyFromLocal command line to put local sst file to hdfs, $HADOOP_HOME env need to be set
+    */
+  private def runHdfsCopyFromLocal(localSstFile: String, hdfsDirectory: String) = {
+    val command = List("${HADOOP_HOME}/bin/hdfs", "dfs", "-copyFromLocal", s"${localSstFile}", s"${hdfsParentDir}${hdfsDirectory}")
+    val exitCode = command.!
+    log.debug(s"Running command:${command.mkString(" ")}, exitCode=${exitCode}")
+
+    if (exitCode != 0) {
+      throw new IllegalStateException(s"Can't put local file `${localSstFile}` to hdfs dir: `${hdfsParentDir}${hdfsDirectory}`," +
+        s"sst file will be reside on each worker's local file system only! Need call `hdfs dfs -copyFromLocal` manually")
     }
   }
 }
