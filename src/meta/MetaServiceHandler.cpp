@@ -7,8 +7,9 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/MetaServiceHandler.h"
 #include "meta/processors/CreateSpaceProcessor.h"
-#include "meta/processors/ListSpacesProcessor.h"
 #include "meta/processors/DropSpaceProcessor.h"
+#include "meta/processors/ListSpacesProcessor.h"
+#include "meta/processors/GetSpaceProcessor.h"
 #include "meta/processors/AddHostsProcessor.h"
 #include "meta/processors/ListHostsProcessor.h"
 #include "meta/processors/RemoveHostsProcessor.h"
@@ -45,15 +46,21 @@ MetaServiceHandler::future_createSpace(const cpp2::CreateSpaceReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropSpace(const cpp2::DropSpaceReq& req) {
+    auto* processor = DropSpaceProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::ListSpacesResp>
 MetaServiceHandler::future_listSpaces(const cpp2::ListSpacesReq& req) {
     auto* processor = ListSpacesProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_dropSpace(const cpp2::DropSpaceReq& req) {
-    auto* processor = DropSpaceProcessor::instance(kvstore_);
+folly::Future<cpp2::GetSpaceResp>
+MetaServiceHandler::future_getSpace(const cpp2::GetSpaceReq& req) {
+    auto* processor = GetSpaceProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
