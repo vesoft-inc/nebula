@@ -5,8 +5,8 @@
  */
 
 #include "base/Base.h"
-#include "wal/BufferFlusher.h"
-#include "wal/FileBasedWal.h"
+#include "kvstore/wal/BufferFlusher.h"
+#include "kvstore/wal/FileBasedWal.h"
 
 namespace nebula {
 namespace wal {
