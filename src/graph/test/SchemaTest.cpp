@@ -61,6 +61,17 @@ TEST_F(SchemaTest, metaCommunication) {
     sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE SPACE default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int>> expected{
+            {1, "default_space", 9, 3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    sleep(FLAGS_load_data_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

@@ -81,6 +81,9 @@ public:
     folly::Future<StatusOr<std::vector<SpaceIdName>>>
     listSpaces();
 
+    folly::Future<StatusOr<cpp2::SpaceItem>>
+    getSpace(GraphSpaceID spaceId);
+
     folly::Future<StatusOr<bool>>
     dropSpace(std::string name);
 

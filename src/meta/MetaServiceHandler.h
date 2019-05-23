@@ -26,11 +26,14 @@ public:
     folly::Future<cpp2::ExecResp>
     future_createSpace(const cpp2::CreateSpaceReq& req) override;
 
+    folly::Future<cpp2::ExecResp>
+    future_dropSpace(const cpp2::DropSpaceReq& req) override;
+
     folly::Future<cpp2::ListSpacesResp>
     future_listSpaces(const cpp2::ListSpacesReq& req) override;
 
-    folly::Future<cpp2::ExecResp>
-    future_dropSpace(const cpp2::DropSpaceReq& req) override;
+    folly::Future<cpp2::GetSpaceResp>
+    future_getSpace(const cpp2::GetSpaceReq& req) override;
 
     folly::Future<cpp2::ExecResp>
     future_addHosts(const cpp2::AddHostsReq& req) override;

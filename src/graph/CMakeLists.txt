@@ -31,6 +31,7 @@ add_library(
     RemoveHostsExecutor.cpp
     CreateSpaceExecutor.cpp
     DropSpaceExecutor.cpp
+    DescribeSpaceExecutor.cpp
     ShowExecutor.cpp
     YieldExecutor.cpp
 )

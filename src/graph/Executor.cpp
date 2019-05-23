@@ -28,6 +28,7 @@
 #include "graph/AddHostsExecutor.h"
 #include "graph/RemoveHostsExecutor.h"
 #include "graph/CreateSpaceExecutor.h"
+#include "graph/DescribeSpaceExecutor.h"
 #include "graph/DropSpaceExecutor.h"
 #include "graph/YieldExecutor.h"
 
@@ -94,6 +95,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kDropSpace:
             executor = std::make_unique<DropSpaceExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDescribeSpace:
+            executor = std::make_unique<DescribeSpaceExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kYield:
             executor = std::make_unique<YieldExecutor>(sentence, ectx());
