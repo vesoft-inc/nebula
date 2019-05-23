@@ -4,6 +4,7 @@ import org.scalatest.Matchers._
 import org.scalatest.{BeforeAndAfter, FlatSpec}
 import play.api.libs.json.Json
 
+import scala.io.Source
 import scala.language.implicitConversions
 
 class MappingConfigurationTest extends FlatSpec with BeforeAndAfter {
@@ -54,20 +55,20 @@ class MappingConfigurationTest extends FlatSpec with BeforeAndAfter {
     val edge1 = Edge("table4", "edge1", "from_column1", "tag1", "to_column1", "tag2", Some("dt"), Some("pin2qq"), Some(Seq(Column("col1", "prop1"), Column("col2", "prop2"))))
     val edge2 = Edge("table5", "edge2", "from_column1", "tag2", "to_column1", "tag3", Some("dt"), Some("pin2mac"), Some(Seq(Column("col1", "prop1"), Column("col2", "prop2"))))
 
-    val mappingConfig = MappingConfiguration("graph_space1", 3, Seq(tag1, tag2, tag3), Seq(edge1, edge2))
+    val mappingConfig = MappingConfiguration("fma", 3, Seq(tag1, tag2, tag3), Seq(edge1, edge2))
     val jsonString = Json.toJson(mappingConfig).toString()
     val expectedResult =
-      """{"graph_space1":{"key_policy":"hash_primary_key","partitions":3,"tags":[{"table_name":"table1","tag_name":"tag1","primary_key":"column1","date_partition_key":"dt","type_partition_key":"pin2mac","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table2","tag_name":"tag2","primary_key":"column2","date_partition_key":"dt","type_partition_key":"pin2qq","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table3","tag_name":"tag3","primary_key":"column3","date_partition_key":"dt","type_partition_key":"pin2wallet","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}],"edges":[{"table_name":"table4","edge_name":"edge1","date_partition_key":"dt","type_partition_key":"pin2qq","from_foreign_key_column":"from_column1","from_tag":"tag1","to_foreign_key_column":"to_column1","to_tag":"tag2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table5","edge_name":"edge2","date_partition_key":"dt","type_partition_key":"pin2mac","from_foreign_key_column":"from_column1","from_tag":"tag2","to_foreign_key_column":"to_column1","to_tag":"tag3","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}]}}"""
+      """{"fma":{"key_policy":"hash_primary_key","partitions":3,"tags":[{"table_name":"table1","tag_name":"tag1","primary_key":"column1","date_partition_key":"dt","type_partition_key":"pin2mac","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table2","tag_name":"tag2","primary_key":"column2","date_partition_key":"dt","type_partition_key":"pin2qq","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table3","tag_name":"tag3","primary_key":"column3","date_partition_key":"dt","type_partition_key":"pin2wallet","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}],"edges":[{"table_name":"table4","edge_name":"edge1","date_partition_key":"dt","type_partition_key":"pin2qq","from_foreign_key_column":"from_column1","from_tag":"tag1","to_foreign_key_column":"to_column1","to_tag":"tag2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table5","edge_name":"edge2","date_partition_key":"dt","type_partition_key":"pin2mac","from_foreign_key_column":"from_column1","from_tag":"tag2","to_foreign_key_column":"to_column1","to_tag":"tag3","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}]}}"""
     assert(expectedResult == jsonString)
 
     val deserializedMappingConfig = Json.parse(expectedResult).as[MappingConfiguration]
     assert(deserializedMappingConfig == mappingConfig)
 
     // MappingConfiguration w/ custom ken generation policy
-    val mappingConfigWithCustomPolicy = MappingConfiguration("graph_space1", 3, Seq(tag1, tag2, tag3), Seq(edge1, edge2), Some("some_other_policy"))
+    val mappingConfigWithCustomPolicy = MappingConfiguration("fma", 3, Seq(tag1, tag2, tag3), Seq(edge1, edge2), Some("some_other_policy"))
     val mappingConfigWithCustomPolicyJson = Json.toJson(mappingConfigWithCustomPolicy).toString()
     val mappingConfigWithCustomPolicyExpected =
-      """{"graph_space1":{"key_policy":"some_other_policy","partitions":3,"tags":[{"table_name":"table1","tag_name":"tag1","primary_key":"column1","date_partition_key":"dt","type_partition_key":"pin2mac","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table2","tag_name":"tag2","primary_key":"column2","date_partition_key":"dt","type_partition_key":"pin2qq","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table3","tag_name":"tag3","primary_key":"column3","date_partition_key":"dt","type_partition_key":"pin2wallet","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}],"edges":[{"table_name":"table4","edge_name":"edge1","date_partition_key":"dt","type_partition_key":"pin2qq","from_foreign_key_column":"from_column1","from_tag":"tag1","to_foreign_key_column":"to_column1","to_tag":"tag2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table5","edge_name":"edge2","date_partition_key":"dt","type_partition_key":"pin2mac","from_foreign_key_column":"from_column1","from_tag":"tag2","to_foreign_key_column":"to_column1","to_tag":"tag3","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}]}}"""
+      """{"fma":{"key_policy":"some_other_policy","partitions":3,"tags":[{"table_name":"table1","tag_name":"tag1","primary_key":"column1","date_partition_key":"dt","type_partition_key":"pin2mac","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table2","tag_name":"tag2","primary_key":"column2","date_partition_key":"dt","type_partition_key":"pin2qq","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table3","tag_name":"tag3","primary_key":"column3","date_partition_key":"dt","type_partition_key":"pin2wallet","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}],"edges":[{"table_name":"table4","edge_name":"edge1","date_partition_key":"dt","type_partition_key":"pin2qq","from_foreign_key_column":"from_column1","from_tag":"tag1","to_foreign_key_column":"to_column1","to_tag":"tag2","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]},{"table_name":"table5","edge_name":"edge2","date_partition_key":"dt","type_partition_key":"pin2mac","from_foreign_key_column":"from_column1","from_tag":"tag2","to_foreign_key_column":"to_column1","to_tag":"tag3","mappings":[{"col1":{"name":"prop1","type":"string"}},{"col2":{"name":"prop2","type":"string"}}]}]}}"""
     assert(mappingConfigWithCustomPolicyExpected == mappingConfigWithCustomPolicyJson)
 
     val deserializedMappingConfigWithCustomPolicy = Json.parse(mappingConfigWithCustomPolicyExpected).as[MappingConfiguration]
@@ -77,7 +78,7 @@ class MappingConfigurationTest extends FlatSpec with BeforeAndAfter {
   "a MappingConfiguration" should "be constructed from a configuration file" in {
     val config = MappingConfiguration("mapping.json")
     assert(config != null)
-    assert(config.databaseName == "space_one")
+    assert(config.databaseName == "fma")
     assert(config.keyPolicy.get == "hash_primary_key")
 
     val tag1 = Tag("dmt_risk_graph_idmp_node_s_d", "mac", "node", Some("dt"), Some("flag"), Some(Seq(Column("src_pri_value", "src_pri_value", "string"))))
@@ -92,7 +93,10 @@ class MappingConfigurationTest extends FlatSpec with BeforeAndAfter {
 
   "a MappingConfiguration" should "be throw exception from an ill-formatted configuration file" in {
     intercept[IllegalStateException] {
-      MappingConfiguration("mapping-ill-format.json")
+      val bufferedSource = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("mapping-ill-format.json"))
+      val toString = bufferedSource.mkString
+      Json.parse(toString).as[MappingConfiguration]
+      bufferedSource.close
     }
   }
 }
