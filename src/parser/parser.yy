@@ -596,7 +596,7 @@ describe_tag_sentence
     : KW_DESCRIBE KW_TAG name_label {
         $$ = new DescribeTagSentence($3);
     }
-    | KW_DESC KW_TAG LABEL {
+    | KW_DESC KW_TAG name_label {
         $$ = new DescribeTagSentence($3);
     }
     ;
@@ -605,7 +605,7 @@ describe_edge_sentence
     : KW_DESCRIBE KW_EDGE name_label {
         $$ = new DescribeEdgeSentence($3);
     }
-    | KW_DESC KW_EDGE LABEL {
+    | KW_DESC KW_EDGE name_label {
         $$ = new DescribeEdgeSentence($3);
     }
     ;
@@ -944,10 +944,10 @@ create_space_sentence
     ;
 
 describe_space_sentence
-    : KW_DESCRIBE KW_SPACE LABEL {
+    : KW_DESCRIBE KW_SPACE name_label {
         $$ = new DescribeSpaceSentence($3);
     }
-    | KW_DESC KW_SPACE LABEL {
+    | KW_DESC KW_SPACE name_label {
         $$ = new DescribeSpaceSentence($3);
     }
     ;
