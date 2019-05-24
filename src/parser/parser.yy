@@ -153,7 +153,7 @@ class GraphScanner;
 %type <order_factor> order_factor
 %type <order_factors> order_factors
 
-%type <intval> ttl_spec port unary_integer rank
+%type <intval> port unary_integer rank
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -251,6 +251,9 @@ primary_expression
 input_ref_expression
     : INPUT_REF DOT LABEL {
         $$ = new InputPropertyExpression($3);
+    }
+    | INPUT_REF {
+        $$ = new InputPropertyExpression();
     }
     ;
 
@@ -562,7 +565,7 @@ create_schema_prop_list
     ;
 
  create_schema_prop_item
-    : KW_TTL_DURATION ASSIGN INTEGER {
+    : KW_TTL_DURATION ASSIGN unary_integer {
         // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
         if ($3 < 0) {
             $3 = 0;
@@ -643,7 +646,7 @@ alter_schema_prop_list
     ;
 
 alter_schema_prop_item
-    : KW_TTL_DURATION ASSIGN INTEGER {
+    : KW_TTL_DURATION ASSIGN unary_integer {
         // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
         if ($3 < 0) {
             $3 = 0;

@@ -225,22 +225,30 @@ Status GoExecutor::setupStarts() {
     if (!starts_.empty()) {
         return Status::OK();
     }
+    const auto *inputs = inputs_.get();
     // Take one column from a variable
     if (varname_ != nullptr) {
-        auto *varinput = ectx()->variableHolder()->get(*varname_);
-        if (varinput == nullptr) {
+        auto *varInputs = ectx()->variableHolder()->get(*varname_);
+        if (varInputs == nullptr) {
             return Status::Error("Variable `%s' not defined", varname_->c_str());
         }
-        starts_ = varinput->getVIDs(*colname_);
-        return Status::OK();
+        DCHECK(inputs == nullptr);
+        inputs = varInputs;
     }
     // No error happened, but we are having empty inputs
-    if (inputs_ == nullptr) {
+    if (inputs == nullptr) {
         return Status::OK();
     }
-    // Take one column from the input of the pipe
-    DCHECK(colname_ != nullptr);
-    starts_ = inputs_->getVIDs(*colname_);
+    // This is for the case that the former executor has no YIELD clause.
+    // (Even though we already implicitly add `YIELD edge_type._dst AS id`)
+    // In such case, the input ref could be simply written as `$-'.
+    // TODO(dutor) In future, we should remove the implicitly added YIELD clause.
+    static const std::string defaultCol("id");
+    auto result = inputs->getVIDs(colname_ == nullptr ? defaultCol : *colname_);
+    if (!result.ok()) {
+        return std::move(result).status();
+    }
+    starts_ = std::move(result).value();
     return Status::OK();
 }
 

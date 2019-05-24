@@ -80,7 +80,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
-        status = row->id()->prepare();
+        auto status = row->id()->prepare();
         if (!status.ok()) {
             return status;
         }
