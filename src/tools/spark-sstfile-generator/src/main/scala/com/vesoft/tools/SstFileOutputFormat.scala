@@ -1,6 +1,6 @@
 package com.vesoft.tools
 
-import java.io.File
+import java.io.{File, IOException}
 
 import com.vesoft.tools.VertexOrEdgeEnum.VertexOrEdgeEnum
 import javax.xml.bind.DatatypeConverter
@@ -26,7 +26,7 @@ import scala.sys.process._
   *     |
   *     |--1
   *     |  |
-  *     |  |——vertex-${FIRST_KEY}.data
+  *     |  |——vertex-${FIRST_KEY1}.data
   *     |  |--edge-${FIRST_KEY}.data
   *     |
   *     |--2
@@ -46,7 +46,7 @@ import scala.sys.process._
   *        |
   *        |——vertex-${FIRST_KEY}.data
   *        |--edge-${FIRST_KEY}.data
-  */
+  **/
 class SstFileOutputFormat extends FileOutputFormat[BytesWritable, PartitionIdAndValueBinaryWritable] {
   override def getRecordWriter(job: TaskAttemptContext): RecordWriter[BytesWritable, PartitionIdAndValueBinaryWritable] = {
     if (FileOutputFormat.getCompressOutput(job)) {
@@ -83,7 +83,16 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
   /**
     * need local file system only, for rocksdb sstFileWriter can't write to remote file system(only can back up to HDFS) for now
     */
-  private val fileSystem = FileSystem.get(new Configuration(false))
+  private val localFileSystem = FileSystem.get(new Configuration(false))
+
+  /**
+    * hdfs file system, for create destination sst file dir
+    */
+  private val hdfsFileSystem = FileSystem.get(configuration)
+
+  if (!hdfsFileSystem.getScheme.equalsIgnoreCase("hdfs")) {
+    throw new IllegalStateException("File system is not hdfs")
+  }
 
   /**
     * which dir in hdfs to put sst files
@@ -125,13 +134,13 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
 
       var localSstFile = s"${localSstFileOutput}${hdfsDirectory}${value.vertexOrEdgeEnum}-${DatatypeConverter.printHexBinary(key.getBytes)}.data".toLowerCase
       val path = new Path(localSstFile)
-      if (!fileSystem.exists(path)) {
-        fileSystem.create(path)
+      if (!localFileSystem.exists(path)) {
+        localFileSystem.create(path)
       }
       else {
-        if (fileSystem.isDirectory(path)) {
-          fileSystem.delete(path, true)
-          fileSystem.create(path)
+        if (localFileSystem.isDirectory(path)) {
+          localFileSystem.delete(path, true)
+          localFileSystem.create(path)
         }
       }
 
@@ -179,13 +188,33 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
     * assembly a hdfs dfs -copyFromLocal command line to put local sst file to hdfs, $HADOOP_HOME env need to be set
     */
   private def runHdfsCopyFromLocal(localSstFile: String, hdfsDirectory: String) = {
-    val command = List("${HADOOP_HOME}/bin/hdfs", "dfs", "-copyFromLocal", s"${localSstFile}", s"${hdfsParentDir}${hdfsDirectory}")
+    var hadoopHome = System.getenv("HADOOP_HOME")
+    while (hadoopHome.endsWith("/")) {
+      hadoopHome = hadoopHome.stripSuffix("/")
+    }
+
+    val destinationHdfsDir = s"${hdfsParentDir}${hdfsDirectory}"
+    val destinationPath = new Path(destinationHdfsDir)
+
+    try {
+      if (!hdfsFileSystem.exists(destinationPath)) {
+        hdfsFileSystem.mkdirs(destinationPath)
+      }
+    }
+    catch {
+      case e: IOException => {
+        log.error(s"Error when mkdir hdfs dir ${destinationPath}", e)
+        throw e
+      }
+    }
+
+    val command = List(s"${hadoopHome}/bin/hdfs", "dfs", "-copyFromLocal", s"${localSstFile}", destinationHdfsDir)
     val exitCode = command.!
     log.debug(s"Running command:${command.mkString(" ")}, exitCode=${exitCode}")
 
     if (exitCode != 0) {
-      throw new IllegalStateException(s"Can't put local file `${localSstFile}` to hdfs dir: `${hdfsParentDir}${hdfsDirectory}`," +
-        s"sst file will be reside on each worker's local file system only! Need call `hdfs dfs -copyFromLocal` manually")
+      throw new IllegalStateException(s"Can't put local file `${localSstFile}` to hdfs dir: `${destinationHdfsDir}`," +
+        s"sst files will reside on each worker's local file system only! Need to run `hdfs dfs -copyFromLocal` manually")
     }
   }
 }

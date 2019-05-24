@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
 
 /**
   * Use spark to generate sst files in batch, which will be ingested by Nebula engine.
+  * $HADOOP_HOME env need to be set.
   *
   * The following use cases are supported:
   *
@@ -139,9 +140,6 @@ object SparkSstFileGenerator {
 
   val DefaultVersion = 1
 
-  // some prime number to redistribute records, to reduce skewness
-  val DefaultRepartition = 131
-
   // default charset when encoding String type
   val DefaultCharset = "UTF-8"
 
@@ -206,16 +204,16 @@ object SparkSstFileGenerator {
     val latestDate = cmd.getOptionValue("di")
 
     val repartitionNumberOpt = cmd.getOptionValue("ri")
-    val repartitionNumber =
+    val repartitionNumber: Option[Int] =
       if (repartitionNumberOpt == null || repartitionNumberOpt.isEmpty) {
-        DefaultRepartition
+        None
       } else {
         try {
-          repartitionNumberOpt.toInt
+          Some(repartitionNumberOpt.toInt)
         } catch {
           case e: Exception => {
             log.error(s"Argument: -ri --repartition_number_input should be int, but found:${repartitionNumberOpt}")
-            DefaultRepartition
+            None
           }
         }
       }
@@ -300,9 +298,9 @@ object SparkSstFileGenerator {
             val keyEncoded: Array[Byte] = NativeClient.createVertexKey(partitionId, vertexId, tagType, DefaultVersion)
             val valuesEncoded: Array[Byte] = NativeClient.encode(values.toArray)
             log.debug(s"Tag(partition=${partitionId}): " + DatatypeConverter.printHexBinary(keyEncoded) + " = " + DatatypeConverter.printHexBinary(valuesEncoded))
-            (PartitionIdAndBytesEncoded(partitionId.toLong, new BytesWritable(keyEncoded)), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded)))
+            (PartitionIdAndBytesEncoded(partitionId, new BytesWritable(keyEncoded)), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded)))
           }
-        }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber)).map(v => (v._1.valueEncoded, v._2)).saveAsNewAPIHadoopFile(localSstFileOutput, classOf[BytesWritable], classOf[PartitionIdAndValueBinaryWritable], classOf[SstFileOutputFormat])
+        }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber.getOrElse(tagKeyAndValues.partitions.length))).map(v => (v._1.valueEncoded, v._2)).saveAsNewAPIHadoopFile(localSstFileOutput, classOf[BytesWritable], classOf[PartitionIdAndValueBinaryWritable], classOf[SstFileOutputFormat])
       }
     }
 
@@ -349,10 +347,10 @@ object SparkSstFileGenerator {
 
             val valuesEncoded: Array[Byte] = NativeClient.encode(values.toArray)
             log.debug(s"Edge(partition=${partitionId}): " + DatatypeConverter.printHexBinary(keyEncoded) + " = " + DatatypeConverter.printHexBinary(valuesEncoded))
-            (PartitionIdAndBytesEncoded(id, new BytesWritable(keyEncoded)), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded), VertexOrEdgeEnum.Edge))
+            (PartitionIdAndBytesEncoded(partitionId, new BytesWritable(keyEncoded)), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded), VertexOrEdgeEnum.Edge))
           }
-        }
-      }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber)).map(v => (v._1.valueEncoded, v._2)).saveAsNewAPIHadoopFile(localSstFileOutput, classOf[BytesWritable], classOf[PartitionIdAndValueBinaryWritable], classOf[SstFileOutputFormat])
+        }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber.getOrElse(edgeKeyAndValues.partitions.length))).map(v => (v._1.valueEncoded, v._2)).saveAsNewAPIHadoopFile(localSstFileOutput, classOf[BytesWritable], classOf[PartitionIdAndValueBinaryWritable], classOf[SstFileOutputFormat])
+      }
     }
   }
 
