@@ -947,6 +947,9 @@ describe_space_sentence
     : KW_DESCRIBE KW_SPACE LABEL {
         $$ = new DescribeSpaceSentence($3);
     }
+    | KW_DESC KW_SPACE LABEL {
+        $$ = new DescribeSpaceSentence($3);
+    }
     ;
 
 space_opt_list
