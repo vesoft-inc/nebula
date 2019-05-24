@@ -15,6 +15,7 @@
 #include "meta/ServerBasedSchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "meta/processors/HBProcessor.h"
+#include "meta/test/TestUtils.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
@@ -47,6 +48,7 @@ TEST(MetaClientTest, InterfacesTest) {
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
         auto r = client->addHosts(hosts).get();
         ASSERT_TRUE(r.ok());
+        TestUtils::registerHB(hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(hosts, ret.value());
@@ -54,7 +56,7 @@ TEST(MetaClientTest, InterfacesTest) {
     {
         // Test createSpace, listSpaces, getPartsAlloc.
         {
-            auto ret = client->createSpace("default_space", 9, 3).get();
+            auto ret = client->createSpace("default_space", 8, 3).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             spaceId = ret.value();
         }
@@ -68,12 +70,9 @@ TEST(MetaClientTest, InterfacesTest) {
         {
             auto ret = client->getPartsAlloc(spaceId).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
+            ASSERT_EQ(8, ret.value().size());
             for (auto it = ret.value().begin(); it != ret.value().end(); it++) {
-                auto startIndex = it->first;
-                for (auto& h : it->second) {
-                    ASSERT_EQ(startIndex++ % 4, h.first);
-                    ASSERT_EQ(h.first, h.second);
-                }
+                ASSERT_EQ(3, it->second.size());
             }
         }
         {
@@ -165,16 +164,14 @@ TEST(MetaClientTest, InterfacesTest) {
     sleep(FLAGS_load_data_interval_secs + 1);
     {
         // Test cache interfaces
-        // For Host(0, 0) the parts should be 2, 3, 4, 6, 7, 8
         auto partsMap = client->getPartsMapFromCache(HostAddr(0, 0));
         ASSERT_EQ(1, partsMap.size());
         ASSERT_EQ(6, partsMap[spaceId].size());
     }
     {
         auto partMeta = client->getPartMetaFromCache(spaceId, 1);
-        int32_t startIndex = 1;
+        ASSERT_EQ(3, partMeta.peers_.size());
         for (auto& h : partMeta.peers_) {
-            ASSERT_EQ(startIndex++ % 4, h.first);
             ASSERT_EQ(h.first, h.second);
         }
     }
@@ -287,6 +284,7 @@ TEST(MetaClientTest, TagTest) {
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
     ASSERT_TRUE(r.ok());
+    TestUtils::registerHB(hosts);
     auto ret = client->createSpace("default_space", 9, 3).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
@@ -387,6 +385,7 @@ TEST(MetaClientTest, DiffTest) {
         std::vector<HostAddr> hosts = {{0, 0}};
         auto r = client->addHosts(hosts).get();
         ASSERT_TRUE(r.ok());
+        TestUtils::registerHB(hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(hosts, ret.value());
@@ -441,7 +440,7 @@ TEST(MetaClientTest, HeartbeatTest) {
         ASSERT_EQ(hosts, ret.value());
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
-    ASSERT_EQ(1, HBProcessor::hostsMan()->getActiveHosts().size());
+    ASSERT_EQ(1, ActiveHostsManHolder::hostsMan()->getActiveHosts().size());
 }
 
 }  // namespace meta
