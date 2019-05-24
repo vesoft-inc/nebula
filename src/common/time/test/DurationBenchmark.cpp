@@ -14,7 +14,7 @@ using std::chrono::duration_cast;
 using std::chrono::milliseconds;
 
 
-BENCHMARK(stead_clock_timer, iters) {
+BENCHMARK(steady_clock_timer, iters) {
     for (uint32_t i = 0; i < iters; i++) {
         auto start = steady_clock::now();
         auto end = steady_clock::now();
@@ -41,13 +41,13 @@ int main(int argc, char** argv) {
 
 /*
 
- Tested on Intel Core i7-8650U (8 cores) with 16GB RAM
+ Tested on Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz x 2
 
 ============================================================================
 DurationBenchmark.cpp                           relative  time/iter  iters/s
 ============================================================================
-stead_clock_timer                                            1.35us  742.59K
-duration_timer                                  7024.98%    19.17ns   52.17M
+steady_clock_timer                                          44.45ns   22.50M
+duration_timer                                   170.50%    26.07ns   38.36M
 ============================================================================
 
 */

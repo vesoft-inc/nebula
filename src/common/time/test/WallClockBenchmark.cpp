@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -75,19 +75,19 @@ int main(int argc, char** argv) {
 
 /*
 
- Tested on Intel Core i7-8650U (8 cores) with 16GB RAM
+ Tested on Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz x 2
 
 ============================================================================
 WallClockBenchmark.cpp                          relative  time/iter  iters/s
 ============================================================================
-gettimeofday_get_msec                                      538.43ns    1.86M
-systemclock_get_time_t                            79.38%   678.28ns    1.47M
-wallclock_get_msec_slow                           79.38%   678.28ns    1.47M
-wallclock_get_msec_fast                         5129.81%    10.50ns   95.27M
+gettimeofday_get_msec                                       24.40ns   40.99M
+systemclock_get_time_t                           129.21%    18.88ns   52.96M
+wallclock_get_msec_slow                          129.91%    18.78ns   53.25M
+wallclock_get_msec_fast                          172.47%    14.15ns   70.69M
 ----------------------------------------------------------------------------
-gettimeofday_get_sec                                       531.79ns    1.88M
-wallclock_get_sec_slow                            78.81%   674.76ns    1.48M
-wallclock_get_sec_fast                          5162.61%    10.30ns   97.08M
+gettimeofday_get_sec                                        17.21ns   58.10M
+wallclock_get_sec_slow                            95.37%    18.05ns   55.41M
+wallclock_get_sec_fast                           129.28%    13.31ns   75.12M
 ============================================================================
 
 */

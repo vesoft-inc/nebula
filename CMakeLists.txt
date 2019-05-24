@@ -59,6 +59,11 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif(NOT CMAKE_BUILD_TYPE)
 
+if(NOT ${CMAKE_BUILD_TYPE} EQUAL "Debug")
+    message(STATUS "Set macro _FORTIFY_SOURCE=2")
+    add_definitions(-D_FORTIFY_SOURCE=2)
+endif()
+
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}, "
                "options: Debug, Release, RelWithDebInfo, MinSizeRel")
 
