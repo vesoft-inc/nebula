@@ -6,7 +6,6 @@
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
 
-#include "base/Base.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
 #include "network/NetworkUtils.h"
@@ -192,8 +191,12 @@ public:
         items_.emplace_back(item);
     }
 
-    std::vector<std::unique_ptr<SpaceOptItem>> getOpt() {
-        return std::move(items_);
+    std::vector<SpaceOptItem*> getOpts() const {
+        std::vector<SpaceOptItem*> result;
+        result.resize(items_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(items_.begin(), items_.end(), result.begin(), get);
+        return result;
     }
 
     std::string toString() const;
@@ -218,8 +221,8 @@ public:
         spaceOpts_.reset(spaceOpts);
     }
 
-    std::vector<std::unique_ptr<SpaceOptItem>> getOpts() {
-        return spaceOpts_->getOpt();
+    std::vector<SpaceOptItem*> getOpts() {
+        return spaceOpts_->getOpts();
     }
 
     std::string toString() const override;
@@ -238,6 +241,24 @@ public:
     }
 
     const std::string* spaceName() const {
+        return spaceName_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>     spaceName_;
+};
+
+
+class DescribeSpaceSentence final : public Sentence {
+public:
+    explicit DescribeSpaceSentence(std::string *spaceName) {
+        spaceName_.reset(spaceName);
+        kind_ = Kind::kDescribeSpace;
+    }
+
+    std::string* spaceName() {
         return spaceName_.get();
     }
 

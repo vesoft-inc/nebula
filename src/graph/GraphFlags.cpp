@@ -19,9 +19,11 @@ DEFINE_int32(num_accept_threads, 1, "Number of threads to accept incoming connec
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(listen_backlog, 1024, "Backlog of the listen socket");
 DEFINE_string(listen_netdev, "any", "The network device to listen on");
-DEFINE_string(pid_file, "nebula-graphd.pid", "File to hold the process id");
+DEFINE_string(pid_file, "pids/nebula-graphd.pid", "File to hold the process id");
 
 DEFINE_bool(redirect_stdout, true, "Whether to redirect stdout and stderr to separate files");
 DEFINE_string(stdout_log_file, "graphd-stdout.log", "Destination filename of stdout");
 DEFINE_string(stderr_log_file, "graphd-stderr.log", "Destination filename of stderr");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
+DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
+                                     "the format looks like ip1:port1, ip2:port2, ip3:port3");

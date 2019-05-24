@@ -20,19 +20,17 @@ DECLARE_string(meta_server_addrs);
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
-    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:44503");
     google::SetStderrLogging(google::INFO);
 
     gEnv = new TestEnv();   // gtest will delete this env object for us
     ::testing::AddGlobalTestEnvironment(gEnv);
 
-    // TODO(YT) use an ephemeral port
-    int32_t localMetaPort = 10001;
-    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", localMetaPort);
-
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
     // need to start meta server
     TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
     auto metaServer = TestUtils::mockServer(localMetaPort, rootPath.path());
 
+    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", metaServer->port_);
     return RUN_ALL_TESTS();
 }

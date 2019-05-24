@@ -7,6 +7,7 @@
 #define PARSER_MAINTAINSENTENCES_H_
 
 #include <interface/gen-cpp2/common_types.h>
+#include <interface/gen-cpp2/meta_types.h>
 #include "base/Base.h"
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
@@ -124,7 +125,7 @@ private:
 };
 
 
-class AlterTagOptItem final {
+class AlterSchemaOptItem final {
 public:
     enum OptionType : uint8_t {
         ADD = 0x01,
@@ -132,7 +133,7 @@ public:
         DROP = 0x03
     };
 
-    AlterTagOptItem(OptionType op, ColumnSpecificationList *columns) {
+    AlterSchemaOptItem(OptionType op, ColumnSpecificationList *columns) {
         optType_ = op;
         columns_.reset(columns);
     }
@@ -145,9 +146,7 @@ public:
         return optType_;
     }
 
-    std::string getOptTypeStr() const {
-        return typeid(optType_).name();
-    }
+    nebula::meta::cpp2::AlterSchemaOp toType();
 
     std::string toString() const;
 
@@ -157,31 +156,31 @@ private:
 };
 
 
-class AlterTagOptList final {
+class AlterSchemaOptList final {
 public:
-    AlterTagOptList() = default;
-    void addOpt(AlterTagOptItem *item) {
-        alterTagitems_.emplace_back(item);
+    AlterSchemaOptList() = default;
+    void addOpt(AlterSchemaOptItem *item) {
+        alterSchemaItems_.emplace_back(item);
     }
 
-    std::vector<AlterTagOptItem*> alterTagItems() const {
-        std::vector<AlterTagOptItem*> result;
-        result.resize(alterTagitems_.size());
+    std::vector<AlterSchemaOptItem*> alterSchemaItems() const {
+        std::vector<AlterSchemaOptItem*> result;
+        result.resize(alterSchemaItems_.size());
         auto get = [] (auto &ptr) { return ptr.get(); };
-        std::transform(alterTagitems_.begin(), alterTagitems_.end(), result.begin(), get);
+        std::transform(alterSchemaItems_.begin(), alterSchemaItems_.end(), result.begin(), get);
         return result;
     }
 
     std::string toString() const;
 
 private:
-    std::vector<std::unique_ptr<AlterTagOptItem>>    alterTagitems_;
+    std::vector<std::unique_ptr<AlterSchemaOptItem>>    alterSchemaItems_;
 };
 
 
 class AlterTagSentence final : public Sentence {
 public:
-    AlterTagSentence(std::string *name, AlterTagOptList *opts) {
+    AlterTagSentence(std::string *name, AlterSchemaOptList *opts) {
         name_.reset(name);
         opts_.reset(opts);
         kind_ = Kind::kAlterTag;
@@ -193,21 +192,21 @@ public:
         return name_.get();
     }
 
-    std::vector<AlterTagOptItem*> tagOptList() const {
-        return opts_->alterTagItems();
+    std::vector<AlterSchemaOptItem*> schemaOptList() const {
+        return opts_->alterSchemaItems();
     }
 
 private:
-    std::unique_ptr<std::string>        name_;
-    std::unique_ptr<AlterTagOptList>    opts_;
+    std::unique_ptr<std::string>                name_;
+    std::unique_ptr<AlterSchemaOptList>         opts_;
 };
 
 
 class AlterEdgeSentence final : public Sentence {
 public:
-    AlterEdgeSentence(std::string *name, ColumnSpecificationList *columns) {
+    AlterEdgeSentence(std::string *name, AlterSchemaOptList *opts) {
         name_.reset(name);
-        columns_.reset(columns);
+        opts_.reset(opts);
         kind_ = Kind::kAlterEdge;
     }
 
@@ -217,13 +216,13 @@ public:
         return name_.get();
     }
 
-    std::vector<ColumnSpecification*> columnSpecs() const {
-        return columns_->columnSpecs();
+    std::vector<AlterSchemaOptItem*> schemaOptList() const {
+        return opts_->alterSchemaItems();
     }
 
 private:
     std::unique_ptr<std::string>                name_;
-    std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<AlterSchemaOptList>         opts_;
 };
 
 
@@ -262,11 +261,11 @@ private:
     std::unique_ptr<std::string>                name_;
 };
 
-class RemoveTagSentence final : public Sentence {
+class DropTagSentence final : public Sentence {
 public:
-    explicit RemoveTagSentence(std::string *name) {
+    explicit DropTagSentence(std::string *name) {
         name_.reset(name);
-        kind_ = Kind::kRemoveTag;
+        kind_ = Kind::kDropTag;
     }
 
     std::string toString() const override;
@@ -280,11 +279,11 @@ private:
 };
 
 
-class RemoveEdgeSentence final : public Sentence {
+class DropEdgeSentence final : public Sentence {
 public:
-    explicit RemoveEdgeSentence(std::string *name) {
+    explicit DropEdgeSentence(std::string *name) {
         name_.reset(name);
-        kind_ = Kind::kRemoveEdge;
+        kind_ = Kind::kDropEdge;
     }
 
     std::string toString() const override;

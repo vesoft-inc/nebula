@@ -1,6 +1,5 @@
 add_library(
-    graph_obj
-    OBJECT
+    graph_obj OBJECT
     GraphFlags.cpp
     GraphService.cpp
     GraphHttpHandler.cpp
@@ -19,8 +18,8 @@ add_library(
     CreateTagExecutor.cpp
     AlterEdgeExecutor.cpp
     AlterTagExecutor.cpp
-    RemoveTagExecutor.cpp
-    RemoveEdgeExecutor.cpp
+    DropTagExecutor.cpp
+    DropEdgeExecutor.cpp
     DescribeTagExecutor.cpp
     DescribeEdgeExecutor.cpp
     InsertVertexExecutor.cpp
@@ -32,6 +31,7 @@ add_library(
     RemoveHostsExecutor.cpp
     CreateSpaceExecutor.cpp
     DropSpaceExecutor.cpp
+    DescribeSpaceExecutor.cpp
     ShowExecutor.cpp
     YieldExecutor.cpp
 )
@@ -44,6 +44,8 @@ add_dependencies(
     meta_thrift_obj
     meta_client
     schema_obj
+    stats_obj
 )
+
 
 add_subdirectory(test)

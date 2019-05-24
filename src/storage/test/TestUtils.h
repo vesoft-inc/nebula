@@ -154,23 +154,24 @@ public:
     }
 
     struct ServerContext {
-         ~ServerContext() {
-             server_->stop();
-             serverT_->join();
-             VLOG(3) << "~ServerContext";
-         }
+        ~ServerContext() {
+            server_->stop();
+            serverT_->join();
+            VLOG(3) << "~ServerContext";
+        }
 
-         std::unique_ptr<apache::thrift::ThriftServer> server_;
-         std::unique_ptr<std::thread> serverT_;
-         uint32_t port_;
-     };
+        std::unique_ptr<apache::thrift::ThriftServer> server_;
+        std::unique_ptr<std::thread> serverT_;
+        uint32_t port_;
+    };
 
-     static std::unique_ptr<ServerContext> mockServer(const char* dataPath,
-                                                      uint32_t ip,
-                                                      uint32_t port = 0) {
-         auto sc = std::make_unique<ServerContext>();
-         sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
-         sc->serverT_ = std::make_unique<std::thread>([&]() {
+    static std::unique_ptr<ServerContext> mockServer(meta::MetaClient* mClient,
+                                                     const char* dataPath,
+                                                     uint32_t ip,
+                                                     uint32_t port = 0) {
+        auto sc = std::make_unique<ServerContext>();
+        sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
+        sc->serverT_ = std::make_unique<std::thread>([&]() {
             std::vector<std::string> paths;
             paths.push_back(folly::stringPrintf("%s/disk1", dataPath));
             paths.push_back(folly::stringPrintf("%s/disk2", dataPath));
@@ -178,29 +179,28 @@ public:
             options.local_ = HostAddr(ip, port);
             options.dataPaths_ = std::move(paths);
             options.partMan_
-                = std::make_unique<kvstore::MetaServerBasedPartManager>(options.local_);
+                = std::make_unique<kvstore::MetaServerBasedPartManager>(options.local_, mClient);
             kvstore::NebulaStore* kvPtr = static_cast<kvstore::NebulaStore*>(
                                         kvstore::KVStore::instance(std::move(options)));
-             std::unique_ptr<kvstore::KVStore> kv(kvPtr);
-             auto schemaMan = TestUtils::mockSchemaMan(1);
-             auto handler
-                    = std::make_shared<nebula::storage::StorageServiceHandler>(
-                                                                            kv.get(),
+            std::unique_ptr<kvstore::KVStore> kv(kvPtr);
+            auto schemaMan = TestUtils::mockSchemaMan(1);
+            auto handler
+                 = std::make_shared<nebula::storage::StorageServiceHandler>(kv.get(),
                                                                             std::move(schemaMan));
-             CHECK(!!sc->server_) << "Failed to create the thrift server";
-             sc->server_->setInterface(handler);
-             sc->server_->setPort(port);
-             sc->server_->serve();  // Will wait until the server shuts down
-             LOG(INFO) << "Stop the server...";
-         });
-         while (!sc->server_->getServeEventBase()
-                 || !sc->server_->getServeEventBase()->isRunning()) {
-         }
-         sc->port_ = sc->server_->getAddress().getPort();
-         LOG(INFO) << "Starting the storage Daemon on port " << sc->port_
-                   << ", path " << dataPath;
-         return sc;
-     }
+            CHECK(!!sc->server_) << "Failed to create the thrift server";
+            sc->server_->setInterface(handler);
+            sc->server_->setPort(port);
+            sc->server_->serve();  // Will wait until the server shuts down
+            LOG(INFO) << "Stop the server...";
+        });
+        while (!sc->server_->getServeEventBase() ||
+               !sc->server_->getServeEventBase()->isRunning()) {
+        }
+        sc->port_ = sc->server_->getAddress().getPort();
+        LOG(INFO) << "Starting the storage Daemon on port " << sc->port_
+                  << ", path " << dataPath;
+        return sc;
+    }
 };
 
 }  // namespace storage

@@ -5,12 +5,12 @@
  */
 
 #include "base/Base.h"
+#include "base/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/AddVerticesProcessor.h"
 #include "storage/StorageServiceHandler.h"
-#include "storage/KeyUtils.h"
 
 namespace nebula {
 namespace storage {
@@ -35,7 +35,7 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     ASSERT_EQ(0, resp.result.failed_codes.size());
 
     LOG(INFO) << "Verify the vertices data...";
-    auto prefix = KeyUtils::prefix(1, 19);
+    auto prefix = NebulaKeyUtils::prefix(1, 19);
     std::unique_ptr<kvstore::KVIterator> iter;
     ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kvstore->prefix(0, 1, prefix, &iter));
     TagID tagId = 0;

@@ -4,27 +4,27 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/RemoveTagProcessor.h"
+#include "meta/processors/DropTagProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-void RemoveTagProcessor::process(const cpp2::RemoveTagReq& req) {
+void DropTagProcessor::process(const cpp2::DropTagReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto ret = getTagKeys(req.get_space_id(), req.get_tag_name());
     if (!ret.ok()) {
-        LOG(ERROR) << "Remove Tag Failed : " << req.get_tag_name() << " not found";
+        LOG(ERROR) << "Drop Tag Failed : " << req.get_tag_name() << " not found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
-    LOG(INFO) << "Remove Tag " << req.get_tag_name();
+    LOG(INFO) << "Drop Tag " << req.get_tag_name();
     doMultiRemove(std::move(ret.value()));
 }
 
-StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID id,
+StatusOr<std::vector<std::string>> DropTagProcessor::getTagKeys(GraphSpaceID id,
                                                                   const std::string& tagName) {
     auto indexKey = MetaServiceUtils::indexTagKey(id, tagName);
     std::vector<std::string> keys;
@@ -55,4 +55,5 @@ StatusOr<std::vector<std::string>> RemoveTagProcessor::getTagKeys(GraphSpaceID i
 
 }  // namespace meta
 }  // namespace nebula
+
 

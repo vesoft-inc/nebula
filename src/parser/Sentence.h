@@ -7,7 +7,7 @@
 #define PARSER_SENTENCE_H_
 
 #include "base/Base.h"
-#include "parser/Expressions.h"
+#include "filter/Expressions.h"
 
 namespace nebula {
 
@@ -30,8 +30,8 @@ public:
         kAlterEdge,
         kDescribeTag,
         kDescribeEdge,
-        kRemoveTag,
-        kRemoveEdge,
+        kDropTag,
+        kDropEdge,
         kInsertVertex,
         kInsertEdge,
         kShow,
@@ -42,6 +42,7 @@ public:
         kRemoveHosts,
         kCreateSpace,
         kDropSpace,
+        kDescribeSpace,
         kYield,
         kCreateUser,
         kDropUser,

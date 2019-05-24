@@ -91,7 +91,8 @@ int main(int argc, char *argv[]) {
     }
 
     LOG(INFO) << "Starting Graph HTTP Service";
-    nebula::WebService::registerHandler("/graph", [] {
+    // http://127.0.0.1:XXXX/status is equivalent to http://127.0.0.1:XXXX
+    nebula::WebService::registerHandler("/status", [] {
         return new nebula::graph::GraphHttpHandler();
     });
     status = nebula::WebService::start();
@@ -111,7 +112,12 @@ int main(int argc, char *argv[]) {
         localIP = std::move(result).value();
     }
 
+    if (FLAGS_num_netio_threads <= 0) {
+        LOG(WARNING) << "Number netio threads should be greater than zero";
+        return EXIT_FAILURE;
+    }
     gServer = std::make_unique<apache::thrift::ThriftServer>();
+    gServer->getIOThreadPool()->setNumThreads(FLAGS_num_netio_threads);
     auto interface = std::make_shared<GraphService>(gServer->getIOThreadPool());
 
     gServer->setInterface(std::move(interface));
@@ -126,12 +132,6 @@ int main(int argc, char *argv[]) {
     gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
     gServer->setListenBacklog(FLAGS_listen_backlog);
     gServer->setThreadStackSizeMB(5);
-    if (FLAGS_num_netio_threads > 0) {
-        gServer->setNumIOWorkerThreads(FLAGS_num_netio_threads);
-    } else {
-        LOG(WARNING) << "Number netio threads should be greater than zero";
-        return EXIT_FAILURE;
-    }
 
     // Setup the signal handlers
     status = setupSignalHandler();

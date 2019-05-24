@@ -58,6 +58,17 @@ struct Pair {
     2: string value,
 }
 
+struct SpaceProperties {
+    1: string               space_name,
+    2: i32                  partition_num,
+    3: i32                  replica_factor,
+}
+
+struct SpaceItem {
+    1: common.GraphSpaceID  space_id,
+    2: SpaceProperties      properties,
+}
+
 struct TagItem {
     1: common.TagID         tag_id,
     2: string               tag_name,
@@ -87,13 +98,10 @@ struct ExecResp {
 
 // Graph space related operations.
 struct CreateSpaceReq {
-    1: string space_name,
-    2: i32 parts_num,
-    3: i32 replica_factor,
+    1: SpaceProperties  properties,
 }
 
 struct DropSpaceReq {
-    //common.GraphSpaceID space_id
     1: string space_name
 }
 
@@ -112,9 +120,9 @@ struct GetSpaceReq {
 }
 
 struct GetSpaceResp {
-    1: IdName space,
-    2: i32    parts_num,
-    3: i32    replica_factor,
+    1: ErrorCode         code,
+    2: common.HostAddr   leader,
+    3: SpaceItem         item,
 }
 
 // Tags related operations
@@ -130,7 +138,7 @@ struct AlterTagReq {
     3: list<AlterSchemaItem>  tag_items,
 }
 
-struct RemoveTagReq {
+struct DropTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
 }
@@ -183,7 +191,7 @@ struct GetEdgeResp {
     3: common.Schema    schema,
 }
 
-struct RemoveEdgeReq {
+struct DropEdgeReq {
     1: common.GraphSpaceID space_id,
     2: string              edge_name,
 }
@@ -299,13 +307,13 @@ service MetaService {
 
     ExecResp createTag(1: CreateTagReq req);
     ExecResp alterTag(1: AlterTagReq req);
-    ExecResp removeTag(1: RemoveTagReq req);
+    ExecResp dropTag(1: DropTagReq req);
     GetTagResp getTag(1: GetTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);
 
     ExecResp createEdge(1: CreateEdgeReq req);
     ExecResp alterEdge(1: AlterEdgeReq req);
-    ExecResp removeEdge(1: RemoveEdgeReq req);
+    ExecResp dropEdge(1: DropEdgeReq req);
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 
