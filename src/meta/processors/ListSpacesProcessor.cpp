@@ -24,10 +24,10 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq& req) {
     while (iter->valid()) {
         auto spaceId = MetaServiceUtils::spaceId(iter->key());
         auto spaceName = MetaServiceUtils::spaceName(iter->val());
-        VLOG(3) << "List spaces " << spaceId << ", name " << spaceName.str();
+        VLOG(3) << "List spaces " << spaceId << ", name " << spaceName;
         spaces.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                             to(spaceId, EntryType::SPACE),
-                            spaceName.str());
+                            spaceName);
         iter->next();
     }
     resp_.set_spaces(std::move(spaces));

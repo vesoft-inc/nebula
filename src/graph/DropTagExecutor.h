@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_REMOVETAGEXECUTOR_H
-#define GRAPH_REMOVETAGEXECUTOR_H
+#ifndef GRAPH_DROPTAGEXECUTOR_H
+#define GRAPH_DROPTAGEXECUTOR_H
 
 #include "base/Base.h"
 #include "graph/Executor.h"
@@ -13,12 +13,12 @@
 namespace nebula {
 namespace graph {
 
-class RemoveTagExecutor final : public Executor {
+class DropTagExecutor final : public Executor {
 public:
-    RemoveTagExecutor(Sentence *sentence, ExecutionContext *context);
+    DropTagExecutor(Sentence *sentence, ExecutionContext *context);
 
     const char* name() const override {
-        return "RemoveTagExecutor";
+        return "DropTagExecutor";
     }
 
     Status MUST_USE_RESULT prepare() override;
@@ -26,11 +26,10 @@ public:
     void execute() override;
 
 private:
-    RemoveTagSentence *sentence_{nullptr};
+    DropTagSentence *sentence_{nullptr};
 };
 
 }   // namespace graph
 }   // namespace nebula
 
-#endif  // GRAPH_REMOVETAGEXECUTOR_H
-
+#endif  // GRAPH_DROPTAGEXECUTOR_H

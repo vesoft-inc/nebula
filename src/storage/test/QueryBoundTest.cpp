@@ -5,13 +5,13 @@
  */
 
 #include "base/Base.h"
+#include "base/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include <limits>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/QueryBoundProcessor.h"
-#include "storage/KeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
@@ -23,7 +23,7 @@ void mockData(kvstore::KVStore* kv) {
         std::vector<kvstore::KV> data;
         for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             for (auto tagId = 3001; tagId < 3010; tagId++) {
-                auto key = KeyUtils::vertexKey(partId, vertexId, tagId, 0);
+                auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
                 for (uint64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;
@@ -39,9 +39,9 @@ void mockData(kvstore::KVStore* kv) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 // Write multi versions,  we should get the latest version.
                 for (auto version = 0; version < 3; version++) {
-                    auto key = KeyUtils::edgeKey(partId, vertexId, 101,
-                                                 0, dstId,
-                                                 std::numeric_limits<int>::max() - version);
+                    auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101,
+                                                       0, dstId,
+                                                       std::numeric_limits<int>::max() - version);
                     RowWriter writer(nullptr);
                     for (uint64_t numInt = 0; numInt < 10; numInt++) {
                         writer << numInt;
@@ -57,9 +57,9 @@ void mockData(kvstore::KVStore* kv) {
             for (auto srcId = 20001; srcId <= 20005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
                 for (auto version = 0; version < 3; version++) {
-                    auto key = KeyUtils::edgeKey(partId, vertexId, -101,
-                                                 0, srcId,
-                                                 std::numeric_limits<int>::max() - version);
+                    auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101,
+                                                       0, srcId,
+                                                       std::numeric_limits<int>::max() - version);
                     data.emplace_back(std::move(key), "");
                 }
             }

@@ -376,10 +376,12 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
 
 folly::Future<StatusOr<GraphSpaceID>>
 MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFactor) {
+    cpp2::SpaceProperties properties;
+    properties.set_space_name(std::move(name));
+    properties.set_partition_num(partsNum);
+    properties.set_replica_factor(replicaFactor);
     cpp2::CreateSpaceReq req;
-    req.set_space_name(std::move(name));
-    req.set_parts_num(partsNum);
-    req.set_replica_factor(replicaFactor);
+    req.set_properties(std::move(properties));
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_createSpace(request);
             }, [] (cpp2::ExecResp&& resp) -> GraphSpaceID {
@@ -396,6 +398,16 @@ folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
                 });
 }
 
+folly::Future<StatusOr<cpp2::SpaceItem>>
+MetaClient::getSpace(GraphSpaceID spaceId) {
+    cpp2::GetSpaceReq req;
+    req.set_space_id(spaceId);
+    return  getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_getSpace(request);
+                }, [] (cpp2::GetSpaceResp&& resp) -> decltype(auto) {
+                    return std::move(resp).get_item();
+                });
+}
 
 folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name) {
     cpp2::DropSpaceReq req;
@@ -701,12 +713,12 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::removeTagSchema(int32_t spaceId, std::string tagName) {
-    cpp2::RemoveTagReq req;
+MetaClient::dropTagSchema(int32_t spaceId, std::string tagName) {
+    cpp2::DropTagReq req;
     req.set_space_id(spaceId);
     req.set_tag_name(std::move(tagName));
     return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_removeTag(request);
+        return client->future_dropTag(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);
@@ -778,12 +790,12 @@ MetaClient::getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer vers
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::removeEdgeSchema(GraphSpaceID spaceId, std::string name) {
-    cpp2::RemoveEdgeReq req;
+MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
+    cpp2::DropEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
     return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_removeEdge(request);
+        return client->future_dropEdge(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);

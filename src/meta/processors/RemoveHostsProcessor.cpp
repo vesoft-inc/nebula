@@ -9,7 +9,6 @@
 namespace nebula {
 namespace meta {
 
-
 void RemoveHostsProcessor::process(const cpp2::RemoveHostsReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
     std::vector<std::string> hostsKey;
@@ -30,4 +29,5 @@ void RemoveHostsProcessor::process(const cpp2::RemoveHostsReq& req) {
 
 }  // namespace meta
 }  // namespace nebula
+
 

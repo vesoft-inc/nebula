@@ -49,24 +49,12 @@ std::string HostList::toString() const {
 
 
 std::string AddHostsSentence::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    buf += "ADD HOSTS (";
-    buf += hosts_->toString();
-    buf += ") ";
-    return buf;
+    return folly::stringPrintf("ADD HOSTS (%s) ", hosts_->toString().c_str());
 }
-
 
 std::string RemoveHostsSentence::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    buf += "REMOVE HOSTS (";
-    buf += hosts_->toString();
-    buf += ") ";
-    return buf;
+    return folly::stringPrintf("REMOVE HOSTS (%s) ", hosts_->toString().c_str());
 }
-
 
 std::string SpaceOptItem::toString() const {
     switch (optType_) {
@@ -96,23 +84,16 @@ std::string SpaceOptList::toString() const {
 
 
 std::string CreateSpaceSentence::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    buf += "CREATE SPACE ";
-    buf += *spaceName_;
-    buf += "(";
-    buf += spaceOpts_->toString();
-    buf += ") ";
-    return buf;
+    return folly::stringPrintf("CREATE SPACE  %s(%s) ", spaceName_.get()->c_str(),
+                               spaceOpts_->toString().c_str());
 }
 
-
 std::string DropSpaceSentence::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    buf += "DROP SPACE ";
-    buf += *spaceName_;
-    return buf;
+    return folly::stringPrintf("DROP SPACE  %s", spaceName_.get()->c_str());
+}
+
+std::string DescribeSpaceSentence::toString() const {
+    return folly::stringPrintf("DESCRIBE SPACE  %s", spaceName_.get()->c_str());
 }
 
 }   // namespace nebula

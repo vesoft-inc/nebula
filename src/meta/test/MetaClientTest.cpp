@@ -320,7 +320,7 @@ TEST(MetaClientTest, TagTest) {
         ASSERT_TRUE(result.ok());
     }
     {
-        auto result = client->removeTagSchema(spaceId, "test_tag").get();
+        auto result = client->dropTagSchema(spaceId, "test_tag").get();
         ASSERT_TRUE(result.ok());
     }
     {
