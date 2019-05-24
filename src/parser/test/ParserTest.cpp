@@ -103,7 +103,7 @@ TEST(Parser, SpaceOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "CREATE SPACE space_without_options()";
+        std::string query = "USE default_space";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -115,16 +115,7 @@ TEST(Parser, SpaceOperation) {
     }
 }
 
-TEST(Parser, UseNamespace) {
-    {
-        GQLParser parser;
-        std::string query = "USE ns";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-}
-
-TEST(Parser, CreateTag) {
+TEST(Parser, TagOperation) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG person(name string, age int TTL = 100, "
@@ -132,9 +123,6 @@ TEST(Parser, CreateTag) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
-}
-
-TEST(Parser, AlterTag) {
     {
         GQLParser parser;
         std::string query = "ALTER TAG person ADD (col1 int TTL = 200, col2 string), "
@@ -143,9 +131,21 @@ TEST(Parser, AlterTag) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "DESCRIBE TAG person";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DROP TAG person";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
-TEST(Parser, CreateEdge) {
+TEST(Parser, EdgeOperation) {
     {
         GQLParser parser;
         std::string query = "CREATE EDGE e1(name string, age int, "
@@ -153,14 +153,23 @@ TEST(Parser, CreateEdge) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
-}
-
-TEST(Parser, AlterEdge) {
     {
         GQLParser parser;
         std::string query = "ALTER EDGE e1 ADD (col1 int, col2 string), "
                             "CHANGE (col3 int, col4 string), "
                             "DROP (col5, col6)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DESCRIBE EDGE e1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DROP EDGE e1";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
