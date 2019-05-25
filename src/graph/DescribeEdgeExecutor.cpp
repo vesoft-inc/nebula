@@ -25,11 +25,16 @@ Status DescribeEdgeExecutor::prepare() {
 void DescribeEdgeExecutor::execute() {
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto edgeType = ectx()->schemaManager()->toEdgeType(spaceId, *name);
+    auto status = ectx()->schemaManager()->toEdgeType(spaceId, *name);
+    if (!status.ok()) {
+        onError_(Status::Error("Schema not found for edge '%s'", name->c_str()));
+        return;
+    }
+    auto edgeType = status.value();
     auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType);
     resp_ = std::make_unique<cpp2::ExecutionResponse>();
     if (schema == nullptr) {
-        onError_(Status::Error("Schema not found for edge `%s'", name->c_str()));
+        onError_(Status::Error("Schema not found for edge '%s'", name->c_str()));
         return;
     }
 

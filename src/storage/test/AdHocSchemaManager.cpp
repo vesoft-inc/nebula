@@ -155,14 +155,14 @@ StatusOr<GraphSpaceID> AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spa
 }
 
 // This interface is disabled
-TagID AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {
+StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {
     UNUSED(space);
     UNUSED(tagName);
     return -1;
 }
 
 // This interface is disabled
-EdgeType AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
+StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
     UNUSED(space);
     UNUSED(typeName);
     return -1;

@@ -37,7 +37,7 @@ struct ServerContext {
 };
 
 static void mockCommon(test::ServerContext *sc,
-                       std::string name,
+                       const std::string &name,
                        uint16_t port,
                        std::shared_ptr<apache::thrift::ServerInterface> handler) {
     if (nullptr == sc) {

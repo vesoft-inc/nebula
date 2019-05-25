@@ -120,7 +120,9 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
 
             // ServerBasedSchemaManager test
-            TagID tagId = schemaMan->toTagID(spaceId, "tagName");
+            auto status = schemaMan->toTagID(spaceId, "tagName");
+            ASSERT_TRUE(status.ok());
+            auto tagId = status.value();
             ASSERT_NE(-1, tagId);
             auto outSchema = schemaMan->getTagSchema(spaceId, tagId);
             ASSERT_EQ(5, outSchema->getNumFields());
@@ -148,7 +150,8 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
 
             // ServerBasedSchemaManager test
-            EdgeType edgeType = schemaMan->toEdgeType(spaceId, "edgeName");
+            auto status = schemaMan->toEdgeType(spaceId, "edgeName");
+            auto edgeType = status.value();
             ASSERT_NE(-1, edgeType);
             auto outSchema = schemaMan->getEdgeSchema(spaceId, edgeType);
             ASSERT_EQ(5, outSchema->getNumFields());

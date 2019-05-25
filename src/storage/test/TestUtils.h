@@ -157,6 +157,7 @@ public:
         return prop;
     }
 
+    // If kvstore should init files in dataPath, input port can't be 0
     static std::unique_ptr<test::ServerContext> mockStorageServer(meta::MetaClient* mClient,
                                                                   const char* dataPath,
                                                                   uint32_t ip,
@@ -173,10 +174,10 @@ public:
                          options.local_, mClient);
         // Save MetaServerBasedPartManager to update port when ThriftServer setup
         auto partManagerPtr = static_cast<kvstore::MetaServerBasedPartManager*>(
-                         options.partMan_.get());
+                            options.partMan_.get());
         kvstore::NebulaStore* kvPtr = static_cast<kvstore::NebulaStore*>(
                                     kvstore::KVStore::instance(std::move(options)));
-        // keep KVStore can't free out of this function
+        // Keep KVStore can't free out of this function
         sc->KVStore_ = std::unique_ptr<kvstore::KVStore>(kvPtr);
         std::unique_ptr<meta::SchemaManager> schemaMan;
         if (!realMetaServer) {
@@ -189,7 +190,9 @@ public:
         auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
                      sc->KVStore_.get(), std::move(schemaMan));
         test::mockCommon(sc.get(), "storage", port, handler);
-        partManagerPtr->setLocalHost(HostAddr(ip, sc->port_));
+        if (nullptr != partManagerPtr) {
+            partManagerPtr->setLocalHost(HostAddr(ip, sc->port_));
+        }
         LOG(INFO) << "Starting the storage Daemon on port " << sc->port_
                   << ", path " << dataPath;
         return sc;

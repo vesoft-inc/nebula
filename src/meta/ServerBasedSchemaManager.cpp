@@ -46,7 +46,12 @@ ServerBasedSchemaManager::getTagSchema(folly::StringPiece spaceName,
         return std::shared_ptr<const SchemaProviderIf>();
     }
     auto spaceId = spaceStatus.value();
-    return getTagSchema(spaceId, toTagID(spaceId, tagName), ver);
+    auto tagStatus = toTagID(spaceId, tagName);
+    if (!tagStatus.ok()) {
+        return std::shared_ptr<const SchemaProviderIf>();
+    }
+    auto tagId = tagStatus.value();
+    return getTagSchema(spaceId, tagId, ver);
 }
 
 // Returns a negative number when the schema does not exist
@@ -62,7 +67,12 @@ SchemaVer ServerBasedSchemaManager::getNewestTagSchemaVer(folly::StringPiece spa
         return -1;
     }
     auto spaceId = spaceStatus.value();
-    return getNewestTagSchemaVer(spaceId, toTagID(spaceId, tagName));
+    auto tagStatus = toTagID(spaceId, tagName);
+    if (!tagStatus.ok()) {
+        return -1;
+    }
+    auto tagId = tagStatus.value();
+    return getNewestTagSchemaVer(spaceId, tagId);
 }
 
 std::shared_ptr<const SchemaProviderIf>
@@ -91,7 +101,12 @@ ServerBasedSchemaManager::getEdgeSchema(folly::StringPiece spaceName,
         return std::shared_ptr<const SchemaProviderIf>();
     }
     auto spaceId = spaceStatus.value();
-    return getEdgeSchema(spaceId, toEdgeType(spaceId, typeName), ver);
+    auto edgeStatus = toEdgeType(spaceId, typeName);
+    if (!edgeStatus.ok()) {
+        return std::shared_ptr<const SchemaProviderIf>();
+    }
+    auto edgeType = edgeStatus.value();
+    return getEdgeSchema(spaceId, edgeType, ver);
 }
 
 // Returns a negative number when the schema does not exist
@@ -108,7 +123,12 @@ SchemaVer ServerBasedSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece sp
         return -1;
     }
     auto spaceId = spaceStatus.value();
-    return getNewestEdgeSchemaVer(spaceId, toEdgeType(spaceId, typeName));
+    auto edgeStatus = toEdgeType(spaceId, typeName);
+    if (!edgeStatus.ok()) {
+        return -1;
+    }
+    auto edgeType = edgeStatus.value();
+    return getNewestEdgeSchemaVer(spaceId, edgeType);
 }
 
 StatusOr<GraphSpaceID> ServerBasedSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
@@ -116,24 +136,16 @@ StatusOr<GraphSpaceID> ServerBasedSchemaManager::toGraphSpaceID(folly::StringPie
     return  metaClient_->getSpaceIdByNameFromCache(spaceName.str());
 }
 
-TagID ServerBasedSchemaManager::toTagID(GraphSpaceID space,
+StatusOr<TagID> ServerBasedSchemaManager::toTagID(GraphSpaceID space,
                                         folly::StringPiece tagName) {
     CHECK(metaClient_);
-    auto ret = metaClient_->getTagIDByNameFromCache(space, tagName.str());
-    if (ret.ok()) {
-        return ret.value();
-    }
-    return -1;
+    return metaClient_->getTagIDByNameFromCache(space, tagName.str());
 }
 
-EdgeType ServerBasedSchemaManager::toEdgeType(GraphSpaceID space,
+StatusOr<EdgeType> ServerBasedSchemaManager::toEdgeType(GraphSpaceID space,
                                               folly::StringPiece typeName) {
     CHECK(metaClient_);
-    auto ret = metaClient_->getEdgeTypeByNameFromCache(space, typeName.str());
-    if (ret.ok()) {
-        return ret.value();
-    }
-    return -1;
+    return metaClient_->getEdgeTypeByNameFromCache(space, typeName.str());
 }
 
 }  // namespace meta

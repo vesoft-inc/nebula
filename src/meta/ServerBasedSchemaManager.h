@@ -52,9 +52,9 @@ public:
 
     StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
-    TagID toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
+    StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
-    EdgeType toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
+    StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
     void init(MetaClient *client) override;
 
