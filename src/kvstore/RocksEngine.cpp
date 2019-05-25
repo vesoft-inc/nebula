@@ -100,10 +100,10 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
         : KVEngine(spaceId)
         , dataPath_(folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId)) {
     auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
-    LOG(INFO) << "open rocksdb on " << path;
     if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
         FileUtils::makeDir(path);
     }
+    LOG(INFO) << "open rocksdb on " << path;
 
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
@@ -279,13 +279,12 @@ ResultCode RocksEngine::removeRange(const std::string& start,
 ResultCode RocksEngine::removePrefix(const std::string& prefix) {
     rocksdb::Slice pre(prefix.data(), prefix.size());
     rocksdb::ReadOptions readOptions;
-    rocksdb::WriteOptions writeOptions;
-    writeOptions.disableWAL = FLAGS_rocksdb_disable_wal;
+    rocksdb::WriteBatch batch;
     std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(readOptions));
     iter->Seek(pre);
     while (iter->Valid()) {
         if (iter->key().starts_with(pre)) {
-            auto status = db_->Delete(writeOptions, iter->key());
+            auto status = batch.Delete(iter->key());
             if (!status.ok()) {
                 return ResultCode::ERR_UNKNOWN;
             }
@@ -295,7 +294,14 @@ ResultCode RocksEngine::removePrefix(const std::string& prefix) {
         }
         iter->Next();
     }
-    return ResultCode::SUCCEEDED;
+
+    rocksdb::WriteOptions writeOptions;
+    writeOptions.disableWAL = FLAGS_rocksdb_disable_wal;
+    if (db_->Write(writeOptions, &batch).ok()) {
+        return ResultCode::SUCCEEDED;
+    } else {
+        return ResultCode::ERR_UNKNOWN;
+    }
 }
 
 

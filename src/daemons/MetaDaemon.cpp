@@ -136,6 +136,7 @@ int main(int argc, char *argv[]) {
         gServer->setPort(FLAGS_port);
         gServer->setReusePort(FLAGS_reuse_port);
         gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
+        gServer->setIOThreadPool(ioPool);
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception &e) {
         LOG(ERROR) << "Exception thrown: " << e.what();

@@ -616,10 +616,10 @@ TEST(ProcessorTest, DropTagTest) {
 
     // remove tag processor test
     {
-        cpp2::RemoveTagReq req;
+        cpp2::DropTagReq req;
         req.set_space_id(1);
         req.set_tag_name("tag_0");
-        auto* processor = RemoveTagProcessor::instance(kv.get());
+        auto* processor = DropTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

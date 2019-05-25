@@ -111,10 +111,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
+    auto result = nebula::network::NetworkUtils::getLocalIP();
     if (!result.ok()) {
-        LOG(ERROR) << "Get localIp failed, ip " << FLAGS_local_ip
-                   << ", status:" << result.status();
+        LOG(ERROR) << "Get localIp failed, status:" << result.status();
         return EXIT_FAILURE;
     }
     auto hostRet = nebula::network::NetworkUtils::toHostAddr(result.value(), FLAGS_port);

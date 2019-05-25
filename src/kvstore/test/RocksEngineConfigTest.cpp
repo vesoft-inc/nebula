@@ -15,6 +15,9 @@
 #include "kvstore/RocksEngine.h"
 #include "kvstore/RocksEngineConfig.h"
 
+#define KV_DATA_PATH_FORMAT(path, spaceId) \
+     folly::stringPrintf("%s/nebula/%d/data", path, spaceId)
+
 namespace nebula {
 namespace kvstore {
 
