@@ -21,7 +21,7 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 Status InsertVertexExecutor::prepare() {
     Status status;
     do {
-        auto status = checkIfGraphSpaceChosen();
+        status = checkIfGraphSpaceChosen();
         if (!status.ok()) {
             break;
         }
