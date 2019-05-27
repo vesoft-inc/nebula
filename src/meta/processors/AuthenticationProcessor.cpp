@@ -30,14 +30,8 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
     data.emplace_back(MetaServiceUtils::indexUserKey(user.get_account()),
                       std::string(reinterpret_cast<const char*>(&userId), sizeof(userId)));
     LOG(INFO) << "Create User " << user.get_account() << ", userId " << userId;
-    auto schema = getUserSchema();
-    if (!schema.ok()) {
-        resp_.set_code(to(ret.status()));
-        onFinished();
-        return;
-    }
     data.emplace_back(MetaServiceUtils::userKey(userId),
-                      MetaServiceUtils::userVal(req.get_encoded_pwd(), user, schema.value()));
+                      MetaServiceUtils::userVal(req.get_encoded_pwd(), user));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(userId, EntryType::USER));
     doPut(std::move(data));
@@ -62,16 +56,9 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
         onFinished();
         return;
     }
-
-    auto schema = getUserSchema();
-    if (!schema.ok()) {
-        resp_.set_code(to(ret.status()));
-        onFinished();
-        return;
-    }
     std::vector<kvstore::KV> data;
     data.emplace_back(std::move(userKey),
-                      MetaServiceUtils::replaceUserVal(user, val, schema.value()));
+                      MetaServiceUtils::replaceUserVal(user, val));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(userId, EntryType::USER));
     doPut(std::move(data));
@@ -211,13 +198,7 @@ void GetUserProcessor::process(const cpp2::GetUserReq& req) {
         onFinished();
         return;
     }
-    auto schema = getUserSchema();
-    if (!schema.ok()) {
-        LOG(ERROR) << "Global schema " << GLOBAL_USER_SCHEMA_TAG << " not found.";
-        onFinished();
-        return;
-    }
-    decltype(resp_.user_item) user = MetaServiceUtils::parseUserItem(val, schema.value());
+    decltype(resp_.user_item) user = MetaServiceUtils::parseUserItem(val);
     resp_.set_user_item(user);
     onFinished();
 }
@@ -234,15 +215,9 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
         onFinished();
         return;
     }
-    auto schema = getUserSchema();
-    if (!schema.ok()) {
-        LOG(ERROR) << "Global schema " << GLOBAL_USER_SCHEMA_TAG << " not found.";
-        onFinished();
-        return;
-    }
     decltype(resp_.users) users;
     while (iter->valid()) {
-        cpp2::UserItem user = MetaServiceUtils::parseUserItem(iter->val(), schema.value());
+        cpp2::UserItem user = MetaServiceUtils::parseUserItem(iter->val());
         users.emplace_back(std::move(user));
         iter->next();
     }

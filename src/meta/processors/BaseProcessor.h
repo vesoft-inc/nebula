@@ -16,7 +16,6 @@
 #include "kvstore/KVStore.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
-#include "meta/NebulaSchemaProvider.h"
 #include "network/NetworkUtils.h"
 #include "meta/processors/Common.h"
 

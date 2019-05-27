@@ -1,8 +1,8 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
- */
+*
+* This source code is licensed under Apache 2.0 License,
+* attached with Common Clause Condition 1.0, found in the LICENSES directory.
+*/
 
 #ifndef META_METAUTILS_H_
 #define META_METAUTILS_H_
@@ -10,17 +10,16 @@
 #include "base/Base.h"
 #include "base/Status.h"
 #include "interface/gen-cpp2/meta_types.h"
-#include "SchemaProviderIf.h"
 
 namespace nebula {
 namespace meta {
 
 enum class EntryType : int8_t {
-    SPACE = 0x01,
-    TAG   = 0x02,
-    EDGE  = 0x03,
-    USER  = 0x04,
-    CONFIG = 0x05,
+SPACE = 0x01,
+TAG   = 0x02,
+EDGE  = 0x03,
+USER  = 0x04,
+CONFIG = 0x05,
 };
 
 using ConfigName = std::pair<cpp2::ConfigModule, std::string>;

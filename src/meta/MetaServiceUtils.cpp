@@ -5,9 +5,6 @@
  */
 
 #include "meta/MetaServiceUtils.h"
-#include "dataman/RowWriter.h"
-#include "dataman/RowUpdater.h"
-#include "dataman/RowReader.h"
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
