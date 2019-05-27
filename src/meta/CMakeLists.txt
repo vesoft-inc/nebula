@@ -46,7 +46,6 @@ add_dependencies(
     kvstore_obj
     thread_obj
     stats_obj
-    dataman_obj
 )
 
 add_library(

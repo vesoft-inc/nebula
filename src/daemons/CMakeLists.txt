@@ -92,7 +92,6 @@ add_executable(
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:ws_obj>
-    $<TARGET_OBJECTS:dataman_obj>
 )
 nebula_link_libraries(
     nebula-metad

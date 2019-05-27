@@ -5,9 +5,6 @@
  */
 
 #include "meta/MetaServiceUtils.h"
-#include "dataman/RowWriter.h"
-#include "dataman/RowUpdater.h"
-#include "dataman/RowReader.h"
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 #include <thrift/lib/cpp2/protocol/CompactProtocol.h>
 
@@ -20,8 +17,8 @@ const std::string kHostsTable  = "__hosts__";   // NOLINT
 const std::string kTagsTable   = "__tags__";    // NOLINT
 const std::string kEdgesTable  = "__edges__";   // NOLINT
 const std::string kIndexTable  = "__index__";   // NOLINT
-const std::string kUsersTable  = "__user__";    // NOLINT
-const std::string kRolesTable  = "__role__";    // NOLINT
+const std::string kUsersTable  = "__users__";    // NOLINT
+const std::string kRolesTable  = "__roles__";    // NOLINT
 
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
@@ -326,21 +323,14 @@ std::string MetaServiceUtils::userKey(UserID userId) {
 }
 
 std::string MetaServiceUtils::userVal(const std::string& password,
-                                      const cpp2::UserItem& userItem,
-                                      std::shared_ptr<const SchemaProviderIf> schema) {
+                                      const cpp2::UserItem& userItem) {
     auto len = password.size();
-    std::string val;
-    RowWriter writer(std::move(schema));
-    writer << userItem.get_account()
-           << userItem.get_first_name()
-           << userItem.get_last_name()
-           << userItem.get_email()
-           << userItem.get_phone();
-    std::string encoded(writer.encode());
-    val.reserve(sizeof(int32_t) + len + encoded.size());
+    std::string val, userVal;
+    apache::thrift::CompactSerializer::serialize(userItem, &userVal);
+    val.reserve(sizeof(int32_t) + len + userVal.size());
     val.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
     val.append(password);
-    val.append(encoded);
+    val.append(userVal);
     return val;
 }
 
@@ -349,30 +339,25 @@ folly::StringPiece MetaServiceUtils::userItemVal(folly::StringPiece rawVal) {
     return rawVal.subpiece(offset, rawVal.size() - offset);
 }
 
-std::string MetaServiceUtils::replaceUserVal(const cpp2::UserItem& user, folly::StringPiece val,
-                                             std::shared_ptr<SchemaProviderIf> schema) {
-    auto reader = RowReader::getRowReader(MetaServiceUtils::userItemVal(val), schema);
-    RowUpdater updater(move(reader), schema);
-
+std::string MetaServiceUtils::replaceUserVal(const cpp2::UserItem& user, folly::StringPiece val) {
+    cpp2:: UserItem oldUser;
+    apache::thrift::CompactSerializer::deserialize(userItemVal(val), oldUser);
     if (user.__isset.first_name) {
-        updater.setString(GLOBAL_USER_ITEM_FIRSTNAME, user.first_name);
+        oldUser.set_first_name(user.get_first_name());
     }
     if (user.__isset.last_name) {
-        updater.setString(GLOBAL_USER_ITEM_LASTNAME, user.get_last_name());
+        oldUser.set_last_name(user.get_last_name());
     }
-    if (user.__isset.email) {
-        updater.setString(GLOBAL_USER_ITEM_EMAIL, user.get_email());
+    if (user.__isset.is_lock) {
+        oldUser.set_is_lock(user.get_is_lock());
     }
-    if (user.__isset.phone) {
-        updater.setString(GLOBAL_USER_ITEM_PHONE, user.get_phone());
-    }
-    auto newVal = updater.encode();
+    std::string newVal, userVal;
+    apache::thrift::CompactSerializer::serialize(oldUser, &userVal);
     auto len = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(val.begin());
-    std::string userVal;
-    userVal.reserve(len + newVal.size());
-    userVal.append(val.subpiece(0, len).str());
-    userVal.append(newVal);
-    return userVal;
+    newVal.reserve(len + userVal.size());
+    newVal.append(val.subpiece(0, len).str());
+    newVal.append(userVal);
+    return newVal;
 }
 
 std::string MetaServiceUtils::roleKey(GraphSpaceID spaceId, UserID userId) {
@@ -403,18 +388,10 @@ std::string MetaServiceUtils::changePassword(folly::StringPiece val, folly::Stri
     return newVal;
 }
 
-cpp2::UserItem MetaServiceUtils::parseUserItem(folly::StringPiece val,
-                                               std::shared_ptr<SchemaProviderIf> schema) {
-    auto reader = RowReader::getRowReader(userItemVal(val), schema);
-    folly::StringPiece accont, first, last, email, phone;
-    reader->getString(GLOBAL_USER_ITEM_ACCOUNT, accont);
-    reader->getString(GLOBAL_USER_ITEM_FIRSTNAME, first);
-    reader->getString(GLOBAL_USER_ITEM_LASTNAME, last);
-    reader->getString(GLOBAL_USER_ITEM_EMAIL, email);
-    reader->getString(GLOBAL_USER_ITEM_PHONE, phone);
-    cpp2::UserItem userItem(apache::thrift::FragileConstructor::FRAGILE,
-                            accont.str(), first.str(), last.str(), email.str(), phone.str());
-    return userItem;
+cpp2::UserItem MetaServiceUtils::parseUserItem(folly::StringPiece val) {
+    cpp2:: UserItem user;
+    apache::thrift::CompactSerializer::deserialize(userItemVal(val), user);
+    return user;
 }
 
 std::string MetaServiceUtils::roleSpacePrefix(GraphSpaceID spaceId) {
