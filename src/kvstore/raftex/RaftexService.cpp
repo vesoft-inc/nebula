@@ -32,10 +32,9 @@ std::shared_ptr<RaftexService> RaftexService::createService(
     }
 
     svc->serverThread_.reset(new std::thread([svc] {
-        LOG(INFO) << "Starting the Raftex Service";
-
         svc->server_->setup();
         svc->serverPort_ = svc->server_->getAddress().getPort();
+        LOG(INFO) << "Starting the Raftex Service on " << svc->serverPort_;
         SCOPE_EXIT {
             svc->server_->cleanUp();
         };

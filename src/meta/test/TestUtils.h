@@ -122,6 +122,7 @@ public:
                           [&] (kvstore::ResultCode code) {
                               ret = (code == kvstore::ResultCode::SUCCEEDED);
                           });
+        usleep(10000);
         return ret;
     }
 
@@ -148,6 +149,7 @@ public:
                           [] (kvstore::ResultCode code) {
                                 ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
                           });
+        usleep(10000);
     }
 
     static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum, SchemaVer version = 0) {
@@ -173,6 +175,7 @@ public:
         kv->asyncMultiPut(0, 0, std::move(edges), [] (kvstore::ResultCode code) {
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
         });
+        usleep(10000);
     }
 
     static std::unique_ptr<test::ServerContext> mockMetaServer(uint16_t port,

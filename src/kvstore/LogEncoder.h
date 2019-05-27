@@ -19,6 +19,7 @@ enum LogType : char {
     OP_MULTI_REMOVE   = 0x4,
     OP_REMOVE_PREFIX  = 0x5,
     OP_REMOVE_RANGE   = 0x6,
+    OP_ADD_LEARNER    = 0x07,
 };
 
 
@@ -31,6 +32,9 @@ std::string encodeMultiValues(LogType type,
                               folly::StringPiece v1,
                               folly::StringPiece v2);
 std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded);
+
+std::string encodeLearner(const HostAddr& learner);
+HostAddr decodeLearner(folly::StringPiece encoded);
 
 }  // namespace kvstore
 }  // namespace nebula

@@ -92,3 +92,26 @@ nebula_link_libraries(
 )
 nebula_add_test(log_command_test)
 
+add_executable(
+    learner_test
+    LearnerTest.cpp
+    RaftexTestBase.cpp
+    TestShard.cpp
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:wal_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:time_obj>
+)
+nebula_link_libraries(
+    learner_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    gtest
+)
+nebula_add_test(learner_test)
+

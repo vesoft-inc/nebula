@@ -50,6 +50,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
             });
     }
 
+    sleep(1);
     LOG(INFO) << "Build VertexPropsRequest...";
     cpp2::VertexPropRequest req;
     req.set_space_id(0);

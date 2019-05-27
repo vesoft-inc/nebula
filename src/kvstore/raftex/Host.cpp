@@ -22,9 +22,10 @@ namespace raftex {
 
 using nebula::network::NetworkUtils;
 
-Host::Host(const HostAddr& addr, std::shared_ptr<RaftPart> part)
+Host::Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner)
         : part_(std::move(part))
         , addr_(addr)
+        , isLearner_(isLearner)
         , idStr_(folly::stringPrintf(
             "[Host: %s:%d] ",
             NetworkUtils::intToIPv4(addr_.first).c_str(),
@@ -39,6 +40,7 @@ void Host::waitForStop() {
     noMoreRequestCV_.wait(g, [this] {
         return !requestOnGoing_;
     });
+    LOG(INFO) << idStr_ << "The host has been stopped!";
 }
 
 
@@ -61,6 +63,17 @@ cpp2::ErrorCode Host::checkStatus(std::lock_guard<std::mutex>& lck) const {
 
 folly::Future<cpp2::AskForVoteResponse> Host::askForVote(
         const cpp2::AskForVoteRequest& req) {
+    {
+        std::lock_guard<std::mutex> g(lock_);
+        auto res = checkStatus(g);
+        if (res != cpp2::ErrorCode::SUCCEEDED) {
+            VLOG(2) << idStr_
+                    << "The Host is not in a proper status, do not send";
+            cpp2::AskForVoteResponse resp;
+            resp.set_error_code(res);
+            return resp;
+        }
+    }
     auto client = tcManager().client(addr_);
     return client->future_askForVote(req);
 }
@@ -193,6 +206,12 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogsInternal(
         }
 
         cpp2::AppendLogResponse resp = std::move(t).value();
+        VLOG(3) << self->idStr_ << "AppendLogResponse "
+                << "code " << static_cast<int32_t>(resp.get_error_code())
+                << ", currTerm " << resp.get_current_term()
+                << ", lastLogId " << resp.get_last_log_id()
+                << ", lastLogTerm " << resp.get_last_log_term()
+                << ", commitLogId " << resp.get_committed_log_id();
         switch (resp.get_error_code()) {
             case cpp2::ErrorCode::SUCCEEDED: {
                 VLOG(2) << self->idStr_
@@ -378,6 +397,9 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
         }
     }
 
+    VLOG(3) << idStr_ << "sendAppendLogRequest, lastLogId " << req->get_last_log_id()
+            << ", lastCommittedLogId " << req->get_committed_log_id()
+            << ", lastLogIdSend " << req->get_last_log_id_sent();
     // Get client connection
     auto client = tcManager().client(addr_);
     return client->future_appendLog(*req);

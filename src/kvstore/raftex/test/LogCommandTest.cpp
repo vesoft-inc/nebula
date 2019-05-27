@@ -42,6 +42,7 @@ TEST_F(LogCommandTest, StartWithCommandLog) {
             fut.wait();
         }
     }
+    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     ASSERT_EQ(2, leader_->commitTimes_);
@@ -54,7 +55,6 @@ TEST_F(LogCommandTest, StartWithCommandLog) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -85,6 +85,7 @@ TEST_F(LogCommandTest, CommandInMiddle) {
             fut.wait();
         }
     }
+    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     ASSERT_EQ(3, leader_->commitTimes_);
@@ -97,7 +98,6 @@ TEST_F(LogCommandTest, CommandInMiddle) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -119,6 +119,7 @@ TEST_F(LogCommandTest, EndWithCommand) {
     auto fut = leader_->sendCommandAsync("Command Log Message");
     msgs.emplace_back("Command Log Message");
     fut.wait();
+    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     ASSERT_EQ(2, leader_->commitTimes_);
@@ -131,7 +132,6 @@ TEST_F(LogCommandTest, EndWithCommand) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -152,6 +152,7 @@ TEST_F(LogCommandTest, AllCommandLogs) {
             fut.wait();
         }
     }
+    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     // Sleep a while to make sure the last log has been committed on
@@ -164,7 +165,6 @@ TEST_F(LogCommandTest, AllCommandLogs) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -216,6 +216,7 @@ TEST_F(LogCommandTest, MixedLogs) {
     leader_->casAsync("FCAS Log Message");
 
     f.wait();
+    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     // Sleep a while to make sure the last log has been committed on
@@ -228,7 +229,6 @@ TEST_F(LogCommandTest, MixedLogs) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;

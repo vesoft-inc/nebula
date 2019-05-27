@@ -42,6 +42,7 @@ void mockData(kvstore::KVStore* kv) {
                 EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
             });
     }
+    sleep(1);
 }
 
 

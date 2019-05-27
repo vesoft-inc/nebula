@@ -144,6 +144,29 @@ std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded) {
     return values;
 }
 
+std::string encodeLearner(const HostAddr& learner) {
+    std::string encoded;
+    encoded.reserve(kHeadLen + sizeof(HostAddr));
+    // Timestamp (8 bytes)
+    int64_t ts = time::WallClock::fastNowInMilliSec();
+    encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
+    // Log type
+    auto type = LogType::OP_ADD_LEARNER;
+    encoded.append(reinterpret_cast<char*>(&type), 1);
+    encoded.append(reinterpret_cast<const char*>(&learner), sizeof(HostAddr));
+    return encoded;
+}
+
+HostAddr decodeLearner(folly::StringPiece encoded) {
+    HostAddr addr;
+    CHECK_EQ(kHeadLen + sizeof(HostAddr), encoded.size());
+    memcpy(&addr.first, encoded.begin() + kHeadLen, sizeof(addr.first));
+    memcpy(&addr.second,
+           encoded.begin() + kHeadLen + sizeof(addr.first),
+           sizeof(addr.second));
+    return addr;
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

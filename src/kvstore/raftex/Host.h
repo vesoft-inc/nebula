@@ -25,7 +25,11 @@ class RaftPart;
 
 class Host final : public std::enable_shared_from_this<Host> {
 public:
-    Host(const HostAddr& addr, std::shared_ptr<RaftPart> part);
+    Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
+
+    ~Host() {
+        LOG(INFO) << idStr_ << " The host has been destroyed!";
+    }
 
     const char* idStr() const {
         return idStr_.c_str();
@@ -50,6 +54,10 @@ public:
 
     void waitForStop();
 
+    bool isLearner() const {
+        return isLearner_;
+    }
+
     folly::Future<cpp2::AskForVoteResponse> askForVote(
         const cpp2::AskForVoteRequest& req);
 
@@ -62,6 +70,9 @@ public:
         TermID lastLogTermSent,     // The last log term being sent
         LogID lastLogIdSent);       // The last log id being sent
 
+    const HostAddr& address() const {
+        return addr_;
+    }
 
 private:
     cpp2::ErrorCode checkStatus(std::lock_guard<std::mutex>& lck) const;
@@ -84,8 +95,8 @@ private:
 private:
     std::shared_ptr<RaftPart> part_;
     const HostAddr addr_;
+    bool isLearner_ = false;
     const std::string idStr_;
-
 
     mutable std::mutex lock_;
 
