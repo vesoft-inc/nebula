@@ -51,6 +51,10 @@ public:
             end_ = nullptr;
             // To flush the internal buffer to recover from a failure
             scanner_.flushBuffer();
+            if (sentences_ != nullptr) {
+                delete sentences_;
+                sentences_ = nullptr;
+            }
             return Status::SyntaxError(error_);
         }
         auto *sentences = sentences_;
