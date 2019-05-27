@@ -107,8 +107,7 @@ struct UserItem {
     1: string account,
     2: string first_name,
     3: string last_name,
-    4: string email,
-    5: string phone,
+    4: bool   is_lock,
 }
 
 struct RoleItem {

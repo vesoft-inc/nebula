@@ -21,11 +21,10 @@ using apache::thrift::FragileConstructor::FRAGILE;
 TEST(AuthProcessorTest, CreateUserTest) {
     fs::TempDir rootPath("/tmp/CreateUserTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    TestUtils::mockUserTag(kv.get());
     // Simple test
     auto code = TestUtils::createUser(kv.get(), false, "user1", "pwd",
                                       "first name", "last name" ,
-                                      "email@email.com", "+00-00000000");
+                                      false);
     ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
     /**
@@ -36,10 +35,10 @@ TEST(AuthProcessorTest, CreateUserTest) {
      * the result will be EXISTED if the user exists.
      **/
 
-    code = TestUtils::createUser(kv.get(), false, "user1", "pwd", "", "" , "", "");
+    code = TestUtils::createUser(kv.get(), false, "user1", "pwd", "", "" , false);
     ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, code);
 
-    code = TestUtils::createUser(kv.get(), true, "user1", "pwd", "", "" , "", "");
+    code = TestUtils::createUser(kv.get(), true, "user1", "pwd", "", "" , false);
     ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 }
 
@@ -47,12 +46,11 @@ TEST(AuthProcessorTest, CreateUserTest) {
 TEST(AuthProcessorTest, AlterUserTest) {
     fs::TempDir rootPath("/tmp/AlterUserTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    TestUtils::mockUserTag(kv.get());
     // Setup
     {
         auto code = TestUtils::createUser(kv.get(), false, "user1", "pwd",
                                           "first name", "last name" ,
-                                          "email@email.com", "+00-00000000");
+                                          false);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Alter a few attributes
@@ -87,8 +85,7 @@ TEST(AuthProcessorTest, AlterUserTest) {
         newUser.set_account("user1");
         newUser.set_first_name("new first name");
         newUser.set_last_name("");
-        newUser.set_email("aaaa@ccccc.com");
-        newUser.set_phone("1234567890");
+        newUser.set_is_lock(false);
         req.set_user_item(std::move(newUser));
         auto* processor = AlterUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -107,8 +104,7 @@ TEST(AuthProcessorTest, AlterUserTest) {
         user.set_account("user1");
         user.set_first_name("new first name");
         user.set_last_name("");
-        user.set_email("aaaa@ccccc.com");
-        user.set_phone("1234567890");
+        user.set_is_lock(false);
         ASSERT_EQ(user, resp.get_user_item());
     }
 }
@@ -116,12 +112,11 @@ TEST(AuthProcessorTest, AlterUserTest) {
 TEST(AuthProcessorTest, DropUserTest) {
     fs::TempDir rootPath("/tmp/DropUserTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    TestUtils::mockUserTag(kv.get());
     // Setup
     {
         auto code = TestUtils::createUser(kv.get(), false, "user1", "pwd",
                                           "first name", "last name" ,
-                                          "email@email.com", "+00-00000000");
+                                          false);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Simple drop.
@@ -164,12 +159,11 @@ TEST(AuthProcessorTest, DropUserTest) {
 TEST(AuthProcessorTest, PasswordTest) {
     fs::TempDir rootPath("/tmp/PasswordTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    TestUtils::mockUserTag(kv.get());
     // Setup
     {
         auto code = TestUtils::createUser(kv.get(), false, "user1", "pwd",
                                           "first name", "last name" ,
-                                          "email@email.com", "+00-00000000");
+                                          false);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // verify password.
@@ -227,12 +221,11 @@ TEST(AuthProcessorTest, PasswordTest) {
 TEST(AuthProcessorTest, GrantRevokeTest) {
     fs::TempDir rootPath("/tmp/GrantRevokeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    TestUtils::mockUserTag(kv.get());
     // Setup
     {
         auto code = TestUtils::createUser(kv.get(), false, "user1", "pwd",
                                           "first name", "last name",
-                                          "email@email.com", "+00-00000000");
+                                          false);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // grant test : space does not exist
@@ -261,7 +254,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // setup space
     {
         TestUtils::createSomeHosts(kv.get());
-        cpp2::CreateSpaceReq req(FRAGILE, "test_space", 3, 1);
+        cpp2::CreateSpaceReq req(FRAGILE, cpp2::SpaceProperties(FRAGILE, "test_space", 1, 1));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
