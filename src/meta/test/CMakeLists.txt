@@ -9,7 +9,6 @@ add_executable(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:dataman_obj>
 )
 nebula_link_libraries(
     meta_utils_test
@@ -39,7 +38,6 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:dataman_obj>
 )
 nebula_link_libraries(
     processor_test
@@ -69,7 +67,6 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:dataman_obj>
 )
 nebula_link_libraries(
     hb_processor_test
@@ -100,7 +97,6 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:dataman_obj>
 )
 nebula_link_libraries(
     meta_client_test
@@ -164,7 +160,6 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:dataman_obj>
 )
 nebula_link_libraries(
     meta_http_test
@@ -190,7 +185,6 @@ add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:schema_obj>
-        $<TARGET_OBJECTS:dataman_obj>
 )
 nebula_link_libraries(
         authentication_test

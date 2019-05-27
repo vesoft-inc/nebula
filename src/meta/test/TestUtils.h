@@ -186,38 +186,13 @@ public:
         return sc;
     }
 
-    static void mockUserTag(kvstore::KVStore* kv, SchemaVer version = 0) {
-        std::vector<nebula::kvstore::KV> tag;
-        SchemaVer ver = version;
-        TagID tagId = 1;
-        nebula::cpp2::Schema srcsch;
-        auto type = nebula::cpp2::ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr);
-        srcsch.columns.emplace_back(FRAGILE, GLOBAL_USER_ITEM_ACCOUNT, type);
-        srcsch.columns.emplace_back(FRAGILE, GLOBAL_USER_ITEM_FIRSTNAME, type);
-        srcsch.columns.emplace_back(FRAGILE, GLOBAL_USER_ITEM_LASTNAME, type);
-        srcsch.columns.emplace_back(FRAGILE, GLOBAL_USER_ITEM_EMAIL, type);
-        srcsch.columns.emplace_back(FRAGILE, GLOBAL_USER_ITEM_PHONE, type);
-
-        auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
-        tag.emplace_back(MetaServiceUtils::indexTagKey(0, GLOBAL_USER_SCHEMA_TAG), tagIdVal);
-        tag.emplace_back(MetaServiceUtils::schemaTagKey(0, tagId, ver),
-                          MetaServiceUtils::schemaTagVal(GLOBAL_USER_SCHEMA_TAG, srcsch));
-
-        kv->asyncMultiPut(0, 0, std::move(tag),
-                          [] (kvstore::ResultCode code, HostAddr leader) {
-            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
-            UNUSED(leader);
-        });
-    }
-
     static cpp2::ErrorCode createUser(kvstore::KVStore* kv,
                                       bool missingOk,
                                       folly::StringPiece account,
                                       folly::StringPiece password,
                                       folly::StringPiece first,
                                       folly::StringPiece last,
-                                      folly::StringPiece email,
-                                      folly::StringPiece phone) {
+                                      bool isLock) {
         cpp2::CreateUserReq req;
         req.set_missing_ok(missingOk);
         req.set_encoded_pwd(password.str());
@@ -225,8 +200,7 @@ public:
                                 account.str(),
                                 first.str(),
                                 last.str(),
-                                email.str(),
-                                phone.str());
+                                isLock);
         req.set_user(std::move(user));
         auto* processor = CreateUserProcessor::instance(kv);
         auto f = processor->getFuture();

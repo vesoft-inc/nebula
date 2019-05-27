@@ -115,14 +115,13 @@ struct UserItem {
     1: string account,
     2: string first_name,
     3: string last_name,
-    4: string email,
-    5: string phone,
+    4: bool   is_lock,
 }
 
 struct RoleItem {
     1: string account,
     2: string space,
-    3: RoleType RoleType,
+    3: RoleType role_type,
 }
 
 struct ExecResp {
@@ -364,14 +363,20 @@ struct GetUserReq {
 }
 
 struct GetUserResp {
-    1: UserItem user_item,
+    1: ErrorCode code,
+    // Valid if ret equals E_LEADER_CHANGED.
+    2: common.HostAddr  leader,    
+    3: UserItem user_item,
 }
 
 struct ListUsersReq {
 }
 
 struct ListUsersResp {
-    1: list<UserItem> users,
+    1: ErrorCode code,
+    // Valid if ret equals E_LEADER_CHANGED.
+    2: common.HostAddr  leader,    
+    3: list<UserItem> users,
 }
 
 struct ListRolesReq {
@@ -379,7 +384,10 @@ struct ListRolesReq {
 }
 
 struct ListRolesResp {
-    1: list<RoleItem> roles,
+    1: ErrorCode code,
+    // Valid if ret equals E_LEADER_CHANGED.
+    2: common.HostAddr  leader,    
+    3: list<RoleItem> roles,
 }
 
 struct ChangePasswordReq {

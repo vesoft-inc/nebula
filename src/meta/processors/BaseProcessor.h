@@ -16,7 +16,6 @@
 #include "kvstore/KVStore.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
-#include "meta/NebulaSchemaProvider.h"
 #include "network/NetworkUtils.h"
 
 namespace nebula {
@@ -101,6 +100,7 @@ protected:
         case Status::kSpaceNotFound:
         case Status::kHostNotFound:
         case Status::kTagNotFound:
+        case Status::kUserNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -209,8 +209,6 @@ protected:
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
     StatusOr<UserID> getUserId(const std::string& account);
-
-    StatusOr<std::shared_ptr<NebulaSchemaProvider>> getUserSchema();
 
     bool checkPassword(UserID userId, const std::string& password);
 
