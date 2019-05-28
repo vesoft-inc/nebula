@@ -19,6 +19,7 @@ static constexpr size_t MAX_STRING = 4096;
 %}
 
 %x STR
+%x COMMENT
 
 GO                          ([Gg][Oo])
 AS                          ([Aa][Ss])
@@ -300,6 +301,12 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 yylloc->lines(yyleng);
                                 yylloc->step();
                             }
+"#".*                       // Skip the annotation
+"//".*                      // Skip the annotation
+"--".*                      // Skip the annotation
+"/*"                        { BEGIN(COMMENT); }
+<COMMENT>"*/"               { BEGIN(INITIAL); }
+<COMMENT>([^*]|\n)+|.       // Skip the annotation
 .                           { printf("error %c\n", *yytext); yyterminate(); }
 
 %%
