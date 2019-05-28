@@ -25,6 +25,7 @@ const int32_t kMaxCommandLineLen = 1024;
 
 CliManager::CliManager() {
     ::using_history();
+    initAutoCompletion();
 }
 
 
@@ -238,6 +239,87 @@ void CliManager::loadHistory() {
     }
     ::free(line);
     ::fclose(file);
+}
+
+
+static auto longestCommonPrefix(std::string prefix,
+                                const std::vector<std::string>& words) {
+    if (words.size() == 1) {
+        return words[0];
+    }
+
+    while (true) {
+        char nextChar = 0;
+        for (auto &word : words) {
+            if (word.size() <= prefix.size()) {
+                return word;
+            }
+            if (nextChar == 0) {
+                nextChar = word[prefix.size()];
+                continue;
+            }
+            if (::toupper(nextChar) != ::toupper(word[prefix.size()])) {
+                return word.substr(0, prefix.size());
+            }
+        }
+        prefix = words[0].substr(0, prefix.size() + 1);
+    }
+}
+
+
+// static
+static char** completer(const char *text, int start, int end) {
+    ::rl_attempted_completion_over = 1;
+    UNUSED(start);
+    UNUSED(end);
+    std::vector<std::string> matches;
+    static const std::vector<std::string> keywords = {
+        "GO", "STEPS", "FROM", "OVER", "AS", "WHERE", "YIELD",
+        "CREATE", "TAG", "EDGE", "DESCRIBE", "SHOW", "TO", "OR",
+        "USE", "SET", "MATCH", "INSERT", "VALUES", "RETURN",
+        "VERTEX", "EDGES", "UPDATE", "DELETE", "LOOKUP", "ALTER",
+        "UPTO", "REVERSELY", "SPACE", "SPACES", "TAGS", "UNION",
+        "INTERSECT", "MINUS", "NO", "OVERWRITE", "SHOW", "ADD",
+        "REMOVE", "HOSTS", "PARTITION_NUM", "REPLICA_FACTOR",
+        "DROP", "REMOVE", "IF", "NOT", "EXISTS", "WITH", "FIRSTNAME",
+        "LASTNAME", "EMAIL", "PHONE", "USER", "USERS", "PASSWORD",
+        "CHANGE", "ROLE", "ROLES", "GOD", "ADMIN", "GUEST", "GRANT",
+        "REVOKE", "ON", "BY", "IN",
+        "int", "double", "bool", "string", "timestamp", "true", "false",
+    };
+
+    // Collect the matched keywords with the input text as prefix
+    auto size = ::strlen(text);
+    for (auto &word : keywords) {
+        if (size > word.size()) {
+            continue;
+        }
+        if (::strncasecmp(text, word.c_str(), size) == 0) {
+            matches.emplace_back(word);
+        }
+    }
+
+    if (matches.empty()) {
+        return nullptr;
+    }
+
+    char **results = reinterpret_cast<char**>(malloc((2 + matches.size()) * sizeof(char*)));
+
+    // Get the longest common prefix of all matches as the echo back of this completion action
+    results[0] = ::strdup(longestCommonPrefix(text, matches).c_str());
+
+    auto i = 1;
+    for (auto &word : matches) {
+        results[i++] = ::strdup(word.c_str());
+    }
+    results[i] = nullptr;
+
+    return results;
+}
+
+
+void CliManager::initAutoCompletion() {
+    ::rl_attempted_completion_function = completer;
 }
 
 }  // namespace graph
