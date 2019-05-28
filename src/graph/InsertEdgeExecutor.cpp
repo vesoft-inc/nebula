@@ -41,6 +41,10 @@ Status InsertEdgeExecutor::prepare() {
 void InsertEdgeExecutor::execute() {
     using storage::cpp2::PropValue;
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
+    std::vector<std::string> names;
+    for (auto property : properties_) {
+        names.emplace_back(*property);
+    }
     auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
@@ -48,7 +52,6 @@ void InsertEdgeExecutor::execute() {
         auto dst = row->dstid();
         auto rank = row->rank();
         auto expressions = row->values();
-        std::vector<std::string> names;
         std::vector<PropValue> values;
 
         values.reserve(expressions.size());
@@ -85,9 +88,6 @@ void InsertEdgeExecutor::execute() {
             out.key.set_dst(dst);
             out.key.set_ranking(rank);
             out.key.set_edge_type(edgeType_);
-            for (auto property : properties_) {
-                names.emplace_back(*property);
-            }
             out.props_name  = names;
             out.props_value = values;
             out.__isset.key = true;

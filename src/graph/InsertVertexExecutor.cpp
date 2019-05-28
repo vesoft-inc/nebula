@@ -55,13 +55,16 @@ void InsertVertexExecutor::execute() {
     using storage::cpp2::Vertex;
     using storage::cpp2::Tag;
     using storage::cpp2::PropValue;
+    std::vector<std::string> names;
+    for (auto property : properties_) {
+        names.emplace_back(*property);
+    }
 
     std::vector<Vertex> vertices(rows_.size());
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
         auto id = row->id();
         auto expressions = row->values();
-        std::vector<std::string> names;
         std::vector<PropValue> values;
 
         values.reserve(expressions.size());
@@ -96,9 +99,6 @@ void InsertVertexExecutor::execute() {
         std::vector<Tag> tags(1);
         auto &tag = tags[0];
         tag.set_tag_id(tagId_);
-        for (auto property : properties_) {
-            names.emplace_back(*property);
-        }
         tag.set_props_name(names);
         tag.set_props_value(values);
         vertex.set_id(id);
