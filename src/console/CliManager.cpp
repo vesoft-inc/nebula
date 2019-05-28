@@ -242,6 +242,7 @@ void CliManager::loadHistory() {
 }
 
 
+// static
 static auto longestCommonPrefix(std::string prefix,
                                 const std::vector<std::string>& words) {
     if (words.size() == 1) {
@@ -268,10 +269,39 @@ static auto longestCommonPrefix(std::string prefix,
 
 
 // static
+bool isInQuotes() {
+    auto pos = ::rl_line_buffer;
+    if (*pos == '\0') {
+        return false;
+    }
+    auto quoteCount = 0;
+    if (*pos++ == '"') {
+        quoteCount++;
+    }
+
+    while (*pos != '\0') {
+        if (*pos == '"' && *(pos - 1) != '\\') {
+            quoteCount++;
+        }
+        pos++;
+    }
+    return quoteCount % 2 != 0;
+}
+
+
+// static
 static char** completer(const char *text, int start, int end) {
-    ::rl_attempted_completion_over = 1;
     UNUSED(start);
     UNUSED(end);
+
+    // Dont do filename completion even there is no match.
+    ::rl_attempted_completion_over = 1;
+
+    // Dont do completion if in quotes
+    if (isInQuotes()) {
+        return nullptr;
+    }
+
     std::vector<std::string> matches;
     static const std::vector<std::string> keywords = {
         "GO", "STEPS", "FROM", "OVER", "AS", "WHERE", "YIELD",
@@ -320,6 +350,7 @@ static char** completer(const char *text, int start, int end) {
 
 void CliManager::initAutoCompletion() {
     ::rl_attempted_completion_function = completer;
+    ::rl_completer_quote_characters = "\"";
 }
 
 }  // namespace graph
