@@ -50,7 +50,9 @@ TEST(MetaClientTest, InterfacesTest) {
         TestUtils::registerHB(hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(hosts, ret.value());
+        for (auto i = 0u; i < hosts.size(); i++) {
+            ASSERT_EQ(hosts[i], ret.value()[i].first);
+        }
     }
     {
         // Test createSpace, listSpaces, getPartsAlloc.
@@ -403,7 +405,9 @@ TEST(MetaClientTest, DiffTest) {
         TestUtils::registerHB(hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(hosts, ret.value());
+        for (auto i = 0u; i < hosts.size(); i++) {
+            ASSERT_EQ(hosts[i], ret.value()[i].first);
+        }
     }
     {
         // Test Create Space and List Spaces
@@ -452,7 +456,9 @@ TEST(MetaClientTest, HeartbeatTest) {
         ASSERT_TRUE(r.ok());
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(hosts, ret.value());
+        for (auto i = 0u; i < hosts.size(); i++) {
+            ASSERT_EQ(hosts[i], ret.value()[i].first);
+        }
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
     ASSERT_EQ(1, ActiveHostsManHolder::hostsMan()->getActiveHosts().size());

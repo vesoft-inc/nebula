@@ -23,6 +23,11 @@ public:
 private:
     explicit ListHostsProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::ListHostsResp>(kvstore) {}
+
+    /**
+     * Get all hosts with online/offline status.
+     * */
+    StatusOr<std::vector<cpp2::HostItem>> allHostsWithStatus();
 };
 
 }  // namespace meta

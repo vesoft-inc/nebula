@@ -102,8 +102,8 @@ public:
             auto resp = std::move(f).get();
             EXPECT_EQ(hosts.size(), resp.hosts.size());
             for (decltype(hosts.size()) i = 0; i < hosts.size(); i++) {
-                EXPECT_EQ(hosts[i].first, resp.hosts[i].ip);
-                EXPECT_EQ(hosts[i].second, resp.hosts[i].port);
+                EXPECT_EQ(hosts[i].first, resp.hosts[i].hostAddr.ip);
+                EXPECT_EQ(hosts[i].second, resp.hosts[i].hostAddr.port);
             }
         }
         return hosts.size();
