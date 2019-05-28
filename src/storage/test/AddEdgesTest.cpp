@@ -5,13 +5,12 @@
  */
 
 #include "base/Base.h"
+#include "base/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/AddEdgesProcessor.h"
-#include "storage/KeyUtils.h"
-
 
 namespace nebula {
 namespace storage {
@@ -51,7 +50,7 @@ TEST(AddEdgesTest, SimpleTest) {
     LOG(INFO) << "Check data in kv store...";
     for (auto partId = 0; partId < 3; partId++) {
         for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
-            auto prefix = KeyUtils::prefix(partId, srcId, srcId*100 + 1);
+            auto prefix = NebulaKeyUtils::prefix(partId, srcId, srcId*100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));
             int num = 0;

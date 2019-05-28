@@ -1,7 +1,6 @@
 add_library(
     storage_service_handler OBJECT
     StorageServiceHandler.cpp
-    KeyUtils.cpp
     StorageHttpHandler.cpp
     AddVerticesProcessor.cpp
     AddEdgesProcessor.cpp

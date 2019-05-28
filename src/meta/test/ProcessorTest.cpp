@@ -19,8 +19,8 @@
 #include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/CreateTagProcessor.h"
 #include "meta/processors/CreateEdgeProcessor.h"
-#include "meta/processors/RemoveTagProcessor.h"
-#include "meta/processors/RemoveEdgeProcessor.h"
+#include "meta/processors/DropTagProcessor.h"
+#include "meta/processors/DropEdgeProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
 #include "meta/processors/GetEdgeProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
@@ -121,10 +121,12 @@ TEST(ProcessorTest, CreateSpaceTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("default_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(3);
+        req.set_properties(std::move(properties));
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -187,10 +189,13 @@ TEST(ProcessorTest, CreateTagTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("default_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(std::move(properties));
+
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -235,10 +240,13 @@ TEST(ProcessorTest, CreateEdgeTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("first_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(std::move(properties));
+
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -247,11 +255,14 @@ TEST(ProcessorTest, CreateEdgeTest) {
         ASSERT_EQ(1, resp.get_id().get_space_id());
    }
    {
-        // create second space
+        // create another space
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("another_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("second_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(std::move(properties));
+
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -324,10 +335,12 @@ TEST(ProcessorTest, KVOperationTest) {
     UNUSED(hostsNum);
 
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("default_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(3);
+        req.set_properties(std::move(properties));
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -558,25 +571,24 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
     }
 }
 
-TEST(ProcessorTest, RemoveTagTest) {
-     fs::TempDir rootPath("/tmp/RemoveTagTest.XXXXXX");
+TEST(ProcessorTest, DropTagTest) {
+     fs::TempDir rootPath("/tmp/DropTagTest.XXXXXX");
      std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
      ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
      TestUtils::mockTag(kv.get(), 1);
-      // remove tag processor test
      {
-         cpp2::RemoveTagReq req;
+         // remove tag processor test
+         cpp2::DropTagReq req;
          req.set_space_id(1);
          req.set_tag_name("tag_0");
-         auto* processor = RemoveTagProcessor::instance(kv.get());
+         auto* processor = DropTagProcessor::instance(kv.get());
          auto f = processor->getFuture();
          processor->process(req);
          auto resp = std::move(f).get();
          ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
      }
-
-     // check tag data has been deleted.
      {
+         // check tag data has been deleted.
          std::string tagVal;
          kvstore::ResultCode ret;
          std::unique_ptr<kvstore::KVIterator> iter;
@@ -590,17 +602,17 @@ TEST(ProcessorTest, RemoveTagTest) {
      }
 }
 
-TEST(ProcessorTest, RemoveEdgeTest) {
-    fs::TempDir rootPath("/tmp/RemoveEdgeTest.XXXXXX");
+TEST(ProcessorTest, DropEdgeTest) {
+    fs::TempDir rootPath("/tmp/DropEdgeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockEdge(kv.get(), 1);
     // Space not exist
     {
-        cpp2::RemoveEdgeReq req;
+        cpp2::DropEdgeReq req;
         req.set_space_id(0);
         req.set_edge_name("edge_0");
-        auto* processor = RemoveEdgeProcessor::instance(kv.get());
+        auto* processor = DropEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -608,10 +620,10 @@ TEST(ProcessorTest, RemoveEdgeTest) {
     }
     // Edge not exist
     {
-        cpp2::RemoveEdgeReq req;
+        cpp2::DropEdgeReq req;
         req.set_space_id(1);
         req.set_edge_name("edge_no");
-        auto* processor = RemoveEdgeProcessor::instance(kv.get());
+        auto* processor = DropEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -619,10 +631,10 @@ TEST(ProcessorTest, RemoveEdgeTest) {
     }
     // Succeeded
     {
-        cpp2::RemoveEdgeReq req;
+        cpp2::DropEdgeReq req;
         req.set_space_id(1);
         req.set_edge_name("edge_0");
-        auto* processor = RemoveEdgeProcessor::instance(kv.get());
+        auto* processor = DropEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
@@ -1001,10 +1013,12 @@ TEST(ProcessorTest, SameNameTagsTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("first_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(std::move(properties));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1013,10 +1027,12 @@ TEST(ProcessorTest, SameNameTagsTest) {
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("second_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(1);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("second_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(std::move(properties));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1059,10 +1075,10 @@ TEST(ProcessorTest, SameNameTagsTest) {
 
     // Remove Test
     {
-        cpp2::RemoveTagReq req;
+        cpp2::DropTagReq req;
         req.set_space_id(1);
         req.set_tag_name("default_tag");
-        auto* processor = RemoveTagProcessor::instance(kv.get());
+        auto* processor = DropTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

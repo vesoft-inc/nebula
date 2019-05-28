@@ -13,6 +13,7 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 #include "dataman/RowSetReader.h"
+#include "network/NetworkUtils.h"
 
 DECLARE_string(meta_server_addrs);
 DECLARE_int32(load_data_interval_secs);
@@ -26,12 +27,13 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     GraphSpaceID spaceId = 0;
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    uint32_t localMetaPort = 10001;
-    uint32_t localDataPort = 20002;
 
+    // Let the system choose an available port for us
+    uint32_t localMetaPort = 0;
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
-    auto metaServerContext = meta::TestUtils::mockServer(10001, metaPath.c_str());
+    auto metaServerContext = meta::TestUtils::mockServer(localMetaPort, metaPath.c_str());
+    localMetaPort =  metaServerContext->port_;
 
     LOG(INFO) << "Create meta client...";
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
@@ -43,6 +45,9 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     mClient->init();
 
     LOG(INFO) << "Start data server....";
+
+    // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
+    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
     auto sc = TestUtils::mockServer(mClient.get(), dataPath.c_str(), localIp, localDataPort);
 

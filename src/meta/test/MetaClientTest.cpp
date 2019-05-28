@@ -29,14 +29,18 @@ using apache::thrift::FragileConstructor::FRAGILE;
 TEST(MetaClientTest, InterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockServer(10001, rootPath.path());
+
+    // Let the system choose an available port for us
+    uint32_t localMetaPort = 0;
+    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
 
     GraphSpaceID spaceId = 0;
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, 10001)});
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+
     client->init();
     {
         // Test addHost, listHosts interface.
@@ -267,14 +271,18 @@ TEST(MetaClientTest, InterfacesTest) {
 TEST(MetaClientTest, TagTest) {
     FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTagTest.XXXXXX");
-    auto sc = TestUtils::mockServer(10001, rootPath.path());
+
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
 
     GraphSpaceID spaceId = 0;
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, 10001)});
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+
     client->init();
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
@@ -312,7 +320,7 @@ TEST(MetaClientTest, TagTest) {
         ASSERT_TRUE(result.ok());
     }
     {
-        auto result = client->removeTagSchema(spaceId, "test_tag").get();
+        auto result = client->dropTagSchema(spaceId, "test_tag").get();
         ASSERT_TRUE(result.ok());
     }
     {
@@ -360,14 +368,18 @@ public:
 TEST(MetaClientTest, DiffTest) {
     FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockServer(10001, rootPath.path());
+
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
     auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, 10001)});
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+
     client->registerListener(listener.get());
     client->init();
     {
