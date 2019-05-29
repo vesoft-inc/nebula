@@ -5,6 +5,7 @@
  */
 
 #include "meta/processors/CreateSpaceProcessor.h"
+#include "meta/ActiveHostsMan.h"
 
 namespace nebula {
 namespace meta {
@@ -22,20 +23,25 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     }
     CHECK_EQ(Status::SpaceNotFound(), spaceRet.status());
-    auto ret = allHosts();
-    if (!ret.ok()) {
+    auto hosts = ActiveHostsManHolder::hostsMan()->getActiveHosts();
+    if (hosts.empty()) {
         LOG(ERROR) << "Create Space Failed : No Hosts!";
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
         onFinished();
         return;
     }
     auto spaceId = autoIncrementId();
-    auto hosts = ret.value();
     auto spaceName = properties.get_space_name();
     auto partitionNum = properties.get_partition_num();
     auto replicaFactor = properties.get_replica_factor();
     VLOG(3) << "Create space " << spaceName << ", id " << spaceId;
-
+    if ((int32_t)hosts.size() < replicaFactor) {
+        LOG(ERROR) << "Not enough hosts existed for replica "
+                   << replicaFactor << ", hosts num " << hosts.size();
+        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
+        onFinished();
+        return;
+    }
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::indexSpaceKey(spaceName),
                       std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
@@ -53,7 +59,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
 
 std::vector<nebula::cpp2::HostAddr>
 CreateSpaceProcessor::pickHosts(PartitionID partId,
-                                const std::vector<nebula::cpp2::HostAddr>& hosts,
+                                const std::vector<HostAddr>& hosts,
                                 int32_t replicaFactor) {
     if (hosts.size() == 0) {
         return std::vector<nebula::cpp2::HostAddr>();
@@ -61,7 +67,7 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
     auto startIndex = partId;
     std::vector<nebula::cpp2::HostAddr> pickedHosts;
     for (decltype(replicaFactor) i = 0; i < replicaFactor; i++) {
-        pickedHosts.emplace_back(hosts[startIndex++ % hosts.size()]);
+        pickedHosts.emplace_back(toThriftHost(hosts[startIndex++ % hosts.size()]));
     }
     return pickedHosts;
 }
