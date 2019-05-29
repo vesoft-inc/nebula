@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -10,14 +10,22 @@ namespace nebula {
 
 std::string WithUserOptItem::toString() const {
     switch (optType_) {
-        case OptionType::FIRST:
-            return folly::stringPrintf("FIRSTNAME \"%s\"", optValue_.get()->data());
-        case OptionType::LAST:
-            return folly::stringPrintf("LASTNAME \"%s\"", optValue_.get()->data());
-        case OptionType::EMAIL:
-            return folly::stringPrintf("EMAIL \"%s\"", optValue_.get()->data());
-        case OptionType::PHONE:
-            return folly::stringPrintf("PHONE \"%s\"", optValue_.get()->data());
+        case OptionType::LOCK:
+        {
+            if (asBool(optVal_)) {
+                return std::string("ACCOUNT LOCK");
+            } else {
+                return std::string("ACCOUNT UNLOCK");
+            }
+        }
+        case OptionType::MAX_QUERIES_PER_HOUR:
+            return folly::stringPrintf("MAX_QUERIES_PER_HOUR %ld", asInt(optVal_));
+        case OptionType::MAX_UPDATES_PER_HOUR:
+            return folly::stringPrintf("MAX_UPDATES_PER_HOUR %ld", asInt(optVal_));
+        case OptionType::MAX_CONNECTIONS_PER_HOUR:
+            return folly::stringPrintf("MAX_CONNECTIONS_PER_HOUR %ld", asInt(optVal_));
+        case OptionType::MAX_USER_CONNECTIONS:
+            return folly::stringPrintf("MAX_USER_CONNECTIONS %ld", asInt(optVal_));
         default:
             return "Unknown";
     }

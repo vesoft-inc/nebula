@@ -77,19 +77,35 @@ void MetaClient::loadDataThreadFunc() {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
         return;
     }
-    auto ret = listSpaces().get();
-    if (!ret.ok()) {
-        LOG(ERROR) << "List space failed, status:" << ret.status();
+    auto spaceRet = listSpaces().get();
+    if (!spaceRet.ok()) {
+        LOG(ERROR) << "List space failed, status:" << spaceRet.status();
         return;
     }
+
+    auto userRet = listUsers().get();
+    if (!userRet.ok()) {
+        LOG(ERROR) << "List user failed, status:" << userRet.status();
+        return;
+    }
+
     decltype(localCache_) cache;
     decltype(spaceIndexByName_) spaceIndexByName;
     decltype(spaceTagIndexByName_) spaceTagIndexByName;
     decltype(spaceEdgeIndexByName_) spaceEdgeIndexByName;
     decltype(spaceNewestTagVerMap_) spaceNewestTagVerMap;
     decltype(spaceNewestEdgeVerMap_) spaceNewestEdgeVerMap;
+    decltype(userNameById_) userNameById;
+    decltype(userIdByName_) userIdByName;
 
-    for (auto space : ret.value()) {
+    for (auto user : userRet.value()) {
+        auto userId = user.first;
+        const auto& userName = user.second.get_account();
+        userNameById.emplace(userId, userName);
+        userIdByName.emplace(std::move(userName), userId);
+    }
+
+    for (auto space : spaceRet.value()) {
         auto spaceId = space.first;
         auto r = getPartsAlloc(spaceId).get();
         if (!r.ok()) {
@@ -128,6 +144,8 @@ void MetaClient::loadDataThreadFunc() {
         spaceEdgeIndexByName_ = std::move(spaceEdgeIndexByName);
         spaceNewestTagVerMap_ = std::move(spaceNewestTagVerMap);
         spaceNewestEdgeVerMap_ = std::move(spaceNewestEdgeVerMap);
+        userNameById_ = std::move(userNameById);
+        userIdByName_ = std::move(userIdByName);
     }
     LOG(INFO) << "Load data completed!";
 }
@@ -511,6 +529,25 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
     return Status::SpaceNotFound();
 }
 
+StatusOr<std::string>
+MetaClient::getUserNameByIdFromCache(UserID userId) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = userNameById_.find(userId);
+    if (it != userNameById_.end()) {
+        return it->second;
+    }
+    return Status::UserNotFound();
+}
+
+StatusOr<UserID>
+MetaClient::getUserIdByNameFromCache(const std::string& name) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = userIdByName_.find(name);
+    if (it != userIdByName_.end()) {
+        return it->second;
+    }
+    return Status::UserNotFound();
+}
 
 StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
                                                     const std::string& name) {
@@ -643,6 +680,126 @@ MetaClient::removeRange(std::string segment, std::string start, std::string end)
                 }, true);
 }
 
+folly::Future<StatusOr<UserID>>
+MetaClient::createUser(cpp2::UserItem userItem, std::string password, bool missingOk) {
+    cpp2::CreateUserReq req;
+    req.set_user(std::move(userItem));
+    req.set_encoded_pwd(std::move(password));
+    req.set_missing_ok(missingOk);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_createUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> UserID {
+        return resp.get_id().get_user_id();
+    }, true);
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::dropUser(std::string account, bool missingOk) {
+    cpp2::DropUserReq req;
+    req.set_account(std::move(account));
+    req.set_missing_ok(missingOk);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_dropUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::alterUser(cpp2::UserItem userItem) {
+    cpp2::AlterUserReq req;
+    req.set_user_item(std::move(userItem));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_alterUser(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::grantToUser(cpp2::RoleItem roleItem) {
+    cpp2::GrantRoleReq req;
+    req.set_role_item(std::move(roleItem));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_grantRole(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::revokeFromUser(cpp2::RoleItem roleItem) {
+    cpp2::RevokeRoleReq req;
+    req.set_role_item(std::move(roleItem));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_revokeRole(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
+}
+
+folly::Future<StatusOr<cpp2::UserItem>>
+MetaClient::getUser(std::string account) {
+    cpp2::GetUserReq req;
+    req.set_account(account);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_getUser(request);
+    }, [] (cpp2::GetUserResp&& resp) -> cpp2::UserItem {
+        return std::move(resp).get_user_item();
+    });
+}
+
+folly::Future<StatusOr<std::unordered_map<UserID, cpp2::UserItem>>>
+MetaClient::listUsers() {
+    cpp2::ListUsersReq req;
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listUsers(request);
+    }, [] (cpp2::ListUsersResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_users();
+    });
+}
+
+folly::Future<StatusOr<std::vector<cpp2::RoleItem>>>
+MetaClient::listRoles(GraphSpaceID spaceId) {
+    cpp2::ListRolesReq req;
+    req.set_space_id(spaceId);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_listRoles(request);
+    }, [] (cpp2::ListRolesResp&& resp) -> decltype(auto) {
+        return std::move(resp).get_roles();
+    });
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::changePassword(std::string account,
+                           std::string newPwd,
+                           std::string oldPwd,
+                           bool verifyNeed) {
+    cpp2::ChangePasswordReq req;
+    req.set_account(std::move(account));
+    req.set_new_encoded_pwd(std::move(newPwd));
+    // If the user role is GOD, there is no need to verify the old password.
+    if (verifyNeed) {
+        req.set_old_encoded_pwd(std::move(oldPwd));
+    }
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_changePassword(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::checkPassword(std::string account, std::string password) {
+    cpp2::CheckPasswordReq req;
+    req.set_account(std::move(account));
+    req.set_encoded_pwd(std::move(password));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_checkPassword(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
+}
 
 PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
@@ -697,6 +854,11 @@ bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
     return false;
 }
 
+bool MetaClient::checkIsGodUserInCache(const std::string& account) {
+    // TODO(boshengchen) : user cache.
+    UNUSED(account);
+    return true;
+}
 
 int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);

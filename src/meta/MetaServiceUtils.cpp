@@ -342,15 +342,22 @@ folly::StringPiece MetaServiceUtils::userItemVal(folly::StringPiece rawVal) {
 std::string MetaServiceUtils::replaceUserVal(const cpp2::UserItem& user, folly::StringPiece val) {
     cpp2:: UserItem oldUser;
     apache::thrift::CompactSerializer::deserialize(userItemVal(val), oldUser);
-    if (user.__isset.first_name) {
-        oldUser.set_first_name(user.get_first_name());
-    }
-    if (user.__isset.last_name) {
-        oldUser.set_last_name(user.get_last_name());
-    }
     if (user.__isset.is_lock) {
-        oldUser.set_is_lock(user.get_is_lock());
+        oldUser.set_is_lock(*user.get_is_lock());
     }
+    if (user.__isset.max_queries_per_hour) {
+        oldUser.set_max_queries_per_hour(*user.get_max_queries_per_hour());
+    }
+    if (user.__isset.max_updates_per_hour) {
+        oldUser.set_max_updates_per_hour(*user.get_max_updates_per_hour());
+    }
+    if (user.__isset.max_connections_per_hour) {
+        oldUser.set_max_connections_per_hour(*user.get_max_connections_per_hour());
+    }
+    if (user.__isset.max_user_connections) {
+        oldUser.set_max_user_connections(*user.get_max_user_connections());
+    }
+
     std::string newVal, userVal;
     apache::thrift::CompactSerializer::serialize(oldUser, &userVal);
     auto len = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(val.begin());
@@ -402,10 +409,14 @@ std::string MetaServiceUtils::roleSpacePrefix(GraphSpaceID spaceId) {
     return key;
 }
 
-UserID MetaServiceUtils::parseUserId(folly::StringPiece val) {
+UserID MetaServiceUtils::parseRoleUserId(folly::StringPiece val) {
     return *reinterpret_cast<const UserID *>(val.begin() +
                                              kRolesTable.size() +
                                              sizeof(GraphSpaceID));
+}
+
+UserID MetaServiceUtils::parseUserId(folly::StringPiece val) {
+    return *reinterpret_cast<const UserID *>(val.begin() + kUsersTable.size());
 }
 
 }  // namespace meta

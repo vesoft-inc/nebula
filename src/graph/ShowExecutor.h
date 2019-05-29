@@ -28,8 +28,13 @@ public:
     void showSpaces();
     void showTags();
     void showEdges();
+    void showUsers();
+    void showUser(const std::string *user);
+    void showRoles(const std::string *space);
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
+
+    std::string roleStr(meta::cpp2::RoleType type);
 
 private:
     ShowSentence                             *sentence_{nullptr};

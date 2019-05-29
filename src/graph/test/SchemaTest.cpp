@@ -159,8 +159,8 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
         std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"EMAIL", "string"},
             {"name", "string"},
-            {"email", "string"},
             {"age", "int"},
             {"gender", "string"},
             {"row_timestamp", "timestamp"},

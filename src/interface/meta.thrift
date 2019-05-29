@@ -45,12 +45,20 @@ enum AlterSchemaOp {
     UNKNOWN = 0x04,
 } (cpp.enum_strict)
 
+/**
+** GOD is A global senior administrator.like root of Linux systems.
+** ADMIN is an administrator for a given Graph Space.
+** USER is a normal user for a given Graph Space. A User can access (read and write) the data in the Graph Space.
+** GUEST is a read-only role for a given Graph Space. A Guest cannot modify the data in the Graph Space.
+** Refer to header file src/graph/PermissionManager.h for details.
+**/
 
 enum RoleType {
-    GOD    = 0x01,
-    ADMIN  = 0x02,
-    USER   = 0x03,
-    GUEST  = 0x04,
+    GOD     = 0x01,
+    ADMIN   = 0x02,
+    USER    = 0x03,
+    GUEST   = 0x04,
+    UNKNOWN = 0x05,
 } (cpp.enum_strict)
 
 
@@ -104,16 +112,23 @@ struct EdgeItem {
 
 
 struct UserItem {
-    1: string account,
-    2: string first_name,
-    3: string last_name,
-    4: bool   is_lock,
+    1: string account;
+    // Disable user if lock status is true.
+    2: optional bool   is_lock,
+    // The number of queries an account can issue per hour
+    3: optional i32    max_queries_per_hour,
+    // The number of updates an account can issue per hour
+    4: optional i32    max_updates_per_hour,
+    // The number of times an account can connect to the server per hour
+    5: optional i32    max_connections_per_hour,
+    // The number of simultaneous connections to the server by an account
+    6: optional i32    max_user_connections,
 }
 
 struct RoleItem {
-    1: string account,
-    2: string space,
-    3: RoleType RoleType,
+    1: common.UserID        user_id,
+    2: common.GraphSpaceID  space_id,
+    3: RoleType             role_type,
 }
 
 struct ExecResp {
@@ -355,22 +370,32 @@ struct GetUserReq {
 }
 
 struct GetUserResp {
-    1: UserItem user_item,
+    1: ErrorCode code,
+    // Valid if ret equals E_LEADER_CHANGED.
+    2: common.HostAddr  leader,
+    3: common.UserID user_id,
+    4: UserItem user_item,
 }
 
 struct ListUsersReq {
 }
 
 struct ListUsersResp {
-    1: list<UserItem> users,
+    1: ErrorCode code,
+    // Valid if ret equals E_LEADER_CHANGED.
+    2: common.HostAddr  leader,    
+    3: map<common.UserID, UserItem>(cpp.template = "std::unordered_map") users,
 }
 
 struct ListRolesReq {
-    1: string space,
+    1: common.GraphSpaceID space_id,
 }
 
 struct ListRolesResp {
-    1: list<RoleItem> roles,
+    1: ErrorCode code,
+    // Valid if ret equals E_LEADER_CHANGED.
+    2: common.HostAddr  leader,    
+    3: list<RoleItem> roles,
 }
 
 struct ChangePasswordReq {
