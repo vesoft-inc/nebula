@@ -63,10 +63,10 @@ TEST(HBProcessorTest, HBTest) {
             auto resp = std::move(f).get();
             ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         }
-        auto hosts = HBProcessor::hostsMan()->getActiveHosts();
+        auto hosts = ActiveHostsManHolder::hostsMan()->getActiveHosts();
         ASSERT_EQ(5, hosts.size());
         sleep(3);
-        ASSERT_EQ(0, HBProcessor::hostsMan()->getActiveHosts().size());
+        ASSERT_EQ(0, ActiveHostsManHolder::hostsMan()->getActiveHosts().size());
 
         LOG(INFO) << "Test for invalid host!";
         cpp2::HBReq req;
