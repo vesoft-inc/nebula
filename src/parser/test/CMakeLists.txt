@@ -32,3 +32,17 @@ nebula_link_libraries(
 target_include_directories(scanner_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
 nebula_add_test(scanner_test)
 
+add_executable(
+    parser_benchmark
+    ParserBenchmark.cpp
+    $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:filter_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+nebula_link_libraries(
+    parser_benchmark
+    follybenchmark
+    boost_regex
+)
