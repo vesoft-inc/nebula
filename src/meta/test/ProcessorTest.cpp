@@ -41,11 +41,8 @@ using nebula::cpp2::SupportedType;
 using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(ProcessorTest, AddHostsTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
 
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
@@ -122,11 +119,8 @@ TEST(ProcessorTest, AddHostsTest) {
 
 
 TEST(ProcessorTest, CreateSpaceTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
 
     {
@@ -197,11 +191,8 @@ TEST(ProcessorTest, CreateSpaceTest) {
 
 
 TEST(ProcessorTest, CreateTagTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/CreateTagTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
     TestUtils::createSomeHosts(kv.get());
 
     {
@@ -253,11 +244,8 @@ TEST(ProcessorTest, CreateTagTest) {
 
 
 TEST(ProcessorTest, CreateEdgeTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/CreateEdgeTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
     TestUtils::createSomeHosts(kv.get());
 
     {
@@ -351,11 +339,8 @@ TEST(ProcessorTest, CreateEdgeTest) {
 
 
 TEST(ProcessorTest, KVOperationTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/KVOperationTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
     UNUSED(hostsNum);
 
@@ -494,11 +479,8 @@ TEST(ProcessorTest, KVOperationTest) {
 
 
 TEST(ProcessorTest, ListOrGetTagsTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/ListOrGetTagsTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockTag(kv.get(), 10);
 
@@ -549,11 +531,8 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
 
 
 TEST(ProcessorTest, ListOrGetEdgesTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/ListOrGetEdgesTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockEdge(kv.get(), 10);
 
@@ -606,11 +585,8 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
 
 
 TEST(ProcessorTest, DropTagTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/DropTagTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockTag(kv.get(), 1);
 
@@ -643,11 +619,8 @@ TEST(ProcessorTest, DropTagTest) {
 
 
 TEST(ProcessorTest, DropEdgeTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/DropEdgeTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockEdge(kv.get(), 1);
 
@@ -702,11 +675,8 @@ TEST(ProcessorTest, DropEdgeTest) {
 
 
 TEST(ProcessorTest, AlterTagTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/AlterTagTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockTag(kv.get(), 1);
 
@@ -847,11 +817,8 @@ TEST(ProcessorTest, AlterTagTest) {
 
 
 TEST(ProcessorTest, AlterEdgeTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/AlterEdgeTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockEdge(kv.get(), 1);
 
@@ -1064,11 +1031,8 @@ TEST(ProcessorTest, AlterEdgeTest) {
 
 
 TEST(ProcessorTest, SameNameTagsTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/SameNameTagsTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path(), ioPool, workers);
+    auto kv = TestUtils::initKV(rootPath.path());
     TestUtils::createSomeHosts(kv.get());
 
     {

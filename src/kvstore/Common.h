@@ -22,7 +22,7 @@ enum ResultCode {
     ERR_LEADER_CHANGED      = -5,
     ERR_INVALID_ARGUMENT    = -6,
     ERR_IO_ERROR            = -7,
-    ERR_UNKNOWN             = -8,
+    ERR_UNKNOWN             = -100,
 };
 
 using KVCallback = std::function<void(ResultCode code)>;

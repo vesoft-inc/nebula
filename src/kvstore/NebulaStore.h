@@ -58,6 +58,14 @@ public:
         return 0;
     }
 
+    std::shared_ptr<folly::IOThreadPoolExecutor> getIoPool() const {
+        return ioPool_;
+    }
+
+    std::shared_ptr<thread::GenericThreadPool> getWorkers() const {
+        return workers_;
+    }
+
     // Return the current leader
     HostAddr partLeader(GraphSpaceID spaceId, PartitionID partId) override {
         UNUSED(spaceId);

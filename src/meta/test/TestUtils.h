@@ -29,10 +29,10 @@ using nebula::cpp2::SupportedType;
 
 class TestUtils {
 public:
-    static std::unique_ptr<kvstore::KVStore> initKV(
-            const char* rootPath,
-            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
-            std::shared_ptr<thread::GenericThreadPool> workers) {
+    static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
+        auto workers = std::make_shared<thread::GenericThreadPool>();
+        workers->start(4);
+        auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto partMan = std::make_unique<kvstore::MemPartManager>();
 
         // GraphSpaceID =>  {PartitionIDs}
@@ -172,13 +172,10 @@ public:
 
     static std::unique_ptr<test::ServerContext> mockMetaServer(uint16_t port,
                                                                const char* dataPath) {
-        auto workers = std::make_shared<thread::GenericThreadPool>();
-        workers->start(4);
-        auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         LOG(INFO) << "Initializing KVStore at \"" << dataPath << "\"";
 
         auto sc = std::make_unique<test::ServerContext>();
-        sc->kvStore_ = TestUtils::initKV(dataPath, ioPool, workers);
+        sc->kvStore_ = TestUtils::initKV(dataPath);
 
         auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get());
         sc->mockCommon("meta", port, handler);

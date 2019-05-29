@@ -26,11 +26,12 @@ class TestUtils {
 public:
     static std::unique_ptr<kvstore::KVStore> initKV(
             const char* rootPath,
-            HostAddr localhost,
-            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
-            std::shared_ptr<thread::GenericThreadPool> workers,
+            HostAddr localhost = {0, 0},
             meta::MetaClient* mClient = nullptr,
             bool useMetaServer = false) {
+        auto workers = std::make_shared<thread::GenericThreadPool>();
+        workers->start(4);
+        auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         std::unique_ptr<kvstore::PartManager> partMan;
         if (useMetaServer) {
             partMan = std::make_unique<kvstore::MetaServerBasedPartManager>(localhost,
@@ -179,16 +180,7 @@ public:
                                                                   uint32_t port = 0,
                                                                   bool useMetaServer = false) {
         auto sc = std::make_unique<test::ServerContext>();
-
-        auto workers = std::make_shared<thread::GenericThreadPool>();
-        workers->start(4);
-        auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
-        sc->kvStore_ = TestUtils::initKV(dataPath,
-                                         localhost,
-                                         ioPool,
-                                         workers,
-                                         mClient,
-                                         useMetaServer);
+        sc->kvStore_ = TestUtils::initKV(dataPath, localhost, mClient, useMetaServer);
 
         std::unique_ptr<meta::SchemaManager> schemaMan;
         if (!useMetaServer) {

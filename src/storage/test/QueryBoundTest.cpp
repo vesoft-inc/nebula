@@ -174,14 +174,8 @@ void checkResponse(cpp2::QueryResponse& resp, bool outBound = true) {
 
 
 TEST(QueryBoundTest, OutBoundSimpleTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(),
-                                                             {0, 0},
-                                                             ioPool,
-                                                             workers);
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
 
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
@@ -202,15 +196,9 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
 
 
 TEST(QueryBoundTest, inBoundSimpleTest) {
-    auto workers = std::make_shared<thread::GenericThreadPool>();
-    workers->start(4);
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path(),
-                                                             {0, 0},
-                                                             ioPool,
-                                                             workers);
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
 
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
