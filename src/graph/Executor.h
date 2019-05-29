@@ -85,6 +85,20 @@ protected:
         return Status::OK();
     }
 
+    meta::cpp2::RoleType toRole(RoleTypeClause::RoleType type) {
+        switch (type) {
+            case RoleTypeClause::RoleType::GOD:
+                return meta::cpp2::RoleType::GOD;
+            case RoleTypeClause::RoleType::ADMIN:
+                return meta::cpp2::RoleType::ADMIN;
+            case RoleTypeClause::RoleType::USER:
+                return meta::cpp2::RoleType::USER;
+            case RoleTypeClause::RoleType::GUEST:
+                return meta::cpp2::RoleType::GUEST;
+        }
+        return meta::cpp2::RoleType::UNKNOWN;
+    }
+
 protected:
     ExecutionContext                            *ectx_;
     std::function<void()>                       onFinish_;

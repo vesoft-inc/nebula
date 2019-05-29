@@ -109,6 +109,8 @@ public:
 
     static std::string roleSpacePrefix(GraphSpaceID spaceId);
 
+    static UserID parseRoleUserId(folly::StringPiece val);
+
     static UserID parseUserId(folly::StringPiece val);
 };
 

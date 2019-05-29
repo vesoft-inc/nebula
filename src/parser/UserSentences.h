@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -15,33 +15,56 @@ namespace nebula {
 
 class WithUserOptItem final {
 public:
+    using OptVal = boost::variant<bool, int64_t>;
     enum OptionType : uint8_t {
-        FIRST,
-        LAST,
-        EMAIL,
-        PHONE
+        LOCK,
+        MAX_QUERIES_PER_HOUR,
+        MAX_UPDATES_PER_HOUR,
+        MAX_CONNECTIONS_PER_HOUR,
+        MAX_USER_CONNECTIONS,
     };
 
-    WithUserOptItem(OptionType op, std::string *val) {
+    WithUserOptItem(OptionType op, int64_t val) {
         optType_ = op;
-        optValue_.reset(val);
+        optVal_ = val;
     }
 
-    const std::string* getValue() {
-        return optValue_.get();
+    WithUserOptItem(OptionType op, bool val) {
+        optType_ = op;
+        optVal_ = val;
     }
 
-    const OptionType getOptType() {
+    OptVal getOptVal() const {
+        switch (optType_) {
+            case LOCK:
+                return boost::get<bool>(optVal_);
+            case MAX_QUERIES_PER_HOUR:
+            case MAX_UPDATES_PER_HOUR:
+            case MAX_CONNECTIONS_PER_HOUR:
+            case MAX_USER_CONNECTIONS:
+                return boost::get<int64_t>(optVal_);
+        }
+        return false;
+    }
+
+    static int64_t asInt(const OptVal &value) {
+        return boost::get<int64_t>(value);
+    }
+
+    static bool asBool(const OptVal &value) {
+        return boost::get<bool>(value);
+    }
+
+    OptionType getOptType() {
         return optType_;
     }
 
     std::string toString() const;
 
 private:
-    std::unique_ptr<std::string>     optValue_;
+    OptVal                           optVal_;
     OptionType                       optType_;
 };
-
 
 class WithUserOptList final {
 public:
@@ -73,7 +96,7 @@ public:
         roleType_ = roleType;
     }
 
-    const RoleType getOptType() {
+    RoleType getOptType() {
         return roleType_;
     }
 
@@ -100,7 +123,7 @@ public:
         type_.reset(type);
     }
 
-    const RoleTypeClause::RoleType getRoleType() {
+    RoleTypeClause::RoleType getRoleType() {
         return type_->getOptType();
     }
 
@@ -145,8 +168,12 @@ public:
         withUserOpts_.reset(withUserOpts);
     }
 
-    const std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
-        return withUserOpts_->getOpts();
+    std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
+        if (withUserOpts_) {
+            return withUserOpts_->getOpts();
+        } else {
+            return std::vector<std::unique_ptr<WithUserOptItem>>();
+        }
     }
 
     std::string toString() const override;
@@ -174,7 +201,7 @@ public:
         withUserOpts_.reset(withUserOpts);
     }
 
-    const std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
+    std::vector<std::unique_ptr<WithUserOptItem>> getOpts() {
         return withUserOpts_->getOpts();
     }
 
@@ -227,6 +254,7 @@ public:
         account_.reset(account);
         newPwd_.reset(newPwd);
         oldPwd_.reset(oldPwd);
+        kind_ = Kind::kChangePassword;
     }
 
     const std::string* getAccount() {
@@ -266,7 +294,7 @@ public:
         aclItemClause_.reset(aclItemClause);
     }
 
-    const AclItemClause* getAclItemClause() {
+    AclItemClause* getAclItemClause() {
         return aclItemClause_.get();
     }
 
@@ -293,7 +321,7 @@ public:
         aclItemClause_.reset(aclItemClause);
     }
 
-    const AclItemClause* getAclItemClause() {
+    AclItemClause* getAclItemClause() {
         return aclItemClause_.get();
     }
 

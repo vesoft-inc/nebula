@@ -179,6 +179,18 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 
 
 template<typename RESP>
+Status BaseProcessor<RESP>::userExist(UserID spaceId) {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
+    auto userKey = MetaServiceUtils::userKey(spaceId);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, userKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return Status::OK();
+    }
+    return Status::UserNotFound();
+}
+
+template<typename RESP>
 Status BaseProcessor<RESP>::hostExist(const std::string& hostKey) {
     std::string val;
     auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, hostKey , &val);

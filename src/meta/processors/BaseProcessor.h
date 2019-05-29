@@ -48,6 +48,13 @@ GENERATE_LOCK(user);
         return; \
     }
 
+#define CHECK_USER_ID_AND_RETURN(userID) \
+    if (userExist(userID) == Status::UserNotFound()) { \
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        onFinished(); \
+        return; \
+    }
+
 /**
  * Check segemnt is consist of numbers and letters and should not empty.
  * */
@@ -97,6 +104,7 @@ protected:
         case Status::kSpaceNotFound:
         case Status::kHostNotFound:
         case Status::kTagNotFound:
+        case Status::kUserNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -183,6 +191,11 @@ protected:
      * Check spaceId exist or not.
      * */
     Status spaceExist(GraphSpaceID spaceId);
+
+    /**
+     * Check userId exist or not.
+     **/
+    Status userExist(UserID userId);
 
     /**
      * Check host has been registered or not.

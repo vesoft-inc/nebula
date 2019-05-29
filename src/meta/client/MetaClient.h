@@ -46,6 +46,10 @@ using SpaceEdgeNameTypeMap = std::unordered_map<std::pair<GraphSpaceID, std::str
 using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, SchemaVer>;
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
+// get userID via userName
+using UserIdNameMap = std::unordered_map<UserID, std::string>;
+// get userName via userID
+using UserNameIdMap = std::unordered_map<std::string, UserID>;
 
 class MetaChangedListener {
 public:
@@ -156,8 +160,44 @@ public:
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
 
+    // Opeartions for users.
+
+    folly::Future<StatusOr<UserID>>
+    createUser(cpp2::UserItem userItem, std::string password, bool missingOk);
+
+    folly::Future<StatusOr<bool>>
+    dropUser(std::string account, bool missingOk);
+
+    folly::Future<StatusOr<bool>>
+    alterUser(cpp2::UserItem userItem);
+
+    folly::Future<StatusOr<bool>>
+    grantToUser(cpp2::RoleItem roleItem);
+
+    folly::Future<StatusOr<bool>>
+    revokeFromUser(cpp2::RoleItem roleItem);
+
+    folly::Future<StatusOr<cpp2::UserItem>>
+    getUser(std::string account);
+
+    folly::Future<StatusOr<std::unordered_map<UserID, cpp2::UserItem>>>
+    listUsers();
+
+    folly::Future<StatusOr<std::vector<cpp2::RoleItem>>>
+    listRoles(GraphSpaceID spaceId);
+
+    folly::Future<StatusOr<bool>>
+    changePassword(std::string account, std::string newPwd, std::string oldPwd, bool verifyNeed);
+
+    folly::Future<StatusOr<bool>>
+    checkPassword(std::string account, std::string password);
+
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
+
+    StatusOr<std::string> getUserNameByIdFromCache(UserID userId);
+
+    StatusOr<UserID> getUserIdByNameFromCache(const std::string& name);
 
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
@@ -178,6 +218,8 @@ public:
 
     bool checkSpaceExistInCache(const HostAddr& host,
                                 GraphSpaceID spaceId);
+
+    bool checkIsGodUserInCache(const std::string& account);
 
     int32_t partsNum(GraphSpaceID spaceId);
 
@@ -255,6 +297,8 @@ private:
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     bool                  sendHeartBeat_ = false;
+    UserIdNameMap         userNameById_;
+    UserNameIdMap         userIdByName_;
 };
 }  // namespace meta
 }  // namespace nebula

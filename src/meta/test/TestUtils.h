@@ -16,7 +16,7 @@
 #include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/MetaServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "meta/processors/AuthenticationProcessor.h"
+#include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "time/TimeUtils.h"
 #include "meta/ActiveHostsMan.h"
@@ -186,27 +186,35 @@ public:
         return sc;
     }
 
-    static cpp2::ErrorCode createUser(kvstore::KVStore* kv,
+    static StatusOr<UserID> createUser(kvstore::KVStore* kv,
                                       bool missingOk,
                                       folly::StringPiece account,
                                       folly::StringPiece password,
-                                      folly::StringPiece first,
-                                      folly::StringPiece last,
-                                      bool isLock) {
+                                      bool               isLock,
+                                      int32_t            maxQueries,
+                                      int32_t            maxUpdates,
+                                      int32_t            maxConnections,
+                                      int32_t            maxConnectors) {
         cpp2::CreateUserReq req;
         req.set_missing_ok(missingOk);
         req.set_encoded_pwd(password.str());
         decltype(req.user) user(FRAGILE,
                                 account.str(),
-                                first.str(),
-                                last.str(),
-                                isLock);
+                                isLock,
+                                maxQueries,
+                                maxUpdates,
+                                maxConnections,
+                                maxConnectors);
         req.set_user(std::move(user));
         auto* processor = CreateUserProcessor::instance(kv);
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        return resp.get_code();
+        if (resp.get_code() == cpp2::ErrorCode::SUCCEEDED) {
+            return resp.get_id().get_user_id();
+        } else {
+            return Status::Error("Create user fail");
+        }
     }
 };
 
