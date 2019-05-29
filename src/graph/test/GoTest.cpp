@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
+#include "meta/test/TestUtils.h"
 
 DECLARE_int32(load_data_interval_secs);
 
@@ -300,11 +301,13 @@ GoTest::VertexHolder<GoTest::Team> GoTest::teams_ = {
 AssertionResult GoTest::prepareSchema() {
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = folly::stringPrintf("ADD HOSTS 127.0.0.1:%u", storagePort_);
+        std::string host = folly::stringPrintf("127.0.0.1:%u", storagePort_);
+        std::string cmd = "ADD HOSTS " + host;
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
+        meta::TestUtils::registerHB(network::NetworkUtils::toHosts(host).value());
     }
     {
         cpp2::ExecutionResponse resp;
