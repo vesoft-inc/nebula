@@ -57,6 +57,10 @@ using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeTyp
 using SpaceEdgeTypeNameMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, std::string>;
 // get all edgeType edgeName via spaceId
 using SpaceAllEdgeMap = std::unordered_map<GraphSpaceID, std::vector<std::string>>;
+// get userID via userName
+using UserIdNameMap = std::unordered_map<UserID, std::string>;
+// get userName via userID
+using UserNameIdMap = std::unordered_map<std::string, UserID>;
 
 struct ConfigItem {
     ConfigItem() {}
@@ -210,6 +214,38 @@ public:
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
     balance();
+    
+    // Opeartions for users.
+
+    folly::Future<StatusOr<UserID>>
+    createUser(cpp2::UserItem userItem, std::string password, bool missingOk);
+
+    folly::Future<StatusOr<bool>>
+    dropUser(std::string account, bool missingOk);
+
+    folly::Future<StatusOr<bool>>
+    alterUser(cpp2::UserItem userItem);
+
+    folly::Future<StatusOr<bool>>
+    grantToUser(cpp2::RoleItem roleItem);
+
+    folly::Future<StatusOr<bool>>
+    revokeFromUser(cpp2::RoleItem roleItem);
+
+    folly::Future<StatusOr<cpp2::UserItem>>
+    getUser(std::string account);
+
+    folly::Future<StatusOr<std::unordered_map<UserID, cpp2::UserItem>>>
+    listUsers();
+
+    folly::Future<StatusOr<std::vector<cpp2::RoleItem>>>
+    listRoles(GraphSpaceID spaceId);
+
+    folly::Future<StatusOr<bool>>
+    changePassword(std::string account, std::string newPwd, std::string oldPwd, bool verifyNeed);
+
+    folly::Future<StatusOr<bool>>
+    checkPassword(std::string account, std::string password);
 
     folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>>
     showBalance(int64_t balanceId);
@@ -232,6 +268,10 @@ public:
 
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
+
+    StatusOr<std::string> getUserNameByIdFromCache(UserID userId);
+
+    StatusOr<UserID> getUserIdByNameFromCache(const std::string& name);
 
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
@@ -257,6 +297,8 @@ public:
 
     bool checkSpaceExistInCache(const HostAddr& host,
                                 GraphSpaceID spaceId);
+
+    bool checkIsGodUserInCache(const std::string& account);
 
     int32_t partsNum(GraphSpaceID spaceId);
 
@@ -372,6 +414,8 @@ private:
     cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
     std::atomic_bool      configReady_{false};
     std::vector<cpp2::ConfigItem> gflagsDeclared_;
+    UserIdNameMap         userNameById_;
+    UserNameIdMap         userIdByName_;
 };
 
 }  // namespace meta

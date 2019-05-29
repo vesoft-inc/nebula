@@ -45,6 +45,7 @@
 #include "graph/DeleteVertexExecutor.h"
 #include "graph/UpdateVertexExecutor.h"
 #include "graph/UpdateEdgeExecutor.h"
+#include "graph/UserExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -121,6 +122,23 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kOrderBy:
             executor = std::make_unique<OrderByExecutor>(sentence, ectx());
+        case Sentence::Kind::kCreateUser:
+            executor = std::make_unique<CreateUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDropUser:
+            executor = std::make_unique<DropUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kAlterUser:
+            executor = std::make_unique<AlterUserExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kGrant:
+            executor = std::make_unique<GrantExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kRevoke:
+            executor = std::make_unique<RevokeExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kChangePassword:
+            executor = std::make_unique<ChangePasswordExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kIngest:
             executor = std::make_unique<IngestExecutor>(sentence, ectx());

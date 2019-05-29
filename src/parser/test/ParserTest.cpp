@@ -980,7 +980,9 @@ TEST(Parser, UserOperation) {
     {
         GQLParser parser;
         std::string query = "CREATE USER IF NOT EXISTS user1 WITH PASSWORD \"aaa\" , "
-                            "FIRSTNAME \"a\", LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
+                            "ACCOUNT LOCK, MAX_QUERIES_PER_HOUR 1, "
+                            "MAX_UPDATES_PER_HOUR 2, MAX_CONNECTIONS_PER_HOUR 3, "
+                            "MAX_USER_CONNECTIONS 4";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();
@@ -988,8 +990,8 @@ TEST(Parser, UserOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "ALTER USER user1 WITH FIRSTNAME \"a\","
-                            " LASTNAME \"a\", EMAIL \"a\", PHONE \"111\"";
+        std::string query = "ALTER USER user1 WITH "
+                            "ACCOUNT UNLOCK, MAX_USER_CONNECTIONS 55";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
         auto& sentence = result.value();

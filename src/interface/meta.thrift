@@ -59,10 +59,11 @@ enum AlterSchemaOp {
 **/
 
 enum RoleType {
-    GOD    = 0x01,
-    ADMIN  = 0x02,
-    USER   = 0x03,
-    GUEST  = 0x04,
+    GOD     = 0x01,
+    ADMIN   = 0x02,
+    USER    = 0x03,
+    GUEST   = 0x04,
+    UNKNOWN = 0x05,
 } (cpp.enum_strict)
 
 union ID {
@@ -124,15 +125,15 @@ struct HostItem {
 struct UserItem {
     1: string account;
     // Disable user if lock status is true.
-    2: bool   is_lock,
+    2: optional bool   is_lock,
     // The number of queries an account can issue per hour
-    3: i32    max_queries_per_hour,
+    3: optional i32    max_queries_per_hour,
     // The number of updates an account can issue per hour
-    4: i32    max_updates_per_hour,
+    4: optional i32    max_updates_per_hour,
     // The number of times an account can connect to the server per hour
-    5: i32    max_connections_per_hour,
+    5: optional i32    max_connections_per_hour,
     // The number of simultaneous connections to the server by an account
-    6: i32    max_user_connections,
+    6: optional i32    max_user_connections,
 }
 
 struct RoleItem {

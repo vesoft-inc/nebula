@@ -403,19 +403,19 @@ std::string MetaServiceUtils::replaceUserVal(const cpp2::UserItem& user, folly::
     cpp2:: UserItem oldUser;
     apache::thrift::CompactSerializer::deserialize(userItemVal(val), oldUser);
     if (user.__isset.is_lock) {
-        oldUser.set_is_lock(user.get_is_lock());
+        oldUser.set_is_lock(*user.get_is_lock());
     }
     if (user.__isset.max_queries_per_hour) {
-        oldUser.set_max_queries_per_hour(user.get_max_queries_per_hour());
+        oldUser.set_max_queries_per_hour(*user.get_max_queries_per_hour());
     }
     if (user.__isset.max_updates_per_hour) {
-        oldUser.set_max_updates_per_hour(user.get_max_updates_per_hour());
+        oldUser.set_max_updates_per_hour(*user.get_max_updates_per_hour());
     }
     if (user.__isset.max_connections_per_hour) {
-        oldUser.set_max_connections_per_hour(user.get_max_connections_per_hour());
+        oldUser.set_max_connections_per_hour(*user.get_max_connections_per_hour());
     }
     if (user.__isset.max_user_connections) {
-        oldUser.set_max_user_connections(user.get_max_user_connections());
+        oldUser.set_max_user_connections(*user.get_max_user_connections());
     }
 
     std::string newVal, userVal;
@@ -480,8 +480,7 @@ UserID MetaServiceUtils::parseRoleUserId(folly::StringPiece val) {
 }
 
 UserID MetaServiceUtils::parseUserId(folly::StringPiece val) {
-    return *reinterpret_cast<const UserID *>(val.begin() +
-                                             kUsersTable.size());
+    return *reinterpret_cast<const UserID *>(val.begin() + kUsersTable.size());
 }
 
 std::string MetaServiceUtils::configKey(const cpp2::ConfigModule& module,

@@ -98,8 +98,8 @@ class GraphScanner;
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_UUID
-%token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_LOCK KW_UNLOCK
+%token KW_IF KW_NOT KW_EXISTS KW_WITH KW_ACCOUNT KW_USER KW_USERS KW_UUID
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
@@ -108,7 +108,7 @@ class GraphScanner;
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_DATA
-
+%token KW_MAX_QUERIES_PER_HOUR KW_MAX_UPDATES_PER_HOUR KW_MAX_CONNECTIONS_PER_HOUR KW_MAX_USER_CONNECTIONS
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND XOR LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -218,22 +218,25 @@ name_label
      ;
 
 unreserved_keyword
-     : KW_SPACE              { $$ = new std::string("space"); }
-     | KW_VALUES             { $$ = new std::string("values"); }
-     | KW_HOSTS              { $$ = new std::string("hosts"); }
-     | KW_SPACES             { $$ = new std::string("spaces"); }
-     | KW_FIRSTNAME          { $$ = new std::string("firstname"); }
-     | KW_LASTNAME           { $$ = new std::string("lastname"); }
-     | KW_EMAIL              { $$ = new std::string("email"); }
-     | KW_PHONE              { $$ = new std::string("phone"); }
-     | KW_USER               { $$ = new std::string("user"); }
-     | KW_USERS              { $$ = new std::string("users"); }
-     | KW_PASSWORD           { $$ = new std::string("password"); }
-     | KW_ROLE               { $$ = new std::string("role"); }
-     | KW_ROLES              { $$ = new std::string("roles"); }
-     | KW_GOD                { $$ = new std::string("god"); }
-     | KW_ADMIN              { $$ = new std::string("admin"); }
-     | KW_GUEST              { $$ = new std::string("guest"); }
+     : KW_SPACE                      { $$ = new std::string("space"); }
+     | KW_VALUES                     { $$ = new std::string("values"); }     
+     | KW_HOSTS                      { $$ = new std::string("hosts"); }
+     | KW_SPACES                     { $$ = new std::string("spaces"); }
+     | KW_USER                       { $$ = new std::string("user"); }
+     | KW_USERS                      { $$ = new std::string("users"); }
+     | KW_PASSWORD                   { $$ = new std::string("password"); }
+     | KW_ROLE                       { $$ = new std::string("role"); }
+     | KW_ROLES                      { $$ = new std::string("roles"); }
+     | KW_GOD                        { $$ = new std::string("god"); }
+     | KW_ADMIN                      { $$ = new std::string("admin"); }
+     | KW_GUEST                      { $$ = new std::string("guest"); }
+     | KW_ACCOUNT                    { $$ = new std::string("account"); }
+     | KW_LOCK                       { $$ = new std::string("lock"); }
+     | KW_UNLOCK                     { $$ = new std::string("unlock"); }
+     | KW_MAX_QUERIES_PER_HOUR       { $$ = new std::string("max_queries_per_hour"); }
+     | KW_MAX_UPDATES_PER_HOUR       { $$ = new std::string("max_updates_per_hour"); }
+     | KW_MAX_CONNECTIONS_PER_HOUR   { $$ = new std::string("max_connections_per_hour"); }
+     | KW_MAX_USER_CONNECTIONS       { $$ = new std::string("max_user_connections"); }
      ;
 
 primary_expression
@@ -1448,17 +1451,23 @@ drop_space_sentence
 //  User manager sentences.
 
 with_user_opt_item
-    : KW_FIRSTNAME STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::FIRST, $2);
+    : KW_ACCOUNT KW_LOCK {
+        $$ = new WithUserOptItem(WithUserOptItem::LOCK, true);
     }
-    | KW_LASTNAME STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::LAST, $2);
+    | KW_ACCOUNT KW_UNLOCK {
+        $$ = new WithUserOptItem(WithUserOptItem::LOCK, false);
     }
-    | KW_EMAIL STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::EMAIL, $2);
+    | KW_MAX_QUERIES_PER_HOUR INTEGER {
+        $$ = new WithUserOptItem(WithUserOptItem::MAX_QUERIES_PER_HOUR, $2);
     }
-    | KW_PHONE STRING {
-        $$ = new WithUserOptItem(WithUserOptItem::PHONE, $2);
+    | KW_MAX_UPDATES_PER_HOUR INTEGER {
+        $$ = new WithUserOptItem(WithUserOptItem::MAX_UPDATES_PER_HOUR, $2);
+    }
+    | KW_MAX_CONNECTIONS_PER_HOUR INTEGER {
+        $$ = new WithUserOptItem(WithUserOptItem::MAX_CONNECTIONS_PER_HOUR, $2);
+    }
+    | KW_MAX_USER_CONNECTIONS INTEGER {
+        $$ = new WithUserOptItem(WithUserOptItem::MAX_USER_CONNECTIONS, $2);
     }
     ;
 

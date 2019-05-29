@@ -49,7 +49,7 @@ public:
         return showType_;
     }
 
-    std::string* getName() {
+    const std::string* getName() {
         return name_.get();
     }
 
