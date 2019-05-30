@@ -4,6 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#ifndef STORAGE_TEST_TESTUTILS_H_
+#define STORAGE_TEST_TESTUTILS_H_
+
 #include "base/Base.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
@@ -206,3 +209,4 @@ public:
 }  // namespace storage
 }  // namespace nebula
 
+#endif  // STORAGE_TEST_TESTUTILS_H_

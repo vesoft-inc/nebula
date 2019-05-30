@@ -871,6 +871,5 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);
 }
-
 }  // namespace meta
 }  // namespace nebula

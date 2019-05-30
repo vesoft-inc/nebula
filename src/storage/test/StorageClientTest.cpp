@@ -54,6 +54,9 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     LOG(INFO) << "Add hosts and create space....";
     auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
     ASSERT_TRUE(r.ok());
+    while (meta::ActiveHostsManHolder::hostsMan()->getActiveHosts().size() == 0) {
+        usleep(1000);
+    }
     auto ret = mClient->createSpace("default", 10, 1).get();
     spaceId = ret.value();
     sleep(2 * FLAGS_load_data_interval_secs + 1);

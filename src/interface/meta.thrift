@@ -25,6 +25,7 @@ enum ErrorCode {
     E_EXISTED        = -22,
     E_NOT_FOUND      = -23,
     E_INVALID_HOST   = -24,
+    E_UNSUPPORTED    = -25,
 
     // KV Failure
     E_STORE_FAILURE          = -31,

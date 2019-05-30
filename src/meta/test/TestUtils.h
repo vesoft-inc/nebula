@@ -4,6 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#ifndef META_TEST_TESTUTILS_H_
+#define META_TEST_TESTUTILS_H_
+
 #include "base/Base.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
@@ -13,6 +16,8 @@
 #include "meta/MetaServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "interface/gen-cpp2/common_types.h"
+#include "time/TimeUtils.h"
+#include "meta/ActiveHostsMan.h"
 
 DECLARE_string(part_man_type);
 
@@ -52,6 +57,14 @@ public:
         return column;
     }
 
+    static void registerHB(const std::vector<HostAddr>& hosts) {
+        ActiveHostsManHolder::hostsMan()->reset();
+        auto now = time::TimeUtils::nowInSeconds();
+        for (auto& h : hosts) {
+            ActiveHostsManHolder::hostsMan()->updateHostInfo(h, HostInfo(now));
+        }
+    }
+
     static int32_t createSomeHosts(kvstore::KVStore* kv,
                                    std::vector<HostAddr> hosts
                                         = {{0, 0}, {1, 1}, {2, 2}, {3, 3}}) {
@@ -72,6 +85,7 @@ public:
             auto resp = std::move(f).get();
             EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         }
+        registerHB(hosts);
         {
             cpp2::ListHostsReq req;
             auto* processor = ListHostsProcessor::instance(kv);
@@ -191,3 +205,4 @@ public:
 }  // namespace meta
 }  // namespace nebula
 
+#endif  // META_TEST_TESTUTILS_H_
