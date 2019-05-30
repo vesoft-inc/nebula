@@ -17,6 +17,7 @@
 #include "webservice/WebService.h"
 #include "meta/SchemaManager.h"
 #include "meta/client/MetaClient.h"
+#include "storage/CompactionFilter.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
@@ -53,13 +54,15 @@ std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
         std::vector<std::string> paths,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
         std::shared_ptr<nebula::thread::GenericThreadPool> workers,
-        nebula::meta::MetaClient* metaClient) {
+        nebula::meta::MetaClient* metaClient,
+        nebula::meta::SchemaManager* schemaMan) {
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = std::move(paths);
     options.partMan_ = std::make_unique<nebula::kvstore::MetaServerBasedPartManager>(
         localhost,
         metaClient);
-
+    options.cfFactory_ = std::shared_ptr<nebula::kvstore::KVCompactionFilterFactory>(
+            new nebula::storage::NebulaCompactionFilterFactory(schemaMan));
     if (FLAGS_store_type == "nebula") {
         return std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
                                                               ioPool,
@@ -153,14 +156,17 @@ int main(int argc, char *argv[]) {
                                                                  true);
     metaClient->init();
 
+    LOG(INFO) << "Init schema manager";
+    auto schemaMan = nebula::meta::SchemaManager::create();
+    schemaMan->init(metaClient.get());
+
+    LOG(INFO) << "Init kvstore";
     std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
                                                         std::move(paths),
                                                         ioThreadPool,
                                                         workers,
-                                                        metaClient.get());
-
-    auto schemaMan = nebula::meta::SchemaManager::create();
-    schemaMan->init(metaClient.get());
+                                                        metaClient.get(),
+                                                        schemaMan.get());
 
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
@@ -180,8 +186,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    // Thrift server
-    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), std::move(schemaMan));
+    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());
     try {
         nebula::operator<<(operator<<(LOG(INFO), "The storage deamon start on "), localhost);
         gServer = std::make_unique<apache::thrift::ThriftServer>();

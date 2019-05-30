@@ -25,7 +25,6 @@ namespace storage {
 TEST(StorageClientTest, VerticesInterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
-
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     GraphSpaceID spaceId = 0;
     uint32_t localIp;
