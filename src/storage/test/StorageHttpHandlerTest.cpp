@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -15,7 +15,7 @@
 #include "fs/TempDir.h"
 
 DECLARE_string(meta_server_addrs);
-DECLARE_int32(load_data_interval_second);
+DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 
@@ -43,22 +43,29 @@ public:
 
 
 TEST(StoragehHttpHandlerTest, StorageStatusTest) {
-    FLAGS_load_data_interval_second = 1;
+    FLAGS_load_data_interval_secs = 1;
 
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     uint32_t localMetaPort = 10001;
     uint32_t localDataPort = 20002;
-    FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", localMetaPort);
 
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
     auto metaServerContext = meta::TestUtils::mockServer(localMetaPort, metaPath.c_str());
 
     LOG(INFO) << "Start storage server....";
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    auto addrsRet
+        = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
+    CHECK(addrsRet.ok()) << addrsRet.status();
+    auto mClient
+        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
+    mClient->init();
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
-    auto sc = TestUtils::mockServer(dataPath.c_str(),
+    auto sc = TestUtils::mockServer(mClient.get(),
+                                    dataPath.c_str(),
                                     localIp,
                                     localDataPort);
 

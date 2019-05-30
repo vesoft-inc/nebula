@@ -64,8 +64,9 @@ public:
 
 class MetaClient {
 public:
-    explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool = nullptr,
-                        std::vector<HostAddr> addrs = {});
+    explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
+                        std::vector<HostAddr> addrs,
+                        bool sendHeartBeat = false);
 
     virtual ~MetaClient();
 
@@ -84,6 +85,9 @@ public:
 
     folly::Future<StatusOr<std::vector<SpaceIdName>>>
     listSpaces();
+
+    folly::Future<StatusOr<cpp2::SpaceItem>>
+    getSpace(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
     dropSpace(std::string name);
@@ -113,7 +117,7 @@ public:
     listTagSchemas(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<bool>>
-    removeTagSchema(int32_t spaceId, std::string name);
+    dropTagSchema(int32_t spaceId, std::string name);
 
     folly::Future<StatusOr<nebula::cpp2::Schema>>
     getTagSchema(int32_t spaceId, int32_t tagId, int64_t version);
@@ -133,7 +137,7 @@ public:
     getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer version);
 
     folly::Future<StatusOr<bool>>
-    removeEdgeSchema(GraphSpaceID spaceId, std::string name);
+    dropEdgeSchema(GraphSpaceID spaceId, std::string name);
 
     // Operations for index
     folly::Future<StatusOr<TagIndexID>>
@@ -214,12 +218,16 @@ public:
 protected:
     void loadDataThreadFunc();
 
+    void heartBeatThreadFunc();
+
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
                      SpaceTagNameIdMap &tagNameIdMap,
                      SpaceEdgeNameTypeMap &edgeNameTypeMap,
                      SpaceNewestTagVerMap &newestTagVerMap,
                      SpaceNewestEdgeVerMap &newestEdgeVerMap);
+
+    folly::Future<StatusOr<bool>> heartbeat();
 
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
@@ -260,20 +268,21 @@ protected:
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>> clientsMan_;
+    std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
     std::vector<HostAddr> addrs_;
     // The lock used to protect active_ and leader_.
     folly::RWSpinLock hostLock_;
     HostAddr active_;
     HostAddr leader_;
-    thread::GenericWorker loadDataThread_;
-    std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
+    thread::GenericWorker bgThread_;
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
-    folly::RWSpinLock localCacheLock_;
-    MetaChangedListener* listener_{nullptr};
+    folly::RWSpinLock     localCacheLock_;
+    MetaChangedListener*  listener_{nullptr};
+    bool                  sendHeartBeat_ = false;
 };
 }  // namespace meta
 }  // namespace nebula

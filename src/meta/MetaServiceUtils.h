@@ -25,14 +25,15 @@ public:
 
     static std::string spaceKey(GraphSpaceID spaceId);
 
-    // TODO(dangleptr) We should use one struct to represent space properties.
-    static std::string spaceVal(int32_t partsNum, int32_t replicaFactor, const std::string& name);
+    static std::string spaceVal(cpp2::SpaceProperties properties);
+
+    static cpp2::SpaceProperties parseSpace(folly::StringPiece rawData);
 
     static const std::string& spacePrefix();
 
     static GraphSpaceID spaceId(folly::StringPiece rawKey);
 
-    static folly::StringPiece spaceName(folly::StringPiece rawVal);
+    static std::string spaceName(folly::StringPiece rawVal);
 
     static std::string partKey(GraphSpaceID spaceId, PartitionID partId);
 
