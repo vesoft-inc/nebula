@@ -36,7 +36,7 @@ usage: nebula spark sst file generator
  -mi,--mapping_file_input <arg>              Hive tables to nebula graph schema mapping file
  -pi,--date_partition_input <arg>            A partition field of type String of hive table, which represent a Date, and has format of YYY-MM-dd
  -ri,--repartition_number_input <arg>        Repartition number. Some optimization trick to improve generation speed and data skewness. Need tuning to suit your data.
- -so,--local_sst_file_output <arg>           Where the generated sst files will be put on local directory, should starts with file:///
+ -so,--local_sst_file_output <arg>           Which local directory those generated sst files will be put, should starts with file:///
  -ti,--datasource_type_input <arg>           Data source types supported, must be among [hive|hbase|csv] for now, default=hive
 ```
 
@@ -53,7 +53,7 @@ Mapping file are json format.File Schema is provided as [mapping-schema.json](ma
 DEBUG_LEVEL=0 make shared_lib
 DEBUG_LEVEL=0 make rocksdbjava
 ```
-_make sure to keep consistent with DEBUG_LEVEL, or there will be some link error like `symbol not found`  
+_make sure to keep consistent with DEBUG_LEVEL when building, or there will be some link error like `symbol not found`  
 2. run `sbt assembly` to package this project to a spark job jar, which is default named: `nebula-spark-sstfile-generator.jar`  
 3. run `jar uvf nebula-spark-sstfile-generator.jar librocksdbjni-linux64.so libnebula_native_client.so` to replace the `*.so` files packaged inside the dependency org.rocksdb:rocksdbjni:5.17.2,or some error like following will occur when spark-submit:  
 
@@ -68,9 +68,8 @@ _make sure to keep consistent with DEBUG_LEVEL, or there will be some link error
 ```
 
 # TODO
-1. Sst files are written to worker's local file system, for rocksdb lacks the capability of writing remote filesystem like HDFS, need to call `hdfs -copyFromLocal/-put` to unload to HDFS, in order to be accessed by Nebula _load_ command  
-2. Add database_name property to graphspace level and tag/edge level, which the latter will override the former when provided in both levels   
-3. Schema column definitions' order is important, keep it when parsing mapping file and when encoding  
-4. Integrated build with maven or cmake, where this spark assembly should be build after nebula native client  
-5. To handle following situation: different tables share a common Tag, like a tag with properties of (start_time, end_time)  
+1. Add database_name property to graphspace level and tag/edge level, which the latter will override the former when provided in both levels   
+2. Schema column definitions' order is important, keep it when parsing mapping file and when encoding  
+3. Integrated build with maven or cmake, where this spark assembly should be build after nebula native client  
+4. To handle following situation: different tables share a common Tag, like a tag with properties of (start_time, end_time)  
 
