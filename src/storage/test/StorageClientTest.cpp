@@ -32,7 +32,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localMetaPort = 0;
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
-    auto metaServerContext = meta::TestUtils::mockServer(localMetaPort, metaPath.c_str());
+    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str());
     localMetaPort =  metaServerContext->port_;
 
     LOG(INFO) << "Create meta client...";
@@ -47,9 +47,10 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     LOG(INFO) << "Start data server....";
 
     // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
-    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
+    uint32_t localDataPort = 0;
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
-    auto sc = TestUtils::mockServer(mClient.get(), dataPath.c_str(), localIp, localDataPort);
+    auto sc = TestUtils::mockStorageServer(mClient.get(), dataPath.c_str(), localIp, localDataPort);
+    localDataPort = sc->port_;
 
     LOG(INFO) << "Add hosts and create space....";
     auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();

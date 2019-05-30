@@ -22,7 +22,12 @@ Status DescribeSpaceExecutor::prepare() {
 
 void DescribeSpaceExecutor::execute() {
     auto *name = sentence_->spaceName();
-    auto spaceId = ectx()->schemaManager()->toGraphSpaceID(*name);
+    auto status = ectx()->schemaManager()->toGraphSpaceID(*name);
+    if (!status.ok()) {
+        onError_(Status::Error("Space not found"));
+        return;
+    }
+    auto spaceId = status.value();
     auto future = ectx()->getMetaClient()->getSpace(spaceId);
     auto *runner = ectx()->rctx()->runner();
 

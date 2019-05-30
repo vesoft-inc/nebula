@@ -1,3 +1,9 @@
+add_library(
+    adHocSchema_obj OBJECT
+    AdHocSchemaManager.cpp
+)
+add_dependencies(schema_obj base_obj)
+
 add_executable(
     add_vertices_test
     AddVerticesTest.cpp
@@ -99,6 +105,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:adHocSchema_obj>
 )
 nebula_link_libraries(
     query_bound_test
@@ -127,6 +134,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:adHocSchema_obj>
 )
 nebula_link_libraries(
     vertex_props_test
@@ -155,6 +163,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:adHocSchema_obj>
 )
 nebula_link_libraries(
     edge_props_test
@@ -183,6 +192,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:adHocSchema_obj>
 )
 nebula_link_libraries(
     query_stats_test
@@ -213,6 +223,7 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:adHocSchema_obj>
 )
 nebula_link_libraries(
     storage_client_test
@@ -246,6 +257,7 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:adHocSchema_obj>
 )
 
  nebula_link_libraries(
