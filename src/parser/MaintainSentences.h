@@ -66,12 +66,6 @@ public:
     enum PropType : uint8_t {
         TTL_DURATION,
         TTL_COL,
-        COMMENT,
-        ENGINE,
-        ENCRYPT,
-        COMPRESS,
-        CHARACTER_SET,
-        COLLATE
     };
 
     SchemaPropItem(PropType op, int64_t val) {
@@ -137,60 +131,6 @@ public:
             return asString();
         } else {
             LOG(ERROR) << "Ttl_col value illegal.";
-            return "";
-        }
-    }
-
-    std::string getComment() {
-        if (isString()) {
-            return asString();
-        } else {
-            LOG(ERROR) << "Comment value illegal.";
-            return "";
-        }
-    }
-
-    std::string getEngine() {
-        if (isString()) {
-            return asString();
-        } else {
-            LOG(ERROR) << "Engine value illegal.";
-            return "";
-        }
-    }
-
-    std::string getEncrypt() {
-        if (isString()) {
-            return asString();
-        } else {
-            LOG(ERROR) << "Encrypt value illegal.";
-            return "";
-        }
-    }
-
-    std::string getCompress() {
-        if (isString()) {
-            return asString();
-        } else {
-            LOG(ERROR) << "Compress value illegal.";
-            return "";
-        }
-    }
-
-    std::string getCharacterSet() {
-        if (isString()) {
-            return asString();
-        } else {
-            LOG(ERROR) << "Character set value illegal.";
-            return "";
-        }
-    }
-
-    std::string getCollate() {
-        if (isString()) {
-            return asString();
-        } else {
-            LOG(ERROR) << "Collate value illegal.";
             return "";
         }
     }

@@ -17,25 +17,6 @@ std::string SchemaPropItem::toString() const {
         case TTL_COL:
             return folly::stringPrintf("ttl_col = %s",
                                        boost::get<std::string>(propValue_).c_str());
-        // TODO(YT) The following features will be supported in the future
-        case COMMENT:
-            return folly::stringPrintf("comment = \"%s\"",
-                                       boost::get<std::string>(propValue_).c_str());
-        case ENGINE:
-            return folly::stringPrintf("engine = %s",
-                                       boost::get<std::string>(propValue_).c_str());
-        case ENCRYPT:
-            return folly::stringPrintf("encrypt = \"%s\"",
-                                       boost::get<std::string>(propValue_).c_str());
-        case COMPRESS:
-            return folly::stringPrintf("compress = \"%s\"",
-                                       boost::get<std::string>(propValue_).c_str());
-        case CHARACTER_SET:
-            return folly::stringPrintf("character set = %s",
-                                       boost::get<std::string>(propValue_).c_str());
-        case COLLATE:
-            return folly::stringPrintf("collate = %s",
-                                       boost::get<std::string>(propValue_).c_str());
         default:
             FLOG_FATAL("Schema property type illegal");
     }

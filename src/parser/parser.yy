@@ -91,8 +91,7 @@ class GraphScanner;
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY
-%token KW_COMMENT KW_ENCRYPT KW_COMPRESS KW_CHARACTER KW_COLLATE KW_TTL_DURATION
-%token KW_TTL_COL KW_ENGINE
+%token KW_TTL_DURATION KW_TTL_COL
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -544,31 +543,6 @@ create_schema_prop_list
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
         delete $3;
     }
-    // TODO(YT) The following features will be supported in the future
-    | KW_COMMENT ASSIGN STRING {
-        $$ = new SchemaPropItem(SchemaPropItem::COMMENT, *$3);
-        delete $3;
-    }
-    | KW_ENGINE ASSIGN name_label {
-        $$ = new SchemaPropItem(SchemaPropItem::ENGINE, *$3);
-        delete $3;
-    }
-    | KW_ENCRYPT ASSIGN STRING {
-        $$ = new SchemaPropItem(SchemaPropItem::ENCRYPT, *$3);
-        delete $3;
-    }
-    | KW_COMPRESS ASSIGN STRING {
-        $$ = new SchemaPropItem(SchemaPropItem::COMPRESS, *$3);
-        delete $3;
-    }
-    | KW_CHARACTER KW_SET ASSIGN name_label {
-        $$ = new SchemaPropItem(SchemaPropItem::CHARACTER_SET, *$4);
-        delete $4;
-    }
-    | KW_COLLATE ASSIGN name_label {
-        $$ = new SchemaPropItem(SchemaPropItem::COLLATE, *$3);
-        delete $3;
-    }
     ;
 
 create_tag_sentence
@@ -644,11 +618,6 @@ alter_schema_prop_item
     }
     | KW_TTL_COL ASSIGN name_label {
         $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
-        delete $3;
-    }
-    // TODO(YT) The following features will be supported in the future
-    | KW_COMMENT ASSIGN STRING {
-        $$ = new SchemaPropItem(SchemaPropItem::COMMENT, *$3);
         delete $3;
     }
     ;
