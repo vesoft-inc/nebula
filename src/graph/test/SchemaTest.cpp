@@ -85,7 +85,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int, std::string, int, int>> expected{
-            {1, "default_space", 9, 3},
+            {1, "default_space", 9, 1},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
