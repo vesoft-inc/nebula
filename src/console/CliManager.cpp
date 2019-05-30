@@ -5,12 +5,14 @@
  */
 
 #include "base/Base.h"
+#include "base/Status.h"
 #include <termios.h>
 #include <unistd.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "console/CliManager.h"
 #include "client/cpp/GraphClient.h"
+#include "fs/FileUtils.h"
 
 DECLARE_string(u);
 DECLARE_string(p);
@@ -242,9 +244,66 @@ void CliManager::loadHistory() {
 }
 
 
-// static
+struct StringCaseEqual {
+    bool operator()(const std::string &lhs, const std::string &rhs) const {
+        return ::strcasecmp(lhs.c_str(), rhs.c_str()) == 0;
+    }
+};
+
+
+struct StringCaseHash {
+    size_t operator()(const std::string &lhs) const {
+        std::string upper;
+        upper.resize(lhs.size());
+        auto toupper = [] (auto c) { return ::toupper(c); };
+        std::transform(lhs.begin(), lhs.end(), upper.begin(), toupper);
+        return std::hash<std::string>()(upper);
+    }
+};
+
+// Primary keywords, like `GO' `CREATE', etc.
+static std::vector<std::string> primaryKeywords;
+
+// Keywords along with their sub-keywords, like `SHOW': `TAGS', `SPACES'
+static std::unordered_map<std::string, std::vector<std::string>,
+                          StringCaseHash, StringCaseEqual> subKeywords;
+// Typenames, like `int', `double', `string', etc.
+static std::vector<std::string> typeNames;
+
+
+// To fill the containers above from a json file.
+static Status loadCompletions();
+static Status parseKeywordsFromJson(const folly::dynamic &json);
+
+// To retrieve matches from within the `primaryKeywords'
+static std::vector<std::string>
+matchFromPrimaryKeywords(const std::string &text);
+
+// To retrieve matches from within the `subKeywords'
+static std::vector<std::string> matchFromSubKeywords(const std::string &text,
+                                                     const std::string &primaryKeyword);
+
+// Given a collection of keywords, retrieve matches that prefixed with `text'
+static std::vector<std::string> matchFromKeywords(const std::string &text,
+                                                  const std::vector<std::string> &keywords);
+
+// To tell if the current `text' is at the start position of a statement.
+// If so, we should do completion with primary keywords.
+// Otherwise, the primary keyword of the current statement
+// will be set, thus we will do completion with its sub keywords.
+static bool isStartOfStatement(std::string &primaryKeyword);
+
+// Given the prefix and a collection of keywords, retrieve the longest common prefix
+// e.g. given `u' as the prefix and [USE, USER, USERS] as the collection, will return `USE'
 static auto longestCommonPrefix(std::string prefix,
-                                const std::vector<std::string>& words) {
+                                const std::vector<std::string>& words);
+
+// Callback by realine if an auto completion is triggered
+static char** completer(const char *text, int start, int end);
+
+
+auto longestCommonPrefix(std::string prefix,
+                         const std::vector<std::string>& words) {
     if (words.size() == 1) {
         return words[0];
     }
@@ -268,29 +327,7 @@ static auto longestCommonPrefix(std::string prefix,
 }
 
 
-// static
-bool isInQuotes() {
-    auto pos = ::rl_line_buffer;
-    if (*pos == '\0') {
-        return false;
-    }
-    auto quoteCount = 0;
-    if (*pos++ == '"') {
-        quoteCount++;
-    }
-
-    while (*pos != '\0') {
-        if (*pos == '"' && *(pos - 1) != '\\') {
-            quoteCount++;
-        }
-        pos++;
-    }
-    return quoteCount % 2 != 0;
-}
-
-
-// static
-static char** completer(const char *text, int start, int end) {
+char** completer(const char *text, int start, int end) {
     UNUSED(start);
     UNUSED(end);
 
@@ -298,35 +335,17 @@ static char** completer(const char *text, int start, int end) {
     ::rl_attempted_completion_over = 1;
 
     // Dont do completion if in quotes
-    if (isInQuotes()) {
+    if (::rl_completion_quote_character != 0) {
         return nullptr;
     }
 
     std::vector<std::string> matches;
-    static const std::vector<std::string> keywords = {
-        "GO", "STEPS", "FROM", "OVER", "AS", "WHERE", "YIELD",
-        "CREATE", "TAG", "EDGE", "DESCRIBE", "SHOW", "TO", "OR",
-        "USE", "SET", "MATCH", "INSERT", "VALUES", "RETURN",
-        "VERTEX", "EDGES", "UPDATE", "DELETE", "LOOKUP", "ALTER",
-        "UPTO", "REVERSELY", "SPACE", "SPACES", "TAGS", "UNION",
-        "INTERSECT", "MINUS", "NO", "OVERWRITE", "SHOW", "ADD",
-        "REMOVE", "HOSTS", "PARTITION_NUM", "REPLICA_FACTOR",
-        "DROP", "REMOVE", "IF", "NOT", "EXISTS", "WITH", "FIRSTNAME",
-        "LASTNAME", "EMAIL", "PHONE", "USER", "USERS", "PASSWORD",
-        "CHANGE", "ROLE", "ROLES", "GOD", "ADMIN", "GUEST", "GRANT",
-        "REVOKE", "ON", "BY", "IN",
-        "int", "double", "bool", "string", "timestamp", "true", "false",
-    };
 
-    // Collect the matched keywords with the input text as prefix
-    auto size = ::strlen(text);
-    for (auto &word : keywords) {
-        if (size > word.size()) {
-            continue;
-        }
-        if (::strncasecmp(text, word.c_str(), size) == 0) {
-            matches.emplace_back(word);
-        }
+    std::string primaryKeyword;  // The current primary keyword
+    if (isStartOfStatement(primaryKeyword)) {
+        matches = matchFromPrimaryKeywords(text);
+    } else {
+        matches = matchFromSubKeywords(text, primaryKeyword);
     }
 
     if (matches.empty()) {
@@ -348,9 +367,188 @@ static char** completer(const char *text, int start, int end) {
 }
 
 
+bool isStartOfStatement(std::string &primaryKeyword) {
+    // If there is no input
+    if (::rl_line_buffer == nullptr || *::rl_line_buffer == '\0') {
+        return true;
+    }
+
+    std::string line = ::rl_line_buffer;
+
+    auto piece = folly::trimWhitespace(line);
+    // If the inputs are all white spaces
+    if (piece.empty()) {
+        return true;
+    }
+
+    // If the inputs are terminated with ';' or '|', i.e. complete statements
+    // Additionally, there is an incomplete primary keyword for the next statement
+    {
+        static const std::regex pattern(R"((\s*\w+[^;|]*[;|]\s*)*(\w+)?)");
+        std::smatch result;
+
+        if (std::regex_match(line, result, pattern)) {
+            return true;
+        }
+    }
+
+    // The same to the occasion above, except that the primary keyword is complete
+    // This is where sub keywords shall be completed
+    {
+        static const std::regex pattern(R"((\s*\w+[^;|]*[;|]\s*)*(\w+)[^;|]+)");
+        std::smatch result;
+
+        if (std::regex_match(line, result, pattern)) {
+            primaryKeyword = result[result.size() - 1].str();
+            return false;
+        }
+    }
+
+    // TODO(dutor) There are still many scenarios we cannot cover with regular expressions.
+    // We have to accomplish this with the help of the actual parser.
+
+    return false;
+}
+
+
+std::vector<std::string> matchFromPrimaryKeywords(const std::string &text) {
+    return matchFromKeywords(text, primaryKeywords);
+}
+
+
+std::vector<std::string> matchFromSubKeywords(const std::string &text,
+                                              const std::string &primaryKeyword) {
+    std::vector<std::string> matches = typeNames;
+    auto iter = subKeywords.find(primaryKeyword);
+    if (iter != subKeywords.end()) {
+        matches.insert(matches.end(), iter->second.begin(), iter->second.end());
+    }
+    return matchFromKeywords(text, matches);
+}
+
+
+std::vector<std::string>
+matchFromKeywords(const std::string &text, const std::vector<std::string> &keywords) {
+    if (keywords.empty()) {
+        return {};
+    }
+
+    std::vector<std::string> matches;
+    for (auto &word : keywords) {
+        if (text.size() > word.size()) {
+            continue;
+        }
+        if (::strncasecmp(text.c_str(), word.c_str(), text.size()) == 0) {
+            matches.emplace_back(word);
+        }
+    }
+
+    return matches;
+}
+
+
+Status loadCompletions() {
+    using fs::FileUtils;
+    auto dir = FileUtils::readLink("/proc/self/exe").value();
+    dir = FileUtils::dirname(dir.c_str()) + "/../share/resources";
+    std::string file = dir + "/" + "completion.json";
+    auto status = Status::OK();
+    int fd = -1;
+    do {
+        fd = ::open(file.c_str(), O_RDONLY);
+        if (fd == -1) {
+            status = Status::Error("Failed to open `%s': %s",
+                                    file.c_str(), ::strerror(errno));
+            break;
+        }
+
+        auto len = ::lseek(fd, 0, SEEK_END);
+        if (len == 0) {
+            status = Status::Error("File `%s' is empty", file.c_str());
+            break;
+        }
+
+        auto buffer = std::make_unique<char[]>(len + 1);
+        ::lseek(fd, 0, SEEK_SET);
+        ::read(fd, buffer.get(), len);
+        buffer[len] = '\0';
+
+        std::string content;
+        content.assign(buffer.get(), len);
+
+        try {
+            status = parseKeywordsFromJson(folly::parseJson(content));
+        } catch (const std::exception &e) {
+            status = Status::Error("Illegal json `%s': %s", file.c_str(), e.what());
+            break;
+        }
+
+        if (!status.ok()) {
+            break;
+        }
+    } while (false);
+
+    if (fd != -1) {
+        ::close(fd);
+    }
+
+    return status;
+}
+
+
+Status parseKeywordsFromJson(const folly::dynamic &json) {
+    auto iter = json.find("keywords");
+    if (iter == json.items().end()) {
+        fprintf(stderr, "completions: no `keywords' found\n");
+        return Status::OK();
+    }
+
+    for (auto &pair : iter->second.items()) {
+        auto &pkw = pair.first;
+        primaryKeywords.emplace_back(pkw.asString());
+        auto subIter = pair.second.find("sub_keywords");
+        if (subIter == pair.second.items().end()) {
+            continue;
+        }
+        if (!subIter->second.isArray()) {
+            fprintf(stderr, "sub-keywords for `%s' should be an array\n",
+                    pkw.asString().c_str());
+            continue;
+        }
+        for (auto &subKey : subIter->second) {
+            if (!subKey.isString()) {
+                fprintf(stderr, "keyword name should be of type string\n");
+                break;
+            }
+            subKeywords[pkw.asString()].emplace_back(subKey.asString());
+        }
+    }
+
+    iter = json.find("typenames");
+    if (iter == json.items().end()) {
+        fprintf(stderr, "completions: no `typenames' found\n");
+        return Status::OK();
+    }
+
+    for (auto &tname : iter->second) {
+        typeNames.emplace_back(tname.asString());
+    }
+
+    return Status::OK();
+}
+
+
 void CliManager::initAutoCompletion() {
+    // The completion function
     ::rl_attempted_completion_function = completer;
+    // Characters that indicates begin or end of a quote
     ::rl_completer_quote_characters = "\"";
+    // Allow conditional parsing of the ~/.inputrc file
+    ::rl_readline_name = "nebula-graph";
+    auto status = loadCompletions();
+    if (!status.ok()) {
+        fprintf(stderr, "%s\n", status.toString().c_str());
+    }
 }
 
 }  // namespace graph
