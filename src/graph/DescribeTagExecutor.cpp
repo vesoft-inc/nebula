@@ -25,12 +25,17 @@ Status DescribeTagExecutor::prepare() {
 void DescribeTagExecutor::execute() {
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto tagId = ectx()->schemaManager()->toTagID(spaceId, *name);
+    auto status = ectx()->schemaManager()->toTagID(spaceId, *name);
+    if (!status.ok()) {
+        onError_(Status::Error("Schema not found for tag '%s'", name->c_str()));
+        return;
+    }
+    auto tagId = status.value();
     auto schema = ectx()->schemaManager()->getTagSchema(spaceId, tagId);
 
     resp_ = std::make_unique<cpp2::ExecutionResponse>();
     if (schema == nullptr) {
-        onError_(Status::Error("Schema not found for tag `%s'", name->c_str()));
+        onError_(Status::Error("Schema not found for tag '%s'", name->c_str()));
         return;
     }
 

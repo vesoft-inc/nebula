@@ -124,6 +124,21 @@ TEST(Parser, AlterTag) {
     }
 }
 
+TEST(Parser, DescribeTag) {
+    {
+        GQLParser parser;
+        std::string query = "DESCRIBE TAG person";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DESC TAG person";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 TEST(Parser, CreateEdge) {
     {
         GQLParser parser;
@@ -140,6 +155,21 @@ TEST(Parser, AlterEdge) {
         std::string query = "ALTER EDGE e1 ADD (col1 int, col2 string), "
                             "CHANGE (col3 int, col4 string), "
                             "DROP (col5, col6)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, DescribeEdge) {
+    {
+        GQLParser parser;
+        std::string query = "DESCRIBE EDGE e1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DESC EDGE e1";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -431,6 +461,18 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "DESCRIBE SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DESC SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "drop space default_space";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -540,5 +582,39 @@ TEST(Parser, UnreservedKeywords) {
         ASSERT_TRUE(result.ok()) << result.status();
     }
 }
+
+TEST(Parser, Annotation) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG TAG1(space string) // test....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG TAG1(space string) -- test....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG TAG1(space string) # test....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG TAG1/* tag name */(space string)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG TAG1/* tag name */(space string) // test....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 
 }   // namespace nebula
