@@ -5,12 +5,12 @@
  */
 
 #include "base/Base.h"
+#include "base/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/QueryVertexPropsProcessor.h"
-#include "storage/KeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
@@ -28,7 +28,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
         std::vector<kvstore::KV> data;
         for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             for (auto tagId = 3001; tagId < 3010; tagId++) {
-                auto key = KeyUtils::vertexKey(partId, vertexId, tagId, 0);
+                auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
                 for (int64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;

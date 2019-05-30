@@ -4,25 +4,25 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "graph/RemoveEdgeExecutor.h"
+#include "graph/DropTagExecutor.h"
 
 namespace nebula {
 namespace graph {
 
-RemoveEdgeExecutor::RemoveEdgeExecutor(Sentence *sentence,
-                                       ExecutionContext *ectx) : Executor(ectx) {
-    sentence_ = static_cast<RemoveEdgeSentence*>(sentence);
+DropTagExecutor::DropTagExecutor(Sentence *sentence,
+                                 ExecutionContext *ectx) : Executor(ectx) {
+    sentence_ = static_cast<DropTagSentence*>(sentence);
 }
 
-Status RemoveEdgeExecutor::prepare() {
+Status DropTagExecutor::prepare() {
     return checkIfGraphSpaceChosen();
 }
 
-void RemoveEdgeExecutor::execute() {
+void DropTagExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto future = mc->removeEdgeSchema(spaceId, *name);
+    auto future = mc->dropTagSchema(spaceId, *name);
 
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
@@ -47,3 +47,4 @@ void RemoveEdgeExecutor::execute() {
 
 }   // namespace graph
 }   // namespace nebula
+

@@ -25,6 +25,7 @@ enum ErrorCode {
     E_EXISTED        = -22,
     E_NOT_FOUND      = -23,
     E_INVALID_HOST   = -24,
+    E_UNSUPPORTED    = -25,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -58,6 +59,17 @@ struct Pair {
     2: string value,
 }
 
+struct SpaceProperties {
+    1: string               space_name,
+    2: i32                  partition_num,
+    3: i32                  replica_factor,
+}
+
+struct SpaceItem {
+    1: common.GraphSpaceID  space_id,
+    2: SpaceProperties      properties,
+}
+
 struct TagItem {
     1: common.TagID         tag_id,
     2: string               tag_name,
@@ -77,16 +89,27 @@ struct EdgeItem {
     4: common.Schema        schema,
 }
 
+struct TagIndexProperties {
+    1: string               index_name,
+    2: string               tag_name,
+    3: list<string>         fields,
+}
+
+struct EdgeIndexProperties {
+    1: string               index_name,
+    2: string               edge_name,
+    3: list<string>         fields,
+}
+
+
 struct TagIndexItem {
-    1: string        index_name,
-    2: string        tag_name,
-    3: list<string>  property_name,
+    1: common.TagIndexID    index_id,
+    2: TagIndexProperties   properties,
 }
 
 struct EdgeIndexItem {
-    1: string        index_name,
-    2: string        edge_name,
-    3: list<string>  property_name,
+    1: common.EdgeIndexID        index_id,
+    2: EdgeIndexProperties       properties,
 }
 
 struct ExecResp {
@@ -99,13 +122,10 @@ struct ExecResp {
 
 // Graph space related operations.
 struct CreateSpaceReq {
-    1: string space_name,
-    2: i32 parts_num,
-    3: i32 replica_factor,
+    1: SpaceProperties  properties,
 }
 
 struct DropSpaceReq {
-    //common.GraphSpaceID space_id
     1: string space_name
 }
 
@@ -124,9 +144,9 @@ struct GetSpaceReq {
 }
 
 struct GetSpaceResp {
-    1: IdName space,
-    2: i32    parts_num,
-    3: i32    replica_factor,
+    1: ErrorCode         code,
+    2: common.HostAddr   leader,
+    3: SpaceItem         item,
 }
 
 // Tags related operations
@@ -142,7 +162,7 @@ struct AlterTagReq {
     3: list<AlterSchemaItem>  tag_items,
 }
 
-struct RemoveTagReq {
+struct DropTagReq {
     1: common.GraphSpaceID space_id,
     2: string              tag_name,
 }
@@ -195,7 +215,7 @@ struct GetEdgeResp {
     3: common.Schema    schema,
 }
 
-struct RemoveEdgeReq {
+struct DropEdgeReq {
     1: common.GraphSpaceID space_id,
     2: string              edge_name,
 }
@@ -305,10 +325,15 @@ struct HBReq {
 
 struct CreateTagIndexReq {
     1: common.GraphSpaceID space_id,
-    2: TagIndexItem        item,
+    2: TagIndexProperties  properties,
 }
 
 struct DropTagIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+}
+
+struct GetTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
 }
@@ -325,10 +350,15 @@ struct ListTagIndexesResp {
 
 struct CreateEdgeIndexReq {
     1: common.GraphSpaceID space_id,
-    2: EdgeIndexItem       item,
+    2: EdgeIndexProperties properties,
 }
 
 struct DropEdgeIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: string              index_name,
+}
+
+struct GetEdgeIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
 }
@@ -351,13 +381,13 @@ service MetaService {
 
     ExecResp createTag(1: CreateTagReq req);
     ExecResp alterTag(1: AlterTagReq req);
-    ExecResp removeTag(1: RemoveTagReq req);
+    ExecResp dropTag(1: DropTagReq req);
     GetTagResp getTag(1: GetTagReq req);
     ListTagsResp listTags(1: ListTagsReq req);
 
     ExecResp createEdge(1: CreateEdgeReq req);
     ExecResp alterEdge(1: AlterEdgeReq req);
-    ExecResp removeEdge(1: RemoveEdgeReq req);
+    ExecResp dropEdge(1: DropEdgeReq req);
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 

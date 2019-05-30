@@ -12,6 +12,9 @@
 #include "thread/GenericWorker.h"
 #include "time/TimeUtils.h"
 
+DECLARE_int32(expired_hosts_check_interval_sec);
+DECLARE_int32(expired_threshold_sec);
+
 namespace nebula {
 namespace meta {
 
@@ -29,6 +32,21 @@ struct HostInfo {
     }
 
     int64_t lastHBTimeInSec_ = 0;
+};
+
+class ActiveHostsMan;
+
+class ActiveHostsManHolder final {
+public:
+    ActiveHostsManHolder() = delete;
+    ~ActiveHostsManHolder() = delete;
+
+    static ActiveHostsMan* hostsMan() {
+       static auto hostsMan
+           = std::make_unique<ActiveHostsMan>(FLAGS_expired_hosts_check_interval_sec,
+                                              FLAGS_expired_threshold_sec);
+       return hostsMan.get();
+    }
 };
 
 class ActiveHostsMan final {
@@ -75,6 +93,11 @@ public:
             return entry.first;
         });
         return hosts;
+    }
+
+    void reset() {
+        folly::RWSpinLock::WriteHolder rh(&lock_);
+        hostsMap_.clear();
     }
 
 protected:

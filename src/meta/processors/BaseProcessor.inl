@@ -154,9 +154,8 @@ template<typename RESP>
 Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto spaceKey = MetaServiceUtils::spaceKey(spaceId);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, spaceKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
+    auto ret = doGet(std::move(spaceKey));
+    if (ret.ok()) {
         return Status::OK();
     }
     return Status::SpaceNotFound();
@@ -164,9 +163,8 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 
 template<typename RESP>
 Status BaseProcessor<RESP>::hostExist(const std::string& hostKey) {
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, hostKey , &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
+    auto ret = doGet(hostKey);
+    if (ret.ok()) {
         return Status::OK();
     }
     return Status::HostNotFound();
@@ -175,10 +173,9 @@ Status BaseProcessor<RESP>::hostExist(const std::string& hostKey) {
 template<typename RESP>
 StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) {
     auto indexKey = MetaServiceUtils::indexSpaceKey(name);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
-        return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const GraphSpaceID*>(ret.val.c_str());
     }
     return Status::SpaceNotFound(folly::stringPrintf("Space %s not found", name.c_str()));
 }
@@ -187,9 +184,9 @@ template<typename RESP>
 StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::string& name) {
     auto indexKey = MetaServiceUtils::indexTagKey(spaceId, name);
     std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
-        return *reinterpret_cast<const TagID*>(val.c_str());
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const TagID*>(ret.val.c_str());
     }
     return Status::TagNotFound(folly::stringPrintf("Tag %s not found", name.c_str()));
 }
@@ -202,6 +199,28 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId, const 
         return *reinterpret_cast<const EdgeType*>(ret.value().c_str());
     }
     return Status::EdgeNotFound(folly::stringPrintf("Edge %s not found", name.c_str()));
+}
+
+template<typename RESP>
+StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName) {
+    auto indexKey = MetaServiceUtils::indexTagIndexKey(spaceId, indexName);
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const TagIndexID*>(ret.value().c_str());
+    }
+    return Status::TagIndexNotFound(folly::stringPrintf("Tag Index %s not found",
+                                                        indexName.c_str()));
+}
+
+template<typename RESP>
+StatusOr<EdgeIndexID> getEdgeIndexID(GraphSpaceID spaceId, const std::string& indexName) {
+    auto indexKey = MetaServiceUtils::indexEdgeIndexKey(spaceId, indexName);
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const EdgeIndexID*>(ret.value().c_str());
+    }
+    return Status::EdgeIndexNotFound(folly::stringPrintf("Edge Index %s not found",
+                                                         indexName.c_str()));
 }
 
 }  // namespace meta

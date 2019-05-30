@@ -9,26 +9,19 @@
 #include "network/NetworkUtils.h"
 #include "meta/NebulaSchemaProvider.h"
 
-DEFINE_int32(load_data_interval_second, 2 * 60, "Load data interval, unit: second");
-DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
-                                     "the format looks like ip1:port1, ip2:port2, ip3:port3");
-DEFINE_int32(meta_client_io_threads, 3, "meta client io threads");
+DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
+DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 
 namespace nebula {
 namespace meta {
 
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                       std::vector<HostAddr> addrs)
+                       std::vector<HostAddr> addrs,
+                       bool sendHeartBeat)
     : ioThreadPool_(ioThreadPool)
-    , addrs_(std::move(addrs)) {
-    if (ioThreadPool_ == nullptr) {
-        ioThreadPool_
-            = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_meta_client_io_threads);
-    }
-    if (addrs_.empty() && !FLAGS_meta_server_addrs.empty()) {
-        addrs_ = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
-    }
-    CHECK(!addrs_.empty());
+    , addrs_(std::move(addrs))
+    , sendHeartBeat_(sendHeartBeat) {
+    CHECK(ioThreadPool_ != nullptr && !addrs_.empty());
     clientsMan_ = std::make_shared<thrift::ThriftClientManager<
                                     meta::cpp2::MetaServiceAsyncClient>>();
     updateHost();
@@ -36,21 +29,47 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
 }
 
 MetaClient::~MetaClient() {
-    loadDataThread_.stop();
-    loadDataThread_.wait();
+    bgThread_.stop();
+    bgThread_.wait();
     VLOG(3) << "~MetaClient";
 }
 
 void MetaClient::init() {
     loadDataThreadFunc();
-    CHECK(loadDataThread_.start());
-    size_t delayMS = FLAGS_load_data_interval_second * 1000 + folly::Random::rand32(900);
-    loadDataThread_.addTimerTask(delayMS,
-                                 FLAGS_load_data_interval_second * 1000,
-                                 &MetaClient::loadDataThreadFunc, this);
+    CHECK(bgThread_.start());
+    {
+        size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
+        LOG(INFO) << "Register timer task for load data!";
+        bgThread_.addTimerTask(delayMS,
+                               FLAGS_load_data_interval_secs * 1000,
+                               &MetaClient::loadDataThreadFunc, this);
+    }
+    if (sendHeartBeat_) {
+        LOG(INFO) << "Register time task for heartbeat!";
+        size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
+        bgThread_.addTimerTask(delayMS,
+                               FLAGS_heartbeat_interval_secs * 1000,
+                               &MetaClient::heartBeatThreadFunc, this);
+    }
+}
+
+void MetaClient::heartBeatThreadFunc() {
+    if (listener_ == nullptr) {
+        VLOG(1) << "Can't send heartbeat due to listener_ is nullptr!";
+        return;
+    }
+    auto ret = heartbeat().get();
+    if (!ret.ok()) {
+        LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
+        return;
+    }
 }
 
 void MetaClient::loadDataThreadFunc() {
+    if (ioThreadPool_->numThreads() <= 0) {
+        LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
+        return;
+    }
     auto ret = listSpaces().get();
     if (!ret.ok()) {
         LOG(ERROR) << "List space failed, status:" << ret.status();
@@ -236,7 +255,7 @@ std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& 
 std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames) {
     std::vector<SpaceIdName> idNames;
     idNames.resize(tIdNames.size());
-    std::transform(tIdNames.begin(), tIdNames.end(), idNames.begin(), [] (const auto& tin) {
+    std::transform(tIdNames.begin(), tIdNames.end(), idNames.begin(), [](const auto& tin) {
         return SpaceIdName(tin.id.get_space_id(), tin.name);
     });
     return idNames;
@@ -357,10 +376,12 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
 
 folly::Future<StatusOr<GraphSpaceID>>
 MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFactor) {
+    cpp2::SpaceProperties properties;
+    properties.set_space_name(std::move(name));
+    properties.set_partition_num(partsNum);
+    properties.set_replica_factor(replicaFactor);
     cpp2::CreateSpaceReq req;
-    req.set_space_name(std::move(name));
-    req.set_parts_num(partsNum);
-    req.set_replica_factor(replicaFactor);
+    req.set_properties(std::move(properties));
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_createSpace(request);
             }, [] (cpp2::ExecResp&& resp) -> GraphSpaceID {
@@ -377,6 +398,16 @@ folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
                 });
 }
 
+folly::Future<StatusOr<cpp2::SpaceItem>>
+MetaClient::getSpace(GraphSpaceID spaceId) {
+    cpp2::GetSpaceReq req;
+    req.set_space_id(spaceId);
+    return  getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_getSpace(request);
+                }, [] (cpp2::GetSpaceResp&& resp) -> decltype(auto) {
+                    return std::move(resp).get_item();
+                });
+}
 
 folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name) {
     cpp2::DropSpaceReq req;
@@ -682,12 +713,12 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::removeTagSchema(int32_t spaceId, std::string tagName) {
-    cpp2::RemoveTagReq req;
+MetaClient::dropTagSchema(int32_t spaceId, std::string tagName) {
+    cpp2::DropTagReq req;
     req.set_space_id(spaceId);
     req.set_tag_name(std::move(tagName));
     return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_removeTag(request);
+        return client->future_dropTag(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);
@@ -759,15 +790,65 @@ MetaClient::getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer vers
 }
 
 folly::Future<StatusOr<bool>>
-MetaClient::removeEdgeSchema(GraphSpaceID spaceId, std::string name) {
-    cpp2::RemoveEdgeReq req;
+MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
+    cpp2::DropEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
     return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_removeEdge(request);
+        return client->future_dropEdge(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);
+}
+
+folly::Future<StatusOr<TagIndexID>>
+MetaClient::createTagIndex(GraphSpaceID spaceID, std::string name,
+                           std::vector<std::string> fields) {
+    UNUSED(spaceID); UNUSED(name); UNUSED(fields);
+    return Status::OK();
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::dropTagIndex(GraphSpaceID spaceID, std::string name) {
+    UNUSED(spaceID); UNUSED(name);
+    return Status::OK();
+}
+
+folly::Future<StatusOr<cpp2::IndexFields>>
+MetaClient::getTagIndex(GraphSpaceID spaceID, std::string name) {
+    UNUSED(spaceID); UNUSED(name);
+    return Status::OK();
+}
+
+folly::Future<StatusOr<std::vector<cpp2::TagIndexItem>>>
+MetaClient::listTagIndexes(GraphSpaceID spaceID) {
+    UNUSED(spaceID);
+    return Status::OK();
+}
+
+folly::Future<StatusOr<EdgeIndexID>>
+MetaClient::createEdgeIndex(GraphSpaceID spaceID, std::string name,
+                            std::vector<std::string> fields) {
+    UNUSED(spaceID); UNUSED(name); UNUSED(fields);
+    return Status::OK();
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::dropEdgeIndex(GraphSpaceID spaceID, std::string name) {
+    UNUSED(spaceID); UNUSED(name);
+    return Status::OK();
+}
+
+folly::Future<StatusOr<nebula::meta::cpp2::IndexFields>>
+MetaClient::getEdgeIndex(GraphSpaceID spaceID, std::string name) {
+    UNUSED(spaceID); UNUSED(name);
+    return Status::OK();
+}
+
+folly::Future<StatusOr<std::vector<cpp2::EdgeIndexItem>>>
+MetaClient::listEdgeIndexes(GraphSpaceID spaceID) {
+    UNUSED(spaceID);
+    return Status::OK();
 }
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>>
@@ -826,5 +907,19 @@ SchemaVer MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& space,
     return it->second;
 }
 
+folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
+    CHECK_NOTNULL(listener_);
+    auto localHost = listener_->getLocalHost();
+    cpp2::HBReq req;
+    nebula::cpp2::HostAddr thriftHost;
+    thriftHost.set_ip(localHost.first);
+    thriftHost.set_port(localHost.second);
+    req.set_host(std::move(thriftHost));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_heartBeat(request);
+    }, [] (cpp2::HBResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
+}
 }  // namespace meta
 }  // namespace nebula

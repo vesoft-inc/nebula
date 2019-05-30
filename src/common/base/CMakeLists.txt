@@ -6,6 +6,7 @@ add_library(
     Status.cpp
     SanitizerOptions.cpp
     SignalHandler.cpp
+    NebulaKeyUtils.cpp
 )
 add_dependencies(base_obj third-party)
 IF(${PCHSupport_FOUND})

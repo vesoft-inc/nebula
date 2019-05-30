@@ -24,6 +24,19 @@ If `docker` is not found, please see [here](https://docs.docker.com/install/) fo
 
 After that, using `docker pull vesoft/nebula-graph:latest` to get `nebula` image and `docker images` that can display images status.
 
+If `docker` is slow when pulling the image, configure an accelerator.
+
+You can add the source at `/etc/docker/daemon.json`, for Chinese users:
+
+```
+{
+  "registry-mirrors": [
+    "https://dockerhub.azk8s.cn",
+    "https://reg-mirror.qiniu.com"
+  ]
+}
+```
+
 ---
 
 ### Step 2 Startup Nebula Graph

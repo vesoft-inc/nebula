@@ -5,40 +5,49 @@
  */
 
 #include "meta/processors/CreateSpaceProcessor.h"
+#include "meta/ActiveHostsMan.h"
 
 namespace nebula {
 namespace meta {
 
 void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-    auto spaceRet = getSpaceId(req.get_space_name());
+    auto& properties = req.get_properties();
+    auto spaceRet = getSpaceId(properties.get_space_name());
     if (spaceRet.ok()) {
-        LOG(ERROR) << "Create Space Failed : Space " << req.get_space_name() << " have existed!";
+        LOG(ERROR) << "Create Space Failed : Space " << properties.get_space_name()
+                   << " have existed!";
         resp_.set_id(to(spaceRet.value(), EntryType::SPACE));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }
     CHECK_EQ(Status::SpaceNotFound(), spaceRet.status());
-    auto ret = allHosts();
-    if (!ret.ok()) {
+    auto hosts = ActiveHostsManHolder::hostsMan()->getActiveHosts();
+    if (hosts.empty()) {
         LOG(ERROR) << "Create Space Failed : No Hosts!";
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
         onFinished();
         return;
     }
     auto spaceId = autoIncrementId();
-    VLOG(3) << "Create space " << req.get_space_name() << ", id " << spaceId;
-    auto hosts = ret.value();
-    auto replicaFactor = req.get_replica_factor();
+    auto spaceName = properties.get_space_name();
+    auto partitionNum = properties.get_partition_num();
+    auto replicaFactor = properties.get_replica_factor();
+    VLOG(3) << "Create space " << spaceName << ", id " << spaceId;
+    if ((int32_t)hosts.size() < replicaFactor) {
+        LOG(ERROR) << "Not enough hosts existed for replica "
+                   << replicaFactor << ", hosts num " << hosts.size();
+        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
+        onFinished();
+        return;
+    }
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::indexSpaceKey(req.get_space_name()),
+    data.emplace_back(MetaServiceUtils::indexSpaceKey(spaceName),
                       std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
     data.emplace_back(MetaServiceUtils::spaceKey(spaceId),
-                      MetaServiceUtils::spaceVal(req.get_parts_num(),
-                                                 replicaFactor,
-                                                 req.get_space_name()));
-    for (auto partId = 1; partId <= req.get_parts_num(); partId++) {
+                      MetaServiceUtils::spaceVal(properties));
+    for (auto partId = 1; partId <= partitionNum; partId++) {
         auto partHosts = pickHosts(partId, hosts, replicaFactor);
         data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                           MetaServiceUtils::partVal(partHosts));
@@ -50,7 +59,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
 
 std::vector<nebula::cpp2::HostAddr>
 CreateSpaceProcessor::pickHosts(PartitionID partId,
-                                const std::vector<nebula::cpp2::HostAddr>& hosts,
+                                const std::vector<HostAddr>& hosts,
                                 int32_t replicaFactor) {
     if (hosts.size() == 0) {
         return std::vector<nebula::cpp2::HostAddr>();
@@ -58,7 +67,7 @@ CreateSpaceProcessor::pickHosts(PartitionID partId,
     auto startIndex = partId;
     std::vector<nebula::cpp2::HostAddr> pickedHosts;
     for (decltype(replicaFactor) i = 0; i < replicaFactor; i++) {
-        pickedHosts.emplace_back(hosts[startIndex++ % hosts.size()]);
+        pickedHosts.emplace_back(toThriftHost(hosts[startIndex++ % hosts.size()]));
     }
     return pickedHosts;
 }

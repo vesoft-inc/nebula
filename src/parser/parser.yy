@@ -82,7 +82,7 @@ class GraphScanner;
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_TTL
 %token KW_EDGE KW_EDGES KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
@@ -152,11 +152,11 @@ class GraphScanner;
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
-%type <sentence> remove_tag_sentence remove_edge_sentence
+%type <sentence> drop_tag_sentence drop_edge_sentence
 %type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
-%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence
+%type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence describe_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -596,23 +596,29 @@ describe_tag_sentence
     : KW_DESCRIBE KW_TAG name_label {
         $$ = new DescribeTagSentence($3);
     }
+    | KW_DESC KW_TAG name_label {
+        $$ = new DescribeTagSentence($3);
+    }
     ;
 
 describe_edge_sentence
     : KW_DESCRIBE KW_EDGE name_label {
         $$ = new DescribeEdgeSentence($3);
     }
-    ;
-
-remove_tag_sentence
-    : KW_REMOVE KW_TAG name_label {
-        $$ = new RemoveTagSentence($3);
+    | KW_DESC KW_EDGE name_label {
+        $$ = new DescribeEdgeSentence($3);
     }
     ;
 
-remove_edge_sentence
-    : KW_REMOVE KW_EDGE name_label {
-        $$ = new RemoveEdgeSentence($3);
+drop_tag_sentence
+    : KW_DROP KW_TAG name_label {
+        $$ = new DropTagSentence($3);
+    }
+    ;
+
+drop_edge_sentence
+    : KW_DROP KW_EDGE name_label {
+        $$ = new DropEdgeSentence($3);
     }
     ;
 
@@ -937,6 +943,15 @@ create_space_sentence
     }
     ;
 
+describe_space_sentence
+    : KW_DESCRIBE KW_SPACE name_label {
+        $$ = new DescribeSpaceSentence($3);
+    }
+    | KW_DESC KW_SPACE name_label {
+        $$ = new DescribeSpaceSentence($3);
+    }
+    ;
+
 space_opt_list
     : space_opt_item {
         $$ = new SpaceOptList();
@@ -1099,12 +1114,13 @@ maintain_sentence
     | alter_edge_sentence { $$ = $1; }
     | describe_tag_sentence { $$ = $1; }
     | describe_edge_sentence { $$ = $1; }
-    | remove_tag_sentence { $$ = $1; }
-    | remove_edge_sentence { $$ = $1; }
+    | drop_tag_sentence { $$ = $1; }
+    | drop_edge_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
     | add_hosts_sentence { $$ = $1; }
     | remove_hosts_sentence { $$ = $1; }
     | create_space_sentence { $$ = $1; }
+    | describe_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
     | yield_sentence {
         // Now we take YIELD as a normal maintenance sentence.

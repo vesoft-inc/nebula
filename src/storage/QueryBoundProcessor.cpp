@@ -7,7 +7,6 @@
 #include "storage/QueryBoundProcessor.h"
 #include <algorithm>
 #include "time/Duration.h"
-#include "storage/KeyUtils.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 
