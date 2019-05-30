@@ -2,7 +2,7 @@ add_library(
     adHocSchema_obj OBJECT
     AdHocSchemaManager.cpp
 )
-add_dependencies(schema_obj base_obj)
+add_dependencies(adHocSchema_obj schema_obj base_obj)
 
 add_executable(
     add_vertices_test
