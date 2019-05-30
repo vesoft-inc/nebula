@@ -135,7 +135,12 @@ Status GoExecutor::prepareOver() {
             LOG(FATAL) << "Over clause shall never be null";
         }
         auto spaceId = ectx()->rctx()->session()->space();
-        edgeType_ = ectx()->schemaManager()->toEdgeType(spaceId, *clause->edge());
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *clause->edge());
+        if (!edgeStatus.ok()) {
+            status = edgeStatus.status();
+            break;
+        }
+        edgeType_ = edgeStatus.value();
         reversely_ = clause->isReversely();
         if (clause->alias() != nullptr) {
             expCtx_->addAlias(*clause->alias(), AliasKind::Edge, *clause->edge());
@@ -234,7 +239,13 @@ void GoExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
 
 void GoExecutor::stepOut() {
     auto spaceId = ectx()->rctx()->session()->space();
-    auto returns = getStepOutProps();
+    auto status = getStepOutProps();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(Status::Error("Get step out props failed"));
+        return;
+    }
+    auto returns = status.value();
     auto future = ectx()->storage()->getNeighbors(spaceId,
                                                   starts_,
                                                   edgeType_,
@@ -336,7 +347,7 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
 }
 
 
-std::vector<storage::cpp2::PropDef> GoExecutor::getStepOutProps() const {
+StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() const {
     std::vector<storage::cpp2::PropDef> props;
     {
         storage::cpp2::PropDef pd;
@@ -354,7 +365,11 @@ std::vector<storage::cpp2::PropDef> GoExecutor::getStepOutProps() const {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::SOURCE;
         pd.name = tagProp.second;
-        auto tagId = ectx()->schemaManager()->toTagID(spaceId, tagProp.first);
+        auto status = ectx()->schemaManager()->toTagID(spaceId, tagProp.first);
+        if (!status.ok()) {
+            return Status::Error("No schema found for '%s'", tagProp.first);
+        }
+        auto tagId = status.value();
         pd.set_tag_id(tagId);
         props.emplace_back(std::move(pd));
     }
@@ -369,14 +384,18 @@ std::vector<storage::cpp2::PropDef> GoExecutor::getStepOutProps() const {
 }
 
 
-std::vector<storage::cpp2::PropDef> GoExecutor::getDstProps() const {
+StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() const {
     std::vector<storage::cpp2::PropDef> props;
     auto spaceId = ectx()->rctx()->session()->space();
     for (auto &tagProp : expCtx_->dstTagProps()) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::DEST;
         pd.name = tagProp.second;
-        auto tagId = ectx()->schemaManager()->toTagID(spaceId, tagProp.first);
+        auto status = ectx()->schemaManager()->toTagID(spaceId, tagProp.first);
+        if (!status.ok()) {
+            return Status::Error("No schema found for '%s'", tagProp.first);
+        }
+        auto tagId = status.value();
         pd.set_tag_id(tagId);
         props.emplace_back(std::move(pd));
     }
@@ -386,7 +405,13 @@ std::vector<storage::cpp2::PropDef> GoExecutor::getDstProps() const {
 
 void GoExecutor::fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcResp) {
     auto spaceId = ectx()->rctx()->session()->space();
-    auto returns = getDstProps();
+    auto status = getDstProps();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(Status::Error("Get dest props failed"));
+        return;
+    }
+    auto returns = status.value();
     auto future = ectx()->storage()->getVertexProps(spaceId, ids, returns);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this, stepOutResp = std::move(rpcResp)] (auto &&result) mutable {
