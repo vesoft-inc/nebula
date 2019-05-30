@@ -18,9 +18,7 @@ public:
         return new DropTagIndexProcessor(kvstore);
     }
 
-    void process(const cpp2::DropTagIndexReq& req) {
-        UNUSED(req);
-    }
+    void process(const cpp2::DropTagIndexReq& req);
 
 private:
     explicit DropTagIndexProcessor(kvstore::KVStore* kvstore)

@@ -49,8 +49,8 @@ using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeTyp
 
 // cache for index
 using IndexFields = std::vector<std::string>;
-using VertexIndexFieldsCache = std::unordered_map<VertextIndexID, IndexFields>;
-using EdgeIndexFieldsCache = std::unordered_map<EdgeIndexID, IndexFields>;
+using VertexIndexFieldsCache = std::unordered_map<nebula::cpp2::TagIndexID, IndexFields>;
+using EdgeIndexFieldsCache = std::unordered_map<nebula::cpp2::EdgeIndexID, IndexFields>;
 
 class MetaChangedListener {
 public:
@@ -146,7 +146,7 @@ public:
     folly::Future<StatusOr<bool>>
     dropTagIndex(GraphSpaceID spaceId, std::string name);
 
-    folly::Future<StatusOr<cpp2::IndexFields>>
+    folly::Future<StatusOr<cpp2::TagIndexItem>>
     getTagIndex(GraphSpaceID spaceId, std::string name);
 
     folly::Future<StatusOr<std::vector<cpp2::TagIndexItem>>>
@@ -158,7 +158,7 @@ public:
     folly::Future<StatusOr<bool>>
     dropEdgeIndex(GraphSpaceID spaceId, std::string name);
 
-    folly::Future<StatusOr<nebula::meta::cpp2::IndexFields>>
+    folly::Future<StatusOr<cpp2::EdgeIndexItem>>
     getEdgeIndex(GraphSpaceID spaceId, std::string name);
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeIndexItem>>>

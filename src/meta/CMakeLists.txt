@@ -31,6 +31,14 @@ add_library(
     processors/GetEdgeProcessor.cpp
     processors/ListEdgesProcessor.cpp
     processors/DropEdgeProcessor.cpp
+    processors/CreateTagIndexProcessor.cpp
+    processors/DropTagIndexProcessor.cpp
+    processors/GetTagIndexProcessor.cpp
+    processors/ListTagIndexesProcessor.cpp
+    processors/CreateEdgeIndexProcessor.cpp
+    processors/DropEdgeIndexProcessor.cpp
+    processors/GetEdgeIndexProcessor.cpp
+    processors/ListEdgeIndexesProcessor.cpp
     processors/GetProcessor.cpp
     processors/MultiGetProcessor.cpp
     processors/MultiPutProcessor.cpp

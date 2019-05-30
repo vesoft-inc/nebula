@@ -338,6 +338,10 @@ struct GetTagIndexReq {
     2: string              index_name,
 }
 
+struct GetTagIndexResp {
+    1: ErrorCode              code,
+}
+
 struct ListTagIndexesReq {
     1: common.GraphSpaceID space_id,
 }
@@ -361,6 +365,10 @@ struct DropEdgeIndexReq {
 struct GetEdgeIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
+}
+
+struct GetEdgeIndexResp {
+     1: ErrorCode              code,
 }
 
 struct ListEdgeIndexesReq {
@@ -404,13 +412,15 @@ service MetaService {
     ExecResp removeRange(1: RemoveRangeReq req);
     ScanResp scan(1: ScanReq req);
 
-    ExecResp             createTagIndex(1:CreateTagIndexReq req);
-    ExecResp             dropTagIndex(1:DropTagIndexReq req );
+    ExecResp             createTagIndex(1: CreateTagIndexReq req);
+    ExecResp             dropTagIndex(1: DropTagIndexReq req );
+    GetTagIndexResp      getTagIndex(1: GetTagIndexReq req);
     ListTagIndexesResp   listTagIndexes(1:ListTagIndexesReq req);
 
-    ExecResp             createEdgeIndex(1:CreateEdgeIndexReq req);
-    ExecResp             dropEdgeIndex(1:DropEdgeIndexReq req );
-    ListEdgeIndexesResp  listEdgeIndexes(1:ListEdgeIndexesReq req);
+    ExecResp             createEdgeIndex(1: CreateEdgeIndexReq req);
+    ExecResp             dropEdgeIndex(1: DropEdgeIndexReq req );
+    GetEdgeIndexResp     getEdgeIndex(1: GetEdgeIndexReq req);
+    ListEdgeIndexesResp  listEdgeIndexes(1: ListEdgeIndexesReq req);
 
     HBResp           heartBeat(1: HBReq req);
 }

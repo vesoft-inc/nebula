@@ -814,7 +814,7 @@ MetaClient::dropTagIndex(GraphSpaceID spaceID, std::string name) {
     return Status::OK();
 }
 
-folly::Future<StatusOr<cpp2::IndexFields>>
+folly::Future<StatusOr<cpp2::TagIndexItem>>
 MetaClient::getTagIndex(GraphSpaceID spaceID, std::string name) {
     UNUSED(spaceID); UNUSED(name);
     return Status::OK();
@@ -839,7 +839,7 @@ MetaClient::dropEdgeIndex(GraphSpaceID spaceID, std::string name) {
     return Status::OK();
 }
 
-folly::Future<StatusOr<nebula::meta::cpp2::IndexFields>>
+folly::Future<StatusOr<cpp2::EdgeIndexItem>>
 MetaClient::getEdgeIndex(GraphSpaceID spaceID, std::string name) {
     UNUSED(spaceID); UNUSED(name);
     return Status::OK();

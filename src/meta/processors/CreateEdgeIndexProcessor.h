@@ -18,9 +18,7 @@ public:
         return new CreateEdgeIndexProcessor(kvstore);
     }
 
-    void process(const cpp2::CreateEdgeIndexReq& req) {
-        UNUSED(req);
-    }
+    void process(const cpp2::CreateEdgeIndexReq& req);
 
 private:
     explicit CreateEdgeIndexProcessor(kvstore::KVStore* kvstore)

@@ -25,7 +25,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
         return;
     }
 
-    ret = getTagID(req.get_space_id(), properties.get_tag_name());
+    ret = getTagId(req.get_space_id(), properties.get_tag_name());
     if (!ret.ok()) {
         LOG(ERROR) << "Create Tag Index Failed "
                    << properties.get_tag_name() << " not exist";

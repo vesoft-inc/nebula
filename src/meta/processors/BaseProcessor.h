@@ -119,10 +119,10 @@ protected:
             thriftID.set_edge_type(static_cast<EdgeType>(id));
             break;
         case EntryType::TAG_INDEX:
-            thriftID.set_edge_type(static_cast<TagIndexId>(id));
+            thriftID.set_edge_type(static_cast<TagIndexID>(id));
             break;
         case EntryType::EDGE_INDEX:
-            thriftID.set_edge_type(static_cast<EdgeIndexId>(id));
+            thriftID.set_edge_type(static_cast<EdgeIndexID>(id));
             break;
         }
         return thriftID;

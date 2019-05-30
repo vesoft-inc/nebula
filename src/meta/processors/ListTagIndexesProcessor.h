@@ -18,8 +18,7 @@ public:
         return new ListTagIndexesProcessor(kvstore);
     }
 
-    void process(const cpp2::ListTagIndexesReq& req) {
-    }
+    void process(const cpp2::ListTagIndexesReq& req);
 
 private:
     explicit ListTagIndexesProcessor(kvstore::KVStore* kvstore)

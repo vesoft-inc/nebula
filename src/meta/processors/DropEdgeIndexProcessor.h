@@ -18,9 +18,7 @@ public:
         return new DropEdgeIndexProcessor(kvstore);
     }
 
-    void process(const cpp2::DropEdgeIndexReq& req) {
-        UNUSED(req);
-    }
+    void process(const cpp2::DropEdgeIndexReq& req);
 
 private:
     explicit DropEdgeIndexProcessor(kvstore::KVStore* kvstore)

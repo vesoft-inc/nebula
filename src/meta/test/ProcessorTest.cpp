@@ -1135,7 +1135,6 @@ TEST(ProcessorTest, TagIndexTest) {
         cpp2::CreateTagIndexReq req;
         req.set_space_id(1);
         req.set_properties(std::move(properties));
-
         auto* processor = CreateTagIndexProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);

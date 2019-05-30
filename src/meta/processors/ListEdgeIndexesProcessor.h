@@ -18,8 +18,7 @@ public:
         return new ListEdgeIndexesProcessor(kvstore);
     }
 
-    void process(const cpp2::ListEdgeIndexesReq& req) {
-    }
+    void process(const cpp2::ListEdgeIndexesReq& req);
 
 private:
     explicit ListEdgeIndexesProcessor(kvstore::KVStore* kvstore)

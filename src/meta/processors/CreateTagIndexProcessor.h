@@ -18,9 +18,7 @@ public:
         return new CreateTagIndexProcessor(kvstore);
     }
 
-    void process(const cpp2::CreateTagIndexReq& req) {
-        UNUSED(req);
-    }
+    void process(const cpp2::CreateTagIndexReq& req);
 
 private:
     explicit CreateTagIndexProcessor(kvstore::KVStore* kvstore)

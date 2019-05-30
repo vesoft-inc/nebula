@@ -175,7 +175,7 @@ StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) 
     auto indexKey = MetaServiceUtils::indexSpaceKey(name);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
-        return *reinterpret_cast<const GraphSpaceID*>(ret.val.c_str());
+        return *reinterpret_cast<const GraphSpaceID*>(ret.value().c_str());
     }
     return Status::SpaceNotFound(folly::stringPrintf("Space %s not found", name.c_str()));
 }
@@ -186,7 +186,7 @@ StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::s
     std::string val;
     auto ret = doGet(indexKey);
     if (ret.ok()) {
-        return *reinterpret_cast<const TagID*>(ret.val.c_str());
+        return *reinterpret_cast<const TagID*>(ret.value().c_str());
     }
     return Status::TagNotFound(folly::stringPrintf("Tag %s not found", name.c_str()));
 }
@@ -202,7 +202,8 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId, const 
 }
 
 template<typename RESP>
-StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName) {
+StatusOr<TagIndexID> BaseProcessor<RESP>::getTagIndexID(GraphSpaceID spaceId,
+                                                        const std::string& indexName) {
     auto indexKey = MetaServiceUtils::indexTagIndexKey(spaceId, indexName);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
@@ -213,7 +214,8 @@ StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& inde
 }
 
 template<typename RESP>
-StatusOr<EdgeIndexID> getEdgeIndexID(GraphSpaceID spaceId, const std::string& indexName) {
+StatusOr<EdgeIndexID> BaseProcessor<RESP>::getEdgeIndexID(GraphSpaceID spaceId,
+                                                          const std::string& indexName) {
     auto indexKey = MetaServiceUtils::indexEdgeIndexKey(spaceId, indexName);
     auto ret = doGet(indexKey);
     if (ret.ok()) {
