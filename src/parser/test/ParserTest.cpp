@@ -583,4 +583,38 @@ TEST(Parser, UnreservedKeywords) {
     }
 }
 
+TEST(Parser, Annotation) {
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG TAG1(space string) // test....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG TAG1(space string) -- test....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG TAG1(space string) # test....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG TAG1/* tag name */(space string)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG TAG1/* tag name */(space string) // test....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+
 }   // namespace nebula
