@@ -82,7 +82,7 @@ class GraphScanner;
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_TTL
 %token KW_EDGE KW_EDGES KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
@@ -596,10 +596,16 @@ describe_tag_sentence
     : KW_DESCRIBE KW_TAG name_label {
         $$ = new DescribeTagSentence($3);
     }
+    | KW_DESC KW_TAG name_label {
+        $$ = new DescribeTagSentence($3);
+    }
     ;
 
 describe_edge_sentence
     : KW_DESCRIBE KW_EDGE name_label {
+        $$ = new DescribeEdgeSentence($3);
+    }
+    | KW_DESC KW_EDGE name_label {
         $$ = new DescribeEdgeSentence($3);
     }
     ;
@@ -938,7 +944,10 @@ create_space_sentence
     ;
 
 describe_space_sentence
-    : KW_DESCRIBE KW_SPACE LABEL {
+    : KW_DESCRIBE KW_SPACE name_label {
+        $$ = new DescribeSpaceSentence($3);
+    }
+    | KW_DESC KW_SPACE name_label {
         $$ = new DescribeSpaceSentence($3);
     }
     ;
