@@ -24,12 +24,6 @@ Status SequentialExecutor::prepare() {
         auto *sentence = sentences_->sentences_[i].get();
         auto executor = makeExecutor(sentence);
         DCHECK(executor != nullptr);
-        auto status = executor->prepare();
-        if (!status.ok()) {
-            FLOG_ERROR("Prepare executor `%s' failed: %s",
-                        executor->name(), status.toString().c_str());
-            return status;
-        }
         executors_.emplace_back(std::move(executor));
     }
     /**
@@ -44,6 +38,14 @@ Status SequentialExecutor::prepare() {
     };
     for (auto i = 0U; i < executors_.size() - 1; i++) {
         auto onFinish = [this, next = i + 1] () {
+            auto status = executors_[next]->prepare();
+            if (!status.ok()) {
+                FLOG_ERROR("Prepare executor `%s' failed: %s",
+                            executors_[next]->name(), status.toString().c_str());
+                DCHECK(onError_);
+                onError_(std::move(status));
+                return;
+            }
             executors_[next]->execute();
         };
         executors_[i]->setOnFinish(onFinish);
@@ -62,6 +64,14 @@ Status SequentialExecutor::prepare() {
 
 
 void SequentialExecutor::execute() {
+    auto status = executors_.front()->prepare();
+    if (!status.ok()) {
+        FLOG_ERROR("Prepare executor `%s' failed: %s",
+                    executors_.front()->name(), status.toString().c_str());
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
     executors_.front()->execute();
 }
 
