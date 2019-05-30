@@ -8,6 +8,7 @@
 #define META_TEST_TESTUTILS_H_
 
 #include "base/Base.h"
+#include "test/ServerContext.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
@@ -166,36 +167,12 @@ public:
         });
     }
 
-    struct ServerContext {
-        ~ServerContext() {
-            server_->stop();
-            serverT_->join();
-            VLOG(3) << "~ServerContext";
-        }
-
-        std::unique_ptr<apache::thrift::ThriftServer> server_;
-        std::unique_ptr<std::thread> serverT_;
-        uint32_t port_;
-    };
-
-    static std::unique_ptr<ServerContext> mockServer(uint32_t port, const char* dataPath) {
-        auto sc = std::make_unique<ServerContext>();
-        sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
-        sc->serverT_ = std::make_unique<std::thread>([&]() {
-            LOG(INFO) << "Starting the meta Daemon on port " << port << ", path " << dataPath;
-            std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath));
-            auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kv.get());
-            CHECK(!!sc->server_) << "Failed to create the thrift server";
-            sc->server_->setInterface(handler);
-            sc->server_->setPort(port);
-            sc->server_->serve();  // Will wait until the server shuts down
-
-            LOG(INFO) << "Stop the server...";
-        });
-        while (!sc->server_->getServeEventBase() ||
-               !sc->server_->getServeEventBase()->isRunning()) {
-        }
-        sc->port_ = sc->server_->getAddress().getPort();
+    static std::unique_ptr<test::ServerContext> mockMetaServer(uint16_t port,
+                                                               const char* dataPath) {
+        auto sc = std::make_unique<test::ServerContext>();
+        sc->KVStore_ = std::unique_ptr<kvstore::KVStore>(TestUtils::initKV(dataPath));
+        auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->KVStore_.get());
+        test::mockCommon(sc.get(), "meta", port, handler);
         LOG(INFO) << "Starting the Meta Daemon on port " << sc->port_
                   << ", path " << dataPath;
         return sc;

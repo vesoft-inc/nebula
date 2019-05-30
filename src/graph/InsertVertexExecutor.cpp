@@ -19,35 +19,47 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 
 
 Status InsertVertexExecutor::prepare() {
-    auto status = checkIfGraphSpaceChosen();
-    if (!status.ok()) {
-        return status;
-    }
+    Status status;
+    do {
+        status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            break;
+        }
 
-    // TODO(dutor) To support multi-tag insertion
-    auto tagItems = sentence_->tagItems();
-    if (tagItems.size() > 1) {
-        return Status::Error("Multi-tag not supported yet");
-    }
+        // TODO(dutor) To support multi-tag insertion
+        auto tagItems = sentence_->tagItems();
+        if (tagItems.size() > 1) {
+            status = Status::Error("Multi-tag not supported yet");
+            break;
+        }
 
-    auto *tagName = tagItems[0]->tagName();
-    properties_ = tagItems[0]->properties();
+        auto *tagName = tagItems[0]->tagName();
+        properties_ = tagItems[0]->properties();
 
-    rows_ = sentence_->rows();
-    // TODO(dutor) To check whether the number of props and values matches.
-    if (rows_.empty()) {
-        return Status::Error("VALUES cannot be empty");
-    }
+        rows_ = sentence_->rows();
+        // TODO(dutor) To check whether the number of props and values matches.
+        if (rows_.empty()) {
+            status = Status::Error("VALUES cannot be empty");
+            break;
+        }
 
-    overwritable_ = sentence_->overwritable();
+        overwritable_ = sentence_->overwritable();
 
-    auto spaceId = ectx()->rctx()->session()->space();
-    tagId_ = ectx()->schemaManager()->toTagID(spaceId, *tagName);
-    schema_ = ectx()->schemaManager()->getTagSchema(spaceId, tagId_);
-    if (schema_ == nullptr) {
-        return Status::Error("No schema found for `%s'", tagName->c_str());
-    }
-    return Status::OK();
+        auto spaceId = ectx()->rctx()->session()->space();
+        auto tagStatus = ectx()->schemaManager()->toTagID(spaceId, *tagName);
+        if (!tagStatus.ok()) {
+            status = Status::Error("No schema found for '%s'", tagName->c_str());
+            break;
+        }
+        tagId_ = tagStatus.value();
+        schema_ = ectx()->schemaManager()->getTagSchema(spaceId, tagId_);
+        if (schema_ == nullptr) {
+            status = Status::Error("No schema found for '%s'", tagName->c_str());
+            break;
+        }
+    } while (false);
+
+    return status;
 }
 
 

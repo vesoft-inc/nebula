@@ -44,7 +44,7 @@ public:
 TEST(MetaHttpHandlerTest, MetaStatusTest) {
     FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockServer(10001, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(10001, rootPath.path());
 
     {
         std::string resp;
