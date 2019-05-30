@@ -123,11 +123,10 @@ TEST(ProcessorTest, CreateSpaceTest) {
     {
         cpp2::SpaceProperties properties;
         properties.set_space_name("default_space");
-        properties.set_partition_num(9);
+        properties.set_partition_num(8);
         properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
         req.set_properties(std::move(properties));
-
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -155,18 +154,21 @@ TEST(ProcessorTest, CreateSpaceTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        std::unordered_map<HostAddr, std::set<PartitionID>> hostsParts;
         for (auto& p : resp.get_parts()) {
-            auto startIndex = p.first;
             for (auto& h : p.second) {
-                ASSERT_EQ(startIndex++ % hostsNum, h.get_ip());
+                hostsParts[std::make_pair(h.get_ip(), h.get_port())].insert(p.first);
                 ASSERT_EQ(h.get_ip(), h.get_port());
             }
+        }
+        ASSERT_EQ(hostsNum, hostsParts.size());
+        for (auto it = hostsParts.begin(); it != hostsParts.end(); it++) {
+            ASSERT_EQ(6, it->second.size());
         }
     }
     {
         cpp2::DropSpaceReq req;
         req.set_space_name("default_space");
-
         auto* processor = DropSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
