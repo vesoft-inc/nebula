@@ -22,6 +22,8 @@ public:
         kShowSpaces,
         kShowTags,
         kShowEdges,
+        kShowTagCreate,
+        kShowEdgeCreate,
         kShowUsers,
         kShowUser,
         kShowRoles
@@ -31,11 +33,13 @@ public:
         kind_ = Kind::kShow;
         showType_ = std::move(sType);
     }
+
     ShowSentence(ShowType sType, std::string *name) {
         kind_ = Kind::kShow;
         name_.reset(name);
         showType_ = std::move(sType);
     }
+
     std::string toString() const override;
 
     ShowType showType() const {

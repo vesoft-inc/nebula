@@ -883,6 +883,12 @@ show_sentence
     | KW_SHOW KW_EDGES {
          $$ = new ShowSentence(ShowSentence::ShowType::kShowEdges);
     }
+    | KW_SHOW KW_CREATE KW_TAG name_label {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowTagCreate, $4);
+    }
+    | KW_SHOW KW_CREATE KW_EDGE name_label {
+         $$ = new ShowSentence(ShowSentence::ShowType::kShowEdgeCreate, $4);
+    }
     | KW_SHOW KW_USERS {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowUsers);
     }

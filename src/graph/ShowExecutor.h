@@ -28,6 +28,8 @@ public:
     void showSpaces();
     void showTags();
     void showEdges();
+    void showTagCreate();
+    void showEdgeCreate();
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 

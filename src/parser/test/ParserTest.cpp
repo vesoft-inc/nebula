@@ -461,6 +461,18 @@ TEST(Parser, AdminOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "SHOW CREATE TAG TAG_NAME";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE EDGE EDGE_NAME";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "DESCRIBE SPACE default_space";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();

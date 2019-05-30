@@ -18,6 +18,10 @@ std::string ShowSentence::toString() const {
             return std::string("SHOW TAGS");
         case ShowType::kShowEdges:
             return std::string("SHOW EDGES");
+        case ShowType::kShowTagCreate:
+            return std::string("SHOW CREATE TAG");
+        case ShowType::kShowEdgeCreate:
+            return std::string("SHOW CREATE EDGE");
         case ShowType::kShowUsers:
             return std::string("SHOW USERS");
         case ShowType::kShowUser:

@@ -43,6 +43,12 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowEdges:
             showEdges();
             break;
+        case ShowSentence::ShowType::kShowTagCreate:
+            showTagCreate();
+            break;
+        case ShowSentence::ShowType::kShowEdgeCreate:
+            showEdgeCreate();
+            break;
         case ShowSentence::ShowType::kShowUsers:
         case ShowSentence::ShowType::kShowUser:
         case ShowSentence::ShowType::kShowRoles:
@@ -222,6 +228,87 @@ void ShowExecutor::showEdges() {
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
+}
+
+void ShowExecutor::showTagCreate() {
+    auto *tagName = sentence_->getName();
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto tagId = ectx()->schemaManager()->toTagID(spaceId, *tagName);
+    if (!tagId.ok()) {
+        onError_(Status::Error("Schema not found for tag '%s'", tagName->c_str()));
+        return;
+    }
+    auto schema = ectx()->schemaManager()->getTagSchema(spaceId, tagId.value());
+
+    resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    if (schema == nullptr) {
+        onError_(Status::Error("Schema not found for tag `%s'", tagName->c_str()));
+        return;
+    }
+    std::vector<std::string> header{"Command"};
+    resp_->set_column_names(std::move(header));
+    uint32_t numFields = schema->getNumFields();
+    std::vector<cpp2::RowValue> rows;
+    std::vector<std::string> fields;
+    for (uint32_t index = 0; index < numFields; index++) {
+        auto name = schema->getFieldName(index);
+        auto type = valueTypeToString(schema->getFieldType(index)).c_str();
+        fields.emplace_back(folly::stringPrintf("%s %s", name, type));
+    }
+
+    std::vector<cpp2::ColumnValue> row;
+    row.resize(1);
+    std::string value;
+    folly::join(", ", std::move(fields), value);
+    auto command = folly::stringPrintf("CREATE TAG %s(%s)", tagName->c_str(), value.c_str());
+    row[0].set_str(std::move(command));
+    rows.emplace_back();
+    rows.back().set_columns(std::move(row));
+
+    resp_->set_rows(std::move(rows));
+    DCHECK(onFinish_);
+    onFinish_();
+}
+
+void ShowExecutor::showEdgeCreate() {
+    auto *edgeName = sentence_->getName();
+    auto spaceId = ectx()->rctx()->session()->space();
+    auto edgeType = ectx()->schemaManager()->toEdgeType(spaceId, *edgeName);
+    if (!edgeType.ok()) {
+        onError_(Status::Error("Schema not found for edge '%s'", edgeName->c_str()));
+        return;
+    }
+    auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType.value());
+
+    resp_ = std::make_unique<cpp2::ExecutionResponse>();
+    if (schema == nullptr) {
+        onError_(Status::Error("Schema not found for edge `%s'", edgeName->c_str()));
+        return;
+    }
+
+    std::vector<std::string> header{"Command"};
+    resp_->set_column_names(std::move(header));
+    uint32_t numFields = schema->getNumFields();
+    std::vector<cpp2::RowValue> rows;
+    std::vector<std::string> fields;
+    for (uint32_t index = 0; index < numFields; index++) {
+        auto name = schema->getFieldName(index);
+        auto type = valueTypeToString(schema->getFieldType(index)).c_str();
+        fields.emplace_back(folly::stringPrintf("%s %s", name, type));
+    }
+
+    std::vector<cpp2::ColumnValue> row;
+    row.resize(1);
+    std::string value;
+    folly::join(", ", std::move(fields), value);
+    auto command = folly::stringPrintf("CREATE EDGE %s(%s)", edgeName->c_str(), value.c_str());
+    row[0].set_str(std::move(command));
+    rows.emplace_back();
+    rows.back().set_columns(std::move(row));
+
+    resp_->set_rows(std::move(rows));
+    DCHECK(onFinish_);
+    onFinish_();
 }
 
 void ShowExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
