@@ -7,6 +7,8 @@
 #ifndef STORAGE_TEST_TESTUTILS_H_
 #define STORAGE_TEST_TESTUTILS_H_
 
+#include "AdHocSchemaManager.h"
+#include "test/ServerContext.h"
 #include "base/Base.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
@@ -15,7 +17,6 @@
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-#include "meta/SchemaManager.h"
 
 
 DECLARE_string(part_man_type);
@@ -48,7 +49,7 @@ public:
     }
 
     static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
-        auto* schemaMan = new meta::AdHocSchemaManager();
+        auto* schemaMan = new AdHocSchemaManager();
         schemaMan->addEdgeSchema(
             spaceId /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
         for (auto tagId = 3001; tagId < 3010; tagId++) {
@@ -156,50 +157,42 @@ public:
         return prop;
     }
 
-    struct ServerContext {
-        ~ServerContext() {
-            server_->stop();
-            serverT_->join();
-            VLOG(3) << "~ServerContext";
+    // If kvstore should init files in dataPath, input port can't be 0
+    static std::unique_ptr<test::ServerContext> mockStorageServer(meta::MetaClient* mClient,
+                                                                  const char* dataPath,
+                                                                  uint32_t ip,
+                                                                  uint32_t port = 0,
+                                                                  bool realMetaServer = false) {
+        auto sc = std::make_unique<test::ServerContext>();
+        std::vector<std::string> paths;
+        paths.push_back(folly::stringPrintf("%s/disk1", dataPath));
+        paths.push_back(folly::stringPrintf("%s/disk2", dataPath));
+        kvstore::KVOptions options;
+        options.local_ = HostAddr(ip, port);
+        options.dataPaths_ = std::move(paths);
+        options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
+                         options.local_, mClient);
+        // Save MetaServerBasedPartManager to update port when ThriftServer setup
+        auto partManagerPtr = static_cast<kvstore::MetaServerBasedPartManager*>(
+                            options.partMan_.get());
+        kvstore::NebulaStore* kvPtr = static_cast<kvstore::NebulaStore*>(
+                                    kvstore::KVStore::instance(std::move(options)));
+        // Keep KVStore can't free out of this function
+        sc->KVStore_ = std::unique_ptr<kvstore::KVStore>(kvPtr);
+        std::unique_ptr<meta::SchemaManager> schemaMan;
+        if (!realMetaServer) {
+            schemaMan = TestUtils::mockSchemaMan(1);
+        } else {
+            LOG(INFO) << "Create real schemaManager";
+            schemaMan = meta::SchemaManager::create();
+            schemaMan->init(mClient);
         }
-
-        std::unique_ptr<apache::thrift::ThriftServer> server_;
-        std::unique_ptr<std::thread> serverT_;
-        uint32_t port_;
-    };
-
-    static std::unique_ptr<ServerContext> mockServer(meta::MetaClient* mClient,
-                                                     const char* dataPath,
-                                                     uint32_t ip,
-                                                     uint32_t port = 0) {
-        auto sc = std::make_unique<ServerContext>();
-        sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
-        sc->serverT_ = std::make_unique<std::thread>([&]() {
-            std::vector<std::string> paths;
-            paths.push_back(folly::stringPrintf("%s/disk1", dataPath));
-            paths.push_back(folly::stringPrintf("%s/disk2", dataPath));
-            kvstore::KVOptions options;
-            options.local_ = HostAddr(ip, port);
-            options.dataPaths_ = std::move(paths);
-            options.partMan_
-                = std::make_unique<kvstore::MetaServerBasedPartManager>(options.local_, mClient);
-            kvstore::NebulaStore* kvPtr = static_cast<kvstore::NebulaStore*>(
-                                        kvstore::KVStore::instance(std::move(options)));
-            std::unique_ptr<kvstore::KVStore> kv(kvPtr);
-            auto schemaMan = TestUtils::mockSchemaMan(1);
-            auto handler
-                 = std::make_shared<nebula::storage::StorageServiceHandler>(kv.get(),
-                                                                            std::move(schemaMan));
-            CHECK(!!sc->server_) << "Failed to create the thrift server";
-            sc->server_->setInterface(handler);
-            sc->server_->setPort(port);
-            sc->server_->serve();  // Will wait until the server shuts down
-            LOG(INFO) << "Stop the server...";
-        });
-        while (!sc->server_->getServeEventBase() ||
-               !sc->server_->getServeEventBase()->isRunning()) {
+        auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
+                     sc->KVStore_.get(), std::move(schemaMan));
+        test::mockCommon(sc.get(), "storage", port, handler);
+        if (nullptr != partManagerPtr) {
+            partManagerPtr->setLocalHost(HostAddr(ip, sc->port_));
         }
-        sc->port_ = sc->server_->getAddress().getPort();
         LOG(INFO) << "Starting the storage Daemon on port " << sc->port_
                   << ", path " << dataPath;
         return sc;

@@ -53,7 +53,7 @@ TEST(StoragehHttpHandlerTest, StorageStatusTest) {
 
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
-    auto metaServerContext = meta::TestUtils::mockServer(localMetaPort, metaPath.c_str());
+    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str());
 
     LOG(INFO) << "Start storage server....";
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
@@ -64,10 +64,10 @@ TEST(StoragehHttpHandlerTest, StorageStatusTest) {
         = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
     mClient->init();
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
-    auto sc = TestUtils::mockServer(mClient.get(),
-                                    dataPath.c_str(),
-                                    localIp,
-                                    localDataPort);
+    auto sc = TestUtils::mockStorageServer(mClient.get(),
+                                           dataPath.c_str(),
+                                           localIp,
+                                           localDataPort);
 
     {
         std::string resp;
