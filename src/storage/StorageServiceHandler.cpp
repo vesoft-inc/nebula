@@ -8,6 +8,7 @@
 #include "base/Base.h"
 #include "storage/AddVerticesProcessor.h"
 #include "storage/AddEdgesProcessor.h"
+#include "storage/DeleteEdgesProcessor.h"
 #include "storage/QueryBoundProcessor.h"
 #include "storage/QueryVertexPropsProcessor.h"
 #include "storage/QueryEdgePropsProcessor.h"
@@ -111,6 +112,12 @@ StorageServiceHandler::future_removePart(const cpp2::RemovePartReq& req) {
 folly::Future<cpp2::AdminExecResp>
 StorageServiceHandler::future_memberChange(const cpp2::MemberChangeReq& req) {
     auto* processor = MemberChangeProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResponse>
+StorageServiceHandler::future_deleteEdges(const cpp2::DeleteEdgesRequest& req) {
+    auto* processor = DeleteEdgesProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
 

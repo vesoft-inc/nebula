@@ -107,6 +107,13 @@ TEST(Parser, Go) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1001,1003 OVER friend YIELD $^.person.name,"
+                            "$$.person.name, friend.time";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, SpaceOperation) {
@@ -651,25 +658,26 @@ TEST(Parser, DeleteVertex) {
 TEST(Parser, DeleteEdge) {
     {
         GQLParser parser;
-        std::string query = "DELETE EDGE 12345 -> 54321";
+        std::string query = "DELETE EDGE transfer(12345 -> 54321)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "DELETE EDGE 123 -> 321,456 -> 654,789 -> 987";
+        std::string query = "DELETE EDGE transfer(123 -> 321@1537408527, 456 -> 654, 789 -> 987)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "DELETE EDGE 12345 -> 54321 WHERE amount > 3.14";
+        std::string query = "DELETE EDGE transfer(12345 -> 54321@1537408527) WHERE amount > 3.14";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "DELETE EDGE 123 -> 321,456 -> 654,789 -> 987 WHERE amount > 3.14";
+        std::string query = "DELETE EDGE transfer(123 -> 321, 456 -> 654, 789 -> 987)"
+                            " WHERE amount > 3.14";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

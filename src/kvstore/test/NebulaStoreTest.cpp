@@ -95,30 +95,69 @@ TEST(NebulaStoreTest, SimpleTest) {
                           folly::stringPrintf("val_%d", i));
     }
     folly::Baton<true, std::atomic> baton;
-    store->asyncMultiPut(1, 1, std::move(data), [&] (ResultCode code){
+    store->asyncMultiPut(1, 0, data, [&](ResultCode code){
         EXPECT_EQ(ResultCode::SUCCEEDED, code);
         baton.post();
     });
     baton.wait();
-    int32_t start = 0;
-    int32_t end = 100;
-    std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
-    std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
-    s = prefix + s;
-    e = prefix + e;
-    std::unique_ptr<KVIterator> iter;
-    EXPECT_EQ(ResultCode::SUCCEEDED, store->range(1, 1, s, e, &iter));
-    int num = 0;
-    auto prefixLen = prefix.size();
-    while (iter->valid()) {
-        auto key = *reinterpret_cast<const int32_t*>(iter->key().data() + prefixLen);
-        auto val = iter->val();
-        EXPECT_EQ(num, key);
-        EXPECT_EQ(folly::stringPrintf("val_%d", num), val);
-        iter->next();
-        num++;
+    baton.reset();
+    store->asyncMultiPut(1, 1, std::move(data), [&](ResultCode code){
+        EXPECT_EQ(ResultCode::SUCCEEDED, code);
+        baton.post();
+    });
+    baton.wait();
+
+    auto checkData = [&](int32_t graphId, int32_t partId) {
+        int32_t start = 0, end = 100;
+        std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
+        std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
+        s = prefix + s;
+        e = prefix + e;
+        std::unique_ptr<KVIterator> iter;
+        EXPECT_EQ(ResultCode::SUCCEEDED, store->range(graphId, partId, s, e, &iter));
+        int num = 0;
+        while (iter->valid()) {
+          auto key = *reinterpret_cast<const int32_t*>(iter->key().data() + prefix.size());
+          auto val = iter->val();
+          EXPECT_EQ(num, key);
+          EXPECT_EQ(folly::stringPrintf("val_%d", num), val);
+          iter->next();
+          num++;
+        }
+        EXPECT_EQ(100, num);
+    };
+    checkData(1, 0);
+    checkData(1, 1);
+
+    LOG(INFO) << "Remove some data then read them...";
+    std::vector<std::string> keys;
+    for (auto i = 0; i < 100; i++) {
+        keys.emplace_back(
+            prefix + std::string(reinterpret_cast<const char*>(&i), sizeof(int32_t)));
     }
-    EXPECT_EQ(100, num);
+    baton.reset();
+    store->asyncMultiRemove(1, 0, std::move(keys), [&](ResultCode code){
+        EXPECT_EQ(ResultCode::SUCCEEDED, code);
+        baton.post();
+    });
+    baton.wait();
+    std::unique_ptr<KVIterator> iter;
+    EXPECT_EQ(ResultCode::SUCCEEDED, store->prefix(1, 0, prefix, &iter));
+    CHECK(!iter->valid());
+
+    int32_t start = 0, end = 100;
+    std::string startStr =
+        prefix + std::string(reinterpret_cast<const char*>(&start), sizeof(int32_t));
+    std::string endStr =
+        prefix + std::string(reinterpret_cast<const char*>(&end), sizeof(int32_t));
+    baton.reset();
+    store->asyncRemoveRange(1, 1, startStr, endStr, [&](ResultCode code){
+        EXPECT_EQ(ResultCode::SUCCEEDED, code);
+        baton.post();
+    });
+    baton.wait();
+    EXPECT_EQ(ResultCode::SUCCEEDED, store->prefix(1, 1, prefix, &iter));
+    CHECK(!iter->valid());
 }
 
 TEST(NebulaStoreTest, PartsTest) {

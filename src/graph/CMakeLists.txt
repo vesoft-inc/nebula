@@ -23,6 +23,7 @@ add_library(
     DescribeEdgeExecutor.cpp
     InsertVertexExecutor.cpp
     InsertEdgeExecutor.cpp
+    DeleteEdgeExecutor.cpp
     AssignmentExecutor.cpp
     InterimResult.cpp
     VariableHolder.cpp

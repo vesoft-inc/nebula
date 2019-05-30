@@ -59,7 +59,8 @@ class GraphScanner;
     nebula::EdgeRowItem                    *edge_row_item;
     nebula::UpdateList                     *update_list;
     nebula::UpdateItem                     *update_item;
-    nebula::EdgeList                       *edge_list;
+    nebula::EdgeKeyList                    *edge_key_list;
+    nebula::EdgeKeyItem                    *edge_key_item;
     nebula::ArgumentList                   *argument_list;
     nebula::HostList                       *host_list;
     nebula::HostAddr                       *host_item;
@@ -144,7 +145,8 @@ class GraphScanner;
 %type <edge_row_item> edge_row_item
 %type <update_list> update_list
 %type <update_item> update_item
-%type <edge_list> edge_list
+%type <edge_key_list> edge_key_list
+%type <edge_key_item> edge_key_item
 %type <host_list> host_list
 %type <host_item> host_item
 %type <space_opt_list> space_opt_list
@@ -1070,21 +1072,30 @@ download_sentence
     }
     ;
 
-edge_list
-    : vid R_ARROW vid {
-        $$ = new EdgeList();
-        $$->addEdge($1, $3);
+edge_key_item
+    : INTEGER R_ARROW INTEGER {
+        $$ = new EdgeKeyItem($1, $3);
     }
-    | edge_list COMMA vid R_ARROW vid {
+    | INTEGER R_ARROW INTEGER AT INTEGER {
+        $$ = new EdgeKeyItem($1, $3, $5);   
+    }
+    ;
+
+edge_key_list
+    : edge_key_item {
+        $$ = new EdgeKeyList();
+        $$->addEdgeKey($1);
+    }
+    | edge_key_list COMMA edge_key_item {
         $$ = $1;
-        $$->addEdge($3, $5);
+        $$->addEdgeKey($3);
     }
     ;
 
 delete_edge_sentence
-    : KW_DELETE KW_EDGE edge_list where_clause {
-        auto sentence = new DeleteEdgeSentence($3);
-        sentence->setWhereClause($4);
+    : KW_DELETE KW_EDGE LABEL L_PAREN edge_key_list R_PAREN where_clause {
+        auto sentence = new DeleteEdgeSentence($3, $5);
+        sentence->setWhereClause($7);
         $$ = sentence;
     }
     ;

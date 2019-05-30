@@ -163,6 +163,14 @@ struct AddEdgesRequest {
     3: bool overwritable,
 }
 
+struct DeleteEdgesRequest {
+    1: common.GraphSpaceID space_id,
+    // partId => edgeKeys
+    2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
+    3: common.EdgeType edge_type,
+    4: binary filter,
+}
+
 struct AdminExecResp {
     1: ErrorCode code,
     // Only valid when code is E_LEADER_CHANAGED.
@@ -203,7 +211,6 @@ struct CatchUpDataReq {
     3: common.HostAddr     target,
 }
 
-
 service StorageService {
     QueryResponse getOutBound(1: GetNeighborsRequest req)
     QueryResponse getInBound(1: GetNeighborsRequest req)
@@ -217,6 +224,8 @@ service StorageService {
 
     ExecResponse addVertices(1: AddVerticesRequest req);
     ExecResponse addEdges(1: AddEdgesRequest req);
+
+    ExecResponse deleteEdges(1: DeleteEdgesRequest req);
 
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);

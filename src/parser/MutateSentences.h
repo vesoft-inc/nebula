@@ -222,7 +222,7 @@ public:
 private:
     std::unique_ptr<Expression>                 srcid_;
     std::unique_ptr<Expression>                 dstid_;
-    int64_t                                     rank_;
+    int64_t                                     rank_{0};
     std::unique_ptr<ValueList>                  values_;
 };
 
@@ -429,33 +429,74 @@ private:
 };
 
 
-class EdgeList final {
+class EdgeKeyItem final {
 public:
-    void addEdge(Expression *srcid, Expression *dstid) {
-        edges_.emplace_back(srcid, dstid);
+   EdgeKeyItem(int64_t srcid, int64_t dstid) {
+        srcid_ = srcid;
+        dstid_ = dstid;
     }
 
-    const auto& edges() const {
-        return edges_;
+    EdgeKeyItem(int64_t srcid, int64_t dstid, int64_t rank) {
+        srcid_ = srcid;
+        dstid_ = dstid;
+        rank_ = rank;
+    }
+
+    int64_t srcid() const {
+        return srcid_;
+    }
+
+    int64_t dstid() const {
+        return dstid_;
+    }
+
+    int64_t rank() const {
+        return rank_;
     }
 
     std::string toString() const;
 
 private:
-    using EdgeItem = std::pair<std::unique_ptr<Expression>, std::unique_ptr<Expression>>;
-    std::vector<EdgeItem>                       edges_;
+    int64_t                                     srcid_{0};
+    int64_t                                     dstid_{0};
+    int64_t                                     rank_{0};
+};
+
+class EdgeKeyList final {
+public:
+    void addEdgeKey(EdgeKeyItem *key) {
+        keys_.emplace_back(key);
+    }
+
+    const std::vector<EdgeKeyItem*> keys() const {
+        std::vector<EdgeKeyItem*> result;
+        result.resize(keys_.size());
+        auto get = [] (const auto &ptr) { return ptr.get(); };
+        std::transform(keys_.begin(), keys_.end(), result.begin(), get);
+        return result;
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::unique_ptr<EdgeKeyItem>>   keys_;
 };
 
 
 class DeleteEdgeSentence final : public Sentence {
 public:
-    explicit DeleteEdgeSentence(EdgeList *edgeList) {
-        edgeList_.reset(edgeList);
+    explicit DeleteEdgeSentence(std::string *edge, EdgeKeyList *edgeKeyList) {
+        edge_.reset(edge);
+        edgeKeyList_.reset(edgeKeyList);
         kind_ = Kind::kDeleteEdge;
     }
 
-    const EdgeList* edgeList() const {
-        return edgeList_.get();
+    const std::vector<EdgeKeyItem*> keys() {
+        return edgeKeyList_->keys();
+    }
+
+    const std::string* edge() const {
+        return edge_.get();
     }
 
     void setWhereClause(WhereClause *clause) {
@@ -469,7 +510,8 @@ public:
     std::string toString() const override;
 
 private:
-    std::unique_ptr<EdgeList>                   edgeList_;
+    std::unique_ptr<std::string>                edge_;
+    std::unique_ptr<EdgeKeyList>                edgeKeyList_;
     std::unique_ptr<WhereClause>                whereClause_;
 };
 

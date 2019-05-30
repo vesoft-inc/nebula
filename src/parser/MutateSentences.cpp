@@ -238,13 +238,25 @@ std::string DeleteVertexSentence::toString() const {
     return buf;
 }
 
-std::string EdgeList::toString() const {
+std::string EdgeKeyItem::toString() const {
     std::string buf;
     buf.reserve(256);
-    for (auto &edge : edges_) {
-        buf += edge.first->toString();
-        buf += "->";
-        buf += edge.second->toString();
+
+    buf += std::to_string(srcid_);
+    buf += "->";
+    buf += std::to_string(dstid_);
+    if (rank_ != 0) {
+        buf += "@";
+        buf += std::to_string(rank_);
+    }
+    return buf;
+}
+
+std::string EdgeKeyList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &item : keys_) {
+        buf += item->toString();
         buf += ",";
     }
     if (!buf.empty()) {
@@ -257,7 +269,11 @@ std::string DeleteEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE EDGE ";
-    buf += edgeList_->toString();
+    buf += *edge_;
+    buf += "(";
+    buf += edgeKeyList_->toString();
+    buf += ")";
+
     if (whereClause_ != nullptr) {
         buf += " ";
         buf += whereClause_->toString();
