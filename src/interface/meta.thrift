@@ -89,22 +89,27 @@ struct EdgeItem {
     4: common.Schema        schema,
 }
 
-struct IndexFields {
-    1: list<string>  fields
+struct TagIndexProperties {
+    1: string               index_name,
+    2: string               tag_name,
+    3: list<string>         fields,
 }
+
+struct EdgeIndexProperties {
+    1: string               index_name,
+    2: string               edge_name,
+    3: list<string>         fields,
+}
+
 
 struct TagIndexItem {
     1: common.TagIndexID    index_id,
-    2: string               index_name,
-    3: string               tag_name,
-    4: IndexFields          fields,
+    2: TagIndexProperties   properties,
 }
 
 struct EdgeIndexItem {
     1: common.EdgeIndexID        index_id,
-    2: string                    index_name,
-    3: string                    edge_name,
-    4: IndexFields               fields,
+    2: EdgeIndexProperties       properties,
 }
 
 struct ExecResp {
@@ -320,7 +325,7 @@ struct HBReq {
 
 struct CreateTagIndexReq {
     1: common.GraphSpaceID space_id,
-    2: TagIndexItem        item,
+    2: TagIndexProperties  properties,
 }
 
 struct DropTagIndexReq {
@@ -345,7 +350,7 @@ struct ListTagIndexesResp {
 
 struct CreateEdgeIndexReq {
     1: common.GraphSpaceID space_id,
-    2: EdgeIndexItem       item,
+    2: EdgeIndexProperties properties,
 }
 
 struct DropEdgeIndexReq {

@@ -36,6 +36,8 @@ GENERATE_LOCK(space);
 GENERATE_LOCK(id);
 GENERATE_LOCK(tag);
 GENERATE_LOCK(edge);
+GENERATE_LOCK(tagIndex);
+GENERATE_LOCK(edgeIndex);
 
 #undef GENERATE_LOCK
 };
@@ -115,6 +117,12 @@ protected:
             break;
         case EntryType::EDGE:
             thriftID.set_edge_type(static_cast<EdgeType>(id));
+            break;
+        case EntryType::TAG_INDEX:
+            thriftID.set_edge_type(static_cast<TagIndexId>(id));
+            break;
+        case EntryType::EDGE_INDEX:
+            thriftID.set_edge_type(static_cast<EdgeIndexId>(id));
             break;
         }
         return thriftID;
@@ -199,6 +207,10 @@ protected:
      * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
+
+    StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
+
+    StatusOr<EdgeIndexID> getEdgeIndexID(GraphSpaceID spaceId, const std::string& indexName);
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;

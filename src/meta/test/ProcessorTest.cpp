@@ -18,13 +18,15 @@
 #include "meta/processors/RemoveHostsProcessor.h"
 #include "meta/processors/GetPartsAllocProcessor.h"
 #include "meta/processors/CreateTagProcessor.h"
-#include "meta/processors/CreateEdgeProcessor.h"
 #include "meta/processors/DropTagProcessor.h"
-#include "meta/processors/DropEdgeProcessor.h"
 #include "meta/processors/GetTagProcessor.h"
-#include "meta/processors/GetEdgeProcessor.h"
 #include "meta/processors/ListTagsProcessor.h"
+#include "meta/processors/CreateEdgeProcessor.h"
+#include "meta/processors/DropEdgeProcessor.h"
+#include "meta/processors/GetEdgeProcessor.h"
 #include "meta/processors/ListEdgesProcessor.h"
+#include "meta/processors/CreateEdgeIndexProcessor.h"
+#include "meta/processors/CreateTagIndexProcessor.h"
 #include "meta/processors/MultiPutProcessor.h"
 #include "meta/processors/GetProcessor.h"
 #include "meta/processors/MultiGetProcessor.h"
@@ -1011,7 +1013,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
 }
 
 TEST(ProcessorTest, SameNameTagsTest) {
-    fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
+    fs::TempDir rootPath("/tmp/SameNameTagsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
     {
@@ -1116,6 +1118,57 @@ TEST(ProcessorTest, SameNameTagsTest) {
         ASSERT_EQ("default_tag", tags[0].get_tag_name());
     }
 }
+
+TEST(ProcessorTest, TagIndexTest) {
+    fs::TempDir rootPath("/tmp/TagIndexTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    TestUtils::mockTag(kv.get(), 2);
+
+    {
+        cpp2::TagIndexProperties properties;
+        properties.set_index_name("tag_index");
+        properties.set_tag_name("tag_0");
+        std::vector<std::string> fields {"tag_0_col_0"};
+        properties.set_fields(std::move(fields));
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_properties(std::move(properties));
+
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+}
+
+TEST(ProcessorTest, EdgeIndexTest) {
+    fs::TempDir rootPath("/tmp/EdgeIndexTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    TestUtils::mockEdge(kv.get(), 2);
+
+    {
+        cpp2::EdgeIndexProperties   properties;
+        properties.set_index_name("edge_index");
+        properties.set_edge_name("edge_0");
+        std::vector<std::string> fields {"edge_0_col_0"};
+        properties.set_fields(std::move(fields));
+        cpp2::CreateEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_properties(std::move(properties));
+
+        auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+}
+
 }  // namespace meta
 }  // namespace nebula
 

@@ -11,12 +11,14 @@
 namespace nebula {
 namespace meta {
 
-const std::string kSpacesTable = "__spaces__";  // NOLINT
-const std::string kPartsTable  = "__parts__";   // NOLINT
-const std::string kHostsTable  = "__hosts__";   // NOLINT
-const std::string kTagsTable   = "__tags__";    // NOLINT
-const std::string kEdgesTable  = "__edges__";   // NOLINT
-const std::string kIndexTable  = "__index__";   // NOLINT
+const std::string kSpacesTable       = "__spaces__";         // NOLINT
+const std::string kPartsTable        = "__parts__";          // NOLINT
+const std::string kHostsTable        = "__hosts__";          // NOLINT
+const std::string kTagsTable         = "__tags__";           // NOLINT
+const std::string kEdgesTable        = "__edges__";          // NOLINT
+const std::string kTagIndexesTable   = "__tag_indexes__";    // NOLINT
+const std::string kEdgeIndexesTable  = "__edge_indexes__";   // NOLINT
+const std::string kIndexTable        = "__index__";          // NOLINT
 
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
@@ -217,6 +219,36 @@ nebula::cpp2::Schema MetaServiceUtils::parseSchema(folly::StringPiece rawData) {
     return schema;
 }
 
+std::string MetaServiceUtils::tagIndexKey(GraphSpaceID spaceID, TagIndexID indexID) {
+    std::string key;
+    key.reserve(64);
+    key.append(kTagIndexesTable.data(), kTagIndexesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&indexID), sizeof(TagIndexID));
+    return key;
+}
+
+std::string MetaServiceUtils::tagIndexVal(nebula::meta::cpp2::TagIndexProperties properties) {
+    std::string value;
+    apache::thrift::CompactSerializer::serialize(properties, &value);
+    return value;
+}
+
+std::string MetaServiceUtils::edgeIndexKey(GraphSpaceID spaceID, EdgeIndexID indexID) {
+    std::string key;
+    key.reserve(64);
+    key.append(kEdgeIndexesTable.data(), kEdgeIndexesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&indexID), sizeof(EdgeIndexID));
+    return key;
+}
+
+std::string MetaServiceUtils::edgeIndexVal(nebula::meta::cpp2::EdgeIndexProperties properties) {
+    std::string value;
+    apache::thrift::CompactSerializer::serialize(properties, &value);
+    return value;
+}
+
 std::string MetaServiceUtils::indexSpaceKey(const std::string& name) {
     std::string key;
     key.reserve(128);
@@ -248,6 +280,30 @@ std::string MetaServiceUtils::indexEdgeKey(GraphSpaceID spaceId,
     key.append(reinterpret_cast<const char*>(&type), sizeof(type));
     key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
     key.append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::indexTagIndexKey(GraphSpaceID spaceID,
+                                               const std::string& indexName) {
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    EntryType type = EntryType::TAG_INDEX;
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID));
+    key.append(indexName);
+    return key;
+}
+
+std::string MetaServiceUtils::indexEdgeIndexKey(GraphSpaceID spaceID,
+                                                const std::string& indexName) {
+    std::string key;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    EntryType type = EntryType::EDGE_INDEX;
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID));
+    key.append(indexName);
     return key;
 }
 

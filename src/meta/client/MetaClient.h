@@ -144,7 +144,7 @@ public:
     createTagIndex(GraphSpaceID spaceID, std::string name, std::vector<std::string> fields);
 
     folly::Future<StatusOr<bool>>
-    removeTagIndex(GraphSpaceID spaceId, std::string name);
+    dropTagIndex(GraphSpaceID spaceId, std::string name);
 
     folly::Future<StatusOr<cpp2::IndexFields>>
     getTagIndex(GraphSpaceID spaceId, std::string name);

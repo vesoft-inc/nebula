@@ -14,9 +14,11 @@ namespace nebula {
 namespace meta {
 
 enum class EntryType : int8_t {
-    SPACE = 0x01,
-    TAG   = 0x02,
-    EDGE  = 0x03,
+    SPACE       = 0x01,
+    TAG         = 0x02,
+    EDGE        = 0x03,
+    TAG_INDEX   = 0x04,
+    EDGE_INDEX  = 0x05,
 };
 
 class MetaServiceUtils final {
@@ -75,11 +77,25 @@ public:
 
     static nebula::cpp2::Schema parseSchema(folly::StringPiece rawData);
 
+    // assign tag index's key
+    static std::string tagIndexKey(GraphSpaceID spaceId, TagIndexID indexID);
+
+    static std::string tagIndexVal(nebula::meta::cpp2::TagIndexProperties properties);
+
+    // assign edge index's key
+    static std::string edgeIndexKey(GraphSpaceID spaceId, EdgeIndexID indexID);
+
+    static std::string edgeIndexVal(nebula::meta::cpp2::EdgeIndexProperties properties);
+
     static std::string indexSpaceKey(const std::string& name);
 
     static std::string indexTagKey(GraphSpaceID spaceId, const std::string& name);
 
     static std::string indexEdgeKey(GraphSpaceID spaceId, const std::string& name);
+
+    static std::string indexTagIndexKey(GraphSpaceID spaceId, const std::string& indexName);
+
+    static std::string indexEdgeIndexKey(GraphSpaceID spaceId, const std::string& indexName);
 
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 
