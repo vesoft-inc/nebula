@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/DropSpaceProcessor.h"
+#include "meta/processors/partsMan/DropSpaceProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -14,7 +14,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     auto spaceRet = getSpaceId(req.get_space_name());
 
     if (!spaceRet.ok()) {
-        resp_.set_code(to(std::move(spaceRet.status())));
+        resp_.set_code(to(spaceRet.status()));
         onFinished();
         return;;
     }

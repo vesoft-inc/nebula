@@ -120,7 +120,7 @@ std::unordered_set<uint16_t> NetworkUtils::getPortsInUse() {
         inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
         ++iter;
     }
-    return std::move(inUse);
+    return inUse;
 }
 
 
