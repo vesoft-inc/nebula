@@ -15,7 +15,7 @@ std::string CreateTagSentence::toString() const {
     buf += "CREATE TAG ";
     buf += *name_;
     buf += " (";
-    auto colSpecs = std::move(columns_->columnSpecs());
+    auto colSpecs = columns_->columnSpecs();
     for (auto *col : colSpecs) {
         buf += *col->name();
         buf += " ";
@@ -39,7 +39,7 @@ std::string CreateEdgeSentence::toString() const {
     buf += "CREATE EDGE ";
     buf += *name_;
     buf += " (";
-    auto colSpecs = std::move(columns_->columnSpecs());
+    auto colSpecs = columns_->columnSpecs();
     for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
@@ -72,7 +72,7 @@ std::string AlterSchemaOptItem::toString() const {
             break;
     }
     buf += " (";
-    auto colSpecs = std::move(columns_->columnSpecs());
+    auto colSpecs = columns_->columnSpecs();
     for (auto &col : colSpecs) {
         buf += *col->name();
         buf += " ";
