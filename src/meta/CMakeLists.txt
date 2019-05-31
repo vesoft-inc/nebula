@@ -11,7 +11,6 @@ add_library(
     meta_service_handler OBJECT
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
-    MetaHttpHandler.cpp
     processors/partsMan/AddHostsProcessor.cpp
     processors/partsMan/ListHostsProcessor.cpp
     processors/partsMan/RemoveHostsProcessor.cpp
@@ -49,6 +48,13 @@ add_dependencies(
     stats_obj
 )
 
+add_library(
+    meta_http_handler OBJECT
+    MetaHttpHandler.cpp
+)
+add_dependencies(
+    meta_http_handler
+    base_obj)
 
 add_library(
     meta_client OBJECT

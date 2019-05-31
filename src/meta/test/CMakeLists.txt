@@ -121,6 +121,7 @@ nebula_add_test(active_hosts_man_test)
 add_executable(
     meta_http_test
     MetaHttpHandlerTest.cpp
+    $<TARGET_OBJECTS:meta_http_handler>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
