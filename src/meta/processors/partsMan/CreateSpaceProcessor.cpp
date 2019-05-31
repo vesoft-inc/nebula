@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/CreateSpaceProcessor.h"
+#include "meta/processors/partsMan/CreateSpaceProcessor.h"
 #include "meta/ActiveHostsMan.h"
 
 namespace nebula {
