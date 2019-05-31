@@ -12,6 +12,7 @@
 #include "cpp/helpers.h"
 #include "graph/ExecutionContext.h"
 #include "gen-cpp2/common_types.h"
+#include "dataman/RowWriter.h"
 
 
 /**
@@ -77,6 +78,10 @@ protected:
     std::string valueTypeToString(nebula::cpp2::ValueType type);
 
     nebula::cpp2::SupportedType columnTypeToSupportedType(ColumnType type);
+
+    void writeVariantType(RowWriter &writer, const VariantType &value);
+
+    std::string variantTypeToString(const VariantType &value);
 
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {

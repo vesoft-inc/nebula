@@ -338,6 +338,23 @@ TEST(Parser, InsertVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    // Test one vertex multi tags
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name, age, id), student(name, number, id) "
+                            "VALUES 12345:(\"zhangsan\", 18, 1111, \"zhangsan\", 20190527, 1111)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Test multi vertex multi tags
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name, age, id), student(name, number, id) "
+                            "VALUES 12345:(\"zhangsan\", 18, 1111, \"zhangsan\", 20190527, 1111),"
+                            "12346:(\"lisi\", 20, 1112, \"lisi\", 20190413, 1112)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, UpdateVertex) {
@@ -383,6 +400,15 @@ TEST(Parser, InsertEdge) {
         GQLParser parser;
         std::string query = "INSERT EDGE transfer(amount, time) "
                             "VALUES 12345->54321:(3.75, 1537408527)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // multi edge
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE transfer(amount, time) "
+                            "VALUES 12345->54321@1537408527:(3.75, 1537408527),"
+                            "56789->98765@1537408527:(3.5, 1537408527)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

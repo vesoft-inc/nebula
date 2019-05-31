@@ -146,5 +146,39 @@ nebula::cpp2::SupportedType Executor::columnTypeToSupportedType(ColumnType type)
     }
 }
 
+void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
+    switch (value.which()) {
+        case 0:
+            writer << boost::get<int64_t>(value);
+            break;
+        case 1:
+            writer << boost::get<double>(value);
+            break;
+        case 2:
+            writer << boost::get<bool>(value);
+            break;
+        case 3:
+            writer << boost::get<std::string>(value);
+            break;
+        default:
+            LOG(FATAL) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+    }
+}
+
+std::string Executor::variantTypeToString(const VariantType &value) {
+    switch (value.which()) {
+        case 0:
+            return "int";
+        case 1:
+            return "double";
+        case 2:
+            return "bool";
+        case 3:
+            return "string";
+        default:
+            return "unknow";
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
