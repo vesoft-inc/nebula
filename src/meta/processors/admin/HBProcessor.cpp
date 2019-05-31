@@ -5,7 +5,7 @@
  */
 
 
-#include "meta/processors/HBProcessor.h"
+#include "meta/processors/admin/HBProcessor.h"
 
 DEFINE_int32(expired_hosts_check_interval_sec, 20,
              "Check the expired hosts at the interval");
