@@ -2,7 +2,7 @@
     "keywords": {
         "GO" : {
             "sub_keywords": [
-                "UPTO", "STEPS", "FROM", "OVER", "AS", "WHERE", "YIELD"
+                "UPTO", "STEPS", "FROM", "OVER", "AS", "WHERE", "YIELD", "REVERSELY"
             ]
         },
         "INSERT" : {
