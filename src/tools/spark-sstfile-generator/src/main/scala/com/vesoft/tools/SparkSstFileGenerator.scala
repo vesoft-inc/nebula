@@ -120,12 +120,14 @@ object SparkSstFileGenerator {
   }
 
   /**
-    * composite key for vertex/edge RDD
+    * composite key for vertex/edge RDD, the partitionId part is used by Partitioner,
+    * the valueEncoded part is used by SortWithPartition
     *
     * @param partitionId  partition number
+    * @param `type`       tag/edge type
     * @param valueEncoded vertex/edge key encoded by native client
     */
-  case class PartitionIdAndBytesEncoded(partitionId: Long, valueEncoded: BytesWritable)
+  case class GraphPartitionIdAndKeyValueEncoded(partitionId: Int, `type`: Int, valueEncoded: BytesWritable)
 
   /**
     * partition by the partitionId part of key
@@ -134,7 +136,7 @@ object SparkSstFileGenerator {
     override def numPartitions: Int = num
 
     override def getPartition(key: Any): Int = {
-      (key.asInstanceOf[PartitionIdAndBytesEncoded].partitionId % numPartitions).asInstanceOf[Int]
+      (key.asInstanceOf[GraphPartitionIdAndKeyValueEncoded].partitionId % numPartitions)
     }
   }
 
@@ -261,7 +263,7 @@ object SparkSstFileGenerator {
     }
 
     // implicit ordering used by PairedRDD.repartitionAndSortWithinPartitions which's key is of type PartitionIdAndBytesEncoded
-    implicit def ordering[A <: PartitionIdAndBytesEncoded]: Ordering[A] = new Ordering[A] {
+    implicit def ordering[A <: GraphPartitionIdAndKeyValueEncoded]: Ordering[A] = new Ordering[A] {
       override def compare(x: A, y: A): Int = {
         x.valueEncoded.compareTo(y.valueEncoded)
       }
@@ -270,7 +272,7 @@ object SparkSstFileGenerator {
     //1) handle vertex, encode all column except PK column as a single Tag's properties
     mappingConfiguration.tags.zipWithIndex.foreach {
       //tag index used as tagType
-      case (tag, tagType) => {
+      case (tag: Tag, tagType: Int) => {
         //all column w/o PK column, allColumns does not include primaryKey
         val (allColumns, _) = validateColumns(sqlContext, tag, Seq(tag.primaryKey), Seq(tag.primaryKey), mappingConfiguration.databaseName)
         val columnExpression = {
@@ -278,12 +280,14 @@ object SparkSstFileGenerator {
             log.warn(s"Tag:${tag.name} in database doesn't has any column, so three will be no property defined.")
           }
 
-          allColumns.fold(tag.primaryKey) { (acc, column) => acc + "," + column }
+          allColumns.map(_.columnName).fold(tag.primaryKey) { (acc, column) => acc + "," + column }
         }
 
         val whereClause = tag.typePartitionKey.map(key => s"${key}='${tag.name}' AND ${datePartitionKey}='${latestDate}'").getOrElse(s"${datePartitionKey}='${latestDate}'")
         //TODO:to handle multiple partition columns' Cartesian product
-        val tagDF = sqlContext.sql(s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${tag.tableName} WHERE ${whereClause} ${limit} GROUP BY ${columnExpression}")
+        val sql = s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${tag.tableName} WHERE ${whereClause} ${limit}"
+        log.debug(s"sql=s${sql}")
+        val tagDF = sqlContext.sql(sql)
         //RDD[(businessKey->values)]
         val tagKeyAndValues: RDD[(String, Seq[AnyRef])] = tagDF.map(row => {
           (row.getAs[String](tag.primaryKey) + "_" + tag.tableName, //businessId_tableName will be unique, and used as key before HASH
@@ -295,15 +299,15 @@ object SparkSstFileGenerator {
           case (key, values) => {
             val vertexId: Long = idGeneratorFunction.apply(key)
             // hash function generated sign long, but partition id should be unsigned
-            val partitionId: Int = (Math.abs(vertexId) % mappingConfiguration.partitions).asInstanceOf[Int]
+            val graphPartitionId: Int = (Math.abs(vertexId) % mappingConfiguration.partitions).asInstanceOf[Int]
 
             // use NativeClient to generate key and encode values
-            val keyEncoded: Array[Byte] = NativeClient.createVertexKey(partitionId, vertexId, tagType, DefaultVersion)
+            val keyEncoded: Array[Byte] = NativeClient.createVertexKey(graphPartitionId, vertexId, tagType, DefaultVersion)
             val valuesEncoded: Array[Byte] = NativeClient.encode(values.toArray)
-            log.debug(s"Tag(partition=${partitionId}): " + DatatypeConverter.printHexBinary(keyEncoded) + " = " + DatatypeConverter.printHexBinary(valuesEncoded))
-            (PartitionIdAndBytesEncoded(partitionId, new BytesWritable(keyEncoded)), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded)))
+            log.debug(s"Tag(partition=${graphPartitionId}): " + DatatypeConverter.printHexBinary(keyEncoded) + " = " + DatatypeConverter.printHexBinary(valuesEncoded))
+            (GraphPartitionIdAndKeyValueEncoded(graphPartitionId, tagType, new BytesWritable(keyEncoded)), new PropertyValueAndTypeWritable(new BytesWritable(valuesEncoded)))
           }
-        }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber.getOrElse(tagKeyAndValues.partitions.length))).map(v => (v._1.valueEncoded, v._2)).saveAsNewAPIHadoopFile(localSstFileOutput, classOf[BytesWritable], classOf[PartitionIdAndValueBinaryWritable], classOf[SstFileOutputFormat])
+        }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber.getOrElse(tagKeyAndValues.partitions.length))).saveAsNewAPIHadoopFile(localSstFileOutput, classOf[GraphPartitionIdAndKeyValueEncoded], classOf[PropertyValueAndTypeWritable], classOf[SstFileOutputFormat])
       }
     }
 
@@ -313,7 +317,7 @@ object SparkSstFileGenerator {
     //2)  handle edges
     mappingConfiguration.edges.zipWithIndex.foreach {
       //edge index used as edge_type
-      case (edge, edgeType) => {
+      case (edge: Edge, edgeType: Int) => {
         //all column w/o PK column
         val (allColumns, _) = validateColumns(sqlContext, edge, Seq(edge.fromForeignKeyColumn), Seq(edge.fromForeignKeyColumn, edge.toForeignKeyColumn), mappingConfiguration.databaseName)
 
@@ -330,7 +334,7 @@ object SparkSstFileGenerator {
         //RDD[Tuple3(from_vertex_businessKey,end_vertex_businessKey,values)]
         val edgeKeyAndValues: RDD[(String, String, Seq[AnyRef])] = edgeDf.map(row => {
           (row.getAs[String](edge.fromForeignKeyColumn), // consistent with vertexId generation logic, to make sure that vertex and its' outbound edges are in the same partition
-            row.getAs[String](edge.toForeignKeyColumn), // consistent with vertexId generation logic
+            row.getAs[String](edge.toForeignKeyColumn),
             allColumns.filterNot(col => (col.columnName.equalsIgnoreCase(edge.fromForeignKeyColumn) || col.columnName.equalsIgnoreCase(edge.toForeignKeyColumn))).map(valueExtractor(row, _, charset))
           )
         })
@@ -338,21 +342,22 @@ object SparkSstFileGenerator {
         edgeKeyAndValues.map {
           case (srcIDString, dstIdString, values) => {
             val id = idGeneratorFunction.apply(srcIDString)
-            val partitionId: Int = (Math.abs(id) % mappingConfiguration.partitions).asInstanceOf[Int]
+            val graphPartitionId: Int = (Math.abs(id) % mappingConfiguration.partitions).asInstanceOf[Int]
 
             val srcId = Math.abs(idGeneratorFunction.apply(srcIDString))
             val dstId = Math.abs(idGeneratorFunction.apply(dstIdString))
 
             // TODO: support edge ranking,like create_time desc
-            // TODO: only support a single edge type
-            val keyEncoded = NativeClient.createEdgeKey(partitionId, srcId, 1, -1L, dstId, DefaultVersion)
-            //val keyEncoded = NativeClient.createEdgeKey(partitionId, srcId, edgeType.asInstanceOf[Int], -1L, dstId, DefaultVersion)
+            val keyEncoded = NativeClient.createEdgeKey(graphPartitionId, srcId, 1, -1L, dstId, DefaultVersion)
+            //val keyEncoded = NativeClient.createEdgeKey(partitionId, srcId, edgeType, -1L, dstId, DefaultVersion)
 
-            val valuesEncoded: Array[Byte] = NativeClient.encode(values.toArray)
-            log.debug(s"Edge(partition=${partitionId}): " + DatatypeConverter.printHexBinary(keyEncoded) + " = " + DatatypeConverter.printHexBinary(valuesEncoded))
-            (PartitionIdAndBytesEncoded(partitionId, new BytesWritable(keyEncoded)), new PartitionIdAndValueBinaryWritable(partitionId, new BytesWritable(valuesEncoded), VertexOrEdgeEnum.Edge))
+            // TODO: only support a single edge type , put edge_type value in 0th index. Nebula server side must define extra edge property: edge_type
+            val valuesEncoded: Array[Byte] = NativeClient.encode((edge.name.getBytes(charset) +: values).toArray)
+            //val valuesEncoded: Array[Byte] = NativeClient.encode(values.toArray)
+            log.debug(s"Edge(partition=${graphPartitionId}): " + DatatypeConverter.printHexBinary(keyEncoded) + " = " + DatatypeConverter.printHexBinary(valuesEncoded))
+            (GraphPartitionIdAndKeyValueEncoded(graphPartitionId, 1, new BytesWritable(keyEncoded)), new PropertyValueAndTypeWritable(new BytesWritable(valuesEncoded), VertexOrEdgeEnum.Edge))
           }
-        }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber.getOrElse(edgeKeyAndValues.partitions.length))).map(v => (v._1.valueEncoded, v._2)).saveAsNewAPIHadoopFile(localSstFileOutput, classOf[BytesWritable], classOf[PartitionIdAndValueBinaryWritable], classOf[SstFileOutputFormat])
+        }.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(repartitionNumber.getOrElse(edgeKeyAndValues.partitions.length))).saveAsNewAPIHadoopFile(localSstFileOutput, classOf[GraphPartitionIdAndKeyValueEncoded], classOf[PropertyValueAndTypeWritable], classOf[SstFileOutputFormat])
       }
     }
   }

@@ -2,11 +2,11 @@ package com.vesoft.tools
 
 import java.io.{File, IOException}
 
+import com.vesoft.tools.SparkSstFileGenerator.GraphPartitionIdAndKeyValueEncoded
 import com.vesoft.tools.VertexOrEdgeEnum.VertexOrEdgeEnum
 import javax.xml.bind.DatatypeConverter
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.io.BytesWritable
 import org.apache.hadoop.mapred.InvalidJobConfException
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
@@ -23,32 +23,32 @@ import scala.sys.process._
   * worker_node1
   * |
   * |-sstFileOutput
-  *     |
-  *     |--1
-  *     |  |
-  *     |  |——vertex-${FIRST_KEY1}.data
-  *     |  |--edge-${FIRST_KEY}.data
-  *     |
-  *     |--2
-  *        |
-  *        |——vertex-${FIRST_KEY}.data
-  *        |--edge-${FIRST_KEY}.data
+  * |
+  * |--1
+  * |  |
+  * |  |——vertex-${FIRST_KEY1}.data
+  * |  |--edge-${FIRST_KEY}.data
+  * |
+  * |--2
+  * |
+  * |——vertex-${FIRST_KEY}.data
+  * |--edge-${FIRST_KEY}.data
   * worker_node2
   * |
   * |-sstFileOutput
-  *     |
-  *     |--1
-  *     |  |
-  *     |  |——vertex-${FIRST_KEY}.data
-  *     |  |--edge-${FIRST_KEY}.data
-  *     |
-  *     |--2
-  *        |
-  *        |——vertex-${FIRST_KEY}.data
-  *        |--edge-${FIRST_KEY}.data
+  * |
+  * |--1
+  * |  |
+  * |  |——vertex-${FIRST_KEY}.data
+  * |  |--edge-${FIRST_KEY}.data
+  * |
+  * |--2
+  * |
+  * |——vertex-${FIRST_KEY}.data
+  * |--edge-${FIRST_KEY}.data
   **/
-class SstFileOutputFormat extends FileOutputFormat[BytesWritable, PartitionIdAndValueBinaryWritable] {
-  override def getRecordWriter(job: TaskAttemptContext): RecordWriter[BytesWritable, PartitionIdAndValueBinaryWritable] = {
+class SstFileOutputFormat extends FileOutputFormat[GraphPartitionIdAndKeyValueEncoded, PropertyValueAndTypeWritable] {
+  override def getRecordWriter(job: TaskAttemptContext): RecordWriter[GraphPartitionIdAndKeyValueEncoded, PropertyValueAndTypeWritable] = {
     if (FileOutputFormat.getCompressOutput(job)) {
       job.getConfiguration.setBoolean(FileOutputFormat.COMPRESS, false)
     }
@@ -72,7 +72,7 @@ class SstFileOutputFormat extends FileOutputFormat[BytesWritable, PartitionIdAnd
   * @param localSstFileOutput spark conf item,which points to the local dir where rocksdb sst files will be put
   * @param configuration      hadoop configuration
   */
-class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) extends RecordWriter[BytesWritable, PartitionIdAndValueBinaryWritable] {
+class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) extends RecordWriter[GraphPartitionIdAndKeyValueEncoded, PropertyValueAndTypeWritable] {
   private[this] val log = LoggerFactory.getLogger(this.getClass)
 
   /**
@@ -105,11 +105,11 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
   private var env: EnvOptions = _
   private var options: Options = _
 
-  override def write(key: BytesWritable, value: PartitionIdAndValueBinaryWritable): Unit = {
+  override def write(key: GraphPartitionIdAndKeyValueEncoded, value: PropertyValueAndTypeWritable): Unit = {
     var sstFileWriter: SstFileWriter = null
 
     //cache per partition per vertex/edge type sstfile writer
-    val sstWriterOptional = sstFilesMap.get((value.vertexOrEdgeEnum, value.partitionId))
+    val sstWriterOptional = sstFilesMap.get((value.vertexOrEdgeEnum, key.partitionId))
     if (sstWriterOptional.isEmpty) {
       /**
         * https://github.com/facebook/rocksdb/wiki/Creating-and-Ingesting-SST-files
@@ -130,9 +130,9 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
       // TODO: rolling to another file when file size > some THRESHOLD, or some other criteria
       // Each partition can generated multiple sst files, among which keys will be ordered, and keys could overlap between different sst files.
       // All these sst files will be  `hdfs -copyFromLocal` to the same HDFS dir(and consumed by subsequent nebula `load` command), so we need different suffixes to distinguish between them.
-      val hdfsDirectory = s"${File.separator}${value.partitionId}${File.separator}"
+      val hdfsDirectory = s"${File.separator}${key.partitionId}${File.separator}"
 
-      var localSstFile = s"${localSstFileOutput}${hdfsDirectory}${value.vertexOrEdgeEnum}-${DatatypeConverter.printHexBinary(key.getBytes)}.data".toLowerCase
+      var localSstFile = s"${localSstFileOutput}${hdfsDirectory}${value.vertexOrEdgeEnum}-${key.`type`}-${DatatypeConverter.printHexBinary(key.valueEncoded.getBytes)}.data".toLowerCase
       val path = new Path(localSstFile)
       if (!localFileSystem.exists(path)) {
         localFileSystem.create(path)
@@ -144,20 +144,18 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
         }
       }
 
-      // sstfile is pre-checked by SparkSstFileGenerator, so no bother to recheck
-      if (localSstFile.startsWith("file://")) {
+      if (localSstFile.startsWith("file:///")) {
         localSstFile = localSstFile.substring(7)
       }
 
       sstFileWriter.open(localSstFile)
-      sstFilesMap += (value.vertexOrEdgeEnum, value.partitionId) -> (sstFileWriter, localSstFile, hdfsDirectory)
+      sstFilesMap += (value.vertexOrEdgeEnum, key.partitionId) -> (sstFileWriter, localSstFile, hdfsDirectory)
     } else {
-      assert(sstWriterOptional.isDefined)
       sstFileWriter = sstWriterOptional.get._1
     }
 
     //TODO: could be batched?
-    sstFileWriter.put(key.getBytes(), value.values.getBytes)
+    sstFileWriter.put(key.valueEncoded.getBytes(), value.values.getBytes)
   }
 
   override def close(context: TaskAttemptContext): Unit = {
@@ -170,7 +168,18 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
       }
       catch {
         case e: Exception => {
-          log.error("Error when close a sst file", e)
+          log.error("Error when closing a sst file", e)
+        }
+      }
+
+      try {
+        // There could be multiple container on a host, parent dir are shared between multiple containers, so should not delete parent dir but
+        // delete individual file
+        localFileSystem.delete(new Path(localSstFile), true)
+      }
+      catch {
+        case e: Exception => {
+          log.error(s"Error when deleting local dir:${localSstFileOutput}", e)
         }
       }
     }
@@ -203,7 +212,7 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
     }
     catch {
       case e: IOException => {
-        log.error(s"Error when mkdir hdfs dir ${destinationPath}", e)
+        log.error(s"Error when making hdfs dir ${destinationPath}", e)
         throw e
       }
     }
@@ -214,7 +223,7 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
 
     if (exitCode != 0) {
       throw new IllegalStateException(s"Can't put local file `${localSstFile}` to hdfs dir: `${destinationHdfsDir}`," +
-        s"sst files will reside on each worker's local file system only! Need to run `hdfs dfs -copyFromLocal` manually")
+        "sst files will reside on each worker's local file system only! Need to run `hdfs dfs -copyFromLocal` manually")
     }
   }
 }
