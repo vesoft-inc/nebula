@@ -45,6 +45,7 @@ static Status setupSignalHandler();
 
 
 int main(int argc, char *argv[]) {
+    google::SetVersionString(nebula::versionString());
     folly::init(&argc, &argv, true);
     if (FLAGS_daemonize) {
         google::SetStderrLogging(google::FATAL);

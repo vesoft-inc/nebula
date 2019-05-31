@@ -27,11 +27,11 @@ static void signalHandler(int sig);
 static Status setupSignalHandler();
 static Status setupLogging();
 static void printHelp(const char *prog);
-static void printVersion();
 
 DECLARE_string(flagfile);
 
 int main(int argc, char *argv[]) {
+    google::SetVersionString(nebula::versionString());
     if (argc == 1) {
         printHelp(argv[0]);
         return EXIT_FAILURE;
@@ -39,10 +39,6 @@ int main(int argc, char *argv[]) {
     if (argc == 2) {
         if (::strcmp(argv[1], "-h") == 0) {
             printHelp(argv[0]);
-            return EXIT_SUCCESS;
-        }
-        if (::strcmp(argv[1], "-v") == 0) {
-            printVersion();
             return EXIT_SUCCESS;
         }
     }
@@ -213,12 +209,5 @@ Status setupLogging() {
 
 
 void printHelp(const char *prog) {
-    fprintf(stderr, "%s -flagfile config_file\n", prog);
-    fprintf(stderr, "%s -h\n", prog);
-    fprintf(stderr, "%s -v\n", prog);
-}
-
-
-void printVersion() {
-    // TODO(dutor)
+    fprintf(stderr, "%s --flagfile <config_file>\n", prog);
 }
