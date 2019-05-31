@@ -36,7 +36,7 @@ std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
         }
     }
 
-    return std::move(peers);
+    return peers;
 }
 
 

@@ -36,7 +36,7 @@ std::string intToIp(uint32_t ip) {
     std::deque<std::string> parts;
     for (int i = 0; i < 4; i++) {
         try {
-            parts.emplace_front(std::move(folly::to<std::string>(ip & 0x000000FF)));
+            parts.emplace_front(folly::to<std::string>(ip & 0x000000FF));
             ip >>= 8;
         } catch (const std::exception& ex) {
             LOG(FATAL) << "Something is wrong: " << ex.what();
