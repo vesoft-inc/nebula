@@ -174,21 +174,21 @@ name_label
      ;
 
 unreserved_keyword
-     : KW_SPACE              { $$ = new std::string("SPACE"); }
-     | KW_HOSTS              { $$ = new std::string("HOSTS"); }
-     | KW_SPACES             { $$ = new std::string("SPACES"); }
-     | KW_FIRSTNAME          { $$ = new std::string("FIRSTNAME"); }
-     | KW_LASTNAME           { $$ = new std::string("LASTNAME"); }
-     | KW_EMAIL              { $$ = new std::string("EMAIL"); }
-     | KW_PHONE              { $$ = new std::string("PHONE"); }
-     | KW_USER               { $$ = new std::string("USER"); }
-     | KW_USERS              { $$ = new std::string("USERS"); }
-     | KW_PASSWORD           { $$ = new std::string("PASSWORD"); }
-     | KW_ROLE               { $$ = new std::string("ROLE"); }
-     | KW_ROLES              { $$ = new std::string("ROLES"); }
-     | KW_GOD                { $$ = new std::string("GOD"); }
-     | KW_ADMIN              { $$ = new std::string("ADMIN"); }
-     | KW_GUEST              { $$ = new std::string("GUEST"); }
+     : KW_SPACE              { $$ = new std::string("space"); }
+     | KW_HOSTS              { $$ = new std::string("hosts"); }
+     | KW_SPACES             { $$ = new std::string("spaces"); }
+     | KW_FIRSTNAME          { $$ = new std::string("firstname"); }
+     | KW_LASTNAME           { $$ = new std::string("lastname"); }
+     | KW_EMAIL              { $$ = new std::string("email"); }
+     | KW_PHONE              { $$ = new std::string("phone"); }
+     | KW_USER               { $$ = new std::string("user"); }
+     | KW_USERS              { $$ = new std::string("users"); }
+     | KW_PASSWORD           { $$ = new std::string("password"); }
+     | KW_ROLE               { $$ = new std::string("role"); }
+     | KW_ROLES              { $$ = new std::string("roles"); }
+     | KW_GOD                { $$ = new std::string("god"); }
+     | KW_ADMIN              { $$ = new std::string("admin"); }
+     | KW_GUEST              { $$ = new std::string("guest"); }
      ;
 
 primary_expression
