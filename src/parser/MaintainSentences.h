@@ -83,11 +83,36 @@ public:
         propValue_ = std::move(val);
     }
 
+    StatusOr<int64_t> getTtlDuration() {
+        if (isInt()) {
+            return asInt();
+        } else {
+            LOG(ERROR) << "Ttl_duration value illegal: " << propValue_;
+            return Status::Error("Ttl_duration value illegal");
+        }
+    }
+
+    StatusOr<std::string> getTtlCol() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "Ttl_col value illegal: " << propValue_;
+            return Status::Error("Ttl_col value illegal");
+        }
+    }
+
+    PropType getPropType() {
+        return propType_;
+    }
+
+    std::string toString() const;
+
+private:
     int64_t asInt() {
         return boost::get<int64_t>(propValue_);
     }
 
-    std::string& asString() {
+    const std::string& asString() {
         return boost::get<std::string>(propValue_);
     }
 
@@ -117,31 +142,7 @@ public:
         return propValue_.which() == 2;
     }
 
-    int64_t getTtlDuration() {
-        if (isInt()) {
-            return asInt();
-        } else {
-            LOG(ERROR) << "Ttl_duration value illegal.";
-            return 0;
-        }
-    }
-
-    std::string getTtlCol() {
-        if (isString()) {
-            return asString();
-        } else {
-            LOG(ERROR) << "Ttl_col value illegal.";
-            return "";
-        }
-    }
-
-    PropType getPropType() {
-        return propType_;
-    }
-
-    std::string toString() const;
-
- private:
+private:
     Value        propValue_;
     PropType     propType_;
 };
