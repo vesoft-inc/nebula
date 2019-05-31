@@ -331,6 +331,7 @@ TEST(MetaClientTest, TagTest) {
 
 class TestListener : public MetaChangedListener {
 public:
+    virtual ~TestListener() = default;
     void onSpaceAdded(GraphSpaceID spaceId) override {
         LOG(INFO) << "Space " << spaceId << " added";
         spaceNum++;
