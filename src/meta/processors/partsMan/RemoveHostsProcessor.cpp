@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/RemoveHostsProcessor.h"
+#include "meta/processors/partsMan/RemoveHostsProcessor.h"
 
 namespace nebula {
 namespace meta {

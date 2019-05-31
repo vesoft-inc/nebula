@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/DropTagProcessor.h"
+#include "meta/processors/schemaMan/DropTagProcessor.h"
 
 namespace nebula {
 namespace meta {
