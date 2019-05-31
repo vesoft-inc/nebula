@@ -36,8 +36,6 @@ add_executable(
 )
 nebula_link_libraries(
     processor_test
-    proxygenhttpserver
-    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
@@ -63,8 +61,6 @@ add_executable(
 )
 nebula_link_libraries(
     hb_processor_test
-    proxygenhttpserver
-    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
@@ -91,8 +87,6 @@ add_executable(
 )
 nebula_link_libraries(
     meta_client_test
-    proxygenhttpserver
-    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle

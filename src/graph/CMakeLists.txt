@@ -39,7 +39,6 @@ add_dependencies(
     base_obj
     parser_obj
     graph_thrift_obj
-    ws_obj
     meta_thrift_obj
     meta_client
     schema_obj
