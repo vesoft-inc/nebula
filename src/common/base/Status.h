@@ -105,6 +105,9 @@ public:
     STATUS_GENERATOR(TagNotFound);
     STATUS_GENERATOR(EdgeNotFound);
     STATUS_GENERATOR(UserNotFound);
+    STATUS_GENERATOR(CfgNotFound);
+    STATUS_GENERATOR(CfgRegistered);
+    STATUS_GENERATOR(CfgErrorType);
 
 #undef STATUS_GENERATOR
 
@@ -133,6 +136,9 @@ public:
         kTagNotFound            = 406,
         kEdgeNotFound           = 407,
         kUserNotFound           = 408,
+        kCfgNotFound            = 409,
+        kCfgRegistered          = 410,
+        kCfgErrorType           = 411,
     };
 
     Code code() const {

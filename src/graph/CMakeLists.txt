@@ -36,6 +36,7 @@ nebula_add_library(
     DownloadExecutor.cpp
     OrderByExecutor.cpp
     SchemaHelper.cpp
+    ConfigExecutor.cpp
 )
 
 nebula_add_library(

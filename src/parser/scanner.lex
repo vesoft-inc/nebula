@@ -104,6 +104,9 @@ HDFS                        ([Hh][Dd][Ff][Ss])
 ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 ASC                         ([Aa][Ss][Cc])
 DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
+VARIABLES                   ([Vv][Aa][Rr][Ii][Aa][Bb][Ll][Ee][Ss])
+GET                         ([Gg][Ee][Tt])
+DECLARE                     ([Dd][Ee][Cc][Ll][Aa][Rr][Ee])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -192,6 +195,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {TTL_COL}                   { return TokenType::KW_TTL_COL; }
 {DOWNLOAD}                  { return TokenType::KW_DOWNLOAD; }
 {HDFS}                      { return TokenType::KW_HDFS; }
+{VARIABLES}                 { return TokenType::KW_VARIABLES; }
+{GET}                       { return TokenType::KW_GET; }
+{DECLARE}                   { return TokenType::KW_DECLARE; }
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {ORDER}                     { return TokenType::KW_ORDER; }

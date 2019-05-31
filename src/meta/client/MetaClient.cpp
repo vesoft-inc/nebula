@@ -8,9 +8,11 @@
 #include "meta/client/MetaClient.h"
 #include "network/NetworkUtils.h"
 #include "meta/NebulaSchemaProvider.h"
+#include "meta/ConfigManager.h"
 
 DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
+DEFINE_int32(load_config_interval_secs, 2 * 60, "Load config interval");
 
 namespace nebula {
 namespace meta {
@@ -51,6 +53,7 @@ bool MetaClient::isMetadReady() {
         }
     }  // end if
     loadDataThreadFunc();
+    loadCfgThreadFunc();
     return ready_;
 }
 
@@ -63,13 +66,6 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     }  // end while
 
     CHECK(bgThread_.start());
-    {
-        size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
-        LOG(INFO) << "Register timer task for load data!";
-        bgThread_.addTimerTask(delayMS,
-                               FLAGS_load_data_interval_secs * 1000,
-                               &MetaClient::loadDataThreadFunc, this);
-    }
     if (sendHeartBeat_) {
         LOG(INFO) << "Register time task for heartbeat!";
         size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
@@ -89,8 +85,12 @@ void MetaClient::heartBeatThreadFunc() {
     }
 }
 
-
 void MetaClient::loadDataThreadFunc() {
+    loadData();
+    addLoadDataTask();
+}
+
+void MetaClient::loadData() {
     if (ioThreadPool_->numThreads() <= 0) {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
         return;
@@ -151,6 +151,16 @@ void MetaClient::loadDataThreadFunc() {
     diff(oldCache, localCache_);
     ready_ = true;
     LOG(INFO) << "Load data completed!";
+}
+
+void MetaClient::addLoadDataTask() {
+    size_t delayMS = FLAGS_load_data_interval_secs * 1000;
+    auto value = GET_CONFIG_INT("", cpp2::ConfigModule::META, "load_data_interval_secs");
+    if (value.ok()) {
+        delayMS = value.value() * 1000;
+    }
+    bgThread_.addDelayTask(delayMS + folly::Random::rand32(900),
+                           &MetaClient::loadDataThreadFunc, this);
 }
 
 
@@ -995,5 +1005,249 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance() {
         return resp.id;
     }, true);
 }
+
+folly::Future<StatusOr<ConfigItem>>
+MetaClient::getConfig(const std::string& space, const cpp2::ConfigModule& module,
+                      const std::string& name, const cpp2::ConfigType& type) {
+    cpp2::ConfigItem item;
+    item.set_space(space);
+    item.set_module(module);
+    item.set_name(name);
+    item.set_type(type);
+
+    cpp2::GetConfigReq req;
+    req.set_item(item);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_getConfig(request);
+            }, [this] (cpp2::GetConfigResp&& resp) -> decltype(auto) {
+                return toConfigItem(resp.get_item());
+            });
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::setConfig(const std::string& space, const cpp2::ConfigModule& module,
+                      const std::string& name, const cpp2::ConfigType& type,
+                      const std::string& value) {
+    cpp2::ConfigItem item;
+    item.set_space(space);
+    item.set_module(module);
+    item.set_name(name);
+    item.set_type(type);
+    item.set_value(value);
+
+    cpp2::SetConfigReq req;
+    req.set_item(item);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_setConfig(request);
+            }, [this] (cpp2::ExecResp&& resp) -> decltype(auto) {
+                return resp.code == cpp2::ErrorCode::SUCCEEDED;
+            });
+}
+
+folly::Future<StatusOr<std::vector<ConfigItem>>>
+MetaClient::listConfigs(const std::string& space, const cpp2::ConfigModule& module) {
+    cpp2::ListConfigsReq req;
+    req.set_space(space);
+    req.set_module(module);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_listConfigs(request);
+            }, [this] (cpp2::ListConfigsResp&& resp) -> decltype(auto) {
+                std::vector<ConfigItem> configs;
+                for (const auto& tItem : resp.get_items()) {
+                    configs.emplace_back(toConfigItem(tItem));
+                }
+                return configs;
+            });
+}
+
+ConfigItem MetaClient::toConfigItem(const cpp2::ConfigItem& item) {
+    VariantTypeEnum eType;
+    VariantType value;
+    switch (item.get_type()) {
+        case cpp2::ConfigType::INT64:
+            eType = VariantTypeEnum::INT64;
+            value = *reinterpret_cast<const int64_t*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::BOOL:
+            eType = VariantTypeEnum::BOOL;
+            value = *reinterpret_cast<const bool*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::DOUBLE:
+            eType = VariantTypeEnum::DOUBLE;
+            value = *reinterpret_cast<const double*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::STRING:
+            eType = VariantTypeEnum::STRING;
+            value = item.get_value();
+            break;
+    }
+    return ConfigItem(item.get_space(), item.get_module(), item.get_name(), eType, value);
+}
+
+StatusOr<ConfigItem> MetaClient::getConfigFromCache(const std::string& space,
+                                                    const cpp2::ConfigModule& module,
+                                                    const std::string& name,
+                                                    const VariantTypeEnum& type) {
+    if (!configReady_) {
+        return Status::Error("Config cache not ready!");
+    }
+
+    if (!space.empty()) {
+        auto ret = getSpaceIdByNameFromCache(space);
+        if (!ret.ok()) {
+            return ret.status();
+        }
+    }
+    {
+        folly::RWSpinLock::ReadHolder holder(configCacheLock_);
+        auto spaceIt = metaConfigMap_.find(space);
+        if (spaceIt == metaConfigMap_.end()) {
+            return Status::SpaceNotFound();
+        }
+        auto it = spaceIt->second.find({module, name});
+        if (it != spaceIt->second.end()) {
+            if (it->second.type_ != type) {
+                return Status::CfgErrorType();
+            }
+            return it->second;
+        }
+        return Status::CfgNotFound();
+    }
+}
+
+Status MetaClient::setConfigToCache(const std::string& space, const cpp2::ConfigModule& module,
+                                            const std::string& name, const VariantType& value,
+                                            const VariantTypeEnum& type) {
+    if (!configReady_) {
+        return Status::Error("Config cache not ready!");
+    }
+
+    if (!space.empty()) {
+        auto ret = getSpaceIdByNameFromCache(space);
+        if (!ret.ok()) {
+            return ret.status();
+        }
+    }
+    {
+        folly::RWSpinLock::WriteHolder holder(configCacheLock_);
+        std::pair<cpp2::ConfigModule, std::string> key = {module, name};
+        ConfigItem item(space, module, name, type, value);
+        metaConfigMap_[space][key] = item;
+        return Status::OK();
+    }
+}
+
+StatusOr<std::vector<ConfigItem>>
+MetaClient::listConfigsFromCache(const std::string& space, const cpp2::ConfigModule& module) {
+    if (!configReady_) {
+        return Status::Error("Config cache not ready!");
+    }
+    std::vector<ConfigItem> ret;
+    {
+        folly::RWSpinLock::ReadHolder holder(configCacheLock_);
+        if (!space.empty()) {
+            auto spaceIt = metaConfigMap_.find(space);
+            if (spaceIt == metaConfigMap_.end()) {
+                return ret;
+            }
+            for (const auto& entry : spaceIt->second) {
+                if (module == cpp2::ConfigModule::ALL || module == entry.first.first) {
+                    ret.emplace_back(entry.second);
+                }
+            }
+        } else {
+            for (const auto& spaceEntry : metaConfigMap_) {
+                for (const auto& entry : spaceEntry.second) {
+                    ret.emplace_back(entry.second);
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+Status MetaClient::isCfgRegistered(const std::string& space, const cpp2::ConfigModule& module,
+                                   const std::string& name, const VariantTypeEnum& type) {
+    if (!configReady_) {
+        return Status::Error("Config cache not ready!");
+    }
+
+    if (!space.empty()) {
+        auto ret = getSpaceIdByNameFromCache(space);
+        if (!ret.ok()) {
+            return ret.status();
+        }
+    }
+
+    std::pair<cpp2::ConfigModule, std::string> key = {module, name};
+    {
+        folly::RWSpinLock::ReadHolder holder(configCacheLock_);
+        auto spaceIt = metaConfigMap_.find(space);
+        if (spaceIt == metaConfigMap_.end()) {
+            return Status::CfgNotFound();
+        }
+        auto it = spaceIt->second.find(key);
+        if (it == spaceIt->second.end()) {
+            return Status::CfgNotFound();
+        } else if (it->second.type_ != type) {
+            return Status::CfgErrorType();
+        }
+    }
+    return Status::CfgRegistered();
+}
+
+void MetaClient::loadCfgThreadFunc() {
+    if (ioThreadPool_->numThreads() <= 0) {
+        LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
+        addLoadCfgTask();
+        return;
+    }
+    auto ret = listConfigs("", cpp2::ConfigModule::ALL).get();
+    MetaConfigMap metaConfigMap;
+    if (ret.ok()) {
+        auto items = ret.value();
+        for (auto& item : items) {
+            std::string space = item.space_;
+            std::pair<cpp2::ConfigModule, std::string> key = {item.module_, item.name_};
+            metaConfigMap[space].emplace(std::move(key), item);
+        }
+        {
+            // we need to merge config from cache and meta
+            folly::RWSpinLock::ReadHolder holder(configCacheLock_);
+            for (const auto& spaceEntry : metaConfigMap_) {
+                auto space = spaceEntry.first;
+                for (const auto& entry : spaceEntry.second) {
+                    auto key = entry.first;
+                    // If configs in cache is not in meta, merge them.
+                    auto spaceIt = metaConfigMap.find(space);
+                    if (spaceIt == metaConfigMap.end() ||
+                            spaceIt->second.find(key) == spaceIt->second.end()) {
+                        metaConfigMap[space][key] = metaConfigMap_[space][key];
+                    }
+                }
+            }
+        }
+        {
+            folly::RWSpinLock::WriteHolder holder(configCacheLock_);
+            metaConfigMap_ = std::move(metaConfigMap);
+            configReady_ = true;
+            LOG(INFO) << "Load configs completed";
+        }
+    } else {
+        LOG(INFO) << "Load configs failed: " << ret.status();
+    }
+    addLoadCfgTask();
+}
+
+void MetaClient::addLoadCfgTask() {
+    size_t delayMS = FLAGS_load_config_interval_secs * 1000;
+    auto value = GET_CONFIG_INT("", cpp2::ConfigModule::META, "load_config_interval_secs");
+    if (value.ok()) {
+        delayMS = value.value() * 1000;
+    }
+    bgThread_.addDelayTask(delayMS + folly::Random::rand32(900),
+                           &MetaClient::loadCfgThreadFunc, this);
+}
+
 }  // namespace meta
 }  // namespace nebula

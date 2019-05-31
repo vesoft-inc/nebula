@@ -104,4 +104,40 @@ std::string DescribeSpaceSentence::toString() const {
     return folly::stringPrintf("DESCRIBE SPACE  %s", spaceName_.get()->c_str());
 }
 
+std::string ConfigRowItem::toString() const {
+    std::stringstream ss;
+    if (space_ != nullptr) {
+        ss << *space_;
+    }
+    if (module_ != nullptr) {
+        ss << *module_;
+    }
+    if (name_ != nullptr) {
+        ss << *name_;
+    }
+    if (value_ != nullptr) {
+        ss << "=" << value_->eval();
+    }
+    if (type_ != nullptr) {
+        ss << " as " << columnTypeToString(*type_);
+    }
+    return ss.str();
+}
+
+std::string ConfigSentence::toString() const {
+    switch (subType_) {
+        case SubType::kShow:
+            return std::string("SHOW VARIABLES ") + configItem_->toString();
+        case SubType::kSet:
+            return std::string("SET VARIABLES ") + configItem_->toString();
+        case SubType::kGet:
+            return std::string("GET VARIABLES ") + configItem_->toString();
+        case SubType::kDeclare:
+            return std::string("DECLARE VARIABLES ") + configItem_->toString();
+        default:
+            FLOG_FATAL("Type illegal");
+    }
+    return "Unknown";
+}
+
 }   // namespace nebula

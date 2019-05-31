@@ -37,6 +37,7 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
 
     schemaManager_ = meta::SchemaManager::create();
     schemaManager_->init(metaClient_.get());
+    meta::ConfigManager::instance(metaClient_.get());
     storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
     return Status::OK();
 }

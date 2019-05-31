@@ -14,6 +14,8 @@ namespace nebula {
 
 using nebula::network::NetworkUtils;
 
+class ConfigRowItem;
+
 class ShowSentence final : public Sentence {
 public:
     enum class ShowType : uint32_t {
@@ -24,7 +26,7 @@ public:
         kShowEdges,
         kShowUsers,
         kShowUser,
-        kShowRoles
+        kShowRoles,
     };
 
     explicit ShowSentence(ShowType sType) {
@@ -47,8 +49,8 @@ public:
     }
 
 private:
-    ShowType                      showType_{ShowType::kUnknown};
-    std::unique_ptr<std::string>  name_;
+    ShowType                        showType_{ShowType::kUnknown};
+    std::unique_ptr<std::string>    name_;
 };
 
 
@@ -269,6 +271,108 @@ public:
 
 private:
     std::unique_ptr<std::string>     spaceName_;
+};
+
+class ConfigRowItem {
+public:
+    explicit ConfigRowItem(std::string* space) {
+        space_.reset(space);
+    }
+
+    ConfigRowItem(std::string* space, std::string* module) {
+        space_.reset(space);
+        module_.reset(module);
+    }
+
+    ConfigRowItem(std::string* space, std::string* module, std::string* name,
+                  Expression* value) {
+        space_.reset(space);
+        module_.reset(module);
+        name_.reset(name);
+        value_.reset(value);
+    }
+
+    ConfigRowItem(std::string* space, std::string* module, std::string* name,
+                  ColumnType type) {
+        space_.reset(space);
+        module_.reset(module);
+        name_.reset(name);
+        type_ = std::make_unique<ColumnType>(type);
+    }
+
+    ConfigRowItem(std::string* space, std::string* module, std::string* name,
+                  Expression* value, ColumnType type) {
+        space_.reset(space);
+        module_.reset(module);
+        name_.reset(name);
+        value_.reset(value);
+        type_ = std::make_unique<ColumnType>(type);
+    }
+
+    const std::string* getSpace() {
+        return space_.get();
+    }
+
+    const std::string* getModule() {
+        return module_.get();
+    }
+
+    const std::string* getName() {
+        return name_.get();
+    }
+
+    const Expression* getValue() {
+        return value_.get();
+    }
+
+    const ColumnType* getType() {
+        return type_.get();
+    }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<std::string>    space_;
+    std::unique_ptr<std::string>    module_;
+    std::unique_ptr<std::string>    name_;
+    std::unique_ptr<Expression>     value_;
+    std::unique_ptr<ColumnType>     type_;
+};
+
+class ConfigSentence final : public Sentence {
+public:
+    enum class SubType : uint32_t {
+        kUnknown,
+        kShow,
+        kSet,
+        kGet,
+        kDeclare
+    };
+
+    explicit ConfigSentence(SubType subType) {
+        kind_ = Kind::kConfig;
+        subType_ = std::move(subType);
+    }
+
+    ConfigSentence(SubType subType, ConfigRowItem* item) {
+        kind_ = Kind::kConfig;
+        subType_ = std::move(subType);
+        configItem_.reset(item);
+    }
+
+    std::string toString() const override;
+
+    SubType subType() const {
+        return subType_;
+    }
+
+    ConfigRowItem* configItem() {
+        return configItem_.get();
+    }
+
+private:
+    SubType                         subType_{SubType::kUnknown};
+    std::unique_ptr<ConfigRowItem>  configItem_;
 };
 
 }   // namespace nebula

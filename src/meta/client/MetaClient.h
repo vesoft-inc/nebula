@@ -50,6 +50,30 @@ using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, 
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 
+struct ConfigItem {
+    ConfigItem() {}
+    ConfigItem(const std::string& space, const cpp2::ConfigModule& module, const std::string&name,
+            const VariantTypeEnum& type, const VariantType& value)
+        : space_(space)
+        , module_(module)
+        , name_(name)
+        , type_(type)
+        , value_(value) {
+    }
+
+    std::string         space_;
+    cpp2::ConfigModule  module_;
+    std::string         name_;
+    VariantTypeEnum     type_;
+    VariantType         value_;
+};
+
+// get config via space, module and name
+using MetaConfigMap = std::unordered_map<
+        std::string,
+        std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>
+>;
+
 class MetaChangedListener {
 public:
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
@@ -174,6 +198,32 @@ public:
     folly::Future<StatusOr<int64_t>>
     balance();
 
+    // Operations for config
+    folly::Future<StatusOr<ConfigItem>>
+    getConfig(const std::string& space, const cpp2::ConfigModule& module, const std::string& name,
+              const cpp2::ConfigType& type);
+
+    folly::Future<StatusOr<bool>>
+    setConfig(const std::string& space, const cpp2::ConfigModule& module, const std::string& name,
+              const cpp2::ConfigType& type, const std::string& value);
+
+    folly::Future<StatusOr<std::vector<ConfigItem>>>
+    listConfigs(const std::string& space, const cpp2::ConfigModule& module);
+
+    StatusOr<ConfigItem> getConfigFromCache(const std::string& space,
+                                            const cpp2::ConfigModule& module,
+                                            const std::string& name, const VariantTypeEnum& type);
+
+    Status setConfigToCache(const std::string& space, const cpp2::ConfigModule& module,
+                            const std::string& name, const VariantType& value,
+                            const VariantTypeEnum& type);
+
+    StatusOr<std::vector<ConfigItem>> listConfigsFromCache(const std::string& space,
+                                                           const cpp2::ConfigModule& module);
+
+    Status isCfgRegistered(const std::string& space, const cpp2::ConfigModule& module,
+                           const std::string& name, const VariantTypeEnum& type);
+
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
@@ -210,8 +260,13 @@ public:
 
 protected:
     void loadDataThreadFunc();
+    void loadData();
+    void addLoadDataTask();
 
     void heartBeatThreadFunc();
+
+    void loadCfgThreadFunc();
+    void addLoadCfgTask();
 
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
@@ -255,6 +310,8 @@ protected:
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 
+    ConfigItem toConfigItem(const cpp2::ConfigItem& tConfigs);
+
     PartsMap doGetPartsMap(const HostAddr& host,
                            const LocalCache& localCache);
 
@@ -280,6 +337,9 @@ private:
     folly::RWSpinLock     listenerLock_;
     bool                  sendHeartBeat_ = false;
     std::atomic_bool      ready_{false};
+    MetaConfigMap         metaConfigMap_;
+    folly::RWSpinLock     configCacheLock_;
+    std::atomic_bool      configReady_{false};
 };
 
 }  // namespace meta

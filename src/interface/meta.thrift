@@ -303,7 +303,7 @@ struct GetReq {
     2: string key,
 }
 
- struct GetResp {
+struct GetResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
     3: string    value,
@@ -431,6 +431,54 @@ struct BalanceResp {
     3: common.HostAddr  leader,
 }
 
+enum ConfigType {
+    INT64   = 0x00,
+    DOUBLE  = 0x01,
+    BOOL    = 0x02,
+    STRING  = 0x03,
+} (cpp.enum_strict)
+
+enum ConfigModule {
+    UNKNOWN = 0x00,
+    ALL     = 0x01,
+    GRAPH   = 0x02,
+    META    = 0x03,
+    STORAGE = 0x04,
+} (cpp.enum_strict)
+
+struct ConfigItem {
+    1: string               space,
+    2: ConfigModule         module,
+    3: string               name,
+    4: ConfigType           type,
+    5: binary               value,
+}
+
+struct GetConfigReq {
+    1: ConfigItem item,
+}
+
+struct GetConfigResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: ConfigItem           item,
+}
+
+struct SetConfigReq {
+    1: ConfigItem   item,
+}
+
+struct ListConfigsReq {
+    1: string           space,
+    2: ConfigModule     module,
+}
+
+struct ListConfigsResp {
+    1: ErrorCode        code,
+    2: common.HostAddr  leader,
+    3: list<ConfigItem> items,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -475,5 +523,9 @@ service MetaService {
 
     HBResp           heartBeat(1: HBReq req);
     BalanceResp      balance(1: BalanceReq req);
+
+    GetConfigResp getConfig(1: GetConfigReq req);
+    ExecResp setConfig(1: SetConfigReq req);
+    ListConfigsResp listConfigs(1: ListConfigsReq req);
 }
 

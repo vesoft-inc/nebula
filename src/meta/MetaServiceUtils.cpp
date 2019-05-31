@@ -19,6 +19,7 @@ const std::string kEdgesTable  = "__edges__";   // NOLINT
 const std::string kIndexTable  = "__index__";   // NOLINT
 const std::string kUsersTable  = "__users__";    // NOLINT
 const std::string kRolesTable  = "__roles__";    // NOLINT
+const std::string kConfigsTable = "__configs__"; // NOLINT
 
 
 const std::string kHostOnline = "Online";       // NOLINT
@@ -481,6 +482,78 @@ UserID MetaServiceUtils::parseRoleUserId(folly::StringPiece val) {
 UserID MetaServiceUtils::parseUserId(folly::StringPiece val) {
     return *reinterpret_cast<const UserID *>(val.begin() +
                                              kUsersTable.size());
+}
+
+std::string MetaServiceUtils::configKey(const std::string& space, const cpp2::ConfigModule& module,
+                                        const std::string& name,
+                                        const cpp2::ConfigType& configType) {
+    std::string key;
+    key.reserve(128);
+    key.append(kConfigsTable.data(), kConfigsTable.size());
+
+    int32_t sSize = space.size();
+    key.append(reinterpret_cast<const char*>(&sSize), sizeof(int32_t));
+    key.append(space);
+
+    key.append(reinterpret_cast<const char*>(&module), sizeof(cpp2::ConfigModule));
+
+    int32_t nSize = name.size();
+    key.append(reinterpret_cast<const char*>(&nSize), sizeof(int32_t));
+    key.append(name);
+
+    key.append(reinterpret_cast<const char*>(&configType), sizeof(cpp2::ConfigType));
+    return key;
+}
+
+std::string MetaServiceUtils::configKeyPrefix(const std::string& space,
+                                              const cpp2::ConfigModule& module) {
+    std::string key;
+    key.reserve(128);
+    key.append(kConfigsTable.data(), kConfigsTable.size());
+    if (!space.empty()) {
+        int32_t sSize = space.size();
+        key.append(reinterpret_cast<const char*>(&sSize), sizeof(int32_t));
+        key.append(space);
+        if (module != cpp2::ConfigModule::ALL) {
+            key.append(reinterpret_cast<const char*>(&module), sizeof(cpp2::ConfigModule));
+        }
+    }
+    return key;
+}
+
+std::string MetaServiceUtils::configValue(const cpp2::ConfigType& valueType,
+                                          const std::string& config) {
+    std::string val;
+    val.reserve(sizeof(cpp2::ConfigType) + config.size());
+    val.append(reinterpret_cast<const char*>(&valueType), sizeof(cpp2::ConfigType));
+    val.append(config);
+    return val;
+}
+
+ConfigName MetaServiceUtils::parseConfigKey(folly::StringPiece rawKey) {
+    std::string key;
+    auto offset = kConfigsTable.size();
+    int32_t sSize = *reinterpret_cast<const int32_t*>(rawKey.data() + offset);
+    offset += sizeof(int32_t);
+    auto space = rawKey.subpiece(offset, sSize);
+    offset += sSize;
+    auto module = *reinterpret_cast<const cpp2::ConfigModule*>(rawKey.data() + offset);
+    offset += sizeof(cpp2::ConfigModule);
+    int32_t nSize = *reinterpret_cast<const int32_t*>(rawKey.data() + offset);
+    offset += sizeof(int32_t);
+    auto name = rawKey.subpiece(offset, nSize);
+    return {space.str(), module, name.str()};
+}
+
+cpp2::ConfigItem MetaServiceUtils::parseConfigValue(folly::StringPiece rawData) {
+    int32_t offset = sizeof(cpp2::ConfigType);
+    cpp2::ConfigType type = *reinterpret_cast<const cpp2::ConfigType*>(rawData.data());
+    auto value = rawData.subpiece(offset, rawData.size() - offset);
+
+    cpp2::ConfigItem item;
+    item.set_type(type);
+    item.set_value(value.str());
+    return item;
 }
 
 }  // namespace meta

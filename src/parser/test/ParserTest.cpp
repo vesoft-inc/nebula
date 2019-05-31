@@ -1015,7 +1015,6 @@ TEST(Parser, ReentrantRecoveryFromFailure) {
     }
 }
 
-
 TEST(Parser, IllegalCharacter) {
     GQLParser parser;
     {
@@ -1049,6 +1048,57 @@ TEST(Parser, Distinct) {
         std::string query = "GO FROM 1 OVER like "
                             "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve "
                             "YIELD DISTINCT serve._dst, $$.team.name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, ConfigOperation) {
+    {
+        GQLParser parser;
+        std::string query = "SHOW VARIABLES";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW VARIABLES space:module";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES space:module:name=value";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET VARIABLES space:module:name as int";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DECLARE VARIABLES space:meta:load_config_interval_secs=120 AS INT";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES :module:name=value";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET VARIABLES :module:name as int";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "DECLARE VARIABLES :meta:load_config_interval_secs=120 AS INT";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

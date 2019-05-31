@@ -110,6 +110,7 @@ protected:
             break;
         case EntryType::USER:
             thriftID.set_user_id(static_cast<UserID>(id));
+        case EntryType::CONFIG:
             break;
         }
         return thriftID;

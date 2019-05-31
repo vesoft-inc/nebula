@@ -53,6 +53,7 @@ nebula_add_test(
     SOURCES
         YieldTest.cpp
         SchemaTest.cpp
+        ConfigTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>

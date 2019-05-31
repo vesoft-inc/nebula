@@ -18,6 +18,7 @@
 #include "webservice/WebService.h"
 #include "meta/SchemaManager.h"
 #include "meta/client/MetaClient.h"
+#include "meta/ConfigManager.h"
 #include "storage/CompactionFilter.h"
 #include "hdfs/HdfsHelper.h"
 #include "hdfs/HdfsCommandHelper.h"
@@ -158,6 +159,8 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "waitForMetadReady error!";
         return EXIT_FAILURE;
     }
+    nebula::meta::ConfigManager::instance(metaClient.get());
+
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();
     schemaMan->init(metaClient.get());

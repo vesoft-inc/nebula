@@ -12,6 +12,9 @@
 namespace nebula {
 namespace meta {
 
+const PartitionID kDefaultPartId = 0;
+const GraphSpaceID kDefaultSpaceId = 0;
+
 class MetaCommon final {
 public:
     MetaCommon() = delete;

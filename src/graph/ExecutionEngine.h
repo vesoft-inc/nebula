@@ -15,6 +15,7 @@
 #include "meta/client/MetaClient.h"
 #include "network/NetworkUtils.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include "meta/ConfigManager.h"
 
 /**
  * ExecutionEngine is responsible to create and manage ExecutionPlan.
