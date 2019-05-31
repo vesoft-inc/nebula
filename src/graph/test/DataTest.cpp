@@ -87,15 +87,7 @@ AssertionResult DataTest::prepareSchema() {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE TAG student(name string, id int)";
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
-        }
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE TAG school(name string, addr string)";
+        std::string cmd = "CREATE TAG student(grade string, number int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
@@ -104,6 +96,14 @@ AssertionResult DataTest::prepareSchema() {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE EDGE schoolmate(likeness int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE EDGE friend(intimacy int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd << " failed";
@@ -172,17 +172,17 @@ TEST_F(DataTest, InsertVertex) {
     // One vertex multi tags
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX person(name, age),student(name, id) "
-                          "VALUES 1003:(\"xiaoming\", 20, \"xiaoming\", 11)";
+        std::string cmd = "INSERT VERTEX person(name, age),student(grade, number) "
+                          "VALUES 1003:(\"xiaoming\", 8, \"three\", 20190901001)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Multi vertices multi tags
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX person(name, age),student(name, id) "
-                          "VALUES 1005:(\"xiaoqiang\", 20, \"xiaoqaing\", 21),"
-                          "1006:(\"xiaohong\", 19, \"xiaohong\", 22)";
+        std::string cmd = "INSERT VERTEX person(name, age),student(grade, number) "
+                          "VALUES 1005:(\"xiaoqiang\", 8, \"three\", 20190901008),"
+                          "1006:(\"xiaohong\", 9, \"four\", 20180901003)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -190,21 +190,7 @@ TEST_F(DataTest, InsertVertex) {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT VERTEX person(name, age) "
-                          "VALUES 1007:(\"xiaogang\", 20), 1008:(\"xiaoxiao\", 21)";
-        auto code = client_->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX school(name, addr) VALUES "
-                          "2001:(\"schoolA\", \"Hangzhou\")";
-        auto code = client_->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX school(name, addr) VALUES "
-                          "2002:(\"schoolB\", \"Beijing\")";
+                          "VALUES 1007:(\"xiaogang\", 8), 1008:(\"xiaoxiao\", 9)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -228,6 +214,7 @@ TEST_F(DataTest, InsertVertex) {
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Get result
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "GO FROM 1001 OVER schoolmate YIELD $^[person].name,"
@@ -239,6 +226,27 @@ TEST_F(DataTest, InsertVertex) {
             {"zhangsan", 85, "xiaoming"},
             {"zhangsan", 81, "xiaoqiang"},
             {"zhangsan", 83, "xiaohong"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Get multi tags
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE friend(intimacy) VALUES "
+                          "1003->1005:(90), 1003->1006:(95)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM 1003 OVER friend YIELD $^[person].name,"
+                          "friend.intimacy, $$[person].name, $$[student].grade, $$[student].number";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        using valueType = std::tuple<std::string, int64_t, std::string, std::string, int64_t>;
+        std::vector<valueType> expected = {
+            {"xiaoming", 90, "xiaoqiang", "three", 20190901008},
+            {"xiaoming", 95, "xiaohong", "four", 20180901003},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
