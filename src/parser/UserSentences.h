@@ -5,7 +5,7 @@
  */
 
 #ifndef PARSER_USERSENTENCES_H_
-#define PARSER_GRAPH_USERSENTENCES_H_
+#define PARSER_USERSENTENCES_H_
 
 #include "base/Base.h"
 #include "parser/Clauses.h"
