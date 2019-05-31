@@ -42,6 +42,7 @@ public:
         kRemoveHosts,
         kCreateSpace,
         kDropSpace,
+        kDescribeSpace,
         kYield,
         kCreateUser,
         kDropUser,

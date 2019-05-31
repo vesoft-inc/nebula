@@ -25,6 +25,7 @@ enum ErrorCode {
     E_EXISTED        = -22,
     E_NOT_FOUND      = -23,
     E_INVALID_HOST   = -24,
+    E_UNSUPPORTED    = -25,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -58,6 +59,17 @@ struct Pair {
     2: string value,
 }
 
+struct SpaceProperties {
+    1: string               space_name,
+    2: i32                  partition_num,
+    3: i32                  replica_factor,
+}
+
+struct SpaceItem {
+    1: common.GraphSpaceID  space_id,
+    2: SpaceProperties      properties,
+}
+
 struct TagItem {
     1: common.TagID         tag_id,
     2: string               tag_name,
@@ -87,13 +99,10 @@ struct ExecResp {
 
 // Graph space related operations.
 struct CreateSpaceReq {
-    1: string space_name,
-    2: i32 parts_num,
-    3: i32 replica_factor,
+    1: SpaceProperties  properties,
 }
 
 struct DropSpaceReq {
-    //common.GraphSpaceID space_id
     1: string space_name
 }
 
@@ -112,9 +121,9 @@ struct GetSpaceReq {
 }
 
 struct GetSpaceResp {
-    1: IdName space,
-    2: i32    parts_num,
-    3: i32    replica_factor,
+    1: ErrorCode         code,
+    2: common.HostAddr   leader,
+    3: SpaceItem         item,
 }
 
 // Tags related operations

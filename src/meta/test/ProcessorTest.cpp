@@ -11,28 +11,28 @@
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
 #include <common/time/TimeUtils.h>
-#include "meta/processors/CreateSpaceProcessor.h"
-#include "meta/processors/ListSpacesProcessor.h"
-#include "meta/processors/ListSpacesProcessor.h"
-#include "meta/processors/DropSpaceProcessor.h"
-#include "meta/processors/RemoveHostsProcessor.h"
-#include "meta/processors/GetPartsAllocProcessor.h"
-#include "meta/processors/CreateTagProcessor.h"
-#include "meta/processors/CreateEdgeProcessor.h"
-#include "meta/processors/DropTagProcessor.h"
-#include "meta/processors/DropEdgeProcessor.h"
-#include "meta/processors/GetTagProcessor.h"
-#include "meta/processors/GetEdgeProcessor.h"
-#include "meta/processors/ListTagsProcessor.h"
-#include "meta/processors/ListEdgesProcessor.h"
-#include "meta/processors/MultiPutProcessor.h"
-#include "meta/processors/GetProcessor.h"
-#include "meta/processors/MultiGetProcessor.h"
-#include "meta/processors/RemoveProcessor.h"
-#include "meta/processors/RemoveRangeProcessor.h"
-#include "meta/processors/ScanProcessor.h"
-#include "meta/processors/AlterTagProcessor.h"
-#include "meta/processors/AlterEdgeProcessor.h"
+#include "meta/processors/partsMan/CreateSpaceProcessor.h"
+#include "meta/processors/partsMan/ListSpacesProcessor.h"
+#include "meta/processors/partsMan/ListSpacesProcessor.h"
+#include "meta/processors/partsMan/DropSpaceProcessor.h"
+#include "meta/processors/partsMan/RemoveHostsProcessor.h"
+#include "meta/processors/partsMan/GetPartsAllocProcessor.h"
+#include "meta/processors/schemaMan/CreateTagProcessor.h"
+#include "meta/processors/schemaMan/CreateEdgeProcessor.h"
+#include "meta/processors/schemaMan/DropTagProcessor.h"
+#include "meta/processors/schemaMan/DropEdgeProcessor.h"
+#include "meta/processors/schemaMan/GetTagProcessor.h"
+#include "meta/processors/schemaMan/GetEdgeProcessor.h"
+#include "meta/processors/schemaMan/ListTagsProcessor.h"
+#include "meta/processors/schemaMan/ListEdgesProcessor.h"
+#include "meta/processors/schemaMan/AlterTagProcessor.h"
+#include "meta/processors/schemaMan/AlterEdgeProcessor.h"
+#include "meta/processors/customKV/MultiPutProcessor.h"
+#include "meta/processors/customKV/GetProcessor.h"
+#include "meta/processors/customKV/MultiGetProcessor.h"
+#include "meta/processors/customKV/RemoveProcessor.h"
+#include "meta/processors/customKV/RemoveRangeProcessor.h"
+#include "meta/processors/customKV/ScanProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -121,11 +121,12 @@ TEST(ProcessorTest, CreateSpaceTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(8);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("default_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(3);
-
+        req.set_properties(std::move(properties));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -153,18 +154,21 @@ TEST(ProcessorTest, CreateSpaceTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        std::unordered_map<HostAddr, std::set<PartitionID>> hostsParts;
         for (auto& p : resp.get_parts()) {
-            auto startIndex = p.first;
             for (auto& h : p.second) {
-                ASSERT_EQ(startIndex++ % hostsNum, h.get_ip());
+                hostsParts[std::make_pair(h.get_ip(), h.get_port())].insert(p.first);
                 ASSERT_EQ(h.get_ip(), h.get_port());
             }
+        }
+        ASSERT_EQ(hostsNum, hostsParts.size());
+        for (auto it = hostsParts.begin(); it != hostsParts.end(); it++) {
+            ASSERT_EQ(6, it->second.size());
         }
     }
     {
         cpp2::DropSpaceReq req;
         req.set_space_name("default_space");
-
         auto* processor = DropSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -187,10 +191,13 @@ TEST(ProcessorTest, CreateTagTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("default_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(std::move(properties));
+
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -235,10 +242,13 @@ TEST(ProcessorTest, CreateEdgeTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("first_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(std::move(properties));
+
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -247,11 +257,14 @@ TEST(ProcessorTest, CreateEdgeTest) {
         ASSERT_EQ(1, resp.get_id().get_space_id());
    }
    {
-        // create second space
+        // create another space
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("another_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("second_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(std::move(properties));
+
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -324,10 +337,12 @@ TEST(ProcessorTest, KVOperationTest) {
     UNUSED(hostsNum);
 
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("default_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(3);
+        req.set_properties(std::move(properties));
 
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -1000,10 +1015,12 @@ TEST(ProcessorTest, SameNameTagsTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("first_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(std::move(properties));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1012,10 +1029,12 @@ TEST(ProcessorTest, SameNameTagsTest) {
         ASSERT_EQ(1, resp.get_id().get_space_id());
     }
     {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("second_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(1);
         cpp2::CreateSpaceReq req;
-        req.set_space_name("second_space");
-        req.set_parts_num(9);
-        req.set_replica_factor(1);
+        req.set_properties(std::move(properties));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);

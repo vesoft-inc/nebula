@@ -29,7 +29,6 @@ public:
 
 private:
     DescribeTagSentence                        *sentence_{nullptr};
-    std::string                                *tag_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
 };
 

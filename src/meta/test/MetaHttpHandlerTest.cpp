@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -44,7 +44,7 @@ public:
 TEST(MetaHttpHandlerTest, MetaStatusTest) {
     FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockServer(10001, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(10001, rootPath.path());
 
     {
         std::string resp;

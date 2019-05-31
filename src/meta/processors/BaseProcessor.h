@@ -120,6 +120,13 @@ protected:
         return thriftID;
     }
 
+    nebula::cpp2::HostAddr toThriftHost(const HostAddr& host) {
+        nebula::cpp2::HostAddr tHost;
+        tHost.set_ip(host.first);
+        tHost.set_port(host.second);
+        return tHost;
+    }
+
     /**
      * General put function.
      * */

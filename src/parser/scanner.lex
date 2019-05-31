@@ -19,6 +19,7 @@ static constexpr size_t MAX_STRING = 4096;
 %}
 
 %x STR
+%x COMMENT
 
 GO                          ([Gg][Oo])
 AS                          ([Aa][Ss])
@@ -35,6 +36,7 @@ YIELD                       ([Yy][Ii][Ee][Ll][Dd])
 RETURN                      ([Rr][Ee][Tt][Uu][Rr][Nn])
 CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
 DESCRIBE                    ([Dd][Ee][Ss][Cc][Rr][Ii][Bb][Ee])
+DESC                        ([Dd][Ee][Ss][Cc])
 VERTEX                      ([Vv][Ee][Rr][Tt][Ee][Xx])
 EDGE                        ([Ee][Dd][Gg][Ee])
 EDGES                       ([Ee][Dd][Gg][Ee][Ss])
@@ -120,6 +122,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {YIELD}                     { return TokenType::KW_YIELD; }
 {RETURN}                    { return TokenType::KW_RETURN; }
 {DESCRIBE}                  { return TokenType::KW_DESCRIBE; }
+{DESC}                      { return TokenType::KW_DESC; }
 {VERTEX}                    { return TokenType::KW_VERTEX; }
 {EDGE}                      { return TokenType::KW_EDGE; }
 {EDGES}                     { return TokenType::KW_EDGES; }
@@ -300,6 +303,12 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 yylloc->lines(yyleng);
                                 yylloc->step();
                             }
+"#".*                       // Skip the annotation
+"//".*                      // Skip the annotation
+"--".*                      // Skip the annotation
+"/*"                        { BEGIN(COMMENT); }
+<COMMENT>"*/"               { BEGIN(INITIAL); }
+<COMMENT>([^*]|\n)+|.       // Skip the annotation
 .                           { printf("error %c\n", *yytext); yyterminate(); }
 
 %%

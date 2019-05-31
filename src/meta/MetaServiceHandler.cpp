@@ -6,30 +6,31 @@
 
 #include "meta/MetaServiceUtils.h"
 #include "meta/MetaServiceHandler.h"
-#include "meta/processors/CreateSpaceProcessor.h"
-#include "meta/processors/ListSpacesProcessor.h"
-#include "meta/processors/DropSpaceProcessor.h"
-#include "meta/processors/AddHostsProcessor.h"
-#include "meta/processors/ListHostsProcessor.h"
-#include "meta/processors/RemoveHostsProcessor.h"
-#include "meta/processors/GetPartsAllocProcessor.h"
-#include "meta/processors/CreateTagProcessor.h"
-#include "meta/processors/AlterTagProcessor.h"
-#include "meta/processors/DropTagProcessor.h"
-#include "meta/processors/GetTagProcessor.h"
-#include "meta/processors/ListTagsProcessor.h"
-#include "meta/processors/CreateEdgeProcessor.h"
-#include "meta/processors/AlterEdgeProcessor.h"
-#include "meta/processors/DropEdgeProcessor.h"
-#include "meta/processors/GetEdgeProcessor.h"
-#include "meta/processors/ListEdgesProcessor.h"
-#include "meta/processors/MultiPutProcessor.h"
-#include "meta/processors/GetProcessor.h"
-#include "meta/processors/MultiGetProcessor.h"
-#include "meta/processors/ScanProcessor.h"
-#include "meta/processors/RemoveProcessor.h"
-#include "meta/processors/RemoveRangeProcessor.h"
-#include "meta/processors/HBProcessor.h"
+#include "meta/processors/partsMan/CreateSpaceProcessor.h"
+#include "meta/processors/partsMan/DropSpaceProcessor.h"
+#include "meta/processors/partsMan/ListSpacesProcessor.h"
+#include "meta/processors/partsMan/GetSpaceProcessor.h"
+#include "meta/processors/partsMan/AddHostsProcessor.h"
+#include "meta/processors/partsMan/ListHostsProcessor.h"
+#include "meta/processors/partsMan/RemoveHostsProcessor.h"
+#include "meta/processors/partsMan/GetPartsAllocProcessor.h"
+#include "meta/processors/schemaMan/CreateTagProcessor.h"
+#include "meta/processors/schemaMan/AlterTagProcessor.h"
+#include "meta/processors/schemaMan/DropTagProcessor.h"
+#include "meta/processors/schemaMan/GetTagProcessor.h"
+#include "meta/processors/schemaMan/ListTagsProcessor.h"
+#include "meta/processors/schemaMan/CreateEdgeProcessor.h"
+#include "meta/processors/schemaMan/AlterEdgeProcessor.h"
+#include "meta/processors/schemaMan/DropEdgeProcessor.h"
+#include "meta/processors/schemaMan/GetEdgeProcessor.h"
+#include "meta/processors/schemaMan/ListEdgesProcessor.h"
+#include "meta/processors/customKV/MultiPutProcessor.h"
+#include "meta/processors/customKV/GetProcessor.h"
+#include "meta/processors/customKV/MultiGetProcessor.h"
+#include "meta/processors/customKV/ScanProcessor.h"
+#include "meta/processors/customKV/RemoveProcessor.h"
+#include "meta/processors/customKV/RemoveRangeProcessor.h"
+#include "meta/processors/admin/HBProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -45,15 +46,21 @@ MetaServiceHandler::future_createSpace(const cpp2::CreateSpaceReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_dropSpace(const cpp2::DropSpaceReq& req) {
+    auto* processor = DropSpaceProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::ListSpacesResp>
 MetaServiceHandler::future_listSpaces(const cpp2::ListSpacesReq& req) {
     auto* processor = ListSpacesProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp>
-MetaServiceHandler::future_dropSpace(const cpp2::DropSpaceReq& req) {
-    auto* processor = DropSpaceProcessor::instance(kvstore_);
+folly::Future<cpp2::GetSpaceResp>
+MetaServiceHandler::future_getSpace(const cpp2::GetSpaceReq& req) {
+    auto* processor = GetSpaceProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 
