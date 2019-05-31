@@ -14,7 +14,6 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/ServerBasedSchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
-#include "meta/processors/HBProcessor.h"
 #include "meta/test/TestUtils.h"
 
 DECLARE_int32(load_data_interval_secs);

@@ -12,8 +12,8 @@
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
-#include "meta/processors/AddHostsProcessor.h"
-#include "meta/processors/ListHostsProcessor.h"
+#include "meta/processors/partsMan/AddHostsProcessor.h"
+#include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/MetaServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "interface/gen-cpp2/common_types.h"
