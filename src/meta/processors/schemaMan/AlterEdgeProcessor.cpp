@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/AlterEdgeProcessor.h"
+#include "meta/processors/schemaMan/AlterEdgeProcessor.h"
 #include "time/TimeUtils.h"
 
 namespace nebula {

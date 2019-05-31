@@ -4,21 +4,18 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/MultiGetProcessor.h"
+#include "meta/processors/customKV/ScanProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-void MultiGetProcessor::process(const cpp2::MultiGetReq& req) {
+void ScanProcessor::process(const cpp2::ScanReq& req) {
     CHECK_SEGMENT(req.get_segment());
-    std::vector<std::string> keys;
-    for (auto& key : req.get_keys()) {
-        keys.emplace_back(MetaServiceUtils::assembleSegmentKey(req.get_segment(), key));
-    }
-
-    auto result = doMultiGet(std::move(keys));
+    auto start = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_start());
+    auto end   = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_end());
+    auto result = doScan(start, end);
     if (!result.ok()) {
-        LOG(ERROR) << "MultiGet Failed " << result.status();
+        LOG(ERROR) << "Scan Failed " << result.status();
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
         return;
