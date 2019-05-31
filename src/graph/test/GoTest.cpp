@@ -97,7 +97,6 @@ protected:
         std::string                             name_;
         int64_t                                 vid_{0};
         int64_t                                 age_{0};
-        int64_t                                 draftYear{0};
         std::vector<Serve>                      serves_;
         std::vector<Like>                       likes_;
     };

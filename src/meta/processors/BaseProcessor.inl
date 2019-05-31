@@ -143,7 +143,7 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
     data.emplace_back(kIdKey,
                       std::string(reinterpret_cast<const char*>(&id), sizeof(id)));
     kvstore_->asyncMultiPut(kDefaultSpaceId_, kDefaultPartId_, std::move(data),
-                            [this] (kvstore::ResultCode code, HostAddr leader) {
+                            [] (kvstore::ResultCode code, HostAddr leader) {
         UNUSED(leader);
         CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
     });
