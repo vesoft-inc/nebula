@@ -1,0 +1,14 @@
+add_executable(
+    test_serverContext_test
+    TestServerContext.cpp
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+)
+nebula_link_libraries(
+    test_serverContext_test
+    ${THRIFT_LIBRARIES}
+    wangle
+    gtest
+)
+nebula_add_test(test_serverContext_test)

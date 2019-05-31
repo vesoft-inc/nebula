@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
+#include "meta/test/TestUtils.h"
 
 DECLARE_int32(load_data_interval_secs);
 
@@ -34,6 +35,8 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "ADD HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        meta::TestUtils::registerHB(
+                network::NetworkUtils::toHosts("127.0.0.1:1000, 127.0.0.1:1100").value());
     }
     {
         cpp2::ExecutionResponse resp;
@@ -54,7 +57,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3)";
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=1)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -65,7 +68,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int, std::string, int, int>> expected{
-            {1, "default_space", 9, 3},
+            {1, "default_space", 9, 1},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -75,6 +78,16 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESC SPACE default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int>> expected{
+            {1, "default_space", 9, 1},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -101,6 +114,66 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "DESC TAG person";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"name", "string"},
+            {"email_addr", "string"},
+            {"age", "int"},
+            {"gender", "string"},
+            {"row_timestamp", "timestamp"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG man(name string, email string, "
+                            "age int, gender string, row_timestamp timestamp)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_load_data_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE TAG man";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"name", "string"},
+            {"email", "string"},
+            {"age", "int"},
+            {"gender", "string"},
+            {"row_timestamp", "timestamp"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG upper(name string, EMAIL string, "
+                            "age int, gender string, row_timestamp timestamp)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    sleep(FLAGS_load_data_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE TAG upper";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"name", "string"},
+            {"email", "string"},
+            {"age", "int"},
+            {"gender", "string"},
+            {"row_timestamp", "timestamp"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG account(id int, balance double)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -113,16 +186,6 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     sleep(FLAGS_load_data_interval_secs + 1);
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG account";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"id", "int"},
-            {"balance", "double"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG account "
@@ -168,6 +231,16 @@ TEST_F(SchemaTest, metaCommunication) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE buy";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"id", "int"},
+            {"time", "string"},
+        };
+        EXPECT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESC EDGE buy";
         client->execute(query, resp);
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"id", "int"},
@@ -235,7 +308,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE SPACE my_space(partition_num=9, replica_factor=3)";
+        std::string query = "CREATE SPACE my_space(partition_num=9, replica_factor=1)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

@@ -103,8 +103,8 @@ private:
      */
     void onVertexProps(RpcResponse &&rpcResp);
 
-    std::vector<storage::cpp2::PropDef> getStepOutProps() const;
-    std::vector<storage::cpp2::PropDef> getDstProps() const;
+    StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps() const;
+    StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps() const;
 
     void fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcResp);
 
