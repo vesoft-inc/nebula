@@ -125,6 +125,7 @@ add_executable(
     TestBase.cpp
     GraphHttpHandlerTest.cpp
     $<TARGET_OBJECTS:graph_obj>
+    $<TARGET_OBJECTS:graph_http_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>

@@ -11,7 +11,6 @@ add_library(
     meta_service_handler OBJECT
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
-    MetaHttpHandler.cpp
     processors/partsMan/AddHostsProcessor.cpp
     processors/partsMan/ListHostsProcessor.cpp
     processors/partsMan/RemoveHostsProcessor.cpp
@@ -45,10 +44,13 @@ add_dependencies(
     common_thrift_obj
     kvstore_obj
     thread_obj
-    ws_obj
     stats_obj
 )
 
+add_library(
+    meta_http_handler OBJECT
+    MetaHttpHandler.cpp
+)
 
 add_library(
     meta_client OBJECT
