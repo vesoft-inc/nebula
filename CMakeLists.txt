@@ -161,6 +161,9 @@ add_compile_options(-Werror)
 add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
 
+# This requries GCC 5.1+
+add_compile_options(-Wsuggest-override)
+
 if(asan)
     add_definitions(-DBUILT_WITH_SANITIZER)
     add_compile_options(-fsanitize=address)
