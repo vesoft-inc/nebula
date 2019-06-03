@@ -156,11 +156,9 @@ protected:
 
     // The method will be invoked by start()
     //
-    // Inherited classes can implement this method to provide the last
+    // Inherited classes should implement this method to provide the last
     // committed log id
-    virtual LogID lastCommittedLogId() {
-        return 0;
-    }
+    virtual LogID lastCommittedLogId() = 0;
 
     // This method is called when this partition's leader term
     // is finished, either by receiving a new leader election

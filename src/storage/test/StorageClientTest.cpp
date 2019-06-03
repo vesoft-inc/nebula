@@ -17,12 +17,15 @@
 
 DECLARE_string(meta_server_addrs);
 DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace storage {
 
 TEST(StorageClientTest, VerticesInterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
+
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     GraphSpaceID spaceId = 0;
     uint32_t localIp;
@@ -49,7 +52,14 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
     uint32_t localDataPort = 0;
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
-    auto sc = TestUtils::mockStorageServer(mClient.get(), dataPath.c_str(), localIp, localDataPort);
+    auto sc = TestUtils::mockStorageServer(mClient.get(),
+                                           dataPath.c_str(),
+                                           localIp,
+                                           localDataPort,
+                                           // TODO We are using the memory version of
+                                           // SchemaMan We need to switch to Meta Server
+                                           // based version
+                                           false);
     localDataPort = sc->port_;
 
     LOG(INFO) << "Add hosts and create space....";
@@ -58,6 +68,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     while (meta::ActiveHostsManHolder::hostsMan()->getActiveHosts().size() == 0) {
         usleep(1000);
     }
+    VLOG(1) << "The storage server has been added to the meta service";
+
     auto ret = mClient->createSpace("default", 10, 1).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
@@ -117,6 +129,17 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         }
         auto f = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
+        if (VLOG_IS_ON(2)) {
+            if (!resp.succeeded()) {
+                std::stringstream ss;
+                for (auto& p : resp.failedParts()) {
+                    ss << "Part " << p.first
+                       << ": " << static_cast<int32_t>(p.second)
+                       << "; ";
+                }
+                VLOG(2) << "Failed partitions:: " << ss.str();
+            }
+        }
         ASSERT_TRUE(resp.succeeded());
 
         auto& results = resp.responses();

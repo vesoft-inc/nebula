@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -11,9 +11,12 @@
 namespace nebula {
 namespace kvstore {
 
+constexpr auto kHeadLen = sizeof(int64_t) + 1 + sizeof(uint32_t);
+
+
 std::string encodeSingleValue(LogType type, folly::StringPiece val) {
     std::string encoded;
-    encoded.reserve(val.size() + sizeof(int64_t) + 1 + sizeof(uint32_t));
+    encoded.reserve(val.size() + kHeadLen);
     // Timstamp (8 bytes)
     int64_t ts = time::TimeUtils::nowInMSeconds();
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
@@ -33,7 +36,7 @@ folly::StringPiece decodeSingleValue(folly::StringPiece encoded) {
     // Skip the timestamp and the first type byte
     auto* p = encoded.begin() + sizeof(int64_t) + 1;
     uint32_t len = *(reinterpret_cast<const uint32_t*>(p));
-    DCHECK_EQ(len + sizeof(uint32_t) + 1 + sizeof(int64_t), encoded.size());
+    DCHECK_EQ(len + kHeadLen, encoded.size());
     return folly::StringPiece(p + sizeof(uint32_t), len);
 }
 
@@ -45,7 +48,7 @@ std::string encodeMultiValues(LogType type, const std::vector<std::string>& valu
     }
 
     std::string encoded;
-    encoded.reserve(totalLen + sizeof(int64_t) + 1 + sizeof(uint32_t));
+    encoded.reserve(totalLen + kHeadLen);
 
     // Timstamp (8 bytes)
     int64_t ts = time::TimeUtils::nowInMSeconds();
@@ -73,7 +76,7 @@ std::string encodeMultiValues(LogType type, const std::vector<KV>& kvs) {
     }
 
     std::string encoded;
-    encoded.reserve(totalLen + sizeof(int64_t) + 1 + sizeof(uint32_t));
+    encoded.reserve(totalLen + kHeadLen);
 
     // Timstamp (8 bytes)
     int64_t ts = time::TimeUtils::nowInMSeconds();
@@ -101,7 +104,7 @@ std::string encodeMultiValues(LogType type,
                               folly::StringPiece v1,
                               folly::StringPiece v2) {
     std::string encoded;
-    encoded.reserve(sizeof(int64_t) + 1 + 3 * sizeof(uint32_t) + v1.size() + v2.size());
+    encoded.reserve(kHeadLen + 2 * sizeof(uint32_t) + v1.size() + v2.size());
 
     // Timstamp (8 bytes)
     int64_t ts = time::TimeUtils::nowInMSeconds();

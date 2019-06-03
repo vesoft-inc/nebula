@@ -15,6 +15,8 @@ namespace kvstore {
 
 using raftex::AppendLogResult;
 
+const char kLastCommittedIdKey[] = "_last_committed_log_id";
+
 namespace {
 
 ResultCode toResultCode(AppendLogResult res) {
@@ -56,6 +58,22 @@ Part::Part(GraphSpaceID spaceId,
         , partId_(partId)
         , walPath_(walPath)
         , engine_(engine) {
+}
+
+
+LogID Part::lastCommittedLogId() {
+    std::string val;
+    ResultCode res = engine_->get(kLastCommittedIdKey, &val);
+    if (res != ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Cannot fetch the last committed log id from the storage engine";
+        return 0;
+    }
+    CHECK_EQ(val.size(), sizeof(LogID));
+
+    LogID lastId;
+    memcpy(reinterpret_cast<void*>(&lastId), val.data(), sizeof(LogID));
+
+    return lastId;
 }
 
 
@@ -139,7 +157,9 @@ std::string Part::compareAndSet(const std::string& log) {
 
 bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     auto batch = engine_->startBatchWrite();
+    LogID lastId = -1;
     while (iter->valid()) {
+        lastId = iter->logId();
         auto log = iter->logMsg();
         DCHECK_GE(log.size(), sizeof(int64_t) + 1 + sizeof(uint32_t));
         // Skip the timestamp (type of int64_t)
@@ -206,6 +226,11 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
         }
 
         ++(*iter);
+    }
+
+    if (lastId >= 0) {
+        batch->put(kLastCommittedIdKey,
+                   folly::StringPiece(reinterpret_cast<char*>(&lastId), sizeof(LogID)));
     }
 
     return engine_->commitBatchWrite(std::move(batch)) == ResultCode::SUCCEEDED;

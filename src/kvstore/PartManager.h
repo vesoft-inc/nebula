@@ -162,7 +162,7 @@ public:
      }
 
      /**
-      * for UTS, because the port is choosed by system,
+      * for UTs, because the port is choosed by system,
       * we should update port after thrift setup
       * */
      void setLocalHost(HostAddr localHost) {

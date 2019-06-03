@@ -23,7 +23,7 @@ struct ServerContext {
         if (thread_ != nullptr) {
             thread_->join();
         }
-        KVStore_ = nullptr;
+        kvStore_ = nullptr;
         server_ = nullptr;
         thread_ = nullptr;
         VLOG(3) << "~ServerContext";

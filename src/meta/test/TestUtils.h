@@ -179,7 +179,7 @@ public:
 
         auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get());
         sc->mockCommon("meta", port, handler);
-        LOG(INFO) << "The Meta Daemon started on port " << sc->port_;
+        LOG(INFO) << "The Meta Daemon started on port " << sc->port_
                   << ", data path is at \"" << dataPath << "\"";
 
         return sc;

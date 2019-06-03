@@ -74,7 +74,7 @@ public:
     }
 
     PartManager* partManager() const override {
-        return options_.partMan_.get();
+        return partMan_.get();
     }
 
     ResultCode get(GraphSpaceID spaceId,

@@ -32,10 +32,12 @@ public:
         auto workers = std::make_shared<thread::GenericThreadPool>();
         workers->start(4);
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
-        std::unique_ptr<kvstore::PartManager> partMan;
+
+        kvstore::KVOptions options;
         if (useMetaServer) {
-            partMan = std::make_unique<kvstore::MetaServerBasedPartManager>(localhost,
-                                                                            mClient);
+            options.partMan_ = std::make_unique<kvstore::MetaServerBasedPartManager>(
+                localhost,
+                mClient);
         } else {
             auto memPartMan = std::make_unique<kvstore::MemPartManager>();
             // GraphSpaceID =>  {PartitionIDs}
@@ -45,7 +47,7 @@ public:
                 partsMap[0][partId] = PartMeta();
             }
 
-            partMan = std::move(memPartMan);
+            options.partMan_ = std::move(memPartMan);
         }
 
         std::vector<std::string> paths;
@@ -53,9 +55,7 @@ public:
         paths.push_back(folly::stringPrintf("%s/disk2", rootPath));
 
         // Prepare KVStore
-        kvstore::KVOptions options;
         options.dataPaths_ = std::move(paths);
-        options.partMan_ = std::move(partMan);
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
                                                             workers,
@@ -180,7 +180,8 @@ public:
                                                                   uint32_t port = 0,
                                                                   bool useMetaServer = false) {
         auto sc = std::make_unique<test::ServerContext>();
-        sc->kvStore_ = TestUtils::initKV(dataPath, localhost, mClient, useMetaServer);
+        // Always use the Meta Service in this case
+        sc->kvStore_ = TestUtils::initKV(dataPath, {ip, port}, mClient, true);
 
         std::unique_ptr<meta::SchemaManager> schemaMan;
         if (!useMetaServer) {
@@ -196,9 +197,14 @@ public:
         sc->mockCommon("storage", port, handler);
         auto ptr = dynamic_cast<kvstore::MetaServerBasedPartManager*>(
             sc->kvStore_->partManager());
-        if (ptr != nullptr) {
+        if (ptr) {
             ptr->setLocalHost(HostAddr(ip, sc->port_));
+        } else {
+            VLOG(1) << "Not using a MetaServerBasedPartManager";
         }
+
+        // Sleep one second to wait for the leader election
+        sleep(1);
 
         LOG(INFO) << "The storage daemon started on port " << sc->port_
                   << ", data path is at \"" << dataPath << "\"";

@@ -599,6 +599,7 @@ void RaftPart::processAppendLogResponses(
             if (iter.leadByCAS()) {
                 sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
             }
+            VLOG(2) << idStr_ << "Succeeded in committing the logs";
 
             // Step 5: Check whether need to continue
             // the log replication
@@ -625,6 +626,7 @@ void RaftPart::processAppendLogResponses(
                     logs_.clear();
                 } else {
                     replicatingLogs_ = false;
+                    VLOG(2) << idStr_ << "No more log to be replicated";
                 }
             }
         } else {

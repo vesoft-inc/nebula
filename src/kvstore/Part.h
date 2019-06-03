@@ -44,6 +44,8 @@ public:
     /**
      * Methods inherited from RaftPart
      */
+    LogID lastCommittedLogId() override;
+
     void onLostLeadership(TermID term) override;
 
     void onElected(TermID term) override;
