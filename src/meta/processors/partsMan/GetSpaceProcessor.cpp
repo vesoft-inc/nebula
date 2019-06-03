@@ -13,7 +13,7 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto spaceRet = getSpaceId(req.get_space_name());
     if (!spaceRet.ok()) {
-        resp_.set_code(to(std::move(spaceRet.status())));
+        resp_.set_code(to(spaceRet.status()));
         onFinished();
         return;;
     }

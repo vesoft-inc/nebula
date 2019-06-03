@@ -21,7 +21,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
     auto edgeType = edgeTypeRet.value();
 
     std::string schemaValue;
-    // get the lastest version
+    // Get the lastest version
     if (req.get_version() < 0) {
         auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(req.get_space_id(), edgeType);
         auto ret = doPrefix(std::move(edgePrefix));

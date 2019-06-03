@@ -21,7 +21,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
     auto tagId = tagIdRet.value();
 
     std::string schemaValue;
-    // get the lastest version
+    // Get the lastest version
     if (req.get_version() < 0) {
         auto tagPrefix = MetaServiceUtils::schemaTagPrefix(req.get_space_id(), tagId);
         auto ret = doPrefix(std::move(tagPrefix));
