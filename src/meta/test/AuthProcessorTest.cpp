@@ -23,9 +23,8 @@ TEST(AuthProcessorTest, CreateUserTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     // Simple test
     auto code = TestUtils::createUser(kv.get(), false, "user1", "pwd",
-                                      "first name", "last name" ,
-                                      false);
-    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+                                      false, 0, 0, 0, 0);
+    ASSERT_TRUE(code.ok());
 
     /**
      * missing_ok should be turn on when "IF NOT EXISTS" is set.
@@ -35,11 +34,13 @@ TEST(AuthProcessorTest, CreateUserTest) {
      * the result will be EXISTED if the user exists.
      **/
 
-    code = TestUtils::createUser(kv.get(), false, "user1", "pwd", "", "" , false);
-    ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, code);
+    code = TestUtils::createUser(kv.get(), false, "user1", "pwd",
+                                 false, 0, 0, 0, 0);
+    ASSERT_FALSE(code.ok());
 
-    code = TestUtils::createUser(kv.get(), true, "user1", "pwd", "", "" , false);
-    ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    code = TestUtils::createUser(kv.get(), true, "user1", "pwd",
+                                 false, 0, 0, 0, 0);
+        ASSERT_TRUE(code.ok());
 }
 
 
@@ -49,16 +50,15 @@ TEST(AuthProcessorTest, AlterUserTest) {
     // Setup
     {
         auto code = TestUtils::createUser(kv.get(), false, "user1", "pwd",
-                                          "first name", "last name" ,
-                                          false);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+                                          false, 1, 2, 3, 4);
+        ASSERT_TRUE(code.ok());
     }
     // Alter a few attributes
     {
         cpp2::AlterUserReq req;
         decltype(req.user_item) newUser;
         newUser.set_account("user1");
-        newUser.set_first_name("user name");
+        newUser.set_is_lock(true);
         req.set_user_item(std::move(newUser));
         auto* processor = AlterUserProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -83,8 +83,10 @@ TEST(AuthProcessorTest, AlterUserTest) {
         cpp2::AlterUserReq req;
         decltype(req.user_item) newUser;
         newUser.set_account("user1");
-        newUser.set_first_name("new first name");
-        newUser.set_last_name("");
+        newUser.set_max_queries_per_hour(10);
+        newUser.set_max_updates_per_hour(20);
+        newUser.set_max_connections_per_hour(30);
+        newUser.set_max_user_connections(40);
         newUser.set_is_lock(false);
         req.set_user_item(std::move(newUser));
         auto* processor = AlterUserProcessor::instance(kv.get());
@@ -102,8 +104,10 @@ TEST(AuthProcessorTest, AlterUserTest) {
         auto resp = std::move(f).get();
         decltype(resp.user_item) user;
         user.set_account("user1");
-        user.set_first_name("new first name");
-        user.set_last_name("");
+        user.set_max_queries_per_hour(10);
+        user.set_max_updates_per_hour(20);
+        user.set_max_connections_per_hour(30);
+        user.set_max_user_connections(40);
         user.set_is_lock(false);
         ASSERT_EQ(user, resp.get_user_item());
     }
@@ -115,9 +119,8 @@ TEST(AuthProcessorTest, DropUserTest) {
     // Setup
     {
         auto code = TestUtils::createUser(kv.get(), false, "user1", "pwd",
-                                          "first name", "last name" ,
-                                          false);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+                                          false, 1, 2, 3, 4);
+        ASSERT_TRUE(code.ok());
     }
     // Simple drop.
     {
@@ -162,9 +165,8 @@ TEST(AuthProcessorTest, PasswordTest) {
     // Setup
     {
         auto code = TestUtils::createUser(kv.get(), false, "user1", "pwd",
-                                          "first name", "last name" ,
-                                          false);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+                                          false, 4, 3, 2, 1);
+        ASSERT_TRUE(code.ok());
     }
     // verify password.
     {
@@ -221,17 +223,15 @@ TEST(AuthProcessorTest, PasswordTest) {
 TEST(AuthProcessorTest, GrantRevokeTest) {
     fs::TempDir rootPath("/tmp/GrantRevokeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    // Setup
-    {
-        auto code = TestUtils::createUser(kv.get(), false, "user1", "pwd",
-                                          "first name", "last name",
-                                          false);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
+    auto ret = TestUtils::createUser(kv.get(), false, "user1", "pwd",
+                                      false, 1, 2, 3, 4);
+    ASSERT_TRUE(ret.ok());
+    auto userId = ret.value();
+
     // grant test : space does not exist
     {
         cpp2::GrantRoleReq req;
-        decltype(req.role_item) role(FRAGILE, "user1", "space1", cpp2::RoleType::USER);
+        decltype(req.role_item) role(FRAGILE, userId, 100, cpp2::RoleType::USER);
         req.set_role_item(std::move(role));
         auto* processor = GrantProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -243,7 +243,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // revoke test : space does not exist
     {
         cpp2::RevokeRoleReq req;
-        decltype(req.role_item) role(FRAGILE, "user1", "space1", cpp2::RoleType::USER);
+        decltype(req.role_item) role(FRAGILE, userId, 100, cpp2::RoleType::USER);
         req.set_role_item(std::move(role));
         auto* processor = RevokeProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -252,6 +252,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
     // setup space
+    GraphSpaceID spaceId;
     {
         TestUtils::createSomeHosts(kv.get());
         cpp2::CreateSpaceReq req(FRAGILE,
@@ -261,11 +262,12 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        spaceId = resp.get_id().get_space_id();
     }
     // grant test
     {
         cpp2::GrantRoleReq req;
-        decltype(req.role_item) role(FRAGILE, "user1", "test_space", cpp2::RoleType::USER);
+        decltype(req.role_item) role(FRAGILE, userId, spaceId, cpp2::RoleType::USER);
         req.set_role_item(std::move(role));
         auto* processor = GrantProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -275,19 +277,19 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     }
     // List acl by space name.
     {
-        cpp2::ListRolesReq req(FRAGILE, "test_space");
+        cpp2::ListRolesReq req(FRAGILE, spaceId);
         auto* processor = ListRolesProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         decltype(resp.roles) rolesList;
-        rolesList.emplace_back(FRAGILE, "user1", "", cpp2::RoleType::USER);
+        rolesList.emplace_back(FRAGILE, userId, spaceId, cpp2::RoleType::USER);
         ASSERT_EQ(rolesList, resp.get_roles());
     }
     // revoke test
     {
         cpp2::RevokeRoleReq req;
-        decltype(req.role_item) role(FRAGILE, "user1", "test_space", cpp2::RoleType::USER);
+        decltype(req.role_item) role(FRAGILE, userId, spaceId, cpp2::RoleType::USER);
         req.set_role_item(std::move(role));
         auto* processor = RevokeProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -295,10 +297,22 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         std::unique_ptr<kvstore::KVIterator> iter;
-        std::string prefix = "__acl__";
+        std::string prefix = "__roles__";
         auto code = kv.get()->prefix(0, 0, prefix, &iter);
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
         ASSERT_FALSE(iter->valid());
+    }
+    // List Users
+    {
+        cpp2::ListUsersReq req;
+        auto* processor = ListUsersProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        decltype(resp.users) users;
+        users.emplace(userId, cpp2::UserItem(FRAGILE, "user1", false, 1, 2, 3, 4));
+        ASSERT_EQ(users, resp.get_users());
     }
 }
 }  // namespace meta

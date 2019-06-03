@@ -89,7 +89,7 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
     if (userRet == kvstore::ResultCode::SUCCEEDED) {
         while (iter->valid()) {
             auto key = iter->key();
-            auto userId = MetaServiceUtils::parseUserId(key);
+            auto userId = MetaServiceUtils::parseRoleUserId(key);
             if (userId == ret.value()) {
                 keys.emplace_back(std::move(key));
             }
@@ -105,22 +105,12 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
 
 
 void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
     const auto& roleItem = req.get_role_item();
-    auto spaceRet = getSpaceId(roleItem.get_space());
-    if (!spaceRet.ok()) {
-        resp_.set_code(to(spaceRet.status()));
-        onFinished();
-        return;;
-    }
-    auto userRet = getUserId(roleItem.get_account());
-    if (!userRet.ok()) {
-        resp_.set_code(to(userRet.status()));
-        onFinished();
-        return;
-    }
+    CHECK_SPACE_ID_AND_RETURN(roleItem.get_space_id());
+    CHECK_USER_ID_AND_RETURN(roleItem.get_user_id());
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::roleKey(spaceRet.value(), userRet.value()),
+    data.emplace_back(MetaServiceUtils::roleKey(roleItem.get_space_id(), roleItem.get_user_id()),
                       MetaServiceUtils::roleVal(roleItem.get_role_type()));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     doPut(std::move(data));
@@ -128,22 +118,12 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
 
 
 void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
     const auto& roleItem = req.get_role_item();
-    auto spaceRet = getSpaceId(roleItem.get_space());
-    if (!spaceRet.ok()) {
-        resp_.set_code(to(spaceRet.status()));
-        onFinished();
-        return;;
-    }
-    auto userRet = getUserId(roleItem.get_account());
-    if (!userRet.ok()) {
-        resp_.set_code(to(userRet.status()));
-        onFinished();
-        return;
-    }
-    auto roleKey = MetaServiceUtils::roleKey(spaceRet.value(), userRet.value());
-    resp_.set_id(to(userRet.value(), EntryType::USER));
+    CHECK_SPACE_ID_AND_RETURN(roleItem.get_space_id());
+    CHECK_USER_ID_AND_RETURN(roleItem.get_user_id());
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
+    auto roleKey = MetaServiceUtils::roleKey(roleItem.get_space_id(), roleItem.get_user_id());
+    resp_.set_id(to(roleItem.get_user_id(), EntryType::USER));
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     doRemove(std::move(roleKey));
 }
@@ -222,7 +202,8 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
     decltype(resp_.users) users;
     while (iter->valid()) {
         cpp2::UserItem user = MetaServiceUtils::parseUserItem(iter->val());
-        users.emplace_back(std::move(user));
+        auto userId = MetaServiceUtils::parseUserId(iter->key());
+        users.emplace(userId, std::move(user));
         iter->next();
     }
     resp_.set_users(users);
@@ -252,18 +233,14 @@ void CheckPasswordProcessor::process(const cpp2::CheckPasswordReq& req) {
 
 
 void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
+    auto spaceId = req.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(spaceId);
     folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
-    auto spaceRet = getSpaceId(req.get_space());
-    if (!spaceRet.ok()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;;
-    }
-    auto prefix = MetaServiceUtils::roleSpacePrefix(spaceRet.value());
+    auto prefix = MetaServiceUtils::roleSpacePrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Can't find any roles by space " << req.get_space();
+        LOG(ERROR) << "Can't find any roles by space id  " << spaceId;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
@@ -271,7 +248,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
 
     decltype(resp_.roles) roles;
     while (iter->valid()) {
-        auto userId = MetaServiceUtils::parseUserId(iter->key());
+        auto userId = MetaServiceUtils::parseRoleUserId(iter->key());
         auto val = iter->val();
         auto account = getUserAccount(userId);
         if (!account.ok()) {
@@ -281,7 +258,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
             return;
         }
         cpp2::RoleItem role(apache::thrift::FragileConstructor::FRAGILE,
-                            account.value(), ""/*space name can be ignore at here*/,
+                            userId, spaceId,
                             *reinterpret_cast<const cpp2::RoleType *>(val.begin()));
         roles.emplace_back(std::move(role));
         iter->next();
