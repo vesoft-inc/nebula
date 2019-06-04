@@ -25,26 +25,6 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
 
 StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
     std::vector<cpp2::HostItem> hostItems;
-    auto hosts = ActiveHostsManHolder::hostsMan()->getActiveHosts();
-    std::vector<nebula::cpp2::HostAddr> activeHosts;
-    activeHosts.resize(hosts.size());
-    std::transform(hosts.begin(), hosts.end(), activeHosts.begin(), [](const auto& h) {
-        nebula::cpp2::HostAddr th;
-        th.set_ip(h.first);
-        th.set_port(h.second);
-        return th;
-    });
-
-    if (!FLAGS_hosts_whitelist_enabled) {
-        std::for_each(activeHosts.begin(), activeHosts.end(), [&](auto& h) {
-            cpp2::HostItem item;
-            item.set_hostAddr(h);
-            item.set_status(cpp2::HostStatus::ONLINE);
-            hostItems.emplace_back(item);
-        });
-        return hostItems;
-    }
-
     const auto& prefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
@@ -58,7 +38,7 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
         auto hostAddrPiece = iter->key().subpiece(prefix.size());
         memcpy(&host, hostAddrPiece.data(), hostAddrPiece.size());
         item.set_hostAddr(host);
-        if (std::find(activeHosts.begin(), activeHosts.end(), host) != activeHosts.end()) {
+        if (iter->val() == MetaServiceUtils::hostValOnline()) {
             item.set_status(cpp2::HostStatus::ONLINE);
         } else {
             item.set_status(cpp2::HostStatus::OFFLINE);

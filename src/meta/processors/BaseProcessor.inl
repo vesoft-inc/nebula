@@ -6,9 +6,6 @@
 
 #include "meta/MetaServiceUtils.h"
 #include "meta/processors/BaseProcessor.h"
-#include "meta/ActiveHostsMan.h"
-
-DECLARE_bool(hosts_whitelist_enabled);
 
 namespace nebula {
 namespace meta {

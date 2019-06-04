@@ -123,14 +123,14 @@ TEST(ProcessorTest, AddHostsTest) {
 TEST(ProcessorTest, ListHostsTest) {
     fs::TempDir rootPath("/tmp/ListHostsTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    ActiveHostsMan::instance(kv.get());
+    std::vector<HostAddr> hosts;
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
-        std::vector<HostAddr> hosts;
         for (auto i = 0; i < 10; i++) {
             thriftHosts.emplace_back(FRAGILE, i, i);
             hosts.emplace_back(i, i);
         }
-        meta::TestUtils::registerHB(hosts);
 
         cpp2::AddHostsReq req;
         req.set_hosts(std::move(thriftHosts));
@@ -141,6 +141,22 @@ TEST(ProcessorTest, ListHostsTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
+        // add hosts will set host status to offline
+        cpp2::ListHostsReq req;
+        auto* processor = ListHostsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(10, resp.hosts.size());
+        for (auto i = 0; i < 10; i++) {
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
+            ASSERT_EQ(cpp2::HostStatus::OFFLINE, resp.hosts[i].status);
+        }
+    }
+    {
+        // after received heartbeat, host status will become online
+        meta::TestUtils::registerHB(hosts);
         cpp2::ListHostsReq req;
         auto* processor = ListHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -154,7 +170,8 @@ TEST(ProcessorTest, ListHostsTest) {
         }
     }
     {
-        sleep(FLAGS_expired_threshold_sec + 1);
+        // host info expired
+        sleep(3);
         cpp2::ListHostsReq req;
         auto* processor = ListHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();

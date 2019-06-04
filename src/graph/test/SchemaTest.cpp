@@ -43,8 +43,8 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
         std::vector<uniform_tuple_t<std::string, 3>> expected{
-            {"127.0.0.1", "1000", "online"},
-            {"127.0.0.1", "1100", "online"},
+            {"127.0.0.1", "1000", "offline"},
+            {"127.0.0.1", "1100", "offline"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

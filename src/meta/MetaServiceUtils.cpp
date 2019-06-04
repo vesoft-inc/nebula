@@ -18,6 +18,9 @@ const std::string kTagsTable   = "__tags__";    // NOLINT
 const std::string kEdgesTable  = "__edges__";   // NOLINT
 const std::string kIndexTable  = "__index__";   // NOLINT
 
+const std::string kHostOnline = "Online";       // NOLINT
+const std::string kHostOffline = "Offline";     // NOLINT
+
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
     key.reserve(128);
@@ -103,8 +106,12 @@ std::string MetaServiceUtils::hostKey(IPv4 ip, Port port) {
     return key;
 }
 
-std::string MetaServiceUtils::hostVal() {
-    return "";
+std::string MetaServiceUtils::hostValOnline() {
+    return kHostOnline;
+}
+
+std::string MetaServiceUtils::hostValOffline() {
+    return kHostOffline;
 }
 
 const std::string& MetaServiceUtils::hostPrefix() {

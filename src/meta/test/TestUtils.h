@@ -66,12 +66,12 @@ public:
     }
 
     static void registerHB(const std::vector<HostAddr>& hosts) {
-        ActiveHostsManHolder::hostsMan()->reset();
-        auto now = time::TimeUtils::nowInSeconds();
-        for (auto& h : hosts) {
-            ActiveHostsManHolder::hostsMan()->updateHostInfo(h, HostInfo(now));
-        }
-    }
+         ActiveHostsMan::instance()->reset();
+         auto now = time::TimeUtils::nowInSeconds();
+         for (auto& h : hosts) {
+             ActiveHostsMan::instance()->updateHostInfo(h, HostInfo(now));
+         }
+     }
 
     static int32_t createSomeHosts(kvstore::KVStore* kv,
                                    std::vector<HostAddr> hosts

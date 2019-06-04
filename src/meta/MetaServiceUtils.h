@@ -47,7 +47,9 @@ public:
 
     static std::string hostKey(IPv4 ip, Port port);
 
-    static std::string hostVal();
+    static std::string hostValOnline();
+
+    static std::string hostValOffline();
 
     static const std::string& hostPrefix();
 
