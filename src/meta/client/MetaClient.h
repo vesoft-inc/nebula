@@ -185,6 +185,8 @@ public:
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
+    int32_t getHostHTTPPort();
+
 protected:
     void loadDataThreadFunc();
 
@@ -254,6 +256,43 @@ private:
     MetaChangedListener*  listener_{nullptr};
     bool                  sendHeartBeat_ = false;
 };
+
+class DefaultListener : public MetaChangedListener {
+public:
+    void onSpaceAdded(nebula::GraphSpaceID spaceId) override {
+        LOG(INFO) << "Space " << spaceId << " added";
+        spaceNum++;
+    }
+
+    void onSpaceRemoved(nebula::GraphSpaceID spaceId) override {
+        LOG(INFO) << "Space " << spaceId << " removed";
+        spaceNum--;
+    }
+
+    void onPartAdded(const nebula::PartMeta& partMeta) override {
+        LOG(INFO) << "[" << partMeta.spaceId_ << ", " << partMeta.partId_ << "] added!";
+        partNum++;
+    }
+
+    void onPartRemoved(nebula::GraphSpaceID spaceId, nebula::PartitionID partId) override {
+        LOG(INFO) << "[" << spaceId << ", " << partId << "] removed!";
+        partNum--;
+    }
+
+    void onPartUpdated(const nebula::PartMeta& partMeta) override {
+        LOG(INFO) << "[" << partMeta.spaceId_ << ", " << partMeta.partId_ << "] updated!";
+        partChanged++;
+    }
+
+    nebula::HostAddr getLocalHost() override {
+        return nebula::HostAddr(0, 0);
+    }
+
+    int32_t spaceNum = 0;
+    int32_t partNum = 0;
+    int32_t partChanged = 0;
+};
+
 }  // namespace meta
 }  // namespace nebula
 #endif  // META_METACLIENT_H_

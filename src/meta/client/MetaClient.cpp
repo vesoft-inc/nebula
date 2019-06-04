@@ -9,7 +9,7 @@
 #include "network/NetworkUtils.h"
 #include "meta/NebulaSchemaProvider.h"
 
-DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
+DEFINE_int32(load_data_interval_secs, 2 , "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 
 namespace nebula {
@@ -115,6 +115,14 @@ void MetaClient::loadDataThreadFunc() {
     {
         folly::RWSpinLock::WriteHolder holder(localCacheLock_);
         localCache_ = std::move(cache);
+        LOG(INFO) << "*****";
+        auto iter = localCache_.begin();
+        while (iter != localCache_.end()) {
+            LOG(INFO) << iter->first;
+            iter++;
+        }
+        LOG(INFO) << "*****";
+
         spaceIndexByName_ = std::move(spaceIndexByName);
         spaceTagIndexByName_ = std::move(spaceTagIndexByName);
         spaceEdgeIndexByName_ = std::move(spaceEdgeIndexByName);
@@ -315,13 +323,13 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
     auto localHost = listener_->getLocalHost();
     auto newPartsMap = doGetPartsMap(localHost, newCache);
     auto oldPartsMap = getPartsMapFromCache(localHost);
-    VLOG(1) << "Let's check if any new parts added/updated for " << localHost;
+    VLOG(3) << "Let's check if any new parts added/updated for " << localHost;
     for (auto it = newPartsMap.begin(); it != newPartsMap.end(); it++) {
         auto spaceId = it->first;
         const auto& newParts = it->second;
         auto oldIt = oldPartsMap.find(spaceId);
         if (oldIt == oldPartsMap.end()) {
-            VLOG(1) << "SpaceId " << spaceId << " was added!";
+            VLOG(3) << "SpaceId " << spaceId << " was added!";
             listener_->onSpaceAdded(spaceId);
             for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
                 listener_->onPartAdded(partIt->second);
@@ -331,14 +339,14 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
             for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
                 auto oldPartIt = oldParts.find(partIt->first);
                 if (oldPartIt == oldParts.end()) {
-                    VLOG(1) << "SpaceId " << spaceId << ", partId "
+                    VLOG(3) << "SpaceId " << spaceId << ", partId "
                             << partIt->first << " was added!";
                     listener_->onPartAdded(partIt->second);
                 } else {
                     const auto& oldPartMeta = oldPartIt->second;
                     const auto& newPartMeta = partIt->second;
                     if (oldPartMeta != newPartMeta) {
-                        VLOG(1) << "SpaceId " << spaceId
+                        VLOG(3) << "SpaceId " << spaceId
                                 << ", partId " << partIt->first << " was updated!";
                         listener_->onPartUpdated(newPartMeta);
                     }
@@ -346,13 +354,13 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
             }
         }
     }
-    VLOG(1) << "Let's check if any old parts removed....";
+    VLOG(3) << "Let's check if any old parts removed....";
     for (auto it = oldPartsMap.begin(); it != oldPartsMap.end(); it++) {
         auto spaceId = it->first;
         const auto& oldParts = it->second;
         auto newIt = newPartsMap.find(spaceId);
         if (newIt == newPartsMap.end()) {
-            VLOG(1) << "SpaceId " << spaceId << " was removed!";
+            VLOG(3) << "SpaceId " << spaceId << " was removed!";
             for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
                 listener_->onPartRemoved(spaceId, partIt->first);
             }
@@ -362,7 +370,7 @@ void MetaClient::diff(const std::unordered_map<GraphSpaceID,
             for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
                 auto newPartIt = newParts.find(partIt->first);
                 if (newPartIt == newParts.end()) {
-                    VLOG(1) << "SpaceId " << spaceId
+                    VLOG(3) << "SpaceId " << spaceId
                             << ", partId " << partIt->first << " was removed!";
                     listener_->onPartRemoved(spaceId, partIt->first);
                 }
@@ -667,6 +675,14 @@ bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
 int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = localCache_.find(spaceId);
+    LOG(INFO) << "spaceId " << spaceId;
+    auto iter = localCache_.begin();
+    LOG(INFO) << "====";
+    while (iter != localCache_.end()) {
+        LOG(INFO) << iter->first;
+        iter++;
+    }
+    LOG(INFO) << "====";
     CHECK(it != localCache_.end());
     return it->second->partsAlloc_.size();
 }
@@ -836,6 +852,12 @@ StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemaFromC
             return edgeIt->second;
         }
     }
+}
+
+// TODO currently just support default http port
+// maybe we will save http info later
+int32_t MetaClient::getHostHTTPPort() {
+    return 12000;
 }
 
 SchemaVer MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId) {

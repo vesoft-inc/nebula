@@ -41,10 +41,18 @@ private:
     void readAllValue(folly::dynamic& vals);
     folly::dynamic getStatus();
     std::string toStr(folly::dynamic& vals) const;
+    bool downloadSSTFiles(const std::vector<std::string>& urls,
+                          const std::string& path);
+
+    bool ingestSSTFiles(const std::string& path,
+                        GraphSpaceID spaceID);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
     bool returnJson_{false};
+    std::string hdfsUrl;
+    std::string localPath;
+    std::string method{"status"};
     std::vector<std::string> statusNames_;
     std::vector<std::string> statusAllNames_{"status"};
 };

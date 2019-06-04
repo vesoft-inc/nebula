@@ -6,6 +6,8 @@
 
 #include "storage/StorageHttpHandler.h"
 #include "webservice/Common.h"
+#include "process/ProcessUtils.h"
+#include "fs/FileUtils.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
@@ -26,8 +28,21 @@ void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcep
         return;
     }
 
-    if (headers->getQueryParamPtr("returnjson") != nullptr) {
+    if (headers->hasQueryParam("returnjson")) {
         returnJson_ = true;
+    }
+
+    if (headers->hasQueryParam("method")) {
+        method = headers->getQueryParam("method");
+        if (method == "download") {
+            if (!headers->hasQueryParam("url") ||
+                !headers->hasQueryParam("path")) {
+                err_ = HttpCode::E_ILLEGAL_ARGUMENT;
+                return;
+            }
+            hdfsUrl = headers->getQueryParam("url");
+            localPath = headers->getQueryParam("path");
+        }
     }
 
     auto* statusStr = headers->getQueryParamPtr("daemon");
@@ -49,22 +64,50 @@ void StorageHttpHandler::onEOM() noexcept {
                 .status(405, "Method Not Allowed")
                 .sendWithEOM();
             return;
+        case HttpCode::E_ILLEGAL_ARGUMENT:
+            ResponseBuilder(downstream_)
+                .status(400, "Illegal Argument")
+                .sendWithEOM();
         default:
             break;
     }
 
-    // read storage daemon status
-    folly::dynamic vals = getStatus();
-    if (returnJson_) {
-        ResponseBuilder(downstream_)
-            .status(200, "OK")
-            .body(folly::toJson(vals))
-            .sendWithEOM();
+    if (method == "status") {
+        folly::dynamic vals = getStatus();
+        if (returnJson_) {
+            ResponseBuilder(downstream_)
+                .status(200, "OK")
+                .body(folly::toJson(vals))
+                .sendWithEOM();
+        } else {
+            ResponseBuilder(downstream_)
+                .status(200, "OK")
+                .body(toStr(vals))
+                .sendWithEOM();
+        }
+    } else if (method == "download") {
+        if (auto hadoopHome = std::getenv("HADOOP_HOME")) {
+            LOG(INFO) << "Hadoop Path : " << hadoopHome;
+            std::vector<std::string> urls;
+            if (downloadSSTFiles(urls, localPath)) {
+                ResponseBuilder(downstream_)
+                    .status(200, "SSTFile download successfully")
+                    .body("SSTFile download successfully")
+                    .sendWithEOM();
+            } else {
+                ResponseBuilder(downstream_)
+                    .status(404, "SSTFile download failed")
+                    .body("SSTFile download failed")
+                    .sendWithEOM();
+            }
+        } else {
+            ResponseBuilder(downstream_)
+                .status(404, "HADOOP_HOME not exist")
+                .body("HADOOP_HOME not exist")
+                .sendWithEOM();
+        }
     } else {
-        ResponseBuilder(downstream_)
-            .status(200, "OK")
-            .body(toStr(vals))
-            .sendWithEOM();
+        LOG(ERROR) << "";
     }
 }
 
@@ -137,6 +180,35 @@ std::string StorageHttpHandler::toStr(folly::dynamic& vals) const {
            << "\n";
     }
     return ss.str();
+}
+
+bool StorageHttpHandler::downloadSSTFiles(const std::vector<std::string>& urls,
+                                          const std::string& path) {
+    if (fs::FileUtils::fileType(path.c_str()) == fs::FileType::NOTEXIST) {
+        if (fs::FileUtils::makeDir(path)) {
+            LOG(INFO) << "Create directory successfully " << path;
+        } else {
+            LOG(ERROR) << "Create directory failed " << path;
+        }
+    }
+
+    for (auto url : urls) {
+        auto command = folly::stringPrintf("bin/hdfs dfs -copyToLocal %s %s",
+                                           url.c_str(), path.c_str());
+        LOG(INFO) << "Download SST Files " << command;
+        auto result = ProcessUtils::runCommand(command.c_str());
+        if (!result.ok()) {
+            LOG(ERROR) << "Failed to download SST Files: " << result.status();
+            return false;
+        }
+    }
+    return true;
+}
+
+bool StorageHttpHandler::ingestSSTFiles(const std::string& path,
+                                        GraphSpaceID spaceID) {
+    UNUSED(path); UNUSED(spaceID);
+    return false;
 }
 
 }  // namespace storage

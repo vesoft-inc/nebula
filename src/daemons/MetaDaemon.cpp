@@ -8,6 +8,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/MetaServiceHandler.h"
 #include "meta/MetaHttpHandler.h"
+#include "meta/client/MetaClient.h"
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
@@ -68,16 +69,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    LOG(INFO) << "Starting Meta HTTP Service";
-    nebula::WebService::registerHandler("/status", [] {
-        return new nebula::meta::MetaHttpHandler();
-    });
-    status = nebula::WebService::start();
-    if (!status.ok()) {
-        LOG(ERROR) << "Failed to start web service: " << status;
-        return EXIT_FAILURE;
-    }
-
     auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
     if (!result.ok()) {
         LOG(ERROR) << "Get local ip failed! status:" << result.status();
@@ -89,6 +80,24 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     auto& localHost = hostAddrRet.value();
+
+    LOG(INFO) << "Starting Meta HTTP Service";
+    nebula::WebService::registerHandler("/meta", [localHost] {
+        auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+        auto client = std::make_shared<nebula::meta::MetaClient>(threadPool,
+                      std::vector<nebula::HostAddr>{localHost});
+        auto listener = std::make_unique<nebula::meta::DefaultListener>();
+        client->registerListener(listener.get());
+        client->init();
+        auto handler =  new nebula::meta::MetaHttpHandler();
+        handler->init(client.get());
+        return handler;
+    });
+    status = nebula::WebService::start();
+    if (!status.ok()) {
+        LOG(ERROR) << "Failed to start web service: " << status;
+        return EXIT_FAILURE;
+    }
 
     auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_peers);
     if (!peersRet.ok()) {

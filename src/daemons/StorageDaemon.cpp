@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
     schemaMan->init(metaClient.get());
 
     LOG(INFO) << "Starting Storage HTTP Service";
-    nebula::WebService::registerHandler("/status", [] {
+    nebula::WebService::registerHandler("/storage", [] {
         return new nebula::storage::StorageHttpHandler();
     });
 
