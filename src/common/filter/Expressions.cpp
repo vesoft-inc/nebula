@@ -140,6 +140,7 @@ std::string InputPropertyExpression::toString() const {
     buf.reserve(64);
     buf += "$-";
     if (prop_ != nullptr) {
+        buf += ".";
         buf += *prop_;
     }
     return buf;
