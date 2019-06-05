@@ -96,10 +96,11 @@ int main(int argc, char** argv) {
 
 
 /*
+Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz*
+
 -O2
-[heng.chen@hp-server nebula]$ src/common/base/test/_build/range_vs_transform__bm
 ============================================================================
-/data/heng/workspace/nebula/src/common/base/test/RangeVsTransformBenchmark.cpprelative  time/iter  iters/s
+RangeVsTransformBenchmark.cpprelative                     time/iter  iters/s
 ============================================================================
 Test1_RangeTestStr                                          80.60us   12.41K
 Test1_TransformStr                               100.47%    80.22us   12.47K
@@ -112,9 +113,8 @@ Test3_ForEachInt                                 100.63%   380.75ns    2.63M
 ============================================================================
 
 -O3
-[heng.chen@hp-server nebula]$ src/common/base/test/_build/range_vs_transform__bm
 ============================================================================
-/data/heng/workspace/nebula/src/common/base/test/RangeVsTransformBenchmark.cpprelative  time/iter  iters/s
+RangeVsTransformBenchmark.cpprelative                     time/iter  iters/s
 ============================================================================
 Test1_RangeTestStr                                          84.19us   11.88K
 Test1_TransformStr                               100.01%    84.18us   11.88K
