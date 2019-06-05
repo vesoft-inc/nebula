@@ -30,8 +30,6 @@ project("Nebula Graph" C CXX)
 
 set(CMAKE_SKIP_RPATH TRUE)
 
-set(CMAKE_VERBOSE_MAKEFILE TRUE)
-
 option(SKIP_JAVA_CLIENT "Whether to skip building the java client" OFF)
 option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
 option(ENABLE_NATIVE "Whether to build native client" OFF)
@@ -71,6 +69,20 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "_build")
 # Set the project home dir
 set(NEBULA_HOME ${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(-DNEBULA_HOME=${NEBULA_HOME})
+
+find_package(Git)
+if (GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+    execute_process(
+        COMMAND
+        ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_SOURCE_DIR} rev-parse --short HEAD
+        OUTPUT_VARIABLE GIT_INFO_SHA
+    )
+endif()
+
+if (GIT_INFO_SHA)
+    string(REGEX REPLACE "[^0-9a-f]+" "" GIT_INFO_SHA "${GIT_INFO_SHA}")
+    add_definitions(-DGIT_INFO_SHA=${GIT_INFO_SHA})
+endif()
 
 # To include customized FindXXX.cmake modules
 set(CMAKE_MODULE_PATH "${NEBULA_HOME}/cmake" ${CMAKE_MODULE_PATH})
