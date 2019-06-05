@@ -1,7 +1,6 @@
 add_library(
     storage_service_handler OBJECT
     StorageServiceHandler.cpp
-    StorageHttpHandler.cpp
     AddVerticesProcessor.cpp
     AddEdgesProcessor.cpp
     QueryBoundProcessor.cpp
@@ -16,10 +15,13 @@ add_dependencies(
     kvstore_obj
     dataman_obj
     thread_obj
-    ws_obj
     stats_obj
 )
 
+add_library(
+    storage_http_handler OBJECT
+    StorageHttpHandler.cpp
+)
 
 add_library(
     storage_client OBJECT
@@ -31,6 +33,5 @@ add_dependencies(
     storage_thrift_obj
     dataman_obj
 )
-
 
 add_subdirectory(test)

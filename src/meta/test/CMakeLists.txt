@@ -36,8 +36,6 @@ add_executable(
 )
 nebula_link_libraries(
     processor_test
-    proxygenhttpserver
-    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
@@ -63,8 +61,6 @@ add_executable(
 )
 nebula_link_libraries(
     hb_processor_test
-    proxygenhttpserver
-    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
@@ -91,8 +87,6 @@ add_executable(
 )
 nebula_link_libraries(
     meta_client_test
-    proxygenhttpserver
-    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
@@ -121,6 +115,7 @@ nebula_add_test(active_hosts_man_test)
 add_executable(
     meta_http_test
     MetaHttpHandlerTest.cpp
+    $<TARGET_OBJECTS:meta_http_handler>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
