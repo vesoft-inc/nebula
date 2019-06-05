@@ -83,6 +83,28 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_with_default_options";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE SPACE space_with_default_options";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int>> expected{
+            {2, "space_with_default_options", 1024, 1},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP SPACE space_with_default_options";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -376,20 +398,6 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
         ASSERT_EQ(0, (*(resp.get_rows())).size());
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE SPACE space_with_default_options";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    sleep(FLAGS_load_data_interval_secs + 1);
-    {
-        // TODO To verify the space options are applied correctly.
-        cpp2::ExecutionResponse resp;
-        std::string query = "USE space_with_default_options";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
 }
 

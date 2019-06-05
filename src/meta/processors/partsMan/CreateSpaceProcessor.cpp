@@ -15,7 +15,7 @@ namespace meta {
 
 void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-    auto& properties = req.get_properties();
+    auto properties = req.get_properties();
     auto spaceRet = getSpaceId(properties.get_space_name());
     if (spaceRet.ok()) {
         LOG(ERROR) << "Create Space Failed : Space " << properties.get_space_name()
@@ -40,9 +40,13 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     auto replicaFactor = properties.get_replica_factor();
     if (partitionNum == 0) {
         partitionNum = FLAGS_default_parts_num;
+        // Set the default value back to the struct, which will be written to storage
+        properties.set_partition_num(partitionNum);
     }
     if (replicaFactor == 0) {
         replicaFactor = FLAGS_default_replica_factor;
+        // Set the default value back to the struct, which will be written to storage
+        properties.set_replica_factor(replicaFactor);
     }
     VLOG(3) << "Create space " << spaceName << ", id " << spaceId;
     if ((int32_t)hosts.size() < replicaFactor) {
