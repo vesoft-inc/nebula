@@ -65,6 +65,8 @@ add_executable(
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:adHocSchema_obj>
 )
 
 nebula_link_libraries(
@@ -103,6 +105,8 @@ add_executable(
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:adHocSchema_obj>
 )
 nebula_link_libraries(
     go_test
@@ -121,6 +125,7 @@ add_executable(
     TestBase.cpp
     GraphHttpHandlerTest.cpp
     $<TARGET_OBJECTS:graph_obj>
+    $<TARGET_OBJECTS:graph_http_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
@@ -144,6 +149,8 @@ add_executable(
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:storage_service_handler>
+    $<TARGET_OBJECTS:adHocSchema_obj>
 )
 nebula_link_libraries(
     graph_http_test

@@ -20,21 +20,31 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 
 
 Status InsertEdgeExecutor::prepare() {
-    auto status = checkIfGraphSpaceChosen();
-    if (!status.ok()) {
-        return status;
-    }
+    Status status;
+    do {
+        status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            break;
+        }
 
-    auto spaceId = ectx()->rctx()->session()->space();
-    overwritable_ = sentence_->overwritable();
-    edgeType_ = ectx()->schemaManager()->toEdgeType(spaceId, *sentence_->edge());
-    properties_ = sentence_->properties();
-    rows_ = sentence_->rows();
-    schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType_);
-    if (schema_ == nullptr) {
-        return Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
-    }
-    return Status::OK();
+        auto spaceId = ectx()->rctx()->session()->space();
+        overwritable_ = sentence_->overwritable();
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *sentence_->edge());
+        if (!edgeStatus.ok()) {
+            status = edgeStatus.status();
+            break;
+        }
+        edgeType_ = edgeStatus.value();
+        properties_ = sentence_->properties();
+        rows_ = sentence_->rows();
+        schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType_);
+        if (schema_ == nullptr) {
+            status = Status::Error("No schema found for '%s'", sentence_->edge()->c_str());
+            break;
+        }
+    } while (false);
+
+    return status;
 }
 
 

@@ -2,7 +2,6 @@ add_library(
     graph_obj OBJECT
     GraphFlags.cpp
     GraphService.cpp
-    GraphHttpHandler.cpp
     ClientSession.cpp
     SessionManager.cpp
     ExecutionEngine.cpp
@@ -40,12 +39,15 @@ add_dependencies(
     base_obj
     parser_obj
     graph_thrift_obj
-    ws_obj
     meta_thrift_obj
     meta_client
     schema_obj
     stats_obj
 )
 
+add_library(
+    graph_http_obj OBJECT
+    GraphHttpHandler.cpp
+)
 
 add_subdirectory(test)

@@ -49,7 +49,7 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
-        // test nonexistent space
+        // Test space not exist
         cpp2::ExecutionResponse resp;
         std::string query = "USE not_exist_space";
         auto code = client->execute(query, resp);
@@ -72,7 +72,16 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESC SPACE default_space";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int>> expected{
+            {1, "default_space", 9, 1},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE default_space";
@@ -81,7 +90,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG person(name string, email_addr string, "
+        std::string query = "CREATE TAG person(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
         sleep(FLAGS_load_data_interval_secs + 1);
@@ -95,7 +104,45 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 2>> expected{
             {"name", "string"},
-            {"email_addr", "string"},
+            {"email", "string"},
+            {"age", "int"},
+            {"gender", "string"},
+            {"row_timestamp", "timestamp"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESC TAG person";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"name", "string"},
+            {"email", "string"},
+            {"age", "int"},
+            {"gender", "string"},
+            {"row_timestamp", "timestamp"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // Test the tag has been existed.
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG person(name string, email string, "
+                            "age int, gender string, row_timestamp timestamp)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    sleep(FLAGS_load_data_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE TAG person";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"name", "string"},
+            {"email", "string"},
             {"age", "int"},
             {"gender", "string"},
             {"row_timestamp", "timestamp"},
@@ -109,27 +156,17 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
-        // test the tag has been existed.
+        // Test exist
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG account(id int, balance double)";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG account";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"id", "int"},
-            {"balance", "double"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG account "
-                            "ADD (col1 int TTL = 200, col2 string), "
+                            "ADD (col1 int, col2 string), "
                             "CHANGE (balance string), "
                             "DROP (id)";
         auto code = client->execute(query, resp);
@@ -137,8 +174,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER TAG account "
-                            "DROP (id)";
+        std::string query = "ALTER TAG account DROP (id)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
@@ -155,7 +191,7 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
-        // test tag not exist
+        // Test tag not exist
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG not_exist";
         auto code = client->execute(query, resp);
@@ -168,7 +204,7 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
-        // test the edge has been existed.
+        // Test the edge has been existed.
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE buy(id int, time string)";
         auto code = client->execute(query, resp);
@@ -186,11 +222,21 @@ TEST_F(SchemaTest, metaCommunication) {
         EXPECT_TRUE(verifyResult(resp, expected));
     }
     {
-        // test edge not exist
+        // Test edge not exist
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE not_exist";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESC EDGE buy";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"id", "int"},
+            {"time", "string"},
+        };
+        EXPECT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
@@ -225,7 +271,7 @@ TEST_F(SchemaTest, metaCommunication) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE education "
-                            "ADD (col1 int TTL = 200, col2 string), "
+                            "ADD (col1 int, col2 string), "
                             "CHANGE (school int), "
                             "DROP (id, time)";
         auto code = client->execute(query, resp);
@@ -233,8 +279,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER EDGE education "
-                            "DROP (id, time)";
+        std::string query = "ALTER EDGE education DROP (id, time)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
@@ -263,7 +308,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // test different tag and edge in different space
+    // Test different tag and edge in different space
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG animal(name string, kind string)";
@@ -303,7 +348,7 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DROP TAG person ";
+        std::string query = "DROP TAG person";
         auto code = client->execute(query, resp);
         sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

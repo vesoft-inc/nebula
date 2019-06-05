@@ -70,6 +70,10 @@ class GraphScanner;
     nebula::WithUserOptItem                *with_user_opt_item;
     nebula::RoleTypeClause                 *role_type_clause;
     nebula::AclItemClause                  *acl_item_clause;
+    nebula::SchemaPropList                 *create_schema_prop_list;
+    nebula::SchemaPropItem                 *create_schema_prop_item;
+    nebula::SchemaPropList                 *alter_schema_prop_list;
+    nebula::SchemaPropItem                 *alter_schema_prop_item;
 }
 
 /* destructors */
@@ -79,14 +83,15 @@ class GraphScanner;
 
 /* keywords */
 %token KW_GO KW_AS KW_TO KW_OR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_TTL
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
 %token KW_EDGE KW_EDGES KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
-%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
+%token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY
+%token KW_TTL_DURATION KW_TTL_COL
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -137,8 +142,12 @@ class GraphScanner;
 %type <space_opt_item> space_opt_item
 %type <alter_schema_opt_list> alter_schema_opt_list
 %type <alter_schema_opt_item> alter_schema_opt_item
+%type <create_schema_prop_list> create_schema_prop_list
+%type <create_schema_prop_item> create_schema_prop_item
+%type <alter_schema_prop_list> alter_schema_prop_list
+%type <alter_schema_prop_item> alter_schema_prop_item
 
-%type <intval> ttl_spec port
+%type <intval> port
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -174,21 +183,21 @@ name_label
      ;
 
 unreserved_keyword
-     : KW_SPACE              { $$ = new std::string("SPACE"); }
-     | KW_HOSTS              { $$ = new std::string("HOSTS"); }
-     | KW_SPACES             { $$ = new std::string("SPACES"); }
-     | KW_FIRSTNAME          { $$ = new std::string("FIRSTNAME"); }
-     | KW_LASTNAME           { $$ = new std::string("LASTNAME"); }
-     | KW_EMAIL              { $$ = new std::string("EMAIL"); }
-     | KW_PHONE              { $$ = new std::string("PHONE"); }
-     | KW_USER               { $$ = new std::string("USER"); }
-     | KW_USERS              { $$ = new std::string("USERS"); }
-     | KW_PASSWORD           { $$ = new std::string("PASSWORD"); }
-     | KW_ROLE               { $$ = new std::string("ROLE"); }
-     | KW_ROLES              { $$ = new std::string("ROLES"); }
-     | KW_GOD                { $$ = new std::string("GOD"); }
-     | KW_ADMIN              { $$ = new std::string("ADMIN"); }
-     | KW_GUEST              { $$ = new std::string("GUEST"); }
+     : KW_SPACE              { $$ = new std::string("space"); }
+     | KW_HOSTS              { $$ = new std::string("hosts"); }
+     | KW_SPACES             { $$ = new std::string("spaces"); }
+     | KW_FIRSTNAME          { $$ = new std::string("firstname"); }
+     | KW_LASTNAME           { $$ = new std::string("lastname"); }
+     | KW_EMAIL              { $$ = new std::string("email"); }
+     | KW_PHONE              { $$ = new std::string("phone"); }
+     | KW_USER               { $$ = new std::string("user"); }
+     | KW_USERS              { $$ = new std::string("users"); }
+     | KW_PASSWORD           { $$ = new std::string("password"); }
+     | KW_ROLE               { $$ = new std::string("role"); }
+     | KW_ROLES              { $$ = new std::string("roles"); }
+     | KW_GOD                { $$ = new std::string("god"); }
+     | KW_ADMIN              { $$ = new std::string("admin"); }
+     | KW_GUEST              { $$ = new std::string("guest"); }
      ;
 
 primary_expression
@@ -512,21 +521,60 @@ use_sentence
     : KW_USE name_label { $$ = new UseSentence($2); }
     ;
 
+create_schema_prop_list
+    : %empty {
+        $$ = nullptr;
+    }
+    | create_schema_prop_item {
+        $$ = new SchemaPropList();
+        $$->addOpt($1);
+    }
+    | create_schema_prop_list COMMA create_schema_prop_item {
+        $$ = $1;
+        $$->addOpt($3);
+    }
+    ;
+
+ create_schema_prop_item
+    : KW_TTL_DURATION ASSIGN INTEGER {
+        $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
+    }
+    | KW_TTL_COL ASSIGN name_label {
+        $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
+        delete $3;
+    }
+    ;
+
 create_tag_sentence
-    : KW_CREATE KW_TAG name_label L_PAREN R_PAREN {
-        $$ = new CreateTagSentence($3, new ColumnSpecificationList());
+    : KW_CREATE KW_TAG name_label L_PAREN R_PAREN create_schema_prop_list {
+        if ($6 == nullptr) {
+            $6 = new SchemaPropList();
+        }
+        $$ = new CreateTagSentence($3, new ColumnSpecificationList(), $6);
     }
-    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list R_PAREN {
-        $$ = new CreateTagSentence($3, $5);
+    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list R_PAREN create_schema_prop_list {
+        if ($7 == nullptr) {
+            $7 = new SchemaPropList();
+        }
+        $$ = new CreateTagSentence($3, $5, $7);
     }
-    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list COMMA R_PAREN {
-        $$ = new CreateTagSentence($3, $5);
+    | KW_CREATE KW_TAG name_label L_PAREN column_spec_list COMMA R_PAREN create_schema_prop_list {
+        if ($8 == nullptr) {
+            $8 = new SchemaPropList();
+        }
+        $$ = new CreateTagSentence($3, $5, $8);
     }
     ;
 
 alter_tag_sentence
     : KW_ALTER KW_TAG name_label alter_schema_opt_list {
-        $$ = new AlterTagSentence($3, $4);
+        $$ = new AlterTagSentence($3, $4, new SchemaPropList());
+    }
+    | KW_ALTER KW_TAG name_label alter_schema_prop_list {
+        $$ = new AlterTagSentence($3, new AlterSchemaOptList(), $4);
+    }
+    | KW_ALTER KW_TAG name_label alter_schema_opt_list alter_schema_prop_list {
+        $$ = new AlterTagSentence($3, $4, $5);
     }
     ;
 
@@ -553,21 +601,57 @@ alter_schema_opt_item
     }
     ;
 
+alter_schema_prop_list
+    : alter_schema_prop_item {
+        $$ = new SchemaPropList();
+        $$->addOpt($1);
+    }
+    | alter_schema_prop_list COMMA alter_schema_prop_item {
+        $$ = $1;
+        $$->addOpt($3);
+    }
+    ;
+
+alter_schema_prop_item
+    : KW_TTL_DURATION ASSIGN INTEGER {
+        $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
+    }
+    | KW_TTL_COL ASSIGN name_label {
+        $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
+        delete $3;
+    }
+    ;
+
 create_edge_sentence
-    : KW_CREATE KW_EDGE name_label L_PAREN R_PAREN {
-        $$ = new CreateEdgeSentence($3,  new ColumnSpecificationList());
+    : KW_CREATE KW_EDGE name_label L_PAREN R_PAREN create_schema_prop_list {
+        if ($6 == nullptr) {
+            $6 = new SchemaPropList();
+        }
+        $$ = new CreateEdgeSentence($3,  new ColumnSpecificationList(), $6);
     }
-    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list R_PAREN {
-        $$ = new CreateEdgeSentence($3, $5);
+    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list R_PAREN create_schema_prop_list {
+        if ($7 == nullptr) {
+            $7 = new SchemaPropList();
+        }
+        $$ = new CreateEdgeSentence($3, $5, $7);
     }
-    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list COMMA R_PAREN {
-        $$ = new CreateEdgeSentence($3, $5);
+    | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list COMMA R_PAREN create_schema_prop_list {
+        if ($8 == nullptr) {
+            $8 = new SchemaPropList();
+        }
+        $$ = new CreateEdgeSentence($3, $5, $8);
     }
     ;
 
 alter_edge_sentence
     : KW_ALTER KW_EDGE name_label alter_schema_opt_list {
-        $$ = new AlterEdgeSentence($3, $4);
+        $$ = new AlterEdgeSentence($3, $4, new SchemaPropList());
+    }
+    | KW_ALTER KW_EDGE name_label alter_schema_prop_list {
+        $$ = new AlterEdgeSentence($3, new AlterSchemaOptList(), $4);
+    }
+    | KW_ALTER KW_EDGE name_label alter_schema_opt_list alter_schema_prop_list {
+        $$ = new AlterEdgeSentence($3, $4, $5);
     }
     ;
 
@@ -585,21 +669,22 @@ column_spec_list
 column_spec
     : name_label { $$ = new ColumnSpecification($1); }
     | name_label type_spec { $$ = new ColumnSpecification($2, $1); }
-    | name_label type_spec ttl_spec { $$ = new ColumnSpecification($2, $1, $3); }
-    ;
-
-ttl_spec
-    : KW_TTL ASSIGN INTEGER { $$ = $3; }
     ;
 
 describe_tag_sentence
     : KW_DESCRIBE KW_TAG name_label {
         $$ = new DescribeTagSentence($3);
     }
+    | KW_DESC KW_TAG name_label {
+        $$ = new DescribeTagSentence($3);
+    }
     ;
 
 describe_edge_sentence
     : KW_DESCRIBE KW_EDGE name_label {
+        $$ = new DescribeEdgeSentence($3);
+    }
+    | KW_DESC KW_EDGE name_label {
         $$ = new DescribeEdgeSentence($3);
     }
     ;
@@ -938,7 +1023,10 @@ create_space_sentence
     ;
 
 describe_space_sentence
-    : KW_DESCRIBE KW_SPACE LABEL {
+    : KW_DESCRIBE KW_SPACE name_label {
+        $$ = new DescribeSpaceSentence($3);
+    }
+    | KW_DESC KW_SPACE name_label {
         $$ = new DescribeSpaceSentence($3);
     }
     ;

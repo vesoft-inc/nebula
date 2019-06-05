@@ -7,9 +7,9 @@
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
-#include "fs/TempFile.h"
+#include "meta/test/TestUtils.h"
 
-DECLARE_string(schema_file);
+DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -28,6 +28,8 @@ protected:
 
     static void SetUpTestCase() {
         client_ = gEnv->getClient();
+        storagePort_ = gEnv->storageServerPort();
+
         ASSERT_NE(nullptr, client_);
 
         ASSERT_TRUE(prepareSchema());
@@ -36,12 +38,15 @@ protected:
     }
 
     static void TearDownTestCase() {
+        ASSERT_TRUE(removeData());
         client_.reset();
     }
 
     static AssertionResult prepareSchema();
 
     static AssertionResult prepareData();
+
+    static AssertionResult removeData();
 
     class Player final {
     public:
@@ -92,7 +97,6 @@ protected:
         std::string                             name_;
         int64_t                                 vid_{0};
         int64_t                                 age_{0};
-        int64_t                                 draftYear{0};
         std::vector<Serve>                      serves_;
         std::vector<Like>                       likes_;
     };
@@ -188,13 +192,13 @@ protected:
     };
 
 protected:
-    static std::unique_ptr<fs::TempFile>        schemaFile_;
+    static uint16_t                             storagePort_;
     static std::unique_ptr<GraphClient>         client_;
     static VertexHolder<Player>                 players_;
     static VertexHolder<Team>                   teams_;
 };
 
-std::unique_ptr<fs::TempFile> GoTest::schemaFile_;
+uint16_t GoTest::storagePort_ = 0;
 
 std::unique_ptr<GraphClient> GoTest::client_;
 
@@ -294,43 +298,66 @@ GoTest::VertexHolder<GoTest::Team> GoTest::teams_ = {
 
 // static
 AssertionResult GoTest::prepareSchema() {
-    schemaFile_ = std::make_unique<fs::TempFile>("/tmp/go_test.XXXXXX");
-    std::ofstream file(schemaFile_->path());
-    if (!file.good()) {
-        return TestError() << "Failed to open: " << schemaFile_->path();
+    {
+        cpp2::ExecutionResponse resp;
+        std::string host = folly::stringPrintf("127.0.0.1:%u", storagePort_);
+        std::string cmd = "ADD HOSTS " + host;
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+        meta::TestUtils::registerHB(network::NetworkUtils::toHosts(host).value());
     }
-    file << "{\n"
-            "     \"nba\": {\n"
-            "         \"tags\": {\n"
-            "             \"player\": [\n"
-            "                 [\n"
-            "                     \"name: string\",\n"
-            "                     \"age: integer\"\n"
-            "                 ]\n"
-            "             ],\n"
-            "             \"team\": [\n"
-            "                 [\n"
-            "                     \"name: string\"\n"
-            "                 ]\n"
-            "             ]\n"
-            "         },\n"
-            "         \"edges\": {\n"
-            "             \"serve\": [\n"
-            "                 [\n"
-            "                     \"start_year: integer\",\n"
-            "                     \"end_year: integer\"\n"
-            "                 ]\n"
-            "             ],\n"
-            "             \"like\": [\n"
-            "                 [\n"
-            "                     \"likeness: integer\"\n"
-            "                 ]\n"
-            "             ]\n"
-            "         }\n"
-            "     }\n"
-            "}\n";
-    file.close();
-    FLAGS_schema_file = schemaFile_->path();
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE SPACE nba(partition_num=1, replica_factor=1)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    sleep(FLAGS_load_data_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "USE nba";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG player(name string, age int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG team(name string)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE EDGE serve(start_year int, end_year int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE EDGE like(likeness int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    sleep(FLAGS_load_data_interval_secs + 1);
     return TestOK();
 }
 
@@ -636,11 +663,11 @@ AssertionResult GoTest::prepareData() {
         cpp2::ExecutionResponse resp;
         std::string query;
         query.reserve(1024);
-        query += "INSERT VERTEX player(name, age) VALUES";
+        query += "INSERT VERTEX player(name, age) VALUES ";
         for (auto &player : players_) {
-            query += "(";
             query += std::to_string(player.vid());
             query += ": ";
+            query += "(";
             query += "\"";
             query += player.name();
             query += "\"";
@@ -660,11 +687,11 @@ AssertionResult GoTest::prepareData() {
         cpp2::ExecutionResponse resp;
         std::string query;
         query.reserve(1024);
-        query += "INSERT VERTEX team(name) VALUES";
+        query += "INSERT VERTEX team(name) VALUES ";
         for (auto &team : teams_) {
-            query += "(";
             query += std::to_string(team.vid());
             query += ": ";
+            query += "(";
             query += "\"";
             query += team.name();
             query += "\"";
@@ -688,11 +715,11 @@ AssertionResult GoTest::prepareData() {
                 auto &team = std::get<0>(serve);
                 auto startYear = std::get<1>(serve);
                 auto endYear = std::get<2>(serve);
-                query += "(";
                 query += std::to_string(player.vid());
                 query += " -> ";
                 query += std::to_string(teams_[team].vid());
                 query += ": ";
+                query += "(";
                 query += std::to_string(startYear);
                 query += ", ";
                 query += std::to_string(endYear);
@@ -711,16 +738,16 @@ AssertionResult GoTest::prepareData() {
         cpp2::ExecutionResponse resp;
         std::string query;
         query.reserve(1024);
-        query += "INSERT EDGE like(likeness) VALUES";
+        query += "INSERT EDGE like(likeness) VALUES ";
         for (auto &player : players_) {
             for (auto &like : player.likes()) {
                 auto &other = std::get<0>(like);
                 auto likeness = std::get<1>(like);
-                query += "(";
                 query += std::to_string(player.vid());
                 query += " -> ";
                 query += std::to_string(players_[other].vid());
                 query += ": ";
+                query += "(";
                 query += std::to_string(likeness);
                 query += "),\n\t";
             }
@@ -735,8 +762,28 @@ AssertionResult GoTest::prepareData() {
     return TestOK();
 }
 
+AssertionResult GoTest::removeData() {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "DROP SPACE nba";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = folly::stringPrintf("REMOVE HOSTS 127.0.0.1:%u", storagePort_);
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
 
-TEST_F(GoTest, DISABLED_OneStepOutBound) {
+    return TestOK();
+}
+
+TEST_F(GoTest, OneStepOutBound) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve";
@@ -784,7 +831,7 @@ TEST_F(GoTest, DISABLED_OneStepOutBound) {
     }
 }
 
-
+// REVERSELY not supported yet
 TEST_F(GoTest, DISABLED_OneStepInBound) {
     {
         cpp2::ExecutionResponse resp;
@@ -802,7 +849,7 @@ TEST_F(GoTest, DISABLED_OneStepInBound) {
     }
 }
 
-
+// REVERSELY not supported yet
 TEST_F(GoTest, DISABLED_OneStepInOutBound) {
     // Ever served in the same team
     {
