@@ -88,24 +88,20 @@ int main(int argc, char** argv) {
 }
 
 /**
-do_compact = false;
+Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
 
-[heng.chen@hp-server nebula]$ src/kvstore/test/_build/multi_versions_perf_test_bm
+do_compact = false;
 ============================================================================
-/data/heng/workspace/nebula/src/kvstore/test/MultiVersionBenchmark.cpprelative  time/iter  iters/s
+MultiVersionBenchmark.cpprelative                         time/iter  iters/s
 ============================================================================
 WithVersionTest                                              5.87ms   170.41
 WithOutVersionTest                                           1.67ms   598.23
 ============================================================================
 
 
-
-
 do_compact = true
-
-[heng.chen@hp-server nebula]$ src/kvstore/test/_build/multi_versions_perf_test_bm --do_compact=true
 ============================================================================
-/data/heng/workspace/nebula/src/kvstore/test/MultiVersionBenchmark.cpprelative  time/iter  iters/s
+MultiVersionBenchmark.cpprelative                         time/iter  iters/s
 ============================================================================
 WithVersionTest                                             25.44ms    39.30
 WithOutVersionTest                                         329.21us    3.04K
