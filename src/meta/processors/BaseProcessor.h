@@ -78,7 +78,7 @@ protected:
         delete this;
     }
 
-    cpp2::ErrorCode to(const kvstore::ResultCode& code) {
+    cpp2::ErrorCode to(kvstore::ResultCode code) {
         switch (code) {
         case kvstore::ResultCode::SUCCEEDED:
             return cpp2::ErrorCode::SUCCEEDED;
