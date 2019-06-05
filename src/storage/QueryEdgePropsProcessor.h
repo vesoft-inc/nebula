@@ -37,7 +37,7 @@ private:
 
     kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
                                       std::vector<TagContext>& tagContexts,
-                                      EdgeContext& edgeContext) {
+                                      EdgeContext& edgeContext) override {
         UNUSED(partID);
         UNUSED(vId);
         UNUSED(tagContexts);
@@ -48,7 +48,7 @@ private:
 
     void onProcessed(std::vector<TagContext>& tagContexts,
                      EdgeContext& edgeContext,
-                     int32_t retNum) {
+                     int32_t retNum) override {
         UNUSED(tagContexts);
         UNUSED(edgeContext);
         UNUSED(retNum);
