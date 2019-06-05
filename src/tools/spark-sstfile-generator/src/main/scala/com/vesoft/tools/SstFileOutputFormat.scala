@@ -23,29 +23,29 @@ import scala.sys.process._
   * worker_node1
   * |
   * |-sstFileOutput
-  * |
-  * |--1
-  * |  |
-  * |  |——vertex-${FIRST_KEY1}.data
-  * |  |--edge-${FIRST_KEY}.data
-  * |
-  * |--2
-  * |
-  * |——vertex-${FIRST_KEY}.data
-  * |--edge-${FIRST_KEY}.data
+  *   |
+  *   |--1
+  *   |  |
+  *   |  |——vertex-${FIRST_KEY1}.data
+  *   |  |--edge-${FIRST_KEY}.data
+  *   |
+  *   |--2
+  *      |
+  *      |——vertex-${FIRST_KEY}.data
+  *      |--edge-${FIRST_KEY}.data
   * worker_node2
   * |
   * |-sstFileOutput
   * |
-  * |--1
-  * |  |
-  * |  |——vertex-${FIRST_KEY}.data
-  * |  |--edge-${FIRST_KEY}.data
-  * |
-  * |--2
-  * |
-  * |——vertex-${FIRST_KEY}.data
-  * |--edge-${FIRST_KEY}.data
+  *    |--1
+  *    |  |
+  *    |  |——vertex-${FIRST_KEY}.data
+  *    |  |--edge-${FIRST_KEY}.data
+  *    |
+  *    |--2
+  *       |
+  *       |——vertex-${FIRST_KEY}.data
+  *       |--edge-${FIRST_KEY}.data
   **/
 class SstFileOutputFormat extends FileOutputFormat[GraphPartitionIdAndKeyValueEncoded, PropertyValueAndTypeWritable] {
   override def getRecordWriter(job: TaskAttemptContext): RecordWriter[GraphPartitionIdAndKeyValueEncoded, PropertyValueAndTypeWritable] = {
@@ -108,7 +108,7 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
   override def write(key: GraphPartitionIdAndKeyValueEncoded, value: PropertyValueAndTypeWritable): Unit = {
     var sstFileWriter: SstFileWriter = null
 
-    //cache per partition per vertex/edge type sstfile writer
+    //cache per partition per vertex/edge type's sstfile writer
     val sstWriterOptional = sstFilesMap.get((value.vertexOrEdgeEnum, key.partitionId))
     if (sstWriterOptional.isEmpty) {
       /**
@@ -130,26 +130,30 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
       // TODO: rolling to another file when file size > some THRESHOLD, or some other criteria
       // Each partition can generated multiple sst files, among which keys will be ordered, and keys could overlap between different sst files.
       // All these sst files will be  `hdfs -copyFromLocal` to the same HDFS dir(and consumed by subsequent nebula `load` command), so we need different suffixes to distinguish between them.
-      val hdfsDirectory = s"${File.separator}${key.partitionId}${File.separator}"
+      val hdfsSubDirectory = s"${File.separator}${key.partitionId}${File.separator}"
 
-      var localSstFile = s"${localSstFileOutput}${hdfsDirectory}${value.vertexOrEdgeEnum}-${key.`type`}-${DatatypeConverter.printHexBinary(key.valueEncoded.getBytes)}.data".toLowerCase
-      val path = new Path(localSstFile)
-      if (!localFileSystem.exists(path)) {
-        localFileSystem.create(path)
+      val localDir = s"${localSstFileOutput}${hdfsSubDirectory}"
+      val sstFileName = s"${value.vertexOrEdgeEnum}-${key.`type`}-${DatatypeConverter.printHexBinary(key.valueEncoded.getBytes)}.data".toLowerCase
+
+      val localDirPath = new Path(localDir)
+      if (!localFileSystem.exists(localDirPath)) {
+        localFileSystem.mkdirs(localDirPath)
       }
       else {
-        if (localFileSystem.isDirectory(path)) {
-          localFileSystem.delete(path, true)
-          localFileSystem.create(path)
+        if (localFileSystem.isFile(localDirPath)) {
+          localFileSystem.delete(localDirPath, true)
         }
       }
+
+      var localSstFile = s"${localDir}${sstFileName}"
+      localFileSystem.create(new Path(localSstFile))
 
       if (localSstFile.startsWith("file:///")) {
         localSstFile = localSstFile.substring(7)
       }
 
       sstFileWriter.open(localSstFile)
-      sstFilesMap += (value.vertexOrEdgeEnum, key.partitionId) -> (sstFileWriter, localSstFile, hdfsDirectory)
+      sstFilesMap += (value.vertexOrEdgeEnum, key.partitionId) -> (sstFileWriter, localSstFile, hdfsSubDirectory)
     } else {
       sstFileWriter = sstWriterOptional.get._1
     }
@@ -159,6 +163,14 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
   }
 
   override def close(context: TaskAttemptContext): Unit = {
+    if (env != null) {
+      env.close()
+    }
+
+    if (options != null) {
+      options.close()
+    }
+
     sstFilesMap.values.foreach { case (sstFile, localSstFile, hdfsDirectory) =>
       try {
         sstFile.finish()
@@ -173,8 +185,8 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
       }
 
       try {
-        // There could be multiple container on a host, parent dir are shared between multiple containers, so should not delete parent dir but
-        // delete individual file
+        // There could be multiple containers on a single host, parent dir are shared between multiple containers,
+        // so should not delete parent dir but delete individual file
         localFileSystem.delete(new Path(localSstFile), true)
       }
       catch {
@@ -182,14 +194,6 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
           log.error(s"Error when deleting local dir:${localSstFileOutput}", e)
         }
       }
-    }
-
-    if (env != null) {
-      env.close()
-    }
-
-    if (options != null) {
-      options.close()
     }
   }
 
