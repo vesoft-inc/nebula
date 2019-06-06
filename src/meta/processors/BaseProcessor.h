@@ -89,7 +89,7 @@ protected:
         }
     }
 
-    cpp2::ErrorCode to(Status status) {
+    cpp2::ErrorCode to(const Status& status) {
         switch (status.code()) {
         case Status::kOk:
             return cpp2::ErrorCode::SUCCEEDED;
