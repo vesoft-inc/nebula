@@ -316,15 +316,27 @@ TEST(MetaClientTest, TagTest) {
         version = tags[0].get_version();
     }
     {
-        auto result = client->getTagSchema(spaceId, id, version).get();
-        ASSERT_TRUE(result.ok());
+        auto result1 = client->getTagSchema(spaceId, "test_tag", version).get();
+        ASSERT_TRUE(result1.ok());
+        auto result2 = client->getTagSchema(spaceId, "test_tag").get();
+        ASSERT_TRUE(result2.ok());
+        ASSERT_EQ(result1.value().columns.size(), result2.value().columns.size());
+        for (auto i = 0u; i < result1.value().columns.size(); i++) {
+            ASSERT_EQ(result1.value().columns[i].name, result2.value().columns[i].name);
+            ASSERT_EQ(result1.value().columns[i].type, result2.value().columns[i].type);
+        }
+    }
+    // Get wrong version
+    {
+        auto result = client->getTagSchema(spaceId, "test_tag", 100).get();
+        ASSERT_FALSE(result.ok());
     }
     {
         auto result = client->dropTagSchema(spaceId, "test_tag").get();
         ASSERT_TRUE(result.ok());
     }
     {
-        auto result = client->getTagSchema(spaceId, id, version).get();
+        auto result = client->getTagSchema(spaceId, "test_tag", version).get();
         ASSERT_FALSE(result.ok());
     }
 }
