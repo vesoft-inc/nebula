@@ -51,6 +51,10 @@ add_library(
     meta_http_handler OBJECT
     MetaHttpHandler.cpp
 )
+add_dependencies(
+    meta_http_handler
+    base_obj
+)
 
 add_library(
     meta_client OBJECT
