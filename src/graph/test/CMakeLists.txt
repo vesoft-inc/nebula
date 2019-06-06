@@ -88,7 +88,7 @@ add_executable(
     TestEnv.cpp
     TestBase.cpp
     GraphHttpHandlerTest.cpp
-    $<TARGET_OBJECTS:graph_http_obj>
+    $<TARGET_OBJECTS:graph_http_handler>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:stats_obj>
