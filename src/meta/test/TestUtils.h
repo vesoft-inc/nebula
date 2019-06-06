@@ -29,8 +29,12 @@ using nebula::cpp2::SupportedType;
 
 class TestUtils {
 public:
-    static kvstore::KVStore* initKV(const char* rootPath) {
+    static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
+        auto workers = std::make_shared<thread::GenericThreadPool>();
+        workers->start(4);
+        auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto partMan = std::make_unique<kvstore::MemPartManager>();
+
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0}
         auto& partsMap = partMan->partsMap();
@@ -40,13 +44,16 @@ public:
         paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
 
         kvstore::KVOptions options;
-        options.local_ = HostAddr(0, 0);
         options.dataPaths_ = std::move(paths);
         options.partMan_ = std::move(partMan);
+        HostAddr localhost = HostAddr(0, 0);
 
-        kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
-                                     kvstore::KVStore::instance(std::move(options)));
-        return kv;
+        auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
+                                                            ioPool,
+                                                            workers,
+                                                            localhost);
+        sleep(1);
+        return std::move(store);
     }
 
     static nebula::cpp2::ColumnDef columnDef(int32_t index, nebula::cpp2::SupportedType st) {
@@ -107,10 +114,9 @@ public:
         std::vector<nebula::kvstore::KV> data;
         data.emplace_back(MetaServiceUtils::spaceKey(id), "test_space");
         kv->asyncMultiPut(0, 0, std::move(data),
-                          [&] (kvstore::ResultCode code, HostAddr leader) {
-            ret = (code == kvstore::ResultCode::SUCCEEDED);
-            UNUSED(leader);
-        });
+                          [&] (kvstore::ResultCode code) {
+                              ret = (code == kvstore::ResultCode::SUCCEEDED);
+                          });
         return ret;
     }
 
@@ -134,10 +140,9 @@ public:
         }
 
         kv->asyncMultiPut(0, 0, std::move(tags),
-                                [] (kvstore::ResultCode code, HostAddr leader) {
-            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
-            UNUSED(leader);
-        });
+                          [] (kvstore::ResultCode code) {
+                                ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+                          });
     }
 
     static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum, SchemaVer version = 0) {
@@ -160,21 +165,23 @@ public:
                                MetaServiceUtils::schemaEdgeVal(edgeName, srcsch));
         }
 
-        kv->asyncMultiPut(0, 0, std::move(edges),
-                                [] (kvstore::ResultCode code, HostAddr leader) {
+        kv->asyncMultiPut(0, 0, std::move(edges), [] (kvstore::ResultCode code) {
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
-            UNUSED(leader);
         });
     }
 
     static std::unique_ptr<test::ServerContext> mockMetaServer(uint16_t port,
                                                                const char* dataPath) {
+        LOG(INFO) << "Initializing KVStore at \"" << dataPath << "\"";
+
         auto sc = std::make_unique<test::ServerContext>();
-        sc->KVStore_ = std::unique_ptr<kvstore::KVStore>(TestUtils::initKV(dataPath));
-        auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->KVStore_.get());
-        test::mockCommon(sc.get(), "meta", port, handler);
-        LOG(INFO) << "Starting the Meta Daemon on port " << sc->port_
-                  << ", path " << dataPath;
+        sc->kvStore_ = TestUtils::initKV(dataPath);
+
+        auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get());
+        sc->mockCommon("meta", port, handler);
+        LOG(INFO) << "The Meta Daemon started on port " << sc->port_
+                  << ", data path is at \"" << dataPath << "\"";
+
         return sc;
     }
 };

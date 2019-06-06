@@ -13,10 +13,6 @@
 namespace nebula {
 namespace kvstore {
 
-TEST(PartTest, SimpleTest) {
-    LOG(INFO) << "Simple test for shard class...";
-}
-
 TEST(PartTest, RocksTest) {
     fs::TempDir dataPath("/tmp/rocksdb_test.XXXXXX");
     rocksdb::Options options;
@@ -28,7 +24,8 @@ TEST(PartTest, RocksTest) {
     rocksdb::WriteBatch updates;
     std::vector<KV> kvs;
     for (uint32_t i = 0; i < 1000; i++) {
-        kvs.emplace_back(folly::stringPrintf("key%d", i), folly::stringPrintf("val%d", i));
+        kvs.emplace_back(folly::stringPrintf("key%d", i),
+                         folly::stringPrintf("val%d", i));
     }
     for (auto& kv : kvs) {
         updates.Put(rocksdb::Slice(kv.first), rocksdb::Slice(kv.second));
@@ -51,6 +48,7 @@ TEST(PartTest, RocksTest) {
 
 }  // namespace kvstore
 }  // namespace nebula
+
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

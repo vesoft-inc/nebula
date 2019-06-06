@@ -83,6 +83,7 @@ StatusOr<std::unordered_map<std::string, std::string>> NetworkUtils::listDeviceA
     return dev2ipv4s;
 }
 
+
 bool NetworkUtils::getDynamicPortRange(uint16_t& low, uint16_t& high) {
     FILE* pipe = popen("cat /proc/sys/net/ipv4/ip_local_port_range", "r");
     if (!pipe) {
