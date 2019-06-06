@@ -22,6 +22,10 @@ add_library(
     storage_http_handler OBJECT
     StorageHttpHandler.cpp
 )
+add_dependencies(
+    storage_http_handler
+    base_obj
+)
 
 add_library(
     storage_client OBJECT
