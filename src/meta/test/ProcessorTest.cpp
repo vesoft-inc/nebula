@@ -44,8 +44,8 @@ using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(ProcessorTest, AddHostsTest) {
     fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
-    FLAGS_expired_hosts_check_interval_sec = 1;
-    FLAGS_expired_threshold_sec = 1;
+    FLAGS_expired_hosts_check_interval_sec = 2;
+    FLAGS_expired_threshold_sec = 2;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
@@ -171,7 +171,7 @@ TEST(ProcessorTest, ListHostsTest) {
     }
     {
         // host info expired
-        sleep(3);
+        sleep(FLAGS_expired_hosts_check_interval_sec + FLAGS_expired_threshold_sec);
         cpp2::ListHostsReq req;
         auto* processor = ListHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -184,6 +184,7 @@ TEST(ProcessorTest, ListHostsTest) {
             ASSERT_EQ(cpp2::HostStatus::OFFLINE, resp.hosts[i].status);
         }
     }
+    ActiveHostsMan::instance()->stopClean();
 }
 
 TEST(ProcessorTest, CreateSpaceTest) {

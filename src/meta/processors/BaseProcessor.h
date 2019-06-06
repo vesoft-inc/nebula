@@ -23,8 +23,8 @@ namespace meta {
 
 using nebula::network::NetworkUtils;
 
-const PartitionID kDefaultPartId_ = 0;
-const GraphSpaceID kDefaultSpaceId_ = 0;
+const PartitionID kDefaultPartId = 0;
+const GraphSpaceID kDefaultSpaceId = 0;
 
 class LockUtils {
 public:

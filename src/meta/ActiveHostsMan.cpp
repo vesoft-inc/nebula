@@ -47,9 +47,8 @@ void ActiveHostsMan::updateHostInfo(const HostAddr& hostAddr, const HostInfo& in
     }
     if (kvstore_ != nullptr && !data.empty()) {
         folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-        kvstore_->asyncMultiPut(kDefaultSpaceId_, kDefaultPartId_, std::move(data),
-                                [] (kvstore::ResultCode code, HostAddr leader) {
-            UNUSED(leader);
+        kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
+                                [] (kvstore::ResultCode code) {
             CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
         });
     }
@@ -73,7 +72,7 @@ void ActiveHostsMan::loadHostMap() {
 
     const auto& prefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return;
     }
@@ -112,10 +111,9 @@ void ActiveHostsMan::cleanExpiredHosts() {
     if (!data.empty() && kvstore_ != nullptr) {
         folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
         LOG(INFO) << "set " << data.size() << " expired hosts to offline in meta rocksdb";
-        kvstore_->asyncMultiPut(kDefaultSpaceId_, kDefaultPartId_, std::move(data),
-                                [] (kvstore::ResultCode code, HostAddr leader) {
+        kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
+                                [] (kvstore::ResultCode code) {
             CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
-            UNUSED(leader);
         });
     }
 }

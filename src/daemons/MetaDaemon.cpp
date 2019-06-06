@@ -130,8 +130,7 @@ int main(int argc, char *argv[]) {
                                                        localhost);
 
     auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
-    auto activeHostsMan = nebula::meta::ActiveHostsMan::instance(kvstore.get());
-    activeHostsMan->loadHostMap();
+    nebula::meta::ActiveHostsMan::instance(kvstore.get());
 
     nebula::operator<<(operator<<(LOG(INFO), "The meta deamon start on "), localhost);
     try {

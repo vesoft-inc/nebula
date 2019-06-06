@@ -11,7 +11,7 @@
 #include <gtest/gtest_prod.h>
 #include "thread/GenericWorker.h"
 #include "time/TimeUtils.h"
-#include "kvstore/KVStore.h"
+#include "kvstore/NebulaStore.h"
 
 DECLARE_int32(expired_hosts_check_interval_sec);
 DECLARE_int32(expired_threshold_sec);
@@ -37,12 +37,15 @@ struct HostInfo {
 
 class ActiveHostsMan final {
     FRIEND_TEST(ActiveHostsManTest, NormalTest);
+    FRIEND_TEST(ProcessorTest, ListHostsTest);
 
 public:
     static ActiveHostsMan* instance(kvstore::KVStore* kv = nullptr) {
         static auto activeHostsMan = std::unique_ptr<ActiveHostsMan>(
                 new ActiveHostsMan(FLAGS_expired_hosts_check_interval_sec,
                                    FLAGS_expired_threshold_sec, kv));
+        static std::once_flag initFlag;
+        std::call_once(initFlag, &ActiveHostsMan::loadHostMap, activeHostsMan.get());
         return activeHostsMan.get();
     }
 
@@ -50,8 +53,6 @@ public:
         checkThread_.stop();
         checkThread_.wait();
     }
-
-    void loadHostMap();
 
     void updateHostInfo(const HostAddr& hostAddr, const HostInfo& info);
 
@@ -67,6 +68,13 @@ protected:
 
 private:
     ActiveHostsMan(int32_t intervalSeconds, int32_t expiredSeconds, kvstore::KVStore* kv = nullptr);
+
+    void loadHostMap();
+
+    void stopClean() {
+        checkThread_.stop();
+        checkThread_.wait();
+    }
 
     folly::RWSpinLock lock_;
     std::unordered_map<HostAddr, HostInfo> hostsMap_;
