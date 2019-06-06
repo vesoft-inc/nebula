@@ -38,6 +38,7 @@ static void signalHandler(int sig);
 static Status setupSignalHandler();
 
 int main(int argc, char *argv[]) {
+    google::SetVersionString(nebula::versionString());
     folly::init(&argc, &argv, true);
     if (FLAGS_data_path.empty()) {
         LOG(ERROR) << "Meta Data Path should not empty";

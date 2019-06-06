@@ -83,7 +83,7 @@ public:
         : testName_(testName) {}
     ~RaftexTestFixture() = default;
 
-    void SetUp() {
+    void SetUp() override {
         walRoot_ = std::make_unique<fs::TempDir>(
             folly::stringPrintf("/tmp/%s.XXXXXX", testName_.c_str()).c_str());
         setupRaft(3, *walRoot_, workers_, wals_, allHosts_, services_, copies_, leader_);
@@ -92,7 +92,7 @@ public:
         checkLeadership(copies_, leader_);
     }
 
-    void TearDown() {
+    void TearDown() override {
         finishRaft(services_, copies_, workers_, leader_);
         walRoot_.reset();
     }
