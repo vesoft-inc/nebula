@@ -34,6 +34,7 @@ add_library(
     ShowExecutor.cpp
     YieldExecutor.cpp
     UserExecutor.cpp
+    UserAccessControl.cpp
 )
 add_dependencies(
     graph_obj

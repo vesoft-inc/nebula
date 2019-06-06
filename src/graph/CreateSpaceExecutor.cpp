@@ -33,6 +33,7 @@ Status CreateSpaceExecutor::prepare() {
     if (replicaFactor_ <= 0) {
         return Status::Error("Replica_factor value should be greater than zero");
     }
+    ACL_CHECK();
     return Status::OK();
 }
 

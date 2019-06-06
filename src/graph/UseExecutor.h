@@ -27,6 +27,7 @@ public:
 
 private:
     UseSentence                                *sentence_{nullptr};
+    GraphSpaceID                                spaceId_;
 };
 
 }   // namespace graph

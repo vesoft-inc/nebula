@@ -18,7 +18,12 @@ CreateTagExecutor::CreateTagExecutor(Sentence *sentence,
 
 
 Status CreateTagExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+    ACL_CHECK();
+    return Status::OK();
 }
 
 

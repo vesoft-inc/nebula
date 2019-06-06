@@ -60,7 +60,8 @@ Status GoExecutor::prepare() {
         return status;
     }
 
-    return status;
+    ACL_CHECK();
+    return Status::OK();
 }
 
 

@@ -25,6 +25,6 @@ DECLARE_string(stdout_log_file);
 DECLARE_string(stderr_log_file);
 DECLARE_bool(daemonize);
 DECLARE_string(meta_server_addrs);
-
+DECLARE_bool(security_authorization_enable);
 
 #endif  // GRAPH_GRAPHFLAGS_H_

@@ -21,10 +21,15 @@ ShowExecutor::ShowExecutor(Sentence *sentence,
 Status ShowExecutor::prepare() {
     if (sentence_->showType() == ShowSentence::ShowType::kShowTags ||
         sentence_->showType() == ShowSentence::ShowType::kShowEdges) {
-        return checkIfGraphSpaceChosen();
+        auto status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            return status;
+        }
+        ACL_CHECK();
     } else {
-        return Status::OK();
+        ACL_CHECK_IS_GOD();
     }
+    return Status::OK();
 }
 
 

@@ -57,6 +57,7 @@ Status InsertVertexExecutor::prepare() {
             status = Status::Error("No schema found for '%s'", tagName->c_str());
             break;
         }
+        ACL_CHECK_SPACE(spaceId);
     } while (false);
 
     return status;

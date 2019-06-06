@@ -25,6 +25,8 @@ Status AssignmentExecutor::prepare() {
         return status;
     }
 
+    ACL_CHECK();
+
     var_ = sentence_->var();
     executor_ = TraverseExecutor::makeTraverseExecutor(sentence_->sentence(), ectx());
     status = executor_->prepare();

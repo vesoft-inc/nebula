@@ -95,6 +95,7 @@ void MetaClient::loadDataThreadFunc() {
     decltype(spaceEdgeIndexByName_) spaceEdgeIndexByName;
     decltype(spaceNewestTagVerMap_) spaceNewestTagVerMap;
     decltype(spaceNewestEdgeVerMap_) spaceNewestEdgeVerMap;
+    decltype(roleTypeBySpaceUser_) roleTypeBySpaceUserMap;
     decltype(userNameById_) userNameById;
     decltype(userIdByName_) userIdByName;
 
@@ -128,7 +129,8 @@ void MetaClient::loadDataThreadFunc() {
                          spaceTagIndexByName,
                          spaceEdgeIndexByName,
                          spaceNewestTagVerMap,
-                         spaceNewestEdgeVerMap)) {
+                         spaceNewestEdgeVerMap,
+                         roleTypeBySpaceUserMap)) {
             return;
         }
 
@@ -144,6 +146,7 @@ void MetaClient::loadDataThreadFunc() {
         spaceEdgeIndexByName_ = std::move(spaceEdgeIndexByName);
         spaceNewestTagVerMap_ = std::move(spaceNewestTagVerMap);
         spaceNewestEdgeVerMap_ = std::move(spaceNewestEdgeVerMap);
+        roleTypeBySpaceUser_ = std::move(roleTypeBySpaceUserMap);
         userNameById_ = std::move(userNameById);
         userIdByName_ = std::move(userIdByName);
     }
@@ -156,7 +159,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                              SpaceTagNameIdMap &tagNameIdMap,
                              SpaceEdgeNameTypeMap &edgeNameTypeMap,
                              SpaceNewestTagVerMap &newestTagVerMap,
-                             SpaceNewestEdgeVerMap &newestEdgeVerMap) {
+                             SpaceNewestEdgeVerMap &newestEdgeVerMap,
+                             RoleMap &roleMap) {
     auto tagRet = listTagSchemas(spaceId).get();
     if (!tagRet.ok()) {
         LOG(ERROR) << "Get tag schemas failed for spaceId " << spaceId << ", " << tagRet.status();
@@ -169,8 +173,16 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         return false;
     }
 
+    auto rolesRet = listRoles(spaceId).get();
+    if (!rolesRet.ok()) {
+        LOG(ERROR) << "List roles failed for spaceId "
+                   << spaceId << ", status " << rolesRet.status();
+        return false;
+    }
+
     auto tagItemVec = tagRet.value();
     auto edgeItemVec = edgeRet.value();
+    auto roleItemVec = rolesRet.value();
     TagIDSchemas tagIdSchemas;
     EdgeTypeSchemas edgeTypeSchemas;
     for (auto& tagIt : tagItemVec) {
@@ -213,6 +225,15 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                 << ", Name " << edgeIt.edge_name << ", Version " << edgeIt.version
                 << " Successfully!";
     }
+
+    std::unordered_map<UserID, cpp2::RoleType> roles;
+    for (auto& role : roleItemVec) {
+        if (role.get_role_type() == cpp2::RoleType::GOD) {
+            GodUser_ = {spaceId, role.get_user_id()};
+        }
+        roles.emplace(role.get_user_id(), role.get_role_type());
+    }
+    roleMap.emplace(spaceId, std::move(roles));
 
     spaceInfoCache->tagSchemas_ = std::move(tagIdSchemas);
     spaceInfoCache->edgeSchemas_ = std::move(edgeTypeSchemas);
@@ -549,6 +570,20 @@ MetaClient::getUserIdByNameFromCache(const std::string& name) {
     return Status::UserNotFound();
 }
 
+cpp2::RoleType
+MetaClient::getRoleFromCache(GraphSpaceID spaceId, UserID userId) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto spaceIt = roleTypeBySpaceUser_.find(spaceId);
+    if (spaceIt != roleTypeBySpaceUser_.end()) {
+        auto users = spaceIt->second;
+        auto userIt = users.find(userId);
+        if (userIt != users.end()) {
+            return userIt->second;
+        }
+    }
+    return cpp2::RoleType::UNKNOWN;
+}
+
 StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
                                                     const std::string& name) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
@@ -855,7 +890,16 @@ bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
 }
 
 bool MetaClient::checkIsGodUserInCache(const std::string& account) {
+    auto ret = getUserIdByNameFromCache(account);
+    if (ret.ok() && (ret.value() == GodUser_.second)) {
+        return true;
+    }
+
     return false;
+}
+
+GraphSpaceID MetaClient::getMetaDefaultSpaceIdInCache() {
+    return GodUser_.first;
 }
 
 int32_t MetaClient::partsNum(GraphSpaceID spaceId) {

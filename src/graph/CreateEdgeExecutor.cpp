@@ -18,7 +18,12 @@ CreateEdgeExecutor::CreateEdgeExecutor(Sentence *sentence,
 
 
 Status CreateEdgeExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+    ACL_CHECK();
+    return Status::OK();
 }
 
 

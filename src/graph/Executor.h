@@ -12,6 +12,7 @@
 #include "cpp/helpers.h"
 #include "graph/ExecutionContext.h"
 #include "gen-cpp2/common_types.h"
+#include "graph/UserAccessControl.h"
 
 
 /**
@@ -20,6 +21,41 @@
 
 namespace nebula {
 namespace graph {
+
+#define ACL_CHECK()                                                      \
+    do {                                                                 \
+        auto spaceId = ectx()->rctx()->session()->space();               \
+        if (spaceId == -1) {                                             \
+            spaceId = ectx()->getMetaClient()->                          \
+                    getMetaDefaultSpaceIdInCache();                      \
+        }                                                                \
+        auto aclStatus = checkACL(spaceId,                               \
+                                  ectx()->rctx()->session()->user(),     \
+                                  sentence_->kind());                    \
+        if (!aclStatus.ok()) {                                           \
+            return aclStatus;                                            \
+        }                                                                \
+    } while (false)
+
+#define ACL_CHECK_SPACE(spaceId)                                         \
+    do {                                                                 \
+        auto aclStatus = checkACL(spaceId,                               \
+                                  ectx()->rctx()->session()->user(),     \
+                                  sentence_->kind());                    \
+        if (!aclStatus.ok()) {                                           \
+            return aclStatus;                                            \
+        }                                                                \
+    } while (false)
+
+#define ACL_CHECK_IS_GOD()                                               \
+    do {                                                                 \
+        const auto& userName = ectx()->rctx()->session()->user();        \
+        auto isGod = ectx()->getMetaClient()->                           \
+                     checkIsGodUserInCache(userName);                    \
+        if (FLAGS_security_authorization_enable && !isGod) {             \
+        return Status::Error("God role requested");                      \
+        }                                                                \
+    } while (false)
 
 class Executor : public cpp::NonCopyable, public cpp::NonMovable {
 public:
@@ -81,6 +117,24 @@ protected:
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {
             return Status::Error("Please choose a graph space with `USE spaceName' firstly");
+        }
+        return Status::OK();
+    }
+
+    Status checkACL(GraphSpaceID spaceId, const std::string& user, Sentence::Kind op) {
+        if (!FLAGS_security_authorization_enable) {
+            return Status::OK();
+        }
+        auto userRet = ectx()->getMetaClient()->getUserIdByNameFromCache(user);
+        if (!userRet.ok()) {
+            return userRet.status();
+        }
+        auto ret = UserAccessControl::checkPerms(spaceId,
+                                                 userRet.value(),
+                                                 op,
+                                                 ectx()->getMetaClient());
+        if (!ret.ok()) {
+            return ret;
         }
         return Status::OK();
     }

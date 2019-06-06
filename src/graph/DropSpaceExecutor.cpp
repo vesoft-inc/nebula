@@ -17,6 +17,11 @@ DropSpaceExecutor::DropSpaceExecutor(Sentence *sentence,
 
 Status DropSpaceExecutor::prepare() {
     spaceName_ = sentence_->spaceName();
+    auto spaceRet = ectx()->getMetaClient()->getSpaceIdByNameFromCache(spaceName_->data());
+    if (!spaceRet.ok()) {
+        return Status::Error("Space not found : %s", spaceName_);
+    }
+    ACL_CHECK_SPACE(spaceRet.value());
     return Status::OK();
 }
 

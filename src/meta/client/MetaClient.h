@@ -50,6 +50,8 @@ using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeTyp
 using UserIdNameMap = std::unordered_map<UserID, std::string>;
 // get userName via userID
 using UserNameIdMap = std::unordered_map<std::string, UserID>;
+// get role type via spaceId and userId
+using RoleMap = std::unordered_map<GraphSpaceID, std::unordered_map<UserID, cpp2::RoleType>>;
 
 class MetaChangedListener {
 public:
@@ -199,6 +201,8 @@ public:
 
     StatusOr<UserID> getUserIdByNameFromCache(const std::string& name);
 
+    cpp2::RoleType getRoleFromCache(GraphSpaceID spaceId, UserID userId);
+
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
     StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
@@ -221,6 +225,8 @@ public:
 
     bool checkIsGodUserInCache(const std::string& account);
 
+    GraphSpaceID getMetaDefaultSpaceIdInCache();
+
     int32_t partsNum(GraphSpaceID spaceId);
 
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
@@ -239,7 +245,8 @@ protected:
                      SpaceTagNameIdMap &tagNameIdMap,
                      SpaceEdgeNameTypeMap &edgeNameTypeMap,
                      SpaceNewestTagVerMap &newestTagVerMap,
-                     SpaceNewestEdgeVerMap &newestEdgeVerMap);
+                     SpaceNewestEdgeVerMap &newestEdgeVerMap,
+                     RoleMap &roleMap);
 
     folly::Future<StatusOr<bool>> heartbeat();
 
@@ -284,6 +291,7 @@ private:
     std::shared_ptr<thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>> clientsMan_;
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
     std::vector<HostAddr> addrs_;
+    std::pair<GraphSpaceID, UserID> GodUser_{0, 0};
     // The lock used to protect active_ and leader_.
     folly::RWSpinLock hostLock_;
     HostAddr active_;
@@ -299,6 +307,7 @@ private:
     bool                  sendHeartBeat_ = false;
     UserIdNameMap         userNameById_;
     UserNameIdMap         userIdByName_;
+    RoleMap               roleTypeBySpaceUser_;
 };
 }  // namespace meta
 }  // namespace nebula

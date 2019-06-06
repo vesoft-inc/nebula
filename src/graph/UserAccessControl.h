@@ -35,6 +35,7 @@
 // kRemoveHosts     | Y             |               |               |
 // kCreateSpace     | Y             |               |               |
 // kDropSpace       | Y             | Y             |               |
+// kDescribeSpace   | Y             | Y             |               |
 // kYield           | Y             | Y             | Y             | Y
 // kCreateUser      | Y             |               |               |
 // kDropUser        | Y             |               |               |
@@ -43,5 +44,29 @@
 // kRevoke          | Y             | Y             |               |
 // kChangePassword  | Y             | Y             | Y             | Y
 
+#include "base/Base.h"
+#include "parser/Sentence.h"
+#include "meta/client/MetaClient.h"
+#include "interface/gen-cpp2/meta_types.h"
+#include "graph/GraphFlags.h"
+
+namespace nebula {
+namespace graph {
+
+class UserAccessControl final {
+public:
+    static Status checkPerms(GraphSpaceID spaceID,
+                             UserID userId,
+                             Sentence::Kind op,
+                             meta::MetaClient* mc);
+
+private:
+    static int32_t getACLType(Sentence::Kind kind);
+    static int32_t getACLMode(nebula::meta::cpp2::RoleType type);
+    static int32_t checkACL(nebula::meta::cpp2::RoleType type, Sentence::Kind op);
+};
+
+}   // namespace graph
+}   // namespace nebula
 
 #endif  // GRAPH_PERMISSIONMANAGER_H

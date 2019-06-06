@@ -61,6 +61,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE SPACE default_space";
@@ -94,6 +95,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG person";
@@ -122,6 +124,7 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         // Test the tag has been existed.
         cpp2::ExecutionResponse resp;
@@ -158,6 +161,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG account "
@@ -204,6 +208,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE buy";
@@ -237,6 +242,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE education";
@@ -291,6 +297,7 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE my_space";

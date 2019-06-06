@@ -42,6 +42,7 @@ Status InsertEdgeExecutor::prepare() {
             status = Status::Error("No schema found for '%s'", sentence_->edge()->c_str());
             break;
         }
+        ACL_CHECK_SPACE(spaceId);
     } while (false);
 
     return status;

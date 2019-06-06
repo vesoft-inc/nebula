@@ -15,7 +15,12 @@ DropTagExecutor::DropTagExecutor(Sentence *sentence,
 }
 
 Status DropTagExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+    ACL_CHECK();
+    return Status::OK();
 }
 
 void DropTagExecutor::execute() {

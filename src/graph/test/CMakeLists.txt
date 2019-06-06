@@ -97,6 +97,7 @@ add_executable(
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
+    $<TARGET_OBJECTS:wal_obj>
     ${GRAPH_TEST_LIBS}
 )
 nebula_link_libraries(
@@ -137,7 +138,10 @@ add_executable(
         $<TARGET_OBJECTS:storage_client>
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:meta_service_handler>
-        $<TARGET_OBJECTS:kvstore_obj>
+        $<TARGET_OBJECTS:raftex_obj>
+        $<TARGET_OBJECTS:raftex_thrift_obj>
+	$<TARGET_OBJECTS:wal_obj>
+	$<TARGET_OBJECTS:kvstore_obj>
         $<TARGET_OBJECTS:storage_service_handler>
         $<TARGET_OBJECTS:adHocSchema_obj>
 )

@@ -16,6 +16,7 @@ CreateUserExecutor::CreateUserExecutor(Sentence *sentence,
 }
 
 Status CreateUserExecutor::prepare() {
+    ACL_CHECK();
     password_ = sentence_->getPassword();
     missingOk_ = sentence_->getMissingOk();
     userItem_.set_account(sentence_->getAccount()->data());
@@ -82,6 +83,7 @@ DropUserExecutor::DropUserExecutor(Sentence *sentence,
 }
 
 Status DropUserExecutor::prepare() {
+    ACL_CHECK();
     account_ = sentence_->getAccount();
     missingOk_ = sentence_->getMissingOk();
     return Status::OK();
@@ -117,9 +119,19 @@ AlterUserExecutor::AlterUserExecutor(Sentence *sentence,
 }
 
 Status AlterUserExecutor::prepare() {
+    const auto& user = ectx()->rctx()->session()->user();
     userItem_.set_account(sentence_->getAccount()->data());
     auto opts = sentence_->getOpts();
     for (auto &opt : opts) {
+        if (opt->getOptType() == WithUserOptItem::OptionType::LOCK) {
+            ACL_CHECK_IS_GOD();
+        } else {
+            if (FLAGS_security_authorization_enable &&
+                !ectx()->getMetaClient()->checkIsGodUserInCache(user) &&
+                (*sentence_->getAccount()->data() != *user.data())) {
+                return Status::Error("Access denied for user : %s", user.data());
+            }
+        }
         switch (opt->getOptType()) {
             case WithUserOptItem::OptionType::LOCK:
             {
@@ -201,6 +213,7 @@ Status GrantExecutor::prepare() {
     roleItem_.set_space_id(spaceRet.value());
     roleItem_.set_user_id(userRet.value());
     roleItem_.set_role_type(type_);
+    ACL_CHECK_SPACE(spaceRet.value());
     return Status::OK();
 }
 
@@ -249,6 +262,7 @@ Status RevokeExecutor::prepare() {
     roleItem_.set_space_id(spaceRet.value());
     roleItem_.set_user_id(userRet.value());
     roleItem_.set_role_type(type_);
+    ACL_CHECK_SPACE(spaceRet.value());
     return Status::OK();
 }
 
@@ -285,13 +299,20 @@ Status ChangePasswordExecutor::prepare() {
     account_ = sentence_->getAccount();
     newPassword_ = sentence_->getNewPwd();
     oldPassword_ = sentence_->getOldPwd();
+    const auto& user = ectx()->rctx()->session()->user();
+
+    if (FLAGS_security_authorization_enable &&
+        !ectx()->getMetaClient()->checkIsGodUserInCache(user) &&
+        (user != *account_)) {
+        return Status::Error("Permission denied");
+    }
     return Status::OK();
 }
 
 void ChangePasswordExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     const auto user = ectx()->rctx()->session()->user();
-    auto verifyNeed = mc->checkIsGodUserInCache(user);
+    auto verifyNeed = !mc->checkIsGodUserInCache(user);
     auto future = mc->changePassword(*account_,
                                      MD5Utils::md5Encode(*newPassword_),
                                      MD5Utils::md5Encode(*oldPassword_),

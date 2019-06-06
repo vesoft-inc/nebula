@@ -17,6 +17,12 @@ DescribeSpaceExecutor::DescribeSpaceExecutor(Sentence *sentence,
 }
 
 Status DescribeSpaceExecutor::prepare() {
+    auto *name = sentence_->spaceName();
+    auto spaceRet = ectx()->getMetaClient()->getSpaceIdByNameFromCache(name->data());
+    if (!spaceRet.ok()) {
+        return Status::Error("Space not found : %s", name);
+    }
+    ACL_CHECK_SPACE(spaceRet.value());
     return Status::OK();;
 }
 

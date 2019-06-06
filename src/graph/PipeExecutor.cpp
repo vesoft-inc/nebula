@@ -22,6 +22,8 @@ Status PipeExecutor::prepare() {
         return status;
     }
 
+    ACL_CHECK();
+
     left_ = makeTraverseExecutor(sentence_->left());
     right_ = makeTraverseExecutor(sentence_->right());
     DCHECK(left_ != nullptr);

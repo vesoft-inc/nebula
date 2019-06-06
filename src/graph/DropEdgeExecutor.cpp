@@ -15,7 +15,12 @@ DropEdgeExecutor::DropEdgeExecutor(Sentence *sentence,
 }
 
 Status DropEdgeExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+    ACL_CHECK();
+    return Status::OK();
 }
 
 void DropEdgeExecutor::execute() {

@@ -17,6 +17,15 @@ UseExecutor::UseExecutor(Sentence *sentence, ExecutionContext *ectx) : Executor(
 
 
 Status UseExecutor::prepare() {
+    // Check from the cache, if space not exists, schemas also not exist
+    auto spaceName = *sentence_->space();
+    auto status = ectx()->schemaManager()->toGraphSpaceID(spaceName);
+    if (!status.ok()) {
+        return Status::Error("Space not found for `%s'", spaceName.c_str());
+    }
+
+    auto spaceId = status.value();
+    ACL_CHECK_SPACE(spaceId);
     return Status::OK();
 }
 
@@ -47,6 +56,9 @@ void UseExecutor::execute() {
         onError_(Status::Error("Internal error"));
         return;
     };
+    auto *session = ectx()->rctx()->session();
+    session->setSpace(*sentence_->space(), spaceId_);
+    FLOG_INFO("Graph space switched to `%s', space id: %d", sentence_->space()->c_str(), spaceId_);
 
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }

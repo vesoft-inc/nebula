@@ -20,6 +20,7 @@ Status RemoveHostsExecutor::prepare() {
     if (host_.size() == 0) {
         return Status::Error("Host address illegal");
     }
+    ACL_CHECK();
     return Status::OK();
 }
 

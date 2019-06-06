@@ -16,7 +16,12 @@ AlterTagExecutor::AlterTagExecutor(Sentence *sentence,
 }
 
 Status AlterTagExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+    ACL_CHECK();
+    return Status::OK();
 }
 
 void AlterTagExecutor::execute() {
