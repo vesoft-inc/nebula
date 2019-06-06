@@ -19,16 +19,91 @@ using fs::FileType;
 
 const char* kSystemParts = "__system__parts__";
 
+namespace {
+
+/***************************************
+ *
+ * Implementation of WriteBatch
+ *
+ **************************************/
+class RocksWriteBatch : public WriteBatch {
+private:
+    rocksdb::WriteBatch batch_;
+    rocksdb::DB* db_{nullptr};
+
+public:
+    explicit RocksWriteBatch(rocksdb::DB* db) : db_(db) {}
+
+    virtual ~RocksWriteBatch() = default;
+
+    ResultCode put(folly::StringPiece key, folly::StringPiece value) override {
+        if (batch_.Put(toSlice(key), toSlice(value)).ok()) {
+            return ResultCode::SUCCEEDED;
+        } else {
+            return ResultCode::ERR_UNKNOWN;
+        }
+    }
+
+    ResultCode remove(folly::StringPiece key) override {
+        if (batch_.Delete(toSlice(key)).ok()) {
+            return ResultCode::SUCCEEDED;
+        } else {
+            return ResultCode::ERR_UNKNOWN;
+        }
+    }
+
+    ResultCode removePrefix(folly::StringPiece prefix) override {
+        rocksdb::Slice pre(prefix.begin(), prefix.size());
+        rocksdb::ReadOptions options;
+        std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
+        iter->Seek(pre);
+        while (iter->Valid()) {
+            if (iter->key().starts_with(pre)) {
+                if (!batch_.Delete(iter->key()).ok()) {
+                    return ResultCode::ERR_UNKNOWN;
+                }
+            } else {
+                // Done
+                break;
+            }
+            iter->Next();
+        }
+        return ResultCode::SUCCEEDED;
+    }
+
+    // Remove all keys in the range [start, end)
+    ResultCode removeRange(folly::StringPiece start, folly::StringPiece end) override {
+        if (batch_.DeleteRange(toSlice(start), toSlice(end)).ok()) {
+            return ResultCode::SUCCEEDED;
+        } else {
+            return ResultCode::ERR_UNKNOWN;
+        }
+    }
+
+    rocksdb::WriteBatch* data() {
+        return &batch_;
+    }
+};
+
+}  // Anonymous namespace
+
+
+/***************************************
+ *
+ * Implementation of WriteBatch
+ *
+ **************************************/
 RocksEngine::RocksEngine(GraphSpaceID spaceId,
                          const std::string& dataPath,
                          std::shared_ptr<rocksdb::MergeOperator> mergeOp,
                          std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
         : KVEngine(spaceId)
-        , dataPath_(dataPath) {
-    LOG(INFO) << "open rocksdb on " << dataPath;
-    if (FileUtils::fileType(dataPath.c_str()) == FileType::NOTEXIST) {
-        FileUtils::makeDir(dataPath);
+        , dataPath_(folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId)) {
+    auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
+    if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
+        FileUtils::makeDir(path);
     }
+    LOG(INFO) << "open rocksdb on " << path;
 
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
@@ -40,15 +115,29 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     if (cfFactory != nullptr) {
         options.compaction_filter_factory = cfFactory;
     }
-    status = rocksdb::DB::Open(options, dataPath_, &db);
+    status = rocksdb::DB::Open(options, path, &db);
     CHECK(status.ok());
     db_.reset(db);
     partsNum_ = allParts().size();
 }
 
 
-RocksEngine::~RocksEngine() {
+std::unique_ptr<WriteBatch> RocksEngine::startBatchWrite() {
+    return std::make_unique<RocksWriteBatch>(db_.get());
 }
+
+
+ResultCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch> batch) {
+    rocksdb::WriteOptions options;
+    options.disableWAL = FLAGS_rocksdb_disable_wal;
+    auto* b = static_cast<RocksWriteBatch*>(batch.get());
+    rocksdb::Status status = db_->Write(options, b->data());
+    if (status.ok()) {
+        return ResultCode::SUCCEEDED;
+    }
+    return ResultCode::ERR_UNKNOWN;
+}
+
 
 ResultCode RocksEngine::get(const std::string& key, std::string* value) {
     rocksdb::ReadOptions options;
@@ -63,6 +152,7 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
         return ResultCode::ERR_UNKNOWN;
     }
 }
+
 
 ResultCode RocksEngine::multiGet(const std::vector<std::string>& keys,
                                    std::vector<std::string>* values) {
@@ -83,6 +173,32 @@ ResultCode RocksEngine::multiGet(const std::vector<std::string>& keys,
         return ResultCode::ERR_UNKNOWN;
     }
 }
+
+
+ResultCode RocksEngine::range(const std::string& start,
+                              const std::string& end,
+                              std::unique_ptr<KVIterator>* storageIter) {
+    rocksdb::ReadOptions options;
+    rocksdb::Iterator* iter = db_->NewIterator(options);
+    if (iter) {
+        iter->Seek(rocksdb::Slice(start));
+    }
+    storageIter->reset(new RocksRangeIter(iter, start, end));
+    return ResultCode::SUCCEEDED;
+}
+
+
+ResultCode RocksEngine::prefix(const std::string& prefix,
+                               std::unique_ptr<KVIterator>* storageIter) {
+    rocksdb::ReadOptions options;
+    rocksdb::Iterator* iter = db_->NewIterator(options);
+    if (iter) {
+        iter->Seek(rocksdb::Slice(prefix));
+    }
+    storageIter->reset(new RocksPrefixIter(iter, prefix));
+    return ResultCode::SUCCEEDED;
+}
+
 
 ResultCode RocksEngine::put(std::string key, std::string value) {
     rocksdb::WriteOptions options;
@@ -114,31 +230,6 @@ ResultCode RocksEngine::multiPut(std::vector<KV> keyValues) {
 }
 
 
-ResultCode RocksEngine::range(const std::string& start,
-                              const std::string& end,
-                              std::unique_ptr<KVIterator>* storageIter) {
-    rocksdb::ReadOptions options;
-    rocksdb::Iterator* iter = db_->NewIterator(options);
-    if (iter) {
-        iter->Seek(rocksdb::Slice(start));
-    }
-    storageIter->reset(new RocksRangeIter(iter, start, end));
-    return ResultCode::SUCCEEDED;
-}
-
-
-ResultCode RocksEngine::prefix(const std::string& prefix,
-                               std::unique_ptr<KVIterator>* storageIter) {
-    rocksdb::ReadOptions options;
-    rocksdb::Iterator* iter = db_->NewIterator(options);
-    if (iter) {
-        iter->Seek(rocksdb::Slice(prefix));
-    }
-    storageIter->reset(new RocksPrefixIter(iter, prefix));
-    return ResultCode::SUCCEEDED;
-}
-
-
 ResultCode RocksEngine::remove(const std::string& key) {
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;
@@ -150,6 +241,7 @@ ResultCode RocksEngine::remove(const std::string& key) {
         return ResultCode::ERR_UNKNOWN;
     }
 }
+
 
 ResultCode RocksEngine::multiRemove(std::vector<std::string> keys) {
     rocksdb::WriteBatch deletes(FLAGS_batch_reserved_bytes);
@@ -172,11 +264,42 @@ ResultCode RocksEngine::removeRange(const std::string& start,
                                     const std::string& end) {
     rocksdb::WriteOptions options;
     options.disableWAL = FLAGS_rocksdb_disable_wal;
+    // TODO(sye) Given the RocksDB version we are using,
+    // we should avoud using DeleteRange
     auto status = db_->DeleteRange(options, db_->DefaultColumnFamily(), start, end);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
         VLOG(3) << "RemoveRange Failed: " << status.ToString();
+        return ResultCode::ERR_UNKNOWN;
+    }
+}
+
+
+ResultCode RocksEngine::removePrefix(const std::string& prefix) {
+    rocksdb::Slice pre(prefix.data(), prefix.size());
+    rocksdb::ReadOptions readOptions;
+    rocksdb::WriteBatch batch;
+    std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(readOptions));
+    iter->Seek(pre);
+    while (iter->Valid()) {
+        if (iter->key().starts_with(pre)) {
+            auto status = batch.Delete(iter->key());
+            if (!status.ok()) {
+                return ResultCode::ERR_UNKNOWN;
+            }
+        } else {
+            // Done
+            break;
+        }
+        iter->Next();
+    }
+
+    rocksdb::WriteOptions writeOptions;
+    writeOptions.disableWAL = FLAGS_rocksdb_disable_wal;
+    if (db_->Write(writeOptions, &batch).ok()) {
+        return ResultCode::SUCCEEDED;
+    } else {
         return ResultCode::ERR_UNKNOWN;
     }
 }
@@ -217,6 +340,7 @@ std::vector<PartitionID> RocksEngine::allParts() {
     static const size_t prefixLen = ::strlen(kSystemParts);
     static const std::string prefixStr(kSystemParts, prefixLen);
     CHECK_EQ(ResultCode::SUCCEEDED, this->prefix(prefixStr, &iter));
+
     std::vector<PartitionID> parts;
     while (iter->valid()) {
         auto key = iter->key();
@@ -277,6 +401,7 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey,
     }
 }
 
+
 ResultCode RocksEngine::compactAll() {
     rocksdb::CompactRangeOptions options;
     rocksdb::Status status = db_->CompactRange(options, nullptr, nullptr);
@@ -290,4 +415,3 @@ ResultCode RocksEngine::compactAll() {
 
 }  // namespace kvstore
 }  // namespace nebula
-

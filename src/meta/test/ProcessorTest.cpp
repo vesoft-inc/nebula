@@ -42,7 +42,8 @@ using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(ProcessorTest, AddHostsTest) {
     fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path());
+
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
@@ -116,10 +117,12 @@ TEST(ProcessorTest, AddHostsTest) {
     }
 }
 
+
 TEST(ProcessorTest, CreateSpaceTest) {
     fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path());
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
+
     {
         cpp2::SpaceProperties properties;
         properties.set_space_name("default_space");
@@ -186,10 +189,12 @@ TEST(ProcessorTest, CreateSpaceTest) {
     }
 }
 
+
 TEST(ProcessorTest, CreateTagTest) {
     fs::TempDir rootPath("/tmp/CreateTagTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path());
     TestUtils::createSomeHosts(kv.get());
+
     {
         cpp2::SpaceProperties properties;
         properties.set_space_name("default_space");
@@ -237,10 +242,12 @@ TEST(ProcessorTest, CreateTagTest) {
     }
 }
 
+
 TEST(ProcessorTest, CreateEdgeTest) {
     fs::TempDir rootPath("/tmp/CreateEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path());
     TestUtils::createSomeHosts(kv.get());
+
     {
         cpp2::SpaceProperties properties;
         properties.set_space_name("default_space");
@@ -330,9 +337,10 @@ TEST(ProcessorTest, CreateEdgeTest) {
     }
 }
 
+
 TEST(ProcessorTest, KVOperationTest) {
     fs::TempDir rootPath("/tmp/KVOperationTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path());
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
     UNUSED(hostsNum);
 
@@ -469,9 +477,10 @@ TEST(ProcessorTest, KVOperationTest) {
     }
 }
 
+
 TEST(ProcessorTest, ListOrGetTagsTest) {
-    fs::TempDir rootPath("/tmp/ListTagsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    fs::TempDir rootPath("/tmp/ListOrGetTagsTest.XXXXXX");
+    auto kv = TestUtils::initKV(rootPath.path());
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockTag(kv.get(), 10);
 
@@ -520,9 +529,10 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
     }
 }
 
+
 TEST(ProcessorTest, ListOrGetEdgesTest) {
-    fs::TempDir rootPath("/tmp/ListEdgesTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    fs::TempDir rootPath("/tmp/ListOrGetEdgesTest.XXXXXX");
+    auto kv = TestUtils::initKV(rootPath.path());
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockEdge(kv.get(), 10);
 
@@ -573,42 +583,47 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
     }
 }
 
+
 TEST(ProcessorTest, DropTagTest) {
-     fs::TempDir rootPath("/tmp/DropTagTest.XXXXXX");
-     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
-     TestUtils::mockTag(kv.get(), 1);
-     {
-         // remove tag processor test
-         cpp2::DropTagReq req;
-         req.set_space_id(1);
-         req.set_tag_name("tag_0");
-         auto* processor = DropTagProcessor::instance(kv.get());
-         auto f = processor->getFuture();
-         processor->process(req);
-         auto resp = std::move(f).get();
-         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-     }
-     {
-         // check tag data has been deleted.
-         std::string tagVal;
-         kvstore::ResultCode ret;
-         std::unique_ptr<kvstore::KVIterator> iter;
-         ret = kv.get()->get(0, 0, std::move(MetaServiceUtils::indexTagKey(1, "tag_1")),
-                             &tagVal);
-         ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
-         std::string tagPrefix = "__tags__";
-         ret = kv.get()->prefix(0, 0, tagPrefix, &iter);
-         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
-         ASSERT_FALSE(iter->valid());
-     }
+    fs::TempDir rootPath("/tmp/DropTagTest.XXXXXX");
+    auto kv = TestUtils::initKV(rootPath.path());
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    TestUtils::mockTag(kv.get(), 1);
+
+    // remove tag processor test
+    {
+        cpp2::DropTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("tag_0");
+        auto* processor = DropTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+
+    // check tag data has been deleted.
+    {
+        std::string tagVal;
+        kvstore::ResultCode ret;
+        std::unique_ptr<kvstore::KVIterator> iter;
+        ret = kv.get()->get(0, 0, std::move(MetaServiceUtils::indexTagKey(1, "tag_1")),
+                            &tagVal);
+        ASSERT_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
+        std::string tagPrefix = "__tags__";
+        ret = kv.get()->prefix(0, 0, tagPrefix, &iter);
+        ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, ret);
+        ASSERT_FALSE(iter->valid());
+    }
 }
+
 
 TEST(ProcessorTest, DropEdgeTest) {
     fs::TempDir rootPath("/tmp/DropEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path());
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockEdge(kv.get(), 1);
+
     // Space not exist
     {
         cpp2::DropEdgeReq req;
@@ -658,11 +673,13 @@ TEST(ProcessorTest, DropEdgeTest) {
     }
 }
 
+
 TEST(ProcessorTest, AlterTagTest) {
     fs::TempDir rootPath("/tmp/AlterTagTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path());
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockTag(kv.get(), 1);
+
     // Alter tag processor test
     {
         cpp2::AlterTagReq req;
@@ -798,11 +815,13 @@ TEST(ProcessorTest, AlterTagTest) {
     }
 }
 
+
 TEST(ProcessorTest, AlterEdgeTest) {
     fs::TempDir rootPath("/tmp/AlterEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path());
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockEdge(kv.get(), 1);
+
     // Drop all, then add
     {
         cpp2::AlterEdgeReq req;
@@ -1010,10 +1029,12 @@ TEST(ProcessorTest, AlterEdgeTest) {
     }
 }
 
+
 TEST(ProcessorTest, SameNameTagsTest) {
-    fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    fs::TempDir rootPath("/tmp/SameNameTagsTest.XXXXXX");
+    auto kv = TestUtils::initKV(rootPath.path());
     TestUtils::createSomeHosts(kv.get());
+
     {
         cpp2::SpaceProperties properties;
         properties.set_space_name("default_space");
@@ -1116,8 +1137,10 @@ TEST(ProcessorTest, SameNameTagsTest) {
         ASSERT_EQ("default_tag", tags[0].get_tag_name());
     }
 }
+
 }  // namespace meta
 }  // namespace nebula
+
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

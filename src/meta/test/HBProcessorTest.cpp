@@ -24,7 +24,8 @@ using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(HBProcessorTest, HBTest) {
     fs::TempDir rootPath("/tmp/HBTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path());
+
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
@@ -82,6 +83,7 @@ TEST(HBProcessorTest, HBTest) {
 
 }  // namespace meta
 }  // namespace nebula
+
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

@@ -284,7 +284,7 @@ void RaftPart::stop() {
 }
 
 
-typename RaftPart::AppendLogResult RaftPart::canAppendLogs(
+AppendLogResult RaftPart::canAppendLogs(
         std::lock_guard<std::mutex>& lck) {
     UNUSED(lck);
     if (status_ == Status::STARTING) {
@@ -304,7 +304,7 @@ typename RaftPart::AppendLogResult RaftPart::canAppendLogs(
 }
 
 
-folly::Future<RaftPart::AppendLogResult> RaftPart::appendAsync(ClusterID source,
+folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source,
                                                                std::string log) {
     if (source < 0) {
         source = clusterId_;
@@ -313,17 +313,17 @@ folly::Future<RaftPart::AppendLogResult> RaftPart::appendAsync(ClusterID source,
 }
 
 
-folly::Future<RaftPart::AppendLogResult> RaftPart::casAsync(std::string log) {
+folly::Future<AppendLogResult> RaftPart::casAsync(std::string log) {
     return appendLogAsync(clusterId_, true, std::move(log));
 }
 
 
-folly::Future<RaftPart::AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
+folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                                                                   bool isCAS,
                                                                   std::string log) {
     LogCache swappedOutLogs;
     LogID firstId;
-    auto retFuture = folly::Future<RaftPart::AppendLogResult>::makeEmpty();
+    auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
 
     {
         std::lock_guard<std::mutex> lck(raftLock_);
@@ -599,6 +599,7 @@ void RaftPart::processAppendLogResponses(
             if (iter.leadByCAS()) {
                 sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
             }
+            VLOG(2) << idStr_ << "Succeeded in committing the logs";
 
             // Step 5: Check whether need to continue
             // the log replication
@@ -625,6 +626,7 @@ void RaftPart::processAppendLogResponses(
                     logs_.clear();
                 } else {
                     replicatingLogs_ = false;
+                    VLOG(2) << idStr_ << "No more log to be replicated";
                 }
             }
         } else {
@@ -1175,7 +1177,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
 }
 
 
-folly::Future<RaftPart::AppendLogResult> RaftPart::sendHeartbeat() {
+folly::Future<AppendLogResult> RaftPart::sendHeartbeat() {
     using namespace folly;  // NOLINT since the fancy overload of | operator
 
     VLOG(2) << idStr_ << "Sending heartbeat to all other hosts";

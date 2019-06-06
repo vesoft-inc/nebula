@@ -19,7 +19,7 @@ public:
         auto sc = std::make_unique<test::ServerContext>();
         auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
         auto interface = std::make_shared<GraphService>(threadPool);
-        test::mockCommon(sc.get(), "graph", port, interface);
+        sc->mockCommon("graph", port, interface);
         LOG(INFO) << "Starting the graph Daemon on port " << sc->port_;
         return sc;
     }
