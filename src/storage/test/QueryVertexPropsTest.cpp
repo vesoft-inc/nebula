@@ -19,7 +19,8 @@ namespace storage {
 
 TEST(QueryVertexPropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryVertexPropsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
 
@@ -44,9 +45,8 @@ TEST(QueryVertexPropsTest, SimpleTest) {
             0,
             partId,
             std::move(data),
-            [&](kvstore::ResultCode code, HostAddr addr) {
+            [&](kvstore::ResultCode code) {
                 EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                UNUSED(addr);
             });
     }
 
@@ -65,10 +65,10 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
-       tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE,
-                                                  folly::stringPrintf("tag_%d_col_%d",
-                                                                      3001 + i*2, i*2),
-                                                  3001 + i*2));
+        tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE,
+                                                   folly::stringPrintf("tag_%d_col_%d",
+                                                                       3001 + i*2, i*2),
+                                                   3001 + i*2));
     }
     req.set_return_columns(std::move(tmpColumns));
 

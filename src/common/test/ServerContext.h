@@ -23,39 +23,39 @@ struct ServerContext {
         if (thread_ != nullptr) {
             thread_->join();
         }
-        KVStore_ = nullptr;
+        kvStore_ = nullptr;
         server_ = nullptr;
         thread_ = nullptr;
         VLOG(3) << "~ServerContext";
     }
 
+
+    void mockCommon(const std::string& name,
+                    uint16_t port,
+                    std::shared_ptr<apache::thrift::ServerInterface> handler) {
+        server_ = std::make_unique<apache::thrift::ThriftServer>();
+        server_->setInterface(std::move(handler));
+        server_->setPort(port);
+        thread_ = std::make_unique<thread::NamedThread>(name, [this, name] {
+            server_->serve();
+            LOG(INFO) << "The " << name << " server has stopped";
+        });
+
+        while (!server_->getServeEventBase() ||
+               !server_->getServeEventBase()->isRunning()) {
+            usleep(10000);
+        }
+        port_ = server_->getAddress().getPort();
+    }
+
+
     std::unique_ptr<apache::thrift::ThriftServer>      server_{nullptr};
     std::unique_ptr<thread::NamedThread>               thread_{nullptr};
     // To keep meta and storage's KVStore
-    std::unique_ptr<kvstore::KVStore>                  KVStore_{nullptr};
+    std::unique_ptr<kvstore::KVStore>                  kvStore_{nullptr};
     uint16_t                                           port_{0};
 };
 
-static void mockCommon(test::ServerContext *sc,
-                       const std::string &name,
-                       uint16_t port,
-                       std::shared_ptr<apache::thrift::ServerInterface> handler) {
-    if (nullptr == sc) {
-        LOG(ERROR) << "ServerContext is nullptr";
-        return;
-    }
-    sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
-    sc->server_->setInterface(std::move(handler));
-    sc->server_->setPort(port);
-    sc->thread_ = std::make_unique<thread::NamedThread>(name, [&]() {
-        sc->server_->serve();
-        LOG(INFO) << "Stop the server...";
-    });
-    while (!sc->server_->getServeEventBase() ||
-           !sc->server_->getServeEventBase()->isRunning()) {
-    }
-    sc->port_ = sc->server_->getAddress().getPort();
-}
 
 }   // namespace test
 }   // namespace nebula
