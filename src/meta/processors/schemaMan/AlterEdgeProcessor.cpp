@@ -27,7 +27,8 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, edgePrefix, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
         LOG(WARNING) << "Edge could not be found " << req.get_edge_name()
-                     << ", spaceId " << req.get_space_id() << ", edgeType " << edgeType;
+                     << ", spaceId " << req.get_space_id()
+                     << ", edgeType " << edgeType;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;

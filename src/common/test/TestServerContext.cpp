@@ -24,7 +24,7 @@ public:
 TEST(ServerContext, mockCommon) {
     auto sc = std::make_unique<ServerContext>();
     auto handler = std::make_shared<TestServer>();
-    test::mockCommon(sc.get(), "test", 0, handler);
+    sc->mockCommon("test", 0, handler);
 }
 
 }  // namespace test

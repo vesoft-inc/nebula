@@ -66,12 +66,12 @@ void mockData(kvstore::KVStore* kv) {
         }
         kv->asyncMultiPut(
             0, partId, std::move(data),
-            [&](kvstore::ResultCode code, HostAddr addr) {
+            [&](kvstore::ResultCode code) {
                 EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                UNUSED(addr);
             });
     }
 }
+
 
 void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     req.set_space_id(0);
@@ -103,6 +103,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     }
     req.set_return_columns(std::move(tmpColumns));
 }
+
 
 void checkResponse(cpp2::QueryResponse& resp, bool outBound = true) {
     int32_t edgeFields = outBound ? 12 : 2;
@@ -171,11 +172,13 @@ void checkResponse(cpp2::QueryResponse& resp, bool outBound = true) {
     }
 }
 
+
 TEST(QueryBoundTest, OutBoundSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
     LOG(INFO) << "Prepare meta...";
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto schemaMan = TestUtils::mockSchemaMan();;
+    auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
     cpp2::GetNeighborsRequest req;
@@ -191,10 +194,12 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     checkResponse(resp);
 }
 
+
 TEST(QueryBoundTest, inBoundSimpleTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
     auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 

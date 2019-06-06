@@ -43,8 +43,7 @@ TEST(LogAppend, SimpleAppendWithOneCopy) {
         msgs.emplace_back(
             folly::stringPrintf("Test Log Message %03d", i));
         auto fut = leader->appendAsync(0, msgs.back());
-        ASSERT_EQ(RaftPart::AppendLogResult::SUCCEEDED,
-                  std::move(fut).get());
+        ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
     }
     LOG(INFO) << "<===== Finish appending logs";
 
@@ -91,8 +90,7 @@ TEST(LogAppend, SimpleAppendWithThreeCopies) {
         msgs.emplace_back(
             folly::stringPrintf("Test Log Message %03d", i));
         auto fut = leader->appendAsync(0, msgs.back());
-        ASSERT_EQ(RaftPart::AppendLogResult::SUCCEEDED,
-                  std::move(fut).get());
+        ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
     }
     LOG(INFO) << "<===== Finish appending logs";
 
@@ -144,14 +142,13 @@ TEST(LogAppend, MultiThreadAppend) {
                     auto fut = leader->appendAsync(
                         0, folly::stringPrintf("Log %03d for t%d", j, i));
                     if (fut.isReady() &&
-                        fut.value() == RaftPart::AppendLogResult::E_BUFFER_OVERFLOW) {
+                        fut.value() == AppendLogResult::E_BUFFER_OVERFLOW) {
                         // Buffer overflow, while a little
                         usleep(5000);
                         continue;
                     } else if (j == numLogs) {
                         // Only wait on the last log messaage
-                        ASSERT_EQ(RaftPart::AppendLogResult::SUCCEEDED,
-                                  std::move(fut).get());
+                        ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
                     }
                     break;
                 } while (true);

@@ -304,8 +304,8 @@ macro(nebula_link_libraries target)
         ${OPENSSL_CRYPTO_LIBRARY}
         ${KRB5_LIBRARIES}
         ${COMPRESSION_LIBRARIES}
-        ${JEMALLOC_LIB}
         ${LIBUNWIND_LIBRARIES}
+        ${JEMALLOC_LIB}
         dl
         ${GETTIME_LIB}
         -pthread
