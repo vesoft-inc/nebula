@@ -128,15 +128,15 @@ TEST_F(SchemaTest, metaCommunication) {
     {
         // Test the tag has been existed.
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG person(name string, email string, "
+        std::string query = "CREATE TAG upper(name string, EMAIL string, "
                             "age int, gender string, row_timestamp timestamp)";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG person";
+        std::string query = "DESCRIBE TAG upper";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
