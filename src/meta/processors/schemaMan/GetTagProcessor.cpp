@@ -17,14 +17,17 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
                                                         req.get_version());
     auto ret = doGet(std::move(tagKey));
     if (!ret.ok()) {
-        LOG(ERROR) << "Get Tag SpaceID: " << req.get_space_id() << ", tagID: " << req.get_tag_id()
-                   << ", version " << req.get_version() << " not found";
+        LOG(ERROR) << "Get Tag SpaceID: " << req.get_space_id()
+                   << ", tagID: " << req.get_tag_id()
+                   << ", version " << req.get_version() << " Not Found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
-    VLOG(3) << "Get Tag SpaceID: " << req.get_space_id() << ", tagID: " << req.get_tag_id()
-            << ", version " << req.get_version();
+
+    LOG(INFO) << "Get Tag SpaceID: " << req.get_space_id()
+              << ", tagID: " << req.get_tag_id()
+              << ", version " << req.get_version();
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_schema(MetaServiceUtils::parseSchema(ret.value()));
     onFinished();

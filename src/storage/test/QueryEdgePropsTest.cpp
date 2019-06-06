@@ -38,12 +38,12 @@ void mockData(kvstore::KVStore* kv) {
         }
         kv->asyncMultiPut(
             0, partId, std::move(data),
-            [&](kvstore::ResultCode code, HostAddr addr) {
+            [&](kvstore::ResultCode code) {
                 EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                UNUSED(addr);
             });
     }
 }
+
 
 void buildRequest(cpp2::EdgePropRequest& req) {
     req.set_space_id(0);
@@ -66,6 +66,7 @@ void buildRequest(cpp2::EdgePropRequest& req) {
     }
     req.set_return_columns(std::move(tmpColumns));
 }
+
 
 void checkResponse(cpp2::EdgePropResponse& resp) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
@@ -116,9 +117,11 @@ void checkResponse(cpp2::EdgePropResponse& resp) {
     EXPECT_EQ(210, rowNum);
 }
 
+
 TEST(QueryEdgePropsTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/QueryEdgePropsTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
     LOG(INFO) << "Prepare meta...";
     auto schemaMan = TestUtils::mockSchemaMan();
     LOG(INFO) << "Prepare data...";

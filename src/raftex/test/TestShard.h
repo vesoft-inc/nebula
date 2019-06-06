@@ -33,6 +33,10 @@ public:
         std::function<void(size_t idx, const char*, TermID)>
             becomeLeaderCB);
 
+    LogID lastCommittedLogId() override {
+        return 0;
+    }
+
     std::shared_ptr<RaftexService> getService() const {
         return service_;
     }

@@ -25,9 +25,9 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     req.parts.emplace(0, TestUtils::setupVertices(0, 10, 10));
     req.parts.emplace(1, TestUtils::setupVertices(1, 20, 30));
     LOG(INFO) << "Test FutureAddVerticesTest...";
-    std::unique_ptr<kvstore::KVStore> kvstore(TestUtils::initKV(rootPath.path()));
-    auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(), nullptr);
+    std::unique_ptr<kvstore::KVStore> kvstore = TestUtils::initKV(rootPath.path());
 
+    auto storageServiceHandler = std::make_unique<StorageServiceHandler>(kvstore.get(), nullptr);
     auto resp = storageServiceHandler->future_addVertices(req).get();
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());
 

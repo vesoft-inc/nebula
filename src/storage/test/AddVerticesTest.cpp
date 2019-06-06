@@ -17,8 +17,9 @@ namespace storage {
 
 TEST(AddVerticesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddVerticesTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     auto* processor = AddVerticesProcessor::instance(kv.get(), nullptr);
+
     LOG(INFO) << "Build AddVerticesRequest...";
     cpp2::AddVerticesRequest req;
     req.space_id = 0;

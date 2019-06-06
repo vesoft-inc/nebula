@@ -5,6 +5,7 @@ add_library(
     PartManager.cpp
     NebulaStore.cpp
     RocksEngineConfig.cpp
+    LogEncoder.cpp
 )
 add_dependencies(kvstore_obj base_obj meta_client)
 
