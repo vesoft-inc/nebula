@@ -25,35 +25,43 @@ Status DescribeEdgeExecutor::prepare() {
 void DescribeEdgeExecutor::execute() {
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
-    auto status = ectx()->schemaManager()->toEdgeType(spaceId, *name);
-    if (!status.ok()) {
-        onError_(Status::Error("Schema not found for edge '%s'", name->c_str()));
-        return;
-    }
-    auto edgeType = status.value();
-    auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType);
-    resp_ = std::make_unique<cpp2::ExecutionResponse>();
-    if (schema == nullptr) {
-        onError_(Status::Error("Schema not found for edge '%s'", name->c_str()));
-        return;
-    }
 
-    std::vector<std::string> header{"Field", "Type"};
-    resp_->set_column_names(std::move(header));
-    uint32_t numFields = schema->getNumFields();
-    std::vector<cpp2::RowValue> rows;
-    for (uint32_t index = 0; index < numFields; index++) {
-        std::vector<cpp2::ColumnValue> row;
-        row.resize(2);
-        row[0].set_str(schema->getFieldName(index));
-        row[1].set_str(valueTypeToString(schema->getFieldType(index)));
-        rows.emplace_back();
-        rows.back().set_columns(std::move(row));
-    }
+    // Get the lastest ver
+    auto future = ectx()->getMetaClient()->getEdgeSchema(spaceId, *name);
+    auto *runner = ectx()->rctx()->runner();
 
-    resp_->set_rows(std::move(rows));
-    DCHECK(onFinish_);
-    onFinish_();
+    auto cb = [this] (auto &&resp) {
+        if (!resp.ok()) {
+            DCHECK(onError_);
+            onError_(Status::Error("Schema not found for edge '%s'", sentence_->name()->c_str()));
+            return;
+        }
+
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        std::vector<std::string> header{"Field", "Type"};
+        resp_->set_column_names(std::move(header));
+        std::vector<cpp2::RowValue> rows;
+        for (auto& item : resp.value().columns) {
+            std::vector<cpp2::ColumnValue> row;
+            row.resize(2);
+            row[0].set_str(item.name);
+            row[1].set_str(valueTypeToString(item.type));
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
+
+        resp_->set_rows(std::move(rows));
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+
+    auto error = [this] (auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error("Internal error"));
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 

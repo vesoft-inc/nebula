@@ -117,7 +117,7 @@ struct ListSpacesResp {
 }
 
 struct GetSpaceReq {
-    1: common.GraphSpaceID space_id,
+    1: string     space_name,
 }
 
 struct GetSpaceResp {
@@ -157,7 +157,7 @@ struct ListTagsResp {
 
 struct GetTagReq {
     1: common.GraphSpaceID space_id,
-    2: common.TagID        tag_id,
+    2: string              tag_name,
     3: common.SchemaVer    version,
 }
 
@@ -182,7 +182,7 @@ struct AlterEdgeReq {
 
 struct GetEdgeReq {
     1: common.GraphSpaceID space_id,
-    2: common.EdgeType     edge_type,
+    2: string              edge_name,
     3: common.SchemaVer    version,
 }
 
