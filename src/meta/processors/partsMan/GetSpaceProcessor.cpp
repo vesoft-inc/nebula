@@ -11,17 +11,24 @@ namespace meta {
 
 void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    auto spaceId = req.get_space_id();
+    auto spaceRet = getSpaceId(req.get_space_name());
+    if (!spaceRet.ok()) {
+        resp_.set_code(to(spaceRet.status()));
+        onFinished();
+        return;;
+    }
+
+    auto spaceId = spaceRet.value();
     std::string spaceKey = MetaServiceUtils::spaceKey(spaceId);
     auto ret = doGet(std::move(spaceKey));
     if (!ret.ok()) {
-        LOG(ERROR) << "Get Space SpaceID: " << req.get_space_id() << " not found";
+        LOG(ERROR) << "Get Space SpaceName: " << req.get_space_name() << " not found";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
         return;
     }
     auto properties = MetaServiceUtils::parseSpace(ret.value());
-    VLOG(3) << "Get Space SpaceID: " << req.get_space_id() << ", Name "
+    VLOG(3) << "Get Space SpaceName: " << req.get_space_name() << ", Name "
             << properties.get_space_name() << ", Partition Num "
             << properties.get_partition_num() << ", Replica Factor "
             << properties.get_replica_factor();
