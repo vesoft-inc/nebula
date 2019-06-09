@@ -135,6 +135,13 @@ TEST(Parser, TagOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    // Test empty prop
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG person()";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
     {
         GQLParser parser;
         std::string query = "CREATE TAG man(name string, age int, "
@@ -208,6 +215,13 @@ TEST(Parser, EdgeOperation) {
         GQLParser parser;
         std::string query = "CREATE EDGE e1(name string, age int, "
                             "married bool, salary double, create_time timestamp)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Test empty prop
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE e1()";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -371,6 +385,14 @@ TEST(Parser, InsertVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    // Test insert empty value
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person() "
+                            "VALUES 12345:()";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, UpdateVertex) {
@@ -428,6 +450,14 @@ TEST(Parser, InsertEdge) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    // Test insert empty value
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE transfer() "
+                            "VALUES 12345->54321@1537408527:()";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
     {
         GQLParser parser;
         std::string query = "INSERT EDGE NO OVERWRITE transfer(amount, time) "
@@ -446,6 +476,14 @@ TEST(Parser, InsertEdge) {
         GQLParser parser;
         std::string query = "INSERT EDGE NO OVERWRITE transfer(amount, time) "
                             "VALUES 12345->-54321@1537408527:(3.75, 1537408527)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Test insert empty value
+    {
+        GQLParser parser;
+        std::string query = "INSERT EDGE NO OVERWRITE transfer() "
+                            "VALUES 12345->54321@1537408527:()";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

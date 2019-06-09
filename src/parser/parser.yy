@@ -828,7 +828,7 @@ vertex_tag_list
     ;
 
 vertex_tag_item
-    : name_label {
+    : name_label L_PAREN R_PAREN{
         $$ = new VertexTagItem($1);
     }
     | name_label L_PAREN prop_list R_PAREN {
@@ -862,7 +862,10 @@ vertex_row_list
     ;
 
 vertex_row_item
-    : vid COLON L_PAREN value_list R_PAREN {
+    : vid COLON L_PAREN R_PAREN {
+        $$ = new VertexRowItem($1, new ValueList());
+    }
+    | vid COLON L_PAREN value_list R_PAREN {
         $$ = new VertexRowItem($1, $4);
     }
     ;
@@ -882,11 +885,26 @@ value_list
     ;
 
 insert_edge_sentence
-    : KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
+    : KW_INSERT KW_EDGE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgeSentence();
+        sentence->setEdge($3);
+        sentence->setProps(new PropertyList());
+        sentence->setRows($7);
+        $$ = sentence;
+    }
+    | KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setEdge($3);
         sentence->setProps($5);
         sentence->setRows($8);
+        $$ = sentence;
+    }
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgeSentence();
+        sentence->setOverwrite(false);
+        sentence->setEdge($5);
+        sentence->setProps(new PropertyList());
+        sentence->setRows($9);
         $$ = sentence;
     }
     | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
@@ -911,8 +929,14 @@ edge_row_list
     ;
 
 edge_row_item
-    : vid R_ARROW vid COLON L_PAREN value_list R_PAREN {
+    : vid R_ARROW vid COLON L_PAREN R_PAREN {
+        $$ = new EdgeRowItem($1, $3, new ValueList());
+    }
+    | vid R_ARROW vid COLON L_PAREN value_list R_PAREN {
         $$ = new EdgeRowItem($1, $3, $6);
+    }
+    | vid R_ARROW INTEGER AT INTEGER COLON L_PAREN R_PAREN {
+        $$ = new EdgeRowItem($1, $3, $5, new ValueList());
     }
     | vid R_ARROW vid AT rank COLON L_PAREN value_list R_PAREN {
         $$ = new EdgeRowItem($1, $3, $5, $8);
