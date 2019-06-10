@@ -6,8 +6,8 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
-#include "wal/FileBasedWal.h"
-#include "wal/BufferFlusher.h"
+#include "kvstore/wal/FileBasedWal.h"
+#include "kvstore/wal/BufferFlusher.h"
 #include "fs/TempDir.h"
 
 namespace nebula {

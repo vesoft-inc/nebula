@@ -8,7 +8,7 @@
 #define RAFTEX_TEST_TESTSHARD_H_
 
 #include "base/Base.h"
-#include "raftex/RaftPart.h"
+#include "kvstore/raftex/RaftPart.h"
 
 namespace nebula {
 namespace raftex {
