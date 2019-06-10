@@ -69,6 +69,7 @@ public:
     }
 
     bool ttlValid(GraphSpaceID, const folly::StringPiece&) const {
+        // TODO(heng): Implement ttl filter after ttl schema pr merged in
         return true;
     }
 
