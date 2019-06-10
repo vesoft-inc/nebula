@@ -5,9 +5,9 @@
  */
 
 #include "base/Base.h"
-#include "wal/FileBasedWalIterator.h"
-#include "wal/FileBasedWal.h"
-#include "wal/WalFileInfo.h"
+#include "kvstore/wal/FileBasedWalIterator.h"
+#include "kvstore/wal/FileBasedWal.h"
+#include "kvstore/wal/WalFileInfo.h"
 
 namespace nebula {
 namespace wal {

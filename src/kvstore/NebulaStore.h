@@ -10,7 +10,7 @@
 #include "base/Base.h"
 #include <gtest/gtest_prod.h>
 #include <folly/RWSpinLock.h>
-#include "raftex/RaftexService.h"
+#include "kvstore/raftex/RaftexService.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/Part.h"
