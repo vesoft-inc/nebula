@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "raftex/RaftPart.h"
+#include "kvstore/raftex/RaftPart.h"
 #include <folly/io/async/EventBaseManager.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include <folly/gen/Base.h>
@@ -14,10 +14,10 @@
 #include "thrift/ThriftClientManager.h"
 #include "network/NetworkUtils.h"
 #include "thread/NamedThread.h"
-#include "wal/FileBasedWal.h"
-#include "wal/BufferFlusher.h"
-#include "raftex/LogStrListIterator.h"
-#include "raftex/Host.h"
+#include "kvstore/wal/FileBasedWal.h"
+#include "kvstore/wal/BufferFlusher.h"
+#include "kvstore/raftex/LogStrListIterator.h"
+#include "kvstore/raftex/Host.h"
 
 
 DEFINE_bool(accept_log_append_during_pulling, false,
