@@ -106,16 +106,7 @@ AssertionResult DataTest::prepareSchema() {
                                << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "CREATE EDGE friend(intimacy int)";
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd
-                               << " failed, error code "<< static_cast<int32_t>(code);
-        }
-    }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_load_data_interval_secs + 3);
     return TestOK();
 }
 
@@ -141,37 +132,32 @@ AssertionResult DataTest::removeData() {
     return TestOK();
 }
 
-TEST_F(DataTest, DISABLED_InsertVertex) {
+TEST_F(DataTest, InsertVertex) {
     // Insert wrong type value
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX person(name, age) VALUES 1001:(\"peiqi\", \"2\")";
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES 1001:(\"Tom\", \"2\")";
         auto code = client_->execute(cmd, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     // Insert wrong num of value
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX person(name) VALUES 1001:(\"peiqi\", 2)";
+        std::string cmd = "INSERT VERTEX person(name) VALUES 1001:(\"Tom\", 2)";
         auto code = client_->execute(cmd, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     // Insert wrong field
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX person(Name, age) VALUES 1001:(\"peiqi\", 3)";
+        std::string cmd = "INSERT VERTEX person(Name, age) VALUES 1001:(\"Tom\", 3)";
         auto code = client_->execute(cmd, resp);
-        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
+    // Insert vertex succeeded
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX person(name, age) VALUES 1001:(\"zhangsan\", 22)";
-        auto code = client_->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX person(name, age) VALUES 1002:(\"lisi\", 23)";
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES 1001:(\"Tom\", 22)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -179,7 +165,7 @@ TEST_F(DataTest, DISABLED_InsertVertex) {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT VERTEX person(name, age),student(grade, number) "
-                          "VALUES 1003:(\"xiaoming\", 8, \"three\", 20190901001)";
+                          "VALUES 1003:(\"Lucy\", 8, \"three\", 20190901001)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -187,8 +173,8 @@ TEST_F(DataTest, DISABLED_InsertVertex) {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT VERTEX person(name, age),student(grade, number) "
-                          "VALUES 1005:(\"xiaoqiang\", 8, \"three\", 20190901008),"
-                          "1006:(\"xiaohong\", 9, \"four\", 20180901003)";
+                          "VALUES 1005:(\"Laura\", 8, \"three\", 20190901008),"
+                          "1006:(\"Amber\", 9, \"four\", 20180901003)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -196,13 +182,7 @@ TEST_F(DataTest, DISABLED_InsertVertex) {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT VERTEX person(name, age) "
-                          "VALUES 1007:(\"xiaogang\", 8), 1008:(\"xiaoxiao\", 9)";
-        auto code = client_->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES 1001->1002:(80)";
+                          "VALUES 1007:(\"Kitty\", 8), 1008:(\"Peter\", 9)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -216,43 +196,42 @@ TEST_F(DataTest, DISABLED_InsertVertex) {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
-                          "1001->1005:(81), 1001->1006:(83)";
+                          "1001->1007:(81), 1001->1008:(83)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Get result
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "GO FROM 1001 OVER schoolmate YIELD $^[person].name,"
-                          "schoolmate.likeness, $$[person].name";
+        std::string cmd = "GO FROM 1001 OVER schoolmate YIELD $^person.name,"
+                          "schoolmate.likeness, $$person.name";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {"zhangsan", 80, "lisi"},
-            {"zhangsan", 85, "xiaoming"},
-            {"zhangsan", 81, "xiaoqiang"},
-            {"zhangsan", 83, "xiaohong"},
+            {"Tom", 85, "Lucy"},
+            {"Tom", 81, "Kitty"},
+            {"Tom", 83, "Peter"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     // Get multi tags
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT EDGE friend(intimacy) VALUES "
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
                           "1003->1005:(90), 1003->1006:(95)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "GO FROM 1003 OVER friend YIELD $^[person].name,"
-                          "friend.intimacy, $$[person].name, $$[student].grade, $$[student].number";
+        std::string cmd = "GO FROM 1003 OVER schoolmate YIELD "
+                          "schoolmate.likeness, $$person.name, $$student.grade, $$student.number";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        using valueType = std::tuple<std::string, int64_t, std::string, std::string, int64_t>;
+        using valueType = std::tuple<int64_t, std::string, std::string, int64_t>;
         std::vector<valueType> expected = {
-            {"xiaoming", 90, "xiaoqiang", "three", 20190901008},
-            {"xiaoming", 95, "xiaohong", "four", 20180901003},
+            {90, "Laura", "three", 20190901008},
+            {95, "Amber", "four", 20180901003},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -268,7 +247,7 @@ TEST_F(DataTest, DISABLED_InsertVertex) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT EDGE friend(intimacy) VALUES "
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
                           "1006->1111:(90)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -276,7 +255,7 @@ TEST_F(DataTest, DISABLED_InsertVertex) {
     // Get result
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "GO FROM 1006 OVER friend YIELD $$[student].number";
+        std::string cmd = "GO FROM 1006 OVER schoolmate YIELD $$student.number";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<int64_t, 1>> expected{
@@ -318,3 +297,4 @@ TEST_F(DataTest, DISABLED_InsertVertex) {
 
 }   // namespace graph
 }   // namespace nebula
+

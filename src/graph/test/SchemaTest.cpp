@@ -48,15 +48,14 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-
-    // Space test
+    // Test space not exist
     {
-        // Test space not exist
         cpp2::ExecutionResponse resp;
         std::string query = "USE not_exist_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
+    // Test create space succeeded
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=1)";
@@ -73,6 +72,7 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Test desc space command
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESC SPACE default_space";
@@ -111,8 +111,20 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-
-    // Tag test
+    // Test create tag without prop
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG tag1()";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE TAG tag1";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Test create tag succeeded
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG person(name string, email string, "
@@ -134,6 +146,7 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Test desc tag command
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESC TAG person";
@@ -148,8 +161,8 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Test unreserved keyword
     {
-        // Unreserved keyword test
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG upper(name string, EMAIL string, "
                             "age int, gender string, row_timestamp timestamp)";
@@ -171,19 +184,21 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Test existent tag
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG account(id int, balance double)";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        // Tag has existed
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG account(id int, balance double)";
+        std::string query = "CREATE TAG person(id int, balance double)";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Test nonexistent tag
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE TAG not_exist";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Test alter tag
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG account "
@@ -210,23 +225,28 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Test create edge without prop
     {
-        // Test tag not exist
         cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG not_exist";
+        std::string query = "CREATE EDGE edge1()";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-
-    // Edge test
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE EDGE edge1";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Test create edge succeeded
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE buy(id int, time string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Test existent edge
     {
-        // Test the edge has been existed.
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE buy(id int, time string)";
         auto code = client->execute(query, resp);
@@ -242,6 +262,14 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         EXPECT_TRUE(verifyResult(resp, expected));
     }
+    // Test nonexistent edge
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE EDGE not_exist";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Test desc edge
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESC EDGE buy";
@@ -252,13 +280,14 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         EXPECT_TRUE(verifyResult(resp, expected));
     }
+    // Test edge not exist
     {
-        // Test edge not exist
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE not_exist";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
+    // Test create edge succeeded
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE education(id int, time timestamp, school string)";
@@ -276,17 +305,20 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         EXPECT_TRUE(verifyResult(resp, expected));
     }
+    // Test show edges
     {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW EDGES";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"edge1"},
             {"buy"},
             {"education"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Test alter edge
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE education "
@@ -313,7 +345,6 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-
     // Test different tag and edge in different space
     {
         cpp2::ExecutionResponse resp;
@@ -344,6 +375,7 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Test the same tag in diff space
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG person(name string, interest string)";
@@ -361,12 +393,21 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Test drop tag
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP TAG person";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Test drop edge
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP EDGE buy";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Test drop space
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE my_space";

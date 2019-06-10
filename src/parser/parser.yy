@@ -259,14 +259,14 @@ input_ref_expression
     ;
 
 src_ref_expression
-    : SRC_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new SourcePropertyExpression($3, $6);
+    : SRC_REF LABEL DOT LABEL {
+        $$ = new SourcePropertyExpression($2, $4);
     }
     ;
 
 dst_ref_expression
-    : DST_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new DestPropertyExpression($3, $6);
+    : DST_REF LABEL DOT LABEL {
+        $$ = new DestPropertyExpression($2, $4);
     }
     ;
 
