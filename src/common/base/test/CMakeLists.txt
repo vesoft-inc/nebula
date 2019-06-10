@@ -110,3 +110,11 @@ nebula_link_libraries(
     gtest_main
 )
 nebula_add_test(nebulakey_utils_test)
+
+add_executable(range_vs_transform_bm RangeVsTransformBenchmark.cpp)
+nebula_link_libraries(
+    range_vs_transform_bm
+    follybenchmark
+    boost_regex
+)
+target_compile_options(range_vs_transform_bm PRIVATE -O3)

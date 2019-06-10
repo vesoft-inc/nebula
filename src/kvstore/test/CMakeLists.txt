@@ -157,4 +157,19 @@ nebula_link_libraries(
 )
 nebula_add_test(log_encoder_test)
 
+add_executable(
+    multi_versions_perf_test_bm
+    MultiVersionBenchmark.cpp
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:fs_obj>
+)
+
+nebula_link_libraries(
+    multi_versions_perf_test_bm
+    follybenchmark
+    ${ROCKSDB_LIBRARIES}
+    boost_regex
+)
+
+nebula_add_test(multi_versions_perf_test_bm)
 
