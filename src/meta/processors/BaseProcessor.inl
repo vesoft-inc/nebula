@@ -30,7 +30,7 @@ BaseProcessor<RESP>::doPrefix(const std::string& key) {
     if (code != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Prefix Failed");
     }
-    return iter;
+    return std::move(iter);
 }
 
 
