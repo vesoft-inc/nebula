@@ -1047,12 +1047,16 @@ std::string LogicalExpression::toString() const {
 
 
 VariantType LogicalExpression::eval() const {
-    auto left = left_->eval();
-    auto right = right_->eval();
     if (op_ == AND) {
-        return asBool(left) && asBool(right);
+        if (!asBool(left_->eval())) {
+            return false;
+        }
+        return asBool(right_->eval());
     } else {
-        return asBool(left) || asBool(right);
+        if (asBool(left_->eval())) {
+            return true;
+        }
+        return asBool(right_->eval());
     }
 }
 

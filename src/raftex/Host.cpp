@@ -173,6 +173,9 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogsInternal(
     })
     .then([eb, self = shared_from_this(), numLogs, termSent, firstId] (
             folly::Try<cpp2::AppendLogResponse>&& t) {
+        UNUSED(numLogs);
+        UNUSED(termSent);
+        UNUSED(firstId);
         VLOG(2) << self->idStr_ << "appendLogs() call got response";
 
         if (t.hasException()) {
@@ -355,7 +358,7 @@ Host::prepareAppendLogRequest(std::lock_guard<std::mutex>& lck) const {
         req->set_log_term(0);
     }
 
-    return std::move(req);
+    return req;
 }
 
 

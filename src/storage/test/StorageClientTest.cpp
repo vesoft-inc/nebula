@@ -17,12 +17,15 @@
 
 DECLARE_string(meta_server_addrs);
 DECLARE_int32(load_data_interval_secs);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace storage {
 
 TEST(StorageClientTest, VerticesInterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
+    FLAGS_heartbeat_interval_secs = 1;
+
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     GraphSpaceID spaceId = 0;
     uint32_t localIp;
@@ -32,7 +35,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localMetaPort = 0;
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
-    auto metaServerContext = meta::TestUtils::mockServer(localMetaPort, metaPath.c_str());
+    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str());
     localMetaPort =  metaServerContext->port_;
 
     LOG(INFO) << "Create meta client...";
@@ -47,18 +50,34 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     LOG(INFO) << "Start data server....";
 
     // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
-    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
+    uint32_t localDataPort = 0;
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
-    auto sc = TestUtils::mockServer(mClient.get(), dataPath.c_str(), localIp, localDataPort);
+    auto sc = TestUtils::mockStorageServer(mClient.get(),
+                                           dataPath.c_str(),
+                                           localIp,
+                                           localDataPort,
+                                           // TODO We are using the memory version of
+                                           // SchemaMan We need to switch to Meta Server
+                                           // based version
+                                           false);
+    localDataPort = sc->port_;
 
     LOG(INFO) << "Add hosts and create space....";
     auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
     ASSERT_TRUE(r.ok());
+    while (meta::ActiveHostsManHolder::hostsMan()->getActiveHosts().size() == 0) {
+        usleep(1000);
+    }
+    VLOG(1) << "The storage server has been added to the meta service";
+
     auto ret = mClient->createSpace("default", 10, 1).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
+    LOG(INFO) << "Created space \"default\", its id is " << spaceId;
     sleep(2 * FLAGS_load_data_interval_secs + 1);
 
     auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
+
     // VerticesInterfacesTest(addVertices and getVertexProps)
     {
         LOG(INFO) << "Prepare vertices data...";
@@ -87,8 +106,15 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         auto f = client->addVertices(spaceId, std::move(vertices), true);
         LOG(INFO) << "Waiting for the response...";
         auto resp = std::move(f).get();
-        ASSERT_TRUE(resp.succeeded());
+        if (!resp.succeeded()) {
+            for (auto& err : resp.failedParts()) {
+                LOG(ERROR) << "Partition " << err.first
+                           << " failed: " << static_cast<int32_t>(err.second);
+            }
+            ASSERT_TRUE(resp.succeeded());
+        }
     }
+
     {
         std::vector<VertexID> vIds;
         std::vector<cpp2::PropDef> retCols;
@@ -103,6 +129,17 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         }
         auto f = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
+        if (VLOG_IS_ON(2)) {
+            if (!resp.succeeded()) {
+                std::stringstream ss;
+                for (auto& p : resp.failedParts()) {
+                    ss << "Part " << p.first
+                       << ": " << static_cast<int32_t>(p.second)
+                       << "; ";
+                }
+                VLOG(2) << "Failed partitions:: " << ss.str();
+            }
+        }
         ASSERT_TRUE(resp.succeeded());
 
         auto& results = resp.responses();
@@ -158,6 +195,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         auto resp = std::move(f).get();
         ASSERT_TRUE(resp.succeeded());
     }
+
     {
         std::vector<storage::cpp2::EdgeKey> edgeKeys;
         std::vector<cpp2::PropDef> retCols;
@@ -220,7 +258,6 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     metaServerContext.reset();
     threadPool.reset();
 }
-
 
 }  // namespace storage
 }  // namespace nebula

@@ -83,6 +83,7 @@ StatusOr<std::unordered_map<std::string, std::string>> NetworkUtils::listDeviceA
     return dev2ipv4s;
 }
 
+
 bool NetworkUtils::getDynamicPortRange(uint16_t& low, uint16_t& high) {
     FILE* pipe = popen("cat /proc/sys/net/ipv4/ip_local_port_range", "r");
     if (!pipe) {
@@ -91,7 +92,16 @@ bool NetworkUtils::getDynamicPortRange(uint16_t& low, uint16_t& high) {
         return false;
     }
 
-    fscanf(pipe, "%hu %hu", &low, &high);
+    if (fscanf(pipe, "%hu %hu", &low, &high) != 2) {
+        LOG(ERROR) << "Failed to read from /proc/sys/net/ipv4/ip_local_port_range";
+        // According to ICANN, the port range is devided into three sections
+        //
+        // Well-known ports: 0 to 1023 (used for system services)
+        // Registered/user ports: 1024 to 49151
+        // Dynamic/private ports: 49152 to 65535
+        low = 49152;
+        high = 65535;
+    }
 
     if (pclose(pipe) < 0) {
         LOG(ERROR) << "Failed to close the pipe: " << strerror(errno);
@@ -111,7 +121,7 @@ std::unordered_set<uint16_t> NetworkUtils::getPortsInUse() {
         inUse.emplace(std::stoul(sm[1].str(), NULL, 16));
         ++iter;
     }
-    return std::move(inUse);
+    return inUse;
 }
 
 

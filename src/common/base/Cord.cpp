@@ -119,7 +119,7 @@ std::string Cord::str() const {
 
     appendTo(buf);
 
-    return std::move(buf);
+    return buf;
 }
 
 

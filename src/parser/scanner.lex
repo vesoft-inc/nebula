@@ -19,6 +19,7 @@ static constexpr size_t MAX_STRING = 4096;
 %}
 
 %x STR
+%x COMMENT
 
 GO                          ([Gg][Oo])
 AS                          ([Aa][Ss])
@@ -35,6 +36,7 @@ YIELD                       ([Yy][Ii][Ee][Ll][Dd])
 RETURN                      ([Rr][Ee][Tt][Uu][Rr][Nn])
 CREATE                      ([Cc][Rr][Ee][Aa][Tt][Ee])
 DESCRIBE                    ([Dd][Ee][Ss][Cc][Rr][Ii][Bb][Ee])
+DESC                        ([Dd][Ee][Ss][Cc])
 VERTEX                      ([Vv][Ee][Rr][Tt][Ee][Xx])
 EDGE                        ([Ee][Dd][Gg][Ee])
 EDGES                       ([Ee][Dd][Gg][Ee][Ss])
@@ -48,7 +50,6 @@ UPTO                        ([Uu][Pp][Tt][Oo])
 REVERSELY                   ([Rr][Ee][Vv][Ee][Rr][Ss][Ee][Ll][Yy])
 SPACE                       ([Ss][Pp][Aa][Cc][Ee])
 SPACES                      ([Ss][Pp][Aa][Cc][Ee][Ss])
-TTL                         ([Tt][Tt][Ll])
 INT                         ([Ii][Nn][Tt])
 BIGINT                      ([Bb][Ii][Gg][Ii][Nn][Tt])
 DOUBLE                      ([Dd][Oo][Uu][Bb][Ll][Ee])
@@ -93,6 +94,8 @@ ON                          ([Oo][Nn])
 ROLES                       ([Rr][Oo][Ll][Ee][Ss])
 BY                          ([Bb][Yy])
 IN                          ([Ii][Nn])
+TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
+TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -120,6 +123,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {YIELD}                     { return TokenType::KW_YIELD; }
 {RETURN}                    { return TokenType::KW_RETURN; }
 {DESCRIBE}                  { return TokenType::KW_DESCRIBE; }
+{DESC}                      { return TokenType::KW_DESC; }
 {VERTEX}                    { return TokenType::KW_VERTEX; }
 {EDGE}                      { return TokenType::KW_EDGE; }
 {EDGES}                     { return TokenType::KW_EDGES; }
@@ -133,7 +137,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {REVERSELY}                 { return TokenType::KW_REVERSELY; }
 {SPACE}                     { return TokenType::KW_SPACE; }
 {SPACES}                    { return TokenType::KW_SPACES; }
-{TTL}                       { return TokenType::KW_TTL; }
 {INT}                       { return TokenType::KW_INT; }
 {BIGINT}                    { return TokenType::KW_BIGINT; }
 {DOUBLE}                    { return TokenType::KW_DOUBLE; }
@@ -146,8 +149,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {MINUS}                     { return TokenType::KW_MINUS; }
 {NO}                        { return TokenType::KW_NO; }
 {OVERWRITE}                 { return TokenType::KW_OVERWRITE; }
-{TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
-{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {SHOW}                      { return TokenType::KW_SHOW; }
 {ADD}                       { return TokenType::KW_ADD; }
 {HOSTS}                     { return TokenType::KW_HOSTS; }
@@ -179,6 +180,10 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {ROLES}                     { return TokenType::KW_ROLES; }
 {BY}                        { return TokenType::KW_BY; }
 {IN}                        { return TokenType::KW_IN; }
+{TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
+{TTL_COL}                   { return TokenType::KW_TTL_COL; }
+{TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
+{FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -300,6 +305,12 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 yylloc->lines(yyleng);
                                 yylloc->step();
                             }
+"#".*                       // Skip the annotation
+"//".*                      // Skip the annotation
+"--".*                      // Skip the annotation
+"/*"                        { BEGIN(COMMENT); }
+<COMMENT>"*/"               { BEGIN(INITIAL); }
+<COMMENT>([^*]|\n)+|.       // Skip the annotation
 .                           { printf("error %c\n", *yytext); yyterminate(); }
 
 %%

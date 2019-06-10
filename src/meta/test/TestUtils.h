@@ -4,15 +4,21 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#ifndef META_TEST_TESTUTILS_H_
+#define META_TEST_TESTUTILS_H_
+
 #include "base/Base.h"
+#include "test/ServerContext.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
-#include "meta/processors/AddHostsProcessor.h"
-#include "meta/processors/ListHostsProcessor.h"
+#include "meta/processors/partsMan/AddHostsProcessor.h"
+#include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/MetaServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "interface/gen-cpp2/common_types.h"
+#include "time/TimeUtils.h"
+#include "meta/ActiveHostsMan.h"
 
 DECLARE_string(part_man_type);
 
@@ -23,8 +29,12 @@ using nebula::cpp2::SupportedType;
 
 class TestUtils {
 public:
-    static kvstore::KVStore* initKV(const char* rootPath) {
+    static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
+        auto workers = std::make_shared<thread::GenericThreadPool>();
+        workers->start(4);
+        auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto partMan = std::make_unique<kvstore::MemPartManager>();
+
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0}
         auto& partsMap = partMan->partsMap();
@@ -34,13 +44,16 @@ public:
         paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
 
         kvstore::KVOptions options;
-        options.local_ = HostAddr(0, 0);
         options.dataPaths_ = std::move(paths);
         options.partMan_ = std::move(partMan);
+        HostAddr localhost = HostAddr(0, 0);
 
-        kvstore::NebulaStore* kv = static_cast<kvstore::NebulaStore*>(
-                                     kvstore::KVStore::instance(std::move(options)));
-        return kv;
+        auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
+                                                            ioPool,
+                                                            workers,
+                                                            localhost);
+        sleep(1);
+        return std::move(store);
     }
 
     static nebula::cpp2::ColumnDef columnDef(int32_t index, nebula::cpp2::SupportedType st) {
@@ -50,6 +63,14 @@ public:
         vType.set_type(st);
         column.set_type(std::move(vType));
         return column;
+    }
+
+    static void registerHB(const std::vector<HostAddr>& hosts) {
+        ActiveHostsManHolder::hostsMan()->reset();
+        auto now = time::TimeUtils::nowInSeconds();
+        for (auto& h : hosts) {
+            ActiveHostsManHolder::hostsMan()->updateHostInfo(h, HostInfo(now));
+        }
     }
 
     static int32_t createSomeHosts(kvstore::KVStore* kv,
@@ -72,6 +93,7 @@ public:
             auto resp = std::move(f).get();
             EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         }
+        registerHB(hosts);
         {
             cpp2::ListHostsReq req;
             auto* processor = ListHostsProcessor::instance(kv);
@@ -92,10 +114,9 @@ public:
         std::vector<nebula::kvstore::KV> data;
         data.emplace_back(MetaServiceUtils::spaceKey(id), "test_space");
         kv->asyncMultiPut(0, 0, std::move(data),
-                          [&] (kvstore::ResultCode code, HostAddr leader) {
-            ret = (code == kvstore::ResultCode::SUCCEEDED);
-            UNUSED(leader);
-        });
+                          [&] (kvstore::ResultCode code) {
+                              ret = (code == kvstore::ResultCode::SUCCEEDED);
+                          });
         return ret;
     }
 
@@ -119,10 +140,9 @@ public:
         }
 
         kv->asyncMultiPut(0, 0, std::move(tags),
-                                [] (kvstore::ResultCode code, HostAddr leader) {
-            ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
-            UNUSED(leader);
-        });
+                          [] (kvstore::ResultCode code) {
+                                ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+                          });
     }
 
     static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum, SchemaVer version = 0) {
@@ -145,45 +165,23 @@ public:
                                MetaServiceUtils::schemaEdgeVal(edgeName, srcsch));
         }
 
-        kv->asyncMultiPut(0, 0, std::move(edges),
-                                [] (kvstore::ResultCode code, HostAddr leader) {
+        kv->asyncMultiPut(0, 0, std::move(edges), [] (kvstore::ResultCode code) {
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
-            UNUSED(leader);
         });
     }
 
-    struct ServerContext {
-        ~ServerContext() {
-            server_->stop();
-            serverT_->join();
-            VLOG(3) << "~ServerContext";
-        }
+    static std::unique_ptr<test::ServerContext> mockMetaServer(uint16_t port,
+                                                               const char* dataPath) {
+        LOG(INFO) << "Initializing KVStore at \"" << dataPath << "\"";
 
-        std::unique_ptr<apache::thrift::ThriftServer> server_;
-        std::unique_ptr<std::thread> serverT_;
-        uint32_t port_;
-    };
+        auto sc = std::make_unique<test::ServerContext>();
+        sc->kvStore_ = TestUtils::initKV(dataPath);
 
-    static std::unique_ptr<ServerContext> mockServer(uint32_t port, const char* dataPath) {
-        auto sc = std::make_unique<ServerContext>();
-        sc->server_ = std::make_unique<apache::thrift::ThriftServer>();
-        sc->serverT_ = std::make_unique<std::thread>([&]() {
-            LOG(INFO) << "Starting the meta Daemon on port " << port << ", path " << dataPath;
-            std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(dataPath));
-            auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kv.get());
-            CHECK(!!sc->server_) << "Failed to create the thrift server";
-            sc->server_->setInterface(handler);
-            sc->server_->setPort(port);
-            sc->server_->serve();  // Will wait until the server shuts down
+        auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get());
+        sc->mockCommon("meta", port, handler);
+        LOG(INFO) << "The Meta Daemon started on port " << sc->port_
+                  << ", data path is at \"" << dataPath << "\"";
 
-            LOG(INFO) << "Stop the server...";
-        });
-        while (!sc->server_->getServeEventBase() ||
-               !sc->server_->getServeEventBase()->isRunning()) {
-        }
-        sc->port_ = sc->server_->getAddress().getPort();
-        LOG(INFO) << "Starting the Meta Daemon on port " << sc->port_
-                  << ", path " << dataPath;
         return sc;
     }
 };
@@ -191,3 +189,4 @@ public:
 }  // namespace meta
 }  // namespace nebula
 
+#endif  // META_TEST_TESTUTILS_H_

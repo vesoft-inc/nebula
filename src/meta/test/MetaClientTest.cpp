@@ -14,7 +14,7 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/ServerBasedSchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
-#include "meta/processors/HBProcessor.h"
+#include "meta/test/TestUtils.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
@@ -32,7 +32,7 @@ TEST(MetaClientTest, InterfacesTest) {
 
     // Let the system choose an available port for us
     uint32_t localMetaPort = 0;
-    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     GraphSpaceID spaceId = 0;
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
@@ -47,6 +47,7 @@ TEST(MetaClientTest, InterfacesTest) {
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
         auto r = client->addHosts(hosts).get();
         ASSERT_TRUE(r.ok());
+        TestUtils::registerHB(hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(hosts, ret.value());
@@ -54,7 +55,7 @@ TEST(MetaClientTest, InterfacesTest) {
     {
         // Test createSpace, listSpaces, getPartsAlloc.
         {
-            auto ret = client->createSpace("default_space", 9, 3).get();
+            auto ret = client->createSpace("default_space", 8, 3).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             spaceId = ret.value();
         }
@@ -68,12 +69,9 @@ TEST(MetaClientTest, InterfacesTest) {
         {
             auto ret = client->getPartsAlloc(spaceId).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
+            ASSERT_EQ(8, ret.value().size());
             for (auto it = ret.value().begin(); it != ret.value().end(); it++) {
-                auto startIndex = it->first;
-                for (auto& h : it->second) {
-                    ASSERT_EQ(startIndex++ % 4, h.first);
-                    ASSERT_EQ(h.first, h.second);
-                }
+                ASSERT_EQ(3, it->second.size());
             }
         }
         {
@@ -121,7 +119,9 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
 
             // ServerBasedSchemaManager test
-            TagID tagId = schemaMan->toTagID(spaceId, "tagName");
+            auto status = schemaMan->toTagID(spaceId, "tagName");
+            ASSERT_TRUE(status.ok());
+            auto tagId = status.value();
             ASSERT_NE(-1, tagId);
             auto outSchema = schemaMan->getTagSchema(spaceId, tagId);
             ASSERT_EQ(5, outSchema->getNumFields());
@@ -149,7 +149,8 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_EQ(ret2.value()->getNumFields(), 5);
 
             // ServerBasedSchemaManager test
-            EdgeType edgeType = schemaMan->toEdgeType(spaceId, "edgeName");
+            auto status = schemaMan->toEdgeType(spaceId, "edgeName");
+            auto edgeType = status.value();
             ASSERT_NE(-1, edgeType);
             auto outSchema = schemaMan->getEdgeSchema(spaceId, edgeType);
             ASSERT_EQ(5, outSchema->getNumFields());
@@ -165,16 +166,14 @@ TEST(MetaClientTest, InterfacesTest) {
     sleep(FLAGS_load_data_interval_secs + 1);
     {
         // Test cache interfaces
-        // For Host(0, 0) the parts should be 2, 3, 4, 6, 7, 8
         auto partsMap = client->getPartsMapFromCache(HostAddr(0, 0));
         ASSERT_EQ(1, partsMap.size());
         ASSERT_EQ(6, partsMap[spaceId].size());
     }
     {
         auto partMeta = client->getPartMetaFromCache(spaceId, 1);
-        int32_t startIndex = 1;
+        ASSERT_EQ(3, partMeta.peers_.size());
         for (auto& h : partMeta.peers_) {
-            ASSERT_EQ(startIndex++ % 4, h.first);
             ASSERT_EQ(h.first, h.second);
         }
     }
@@ -274,7 +273,7 @@ TEST(MetaClientTest, TagTest) {
 
     // Let the system choose an available port for us
     int32_t localMetaPort = 0;
-    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     GraphSpaceID spaceId = 0;
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
@@ -287,6 +286,7 @@ TEST(MetaClientTest, TagTest) {
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
     ASSERT_TRUE(r.ok());
+    TestUtils::registerHB(hosts);
     auto ret = client->createSpace("default_space", 9, 3).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
@@ -316,21 +316,34 @@ TEST(MetaClientTest, TagTest) {
         version = tags[0].get_version();
     }
     {
-        auto result = client->getTagSchema(spaceId, id, version).get();
-        ASSERT_TRUE(result.ok());
+        auto result1 = client->getTagSchema(spaceId, "test_tag", version).get();
+        ASSERT_TRUE(result1.ok());
+        auto result2 = client->getTagSchema(spaceId, "test_tag").get();
+        ASSERT_TRUE(result2.ok());
+        ASSERT_EQ(result1.value().columns.size(), result2.value().columns.size());
+        for (auto i = 0u; i < result1.value().columns.size(); i++) {
+            ASSERT_EQ(result1.value().columns[i].name, result2.value().columns[i].name);
+            ASSERT_EQ(result1.value().columns[i].type, result2.value().columns[i].type);
+        }
+    }
+    // Get wrong version
+    {
+        auto result = client->getTagSchema(spaceId, "test_tag", 100).get();
+        ASSERT_FALSE(result.ok());
     }
     {
         auto result = client->dropTagSchema(spaceId, "test_tag").get();
         ASSERT_TRUE(result.ok());
     }
     {
-        auto result = client->getTagSchema(spaceId, id, version).get();
+        auto result = client->getTagSchema(spaceId, "test_tag", version).get();
         ASSERT_FALSE(result.ok());
     }
 }
 
 class TestListener : public MetaChangedListener {
 public:
+    virtual ~TestListener() = default;
     void onSpaceAdded(GraphSpaceID spaceId) override {
         LOG(INFO) << "Space " << spaceId << " added";
         spaceNum++;
@@ -371,7 +384,7 @@ TEST(MetaClientTest, DiffTest) {
 
     // Let the system choose an available port for us
     int32_t localMetaPort = 0;
-    auto sc = TestUtils::mockServer(localMetaPort, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     uint32_t localIp;
@@ -387,6 +400,7 @@ TEST(MetaClientTest, DiffTest) {
         std::vector<HostAddr> hosts = {{0, 0}};
         auto r = client->addHosts(hosts).get();
         ASSERT_TRUE(r.ok());
+        TestUtils::registerHB(hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(hosts, ret.value());
@@ -420,7 +434,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     FLAGS_load_data_interval_secs = 5;
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockServer(10001, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(10001, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     uint32_t localIp;
@@ -441,7 +455,7 @@ TEST(MetaClientTest, HeartbeatTest) {
         ASSERT_EQ(hosts, ret.value());
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
-    ASSERT_EQ(1, HBProcessor::hostsMan()->getActiveHosts().size());
+    ASSERT_EQ(1, ActiveHostsManHolder::hostsMan()->getActiveHosts().size());
 }
 
 }  // namespace meta

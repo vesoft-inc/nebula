@@ -11,7 +11,7 @@
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
 #include <common/time/TimeUtils.h>
-#include "meta/processors/HBProcessor.h"
+#include "meta/processors/admin/HBProcessor.h"
 
 DECLARE_int32(expired_hosts_check_interval_sec);
 DECLARE_int32(expired_threshold_sec);
@@ -24,7 +24,8 @@ using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(HBProcessorTest, HBTest) {
     fs::TempDir rootPath("/tmp/HBTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto kv = TestUtils::initKV(rootPath.path());
+
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
@@ -63,10 +64,10 @@ TEST(HBProcessorTest, HBTest) {
             auto resp = std::move(f).get();
             ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         }
-        auto hosts = HBProcessor::hostsMan()->getActiveHosts();
+        auto hosts = ActiveHostsManHolder::hostsMan()->getActiveHosts();
         ASSERT_EQ(5, hosts.size());
         sleep(3);
-        ASSERT_EQ(0, HBProcessor::hostsMan()->getActiveHosts().size());
+        ASSERT_EQ(0, ActiveHostsManHolder::hostsMan()->getActiveHosts().size());
 
         LOG(INFO) << "Test for invalid host!";
         cpp2::HBReq req;
@@ -82,6 +83,7 @@ TEST(HBProcessorTest, HBTest) {
 
 }  // namespace meta
 }  // namespace nebula
+
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

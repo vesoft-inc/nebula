@@ -86,6 +86,11 @@ private:
 };
 
 
+/**************************************************************************
+ *
+ * An implementation of KVEngine based on Rocksdb
+ *
+ *************************************************************************/
 class RocksEngine : public KVEngine {
     FRIEND_TEST(RocksEngineTest, SimpleTest);
 
@@ -95,18 +100,22 @@ public:
                 std::shared_ptr<rocksdb::MergeOperator> mergeOp = nullptr,
                 std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr);
 
-    ~RocksEngine();
+    ~RocksEngine() = default;
 
-    ResultCode get(const std::string& key,
-                   std::string* value) override;
+    const char* getDataRoot() const override {
+        return dataPath_.c_str();
+    }
+
+    std::unique_ptr<WriteBatch> startBatchWrite() override;
+    ResultCode commitBatchWrite(std::unique_ptr<WriteBatch> batch) override;
+
+    /*********************
+     * Data retrieval
+     ********************/
+    ResultCode get(const std::string& key, std::string* value) override;
 
     ResultCode multiGet(const std::vector<std::string>& keys,
                         std::vector<std::string>* values) override;
-
-    ResultCode put(std::string key,
-                   std::string value) override;
-
-    ResultCode multiPut(std::vector<KV> keyValues) override;
 
     ResultCode range(const std::string& start,
                      const std::string& end,
@@ -115,6 +124,13 @@ public:
     ResultCode prefix(const std::string& prefix,
                       std::unique_ptr<KVIterator>* iter) override;
 
+    /*********************
+     * Data modification
+     ********************/
+    ResultCode put(std::string key, std::string value) override;
+
+    ResultCode multiPut(std::vector<KV> keyValues) override;
+
     ResultCode remove(const std::string& key) override;
 
     ResultCode multiRemove(std::vector<std::string> keys) override;
@@ -122,6 +138,11 @@ public:
     ResultCode removeRange(const std::string& start,
                            const std::string& end) override;
 
+    ResultCode removePrefix(const std::string& prefix) override;
+
+    /*********************
+     * Non-data operation
+     ********************/
     void addPart(PartitionID partId) override;
 
     void removePart(PartitionID partId) override;
@@ -145,7 +166,6 @@ private:
 
 private:
     std::string  dataPath_;
-    std::string  extraPath_;
     std::unique_ptr<rocksdb::DB> db_{nullptr};
     int32_t partsNum_ = -1;
 };

@@ -230,7 +230,7 @@ std::string FileUtils::joinPath(const folly::StringPiece dir,
         buf.resize(filename.size() + 2);
         strcpy(&(buf[0]), "./");    // NOLINT
         strncpy(&(buf[2]), filename.begin(), filename.size());
-        return std::move(buf);
+        return buf;
     }
 
     if (dir[len-1] == '/') {
@@ -244,7 +244,7 @@ std::string FileUtils::joinPath(const folly::StringPiece dir,
 
     strncpy(&(buf[len]), filename.data(), filename.size());
 
-    return std::move(buf);
+    return buf;
 }
 
 
@@ -393,7 +393,7 @@ std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
     }
     closedir(dir);
 
-    return std::move(entities);
+    return entities;
 }
 
 

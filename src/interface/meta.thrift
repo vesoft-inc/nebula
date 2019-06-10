@@ -25,6 +25,7 @@ enum ErrorCode {
     E_EXISTED        = -22,
     E_NOT_FOUND      = -23,
     E_INVALID_HOST   = -24,
+    E_UNSUPPORTED    = -25,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -116,7 +117,7 @@ struct ListSpacesResp {
 }
 
 struct GetSpaceReq {
-    1: common.GraphSpaceID space_id,
+    1: string     space_name,
 }
 
 struct GetSpaceResp {
@@ -156,7 +157,7 @@ struct ListTagsResp {
 
 struct GetTagReq {
     1: common.GraphSpaceID space_id,
-    2: common.TagID        tag_id,
+    2: string              tag_name,
     3: common.SchemaVer    version,
 }
 
@@ -181,7 +182,7 @@ struct AlterEdgeReq {
 
 struct GetEdgeReq {
     1: common.GraphSpaceID space_id,
-    2: common.EdgeType     edge_type,
+    2: string              edge_name,
     3: common.SchemaVer    version,
 }
 
