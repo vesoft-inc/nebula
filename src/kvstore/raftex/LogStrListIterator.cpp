@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "raftex/LogStrListIterator.h"
+#include "kvstore/raftex/LogStrListIterator.h"
 
 namespace nebula {
 namespace raftex {
