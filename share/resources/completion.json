@@ -20,6 +20,11 @@
                 "TAG", "EDGE", "SPACE"
             ]
         },
+        "DESC" : {
+            "sub_keywords": [
+                "TAG", "EDGE", "SPACE"
+            ]
+        },
         "CREATE": {
             "sub_keywords": [
                 "SPACE", "TAG", "EDGE", "USER", "IF", "NOT", "EXISTS", "WITH", "PASSWORD", "TTL",
