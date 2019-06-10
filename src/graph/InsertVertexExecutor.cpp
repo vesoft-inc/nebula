@@ -132,7 +132,7 @@ void InsertVertexExecutor::execute() {
     auto result = prepareVertices();
     if (!result.ok()) {
         DCHECK(onError_);
-        onError_(result.status());
+        onError_(std::move(result).status());
         return;
     }
     auto future = ectx()->storage()->addVertices(spaceId_,
