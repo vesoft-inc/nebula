@@ -145,7 +145,7 @@ public:
 
 private:
     /**
-     * Implement two interfaces in Handler.
+     * Implement four interfaces in Handler.
      * */
     void addSpace(GraphSpaceID spaceId) override;
 
