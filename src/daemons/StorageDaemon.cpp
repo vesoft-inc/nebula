@@ -22,7 +22,8 @@ DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path, multi paths should be split by comma."
                              "For rocksdb engine, one path one instance.");
-DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
+DEFINE_string(local_ip, "", "IP address which is used to identify this server, "
+                            "combined with the listen port");
 DEFINE_bool(mock_server, true, "start mock server");
 DEFINE_bool(daemonize, true, "Whether to run the process as a daemon");
 DEFINE_string(pid_file, "pids/nebula-storaged.pid", "File to hold the process id");
