@@ -305,7 +305,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                         cols.erase(it);
                         return cpp2::ErrorCode::SUCCEEDED;
                     } else {
-                        LOG(WARNING) << "Column not be dropped, a TTL attribute on it : "
+                        LOG(WARNING) << "Column cant't be dropped, a TTL attribute on it : "
                                      << colName;
                         return cpp2::ErrorCode::E_NOT_DROP;
                     }
@@ -333,11 +333,17 @@ cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::Colu
         case cpp2::AlterSchemaPropType::TTL_COL:
             for (auto& col : cols) {
                 if (col.get_name() == value) {
+                    // Only integer and timestamp columns can be used as ttl_col
+                    if (col.type.type != nebula::cpp2::SupportedType::INT &&
+                        col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
+                        LOG(WARNING) << "TTL column type illegal : " << value;
+                        return cpp2::ErrorCode::E_UNSUPPORTED;
+                    }
                     prop.set_ttl_col(value);
                     return cpp2::ErrorCode::SUCCEEDED;
                 }
             }
-            LOG(WARNING) << "TTL Column not found : " << value;
+            LOG(WARNING) << "TTL column not found : " << value;
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -348,9 +354,10 @@ Status MetaServiceUtils::checkSchemaTTLProp(nebula::cpp2::SchemaProp& prop) {
     if (prop.ttl_duration != 0) {
         // Disable implicit TTL mode
         if (prop.ttl_col.empty()) {
-            return Status::Error("implicit ttl_col not support");
+            return Status::Error("Implicit ttl_col not support");
         }
 
+        // 0 means infinity
         if (prop.ttl_duration < 0) {
             prop.set_ttl_duration(0);
         }

@@ -57,7 +57,7 @@ Status AlterEdgeExecutor::prepare() {
                 alterSchemaProp.set_value(folly::to<std::string>(retInt.value()));
                 break;
             case SchemaPropItem::TTL_COL:
-                // The legality of the column name need be to check in meta
+                // Check the legality of the column in meta
                 retStr = schemaProp->getTtlCol();
                 if (!retStr.ok()) {
                    return retStr.status();

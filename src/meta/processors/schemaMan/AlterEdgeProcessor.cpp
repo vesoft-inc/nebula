@@ -40,14 +40,14 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     auto columns = schema.get_columns();
     auto prop = schema.get_schema_prop();
 
-    // update schema option
+    // Update schema column
     auto& schemaOptions = req.get_schema_options();
     for (auto& schemaOption : schemaOptions) {
         auto& cols = schemaOption.get_schema().get_columns();
         for (auto& col : cols) {
             auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, schemaOption.type);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-                LOG(WARNING) << "Alter edge option error " << static_cast<int32_t>(retCode);
+                LOG(WARNING) << "Alter edge column error " << static_cast<int32_t>(retCode);
                 resp_.set_code(retCode);
                 onFinished();
                 return;
@@ -55,7 +55,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
         }
     }
 
-    // update schema property
+    // Update schema property
     auto& schemaProps = req.get_schema_props();
     for (auto& schemaProp : schemaProps) {
         auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, schemaProp);

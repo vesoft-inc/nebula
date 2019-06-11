@@ -34,11 +34,6 @@ Status CreateEdgeExecutor::prepare() {
         schema_.columns.emplace_back(std::move(column));
     }
 
-    // set schema_.schema_prop default
-    // 0 means infinity
-    schema_.schema_prop.set_ttl_duration(0);
-    schema_.schema_prop.set_ttl_col("");
-
     if (schemaProps.size() != 0) {
         for (auto& schemaProp : schemaProps) {
             switch (schemaProp->getPropType()) {
@@ -59,9 +54,10 @@ Status CreateEdgeExecutor::prepare() {
         if (schema_.schema_prop.ttl_duration != 0) {
             // Disable implicit TTL mode
             if (schema_.schema_prop.ttl_col.empty()) {
-                return Status::Error("implicit ttl_col not support");
+                return Status::Error("Implicit ttl_col not support");
             }
 
+            // 0 means infinity
             if (schema_.schema_prop.ttl_duration < 0) {
                 schema_.schema_prop.set_ttl_duration(0);
             }
@@ -91,9 +87,14 @@ Status CreateEdgeExecutor::setTTLCol(SchemaPropItem* schemaProp) {
     }
 
     auto  ttlColName = ret.value();
-    // check the legality of the ttl column name
+    // Check the legality of the ttl column name
     for (auto& col : schema_.columns) {
         if (col.name == ttlColName) {
+             // Only integer columns and timestamp columns can be used as ttl_col
+            if (col.type.type != nebula::cpp2::SupportedType::INT &&
+                col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
+                return Status::Error("Ttl column type illegal");
+            }
             schema_.schema_prop.set_ttl_col(ttlColName);
             return Status::OK();
         }

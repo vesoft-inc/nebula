@@ -49,6 +49,7 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 
+    // Space test
     {
         // Test space not exist
         cpp2::ExecutionResponse resp;
@@ -110,6 +111,8 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+
+    // Tag test
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG person(name string, email string, "
@@ -146,7 +149,7 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
-        // Test the tag has been existed.
+        // Unreserved keyword test
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG upper(name string, EMAIL string, "
                             "age int, gender string, row_timestamp timestamp)";
@@ -175,7 +178,7 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
-        // Test exist
+        // Tag has existed
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG account(id int, balance double)";
         auto code = client->execute(query, resp);
@@ -214,6 +217,8 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
+
+    // Edge test
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE buy(id int, time string)";
@@ -238,13 +243,6 @@ TEST_F(SchemaTest, metaCommunication) {
         EXPECT_TRUE(verifyResult(resp, expected));
     }
     {
-        // Test edge not exist
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE not_exist";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
-    }
-    {
         cpp2::ExecutionResponse resp;
         std::string query = "DESC EDGE buy";
         client->execute(query, resp);
@@ -253,6 +251,13 @@ TEST_F(SchemaTest, metaCommunication) {
             {"time", "string"},
         };
         EXPECT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // Test edge not exist
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE EDGE not_exist";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
     {
         cpp2::ExecutionResponse resp;
@@ -308,6 +313,8 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+
+    // Test different tag and edge in different space
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE SPACE my_space(partition_num=9, replica_factor=1)";
@@ -320,7 +327,6 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Test different tag and edge in different space
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG animal(name string, kind string)";
@@ -411,14 +417,16 @@ TEST_F(SchemaTest, TTLtest) {
         std::string query = "ADD HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        meta::TestUtils::registerHB(
+                network::NetworkUtils::toHosts("127.0.0.1:1000, 127.0.0.1:1100").value());
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"127.0.0.1", "1000"},
-            {"127.0.0.1", "1100"},
+        std::vector<uniform_tuple_t<std::string, 3>> expected{
+            {"127.0.0.1", "1000", "offline"},
+            {"127.0.0.1", "1100", "offline"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -428,13 +436,14 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+
+    // Tag with TTL test
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG person(name string, email string, "
@@ -442,7 +451,6 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG person";
@@ -457,7 +465,7 @@ TEST_F(SchemaTest, TTLtest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // Use show create tag
+    // Add show create tag
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG man(name string, email string, "
@@ -466,7 +474,6 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG man";
@@ -482,13 +489,22 @@ TEST_F(SchemaTest, TTLtest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // Use show create tag
+    // Add show create tag test
     {
         // Disable implicit ttl mode
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG woman(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)"
                             "ttl_duration = 100";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        // Disable when ttl_col is not an integer column or a timestamp column
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG woman(name string, email string, "
+                            "age int, gender string, row_timestamp timestamp)"
+                            "ttl_col = name";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -500,7 +516,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    // Use show create tag instead
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG woman";
@@ -516,7 +532,30 @@ TEST_F(SchemaTest, TTLtest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // Use show create tag
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG only_ttl_col(name string, email string, "
+                            "age int, gender string, row_timestamp timestamp)"
+                            "ttl_col = row_timestamp";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Use show create tag instead
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE TAG only_ttl_col";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+         std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"name", "string"},
+            {"email", "string"},
+            {"age", "int"},
+            {"gender", "string"},
+            {"row_timestamp", "timestamp"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG woman "
@@ -524,8 +563,29 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
-    // Use show create tag
+    // Use show create tag instead
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE TAG woman";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"name", "string"},
+            {"email", "string"},
+            {"age", "int"},
+            {"gender", "string"},
+            {"row_timestamp", "timestamp"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // Failed when alter tag to set ttl_col on not integer and timestamp column
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER TAG woman "
+                            "ttl_col = name";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Use show create tag instead
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG woman";
@@ -546,7 +606,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    // Use show create tag instead
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG woman";
@@ -567,7 +627,6 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG woman";
@@ -588,7 +647,6 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     // Use show create tag
     {
         cpp2::ExecutionResponse resp;
@@ -609,7 +667,6 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG woman";
@@ -630,7 +687,6 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE person";
@@ -654,7 +710,6 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE man";
@@ -680,6 +735,15 @@ TEST_F(SchemaTest, TTLtest) {
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
+        // Disable when ttl_col is not an integer column or a timestamp column
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE woman(name string, email string, "
+                            "age int, gender string, row_timestamp timestamp)"
+                            "ttl_col = name";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE woman(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)"
@@ -687,10 +751,34 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    // Use show create tag instead
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE woman";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+         std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"name", "string"},
+            {"email", "string"},
+            {"age", "int"},
+            {"gender", "string"},
+            {"row_timestamp", "timestamp"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE only_ttl_col(name string, email string, "
+                            "age int, gender string, row_timestamp timestamp)"
+                            "ttl_col = row_timestamp";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Use show create tag instead
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE EDGE only_ttl_col";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
 
@@ -711,7 +799,6 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE woman";
@@ -732,7 +819,26 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE EDGE woman";
+        client->execute(query, resp);
+        std::vector<uniform_tuple_t<std::string, 2>> expected{
+            {"email", "string"},
+            {"age", "int"},
+            {"gender", "string"},
+            {"row_timestamp", "timestamp"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        // Failed when alter tag to set ttl_col on not integer and timestamp column
+        cpp2::ExecutionResponse resp;
+        std::string query = "ALTER EDGE woman "
+                            "ttl_col = email";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE woman";
@@ -753,7 +859,6 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE woman";
@@ -774,7 +879,6 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE woman";
@@ -794,7 +898,6 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE EDGE woman";
