@@ -1,6 +1,5 @@
 # nGQL Query Language
 
-
 nGQL is the query language of Nebula Graph that allows users to store and retrieve
 data from the graph database. Nebula Graph wants to make its queries easy to learn,
 understand, and use for everyone.
@@ -178,9 +177,6 @@ GO FROM 101 OVER serve YIELD serve._src AS srcid, $^[player].age AS src.propAge,
 ```
 GO FROM 100 OVER like | GO FROM $-.id OVER serve; -- Start from vertex 100, query 1-hop, set its output as the next query's input by using pipe
 ```
-
-
-
 ## Syntax norms
 
 In order to be consistent with ourselves and other nGQL users, we advise
