@@ -1015,7 +1015,11 @@ host_item
 port : INTEGER { $$ = $1; }
 
 create_space_sentence
-    : KW_CREATE KW_SPACE name_label L_PAREN space_opt_list R_PAREN {
+    : KW_CREATE KW_SPACE name_label {
+        auto sentence = new CreateSpaceSentence($3);
+        $$ = sentence;
+    }
+    | KW_CREATE KW_SPACE name_label L_PAREN space_opt_list R_PAREN {
         auto sentence = new CreateSpaceSentence($3);
         sentence->setOpts($5);
         $$ = sentence;

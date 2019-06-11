@@ -41,4 +41,4 @@
 # HTTP service port
 --ws_http_port=13000
 # HTTP2 service port
---ws_h2_portt=13002
+--ws_h2_port=13002
