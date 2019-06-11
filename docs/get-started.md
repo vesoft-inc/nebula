@@ -28,8 +28,20 @@ docker pull vesoft/nebula-graph:latest
 to get `nebula` image and `docker images` that can display images status.
 
 If `docker` is slow when pulling the image, configure an accelerator.
+1. Check if the `/etc/docker` folder exists, if not create a new one with `mkdir -p /etc/docker`. Generally the folder will exist after docker installation.
+2. Create the new file `daemon.json` with the following command
 
-You can add the source at `/etc/docker/daemon.json`, for Chinese users:
+```
+tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": [
+    "https://dockerhub.azk8s.cn",
+    "https://reg-mirror.qiniu.com"
+  ]
+}
+EOF
+```
+Or create the new file with `vi /etc/docker/daemon.json`, then add the following content
 
 ```
 {
@@ -39,6 +51,7 @@ You can add the source at `/etc/docker/daemon.json`, for Chinese users:
   ]
 }
 ```
+
 ---
 
 ### Step 2 Startup Nebula Graph
