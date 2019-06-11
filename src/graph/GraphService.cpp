@@ -18,7 +18,7 @@ GraphService::GraphService(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecut
     sessionManager_ = std::make_unique<SessionManager>();
     executionEngine_ = std::make_unique<ExecutionEngine>();
     executionEngine_->init(ioExecutor);
-    authenticator_ = std::make_unique<SimpleAuthenticator>();
+    authenticator_ = std::make_unique<SimpleAuthenticator>(executionEngine_->getMetaClient());
 }
 
 
@@ -31,7 +31,6 @@ folly::Future<cpp2::AuthResponse> GraphService::future_authenticate(
         const std::string& password) {
     auto *peer = getConnectionContext()->getPeerAddress();
     FVLOG2("Authenticating user %s from %s", username.c_str(), peer->describe().c_str());
-
     RequestContext<cpp2::AuthResponse> ctx;
     auto session = sessionManager_->createSession();
     session->setUser(username);

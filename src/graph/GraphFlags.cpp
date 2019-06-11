@@ -27,3 +27,6 @@ DEFINE_string(stderr_log_file, "graphd-stderr.log", "Destination filename of std
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
                                      "the format looks like ip1:port1, ip2:port2, ip3:port3");
+DEFINE_bool(security_authorization_enable, false, "Whether to turn on security "
+                                                  "authorization management");
+

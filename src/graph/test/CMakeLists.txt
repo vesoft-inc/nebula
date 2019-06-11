@@ -138,7 +138,10 @@ add_executable(
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:meta_service_handler>
         $<TARGET_OBJECTS:kvstore_obj>
-        $<TARGET_OBJECTS:storage_service_handler>
+        $<TARGET_OBJECTS:raftex_obj>
+        $<TARGET_OBJECTS:raftex_thrift_obj>
+        $<TARGET_OBJECTS:wal_obj>
+	$<TARGET_OBJECTS:storage_service_handler>
         $<TARGET_OBJECTS:adHocSchema_obj>
 )
 nebula_link_libraries(

@@ -48,5 +48,9 @@ void ExecutionEngine::execute(RequestContextPtr rctx) {
     plan->execute();
 }
 
+meta::MetaClient* ExecutionEngine::getMetaClient() const {
+    return metaClient_.get();
+}
+
 }   // namespace graph
 }   // namespace nebula

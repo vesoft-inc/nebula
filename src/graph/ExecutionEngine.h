@@ -38,7 +38,7 @@ public:
 
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
     void execute(RequestContextPtr rctx);
-
+    meta::MetaClient* getMetaClient() const;
 private:
     std::unique_ptr<meta::SchemaManager>              schemaManager_;
     std::unique_ptr<storage::StorageClient>           storage_;
