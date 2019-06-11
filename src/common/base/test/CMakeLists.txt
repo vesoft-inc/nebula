@@ -111,7 +111,11 @@ nebula_link_libraries(
 )
 nebula_add_test(nebulakey_utils_test)
 
-add_executable(range_vs_transform_bm RangeVsTransformBenchmark.cpp)
+add_executable(
+    range_vs_transform_bm
+    RangeVsTransformBenchmark.cpp
+    $<TARGET_OBJECTS:base_obj>
+)
 nebula_link_libraries(
     range_vs_transform_bm
     follybenchmark
