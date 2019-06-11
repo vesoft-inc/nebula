@@ -5,7 +5,7 @@
  */
 
 #include "kvstore/Part.h"
-#include "wal/BufferFlusher.h"
+#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/LogEncoder.h"
 
 DEFINE_int32(cluster_id, 0, "A unique id for each cluster");

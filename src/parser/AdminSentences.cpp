@@ -84,8 +84,16 @@ std::string SpaceOptList::toString() const {
 
 
 std::string CreateSpaceSentence::toString() const {
-    return folly::stringPrintf("CREATE SPACE  %s(%s) ", spaceName_.get()->c_str(),
-                               spaceOpts_->toString().c_str());
+    std::string buf;
+    buf.reserve(256);
+    buf += "CREATE SPACE ";
+    buf += *spaceName_;
+    if (spaceOpts_ != nullptr) {
+        buf += "(";
+        buf += spaceOpts_->toString();
+        buf += ")";
+    }
+    return buf;
 }
 
 std::string DropSpaceSentence::toString() const {

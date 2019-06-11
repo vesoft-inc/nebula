@@ -25,7 +25,7 @@ public:
 
     static std::string spaceKey(GraphSpaceID spaceId);
 
-    static std::string spaceVal(cpp2::SpaceProperties properties);
+    static std::string spaceVal(const cpp2::SpaceProperties &properties);
 
     static cpp2::SpaceProperties parseSpace(folly::StringPiece rawData);
 
