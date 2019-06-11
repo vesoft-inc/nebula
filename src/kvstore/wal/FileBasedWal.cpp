@@ -5,9 +5,9 @@
  */
 
 #include "base/Base.h"
-#include "wal/FileBasedWal.h"
-#include "wal/FileBasedWalIterator.h"
-#include "wal/BufferFlusher.h"
+#include "kvstore/wal/FileBasedWal.h"
+#include "kvstore/wal/FileBasedWalIterator.h"
+#include "kvstore/wal/BufferFlusher.h"
 #include "fs/FileUtils.h"
 
 namespace nebula {
@@ -38,6 +38,11 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
         , policy_(std::move(policy))
         , maxFileSize_(policy_.fileSize * 1024L * 1024L)
         , maxBufferSize_(policy_.bufferSize * 1024L * 1024L) {
+    // Make sure WAL directory exist
+    if (FileUtils::fileType(dir_.c_str()) == fs::FileType::NOTEXIST) {
+        FileUtils::makeDir(dir_);
+    }
+
     scanAllWalFiles();
     if (!walFiles_.empty()) {
         auto& info = walFiles_.rbegin()->second;

@@ -21,18 +21,23 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
     , sendHeartBeat_(sendHeartBeat) {
-    CHECK(ioThreadPool_ != nullptr && !addrs_.empty());
-    clientsMan_ = std::make_shared<thrift::ThriftClientManager<
-                                    meta::cpp2::MetaServiceAsyncClient>>();
+    CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
+    CHECK(!addrs_.empty())
+        << "No meta server address is specified. Meta server is required";
+    clientsMan_ = std::make_shared<
+        thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>
+    >();
     updateHost();
     LOG(INFO) << "Create meta client to " << active_;
 }
+
 
 MetaClient::~MetaClient() {
     bgThread_.stop();
     bgThread_.wait();
     VLOG(3) << "~MetaClient";
 }
+
 
 void MetaClient::init() {
     loadDataThreadFunc();
@@ -53,6 +58,7 @@ void MetaClient::init() {
     }
 }
 
+
 void MetaClient::heartBeatThreadFunc() {
     if (listener_ == nullptr) {
         VLOG(1) << "Can't send heartbeat due to listener_ is nullptr!";
@@ -64,6 +70,7 @@ void MetaClient::heartBeatThreadFunc() {
         return;
     }
 }
+
 
 void MetaClient::loadDataThreadFunc() {
     if (ioThreadPool_->numThreads() <= 0) {
@@ -96,7 +103,8 @@ void MetaClient::loadDataThreadFunc() {
         spaceCache->spaceName = space.second;
         spaceCache->partsOnHost_ = reverse(partsAlloc);
         spaceCache->partsAlloc_ = std::move(partsAlloc);
-        VLOG(3) << "Load space " << spaceId << ", parts num:" << spaceCache->partsAlloc_.size();
+        VLOG(2) << "Load space " << spaceId
+                << ", parts num:" << spaceCache->partsAlloc_.size();
 
         // loadSchemas
         if (!loadSchemas(spaceId,
@@ -131,6 +139,7 @@ void MetaClient::loadDataThreadFunc() {
     }
     LOG(INFO) << "Load data completed!";
 }
+
 
 bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                              std::shared_ptr<SpaceInfoCache> spaceInfoCache,
@@ -200,6 +209,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     return true;
 }
 
+
 std::unordered_map<HostAddr, std::vector<PartitionID>>
 MetaClient::reverse(const PartsAlloc& parts) {
     std::unordered_map<HostAddr, std::vector<PartitionID>> hosts;
@@ -210,6 +220,7 @@ MetaClient::reverse(const PartsAlloc& parts) {
     }
     return hosts;
 }
+
 
 template<typename Request,
          typename RemoteFunc,
@@ -251,6 +262,7 @@ folly::Future<StatusOr<Response>> MetaClient::getResponse(
     return f;
 }
 
+
 std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& tHosts) {
     std::vector<HostAddr> hosts;
     hosts.resize(tHosts.size());
@@ -260,6 +272,7 @@ std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& 
     return hosts;
 }
 
+
 std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames) {
     std::vector<SpaceIdName> idNames;
     idNames.resize(tIdNames.size());
@@ -268,6 +281,7 @@ std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdNam
     });
     return idNames;
 }
+
 
 template<typename RESP>
 Status MetaClient::handleResponse(const RESP& resp) {
@@ -291,6 +305,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     }
 }
 
+
 PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
                                    const std::unordered_map<
                                                 GraphSpaceID,
@@ -313,6 +328,7 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
     }
     return partMap;
 }
+
 
 void MetaClient::diff(const std::unordered_map<GraphSpaceID,
                                                std::shared_ptr<SpaceInfoCache>>& newCache) {
@@ -397,6 +413,7 @@ MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFacto
             }, true);
 }
 
+
 folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
     cpp2::ListSpacesReq req;
     return getResponse(std::move(req), [] (auto client, auto request) {
@@ -407,9 +424,9 @@ folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
 }
 
 folly::Future<StatusOr<cpp2::SpaceItem>>
-MetaClient::getSpace(GraphSpaceID spaceId) {
+MetaClient::getSpace(std::string name) {
     cpp2::GetSpaceReq req;
-    req.set_space_id(spaceId);
+    req.set_space_name(std::move(name));
     return  getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_getSpace(request);
                 }, [] (cpp2::GetSpaceResp&& resp) -> decltype(auto) {
@@ -446,6 +463,7 @@ folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& 
                 }, true);
 }
 
+
 folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::listHosts() {
     cpp2::ListHostsReq req;
     return getResponse(std::move(req), [] (auto client, auto request) {
@@ -454,6 +472,7 @@ folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::listHosts() {
                 return this->to(resp.hosts);
             });
 }
+
 
 folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr>& hosts) {
     std::vector<nebula::cpp2::HostAddr> thriftHosts;
@@ -473,6 +492,7 @@ folly::Future<StatusOr<bool>> MetaClient::removeHosts(const std::vector<HostAddr
                 }, true);
 }
 
+
 folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
 MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
     cpp2::GetPartsAllocReq req;
@@ -488,6 +508,7 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
                 });
 }
 
+
 StatusOr<GraphSpaceID>
 MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
@@ -497,6 +518,7 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
     }
     return Status::SpaceNotFound();
 }
+
 
 StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
                                                     const std::string& name) {
@@ -508,6 +530,7 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
     return it->second;
 }
 
+
 StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                           const std::string& name) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
@@ -517,6 +540,7 @@ StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& sp
     }
     return it->second;
 }
+
 
 folly::Future<StatusOr<bool>>
 MetaClient::multiPut(std::string segment,
@@ -540,6 +564,7 @@ MetaClient::multiPut(std::string segment,
                 }, true);
 }
 
+
 folly::Future<StatusOr<std::string>>
 MetaClient::get(std::string segment, std::string key) {
     if (!nebula::meta::MetaCommon::checkSegment(segment)
@@ -556,6 +581,7 @@ MetaClient::get(std::string segment, std::string key) {
                 });
 }
 
+
 folly::Future<StatusOr<std::vector<std::string>>>
 MetaClient::multiGet(std::string segment, std::vector<std::string> keys) {
     if (!nebula::meta::MetaCommon::checkSegment(segment)
@@ -571,6 +597,7 @@ MetaClient::multiGet(std::string segment, std::vector<std::string> keys) {
                     return resp.get_values();
                 });
 }
+
 
 folly::Future<StatusOr<std::vector<std::string>>>
 MetaClient::scan(std::string segment, std::string start, std::string end) {
@@ -589,6 +616,7 @@ MetaClient::scan(std::string segment, std::string start, std::string end) {
             });
 }
 
+
 folly::Future<StatusOr<bool>>
 MetaClient::remove(std::string segment, std::string key) {
     if (!nebula::meta::MetaCommon::checkSegment(segment)
@@ -604,6 +632,7 @@ MetaClient::remove(std::string segment, std::string key) {
                 return resp.code == cpp2::ErrorCode::SUCCEEDED;
             }, true);
 }
+
 
 folly::Future<StatusOr<bool>>
 MetaClient::removeRange(std::string segment, std::string start, std::string end) {
@@ -622,10 +651,12 @@ MetaClient::removeRange(std::string segment, std::string start, std::string end)
                 }, true);
 }
 
+
 PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     return doGetPartsMap(host, localCache_);
 }
+
 
 PartMeta MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID partId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
@@ -640,6 +671,7 @@ PartMeta MetaClient::getPartMetaFromCache(GraphSpaceID spaceId, PartitionID part
     pm.peers_   = partAllocIter->second;
     return pm;
 }
+
 
 bool MetaClient::checkPartExistInCache(const HostAddr& host,
                                        GraphSpaceID spaceId,
@@ -659,6 +691,7 @@ bool MetaClient::checkPartExistInCache(const HostAddr& host,
     return false;
 }
 
+
 bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
                                         GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
@@ -671,6 +704,7 @@ bool MetaClient::checkSpaceExistInCache(const HostAddr& host,
     }
     return false;
 }
+
 
 int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
@@ -687,6 +721,7 @@ int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
     return it->second->partsAlloc_.size();
 }
 
+
 folly::Future<StatusOr<TagID>>
 MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
     cpp2::CreateTagReq req;
@@ -700,6 +735,7 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
         return resp.get_id().get_tag_id();
     }, true);
 }
+
 
 folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
@@ -717,6 +753,7 @@ MetaClient::alterTagSchema(GraphSpaceID spaceId,
     }, true);
 }
 
+
 folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
 MetaClient::listTagSchemas(GraphSpaceID spaceId) {
     cpp2::ListTagsReq req;
@@ -727,6 +764,7 @@ MetaClient::listTagSchemas(GraphSpaceID spaceId) {
         return std::move(resp).get_tags();
     });
 }
+
 
 folly::Future<StatusOr<bool>>
 MetaClient::dropTagSchema(int32_t spaceId, std::string tagName) {
@@ -740,11 +778,12 @@ MetaClient::dropTagSchema(int32_t spaceId, std::string tagName) {
     }, true);
 }
 
+
 folly::Future<StatusOr<nebula::cpp2::Schema>>
-MetaClient::getTagSchema(int32_t spaceId, int32_t tagId, int64_t version) {
+MetaClient::getTagSchema(int32_t spaceId, std::string name, int64_t version) {
     cpp2::GetTagReq req;
     req.set_space_id(spaceId);
-    req.set_tag_id(tagId);
+    req.set_tag_name(std::move(name));
     req.set_version(version);
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_getTag(request);
@@ -752,6 +791,7 @@ MetaClient::getTagSchema(int32_t spaceId, int32_t tagId, int64_t version) {
         return std::move(resp).get_schema();
     });
 }
+
 
 folly::Future<StatusOr<EdgeType>>
 MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {
@@ -765,6 +805,7 @@ MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp
         return resp.get_id().get_edge_type();
     }, true);
 }
+
 
 folly::Future<StatusOr<bool>>
 MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
@@ -781,6 +822,7 @@ MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
     }, true);
 }
 
+
 folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
 MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     cpp2::ListEdgesReq req;
@@ -792,11 +834,12 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
     });
 }
 
+
 folly::Future<StatusOr<nebula::cpp2::Schema>>
-MetaClient::getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer version) {
+MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version) {
     cpp2::GetEdgeReq req;
     req.set_space_id(std::move(spaceId));
-    req.set_edge_type(edgeType);
+    req.set_edge_name(std::move(name));
     req.set_version(version);
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_getEdge(request);
@@ -804,6 +847,7 @@ MetaClient::getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer vers
         return std::move(resp).get_schema();
     });
 }
+
 
 folly::Future<StatusOr<bool>>
 MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
@@ -816,6 +860,7 @@ MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);
 }
+
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>>
 MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver) {
@@ -833,6 +878,7 @@ MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer v
         }
     }
 }
+
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemaFromCache(
         GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver) {
@@ -854,12 +900,6 @@ StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemaFromC
     }
 }
 
-// TODO currently just support default http port
-// maybe we will save http info later
-int32_t MetaClient::getHostHTTPPort() {
-    return 12000;
-}
-
 SchemaVer MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId) {
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceNewestTagVerMap_.find(std::make_pair(space, tagId));
@@ -868,6 +908,7 @@ SchemaVer MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space, const 
     }
     return it->second;
 }
+
 
 SchemaVer MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& space,
                                                 const EdgeType& edgeType) {
@@ -878,6 +919,7 @@ SchemaVer MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& space,
     }
     return it->second;
 }
+
 
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     CHECK_NOTNULL(listener_);

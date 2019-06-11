@@ -1,4 +1,3 @@
-## Get Started
 
 ---
 
@@ -22,7 +21,11 @@ docker --version
 
 If `docker` is not found, please see [here](https://docs.docker.com/install/) for more information to install docker.
 
-After that, using `docker pull vesoft/nebula-graph:latest` to get `nebula` image and `docker images` that can display images status.
+After that, using
+```
+docker pull vesoft/nebula-graph:latest
+```
+to get `nebula` image and `docker images` that can display images status.
 
 If `docker` is slow when pulling the image, configure an accelerator.
 
@@ -36,23 +39,30 @@ You can add the source at `/etc/docker/daemon.json`, for Chinese users:
   ]
 }
 ```
-
 ---
 
 ### Step 2 Startup Nebula Graph
 
 When `nebula` image is ready, run
 
-`docker run -it vesoft/nebula-graph:latest /bin/bash`
+```
+docker run -it vesoft/nebula-graph:latest /bin/bash
+```
 
 to start and log in to the docker container.
 After login, you're in the `root` directory and you should use `cd ~/nebula-graph/` to switch to the nebula home directory.
 
-Run `./start-all.sh` to start meta service, storage service and graph service.
+Run
+```
+./start-all.sh
+```
+to start meta service, storage service and graph service.
 
 Run
 
-`ps -ef | grep nebula`
+```
+ps -ef | grep nebula
+```
 
 to display the services' running status.
 
@@ -66,13 +76,17 @@ Please make sure the services are working.
 
 Run
 
-`bin/nebula --port=3699 -u=user -p=password`
+```
+bin/nebula --port=3699 -u=user -p=password
+```
 
 to connect to the graph server.
 
 One easier way to start console is to run
 
-`./start-console.sh`.
+```
+./start-console.sh
+```
 
 ```
 Welcome to Nebula Graph (Version 0.1)
@@ -147,7 +161,7 @@ nebula> GO FROM 5209979940224249985 OVER like WHERE $$[player].age >= 30 | GO FR
 .....................................................
 ```
 
-For more detail about Query Language, please see [Traverse The Graph](../docs/nGQL.md#traverse-the-graph).
+For more detail about Query Language, please see [Traverse The Graph](/nGQL/#traverse-the-graph).
 
 ---
 
@@ -237,4 +251,3 @@ INSERT EDGE like(likeness) VALUES -8379929135833483044 -> 6663720087669302163:(9
 
 INSERT EDGE serve(start_year, end_year) VALUES -8379929135833483044 -> 868103967282670864:(2002, 2010)
 ```
-

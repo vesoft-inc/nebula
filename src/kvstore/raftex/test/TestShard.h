@@ -8,7 +8,7 @@
 #define RAFTEX_TEST_TESTSHARD_H_
 
 #include "base/Base.h"
-#include "raftex/RaftPart.h"
+#include "kvstore/raftex/RaftPart.h"
 
 namespace nebula {
 namespace raftex {
@@ -32,6 +32,10 @@ public:
             leadershipLostCB,
         std::function<void(size_t idx, const char*, TermID)>
             becomeLeaderCB);
+
+    LogID lastCommittedLogId() override {
+        return 0;
+    }
 
     std::shared_ptr<RaftexService> getService() const {
         return service_;

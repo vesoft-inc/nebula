@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include "thread/NamedThread.h"
-#include "wal/InMemoryLogBuffer.h"
+#include "kvstore/wal/InMemoryLogBuffer.h"
 
 namespace nebula {
 namespace wal {

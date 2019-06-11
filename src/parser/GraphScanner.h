@@ -33,7 +33,7 @@ public:
 
 private:
     friend class Scanner_Basic_Test;
-    int yylex();
+    int yylex() override;
 
     nebula::GraphParser::semantic_type * yylval{nullptr};
     nebula::GraphParser::location_type * yylloc{nullptr};
