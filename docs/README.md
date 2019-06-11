@@ -39,7 +39,7 @@ In order to prevent cloud providers monetarizing from the project without contri
 # Nebula docs
 ---
 
-**Nebula** is a distributed, scalable, lightening-fast graph database. It is the only solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
+**Nebula** is a distributed, scalable, lightning-fast graph database. It is the only solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
 
 **Nebula's** goal is to provide reading, writing, and computing with high concurrency, low latency for super large scale graphs. Nebula is an open source project and we are looking forward to working with the community to popularize and promote the graph database.
 
