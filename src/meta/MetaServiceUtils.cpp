@@ -29,7 +29,7 @@ std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     return key;
 }
 
-std::string MetaServiceUtils::spaceVal(cpp2::SpaceProperties properties) {
+std::string MetaServiceUtils::spaceVal(const cpp2::SpaceProperties &properties) {
     std::string val;
     apache::thrift::CompactSerializer::serialize(properties, &val);
     return val;

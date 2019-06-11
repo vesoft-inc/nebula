@@ -9,8 +9,8 @@
 
 #include "base/Base.h"
 #include "base/Cord.h"
-#include "wal/Wal.h"
-#include "wal/InMemoryLogBuffer.h"
+#include "kvstore/wal/Wal.h"
+#include "kvstore/wal/InMemoryLogBuffer.h"
 
 namespace nebula {
 namespace wal {

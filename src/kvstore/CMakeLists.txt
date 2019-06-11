@@ -9,5 +9,7 @@ add_library(
 )
 add_dependencies(kvstore_obj base_obj meta_client)
 
+add_subdirectory(raftex)
+add_subdirectory(wal)
 add_subdirectory(test)
 
