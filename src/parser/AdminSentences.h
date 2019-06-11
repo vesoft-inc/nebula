@@ -222,6 +222,9 @@ public:
     }
 
     std::vector<SpaceOptItem*> getOpts() {
+        if (spaceOpts_ == nullptr) {
+            return {};
+        }
         return spaceOpts_->getOpts();
     }
 
