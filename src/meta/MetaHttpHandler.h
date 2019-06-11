@@ -21,7 +21,7 @@ class MetaHttpHandler : public proxygen::RequestHandler {
 public:
     MetaHttpHandler() = default;
 
-    void init(MetaClient *client);
+    void init(std::shared_ptr<MetaClient> client);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -46,7 +46,8 @@ private:
     std::string toStr(folly::dynamic& vals) const;
     bool dispatchSSTFiles(const std::string& url,
                           int port,
-                          const std::string& path);
+                          const std::string& path,
+                          const std::string& local);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
@@ -56,9 +57,10 @@ private:
     std::vector<std::string> statusAllNames_{"status"};
     std::string hdfsUrl;
     int32_t hdfsPort;
+    std::string hdfsPath;
     std::string localPath;
     GraphSpaceID spaceID;
-    MetaClient *metaClient{nullptr};
+    std::shared_ptr<MetaClient> metaClient{nullptr};
 };
 
 }  // namespace meta

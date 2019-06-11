@@ -7,7 +7,6 @@
 #include "storage/StorageHttpHandler.h"
 #include "webservice/Common.h"
 #include "process/ProcessUtils.h"
-#include "fs/FileUtils.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
@@ -20,6 +19,11 @@ using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
+
+void StorageHttpHandler::init(std::shared_ptr<nebula::kvstore::KVStore> kvstore) {
+    kvstore_ = kvstore;
+    CHECK_NOTNULL(kvstore_);
+}
 
 void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
@@ -36,12 +40,18 @@ void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcep
         method = headers->getQueryParam("method");
         if (method == "download") {
             if (!headers->hasQueryParam("url") ||
-                !headers->hasQueryParam("path")) {
+                !headers->hasQueryParam("port") ||
+                !headers->hasQueryParam("path") ||
+                !headers->hasQueryParam("parts") ||
+                !headers->hasQueryParam("local")) {
                 err_ = HttpCode::E_ILLEGAL_ARGUMENT;
                 return;
             }
             hdfsUrl = headers->getQueryParam("url");
-            localPath = headers->getQueryParam("path");
+            hdfsPort = headers->getIntQueryParam("port");
+            partitions = headers->getQueryParam("parts");
+            hdfsPath = headers->getQueryParam("path");
+            localPath = headers->getQueryParam("local");
         }
     }
 
@@ -68,6 +78,7 @@ void StorageHttpHandler::onEOM() noexcept {
             ResponseBuilder(downstream_)
                 .status(400, "Illegal Argument")
                 .sendWithEOM();
+            return;
         default:
             break;
     }
@@ -88,8 +99,9 @@ void StorageHttpHandler::onEOM() noexcept {
     } else if (method == "download") {
         if (auto hadoopHome = std::getenv("HADOOP_HOME")) {
             LOG(INFO) << "Hadoop Path : " << hadoopHome;
-            std::vector<std::string> urls;
-            if (downloadSSTFiles(urls, localPath)) {
+            std::vector<std::string> parts;
+            folly::split(",", partitions, parts, true);
+            if (downloadSSTFiles(hdfsUrl, hdfsPort, hdfsPath, parts, localPath)) {
                 ResponseBuilder(downstream_)
                     .status(200, "SSTFile download successfully")
                     .body("SSTFile download successfully")
@@ -97,17 +109,18 @@ void StorageHttpHandler::onEOM() noexcept {
             } else {
                 ResponseBuilder(downstream_)
                     .status(404, "SSTFile download failed")
-                    .body("SSTFile download failed")
                     .sendWithEOM();
             }
         } else {
             ResponseBuilder(downstream_)
                 .status(404, "HADOOP_HOME not exist")
-                .body("HADOOP_HOME not exist")
                 .sendWithEOM();
         }
     } else {
-        LOG(ERROR) << "";
+        LOG(ERROR) << "Illegal Argument " << method;
+        ResponseBuilder(downstream_)
+            .status(400, "Illegal Argument")
+            .sendWithEOM();
     }
 }
 
@@ -182,20 +195,31 @@ std::string StorageHttpHandler::toStr(folly::dynamic& vals) const {
     return ss.str();
 }
 
-bool StorageHttpHandler::downloadSSTFiles(const std::vector<std::string>& urls,
-                                          const std::string& path) {
-    if (fs::FileUtils::fileType(path.c_str()) == fs::FileType::NOTEXIST) {
-        if (fs::FileUtils::makeDir(path)) {
-            LOG(INFO) << "Create directory successfully " << path;
+bool StorageHttpHandler::downloadSSTFiles(const std::string& url,
+                                          int port,
+                                          const std::string& path,
+                                          const std::vector<std::string>& parts,
+                                          const std::string& local) {
+    for (auto& part : parts) {
+        std::stringstream ss;
+        ss << "hdfs://" << url << ":" << port << path << "/";
+        auto len = part.size();
+        if (len == 1) {
+            ss << "part-0000" << part;
+        } else if (len == 2) {
+            ss << "part-000" << part;
+        } else if (len == 3) {
+            ss << "part-00" << part;
+        } else if (len == 4) {
+            ss << "part-0" << part;
         } else {
-            LOG(ERROR) << "Create directory failed " << path;
+            ss << "part-" << part;
         }
-    }
+        LOG(INFO) << "File Path " << ss.str();
 
-    for (auto url : urls) {
-        auto command = folly::stringPrintf("bin/hdfs dfs -copyToLocal %s %s",
-                                           url.c_str(), path.c_str());
-        LOG(INFO) << "Download SST Files " << command;
+        auto command = folly::stringPrintf("hdfs dfs -copyToLocal %s %s",
+                                           ss.str().c_str(), local.c_str());
+        LOG(INFO) << "Download SST Files : " << command;
         auto result = ProcessUtils::runCommand(command.c_str());
         if (!result.ok()) {
             LOG(ERROR) << "Failed to download SST Files: " << result.status();

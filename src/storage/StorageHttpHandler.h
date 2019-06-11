@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "webservice/Common.h"
+#include "kvstore/KVStore.h"
 #include "proxygen/httpserver/RequestHandler.h"
 
 namespace nebula {
@@ -19,6 +20,8 @@ using nebula::HttpCode;
 class StorageHttpHandler : public proxygen::RequestHandler {
 public:
     StorageHttpHandler() = default;
+
+    void init(std::shared_ptr<nebula::kvstore::KVStore> kvstore);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -41,8 +44,11 @@ private:
     void readAllValue(folly::dynamic& vals);
     folly::dynamic getStatus();
     std::string toStr(folly::dynamic& vals) const;
-    bool downloadSSTFiles(const std::vector<std::string>& urls,
-                          const std::string& path);
+    bool downloadSSTFiles(const std::string& url,
+                          int port,
+                          const std::string& path,
+                          const std::vector<std::string>& parts,
+                          const std::string& local);
 
     bool ingestSSTFiles(const std::string& path,
                         GraphSpaceID spaceID);
@@ -51,10 +57,14 @@ private:
     HttpCode err_{HttpCode::SUCCEEDED};
     bool returnJson_{false};
     std::string hdfsUrl;
+    int hdfsPort;
+    std::string hdfsPath;
+    std::string partitions;
     std::string localPath;
     std::string method{"status"};
     std::vector<std::string> statusNames_;
     std::vector<std::string> statusAllNames_{"status"};
+    std::shared_ptr<nebula::kvstore::KVStore> kvstore_;
 };
 
 }  // namespace storage

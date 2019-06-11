@@ -50,7 +50,7 @@ static void signalHandler(int sig);
 static Status setupSignalHandler();
 
 
-std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
+std::shared_ptr<nebula::kvstore::KVStore> getStoreInstance(
         HostAddr localhost,
         std::vector<std::string> paths,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
@@ -63,7 +63,7 @@ std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
         metaClient);
 
     if (FLAGS_store_type == "nebula") {
-        return std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
+        return std::make_shared<nebula::kvstore::NebulaStore>(std::move(options),
                                                               ioPool,
                                                               workers,
                                                               localhost);
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
                                                                  true);
     metaClient->init();
 
-    std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
+    std::shared_ptr<KVStore> kvstore = getStoreInstance(localhost,
                                                         std::move(paths),
                                                         ioThreadPool,
                                                         workers,
@@ -166,8 +166,10 @@ int main(int argc, char *argv[]) {
     schemaMan->init(metaClient.get());
 
     LOG(INFO) << "Starting Storage HTTP Service";
-    nebula::WebService::registerHandler("/storage", [] {
-        return new nebula::storage::StorageHttpHandler();
+    nebula::WebService::registerHandler("/storage", [&kvstore] {
+        auto handler =  new nebula::storage::StorageHttpHandler();
+        handler->init(kvstore);
+        return handler;
     });
 
     status = nebula::WebService::start();

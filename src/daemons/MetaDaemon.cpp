@@ -86,16 +86,17 @@ int main(int argc, char *argv[]) {
     }
     auto& localhost = hostAddrRet.value();
 
+    // folly IOThreadPoolExecutor
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
+
     LOG(INFO) << "Starting Meta HTTP Service";
-    nebula::WebService::registerHandler("/meta", [localHost] {
-        auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-        auto client = std::make_shared<nebula::meta::MetaClient>(threadPool,
-                      std::vector<nebula::HostAddr>{localHost});
-        auto listener = std::make_unique<nebula::meta::DefaultListener>();
-        client->registerListener(listener.get());
+    nebula::WebService::registerHandler("/meta", [&localhost, &ioPool] {
+        auto client = std::make_shared<nebula::meta::MetaClient>(
+                          ioPool,
+                          std::vector<nebula::HostAddr>{localhost});
         client->init();
         auto handler =  new nebula::meta::MetaHttpHandler();
-        handler->init(client.get());
+        handler->init(client);
         return handler;
     });
     status = nebula::WebService::start();
@@ -125,8 +126,6 @@ int main(int argc, char *argv[]) {
     auto workers = std::make_shared<nebula::thread::GenericThreadPool>();
     workers->start(FLAGS_num_workers);
 
-    // folly IOThreadPoolExecutor
-    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
 
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};

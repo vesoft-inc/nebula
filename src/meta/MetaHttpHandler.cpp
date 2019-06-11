@@ -25,7 +25,7 @@ using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
 
-void MetaHttpHandler::init(MetaClient* client) {
+void MetaHttpHandler::init(std::shared_ptr<MetaClient> client) {
     metaClient = client;
     CHECK_NOTNULL(metaClient);
 }
@@ -54,7 +54,8 @@ void MetaHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
 
             hdfsUrl = headers->getQueryParam("url");
             hdfsPort = headers->getIntQueryParam("port");
-            localPath = headers->getQueryParam("path");
+            hdfsPath = headers->getQueryParam("path");
+            localPath = headers->getQueryParam("localPath");
             spaceID = headers->getIntQueryParam("spaceID");
         }
     }
@@ -103,8 +104,7 @@ void MetaHttpHandler::onEOM() noexcept {
     } else if (method == "download") {
         if (auto hadoopHome = std::getenv("HADOOP_HOME")) {
             LOG(INFO) << "Hadoop Path : " << hadoopHome;
-            std::cout << "Hadoop Path : " << hadoopHome << std::endl;
-            if (dispatchSSTFiles(hdfsUrl, hdfsPort, localPath)) {
+            if (dispatchSSTFiles(hdfsUrl, hdfsPort, hdfsPath, localPath)) {
                 ResponseBuilder(downstream_)
                     .status(200, "SSTFile dispatch successfully")
                     .body("SSTFile dispatch successfully")
@@ -198,7 +198,8 @@ std::string MetaHttpHandler::toStr(folly::dynamic& vals) const {
 
 bool MetaHttpHandler::dispatchSSTFiles(const std::string& url,
                                        int port,
-                                       const std::string& path) {
+                                       const std::string& path,
+                                       const std::string& local) {
     auto command = folly::stringPrintf("hdfs dfs -ls hdfs://%s:%d%s ",
                                        url.c_str(), port, path.c_str());
     LOG(INFO) << "List SST Files " << command;
@@ -206,7 +207,7 @@ bool MetaHttpHandler::dispatchSSTFiles(const std::string& url,
     std::vector<std::string> files;
     folly::split("\n", result.value(), files, true);
     auto partNumber = std::count_if(files.begin(), files.end(), [](const std::string& element) {
-                                        return element.find("part") == 0;
+                                        return element.find("part") != std::string::npos;
                                     });
 
     auto partResult = (*metaClient).getPartsAlloc(spaceID).get();
@@ -214,7 +215,6 @@ bool MetaHttpHandler::dispatchSSTFiles(const std::string& url,
         return false;
     }
 
-    // if (folly::to<int64_t>(partNumber) != folly::to<int64_t>(partResult.value().size())) {
     if (folly::to<int64_t>(partNumber) != (*metaClient).partsNum(spaceID)) {
         LOG(ERROR) << "HDFS part number should be equal with nebula";
         return false;
@@ -233,17 +233,20 @@ bool MetaHttpHandler::dispatchSSTFiles(const std::string& url,
             LOG(ERROR) << "Can't find SpaceID " << spaceID;
             return false;
         }
-        std::vector<std::string> paths;
+        std::vector<PartitionID> partitions;
         auto partIter = partMap[spaceID].begin();
         while (partIter != partMap[spaceID].end()) {
-            paths.emplace_back();
+            partitions.emplace_back(partIter->first-1);
+            partIter++;
         }
+        std::string parts;
+        folly::join(",", partitions, parts);
 
         auto host = network::NetworkUtils::intToIPv4((*iter).first);
-        auto downloadCommand = folly::stringPrintf("hdfs dfs -copyToLocal hdfs://%s:%d/ %s",
-                                                   host.c_str(), port, localPath.c_str());
-        command = folly::stringPrintf("/usr/bin/curl -G \"%s\" 2> /dev/null",
-                                      downloadCommand.c_str());
+        auto t = "http://%s:%d/storage?method=download&url=%s&port=%d&path=%s&parts=%s&local=%s";
+        auto download = folly::stringPrintf(t, host.c_str(), 22000, url.c_str(), port, path.c_str(),
+                                            parts.c_str(), local.c_str());
+        command = folly::stringPrintf("curl %s ", download.c_str());
         result = ProcessUtils::runCommand(command.c_str());
         if (!result.ok()) {
             LOG(ERROR) << "Failed to download SST File: " << result.status();
