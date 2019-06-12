@@ -16,7 +16,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     if (!spaceRet.ok()) {
         resp_.set_code(to(spaceRet.status()));
         onFinished();
-        return;;
+        return;
     }
 
     auto spaceId = spaceRet.value();
@@ -26,7 +26,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
 
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         resp_.set_code(to(ret));
         onFinished();

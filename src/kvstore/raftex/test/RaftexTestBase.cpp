@@ -5,10 +5,10 @@
  */
 
 #include "base/Base.h"
-#include "raftex/test/RaftexTestBase.h"
-#include "wal/BufferFlusher.h"
-#include "raftex/RaftexService.h"
-#include "raftex/test/TestShard.h"
+#include "kvstore/raftex/test/RaftexTestBase.h"
+#include "kvstore/wal/BufferFlusher.h"
+#include "kvstore/raftex/RaftexService.h"
+#include "kvstore/raftex/test/TestShard.h"
 #include "thrift/ThriftClientManager.h"
 
 namespace nebula {

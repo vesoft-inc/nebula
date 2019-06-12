@@ -42,9 +42,9 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"127.0.0.1", "1000"},
-            {"127.0.0.1", "1100"},
+        std::vector<uniform_tuple_t<std::string, 3>> expected{
+            {"127.0.0.1", "1000", "offline"},
+            {"127.0.0.1", "1100", "offline"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -80,6 +80,28 @@ TEST_F(SchemaTest, metaCommunication) {
             {1, "default_space", 9, 1},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_with_default_options";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE SPACE space_with_default_options";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int>> expected{
+            {2, "space_with_default_options", 1024, 1},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP SPACE space_with_default_options";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
