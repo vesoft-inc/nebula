@@ -11,6 +11,7 @@ add_library(
     meta_service_handler OBJECT
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
+    ActiveHostsMan.cpp
     processors/partsMan/AddHostsProcessor.cpp
     processors/partsMan/ListHostsProcessor.cpp
     processors/partsMan/RemoveHostsProcessor.cpp
