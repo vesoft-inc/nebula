@@ -1,33 +1,33 @@
 
 ---
 
-This tutorial provides a quick introduction to use `Nebula Graph`.
+This tutorial provides a quick introduction to use Nebula Graph.
 
 ---
 
 ### Step 1 Install Nebula Graph
 
-The easiest way to startup `Nebula` is using `Docker`.
-`Docker` is a tool designed to make it easier to create, deploy, and run applications by using containers.
+The easiest way to startup Nebula is using Docker.
+Docker is a tool designed to make it easier to create, deploy, and run applications by using containers.
 Containers allow a developer to package up an application with all of the parts it needs,
 such as libraries and other dependencies, and ship it all out as one package.
-By doing so, the developer can rest assured that the application will run on any other `Linux` machine regardless of any customized settings that machine might have that could differ from the machine used for writing and testing the code.
+By doing so, the developer can rest assured that the application will run on any other Linux machine regardless of any customized settings that machine might have that could differ from the machine used for writing and testing the code.
 
-First of all, you should make sure that `Docker` has been installed on your machine. Open a terminal and run the following command :
+First of all, you should make sure that Docker has been installed on your machine. Open a terminal and run the following command :
 
 ```
 docker --version
 ```
 
-If `Docker` is not found, please see [here](https://docs.docker.com/install/) for more information to install Docker.
+If Docker is not found, please see [here](https://docs.docker.com/install/) for more information to install Docker.
 
 After that, using
 ```
 docker pull vesoft/nebula-graph:latest
 ```
-to get `Nebula` image and `Docker images` that can display images status.
+to get `nebula` image and `docker images` that can display images status.
 
-If `Docker` is slow when pulling the image, configure a new mirror.
+If the pulling is slow when pulling the image, configure a new mirror.
 1. Check if the `/etc/docker` folder exists, if not, create a new one with `mkdir -p /etc/docker`. Generally the folder will exist after Docker installation.
 2. Create the new file `daemon.json` with the following command
 
