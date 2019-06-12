@@ -165,19 +165,19 @@ void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
     }
 }
 
-std::string Executor::variantTypeToString(const VariantType &value) {
+bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value) {
     switch (value.which()) {
         case 0:
-            return "int";
+            return nebula::cpp2::SupportedType::INT == type.type;
         case 1:
-            return "double";
+            return nebula::cpp2::SupportedType::DOUBLE == type.type;
         case 2:
-            return "bool";
+            return nebula::cpp2::SupportedType::BOOL == type.type;
         case 3:
-            return "string";
-        default:
-            return "unknow";
+            return nebula::cpp2::SupportedType::STRING == type.type;
     }
+
+    return false;
 }
 
 }   // namespace graph

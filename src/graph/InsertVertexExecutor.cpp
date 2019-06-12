@@ -31,13 +31,49 @@ Status InsertVertexExecutor::prepare() {
             break;
         }
 
-        tagItems_ = sentence_->tagItems();
-        if (tagItems_.size() == 0) {
-            status = Status::Error("Tag items empty");
-            break;
-        }
+        auto tagItems = sentence_->tagItems();
         overwritable_ = sentence_->overwritable();
         spaceId_ = ectx()->rctx()->session()->space();
+
+        // Check field name
+        tagIds_.reserve(tagItems.size());
+        schemas_.reserve(tagItems.size());
+        tagProps_.reserve(tagItems.size());
+
+        for (auto& item : tagItems) {
+            auto *tagName = item->tagName();
+            auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
+            if (!tagStatus.ok()) {
+                return Status::Error("No schema found for `%s'", tagName->c_str());
+            }
+
+            auto tagId = tagStatus.value();
+            auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
+            if (schema == nullptr) {
+                return Status::Error("No schema found for `%s'", tagName->c_str());
+            }
+
+            auto props = item->properties();
+            // Now default value is unsupported, props should equal to schema's fields
+            if (schema->getNumFields() != props.size()) {
+                LOG(ERROR) << "props number " << props.size()
+                           << ", schema field number " << schema->getNumFields();
+                return Status::Error("Wrong number of props");
+            }
+
+            tagIds_.emplace_back(tagId);
+            schemas_.emplace_back(schema);
+            tagProps_.emplace_back(props);
+            for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
+                std::string schemaFieldName = schema->getFieldName(fieldIndex);
+                if (schemaFieldName != *props[fieldIndex]) {
+                    LOG(ERROR) << "Field is wrong, schema field " << schemaFieldName
+                               << ", input field " << *props[fieldIndex];
+                    return Status::Error("Wrong field name `%s'",
+                                         props[fieldIndex]->c_str());
+                }
+            }
+        }
     } while (false);
 
     return status;
@@ -58,56 +94,34 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
         }
 
         storage::cpp2::Vertex vertex;
-        std::vector<storage::cpp2::Tag> tags(tagItems_.size());
-        // The index for multi tags
-        auto tagIndex = 0u;
+        std::vector<storage::cpp2::Tag> tags(tagIds_.size());
+
         auto valuePos = 0u;
-        for (auto& it : tagItems_) {
-            auto &tag = tags[tagIndex];
-            auto *tagName = it->tagName();
-            auto status = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
-            if (!status.ok()) {
-                return Status::Error("No schema found for `%s'", tagName->c_str());
-            }
+        for (auto index = 0u; index < tagIds_.size(); index++) {
+            auto &tag = tags[index];
+            auto tagId = tagIds_[index];
+            auto propSize = tagProps_[index].size();
+            auto schema = schemas_[index];
 
-            auto tagId = status.value();
-            auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
-            if (schema == nullptr) {
-                return Status::Error("No schema found for `%s'", tagName->c_str());
-            }
-
-            auto props = it->properties();
-            // Now default value is unsupported, props should equal to schema's fields
-            if (schema->getNumFields() != props.size() ||
-                (valuePos + props.size()) > values.size()) {
+            // props's number should equal to value's number
+            if ((valuePos + propSize) > values.size()) {
                 LOG(ERROR) << "Input values number " << values.size()
-                           << ", props number " << props.size()
-                           << ", schema field number " << schema->getNumFields();
-                return Status::Error("Wrong number of fields");
+                           << ", props number " << propSize;
+                return Status::Error("Wrong number of value");
             }
 
             RowWriter writer(schema);
             auto valueIndex = valuePos;
-            for (auto schemaIndex = 0u; schemaIndex < schema->getNumFields(); schemaIndex++) {
+            for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
                 auto& value = values[valueIndex];
 
-                // Check field name
-                std::string schemaFileName = schema->getFieldName(schemaIndex);
-                if (schemaFileName != *props[schemaIndex]) {
-                    LOG(ERROR) << "Field is wrong, schema field " << schemaFileName
-                               << ", input field " << *props[schemaIndex];
-                    return Status::Error("Input field name `%s' is wrong",
-                                         props[schemaIndex]->c_str());
-                }
-
                 // Check value type
-                auto schemaType = valueTypeToString(schema->getFieldType(schemaIndex));
-                auto propType = variantTypeToString(value);
-                if (schemaType != propType) {
-                    LOG(ERROR) << "ValueType is wrong, schema type " << schemaType
-                               << ", input type " <<  propType;
-                    return Status::Error("ValueType is wrong, schema type `%s', input type `%s'",
-                                         schemaType.c_str(), propType.c_str());
+                auto schemaType = schema->getFieldType(fieldIndex);
+                if (!checkValueType(schema->getFieldType(fieldIndex), value)) {
+                    LOG(ERROR) << "ValueType is wrong, schema type "
+                               << static_cast<int32_t>(schemaType.type)
+                               << ", input type " <<  value.which();
+                    return Status::Error("ValueType is wrong");
                 }
                 writeVariantType(writer, value);
                 valueIndex++;
@@ -115,8 +129,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 
             tag.set_tag_id(tagId);
             tag.set_props(writer.encode());
-            tagIndex++;
-            valuePos += props.size();
+            valuePos += propSize;
         }
 
         vertex.set_id(id);

@@ -34,7 +34,9 @@ private:
     InsertVertexSentence                       *sentence_{nullptr};
     bool                                        overwritable_{true};
     std::vector<VertexRowItem*>                 rows_;
-    std::vector<VertexTagItem*>                 tagItems_;
+    std::vector<TagID>                          tagIds_;
+    std::vector<TagSchema>                      schemas_;
+    std::vector<std::vector<std::string*>>      tagProps_;
     GraphSpaceID                                spaceId_{-1};
 };
 

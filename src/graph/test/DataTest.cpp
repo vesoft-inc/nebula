@@ -56,7 +56,8 @@ AssertionResult DataTest::prepareSchema() {
         std::string cmd = "ADD HOSTS " + host;
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
         }
         meta::TestUtils::registerHB(network::NetworkUtils::toHosts(host).value());
     }
@@ -65,16 +66,17 @@ AssertionResult DataTest::prepareSchema() {
         std::string cmd = "CREATE SPACE mySpace(partition_num=1, replica_factor=1)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "USE mySpace";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
     {
@@ -82,7 +84,8 @@ AssertionResult DataTest::prepareSchema() {
         std::string cmd = "CREATE TAG person(name string, age int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
     {
@@ -90,7 +93,8 @@ AssertionResult DataTest::prepareSchema() {
         std::string cmd = "CREATE TAG student(grade string, number int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
     {
@@ -98,7 +102,8 @@ AssertionResult DataTest::prepareSchema() {
         std::string cmd = "CREATE EDGE schoolmate(likeness int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
     {
@@ -106,7 +111,8 @@ AssertionResult DataTest::prepareSchema() {
         std::string cmd = "CREATE EDGE friend(intimacy int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
     sleep(FLAGS_load_data_interval_secs + 1);

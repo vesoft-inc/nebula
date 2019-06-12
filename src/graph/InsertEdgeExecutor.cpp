@@ -34,12 +34,32 @@ Status InsertEdgeExecutor::prepare() {
             break;
         }
         edgeType_ = edgeStatus.value();
-        properties_ = sentence_->properties();
+        auto properties = sentence_->properties();
         rows_ = sentence_->rows();
+
         schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType_);
         if (schema_ == nullptr) {
             status = Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
             break;
+        }
+
+        // Now default value is unsupported
+        if (properties.size() != schema_->getNumFields()) {
+            LOG(ERROR) << "Input props number " << properties.size()
+                       << ", schema fields number " << schema_->getNumFields();
+            status = Status::Error("Wrong number of props");
+            break;
+        }
+
+        // Check field name
+        for (auto fieldIndex = 0u; fieldIndex < schema_->getNumFields(); fieldIndex++) {
+            auto schemaFieldName = schema_->getFieldName(fieldIndex);
+            if (schemaFieldName != *properties[fieldIndex]) {
+                LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
+                           << ", input field " << *properties[fieldIndex];
+                return Status::Error("Input field name `%s' is wrong",
+                                     properties[fieldIndex]->c_str());
+            }
         }
     } while (false);
 
@@ -58,12 +78,10 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         auto expressions = row->values();
 
         // Now default value is unsupported
-        if (expressions.size() != schema_->getNumFields() ||
-            properties_.size() != schema_->getNumFields()) {
+        if (expressions.size() != schema_->getNumFields()) {
             LOG(ERROR) << "Input values number " << expressions.size()
-                       << ", props number " << properties_.size()
                        << ", schema field number " << schema_->getNumFields();
-            return Status::Error("Wrong number of fields");
+            return Status::Error("Wrong number of values");
         }
 
         std::vector<VariantType> values;
@@ -73,28 +91,19 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         }
 
         RowWriter writer(schema_);
-        auto schemaIndex = 0u;
+        auto fieldIndex = 0u;
         for (auto &value : values) {
-            // Check field name
-            auto schemaFileName = schema_->getFieldName(schemaIndex);
-            if (schemaFileName != *properties_[schemaIndex]) {
-                LOG(ERROR) << "Field name is wrong, schema field " << schemaFileName
-                           << ", input field " << *properties_[schemaIndex];
-                return Status::Error("Input field name `%s' is wrong",
-                                      properties_[schemaIndex]->c_str());
-            }
             // Check value type
-            auto schemaType = valueTypeToString(schema_->getFieldType(schemaIndex));
-            auto propType = variantTypeToString(value);
-            if (schemaType != propType) {
+            auto schemaType = schema_->getFieldType(fieldIndex);
+            if (!checkValueType(schemaType, value)) {
                 DCHECK(onError_);
-                LOG(ERROR) << "ValueType is wrong, schema type " << schemaType
-                           << ", input type " <<  propType;
-                return Status::Error("ValueType is wrong, schema type `%s', input type `%s'",
-                                      schemaType.c_str(), propType.c_str());
+                LOG(ERROR) << "ValueType is wrong, schema type "
+                           << static_cast<int32_t>(schemaType.type)
+                           << ", input type " <<  value.which();
+                return Status::Error("ValueType is wrong");
             }
             writeVariantType(writer, value);
-            schemaIndex++;
+            fieldIndex++;
         }
         {
             auto &out = edges[index++];

@@ -35,7 +35,6 @@ private:
     bool                                        overwritable_{true};
     EdgeType                                    edgeType_{0};
     EdgeSchema                                  schema_;
-    std::vector<std::string*>                   properties_;
     std::vector<EdgeRowItem*>                   rows_;
 };
 

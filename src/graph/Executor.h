@@ -81,7 +81,7 @@ protected:
 
     void writeVariantType(RowWriter &writer, const VariantType &value);
 
-    std::string variantTypeToString(const VariantType &value);
+    bool checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value);
 
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {
