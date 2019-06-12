@@ -183,7 +183,7 @@ Status BaseProcessor<RESP>::userExist(UserID spaceId) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
     auto userKey = MetaServiceUtils::userKey(spaceId);
     std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, userKey, &val);
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         return Status::OK();
     }
@@ -240,7 +240,7 @@ template<typename RESP>
 StatusOr<UserID> BaseProcessor<RESP>::getUserId(const std::string& account) {
     auto indexKey = MetaServiceUtils::indexUserKey(account);
     std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         return *reinterpret_cast<const UserID*>(val.c_str());
     }
@@ -251,7 +251,7 @@ template<typename RESP>
 bool BaseProcessor<RESP>::checkPassword(UserID userId, const std::string& password) {
     auto userKey = MetaServiceUtils::userKey(userId);
     std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, userKey, &val);
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         auto len = *reinterpret_cast<const int32_t *>(val.data());
         return password == val.substr(sizeof(int32_t), len);
@@ -263,7 +263,7 @@ template<typename RESP>
 StatusOr<std::string> BaseProcessor<RESP>::getUserAccount(UserID userId) {
     auto key = MetaServiceUtils::userKey(userId);
     std::string value;
-    auto code = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_,
+    auto code = kvstore_->get(kDefaultSpaceId, kDefaultPartId,
                               key, &value);
     if (code != kvstore::ResultCode::SUCCEEDED) {
         return Status::UserNotFound(folly::stringPrintf("User not found by id %d", userId));

@@ -117,6 +117,7 @@ enum HostStatus {
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
+}
 
 struct UserItem {
     1: string account;

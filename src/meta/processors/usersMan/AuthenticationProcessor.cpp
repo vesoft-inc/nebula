@@ -50,7 +50,7 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
     UserID userId = ret.value();
     auto userKey = MetaServiceUtils::userKey(userId);
     std::string val;
-    auto result = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, userKey, &val);
+    auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
     if (result != kvstore::ResultCode::SUCCEEDED) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
@@ -85,7 +85,7 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
     // Collect related roles by user.
     std::unique_ptr<kvstore::KVIterator> iter;
     std::string prefix = "__roles__";
-    auto userRet = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
+    auto userRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (userRet == kvstore::ResultCode::SUCCEEDED) {
         while (iter->valid()) {
             auto key = iter->key();
@@ -149,7 +149,7 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
 
     auto userKey = MetaServiceUtils::userKey(userRet.value());
     std::string val;
-    auto result = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, userKey, &val);
+    auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
     if (result != kvstore::ResultCode::SUCCEEDED) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
@@ -174,7 +174,7 @@ void GetUserProcessor::process(const cpp2::GetUserReq& req) {
     }
     auto userKey = MetaServiceUtils::userKey(userRet.value());
     std::string val;
-    auto result = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, userKey, &val);
+    auto result = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
     if (result != kvstore::ResultCode::SUCCEEDED) {
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
@@ -192,7 +192,7 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
     std::unique_ptr<kvstore::KVIterator> iter;
     std::string prefix = "__users__";
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Can't find any users.";
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -238,7 +238,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
     auto prefix = MetaServiceUtils::roleSpacePrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Can't find any roles by space id  " << spaceId;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
