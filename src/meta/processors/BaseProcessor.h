@@ -23,6 +23,9 @@ namespace meta {
 
 using nebula::network::NetworkUtils;
 
+const PartitionID kDefaultPartId = 0;
+const GraphSpaceID kDefaultSpaceId = 0;
+
 class LockUtils {
 public:
     LockUtils() = delete;
@@ -204,8 +207,6 @@ protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
-    const PartitionID kDefaultPartId_ = 0;
-    const GraphSpaceID kDefaultSpaceId_ = 0;
 };
 
 }  // namespace meta

@@ -41,10 +41,12 @@ namespace meta {
 using nebula::cpp2::SupportedType;
 using apache::thrift::FragileConstructor::FRAGILE;
 
+
 TEST(ProcessorTest, AddHostsTest) {
     fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path());
-
+    FLAGS_expired_hosts_check_interval_sec = 2;
+    FLAGS_expired_threshold_sec = 2;
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
@@ -66,8 +68,8 @@ TEST(ProcessorTest, AddHostsTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(10, resp.hosts.size());
         for (auto i = 0; i < 10; i++) {
-            ASSERT_EQ(i, resp.hosts[i].ip);
-            ASSERT_EQ(i, resp.hosts[i].port);
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
         }
     }
     {
@@ -91,8 +93,8 @@ TEST(ProcessorTest, AddHostsTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(20, resp.hosts.size());
         for (auto i = 0; i < 20; i++) {
-            ASSERT_EQ(i, resp.hosts[i].ip);
-            ASSERT_EQ(i, resp.hosts[i].port);
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
         }
     }
     {
@@ -118,6 +120,72 @@ TEST(ProcessorTest, AddHostsTest) {
     }
 }
 
+TEST(ProcessorTest, ListHostsTest) {
+    fs::TempDir rootPath("/tmp/ListHostsTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    ActiveHostsMan::instance(kv.get());
+    std::vector<HostAddr> hosts;
+    {
+        std::vector<nebula::cpp2::HostAddr> thriftHosts;
+        for (auto i = 0; i < 10; i++) {
+            thriftHosts.emplace_back(FRAGILE, i, i);
+            hosts.emplace_back(i, i);
+        }
+
+        cpp2::AddHostsReq req;
+        req.set_hosts(std::move(thriftHosts));
+        auto* processor = AddHostsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+    }
+    {
+        // add hosts will set host status to offline
+        cpp2::ListHostsReq req;
+        auto* processor = ListHostsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(10, resp.hosts.size());
+        for (auto i = 0; i < 10; i++) {
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
+            ASSERT_EQ(cpp2::HostStatus::OFFLINE, resp.hosts[i].status);
+        }
+    }
+    {
+        // after received heartbeat, host status will become online
+        meta::TestUtils::registerHB(hosts);
+        cpp2::ListHostsReq req;
+        auto* processor = ListHostsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(10, resp.hosts.size());
+        for (auto i = 0; i < 10; i++) {
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
+            ASSERT_EQ(cpp2::HostStatus::ONLINE, resp.hosts[i].status);
+        }
+    }
+    {
+        // host info expired
+        sleep(FLAGS_expired_hosts_check_interval_sec + FLAGS_expired_threshold_sec);
+        cpp2::ListHostsReq req;
+        auto* processor = ListHostsProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(10, resp.hosts.size());
+        for (auto i = 0; i < 10; i++) {
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
+            ASSERT_EQ(cpp2::HostStatus::OFFLINE, resp.hosts[i].status);
+        }
+    }
+    ActiveHostsMan::instance()->stopClean();
+}
 
 TEST(ProcessorTest, CreateSpaceTest) {
     fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");

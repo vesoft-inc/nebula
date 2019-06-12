@@ -22,6 +22,7 @@ namespace meta {
 
 using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAddr>>;
 using SpaceIdName = std::pair<GraphSpaceID, std::string>;
+using HostStatus = std::pair<HostAddr, std::string>;
 
 // struct for in cache
 using TagIDSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
@@ -90,7 +91,7 @@ public:
     folly::Future<StatusOr<bool>>
     addHosts(const std::vector<HostAddr>& hosts);
 
-    folly::Future<StatusOr<std::vector<HostAddr>>>
+    folly::Future<StatusOr<std::vector<HostStatus>>>
     listHosts();
 
     folly::Future<StatusOr<bool>>
@@ -229,6 +230,8 @@ protected:
                                                   bool toLeader = false);
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
+
+    std::vector<HostStatus> toHostStatus(const std::vector<cpp2::HostItem>& thosts);
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 

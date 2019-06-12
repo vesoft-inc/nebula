@@ -6,18 +6,22 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include "meta/ActiveHostsMan.h"
+#include "fs/TempDir.h"
+#include "meta/test/TestUtils.h"
 
 namespace nebula {
 namespace meta {
 
 TEST(ActiveHostsManTest, NormalTest) {
+    fs::TempDir rootPath("/tmp/ActiveHostsManTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     auto now = time::TimeUtils::nowInSeconds();
     ActiveHostsMan ahMan(1, 1);
     ahMan.updateHostInfo(HostAddr(0, 0), HostInfo(now));
     ahMan.updateHostInfo(HostAddr(0, 1), HostInfo(now));
     ahMan.updateHostInfo(HostAddr(0, 2), HostInfo(now));
-
     ASSERT_EQ(3, ahMan.getActiveHosts().size());
+
     ahMan.updateHostInfo(HostAddr(0, 0), HostInfo(now + 2));
     ASSERT_EQ(3, ahMan.getActiveHosts().size());
     {
