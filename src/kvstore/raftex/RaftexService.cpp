@@ -5,9 +5,9 @@
  */
 
 #include "base/Base.h"
-#include "raftex/RaftexService.h"
+#include "kvstore/raftex/RaftexService.h"
 #include <folly/ScopeGuard.h>
-#include "raftex/RaftPart.h"
+#include "kvstore/raftex/RaftPart.h"
 
 namespace nebula {
 namespace raftex {

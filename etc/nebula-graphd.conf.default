@@ -36,9 +36,11 @@
 --session_idle_timeout_secs=60000
 # The number of threads to accept incoming connections
 --num_accept_threads=1
-# The number of networking IO threads to process request and return response.
+# The number of networking IO threads
 --num_netio_threads=1
+# The number of threads to execute user queries
+--num_worker_threads=1
 # HTTP service port
 --ws_http_port=13000
 # HTTP2 service port
---ws_h2_portt=13002
+--ws_h2_port=13002

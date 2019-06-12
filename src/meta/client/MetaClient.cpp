@@ -264,6 +264,21 @@ std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& 
     return hosts;
 }
 
+std::vector<HostStatus> MetaClient::toHostStatus(const std::vector<cpp2::HostItem>& tHosts) {
+    std::vector<HostStatus> hosts;
+    hosts.resize(tHosts.size());
+    std::transform(tHosts.begin(), tHosts.end(), hosts.begin(), [](const auto& h) {
+        switch (h.get_status()) {
+            case cpp2::HostStatus::ONLINE:
+                return HostStatus(HostAddr(h.hostAddr.get_ip(), h.hostAddr.get_port()), "online");
+            case cpp2::HostStatus::OFFLINE:
+                return HostStatus(HostAddr(h.hostAddr.get_ip(), h.hostAddr.get_port()), "offline");
+            default:
+                return HostStatus(HostAddr(h.hostAddr.get_ip(), h.hostAddr.get_port()), "unknown");
+        }
+    });
+    return hosts;
+}
 
 std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames) {
     std::vector<SpaceIdName> idNames;
@@ -416,9 +431,9 @@ folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
 }
 
 folly::Future<StatusOr<cpp2::SpaceItem>>
-MetaClient::getSpace(GraphSpaceID spaceId) {
+MetaClient::getSpace(std::string name) {
     cpp2::GetSpaceReq req;
-    req.set_space_id(spaceId);
+    req.set_space_name(std::move(name));
     return  getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_getSpace(request);
                 }, [] (cpp2::GetSpaceResp&& resp) -> decltype(auto) {
@@ -455,13 +470,12 @@ folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& 
                 }, true);
 }
 
-
-folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::listHosts() {
+folly::Future<StatusOr<std::vector<HostStatus>>> MetaClient::listHosts() {
     cpp2::ListHostsReq req;
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_listHosts(request);
             }, [this] (cpp2::ListHostsResp&& resp) -> decltype(auto) {
-                return this->to(resp.hosts);
+                return this->toHostStatus(resp.hosts);
             });
 }
 
@@ -764,10 +778,10 @@ MetaClient::dropTagSchema(int32_t spaceId, std::string tagName) {
 
 
 folly::Future<StatusOr<nebula::cpp2::Schema>>
-MetaClient::getTagSchema(int32_t spaceId, int32_t tagId, int64_t version) {
+MetaClient::getTagSchema(int32_t spaceId, std::string name, int64_t version) {
     cpp2::GetTagReq req;
     req.set_space_id(spaceId);
-    req.set_tag_id(tagId);
+    req.set_tag_name(std::move(name));
     req.set_version(version);
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_getTag(request);
@@ -820,10 +834,10 @@ MetaClient::listEdgeSchemas(GraphSpaceID spaceId) {
 
 
 folly::Future<StatusOr<nebula::cpp2::Schema>>
-MetaClient::getEdgeSchema(GraphSpaceID spaceId, int32_t edgeType, SchemaVer version) {
+MetaClient::getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version) {
     cpp2::GetEdgeReq req;
     req.set_space_id(std::move(spaceId));
-    req.set_edge_type(edgeType);
+    req.set_edge_name(std::move(name));
     req.set_version(version);
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_getEdge(request);

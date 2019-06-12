@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "raftex/RaftPart.h"
+#include "kvstore/raftex/RaftPart.h"
 #include <folly/io/async/EventBaseManager.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include <folly/gen/Base.h>
@@ -14,18 +14,16 @@
 #include "thrift/ThriftClientManager.h"
 #include "network/NetworkUtils.h"
 #include "thread/NamedThread.h"
-#include "wal/FileBasedWal.h"
-#include "wal/BufferFlusher.h"
-#include "raftex/LogStrListIterator.h"
-#include "raftex/Host.h"
+#include "kvstore/wal/FileBasedWal.h"
+#include "kvstore/wal/BufferFlusher.h"
+#include "kvstore/raftex/LogStrListIterator.h"
+#include "kvstore/raftex/Host.h"
 
 
 DEFINE_bool(accept_log_append_during_pulling, false,
             "Whether to accept new logs during pulling the snapshot");
 DEFINE_uint32(heartbeat_interval, 5,
              "Seconds between each heartbeat");
-DEFINE_uint32(num_worker_threads, 4,
-              "The number of threads in the shared worker thread pool");
 DEFINE_uint32(max_batch_size, 256, "The max number of logs in a batch");
 
 

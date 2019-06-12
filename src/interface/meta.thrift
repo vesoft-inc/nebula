@@ -89,6 +89,17 @@ struct EdgeItem {
     4: common.Schema        schema,
 }
 
+enum HostStatus {
+    ONLINE  = 0x00,
+    OFFLINE = 0x01,
+    UNKNOWN = 0x02,
+} (cpp.enum_strict)
+
+struct HostItem {
+    1: common.HostAddr      hostAddr,
+    2: HostStatus           status,
+}
+
 struct ExecResp {
     1: ErrorCode        code,
     // For custom kv operations, it is useless.
@@ -117,7 +128,7 @@ struct ListSpacesResp {
 }
 
 struct GetSpaceReq {
-    1: common.GraphSpaceID space_id,
+    1: string     space_name,
 }
 
 struct GetSpaceResp {
@@ -157,7 +168,7 @@ struct ListTagsResp {
 
 struct GetTagReq {
     1: common.GraphSpaceID space_id,
-    2: common.TagID        tag_id,
+    2: string              tag_name,
     3: common.SchemaVer    version,
 }
 
@@ -182,7 +193,7 @@ struct AlterEdgeReq {
 
 struct GetEdgeReq {
     1: common.GraphSpaceID space_id,
-    2: common.EdgeType     edge_type,
+    2: string              edge_name,
     3: common.SchemaVer    version,
 }
 
@@ -220,7 +231,7 @@ struct ListHostsResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: list<common.HostAddr> hosts,
+    3: list<HostItem> hosts,
 }
 
 struct RemoveHostsReq {

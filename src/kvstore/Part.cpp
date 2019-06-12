@@ -5,7 +5,7 @@
  */
 
 #include "kvstore/Part.h"
-#include "wal/BufferFlusher.h"
+#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/LogEncoder.h"
 
 DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
@@ -78,7 +78,7 @@ LogID Part::lastCommittedLogId() {
 
 
 void Part::asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback cb) {
-    std::string log = encodeMultiValues(OP_PUT, key, value);;
+    std::string log = encodeMultiValues(OP_PUT, key, value);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
         .then([callback = std::move(cb)] (AppendLogResult res) {
@@ -88,7 +88,7 @@ void Part::asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback
 
 
 void Part::asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb) {
-    std::string log = encodeMultiValues(OP_MULTI_PUT, keyValues);;
+    std::string log = encodeMultiValues(OP_MULTI_PUT, keyValues);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
         .then([callback = std::move(cb)] (AppendLogResult res) {
@@ -98,7 +98,7 @@ void Part::asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb) {
 
 
 void Part::asyncRemove(folly::StringPiece key, KVCallback cb) {
-    std::string log = encodeSingleValue(OP_REMOVE, key);;
+    std::string log = encodeSingleValue(OP_REMOVE, key);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
         .then([callback = std::move(cb)] (AppendLogResult res) {
@@ -108,7 +108,7 @@ void Part::asyncRemove(folly::StringPiece key, KVCallback cb) {
 
 
 void Part::asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb) {
-    std::string log = encodeMultiValues(OP_MULTI_REMOVE, keys);;
+    std::string log = encodeMultiValues(OP_MULTI_REMOVE, keys);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
         .then([callback = std::move(cb)] (AppendLogResult res) {
@@ -118,7 +118,7 @@ void Part::asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb)
 
 
 void Part::asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb) {
-    std::string log = encodeSingleValue(OP_REMOVE_PREFIX, prefix);;
+    std::string log = encodeSingleValue(OP_REMOVE_PREFIX, prefix);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
         .then([callback = std::move(cb)] (AppendLogResult res) {
@@ -130,7 +130,7 @@ void Part::asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb) {
 void Part::asyncRemoveRange(folly::StringPiece start,
                             folly::StringPiece end,
                             KVCallback cb) {
-    std::string log = encodeMultiValues(OP_REMOVE_RANGE, start, end);;
+    std::string log = encodeMultiValues(OP_REMOVE_RANGE, start, end);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
         .then([callback = std::move(cb)] (AppendLogResult res) {

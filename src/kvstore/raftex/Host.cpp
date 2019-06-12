@@ -5,9 +5,9 @@
  */
 
 #include "base/Base.h"
-#include "raftex/Host.h"
-#include "raftex/RaftPart.h"
-#include "wal/FileBasedWal.h"
+#include "kvstore/raftex/Host.h"
+#include "kvstore/raftex/RaftPart.h"
+#include "kvstore/wal/FileBasedWal.h"
 #include <folly/io/async/EventBase.h>
 #include "network/NetworkUtils.h"
 
