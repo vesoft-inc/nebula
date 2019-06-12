@@ -29,7 +29,7 @@ StatusOr<std::vector<std::string>> DropEdgeProcessor::getEdgeKeys(GraphSpaceID i
     std::vector<std::string> keys;
     std::string edgeVal;
     EdgeType edgeType;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &edgeVal);
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &edgeVal);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         edgeType = *reinterpret_cast<const EdgeType *>(edgeVal.data());
         resp_.set_id(to(edgeType, EntryType::EDGE));
@@ -40,7 +40,7 @@ StatusOr<std::vector<std::string>> DropEdgeProcessor::getEdgeKeys(GraphSpaceID i
 
     std::unique_ptr<kvstore::KVIterator> iter;
     auto key = MetaServiceUtils::schemaEdgePrefix(id, edgeType);
-    ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, key, &iter);
+    ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Edge get error by id : %d !", edgeType);
     }
