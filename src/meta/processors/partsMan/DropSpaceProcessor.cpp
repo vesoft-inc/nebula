@@ -16,7 +16,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     if (!spaceRet.ok()) {
         resp_.set_code(to(spaceRet.status()));
         onFinished();
-        return;;
+        return;
     }
 
     auto spaceId = spaceRet.value();

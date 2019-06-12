@@ -77,7 +77,7 @@ std::vector<nebula::cpp2::HostAddr>
 CreateSpaceProcessor::pickHosts(PartitionID partId,
                                 const std::vector<HostAddr>& hosts,
                                 int32_t replicaFactor) {
-    if (hosts.size() == 0) {
+    if (hosts.empty()) {
         return std::vector<nebula::cpp2::HostAddr>();
     }
     auto startIndex = partId;

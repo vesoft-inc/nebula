@@ -24,7 +24,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
     // Get the lastest version
     if (req.get_version() < 0) {
         auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(req.get_space_id(), edgeType);
-        auto ret = doPrefix(std::move(edgePrefix));
+        auto ret = doPrefix(edgePrefix);
         if (!ret.ok()) {
             LOG(ERROR) << "Get Edge SpaceID: " << req.get_space_id() << ", edgeName: "
                        << req.get_edge_name() << ", version " << req.get_version() << " not found";
@@ -37,7 +37,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
         auto edgeKey = MetaServiceUtils::schemaEdgeKey(req.get_space_id(),
                                                        edgeType,
                                                        req.get_version());
-        auto ret = doGet(std::move(edgeKey));
+        auto ret = doGet(edgeKey);
         if (!ret.ok()) {
             LOG(ERROR) << "Get Edge SpaceID: " << req.get_space_id() << ", edgeName: "
                        << req.get_edge_name() << ", version " << req.get_version() << " not found";
