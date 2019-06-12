@@ -26,7 +26,7 @@ public:
         , size_(0) {}
 
     const char* path() const {
-        return fullpath_.c_str();;
+        return fullpath_.c_str();
     }
 
     LogID firstId() const {

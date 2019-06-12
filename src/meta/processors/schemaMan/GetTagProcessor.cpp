@@ -24,7 +24,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
     // Get the lastest version
     if (req.get_version() < 0) {
         auto tagPrefix = MetaServiceUtils::schemaTagPrefix(req.get_space_id(), tagId);
-        auto ret = doPrefix(std::move(tagPrefix));
+        auto ret = doPrefix(tagPrefix);
         if (!ret.ok()) {
             LOG(ERROR) << "Get Tag SpaceID: " << req.get_space_id()
                        << ", tagName: " << req.get_tag_name()
@@ -38,7 +38,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
         auto tagKey = MetaServiceUtils::schemaTagKey(req.get_space_id(),
                                                      tagId,
                                                      req.get_version());
-        auto ret = doGet(std::move(tagKey));
+        auto ret = doGet(tagKey);
         if (!ret.ok()) {
             LOG(ERROR) << "Get Tag SpaceID: " << req.get_space_id()
                        << ", tagName: " << req.get_tag_name()
