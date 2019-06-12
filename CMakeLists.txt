@@ -316,6 +316,7 @@ add_subdirectory(third-party)
 add_subdirectory(src)
 add_subdirectory(etc)
 add_subdirectory(scripts)
+add_subdirectory(share)
 
 add_custom_target(
     clean-build
