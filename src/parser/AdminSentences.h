@@ -261,7 +261,7 @@ public:
         kind_ = Kind::kDescribeSpace;
     }
 
-    std::string* spaceName() {
+    const std::string* spaceName() const {
         return spaceName_.get();
     }
 
