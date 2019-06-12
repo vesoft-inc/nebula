@@ -24,8 +24,6 @@ DEFINE_bool(accept_log_append_during_pulling, false,
             "Whether to accept new logs during pulling the snapshot");
 DEFINE_uint32(heartbeat_interval, 5,
              "Seconds between each heartbeat");
-DEFINE_uint32(num_worker_threads, 4,
-              "The number of threads in the shared worker thread pool");
 DEFINE_uint32(max_batch_size, 256, "The max number of logs in a batch");
 
 
