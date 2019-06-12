@@ -24,8 +24,9 @@ using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(HBProcessorTest, HBTest) {
     fs::TempDir rootPath("/tmp/HBTest.XXXXXX");
-    auto kv = TestUtils::initKV(rootPath.path());
-
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    FLAGS_expired_hosts_check_interval_sec = 1;
+    FLAGS_expired_threshold_sec = 1;
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
@@ -47,13 +48,11 @@ TEST(HBProcessorTest, HBTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(10, resp.hosts.size());
         for (auto i = 0; i < 10; i++) {
-            ASSERT_EQ(i, resp.hosts[i].ip);
-            ASSERT_EQ(i, resp.hosts[i].port);
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
+            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
         }
     }
     {
-        FLAGS_expired_hosts_check_interval_sec = 1;
-        FLAGS_expired_threshold_sec = 1;
         for (auto i = 0; i < 5; i++) {
             cpp2::HBReq req;
             nebula::cpp2::HostAddr thriftHost(FRAGILE, i, i);
@@ -64,10 +63,10 @@ TEST(HBProcessorTest, HBTest) {
             auto resp = std::move(f).get();
             ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         }
-        auto hosts = ActiveHostsManHolder::hostsMan()->getActiveHosts();
+        auto hosts = ActiveHostsMan::instance()->getActiveHosts();
         ASSERT_EQ(5, hosts.size());
         sleep(3);
-        ASSERT_EQ(0, ActiveHostsManHolder::hostsMan()->getActiveHosts().size());
+        ASSERT_EQ(0, ActiveHostsMan::instance()->getActiveHosts().size());
 
         LOG(INFO) << "Test for invalid host!";
         cpp2::HBReq req;

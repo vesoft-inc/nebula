@@ -6,6 +6,7 @@
 
 
 #include "meta/processors/admin/HBProcessor.h"
+#include "meta/ActiveHostsMan.h"
 
 DEFINE_int32(expired_hosts_check_interval_sec, 20,
              "Check the expired hosts at the interval");
@@ -30,7 +31,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     LOG(INFO) << "Receive heartbeat from " << host;
     HostInfo info;
     info.lastHBTimeInSec_ = time::TimeUtils::nowInSeconds();
-    ActiveHostsManHolder::hostsMan()->updateHostInfo(host, info);
+    ActiveHostsMan::instance()->updateHostInfo(host, info);
     onFinished();
 }
 
