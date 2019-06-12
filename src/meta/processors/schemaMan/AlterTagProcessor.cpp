@@ -24,7 +24,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     // Check the tag belongs to the space
     std::unique_ptr<kvstore::KVIterator> iter;
     auto tagPrefix = MetaServiceUtils::schemaTagPrefix(req.get_space_id(), tagId);
-    auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, tagPrefix, &iter);
+    auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, tagPrefix, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
         LOG(WARNING) << "Tag could not be found " << req.get_tag_name()
                      << ", spaceId " << req.get_space_id()

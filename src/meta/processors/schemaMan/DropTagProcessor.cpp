@@ -30,7 +30,7 @@ StatusOr<std::vector<std::string>> DropTagProcessor::getTagKeys(GraphSpaceID id,
     std::vector<std::string> keys;
     std::string tagVal;
     TagID tagId;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &tagVal);
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &tagVal);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         tagId = *reinterpret_cast<const TagID *>(tagVal.data());
         resp_.set_id(to(tagId, EntryType::TAG));
@@ -41,7 +41,7 @@ StatusOr<std::vector<std::string>> DropTagProcessor::getTagKeys(GraphSpaceID id,
 
     std::unique_ptr<kvstore::KVIterator> iter;
     auto key = MetaServiceUtils::schemaTagPrefix(id, tagId);
-    ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, key, &iter);
+    ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Tag get error by id : %d !", tagId);
     }
