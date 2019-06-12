@@ -13,6 +13,7 @@
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/CompactionFilter.h"
 
 namespace nebula {
 namespace kvstore {
@@ -28,9 +29,10 @@ struct KVOptions {
 
     // Custom MergeOperator used in rocksdb.merge method.
     std::shared_ptr<rocksdb::MergeOperator> mergeOp_{nullptr};
-
-    // Custom CompactionFilter used in compaction.
-    std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory_{nullptr};
+    /**
+     * Custom CompactionFilter used in compaction.
+     * */
+    std::shared_ptr<KVCompactionFilterFactory> cfFactory_{nullptr};
 };
 
 
