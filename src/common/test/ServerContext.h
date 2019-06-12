@@ -10,6 +10,7 @@
 #include "thread/NamedThread.h"
 #include "kvstore/KVStore.h"
 #include "meta/client/MetaClient.h"
+#include "meta/SchemaManager.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 namespace nebula {
@@ -24,6 +25,7 @@ struct ServerContext {
             thread_->join();
         }
         kvStore_ = nullptr;
+        schemaMan_.reset();
         server_ = nullptr;
         thread_ = nullptr;
         VLOG(3) << "~ServerContext";
@@ -53,6 +55,7 @@ struct ServerContext {
     std::unique_ptr<thread::NamedThread>               thread_{nullptr};
     // To keep meta and storage's KVStore
     std::unique_ptr<kvstore::KVStore>                  kvStore_{nullptr};
+    std::unique_ptr<meta::SchemaManager>               schemaMan_{nullptr};
     uint16_t                                           port_{0};
 };
 

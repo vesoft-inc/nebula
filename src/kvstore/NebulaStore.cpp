@@ -14,6 +14,7 @@
 #include "kvstore/RocksEngine.h"
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
+DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom compaction");
 
 /**
  * Check spaceId, partId exists or not.
@@ -140,6 +141,9 @@ void NebulaStore::init() {
 std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
                                                  const std::string& path) {
     if (FLAGS_engine_type == "rocksdb") {
+        if (options_.cfFactory_ != nullptr) {
+            options_.cfFactory_->construct(spaceId, FLAGS_custom_filter_interval_secs);
+        }
         return std::make_unique<RocksEngine>(spaceId,
                                              path,
                                              options_.mergeOp_,

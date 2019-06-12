@@ -29,6 +29,8 @@ public:
                        EdgeType edge,
                        std::shared_ptr<nebula::meta::SchemaProviderIf> schema);
 
+    void removeTagSchema(GraphSpaceID space, TagID tag);
+
     std::shared_ptr<const nebula::meta::SchemaProviderIf>
     getTagSchema(GraphSpaceID space,
                  TagID tag,
