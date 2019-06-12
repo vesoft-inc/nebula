@@ -74,13 +74,15 @@ void ShowExecutor::showHosts() {
 
         header.push_back("Ip");
         header.push_back("Port");
+        header.push_back("Status");
         resp_->set_column_names(std::move(header));
 
-        for (auto &host : retShowHosts) {
+        for (auto &status : retShowHosts) {
             std::vector<cpp2::ColumnValue> row;
-            row.resize(2);
-            row[0].set_str(NetworkUtils::ipFromHostAddr(host));
-            row[1].set_str(folly::to<std::string>(NetworkUtils::portFromHostAddr(host)));
+            row.resize(3);
+            row[0].set_str(NetworkUtils::ipFromHostAddr(status.first));
+            row[1].set_str(folly::to<std::string>(NetworkUtils::portFromHostAddr(status.first)));
+            row[2].set_str(status.second);
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
