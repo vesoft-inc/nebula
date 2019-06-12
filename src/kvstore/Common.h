@@ -25,8 +25,21 @@ enum ResultCode {
     ERR_UNKNOWN             = -100,
 };
 
-using KVCallback = std::function<void(ResultCode code)>;
+class KVFilter {
+public:
+    KVFilter() = default;
+    virtual ~KVFilter() = default;
+
+    /**
+     * Remove the key in background compaction if return true, otherwise return false.
+     * */
+    virtual bool filter(GraphSpaceID spaceId,
+                        const folly::StringPiece& key,
+                        const folly::StringPiece& val) const = 0;
+};
+
 using KV = std::pair<std::string, std::string>;
+using KVCallback = std::function<void(ResultCode code)>;
 
 inline rocksdb::Slice toSlice(const folly::StringPiece& str) {
     return rocksdb::Slice(str.begin(), str.size());
