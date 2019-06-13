@@ -74,7 +74,7 @@ find_package(Git)
 if (GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
     execute_process(
         COMMAND
-        ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_SOURCE_DIR} rev-parse --short HEAD
+        ${GIT_EXECUTABLE} rev-parse --short HEAD
         OUTPUT_VARIABLE GIT_INFO_SHA
     )
 endif()
@@ -304,8 +304,8 @@ macro(nebula_link_libraries target)
         ${OPENSSL_CRYPTO_LIBRARY}
         ${KRB5_LIBRARIES}
         ${COMPRESSION_LIBRARIES}
-        ${LIBUNWIND_LIBRARIES}
         ${JEMALLOC_LIB}
+        ${LIBUNWIND_LIBRARIES}
         dl
         ${GETTIME_LIB}
         -pthread
