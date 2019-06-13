@@ -54,7 +54,8 @@ public:
         checkThread_.wait();
     }
 
-    void updateHostInfo(const HostAddr& hostAddr, const HostInfo& info);
+    // return true if register host successfully
+    bool updateHostInfo(const HostAddr& hostAddr, const HostInfo& info);
 
     std::vector<HostAddr> getActiveHosts();
 

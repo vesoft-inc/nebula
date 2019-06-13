@@ -135,6 +135,9 @@ void NebulaStore::init() {
 
     LOG(INFO) << "Register handler...";
     partMan_->registerHandler(this);
+
+    // TODO: we have to wait until leader has been elected, for now we just sleep a few seconds.
+    sleep(3);
 }
 
 

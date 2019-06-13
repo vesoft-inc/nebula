@@ -31,7 +31,7 @@ ActiveHostsMan::ActiveHostsMan(int32_t intervalSeconds, int32_t expiredSeconds,
                               this);
 }
 
-void ActiveHostsMan::updateHostInfo(const HostAddr& hostAddr, const HostInfo& info) {
+bool ActiveHostsMan::updateHostInfo(const HostAddr& hostAddr, const HostInfo& info) {
     std::vector<kvstore::KV> data;
     {
         folly::RWSpinLock::ReadHolder rh(&lock_);
@@ -47,11 +47,14 @@ void ActiveHostsMan::updateHostInfo(const HostAddr& hostAddr, const HostInfo& in
     }
     if (kvstore_ != nullptr && !data.empty()) {
         folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+        bool ret = true;
         kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
-                                [] (kvstore::ResultCode code) {
-            CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                                [&ret] (kvstore::ResultCode code) {
+            ret = (code == kvstore::ResultCode::SUCCEEDED);
         });
+        return ret;
     }
+    return true;
 }
 
 std::vector<HostAddr> ActiveHostsMan::getActiveHosts() {
