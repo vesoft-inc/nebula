@@ -8,30 +8,42 @@
 #define KVSTORE_COMMON_H_
 
 #include "base/Base.h"
+#include "rocksdb/slice.h"
 
 namespace nebula {
 namespace kvstore {
 
 enum ResultCode {
-    SUCCEEDED            = 0,
-    ERR_UNKNOWN          = -1,
-    ERR_PART_NOT_FOUND   = -2,
-    ERR_KEY_NOT_FOUND    = -3,
-    ERR_SPACE_NOT_FOUND  = -4,
-    ERR_LEADER_CHANAGED  = -5,
-    ERR_INVALID_ARGUMENT = -6,
-    ERR_IO_ERROR         = -7,
+    SUCCEEDED               = 0,
+    ERR_SPACE_NOT_FOUND     = -1,
+    ERR_PART_NOT_FOUND      = -2,
+    ERR_KEY_NOT_FOUND       = -3,
+    ERR_CONSENSUS_ERROR     = -4,
+    ERR_LEADER_CHANGED      = -5,
+    ERR_INVALID_ARGUMENT    = -6,
+    ERR_IO_ERROR            = -7,
+    ERR_UNKNOWN             = -100,
 };
 
-#define KV_DATA_PATH_FORMAT(path, spaceId) \
-     folly::stringPrintf("%s/nebula/%d/data", path, spaceId)
+class KVFilter {
+public:
+    KVFilter() = default;
+    virtual ~KVFilter() = default;
 
-#define KV_WAL_PATH_FORMAT(path, spaceId, partId) \
-     folly::stringPrintf("%s/nebula/%d/wals/%d", \
-        path, spaceId, partId)
-using KVCallback = std::function<void(ResultCode code, HostAddr hostAddr)>;
+    /**
+     * Remove the key in background compaction if return true, otherwise return false.
+     * */
+    virtual bool filter(GraphSpaceID spaceId,
+                        const folly::StringPiece& key,
+                        const folly::StringPiece& val) const = 0;
+};
 
 using KV = std::pair<std::string, std::string>;
+using KVCallback = std::function<void(ResultCode code)>;
+
+inline rocksdb::Slice toSlice(const folly::StringPiece& str) {
+    return rocksdb::Slice(str.begin(), str.size());
+}
 
 }  // namespace kvstore
 }  // namespace nebula

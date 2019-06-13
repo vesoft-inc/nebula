@@ -43,32 +43,6 @@ public:
 
 
 TEST(StoragehHttpHandlerTest, StorageStatusTest) {
-    FLAGS_load_data_interval_secs = 1;
-
-    fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
-    uint32_t localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    uint32_t localMetaPort = 10001;
-    uint32_t localDataPort = 20002;
-
-    LOG(INFO) << "Start meta server....";
-    std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
-    auto metaServerContext = meta::TestUtils::mockServer(localMetaPort, metaPath.c_str());
-
-    LOG(INFO) << "Start storage server....";
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    auto addrsRet
-        = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
-    CHECK(addrsRet.ok()) << addrsRet.status();
-    auto mClient
-        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
-    mClient->init();
-    std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
-    auto sc = TestUtils::mockServer(mClient.get(),
-                                    dataPath.c_str(),
-                                    localIp,
-                                    localDataPort);
-
     {
         std::string resp;
         ASSERT_TRUE(getUrl("/status", resp));

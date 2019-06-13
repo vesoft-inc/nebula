@@ -19,4 +19,15 @@ std::ostream& operator<<(std::ostream &os, const HostAddr &addr) {
     return os;
 }
 
+
+std::string versionString() {
+#if defined(GIT_INFO_SHA)
+    return folly::stringPrintf("Git: %s, Build Time: %s %s",
+                                NEBULA_STRINGIFY(GIT_INFO_SHA),
+                                __DATE__, __TIME__);
+#else
+    return folly::stringPrintf("Build Time: %s %s", __DATE__, __TIME__);
+#endif
+}
+
 }   // namespace nebula

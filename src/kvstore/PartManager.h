@@ -23,6 +23,7 @@ public:
     virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
 };
 
+
 /**
  * This class manages all meta information one storage host needed.
  * */
@@ -62,6 +63,7 @@ public:
 protected:
     Handler* handler_ = nullptr;
 };
+
 
 /**
 : * Memory based PartManager, it is used in UTs now.
@@ -127,6 +129,7 @@ private:
     PartsMap partsMap_;
 };
 
+
 class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedListener {
 public:
      explicit MetaServerBasedPartManager(HostAddr host, meta::MetaClient *client = nullptr);
@@ -156,6 +159,14 @@ public:
 
      HostAddr getLocalHost() override {
         return localHost_;
+     }
+
+     /**
+      * for UTs, because the port is choosed by system,
+      * we should update port after thrift setup
+      * */
+     void setLocalHost(HostAddr localHost) {
+        localHost_ = std::move(localHost);
      }
 
 private:

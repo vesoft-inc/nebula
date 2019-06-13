@@ -25,21 +25,6 @@ public:
         name_.reset(name);
     }
 
-    ColumnSpecification(ColumnType type, std::string *name, int64_t ttl) {
-        hasTTL_ = true;
-        ttl_ = ttl;
-        type_ = type;
-        name_.reset(name);
-    }
-
-    bool hasTTL() const {
-        return hasTTL_;
-    }
-
-    int64_t ttl() const {
-        return ttl_;
-    }
-
     ColumnType type() const {
         return type_;
     }
@@ -49,8 +34,6 @@ public:
     }
 
 private:
-    bool                                        hasTTL_{false};
-    int64_t                                     ttl_;
     ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
 };
@@ -76,11 +59,124 @@ private:
 };
 
 
+class SchemaPropItem final {
+public:
+    using Value = boost::variant<int64_t, bool, std::string>;
+
+    enum PropType : uint8_t {
+        TTL_DURATION,
+        TTL_COL,
+    };
+
+    SchemaPropItem(PropType op, int64_t val) {
+        propType_ = op;
+        propValue_ = val;
+    }
+
+    SchemaPropItem(PropType op, bool val) {
+        propType_ = op;
+        propValue_ = val;
+    }
+
+    SchemaPropItem(PropType op, std::string val) {
+        propType_ = op;
+        propValue_ = std::move(val);
+    }
+
+    StatusOr<int64_t> getTtlDuration() {
+        if (isInt()) {
+            return asInt();
+        } else {
+            LOG(ERROR) << "Ttl_duration value illegal: " << propValue_;
+            return Status::Error("Ttl_duration value illegal");
+        }
+    }
+
+    StatusOr<std::string> getTtlCol() {
+        if (isString()) {
+            return asString();
+        } else {
+            LOG(ERROR) << "Ttl_col value illegal: " << propValue_;
+            return Status::Error("Ttl_col value illegal");
+        }
+    }
+
+    PropType getPropType() {
+        return propType_;
+    }
+
+    std::string toString() const;
+
+private:
+    int64_t asInt() {
+        return boost::get<int64_t>(propValue_);
+    }
+
+    const std::string& asString() {
+        return boost::get<std::string>(propValue_);
+    }
+
+    bool asBool() {
+        switch (propValue_.which()) {
+            case 0:
+                return asInt() != 0;
+            case 1:
+                return boost::get<bool>(propValue_);
+            case 2:
+                return asString().empty();
+            default:
+                DCHECK(false);
+        }
+        return false;
+    }
+
+    bool isInt() {
+        return propValue_.which() == 0;
+    }
+
+    bool isBool() {
+        return propValue_.which() == 1;
+    }
+
+    bool isString() {
+        return propValue_.which() == 2;
+    }
+
+private:
+    Value        propValue_;
+    PropType     propType_;
+};
+
+
+class SchemaPropList final {
+public:
+    void addOpt(SchemaPropItem *item) {
+        items_.emplace_back(item);
+    }
+
+    std::vector<SchemaPropItem*> getProps() const {
+        std::vector<SchemaPropItem*> result;
+        result.resize(items_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(items_.begin(), items_.end(), result.begin(), get);
+        return result;
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::unique_ptr<SchemaPropItem>>    items_;
+};
+
+
 class CreateTagSentence final : public Sentence {
 public:
-    CreateTagSentence(std::string *name, ColumnSpecificationList *columns) {
+    CreateTagSentence(std::string *name,
+                      ColumnSpecificationList *columns,
+                      SchemaPropList *schemaProps) {
         name_.reset(name);
         columns_.reset(columns);
+        schemaProps_.reset(schemaProps);
         kind_ = Kind::kCreateTag;
     }
 
@@ -94,18 +190,25 @@ public:
         return columns_->columnSpecs();
     }
 
+    std::vector<SchemaPropItem*> getSchemaProps() const {
+        return schemaProps_->getProps();
+    }
+
 private:
     std::unique_ptr<std::string>                name_;
     std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<SchemaPropList>             schemaProps_;
 };
 
 
 class CreateEdgeSentence final : public Sentence {
 public:
     CreateEdgeSentence(std::string *name,
-                       ColumnSpecificationList *columns) {
+                       ColumnSpecificationList *columns,
+                       SchemaPropList *schemaProps) {
         name_.reset(name);
         columns_.reset(columns);
+        schemaProps_.reset(schemaProps);
         kind_ = Kind::kCreateEdge;
     }
 
@@ -119,9 +222,14 @@ public:
         return columns_->columnSpecs();
     }
 
+    std::vector<SchemaPropItem*> getSchemaProps() const {
+        return schemaProps_->getProps();
+    }
+
 private:
     std::unique_ptr<std::string>                name_;
     std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<SchemaPropList>             schemaProps_;
 };
 
 
@@ -180,9 +288,12 @@ private:
 
 class AlterTagSentence final : public Sentence {
 public:
-    AlterTagSentence(std::string *name, AlterSchemaOptList *opts) {
+    AlterTagSentence(std::string *name,
+                     AlterSchemaOptList *opts,
+                     SchemaPropList *schemaProps) {
         name_.reset(name);
         opts_.reset(opts);
+        schemaProps_.reset(schemaProps);
         kind_ = Kind::kAlterTag;
     }
 
@@ -196,17 +307,25 @@ public:
         return opts_->alterSchemaItems();
     }
 
+    std::vector<SchemaPropItem*> getSchemaProps() const {
+        return schemaProps_->getProps();
+    }
+
 private:
     std::unique_ptr<std::string>                name_;
     std::unique_ptr<AlterSchemaOptList>         opts_;
+    std::unique_ptr<SchemaPropList>             schemaProps_;
 };
 
 
 class AlterEdgeSentence final : public Sentence {
 public:
-    AlterEdgeSentence(std::string *name, AlterSchemaOptList *opts) {
+    AlterEdgeSentence(std::string *name,
+                      AlterSchemaOptList *opts,
+                      SchemaPropList *schemaProps) {
         name_.reset(name);
         opts_.reset(opts);
+        schemaProps_.reset(schemaProps);
         kind_ = Kind::kAlterEdge;
     }
 
@@ -220,9 +339,14 @@ public:
         return opts_->alterSchemaItems();
     }
 
+    std::vector<SchemaPropItem*> getSchemaProps() const {
+        return schemaProps_->getProps();
+    }
+
 private:
     std::unique_ptr<std::string>                name_;
     std::unique_ptr<AlterSchemaOptList>         opts_;
+    std::unique_ptr<SchemaPropList>             schemaProps_;
 };
 
 
@@ -270,7 +394,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 
@@ -288,7 +412,7 @@ public:
 
     std::string toString() const override;
 
-    std::string* name() const {
+    const std::string* name() const {
         return name_.get();
     }
 

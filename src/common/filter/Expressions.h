@@ -641,7 +641,7 @@ public:
 
     Status MUST_USE_RESULT prepare() override;
 
-    void setContext(ExpressionContext *ctx) {
+    void setContext(ExpressionContext *ctx) override {
         context_ = ctx;
         for (auto &arg : args_) {
             arg->setContext(ctx);

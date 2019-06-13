@@ -1,26 +1,4 @@
 add_executable(
-    file_based_schema_manager_test
-    FileBasedSchemaManagerTest.cpp
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:network_obj>
-)
-nebula_link_libraries(
-    file_based_schema_manager_test
-    ${THRIFT_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(file_based_schema_manager_test)
-
-
-add_executable(
     meta_utils_test
     MetaServiceUtilsTest.cpp
     ../MetaServiceUtils.cpp
@@ -48,8 +26,13 @@ add_executable(
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
@@ -58,8 +41,6 @@ add_executable(
 )
 nebula_link_libraries(
     processor_test
-    proxygenhttpserver
-    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
@@ -76,23 +57,26 @@ add_executable(
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:schema_obj>
 )
 nebula_link_libraries(
     hb_processor_test
-    proxygenhttpserver
-    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
     gtest
 )
 nebula_add_test(hb_processor_test)
+
 
 add_executable(
     meta_client_test
@@ -102,8 +86,11 @@ add_executable(
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -113,8 +100,6 @@ add_executable(
 )
 nebula_link_libraries(
     meta_client_test
-    proxygenhttpserver
-    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
@@ -131,27 +116,45 @@ add_executable(
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:wal_obj>
 )
 nebula_link_libraries(
     active_hosts_man_test
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
     gtest
 )
-
 nebula_add_test(active_hosts_man_test)
 
 
 add_executable(
     meta_http_test
     MetaHttpHandlerTest.cpp
+    $<TARGET_OBJECTS:meta_http_handler>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>

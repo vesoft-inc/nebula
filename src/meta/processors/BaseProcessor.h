@@ -23,6 +23,9 @@ namespace meta {
 
 using nebula::network::NetworkUtils;
 
+const PartitionID kDefaultPartId = 0;
+const GraphSpaceID kDefaultSpaceId = 0;
+
 class LockUtils {
 public:
     LockUtils() = delete;
@@ -91,7 +94,7 @@ protected:
         }
     }
 
-    cpp2::ErrorCode to(Status status) {
+    cpp2::ErrorCode to(const Status& status) {
         switch (status.code()) {
         case Status::kOk:
             return cpp2::ErrorCode::SUCCEEDED;
@@ -216,8 +219,6 @@ protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
-    const PartitionID kDefaultPartId_ = 0;
-    const GraphSpaceID kDefaultSpaceId_ = 0;
 };
 
 }  // namespace meta

@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "webservice/WebService.h"
 #include "process/ProcessUtils.h"
 
 namespace nebula {

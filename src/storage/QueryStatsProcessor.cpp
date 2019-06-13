@@ -62,8 +62,9 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
     }
     s.set_columns(std::move(cols));
     resp_.set_schema(std::move(s));
-    resp_.set_data(std::move(writer.encode()));
+    resp_.set_data(writer.encode());
 }
+
 
 kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
                                                        VertexID vId,

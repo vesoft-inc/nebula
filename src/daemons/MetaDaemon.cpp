@@ -11,7 +11,10 @@
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
+#include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/NebulaStore.h"
+#include "meta/ActiveHostsMan.h"
 
 using nebula::ProcessUtils;
 using nebula::Status;
@@ -23,6 +26,8 @@ DEFINE_string(peers, "", "It is a list of IPs split by comma,"
                          "the ips number equals replica number."
                          "If empty, it means replica is 1");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
+DEFINE_int32(num_workers, 4, "Number of worker threads");
+DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DECLARE_string(part_man_type);
 
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
@@ -34,6 +39,7 @@ static void signalHandler(int sig);
 static Status setupSignalHandler();
 
 int main(int argc, char *argv[]) {
+    google::SetVersionString(nebula::versionString());
     folly::init(&argc, &argv, true);
     if (FLAGS_data_path.empty()) {
         LOG(ERROR) << "Meta Data Path should not empty";
@@ -88,7 +94,7 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Bad local host addr, status:" << hostAddrRet.status();
         return EXIT_FAILURE;
     }
-    auto& localHost = hostAddrRet.value();
+    auto& localhost = hostAddrRet.value();
 
     auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_peers);
     if (!peersRet.ok()) {
@@ -107,22 +113,33 @@ int main(int argc, char *argv[]) {
     // The meta server has only one space, one part.
     partMan->addPart(0, 0, std::move(peersRet.value()));
 
+    // Generic thread pool
+    auto workers = std::make_shared<nebula::thread::GenericThreadPool>();
+    workers->start(FLAGS_num_workers);
+
+    // folly IOThreadPoolExecutor
+    auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
+
     nebula::kvstore::KVOptions options;
-    options.local_ = localHost;
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
-    std::unique_ptr<nebula::kvstore::KVStore> kvstore(
-            nebula::kvstore::KVStore::instance(std::move(options)));
+    std::unique_ptr<nebula::kvstore::KVStore> kvstore =
+        std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
+                                                       ioPool,
+                                                       workers,
+                                                       localhost);
 
     auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
+    nebula::meta::ActiveHostsMan::instance(kvstore.get());
 
-    nebula::operator<<(operator<<(LOG(INFO), "The meta deamon start on "), localHost);
+    nebula::operator<<(operator<<(LOG(INFO), "The meta deamon start on "), localhost);
     try {
         gServer = std::make_unique<apache::thrift::ThriftServer>();
         gServer->setInterface(std::move(handler));
         gServer->setPort(FLAGS_port);
         gServer->setReusePort(FLAGS_reuse_port);
         gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
+        gServer->setIOThreadPool(ioPool);
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception &e) {
         LOG(ERROR) << "Exception thrown: " << e.what();

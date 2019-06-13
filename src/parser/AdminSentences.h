@@ -222,6 +222,9 @@ public:
     }
 
     std::vector<SpaceOptItem*> getOpts() {
+        if (spaceOpts_ == nullptr) {
+            return {};
+        }
         return spaceOpts_->getOpts();
     }
 
@@ -258,7 +261,7 @@ public:
         kind_ = Kind::kDescribeSpace;
     }
 
-    std::string* spaceName() {
+    const std::string* spaceName() const {
         return spaceName_.get();
     }
 

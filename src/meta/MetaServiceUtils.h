@@ -27,7 +27,7 @@ public:
 
     static std::string spaceKey(GraphSpaceID spaceId);
 
-    static std::string spaceVal(cpp2::SpaceProperties properties);
+    static std::string spaceVal(const cpp2::SpaceProperties &properties);
 
     static cpp2::SpaceProperties parseSpace(folly::StringPiece rawData);
 
@@ -49,7 +49,9 @@ public:
 
     static std::string hostKey(IPv4 ip, Port port);
 
-    static std::string hostVal();
+    static std::string hostValOnline();
+
+    static std::string hostValOffline();
 
     static const std::string& hostPrefix();
 
