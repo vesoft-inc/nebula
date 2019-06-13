@@ -46,8 +46,7 @@ bool ResultSchemaProvider::ResultSchemaField::isValid() const {
  *
  **********************************/
 ResultSchemaProvider::ResultSchemaProvider(Schema schema)
-        : columns_(std::move(schema.get_columns())),
-          schemaProp_(std::move(schema.get_schema_prop())) {
+        : columns_(std::move(schema.get_columns())) {
     for (int64_t i = 0; i < static_cast<int64_t>(columns_.size()); i++) {
         const std::string& name = columns_[i].get_name();
         nameIndex_.emplace(std::make_pair(SpookyHashV2::Hash64(name.data(), name.size(), 0), i));
@@ -112,11 +111,6 @@ std::shared_ptr<const meta::SchemaProviderIf::Field> ResultSchemaProvider::field
         return std::shared_ptr<ResultSchemaField>();
     }
     return std::make_shared<ResultSchemaField>(&(columns_[index]));
-}
-
-
-const cpp2::SchemaProp ResultSchemaProvider::getProp() const {
-    return schemaProp_;
 }
 
 }  // namespace nebula
