@@ -396,6 +396,19 @@ ResultCode NebulaStore::compactAll(GraphSpaceID spaceId) {
     return ResultCode::SUCCEEDED;
 }
 
+bool NebulaStore::isLeader(GraphSpaceID spaceId, PartitionID partId) {
+    auto spaceIt = spaces_.find(spaceId);
+    if (spaceIt != this->spaces_.end()) {
+        auto partIt = spaceIt->second->parts_.find(partId);
+        if (partIt != spaceIt->second->parts_.end()) {
+            return partIt->second->isLeader();
+        } else {
+            return false;
+        }
+    }
+    return false;
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

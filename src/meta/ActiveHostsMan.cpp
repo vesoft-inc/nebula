@@ -16,7 +16,7 @@ ActiveHostsMan::ActiveHostsMan(int32_t intervalSeconds, int32_t expiredSeconds,
     : intervalSeconds_(intervalSeconds)
     , expirationInSeconds_(expiredSeconds) {
     if (kv != nullptr) {
-        kvstore_ = kv;
+        kvstore_ = dynamic_cast<kvstore::NebulaStore*>(kv);
     }
 
     CHECK_GT(intervalSeconds, 0)
@@ -46,13 +46,18 @@ bool ActiveHostsMan::updateHostInfo(const HostAddr& hostAddr, const HostInfo& in
         }
     }
     if (kvstore_ != nullptr && !data.empty()) {
-        folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-        bool ret = true;
-        kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
-                                [&ret] (kvstore::ResultCode code) {
-            ret = (code == kvstore::ResultCode::SUCCEEDED);
-        });
-        return ret;
+        if (kvstore_->isLeader(kDefaultSpaceId, kDefaultPartId)) {
+            folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
+            folly::Baton<true, std::atomic> baton;
+            kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
+                                    [&baton] (kvstore::ResultCode code) {
+                UNUSED(code);
+                baton.post();
+            });
+            return baton.try_wait_for(std::chrono::milliseconds(500));
+        } else {
+            return false;
+        }
     }
     return true;
 }
