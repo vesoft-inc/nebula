@@ -11,6 +11,8 @@ prefix="/usr/local"
 bindir="$prefix/bin"
 datadir="$prefix/scripts"
 sysconfdir="$prefix/etc"
+sharedir="$prefix/share"
+resourcesdir="$sharedir/resources"
 
 # parsing arguments
 while getopts v:p: opt;
@@ -60,4 +62,7 @@ sed -i "s/@VERSION@/$rpm_version/g" nebula.spec
 sed -i "s/@RELEASE@/$rpm_release/g" nebula.spec
 
 # do rpmbuild
-rpmbuild -D"_topdir $rpmbuilddir" -D"_bindir $bindir" -D"_datadir $datadir" -D"_sysconfdir $sysconfdir" -ba nebula.spec
+rpmbuild -D"_topdir $rpmbuilddir" -D"_bindir $bindir" \
+         -D"_datadir $datadir" -D"_sysconfdir $sysconfdir" \
+         -D"_sharedir $sharedir" -D"_resourcesdir $resourcesdir" \
+         -ba nebula.spec
