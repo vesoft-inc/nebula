@@ -49,12 +49,16 @@ bool ActiveHostsMan::updateHostInfo(const HostAddr& hostAddr, const HostInfo& in
         if (kvstore_->isLeader(kDefaultSpaceId, kDefaultPartId)) {
             folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
             folly::Baton<true, std::atomic> baton;
+            bool succeeded = true;
             kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
-                                    [&baton] (kvstore::ResultCode code) {
-                UNUSED(code);
+                                    [&] (kvstore::ResultCode code) {
+                if (code != kvstore::ResultCode::SUCCEEDED) {
+                    succeeded = false;
+                }
                 baton.post();
             });
-            return baton.try_wait_for(std::chrono::milliseconds(500));
+            baton.wait();
+            return succeeded;
         } else {
             return false;
         }

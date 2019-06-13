@@ -20,7 +20,6 @@ DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom
  * Check spaceId, partId exists or not.
  * */
 #define CHECK_FOR_WRITE(spaceId, partId, cb) \
-    folly::RWSpinLock::ReadHolder rh(&lock_); \
     auto it = spaces_.find(spaceId); \
     if (UNLIKELY(it == spaces_.end())) { \
         cb(ResultCode::ERR_SPACE_NOT_FOUND); \
@@ -37,7 +36,6 @@ DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom
  * Check spaceId, partId and return related storage engine.
  * */
 #define CHECK_AND_RETURN_ENGINE(spaceId, partId) \
-    folly::RWSpinLock::ReadHolder rh(&lock_); \
     KVEngine* engine = nullptr; \
     do { \
         auto it = spaces_.find(spaceId); \
@@ -255,6 +253,7 @@ ResultCode NebulaStore::get(GraphSpaceID spaceId,
                             PartitionID partId,
                             const std::string& key,
                             std::string* value) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->get(key, value);
 }
@@ -264,6 +263,7 @@ ResultCode NebulaStore::multiGet(GraphSpaceID spaceId,
                                  PartitionID partId,
                                  const std::vector<std::string>& keys,
                                  std::vector<std::string>* values) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->multiGet(keys, values);
 }
@@ -274,6 +274,7 @@ ResultCode NebulaStore::range(GraphSpaceID spaceId,
                               const std::string& start,
                               const std::string& end,
                               std::unique_ptr<KVIterator>* iter) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->range(start, end, iter);
 }
@@ -283,6 +284,7 @@ ResultCode NebulaStore::prefix(GraphSpaceID spaceId,
                                PartitionID partId,
                                const std::string& prefix,
                                std::unique_ptr<KVIterator>* iter) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     CHECK_AND_RETURN_ENGINE(spaceId, partId);
     return engine->prefix(prefix, iter);
 }
@@ -292,6 +294,7 @@ void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<KV> keyValues,
                                 KVCallback cb) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     CHECK_FOR_WRITE(spaceId, partId, cb);
     return partIt->second->asyncMultiPut(std::move(keyValues), std::move(cb));
 }
@@ -301,6 +304,7 @@ void NebulaStore::asyncRemove(GraphSpaceID spaceId,
                               PartitionID partId,
                               const std::string& key,
                               KVCallback cb) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     CHECK_FOR_WRITE(spaceId, partId, cb);
     return partIt->second->asyncRemove(key, std::move(cb));
 }
@@ -310,6 +314,7 @@ void NebulaStore::asyncMultiRemove(GraphSpaceID spaceId,
                                    PartitionID  partId,
                                    std::vector<std::string> keys,
                                    KVCallback cb) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     CHECK_FOR_WRITE(spaceId, partId, cb);
     return partIt->second->asyncMultiRemove(std::move(keys), cb);
 }
@@ -320,6 +325,7 @@ void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,
                                    const std::string& start,
                                    const std::string& end,
                                    KVCallback cb) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     CHECK_FOR_WRITE(spaceId, partId, cb);
     return partIt->second->asyncRemoveRange(start, end, std::move(cb));
 }
@@ -329,6 +335,7 @@ void NebulaStore::asyncRemovePrefix(GraphSpaceID spaceId,
                                     PartitionID partId,
                                     const std::string& prefix,
                                     KVCallback cb) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     CHECK_FOR_WRITE(spaceId, partId, cb);
     return partIt->second->asyncRemovePrefix(prefix, std::move(cb));
 }
@@ -338,6 +345,7 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
                                const std::string& extra,
                                const std::vector<std::string>& files) {
     decltype(spaces_)::iterator it;
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
     for (auto& engine : it->second->engines_) {
         auto parts = engine->allParts();
@@ -364,6 +372,7 @@ ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
                                   const std::string& configKey,
                                   const std::string& configValue) {
     decltype(spaces_)::iterator it;
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
     for (auto& engine : it->second->engines_) {
         auto code = engine->setOption(configKey, configValue);
@@ -377,6 +386,7 @@ ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
                                     const std::string& configKey,
                                     const std::string& configValue) {
     decltype(spaces_)::iterator it;
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
     for (auto& engine : it->second->engines_) {
         auto code = engine->setDBOption(configKey, configValue);
@@ -388,6 +398,7 @@ ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
 
 ResultCode NebulaStore::compactAll(GraphSpaceID spaceId) {
     decltype(spaces_)::iterator it;
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
     for (auto& engine : it->second->engines_) {
         auto code = engine->compactAll();
@@ -397,6 +408,7 @@ ResultCode NebulaStore::compactAll(GraphSpaceID spaceId) {
 }
 
 bool NebulaStore::isLeader(GraphSpaceID spaceId, PartitionID partId) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     auto spaceIt = spaces_.find(spaceId);
     if (spaceIt != this->spaces_.end()) {
         auto partIt = spaceIt->second->parts_.find(partId);
