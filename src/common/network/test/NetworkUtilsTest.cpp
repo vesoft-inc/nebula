@@ -64,12 +64,12 @@ TEST(NetworkUtils, listDeviceAndIPv4s) {
 
 
 TEST(NetworkUtils, intIPv4Conversion) {
-    uint32_t ip;
+    int32_t ip;
     ASSERT_TRUE(NetworkUtils::ipv4ToInt("127.0.0.1", ip));
     EXPECT_EQ(NetworkUtils::intToIPv4(ip), "127.0.0.1");
 
     ip = 0x11223344;
-    uint32_t converted;
+    int32_t converted;
     ASSERT_TRUE(NetworkUtils::ipv4ToInt(NetworkUtils::intToIPv4(ip), converted));
     EXPECT_EQ(converted, ip);
 }

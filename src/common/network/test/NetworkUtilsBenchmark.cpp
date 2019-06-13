@@ -59,7 +59,7 @@ BENCHMARK(shared_ipToInt, iters) {
 }
 BENCHMARK_RELATIVE(ipv4ToInt, iters) {
     std::string ipStr("10.20.30.40");
-    uint32_t ipInt;
+    int32_t ipInt;
     for (uint32_t i = 0; i < iters; i++) {
         NetworkUtils::ipv4ToInt(ipStr, ipInt);
         folly::doNotOptimizeAway(ipInt);

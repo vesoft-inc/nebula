@@ -4,7 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <sys/types.h>
@@ -26,8 +25,8 @@ using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
 
 void MetaHttpHandler::init(std::shared_ptr<MetaClient> client) {
-    metaClient = client;
-    CHECK_NOTNULL(metaClient);
+    metaClient_ = client;
+    CHECK_NOTNULL(metaClient_);
 }
 
 void MetaHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
@@ -42,8 +41,8 @@ void MetaHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     }
 
     if (headers->hasQueryParam("method")) {
-        method = headers->getQueryParam("method");
-        if (method == "download") {
+        method_ = headers->getQueryParam("method");
+        if (method_ == "download") {
             if (!headers->hasQueryParam("url") ||
                 !headers->hasQueryParam("port") ||
                 !headers->hasQueryParam("path") ||
@@ -52,11 +51,11 @@ void MetaHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
                 return;
             }
 
-            hdfsUrl = headers->getQueryParam("url");
-            hdfsPort = headers->getIntQueryParam("port");
-            hdfsPath = headers->getQueryParam("path");
-            localPath = headers->getQueryParam("localPath");
-            spaceID = headers->getIntQueryParam("spaceID");
+            hdfsUrl_ = headers->getQueryParam("url");
+            hdfsPort_ = headers->getIntQueryParam("port");
+            hdfsPath_ = headers->getQueryParam("path");
+            localPath_ = headers->getQueryParam("localPath");
+            spaceID_ = headers->getIntQueryParam("spaceID");
         }
     }
 
@@ -81,14 +80,14 @@ void MetaHttpHandler::onEOM() noexcept {
             return;
         case HttpCode::E_ILLEGAL_ARGUMENT:
             ResponseBuilder(downstream_)
-                .status(404, "Illegal Argument")
+                .status(400, "Bad Request")
                 .sendWithEOM();
             return;
         default:
             break;
     }
 
-    if (method == "status") {
+    if (method_ == "status") {
         folly::dynamic vals = getStatus();
         if (returnJson_) {
             ResponseBuilder(downstream_)
@@ -101,27 +100,32 @@ void MetaHttpHandler::onEOM() noexcept {
                 .body(toStr(vals))
                 .sendWithEOM();
         }
-    } else if (method == "download") {
+    } else if (method_ == "download") {
         if (auto hadoopHome = std::getenv("HADOOP_HOME")) {
             LOG(INFO) << "Hadoop Path : " << hadoopHome;
-            if (dispatchSSTFiles(hdfsUrl, hdfsPort, hdfsPath, localPath)) {
+            if (dispatchSSTFiles(hdfsUrl_, hdfsPort_, hdfsPath_, localPath_)) {
                 ResponseBuilder(downstream_)
                     .status(200, "SSTFile dispatch successfully")
                     .body("SSTFile dispatch successfully")
                     .sendWithEOM();
             } else {
+                LOG(ERROR) << "SSTFile dispatch failed";
                 ResponseBuilder(downstream_)
                     .status(404, "SSTFile dispatch failed")
                     .sendWithEOM();
             }
 
         } else {
-            LOG(INFO) << "Hadoop Home not exist";
+            LOG(ERROR) << "Hadoop Home not exist";
             ResponseBuilder(downstream_)
                 .status(404, "HADOOP_HOME not exist")
                 .sendWithEOM();
         }
     } else {
+        LOG(ERROR) << "Bad Request " << method_;
+        ResponseBuilder(downstream_)
+            .status(400, "Bad Request")
+            .sendWithEOM();
     }
 }
 
@@ -202,7 +206,6 @@ bool MetaHttpHandler::dispatchSSTFiles(const std::string& url,
                                        const std::string& local) {
     auto command = folly::stringPrintf("hdfs dfs -ls hdfs://%s:%d%s ",
                                        url.c_str(), port, path.c_str());
-    LOG(INFO) << "List SST Files " << command;
     auto result = ProcessUtils::runCommand(command.c_str());
     std::vector<std::string> files;
     folly::split("\n", result.value(), files, true);
@@ -210,46 +213,46 @@ bool MetaHttpHandler::dispatchSSTFiles(const std::string& url,
                                         return element.find("part") != std::string::npos;
                                     });
 
-    auto partResult = (*metaClient).getPartsAlloc(spaceID).get();
+    auto partResult = metaClient_->getPartsAlloc(spaceID_).get();
     if (!partResult.ok()) {
         return false;
     }
 
-    if (folly::to<int64_t>(partNumber) != (*metaClient).partsNum(spaceID)) {
+    if ((int64_t)partNumber != metaClient_->partsNum(spaceID_)) {
         LOG(ERROR) << "HDFS part number should be equal with nebula";
         return false;
     }
 
-    auto hosts = (*metaClient).listHosts().get();
+    auto hosts = metaClient_->listHosts().get();
     if (!hosts.ok()) {
         LOG(ERROR) << "List Hosts Failed: " << hosts.status();
         return false;
     }
 
-    for (auto iter = hosts.value().cbegin(); iter != hosts.value().cend(); iter++) {
-        auto partMap = (*metaClient).getPartsMapFromCache((*iter));
-        auto id = partMap.find(spaceID);
+    for (auto &address : hosts.value()) {
+        auto partMap = metaClient_->getPartsMapFromCache(address);
+        auto id = partMap.find(spaceID_);
         if (id == partMap.end()) {
-            LOG(ERROR) << "Can't find SpaceID " << spaceID;
+            LOG(ERROR) << "Can't find SpaceID: " << spaceID_;
             return false;
         }
         std::vector<PartitionID> partitions;
-        auto partIter = partMap[spaceID].begin();
-        while (partIter != partMap[spaceID].end()) {
-            partitions.emplace_back(partIter->first-1);
+        auto partIter = partMap[spaceID_].begin();
+        while (partIter != partMap[spaceID_].end()) {
+            partitions.emplace_back(partIter->first - 1);
             partIter++;
         }
         std::string parts;
         folly::join(",", partitions, parts);
 
-        auto host = network::NetworkUtils::intToIPv4((*iter).first);
+        auto host = network::NetworkUtils::intToIPv4(address.first);
         auto t = "http://%s:%d/storage?method=download&url=%s&port=%d&path=%s&parts=%s&local=%s";
         auto download = folly::stringPrintf(t, host.c_str(), 22000, url.c_str(), port, path.c_str(),
                                             parts.c_str(), local.c_str());
         command = folly::stringPrintf("curl %s ", download.c_str());
         result = ProcessUtils::runCommand(command.c_str());
         if (!result.ok()) {
-            LOG(ERROR) << "Failed to download SST File: " << result.status();
+            LOG(ERROR) << "Failed to download SST Files: " << result.status();
             return false;
         }
     }

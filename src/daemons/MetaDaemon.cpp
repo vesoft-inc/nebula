@@ -89,6 +89,30 @@ int main(int argc, char *argv[]) {
     // folly IOThreadPoolExecutor
     auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
 
+    auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_peers);
+    if (!peersRet.ok()) {
+        LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
+        return EXIT_FAILURE;
+    }
+
+    auto partMan
+        = std::make_unique<nebula::kvstore::MemPartManager>();
+    // The meta server has only one space, one part.
+    partMan->addPart(0, 0, std::move(peersRet.value()));
+
+    // Generic thread pool
+    auto workers = std::make_shared<nebula::thread::GenericThreadPool>();
+    workers->start(FLAGS_num_workers);
+
+    nebula::kvstore::KVOptions options;
+    options.dataPaths_ = {FLAGS_data_path};
+    options.partMan_ = std::move(partMan);
+    std::unique_ptr<nebula::kvstore::KVStore> kvstore =
+        std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
+                                                       ioPool,
+                                                       workers,
+                                                       localhost);
+
     LOG(INFO) << "Starting Meta HTTP Service";
     nebula::WebService::registerHandler("/meta", [&localhost, &ioPool] {
         auto client = std::make_shared<nebula::meta::MetaClient>(
@@ -105,11 +129,6 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_peers);
-    if (!peersRet.ok()) {
-        LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
-        return EXIT_FAILURE;
-    }
     // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
@@ -117,30 +136,10 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto partMan
-        = std::make_unique<nebula::kvstore::MemPartManager>();
-    // The meta server has only one space, one part.
-    partMan->addPart(0, 0, std::move(peersRet.value()));
-
-    // Generic thread pool
-    auto workers = std::make_shared<nebula::thread::GenericThreadPool>();
-    workers->start(FLAGS_num_workers);
-
-
-    nebula::kvstore::KVOptions options;
-    options.dataPaths_ = {FLAGS_data_path};
-    options.partMan_ = std::move(partMan);
-    std::unique_ptr<nebula::kvstore::KVStore> kvstore =
-        std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
-                                                       ioPool,
-                                                       workers,
-                                                       localhost);
-
-    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
-
     nebula::operator<<(operator<<(LOG(INFO), "The meta deamon start on "), localhost);
     try {
         gServer = std::make_unique<apache::thrift::ThriftServer>();
+        auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
         gServer->setInterface(std::move(handler));
         gServer->setPort(FLAGS_port);
         gServer->setReusePort(FLAGS_reuse_port);

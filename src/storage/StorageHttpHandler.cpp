@@ -11,6 +11,8 @@
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 
+DEFINE_int32(download_thread_num, 3, "download thread number");
+
 namespace nebula {
 namespace storage {
 
@@ -76,7 +78,7 @@ void StorageHttpHandler::onEOM() noexcept {
             return;
         case HttpCode::E_ILLEGAL_ARGUMENT:
             ResponseBuilder(downstream_)
-                .status(400, "Illegal Argument")
+                .status(400, "Bad Request")
                 .sendWithEOM();
             return;
         default:
@@ -117,9 +119,9 @@ void StorageHttpHandler::onEOM() noexcept {
                 .sendWithEOM();
         }
     } else {
-        LOG(ERROR) << "Illegal Argument " << method;
+        LOG(ERROR) << "Bad Request " << method;
         ResponseBuilder(downstream_)
-            .status(400, "Illegal Argument")
+            .status(400, "Bad Request")
             .sendWithEOM();
     }
 }
@@ -200,33 +202,33 @@ bool StorageHttpHandler::downloadSSTFiles(const std::string& url,
                                           const std::string& path,
                                           const std::vector<std::string>& parts,
                                           const std::string& local) {
-    for (auto& part : parts) {
-        std::stringstream ss;
-        ss << "hdfs://" << url << ":" << port << path << "/";
-        auto len = part.size();
-        if (len == 1) {
-            ss << "part-0000" << part;
-        } else if (len == 2) {
-            ss << "part-000" << part;
-        } else if (len == 3) {
-            ss << "part-00" << part;
-        } else if (len == 4) {
-            ss << "part-0" << part;
-        } else {
-            ss << "part-" << part;
-        }
-        LOG(INFO) << "File Path " << ss.str();
+    folly::IOThreadPoolExecutor executor(FLAGS_download_thread_num);
+    std::atomic<int> completed(0);
 
-        auto command = folly::stringPrintf("hdfs dfs -copyToLocal %s %s",
-                                           ss.str().c_str(), local.c_str());
-        LOG(INFO) << "Download SST Files : " << command;
-        auto result = ProcessUtils::runCommand(command.c_str());
-        if (!result.ok()) {
-            LOG(ERROR) << "Failed to download SST Files: " << result.status();
-            return false;
-        }
+    for (auto& part : parts) {
+        auto downloader = [&]() {
+            auto remotePath = folly::stringPrintf("hdfs://%s:%d%s/part-%05d",
+                                                  url.c_str(), port, path.c_str(),
+                                                  atoi(part.c_str()));
+            LOG(INFO) << "File Path " << remotePath;
+            auto command = folly::stringPrintf("hdfs dfs -copyToLocal %s %s",
+                                               remotePath.c_str(), local.c_str());
+            LOG(INFO) << "Download SST Files: " << command;
+            auto result = ProcessUtils::runCommand(command.c_str());
+            if (!result.ok()) {
+                LOG(ERROR) << "Failed to download SST Files: " << remotePath;
+            } else {
+                completed++;
+            }
+        };
+        executor.add(downloader);
     }
-    return true;
+    executor.stop();
+    if (completed == (int32_t)parts.size()) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool StorageHttpHandler::ingestSSTFiles(const std::string& path,

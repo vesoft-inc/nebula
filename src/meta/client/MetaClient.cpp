@@ -9,7 +9,7 @@
 #include "network/NetworkUtils.h"
 #include "meta/NebulaSchemaProvider.h"
 
-DEFINE_int32(load_data_interval_secs, 2 * 60 , "Load data interval");
+DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 
 namespace nebula {

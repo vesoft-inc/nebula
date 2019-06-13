@@ -52,15 +52,15 @@ private:
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
     bool returnJson_{false};
-    std::string method{"status"};
+    std::string method_{"status"};
     std::vector<std::string> statusNames_;
     std::vector<std::string> statusAllNames_{"status"};
-    std::string hdfsUrl;
-    int32_t hdfsPort;
-    std::string hdfsPath;
-    std::string localPath;
-    GraphSpaceID spaceID;
-    std::shared_ptr<MetaClient> metaClient{nullptr};
+    std::string hdfsUrl_;
+    int32_t hdfsPort_;
+    std::string hdfsPath_;
+    std::string localPath_;
+    GraphSpaceID spaceID_;
+    std::shared_ptr<MetaClient> metaClient_{nullptr};
 };
 
 }  // namespace meta

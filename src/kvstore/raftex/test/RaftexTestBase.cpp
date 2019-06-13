@@ -118,7 +118,7 @@ void setupRaft(
         std::vector<std::shared_ptr<RaftexService>>& services,
         std::vector<std::shared_ptr<test::TestShard>>& copies,
         std::shared_ptr<test::TestShard>& leader) {
-    uint32_t ipInt;
+    int32_t ipInt;
     CHECK(NetworkUtils::ipv4ToInt("127.0.0.1", ipInt));
 
     workers = std::make_shared<thread::GenericThreadPool>();
