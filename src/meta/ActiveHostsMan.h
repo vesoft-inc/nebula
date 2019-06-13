@@ -54,7 +54,8 @@ public:
         checkThread_.wait();
     }
 
-    void updateHostInfo(const HostAddr& hostAddr, const HostInfo& info);
+    // return true if register host successfully
+    bool updateHostInfo(const HostAddr& hostAddr, const HostInfo& info);
 
     std::vector<HostAddr> getActiveHosts();
 
@@ -81,7 +82,7 @@ private:
     thread::GenericWorker checkThread_;
     int32_t intervalSeconds_ = 0;
     int32_t expirationInSeconds_ = 5 * 60;
-    kvstore::KVStore* kvstore_ = nullptr;
+    kvstore::NebulaStore* kvstore_ = nullptr;
 };
 
 }  // namespace meta
