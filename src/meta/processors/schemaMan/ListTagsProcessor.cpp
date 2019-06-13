@@ -23,7 +23,6 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq& req) {
     }
     decltype(resp_.tags) tags;
     while (iter->valid()) {
-        cpp2::TagItem tag;
         auto key = iter->key();
         auto val = iter->val();
         auto tagID = *reinterpret_cast<const TagID *>(key.data() + prefix.size());

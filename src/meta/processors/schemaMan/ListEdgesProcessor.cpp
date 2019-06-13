@@ -23,7 +23,6 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
     }
     decltype(resp_.edges) edges;
     while (iter->valid()) {
-        cpp2::EdgeItem tag;
         auto key = iter->key();
         auto val = iter->val();
         auto edgeType = *reinterpret_cast<const EdgeType *>(key.data() + prefix.size());
