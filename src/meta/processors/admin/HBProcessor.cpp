@@ -31,7 +31,9 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     LOG(INFO) << "Receive heartbeat from " << host;
     HostInfo info;
     info.lastHBTimeInSec_ = time::TimeUtils::nowInSeconds();
-    ActiveHostsMan::instance()->updateHostInfo(host, info);
+    if (!ActiveHostsMan::instance()->updateHostInfo(host, info)) {
+        resp_.set_code(cpp2::ErrorCode::E_LEADER_CHANGED);
+    }
     onFinished();
 }
 
