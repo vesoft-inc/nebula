@@ -297,7 +297,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         std::unique_ptr<kvstore::KVIterator> iter;
-        std::string prefix = "__roles__";
+        auto prefix = MetaServiceUtils::rolesPrefix();
         auto code = kv.get()->prefix(0, 0, prefix, &iter);
         ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
         ASSERT_FALSE(iter->valid());

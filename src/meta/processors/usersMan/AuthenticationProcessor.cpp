@@ -84,7 +84,7 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
 
     // Collect related roles by user.
     std::unique_ptr<kvstore::KVIterator> iter;
-    std::string prefix = "__roles__";
+    auto prefix = MetaServiceUtils::rolesPrefix();
     auto userRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (userRet == kvstore::ResultCode::SUCCEEDED) {
         while (iter->valid()) {

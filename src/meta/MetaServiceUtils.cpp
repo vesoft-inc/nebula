@@ -408,6 +408,10 @@ cpp2::UserItem MetaServiceUtils::parseUserItem(folly::StringPiece val) {
     return user;
 }
 
+std::string MetaServiceUtils::rolesPrefix() {
+    return kRolesTable;
+}
+
 std::string MetaServiceUtils::roleSpacePrefix(GraphSpaceID spaceId) {
     std::string key;
     key.reserve(64);

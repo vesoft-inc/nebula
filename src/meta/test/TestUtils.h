@@ -187,14 +187,14 @@ public:
     }
 
     static StatusOr<UserID> createUser(kvstore::KVStore* kv,
-                                      bool missingOk,
-                                      folly::StringPiece account,
-                                      folly::StringPiece password,
-                                      bool               isLock,
-                                      int32_t            maxQueries,
-                                      int32_t            maxUpdates,
-                                      int32_t            maxConnections,
-                                      int32_t            maxConnectors) {
+                                       bool missingOk,
+                                       folly::StringPiece account,
+                                       folly::StringPiece password,
+                                       bool               isLock,
+                                       int32_t            maxQueries,
+                                       int32_t            maxUpdates,
+                                       int32_t            maxConnections,
+                                       int32_t            maxConnectors) {
         cpp2::CreateUserReq req;
         req.set_missing_ok(missingOk);
         req.set_encoded_pwd(password.str());
