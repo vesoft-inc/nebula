@@ -37,9 +37,20 @@ Status InsertVertexExecutor::prepare() {
         properties_ = tagItems[0]->properties();
 
         rows_ = sentence_->rows();
-        // TODO(dutor) To check whether the number of props and values matches.
         if (rows_.empty()) {
             status = Status::Error("VALUES cannot be empty");
+            break;
+        }
+
+        // To check whether the number of props and values matches.
+        auto propNum = properties_.size();
+        for (auto &row : rows_) {
+            if (row->values().size() != propNum) {
+                status = Status::Error("Property and value do not match");
+                break;
+            }
+        }
+        if (!status.ok()) {
             break;
         }
 

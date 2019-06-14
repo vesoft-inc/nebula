@@ -27,19 +27,36 @@ Status InsertEdgeExecutor::prepare() {
             break;
         }
 
+        properties_ = sentence_->properties();
+        rows_ = sentence_->rows();
+        if (rows_.empty()) {
+            status = Status::Error("VALUES cannot be empty");
+            break;
+        }
+        // To check whether the number of props and values matches
+        auto propNum = properties_.size();
+        for (auto &row : rows_) {
+            if (row->values().size() != propNum) {
+                status = Status::Error("Property and value do not match");
+                break;
+            }
+        }
+        if (!status.ok()) {
+            break;
+        }
+
         auto spaceId = ectx()->rctx()->session()->space();
         overwritable_ = sentence_->overwritable();
-        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *sentence_->edge());
+        auto *edgeName = sentence_->edge();
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *edgeName);
         if (!edgeStatus.ok()) {
             status = edgeStatus.status();
             break;
         }
         edgeType_ = edgeStatus.value();
-        properties_ = sentence_->properties();
-        rows_ = sentence_->rows();
         schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType_);
         if (schema_ == nullptr) {
-            status = Status::Error("No schema found for '%s'", sentence_->edge()->c_str());
+            status = Status::Error("No schema found for '%s'", edgeName->c_str());
             break;
         }
     } while (false);
