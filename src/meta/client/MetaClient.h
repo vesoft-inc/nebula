@@ -165,9 +165,10 @@ public:
     StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                   const std::string& name);
 
-    SchemaVer getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
+    StatusOr<SchemaVer> getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
 
-    SchemaVer getNewestEdgeVerFromCache(const GraphSpaceID& space, const EdgeType& edgeType);
+    StatusOr<SchemaVer> getNewestEdgeVerFromCache(const GraphSpaceID& space,
+                                                  const EdgeType& edgeType);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
@@ -258,6 +259,7 @@ private:
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     bool                  sendHeartBeat_ = false;
+    std::atomic_bool      ready_{false};
 };
 }  // namespace meta
 }  // namespace nebula
