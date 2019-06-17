@@ -90,8 +90,6 @@ struct ExecutionResponse {
     3: optional string error_msg;
     4: optional list<binary> column_names;  // Column names
     5: optional list<RowValue> rows;
-    6: optional list<binary> schema_prop_names;
-    7: optional list<RowValue> schema_prop_rows;
 }
 
 
