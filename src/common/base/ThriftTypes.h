@@ -25,6 +25,7 @@ using EdgeType = int32_t;
 using EdgeRanking = int64_t;
 using EdgeVersion = int64_t;
 using SchemaVer = int64_t;
+using UserID = int32_t;
 
 }  // namespace nebula
 #endif  // COMMON_BASE_THRIFTTYPES_H_
