@@ -81,7 +81,7 @@ SchemaVer AdHocSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName
     return -1;
 }
 
-SchemaVer AdHocSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
+StatusOr<SchemaVer> AdHocSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
     folly::RWSpinLock::ReadHolder rh(tagLock_);
     auto it = tagSchemas_.find(std::make_pair(space, tag));
     if (it == tagSchemas_.end() || it->second.empty()) {
@@ -143,7 +143,7 @@ SchemaVer AdHocSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceNam
     return -1;
 }
 
-SchemaVer AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) {
+StatusOr<SchemaVer> AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) {
     folly::RWSpinLock::ReadHolder rh(edgeLock_);
 
     auto it = edgeSchemas_.find(std::make_pair(space, edge));
