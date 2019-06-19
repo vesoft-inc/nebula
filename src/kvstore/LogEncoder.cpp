@@ -17,7 +17,7 @@ constexpr auto kHeadLen = sizeof(int64_t) + 1 + sizeof(uint32_t);
 std::string encodeSingleValue(LogType type, folly::StringPiece val) {
     std::string encoded;
     encoded.reserve(val.size() + kHeadLen);
-    // Timstamp (8 bytes)
+    // Timestamp (8 bytes)
     int64_t ts = time::TimeUtils::nowInMSeconds();
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
     // Log type
@@ -50,7 +50,7 @@ std::string encodeMultiValues(LogType type, const std::vector<std::string>& valu
     std::string encoded;
     encoded.reserve(totalLen + kHeadLen);
 
-    // Timstamp (8 bytes)
+    // Timestamp (8 bytes)
     int64_t ts = time::TimeUtils::nowInMSeconds();
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
     // Log type
@@ -78,7 +78,7 @@ std::string encodeMultiValues(LogType type, const std::vector<KV>& kvs) {
     std::string encoded;
     encoded.reserve(totalLen + kHeadLen);
 
-    // Timstamp (8 bytes)
+    // Timestamp (8 bytes)
     int64_t ts = time::TimeUtils::nowInMSeconds();
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
     // Log type
@@ -106,7 +106,7 @@ std::string encodeMultiValues(LogType type,
     std::string encoded;
     encoded.reserve(kHeadLen + 2 * sizeof(uint32_t) + v1.size() + v2.size());
 
-    // Timstamp (8 bytes)
+    // Timestamp (8 bytes)
     int64_t ts = time::TimeUtils::nowInMSeconds();
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
     // Log type
