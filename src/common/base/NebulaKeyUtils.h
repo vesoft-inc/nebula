@@ -61,41 +61,41 @@ public:
         return rawKey.size() == kVertexLen;
     }
 
-    static int32_t getTagId(const folly::StringPiece& rawKey) {
+    static TagID getTagId(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kVertexLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
-        return readInt<int32_t>(rawKey.data() + offset, sizeof(TagID));
+        return readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
     }
 
     static bool isEdge(const folly::StringPiece& rawKey) {
         return rawKey.size() == kEdgeLen;
     }
 
-    static int64_t getSrcId(const folly::StringPiece& rawKey) {
+    static VertexID getSrcId(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kEdgeLen);
-        return readInt<int64_t>(rawKey.data() + sizeof(PartitionID),
-                                rawKey.size() - sizeof(PartitionID));
+        return readInt<VertexID>(rawKey.data() + sizeof(PartitionID),
+                                 rawKey.size() - sizeof(PartitionID));
     }
 
-    static int64_t getDstId(const folly::StringPiece& rawKey) {
+    static VertexID getDstId(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kEdgeLen);
         auto offset = kEdgeLen - sizeof(EdgeVersion) - sizeof(VertexID);
-        return readInt<int64_t>(rawKey.data() + offset,
-                                rawKey.size() - offset);
+        return readInt<VertexID>(rawKey.data() + offset,
+                                 rawKey.size() - offset);
     }
 
-    static int32_t getEdgeType(const folly::StringPiece& rawKey) {
+    static EdgeType getEdgeType(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kEdgeLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
-        return readInt<int32_t>(rawKey.data() + offset,
-                                rawKey.size() - offset);
+        return readInt<EdgeType>(rawKey.data() + offset,
+                                 rawKey.size() - offset);
     }
 
-    static int64_t getRank(const folly::StringPiece& rawKey) {
+    static EdgeRanking getRank(const folly::StringPiece& rawKey) {
         CHECK_EQ(rawKey.size(), kEdgeLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType);
-        return readInt<int64_t>(rawKey.data() + offset,
-                                rawKey.size() - offset);
+        return readInt<EdgeRanking>(rawKey.data() + offset,
+                                    rawKey.size() - offset);
     }
 
     template<typename T>
