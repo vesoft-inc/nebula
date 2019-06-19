@@ -209,6 +209,39 @@ StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::s
     return Status::TagNotFound(folly::stringPrintf("Tag %s not found", name.c_str()));
 }
 
+template<typename RESP>
+StatusOr<std::vector<std::string>>
+BaseProcessor<RESP>::getLatestTagPropertyNames(GraphSpaceID spaceId,
+                                               const std::string& name) {
+    auto result = getTagId(spaceId, name);
+    if (!result.ok()) {
+        return result.status();
+    }
+    // auto tagId = to(result.value(), EntryType::TAG);
+    auto key = MetaServiceUtils::schemaTagPrefix(spaceId, result.value());
+    auto ret = doPrefix(key);
+    if (!ret.ok()) {
+        LOG(ERROR) << "";
+        return Status::Error("");
+    }
+    auto iter = ret.value().get();
+    auto latestKey = iter->key();
+    LOG(INFO) << "Latest Tag Key " << latestKey;
+    auto latestSchemaResult = doGet(latestKey.data());
+    if (!latestSchemaResult.ok()) {
+        LOG(ERROR) << "";
+        return Status::Error("");
+    }
+    auto latestSchema = MetaServiceUtils::parseSchema(latestSchemaResult.value());
+    LOG(INFO) << "Property Names: [";
+    std::vector<std::string> propertyNames;
+    for (auto &column : latestSchema.get_columns()) {
+        propertyNames.emplace_back(column.get_name());
+        LOG(INFO) << column.get_name() << " ";
+    }
+    LOG(INFO) << "]";
+    return propertyNames;
+}
 
 template<typename RESP>
 StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
@@ -219,6 +252,38 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
         return *reinterpret_cast<const EdgeType*>(ret.value().c_str());
     }
     return Status::EdgeNotFound(folly::stringPrintf("Edge %s not found", name.c_str()));
+}
+
+template<typename RESP>
+StatusOr<std::vector<std::string>>
+BaseProcessor<RESP>::getLatestEdgePropertyNames(GraphSpaceID spaceId,
+                                                const std::string& name) {
+    auto result = getEdgeType(spaceId, name);
+    if (!result.ok()) {
+        return result.status();
+    }
+    auto edgeType = to(result.value(), EntryType::EDGE);
+    auto key = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
+    auto ret = doPrefix(key);
+    if (!ret.ok()) {
+        LOG(ERROR) << "";
+        return Status::Error("");
+    }
+    auto iter = ret.value();
+    auto latestKey = iter->key();
+    LOG(INFO) << "Latest Edge Key " << latestKey;
+    auto latestSchemaResult = doGet(latestKey);
+    if (!latestSchemaResult.ok()) {
+        LOG(ERROR) << "";
+        return Status::Error("");
+    }
+    auto latestSchema = MetaServiceUtils::parseSchema(latestSchemaResult.value());
+    std::vector<std::string> propertyNames;
+    for (auto &column : latestSchema.get_columns()) {
+        propertyNames.emplace_back(column.get_name());
+    }
+    VLOG(3) << "Property Names: " << propertyNames;
+    return propertyNames;
 }
 
 template<typename RESP>

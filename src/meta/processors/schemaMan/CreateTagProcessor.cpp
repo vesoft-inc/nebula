@@ -28,7 +28,6 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     LOG(INFO) << "Create Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, 0),
                       MetaServiceUtils::schemaTagVal(req.get_tag_name(), req.get_schema()));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_id(to(tagId, EntryType::TAG));
     doPut(std::move(data));
 }

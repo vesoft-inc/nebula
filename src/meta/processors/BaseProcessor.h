@@ -206,10 +206,16 @@ protected:
      */
     StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
 
+    StatusOr<std::vector<std::string>> getLatestTagPropertyNames(GraphSpaceID spaceId,
+                                                                 const std::string& name);
+
     /**
      * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
+
+    StatusOr<std::vector<std::string>> getLatestEdgePropertyNames(GraphSpaceID spaceId,
+                                                                  const std::string& name);
 
     StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
 

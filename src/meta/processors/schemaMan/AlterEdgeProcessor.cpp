@@ -11,9 +11,10 @@ namespace nebula {
 namespace meta {
 
 void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
-    CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    auto spaceId = req.get_space_id();
+    CHECK_SPACE_ID_AND_RETURN(spaceId);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
-    auto ret = getEdgeType(req.get_space_id(), req.get_edge_name());
+    auto ret = getEdgeType(spaceId, req.get_edge_name());
     if (!ret.ok()) {
         resp_.set_code(to(ret.status()));
         onFinished();
@@ -23,11 +24,11 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
 
     // Check the edge belongs to the space
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(req.get_space_id(), edgeType);
+    auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
     auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, edgePrefix, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED || !iter->valid()) {
         LOG(WARNING) << "Edge could not be found " << req.get_edge_name()
-                     << ", spaceId " << req.get_space_id()
+                     << ", spaceId " << spaceId
                      << ", edgeType " << edgeType;
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
         onFinished();
@@ -53,10 +54,11 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     }
     schema.set_columns(std::move(columns));
     std::vector<kvstore::KV> data;
-    LOG(INFO) << "Alter edge " << req.get_edge_name() << ", edgeTye " << edgeType;
-    data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, version),
+    LOG(INFO) << "Alter edge " << req.get_edge_name() << ", edgeType " << edgeType;
+    data.emplace_back(MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, version),
                       MetaServiceUtils::schemaEdgeVal(req.get_edge_name(), schema));
-    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
+    data.emplace_back(MetaServiceUtils::schemaLatestEdgeKey(spaceId, edgeType),
+                      MetaServiceUtils::schemaEdgeVal(req.get_edge_name(), schema));
     resp_.set_id(to(edgeType, EntryType::EDGE));
     doPut(std::move(data));
 }

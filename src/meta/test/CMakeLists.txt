@@ -5,10 +5,10 @@ add_executable(
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:base_obj>
 )
 nebula_link_libraries(
     meta_utils_test
@@ -29,7 +29,6 @@ add_executable(
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
@@ -38,6 +37,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:base_obj>
 )
 nebula_link_libraries(
     processor_test
@@ -61,12 +61,12 @@ add_executable(
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:base_obj>
 )
 nebula_link_libraries(
     hb_processor_test
@@ -89,7 +89,6 @@ add_executable(
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
@@ -97,6 +96,7 @@ add_executable(
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:base_obj>
 )
 nebula_link_libraries(
     meta_client_test
@@ -111,7 +111,6 @@ nebula_add_test(meta_client_test)
 add_executable(
     active_hosts_man_test
     ActiveHostsManTest.cpp
-    $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -127,6 +126,7 @@ add_executable(
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:wal_obj>
+    $<TARGET_OBJECTS:base_obj>
 )
 nebula_link_libraries(
     active_hosts_man_test
@@ -152,7 +152,6 @@ add_executable(
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:ws_obj>
-    $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:stats_obj>
@@ -160,6 +159,7 @@ add_executable(
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:base_obj>
 )
 nebula_link_libraries(
     meta_http_test

@@ -11,6 +11,7 @@ namespace meta {
 
 void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
 }
 
 }  // namespace meta

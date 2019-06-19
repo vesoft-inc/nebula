@@ -11,6 +11,7 @@ namespace meta {
 
 void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
 }
 
 }  // namespace meta

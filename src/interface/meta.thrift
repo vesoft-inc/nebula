@@ -26,6 +26,7 @@ enum ErrorCode {
     E_NOT_FOUND      = -23,
     E_INVALID_HOST   = -24,
     E_UNSUPPORTED    = -25,
+    E_INVALID_PARM   = -26,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -91,14 +92,12 @@ struct EdgeItem {
 
 struct TagIndexProperties {
     1: string               index_name,
-    2: string               tag_name,
-    3: list<string>         fields,
+    2: map<string, list<string>>(cpp.template = "std::map")  tag_fields,
 }
 
 struct EdgeIndexProperties {
     1: string               index_name,
-    2: string               edge_name,
-    3: list<string>         fields,
+    2: map<string, list<string>>(cpp.template = "std::map")  edge_fields,
 }
 
 struct TagIndexItem {
@@ -107,8 +106,8 @@ struct TagIndexItem {
 }
 
 struct EdgeIndexItem {
-    1: common.EdgeIndexID        index_id,
-    2: EdgeIndexProperties       properties,
+    1: common.EdgeIndexID   index_id,
+    2: EdgeIndexProperties  properties,
 }
 
 enum HostStatus {

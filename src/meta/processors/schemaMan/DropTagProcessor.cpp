@@ -25,27 +25,26 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
 }
 
 StatusOr<std::vector<std::string>> DropTagProcessor::getTagKeys(GraphSpaceID id,
-                                                                  const std::string& tagName) {
+                                                                const std::string& tagName) {
     auto indexKey = MetaServiceUtils::indexTagKey(id, tagName);
     std::vector<std::string> keys;
-    std::string tagVal;
     TagID tagId;
-    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &tagVal);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
-        tagId = *reinterpret_cast<const TagID *>(tagVal.data());
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        tagId = *reinterpret_cast<const TagID *>(ret.value().data());
         resp_.set_id(to(tagId, EntryType::TAG));
         keys.emplace_back(indexKey);
     } else {
         return Status::Error("No Tag!");
     }
 
-    std::unique_ptr<kvstore::KVIterator> iter;
     auto key = MetaServiceUtils::schemaTagPrefix(id, tagId);
-    ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
+    auto iterRet = doPrefix(key);
+    if (!iterRet.ok()) {
         return Status::Error("Tag get error by id : %d !", tagId);
     }
 
+    auto iter = iterRet.value().get();
     while (iter->valid()) {
         keys.emplace_back(iter->key());
         iter->next();
