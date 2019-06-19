@@ -94,7 +94,7 @@ public:
     }
 
     // Change the partition status to RUNNING. This is called
-    // by the inherited class, when it's ready to server
+    // by the inherited class, when it's ready to serve
     virtual void start(std::vector<HostAddr>&& peers);
 
     // Change the partition status to STOPPED. This is called
@@ -250,7 +250,7 @@ private:
     // It return true if a leader is elected, otherwise returns false
     bool leaderElection();
 
-    // The methed will fill up the request object and return TRUE
+    // The method will fill up the request object and return TRUE
     // if the election should continue. Otherwise the method will
     // return FALSE
     bool prepareElectionRequest(
