@@ -7,7 +7,7 @@
 #include "storage/QueryBaseProcessor.h"
 
 DEFINE_int32(max_handlers_per_req, 10, "The max handlers used to handle one request");
-DEFINE_int32(min_vertices_num_mp, 3, "The min vertices number for multi-process in one request");
+DEFINE_int32(min_vertices_per_bucket, 3, "The min vertices number in one bucket");
 
 namespace nebula {
 namespace storage {

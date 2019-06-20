@@ -10,7 +10,7 @@
 #include "dataman/RowWriter.h"
 
 DECLARE_int32(max_handlers_per_req);
-DECLARE_int32(min_vertices_num_mp);
+DECLARE_int32(min_vertices_per_bucket);
 
 namespace nebula {
 namespace storage {
@@ -271,11 +271,10 @@ QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(Bucket bucket) {
 }
 
 template<typename REQ, typename RESP>
-int32_t QueryBaseProcessor<REQ, RESP>::getBucketsNum(int32_t verticesNum, int handlerNum) {
-    if (verticesNum < FLAGS_min_vertices_num_mp) {
-        return 1;
-    }
-    return std::min(verticesNum, handlerNum);
+int32_t QueryBaseProcessor<REQ, RESP>::getBucketsNum(int32_t verticesNum,
+                                                     int32_t minVerticesPerBucket,
+                                                     int32_t handlerNum) {
+    return std::min(verticesNum/minVerticesPerBucket, handlerNum);
 }
 
 template<typename REQ, typename RESP>
@@ -286,17 +285,20 @@ std::vector<Bucket> QueryBaseProcessor<REQ, RESP>::genBuckets(
     for (auto& pv : req.get_parts()) {
         verticesNum += pv.second.size();
     }
-    auto bucketsNum = getBucketsNum(verticesNum, FLAGS_max_handlers_per_req);
+    auto bucketsNum = getBucketsNum(verticesNum,
+                                    FLAGS_min_vertices_per_bucket,
+                                    FLAGS_max_handlers_per_req);
     buckets.resize(bucketsNum);
     auto vNumPerBucket = verticesNum / bucketsNum;
+    auto leftVertices = verticesNum % bucketsNum;
     int32_t bucketIndex = -1;
+    size_t thresHold = vNumPerBucket;
     for (auto& pv : req.get_parts()) {
         for (auto& vId : pv.second) {
-            if (bucketIndex == -1
-                    || (bucketIndex < bucketsNum - 1
-                            && (int64_t)buckets[bucketIndex].vertices_.size() >= vNumPerBucket)) {
+            if (bucketIndex < 0 || buckets[bucketIndex].vertices_.size() >= thresHold) {
                 ++bucketIndex;
-                buckets[bucketIndex].vertices_.reserve(vNumPerBucket << 1);
+                thresHold = bucketIndex < leftVertices ? vNumPerBucket + 1 : vNumPerBucket;
+                buckets[bucketIndex].vertices_.reserve(thresHold);
             }
             CHECK_LT(bucketIndex, bucketsNum);
             buckets[bucketIndex].vertices_.emplace_back(pv.first, vId);

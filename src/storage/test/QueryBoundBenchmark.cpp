@@ -1,8 +1,9 @@
-/* Copyright (c) 2018 - present, VE Software Inc. All rights reserved
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License
- *  (found in the LICENSE.Apache file in the root directory)
+ * This source code is licensed under Apache 2.0 License,
+ * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
+
 
 #include "base/Base.h"
 #include <folly/Benchmark.h>
@@ -30,7 +31,7 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (auto partId = 0; partId < 100; partId++) {
+    for (auto partId = 0; partId < 6; partId++) {
         std::vector<kvstore::KV> data;
         for (auto vertexId = 1; vertexId < 1000; vertexId++) {
             for (auto tagId = 3001; tagId < 3010; tagId++) {
@@ -133,7 +134,10 @@ cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
 
 void run(int32_t iters, int32_t handlerNum) {
     FLAGS_max_handlers_per_req = handlerNum;
-    auto req = nebula::storage::buildRequest();
+    nebula::storage::cpp2::GetNeighborsRequest req;
+    BENCHMARK_SUSPEND {
+        req = nebula::storage::buildRequest();
+    }
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(FLAGS_handler_num);
     for (decltype(iters) i = 0; i < iters; i++) {
         auto* processor
@@ -173,14 +177,17 @@ int main(int argc, char** argv) {
     return 0;
 }
 /*
-40 processors, Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
+40 processors, Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz.
 req_parts=1, vrpp=100, handler_num=10
+Notes: all requests hit the cache.
+TODO(heng): We need perf number under heavy load
+
 ============================================================================
-/data/heng/workspace/nebula/src/storage/test/QueryBoundBenchmark.cpprelative  time/iter  iters/s
+QueryBoundBenchmark.cpprelative                           time/iter  iters/s
 ============================================================================
-query_bound_1                                              112.67ms     8.88
-query_bound_3                                               40.20ms    24.88
-query_bound_10                                              13.43ms    74.47
+query_bound_1                                              122.30ms     8.18
+query_bound_3                                               41.18ms    24.29
+query_bound_10                                              13.69ms    73.04
 ============================================================================
 
 */

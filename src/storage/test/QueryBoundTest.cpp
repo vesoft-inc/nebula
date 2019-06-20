@@ -15,6 +15,9 @@
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
+DECLARE_int32(max_handlers_per_req);
+DECLARE_int32(min_vertices_per_bucket);
+
 namespace nebula {
 namespace storage {
 
@@ -217,6 +220,49 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
 
     LOG(INFO) << "Check the results...";
     checkResponse(resp, false);
+}
+
+TEST(QueryBoundTest,  GenBucketsTest) {
+    {
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(10, buckets.size());
+        for (auto& bucket : buckets) {
+            ASSERT_EQ(3, bucket.vertices_.size());
+        }
+    }
+    {
+        FLAGS_max_handlers_per_req = 9;
+        FLAGS_min_vertices_per_bucket = 3;
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(9, buckets.size());
+        for (auto i = 0; i < 3; i++) {
+            ASSERT_EQ(4, buckets[i].vertices_.size());
+        }
+        for (auto i = 3; i < 9; i++) {
+            ASSERT_EQ(3, buckets[i].vertices_.size());
+        }
+    }
+    {
+        FLAGS_max_handlers_per_req = 40;
+        FLAGS_min_vertices_per_bucket = 4;
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(7, buckets.size());
+        for (auto i = 0; i < 2; i++) {
+            ASSERT_EQ(5, buckets[i].vertices_.size());
+        }
+        for (auto i = 2; i < 7; i++) {
+            ASSERT_EQ(4, buckets[i].vertices_.size());
+        }
+    }
 }
 
 }  // namespace storage

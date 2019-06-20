@@ -8,6 +8,7 @@
 #define STORAGE_QUERYBOUNDPROCESSOR_H_
 
 #include "base/Base.h"
+#include <gtest/gtest_prod.h>
 #include "storage/QueryBaseProcessor.h"
 
 namespace nebula {
@@ -16,6 +17,8 @@ namespace storage {
 
 class QueryBoundProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::QueryResponse> {
+    FRIEND_TEST(QueryBoundTest,  GenBucketsTest);
+
 public:
     static QueryBoundProcessor* instance(kvstore::KVStore* kvstore,
                                          meta::SchemaManager* schemaMan,

@@ -97,7 +97,7 @@ protected:
 
     folly::Future<std::vector<OneVertexResp>> asyncProcessBucket(Bucket bucket);
 
-    int32_t getBucketsNum(int32_t verticesNum, int handlerNum);
+    int32_t getBucketsNum(int32_t verticesNum, int32_t minVerticesPerBucket, int32_t handlerNum);
 
 protected:
     GraphSpaceID  spaceId_;
