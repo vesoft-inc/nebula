@@ -102,6 +102,7 @@ public:
     STATUS_GENERATOR(HostNotFound);
     STATUS_GENERATOR(TagNotFound);
     STATUS_GENERATOR(EdgeNotFound);
+    STATUS_GENERATOR(UserNotFound);
     STATUS_GENERATOR(TagIndexNotFound);
     STATUS_GENERATOR(EdgeIndexNotFound);
 
@@ -130,8 +131,9 @@ public:
         kHostNotFound           = 405,
         kTagNotFound            = 406,
         kEdgeNotFound           = 407,
-        kTagIndexNotFound       = 408,
-        kEdgeIndexNotFound      = 409,
+        kUserNotFound           = 408,
+        kTagIndexNotFound       = 409,
+        kEdgeIndexNotFound      = 410,
     };
 
     Code code() const {

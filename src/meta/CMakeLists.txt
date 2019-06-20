@@ -49,6 +49,7 @@ add_library(
     processors/customKV/RemoveRangeProcessor.cpp
     processors/customKV/ScanProcessor.cpp
     processors/admin/HBProcessor.cpp
+    processors/usersMan/AuthenticationProcessor.cpp
 )
 add_dependencies(
     meta_service_handler

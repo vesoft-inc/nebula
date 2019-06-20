@@ -21,6 +21,8 @@ const std::string kEdgeLatestTable   = "__edge_latest__";    // NOLINT
 const std::string kTagIndexesTable   = "__tag_indexes__";    // NOLINT
 const std::string kEdgeIndexesTable  = "__edge_indexes__";   // NOLINT
 const std::string kIndexTable        = "__index__";          // NOLINT
+const std::string kUsersTable        = "__users__";          // NOLINT
+const std::string kRolesTable        = "__roles__";          // NOLINT
 
 const std::string kHostOnline = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";     // NOLINT
@@ -384,6 +386,126 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
     }
     LOG(WARNING) << "Column not found : " << col.get_name();
     return cpp2::ErrorCode::E_NOT_FOUND;
+}
+
+std::string MetaServiceUtils::indexUserKey(const std::string& account) {
+    std::string key;
+    EntryType type = EntryType::USER;
+    key.reserve(128);
+    key.append(kIndexTable.data(), kIndexTable.size());
+    key.append(reinterpret_cast<const char*>(&type), sizeof(type));
+    key.append(account);
+    return key;
+}
+
+std::string MetaServiceUtils::userKey(UserID userId) {
+    std::string key;
+    key.reserve(64);
+    key.append(kUsersTable.data(), kUsersTable.size());
+    key.append(reinterpret_cast<const char*>(&userId), sizeof(userId));
+    return key;
+}
+
+std::string MetaServiceUtils::userVal(const std::string& password,
+                                      const cpp2::UserItem& userItem) {
+    auto len = password.size();
+    std::string val, userVal;
+    apache::thrift::CompactSerializer::serialize(userItem, &userVal);
+    val.reserve(sizeof(int32_t) + len + userVal.size());
+    val.append(reinterpret_cast<const char*>(&len), sizeof(int32_t));
+    val.append(password);
+    val.append(userVal);
+    return val;
+}
+
+folly::StringPiece MetaServiceUtils::userItemVal(folly::StringPiece rawVal) {
+    auto offset = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(rawVal.begin());
+    return rawVal.subpiece(offset, rawVal.size() - offset);
+}
+
+std::string MetaServiceUtils::replaceUserVal(const cpp2::UserItem& user, folly::StringPiece val) {
+    cpp2:: UserItem oldUser;
+    apache::thrift::CompactSerializer::deserialize(userItemVal(val), oldUser);
+    if (user.__isset.is_lock) {
+        oldUser.set_is_lock(user.get_is_lock());
+    }
+    if (user.__isset.max_queries_per_hour) {
+        oldUser.set_max_queries_per_hour(user.get_max_queries_per_hour());
+    }
+    if (user.__isset.max_updates_per_hour) {
+        oldUser.set_max_updates_per_hour(user.get_max_updates_per_hour());
+    }
+    if (user.__isset.max_connections_per_hour) {
+        oldUser.set_max_connections_per_hour(user.get_max_connections_per_hour());
+    }
+    if (user.__isset.max_user_connections) {
+        oldUser.set_max_user_connections(user.get_max_user_connections());
+    }
+
+    std::string newVal, userVal;
+    apache::thrift::CompactSerializer::serialize(oldUser, &userVal);
+    auto len = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(val.begin());
+    newVal.reserve(len + userVal.size());
+    newVal.append(val.subpiece(0, len).str());
+    newVal.append(userVal);
+    return newVal;
+}
+
+std::string MetaServiceUtils::roleKey(GraphSpaceID spaceId, UserID userId) {
+    std::string key;
+    key.reserve(64);
+    key.append(kRolesTable.data(), kRolesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&userId), sizeof(UserID));
+    return key;
+}
+
+std::string MetaServiceUtils::roleVal(cpp2::RoleType roleType) {
+    std::string val;
+    val.reserve(64);
+    val.append(reinterpret_cast<const char*>(&roleType), sizeof(roleType));
+    return val;
+}
+
+std::string MetaServiceUtils::changePassword(folly::StringPiece val, folly::StringPiece newPwd) {
+    auto pwdLen = newPwd.size();
+    auto len = sizeof(int32_t) + *reinterpret_cast<const int32_t *>(val.begin());
+    auto userVal = val.subpiece(len, val.size() - len);
+    std::string newVal;
+    newVal.reserve(sizeof(int32_t) + pwdLen+ userVal.size());
+    newVal.append(reinterpret_cast<const char*>(&pwdLen), sizeof(int32_t));
+    newVal.append(newPwd.str());
+    newVal.append(userVal.str());
+    return newVal;
+}
+
+cpp2::UserItem MetaServiceUtils::parseUserItem(folly::StringPiece val) {
+    cpp2:: UserItem user;
+    apache::thrift::CompactSerializer::deserialize(userItemVal(val), user);
+    return user;
+}
+
+std::string MetaServiceUtils::rolesPrefix() {
+    return kRolesTable;
+}
+
+std::string MetaServiceUtils::roleSpacePrefix(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(64);
+    key.append(kRolesTable.data(), kRolesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    return key;
+}
+
+UserID MetaServiceUtils::parseRoleUserId(folly::StringPiece val) {
+    return *reinterpret_cast<const UserID *>(val.begin() +
+                                             kRolesTable.size() +
+                                             sizeof(GraphSpaceID));
+}
+
+UserID MetaServiceUtils::parseUserId(folly::StringPiece val) {
+    return *reinterpret_cast<const UserID *>(val.begin() +
+                                             kUsersTable.size());
 }
 
 }  // namespace meta

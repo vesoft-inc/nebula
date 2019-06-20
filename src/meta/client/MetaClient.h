@@ -120,7 +120,7 @@ public:
     folly::Future<StatusOr<bool>>
     dropTagSchema(int32_t spaceId, std::string name);
 
-    // Return the lastest schema when ver = -1
+    // Return the latest schema when ver = -1
     folly::Future<StatusOr<nebula::cpp2::Schema>>
     getTagSchema(int32_t spaceId, std::string name, SchemaVer version = -1);
 
@@ -135,7 +135,7 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
     listEdgeSchemas(GraphSpaceID spaceId);
 
-    // Return the lastest schema when ver = -1
+    // Return the latest schema when ver = -1
     folly::Future<StatusOr<nebula::cpp2::Schema>>
     getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version = -1);
 
@@ -187,7 +187,7 @@ public:
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
 
-    // Opeartions for cache.
+    // Operations for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
@@ -195,9 +195,10 @@ public:
     StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                   const std::string& name);
 
-    SchemaVer getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
+    StatusOr<SchemaVer> getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
 
-    SchemaVer getNewestEdgeVerFromCache(const GraphSpaceID& space, const EdgeType& edgeType);
+    StatusOr<SchemaVer> getNewestEdgeVerFromCache(const GraphSpaceID& space,
+                                                  const EdgeType& edgeType);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
@@ -288,6 +289,7 @@ private:
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     bool                  sendHeartBeat_ = false;
+    std::atomic_bool      ready_{false};
 };
 }  // namespace meta
 }  // namespace nebula
