@@ -11,10 +11,11 @@
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/QueryBoundProcessor.h"
-#include "storage/KeyUtils.h"
+#include "base/NebulaKeyUtils.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 #include "meta/SchemaManager.h"
+#include "storage/test/AdHocSchemaManager.h"
 #include <folly/executors/CPUThreadPoolExecutor.h>
 
 DEFINE_int32(req_parts, 3, "parts requested");
@@ -23,7 +24,7 @@ DEFINE_int32(handler_num, 10, "vertices requested per part");
 DECLARE_int32(max_handlers_per_req);
 
 std::unique_ptr<nebula::kvstore::KVStore> gKV;
-std::unique_ptr<nebula::meta::AdHocSchemaManager> schema;
+std::unique_ptr<nebula::storage::AdHocSchemaManager> schema;
 
 namespace nebula {
 namespace storage {
@@ -33,7 +34,7 @@ void mockData(kvstore::KVStore* kv) {
         std::vector<kvstore::KV> data;
         for (auto vertexId = 1; vertexId < 1000; vertexId++) {
             for (auto tagId = 3001; tagId < 3010; tagId++) {
-                auto key = KeyUtils::vertexKey(partId, vertexId, tagId, 0);
+                auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
                 for (uint64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;
@@ -49,7 +50,7 @@ void mockData(kvstore::KVStore* kv) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 // Write multi versions,  we should get the latest version.
                 for (auto version = 0; version < 3; version++) {
-                    auto key = KeyUtils::edgeKey(partId, vertexId, 101,
+                    auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101,
                                                  dstId - 10001, dstId,
                                                  std::numeric_limits<int>::max() - version);
                     RowWriter writer(nullptr);
@@ -67,7 +68,7 @@ void mockData(kvstore::KVStore* kv) {
             for (auto srcId = 20001; srcId <= 20005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
                 for (auto version = 0; version < 3; version++) {
-                    auto key = KeyUtils::edgeKey(partId, vertexId, -101,
+                    auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101,
                                                  srcId - 20001, srcId,
                                                  std::numeric_limits<int>::max() - version);
                     data.emplace_back(std::move(key), "");
@@ -76,16 +77,15 @@ void mockData(kvstore::KVStore* kv) {
         }
         kv->asyncMultiPut(
             0, partId, std::move(data),
-            [&](kvstore::ResultCode code, HostAddr addr) {
+            [&](kvstore::ResultCode code) {
                 CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
-                UNUSED(addr);
             });
     }
 }
 
 void setUp(const char* path) {
-    gKV.reset(TestUtils::initKV(path, 100));
-    schema.reset(new meta::AdHocSchemaManager());
+    gKV = TestUtils::initKV(path);
+    schema.reset(new storage::AdHocSchemaManager());
     schema->addEdgeSchema(
         0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
     for (auto tagId = 3001; tagId < 3010; tagId++) {

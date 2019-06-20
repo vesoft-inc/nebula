@@ -215,8 +215,12 @@ nebula_add_test(compaction_test)
 add_executable(
     query_bound_bm
     QueryBoundBenchmark.cpp
+    $<TARGET_OBJECTS:adHocSchema_obj>
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
