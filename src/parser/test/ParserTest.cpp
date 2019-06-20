@@ -969,6 +969,20 @@ TEST(Parser, AdminOperation) {
 }
 
 TEST(Parser, UserOperation) {
+    // Expected error. Password strings require quotation marks
+    {
+        GQLParser parser;
+        std::string query = "CREATE USER user1 WITH PASSWORD aaa";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
+    }
+    // Expected error. The password clause is not allowed to appear twice
+    {
+        GQLParser parser;
+        std::string query = "CREATE USER user1 WITH PASSWORD \"aaa\" , PASSWORD \"aaa\" ";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
+    }
     {
         GQLParser parser;
         std::string query = "CREATE USER user1 WITH PASSWORD \"aaa\" ";

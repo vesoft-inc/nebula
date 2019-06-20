@@ -53,12 +53,13 @@ TEST_F(UserTest, userManagerTest) {
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Test each option property.
+    // TODO(boshengchen) The restrict related parameters is not supported yet
     {
         cpp2::ExecutionResponse resp;
         std::string query1 = "CREATE USER user2 WITH PASSWORD \"aaa\" , "
-                            "MAX_QUERIES_PER_HOUR 11";
+                             "MAX_QUERIES_PER_HOUR 11";
         std::string query2 = "CREATE USER user3 WITH PASSWORD \"aaa\" , "
-                            "MAX_UPDATES_PER_HOUR 22";
+                             "MAX_UPDATES_PER_HOUR 22";
         std::string query3 = "CREATE USER user4 WITH PASSWORD \"aaa\" , "
                              "MAX_CONNECTIONS_PER_HOUR 33";
         std::string query4 = "CREATE USER user5 WITH PASSWORD \"aaa\" , "
@@ -192,6 +193,10 @@ TEST_F(UserTest, userManagerTest) {
         query = "CHANGE PASSWORD user1 FROM \"aaa\" TO \"bbb\"";
         code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        // test old password invalid
+        query = "CHANGE PASSWORD user1 FROM \"aaa\" TO \"bbb\"";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
 }   // namespace graph
