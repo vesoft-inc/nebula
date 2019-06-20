@@ -25,7 +25,6 @@ namespace storage {
 TEST(StorageClientTest, VerticesInterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
-
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     GraphSpaceID spaceId = 0;
     int32_t localIp;
@@ -65,7 +64,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     LOG(INFO) << "Add hosts and create space....";
     auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
     ASSERT_TRUE(r.ok());
-    while (meta::ActiveHostsManHolder::hostsMan()->getActiveHosts().size() == 0) {
+    while (meta::ActiveHostsMan::instance()->getActiveHosts().size() == 0) {
         usleep(1000);
     }
     VLOG(1) << "The storage server has been added to the meta service";

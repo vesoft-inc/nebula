@@ -11,6 +11,7 @@ add_library(
     meta_service_handler OBJECT
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
+    ActiveHostsMan.cpp
     processors/partsMan/AddHostsProcessor.cpp
     processors/partsMan/ListHostsProcessor.cpp
     processors/partsMan/RemoveHostsProcessor.cpp
@@ -36,6 +37,7 @@ add_library(
     processors/customKV/RemoveRangeProcessor.cpp
     processors/customKV/ScanProcessor.cpp
     processors/admin/HBProcessor.cpp
+    processors/usersMan/AuthenticationProcessor.cpp
 )
 add_dependencies(
     meta_service_handler

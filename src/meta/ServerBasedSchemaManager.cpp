@@ -27,7 +27,11 @@ ServerBasedSchemaManager::getTagSchema(GraphSpaceID space, TagID tag, SchemaVer 
     CHECK(metaClient_);
     // ver less 0, get the newest ver
     if (ver < 0) {
-        ver = getNewestTagSchemaVer(space, tag);
+        auto ret = getNewestTagSchemaVer(space, tag);
+        if (!ret.ok()) {
+            return std::shared_ptr<const SchemaProviderIf>();
+        }
+        ver = ret.value();
     }
     auto ret = metaClient_->getTagSchemaFromCache(space, tag, ver);
     if (ret.ok()) {
@@ -55,7 +59,8 @@ ServerBasedSchemaManager::getTagSchema(folly::StringPiece spaceName,
 }
 
 // Returns a negative number when the schema does not exist
-SchemaVer ServerBasedSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
+StatusOr<SchemaVer> ServerBasedSchemaManager::getNewestTagSchemaVer(GraphSpaceID space,
+                                                                    TagID tag) {
     CHECK(metaClient_);
     return  metaClient_->getNewestTagVerFromCache(space, tag);
 }
@@ -72,7 +77,11 @@ SchemaVer ServerBasedSchemaManager::getNewestTagSchemaVer(folly::StringPiece spa
         return -1;
     }
     auto tagId = tagStatus.value();
-    return getNewestTagSchemaVer(spaceId, tagId);
+    auto ret = getNewestTagSchemaVer(spaceId, tagId);
+    if (!ret.ok()) {
+        return -1;
+    }
+    return ret.value();
 }
 
 std::shared_ptr<const SchemaProviderIf>
@@ -81,7 +90,11 @@ ServerBasedSchemaManager::getEdgeSchema(GraphSpaceID space, EdgeType edge, Schem
     CHECK(metaClient_);
     // ver less 0, get the newest ver
     if (ver < 0) {
-        ver = getNewestEdgeSchemaVer(space, edge);
+        auto ret = getNewestEdgeSchemaVer(space, edge);
+        if (!ret.ok()) {
+            return std::shared_ptr<const SchemaProviderIf>();
+        }
+        ver = ret.value();
     }
 
     auto ret = metaClient_->getEdgeSchemaFromCache(space, edge, ver);
@@ -110,8 +123,8 @@ ServerBasedSchemaManager::getEdgeSchema(folly::StringPiece spaceName,
 }
 
 // Returns a negative number when the schema does not exist
-SchemaVer ServerBasedSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space,
-                                                           EdgeType edge) {
+StatusOr<SchemaVer> ServerBasedSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space,
+                                                                     EdgeType edge) {
     CHECK(metaClient_);
     return  metaClient_->getNewestEdgeVerFromCache(space, edge);
 }
@@ -128,7 +141,11 @@ SchemaVer ServerBasedSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece sp
         return -1;
     }
     auto edgeType = edgeStatus.value();
-    return getNewestEdgeSchemaVer(spaceId, edgeType);
+    auto ret = getNewestEdgeSchemaVer(spaceId, edgeType);
+    if (!ret.ok()) {
+        return -1;
+    }
+    return ret.value();
 }
 
 StatusOr<GraphSpaceID> ServerBasedSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {

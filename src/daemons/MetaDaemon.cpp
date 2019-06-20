@@ -15,6 +15,7 @@
 #include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
+#include "meta/ActiveHostsMan.h"
 
 using nebula::ProcessUtils;
 using nebula::Status;
@@ -135,11 +136,12 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
     }
+    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
+    nebula::meta::ActiveHostsMan::instance(kvstore.get());
 
     nebula::operator<<(operator<<(LOG(INFO), "The meta deamon start on "), localhost);
     try {
         gServer = std::make_unique<apache::thrift::ThriftServer>();
-        auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
         gServer->setInterface(std::move(handler));
         gServer->setPort(FLAGS_port);
         gServer->setReusePort(FLAGS_reuse_port);

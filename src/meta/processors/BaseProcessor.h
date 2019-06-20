@@ -23,6 +23,9 @@ namespace meta {
 
 using nebula::network::NetworkUtils;
 
+const PartitionID kDefaultPartId = 0;
+const GraphSpaceID kDefaultSpaceId = 0;
+
 class LockUtils {
 public:
     LockUtils() = delete;
@@ -36,12 +39,20 @@ GENERATE_LOCK(space);
 GENERATE_LOCK(id);
 GENERATE_LOCK(tag);
 GENERATE_LOCK(edge);
+GENERATE_LOCK(user);
 
 #undef GENERATE_LOCK
 };
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
+        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
+        onFinished(); \
+        return; \
+    }
+
+#define CHECK_USER_ID_AND_RETURN(userID) \
+    if (userExist(userID) == Status::UserNotFound()) { \
         resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND); \
         onFinished(); \
         return; \
@@ -96,6 +107,7 @@ protected:
         case Status::kSpaceNotFound:
         case Status::kHostNotFound:
         case Status::kTagNotFound:
+        case Status::kUserNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -115,6 +127,9 @@ protected:
             break;
         case EntryType::EDGE:
             thriftID.set_edge_type(static_cast<EdgeType>(id));
+            break;
+        case EntryType::USER:
+            thriftID.set_user_id(static_cast<UserID>(id));
             break;
         }
         return thriftID;
@@ -181,6 +196,11 @@ protected:
     Status spaceExist(GraphSpaceID spaceId);
 
     /**
+     * Check userId exist or not.
+     **/
+    Status userExist(UserID userId);
+
+    /**
      * Check host has been registered or not.
      * */
     Status hostExist(const std::string& hostKey);
@@ -200,12 +220,16 @@ protected:
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
+    StatusOr<UserID> getUserId(const std::string& account);
+
+    bool checkPassword(UserID userId, const std::string& password);
+
+    StatusOr<std::string> getUserAccount(UserID userId);
+
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
-    const PartitionID kDefaultPartId_ = 0;
-    const GraphSpaceID kDefaultSpaceId_ = 0;
 };
 
 }  // namespace meta

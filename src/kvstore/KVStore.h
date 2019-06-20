@@ -13,6 +13,7 @@
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/CompactionFilter.h"
 
 namespace nebula {
 namespace kvstore {
@@ -28,9 +29,10 @@ struct KVOptions {
 
     // Custom MergeOperator used in rocksdb.merge method.
     std::shared_ptr<rocksdb::MergeOperator> mergeOp_{nullptr};
-
-    // Custom CompactionFilter used in compaction.
-    std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory_{nullptr};
+    /**
+     * Custom CompactionFilter used in compaction.
+     * */
+    std::shared_ptr<KVCompactionFilterFactory> cfFactory_{nullptr};
 };
 
 
@@ -53,7 +55,7 @@ public:
 
     // Retrieve the current leader for the given partition. This
     // is usually called when ERR_LEADER_CHANGED result code is
-    // returnde
+    // returned
     virtual HostAddr partLeader(GraphSpaceID spaceId, PartitionID partID) = 0;
 
     virtual PartManager* partManager() const {
@@ -99,12 +101,12 @@ public:
                               std::string&& prefix,
                               std::unique_ptr<KVIterator>* iter) = delete;
 
-    // Asynchrous version of remove methods
     virtual void asyncMultiPut(GraphSpaceID spaceId,
                                PartitionID  partId,
                                std::vector<KV> keyValues,
                                KVCallback cb) = 0;
 
+    // Asynchronous version of remove methods
     virtual void asyncRemove(GraphSpaceID spaceId,
                              PartitionID partId,
                              const std::string& key,

@@ -27,6 +27,7 @@ public:
 
     void loop();
 
+private:
     bool readLine(std::string &line, bool linebreak = false);
 
     void updateHistory(const char *line);
@@ -34,6 +35,8 @@ public:
     void saveHistory();
 
     void loadHistory();
+
+    void initAutoCompletion();
 
 private:
     std::string addr_;

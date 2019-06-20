@@ -25,6 +25,11 @@ void AdHocSchemaManager::addEdgeSchema(GraphSpaceID space,
     edgeSchemas_[std::make_pair(space, edge)][0] = schema;
 }
 
+void AdHocSchemaManager::removeTagSchema(GraphSpaceID space, TagID tag) {
+    folly::RWSpinLock::WriteHolder wh(tagLock_);
+    tagSchemas_.erase(std::make_pair(space, tag));
+}
+
 std::shared_ptr<const nebula::meta::SchemaProviderIf>
 AdHocSchemaManager::getTagSchema(folly::StringPiece spaceName,
                                  folly::StringPiece tagName,
@@ -32,6 +37,7 @@ AdHocSchemaManager::getTagSchema(folly::StringPiece spaceName,
     UNUSED(spaceName);
     UNUSED(tagName);
     UNUSED(ver);
+    LOG(FATAL) << "Unimplement";
     return std::shared_ptr<const nebula::meta::SchemaProviderIf>();
 }
 
@@ -71,10 +77,11 @@ SchemaVer AdHocSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName
                                                     folly::StringPiece tagName) {
     UNUSED(spaceName);
     UNUSED(tagName);
+    LOG(FATAL) << "Unimplement";
     return -1;
 }
 
-SchemaVer AdHocSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
+StatusOr<SchemaVer> AdHocSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
     folly::RWSpinLock::ReadHolder rh(tagLock_);
     auto it = tagSchemas_.find(std::make_pair(space, tag));
     if (it == tagSchemas_.end() || it->second.empty()) {
@@ -132,10 +139,11 @@ SchemaVer AdHocSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceNam
                                                      folly::StringPiece typeName) {
     UNUSED(spaceName);
     UNUSED(typeName);
+    LOG(FATAL) << "Unimplement";
     return -1;
 }
 
-SchemaVer AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) {
+StatusOr<SchemaVer> AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) {
     folly::RWSpinLock::ReadHolder rh(edgeLock_);
 
     auto it = edgeSchemas_.find(std::make_pair(space, edge));
@@ -151,6 +159,7 @@ SchemaVer AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeTyp
 // This interface is disabled
 StatusOr<GraphSpaceID> AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
     UNUSED(spaceName);
+    LOG(FATAL) << "Unimplement";
     return -1;
 }
 
@@ -158,6 +167,7 @@ StatusOr<GraphSpaceID> AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spa
 StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {
     UNUSED(space);
     UNUSED(tagName);
+    LOG(FATAL) << "Unimplement";
     return -1;
 }
 
@@ -165,6 +175,7 @@ StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPie
 StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
     UNUSED(space);
     UNUSED(typeName);
+    LOG(FATAL) << "Unimplement";
     return -1;
 }
 

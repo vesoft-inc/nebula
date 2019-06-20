@@ -230,7 +230,7 @@ bool MetaHttpHandler::dispatchSSTFiles(const std::string& url,
     }
 
     for (auto &address : hosts.value()) {
-        auto partMap = metaClient_->getPartsMapFromCache(address);
+        auto partMap = metaClient_->getPartsMapFromCache(address.first);
         auto id = partMap.find(spaceID_);
         if (id == partMap.end()) {
             LOG(ERROR) << "Can't find SpaceID: " << spaceID_;
@@ -245,7 +245,7 @@ bool MetaHttpHandler::dispatchSSTFiles(const std::string& url,
         std::string parts;
         folly::join(",", partitions, parts);
 
-        auto host = network::NetworkUtils::intToIPv4(address.first);
+        auto host = network::NetworkUtils::intToIPv4(address.first.first);
         auto t = "http://%s:%d/storage?method=download&url=%s&port=%d&path=%s&parts=%s&local=%s";
         auto download = folly::stringPrintf(t, host.c_str(), 22000, url.c_str(), port, path.c_str(),
                                             parts.c_str(), local.c_str());

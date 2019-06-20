@@ -22,6 +22,7 @@ namespace meta {
 
 using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAddr>>;
 using SpaceIdName = std::pair<GraphSpaceID, std::string>;
+using HostStatus = std::pair<HostAddr, std::string>;
 
 // struct for in cache
 using TagIDSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
@@ -90,7 +91,7 @@ public:
     folly::Future<StatusOr<bool>>
     addHosts(const std::vector<HostAddr>& hosts);
 
-    folly::Future<StatusOr<std::vector<HostAddr>>>
+    folly::Future<StatusOr<std::vector<HostStatus>>>
     listHosts();
 
     folly::Future<StatusOr<bool>>
@@ -114,7 +115,7 @@ public:
     folly::Future<StatusOr<bool>>
     dropTagSchema(int32_t spaceId, std::string name);
 
-    // Return the lastest schema when ver = -1
+    // Return the latest schema when ver = -1
     folly::Future<StatusOr<nebula::cpp2::Schema>>
     getTagSchema(int32_t spaceId, std::string name, SchemaVer version = -1);
 
@@ -129,7 +130,7 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
     listEdgeSchemas(GraphSpaceID spaceId);
 
-    // Return the lastest schema when ver = -1
+    // Return the latest schema when ver = -1
     folly::Future<StatusOr<nebula::cpp2::Schema>>
     getEdgeSchema(GraphSpaceID spaceId, std::string name, SchemaVer version = -1);
 
@@ -156,7 +157,7 @@ public:
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
 
-    // Opeartions for cache.
+    // Operations for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
@@ -164,9 +165,10 @@ public:
     StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                   const std::string& name);
 
-    SchemaVer getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
+    StatusOr<SchemaVer> getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
 
-    SchemaVer getNewestEdgeVerFromCache(const GraphSpaceID& space, const EdgeType& edgeType);
+    StatusOr<SchemaVer> getNewestEdgeVerFromCache(const GraphSpaceID& space,
+                                                  const EdgeType& edgeType);
 
     PartsMap getPartsMapFromCache(const HostAddr& host);
 
@@ -230,6 +232,8 @@ protected:
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
+    std::vector<HostStatus> toHostStatus(const std::vector<cpp2::HostItem>& thosts);
+
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 
     PartsMap doGetPartsMap(const HostAddr& host,
@@ -255,6 +259,7 @@ private:
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     bool                  sendHeartBeat_ = false;
+    std::atomic_bool      ready_{false};
 };
 
 }  // namespace meta

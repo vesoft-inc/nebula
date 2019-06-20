@@ -29,6 +29,8 @@ public:
                        EdgeType edge,
                        std::shared_ptr<nebula::meta::SchemaProviderIf> schema);
 
+    void removeTagSchema(GraphSpaceID space, TagID tag);
+
     std::shared_ptr<const nebula::meta::SchemaProviderIf>
     getTagSchema(GraphSpaceID space,
                  TagID tag,
@@ -41,7 +43,7 @@ public:
                  SchemaVer version = -1) override;
 
     // Returns a negative number when the schema does not exist
-    SchemaVer getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
+    StatusOr<SchemaVer> getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
 
     // This interface is disabled
     SchemaVer getNewestTagSchemaVer(folly::StringPiece spaceName,
@@ -59,7 +61,7 @@ public:
                   SchemaVer version = -1) override;
 
     // Returns a negative number when the schema does not exist
-    SchemaVer getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
+    StatusOr<SchemaVer> getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
 
     // This interface is disabled
     SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
