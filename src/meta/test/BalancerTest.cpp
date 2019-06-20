@@ -12,6 +12,8 @@
 #include "fs/TempDir.h"
 #include "meta/processors/partsMan/CreateSpaceProcessor.h"
 
+DECLARE_uint32(task_concurrency);
+
 namespace nebula {
 namespace meta {
 
@@ -238,9 +240,59 @@ TEST(BalanceTest, BalancePartsTest) {
     }
 }
 
+TEST(BalanceTest, DispatchTasksTest) {
+    {
+        FLAGS_task_concurrency = 10;
+        BalancePlan plan(0L, nullptr, nullptr);
+        for (int i = 0; i < 20; i++) {
+            BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            plan.addTask(std::move(task));
+        }
+        plan.dispatchTasks();
+        // All tasks is about space 0, part 0.
+        // So they will be dispatched into the same bucket.
+        ASSERT_EQ(10, plan.buckets_.size());
+        ASSERT_EQ(20, plan.buckets_[0].size());
+    }
+    {
+        FLAGS_task_concurrency = 10;
+        BalancePlan plan(0L, nullptr, nullptr);
+        for (int i = 0; i < 5; i++) {
+            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            plan.addTask(std::move(task));
+        }
+        plan.dispatchTasks();
+        ASSERT_EQ(5, plan.buckets_.size());
+        for (auto& bucket : plan.buckets_) {
+            ASSERT_EQ(1, bucket.size());
+        }
+    }
+    {
+        FLAGS_task_concurrency = 20;
+        BalancePlan plan(0L, nullptr, nullptr);
+        for (int i = 0; i < 5; i++) {
+            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            plan.addTask(std::move(task));
+        }
+        for (int i = 0; i < 10; i++) {
+            BalanceTask task(0, 0, i, HostAddr(i, 2), HostAddr(i, 3), nullptr, nullptr);
+            plan.addTask(std::move(task));
+        }
+        plan.dispatchTasks();
+        ASSERT_EQ(15, plan.buckets_.size());
+        for (auto i = 0; i < 10; i++) {
+            ASSERT_LE(1, plan.buckets_[i].size());
+            ASSERT_GE(2, plan.buckets_[i].size());
+        }
+        for (auto i = 10; i < 15; i++) {
+            ASSERT_EQ(0, plan.buckets_[i].size());
+        }
+    }
+}
+
 TEST(BalanceTest, BalancePlanTest) {
     {
-        LOG(INFO) << "Test with all tasks succeeded!";
+        LOG(INFO) << "Test with all tasks succeeded, only one bucket!";
         BalancePlan plan(0L, nullptr, nullptr);
         std::vector<Status> sts(7, Status::OK());
         std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
@@ -257,20 +309,54 @@ TEST(BalanceTest, BalancePlanTest) {
             ASSERT_EQ(10, plan.finishedTaskNum_);
             b.post();
         };
-        plan.registerTaskCb();
         plan.invoke();
         b.wait();
+        // All tasks is about space 0, part 0.
+        // So they will be dispatched into the same bucket.
+        ASSERT_EQ(10, plan.buckets_.size());
+        ASSERT_EQ(10, plan.buckets_[0].size());
+        for (auto i = 1; i < 10; i++) {
+            ASSERT_EQ(0, plan.buckets_[1].size());
+        }
     }
     {
-        LOG(INFO) << "Test with one task failed!";
+        LOG(INFO) << "Test with all tasks succeeded, 10 buckets!";
         BalancePlan plan(0L, nullptr, nullptr);
+        std::vector<Status> sts(7, Status::OK());
+        std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
+        auto client = std::make_unique<AdminClient>(std::move(injector));
+
+        for (int i = 0; i < 10; i++) {
+            BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+            task.client_ = client.get();
+            plan.addTask(std::move(task));
+        }
+        folly::Baton<true, std::atomic> b;
+        plan.onFinished_ = [&plan, &b] () {
+            ASSERT_EQ(BalancePlan::Status::SUCCEEDED, plan.status_);
+            ASSERT_EQ(10, plan.finishedTaskNum_);
+            b.post();
+        };
+        plan.invoke();
+        b.wait();
+        // All tasks is about different parts.
+        // So they will be dispatched into different buckets.
+        ASSERT_EQ(10, plan.buckets_.size());
+        for (auto i = 0; i < 10; i++) {
+            ASSERT_EQ(1, plan.buckets_[1].size());
+        }
+    }
+    {
+        LOG(INFO) << "Test with one task failed, 10 buckets";
+        BalancePlan plan(0L, nullptr, nullptr);
+        std::unique_ptr<AdminClient> client1, client2;
         {
             std::vector<Status> sts(7, Status::OK());
             std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-            auto client = std::make_unique<AdminClient>(std::move(injector));
+            client1 = std::make_unique<AdminClient>(std::move(injector));
             for (int i = 0; i < 9; i++) {
-                BalanceTask task(0, 0, 0, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
-                task.client_ = client.get();
+                BalanceTask task(0, 0, i, HostAddr(i, 0), HostAddr(i, 1), nullptr, nullptr);
+                task.client_ = client1.get();
                 plan.addTask(std::move(task));
             }
         }
@@ -284,18 +370,17 @@ TEST(BalanceTest, BalancePlanTest) {
                                 Status::OK(),
                                 Status::OK()};
             std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
-            auto client = std::make_unique<AdminClient>(std::move(injector));
+            client2 = std::make_unique<AdminClient>(std::move(injector));
             BalanceTask task(0, 0, 0, HostAddr(10, 0), HostAddr(10, 1), nullptr, nullptr);
-            task.client_ = client.get();
+            task.client_ = client2.get();
             plan.addTask(std::move(task));
         }
         folly::Baton<true, std::atomic> b;
         plan.onFinished_ = [&plan, &b] () {
-            ASSERT_EQ(BalancePlan::Status::SUCCEEDED, plan.status_);
+            ASSERT_EQ(BalancePlan::Status::FAILED, plan.status_);
             ASSERT_EQ(10, plan.finishedTaskNum_);
             b.post();
         };
-        plan.registerTaskCb();
         plan.invoke();
         b.wait();
     }

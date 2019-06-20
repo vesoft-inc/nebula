@@ -19,6 +19,7 @@ class BalancePlan {
     FRIEND_TEST(BalanceTest, BalancePlanTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
+    FRIEND_TEST(BalanceTest, DispatchTasksTest);
 
 public:
     enum class Status : uint8_t {
@@ -41,11 +42,6 @@ public:
     void addTask(BalanceTask task) {
         tasks_.emplace_back(std::move(task));
     }
-
-    /**
-     * The method should be called after add all tasks into plan.
-     * */
-    void registerTaskCb();
 
     void invoke();
 
@@ -70,6 +66,8 @@ private:
 
     std::string planVal() const;
 
+    void dispatchTasks();
+
     static const std::string& prefix();
 
     static BalanceID id(const folly::StringPiece& rawKey);
@@ -85,6 +83,10 @@ private:
     size_t finishedTaskNum_ = 0;
     std::function<void()> onFinished_;
     Status status_ = Status::NOT_START;
+
+    // List of task index in tasks_;
+    using Bucket = std::vector<int32_t>;
+    std::vector<Bucket> buckets_;
 };
 
 }  // namespace meta

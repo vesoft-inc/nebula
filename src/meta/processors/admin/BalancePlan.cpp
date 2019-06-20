@@ -8,55 +8,96 @@
 #include <folly/synchronization/Baton.h>
 #include "meta/processors/Common.h"
 
+DEFINE_uint32(task_concurrency, 10, "The tasks number could be invoked simultaneously");
+
 namespace nebula {
 namespace meta {
 
 const std::string kBalancePlanTable = "__b_plan__"; // NOLINT
 
-void BalancePlan::invoke() {
-    status_ = Status::IN_PROGRESS;
-    // TODO(heng) we want tasks for the same part to be invoked serially.
+void BalancePlan::dispatchTasks() {
+    // Key -> spaceID + partID,  Val -> List of task index in tasks_;
+    std::unordered_map<std::pair<GraphSpaceID, PartitionID>, std::vector<int32_t>> partTasks;
+    int32_t index = 0;
     for (auto& task : tasks_) {
-        task.invoke();
+        partTasks[std::make_pair(task.spaceId_, task.partId_)].emplace_back(index++);
     }
-    saveInStore(true);
+    buckets_.resize(std::min(tasks_.size(), (size_t)FLAGS_task_concurrency));
+    for (auto it = partTasks.begin(); it != partTasks.end(); it++) {
+        size_t minNum = tasks_.size();
+        int32_t i = 0, minIndex = 0;
+        for (auto& bucket : buckets_) {
+            if (bucket.size() < minNum) {
+                minNum = bucket.size();
+                minIndex = i;
+            }
+            i++;
+        }
+        for (auto taskIndex : it->second) {
+            buckets_[minIndex].emplace_back(taskIndex);
+        }
+    }
 }
 
-void BalancePlan::registerTaskCb() {
-    for (auto& task : tasks_) {
-        task.onFinished_ = [this]() {
-            bool finished = false;
-            {
-                std::lock_guard<std::mutex> lg(lock_);
-                finishedTaskNum_++;
-                if (finishedTaskNum_ == tasks_.size()) {
-                    finished = true;
-                    if (status_ == Status::IN_PROGRESS) {
-                        status_ = Status::SUCCEEDED;
+void BalancePlan::invoke() {
+    status_ = Status::IN_PROGRESS;
+    dispatchTasks();
+    for (size_t i = 0; i < buckets_.size(); i++) {
+        for (size_t j = 0; j < buckets_[i].size(); j++) {
+            auto taskIndex = buckets_[i][j];
+            tasks_[taskIndex].onFinished_ = [this, i, j]() {
+                bool finished = false;
+                {
+                    std::lock_guard<std::mutex> lg(lock_);
+                    finishedTaskNum_++;
+                    if (finishedTaskNum_ == tasks_.size()) {
+                        finished = true;
+                        if (status_ == Status::IN_PROGRESS) {
+                            status_ = Status::SUCCEEDED;
+                        }
                     }
                 }
-            }
-            if (finished) {
-                saveInStore(true);
-                onFinished_();
-            }
-        };
-        task.onError_ = [this]() {
-            bool finished = false;
-            {
-                std::lock_guard<std::mutex> lg(lock_);
-                finishedTaskNum_++;
-                if (finishedTaskNum_ == tasks_.size()) {
-                    finished = true;
-                    status_ = Status::FAILED;
+                if (finished) {
+                    CHECK_EQ(j, this->buckets_[i].size() - 1);
+                    saveInStore(true);
+                    onFinished_();
+                } else {
+                    if (j + 1 < this->buckets_[i].size()) {
+                        auto& task = this->tasks_[this->buckets_[i][j + 1]];
+                        task.invoke();
+                    }
                 }
-            }
-            if (finished) {
-                saveInStore(true);
-                onFinished_();
-            }
-        };
+            };  // onFinished
+            tasks_[taskIndex].onError_ = [this, i, j]() {
+                bool finished = false;
+                {
+                    std::lock_guard<std::mutex> lg(lock_);
+                    finishedTaskNum_++;
+                    status_ = Status::FAILED;
+                    if (finishedTaskNum_ == tasks_.size()) {
+                        finished = true;
+                    }
+                }
+                if (finished) {
+                    CHECK_EQ(j, this->buckets_[i].size() - 1);
+                    saveInStore(true);
+                    onFinished_();
+                } else {
+                    if (j + 1 < this->buckets_[i].size()) {
+                        auto& task = this->tasks_[this->buckets_[i][j + 1]];
+                        task.invoke();
+                    }
+                }
+            };  // onError
+        }  // for (auto j = 0; j < buckets_[i].size(); j++)
+    }  // for (auto i = 0; i < buckets_.size(); i++)
+
+    for (auto& bucket : buckets_) {
+        if (!bucket.empty()) {
+            tasks_[bucket[0]].invoke();
+        }
     }
+    saveInStore(true);
 }
 
 bool BalancePlan::saveInStore(bool onlyPlan) {

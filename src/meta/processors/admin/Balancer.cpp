@@ -71,7 +71,6 @@ bool Balancer::recovery() {
             plan_->onFinished_();
             return false;
         }
-        plan_->registerTaskCb();
     }
     return true;
 }
@@ -107,7 +106,6 @@ Status Balancer::buildBalancePlan() {
         bool expected = true;
         CHECK(running_.compare_exchange_strong(expected, false));
     };
-    plan_->registerTaskCb();
     if (plan_->tasks_.empty()) {
         plan_->onFinished_();
         return Status::Error("No Tasks");

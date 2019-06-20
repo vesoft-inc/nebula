@@ -57,10 +57,33 @@ public:
     StatusOr<BalanceID> balance();
 
     /**
-     * 
-     * */
+     * TODO(heng): Rollback some specific balance id
+     */
     Status rollback(BalanceID id) {
         return Status::Error("unplemented, %ld", id);
+    }
+
+    /**
+     * TODO(heng): Only generate balance plan for our users.
+     * */
+    const BalancePlan* preview() {
+        return plan_.get();
+    }
+
+    /**
+     * TODO(heng): Execute balance plan from outside.
+     * */
+    Status execute(BalancePlan plan) {
+        UNUSED(plan);
+        return Status::Error("Unsupport it yet!");
+    }
+
+    /**
+     * TODO(heng): Execute specific balance plan by id.
+     * */
+    Status execute(BalanceID id) {
+        UNUSED(id);
+        return Status::Error("Unsupport it yet!");
     }
 
 private:
