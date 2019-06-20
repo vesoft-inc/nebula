@@ -93,10 +93,8 @@ public:
                                            const cpp2::AlterSchemaOptionType op);
 
     static cpp2::ErrorCode alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
-                                           nebula::cpp2::SchemaProp&  prop,
-                                           cpp2::AlterSchemaProp alterProp);
-
-    static Status checkSchemaTTLProp(nebula::cpp2::SchemaProp& prop);
+                                           nebula::cpp2::SchemaProp&  schemaProp,
+                                           nebula::cpp2::SchemaProp alterSchemaProp);
 
     static std::string indexUserKey(const std::string& account);
 

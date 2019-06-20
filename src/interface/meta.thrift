@@ -45,12 +45,6 @@ enum AlterSchemaOptionType {
     UNKNOWN = 0x04,
 } (cpp.enum_strict)
 
-enum AlterSchemaPropType {
-    TTL_DURATION = 0;
-    TTL_COL      = 1;
-    UNKNOWN      = 2;
-} (cpp.enum_strict)
-
 /**
 ** GOD is A global senior administrator.like root of Linux systems.
 ** ADMIN is an administrator for a given Graph Space.
@@ -104,11 +98,6 @@ struct TagItem {
 struct AlterSchemaOption {
     1: AlterSchemaOptionType    type,
     2: common.Schema            schema,
-}
-
-struct AlterSchemaProp {
-    1: AlterSchemaPropType  type,
-    2: string               value,
 }
 
 struct EdgeItem {
@@ -197,7 +186,7 @@ struct AlterTagReq {
     1: common.GraphSpaceID      space_id,
     2: string                   tag_name,
     3: list<AlterSchemaOption>  schema_options,
-    4: list<AlterSchemaProp>    schema_props,
+    4: common.SchemaProp        schema_prop,
 }
 
 struct DropTagReq {
@@ -239,7 +228,7 @@ struct AlterEdgeReq {
     1: common.GraphSpaceID      space_id,
     2: string                   edge_name,
     3: list<AlterSchemaOption>  schema_options,
-    4: list<AlterSchemaProp>    schema_props,
+    4: common.SchemaProp        schema_prop,
 }
 
 struct GetEdgeReq {

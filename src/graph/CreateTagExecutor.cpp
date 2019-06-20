@@ -52,14 +52,16 @@ Status CreateTagExecutor::prepare() {
             }
         }
 
-        if (schema_.schema_prop.ttl_duration != 0) {
+        if (schema_.schema_prop.get_ttl_duration() &&
+            (*schema_.schema_prop.get_ttl_duration() != 0)) {
             // Disable implicit TTL mode
-            if (schema_.schema_prop.ttl_col.empty()) {
+            if (!schema_.schema_prop.get_ttl_col() ||
+                (schema_.schema_prop.get_ttl_col() && schema_.schema_prop.get_ttl_col()->empty())) {
                 return Status::Error("Implicit ttl_col not support");
             }
 
             // 0 means infinity
-            if (schema_.schema_prop.ttl_duration < 0) {
+            if (schema_.schema_prop.get_ttl_duration() < 0) {
                 schema_.schema_prop.set_ttl_duration(0);
             }
         }

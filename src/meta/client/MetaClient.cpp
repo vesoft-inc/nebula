@@ -753,12 +753,12 @@ folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
                            std::string name,
                            std::vector<cpp2::AlterSchemaOption> options,
-                           std::vector<cpp2::AlterSchemaProp> props) {
+                           nebula::cpp2::SchemaProp schemaProp) {
     cpp2::AlterTagReq req;
     req.set_space_id(std::move(spaceId));
     req.set_tag_name(std::move(name));
     req.set_schema_options(std::move(options));
-    req.set_schema_props(std::move(props));
+    req.set_schema_prop(std::move(schemaProp));
 
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_alterTag(request);
@@ -825,12 +825,12 @@ folly::Future<StatusOr<bool>>
 MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
                             std::string name,
                             std::vector<cpp2::AlterSchemaOption> options,
-                            std::vector<cpp2::AlterSchemaProp> props) {
+                            nebula::cpp2::SchemaProp schemaProp) {
     cpp2::AlterEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
     req.set_schema_options(std::move(options));
-    req.set_schema_props(std::move(props));
+    req.set_schema_prop(std::move(schemaProp));
 
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_alterEdge(request);

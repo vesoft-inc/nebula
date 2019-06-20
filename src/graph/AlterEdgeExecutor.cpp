@@ -44,17 +44,21 @@ Status AlterEdgeExecutor::prepare() {
     const auto& schemaProps = sentence_->getSchemaProps();
 
     for (auto& schemaProp : schemaProps) {
-        nebula::meta::cpp2::AlterSchemaProp alterSchemaProp;
         auto propType = schemaProp->getPropType();
         StatusOr<int64_t> retInt;
         StatusOr<std::string> retStr;
+        int ttlDuration;
         switch (propType) {
             case SchemaPropItem::TTL_DURATION:
                 retInt = schemaProp->getTtlDuration();
                 if (!retInt.ok()) {
                    return retInt.status();
                 }
-                alterSchemaProp.set_value(folly::to<std::string>(retInt.value()));
+                ttlDuration = retInt.value();
+                if (ttlDuration < 0) {
+                    ttlDuration = 0;
+                }
+                schemaProp_.set_ttl_duration(ttlDuration);
                 break;
             case SchemaPropItem::TTL_COL:
                 // Check the legality of the column in meta
@@ -62,13 +66,11 @@ Status AlterEdgeExecutor::prepare() {
                 if (!retStr.ok()) {
                    return retStr.status();
                 }
-                alterSchemaProp.set_value(retStr.value());
+                schemaProp_.set_ttl_col(retStr.value());
                 break;
             default:
                 return Status::Error("Property type not support");
         }
-        alterSchemaProp.set_type(std::move(schemaProp->toPropType()));
-        schemaProps_.emplace_back(std::move(alterSchemaProp));
     }
 
     return Status::OK();
@@ -80,7 +82,7 @@ void AlterEdgeExecutor::execute() {
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    auto future = mc->alterEdgeSchema(spaceId, *name, std::move(options_), std::move(schemaProps_));
+    auto future = mc->alterEdgeSchema(spaceId, *name, std::move(options_), std::move(schemaProp_));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

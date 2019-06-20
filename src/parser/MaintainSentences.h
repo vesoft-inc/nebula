@@ -105,8 +105,6 @@ public:
         return propType_;
     }
 
-    nebula::meta::cpp2::AlterSchemaPropType toPropType();
-
     std::string toString() const;
 
 private:

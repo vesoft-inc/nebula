@@ -979,14 +979,12 @@ TEST(ProcessorTest, AlterTagTest) {
     {
         // Only set ttl_duration
         cpp2::AlterTagReq req;
-        std::vector<cpp2::AlterSchemaProp> props;
-        props.emplace_back(FRAGILE,
-                           cpp2::AlterSchemaPropType::TTL_DURATION,
-                           std::move(std::string("100")));
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(100);
 
         req.set_space_id(1);
         req.set_tag_name("tag_0");
-        req.set_schema_props(props);
+        req.set_schema_prop(std::move(schemaProp));
         auto* processor = AlterTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -996,17 +994,13 @@ TEST(ProcessorTest, AlterTagTest) {
     {
         // Succeeded
         cpp2::AlterTagReq req;
-        std::vector<cpp2::AlterSchemaProp> props;
-        props.emplace_back(FRAGILE,
-                           cpp2::AlterSchemaPropType::TTL_DURATION,
-                           std::move(std::string("100")));
-        props.emplace_back(FRAGILE,
-                           cpp2::AlterSchemaPropType::TTL_COL,
-                           std::move(std::string("tag_0_col_10")));
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(100);
+        schemaProp.set_ttl_col("tag_0_col_10");
 
         req.set_space_id(1);
         req.set_tag_name("tag_0");
-        req.set_schema_props(props);
+        req.set_schema_prop(std::move(schemaProp));
         auto* processor = AlterTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1051,10 +1045,14 @@ TEST(ProcessorTest, AlterTagTest) {
         schema.set_columns(std::move(cols));
 
         nebula::cpp2::SchemaProp schemaProp;
-        schemaProp.ttl_duration = 100;
-        schemaProp.ttl_col = "tag_0_col_10";
+        schemaProp.set_ttl_duration(100);
+        schemaProp.set_ttl_col("tag_0_col_10");
         schema.set_schema_prop(std::move(schemaProp));
-        EXPECT_EQ(schema, tag.get_schema());
+        EXPECT_EQ(schema.get_columns(), tag.get_schema().get_columns());
+        EXPECT_EQ(*schema.get_schema_prop().get_ttl_duration(),
+                  *tag.get_schema().get_schema_prop().get_ttl_duration());
+        EXPECT_EQ(*schema.get_schema_prop().get_ttl_col(),
+                  *tag.get_schema().get_schema_prop().get_ttl_col());
     }
 
     {
@@ -1294,14 +1292,12 @@ TEST(ProcessorTest, AlterEdgeTest) {
     {
         // only set ttl_duration, failed
         cpp2::AlterEdgeReq req;
-        std::vector<cpp2::AlterSchemaProp> props;
-        props.emplace_back(FRAGILE,
-                           cpp2::AlterSchemaPropType::TTL_DURATION,
-                           std::move(std::string("100")));
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(100);
 
         req.set_space_id(1);
         req.set_edge_name("edge_0");
-        req.set_schema_props(props);
+        req.set_schema_prop(std::move(schemaProp));
         auto* processor = AlterEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1311,17 +1307,13 @@ TEST(ProcessorTest, AlterEdgeTest) {
     {
         // Succeed
         cpp2::AlterEdgeReq req;
-        std::vector<cpp2::AlterSchemaProp> props;
-        props.emplace_back(FRAGILE,
-                           cpp2::AlterSchemaPropType::TTL_DURATION,
-                           std::move(std::string("100")));
-        props.emplace_back(FRAGILE,
-                           cpp2::AlterSchemaPropType::TTL_COL,
-                           std::move(std::string("edge_0_col_10")));
+        nebula::cpp2::SchemaProp schemaProp;
+        schemaProp.set_ttl_duration(100);
+        schemaProp.set_ttl_col("edge_0_col_10");
 
         req.set_space_id(1);
         req.set_edge_name("edge_0");
-        req.set_schema_props(props);
+        req.set_schema_prop(std::move(schemaProp));
         auto* processor = AlterEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1373,10 +1365,14 @@ TEST(ProcessorTest, AlterEdgeTest) {
         schema.set_columns(std::move(cols));
 
         nebula::cpp2::SchemaProp schemaProp;
-        schemaProp.ttl_duration = 100;
-        schemaProp.ttl_col = "edge_0_col_10";
+        schemaProp.set_ttl_duration(100);
+        schemaProp.set_ttl_col("edge_0_col_10");
         schema.set_schema_prop(std::move(schemaProp));
-        EXPECT_EQ(schema, edge.get_schema());
+        EXPECT_EQ(schema.get_columns(), edge.get_schema().get_columns());
+        EXPECT_EQ(*schema.get_schema_prop().get_ttl_duration(),
+                  *edge.get_schema().get_schema_prop().get_ttl_duration());
+        EXPECT_EQ(*schema.get_schema_prop().get_ttl_col(),
+                  *edge.get_schema().get_schema_prop().get_ttl_col());
     }
     {
         // Drop ttl_col column, failed

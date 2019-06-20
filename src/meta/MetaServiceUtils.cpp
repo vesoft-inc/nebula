@@ -301,7 +301,8 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (colName == it->get_name()) {
                     // Check if there is a TTL on the column to be deleted
-                    if (prop.get_ttl_col() != colName) {
+                    if (!prop.get_ttl_col() ||
+                        (prop.get_ttl_col() && (*prop.get_ttl_col() != colName))) {
                         cols.erase(it);
                         return cpp2::ErrorCode::SUCCEEDED;
                     } else {
@@ -321,48 +322,44 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
 }
 
 cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
-                                                  nebula::cpp2::SchemaProp& prop,
-                                                  cpp2::AlterSchemaProp alterProp) {
-    auto propType = alterProp.get_type();
-    std::string value = alterProp.get_value();
-    switch (propType) {
-        case cpp2::AlterSchemaPropType::TTL_DURATION:
-            // Later check ttl_duration value, <=0 to =0
-            prop.set_ttl_duration(folly::to<int>(value));
-            return cpp2::ErrorCode::SUCCEEDED;;
-        case cpp2::AlterSchemaPropType::TTL_COL:
-            for (auto& col : cols) {
-                if (col.get_name() == value) {
-                    // Only integer and timestamp columns can be used as ttl_col
-                    if (col.type.type != nebula::cpp2::SupportedType::INT &&
-                        col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
-                        LOG(WARNING) << "TTL column type illegal : " << value;
-                        return cpp2::ErrorCode::E_UNSUPPORTED;
-                    }
-                    prop.set_ttl_col(value);
-                    return cpp2::ErrorCode::SUCCEEDED;
+                                                  nebula::cpp2::SchemaProp& schemaProp,
+                                                  nebula::cpp2::SchemaProp alterSchemaProp) {
+    if (alterSchemaProp.__isset.ttl_duration) {
+        // Graph check  <=0 to = 0
+        schemaProp.set_ttl_duration(*alterSchemaProp.get_ttl_duration());
+    }
+    if (alterSchemaProp.__isset.ttl_col) {
+        auto ttlCol = *alterSchemaProp.get_ttl_col();
+        auto existed = false;
+        for (auto& col : cols) {
+            if (col.get_name() == ttlCol) {
+                // Only integer and timestamp columns can be used as ttl_col
+                if (col.type.type != nebula::cpp2::SupportedType::INT &&
+                    col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
+                    LOG(WARNING) << "TTL column type illegal";
+                    return cpp2::ErrorCode::E_UNSUPPORTED;
                 }
+                existed = true;
+                schemaProp.set_ttl_col(ttlCol);
+                break;
             }
-            LOG(WARNING) << "TTL column not found : " << value;
+        }
+
+        if (!existed) {
+            LOG(WARNING) << "TTL column not found : " << ttlCol;
             return cpp2::ErrorCode::E_NOT_FOUND;
-        default:
-            return cpp2::ErrorCode::E_UNKNOWN;
-    }
-}
-
-Status MetaServiceUtils::checkSchemaTTLProp(nebula::cpp2::SchemaProp& prop) {
-    if (prop.ttl_duration != 0) {
-        // Disable implicit TTL mode
-        if (prop.ttl_col.empty()) {
-            return Status::Error("Implicit ttl_col not support");
-        }
-
-        // 0 means infinity
-        if (prop.ttl_duration < 0) {
-            prop.set_ttl_duration(0);
         }
     }
-    return Status::OK();
+
+    // Disable implicit TTL mode
+    if ((schemaProp.get_ttl_duration() && (*schemaProp.get_ttl_duration() !=0)) &&
+        (!schemaProp.get_ttl_col() || (schemaProp.get_ttl_col() &&
+         schemaProp.get_ttl_col()->empty()))) {
+        LOG(WARNING) << "Implicit ttl_col not support";
+        return cpp2::ErrorCode::E_UNSUPPORTED;
+    }
+
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 std::string MetaServiceUtils::indexUserKey(const std::string& account) {

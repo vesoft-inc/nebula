@@ -69,8 +69,8 @@ struct ColumnDef {
 }
 
 struct SchemaProp {
-    1: i64      ttl_duration,
-    2: string   ttl_col,
+    1: optional i64      ttl_duration,
+    2: optional string   ttl_col,
 }
 
 struct Schema {

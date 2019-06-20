@@ -56,21 +56,12 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     }
 
     // Update schema property
-    auto& schemaProps = req.get_schema_props();
-    for (auto& schemaProp : schemaProps) {
-        auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, schemaProp);
-        if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-            LOG(WARNING) << "Alter edge property error " << static_cast<int32_t>(retCode);
-            resp_.set_code(retCode);
-            onFinished();
-            return;
-        }
-    }
+    auto& alterSchemaProp = req.get_schema_prop();
+    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, std::move(alterSchemaProp));
 
-    auto retProp = MetaServiceUtils::checkSchemaTTLProp(prop);
-    if (!retProp.ok()) {
-        LOG(WARNING) << "Implicit ttl_col not support";
-        resp_.set_code(cpp2::ErrorCode::E_UNSUPPORTED);
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(WARNING) << "Alter edge property error " << static_cast<int32_t>(retCode);
+        resp_.set_code(retCode);
         onFinished();
         return;
     }

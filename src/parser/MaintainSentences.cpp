@@ -24,19 +24,6 @@ std::string SchemaPropItem::toString() const {
 }
 
 
-nebula::meta::cpp2::AlterSchemaPropType
-SchemaPropItem::toPropType() {
-    switch (propType_) {
-        case TTL_DURATION:
-            return nebula::meta::cpp2::AlterSchemaPropType::TTL_DURATION;
-        case TTL_COL:
-            return nebula::meta::cpp2::AlterSchemaPropType::TTL_COL;
-        default:
-            return nebula::meta::cpp2::AlterSchemaPropType::UNKNOWN;
-    }
-}
-
-
  std::string SchemaPropList::toString() const {
     std::string buf;
     buf.reserve(256);
