@@ -133,11 +133,11 @@ TEST_F(UserTest, userManagerTest) {
     // Setup spaces.
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ADD HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
-        auto code = client->execute(query, resp);
+        std::string host = folly::stringPrintf("127.0.0.1:%u", gEnv->graphServerPort());
+        std::string cmd = "ADD HOSTS " + host;
+        auto code = client->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        meta::TestUtils::registerHB(
-                network::NetworkUtils::toHosts("127.0.0.1:1000, 127.0.0.1:1100").value());
+        meta::TestUtils::registerHB(network::NetworkUtils::toHosts(host).value());
     }
     {
         cpp2::ExecutionResponse resp;

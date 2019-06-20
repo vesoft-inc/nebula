@@ -12,7 +12,7 @@
 
 namespace nebula {
 namespace graph {
-using apache::thrift::FragileConstructor::FRAGILE;
+
 class CreateUserExecutor final : public Executor {
 public:
     CreateUserExecutor(Sentence *sentence, ExecutionContext *ectx);
@@ -27,7 +27,8 @@ public:
 
 private:
     CreateUserSentence                           *sentence_{nullptr};
-    meta::cpp2::UserItem                          userItem_{FRAGILE, "", false, 0, 0, 0, 0};
+    meta::cpp2::UserItem                          userItem_{apache::thrift::FRAGILE,
+                                                            "", false, 0, 0, 0, 0};
     const std::string                            *password_{nullptr};
     bool                                          missingOk_{false};
 };
