@@ -38,7 +38,7 @@ void BalanceTask::invoke() {
         case Status::CHANGE_LEADER: {
             LOG(INFO) << taskIdStr_ << "Ask the src to give up the leadership.";
             SAVE_STATE();
-            client_->transLeader(spaceId_, partId_, src_, dst_).thenValue([this](auto&& resp) {
+            client_->transLeader(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
                     ret_ = Result::FAILED;
                 } else {
