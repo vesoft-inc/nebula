@@ -20,7 +20,7 @@ int64_t WallClock::slowNowInSec() {
 
 int64_t WallClock::fastNowInSec() {
     static const int64_t st = kStartTime.tv_sec;
-    return (readTsc() - kFirstTick) / ticksPerUSec / 1000000 + st;
+    return (readTsc() - kFirstTick) * ticksPerSecFactor + st;
 }
 
 
@@ -33,7 +33,7 @@ int64_t WallClock::slowNowInMilliSec() {
 
 int64_t WallClock::fastNowInMilliSec() {
     static const int64_t st = kStartTime.tv_sec * 1000 + kStartTime.tv_nsec / 1000000;
-    return (readTsc() - kFirstTick) / ticksPerUSec / 1000 + st;
+    return (readTsc() - kFirstTick) * ticksPerMSecFactor + st;
 }
 
 
@@ -46,7 +46,7 @@ int64_t WallClock::slowNowInMicroSec() {
 
 int64_t WallClock::fastNowInMicroSec() {
     static const int64_t st = kStartTime.tv_sec * 1000000 + kStartTime.tv_nsec / 1000;
-    return (readTsc() - kFirstTick) / ticksPerUSec + st;
+    return (readTsc() - kFirstTick) * ticksPerUSecFactor + st;
 }
 
 }  // namespace time

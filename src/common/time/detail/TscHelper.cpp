@@ -13,11 +13,15 @@ namespace time {
 
 namespace {
 
-uint64_t calibrateTicksPerUSec() {
+double calibrateTicksPerUSecFactor() {
     auto dur = std::chrono::steady_clock::now() - kUptime;
     uint64_t tickDiff = readTsc() - kFirstTick;
 
-    return tickDiff / std::chrono::duration_cast<std::chrono::microseconds>(dur).count();
+    uint64_t ticksPerUSec =
+        tickDiff / std::chrono::duration_cast<std::chrono::microseconds>(dur).count();
+    ticksPerSecFactor = 1.0 / ticksPerUSec / 1000000.0;
+    ticksPerMSecFactor = 1.0 / ticksPerUSec / 1000.0;
+    return 1.0 / ticksPerUSec;
 }
 
 
@@ -27,7 +31,7 @@ void launchTickTockThread() {
         [] {
             while (true) {
                 sleep(2);
-                ticksPerUSec.store(calibrateTicksPerUSec());
+                ticksPerUSecFactor.store(calibrateTicksPerUSecFactor());
             }  // while
         });
     t.detach();
@@ -57,14 +61,16 @@ const struct timespec kStartTime = [] {
 const std::chrono::steady_clock::time_point kUptime = std::chrono::steady_clock::now();
 const uint64_t kFirstTick = readTsc();
 
-volatile std::atomic<uint64_t> ticksPerUSec{[] {
+volatile std::atomic<double> ticksPerSecFactor{0.0};
+volatile std::atomic<double> ticksPerMSecFactor{0.0};
+volatile std::atomic<double> ticksPerUSecFactor{[] {
     launchTickTockThread();
     // re-launch tick-tock thread after forking
     ::pthread_atfork(nullptr, nullptr, &launchTickTockThread);
 
     usleep(10000);
 
-    return calibrateTicksPerUSec();
+    return calibrateTicksPerUSecFactor();
 }()};
 
 }  // namespace time

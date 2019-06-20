@@ -45,19 +45,19 @@ void Duration::resume() {
 
 uint64_t Duration::elapsedInSec() const {
     uint64_t ticks = isPaused_ ? accumulated_ : readTsc() - startTick_ + accumulated_;
-    return (ticks / ticksPerUSec.load() + 500000) / 1000000;
+    return ticks * ticksPerSecFactor.load() + 0.5;
 }
 
 
 uint64_t Duration::elapsedInMSec() const {
     uint64_t ticks = isPaused_ ? accumulated_ : readTsc() - startTick_ + accumulated_;
-    return (ticks / ticksPerUSec.load() + 500) / 1000;
+    return ticks * ticksPerMSecFactor.load() + 0.5;
 }
 
 
 uint64_t Duration::elapsedInUSec() const {
     uint64_t ticks = isPaused_ ? accumulated_ : readTsc() - startTick_ + accumulated_;
-    return ticks / ticksPerUSec.load();
+    return ticks * ticksPerUSecFactor.load();
 }
 
 }  // namespace time

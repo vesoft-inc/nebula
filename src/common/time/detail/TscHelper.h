@@ -18,7 +18,9 @@ extern const std::chrono::steady_clock::time_point kUptime;
 extern const uint64_t kFirstTick;
 extern const struct timespec kStartTime;
 
-extern volatile std::atomic<uint64_t> ticksPerUSec;
+extern volatile std::atomic<double> ticksPerSecFactor;
+extern volatile std::atomic<double> ticksPerMSecFactor;
+extern volatile std::atomic<double> ticksPerUSecFactor;
 
 }  // namespace time
 }  // namespace nebula
