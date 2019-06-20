@@ -27,11 +27,11 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     GraphSpaceID spaceId = 0;
-    int32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
     // Let the system choose an available port for us
-    auto localMetaPort = 0;
+    uint32_t localMetaPort = 0;
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
     auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str());

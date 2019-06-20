@@ -11,8 +11,6 @@
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 
-DEFINE_int32(download_thread_num, 3, "download thread number");
-
 namespace nebula {
 namespace storage {
 
@@ -21,11 +19,6 @@ using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
-
-void StorageHttpHandler::init(std::shared_ptr<nebula::kvstore::KVStore> kvstore) {
-    kvstore_ = kvstore;
-    CHECK_NOTNULL(kvstore_);
-}
 
 void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
@@ -36,25 +29,6 @@ void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcep
 
     if (headers->hasQueryParam("returnjson")) {
         returnJson_ = true;
-    }
-
-    if (headers->hasQueryParam("method")) {
-        method = headers->getQueryParam("method");
-        if (method == "download") {
-            if (!headers->hasQueryParam("url") ||
-                !headers->hasQueryParam("port") ||
-                !headers->hasQueryParam("path") ||
-                !headers->hasQueryParam("parts") ||
-                !headers->hasQueryParam("local")) {
-                err_ = HttpCode::E_ILLEGAL_ARGUMENT;
-                return;
-            }
-            hdfsUrl = headers->getQueryParam("url");
-            hdfsPort = headers->getIntQueryParam("port");
-            partitions = headers->getQueryParam("parts");
-            hdfsPath = headers->getQueryParam("path");
-            localPath = headers->getQueryParam("local");
-        }
     }
 
     auto* statusStr = headers->getQueryParamPtr("daemon");
@@ -76,52 +50,20 @@ void StorageHttpHandler::onEOM() noexcept {
                 .status(405, "Method Not Allowed")
                 .sendWithEOM();
             return;
-        case HttpCode::E_ILLEGAL_ARGUMENT:
-            ResponseBuilder(downstream_)
-                .status(400, "Bad Request")
-                .sendWithEOM();
-            return;
         default:
             break;
     }
 
-    if (method == "status") {
-        folly::dynamic vals = getStatus();
-        if (returnJson_) {
-            ResponseBuilder(downstream_)
-                .status(200, "OK")
-                .body(folly::toJson(vals))
-                .sendWithEOM();
-        } else {
-            ResponseBuilder(downstream_)
-                .status(200, "OK")
-                .body(toStr(vals))
-                .sendWithEOM();
-        }
-    } else if (method == "download") {
-        if (auto hadoopHome = std::getenv("HADOOP_HOME")) {
-            LOG(INFO) << "Hadoop Path : " << hadoopHome;
-            std::vector<std::string> parts;
-            folly::split(",", partitions, parts, true);
-            if (downloadSSTFiles(hdfsUrl, hdfsPort, hdfsPath, parts, localPath)) {
-                ResponseBuilder(downstream_)
-                    .status(200, "SSTFile download successfully")
-                    .body("SSTFile download successfully")
-                    .sendWithEOM();
-            } else {
-                ResponseBuilder(downstream_)
-                    .status(404, "SSTFile download failed")
-                    .sendWithEOM();
-            }
-        } else {
-            ResponseBuilder(downstream_)
-                .status(404, "HADOOP_HOME not exist")
-                .sendWithEOM();
-        }
-    } else {
-        LOG(ERROR) << "Bad Request " << method;
+    folly::dynamic vals = getStatus();
+    if (returnJson_) {
         ResponseBuilder(downstream_)
-            .status(400, "Bad Request")
+            .status(200, "OK")
+            .body(folly::toJson(vals))
+            .sendWithEOM();
+    } else {
+        ResponseBuilder(downstream_)
+            .status(200, "OK")
+            .body(toStr(vals))
             .sendWithEOM();
     }
 }
@@ -195,46 +137,6 @@ std::string StorageHttpHandler::toStr(folly::dynamic& vals) const {
            << "\n";
     }
     return ss.str();
-}
-
-bool StorageHttpHandler::downloadSSTFiles(const std::string& url,
-                                          int port,
-                                          const std::string& path,
-                                          const std::vector<std::string>& parts,
-                                          const std::string& local) {
-    folly::IOThreadPoolExecutor executor(FLAGS_download_thread_num);
-    std::atomic<int> completed(0);
-
-    for (auto& part : parts) {
-        auto downloader = [&]() {
-            auto remotePath = folly::stringPrintf("hdfs://%s:%d%s/part-%05d",
-                                                  url.c_str(), port, path.c_str(),
-                                                  atoi(part.c_str()));
-            LOG(INFO) << "File Path " << remotePath;
-            auto command = folly::stringPrintf("hdfs dfs -copyToLocal %s %s",
-                                               remotePath.c_str(), local.c_str());
-            LOG(INFO) << "Download SST Files: " << command;
-            auto result = ProcessUtils::runCommand(command.c_str());
-            if (!result.ok()) {
-                LOG(ERROR) << "Failed to download SST Files: " << remotePath;
-            } else {
-                completed++;
-            }
-        };
-        executor.add(downloader);
-    }
-    executor.stop();
-    if (completed == (int32_t)parts.size()) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-bool StorageHttpHandler::ingestSSTFiles(const std::string& path,
-                                        GraphSpaceID spaceID) {
-    UNUSED(path); UNUSED(spaceID);
-    return false;
 }
 
 }  // namespace storage

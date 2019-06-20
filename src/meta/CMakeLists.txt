@@ -51,6 +51,7 @@ add_dependencies(
 
 add_library(
     meta_http_handler OBJECT
+    MetaHttpDownloadHandler.cpp
     MetaHttpHandler.cpp
 )
 add_dependencies(

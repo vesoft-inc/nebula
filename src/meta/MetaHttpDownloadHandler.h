@@ -1,11 +1,11 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_METAHTTPHANDLER_H_
-#define META_METAHTTPHANDLER_H_
+#ifndef META_METAHTTPDOWNLOADHANDLER_H_
+#define META_METAHTTPDOWNLOADHANDLER_H_
 
 #include "base/Base.h"
 #include "webservice/Common.h"
@@ -17,9 +17,11 @@ namespace meta {
 
 using nebula::HttpCode;
 
-class MetaHttpHandler : public proxygen::RequestHandler {
+class MetaHttpDownloadHandler : public proxygen::RequestHandler {
 public:
-    MetaHttpHandler() = default;
+    MetaHttpDownloadHandler() = default;
+
+    void init(nebula::kvstore::KVStore *kvstore);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -34,24 +36,24 @@ public:
     void onError(proxygen::ProxygenError error) noexcept override;
 
 private:
-    void addOneStatus(folly::dynamic& vals,
-                      const std::string& statusName,
-                      const std::string& statusValue) const;
-
-    std::string readValue(std::string& statusName);
-    void readAllValue(folly::dynamic& vals);
-    folly::dynamic getStatus();
     std::string toStr(folly::dynamic& vals) const;
+    bool dispatchSSTFiles(const std::string& url,
+                          int port,
+                          const std::string& path,
+                          const std::string& local);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
     bool returnJson_{false};
-    std::vector<std::string> statusNames_;
-    std::vector<std::string> statusAllNames_{"status"};
-    std::shared_ptr<nebula::kvstore::KVStore> kvstore_{nullptr};
+    std::string hdfsUrl_;
+    int32_t hdfsPort_;
+    std::string hdfsPath_;
+    std::string localPath_;
+    GraphSpaceID spaceID_;
+    nebula::kvstore::KVStore *kvstore_;
 };
 
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_METAHTTPHANDLER_H_
+#endif  // META_METAHTTPDOWNLOADHANDLER_H_

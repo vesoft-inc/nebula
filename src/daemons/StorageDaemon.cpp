@@ -10,6 +10,7 @@
 #include "thread/GenericThreadPool.h"
 #include "storage/StorageServiceHandler.h"
 #include "storage/StorageHttpHandler.h"
+#include "storage/StorageHttpDownloadHandler.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "process/ProcessUtils.h"
@@ -51,7 +52,7 @@ static void signalHandler(int sig);
 static Status setupSignalHandler();
 
 
-std::shared_ptr<nebula::kvstore::KVStore> getStoreInstance(
+std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
         HostAddr localhost,
         std::vector<std::string> paths,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
@@ -66,7 +67,7 @@ std::shared_ptr<nebula::kvstore::KVStore> getStoreInstance(
     options.cfFactory_ = std::shared_ptr<nebula::kvstore::KVCompactionFilterFactory>(
             new nebula::storage::NebulaCompactionFilterFactory(schemaMan));
     if (FLAGS_store_type == "nebula") {
-        return std::make_shared<nebula::kvstore::NebulaStore>(std::move(options),
+        return std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
                                                               ioPool,
                                                               workers,
                                                               localhost);
@@ -164,17 +165,21 @@ int main(int argc, char *argv[]) {
     schemaMan->init(metaClient.get());
 
     LOG(INFO) << "Init kvstore";
-    std::shared_ptr<KVStore> kvstore = getStoreInstance(localhost,
+    std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
                                                         std::move(paths),
                                                         ioThreadPool,
                                                         workers,
                                                         metaClient.get(),
                                                         schemaMan.get());
+    auto *kvstore_ = kvstore.get();
 
     LOG(INFO) << "Starting Storage HTTP Service";
-    nebula::WebService::registerHandler("/storage", [&kvstore] {
-        auto handler =  new nebula::storage::StorageHttpHandler();
-        handler->init(kvstore);
+    nebula::WebService::registerHandler("/status", [] {
+        return new nebula::storage::StorageHttpHandler();
+    });
+    nebula::WebService::registerHandler("/download", [kvstore_] {
+        auto handler = new nebula::storage::StorageHttpDownloadHandler();
+        handler->init(kvstore_);
         return handler;
     });
 
@@ -191,7 +196,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());
+    auto handler = std::make_shared<StorageServiceHandler>(kvstore_, schemaMan.get());
     try {
         nebula::operator<<(operator<<(LOG(INFO), "The storage deamon start on "), localhost);
         gServer = std::make_unique<apache::thrift::ThriftServer>();

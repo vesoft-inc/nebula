@@ -8,7 +8,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/MetaServiceHandler.h"
 #include "meta/MetaHttpHandler.h"
-#include "meta/client/MetaClient.h"
+#include "meta/MetaHttpDownloadHandler.h"
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
@@ -114,14 +114,15 @@ int main(int argc, char *argv[]) {
                                                        workers,
                                                        localhost);
 
+   auto *kvstore_ = kvstore.get();
+
     LOG(INFO) << "Starting Meta HTTP Service";
-    nebula::WebService::registerHandler("/meta", [&localhost, &ioPool] {
-        auto client = std::make_shared<nebula::meta::MetaClient>(
-                          ioPool,
-                          std::vector<nebula::HostAddr>{localhost});
-        client->init();
-        auto handler =  new nebula::meta::MetaHttpHandler();
-        handler->init(client);
+    nebula::WebService::registerHandler("/status", [] {
+        return new nebula::meta::MetaHttpHandler();
+    });
+    nebula::WebService::registerHandler("/download", [kvstore_] {
+        auto handler = new nebula::meta::MetaHttpDownloadHandler();
+        handler->init(kvstore_);
         return handler;
     });
     status = nebula::WebService::start();
@@ -136,8 +137,8 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << status;
         return EXIT_FAILURE;
     }
-    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
-    nebula::meta::ActiveHostsMan::instance(kvstore.get());
+    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore_);
+    nebula::meta::ActiveHostsMan::instance(kvstore_);
 
     nebula::operator<<(operator<<(LOG(INFO), "The meta deamon start on "), localhost);
     try {

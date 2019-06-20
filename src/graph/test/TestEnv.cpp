@@ -39,7 +39,7 @@ void TestEnv::SetUp() {
     CHECK(addrsRet.ok()) << addrsRet.status();
     mClient_ = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
     mClient_->init();
-    int32_t localIp;
+    IPv4 localIp;
     nebula::network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     storageServer_ = nebula::storage::TestUtils::mockStorageServer(mClient_.get(),
                                                                    storageRootPath_.path(),

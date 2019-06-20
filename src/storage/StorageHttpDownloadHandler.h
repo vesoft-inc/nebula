@@ -1,11 +1,11 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef STORAGE_STORAGEHTTPHANDLER_H_
-#define STORAGE_STORAGEHTTPHANDLER_H_
+#ifndef STORAGE_STORAGEHTTPDOWNLOADHANDLER_H_
+#define STORAGE_STORAGEHTTPDOWNLOADHANDLER_H_
 
 #include "base/Base.h"
 #include "webservice/Common.h"
@@ -17,9 +17,11 @@ namespace storage {
 
 using nebula::HttpCode;
 
-class StorageHttpHandler : public proxygen::RequestHandler {
+class StorageHttpDownloadHandler : public proxygen::RequestHandler {
 public:
-    StorageHttpHandler() = default;
+    StorageHttpDownloadHandler() = default;
+
+    void init(nebula::kvstore::KVStore *kvstore);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -34,24 +36,28 @@ public:
     void onError(proxygen::ProxygenError error) noexcept override;
 
 private:
-    void addOneStatus(folly::dynamic& vals,
-                      const std::string& statusName,
-                      const std::string& statusValue) const;
-
-    std::string readValue(std::string& statusName);
-    void readAllValue(folly::dynamic& vals);
-    folly::dynamic getStatus();
     std::string toStr(folly::dynamic& vals) const;
+    bool downloadSSTFiles(const std::string& url,
+                          int port,
+                          const std::string& path,
+                          const std::vector<std::string>& parts,
+                          const std::string& local);
+
+    bool ingestSSTFiles(const std::string& path,
+                        GraphSpaceID spaceID);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
     bool returnJson_{false};
-    std::vector<std::string> statusNames_;
-    std::vector<std::string> statusAllNames_{"status"};
+    std::string hdfsUrl_;
+    int hdfsPort_;
+    std::string hdfsPath_;
+    std::string partitions_;
+    std::string localPath_;
     nebula::kvstore::KVStore *kvstore_;
 };
 
 }  // namespace storage
 }  // namespace nebula
 
-#endif  // STORAGE_STORAGEHTTPHANDLER_H_
+#endif  // STORAGE_STORAGEHTTPDOWNLOADHANDLER_H_
