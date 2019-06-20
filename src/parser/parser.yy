@@ -74,6 +74,8 @@ class GraphScanner;
     nebula::SchemaPropItem                 *create_schema_prop_item;
     nebula::SchemaPropList                 *alter_schema_prop_list;
     nebula::SchemaPropItem                 *alter_schema_prop_item;
+	nebula::OrderFactor                    *order_factor;
+    nebula::OrderFactors                   *order_factors;
 }
 
 /* destructors */
@@ -92,6 +94,7 @@ class GraphScanner;
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY
 %token KW_TTL_DURATION KW_TTL_COL
+%token KW_ORDER KW_ASCEND KW_ASC KW_DESCEND
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -146,6 +149,8 @@ class GraphScanner;
 %type <create_schema_prop_item> create_schema_prop_item
 %type <alter_schema_prop_list> alter_schema_prop_list
 %type <alter_schema_prop_item> alter_schema_prop_item
+%type <order_factor> order_factor
+%type <order_factors> order_factors
 
 %type <intval> port
 
@@ -168,6 +173,7 @@ class GraphScanner;
 %type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence describe_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
+%type <sentence> order_by_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
 %type <sentence> grant_sentence revoke_sentence
 %type <sentence> sentence
@@ -701,10 +707,47 @@ drop_edge_sentence
     }
     ;
 
+order_factor
+    : input_ref_expression {
+        $$ = new OrderFactor($1, OrderFactor::ASCEND);
+    }
+    | input_ref_expression KW_ASC {
+        $$ = new OrderFactor($1, OrderFactor::ASCEND);
+    }
+    | input_ref_expression KW_ASCEND {
+        $$ = new OrderFactor($1, OrderFactor::ASCEND);
+    }
+    | input_ref_expression KW_DESC {
+        $$ = new OrderFactor($1, OrderFactor::DESCEND);
+    }
+    | input_ref_expression KW_DESCEND {
+        $$ = new OrderFactor($1, OrderFactor::DESCEND);
+    }
+    ;
+
+order_factors
+    : order_factor {
+        auto factors = new OrderFactors();
+        factors->addFactor($1);
+        $$ = factors;
+    }
+    | order_factors COMMA order_factor {
+        $1->addFactor($3);
+        $$ = $1;
+    }
+    ;
+
+order_by_sentence
+    : KW_ORDER KW_BY order_factors {
+        $$ = new OrderBySentence($3);
+    }
+    ;
+
 traverse_sentence
     : go_sentence { $$ = $1; }
     | match_sentence { $$ = $1; }
     | find_sentence { $$ = $1; }
+    | order_by_sentence { $$ = $1; }
     ;
 
 set_sentence

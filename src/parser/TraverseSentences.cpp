@@ -98,4 +98,30 @@ std::string AssignmentSentence::toString() const {
     return buf;
 }
 
+std::string OrderFactor::toString() const {
+    switch (orderType_) {
+        case ASCEND:
+            return folly::stringPrintf(" %s ASCEND,", expr_->toString().c_str());
+        case DESCEND:
+            return folly::stringPrintf(" %s DESCEND,", expr_->toString().c_str());
+        default:
+            return "";
+    }
+}
+
+std::string OrderFactors::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &factor : factors_) {
+        buf += factor->toString();
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+std::string OrderBySentence::toString() const {
+    return folly::stringPrintf("ORDER BY %s", orderFactors_->toString().c_str());
+}
 }   // namespace nebula

@@ -437,7 +437,6 @@ class YieldSentence final : public Sentence {
  private:
      std::unique_ptr<YieldColumns>              yieldColumns_;
 };
-
 }   // namespace nebula
 
 #endif  // PARSER_MAINTAINSENTENCES_H_
