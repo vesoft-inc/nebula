@@ -175,9 +175,24 @@ bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const Variant
             return nebula::cpp2::SupportedType::BOOL == type.type;
         case 3:
             return nebula::cpp2::SupportedType::STRING == type.type;
+        // TODO: Other type
     }
 
     return false;
+}
+
+Status Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
+                                std::vector<std::string*> props) {
+    for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
+        auto schemaFieldName = schema->getFieldName(fieldIndex);
+        if (schemaFieldName != *props[fieldIndex]) {
+            LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
+                       << ", input field " << *props[fieldIndex];
+            return Status::Error("Input field name `%s' is wrong",
+                                 props[fieldIndex]->c_str());
+        }
+    }
+    return Status::OK();
 }
 
 }   // namespace graph

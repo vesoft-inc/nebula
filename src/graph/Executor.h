@@ -13,6 +13,7 @@
 #include "graph/ExecutionContext.h"
 #include "gen-cpp2/common_types.h"
 #include "dataman/RowWriter.h"
+#include "meta/SchemaManager.h"
 
 
 /**
@@ -82,6 +83,9 @@ protected:
     void writeVariantType(RowWriter &writer, const VariantType &value);
 
     bool checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value);
+
+    Status checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
+                          std::vector<std::string*> props);
 
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {

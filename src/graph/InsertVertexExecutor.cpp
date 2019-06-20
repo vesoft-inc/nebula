@@ -35,7 +35,6 @@ Status InsertVertexExecutor::prepare() {
         overwritable_ = sentence_->overwritable();
         spaceId_ = ectx()->rctx()->session()->space();
 
-        // Check field name
         tagIds_.reserve(tagItems.size());
         schemas_.reserve(tagItems.size());
         tagProps_.reserve(tagItems.size());
@@ -64,14 +63,11 @@ Status InsertVertexExecutor::prepare() {
             tagIds_.emplace_back(tagId);
             schemas_.emplace_back(schema);
             tagProps_.emplace_back(props);
-            for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
-                std::string schemaFieldName = schema->getFieldName(fieldIndex);
-                if (schemaFieldName != *props[fieldIndex]) {
-                    LOG(ERROR) << "Field is wrong, schema field " << schemaFieldName
-                               << ", input field " << *props[fieldIndex];
-                    return Status::Error("Wrong field name `%s'",
-                                         props[fieldIndex]->c_str());
-                }
+
+            // Check field name
+            auto checkStatus = checkFieldName(schema, props);
+            if (!checkStatus.ok()) {
+                return checkStatus;
             }
         }
     } while (false);

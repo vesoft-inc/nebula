@@ -256,6 +256,34 @@ TEST_F(DataTest, InsertVertex) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Multi sentences to insert multi tags
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age)"
+                          "VALUES 1111:(\"Tom\", 8);"
+                          "INSERT VERTEX student(grade, number) "
+                          "VALUES 1111:(\"four\", 20190901003)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE friend(intimacy) VALUES "
+                          "1006->1111:(90)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Get result
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM 1006 OVER friend YIELD $$[student].number";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<int64_t, 1>> expected{
+            {20190901003},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     // Insert wrong type
     {
         cpp2::ExecutionResponse resp;
@@ -285,6 +313,7 @@ TEST_F(DataTest, InsertVertex) {
         auto code = client_->execute(cmd, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // TODO: Test insert multi tags, and delete one of them then check other existent
 }
 
 }   // namespace graph

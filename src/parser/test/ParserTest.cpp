@@ -355,6 +355,15 @@ TEST(Parser, InsertVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    // Test wrong syntax
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name, age, id), student(name, number) "
+                            "VALUES 12345:(\"zhangsan\", 18, 1111), ( \"zhangsan\", 20190527),"
+                            "12346:(\"lisi\", 20, 1112), (\"lisi\", 20190413)";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, UpdateVertex) {

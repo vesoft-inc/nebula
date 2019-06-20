@@ -6,7 +6,6 @@
 
 #include "base/Base.h"
 #include "graph/InsertEdgeExecutor.h"
-#include "meta/SchemaManager.h"
 #include "storage/client/StorageClient.h"
 
 namespace nebula {
@@ -34,7 +33,7 @@ Status InsertEdgeExecutor::prepare() {
             break;
         }
         edgeType_ = edgeStatus.value();
-        auto properties = sentence_->properties();
+        auto props = sentence_->properties();
         rows_ = sentence_->rows();
 
         schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType_);
@@ -44,22 +43,18 @@ Status InsertEdgeExecutor::prepare() {
         }
 
         // Now default value is unsupported
-        if (properties.size() != schema_->getNumFields()) {
-            LOG(ERROR) << "Input props number " << properties.size()
+        if (props.size() != schema_->getNumFields()) {
+            LOG(ERROR) << "Input props number " << props.size()
                        << ", schema fields number " << schema_->getNumFields();
             status = Status::Error("Wrong number of props");
             break;
         }
 
         // Check field name
-        for (auto fieldIndex = 0u; fieldIndex < schema_->getNumFields(); fieldIndex++) {
-            auto schemaFieldName = schema_->getFieldName(fieldIndex);
-            if (schemaFieldName != *properties[fieldIndex]) {
-                LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
-                           << ", input field " << *properties[fieldIndex];
-                return Status::Error("Input field name `%s' is wrong",
-                                     properties[fieldIndex]->c_str());
-            }
+        auto checkStatus = checkFieldName(schema_, props);
+        if (!checkStatus.ok()) {
+            status = checkStatus;
+            break;
         }
     } while (false);
 

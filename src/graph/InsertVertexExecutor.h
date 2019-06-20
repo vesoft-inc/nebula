@@ -9,7 +9,6 @@
 
 #include "base/Base.h"
 #include "graph/Executor.h"
-#include "meta/SchemaManager.h"
 
 namespace nebula {
 namespace graph {
