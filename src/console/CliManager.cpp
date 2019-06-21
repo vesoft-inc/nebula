@@ -470,7 +470,8 @@ Status loadCompletions() {
 
         auto buffer = std::make_unique<char[]>(len + 1);
         ::lseek(fd, 0, SEEK_SET);
-        ::read(fd, buffer.get(), len);
+        auto ll = ::read(fd, buffer.get(), len);
+        UNUSED(ll);
         buffer[len] = '\0';
 
         std::string content;
