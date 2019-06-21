@@ -263,6 +263,15 @@ TEST(QueryBoundTest,  GenBucketsTest) {
             ASSERT_EQ(4, buckets[i].vertices_.size());
         }
     }
+    {
+        FLAGS_min_vertices_per_bucket = 40;
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(1, buckets.size());
+        ASSERT_EQ(30, buckets[0].vertices_.size());
+    }
 }
 
 }  // namespace storage

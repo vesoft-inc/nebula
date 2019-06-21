@@ -274,7 +274,7 @@ template<typename REQ, typename RESP>
 int32_t QueryBaseProcessor<REQ, RESP>::getBucketsNum(int32_t verticesNum,
                                                      int32_t minVerticesPerBucket,
                                                      int32_t handlerNum) {
-    return std::min(verticesNum/minVerticesPerBucket, handlerNum);
+    return std::min(std::max(1, verticesNum/minVerticesPerBucket), handlerNum);
 }
 
 template<typename REQ, typename RESP>
