@@ -23,11 +23,7 @@ add_library(
     adHocSchema_obj OBJECT
     AdHocSchemaManager.cpp
 )
-add_dependencies(
-    adHocSchema_obj
-    schema_obj
-    base_obj
-)
+nebula_add_base_obj(adHocSchema_obj)
 
 
 add_executable(

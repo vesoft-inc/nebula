@@ -22,6 +22,4 @@ add_library(
         UserSentences.cpp
 )
 
-add_dependencies(parser_obj base_obj filter_obj meta_thrift_obj)
-
 add_subdirectory(test)

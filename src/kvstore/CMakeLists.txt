@@ -7,7 +7,7 @@ add_library(
     RocksEngineConfig.cpp
     LogEncoder.cpp
 )
-add_dependencies(kvstore_obj base_obj meta_client)
+nebula_add_base_obj(kvstore_obj)
 
 add_subdirectory(raftex)
 add_subdirectory(wal)

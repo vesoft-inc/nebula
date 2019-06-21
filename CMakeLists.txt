@@ -72,11 +72,6 @@ else ()
     set(CMAKE_CXX_COMPILER_LAUNCHER)
 endif()
 
-# CMake macro to specify number of jobs to build third-party
-if (NOT THIRD_PARTY_JOBS)
-    set(THIRD_PARTY_JOBS 2)
-endif(NOT THIRD_PARTY_JOBS)
-
 # Possible values are Debug, Release, RelWithDebInfo, MinSizeRel
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
@@ -170,6 +165,130 @@ if(NOT ${NEBULA_GPERF_BIN_DIR} STREQUAL "")
     list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_GPERF_BIN_DIR})
 endif()
 
+# third-party
+if(NOT ${NEBULA_BZIP2_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_BZIP2_ROOT: " ${NEBULA_BZIP2_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_BZIP2_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_BZIP2_ROOT}/lib)
+    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_BZIP2_ROOT}/bin)
+endif()
+
+if(NOT ${NEBULA_DOUBLE_CONVERSION_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_DOUBLE_CONVERSION_ROOT: " ${NEBULA_DOUBLE_CONVERSION_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_DOUBLE_CONVERSION_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_DOUBLE_CONVERSION_ROOT}/lib)
+endif()
+
+if(NOT ${NEBULA_FATAL_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_FATAL_ROOT: " ${NEBULA_FATAL_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_FATAL_ROOT}/include)
+endif()
+
+if(NOT ${NEBULA_FBTHRIFT_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_FBTHRIFT_ROOT: " ${NEBULA_FBTHRIFT_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_FBTHRIFT_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_FBTHRIFT_ROOT}/lib)
+    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_FBTHRIFT_ROOT}/bin)
+endif()
+
+if(NOT ${NEBULA_SNAPSHOT_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_SNAPSHOT_ROOT: " ${NEBULA_SNAPSHOT_ROOT})
+    message(STATUS "CMAKE_CURRENT_SOURCE_DIR} = ${CMAKE_CURRENT_SOURCE_DIR}}")
+    execute_process(
+        COMMAND sed -i "s|FBTHRIFT_ROOT_DIR|${NEBULA_SNAPSHOT_ROOT}|g" ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/importer/pom.xml
+        COMMAND sed -i "s|FBTHRIFT_ROOT_DIR|${NEBULA_SNAPSHOT_ROOT}|g" ${CMAKE_CURRENT_SOURCE_DIR}/src/client/java/pom.xml
+    )
+else()
+    message(FATAL_ERROR "Please input the path of thrift-1.0-SNAPSHOT.jar")
+endif()
+
+if(NOT ${NEBULA_FOLLY_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_FOLLY_ROOT: " ${NEBULA_FOLLY_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_FOLLY_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_FOLLY_ROOT}/lib)
+endif()
+
+if(NOT ${NEBULA_GFLAGS_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_GFLAGS_ROOT: " ${NEBULA_GFLAGS_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_GFLAGS_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_GFLAGS_ROOT}/lib)
+    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_GFLAGS_ROOT}/bin)
+endif()
+
+if(NOT ${NEBULA_GLOG_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_GLOG_ROOT: " ${NEBULA_GLOG_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_GLOG_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_GLOG_ROOT}/lib)
+endif()
+
+if(NOT ${NEBULA_GOOGLETEST_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_GOOGLETEST_ROOT: " ${NEBULA_GOOGLETEST_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_GOOGLETEST_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_GOOGLETEST_ROOT}/lib)
+endif()
+
+if(NOT ${NEBULA_JEMALLOC_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_JEMALLOC_ROOT: " ${NEBULA_JEMALLOC_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_JEMALLOC_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_JEMALLOC_ROOT}/lib)
+    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_JEMALLOC_ROOT}/bin)
+endif()
+
+if(NOT ${NEBULA_LIBEVENT_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_LIBEVENT_ROOT: " ${NEBULA_LIBEVENT_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_LIBEVENT_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_LIBEVENT_ROOT}/lib)
+    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_LIBEVENT_ROOT}/bin)
+endif()
+
+if(NOT ${NEBULA_MSTCH_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_MSTCH_ROOT: " ${NEBULA_MSTCH_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_MSTCH_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_MSTCH_ROOT}/lib)
+endif()
+
+if(NOT ${NEBULA_PROXYGEN_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_PROXYGEN_ROOT: " ${NEBULA_PROXYGEN_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_PROXYGEN_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_PROXYGEN_ROOT}/lib)
+endif()
+
+if(NOT ${NEBULA_ROCKSDB_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_ROCKSDB_ROOT: " ${NEBULA_ROCKSDB_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_ROCKSDB_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_ROCKSDB_ROOT}/lib)
+    set(ROCKSDB_LIBRARIES ${NEBULA_ROCKSDB_ROOT}/lib/librocksdb.a)
+endif()
+
+if(NOT ${NEBULA_SNAPPY_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_SNAPPY_ROOT: " ${NEBULA_SNAPPY_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_SNAPPY_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_SNAPPY_ROOT}/lib)
+endif()
+
+if(NOT ${NEBULA_WANGLE_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_WANGLE_ROOT: " ${NEBULA_WANGLE_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_WANGLE_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_WANGLE_ROOT}/lib)
+endif()
+
+if(NOT ${NEBULA_ZLIB_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_ZLIB_ROOT: " ${NEBULA_ZLIB_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_ZLIB_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_ZLIB_ROOT}/lib)
+endif()
+
+if(NOT ${NEBULA_ZSTD_ROOT} STREQUAL "")
+    message(STATUS "Specified NEBULA_ZSTD_ROOT: " ${NEBULA_ZSTD_ROOT})
+    list(INSERT CMAKE_INCLUDE_PATH 0 ${NEBULA_ZSTD_ROOT}/include)
+    list(INSERT CMAKE_LIBRARY_PATH 0 ${NEBULA_ZSTD_ROOT}/lib)
+    list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_ZSTD_ROOT}/bin)
+endif()
+
+option(asan "Whether to turn AddressSanitizer ON or OFF" OFF)
+
+message(STATUS "ASAN: ${asan}")
+
 string(REPLACE ";" ":" INCLUDE_PATH_STR "${CMAKE_INCLUDE_PATH}")
 string(REPLACE ";" ":" LIBRARY_PATH_STR "${CMAKE_LIBRARY_PATH}")
 string(REPLACE ";" ":" PROGRAM_PATH_STR "${CMAKE_PROGRAM_PATH}")
@@ -177,6 +296,23 @@ message(STATUS "CMAKE_INCLUDE_PATH: " ${INCLUDE_PATH_STR})
 message(STATUS "CMAKE_LIBRARY_PATH: " ${LIBRARY_PATH_STR})
 message(STATUS "CMAKE_PROGRAM_PATH: " ${PROGRAM_PATH_STR})
 
+find_package(Bzip2 REQUIRED)
+find_package(DoubleConversion REQUIRED)
+find_package(Fatal REQUIRED)
+find_package(Fbthrift REQUIRED)
+find_package(Folly REQUIRED)
+find_package(Gflags REQUIRED)
+find_package(Glog REQUIRED)
+find_package(Googletest REQUIRED)
+find_package(Jemalloc REQUIRED)
+find_package(Libevent REQUIRED)
+find_package(Mstch REQUIRED)
+find_package(Proxygen REQUIRED)
+find_package(Rocksdb REQUIRED)
+find_package(Snappy REQUIRED)
+find_package(Wangle REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(Zstd REQUIRED)
 find_package(Boost REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Krb5 REQUIRED gssapi)
@@ -217,23 +353,27 @@ macro(nebula_add_test test_name)
     endif(NEBULA_ASAN_PRELOAD)
 endmacro(nebula_add_test)
 
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/bzip2/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/double-conversion/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/fatal/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/fbthrift/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/folly/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/gflags/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/glog/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/googletest/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/jemalloc/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/libevent/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/mstch/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/proxygen/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/rocksdb/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/snappy/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/wangle/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/zlib/_install/include)
-include_directories(SYSTEM ${NEBULA_HOME}/third-party/zstd/_install/include)
+macro(nebula_add_base_obj obj_name)
+    add_dependencies(${obj_name} base_obj)
+endmacro(nebula_add_base_obj)
+
+include_directories(SYSTEM ${NEBULA_BZIP2_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_DOUBLE_CONVERSION_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_FATAL_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_FBTHRIFT_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_FOLLY_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_GFLAGS_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_GLOG_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_GOOGLETEST_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_JEMALLOC_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_LIBEVENT_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_MSTCH_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_PROXYGEN_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_ROCKSDB_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_SNAPPY_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_WANGLE_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_ZLIB_ROOT}/include)
+include_directories(SYSTEM ${NEBULA_ZSTD_ROOT}/include)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 include_directories(SYSTEM ${OPENSSL_INCLUDE_DIR})
 include_directories(SYSTEM ${KRB5_INCLUDE_DIRS})
@@ -245,23 +385,23 @@ include_directories(AFTER src/common)
 include_directories(AFTER src/interface)
 
 link_directories(
-    ${NEBULA_HOME}/third-party/bzip2/_install/lib
-    ${NEBULA_HOME}/third-party/double-conversion/_install/lib
-    ${NEBULA_HOME}/third-party/fatal/_install/lib
-    ${NEBULA_HOME}/third-party/fbthrift/_install/lib
-    ${NEBULA_HOME}/third-party/folly/_install/lib
-    ${NEBULA_HOME}/third-party/gflags/_install/lib
-    ${NEBULA_HOME}/third-party/glog/_install/lib
-    ${NEBULA_HOME}/third-party/googletest/_install/lib
-    ${NEBULA_HOME}/third-party/jemalloc/_install/lib
-    ${NEBULA_HOME}/third-party/libevent/_install/lib
-    ${NEBULA_HOME}/third-party/mstch/_install/lib
-    ${NEBULA_HOME}/third-party/proxygen/_install/lib
-    ${NEBULA_HOME}/third-party/rocksdb/_install/lib
-    ${NEBULA_HOME}/third-party/snappy/_install/lib
-    ${NEBULA_HOME}/third-party/wangle/_install/lib
-    ${NEBULA_HOME}/third-party/zlib/_install/lib
-    ${NEBULA_HOME}/third-party/zstd/_install/lib
+    ${NEBULA_BZIP2_ROOT}/lib
+    ${NEBULA_DOUBLE_CONVERSION_ROOT}/lib
+    ${NEBULA_FATAL_ROOT}/lib
+    ${NEBULA_FBTHRIFT_ROOT}/lib
+    ${NEBULA_FOLLY_ROOT}/lib
+    ${NEBULA_GFLAGS_ROOT}/lib
+    ${NEBULA_GLOG_ROOT}/lib
+    ${NEBULA_GOOGLETEST_ROOT}/lib
+    ${NEBULA_JEMALLOC_ROOT}/lib
+    ${NEBULA_LIBEVENT_ROOT}/lib
+    ${NEBULA_MSTCH_ROOT}/lib
+    ${NEBULA_PROXYGEN_ROOT}/lib
+    ${NEBULA_ROCKSDB_ROOT}/lib
+    ${NEBULA_SNAPPY_ROOT}/lib
+    ${NEBULA_WANGLE_ROOT}/lib
+    ${NEBULA_ZLIB_ROOT}/lib
+    ${NEBULA_ZSTD_ROOT}/lib
     ${Boost_LIBRARY_DIRS}
     ${KRB5_LIBRARY_DIRS}
 )
@@ -280,7 +420,7 @@ set(THRIFT_LIBRARIES
     thrift-core
 )
 
-set(ROCKSDB_LIBRARIES ${NEBULA_HOME}/third-party/rocksdb/_install/lib/librocksdb.a)
+set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
 
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z)
@@ -336,7 +476,6 @@ macro(nebula_link_libraries target)
     )
 endmacro(nebula_link_libraries)
 
-add_subdirectory(third-party)
 add_subdirectory(src)
 add_subdirectory(etc)
 add_subdirectory(scripts)
@@ -350,9 +489,9 @@ add_custom_target(
 )
 
 if (NOT SKIP_JAVA_CLIENT)
-    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-third-party clean-java-client)
+    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-java-client)
 else()
-    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-third-party)
+    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch )
 endif()
 
 add_custom_target(

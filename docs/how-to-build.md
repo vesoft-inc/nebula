@@ -21,7 +21,23 @@ The project itself includes the source code of several 3rd-party libraries, whic
   - libunwind
   - ncurses
   - readline
+  - bzip2
+  - doubleconversion
+  - fatal
+  - fbthrift
+  - folly
+  - gflags
+  - glog
+  - googletest
+  - jemalloc
+  - libevent
+  - mstch
+  - proxygen
+  - rocksdb
+  - snappy
+  - wangle
+  - zlib
+  - zstd
 
-Currently, we using `git-lfs` to manage the 3rd-party libraries. So make sure `git-lfs` have been installed before building the source code.
+### How to get 3rd-party Libraries
 
-Please see [INSTALLING.md](https://github.com/git-lfs/git-lfs/blob/master/INSTALLING.md) for more details.

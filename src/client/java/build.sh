@@ -4,8 +4,6 @@
 # variable value
 #-----------------------------------------------
 src_root_path=`cd ../../../; pwd`;
-thrift_root_path=$src_root_path/"third-party/fbthrift"
-thrift_jar_source_path=$thrift_root_path/"_build/fbthrift-2018.08.20.00/thrift/lib/java/thrift"
 graph_gen_java_path=$src_root_path"/src/interface/gen-java/com/vesoft/nebula/graph/"
 java_client_source_file_path=$src_root_path/src/client/java/src/main/java/com/vesoft/nebula/graph/
 
@@ -33,16 +31,6 @@ maven_check()
 }
 
 #-----------------------------------------------
-# compile dependent thrift jar
-#-----------------------------------------------
-compile_thrift_jar()
-{
-	check_file_exist $thrift_jar_source_path
-	maven_check
-	cd $thrift_jar_source_path && mvn clean package && cd -
-}
-
-#-----------------------------------------------
 # setup dependent graph source files
 #-----------------------------------------------
 setup_graph_source()
@@ -61,7 +49,6 @@ compile_java_client()
 }
 
 
-compile_thrift_jar
 setup_graph_source
 compile_java_client
 
