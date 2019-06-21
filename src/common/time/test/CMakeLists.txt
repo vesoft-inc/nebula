@@ -11,6 +11,18 @@ nebula_link_libraries(
 nebula_add_test(duration_test)
 
 add_executable(
+    wallclock_test
+    WallClockTest.cpp
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:thread_obj>
+)
+nebula_link_libraries(
+    wallclock_test
+    gtest
+)
+nebula_add_test(wallclock_test)
+
+add_executable(
     duration_bm
     DurationBenchmark.cpp
     $<TARGET_OBJECTS:time_obj>
@@ -18,6 +30,17 @@ add_executable(
 )
 nebula_link_libraries(
     duration_bm
+    follybenchmark
+    boost_regex
+)
+
+add_executable(
+    wallclock_bm
+    WallClockBenchmark.cpp
+    $<TARGET_OBJECTS:time_obj>
+)
+nebula_link_libraries(
+    wallclock_bm
     follybenchmark
     boost_regex
 )
