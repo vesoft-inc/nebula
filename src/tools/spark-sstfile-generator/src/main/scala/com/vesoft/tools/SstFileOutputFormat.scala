@@ -26,26 +26,26 @@ import scala.sys.process._
   *   |
   *   |--1
   *   |  |
-  *   |  |——vertex-${FIRST_KEY1}.data
-  *   |  |--edge-${FIRST_KEY}.data
+  *   |  |——vertex-${FIRST_KEY}.sst
+  *   |  |--edge-${FIRST_KEY}.sst
   *   |
   *   |--2
   *      |
-  *      |——vertex-${FIRST_KEY}.data
-  *      |--edge-${FIRST_KEY}.data
+  *      |——vertex-${FIRST_KEY}.sst
+  *      |--edge-${FIRST_KEY}.sst
   * worker_node2
   * |
   * |-sstFileOutput
   * |
   *    |--1
   *    |  |
-  *    |  |——vertex-${FIRST_KEY}.data
-  *    |  |--edge-${FIRST_KEY}.data
+  *    |  |——vertex-${FIRST_KEY}.sst
+  *    |  |--edge-${FIRST_KEY}.sst
   *    |
   *    |--2
   *       |
-  *       |——vertex-${FIRST_KEY}.data
-  *       |--edge-${FIRST_KEY}.data
+  *       |——vertex-${FIRST_KEY}.sst
+  *       |--edge-${FIRST_KEY}.sst
   **/
 class SstFileOutputFormat extends FileOutputFormat[GraphPartitionIdAndKeyValueEncoded, PropertyValueAndTypeWritable] {
   override def getRecordWriter(job: TaskAttemptContext): RecordWriter[GraphPartitionIdAndKeyValueEncoded, PropertyValueAndTypeWritable] = {
@@ -129,11 +129,11 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
 
       // TODO: rolling to another file when file size > some THRESHOLD, or some other criteria
       // Each partition can generated multiple sst files, among which keys will be ordered, and keys could overlap between different sst files.
-      // All these sst files will be  `hdfs -copyFromLocal` to the same HDFS dir(and consumed by subsequent nebula `load` command), so we need different suffixes to distinguish between them.
+      // All these sst files will be  `hdfs -copyFromLocal` to the same HDFS dir(and consumed by subsequent nebula `IMPORT` command), so we need different suffixes to distinguish between them.
       val hdfsSubDirectory = s"${File.separator}${key.partitionId}${File.separator}"
 
       val localDir = s"${localSstFileOutput}${hdfsSubDirectory}"
-      val sstFileName = s"${value.vertexOrEdgeEnum}-${key.`type`}-${DatatypeConverter.printHexBinary(key.valueEncoded.getBytes)}.data".toLowerCase
+      val sstFileName = s"${value.vertexOrEdgeEnum}-${key.`type`}-${DatatypeConverter.printHexBinary(key.valueEncoded.getBytes)}.sst".toLowerCase
 
       val localDirPath = new Path(localDir)
       if (!localFileSystem.exists(localDirPath)) {
