@@ -62,6 +62,10 @@ TEST(MetaClientTest, InterfacesTest) {
             spaceId = ret.value();
         }
         {
+            auto ret = client->createSpace("default_space", 8, 3).get();
+            ASSERT_FALSE(ret.ok());
+        }
+        {
             auto ret = client->listSpaces().get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             ASSERT_EQ(1, ret.value().size());
@@ -285,7 +289,6 @@ TEST(MetaClientTest, TagTest) {
     int32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
-    GraphSpaceID spaceId = 0;
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     uint32_t localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
@@ -299,7 +302,7 @@ TEST(MetaClientTest, TagTest) {
     TestUtils::registerHB(hosts);
     auto ret = client->createSpace("default_space", 9, 3).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
-    spaceId = ret.value();
+    GraphSpaceID spaceId = ret.value();
     TagID id;
     int64_t version;
 
@@ -312,6 +315,7 @@ TEST(MetaClientTest, TagTest) {
         columns.emplace_back(FRAGILE, "column_s",
                              ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
         nebula::cpp2::Schema schema;
+        schema.set_columns(std::move(columns));
         auto result = client->createTagSchema(spaceId, "test_tag", schema).get();
         ASSERT_TRUE(result.ok());
         id = result.value();
@@ -347,6 +351,254 @@ TEST(MetaClientTest, TagTest) {
     }
     {
         auto result = client->getTagSchema(spaceId, "test_tag", version).get();
+        ASSERT_FALSE(result.ok());
+    }
+}
+
+TEST(MetaClientTest, EdgeTest) {
+    FLAGS_load_data_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/MetaClientEdgeTest.XXXXXX");
+
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    uint32_t localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto client = std::make_shared<MetaClient>(threadPool,
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+
+    client->init();
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    auto r = client->addHosts(hosts).get();
+    ASSERT_TRUE(r.ok());
+    TestUtils::registerHB(hosts);
+    auto ret = client->createSpace("default_space", 9, 3).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    GraphSpaceID spaceId = ret.value();
+    EdgeType id;
+    int64_t version;
+
+    {
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        columns.emplace_back(FRAGILE, "column_i",
+                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
+        columns.emplace_back(FRAGILE, "column_d",
+                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr));
+        columns.emplace_back(FRAGILE, "column_s",
+                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+        nebula::cpp2::Schema schema;
+        schema.set_columns(std::move(columns));
+        auto result = client->createEdgeSchema(spaceId, "test_edge", schema).get();
+        ASSERT_TRUE(result.ok());
+        id = result.value();
+    }
+    {
+        auto result = client->listEdgeSchemas(spaceId).get();
+        ASSERT_TRUE(result.ok());
+        auto edges = result.value();
+        ASSERT_EQ(1, edges.size());
+        ASSERT_EQ(id, edges[0].get_edge_type());
+        ASSERT_EQ("test_edge", edges[0].get_edge_name());
+        version = edges[0].get_version();
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        columns.emplace_back(FRAGILE, "column_i",
+                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
+        columns.emplace_back(FRAGILE, "column_d",
+                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr));
+        columns.emplace_back(FRAGILE, "column_s",
+                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+        nebula::cpp2::Schema expected;
+        expected.set_columns(std::move(columns));
+        nebula::cpp2::Schema resultSchema = edges[0].get_schema();
+        ASSERT_TRUE(TestUtils::verifySchema(resultSchema, expected));
+    }
+    {
+        auto result1 = client->getEdgeSchema(spaceId, "test_edge", version).get();
+        ASSERT_TRUE(result1.ok());
+        auto result2 = client->getEdgeSchema(spaceId, "test_edge").get();
+        ASSERT_TRUE(result2.ok());
+        ASSERT_EQ(result1.value().columns.size(), result2.value().columns.size());
+        for (auto i = 0u; i < result1.value().columns.size(); i++) {
+            ASSERT_EQ(result1.value().columns[i].name, result2.value().columns[i].name);
+            ASSERT_EQ(result1.value().columns[i].type, result2.value().columns[i].type);
+        }
+    }
+    {
+        auto result = client->dropEdgeSchema(spaceId, "test_edge").get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        auto result = client->getEdgeSchema(spaceId, "test_edge", version).get();
+        ASSERT_FALSE(result.ok());
+    }
+}
+
+TEST(MetaClientTest, TagIndexTest) {
+    FLAGS_load_data_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/MetaClientTagIndexTest.XXXXXX");
+
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    uint32_t localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto client = std::make_shared<MetaClient>(threadPool,
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    client->init();
+
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    auto r = client->addHosts(hosts).get();
+    ASSERT_TRUE(r.ok());
+    auto ret = client->createSpace("default_space", 8, 3).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    auto spaceId = ret.value();
+    {
+        for (auto i = 0; i < 2; i++) {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            columns.emplace_back(FRAGILE, folly::stringPrintf("tag_%d_col_0", i),
+                                 ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
+            columns.emplace_back(FRAGILE, folly::stringPrintf("tag_%d_col_1", i),
+                                 ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+            nebula::cpp2::Schema schema;
+            schema.set_columns(std::move(columns));
+            auto result = client->createTagSchema(spaceId, folly::stringPrintf("tag_%d", i),
+                                                  schema).get();
+            ASSERT_TRUE(result.ok());
+        }
+    }
+    {
+        std::map<std::string, std::vector<std::string>> fields{
+            {"tag_0", {"tag_0_col_0",  "tag_0_col_1"}},
+            {"tag_1", {"tag_1_col_0",  "tag_1_col_1"}}
+        };
+        auto result = client->createTagIndex(spaceId, "test_tag_index", fields).get();
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        std::map<std::string, std::vector<std::string>> fields{
+            {"tag_0", {"tag_0_col_0",  "tag_0_col_1"}}
+        };
+        auto result = client->createTagIndex(spaceId, "test_tag_index", fields).get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::map<std::string, std::vector<std::string>> fields{
+            {"tag_not_exist", {"tag_0_col_0",  "tag_0_col_1"}}
+        };
+        auto result = client->createTagIndex(spaceId, "test_tag_not_exist_index", fields).get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::map<std::string, std::vector<std::string>> fields{
+            {"tag_0", {"tag_0_col_0",  "tag_0_col_1"}}
+        };
+        auto result = client->createTagIndex(spaceId, "test_tag_index", fields).get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        auto result = client->getTagIndex(spaceId, "test_tag_index").get();
+        ASSERT_TRUE(result.ok());
+        auto fields = result.value().get_properties().get_tag_fields();
+        ASSERT_EQ(2, fields.size());
+        std::vector<std::string> field0{"tag_0_col_0", "tag_0_col_1"};
+        std::vector<std::string> field1{"tag_1_col_0", "tag_1_col_1"};
+        ASSERT_TRUE(TestUtils::verifyResult(field0, fields["tag_0"]));
+        ASSERT_TRUE(TestUtils::verifyResult(field1, fields["tag_1"]));
+    }
+    {
+        auto result = client->dropTagIndex(spaceId, "test_tag_index").get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        auto result = client->dropTagIndex(spaceId, "missed_tag_index").get();
+        ASSERT_FALSE(result.ok());
+    }
+}
+
+TEST(MetaClientTest, EdgeIndexTest) {
+    FLAGS_load_data_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/MetaClientEdgeIndexTest.XXXXXX");
+
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    uint32_t localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto client = std::make_shared<MetaClient>(threadPool,
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+
+    client->init();
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    auto r = client->addHosts(hosts).get();
+    ASSERT_TRUE(r.ok());
+    TestUtils::registerHB(hosts);
+    auto ret = client->createSpace("default_space", 8, 3).get();
+    GraphSpaceID spaceId = ret.value();
+    {
+        for (auto i = 0; i < 2; i++) {
+            std::vector<nebula::cpp2::ColumnDef> columns;
+            columns.emplace_back(FRAGILE, "col_0",
+                                 ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
+            columns.emplace_back(FRAGILE, "col_1",
+                                 ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+            nebula::cpp2::Schema schema;
+            schema.set_columns(std::move(columns));
+            auto result = client->createEdgeSchema(spaceId, folly::stringPrintf("edge_%d", i),
+                                                   schema).get();
+            ASSERT_TRUE(result.ok());
+        }
+    }
+    {
+        std::map<std::string, std::vector<std::string>> fields{
+            {"edge_0", {"edge_0_col_0",  "edge_0_col_1"}},
+            {"edge_1", {"edge_1_col_0",  "edge_1_col_1"}}
+        };
+        auto result = client->createEdgeIndex(spaceId, "test_edge_index", fields).get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        std::map<std::string, std::vector<std::string>> fields{
+            {"edge_0", {"edge_0_col_0",  "edge_0_col_1"}}
+        };
+        auto result = client->createEdgeIndex(spaceId, "test_edge_index", fields).get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::map<std::string, std::vector<std::string>> fields{
+            {"edge_not_exist", {"edge_0_col_0",  "edge_0_col_1"}}
+        };
+        auto result = client->createEdgeIndex(spaceId, "test_edge_not_exist_index", fields).get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        std::map<std::string, std::vector<std::string>> fields{
+            {"edge_0", {"edge_0_col_0",  "edge_0_col_1"}}
+        };
+        auto result = client->createEdgeIndex(spaceId, "test_edge_index", fields).get();
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        auto result = client->getEdgeIndex(spaceId, "test_edge_index").get();
+        ASSERT_TRUE(result.ok());
+        auto fields = result.value().get_properties().get_edge_fields();
+        ASSERT_EQ(2, fields.size());
+        std::vector<std::string> field0{"edge_0_col_0", "edge_0_col_1"};
+        std::vector<std::string> field1{"edge_1_col_0", "edge_1_col_1"};
+        ASSERT_TRUE(TestUtils::verifyResult(field0, fields["edge_0"]));
+        ASSERT_TRUE(TestUtils::verifyResult(field1, fields["edge_1"]));
+    }
+    {
+        auto result = client->dropEdgeIndex(spaceId, "test_edge_index").get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        auto result = client->dropEdgeIndex(spaceId, "missed_edge_index").get();
         ASSERT_FALSE(result.ok());
     }
 }

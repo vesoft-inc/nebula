@@ -264,6 +264,14 @@ std::string MetaServiceUtils::tagIndexVal(nebula::meta::cpp2::TagIndexProperties
     return value;
 }
 
+std::string MetaServiceUtils::tagIndexPrefix(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(kTagIndexesTable.size() + sizeof(GraphSpaceID));
+    key.append(kTagIndexesTable.data(), kTagIndexesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    return key;
+}
+
 std::string MetaServiceUtils::edgeIndexKey(GraphSpaceID spaceID, EdgeIndexID indexID) {
     std::string key;
     key.reserve(64);
@@ -277,6 +285,26 @@ std::string MetaServiceUtils::edgeIndexVal(nebula::meta::cpp2::EdgeIndexProperti
     std::string value;
     apache::thrift::CompactSerializer::serialize(properties, &value);
     return value;
+}
+
+std::string MetaServiceUtils::edgeIndexPrefix(GraphSpaceID spaceId) {
+    std::string key;
+    key.reserve(kEdgeIndexesTable.size() + sizeof(GraphSpaceID));
+    key.append(kEdgeIndexesTable.data(), kEdgeIndexesTable.size());
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId));
+    return key;
+}
+
+cpp2::TagIndexProperties MetaServiceUtils::parseTagIndex(folly::StringPiece rawData) {
+    cpp2::TagIndexProperties properties;
+    apache::thrift::CompactSerializer::deserialize(rawData, properties);
+    return properties;
+}
+
+cpp2::EdgeIndexProperties MetaServiceUtils::parseEdgeIndex(folly::StringPiece rawData) {
+    cpp2::EdgeIndexProperties properties;
+    apache::thrift::CompactSerializer::deserialize(rawData, properties);
+    return properties;
 }
 
 std::string MetaServiceUtils::indexSpaceKey(const std::string& name) {

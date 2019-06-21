@@ -89,10 +89,18 @@ public:
 
     static std::string tagIndexVal(nebula::meta::cpp2::TagIndexProperties properties);
 
+    static std::string tagIndexPrefix(GraphSpaceID spaceId);
+
     // assign edge index's key
     static std::string edgeIndexKey(GraphSpaceID spaceId, EdgeIndexID indexID);
 
     static std::string edgeIndexVal(nebula::meta::cpp2::EdgeIndexProperties properties);
+
+    static std::string edgeIndexPrefix(GraphSpaceID spaceId);
+
+    static cpp2::TagIndexProperties parseTagIndex(folly::StringPiece rawData);
+
+    static cpp2::EdgeIndexProperties parseEdgeIndex(folly::StringPiece rawData);
 
     static std::string indexSpaceKey(const std::string& name);
 

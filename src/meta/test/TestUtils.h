@@ -28,6 +28,7 @@ namespace meta {
 
 using nebula::cpp2::SupportedType;
 using apache::thrift::FragileConstructor::FRAGILE;
+
 class TestUtils {
 public:
     static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
@@ -215,6 +216,50 @@ public:
         } else {
             return Status::Error("Create user fail");
         }
+    }
+
+    static bool verifySchema(nebula::cpp2::Schema &result,
+                             nebula::cpp2::Schema &expected) {
+        if (result.get_columns().size() != expected.get_columns().size()) {
+            return false;
+        }
+
+        std::vector<nebula::cpp2::ColumnDef> resultColumns = result.get_columns();
+        std::vector<nebula::cpp2::ColumnDef> expectedColumns = expected.get_columns();
+        std::sort(resultColumns.begin(), resultColumns.end(),
+                  [](nebula::cpp2::ColumnDef col0, nebula::cpp2::ColumnDef col1) {
+                      return col0.get_name() < col1.get_name();
+                  });
+        std::sort(expectedColumns.begin(), expectedColumns.end(),
+                  [](nebula::cpp2::ColumnDef col0, nebula::cpp2::ColumnDef col1) {
+                      return col0.get_name() < col1.get_name();
+                  });
+
+        int32_t size = resultColumns.size();
+        for (auto i = 0; i < size; i++) {
+            if (resultColumns[i].get_name() != expectedColumns[i].get_name()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static bool verifyResult(std::vector<std::string> &result,
+                             std::vector<std::string> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        std::sort(result.begin(), result.end());
+        std::sort(expected.begin(), expected.end());
+        int32_t size = result.size();
+        for (auto i = 0; i < size; i++) {
+            if (result[i] != expected[i]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 };
 

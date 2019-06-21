@@ -16,6 +16,7 @@
 #include "thread/GenericWorker.h"
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
+#include "meta/IndexProviderIf.h"
 
 namespace nebula {
 namespace meta {
@@ -25,17 +26,21 @@ using SpaceIdName = std::pair<GraphSpaceID, std::string>;
 using HostStatus = std::pair<HostAddr, std::string>;
 
 // struct for in cache
-using TagIDSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
-                                        std::shared_ptr<const SchemaProviderIf>>;
-using EdgeTypeSchemas = std::unordered_map<std::pair<EdgeType, SchemaVer>,
-                                           std::shared_ptr<const SchemaProviderIf>>;
+using TagSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
+                                      std::shared_ptr<const SchemaProviderIf>>;
+using EdgeSchemas = std::unordered_map<std::pair<EdgeType, SchemaVer>,
+                                       std::shared_ptr<const SchemaProviderIf>>;
+using TagIndexes = std::unordered_map<TagID, std::shared_ptr<const IndexProviderIf>>;
+using EdgeIndexes = std::unordered_map<EdgeType, std::shared_ptr<const IndexProviderIf>>;
 
 struct SpaceInfoCache {
     std::string spaceName;
     PartsAlloc partsAlloc_;
     std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
-    TagIDSchemas tagSchemas_;
-    EdgeTypeSchemas edgeSchemas_;
+    TagSchemas tagSchemas_;
+    EdgeSchemas edgeSchemas_;
+    TagIndexes tagIndexes_;
+    EdgeIndexes edgeIndexes_;
 };
 
 using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;
@@ -144,7 +149,8 @@ public:
 
     // Operations for index
     folly::Future<StatusOr<TagIndexID>>
-    createTagIndex(GraphSpaceID spaceID, std::string name, std::vector<std::string> fields);
+    createTagIndex(GraphSpaceID spaceID, std::string name,
+                   std::map<std::string, std::vector<std::string>> fields);
 
     folly::Future<StatusOr<bool>>
     dropTagIndex(GraphSpaceID spaceId, std::string name);
@@ -156,7 +162,8 @@ public:
     listTagIndexes(GraphSpaceID spaceId);
 
     folly::Future<StatusOr<EdgeIndexID>>
-    createEdgeIndex(GraphSpaceID spaceID, std::string name, std::vector<std::string> fields);
+    createEdgeIndex(GraphSpaceID spaceID, std::string name,
+                    std::map<std::string, std::vector<std::string>> fields);
 
     folly::Future<StatusOr<bool>>
     dropEdgeIndex(GraphSpaceID spaceId, std::string name);
@@ -218,6 +225,12 @@ public:
 
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
+
+    StatusOr<std::shared_ptr<const IndexProviderIf>>
+    getTagIndexFromCache(GraphSpaceID spaceId, TagIndexID tagIndexID);
+
+    StatusOr<std::shared_ptr<const IndexProviderIf>>
+    getEdgeIndexFromCache(GraphSpaceID spaceId, EdgeIndexID edgeIndexID);
 
 protected:
     void loadDataThreadFunc();

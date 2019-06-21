@@ -222,40 +222,6 @@ StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::s
 }
 
 template<typename RESP>
-StatusOr<std::vector<std::string>>
-BaseProcessor<RESP>::getLatestTagPropertyNames(GraphSpaceID spaceId,
-                                               const std::string& name) {
-    auto result = getTagId(spaceId, name);
-    if (!result.ok()) {
-        return result.status();
-    }
-    // auto tagId = to(result.value(), EntryType::TAG);
-    auto key = MetaServiceUtils::schemaTagPrefix(spaceId, result.value());
-    auto ret = doPrefix(key);
-    if (!ret.ok()) {
-        LOG(ERROR) << "";
-        return Status::Error("");
-    }
-    auto iter = ret.value().get();
-    auto latestKey = iter->key();
-    LOG(INFO) << "Latest Tag Key " << latestKey;
-    auto latestSchemaResult = doGet(latestKey.data());
-    if (!latestSchemaResult.ok()) {
-        LOG(ERROR) << "";
-        return Status::Error("");
-    }
-    auto latestSchema = MetaServiceUtils::parseSchema(latestSchemaResult.value());
-    LOG(INFO) << "Property Names: [";
-    std::vector<std::string> propertyNames;
-    for (auto &column : latestSchema.get_columns()) {
-        propertyNames.emplace_back(column.get_name());
-        LOG(INFO) << column.get_name() << " ";
-    }
-    LOG(INFO) << "]";
-    return propertyNames;
-}
-
-template<typename RESP>
 StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
                                                     const std::string& name) {
     auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, name);
@@ -268,33 +234,50 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
 
 template<typename RESP>
 StatusOr<std::vector<std::string>>
-BaseProcessor<RESP>::getLatestEdgePropertyNames(GraphSpaceID spaceId,
-                                                const std::string& name) {
-    auto result = getEdgeType(spaceId, name);
+BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId,
+                                        const std::string& name) {
+    auto result = getTagId(spaceId, name);
     if (!result.ok()) {
-        return result.status();
+        LOG(ERROR) << "Tag " << name << " not found";
+        return Status::Error(folly::stringPrintf("Tag %s not found", name.c_str()));
     }
-    auto edgeType = to(result.value(), EntryType::EDGE);
-    auto key = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
+    auto key = MetaServiceUtils::schemaTagPrefix(spaceId, result.value());
     auto ret = doPrefix(key);
     if (!ret.ok()) {
-        LOG(ERROR) << "";
-        return Status::Error("");
+        LOG(ERROR) << "Tag Prefix " << key << " not found";
+        return Status::Error("Tag Prefix  not found");
     }
-    auto iter = ret.value();
-    auto latestKey = iter->key();
-    LOG(INFO) << "Latest Edge Key " << latestKey;
-    auto latestSchemaResult = doGet(latestKey);
-    if (!latestSchemaResult.ok()) {
-        LOG(ERROR) << "";
-        return Status::Error("");
-    }
-    auto latestSchema = MetaServiceUtils::parseSchema(latestSchemaResult.value());
+    auto iter = ret.value().get();
+    auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
     std::vector<std::string> propertyNames;
     for (auto &column : latestSchema.get_columns()) {
         propertyNames.emplace_back(column.get_name());
     }
-    VLOG(3) << "Property Names: " << propertyNames;
+    return propertyNames;
+}
+
+template<typename RESP>
+StatusOr<std::vector<std::string>>
+BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId,
+                                         const std::string& name) {
+    auto result = getEdgeType(spaceId, name);
+    if (!result.ok()) {
+        LOG(ERROR) << "Edge " << name << " not found";
+        return Status::Error(folly::stringPrintf("Edge %s not found", name.c_str()));
+    }
+    auto edgeType = to(result.value(), EntryType::EDGE);
+    auto key = MetaServiceUtils::schemaEdgePrefix(spaceId, result.value());
+    auto ret = doPrefix(key);
+    if (!ret.ok()) {
+        LOG(ERROR) << "Edge Prefix " << key << " not found";
+        return Status::Error("");
+    }
+    auto iter = ret.value().get();
+    auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
+    std::vector<std::string> propertyNames;
+    for (auto &column : latestSchema.get_columns()) {
+        propertyNames.emplace_back(column.get_name());
+    }
     return propertyNames;
 }
 
@@ -325,10 +308,9 @@ StatusOr<EdgeIndexID> BaseProcessor<RESP>::getEdgeIndexID(GraphSpaceID spaceId,
 template<typename RESP>
 StatusOr<UserID> BaseProcessor<RESP>::getUserId(const std::string& account) {
     auto indexKey = MetaServiceUtils::indexUserKey(account);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
-        return *reinterpret_cast<const UserID*>(val.c_str());
+    auto ret = doGet(indexKey);
+    if (ret.ok()) {
+        return *reinterpret_cast<const UserID*>(ret.value().c_str());
     }
     return Status::UserNotFound(folly::stringPrintf("User %s not found", account.c_str()));
 }
@@ -336,11 +318,10 @@ StatusOr<UserID> BaseProcessor<RESP>::getUserId(const std::string& account) {
 template<typename RESP>
 bool BaseProcessor<RESP>::checkPassword(UserID userId, const std::string& password) {
     auto userKey = MetaServiceUtils::userKey(userId);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
-        auto len = *reinterpret_cast<const int32_t *>(val.data());
-        return password == val.substr(sizeof(int32_t), len);
+    auto ret = doGet(userKey);
+    if (ret.ok()) {
+        auto len = *reinterpret_cast<const int32_t *>(ret.value().data());
+        return password == ret.value().substr(sizeof(int32_t), len);
     }
     return false;
 }
@@ -348,14 +329,12 @@ bool BaseProcessor<RESP>::checkPassword(UserID userId, const std::string& passwo
 template<typename RESP>
 StatusOr<std::string> BaseProcessor<RESP>::getUserAccount(UserID userId) {
     auto key = MetaServiceUtils::userKey(userId);
-    std::string value;
-    auto code = kvstore_->get(kDefaultSpaceId, kDefaultPartId,
-                              key, &value);
-    if (code != kvstore::ResultCode::SUCCEEDED) {
+    auto ret = doGet(key);
+    if (!ret.ok()) {
         return Status::UserNotFound(folly::stringPrintf("User not found by id %d", userId));
     }
 
-    auto user = MetaServiceUtils::parseUserItem(value);
+    auto user = MetaServiceUtils::parseUserItem(ret.value());
     return user.get_account();
 }
 

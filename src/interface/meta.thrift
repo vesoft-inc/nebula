@@ -66,7 +66,9 @@ union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
-    4: common.UserID        user_id,
+    4: common.TagIndexID    tag_index_id,
+    5: common.EdgeIndexID   edge_index_id,
+    6: common.UserID        user_id,
 }
 
 struct IdName {
@@ -110,13 +112,11 @@ struct EdgeItem {
 }
 
 struct TagIndexProperties {
-    1: string               index_name,
-    2: map<string, list<string>>(cpp.template = "std::map")  tag_fields,
+    1: map<string, list<string>>(cpp.template = "std::map")  tag_fields,
 }
 
 struct EdgeIndexProperties {
-    1: string               index_name,
-    2: map<string, list<string>>(cpp.template = "std::map")  edge_fields,
+    1: map<string, list<string>>(cpp.template = "std::map")  edge_fields,
 }
 
 struct TagIndexItem {
@@ -373,7 +373,8 @@ struct HBReq {
 
 struct CreateTagIndexReq {
     1: common.GraphSpaceID space_id,
-    2: TagIndexProperties  properties,
+    2: string              index_name,
+    3: TagIndexProperties  properties,
 }
 
 struct DropTagIndexReq {
@@ -388,6 +389,8 @@ struct GetTagIndexReq {
 
 struct GetTagIndexResp {
     1: ErrorCode              code,
+    2: common.HostAddr        leader,
+    3: TagIndexItem           item,
 }
 
 struct ListTagIndexesReq {
@@ -402,7 +405,8 @@ struct ListTagIndexesResp {
 
 struct CreateEdgeIndexReq {
     1: common.GraphSpaceID space_id,
-    2: EdgeIndexProperties properties,
+    2: string              index_name,
+    3: EdgeIndexProperties properties,
 }
 
 struct DropEdgeIndexReq {
@@ -416,7 +420,9 @@ struct GetEdgeIndexReq {
 }
 
 struct GetEdgeIndexResp {
-     1: ErrorCode              code,
+    1: ErrorCode              code,
+    2: common.HostAddr        leader,
+    3: EdgeIndexItem          item,
 }
 
 struct ListEdgeIndexesReq {

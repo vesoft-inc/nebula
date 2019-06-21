@@ -50,6 +50,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
 
     VLOG(3) << "Get Edge SpaceID: " << req.get_space_id() << ", edgeName: "
             << req.get_edge_name() << ", version " << req.get_version();
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_schema(MetaServiceUtils::parseSchema(schemaValue));
     onFinished();
 }

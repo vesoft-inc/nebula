@@ -11,27 +11,48 @@ namespace meta {
 
 void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     auto spaceID = req.get_space_id();
+    auto indexName = req.get_index_name();
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
     auto properties = req.get_properties();
-    auto indexName = properties.get_index_name();
     auto ret = getEdgeIndexID(spaceID, indexName);
     if (ret.ok()) {
         LOG(ERROR) << "Create Edge Index Failed: " << indexName << " already existed";
-        resp_.set_id(to(ret.value(), EntryType::EDGE_INDEX));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }
 
+    if (properties.get_edge_fields().size() == 0) {
+        resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
+        onFinished();
+        return;
+    }
+
     for (auto const &element : properties.get_edge_fields()) {
-        ret = getEdgeType(spaceID, element.first);
-        if (!ret.ok()) {
+        auto edgeType = getEdgeType(spaceID, element.first);
+        if (!edgeType.ok()) {
             LOG(ERROR) << "Create Edge Index Failed: " << element.first << " not exist";
-            resp_.set_id(to(ret.value(), EntryType::EDGE_INDEX));
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
+        }
+
+        auto fieldsResult = getLatestEdgeFields(spaceID, element.first);
+        if (!fieldsResult.ok()) {
+            LOG(ERROR) << "Get Latest Edge Property Name Failed";
+            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            onFinished();
+            return;
+        }
+        auto fields = fieldsResult.value();
+        for (auto &field : element.second) {
+            if (std::find(fields.begin(), fields.end(), field) == fields.end()) {
+                LOG(ERROR) << "Field " << field << " not found in Edge " << element.first;
+                resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+                onFinished();
+                return;
+            }
         }
     }
 

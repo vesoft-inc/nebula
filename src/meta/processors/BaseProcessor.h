@@ -134,10 +134,10 @@ protected:
             thriftID.set_user_id(static_cast<UserID>(id));
             break;
         case EntryType::TAG_INDEX:
-            thriftID.set_edge_type(static_cast<TagIndexID>(id));
+            thriftID.set_tag_index_id(static_cast<TagIndexID>(id));
             break;
         case EntryType::EDGE_INDEX:
-            thriftID.set_edge_type(static_cast<EdgeIndexID>(id));
+            thriftID.set_edge_index_id(static_cast<EdgeIndexID>(id));
             break;
         }
         return thriftID;
@@ -223,16 +223,16 @@ protected:
      */
     StatusOr<TagID> getTagId(GraphSpaceID spaceId, const std::string& name);
 
-    StatusOr<std::vector<std::string>> getLatestTagPropertyNames(GraphSpaceID spaceId,
-                                                                 const std::string& name);
+    StatusOr<std::vector<std::string>> getLatestTagFields(GraphSpaceID spaceId,
+                                                          const std::string& name);
 
     /**
      * Return the edgeType for name.
      */
     StatusOr<EdgeType> getEdgeType(GraphSpaceID spaceId, const std::string& name);
 
-    StatusOr<std::vector<std::string>> getLatestEdgePropertyNames(GraphSpaceID spaceId,
-                                                                  const std::string& name);
+    StatusOr<std::vector<std::string>> getLatestEdgeFields(GraphSpaceID spaceId,
+                                                           const std::string& name);
 
     StatusOr<TagIndexID> getTagIndexID(GraphSpaceID spaceId, const std::string& indexName);
 

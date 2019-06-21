@@ -11,45 +11,53 @@ namespace meta {
 
 void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto spaceID = req.get_space_id();
+    auto indexName = req.get_index_name();
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
     auto properties = req.get_properties();
-    auto indexName = properties.get_index_name();
     auto ret = getTagIndexID(spaceID, indexName);
     if (ret.ok()) {
         LOG(ERROR) << "Create Tag Index Failed: " << indexName << " already existed";
-        resp_.set_id(to(ret.value(), EntryType::TAG_INDEX));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }
 
     if (properties.get_tag_fields().size() == 0) {
-        resp_.set_id(to(ret.value(), EntryType::TAG_INDEX));
         resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
 
     for (auto const &element : properties.get_tag_fields()) {
-        ret = getTagId(spaceID, element.first);
-        if (!ret.ok()) {
-            LOG(ERROR) << "Create Tag Index Failed: Tag "
-                       << element.first << " not exist";
-            resp_.set_id(to(ret.value(), EntryType::TAG_INDEX));
+        auto tagID = getTagId(spaceID, element.first);
+        if (!tagID.ok()) {
+            LOG(ERROR) << "Create Tag Index Failed: Tag " << element.first << " not exist";
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
 
-        auto propertyNames = getLatestTagPropertyNames(spaceID, indexName);
-        if (propertyNames.ok()) {
-            LOG(ERROR) << "";
+        auto fieldsResult = getLatestTagFields(spaceID, element.first);
+        if (!fieldsResult.ok()) {
+            LOG(ERROR) << "Get Latest Tag Fields Failed";
+            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            onFinished();
+            return;
+        }
+        auto fields = fieldsResult.value();
+        for (auto &field : element.second) {
+            if (std::find(fields.begin(), fields.end(), field) == fields.end()) {
+                LOG(ERROR) << "Field " << field << " not found in Tag " << element.first;
+                resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+                onFinished();
+                return;
+            }
         }
     }
 
     std::vector<kvstore::KV> data;
-    TagIndexID tagIndex = autoIncrementId();
+    auto tagIndex = autoIncrementId();
     data.emplace_back(MetaServiceUtils::indexTagIndexKey(spaceID, indexName),
                       std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(TagIndexID)));
     data.emplace_back(MetaServiceUtils::tagIndexKey(spaceID, tagIndex),
