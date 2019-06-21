@@ -59,8 +59,8 @@ public:
 
     virtual ~RowSetReader() = default;
 
-    meta::SchemaProviderIf const* schema() const {
-        return schema_.get();
+    std::shared_ptr<const meta::SchemaProviderIf> schema() const {
+        return schema_;
     }
 
     Iterator begin() const noexcept;
