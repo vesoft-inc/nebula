@@ -101,10 +101,11 @@ std::string AssignmentSentence::toString() const {
 std::string OrderFactor::toString() const {
     switch (orderType_) {
         case ASCEND:
-            return folly::stringPrintf(" %s ASCEND,", expr_->toString().c_str());
+            return folly::stringPrintf("%s ASCEND,", expr_->toString().c_str());
         case DESCEND:
-            return folly::stringPrintf(" %s DESCEND,", expr_->toString().c_str());
+            return folly::stringPrintf("%s DESCEND,", expr_->toString().c_str());
         default:
+            LOG(FATAL) << "Unkown Order Type: " << orderType_;
             return "";
     }
 }

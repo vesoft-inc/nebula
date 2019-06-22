@@ -164,7 +164,7 @@ protected:
 
     template <typename Tuple>
     AssertionResult verifyResult(const cpp2::ExecutionResponse &resp,
-                                 std::vector<Tuple> &expected) {
+                                 std::vector<Tuple> &expected, bool sortEnable = true) {
         if (resp.get_error_code() != cpp2::ErrorCode::SUCCEEDED) {
             auto *errmsg = resp.get_error_msg();
             return TestError() << "Query failed with `"
@@ -190,9 +190,10 @@ protected:
             return TestOK();
         }
 
-        std::sort(rows.begin(), rows.end());
-        std::sort(expected.begin(), expected.end());
-
+        if (sortEnable) {
+            std::sort(rows.begin(), rows.end());
+            std::sort(expected.begin(), expected.end());
+        }
         for (auto i = 0u; i < rows.size(); i++) {
             if (rows[i] != expected[i]) {
                 return TestError() << rows[i] << " vs. " << expected[i];

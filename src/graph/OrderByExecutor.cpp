@@ -95,8 +95,16 @@ OrderByExecutor::OrderByExecutor(Sentence *sentence, ExecutionContext *ectx)
 }
 
 Status OrderByExecutor::prepare() {
+    return Status::OK();
+}
+
+void OrderByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
+    if (result == nullptr) {
+        return;
+    }
     DCHECK(sentence_ != nullptr);
-    DCHECK(inputs_ != nullptr);
+    inputs_ = std::move(result);
+    rows_ = inputs_->getRows();
 
     auto schema = inputs_->schema();
     auto factors = sentence_->factors();
@@ -107,28 +115,26 @@ Status OrderByExecutor::prepare() {
         auto pair = std::make_pair(schema->getFieldIndex(field), factor->orderType());
         sortFactors_.emplace_back(std::move(pair));
     }
-
-    rows_ = inputs_->getRows();
-    return Status::OK();
-}
-
-void OrderByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    inputs_ = std::move(result);
 }
 
 void OrderByExecutor::execute() {
+    FLOG_INFO("Executing Order By: %s", sentence_->toString().c_str());
     auto comparator = [this] (cpp2::RowValue& lhs, cpp2::RowValue& rhs) {
         auto lhsColumns = lhs.get_columns();
         auto rhsColumns = rhs.get_columns();
         for (auto &factor : this->sortFactors_) {
             auto fieldIndex = factor.first;
             auto orderType = factor.second;
-            if (lhsColumns[fieldIndex] < rhsColumns[fieldIndex]) {
-                return (orderType == OrderFactor::OrderType::ASCEND);
-            } else if (lhsColumns[fieldIndex] == rhsColumns[fieldIndex]) {
+            if (lhsColumns[fieldIndex] == rhsColumns[fieldIndex]) {
                 continue;
+            }
+
+            if (orderType == OrderFactor::OrderType::ASCEND) {
+                return lhsColumns[fieldIndex] < rhsColumns[fieldIndex];
+            } else if (orderType == OrderFactor::OrderType::DESCEND) {
+                return lhsColumns[fieldIndex] > rhsColumns[fieldIndex];
             } else {
-                return (orderType == OrderFactor::OrderType::DESCEND);
+                LOG(FATAL) << "Unkown Order Type: " << orderType;
             }
         }
         return true;
@@ -179,14 +185,19 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
 }
 
 void OrderByExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
-    auto schema = inputs_->schema();
-    std::vector<std::string> result;
-    result.reserve(schema->getNumFields());
-    for (auto field = schema->begin(); field < schema->end(); ++field) {
-        result.emplace_back(field->getName());
+    if (rows_.empty()) {
+        return;
     }
-    resp.set_column_names(std::move(result));
 
+    auto schema = inputs_->schema();
+    std::vector<std::string> columnNames;
+    columnNames.reserve(schema->getNumFields());
+    auto field = schema->begin();
+    while (field) {
+        columnNames.emplace_back(field->getName());
+        ++field;
+    }
+    resp.set_column_names(std::move(columnNames));
     resp.set_rows(std::move(rows_));
 }
 
