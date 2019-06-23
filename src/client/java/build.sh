@@ -6,6 +6,7 @@
 src_root_path=`cd ../../../; pwd`;
 graph_gen_java_path=$src_root_path"/src/interface/gen-java/com/vesoft/nebula/graph/"
 java_client_source_file_path=$src_root_path/src/client/java/src/main/java/com/vesoft/nebula/graph/
+java_fbthrift_jar=$1
 
 #-----------------------------------------------
 # check file or dir exist 
@@ -45,7 +46,7 @@ setup_graph_source()
 #-----------------------------------------------
 compile_java_client()
 {
-	mvn clean package
+	mvn clean package -DJAVA_FBTHRIFT_JAR=$java_fbthrift_jar
 }
 
 

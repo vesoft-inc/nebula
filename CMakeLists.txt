@@ -193,11 +193,7 @@ endif()
 
 if(NOT ${NEBULA_SNAPSHOT_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_SNAPSHOT_ROOT: " ${NEBULA_SNAPSHOT_ROOT})
-    message(STATUS "CMAKE_CURRENT_SOURCE_DIR} = ${CMAKE_CURRENT_SOURCE_DIR}}")
-    execute_process(
-        COMMAND sed -i "s|FBTHRIFT_ROOT_DIR|${NEBULA_SNAPSHOT_ROOT}|g" ${CMAKE_CURRENT_SOURCE_DIR}/src/tools/importer/pom.xml
-        COMMAND sed -i "s|FBTHRIFT_ROOT_DIR|${NEBULA_SNAPSHOT_ROOT}|g" ${CMAKE_CURRENT_SOURCE_DIR}/src/client/java/pom.xml
-    )
+    set_property(GLOBAL PROPERTY java-fbthrift-jar ${NEBULA_SNAPSHOT_ROOT})
 else()
     message(FATAL_ERROR "Please input the path of thrift-1.0-SNAPSHOT.jar")
 endif()

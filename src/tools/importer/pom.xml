@@ -16,7 +16,6 @@
 
     <properties>
         <project.root.dir>../../..</project.root.dir>
-        <fbthrift.root.dir>/home/engshare/fbthrift/thrift-1.0-SNAPSHOT.jar</fbthrift.root.dir>
         <nebula-client.target.dir>../../../src/client/java/target/</nebula-client.target.dir>
     </properties>
 
@@ -90,7 +89,7 @@
             <artifactId>thrift</artifactId>
             <version>1.0.0-SNAPSHORT</version>
             <scope>system</scope>
-            <systemPath>${fbthrift.root.dir}/thrift-1.0-SNAPSHOT.jar</systemPath>
+            <systemPath>${JAVA_FBTHRIFT_JAR}</systemPath>
         </dependency>
         <dependency>
             <groupId>nebula-graph</groupId>
