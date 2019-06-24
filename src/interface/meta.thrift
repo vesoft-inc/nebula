@@ -415,7 +415,8 @@ struct ListRolesResp {
 struct ChangePasswordReq {
     1: string account,
     2: string new_encoded_pwd,
-    3: string old_encoded_pwd,
+    // Can be ignore old password if role is god.
+    3: optional string old_encoded_pwd,
 }
 
 struct CheckPasswordReq {

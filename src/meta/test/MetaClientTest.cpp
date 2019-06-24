@@ -663,6 +663,141 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
     }
 }
 
+TEST(MetaClientTest, UserTest) {
+    FLAGS_load_data_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/MetaClientUserTest.XXXXXX");
+
+    // Let the system choose an available port for us
+    uint16_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    uint32_t localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto client = std::make_shared<MetaClient>(threadPool,
+                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    client->init();
+    std::vector<HostAddr> hosts = {{0, 0}};
+    auto hostRet = client->addHosts(hosts).get();
+    ASSERT_TRUE(hostRet.ok()) << hostRet.status();
+    TestUtils::registerHB(hosts);
+    auto spaceRet = client->createSpace("default_space", 1, 1).get();
+    ASSERT_TRUE(spaceRet.ok()) << spaceRet.status();
+    auto defaultSpaceId = spaceRet.value();
+    spaceRet = client->createSpace("test_space", 1, 1).get();
+    ASSERT_TRUE(spaceRet.ok()) << spaceRet.status();
+    auto testSpaceId = spaceRet.value();
+    UserID uId1, uId2;
+    // Test simple user create.
+    {
+        cpp2::UserItem user(FRAGILE, "user1", false, 10, 20, 30, 40);
+        auto r = client->createUser(user, "password", false).get();
+        ASSERT_TRUE(r.ok()) << r.status();
+        uId1 = r.value();
+        // Expected failing. user exists.
+        r = client->createUser(user, "password", false).get();
+        ASSERT_FALSE(r.ok()) << r.status();
+        // Expected success. user exists but missingOk is turn on.
+        r = client->createUser(user, "password", true).get();
+        ASSERT_TRUE(r.ok()) << r.status();
+    }
+    // Test optional parameters.
+    {
+        cpp2::UserItem user;
+        user.set_account("user2");
+        user.set_is_lock(true);
+        user.set_max_user_connections(10);
+        user.set_max_connections_per_hour(20);
+        auto r = client->createUser(user, "user2", false).get();
+        ASSERT_TRUE(r.ok()) << r.status();
+        auto ret = client->getUser("user2").get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+        ASSERT_EQ(user, ret.value());
+    }
+    {
+        auto r = client->dropUser("user2", false).get();
+        ASSERT_TRUE(r.ok()) << r.status();
+        // Expected failing, user not exists.
+        r = client->dropUser("user2", false).get();
+        ASSERT_FALSE(r.ok()) << r.status();
+        // Expected success. user exists but missingOk is turn on.
+        r = client->dropUser("user2", true).get();
+        ASSERT_TRUE(r.ok()) << r.status();
+        // Verify user dropped.
+        auto ret = client->getUser("user2").get();
+        ASSERT_FALSE(ret.ok()) << ret.status();
+    }
+    {
+        cpp2::UserItem user;
+        user.set_account("user1");
+        user.set_is_lock(true);
+        user.set_max_user_connections(100);
+        auto r = client->alterUser(user).get();
+        ASSERT_TRUE(r.ok()) << r.status();
+        auto ret = client->getUser("user1").get();
+        ASSERT_TRUE(ret.ok()) << ret.status();
+        cpp2::UserItem expect(FRAGILE, "user1", true, 10, 20, 30, 100);
+        ASSERT_EQ(expect, ret.value());
+    }
+    {
+        cpp2::UserItem user(FRAGILE, "user2", true, 10, 20, 30, 40);
+        auto r = client->createUser(user, "password", false).get();
+        ASSERT_TRUE(r.ok()) << r.status();
+        uId2 = r.value();
+        auto grantRet = client->grantToUser(
+                cpp2::RoleItem(FRAGILE, uId1, defaultSpaceId, cpp2::RoleType::GOD)).get();
+        ASSERT_TRUE(grantRet.ok());
+        grantRet = client->grantToUser(
+                cpp2::RoleItem(FRAGILE, uId1, testSpaceId, cpp2::RoleType::ADMIN)).get();
+        ASSERT_TRUE(grantRet.ok());
+        grantRet = client->grantToUser(
+                cpp2::RoleItem(FRAGILE, uId2, testSpaceId, cpp2::RoleType::USER)).get();
+        ASSERT_TRUE(grantRet.ok());
+        sleep(FLAGS_load_data_interval_secs + 1);
+        auto listRet = client->listRoles(testSpaceId).get();
+        ASSERT_TRUE(listRet.ok());
+        std::vector<cpp2::RoleItem> expect = {
+                {cpp2::RoleItem(FRAGILE, uId1, testSpaceId, cpp2::RoleType::ADMIN)},
+                {cpp2::RoleItem(FRAGILE, uId2, testSpaceId, cpp2::RoleType::USER)}};
+        ASSERT_EQ(expect, listRet.value());
+        auto revoke = client->revokeFromUser(
+                cpp2::RoleItem(FRAGILE, uId2, testSpaceId, cpp2::RoleType::USER));
+        sleep(FLAGS_load_data_interval_secs + 1);
+        listRet = client->listRoles(testSpaceId).get();
+        ASSERT_TRUE(listRet.ok());
+        expect = {{cpp2::RoleItem(FRAGILE, uId1, testSpaceId, cpp2::RoleType::ADMIN)}};
+        ASSERT_EQ(expect, listRet.value());
+    }
+    {
+        auto chgRet = client->changePassword("user1", "user1", "", false).get();
+        ASSERT_TRUE(chgRet.ok());
+        chgRet = client->changePassword("user1", "user1", "", true).get();
+        ASSERT_FALSE(chgRet.ok()) << chgRet.status();
+        chgRet = client->changePassword("user1", "aaaaaa", "user1", true).get();
+        ASSERT_TRUE(chgRet.ok());
+        auto checkRet = client->checkPassword("user1", "user1").get();
+        ASSERT_FALSE(checkRet.ok()) << checkRet.status();
+        checkRet = client->checkPassword("user1", "aaaaaa").get();
+        ASSERT_TRUE(checkRet.ok());
+    }
+    {
+        auto listRet = client->listUsers().get();
+        ASSERT_TRUE(listRet.ok());
+        std::unordered_map<UserID, cpp2::UserItem> expect = {
+                {uId1, {FRAGILE, "user1", true, 10, 20, 30, 100}},
+                {uId2, {FRAGILE, "user2", true, 10, 20, 30, 40}}
+        };
+        ASSERT_EQ(expect, listRet.value());
+    }
+    sleep(FLAGS_load_data_interval_secs + 1);
+    {
+        auto uIdRet = client->getUserIdByNameFromCache("user1");
+        ASSERT_TRUE(uIdRet.ok());
+        ASSERT_EQ(uId1, uIdRet.value());
+        auto uNameRet = client->getUserNameByIdFromCache(uId1);
+        ASSERT_TRUE(uNameRet.ok());
+        ASSERT_EQ("user1", uNameRet.value());
+    }
+}
 }  // namespace meta
 }  // namespace nebula
 

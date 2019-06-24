@@ -147,7 +147,8 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
 
     // If the user role is god, the option old_encoded_pwd will not be set.
     if (req.__isset.old_encoded_pwd) {
-        if (!checkPassword(userRet.value(), req.get_old_encoded_pwd())) {
+        if (!checkPassword(userRet.value(), *(req.get_old_encoded_pwd()))) {
+            LOG(ERROR) << "User " << req.get_account() << " password invalid.";
             resp_.set_code(cpp2::ErrorCode::E_INVALID_PASSWORD);
             onFinished();
             return;
