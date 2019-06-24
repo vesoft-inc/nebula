@@ -29,14 +29,6 @@ public:
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
-    ResultSchema* resultSchema() const override {
-        return right_->resultSchema();
-    }
-
-    void setInputResultSchema(ResultSchema *schema) override {
-        left_->setInputResultSchema(schema);
-    }
-
 private:
     PipedSentence                              *sentence_{nullptr};
     std::unique_ptr<TraverseExecutor>           left_;
