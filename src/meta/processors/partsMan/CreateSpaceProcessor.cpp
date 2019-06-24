@@ -26,7 +26,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         return;
     }
     CHECK_EQ(Status::SpaceNotFound(), spaceRet.status());
-    auto hosts = ActiveHostsManHolder::hostsMan()->getActiveHosts();
+    auto hosts = ActiveHostsMan::instance()->getActiveHosts();
     if (hosts.empty()) {
         LOG(ERROR) << "Create Space Failed : No Hosts!";
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);
@@ -77,7 +77,7 @@ std::vector<nebula::cpp2::HostAddr>
 CreateSpaceProcessor::pickHosts(PartitionID partId,
                                 const std::vector<HostAddr>& hosts,
                                 int32_t replicaFactor) {
-    if (hosts.size() == 0) {
+    if (hosts.empty()) {
         return std::vector<nebula::cpp2::HostAddr>();
     }
     auto startIndex = partId;

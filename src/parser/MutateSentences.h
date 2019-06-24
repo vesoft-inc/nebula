@@ -42,7 +42,7 @@ class VertexTagItem final {
 
      std::string toString() const;
 
-     std::string* tagName() const {
+     const std::string* tagName() const {
          return tagName_.get();
      }
 

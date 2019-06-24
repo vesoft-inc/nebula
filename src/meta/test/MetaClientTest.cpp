@@ -50,7 +50,9 @@ TEST(MetaClientTest, InterfacesTest) {
         TestUtils::registerHB(hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(hosts, ret.value());
+        for (auto i = 0u; i < hosts.size(); i++) {
+            ASSERT_EQ(hosts[i], ret.value()[i].first);
+        }
     }
     {
         // Test createSpace, listSpaces, getPartsAlloc.
@@ -111,8 +113,10 @@ TEST(MetaClientTest, InterfacesTest) {
 
             // getTagSchemaFromCache
             sleep(FLAGS_load_data_interval_secs + 1);
-            auto ver = client->getNewestTagVerFromCache(spaceId,
+            auto ret = client->getNewestTagVerFromCache(spaceId,
                                                         ret1.value().begin()->tag_id);
+            CHECK(ret.ok());
+            auto ver = ret.value();
             auto ret2 = client->getTagSchemaFromCache(spaceId,
                                                       ret1.value().begin()->tag_id, ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
@@ -126,7 +130,9 @@ TEST(MetaClientTest, InterfacesTest) {
             auto outSchema = schemaMan->getTagSchema(spaceId, tagId);
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("tagItem0", outSchema->getFieldName(0));
-            auto version = schemaMan->getNewestTagSchemaVer(spaceId, tagId);
+            auto retVer = schemaMan->getNewestTagSchemaVer(spaceId, tagId);
+            ASSERT_TRUE(retVer.ok());
+            auto version = retVer.value();
             ASSERT_EQ(0, version);
             auto outSchema1 = schemaMan->getTagSchema(spaceId, tagId, version);
             ASSERT_TRUE(outSchema1 != nullptr);
@@ -141,8 +147,10 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_NE(ret1.value().begin()->edge_type, 0);
 
             // getEdgeSchemaFromCache
-            auto ver = client->getNewestEdgeVerFromCache(spaceId,
-                                                         ret1.value().begin()->edge_type);
+            auto retVer = client->getNewestEdgeVerFromCache(spaceId,
+                                                            ret1.value().begin()->edge_type);
+            CHECK(retVer.ok());
+            auto ver = retVer.value();
             auto ret2 = client->getEdgeSchemaFromCache(spaceId,
                                                        ret1.value().begin()->edge_type, ver);
             ASSERT_TRUE(ret2.ok()) << ret2.status();
@@ -155,7 +163,9 @@ TEST(MetaClientTest, InterfacesTest) {
             auto outSchema = schemaMan->getEdgeSchema(spaceId, edgeType);
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("edgeItem0", outSchema->getFieldName(0));
-            auto version = schemaMan->getNewestEdgeSchemaVer(spaceId, edgeType);
+            auto versionRet = schemaMan->getNewestEdgeSchemaVer(spaceId, edgeType);
+            ASSERT_TRUE(versionRet.ok());
+            auto version = versionRet.value();
             ASSERT_EQ(0, version);
             auto outSchema1 = schemaMan->getEdgeSchema(spaceId, edgeType, version);
             ASSERT_TRUE(outSchema1 != nullptr);
@@ -403,7 +413,9 @@ TEST(MetaClientTest, DiffTest) {
         TestUtils::registerHB(hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(hosts, ret.value());
+        for (auto i = 0u; i < hosts.size(); i++) {
+            ASSERT_EQ(hosts[i], ret.value()[i].first);
+        }
     }
     {
         // Test Create Space and List Spaces
@@ -452,10 +464,12 @@ TEST(MetaClientTest, HeartbeatTest) {
         ASSERT_TRUE(r.ok());
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(hosts, ret.value());
+        for (auto i = 0u; i < hosts.size(); i++) {
+            ASSERT_EQ(hosts[i], ret.value()[i].first);
+        }
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
-    ASSERT_EQ(1, ActiveHostsManHolder::hostsMan()->getActiveHosts().size());
+    ASSERT_EQ(1, ActiveHostsMan::instance()->getActiveHosts().size());
 }
 
 }  // namespace meta

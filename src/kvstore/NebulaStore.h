@@ -141,9 +141,11 @@ public:
 
     ResultCode compactAll(GraphSpaceID spaceId);
 
+    bool isLeader(GraphSpaceID spaceId, PartitionID partId);
+
 private:
     /**
-     * Implement two interfaces in Handler.
+     * Implement four interfaces in Handler.
      * */
     void addSpace(GraphSpaceID spaceId) override;
 

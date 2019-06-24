@@ -12,8 +12,8 @@ namespace meta {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doPut(std::vector<kvstore::KV> data) {
-    kvstore_->asyncMultiPut(kDefaultSpaceId_,
-                            kDefaultPartId_,
+    kvstore_->asyncMultiPut(kDefaultSpaceId,
+                            kDefaultPartId,
                             std::move(data),
                             [this] (kvstore::ResultCode code) {
         this->resp_.set_code(to(code));
@@ -26,7 +26,7 @@ template<typename RESP>
 StatusOr<std::unique_ptr<kvstore::KVIterator>>
 BaseProcessor<RESP>::doPrefix(const std::string& key) {
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto code = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, key, &iter);
+    auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, key, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Prefix Failed");
     }
@@ -37,7 +37,7 @@ BaseProcessor<RESP>::doPrefix(const std::string& key) {
 template<typename RESP>
 StatusOr<std::string> BaseProcessor<RESP>::doGet(const std::string& key) {
     std::string value;
-    auto code = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, key, &value);
+    auto code = kvstore_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
     switch (code) {
         case kvstore::ResultCode::SUCCEEDED:
             return value;
@@ -53,7 +53,7 @@ template<typename RESP>
 StatusOr<std::vector<std::string>>
 BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
     std::vector<std::string> values;
-    auto code = kvstore_->multiGet(kDefaultSpaceId_, kDefaultPartId_, keys, &values);
+    auto code = kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, keys, &values);
     if (code != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("MultiGet Failed");
     }
@@ -63,8 +63,8 @@ BaseProcessor<RESP>::doMultiGet(const std::vector<std::string>& keys) {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doRemove(const std::string& key) {
-    kvstore_->asyncRemove(kDefaultSpaceId_,
-                          kDefaultPartId_,
+    kvstore_->asyncRemove(kDefaultSpaceId,
+                          kDefaultPartId,
                           key,
                           [this] (kvstore::ResultCode code) {
         this->resp_.set_code(to(code));
@@ -75,8 +75,8 @@ void BaseProcessor<RESP>::doRemove(const std::string& key) {
 
 template<typename RESP>
 void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
-    kvstore_->asyncMultiRemove(kDefaultSpaceId_,
-                               kDefaultPartId_,
+    kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                               kDefaultPartId,
                                std::move(keys),
                                [this] (kvstore::ResultCode code) {
         this->resp_.set_code(to(code));
@@ -88,8 +88,8 @@ void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string> keys) {
 template<typename RESP>
 void BaseProcessor<RESP>::doRemoveRange(const std::string& start,
                                         const std::string& end) {
-    kvstore_->asyncRemoveRange(kDefaultSpaceId_,
-                               kDefaultPartId_,
+    kvstore_->asyncRemoveRange(kDefaultSpaceId,
+                               kDefaultPartId,
                                start,
                                end,
                                [this] (kvstore::ResultCode code) {
@@ -103,7 +103,7 @@ template<typename RESP>
 StatusOr<std::vector<std::string>> BaseProcessor<RESP>::doScan(const std::string& start,
                                                                const std::string& end) {
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto code = kvstore_->range(kDefaultSpaceId_, kDefaultPartId_, start, end, &iter);
+    auto code = kvstore_->range(kDefaultSpaceId, kDefaultPartId, start, end, &iter);
     if (code != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Scan Failed");
     }
@@ -122,7 +122,7 @@ StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
     std::vector<nebula::cpp2::HostAddr> hosts;
     const auto& prefix = MetaServiceUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return Status::Error("Can't find any hosts");
     }
@@ -144,7 +144,7 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
     static const std::string kIdKey = "__id__";
     int32_t id;
     std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, kIdKey, &val);
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, kIdKey, &val);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         CHECK_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
         id = 1;
@@ -155,8 +155,8 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
     std::vector<kvstore::KV> data;
     data.emplace_back(kIdKey,
                       std::string(reinterpret_cast<const char*>(&id), sizeof(id)));
-    kvstore_->asyncMultiPut(kDefaultSpaceId_,
-                            kDefaultPartId_,
+    kvstore_->asyncMultiPut(kDefaultSpaceId,
+                            kDefaultPartId,
                             std::move(data),
                             [this] (kvstore::ResultCode code) {
         CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
@@ -170,7 +170,7 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto spaceKey = MetaServiceUtils::spaceKey(spaceId);
     std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, spaceKey, &val);
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         return Status::OK();
     }
@@ -179,9 +179,21 @@ Status BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 
 
 template<typename RESP>
+Status BaseProcessor<RESP>::userExist(UserID spaceId) {
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
+    auto userKey = MetaServiceUtils::userKey(spaceId);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return Status::OK();
+    }
+    return Status::UserNotFound();
+}
+
+template<typename RESP>
 Status BaseProcessor<RESP>::hostExist(const std::string& hostKey) {
     std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, hostKey , &val);
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, hostKey , &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         return Status::OK();
     }
@@ -193,7 +205,7 @@ template<typename RESP>
 StatusOr<GraphSpaceID> BaseProcessor<RESP>::getSpaceId(const std::string& name) {
     auto indexKey = MetaServiceUtils::indexSpaceKey(name);
     std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
     }
@@ -205,7 +217,7 @@ template<typename RESP>
 StatusOr<TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId, const std::string& name) {
     auto indexKey = MetaServiceUtils::indexTagKey(spaceId, name);
     std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId_, kDefaultPartId_, indexKey, &val);
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
     if (ret == kvstore::ResultCode::SUCCEEDED) {
         return *reinterpret_cast<const TagID*>(val.c_str());
     }
@@ -222,6 +234,43 @@ StatusOr<EdgeType> BaseProcessor<RESP>::getEdgeType(GraphSpaceID spaceId,
         return *reinterpret_cast<const EdgeType*>(ret.value().c_str());
     }
     return Status::EdgeNotFound(folly::stringPrintf("Edge %s not found", name.c_str()));
+}
+
+template<typename RESP>
+StatusOr<UserID> BaseProcessor<RESP>::getUserId(const std::string& account) {
+    auto indexKey = MetaServiceUtils::indexUserKey(account);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        return *reinterpret_cast<const UserID*>(val.c_str());
+    }
+    return Status::UserNotFound(folly::stringPrintf("User %s not found", account.c_str()));
+}
+
+template<typename RESP>
+bool BaseProcessor<RESP>::checkPassword(UserID userId, const std::string& password) {
+    auto userKey = MetaServiceUtils::userKey(userId);
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
+    if (ret == kvstore::ResultCode::SUCCEEDED) {
+        auto len = *reinterpret_cast<const int32_t *>(val.data());
+        return password == val.substr(sizeof(int32_t), len);
+    }
+    return false;
+}
+
+template<typename RESP>
+StatusOr<std::string> BaseProcessor<RESP>::getUserAccount(UserID userId) {
+    auto key = MetaServiceUtils::userKey(userId);
+    std::string value;
+    auto code = kvstore_->get(kDefaultSpaceId, kDefaultPartId,
+                              key, &value);
+    if (code != kvstore::ResultCode::SUCCEEDED) {
+        return Status::UserNotFound(folly::stringPrintf("User not found by id %d", userId));
+    }
+
+    auto user = MetaServiceUtils::parseUserItem(value);
+    return user.get_account();
 }
 
 }  // namespace meta

@@ -15,7 +15,7 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
     auto spaceId = req.get_space_id();
     auto prefix = MetaServiceUtils::schemaEdgesPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId_, kDefaultPartId_, prefix, &iter);
+    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     resp_.set_code(to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         onFinished();
@@ -23,7 +23,6 @@ void ListEdgesProcessor::process(const cpp2::ListEdgesReq& req) {
     }
     decltype(resp_.edges) edges;
     while (iter->valid()) {
-        cpp2::EdgeItem tag;
         auto key = iter->key();
         auto val = iter->val();
         auto edgeType = *reinterpret_cast<const EdgeType *>(key.data() + prefix.size());

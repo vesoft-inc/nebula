@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
 
     // TODO(dutor) This only take effects on NORMAL priority threads
-    gServer->setNumCPUWorkerThreads(1);
+    gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
 
     gServer->setCPUWorkerThreadName("executor");
     gServer->setNumAcceptThreads(FLAGS_num_accept_threads);

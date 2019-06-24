@@ -28,7 +28,8 @@ public:
             const char* rootPath,
             HostAddr localhost = {0, 0},
             meta::MetaClient* mClient = nullptr,
-            bool useMetaServer = false) {
+            bool useMetaServer = false,
+            std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory = nullptr) {
         auto workers = std::make_shared<thread::GenericThreadPool>();
         workers->start(4);
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
@@ -56,6 +57,7 @@ public:
 
         // Prepare KVStore
         options.dataPaths_ = std::move(paths);
+        options.cfFactory_ = cfFactory;
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
                                                             workers,
@@ -183,17 +185,16 @@ public:
         // Always use the Meta Service in this case
         sc->kvStore_ = TestUtils::initKV(dataPath, {ip, port}, mClient, true);
 
-        std::unique_ptr<meta::SchemaManager> schemaMan;
         if (!useMetaServer) {
-            schemaMan = TestUtils::mockSchemaMan(1);
+            sc->schemaMan_ = TestUtils::mockSchemaMan(1);
         } else {
             LOG(INFO) << "Create real schemaManager";
-            schemaMan = meta::SchemaManager::create();
-            schemaMan->init(mClient);
+            sc->schemaMan_ = meta::SchemaManager::create();
+            sc->schemaMan_->init(mClient);
         }
 
         auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(
-            sc->kvStore_.get(), std::move(schemaMan));
+            sc->kvStore_.get(), sc->schemaMan_.get());
         sc->mockCommon("storage", port, handler);
         auto ptr = dynamic_cast<kvstore::MetaServerBasedPartManager*>(
             sc->kvStore_->partManager());
