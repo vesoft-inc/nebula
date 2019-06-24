@@ -117,17 +117,17 @@ std::string AlterSchemaOptItem::toString() const {
 }
 
 
-nebula::meta::cpp2::AlterSchemaOptionType
-AlterSchemaOptItem::toOptionType() {
+nebula::meta::cpp2::AlterSchemaOp
+AlterSchemaOptItem::toType() {
     switch (optType_) {
         case ADD:
-            return nebula::meta::cpp2::AlterSchemaOptionType::ADD;
+            return nebula::meta::cpp2::AlterSchemaOp::ADD;
         case CHANGE:
-            return nebula::meta::cpp2::AlterSchemaOptionType::CHANGE;
+            return nebula::meta::cpp2::AlterSchemaOp::CHANGE;
         case DROP:
-            return nebula::meta::cpp2::AlterSchemaOptionType::DROP;
+            return nebula::meta::cpp2::AlterSchemaOp::DROP;
         default:
-            return nebula::meta::cpp2::AlterSchemaOptionType::UNKNOWN;
+            return nebula::meta::cpp2::AlterSchemaOp::UNKNOWN;
     }
 }
 

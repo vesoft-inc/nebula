@@ -272,9 +272,9 @@ std::string MetaServiceUtils::assembleSegmentKey(const std::string& segment,
 cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
                                                   nebula::cpp2::SchemaProp&  prop,
                                                   const nebula::cpp2::ColumnDef col,
-                                                  const cpp2::AlterSchemaOptionType type) {
-    switch (type) {
-        case cpp2::AlterSchemaOptionType::ADD:
+                                                  const cpp2::AlterSchemaOp op) {
+    switch (op) {
+        case cpp2::AlterSchemaOp::ADD:
         {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (it->get_name() == col.get_name()) {
@@ -285,7 +285,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             cols.emplace_back(std::move(col));
             return cpp2::ErrorCode::SUCCEEDED;
         }
-        case cpp2::AlterSchemaOptionType::CHANGE:
+        case cpp2::AlterSchemaOp::CHANGE:
         {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (col.get_name() == it->get_name()) {
@@ -295,7 +295,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             }
             break;
         }
-        case cpp2::AlterSchemaOptionType::DROP:
+        case cpp2::AlterSchemaOp::DROP:
         {
             auto colName = col.get_name();
             for (auto it = cols.begin(); it != cols.end(); ++it) {

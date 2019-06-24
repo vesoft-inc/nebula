@@ -254,7 +254,7 @@ public:
         return optType_;
     }
 
-    nebula::meta::cpp2::AlterSchemaOptionType toOptionType();
+    nebula::meta::cpp2::AlterSchemaOp toType();
 
     std::string toString() const;
 

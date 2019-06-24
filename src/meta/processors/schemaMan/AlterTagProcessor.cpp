@@ -41,11 +41,11 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     auto prop = schema.get_schema_prop();
 
     // Update schema column
-    auto& schemaOptions = req.get_schema_options();
-    for (auto& schemaOption : schemaOptions) {
-        auto& cols = schemaOption.get_schema().get_columns();
+    auto& tagItems = req.get_tag_items();
+    for (auto& tagItem : tagItems) {
+        auto& cols = tagItem.get_schema().get_columns();
         for (auto& col : cols) {
-            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, schemaOption.type);
+            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, tagItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
                 LOG(WARNING) << "Alter tag column error " << static_cast<int32_t>(retCode);
                 resp_.set_code(retCode);

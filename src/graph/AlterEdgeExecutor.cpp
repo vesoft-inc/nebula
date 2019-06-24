@@ -26,9 +26,9 @@ Status AlterEdgeExecutor::prepare() {
     const auto& schemaOpts = sentence_->getSchemaOpts();
 
     for (auto& schemaOpt : schemaOpts) {
-        nebula::meta::cpp2::AlterSchemaOption schemaOption;
-        auto opType = schemaOpt->toOptionType();
-        schemaOption.set_type(std::move(opType));
+        nebula::meta::cpp2::AlterSchemaItem schemaItem;
+        auto opType = schemaOpt->toType();
+        schemaItem.set_op(std::move(opType));
         const auto& specs = schemaOpt->columnSpecs();
         nebula::cpp2::Schema schema;
         for (auto& spec : specs) {
@@ -37,8 +37,8 @@ Status AlterEdgeExecutor::prepare() {
             column.type.type = columnTypeToSupportedType(spec->type());
             schema.columns.emplace_back(std::move(column));
         }
-        schemaOption.set_schema(std::move(schema));
-        options_.emplace_back(std::move(schemaOption));
+        schemaItem.set_schema(std::move(schema));
+        options_.emplace_back(std::move(schemaItem));
     }
 
     const auto& schemaProps = sentence_->getSchemaProps();

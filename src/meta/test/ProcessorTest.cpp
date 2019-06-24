@@ -907,7 +907,7 @@ TEST(ProcessorTest, AlterTagTest) {
     // Alter tag options test
     {
         cpp2::AlterTagReq req;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema addSch;
         for (auto i = 0; i < 2; i++) {
             nebula::cpp2::ColumnDef column;
@@ -927,12 +927,12 @@ TEST(ProcessorTest, AlterTagTest) {
         column.name = folly::stringPrintf("tag_%d_col_%d", 0, 0);
         dropSch.columns.emplace_back(std::move(column));
 
-        options.emplace_back(FRAGILE, cpp2::AlterSchemaOptionType::ADD, std::move(addSch));
-        options.emplace_back(FRAGILE, cpp2::AlterSchemaOptionType::CHANGE, std::move(changeSch));
-        options.emplace_back(FRAGILE, cpp2::AlterSchemaOptionType::DROP, std::move(dropSch));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::ADD, std::move(addSch));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::CHANGE, std::move(changeSch));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(dropSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
-        req.set_schema_options(options);
+        req.set_tag_items(items);
         auto* processor = AlterTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1058,16 +1058,16 @@ TEST(ProcessorTest, AlterTagTest) {
     {
         // Drop ttl_col column, failed
         cpp2::AlterTagReq req;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema dropSch;
         nebula::cpp2::ColumnDef column;
         column.name = folly::stringPrintf("tag_%d_col_%d", 0, 10);
         dropSch.columns.emplace_back(std::move(column));
 
-        options.emplace_back(FRAGILE, cpp2::AlterSchemaOptionType::DROP, std::move(dropSch));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(dropSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
-        req.set_schema_options(options);
+        req.set_tag_items(items);
         auto* processor = AlterTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1077,7 +1077,7 @@ TEST(ProcessorTest, AlterTagTest) {
     // Verify ErrorCode of add
     {
         cpp2::AlterTagReq req;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema addSch;
         nebula::cpp2::ColumnDef column;
         column.name = "tag_0_col_1";
@@ -1089,7 +1089,7 @@ TEST(ProcessorTest, AlterTagTest) {
         items.emplace_back(std::move(addItem));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
-        req.set_schema_options(options);
+        req.set_tag_items(items);
         auto* processor = AlterTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1099,7 +1099,7 @@ TEST(ProcessorTest, AlterTagTest) {
     // Verify ErrorCode of change
     {
         cpp2::AlterTagReq req;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema changeSch;
         nebula::cpp2::ColumnDef column;
         column.name = "tag_0_col_2";
@@ -1111,7 +1111,7 @@ TEST(ProcessorTest, AlterTagTest) {
         items.emplace_back(std::move(changeItem));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
-        req.set_schema_options(options);
+        req.set_tag_items(items);
         auto* processor = AlterTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1121,16 +1121,16 @@ TEST(ProcessorTest, AlterTagTest) {
     // Verify ErrorCode of drop
     {
         cpp2::AlterTagReq req;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema dropSch;
         nebula::cpp2::ColumnDef column;
         column.name = "tag_0_col_0";
         column.type.type = SupportedType::INT;
         dropSch.columns.emplace_back(std::move(column));
-        options.emplace_back(FRAGILE, cpp2::AlterSchemaOptionType::DROP, std::move(dropSch));
+        items.emplace_back(FRAGILE, cpp2::AlterSchemaOp::DROP, std::move(dropSch));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
-        req.set_schema_options(options);
+        req.set_tag_items(items);
         auto* processor = AlterTagProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1151,19 +1151,19 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::AlterEdgeReq req;
         nebula::cpp2::Schema dropSch;
         nebula::cpp2::ColumnDef column;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 0);
         dropSch.columns.emplace_back(std::move(column));
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 1);
         dropSch.columns.emplace_back(std::move(column));
 
-        auto dropOption = cpp2::AlterSchemaOption(FRAGILE,
-                                                  cpp2::AlterSchemaOptionType::DROP,
-                                                  std::move(dropSch));
-        options.emplace_back(std::move(dropOption));
+        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
+                                              cpp2::AlterSchemaOp::DROP,
+                                              std::move(dropSch));
+        items.emplace_back(std::move(dropItem));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
-        req.set_schema_options(options);
+        req.set_edge_items(items);
         auto* processor = AlterEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1190,19 +1190,19 @@ TEST(ProcessorTest, AlterEdgeTest) {
         cpp2::AlterEdgeReq req;
         nebula::cpp2::Schema addSch;
         nebula::cpp2::ColumnDef column;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 0);
         addSch.columns.emplace_back(std::move(column));
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 1);
         addSch.columns.emplace_back(std::move(column));
 
-        auto addOption = cpp2::AlterSchemaOption(FRAGILE,
-                                                 cpp2::AlterSchemaOptionType::ADD,
-                                                 std::move(addSch));
-        options.emplace_back(std::move(addOption));
+        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
+                                             cpp2::AlterSchemaOp::ADD,
+                                             std::move(addSch));
+        items.emplace_back(std::move(addItem));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
-        req.set_schema_options(options);
+        req.set_edge_items(items);
         auto* processor = AlterEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1211,7 +1211,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     }
     {
         cpp2::AlterEdgeReq req;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema addSch;
         for (auto i = 0; i < 2; i++) {
             nebula::cpp2::ColumnDef column;
@@ -1231,21 +1231,21 @@ TEST(ProcessorTest, AlterEdgeTest) {
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 0);
         dropSch.columns.emplace_back(std::move(column));
 
-        auto addOption = cpp2::AlterSchemaOption(FRAGILE,
-                                                 cpp2::AlterSchemaOptionType::ADD,
-                                                 std::move(addSch));
-        auto changeOption = cpp2::AlterSchemaOption(FRAGILE,
-                                                    cpp2::AlterSchemaOptionType::CHANGE,
-                                                    std::move(changeSch));
-        auto dropOption = cpp2::AlterSchemaOption(FRAGILE,
-                                                  cpp2::AlterSchemaOptionType::DROP,
-                                                  std::move(dropSch));
-        options.emplace_back(std::move(addOption));
-        options.emplace_back(std::move(changeOption));
-        options.emplace_back(std::move(dropOption));
+        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
+                                             cpp2::AlterSchemaOp::ADD,
+                                             std::move(addSch));
+        auto changeItem = cpp2::AlterSchemaItem(FRAGILE,
+                                                cpp2::AlterSchemaOp::CHANGE,
+                                                std::move(changeSch));
+        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
+                                              cpp2::AlterSchemaOp::DROP,
+                                              std::move(dropSch));
+        items.emplace_back(std::move(addItem));
+        items.emplace_back(std::move(changeItem));
+        items.emplace_back(std::move(dropItem));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
-        req.set_schema_options(options);
+        req.set_edge_items(items);
         auto* processor = AlterEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1377,19 +1377,19 @@ TEST(ProcessorTest, AlterEdgeTest) {
     {
         // Drop ttl_col column, failed
         cpp2::AlterEdgeReq req;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema dropSch;
         nebula::cpp2::ColumnDef column;
         column.name = folly::stringPrintf("edge_%d_col_%d", 0, 10);
         dropSch.columns.emplace_back(std::move(column));
 
-        auto dropOption = cpp2::AlterSchemaOption(FRAGILE,
-                                                  cpp2::AlterSchemaOptionType::DROP,
-                                                  std::move(dropSch));
-        options.emplace_back(std::move(dropOption));
+        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
+                                              cpp2::AlterSchemaOp::DROP,
+                                              std::move(dropSch));
+        items.emplace_back(std::move(dropItem));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
-        req.set_schema_options(options);
+        req.set_edge_items(items);
         auto* processor = AlterEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1399,19 +1399,19 @@ TEST(ProcessorTest, AlterEdgeTest) {
     // Verify ErrorCode of add
     {
         cpp2::AlterEdgeReq req;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema addSch;
         nebula::cpp2::ColumnDef column;
         column.name = "edge_0_col_1";
         column.type.type = SupportedType::INT;
         addSch.columns.emplace_back(std::move(column));
-        auto addOption = cpp2::AlterSchemaOption(FRAGILE,
-                                                 cpp2::AlterSchemaOptionType::ADD,
-                                                 std::move(addSch));
-        options.emplace_back(std::move(addOption));
+        auto addItem = cpp2::AlterSchemaItem(FRAGILE,
+                                             cpp2::AlterSchemaOp::ADD,
+                                             std::move(addSch));
+        items.emplace_back(std::move(addItem));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
-        req.set_schema_options(options);
+        req.set_edge_items(items);
         auto* processor = AlterEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1421,19 +1421,19 @@ TEST(ProcessorTest, AlterEdgeTest) {
     // Verify ErrorCode of change
     {
         cpp2::AlterEdgeReq req;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema changeSch;
         nebula::cpp2::ColumnDef column;
         column.name = "edge_0_col_2";
         column.type.type = SupportedType::INT;
         changeSch.columns.emplace_back(std::move(column));
-        auto addOption = cpp2::AlterSchemaOption(FRAGILE,
-                                                 cpp2::AlterSchemaOptionType::CHANGE,
-                                                 std::move(changeSch));
-        options.emplace_back(std::move(addOption));
+        auto changeItem = cpp2::AlterSchemaItem(FRAGILE,
+                                                cpp2::AlterSchemaOp::CHANGE,
+                                                std::move(changeSch));
+        items.emplace_back(std::move(changeItem));
         req.set_space_id(1);
         req.set_edge_name("edge_0");
-        req.set_schema_options(options);
+        req.set_edge_items(items);
         auto* processor = AlterEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
@@ -1443,19 +1443,19 @@ TEST(ProcessorTest, AlterEdgeTest) {
     // Verify ErrorCode of drop
     {
         cpp2::AlterEdgeReq req;
-        std::vector<cpp2::AlterSchemaOption> options;
+        std::vector<cpp2::AlterSchemaItem> items;
         nebula::cpp2::Schema dropSch;
         nebula::cpp2::ColumnDef column;
         column.name = "edge_0_col_2";
         column.type.type = SupportedType::INT;
         dropSch.columns.emplace_back(std::move(column));
-        auto addOption = cpp2::AlterSchemaOption(FRAGILE,
-                                                 cpp2::AlterSchemaOptionType::DROP,
-                                                 std::move(dropSch));
-        options.emplace_back(addOption);
+        auto dropItem = cpp2::AlterSchemaItem(FRAGILE,
+                                              cpp2::AlterSchemaOp::DROP,
+                                              std::move(dropSch));
+        items.emplace_back(dropItem);
         req.set_space_id(1);
         req.set_edge_name("edge_0");
-        req.set_schema_options(options);
+        req.set_edge_items(items);
         auto* processor = AlterEdgeProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);

@@ -38,7 +38,7 @@ enum ErrorCode {
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
 
-enum AlterSchemaOptionType {
+enum AlterSchemaOp {
     ADD    = 0x01,
     CHANGE = 0x02,
     DROP   = 0x03,
@@ -95,9 +95,9 @@ struct TagItem {
     4: common.Schema        schema,
 }
 
-struct AlterSchemaOption {
-    1: AlterSchemaOptionType    type,
-    2: common.Schema            schema,
+struct AlterSchemaItem {
+    1: AlterSchemaOp        op,
+    2: common.Schema        schema,
 }
 
 struct EdgeItem {
@@ -185,7 +185,7 @@ struct CreateTagReq {
 struct AlterTagReq {
     1: common.GraphSpaceID      space_id,
     2: string                   tag_name,
-    3: list<AlterSchemaOption>  schema_options,
+    3: list<AlterSchemaItem>    tag_items,
     4: common.SchemaProp        schema_prop,
 }
 
@@ -227,7 +227,7 @@ struct CreateEdgeReq {
 struct AlterEdgeReq {
     1: common.GraphSpaceID      space_id,
     2: string                   edge_name,
-    3: list<AlterSchemaOption>  schema_options,
+    3: list<AlterSchemaItem>    edge_items,
     4: common.SchemaProp        schema_prop,
 }
 
