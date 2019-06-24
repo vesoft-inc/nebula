@@ -1,17 +1,31 @@
 # nGQL Query Language
 
+<<<<<<< HEAD
 nGQL is the query language of Nebula Graph that allows users to store and retrieve
 data from the graph database. Nebula Graph wants to make its queries easy to learn,
 understand, and use for everyone.
 
 ## Key attributes of nGQL
 
+=======
+
+nGQL is the query language of Nebula Graph that allows users to store and retrieve
+data from the graph database. Nebula Graph wants to make its queries easy to learn,
+understand, and use for everyone.
+
+## Key attributes of nGQL
+
+>>>>>>> add  contents in nGQL-toturial
 Nebula Graph is committed to create a new query language that specifically deals
 with graph data. nGQL has two attributes that are not available together in any
 other query language out there.
 
 - Declarative: nGQL is a declarative query language, which is very different from
+<<<<<<< HEAD
  the imperative alternatives out there. You declare the pattern that you are looking for. You effectively tell nGQL what you want, rather than how to get it.
+=======
+ the imperative alternatives out there. You declare the pattern that you are looking for. You effectively tell Cypher what you want, rather than how to get it.
+>>>>>>> add  contents in nGQL-toturial
 
 - Expressive: nGQL's ASCII-art style syntax provides a familiar, readable way to
  match patterns of nodes and relationships within graph datasets.
@@ -177,6 +191,7 @@ GO FROM 101 OVER serve YIELD serve._src AS srcid, $^[player].age AS src.propAge,
 ```
 GO FROM 100 OVER like | GO FROM $-.id OVER serve; -- Start from vertex 100, query 1-hop, set its output as the next query's input by using pipe
 ```
+<<<<<<< HEAD
 ## Syntax norms
 
 In order to be consistent with ourselves and other nGQL users, we advise
@@ -203,3 +218,18 @@ you to follow these syntax norms:
 - Property names are in lower camel case
 
   - eg: kobeBryant
+=======
+
+
+
+## Syntax norms
+
+In order to be consistent with ourselves and other nGQL users, we strongly advise
+you to follow these syntax norms:
+
+- KEYWORDS are in uppercase
+- nodeAliases are in lower camel case (start with lowercase)
+- Labels are in upper camel case (start with uppercase
+- RELATIONS are in upper snake case (like IS_A)
+- Property names are in lower camel case
+>>>>>>> add  contents in nGQL-toturial
