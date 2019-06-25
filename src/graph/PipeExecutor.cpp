@@ -27,22 +27,6 @@ Status PipeExecutor::prepare() {
     DCHECK(left_ != nullptr);
     DCHECK(right_ != nullptr);
 
-    status = left_->prepare();
-    if (!status.ok()) {
-        FLOG_ERROR("Prepare executor `%s' failed: %s",
-                    left_->name(), status.toString().c_str());
-        return status;
-    }
-
-    right_->setInputResultSchema(left_->resultSchema());
-
-    status = right_->prepare();
-    if (!status.ok()) {
-        FLOG_ERROR("Prepare executor `%s' failed: %s",
-                    right_->name(), status.toString().c_str());
-        return status;
-    }
-
     auto onError = [this] (Status s) {
         /**
          * TODO(dutor)
@@ -89,6 +73,21 @@ Status PipeExecutor::prepare() {
 
         right_->setOnError(onError);
     }
+
+    status = left_->prepare();
+    if (!status.ok()) {
+        FLOG_ERROR("Prepare executor `%s' failed: %s",
+                    left_->name(), status.toString().c_str());
+        return status;
+    }
+
+    status = right_->prepare();
+    if (!status.ok()) {
+        FLOG_ERROR("Prepare executor `%s' failed: %s",
+                    right_->name(), status.toString().c_str());
+        return status;
+    }
+
 
     return Status::OK();
 }
