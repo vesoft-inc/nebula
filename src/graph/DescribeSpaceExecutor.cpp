@@ -17,7 +17,7 @@ DescribeSpaceExecutor::DescribeSpaceExecutor(Sentence *sentence,
 }
 
 Status DescribeSpaceExecutor::prepare() {
-    return Status::OK();;
+    return Status::OK();
 }
 
 void DescribeSpaceExecutor::execute() {

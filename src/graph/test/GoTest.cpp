@@ -116,7 +116,7 @@ protected:
 
         const Vertex& operator[](const Key &key) const {
             auto iter = vertices_.find(key);
-            CHECK(iter != vertices_.end()) << "Vertex not exist, key: " << key;;
+            CHECK(iter != vertices_.end()) << "Vertex not exist, key: " << key;
             return iter->second;
         }
 

@@ -129,6 +129,7 @@ void MetaClient::loadDataThreadFunc() {
         spaceNewestTagVerMap_ = std::move(spaceNewestTagVerMap);
         spaceNewestEdgeVerMap_ = std::move(spaceNewestEdgeVerMap);
     }
+    ready_ = true;
     LOG(INFO) << "Load data completed!";
 }
 
@@ -517,6 +518,9 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId) {
 
 StatusOr<GraphSpaceID>
 MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceIndexByName_.find(name);
     if (it != spaceIndexByName_.end()) {
@@ -528,6 +532,9 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
 
 StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
                                                     const std::string& name) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceTagIndexByName_.find(make_pair(space, name));
     if (it == spaceTagIndexByName_.end()) {
@@ -539,6 +546,9 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
 
 StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                           const std::string& name) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceEdgeIndexByName_.find(make_pair(space, name));
     if (it == spaceEdgeIndexByName_.end()) {
@@ -862,6 +872,9 @@ MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>>
 MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto spaceIt = localCache_.find(spaceId);
     if (spaceIt == localCache_.end()) {
@@ -880,6 +893,9 @@ MetaClient::getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer v
 
 StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemaFromCache(
         GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto spaceIt = localCache_.find(spaceId);
     if (spaceIt == localCache_.end()) {
@@ -899,7 +915,11 @@ StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemaFromC
 }
 
 
-SchemaVer MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId) {
+StatusOr<SchemaVer> MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space,
+                                                         const TagID& tagId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceNewestTagVerMap_.find(std::make_pair(space, tagId));
     if (it == spaceNewestTagVerMap_.end()) {
@@ -909,8 +929,11 @@ SchemaVer MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space, const 
 }
 
 
-SchemaVer MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& space,
-                                                const EdgeType& edgeType) {
+StatusOr<SchemaVer> MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& space,
+                                                          const EdgeType& edgeType) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
     folly::RWSpinLock::ReadHolder holder(localCacheLock_);
     auto it = spaceNewestEdgeVerMap_.find(std::make_pair(space, edgeType));
     if (it == spaceNewestEdgeVerMap_.end()) {

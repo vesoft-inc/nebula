@@ -43,7 +43,7 @@ public:
                  SchemaVer version = -1) override;
 
     // Returns a negative number when the schema does not exist
-    SchemaVer getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
+    StatusOr<SchemaVer> getNewestTagSchemaVer(GraphSpaceID space, TagID tag) override;
 
     // This interface is disabled
     SchemaVer getNewestTagSchemaVer(folly::StringPiece spaceName,
@@ -61,7 +61,7 @@ public:
                   SchemaVer version = -1) override;
 
     // Returns a negative number when the schema does not exist
-    SchemaVer getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
+    StatusOr<SchemaVer> getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) override;
 
     // This interface is disabled
     SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
