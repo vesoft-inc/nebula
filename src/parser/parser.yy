@@ -74,7 +74,7 @@ class GraphScanner;
     nebula::SchemaPropItem                 *create_schema_prop_item;
     nebula::SchemaPropList                 *alter_schema_prop_list;
     nebula::SchemaPropItem                 *alter_schema_prop_item;
-	nebula::OrderFactor                    *order_factor;
+    nebula::OrderFactor                    *order_factor;
     nebula::OrderFactors                   *order_factors;
 }
 
