@@ -829,6 +829,44 @@ TEST_F(GoTest, OneStepOutBound) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+            {teams_["Trail Blazers"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| ( GO FROM $-.id OVER like | GO FROM $-.id OVER serve )";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+            {teams_["Trail Blazers"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 // REVERSELY not supported yet
