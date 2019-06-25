@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -67,6 +67,28 @@ TEST_F(OrderByTest, NoInput) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+    }
+}
+
+TEST_F(OrderByTest, WrongFactor) {
+    std::string go = "GO FROM %ld OVER serve YIELD "
+                     "$^[player].name as name, serve.start_year as start, $$[team].name as team";
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        // Will not do sort if field name not exist in input schema
+        auto fmt = go + "| ORDER BY $-.abc";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
+            {player.name(), 2003, "Hawks"},
+            {player.name(), 2005, "Suns"},
+            {player.name(), 2008, "Hornets"},
+            {player.name(), 2012, "Spurs"},
+            {player.name(), 2016, "Jazz"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 
@@ -218,6 +240,23 @@ TEST_F(OrderByTest, MultiFactors) {
             {"Jazz", boris.name(), 36, 2016},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
+    }
+}
+
+TEST_F(OrderByTest, DISABLED_InterimResult) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &boris = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER like | ORDER BY $-.id | GO FROM $-.id over serve";
+        auto query = folly::stringPrintf(fmt, boris.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        auto &spurs = teams_["Spurs"];
+        std::vector<std::tuple<int64_t>> expected = {
+            spurs.vid(),
+            spurs.vid(),
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 }   // namespace graph

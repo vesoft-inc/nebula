@@ -739,6 +739,62 @@ TEST(Parser, Annotation) {
     }
 }
 
+TEST(Parser, Agg) {
+    {
+        GQLParser parser;
+        std::string query = "ORDER BY $-.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name | "
+                            "ORDER BY $-.name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name | "
+                            "ORDER BY $-.name ASCEND";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name | "
+                            "ORDER BY $-.name ASC";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name | "
+                            "ORDER BY $-.name DESCEND";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name | "
+                            "ORDER BY $-.name DESC";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name, friend.age as age | "
+                            "ORDER BY $-.name ASC, $-.age DESC";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
 
 TEST(Parser, ReentrantRecoveryFromFailure) {
     GQLParser parser;

@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -20,72 +20,84 @@ bool ColumnValue::operator < (const ColumnValue& rhs) const {
             if (!(lhs.value_.bool_val == rhs.value_.bool_val)) {
                 return lhs.value_.bool_val < rhs.value_.bool_val;
             }
+            break;
         }
         case Type::integer:
         {
             if (!(lhs.value_.integer == rhs.value_.integer)) {
                 return lhs.value_.integer < rhs.value_.integer;
             }
+            break;
         }
         case Type::id:
         {
             if (!(lhs.value_.id == rhs.value_.id)) {
                 return lhs.value_.id < rhs.value_.id;
             }
+            break;
         }
         case Type::single_precision:
         {
             if (!(lhs.value_.single_precision == rhs.value_.single_precision)) {
                 return lhs.value_.single_precision < rhs.value_.single_precision;
             }
+            break;
         }
         case Type::double_precision:
         {
             if (!(lhs.value_.double_precision == rhs.value_.double_precision)) {
                 return lhs.value_.double_precision < rhs.value_.double_precision;
             }
+            break;
         }
         case Type::str:
         {
             if (!(lhs.value_.str == rhs.value_.str)) {
                 return lhs.value_.str < rhs.value_.str;
             }
+            break;
         }
         case Type::timestamp:
         {
             if (!(lhs.value_.timestamp == rhs.value_.timestamp)) {
                 return lhs.value_.timestamp < rhs.value_.timestamp;
             }
+            break;
         }
         case Type::year:
         {
             if (!(lhs.value_.year == rhs.value_.year)) {
                 return lhs.value_.year < rhs.value_.year;
             }
+            break;
         }
         case Type::month:
         {
             if (!(lhs.value_.month == rhs.value_.month)) {
                 return lhs.value_.month < rhs.value_.month;
             }
+            break;
         }
         case Type::date:
         {
             if (!(lhs.value_.date == rhs.value_.date)) {
                 return lhs.value_.date < rhs.value_.date;
             }
+            break;
         }
         case Type::datetime:
         {
             if (!(lhs.value_.datetime == rhs.value_.datetime)) {
                 return lhs.value_.datetime < rhs.value_.datetime;
             }
+            break;
         }
         default:
         {
-            return true;
+            return false;
         }
     }
+    return false;
 }
 }  // namespace cpp2
 
@@ -112,6 +124,11 @@ void OrderByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     for (auto &factor : factors) {
         auto expr = static_cast<InputPropertyExpression*>(factor->expr());
         folly::StringPiece field = *(expr->prop());
+        auto fieldIndex = schema->getFieldIndex(field);
+        if (fieldIndex == -1) {
+            LOG(INFO) << "Field(" << field << ") not exist in input schema.";
+            continue;
+        }
         auto pair = std::make_pair(schema->getFieldIndex(field), factor->orderType());
         sortFactors_.emplace_back(std::move(pair));
     }
@@ -137,12 +154,15 @@ void OrderByExecutor::execute() {
                 LOG(FATAL) << "Unkown Order Type: " << orderType;
             }
         }
-        return true;
+        return false;
     };
 
-    std::sort(rows_.begin(), rows_.end(), comparator);
+    if (!sortFactors_.empty()) {
+        std::sort(rows_.begin(), rows_.end(), comparator);
+    }
 
     if (onResult_) {
+        LOG(INFO) << "on result";
         onResult_(setupInterimResult());
     }
     DCHECK(onFinish_);
@@ -157,6 +177,7 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
     auto schema = inputs_->schema();
     auto rsWriter = std::make_unique<RowSetWriter>(schema);
     using Type = cpp2::ColumnValue::Type;
+    LOG(INFO) << rows_.size();
     for (auto &row : rows_) {
         RowWriter writer(schema);
         auto columns = row.get_columns();

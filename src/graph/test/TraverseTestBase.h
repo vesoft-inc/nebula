@@ -1,8 +1,11 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
+
+#ifndef GRAPH_TEST_TRAVERSETESTBASE_H
+#define GRAPH_TEST_TRAVERSETESTBASE_H
 
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
@@ -785,3 +788,5 @@ AssertionResult TraverseTestBase::removeData() {
 }
 }  // namespace graph
 }  // namespace nebula
+
+#endif  // GRAPH_TEST_TRAVERSETESTBASE_H
