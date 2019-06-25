@@ -243,7 +243,7 @@ TEST_F(OrderByTest, MultiFactors) {
     }
 }
 
-TEST_F(OrderByTest, DISABLED_InterimResult) {
+TEST_F(OrderByTest, InterimResult) {
     {
         cpp2::ExecutionResponse resp;
         auto &boris = players_["Boris Diaw"];
@@ -251,10 +251,10 @@ TEST_F(OrderByTest, DISABLED_InterimResult) {
         auto query = folly::stringPrintf(fmt, boris.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        auto &spurs = teams_["Spurs"];
         std::vector<std::tuple<int64_t>> expected = {
-            spurs.vid(),
-            spurs.vid(),
+            teams_["Spurs"].vid(),
+            teams_["Spurs"].vid(),
+            teams_["Hornets"].vid(),
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
