@@ -11,7 +11,6 @@
 #
 #  Fatal_FOUND            System has readline, include and lib dirs found
 #  Fatal_INCLUDE_DIR      The readline includes directories.
-#  Fatal_LIBRARY          The readline library.
 
 find_path(Fatal_INCLUDE_DIR NAMES fatal)
 

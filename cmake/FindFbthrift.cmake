@@ -13,7 +13,6 @@
 #  Fbthrift_INCLUDE_DIR      The fbthrift includes directories.
 #  Fbthrift_LIBRARY          The fbthrift library.
 #  Fbthrift_BIN              The fbthrift binary.
-#  Fbthrift_VERSION          The fbthrift version.
 
 find_path(Fbthrift_INCLUDE_DIR NAMES thrift)
 find_library(Fbthrift_LIBRARY NAMES libthrift.a)

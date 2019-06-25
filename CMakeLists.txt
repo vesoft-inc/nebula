@@ -6,23 +6,39 @@
 # The build can be controlled by defining following variables on the
 # <cmake> command line
 #
-#   CMAKE_C_COMPILER        -- Specify the compiler for C language
-#   CMAKE_CXX_COMPILER      -- Specify the compiler for C++ language
+#   CMAKE_C_COMPILER               -- Specify the compiler for C language
+#   CMAKE_CXX_COMPILER             -- Specify the compiler for C++ language
 
-#   NEBULA_GPERF_BIN_DIR    -- Specify the full path to the directory
-#                              containing gperf binary
-#   NEBULA_FLEX_ROOT        -- Specify the root directory for flex
-#   NEBULA_BISON_ROOT       -- Specify the root directory for bison
-#   NEBULA_READLINE_ROOT    -- Specify the root directory for readline
-#   NEBULA_NCURSES_ROOT     -- Specify the root directory for ncurses
-#   NEBULA_KRB5_ROOT        -- Specify the root directory for KRB5
-#   NEBULA_LIBUNWIND_ROOT   -- Specify the root directory for libunwind
-#   NEBULA_OPENSSL_ROOT     -- Specify the root directory for openssl
-#   NEBULA_BOOST_ROOT       -- Specify the root directory for boost
+#   NEBULA_GPERF_BIN_DIR           -- Specify the full path to the directory
+#                                      containing gperf binary
+#   NEBULA_FLEX_ROOT               -- Specify the root directory for flex
+#   NEBULA_BISON_ROOT              -- Specify the root directory for bison
+#   NEBULA_READLINE_ROOT           -- Specify the root directory for readline
+#   NEBULA_NCURSES_ROOT            -- Specify the root directory for ncurses
+#   NEBULA_KRB5_ROOT               -- Specify the root directory for KRB5
+#   NEBULA_LIBUNWIND_ROOT          -- Specify the root directory for libunwind
+#   NEBULA_OPENSSL_ROOT            -- Specify the root directory for openssl
+#   NEBULA_BOOST_ROOT              -- Specify the root directory for boost
+#   NEBULA_DOUBLE_CONVERSION_ROOT  -- Specify the root directory double-conversion
+#   NEBULA_FATAL_ROOT              -- Specify the root directory fatal
+#   NEBULA_FBTHRIFT_ROOT           -- Specify the root directory fbthrift
+#   NEBULA_FOLLY_ROOT              -- Specify the root directory folly
+#   NEBULA_GFLAGS_ROOT             -- Specify the root directory gflags
+#   NEBULA_GLOG_ROOT               -- Specify the root directory glog
+#   NEBULA_GOOGLETEST_ROOT         -- Specify the root directory googletest
+#   NEBULA_JEMALLOC_ROOT           -- Specify the root directory jemalloc
+#   NEBULA_LIBEVENT_ROOT           -- Specify the root directory libevent
+#   NEBULA_MSTCH_ROOT              -- Specify the root directory mstch
+#   NEBULA_PROXYGEN_ROOT           -- Specify the root directory proxygen
+#   NEBULA_ROCKSDB_ROOT            -- Specify the root directory rocksdb
+#   NEBULA_SNAPPY_ROOT             -- Specify the root directory snappy
+#   NEBULA_WANGLE_ROOT             -- Specify the root directory wangle
+#   NEBULA_ZLIB_ROOT               -- Specify the root directory zlib
+#   NEBULA_ZSTD_ROOT               -- Specify the root directory zstd
 #
-#   SKIP_JAVA_CLIENT        -- Skip building the java client
-#   ENABLE_JEMALLOC         -- Link jemalloc into all executables
-#   ENABLE_NATIVE           -- Build native client
+#   SKIP_JAVA_CLIENT               -- Skip building the java client
+#   ENABLE_JEMALLOC                -- Link jemalloc into all executables
+#   ENABLE_NATIVE                  -- Build native client
 #
 cmake_minimum_required(VERSION 3.0.0)
 

@@ -9,9 +9,9 @@ add_library(
     NebulaKeyUtils.cpp
 )
 
-add_dependencies(base_obj parser_obj graph_thrift_obj raftex_thrift_obj common_thrift_obj storage_thrift_obj meta_thrift_obj)
+add_dependencies(base_obj graph_thrift_obj raftex_thrift_obj common_thrift_obj storage_thrift_obj meta_thrift_obj)
 IF(${PCHSupport_FOUND})
-    add_precompiled_header(base_obj Base.h parser_obj graph_thrift_obj raftex_thrift_obj common_thrift_obj storage_thrift_obj meta_thrift_obj)
+    add_precompiled_header(base_obj Base.h graph_thrift_obj raftex_thrift_obj common_thrift_obj storage_thrift_obj meta_thrift_obj)
 ENDIF(${PCHSupport_FOUND})
 
 add_custom_target(

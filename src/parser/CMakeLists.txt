@@ -21,5 +21,6 @@ add_library(
         AdminSentences.cpp
         UserSentences.cpp
 )
+nebula_add_base_obj(parser_obj)
 
 add_subdirectory(test)
