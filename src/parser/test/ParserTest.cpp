@@ -702,5 +702,13 @@ TEST(Parser, Annotation) {
     }
 }
 
+TEST(Parser, DownloadLoad) {
+    {
+        GQLParser parser;
+        std::string query = "DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\" TO \"/tmp\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
 
 }   // namespace nebula

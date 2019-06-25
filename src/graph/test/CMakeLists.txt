@@ -1,6 +1,5 @@
 set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:graph_obj>
-    $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:storage_service_handler>
     $<TARGET_OBJECTS:storage_thrift_obj>
@@ -22,6 +21,8 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:base_obj>
 )
 
 

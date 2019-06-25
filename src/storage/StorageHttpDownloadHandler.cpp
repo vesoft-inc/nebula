@@ -136,9 +136,9 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
 
     for (auto& part : parts) {
         auto downloader = [&]() {
-            auto remotePath = folly::stringPrintf("hdfs://%s:%d%s/part-%05d",
+            auto remotePath = folly::stringPrintf("hdfs://%s:%d%s/%d",
                                                   url.c_str(), port, path.c_str(),
-                                                  atoi(part.c_str()));
+                                                  atoi(part.c_str()) + 1);
             LOG(INFO) << "File Path " << remotePath;
             auto command = folly::stringPrintf("hdfs dfs -copyToLocal %s %s",
                                                remotePath.c_str(), local.c_str());
@@ -148,7 +148,7 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
                 LOG(ERROR) << "Failed to download SST Files: " << remotePath;
                 successful = false;
             }
-            std::lock_guard<std::mutex> uniqueLock(lock);
+            std::unique_lock<std::mutex> uniqueLock(lock);
             completed++;
             cv.notify_one();
         };
@@ -158,12 +158,7 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
     auto uniqueLock = std::unique_lock<std::mutex>(lock);
     cv.wait(uniqueLock, [&]() { return completed == (int32_t)parts.size(); });
     VLOG(3) << "Download tasks have finished";
-
-    if (successful) {
-        return true;
-    } else {
-        return false;
-    }
+    return successful;
 }
 
 bool StorageHttpDownloadHandler::ingestSSTFiles(const std::string& path,

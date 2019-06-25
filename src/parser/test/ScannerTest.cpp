@@ -317,6 +317,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("TTL_COL", TokenType::KW_TTL_COL),
         CHECK_SEMANTIC_TYPE("ttl_col", TokenType::KW_TTL_COL),
         CHECK_SEMANTIC_TYPE("Ttl_col", TokenType::KW_TTL_COL),
+        CHECK_SEMANTIC_TYPE("DOWNLOAD", TokenType::KW_DOWNLOAD),
+        CHECK_SEMANTIC_TYPE("download", TokenType::KW_DOWNLOAD),
+        CHECK_SEMANTIC_TYPE("Download", TokenType::KW_DOWNLOAD),
+        CHECK_SEMANTIC_TYPE("HDFS", TokenType::KW_HDFS),
+        CHECK_SEMANTIC_TYPE("Hdfs", TokenType::KW_HDFS),
+        CHECK_SEMANTIC_TYPE("hdfs", TokenType::KW_HDFS),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

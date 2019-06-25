@@ -16,6 +16,8 @@
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 
+DEFINE_int32(storage_http_port, 12000, "Storage daemon's http port");
+
 namespace nebula {
 namespace meta {
 
@@ -44,7 +46,8 @@ void MetaHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers) no
     if (!headers->hasQueryParam("url") ||
         !headers->hasQueryParam("port") ||
         !headers->hasQueryParam("path") ||
-        !headers->hasQueryParam("spaceID")) {
+        !headers->hasQueryParam("local") ||
+        !headers->hasQueryParam("space")) {
         err_ = HttpCode::E_ILLEGAL_ARGUMENT;
         return;
     }
@@ -52,8 +55,8 @@ void MetaHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers) no
     hdfsUrl_ = headers->getQueryParam("url");
     hdfsPort_ = headers->getIntQueryParam("port");
     hdfsPath_ = headers->getQueryParam("path");
-    localPath_ = headers->getQueryParam("localPath");
-    spaceID_ = headers->getIntQueryParam("spaceID");
+    localPath_ = headers->getQueryParam("local");
+    spaceID_ = headers->getIntQueryParam("space");
 }
 
 
@@ -132,6 +135,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
                                        const std::string& local) {
     auto command = folly::stringPrintf("hdfs dfs -ls hdfs://%s:%d%s ",
                                        url.c_str(), port, path.c_str());
+    LOG(INFO) << "Download Command: " << command;
     /**
      * HDFS command output looks like:
      * -rw-r--r--   1 user supergroup 0 2019-06-11 10:27 hdfs://host:port/path/part-{part_number}
@@ -139,35 +143,41 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
     auto result = ProcessUtils::runCommand(command.c_str());
     std::vector<std::string> files;
     folly::split("\n", result.value(), files, true);
-    auto partNumber = std::count_if(files.begin(), files.end(), [](const std::string& element) {
-                                        return element.find("part") != std::string::npos;
-                                    });
+    int32_t  partNumber = files.size() - 1;
 
     std::vector<cpp2::HostItem> hostItems;
+    std::unique_ptr<kvstore::KVIterator> hostIter;
+    auto hostPrefix = MetaServiceUtils::hostPrefix();
+    auto hostRet = kvstore_->prefix(0, 0, hostPrefix, &hostIter);
+    if (hostRet != kvstore::ResultCode::SUCCEEDED) {
+        return false;
+    }
+
     std::unordered_map<HostAddr, std::vector<PartitionID>> hostPartition;
+    while (hostIter->valid()) {
+        cpp2::HostItem item;
+        nebula::cpp2::HostAddr host;
+        auto hostAddrPiece = hostIter->key().subpiece(hostPrefix.size());
+        memcpy(&host, hostAddrPiece.data(), hostAddrPiece.size());
+        item.set_hostAddr(host);
+        auto address = std::make_pair(host.get_ip(), host.get_port());
+        auto hostIter_ = hostPartition.find(address);
+        if (hostIter_ == hostPartition.end()) {
+            std::vector<PartitionID> partitions;
+            hostPartition.insert(std::make_pair(address, partitions));
+        }
+        hostItems.emplace_back(item);
+        hostIter->next();
+    }
+
     std::unique_ptr<kvstore::KVIterator> iter;
     auto prefix = MetaServiceUtils::partPrefix(spaceID_);
     auto ret = kvstore_->prefix(0, 0, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         return false;
     }
-    while (iter->valid()) {
-        cpp2::HostItem item;
-        nebula::cpp2::HostAddr host;
-        auto hostAddrPiece = iter->key().subpiece(prefix.size());
-        memcpy(&host, hostAddrPiece.data(), hostAddrPiece.size());
-        item.set_hostAddr(host);
-        auto address = std::make_pair(host.get_ip(), host.get_port());
-        auto hostIter = hostPartition.find(address);
-        if (hostIter == hostPartition.end()) {
-            std::vector<PartitionID> partitions;
-            hostPartition.insert(std::make_pair(address, partitions));
-        }
-        hostItems.emplace_back(item);
-        iter->next();
-    }
 
-    int32_t partSize;
+    int32_t partSize{0};
     while (iter->valid()) {
         auto key = iter->key();
         PartitionID partId;
@@ -181,7 +191,8 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
     }
 
     if (partNumber != partSize) {
-        LOG(ERROR) << "HDFS part number should be equal with nebula";
+        LOG(ERROR) << "HDFS part number should be equal with nebula "
+                   << partNumber << " " << partSize;
         return false;
     }
 
@@ -196,15 +207,17 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
         folly::join(",", partitions, partNumbers);
 
         auto host = network::NetworkUtils::intToIPv4(pair.first.first);
-        auto t = "http://%s:%d/storage?method=download&url=%s&port=%d&path=%s&parts=%s&local=%s";
-        auto download = folly::stringPrintf(t, host.c_str(), 22000, url.c_str(), port, path.c_str(),
-                                            partNumbers.c_str(), local.c_str());
-        command = folly::stringPrintf("curl %s ", download.c_str());
+        auto t = "http://%s:%d/download?url=%s&port=%d&path=%s&parts=%s&local=%s";
+        auto download = folly::stringPrintf(t, host.c_str(), FLAGS_storage_http_port, url.c_str(),
+                                            port, path.c_str(), partNumbers.c_str(), local.c_str());
+        command = folly::stringPrintf("/usr/bin/curl -G \"%s\" 2> /dev/null", download.c_str());
+        LOG(INFO) << "Fetch Storage: " << download;
         threads.push_back(std::thread([&]() {
             auto downloadResult = ProcessUtils::runCommand(command.c_str());
             if (!downloadResult.ok()) {
                 LOG(ERROR) << "Failed to download SST Files: " << downloadResult.status();
             } else {
+                LOG(INFO) << "Download SST Files successfully";
                 completed++;
             }
         }));

@@ -914,6 +914,9 @@ StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemaFromC
     }
 }
 
+const std::vector<HostAddr>& MetaClient::getAddresses() {
+    return addrs_;
+}
 
 StatusOr<SchemaVer> MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space,
                                                          const TagID& tagId) {

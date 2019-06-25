@@ -463,6 +463,67 @@ private:
     std::unique_ptr<WhereClause>                whereClause_;
 };
 
+class DownloadSentence final : public Sentence {
+public:
+    DownloadSentence() {
+        kind_ = Kind::kDownload;
+    }
+
+    const std::string* host() const {
+        return host_.get();
+    }
+
+    void setHost(std::string *host) {
+        host_.reset(host);
+    }
+
+    const int32_t port() const {
+        return port_;
+    }
+
+    void setPort(int32_t port) {
+        port_ = port;
+    }
+
+    const std::string* path() const {
+        return path_.get();
+    }
+
+    void setPath(std::string *path) {
+        path_.reset(path);
+    }
+
+    const std::string* localPath() const {
+        return localPath_.get();
+    }
+
+    void setLocalPath(std::string *localPath) {
+        localPath_.reset(localPath);
+    }
+
+    void setUrl(std::string *url) {
+        std::string u = url->substr(7, url->size());
+        std::vector<folly::StringPiece> tokens;
+        folly::split(":", u, tokens);
+        host_ = std::make_unique<std::string>(tokens[0]);
+        int32_t position = tokens[1].find_first_of("/");
+        if (position != -1) {
+            port_ = atoi(tokens[1].toString().substr(0, position).c_str());
+            path_ = std::make_unique<std::string>(tokens[1].toString().substr(position,
+                                                                              tokens[1].size()));
+        }
+        delete url;
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>                host_;
+    int32_t                                     port_;
+    std::unique_ptr<std::string>                path_;
+    std::unique_ptr<std::string>                localPath_;
+};
+
 }  // namespace nebula
 
 #endif  // PARSER_MUTATESENTENCES_H_

@@ -189,6 +189,8 @@ public:
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
+    const std::vector<HostAddr>& getAddresses();
+
 protected:
     void loadDataThreadFunc();
 
