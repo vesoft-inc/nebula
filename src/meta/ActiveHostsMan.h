@@ -37,6 +37,7 @@ struct HostInfo {
 
 class ActiveHostsMan final {
     FRIEND_TEST(ActiveHostsManTest, NormalTest);
+    FRIEND_TEST(ActiveHostsMergeTest, NormalTest);
     FRIEND_TEST(ProcessorTest, ListHostsTest);
 
 public:
@@ -44,8 +45,6 @@ public:
         static auto activeHostsMan = std::unique_ptr<ActiveHostsMan>(
                 new ActiveHostsMan(FLAGS_expired_hosts_check_interval_sec,
                                    FLAGS_expired_threshold_sec, kv));
-        static std::once_flag initFlag;
-        std::call_once(initFlag, &ActiveHostsMan::loadHostMap, activeHostsMan.get());
         return activeHostsMan.get();
     }
 
@@ -70,7 +69,8 @@ protected:
 private:
     ActiveHostsMan(int32_t intervalSeconds, int32_t expiredSeconds, kvstore::KVStore* kv = nullptr);
 
-    void loadHostMap();
+    void handleHosts();
+    void mergeHosts();
 
     void stopClean() {
         checkThread_.stop();

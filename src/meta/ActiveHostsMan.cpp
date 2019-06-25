@@ -27,7 +27,7 @@ ActiveHostsMan::ActiveHostsMan(int32_t intervalSeconds, int32_t expiredSeconds,
     CHECK(checkThread_.start());
     checkThread_.addTimerTask(intervalSeconds * 1000,
                               intervalSeconds * 1000,
-                              &ActiveHostsMan::cleanExpiredHosts,
+                              &ActiveHostsMan::handleHosts,
                               this);
 }
 
@@ -77,7 +77,12 @@ std::vector<HostAddr> ActiveHostsMan::getActiveHosts() {
     return hosts;
 }
 
-void ActiveHostsMan::loadHostMap() {
+void ActiveHostsMan::handleHosts() {
+    cleanExpiredHosts();
+    mergeHosts();
+}
+
+void ActiveHostsMan::mergeHosts() {
     if (kvstore_ == nullptr) {
         return;
     }
@@ -94,8 +99,11 @@ void ActiveHostsMan::loadHostMap() {
         HostInfo info;
         info.lastHBTimeInSec_ = time::TimeUtils::nowInSeconds();
         if (iter->val() == MetaServiceUtils::hostValOnline()) {
-            LOG(INFO) << "load host " << host.ip << ":" << host.port;
-            updateHostInfo({host.ip, host.port}, info);
+            bool found = hostsMap_.find({host.ip, host.port}) != hostsMap_.end();
+            if (!found) {
+                LOG(INFO) << "add active host " << host.ip << ":" << host.port;
+                updateHostInfo({host.ip, host.port}, info);
+            }
         }
         iter->next();
     }
