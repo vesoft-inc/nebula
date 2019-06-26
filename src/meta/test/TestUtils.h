@@ -42,7 +42,7 @@ public:
         partsMap[0][0] = PartMeta();
 
         std::vector<std::string> paths;
-        paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
+        paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath));
 
         kvstore::KVOptions options;
         options.dataPaths_ = std::move(paths);

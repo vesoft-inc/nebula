@@ -34,7 +34,7 @@ std::vector<VertexID> InterimResult::getVIDs(const std::string &col) const {
         VertexID vid;
         auto rc = iter->getVid(col, vid);
         CHECK(rc == ResultType::SUCCEEDED);
-        result.push_back(vid);
+        result.emplace_back(vid);
         ++iter;
     }
     return result;
