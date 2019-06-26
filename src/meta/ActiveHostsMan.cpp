@@ -120,6 +120,26 @@ void ActiveHostsMan::cleanExpiredHosts() {
         }
     }
 
+    // merge host info from kvstore
+    if (kvstore_ != nullptr) {
+        const auto& prefix = MetaServiceUtils::hostPrefix();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        if (ret == kvstore::ResultCode::SUCCEEDED) {
+            while (iter->valid()) {
+                auto host = MetaServiceUtils::parseHostKey(iter->key());
+                if (iter->val() == MetaServiceUtils::hostValOnline()) {
+                    bool found = hostsMap_.find({host.ip, host.port}) == hostsMap_.end();
+                    if (found) {
+                        data.emplace_back(MetaServiceUtils::hostKey(host.ip, host.port),
+                                MetaServiceUtils::hostValOffline());
+                    }
+                }
+                iter->next();
+            }
+        }
+    }
+
     if (!data.empty() && kvstore_ != nullptr) {
         folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
         LOG(INFO) << "set " << data.size() << " expired hosts to offline in meta rocksdb";
