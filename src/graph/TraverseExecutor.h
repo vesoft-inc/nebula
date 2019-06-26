@@ -70,14 +70,6 @@ public:
         onResult_ = std::move(onResult);
     }
 
-    virtual ResultSchema* resultSchema() const {
-        return resultSchema_.get();
-    }
-
-    virtual void setInputResultSchema(ResultSchema *schema) {
-        inputResultSchema_ = schema;
-    }
-
     static std::unique_ptr<TraverseExecutor>
     makeTraverseExecutor(Sentence *sentence, ExecutionContext *ectx);
 
@@ -86,8 +78,6 @@ protected:
 
 protected:
     OnResult                                    onResult_;
-    std::unique_ptr<ResultSchema>               resultSchema_;
-    ResultSchema                               *inputResultSchema_{nullptr};
 };
 
 }   // namespace graph
