@@ -22,7 +22,7 @@ void BalancePlan::dispatchTasks() {
     for (auto& task : tasks_) {
         partTasks[std::make_pair(task.spaceId_, task.partId_)].emplace_back(index++);
     }
-    buckets_.resize(std::min(tasks_.size(), (size_t)FLAGS_task_concurrency));
+    buckets_.resize(std::min(partTasks.size(), (size_t)FLAGS_task_concurrency));
     for (auto it = partTasks.begin(); it != partTasks.end(); it++) {
         size_t minNum = tasks_.size();
         int32_t i = 0, minIndex = 0;

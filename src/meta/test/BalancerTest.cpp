@@ -251,7 +251,7 @@ TEST(BalanceTest, DispatchTasksTest) {
         plan.dispatchTasks();
         // All tasks is about space 0, part 0.
         // So they will be dispatched into the same bucket.
-        ASSERT_EQ(10, plan.buckets_.size());
+        ASSERT_EQ(1, plan.buckets_.size());
         ASSERT_EQ(20, plan.buckets_[0].size());
     }
     {
@@ -279,14 +279,14 @@ TEST(BalanceTest, DispatchTasksTest) {
             plan.addTask(std::move(task));
         }
         plan.dispatchTasks();
-        ASSERT_EQ(15, plan.buckets_.size());
+        ASSERT_EQ(10, plan.buckets_.size());
+        int32_t total = 0;
         for (auto i = 0; i < 10; i++) {
             ASSERT_LE(1, plan.buckets_[i].size());
             ASSERT_GE(2, plan.buckets_[i].size());
+            total += plan.buckets_[i].size();
         }
-        for (auto i = 10; i < 15; i++) {
-            ASSERT_EQ(0, plan.buckets_[i].size());
-        }
+        ASSERT_EQ(15, total);
     }
 }
 
@@ -313,11 +313,8 @@ TEST(BalanceTest, BalancePlanTest) {
         b.wait();
         // All tasks is about space 0, part 0.
         // So they will be dispatched into the same bucket.
-        ASSERT_EQ(10, plan.buckets_.size());
+        ASSERT_EQ(1, plan.buckets_.size());
         ASSERT_EQ(10, plan.buckets_[0].size());
-        for (auto i = 1; i < 10; i++) {
-            ASSERT_EQ(0, plan.buckets_[1].size());
-        }
     }
     {
         LOG(INFO) << "Test with all tasks succeeded, 10 buckets!";
