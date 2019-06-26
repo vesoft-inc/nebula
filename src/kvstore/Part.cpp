@@ -81,7 +81,7 @@ void Part::asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback
     std::string log = encodeMultiValues(OP_PUT, key, value);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) {
+        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
@@ -91,7 +91,7 @@ void Part::asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb) {
     std::string log = encodeMultiValues(OP_MULTI_PUT, keyValues);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) {
+        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
@@ -101,7 +101,7 @@ void Part::asyncRemove(folly::StringPiece key, KVCallback cb) {
     std::string log = encodeSingleValue(OP_REMOVE, key);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) {
+        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
@@ -111,7 +111,7 @@ void Part::asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb)
     std::string log = encodeMultiValues(OP_MULTI_REMOVE, keys);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) {
+        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
@@ -121,7 +121,7 @@ void Part::asyncRemovePrefix(folly::StringPiece prefix, KVCallback cb) {
     std::string log = encodeSingleValue(OP_REMOVE_PREFIX, prefix);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) {
+        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
@@ -133,7 +133,7 @@ void Part::asyncRemoveRange(folly::StringPiece start,
     std::string log = encodeMultiValues(OP_REMOVE_RANGE, start, end);
 
     appendAsync(FLAGS_cluster_id, std::move(log))
-        .then([callback = std::move(cb)] (AppendLogResult res) {
+        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
             callback(toResultCode(res));
         });
 }
