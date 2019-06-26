@@ -6,7 +6,6 @@
 
 #include "base/Base.h"
 #include "graph/GoExecutor.h"
-#include "meta/SchemaManager.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/ResultSchemaProvider.h"
