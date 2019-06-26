@@ -98,7 +98,8 @@ void ActiveHostsMan::mergeHosts() {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
         HostInfo info;
         info.lastHBTimeInSec_ = time::TimeUtils::nowInSeconds();
-        if (iter->val() == MetaServiceUtils::hostValOnline()) {
+        if (iter->val() == MetaServiceUtils::hostValKVStoreOnline()) {
+            folly::RWSpinLock::ReadHolder rh(&lock_);
             bool found = hostsMap_.find({host.ip, host.port}) != hostsMap_.end();
             if (!found) {
                 LOG(INFO) << "add active host " << host.ip << ":" << host.port;
@@ -120,7 +121,7 @@ void ActiveHostsMan::cleanExpiredHosts() {
                 LOG(INFO) << it->first << " expired! last hb time "
                     << it->second.lastHBTimeInSec_;
                 data.emplace_back(MetaServiceUtils::hostKey(it->first.first, it->first.second),
-                                  MetaServiceUtils::hostValOffline());
+                                  MetaServiceUtils::hostValKVStoreOnline());
                 it = hostsMap_.erase(it);
             } else {
                 it++;
@@ -130,7 +131,7 @@ void ActiveHostsMan::cleanExpiredHosts() {
 
     if (!data.empty() && kvstore_ != nullptr) {
         folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-        LOG(INFO) << "set " << data.size() << " expired hosts to offline in meta rocksdb";
+        LOG(INFO) << "set " << data.size() << " expired hosts to kvstoreOnline in meta rocksdb";
         kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
                                 [] (kvstore::ResultCode code) {
             CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);

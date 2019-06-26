@@ -50,6 +50,8 @@ public:
 
     static std::string hostValOnline();
 
+    static std::string hostValKVStoreOnline();
+
     static std::string hostValOffline();
 
     static const std::string& hostPrefix();

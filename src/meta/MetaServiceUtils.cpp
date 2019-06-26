@@ -21,6 +21,7 @@ const std::string kUsersTable  = "__users__";    // NOLINT
 const std::string kRolesTable  = "__roles__";    // NOLINT
 
 const std::string kHostOnline = "Online";       // NOLINT
+const std::string kHostKVStoreOnline = "KVStoreOnline";     // NOLINT
 const std::string kHostOffline = "Offline";     // NOLINT
 
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
@@ -110,6 +111,10 @@ std::string MetaServiceUtils::hostKey(IPv4 ip, Port port) {
 
 std::string MetaServiceUtils::hostValOnline() {
     return kHostOnline;
+}
+
+std::string MetaServiceUtils::hostValKVStoreOnline() {
+    return kHostKVStoreOnline;
 }
 
 std::string MetaServiceUtils::hostValOffline() {

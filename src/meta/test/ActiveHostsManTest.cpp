@@ -37,6 +37,32 @@ TEST(ActiveHostsManTest, NormalTest) {
     }
 }
 
+TEST(ActiveHostsManTest, NormalTest2) {
+    fs::TempDir rootPath("/tmp/ActiveHostsMergeTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto now = time::TimeUtils::nowInSeconds();
+    ActiveHostsMan ahMan(1, 2, kv.get());
+    ahMan.updateHostInfo(HostAddr(0, 0), HostInfo(now));
+    ahMan.updateHostInfo(HostAddr(0, 1), HostInfo(now));
+    ahMan.updateHostInfo(HostAddr(0, 2), HostInfo(now));
+    ASSERT_EQ(3, ahMan.getActiveHosts().size());
+    usleep(2200);
+    ASSERT_EQ(3, ahMan.getActiveHosts().size());
+    {
+        std::vector<kvstore::KV> data;
+        for (auto i = 0; i < 3; i++) {
+            data.emplace_back(MetaServiceUtils::hostKey(0, i),
+                MetaServiceUtils::hostValKVStoreOnline());
+        }
+        kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
+            [] (kvstore::ResultCode code) {
+            CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+        });
+    }
+    usleep(200);
+    ASSERT_EQ(3, ahMan.getActiveHosts().size());
+}
+
 }  // namespace meta
 }  // namespace nebula
 
