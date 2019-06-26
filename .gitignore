@@ -7,6 +7,7 @@ _install
 install_manifest.txt
 
 src/common/base/Base.h.gch
+gen-*
 
 CMakeCache.txt
 Makefile

@@ -13,3 +13,5 @@ add_subdirectory(raftex)
 add_subdirectory(wal)
 add_subdirectory(test)
 
+add_subdirectory(plugins)
+
