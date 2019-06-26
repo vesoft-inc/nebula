@@ -106,3 +106,23 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(graph_http_test)
+
+add_executable(
+    data_test
+    TestMain.cpp
+    TestEnv.cpp
+    TestBase.cpp
+    DataTest.cpp
+    $<TARGET_OBJECTS:client_cpp_obj>
+    $<TARGET_OBJECTS:adHocSchema_obj>
+    ${GRAPH_TEST_LIBS}
+)
+
+nebula_link_libraries(
+    data_test
+    ${THRIFT_LIBRARIES}
+    ${ROCKSDB_LIBRARIES}
+    wangle
+    gtest
+)
+nebula_add_test(data_test)
