@@ -129,6 +129,7 @@ void ActiveHostsMan::cleanExpiredHosts() {
             while (iter->valid()) {
                 auto host = MetaServiceUtils::parseHostKey(iter->key());
                 if (iter->val() == MetaServiceUtils::hostValOnline()) {
+                    folly::RWSpinLock::ReadHolder rh(&lock_);
                     bool found = hostsMap_.find({host.ip, host.port}) == hostsMap_.end();
                     if (found) {
                         data.emplace_back(MetaServiceUtils::hostKey(host.ip, host.port),
