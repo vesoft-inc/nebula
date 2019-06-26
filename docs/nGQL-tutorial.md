@@ -187,7 +187,23 @@ In order to be consistent with ourselves and other nGQL users, we advise
 you to follow these syntax norms:
 
 - KEYWORDS are in uppercase
+
+  - eg: `SHOW SPACES` the keywords here are all written in uppercase
+
 - node Aliases are in lower camel case (start with lowercase)
-- Labels are in upper camel case (start with uppercase
-- RELATIONS are in upper snake case (like IS_A)
+
+  - eg:  node alias userName
+
+- Tags are in upper camel case (start with uppercase）
+
+  - eg: `CREATE TAG ManageTeam` the tag name **ManageTeam** is written in upper
+  camel case
+
+- EDGES are in upper snake case (like IS_A)
+
+  - eg: CREATE EDGE Play_for (name) the edge name **Play_for** is written in upper
+   snake case
+
 - Property names are in lower camel case
+
+  - eg: kobeBryant
