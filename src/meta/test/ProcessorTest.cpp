@@ -1104,10 +1104,10 @@ TEST(ProcessorTest, AlterTagTest) {
         nebula::cpp2::ColumnDef column;
         column.name = "tag_0_col_2";
         column.type.type = SupportedType::INT;
-        addSch.columns.emplace_back(std::move(column));
+        changeSch.columns.emplace_back(std::move(column));
         auto changeItem = cpp2::AlterSchemaItem(FRAGILE,
                                                 cpp2::AlterSchemaOp::CHANGE,
-                                                std::move(addSch));
+                                                std::move(changeSch));
         items.emplace_back(std::move(changeItem));
         req.set_space_id(1);
         req.set_tag_name("tag_0");

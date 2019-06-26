@@ -25,10 +25,6 @@ public:
 
     void execute() override;
 
-    Status setTTLDuration(SchemaPropItem* schemaProp);
-
-    Status setTTLCol(SchemaPropItem* schemaProp);
-
 private:
     CreateEdgeSentence                         *sentence_{nullptr};
     nebula::cpp2::Schema                        schema_;

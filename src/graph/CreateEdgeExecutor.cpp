@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "graph/CreateEdgeExecutor.h"
 #include "dataman/ResultSchemaProvider.h"
+#include "graph/SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -27,82 +28,7 @@ Status CreateEdgeExecutor::prepare() {
     const auto& specs = sentence_->columnSpecs();
     const auto& schemaProps = sentence_->getSchemaProps();
 
-    for (auto& spec : specs) {
-        nebula::cpp2::ColumnDef column;
-        column.name = *spec->name();
-        column.type.type = columnTypeToSupportedType(spec->type());
-        schema_.columns.emplace_back(std::move(column));
-    }
-
-    if (schemaProps.size() != 0) {
-        for (auto& schemaProp : schemaProps) {
-            switch (schemaProp->getPropType()) {
-                case SchemaPropItem::TTL_DURATION:
-                    status = setTTLDuration(schemaProp);
-                    if (!status.ok()) {
-                        return status;
-                    }
-                    break;
-                case SchemaPropItem::TTL_COL:
-                    status = setTTLCol(schemaProp);
-                    if (!status.ok()) {
-                        return status;
-                    }
-                    break;
-            }
-        }
-
-        if (schema_.schema_prop.get_ttl_duration() &&
-            (*schema_.schema_prop.get_ttl_duration() != 0)) {
-            // Disable implicit TTL mode
-            if (!schema_.schema_prop.get_ttl_col() ||
-                (schema_.schema_prop.get_ttl_col() && schema_.schema_prop.get_ttl_col()->empty())) {
-                return Status::Error("Implicit ttl_col not support");
-            }
-
-            // 0 means infinity
-            if (schema_.schema_prop.get_ttl_duration() < 0) {
-                schema_.schema_prop.set_ttl_duration(0);
-            }
-        }
-    }
-
-     return Status::OK();
-}
-
-
-Status CreateEdgeExecutor::setTTLDuration(SchemaPropItem* schemaProp) {
-    auto ret = schemaProp->getTtlDuration();
-    if (!ret.ok()) {
-        return ret.status();
-    }
-
-    auto ttlDuration = ret.value();
-    schema_.schema_prop.set_ttl_duration(ttlDuration);
-    return Status::OK();
-}
-
-
-Status CreateEdgeExecutor::setTTLCol(SchemaPropItem* schemaProp) {
-    auto ret = schemaProp->getTtlCol();
-    if (!ret.ok()) {
-        return ret.status();
-    }
-
-    auto  ttlColName = ret.value();
-    // Check the legality of the ttl column name
-    for (auto& col : schema_.columns) {
-        if (col.name == ttlColName) {
-             // Only integer columns and timestamp columns can be used as ttl_col
-            if (col.type.type != nebula::cpp2::SupportedType::INT &&
-                col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
-                return Status::Error("Ttl column type illegal");
-            }
-            schema_.schema_prop.set_ttl_col(ttlColName);
-            return Status::OK();
-        }
-    }
-    return Status::Error("Ttl column name not exist in columns");
+    return SchemaHelper::createSchema(specs, schemaProps, schema_);
 }
 
 

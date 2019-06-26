@@ -537,6 +537,9 @@ create_schema_prop_list
 
  create_schema_prop_item
     : KW_TTL_DURATION ASSIGN INTEGER {
+        if ($3 < 0) {
+            $3 = 0;
+        }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
     | KW_TTL_COL ASSIGN name_label {
@@ -614,6 +617,9 @@ alter_schema_prop_list
 
 alter_schema_prop_item
     : KW_TTL_DURATION ASSIGN INTEGER {
+        if ($3 < 0) {
+            $3 = 0;
+        }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
     | KW_TTL_COL ASSIGN name_label {

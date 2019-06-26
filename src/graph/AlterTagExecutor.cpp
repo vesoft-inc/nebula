@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "graph/AlterTagExecutor.h"
+#include "graph/SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -24,56 +25,9 @@ Status AlterTagExecutor::prepare() {
     }
 
     const auto& schemaOpts = sentence_->getSchemaOpts();
-
-    for (auto& schemaOpt : schemaOpts) {
-        nebula::meta::cpp2::AlterSchemaItem schemaItem;
-        auto opType = schemaOpt->toType();
-        schemaItem.set_op(std::move(opType));
-        const auto& specs = schemaOpt->columnSpecs();
-        nebula::cpp2::Schema schema;
-        for (auto& spec : specs) {
-            nebula::cpp2::ColumnDef column;
-            column.name = *spec->name();
-            column.type.type = columnTypeToSupportedType(spec->type());
-            schema.columns.emplace_back(std::move(column));
-        }
-        schemaItem.set_schema(std::move(schema));
-        options_.emplace_back(std::move(schemaItem));
-    }
-
     const auto& schemaProps = sentence_->getSchemaProps();
 
-    for (auto& schemaProp : schemaProps) {
-        auto propType = schemaProp->getPropType();
-        StatusOr<int64_t> retInt;
-        StatusOr<std::string> retStr;
-        int ttlDuration;
-        switch (propType) {
-            case SchemaPropItem::TTL_DURATION:
-                retInt = schemaProp->getTtlDuration();
-                if (!retInt.ok()) {
-                   return retInt.status();
-                }
-                ttlDuration = retInt.value();
-                if (ttlDuration < 0) {
-                    ttlDuration = 0;
-                }
-                schemaProp_.set_ttl_duration(ttlDuration);
-                break;
-            case SchemaPropItem::TTL_COL:
-                // Check the legality of ttl_col in meta
-                retStr = schemaProp->getTtlCol();
-                if (!retStr.ok()) {
-                   return retStr.status();
-                }
-                schemaProp_.set_ttl_col(retStr.value());
-                break;
-            default:
-               return Status::Error("Property type not support");
-        }
-    }
-
-    return Status::OK();
+    return SchemaHelper::alterSchema(schemaOpts, schemaProps, options_, schemaProp_);
 }
 
 
