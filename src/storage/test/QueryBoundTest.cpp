@@ -78,7 +78,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     decltype(req.parts) tmpIds;
     for (auto partId = 0; partId < 3; partId++) {
         for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            tmpIds[partId].push_back(vertexId);
+            tmpIds[partId].emplace_back(vertexId);
         }
     }
     req.set_parts(std::move(tmpIds));

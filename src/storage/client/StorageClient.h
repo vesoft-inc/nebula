@@ -167,7 +167,7 @@ private:
             auto partMeta = client_->getPartMetaFromCache(spaceId, part);
             CHECK_GT(partMeta.peers_.size(), 0U);
             // TODO We need to use the leader here
-            clusters[partMeta.peers_.front()][part].push_back(std::move(id));
+            clusters[partMeta.peers_.front()][part].emplace_back(std::move(id));
         }
         return clusters;
     }
