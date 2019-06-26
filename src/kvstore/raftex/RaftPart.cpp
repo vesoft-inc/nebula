@@ -303,7 +303,7 @@ AppendLogResult RaftPart::canAppendLogs(
 
 
 folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source,
-                                                               std::string log) {
+                                                     std::string log) {
     if (source < 0) {
         source = clusterId_;
     }
@@ -317,8 +317,8 @@ folly::Future<AppendLogResult> RaftPart::casAsync(std::string log) {
 
 
 folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
-                                                                  bool isCAS,
-                                                                  std::string log) {
+                                                        bool isCAS,
+                                                        std::string log) {
     LogCache swappedOutLogs;
     LogID firstId;
     auto retFuture = folly::Future<AppendLogResult>::makeEmpty();

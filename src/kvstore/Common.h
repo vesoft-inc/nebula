@@ -46,6 +46,9 @@ inline rocksdb::Slice toSlice(const folly::StringPiece& str) {
     return rocksdb::Slice(str.begin(), str.size());
 }
 
+using KVMap = std::unordered_map<std::string, std::string>;
+using KVArrayIterator = std::vector<KV>::const_iterator;
+
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_COMMON_H_
