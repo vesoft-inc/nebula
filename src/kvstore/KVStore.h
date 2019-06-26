@@ -62,7 +62,7 @@ public:
 
     // Retrieve the current leader for the given partition. This
     // is usually called when ERR_LEADER_CHANGED result code is
-    // returnde
+    // returned
     virtual HostAddr partLeader(GraphSpaceID spaceId, PartitionID partID) = 0;
 
     virtual PartManager* partManager() const {
@@ -108,12 +108,12 @@ public:
                               std::string&& prefix,
                               std::unique_ptr<KVIterator>* iter) = delete;
 
-    // Asynchrous version of remove methods
     virtual void asyncMultiPut(GraphSpaceID spaceId,
                                PartitionID  partId,
                                std::vector<KV> keyValues,
                                KVCallback cb) = 0;
 
+    // Asynchronous version of remove methods
     virtual void asyncRemove(GraphSpaceID spaceId,
                              PartitionID partId,
                              const std::string& key,

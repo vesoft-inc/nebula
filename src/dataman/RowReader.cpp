@@ -244,14 +244,14 @@ bool RowReader::processHeader(folly::StringPiece row) {
     }
     offsets_.resize(numFields + 1, -1);
     offsets_[0] = 0;
-    blockOffsets_.push_back(std::make_pair(0, 0));
+    blockOffsets_.emplace_back(0, 0);
     blockOffsets_.reserve(numOffsets);
     for (uint32_t i = 0; i < numOffsets; i++) {
         int64_t offset = 0;
         for (int32_t j = 0; j < numBytesForOffset_; j++) {
             offset |= (uint64_t(*(it++)) << (8 * j));
         }
-        blockOffsets_.push_back(std::make_pair(offset, 0));
+        blockOffsets_.emplace_back(offset, 0);
         offsets_[16 * (i + 1)] = offset;
     }
     // Now done with the header

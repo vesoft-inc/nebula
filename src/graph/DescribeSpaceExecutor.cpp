@@ -6,7 +6,6 @@
 
 #include "base/Base.h"
 #include "graph/DescribeSpaceExecutor.h"
-#include "meta/SchemaManager.h"
 
 namespace nebula {
 namespace graph {
@@ -17,7 +16,7 @@ DescribeSpaceExecutor::DescribeSpaceExecutor(Sentence *sentence,
 }
 
 Status DescribeSpaceExecutor::prepare() {
-    return Status::OK();;
+    return Status::OK();
 }
 
 void DescribeSpaceExecutor::execute() {

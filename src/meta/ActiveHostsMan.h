@@ -75,6 +75,7 @@ private:
     void stopClean() {
         checkThread_.stop();
         checkThread_.wait();
+        kvstore_ = nullptr;
     }
 
     folly::RWSpinLock lock_;

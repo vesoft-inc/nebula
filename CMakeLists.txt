@@ -59,8 +59,13 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif(NOT CMAKE_BUILD_TYPE)
 
-message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}, "
-               "options: Debug, Release, RelWithDebInfo, MinSizeRel")
+if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    message(STATUS "Set macro _FORTIFY_SOURCE=2")
+    add_definitions(-D_FORTIFY_SOURCE=2)
+endif()
+
+message(STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE} "
+               "(Options are: Debug, Release, RelWithDebInfo, MinSizeRel)")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "_build")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "_build")
@@ -74,7 +79,7 @@ find_package(Git)
 if (GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
     execute_process(
         COMMAND
-        ${GIT_EXECUTABLE} -C ${CMAKE_CURRENT_SOURCE_DIR} rev-parse --short HEAD
+        ${GIT_EXECUTABLE} rev-parse --short HEAD
         OUTPUT_VARIABLE GIT_INFO_SHA
     )
 endif()
@@ -304,8 +309,8 @@ macro(nebula_link_libraries target)
         ${OPENSSL_CRYPTO_LIBRARY}
         ${KRB5_LIBRARIES}
         ${COMPRESSION_LIBRARIES}
-        ${LIBUNWIND_LIBRARIES}
         ${JEMALLOC_LIB}
+        ${LIBUNWIND_LIBRARIES}
         dl
         ${GETTIME_LIB}
         -pthread

@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "rocksdb/slice.h"
+#include <folly/Function.h>
 
 namespace nebula {
 namespace kvstore {
@@ -39,7 +40,7 @@ public:
 };
 
 using KV = std::pair<std::string, std::string>;
-using KVCallback = std::function<void(ResultCode code)>;
+using KVCallback = folly::Function<void(ResultCode code)>;
 
 inline rocksdb::Slice toSlice(const folly::StringPiece& str) {
     return rocksdb::Slice(str.begin(), str.size());
