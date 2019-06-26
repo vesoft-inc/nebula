@@ -22,10 +22,14 @@ other query language out there.
 
 - Declarative: nGQL is a declarative query language, which is very different from
 <<<<<<< HEAD
+<<<<<<< HEAD
  the imperative alternatives out there. You declare the pattern that you are looking for. You effectively tell nGQL what you want, rather than how to get it.
 =======
  the imperative alternatives out there. You declare the pattern that you are looking for. You effectively tell Cypher what you want, rather than how to get it.
 >>>>>>> add  contents in nGQL-toturial
+=======
+ the imperative alternatives out there. You declare the pattern that you are looking for. You effectively tell nGQL what you want, rather than how to get it.
+>>>>>>> fix nGQL feature expression
 
 - Expressive: nGQL's ASCII-art style syntax provides a familiar, readable way to
  match patterns of nodes and relationships within graph datasets.
@@ -224,11 +228,11 @@ you to follow these syntax norms:
 
 ## Syntax norms
 
-In order to be consistent with ourselves and other nGQL users, we strongly advise
+In order to be consistent with ourselves and other nGQL users, we advise
 you to follow these syntax norms:
 
 - KEYWORDS are in uppercase
-- nodeAliases are in lower camel case (start with lowercase)
+- node Aliases are in lower camel case (start with lowercase)
 - Labels are in upper camel case (start with uppercase
 - RELATIONS are in upper snake case (like IS_A)
 - Property names are in lower camel case
