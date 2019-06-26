@@ -888,7 +888,7 @@ TEST(ProcessorTest, AlterTagTest) {
         auto addItem = cpp2::AlterSchemaItem(FRAGILE,
                                              cpp2::AlterSchemaOp::ADD,
                                              std::move(addSch));
-        items.push_back(std::move(addItem));
+        items.emplace_back(std::move(addItem));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);
@@ -910,7 +910,7 @@ TEST(ProcessorTest, AlterTagTest) {
         auto addItem = cpp2::AlterSchemaItem(FRAGILE,
                                              cpp2::AlterSchemaOp::CHANGE,
                                              std::move(addSch));
-        items.push_back(std::move(addItem));
+        items.emplace_back(std::move(addItem));
         req.set_space_id(1);
         req.set_tag_name("tag_0");
         req.set_tag_items(items);

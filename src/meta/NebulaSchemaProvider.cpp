@@ -77,7 +77,7 @@ std::shared_ptr<const SchemaProviderIf::Field> NebulaSchemaProvider::field(
 
 void NebulaSchemaProvider::addField(folly::StringPiece name,
                                     nebula::cpp2::ValueType&& type) {
-    fields_.push_back(std::make_shared<SchemaField>(name.toString(),
+    fields_.emplace_back(std::make_shared<SchemaField>(name.toString(),
                                                     std::move(type)));
     fieldNameIndex_.emplace(name.toString(),
                             static_cast<int64_t>(fields_.size() - 1));
