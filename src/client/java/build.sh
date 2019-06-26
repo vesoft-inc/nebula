@@ -3,10 +3,15 @@
 #-----------------------------------------------
 # variable value
 #-----------------------------------------------
-src_root_path=`cd ../../../; pwd`;
-graph_gen_java_path=$src_root_path"/src/interface/gen-java/com/vesoft/nebula/graph/"
-java_client_source_file_path=$src_root_path/src/client/java/src/main/java/com/vesoft/nebula/graph/
+# $1: the path of thrift-1.0-SNAPSHOT.jar
+# $2: the path of java src
+# $3: the path of current build dir
 java_fbthrift_jar=$1
+src_root_path=$2
+output_src_file=$3
+pom_file_path=${src_root_path}/pom.xml
+graph_gen_java_path=${output_src_file}/../../interface/gen-java/com/vesoft/nebula/graph/
+java_client_source_file_path=${src_root_path}/src/main/java/com/vesoft/nebula/graph/
 
 #-----------------------------------------------
 # check file or dir exist 
@@ -46,7 +51,7 @@ setup_graph_source()
 #-----------------------------------------------
 compile_java_client()
 {
-	mvn clean package -DJAVA_FBTHRIFT_JAR=$java_fbthrift_jar
+	mvn clean package -DJAVA_FBTHRIFT_JAR=$java_fbthrift_jar -f ${pom_file_path}
 }
 
 

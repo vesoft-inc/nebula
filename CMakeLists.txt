@@ -395,6 +395,9 @@ include_directories(SYSTEM ${Readline_INCLUDE_DIR})
 include_directories(AFTER ${NEBULA_HOME}/src)
 include_directories(AFTER src/common)
 include_directories(AFTER src/interface)
+include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src)
+include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/interface)
+include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/parser)
 
 link_directories(
     ${NEBULA_BZIP2_ROOT}/lib
