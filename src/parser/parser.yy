@@ -94,7 +94,7 @@ class GraphScanner;
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY
 %token KW_TTL_DURATION KW_TTL_COL
-%token KW_ORDER KW_ASCEND KW_ASC KW_DESCEND
+%token KW_ORDER KW_ASC
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
@@ -714,13 +714,7 @@ order_factor
     | input_ref_expression KW_ASC {
         $$ = new OrderFactor($1, OrderFactor::ASCEND);
     }
-    | input_ref_expression KW_ASCEND {
-        $$ = new OrderFactor($1, OrderFactor::ASCEND);
-    }
     | input_ref_expression KW_DESC {
-        $$ = new OrderFactor($1, OrderFactor::DESCEND);
-    }
-    | input_ref_expression KW_DESCEND {
         $$ = new OrderFactor($1, OrderFactor::DESCEND);
     }
     ;

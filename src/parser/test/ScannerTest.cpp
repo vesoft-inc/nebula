@@ -320,15 +320,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("ORDER", TokenType::KW_ORDER),
         CHECK_SEMANTIC_TYPE("Order", TokenType::KW_ORDER),
         CHECK_SEMANTIC_TYPE("order", TokenType::KW_ORDER),
-        CHECK_SEMANTIC_TYPE("ASCEND", TokenType::KW_ASCEND),
-        CHECK_SEMANTIC_TYPE("Ascend", TokenType::KW_ASCEND),
-        CHECK_SEMANTIC_TYPE("ascend", TokenType::KW_ASCEND),
         CHECK_SEMANTIC_TYPE("ASC", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("Asc", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("asc", TokenType::KW_ASC),
-        CHECK_SEMANTIC_TYPE("DESCEND", TokenType::KW_DESCEND),
-        CHECK_SEMANTIC_TYPE("Descend", TokenType::KW_DESCEND),
-        CHECK_SEMANTIC_TYPE("descend", TokenType::KW_DESCEND),
 
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),

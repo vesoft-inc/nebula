@@ -130,39 +130,7 @@ TEST_F(OrderByTest, SingleFactor) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto fmt = go + "| ORDER BY $-.team ASCEND";
-        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {player.name(), 2003, "Hawks"},
-            {player.name(), 2008, "Hornets"},
-            {player.name(), 2016, "Jazz"},
-            {player.name(), 2012, "Spurs"},
-            {player.name(), 2005, "Suns"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected, false));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto &player = players_["Boris Diaw"];
         auto fmt = go + "| ORDER BY $-.team DESC";
-        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
-            {player.name(), 2005, "Suns"},
-            {player.name(), 2012, "Spurs"},
-            {player.name(), 2016, "Jazz"},
-            {player.name(), 2008, "Hornets"},
-            {player.name(), 2003, "Hawks"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected, false));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto &player = players_["Boris Diaw"];
-        auto fmt = go + "| ORDER BY $-.team DESCEND";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
