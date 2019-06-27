@@ -124,3 +124,4 @@ add_library(
     gen-cpp2/meta_types.cpp
 )
 add_dependencies(meta_thrift_obj common_thrift_obj tgt_fbthrift)
+

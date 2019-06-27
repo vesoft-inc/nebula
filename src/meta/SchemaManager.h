@@ -30,7 +30,7 @@ public:
                                                                  SchemaVer ver = -1) = 0;
 
     // Returns a negative number when the schema does not exist
-    virtual SchemaVer getNewestTagSchemaVer(GraphSpaceID space, TagID tag) = 0;
+    virtual StatusOr<SchemaVer> getNewestTagSchemaVer(GraphSpaceID space, TagID tag) = 0;
 
     virtual SchemaVer getNewestTagSchemaVer(folly::StringPiece spaceName,
                                             folly::StringPiece tagName) = 0;
@@ -44,7 +44,7 @@ public:
                                                                   SchemaVer ver = -1) = 0;
 
     // Returns a negative number when the schema does not exist
-    virtual SchemaVer getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) = 0;
+    virtual StatusOr<SchemaVer> getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) = 0;
 
     virtual SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
                                              folly::StringPiece typeName) = 0;

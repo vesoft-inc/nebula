@@ -58,7 +58,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
         for (auto vertexId =  partId * 10;
              vertexId < (partId + 1) * 10;
              vertexId++) {
-            tmpIds[partId].push_back(vertexId);
+            tmpIds[partId].emplace_back(vertexId);
         }
     }
     req.set_parts(std::move(tmpIds));

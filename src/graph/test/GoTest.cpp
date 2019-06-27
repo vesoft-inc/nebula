@@ -116,7 +116,7 @@ protected:
 
         const Vertex& operator[](const Key &key) const {
             auto iter = vertices_.find(key);
-            CHECK(iter != vertices_.end()) << "Vertex not exist, key: " << key;;
+            CHECK(iter != vertices_.end()) << "Vertex not exist, key: " << key;
             return iter->second;
         }
 
@@ -826,6 +826,44 @@ TEST_F(GoTest, OneStepOutBound) {
             {player.name(), 2015, 2016, "Kings"},
             {player.name(), 2016, 2017, "Bulls"},
             {player.name(), 2017, 2018, "Pelicans"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+            {teams_["Trail Blazers"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| ( GO FROM $-.id OVER like | GO FROM $-.id OVER serve )";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+            {teams_["Trail Blazers"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

@@ -16,6 +16,7 @@
 #include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/MetaServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+#include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "time/TimeUtils.h"
 #include "meta/ActiveHostsMan.h"
@@ -26,7 +27,7 @@ namespace nebula {
 namespace meta {
 
 using nebula::cpp2::SupportedType;
-
+using apache::thrift::FragileConstructor::FRAGILE;
 class TestUtils {
 public:
     static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
@@ -41,7 +42,7 @@ public:
         partsMap[0][0] = PartMeta();
 
         std::vector<std::string> paths;
-        paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
+        paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath));
 
         kvstore::KVOptions options;
         options.dataPaths_ = std::move(paths);
@@ -66,12 +67,12 @@ public:
     }
 
     static void registerHB(const std::vector<HostAddr>& hosts) {
-        ActiveHostsManHolder::hostsMan()->reset();
-        auto now = time::TimeUtils::nowInSeconds();
-        for (auto& h : hosts) {
-            ActiveHostsManHolder::hostsMan()->updateHostInfo(h, HostInfo(now));
-        }
-    }
+         ActiveHostsMan::instance()->reset();
+         auto now = time::TimeUtils::nowInSeconds();
+         for (auto& h : hosts) {
+             ActiveHostsMan::instance()->updateHostInfo(h, HostInfo(now));
+         }
+     }
 
     static int32_t createSomeHosts(kvstore::KVStore* kv,
                                    std::vector<HostAddr> hosts
@@ -102,8 +103,8 @@ public:
             auto resp = std::move(f).get();
             EXPECT_EQ(hosts.size(), resp.hosts.size());
             for (decltype(hosts.size()) i = 0; i < hosts.size(); i++) {
-                EXPECT_EQ(hosts[i].first, resp.hosts[i].ip);
-                EXPECT_EQ(hosts[i].second, resp.hosts[i].port);
+                EXPECT_EQ(hosts[i].first, resp.hosts[i].hostAddr.ip);
+                EXPECT_EQ(hosts[i].second, resp.hosts[i].hostAddr.port);
             }
         }
         return hosts.size();
@@ -183,6 +184,37 @@ public:
                   << ", data path is at \"" << dataPath << "\"";
 
         return sc;
+    }
+
+    static StatusOr<UserID> createUser(kvstore::KVStore* kv,
+                                       bool missingOk,
+                                       folly::StringPiece account,
+                                       folly::StringPiece password,
+                                       bool               isLock,
+                                       int32_t            maxQueries,
+                                       int32_t            maxUpdates,
+                                       int32_t            maxConnections,
+                                       int32_t            maxConnectors) {
+        cpp2::CreateUserReq req;
+        req.set_missing_ok(missingOk);
+        req.set_encoded_pwd(password.str());
+        decltype(req.user) user(FRAGILE,
+                                account.str(),
+                                isLock,
+                                maxQueries,
+                                maxUpdates,
+                                maxConnections,
+                                maxConnectors);
+        req.set_user(std::move(user));
+        auto* processor = CreateUserProcessor::instance(kv);
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        if (resp.get_code() == cpp2::ErrorCode::SUCCEEDED) {
+            return resp.get_id().get_user_id();
+        } else {
+            return Status::Error("Create user fail");
+        }
     }
 };
 

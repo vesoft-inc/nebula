@@ -149,6 +149,7 @@ Group: Applications/Databases
 %files nebula
 %defattr(-,root,root,-)
 %{_bindir}/nebula
+%{_resourcesdir}/completion.json
 
 
 # storage_perf rpm
