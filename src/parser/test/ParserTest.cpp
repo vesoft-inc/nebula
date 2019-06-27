@@ -687,6 +687,7 @@ TEST(Parser, UserOperation) {
     }
 }
 
+
 TEST(Parser, UnreservedKeywords) {
     {
         GQLParser parser;
@@ -703,6 +704,7 @@ TEST(Parser, UnreservedKeywords) {
         ASSERT_TRUE(result.ok()) << result.status();
     }
 }
+
 
 TEST(Parser, Annotation) {
     {
@@ -737,5 +739,18 @@ TEST(Parser, Annotation) {
     }
 }
 
+
+TEST(Parser, ReentrantRecoveryFromFailure) {
+    GQLParser parser;
+    {
+        std::string query = "USE dumy tag_name";
+        ASSERT_FALSE(parser.parse(query).ok());
+    }
+    {
+        std::string query = "USE space_name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
 
 }   // namespace nebula
