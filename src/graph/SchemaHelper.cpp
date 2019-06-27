@@ -99,6 +99,7 @@ Status SchemaHelper::setTTLCol(SchemaPropItem* schemaProp, nebula::cpp2::Schema&
     for (auto& col : schema.columns) {
         if (col.name == ttlColName) {
             // Only integer columns and timestamp columns can be used as ttl_col
+            // TODO(YT) Ttl_duration supports datetime type
             if (col.type.type != nebula::cpp2::SupportedType::INT &&
                 col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
                 return Status::Error("Ttl column type illegal");

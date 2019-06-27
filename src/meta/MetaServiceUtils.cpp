@@ -306,7 +306,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                         cols.erase(it);
                         return cpp2::ErrorCode::SUCCEEDED;
                     } else {
-                        LOG(WARNING) << "Column cant't be dropped, a TTL attribute on it : "
+                        LOG(WARNING) << "Column can't be dropped, a TTL attribute on it : "
                                      << colName;
                         return cpp2::ErrorCode::E_NOT_DROP;
                     }
@@ -352,7 +352,7 @@ cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::Colu
     }
 
     // Disable implicit TTL mode
-    if ((schemaProp.get_ttl_duration() && (*schemaProp.get_ttl_duration() !=0)) &&
+    if ((schemaProp.get_ttl_duration() && (*schemaProp.get_ttl_duration() != 0)) &&
         (!schemaProp.get_ttl_col() || (schemaProp.get_ttl_col() &&
          schemaProp.get_ttl_col()->empty()))) {
         LOG(WARNING) << "Implicit ttl_col not support";

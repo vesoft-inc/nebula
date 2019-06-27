@@ -465,7 +465,7 @@ TEST_F(SchemaTest, TTLtest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // Add show create tag
+    // TODO(YT) Add show create tag
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG man(name string, email string, "
@@ -516,22 +516,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Use show create tag instead
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG woman";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-
-         std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"name", "string"},
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create tag instead
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG only_ttl_col(name string, email string, "
@@ -540,22 +525,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Use show create tag instead
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG only_ttl_col";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-
-         std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"name", "string"},
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT)  Use show create tag instead
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG woman "
@@ -606,19 +576,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Use show create tag instead
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG woman";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create tag
     {
         // When the column is as TTL column, droping column failed
         cpp2::ExecutionResponse resp;
@@ -627,18 +585,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG woman";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create tag
     {
         // First remove TTL property, then drop column
         cpp2::ExecutionResponse resp;
@@ -647,19 +594,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Use show create tag
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG woman";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create tag
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER TAG woman "
@@ -667,17 +602,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG woman";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create tag
 
     // Edge ttl test
     {
@@ -701,7 +626,7 @@ TEST_F(SchemaTest, TTLtest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-    // Use show create edge test
+    // TODO(YT) Use show create edge test
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE man(name string, email string, "
@@ -710,21 +635,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE man";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"name", "string"},
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create edge test
     {
         // Disable implicit ttl mode
         cpp2::ExecutionResponse resp;
@@ -751,22 +662,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Use show create tag instead
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE woman";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-
-         std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"name", "string"},
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create edge
     {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE EDGE only_ttl_col(name string, email string, "
@@ -775,23 +671,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Use show create tag instead
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE only_ttl_col";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-
-         std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"name", "string"},
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    // Use show create edge test
+    // TODO(YT) Use show create edge
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE woman "
@@ -799,19 +679,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE woman";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"name", "string"},
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create edge
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE woman "
@@ -819,18 +687,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE woman";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create edge
     {
         // Failed when alter tag to set ttl_col on not integer and timestamp column
         cpp2::ExecutionResponse resp;
@@ -839,18 +696,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE woman";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create edge
     {
         // When the column is as TTL column, droping column failed
         cpp2::ExecutionResponse resp;
@@ -859,18 +705,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE woman";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create edge
     {
         // First remove TTL property, then drop column
         cpp2::ExecutionResponse resp;
@@ -879,18 +714,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE woman";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create edge
     {
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE woman "
@@ -898,17 +722,7 @@ TEST_F(SchemaTest, TTLtest) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE woman";
-        client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
+    // TODO(YT) Use show create edge
 
     {
         cpp2::ExecutionResponse resp;
