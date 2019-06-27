@@ -22,6 +22,7 @@ size_t SimpleQuery(size_t iters, size_t nrThreads) {
     auto parse = [&] () {
         auto n = iters * ops;
         for (auto i = 0UL; i < n; i++) {
+            // static thread_local GQLParser parser;
             GQLParser parser;
             auto result = parser.parse(simpleQuery);
             folly::doNotOptimizeAway(result);
@@ -45,6 +46,7 @@ size_t ComplexQuery(size_t iters, size_t nrThreads) {
     auto parse = [&] () {
         auto n = iters * ops;
         for (auto i = 0UL; i < n; i++) {
+            // static thread_local GQLParser parser;
             GQLParser parser;
             auto result = parser.parse(complexQuery);
             folly::doNotOptimizeAway(result);
@@ -99,23 +101,43 @@ main(int argc, char **argv) {
 }
 
 /*           Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz, 20core 40thread
+
+                                Non-Thread-Local
 ============================================================================
 src/parser/test/ParserBenchmark.cpp             relative  time/iter  iters/s
 ============================================================================
-SimpleQuery(1_thread)                                        1.16us  860.26K
-SimpleQuery(2_thread)                             56.46%     2.06us  485.71K
-SimpleQuery(4_thread)                             24.76%     4.69us  213.04K
-SimpleQuery(8_thread)                             12.67%     9.17us  109.04K
-SimpleQuery(16_thread)                             5.86%    19.85us   50.39K
-SimpleQuery(32_thread)                             3.38%    34.36us   29.10K
-SimpleQuery(48_thread)                             2.57%    45.24us   22.11K
+SimpleQuery(1_thread)                                      892.36ns    1.12M
+SimpleQuery(2_thread)                             67.21%     1.33us  753.21K
+SimpleQuery(4_thread)                             41.68%     2.14us  467.11K
+SimpleQuery(8_thread)                             19.62%     4.55us  219.92K
+SimpleQuery(16_thread)                             9.62%     9.28us  107.76K
+SimpleQuery(32_thread)                             5.32%    16.76us   59.66K
+SimpleQuery(48_thread)                             3.98%    22.43us   44.58K
 ----------------------------------------------------------------------------
-ComplexQuery(1_thread)                                       6.02us  166.08K
-ComplexQuery(2_thread)                            92.93%     6.48us  154.33K
-ComplexQuery(4_thread)                            80.81%     7.45us  134.20K
-ComplexQuery(8_thread)                            57.20%    10.53us   94.99K
-ComplexQuery(16_thread)                           29.74%    20.25us   49.39K
-ComplexQuery(32_thread)                           16.76%    35.93us   27.84K
-ComplexQuery(48_thread)                           12.45%    48.38us   20.67K
+ComplexQuery(1_thread)                                       6.40us  156.16K
+ComplexQuery(2_thread)                           100.48%     6.37us  156.91K
+ComplexQuery(4_thread)                            92.96%     6.89us  145.16K
+ComplexQuery(8_thread)                            82.83%     7.73us  129.36K
+ComplexQuery(16_thread)                           61.58%    10.40us   96.16K
+ComplexQuery(32_thread)                           35.98%    17.80us   56.19K
+ComplexQuery(48_thread)                           26.24%    24.41us   40.97K
 ============================================================================
- */
+                                Thread-Local(Reentrant)
+============================================================================
+SimpleQuery(1_thread)                                      496.38ns    2.01M
+SimpleQuery(2_thread)                             91.86%   540.35ns    1.85M
+SimpleQuery(4_thread)                             89.51%   554.53ns    1.80M
+SimpleQuery(8_thread)                             89.86%   552.42ns    1.81M
+SimpleQuery(16_thread)                            58.34%   850.83ns    1.18M
+SimpleQuery(32_thread)                            56.01%   886.22ns    1.13M
+SimpleQuery(48_thread)                            39.20%     1.27us  789.64K
+----------------------------------------------------------------------------
+ComplexQuery(1_thread)                                       5.15us  194.04K
+ComplexQuery(2_thread)                            93.48%     5.51us  181.38K
+ComplexQuery(4_thread)                            94.62%     5.45us  183.59K
+ComplexQuery(8_thread)                            92.52%     5.57us  179.53K
+ComplexQuery(16_thread)                           79.93%     6.45us  155.09K
+ComplexQuery(32_thread)                           60.09%     8.58us  116.60K
+ComplexQuery(48_thread)                           44.15%    11.67us   85.67K
+============================================================================
+*/
