@@ -750,6 +750,14 @@ TEST(Parser, Agg) {
         GQLParser parser;
         std::string query = "GO FROM 1 over friend "
                             "YIELD friend.name as name | "
+                            "ORDER BY name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name | "
                             "ORDER BY $-.name";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -788,6 +796,14 @@ TEST(Parser, ReentrantRecoveryFromFailure) {
     }
     {
         std::string query = "USE space_name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name, friend.age as age | "
+                            "ORDER BY name ASC, age DESC";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

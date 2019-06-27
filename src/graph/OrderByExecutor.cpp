@@ -17,80 +17,47 @@ bool ColumnValue::operator < (const ColumnValue& rhs) const {
     switch (lhs.type_) {
         case Type::bool_val:
         {
-            if (!(lhs.value_.bool_val == rhs.value_.bool_val)) {
-                return lhs.value_.bool_val < rhs.value_.bool_val;
-            }
-            break;
+            return lhs.value_.bool_val < rhs.value_.bool_val;
         }
         case Type::integer:
         {
-            if (!(lhs.value_.integer == rhs.value_.integer)) {
-                return lhs.value_.integer < rhs.value_.integer;
-            }
-            break;
+            return lhs.value_.integer < rhs.value_.integer;
         }
         case Type::id:
         {
-            if (!(lhs.value_.id == rhs.value_.id)) {
-                return lhs.value_.id < rhs.value_.id;
-            }
-            break;
+            return lhs.value_.id < rhs.value_.id;
         }
         case Type::single_precision:
         {
-            if (!(lhs.value_.single_precision == rhs.value_.single_precision)) {
-                return lhs.value_.single_precision < rhs.value_.single_precision;
-            }
-            break;
+            return lhs.value_.single_precision < rhs.value_.single_precision;
         }
         case Type::double_precision:
         {
-            if (!(lhs.value_.double_precision == rhs.value_.double_precision)) {
-                return lhs.value_.double_precision < rhs.value_.double_precision;
-            }
-            break;
+            return lhs.value_.double_precision < rhs.value_.double_precision;
         }
         case Type::str:
         {
-            if (!(lhs.value_.str == rhs.value_.str)) {
-                return lhs.value_.str < rhs.value_.str;
-            }
-            break;
+            return lhs.value_.str < rhs.value_.str;
         }
         case Type::timestamp:
         {
-            if (!(lhs.value_.timestamp == rhs.value_.timestamp)) {
-                return lhs.value_.timestamp < rhs.value_.timestamp;
-            }
-            break;
+            return lhs.value_.timestamp < rhs.value_.timestamp;
         }
         case Type::year:
         {
-            if (!(lhs.value_.year == rhs.value_.year)) {
-                return lhs.value_.year < rhs.value_.year;
-            }
-            break;
+            return lhs.value_.year < rhs.value_.year;
         }
         case Type::month:
         {
-            if (!(lhs.value_.month == rhs.value_.month)) {
-                return lhs.value_.month < rhs.value_.month;
-            }
-            break;
+            return lhs.value_.month < rhs.value_.month;
         }
         case Type::date:
         {
-            if (!(lhs.value_.date == rhs.value_.date)) {
-                return lhs.value_.date < rhs.value_.date;
-            }
-            break;
+            return lhs.value_.date < rhs.value_.date;
         }
         case Type::datetime:
         {
-            if (!(lhs.value_.datetime == rhs.value_.datetime)) {
-                return lhs.value_.datetime < rhs.value_.datetime;
-            }
-            break;
+            return lhs.value_.datetime < rhs.value_.datetime;
         }
         default:
         {
@@ -137,8 +104,8 @@ void OrderByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
 void OrderByExecutor::execute() {
     FLOG_INFO("Executing Order By: %s", sentence_->toString().c_str());
     auto comparator = [this] (cpp2::RowValue& lhs, cpp2::RowValue& rhs) {
-        auto lhsColumns = lhs.get_columns();
-        auto rhsColumns = rhs.get_columns();
+        const auto &lhsColumns = lhs.get_columns();
+        const auto &rhsColumns = rhs.get_columns();
         for (auto &factor : this->sortFactors_) {
             auto fieldIndex = factor.first;
             auto orderType = factor.second;
@@ -162,7 +129,6 @@ void OrderByExecutor::execute() {
     }
 
     if (onResult_) {
-        LOG(INFO) << "on result";
         onResult_(setupInterimResult());
     }
     DCHECK(onFinish_);
@@ -177,7 +143,6 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
     auto schema = inputs_->schema();
     auto rsWriter = std::make_unique<RowSetWriter>(schema);
     using Type = cpp2::ColumnValue::Type;
-    LOG(INFO) << rows_.size();
     for (auto &row : rows_) {
         RowWriter writer(schema);
         auto columns = row.get_columns();

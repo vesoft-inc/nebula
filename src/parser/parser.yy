@@ -717,6 +717,18 @@ order_factor
     | input_ref_expression KW_DESC {
         $$ = new OrderFactor($1, OrderFactor::DESCEND);
     }
+    | LABEL {
+        auto inputRef = new InputPropertyExpression($1);
+        $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
+    }
+    | LABEL KW_ASC {
+        auto inputRef = new InputPropertyExpression($1);
+        $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
+    }
+    | LABEL KW_DESC {
+        auto inputRef = new InputPropertyExpression($1);
+        $$ = new OrderFactor(inputRef, OrderFactor::DESCEND);
+    }
     ;
 
 order_factors
