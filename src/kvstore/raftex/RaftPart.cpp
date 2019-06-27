@@ -47,7 +47,10 @@ public:
             , casCB_(std::move(casCB)) {
         leadByCAS_ = processCAS();
         valid_ = idx_ < logs_.size();
-        hasLogs_ = !leadByCAS_ && valid_;
+        hasNonCASLogs_ = !leadByCAS_ && valid_;
+        if (valid_) {
+            currLogType_ = lastLogType_ = logType();
+        }
     }
 
     AppendLogsIterator(const AppendLogsIterator&) = delete;
@@ -60,8 +63,8 @@ public:
         return leadByCAS_;
     }
 
-    bool hasLogs() const {
-        return hasLogs_;
+    bool hasNonCASLogs() const {
+        return hasNonCASLogs_;
     }
 
     LogID firstLogId() const {
@@ -72,8 +75,8 @@ public:
     bool processCAS() {
         while (idx_ < logs_.size()) {
             auto& tup = logs_.at(idx_);
-            bool isCAS = std::get<2>(tup);
-            if (!isCAS) {
+            auto logType = std::get<2>(tup);
+            if (logType != LogType::CAS) {
                 // Not a CAS
                 return false;
             }
@@ -97,9 +100,16 @@ public:
     LogIterator& operator++() override {
         ++idx_;
         ++logId_;
-        valid_ = (idx_ < logs_.size()) && !isCAS();
-        if (valid_) {
-            hasLogs_ = true;
+        if (idx_ < logs_.size()) {
+            currLogType_ = logType();
+            valid_ = currLogType_ != LogType::CAS;
+            if (valid_) {
+                hasNonCASLogs_ = true;
+            }
+            valid_ = valid_ && lastLogType_ != LogType::COMMAND;
+            lastLogType_ = currLogType_;
+        } else {
+            valid_ = false;
         }
         return *this;
     }
@@ -127,7 +137,7 @@ public:
 
     folly::StringPiece logMsg() const override {
         DCHECK(valid());
-        if (isCAS()) {
+        if (currLogType_ == LogType::CAS) {
             return casResult_;
         } else {
             return std::get<3>(logs_.at(idx_));
@@ -145,20 +155,24 @@ public:
         if (!empty()) {
             leadByCAS_ = processCAS();
             valid_ = idx_ < logs_.size();
-            hasLogs_ = !leadByCAS_ && valid_;
+            hasNonCASLogs_ = !leadByCAS_ && valid_;
+            if (valid_) {
+                currLogType_ = lastLogType_ = logType();
+            }
         }
     }
 
-private:
-    bool isCAS() const {
-        return std::get<2>(logs_.at(idx_));
+    LogType logType() const {
+        return  std::get<2>(logs_.at(idx_));
     }
 
 private:
     size_t idx_{0};
     bool leadByCAS_{false};
-    bool hasLogs_{false};
+    bool hasNonCASLogs_{false};
     bool valid_{true};
+    LogType lastLogType_{LogType::NORMAL};
+    LogType currLogType_{LogType::NORMAL};
     std::string casResult_;
     LogID firstLogId_;
     LogID logId_;
@@ -307,17 +321,20 @@ folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source,
     if (source < 0) {
         source = clusterId_;
     }
-    return appendLogAsync(source, false, std::move(log));
+    return appendLogAsync(source, LogType::NORMAL, std::move(log));
 }
 
 
 folly::Future<AppendLogResult> RaftPart::casAsync(std::string log) {
-    return appendLogAsync(clusterId_, true, std::move(log));
+    return appendLogAsync(clusterId_, LogType::CAS, std::move(log));
 }
 
+folly::Future<AppendLogResult> RaftPart::commandAsync(std::string log) {
+    return appendLogAsync(clusterId_, LogType::COMMAND, std::move(log));
+}
 
 folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
-                                                        bool isCAS,
+                                                        LogType logType,
                                                         std::string log) {
     LogCache swappedOutLogs;
     LogID firstId;
@@ -350,14 +367,18 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
 
         // Append new logs to the buffer
         DCHECK_GE(source, 0);
-        if (isCAS) {
-            logs_.emplace_back(source, term_, true, std::move(log));
-            retFuture = cachingPromise_.getSingleFuture();
-        } else {
-            logs_.emplace_back(source, term_, false, std::move(log));
-            retFuture = cachingPromise_.getSharedFuture();
+        logs_.emplace_back(source, term_, logType, std::move(log));
+        switch (logType) {
+            case LogType::CAS:
+                retFuture = cachingPromise_.getSingleFuture();
+                break;
+            case LogType::COMMAND:
+                retFuture = cachingPromise_.getAndRollSharedFuture();
+                break;
+            case LogType::NORMAL:
+                retFuture = cachingPromise_.getSharedFuture();
+                break;
         }
-
         if (replicatingLogs_) {
             VLOG(2) << idStr_
                     << "Another AppendLogs request is ongoing,"
@@ -424,7 +445,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
         return;
     }
     LogID lastId = wal_->lastLogId();
-    VLOG(2) << idStr_ << "Succeeded writing logs ["
+    VLOG(3) << idStr_ << "Succeeded writing logs ["
             << iter.firstLogId() << ", " << lastId << "] to WAL";
 
     // Step 2: Replicate to followers
@@ -591,7 +612,7 @@ void RaftPart::processAppendLogResponses(
             committedLogId_ = lastLogId;
 
             // Step 4: Fulfill the promise
-            if (iter.hasLogs()) {
+            if (iter.hasNonCASLogs()) {
                 sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
             }
             if (iter.leadByCAS()) {
