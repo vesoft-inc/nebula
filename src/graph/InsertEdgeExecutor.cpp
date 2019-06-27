@@ -63,29 +63,26 @@ Status InsertEdgeExecutor::prepare() {
 
 
 StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
-    auto status = Status::OK();
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
-        status = row->srcid()->prepare();
+        auto status = row->srcid()->prepare();
         if (!status.ok()) {
-            break;
+            return status;
         }
         auto v = row->srcid()->eval();
         if (!Expression::isInt(v)) {
-            status = Status::Error("Vertex ID should be of type integer");
-            break;
+            return Status::Error("Vertex ID should be of type integer");
         }
         auto src = Expression::asInt(v);
         status = row->dstid()->prepare();
         if (!status.ok()) {
-            break;
+            return status;
         }
         v = row->dstid()->eval();
         if (!Expression::isInt(v)) {
-            status = Status::Error("Vertex ID should be of type integer");
-            break;
+            return Status::Error("Vertex ID should be of type integer");
         }
         auto dst = Expression::asInt(v);
 
@@ -141,10 +138,6 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             in.__isset.key = true;
             in.__isset.props = true;
         }
-    }
-
-    if (!status.ok()) {
-        return status;
     }
 
     return edges;
