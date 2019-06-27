@@ -18,34 +18,34 @@ import scala.collection.mutable
 import scala.sys.process._
 
 /**
-  * Custom outputFormat, which generate a sub dir per partition per worker:
+  * Custom outputFormat, which generate a sub dir per partition per worker, the local dir structure of EACH worker node:
   *
-  * worker_node1
-  * |
-  * |-sstFileOutput
-  *   |
-  *   |--1
-  *   |  |
-  *   |  |——vertex-${FIRST_KEY}.sst
-  *   |  |--edge-${FIRST_KEY}.sst
-  *   |
-  *   |--2
-  *      |
-  *      |——vertex-${FIRST_KEY}.sst
-  *      |--edge-${FIRST_KEY}.sst
-  * worker_node2
-  * |
-  * |-sstFileOutput
-  * |
-  *    |--1
-  *    |  |
-  *    |  |——vertex-${FIRST_KEY}.sst
-  *    |  |--edge-${FIRST_KEY}.sst
-  *    |
-  *    |--2
-  *       |
-  *       |——vertex-${FIRST_KEY}.sst
-  *       |--edge-${FIRST_KEY}.sst
+  * ${LOCAL_ROOT} (local dir will be stripped off when `hdfs -copyFromLocal`, specified by user through cmd line)
+  *    |---1 (this is PARTITION number)
+  *    |        | ----  vertex-${FIRST_KEY_IN_THIS_FILE}.sst
+  *    |        | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst
+  *    |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst
+  *    |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst
+  *    |---2
+  *             | ----  vertex-${FIRST_KEY_IN_THIS_FILE}.sst
+  *             | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst
+  *             | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst
+  *      ....
+  *
+  * Sst file name convention is {TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst, where type=vertex OR edge, FIRST_KEY_IN_THIS_FILE is the first key the file sees.
+  * This combination will make the sst file name unique between all worker nodes.
+  *
+  * After hdfs -copyFromLocal ,the final hdfs dir layout is:
+  *
+  * ${HDFS_ROOT} (specified by user through cmd line)
+  *    |---1 (this is PARTITION number, will hold all sst file from every single worker node with the same PARTITION number)
+  *    |        | ----  vertex-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#1)
+  *    |        | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#2)
+  *    |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#1)
+  *    |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#2)
+  *    |---2 (same as above)
+  *             | ----  vertex-${FIRST_KEY_IN_THIS_FILE}.sst
+  *
   **/
 class SstFileOutputFormat extends FileOutputFormat[GraphPartitionIdAndKeyValueEncoded, PropertyValueAndTypeWritable] {
   override def getRecordWriter(job: TaskAttemptContext): RecordWriter[GraphPartitionIdAndKeyValueEncoded, PropertyValueAndTypeWritable] = {
