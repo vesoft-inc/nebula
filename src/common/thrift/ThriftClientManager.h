@@ -16,7 +16,9 @@ namespace thrift {
 template<class ClientType>
 class ThriftClientManager final {
 public:
-    std::shared_ptr<ClientType> client(const HostAddr& host, folly::EventBase* evb = nullptr);
+    std::shared_ptr<ClientType> client(const HostAddr& host,
+                                       folly::EventBase* evb = nullptr,
+                                       bool compatibility = false);
 
     ~ThriftClientManager() {
         VLOG(3) << "~ThriftClientManager";
