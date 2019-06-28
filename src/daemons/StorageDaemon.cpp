@@ -129,8 +129,13 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     auto& localhost = hostRet.value();
+
+    if (FLAGS_meta_server_addrs.empty()) {
+        LOG(ERROR) << "Can't get metaServer address, FLAGS_meta_server_addrs is empty";
+        return EXIT_FAILURE;
+    }
     auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
-    if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
+    if (!metaAddrsRet.ok()) {
         LOG(ERROR) << "Can't get metaServer address, status:" << metaAddrsRet.status()
                    << ", FLAGS_meta_server_addrs:" << FLAGS_meta_server_addrs;
         return EXIT_FAILURE;

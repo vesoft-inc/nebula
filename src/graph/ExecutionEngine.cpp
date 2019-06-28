@@ -24,8 +24,12 @@ ExecutionEngine::~ExecutionEngine() {
 
 
 Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor) {
+    if (FLAGS_meta_server_addrs.empty()) {
+        return Status::Error("Flags meta_server_addrs is empty");
+    }
+
     auto addrs = network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
-    if (!addrs.ok() || addrs.value().empty()) {
+    if (!addrs.ok()) {
         return addrs.status();
     }
 

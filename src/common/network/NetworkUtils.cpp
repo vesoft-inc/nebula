@@ -240,9 +240,6 @@ StatusOr<HostAddr> NetworkUtils::toHostAddr(folly::StringPiece ipPort) {
 }
 
 StatusOr<std::vector<HostAddr>> NetworkUtils::toHosts(const std::string& peersStr) {
-    if (peersStr.empty()) {
-        return Status::Error("Input string(ip:port) empty");
-    }
     std::vector<HostAddr> hosts;
     std::vector<std::string> peers;
     folly::split(",", peersStr, peers, true);
