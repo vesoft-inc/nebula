@@ -38,20 +38,37 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     auto version = MetaServiceUtils::parseTagVersion(iter->key()) + 1;
     auto schema = MetaServiceUtils::parseSchema(iter->val());
     auto columns = schema.get_columns();
+    auto prop = schema.get_schema_prop();
+
+    // Update schema column
     auto& tagItems = req.get_tag_items();
     for (auto& tagItem : tagItems) {
         auto& cols = tagItem.get_schema().get_columns();
         for (auto& col : cols) {
-            auto retCode = MetaServiceUtils::alterColumnDefs(columns, col, tagItem.op);
+            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, tagItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-                LOG(WARNING) << "Alter tag error " << static_cast<int32_t>(retCode);
+                LOG(WARNING) << "Alter tag column error " << static_cast<int32_t>(retCode);
                 resp_.set_code(retCode);
                 onFinished();
                 return;
             }
         }
     }
+
+    // Update schema property
+    auto& alterSchemaProp = req.get_schema_prop();
+    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, std::move(alterSchemaProp));
+
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(WARNING) << "Alter tag property error " << static_cast<int32_t>(retCode);
+        resp_.set_code(retCode);
+        onFinished();
+        return;
+    }
+
     schema.set_columns(std::move(columns));
+    schema.set_schema_prop(std::move(prop));
+
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter Tag " << req.get_tag_name() << ", tagId " << tagId;
     data.emplace_back(MetaServiceUtils::schemaTagKey(req.get_space_id(), tagId, version),

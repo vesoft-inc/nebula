@@ -83,6 +83,14 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
                             static_cast<int64_t>(fields_.size() - 1));
 }
 
+void NebulaSchemaProvider::setProp(nebula::cpp2::SchemaProp schemaProp) {
+    schemaProp_ = std::move(schemaProp);
+}
+
+const nebula::cpp2::SchemaProp NebulaSchemaProvider::getProp() const {
+    return schemaProp_;
+}
+
 }  // namespace meta
 }  // namespace nebula
 

@@ -26,6 +26,7 @@ enum ErrorCode {
     E_NOT_FOUND      = -23,
     E_INVALID_HOST   = -24,
     E_UNSUPPORTED    = -25,
+    E_NOT_DROP       = -26,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -36,7 +37,6 @@ enum ErrorCode {
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
-
 
 enum AlterSchemaOp {
     ADD    = 0x01,
@@ -59,7 +59,6 @@ enum RoleType {
     USER   = 0x03,
     GUEST  = 0x04,
 } (cpp.enum_strict)
-
 
 union ID {
     1: common.GraphSpaceID  space_id,
@@ -184,9 +183,10 @@ struct CreateTagReq {
 }
 
 struct AlterTagReq {
-    1: common.GraphSpaceID    space_id,
-    2: string                 tag_name,
-    3: list<AlterSchemaItem>  tag_items,
+    1: common.GraphSpaceID      space_id,
+    2: string                   tag_name,
+    3: list<AlterSchemaItem>    tag_items,
+    4: common.SchemaProp        schema_prop,
 }
 
 struct DropTagReq {
@@ -225,9 +225,10 @@ struct CreateEdgeReq {
 }
 
 struct AlterEdgeReq {
-    1: common.GraphSpaceID     space_id,
-    2: string                  edge_name,
-    3: list<AlterSchemaItem>   edge_items,
+    1: common.GraphSpaceID      space_id,
+    2: string                   edge_name,
+    3: list<AlterSchemaItem>    edge_items,
+    4: common.SchemaProp        schema_prop,
 }
 
 struct GetEdgeReq {
@@ -380,7 +381,7 @@ struct GetUserReq {
 struct GetUserResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,    
+    2: common.HostAddr  leader,
     3: UserItem user_item,
 }
 
@@ -390,7 +391,7 @@ struct ListUsersReq {
 struct ListUsersResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,    
+    2: common.HostAddr  leader,
     3: map<common.UserID, UserItem>(cpp.template = "std::unordered_map") users,
 }
 
@@ -401,7 +402,7 @@ struct ListRolesReq {
 struct ListRolesResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,    
+    2: common.HostAddr  leader,
     3: list<RoleItem> roles,
 }
 
