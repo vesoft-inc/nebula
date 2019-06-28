@@ -115,7 +115,8 @@ AssertionResult DataTest::prepareSchema() {
                                << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    // Increase waiting time to avoid storaged is not finished
+    sleep(FLAGS_load_data_interval_secs + 3);
     return TestOK();
 }
 
