@@ -143,7 +143,8 @@ TEST(QueryStatsTest, StatsSimpleTest) {
     cpp2::GetNeighborsRequest req;
     buildRequest(req);
 
-    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get());
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get(), executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

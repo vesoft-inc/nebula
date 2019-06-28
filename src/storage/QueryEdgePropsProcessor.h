@@ -33,24 +33,15 @@ private:
                                           std::vector<PropContext>& props,
                                           RowSetWriter& rsWriter);
 
-    void addDefaultProps(EdgeContext& edgeContext);
+    void addDefaultProps();
 
-    kvstore::ResultCode processVertex(PartitionID partID, VertexID vId,
-                                      std::vector<TagContext>& tagContexts,
-                                      EdgeContext& edgeContext) override {
-        UNUSED(partID);
-        UNUSED(vId);
-        UNUSED(tagContexts);
-        UNUSED(edgeContext);
+    kvstore::ResultCode processVertex(PartitionID partID, VertexID vId) override {
+        UNUSED(partID); UNUSED(vId);
         LOG(FATAL) << "Unimplement!";
         return kvstore::ResultCode::SUCCEEDED;
     }
 
-    void onProcessed(std::vector<TagContext>& tagContexts,
-                     EdgeContext& edgeContext,
-                     int32_t retNum) override {
-        UNUSED(tagContexts);
-        UNUSED(edgeContext);
+    void onProcessFinished(int32_t retNum) override {
         UNUSED(retNum);
         LOG(FATAL) << "Unimplement!";
     }
