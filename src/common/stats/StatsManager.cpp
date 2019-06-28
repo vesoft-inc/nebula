@@ -333,7 +333,7 @@ StatsManager::VT StatsManager::readHisto(const std::string& counterName,
 
     std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
     sm.histograms_[index].second->update(Clock::now());
-    size_t level = static_cast<size_t>(range);
+    auto level = static_cast<size_t>(range);
     return sm.histograms_[index].second->getPercentileEstimate(pct, level);
 }
 

@@ -12,8 +12,7 @@
 namespace nebula {
 namespace thread {
 
-GenericWorker::GenericWorker() {
-}
+GenericWorker::GenericWorker() = default;
 
 GenericWorker::~GenericWorker() {
     stop();
@@ -99,7 +98,7 @@ void GenericWorker::notify() {
 
 void GenericWorker::onNotify() {
     if (stopped_.load(std::memory_order_acquire)) {
-        event_base_loopexit(evbase_, NULL);
+        event_base_loopexit(evbase_, nullptr);
         // Even been broken, we still fall through to finish the current loop.
     }
     {
@@ -165,7 +164,7 @@ GenericWorker::Timer::~Timer() {
 void GenericWorker::purgeTimerTask(uint64_t id) {
     {
         std::lock_guard<std::mutex> guard(lock_);
-        purgingingTimers_.push_back(id);
+        purgingingTimers_.emplace_back(id);
     }
     notify();
 }

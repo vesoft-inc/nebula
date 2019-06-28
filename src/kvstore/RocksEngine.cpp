@@ -155,10 +155,10 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
 
 
 ResultCode RocksEngine::multiGet(const std::vector<std::string>& keys,
-                                   std::vector<std::string>* values) {
+                                 std::vector<std::string>* values) {
     rocksdb::ReadOptions options;
     std::vector<rocksdb::Slice> slices;
-    for (unsigned int index = 0 ; index < keys.size() ; index++) {
+    for (size_t index = 0; index < keys.size(); index++) {
         slices.emplace_back(keys[index]);
     }
 

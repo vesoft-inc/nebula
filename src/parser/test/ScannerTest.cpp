@@ -374,8 +374,18 @@ TEST(Scanner, Basic) {
 #undef CHECK_SEMANTIC_TYPE
 #undef CHECK_SEMANTIC_VALUE
 
-    std::istringstream is(stream);
-    scanner.switch_streams(&is, nullptr);
+    auto input = [&] (char *buf, int maxSize) {
+        static int copied = 0;
+        int left = stream.size() - copied;
+        if (left == 0) {
+            return 0;
+        }
+        int n = left < maxSize ? left : maxSize;
+        ::memcpy(buf, &stream[copied], n);
+        copied += n;
+        return n;
+    };
+    scanner.setReadBuffer(input);
 
     for (auto &item : validators) {
         ASSERT_TRUE(item());
