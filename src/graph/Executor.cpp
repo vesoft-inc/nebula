@@ -129,23 +129,6 @@ std::string Executor::valueTypeToString(nebula::cpp2::ValueType type) {
     }
 }
 
-nebula::cpp2::SupportedType Executor::columnTypeToSupportedType(ColumnType type) {
-    switch (type) {
-        case BOOL:
-            return nebula::cpp2::SupportedType::BOOL;
-        case INT:
-            return nebula::cpp2::SupportedType::INT;
-        case DOUBLE:
-            return nebula::cpp2::SupportedType::DOUBLE;
-        case STRING:
-            return nebula::cpp2::SupportedType::STRING;
-        case TIMESTAMP:
-            return nebula::cpp2::SupportedType::TIMESTAMP;
-        default:
-            return nebula::cpp2::SupportedType::UNKNOWN;
-    }
-}
-
 void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
     switch (value.which()) {
         case 0:

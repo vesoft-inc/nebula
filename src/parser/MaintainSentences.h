@@ -65,7 +65,7 @@ public:
 
     enum PropType : uint8_t {
         TTL_DURATION,
-        TTL_COL,
+        TTL_COL
     };
 
     SchemaPropItem(PropType op, int64_t val) {
@@ -303,7 +303,7 @@ public:
         return name_.get();
     }
 
-    std::vector<AlterSchemaOptItem*> schemaOptList() const {
+    std::vector<AlterSchemaOptItem*> getSchemaOpts() const {
         return opts_->alterSchemaItems();
     }
 
@@ -335,7 +335,7 @@ public:
         return name_.get();
     }
 
-    std::vector<AlterSchemaOptItem*> schemaOptList() const {
+    std::vector<AlterSchemaOptItem*> getSchemaOpts() const {
         return opts_->alterSchemaItems();
     }
 
