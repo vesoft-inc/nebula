@@ -38,20 +38,37 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     auto version = MetaServiceUtils::parseEdgeVersion(iter->key()) + 1;
     auto schema = MetaServiceUtils::parseSchema(iter->val());
     auto columns = schema.get_columns();
+    auto prop = schema.get_schema_prop();
+
+    // Update schema column
     auto& edgeItems = req.get_edge_items();
     for (auto& edgeItem : edgeItems) {
         auto& cols = edgeItem.get_schema().get_columns();
         for (auto& col : cols) {
-            auto retCode = MetaServiceUtils::alterColumnDefs(columns, col, edgeItem.op);
+            auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, edgeItem.op);
             if (retCode != cpp2::ErrorCode::SUCCEEDED) {
-                LOG(WARNING) << "Alter edge error " << static_cast<int32_t>(retCode);
+                LOG(WARNING) << "Alter edge column error " << static_cast<int32_t>(retCode);
                 resp_.set_code(retCode);
                 onFinished();
                 return;
             }
         }
     }
+
+    // Update schema property
+    auto& alterSchemaProp = req.get_schema_prop();
+    auto retCode = MetaServiceUtils::alterSchemaProp(columns, prop, std::move(alterSchemaProp));
+
+    if (retCode != cpp2::ErrorCode::SUCCEEDED) {
+        LOG(WARNING) << "Alter edge property error " << static_cast<int32_t>(retCode);
+        resp_.set_code(retCode);
+        onFinished();
+        return;
+    }
+
     schema.set_columns(std::move(columns));
+    schema.set_schema_prop(std::move(prop));
+
     std::vector<kvstore::KV> data;
     LOG(INFO) << "Alter edge " << req.get_edge_name() << ", edgeTye " << edgeType;
     data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, version),
