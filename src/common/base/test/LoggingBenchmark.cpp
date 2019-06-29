@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
 Benchmark number is taken from WSL running on i7-8650
 
 ============================================================================
-/home/sherman/Workspace/nebula/src/common/base/test/LoggingBenchmark.cpprelative  time/iter  iters/s
+LoggingBenchmark.cpp                            relative  time/iter  iters/s
 ============================================================================
 glog_output_logs                                             3.13us  319.07K
 optimized_output_logs                            100.10%     3.13us  319.39K
