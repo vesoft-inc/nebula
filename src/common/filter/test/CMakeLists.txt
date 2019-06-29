@@ -7,6 +7,7 @@ add_executable(
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:time_obj>
 )
 nebula_link_libraries(
     expression_test
@@ -25,6 +26,7 @@ add_executable(
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:time_obj>
 )
 nebula_link_libraries(
     expression_encode_decode_bm
