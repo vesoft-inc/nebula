@@ -21,7 +21,57 @@ other query language out there.
 
 nGQL key words are case-insensitive but we recommend them written in all caps for easy reading. To help you get a quick understanding of nGQL, we have created a simple graph `myspace_test` with 4 vertices and 3 edges.
 
-### Graph space administration
+### Cluster administration
+
+* Add hosts
+
+Add a single host
+
+```
+ADD HOSTS $storage_ip:$storage_port
+```
+
+Add multiple hosts
+
+```
+ADD HOSTS $storage_ip1:$storage_port1,
+$storage_ip2:$storage_port2,...
+```
+
+**Note:**
+Replace the $storage_ip and $storage_port here according to the local_ip and port in nebula-storaged.conf. Separate the hosts by comma.
+
+
+- Show active hosts
+
+```
+SHOW HOSTS
+=============================
+|          Ip |  Port | Status |
+=============================
+| 192.168.8.5 | 65500 | online |
+-----------------------
+| 192.168.8.1 | 65500 | offline |
+-----------------------
+```
+
+* Remove hosts
+
+Remove a single host
+
+```
+REMOVE HOSTS $storage_ip:$storage_port
+```
+
+Remove multiple hosts
+
+```
+REMOVE HOSTS $storage_ip1:$storage_port1, $storage_ip2:$storage_port2,...
+```
+
+**Note:** Separate the hosts by comma.
+
+### Graph administration
 
 Graph spaces are physically isolated like the database in MySQL.
 
@@ -172,7 +222,7 @@ GO FROM 100 OVER like WHERE $$[player].name=="Vicenta"; -- Filter requirement: t
 ```
 
 ```
-GO FROM 101 OVER serve YIELD serve._src AS srcid, $^[player].age AS src.propAge, serve._dst AS dstid, $$[team].name AS dst.propName; -- Return the starting vertex id(renamed as srcid), source vertex property age, destination vertex id and its name
+GO FROM 101 OVER serve YIELD serve._src AS src_id, $^[player].age AS src_propAge, serve._dst AS dst_id, $$[team].name AS dst_propName; -- Return the starting vertex id(renamed as srcid), source vertex property age, destination vertex id and its name
 ```
 
 ```
