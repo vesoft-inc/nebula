@@ -34,6 +34,7 @@ add_library(
     ShowExecutor.cpp
     YieldExecutor.cpp
     OrderByExecutor.cpp
+    SchemaHelper.cpp
 )
 add_dependencies(
     graph_obj

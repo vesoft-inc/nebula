@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "graph/CreateEdgeExecutor.h"
 #include "dataman/ResultSchemaProvider.h"
+#include "graph/SchemaHelper.h"
 
 namespace nebula {
 namespace graph {
@@ -18,25 +19,25 @@ CreateEdgeExecutor::CreateEdgeExecutor(Sentence *sentence,
 
 
 Status CreateEdgeExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    auto status = checkIfGraphSpaceChosen();
+
+    if (!status.ok()) {
+        return status;
+    }
+
+    const auto& specs = sentence_->columnSpecs();
+    const auto& schemaProps = sentence_->getSchemaProps();
+
+    return SchemaHelper::createSchema(specs, schemaProps, schema_);
 }
 
 
 void CreateEdgeExecutor::execute() {
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
-    const auto& specs = sentence_->columnSpecs();
     auto spaceId = ectx()->rctx()->session()->space();
 
-    nebula::cpp2::Schema schema;
-    for (auto& spec : specs) {
-        nebula::cpp2::ColumnDef column;
-        column.name = *spec->name();
-        column.type.type = columnTypeToSupportedType(spec->type());
-        schema.columns.emplace_back(std::move(column));
-    }
-
-    auto future = mc->createEdgeSchema(spaceId, *name, schema);
+    auto future = mc->createEdgeSchema(spaceId, *name, schema_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {

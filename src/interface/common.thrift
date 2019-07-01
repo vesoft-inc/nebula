@@ -68,8 +68,14 @@ struct ColumnDef {
     2: required ValueType type,
 }
 
+struct SchemaProp {
+    1: optional i64      ttl_duration,
+    2: optional string   ttl_col,
+}
+
 struct Schema {
     1: list<ColumnDef> columns,
+    2: SchemaProp schema_prop,
 }
 
 struct HostAddr {
