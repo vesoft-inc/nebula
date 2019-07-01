@@ -7,14 +7,15 @@
 #include "base/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
-#include "time/TimeUtils.h"
+#include "time/WallClock.h"
 
 namespace nebula {
 namespace storage {
 
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     auto spaceId = req.get_space_id();
-    auto version = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInUSeconds();
+    auto version =
+        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
     callingNum_ = req.parts.size();
     CHECK_NOTNULL(kvstore_);
     std::for_each(req.parts.begin(), req.parts.end(), [&](auto& partEdges){

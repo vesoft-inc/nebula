@@ -6,6 +6,7 @@
 
 
 #include "meta/processors/admin/HBProcessor.h"
+#include "time/WallClock.h"
 #include "meta/ActiveHostsMan.h"
 
 DEFINE_int32(expired_hosts_check_interval_sec, 20,
@@ -30,7 +31,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
 
     LOG(INFO) << "Receive heartbeat from " << host;
     HostInfo info;
-    info.lastHBTimeInSec_ = time::TimeUtils::nowInSeconds();
+    info.lastHBTimeInSec_ = time::WallClock::fastNowInSec();
     if (!ActiveHostsMan::instance()->updateHostInfo(host, info)) {
         resp_.set_code(cpp2::ErrorCode::E_LEADER_CHANGED);
     }

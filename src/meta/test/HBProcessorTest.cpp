@@ -10,7 +10,6 @@
 #include <fstream>
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
-#include <common/time/TimeUtils.h>
 #include "meta/processors/admin/HBProcessor.h"
 
 DECLARE_int32(expired_hosts_check_interval_sec);
