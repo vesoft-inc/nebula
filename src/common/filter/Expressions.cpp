@@ -139,10 +139,8 @@ std::string InputPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
     buf += "$-";
-    if (prop_ != nullptr) {
-        buf += ".";
-        buf += *prop_;
-    }
+    buf += ".";
+    buf += *prop_;
     return buf;
 }
 

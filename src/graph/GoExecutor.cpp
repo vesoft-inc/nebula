@@ -239,12 +239,8 @@ Status GoExecutor::setupStarts() {
     if (inputs == nullptr) {
         return Status::OK();
     }
-    // This is for the case that the former executor has no YIELD clause.
-    // (Even though we already implicitly add `YIELD edge_type._dst AS id`)
-    // In such case, the input ref could be simply written as `$-'.
-    // TODO(dutor) In future, we should remove the implicitly added YIELD clause.
-    static const std::string defaultCol("id");
-    auto result = inputs->getVIDs(colname_ == nullptr ? defaultCol : *colname_);
+
+    auto result = inputs->getVIDs(*colname_);
     if (!result.ok()) {
         return std::move(result).status();
     }

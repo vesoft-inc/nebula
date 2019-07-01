@@ -253,7 +253,8 @@ input_ref_expression
         $$ = new InputPropertyExpression($3);
     }
     | INPUT_REF {
-        $$ = new InputPropertyExpression();
+        // To reference the `id' column implicitly
+        $$ = new InputPropertyExpression(new std::string("id"));
     }
     ;
 
