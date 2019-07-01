@@ -19,7 +19,7 @@ other query language out there.
 
 ## nGQL Syntax
 
-nGQL key words are case-insensitive but we recommend them written in all caps for easy reading. Based on the released Nebula v0.1 and corresponding Docker mirror, we have created a simple graph with 4 vertices and 3 edges to help you get a quick understanding of nGQL.
+nGQL key words are case-insensitive but we recommend them written in all caps for easy reading. To help you get a quick understanding of nGQL, we have created a simple graph `myspace_test` with 4 vertices and 3 edges.
 
 ### Graph space administration
 
@@ -207,4 +207,3 @@ you to follow these syntax norms:
 - Property names are in lower camel case
 
   - eg: kobeBryant
-
