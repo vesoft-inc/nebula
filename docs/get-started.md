@@ -152,14 +152,14 @@ Currently, we are using `git-lfs` to store the 3rd-party libraries so make sure
 **Compiling**
 
 ```
-cmake ./
+> cmake ./
 ```
 
 The default installation is in /usr/local path. To specify the installation path,
 use:
 
 ```
-cmake -DCMAKE_INSTALL_PREFIX=$your_nebula_install_dir
+> cmake -DCMAKE_INSTALL_PREFIX=$your_nebula_install_dir
 ```
 
 to replace the `$your_nebula_install_dir` here
@@ -167,7 +167,7 @@ to replace the `$your_nebula_install_dir` here
 Then run the following command:
 
 ```
-make && make install
+> make && make install
 ```
 
 **Running**
@@ -177,7 +177,7 @@ Configure nebula-metad.conf
 In your Nebula installation directory, run
 
 ```
-cp etc/nebula-metad.conf.default etc/nebula-metad.conf
+> cp etc/nebula-metad.conf.default etc/nebula-metad.conf
 ```
 
 Modify configurations in nebula-metad.conf:
@@ -191,7 +191,7 @@ Modify configurations in nebula-metad.conf:
 Configure nebula-storaged.conf
 
 ```
-cp etc/nebula-storaged.conf.default etc/nebula-storaged.conf
+> cp etc/nebula-storaged.conf.default etc/nebula-storaged.conf
 ```
 
 Modify configurations in nebula-storaged.conf:
@@ -204,7 +204,7 @@ Modify configurations in nebula-storaged.conf:
 Configure nebula-graphd.conf
 
 ```
-cp etc/nebula-graphd.conf.default etc/nebula-graphd.conf
+> cp etc/nebula-graphd.conf.default etc/nebula-graphd.conf
 ```
 
 Modify configurations in nebula-graphd.conf:
@@ -217,19 +217,19 @@ Modify configurations in nebula-graphd.conf:
 **Start service**
 
 ```
-script/nebula.service start all
+> script/nebula.service start all
 ```
 
 Make sure all the services are working
 
 ```
-script/nebula.service status all
+> script/nebula.service status all
 ```
 
 **Connect to Nebula**
 
 ```
-bin/nebula -u=user -p=password
+> bin/nebula -u=user -p=password
 ```
 
 - -u is to set user name, `user` is the default Nebula user account
@@ -238,7 +238,6 @@ bin/nebula -u=user -p=password
 Add host to make console connect to the Nebula service:
 
 ```
-bin/nebula -u=user -p=password
 > ADD HOSTS $storage_ip:$storage_port
 ```
 
@@ -355,12 +354,17 @@ nebula> DESCRIBE EDGE like;
 
 Insert the vertices and edges based on the graph above.
 ```
+<<<<<<< HEAD
 -- Insert vertices
 nebula> INSERT VERTEX student(name, age, gender) VALUES 200:("Monica", 16, "female");
 nebula> INSERT VERTEX student(name, age, gender) VALUES 201:("Mike", 18, "male");
 nebula> INSERT VERTEX student(name, age, gender) VALUES 202:("Jane", 17, "female");
 nebula> INSERT VERTEX course(name, credits),building(name) VALUES 101:("Math", 3, "No5");
 nebula> INSERT VERTEX course(name, credits),building(name) VALUES 102:("English", 6, "No11");
+=======
+nebula> CREATE space myspace(partition_num=1, replica_factor=1)
+```
+>>>>>>> delete duplicate command
 
 -- Insert edges
 nebula> INSERT EDGE select(grade) VALUES 200 -> 101:(5);
@@ -408,6 +412,7 @@ nebula> GO FROM 201 OVER like WHERE $$[student].age >= 17 YIELD $$[student].name
 Q3. Find the courses that the vertices liked by 201 select and their grade.
 
 ```
+<<<<<<< HEAD
 -- By pipe
 nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^[student].name AS Student, $$[course].name AS Course, select.grade AS Grade;
 
@@ -433,15 +438,35 @@ nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^[student].na
 -----------------------------
 |    Jane | English |     3 |
 -----------------------------
+=======
+// create tags schema: players and teams:
+nebula> CREATE TAG player(name string, age int)
+
+nebula> CREATE TAG team(name string)
+
+// create edges schema: players and teams:
+nebula> CREATE EDGE like(likeness int)
+
+nebula> CREATE EDGE serve(start_year int, end_year int)
+>>>>>>> delete duplicate command
 ```
 
 `|` denotes a pipe. The output of the formal query acts as input to the next one like a pipeline.
 
+<<<<<<< HEAD
 `$-` refers to the input stream.
 
+=======
+```
+nebula> DESCRIBE TAG player
+
+nebula> DESCRIBE EDGE serve
+```
+>>>>>>> delete duplicate command
 
 The second approach adopts a user-defined variable `$a`. The scope of this variable is within the compound statement.
 
+<<<<<<< HEAD
 For more details about Query Language, check [nGQL Query Language](nGQL-tutorial.md).
 
 
@@ -449,6 +474,18 @@ For more details about Query Language, check [nGQL Query Language](nGQL-tutorial
 1. Check if the `/etc/docker` folder exists, if not, create a new one with `mkdir -p /etc/docker`. Generally the folder will exist after Docker installation.
 2. Create the new file `daemon.json` with the following command
 
+=======
+```
+// Insert some vertices: players and teams:
+nebula> INSERT VERTEX player(name, age) VALUES -8379929135833483044:("Amar'e Stoudemire", 36)
+
+nebula> INSERT VERTEX team(name) VALUES -9110170398241263635:("Magic")
+
+// Insert some edges: likes and serves:
+nebula> INSERT EDGE like(likeness) VALUES -8379929135833483044 -> 6663720087669302163:(90)
+
+nebula> INSERT EDGE serve(start_year, end_year) VALUES -8379929135833483044 -> 868103967282670864:(2002, 2010)
+>>>>>>> delete duplicate command
 ```
 tee /etc/docker/daemon.json <<-'EOF'
 {
