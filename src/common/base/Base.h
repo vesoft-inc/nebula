@@ -47,7 +47,6 @@
 #include <cmath>
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 
 #include <boost/variant.hpp>
 #include <boost/any.hpp>
@@ -64,6 +63,7 @@
 #include <folly/json.h>
 #include <folly/RWSpinLock.h>
 
+#include "base/Logging.h"
 #include "thread/NamedThread.h"
 // #include "base/StringUnorderedMap.h"
 
@@ -99,6 +99,7 @@
 #define FVLOG4(...) VLOG(4) << folly::stringPrintf(__VA_ARGS__)
 
 #include "base/ThriftTypes.h"
+
 
 namespace nebula {
 
@@ -162,4 +163,5 @@ static constexpr auto is_convertible_v = std::is_constructible<U, T>::value;
 std::string versionString();
 
 }  // namespace nebula
+
 #endif  // COMMON_BASE_BASE_H_
