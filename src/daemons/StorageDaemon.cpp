@@ -36,6 +36,7 @@ DEFINE_string(store_type, "nebula",
 DEFINE_int32(num_workers, 4, "Number of worker threads");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 
+using nebula::operator<<;
 using nebula::Status;
 using nebula::HostAddr;
 using nebula::storage::StorageServiceHandler;
@@ -191,7 +192,7 @@ int main(int argc, char *argv[]) {
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());
     try {
-        nebula::operator<<(operator<<(LOG(INFO), "The storage deamon start on "), localhost);
+        LOG(INFO) << "The storage deamon start on " << localhost;
         gServer = std::make_unique<apache::thrift::ThriftServer>();
         gServer->setInterface(std::move(handler));
         gServer->setPort(FLAGS_port);
