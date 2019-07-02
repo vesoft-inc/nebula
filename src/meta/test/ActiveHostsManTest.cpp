@@ -15,7 +15,7 @@ namespace meta {
 TEST(ActiveHostsManTest, NormalTest) {
     fs::TempDir rootPath("/tmp/ActiveHostsManTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto now = time::TimeUtils::nowInSeconds();
+    auto now = time::WallClock::fastNowInSec();
     ActiveHostsMan ahMan(1, 1);
     ahMan.updateHostInfo(HostAddr(0, 0), HostInfo(now));
     ahMan.updateHostInfo(HostAddr(0, 1), HostInfo(now));

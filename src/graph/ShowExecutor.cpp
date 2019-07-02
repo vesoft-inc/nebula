@@ -72,9 +72,9 @@ void ShowExecutor::showHosts() {
         std::vector<std::string> header;
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
 
-        header.push_back("Ip");
-        header.push_back("Port");
-        header.push_back("Status");
+        header.emplace_back("Ip");
+        header.emplace_back("Port");
+        header.emplace_back("Status");
         resp_->set_column_names(std::move(header));
 
         for (auto &status : retShowHosts) {
@@ -119,7 +119,7 @@ void ShowExecutor::showSpaces() {
         std::vector<std::string> header;
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
 
-        header.push_back("Name");
+        header.emplace_back("Name");
         resp_->set_column_names(std::move(header));
 
         for (auto &space : retShowSpaces) {

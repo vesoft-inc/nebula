@@ -92,7 +92,7 @@ void ActiveHostsMan::loadHostMap() {
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
         HostInfo info;
-        info.lastHBTimeInSec_ = time::TimeUtils::nowInSeconds();
+        info.lastHBTimeInSec_ = time::WallClock::fastNowInSec();
         if (iter->val() == MetaServiceUtils::hostValOnline()) {
             LOG(INFO) << "load host " << host.ip << ":" << host.port;
             updateHostInfo({host.ip, host.port}, info);
@@ -102,7 +102,7 @@ void ActiveHostsMan::loadHostMap() {
 }
 
 void ActiveHostsMan::cleanExpiredHosts() {
-    int64_t now = time::TimeUtils::nowInSeconds();
+    int64_t now = time::WallClock::fastNowInSec();
     std::vector<kvstore::KV> data;
     {
         folly::RWSpinLock::WriteHolder rh(&lock_);

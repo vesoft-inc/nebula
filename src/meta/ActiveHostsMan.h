@@ -10,7 +10,6 @@
 #include "base/Base.h"
 #include <gtest/gtest_prod.h>
 #include "thread/GenericWorker.h"
-#include "time/TimeUtils.h"
 #include "kvstore/NebulaStore.h"
 
 DECLARE_int32(expired_hosts_check_interval_sec);

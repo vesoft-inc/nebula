@@ -161,6 +161,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         for (auto colIt : tagIt.schema.get_columns()) {
             schema->addField(colIt.name, std::move(colIt.type));
         }
+        // handle schema property
+        schema->setProp(tagIt.schema.get_schema_prop());
         tagIdSchemas.emplace(std::make_pair(tagIt.tag_id, tagIt.version), schema);
         tagNameIdMap.emplace(std::make_pair(spaceId, tagIt.tag_name), tagIt.tag_id);
         // get the latest tag version
@@ -181,6 +183,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
         for (auto colIt : edgeIt.schema.get_columns()) {
             schema->addField(colIt.name, std::move(colIt.type));
         }
+        // handle shcem property
+        schema->setProp(edgeIt.schema.get_schema_prop());
         edgeTypeSchemas.emplace(std::make_pair(edgeIt.edge_type, edgeIt.version), schema);
         edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.edge_name), edgeIt.edge_type);
         // get the latest edge version
@@ -748,11 +752,13 @@ MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2
 folly::Future<StatusOr<TagID>>
 MetaClient::alterTagSchema(GraphSpaceID spaceId,
                            std::string name,
-                           std::vector<cpp2::AlterSchemaItem> items) {
+                           std::vector<cpp2::AlterSchemaItem> items,
+                           nebula::cpp2::SchemaProp schemaProp) {
     cpp2::AlterTagReq req;
     req.set_space_id(std::move(spaceId));
     req.set_tag_name(std::move(name));
     req.set_tag_items(std::move(items));
+    req.set_schema_prop(std::move(schemaProp));
 
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_alterTag(request);
@@ -818,11 +824,14 @@ MetaClient::createEdgeSchema(GraphSpaceID spaceId, std::string name, nebula::cpp
 folly::Future<StatusOr<bool>>
 MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
                             std::string name,
-                            std::vector<cpp2::AlterSchemaItem> items) {
+                            std::vector<cpp2::AlterSchemaItem> items,
+                            nebula::cpp2::SchemaProp schemaProp) {
     cpp2::AlterEdgeReq req;
     req.set_space_id(std::move(spaceId));
     req.set_edge_name(std::move(name));
     req.set_edge_items(std::move(items));
+    req.set_schema_prop(std::move(schemaProp));
+
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_alterEdge(request);
     }, [] (cpp2::ExecResp&& resp) -> bool {
