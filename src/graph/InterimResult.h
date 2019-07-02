@@ -8,6 +8,7 @@
 #define GRAPH_INTERIMRESULT_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowSetWriter.h"
 #include "dataman/SchemaWriter.h"
@@ -36,7 +37,7 @@ public:
         return rsReader_->schema();
     }
 
-    std::vector<VertexID> getVIDs(const std::string &col) const;
+    StatusOr<std::vector<VertexID>> getVIDs(const std::string &col) const;
 
     std::vector<cpp2::RowValue> getRows() const;
     // TODO(dutor) iterating interfaces on rows and columns
