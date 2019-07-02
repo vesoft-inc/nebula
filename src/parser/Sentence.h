@@ -52,6 +52,7 @@ public:
         kChangePassword,
         kDownload,
         kIngest,
+        kOrderBy,
     };
 
     Kind kind() const {

@@ -98,6 +98,8 @@ TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
 TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
 DOWNLOAD                    ([Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd])
 HDFS                        ([Hh][Dd][Ff][Ss])
+ORDER                       ([Oo][Rr][Dd][Ee][Rr])
+ASC                         ([Aa][Ss][Cc])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -188,6 +190,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {HDFS}                      { return TokenType::KW_HDFS; }
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
+{ORDER}                     { return TokenType::KW_ORDER; }
+{ASC}                       { return TokenType::KW_ASC; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

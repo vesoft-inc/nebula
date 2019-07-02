@@ -32,6 +32,7 @@
 #include "graph/DropSpaceExecutor.h"
 #include "graph/YieldExecutor.h"
 #include "graph/DownloadExecutor.h"
+#include "graph/OrderByExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -106,6 +107,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kDownload:
             executor = std::make_unique<DownloadExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kOrderBy:
+            executor = std::make_unique<OrderByExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
             break;
@@ -133,21 +137,53 @@ std::string Executor::valueTypeToString(nebula::cpp2::ValueType type) {
     }
 }
 
-nebula::cpp2::SupportedType Executor::columnTypeToSupportedType(ColumnType type) {
-    switch (type) {
-        case BOOL:
-            return nebula::cpp2::SupportedType::BOOL;
-        case INT:
-            return nebula::cpp2::SupportedType::INT;
-        case DOUBLE:
-            return nebula::cpp2::SupportedType::DOUBLE;
-        case STRING:
-            return nebula::cpp2::SupportedType::STRING;
-        case TIMESTAMP:
-            return nebula::cpp2::SupportedType::TIMESTAMP;
+void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
+    switch (value.which()) {
+        case 0:
+            writer << boost::get<int64_t>(value);
+            break;
+        case 1:
+            writer << boost::get<double>(value);
+            break;
+        case 2:
+            writer << boost::get<bool>(value);
+            break;
+        case 3:
+            writer << boost::get<std::string>(value);
+            break;
         default:
-            return nebula::cpp2::SupportedType::UNKNOWN;
+            LOG(FATAL) << "Unknown value type: " << static_cast<uint32_t>(value.which());
     }
+}
+
+bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value) {
+    switch (value.which()) {
+        case 0:
+            return nebula::cpp2::SupportedType::INT == type.type;
+        case 1:
+            return nebula::cpp2::SupportedType::DOUBLE == type.type;
+        case 2:
+            return nebula::cpp2::SupportedType::BOOL == type.type;
+        case 3:
+            return nebula::cpp2::SupportedType::STRING == type.type;
+        // TODO: Other type
+    }
+
+    return false;
+}
+
+Status Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
+                                std::vector<std::string*> props) {
+    for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
+        auto schemaFieldName = schema->getFieldName(fieldIndex);
+        if (schemaFieldName != *props[fieldIndex]) {
+            LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
+                       << ", input field " << *props[fieldIndex];
+            return Status::Error("Input field name `%s' is wrong",
+                                 props[fieldIndex]->c_str());
+        }
+    }
+    return Status::OK();
 }
 
 }   // namespace graph

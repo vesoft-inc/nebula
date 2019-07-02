@@ -133,9 +133,6 @@ void NebulaStore::init() {
 
     LOG(INFO) << "Register handler...";
     partMan_->registerHandler(this);
-
-    // TODO: we have to wait until leader has been elected, for now we just sleep a few seconds.
-    sleep(3);
 }
 
 
@@ -316,7 +313,7 @@ void NebulaStore::asyncMultiRemove(GraphSpaceID spaceId,
                                    KVCallback cb) {
     folly::RWSpinLock::ReadHolder rh(&lock_);
     CHECK_FOR_WRITE(spaceId, partId, cb);
-    return partIt->second->asyncMultiRemove(std::move(keys), cb);
+    return partIt->second->asyncMultiRemove(std::move(keys), std::move(cb));
 }
 
 

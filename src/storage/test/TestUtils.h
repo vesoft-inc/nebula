@@ -17,6 +17,9 @@
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+#include "meta/SchemaManager.h"
+#include <folly/executors/ThreadPoolExecutor.h>
+#include <folly/executors/CPUThreadPoolExecutor.h>
 
 
 namespace nebula {
@@ -52,12 +55,12 @@ public:
         }
 
         std::vector<std::string> paths;
-        paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
-        paths.push_back(folly::stringPrintf("%s/disk2", rootPath));
+        paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath));
+        paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath));
 
         // Prepare KVStore
         options.dataPaths_ = std::move(paths);
-        options.cfFactory_ = cfFactory;
+        options.cfFactory_ = std::move(cfFactory);
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
                                                             workers,
@@ -170,7 +173,7 @@ public:
                                  std::string name,
                                  cpp2::StatType type,
                                  TagID tagId = -1) {
-        auto prop = TestUtils::propDef(owner, name, tagId);
+        auto prop = TestUtils::propDef(owner, std::move(name), tagId);
         prop.set_stat(type);
         return prop;
     }
