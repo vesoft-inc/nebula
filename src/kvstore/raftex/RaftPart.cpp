@@ -572,63 +572,77 @@ void RaftPart::processAppendLogResponses(
         VLOG(2) << idStr_ << numSucceeded
                 << " hosts have accepted the logs";
 
-        std::unique_ptr<LogIterator> walIt;
         {
             std::lock_guard<std::mutex> g(raftLock_);
+            if (status_ != Status::RUNNING) {
+                // The partition is not running
+                VLOG(2) << idStr_ << "The partition is stopped";
+                sendingPromise_.setValue(AppendLogResult::E_STOPPED);
+                cachingPromise_.setValue(AppendLogResult::E_STOPPED);
+                logs_.clear();
+                replicatingLogs_ = false;
+                return;
+            }
 
+            if (role_ != Role::LEADER) {
+                // Is not a leader any more
+                VLOG(2) << idStr_ << "The leader has changed";
+                sendingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+                cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+                logs_.clear();
+                replicatingLogs_ = false;
+                return;
+            }
             lastLogId_ = lastLogId;
             lastLogTerm_ = currTerm;
 
             lastMsgSentDur_.reset();
 
-            walIt = wal_->iterator(committedId + 1, lastLogId);
-        }
+            auto walIt = wal_->iterator(committedId + 1, lastLogId);
+            // Step 3: Commit the batch
+            if (commitLogs(std::move(walIt))) {
+                committedLogId_ = lastLogId;
 
-        // Step 3: Commit the batch
-        if (commitLogs(std::move(walIt))) {
-            std::lock_guard<std::mutex> g(raftLock_);
-
-            committedLogId_ = lastLogId;
-
-            // Step 4: Fulfill the promise
-            if (iter.hasLogs()) {
-                sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
-            }
-            if (iter.leadByCAS()) {
-                sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
-            }
-            VLOG(2) << idStr_ << "Succeeded in committing the logs";
-
-            // Step 5: Check whether need to continue
-            // the log replication
-            CHECK(replicatingLogs_);
-            // Continue to process the original AppendLogsIterator if necessary
-            iter.resume();
-            if (iter.empty()) {
-                if (logs_.size() > 0) {
-                    // continue to replicate the logs
-                    sendingPromise_ = std::move(cachingPromise_);
-                    cachingPromise_.reset();
-                    iter = AppendLogsIterator(
-                        lastLogId_ + 1,
-                        std::move(logs_),
-                        [this] (const std::string& log) -> std::string {
-                            auto res = compareAndSet(log);
-                            if (res.empty()) {
-                                // Failed
-                                sendingPromise_.setOneSingleValue(
-                                    AppendLogResult::E_CAS_FAILURE);
-                            }
-                            return res;
-                        });
-                    logs_.clear();
-                } else {
-                    replicatingLogs_ = false;
-                    VLOG(2) << idStr_ << "No more log to be replicated";
+                // Step 4: Fulfill the promise
+                if (iter.hasLogs()) {
+                    sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
                 }
+                if (iter.leadByCAS()) {
+                    sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
+                }
+                VLOG(2) << idStr_ << "Succeeded in committing the logs";
+
+                // Step 5: Check whether need to continue
+                // the log replication
+                CHECK(replicatingLogs_);
+                // Continue to process the original AppendLogsIterator if necessary
+                iter.resume();
+                if (iter.empty()) {
+                    if (logs_.size() > 0) {
+                        // continue to replicate the logs
+                        sendingPromise_ = std::move(cachingPromise_);
+                        cachingPromise_.reset();
+                        iter = AppendLogsIterator(
+                            lastLogId_ + 1,
+                            std::move(logs_),
+                            [this] (const std::string& log) -> std::string {
+                                auto res = compareAndSet(log);
+                                if (res.empty()) {
+                                    // Failed
+                                    sendingPromise_.setOneSingleValue(
+                                        AppendLogResult::E_CAS_FAILURE);
+                                }
+                                return res;
+                            });
+                        logs_.clear();
+                    } else {
+                        replicatingLogs_ = false;
+                        VLOG(2) << idStr_ << "No more log to be replicated";
+                    }
+                }
+            } else {
+                LOG(FATAL) << idStr_ << "Failed to commit logs";
             }
-        } else {
-            LOG(FATAL) << idStr_ << "Failed to commit logs";
         }
 
         if (!iter.empty()) {
