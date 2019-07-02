@@ -16,6 +16,8 @@ DEFINE_int32(download_thread_num, 3, "download thread number");
 namespace nebula {
 namespace storage {
 
+static std::atomic_flag isRunning = ATOMIC_FLAG_INIT;
+
 using proxygen::HTTPMessage;
 using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
@@ -128,10 +130,15 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
                                           const std::string& path,
                                           const std::vector<std::string>& parts,
                                           const std::string& local) {
+    if (isRunning.test_and_set()) {
+        LOG(ERROR) << "Download is not completed";
+        return false;
+    }
+
     static folly::IOThreadPoolExecutor executor(FLAGS_download_thread_num);
     std::condition_variable cv;
     std::mutex lock;
-    std::atomic<int> completed(0);
+    int32_t completed{0};
     std::atomic<bool> successful{true};
 
     for (auto& part : parts) {
@@ -139,7 +146,6 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
             auto remotePath = folly::stringPrintf("hdfs://%s:%d%s/%d",
                                                   url.c_str(), port, path.c_str(),
                                                   atoi(part.c_str()) + 1);
-            LOG(INFO) << "File Path " << remotePath;
             auto command = folly::stringPrintf("hdfs dfs -copyToLocal %s %s",
                                                remotePath.c_str(), local.c_str());
             LOG(INFO) << "Download SST Files: " << command;
@@ -150,19 +156,22 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
             }
             std::unique_lock<std::mutex> uniqueLock(lock);
             completed++;
-            cv.notify_one();
+            if (completed == (int32_t)parts.size()) {
+                cv.notify_one();
+            }
         };
         executor.add(downloader);
     }
 
-    auto uniqueLock = std::unique_lock<std::mutex>(lock);
-    cv.wait(uniqueLock, [&]() { return completed == (int32_t)parts.size(); });
+    std::unique_lock<std::mutex> uniqueLock(lock);
+    cv.wait(uniqueLock);
     VLOG(3) << "Download tasks have finished";
+    isRunning.clear();
     return successful;
 }
 
 bool StorageHttpDownloadHandler::ingestSSTFiles(const std::string& path,
-                                        GraphSpaceID spaceID) {
+                                                GraphSpaceID spaceID) {
     UNUSED(path); UNUSED(spaceID);
     return false;
 }

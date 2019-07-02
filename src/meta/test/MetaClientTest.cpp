@@ -31,7 +31,7 @@ TEST(MetaClientTest, InterfacesTest) {
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
 
     // Let the system choose an available port for us
-    auto localMetaPort = 0;
+    uint32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     GraphSpaceID spaceId = 0;

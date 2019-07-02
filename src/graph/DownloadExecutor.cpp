@@ -25,7 +25,7 @@ DownloadExecutor::DownloadExecutor(Sentence *sentence,
 }
 
 Status DownloadExecutor::prepare() {
-    return Status::OK();
+    return checkIfGraphSpaceChosen();
 }
 
 void DownloadExecutor::execute() {
@@ -40,19 +40,19 @@ void DownloadExecutor::execute() {
 
     auto tmp = "%s \"http://%s:%d/download?url=%s&port=%d&path=%s&local=%s&space=%d\" 2> /dev/null";
     auto func = [&]() {
-                    auto command = folly::stringPrintf(tmp, "/usr/bin/curl -G", metaHost.c_str(),
-                                                       FLAGS_meta_http_port, host->c_str(), port,
-                                                       path->c_str(), local->c_str(), spaceId);
-                    LOG(INFO) << "Download Command: " << command;
-                    auto result = nebula::ProcessUtils::runCommand(command.c_str());
-                    if (result.ok()) {
-                        LOG(INFO) << "Download Successfully";
-                        return true;
-                    } else {
-                        LOG(ERROR) << "Download Failed " << result.status();
-                        return false;
-                    }
-                };
+        auto command = folly::stringPrintf(tmp, "/usr/bin/curl -G", metaHost.c_str(),
+                                           FLAGS_meta_http_port, host->c_str(), port,
+                                           path->c_str(), local->c_str(), spaceId);
+        LOG(INFO) << "Download Command: " << command;
+        auto result = nebula::ProcessUtils::runCommand(command.c_str());
+        if (result.ok()) {
+            LOG(INFO) << "Download Successfully";
+            return true;
+        } else {
+            LOG(ERROR) << "Download Failed " << result.status();
+            return false;
+        }
+    };
     auto future = folly::async(func);
 
     auto *runner = ectx()->rctx()->runner();

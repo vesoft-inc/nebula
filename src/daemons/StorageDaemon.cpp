@@ -49,7 +49,7 @@ using nebula::ProcessUtils;
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
-static Status setupSignalHandler();
+static void setupSignalHandler();
 
 
 std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
@@ -190,11 +190,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Setup the signal handlers
-    status = setupSignalHandler();
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        return EXIT_FAILURE;
-    }
+    setupSignalHandler();
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore_, schemaMan.get());
     try {
@@ -215,11 +211,10 @@ int main(int argc, char *argv[]) {
 }
 
 
-Status setupSignalHandler() {
+void setupSignalHandler() {
     ::signal(SIGPIPE, SIG_IGN);
     ::signal(SIGINT, signalHandler);
     ::signal(SIGTERM, signalHandler);
-    return Status::OK();
 }
 
 
