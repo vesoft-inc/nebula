@@ -109,8 +109,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE(",", TokenType::COMMA),
         CHECK_SEMANTIC_TYPE(":", TokenType::COLON),
         CHECK_SEMANTIC_TYPE(";", TokenType::SEMICOLON),
-        CHECK_SEMANTIC_TYPE("+", TokenType::ADD),
-        CHECK_SEMANTIC_TYPE("-", TokenType::SUB),
+        CHECK_SEMANTIC_TYPE("+", TokenType::PLUS),
+        CHECK_SEMANTIC_TYPE("-", TokenType::MINUS),
         CHECK_SEMANTIC_TYPE("*", TokenType::MUL),
         CHECK_SEMANTIC_TYPE("/", TokenType::DIV),
         CHECK_SEMANTIC_TYPE("%", TokenType::MOD),
@@ -343,15 +343,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("label123", TokenType::LABEL, "label123"),
 
         CHECK_SEMANTIC_VALUE("123", TokenType::INTEGER, 123),
-        CHECK_SEMANTIC_VALUE("-123", TokenType::INTEGER, -123),
         CHECK_SEMANTIC_VALUE("0x123", TokenType::INTEGER, 0x123),
         CHECK_SEMANTIC_VALUE("0xdeadbeef", TokenType::INTEGER, 0xdeadbeef),
         CHECK_SEMANTIC_VALUE("0123", TokenType::INTEGER, 0123),
         CHECK_SEMANTIC_VALUE("123.", TokenType::DOUBLE, 123.),
         CHECK_SEMANTIC_VALUE(".123", TokenType::DOUBLE, 0.123),
         CHECK_SEMANTIC_VALUE("123.456", TokenType::DOUBLE, 123.456),
-        CHECK_SEMANTIC_VALUE("+123.456", TokenType::DOUBLE, 123.456),
-        CHECK_SEMANTIC_VALUE("-123.456", TokenType::DOUBLE, -123.456),
 
         CHECK_SEMANTIC_VALUE("127.0.0.1", TokenType::IPV4, 0x7F000001),
 
