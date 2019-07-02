@@ -329,7 +329,7 @@ folly::Future<AppendLogResult> RaftPart::casAsync(std::string log) {
     return appendLogAsync(clusterId_, LogType::CAS, std::move(log));
 }
 
-folly::Future<AppendLogResult> RaftPart::commandAsync(std::string log) {
+folly::Future<AppendLogResult> RaftPart::sendCommandAsync(std::string log) {
     return appendLogAsync(clusterId_, LogType::COMMAND, std::move(log));
 }
 

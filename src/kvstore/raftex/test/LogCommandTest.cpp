@@ -32,7 +32,7 @@ TEST_F(LogCommandTest, StartWithCommandLog) {
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    leader_->commandAsync("Command Log Message");
+    leader_->sendCommandAsync("Command Log Message");
     msgs.emplace_back("Command Log Message");
     for (int i = 2; i <= 10; ++i) {
         msgs.emplace_back(
@@ -74,7 +74,7 @@ TEST_F(LogCommandTest, CommandInMiddle) {
         auto fut = leader_->appendAsync(0, msgs.back());
     }
 
-    leader_->commandAsync("Command Log Message");
+    leader_->sendCommandAsync("Command Log Message");
     msgs.emplace_back("Command Log Message");
 
     for (int i = 7; i <= 10; ++i) {
@@ -116,7 +116,7 @@ TEST_F(LogCommandTest, EndWithCommand) {
             folly::stringPrintf("Test Log Message %03d", i));
         leader_->appendAsync(0, msgs.back());
     }
-    auto fut = leader_->commandAsync("Command Log Message");
+    auto fut = leader_->sendCommandAsync("Command Log Message");
     msgs.emplace_back("Command Log Message");
     fut.wait();
     LOG(INFO) << "<===== Finish appending logs";
@@ -146,7 +146,7 @@ TEST_F(LogCommandTest, AllCommandLogs) {
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
     for (int i = 1; i <= 10; ++i) {
-        auto fut = leader_->commandAsync(folly::stringPrintf("Command log %d", i));
+        auto fut = leader_->sendCommandAsync(folly::stringPrintf("Command log %d", i));
         msgs.emplace_back(folly::stringPrintf("Command log %d", i));
         if (i == 10) {
             fut.wait();
@@ -181,7 +181,7 @@ TEST_F(LogCommandTest, MixedLogs) {
     // Command, CAS,  Normal, CAS, CAS, Command, Command, Normal, TCAS, Command, Normal, TCAS
     // c        c              c     c      c       c                      c       c
     std::vector<std::string> msgs;
-    leader_->commandAsync("Command log 1");
+    leader_->sendCommandAsync("Command log 1");
     msgs.emplace_back("Command log 1");
 
     leader_->casAsync("TCAS Log Message 2");
@@ -196,10 +196,10 @@ TEST_F(LogCommandTest, MixedLogs) {
     leader_->casAsync("TCAS Log Message 5");
     msgs.emplace_back("CAS Log Message 5");
 
-    leader_->commandAsync("Command log 6");
+    leader_->sendCommandAsync("Command log 6");
     msgs.emplace_back("Command log 6");
 
-    leader_->commandAsync("Command log 7");
+    leader_->sendCommandAsync("Command log 7");
     msgs.emplace_back("Command log 7");
 
     leader_->appendAsync(0, "Normal log Message 8");
@@ -207,7 +207,7 @@ TEST_F(LogCommandTest, MixedLogs) {
 
     leader_->casAsync("FCAS Log Message");
 
-    leader_->commandAsync("Command log 9");
+    leader_->sendCommandAsync("Command log 9");
     msgs.emplace_back("Command log 9");
 
     auto f = leader_->appendAsync(0, "Normal log Message 10");

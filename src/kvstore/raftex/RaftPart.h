@@ -139,7 +139,7 @@ public:
     /**
      * Asynchronously send one command.
      * */
-    folly::Future<AppendLogResult> commandAsync(std::string log);
+    folly::Future<AppendLogResult> sendCommandAsync(std::string log);
 
     /*****************************************************
      *
