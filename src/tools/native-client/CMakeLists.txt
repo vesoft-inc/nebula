@@ -1,7 +1,8 @@
+# locate jni header
 include_directories($ENV{JAVA_HOME}/include
                     $ENV{JAVA_HOME}/include/linux)
 
-add_library(nebula_native_client SHARED 
+add_library(nebula_native_client SHARED
             $<TARGET_OBJECTS:dataman_obj>
             $<TARGET_OBJECTS:fs_obj>
             $<TARGET_OBJECTS:base_obj>

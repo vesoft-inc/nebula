@@ -41,13 +41,15 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
         thriftResult.set_code(to(code));
         thriftResult.set_part_id(partId);
         if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+            nebula::cpp2::HostAddr leader;
             auto addr = kvstore_->partLeader(spaceId, partId);
-            thriftResult.get_leader()->set_ip(addr.first);
-            thriftResult.get_leader()->set_port(addr.second);
+            leader.set_ip(addr.first);
+            leader.set_port(addr.second);
+            thriftResult.set_leader(leader);
         }
         bool finished = false;
         {
-            std::lock_guard<folly::SpinLock> lg(this->lock_);
+            std::lock_guard<std::mutex> lg(this->lock_);
             if (thriftResult.code != cpp2::ErrorCode::SUCCEEDED) {
                 this->codes_.emplace_back(std::move(thriftResult));
             }

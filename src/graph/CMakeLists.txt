@@ -33,6 +33,8 @@ add_library(
     DescribeSpaceExecutor.cpp
     ShowExecutor.cpp
     YieldExecutor.cpp
+    OrderByExecutor.cpp
+    SchemaHelper.cpp
 )
 add_dependencies(
     graph_obj

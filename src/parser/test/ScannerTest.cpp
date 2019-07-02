@@ -317,6 +317,13 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("TTL_COL", TokenType::KW_TTL_COL),
         CHECK_SEMANTIC_TYPE("ttl_col", TokenType::KW_TTL_COL),
         CHECK_SEMANTIC_TYPE("Ttl_col", TokenType::KW_TTL_COL),
+        CHECK_SEMANTIC_TYPE("ORDER", TokenType::KW_ORDER),
+        CHECK_SEMANTIC_TYPE("Order", TokenType::KW_ORDER),
+        CHECK_SEMANTIC_TYPE("order", TokenType::KW_ORDER),
+        CHECK_SEMANTIC_TYPE("ASC", TokenType::KW_ASC),
+        CHECK_SEMANTIC_TYPE("Asc", TokenType::KW_ASC),
+        CHECK_SEMANTIC_TYPE("asc", TokenType::KW_ASC),
+
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
@@ -374,8 +381,18 @@ TEST(Scanner, Basic) {
 #undef CHECK_SEMANTIC_TYPE
 #undef CHECK_SEMANTIC_VALUE
 
-    std::istringstream is(stream);
-    scanner.switch_streams(&is, nullptr);
+    auto input = [&] (char *buf, int maxSize) {
+        static int copied = 0;
+        int left = stream.size() - copied;
+        if (left == 0) {
+            return 0;
+        }
+        int n = left < maxSize ? left : maxSize;
+        ::memcpy(buf, &stream[copied], n);
+        copied += n;
+        return n;
+    };
+    scanner.setReadBuffer(input);
 
     for (auto &item : validators) {
         ASSERT_TRUE(item());

@@ -79,7 +79,7 @@ protected:
 
     time::Duration          duration_;
     std::vector<cpp2::ResultCode> codes_;
-    folly::SpinLock         lock_;
+    std::mutex lock_;
     int32_t                 callingNum_ = 0;
 };
 

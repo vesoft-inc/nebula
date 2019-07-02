@@ -59,7 +59,7 @@ GENERATE_LOCK(user);
     }
 
 /**
- * Check segemnt is consist of numbers and letters and should not empty.
+ * Check segment is consist of numbers and letters and should not empty.
  * */
 #define CHECK_SEGMENT(segment) \
     if (!MetaCommon::checkSegment(segment)) { \

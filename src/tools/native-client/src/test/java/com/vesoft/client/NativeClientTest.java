@@ -6,8 +6,6 @@
 
 package com.vesoft.client;
 
-import static com.vesoft.client.NativeClient.decoded;
-import static com.vesoft.client.NativeClient.encoded;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -35,7 +33,7 @@ public class NativeClientTest {
             0.618,
             "Hello".getBytes()
         };
-        byte[] result = encoded(values);
+        byte[] result = NativeClient.encode(values);
 
         NativeClient.Pair[] pairs = new NativeClient.Pair[]{
             new NativeClient.Pair("b_field", Boolean.class.getName()),
@@ -45,7 +43,7 @@ public class NativeClientTest {
             new NativeClient.Pair("s_field", byte[].class.getName())
         };
 
-        Map<String, byte[]> decodedResult = decoded(result, pairs);
+        Map<String, byte[]> decodedResult = NativeClient.decode(result, pairs);
 
         byte byteValue = decodedResult.get("b_field")[0];
         boolean boolValue = (byteValue == 0x00) ? false : true;

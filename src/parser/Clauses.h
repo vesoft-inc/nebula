@@ -37,7 +37,7 @@ private:
 class SourceNodeList final {
 public:
     void addNodeId(int64_t id) {
-        nodes_.push_back(id);
+        nodes_.emplace_back(id);
     }
 
     const std::vector<int64_t>& nodeIds() const {

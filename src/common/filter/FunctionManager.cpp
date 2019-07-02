@@ -6,7 +6,7 @@
 
 #include "base/Base.h"
 #include "filter/FunctionManager.h"
-#include "time/TimeUtils.h"
+#include "time/WallClock.h"
 
 namespace nebula {
 
@@ -230,7 +230,7 @@ FunctionManager::FunctionManager() {
         attr.maxArity_ = 0;
         attr.body_ = [] (const auto &args) {
             UNUSED(args);
-            return time::TimeUtils::nowInSeconds();
+            return time::WallClock::fastNowInSec();
         };
     }
     {

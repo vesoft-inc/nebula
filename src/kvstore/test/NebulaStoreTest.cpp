@@ -48,8 +48,8 @@ TEST(NebulaStoreTest, SimpleTest) {
 
     fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
     std::vector<std::string> paths;
-    paths.push_back(folly::stringPrintf("%s/disk1", rootPath.path()));
-    paths.push_back(folly::stringPrintf("%s/disk2", rootPath.path()));
+    paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+    paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
 
     KVOptions options;
     options.dataPaths_ = std::move(paths);
@@ -131,8 +131,8 @@ TEST(NebulaStoreTest, PartsTest) {
     }
 
     std::vector<std::string> paths;
-    paths.push_back(folly::stringPrintf("%s/disk1", rootPath.path()));
-    paths.push_back(folly::stringPrintf("%s/disk2", rootPath.path()));
+    paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+    paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
 
     for (size_t i = 0; i < paths.size(); i++) {
         auto db = std::make_unique<RocksEngine>(
@@ -176,7 +176,7 @@ TEST(NebulaStoreTest, PartsTest) {
     };
     check(0);
 
-    auto* pm = static_cast<MemPartManager*>(store->partMan_.get());
+    auto* pm = dynamic_cast<MemPartManager*>(store->partMan_.get());
     // Let's create another space with 10 parts.
     for (auto partId = 0; partId < 10; partId++) {
         pm->addPart(1, partId);
