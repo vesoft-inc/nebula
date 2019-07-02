@@ -42,6 +42,14 @@ enum class AppendLogResult {
 enum class LogType {
     NORMAL      = 0x00,
     CAS         = 0x01,
+    /**
+      COMMAND is similar to CAS, but not the same. There are two differences:
+      1. Normal logs after CAS could be committed together. In opposite, Normal logs
+         after COMMAND should be hold until the COMMAND committed, but the logs before
+         COMMAND could be committed together.
+      2. CAS maybe failed. So we use SinglePromise for it. But COMMAND not, so it could
+         share one promise with the normal logs before it.
+     * */
     COMMAND     = 0x02,
 };
 
