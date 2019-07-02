@@ -195,8 +195,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 ";"                         { return TokenType::SEMICOLON; }
 "@"                         { return TokenType::AT; }
 
-"+"                         { return TokenType::ADD; }
-"-"                         { return TokenType::SUB; }
+"+"                         { return TokenType::PLUS; }
+"-"                         { return TokenType::MINUS; }
 "*"                         { return TokenType::MUL; }
 "/"                         { return TokenType::DIV; }
 "%"                         { return TokenType::MOD; }
@@ -260,9 +260,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
-[+-]?{DEC}+                 { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
-[+-]?{DEC}+\.{DEC}*         { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
-[+-]?{DEC}*\.{DEC}+         { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+{DEC}+                      { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
+{DEC}+\.{DEC}*              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+{DEC}*\.{DEC}+              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
 
 \${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 

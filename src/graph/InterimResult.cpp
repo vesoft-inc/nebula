@@ -22,7 +22,7 @@ InterimResult::InterimResult(std::vector<VertexID> vids) {
 }
 
 
-std::vector<VertexID> InterimResult::getVIDs(const std::string &col) const {
+StatusOr<std::vector<VertexID>> InterimResult::getVIDs(const std::string &col) const {
     if (!vids_.empty()) {
         DCHECK(rsReader_ == nullptr);
         return vids_;
@@ -33,7 +33,9 @@ std::vector<VertexID> InterimResult::getVIDs(const std::string &col) const {
     while (iter) {
         VertexID vid;
         auto rc = iter->getVid(col, vid);
-        CHECK(rc == ResultType::SUCCEEDED);
+        if (rc != ResultType::SUCCEEDED) {
+            return Status::Error("Column `%s' not found", col.c_str());
+        }
         result.emplace_back(vid);
         ++iter;
     }
