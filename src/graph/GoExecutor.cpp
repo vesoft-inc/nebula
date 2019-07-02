@@ -56,6 +56,7 @@ Status GoExecutor::prepare() {
     } while (false);
 
     if (!status.ok()) {
+        LOG(ERROR) << "Preparing failed: " << status;
         return status;
     }
 
@@ -105,9 +106,7 @@ Status GoExecutor::prepareFrom() {
         if (clause == nullptr) {
             LOG(FATAL) << "From clause shall never be null";
         }
-        if (!clause->isRef()) {
-            starts_ = clause->srcNodeList()->nodeIds();
-        } else {
+        if (clause->isRef()) {
             auto *expr = clause->ref();
             if (expr->isInputExpression()) {
                 auto *iexpr = static_cast<InputPropertyExpression*>(expr);
@@ -120,6 +119,24 @@ Status GoExecutor::prepareFrom() {
                 // No way to happen except memory corruption
                 LOG(FATAL) << "Unknown kind of expression";
             }
+            break;
+        }
+
+        auto vidList = clause->vidList();
+        for (auto *expr : vidList) {
+            status = expr->prepare();
+            if (!status.ok()) {
+                break;
+            }
+            auto value = expr->eval();
+            if (!Expression::isInt(value)) {
+                status = Status::Error("Vertex ID should be of type integer");
+                break;
+            }
+            starts_.push_back(Expression::asInt(value));
+        }
+        if (!status.ok()) {
+            break;
         }
     } while (false);
     return status;
@@ -208,22 +225,26 @@ Status GoExecutor::setupStarts() {
     if (!starts_.empty()) {
         return Status::OK();
     }
+    const auto *inputs = inputs_.get();
     // Take one column from a variable
     if (varname_ != nullptr) {
-        auto *varinput = ectx()->variableHolder()->get(*varname_);
-        if (varinput == nullptr) {
+        auto *varInputs = ectx()->variableHolder()->get(*varname_);
+        if (varInputs == nullptr) {
             return Status::Error("Variable `%s' not defined", varname_->c_str());
         }
-        starts_ = varinput->getVIDs(*colname_);
-        return Status::OK();
+        DCHECK(inputs == nullptr);
+        inputs = varInputs;
     }
     // No error happened, but we are having empty inputs
-    if (inputs_ == nullptr) {
+    if (inputs == nullptr) {
         return Status::OK();
     }
-    // Take one column from the input of the pipe
-    DCHECK(colname_ != nullptr);
-    starts_ = inputs_->getVIDs(*colname_);
+
+    auto result = inputs->getVIDs(*colname_);
+    if (!result.ok()) {
+        return std::move(result).status();
+    }
+    starts_ = std::move(result).value();
     return Status::OK();
 }
 

@@ -67,9 +67,27 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
     auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
-        auto src = row->srcid();
-        auto dst = row->dstid();
-        auto rank = row->rank();
+        auto status = row->srcid()->prepare();
+        if (!status.ok()) {
+            return status;
+        }
+        auto v = row->srcid()->eval();
+        if (!Expression::isInt(v)) {
+            return Status::Error("Vertex ID should be of type integer");
+        }
+        auto src = Expression::asInt(v);
+        status = row->dstid()->prepare();
+        if (!status.ok()) {
+            return status;
+        }
+        v = row->dstid()->eval();
+        if (!Expression::isInt(v)) {
+            return Status::Error("Vertex ID should be of type integer");
+        }
+        auto dst = Expression::asInt(v);
+
+        int64_t rank = row->rank();
+
         auto expressions = row->values();
 
         // Now default value is unsupported
@@ -121,6 +139,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             in.__isset.props = true;
         }
     }
+
     return edges;
 }
 

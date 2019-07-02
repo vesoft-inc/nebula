@@ -42,7 +42,7 @@ class GraphScanner;
     nebula::ColumnType                      type;
     nebula::StepClause                     *step_clause;
     nebula::FromClause                     *from_clause;
-    nebula::SourceNodeList                 *src_node_list;
+    nebula::VertexIDList                   *vid_list;
     nebula::OverClause                     *over_clause;
     nebula::WhereClause                    *where_clause;
     nebula::YieldClause                    *yield_clause;
@@ -97,7 +97,7 @@ class GraphScanner;
 %token KW_ORDER KW_ASC
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
-%token PIPE OR AND LT LE GT GE EQ NE ADD SUB MUL DIV MOD NOT NEG ASSIGN
+%token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
 %token DOT COLON SEMICOLON L_ARROW R_ARROW AT
 %token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
 
@@ -111,18 +111,19 @@ class GraphScanner;
 %type <expr> expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression
 %type <expr> unary_expression primary_expression equality_expression
-%type <expr> ref_expression
 %type <expr> src_ref_expression
 %type <expr> dst_ref_expression
 %type <expr> input_ref_expression
 %type <expr> var_ref_expression
 %type <expr> alias_ref_expression
+%type <expr> vid_ref_expression
+%type <expr> vid
 %type <expr> function_call_expression
 %type <argument_list> argument_list
 %type <type> type_spec
 %type <step_clause> step_clause
 %type <from_clause> from_clause
-%type <src_node_list> id_list
+%type <vid_list> vid_list
 %type <over_clause> over_clause
 %type <where_clause> where_clause
 %type <yield_clause> yield_clause
@@ -152,7 +153,7 @@ class GraphScanner;
 %type <order_factor> order_factor
 %type <order_factors> order_factors
 
-%type <intval> port
+%type <intval> port unary_integer rank
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
@@ -251,6 +252,10 @@ input_ref_expression
     : INPUT_REF DOT LABEL {
         $$ = new InputPropertyExpression($3);
     }
+    | INPUT_REF {
+        // To reference the `id' column implicitly
+        $$ = new InputPropertyExpression(new std::string("id"));
+    }
     ;
 
 src_ref_expression
@@ -311,10 +316,10 @@ argument_list
 
 unary_expression
     : primary_expression { $$ = $1; }
-    | ADD primary_expression {
+    | PLUS primary_expression {
         $$ = new UnaryExpression(UnaryExpression::PLUS, $2);
     }
-    | SUB primary_expression {
+    | MINUS primary_expression {
         $$ = new UnaryExpression(UnaryExpression::NEGATE, $2);
     }
     | NOT primary_expression {
@@ -349,10 +354,10 @@ multiplicative_expression
 
 additive_expression
     : multiplicative_expression { $$ = $1; }
-    | additive_expression ADD multiplicative_expression {
+    | additive_expression PLUS multiplicative_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::ADD, $3);
     }
-    | additive_expression SUB multiplicative_expression {
+    | additive_expression MINUS multiplicative_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::SUB, $3);
     }
     ;
@@ -429,33 +434,52 @@ step_clause
     ;
 
 from_clause
-    : KW_FROM id_list {
-        auto from = new FromClause($2);
-        $$ = from;
+    : KW_FROM vid_list {
+        $$ = new FromClause($2);
     }
-    | KW_FROM ref_expression {
-        auto from = new FromClause($2);
-        $$ = from;
+    | KW_FROM vid_ref_expression {
+        $$ = new FromClause($2);
     }
     ;
 
-ref_expression
+vid_list
+    : vid {
+        $$ = new VertexIDList();
+        $$->add($1);
+    }
+    | vid_list COMMA vid {
+        $$ = $1;
+        $$->add($3);
+    }
+    ;
+
+vid
+    : unary_integer {
+        $$ = new PrimaryExpression($1);
+    }
+    | function_call_expression {
+        $$ = $1;
+    }
+    ;
+
+unary_integer
+    : PLUS INTEGER {
+        $$ = $2;
+    }
+    | MINUS INTEGER {
+        $$ = -$2;
+    }
+    | INTEGER {
+        $$ = $1;
+    }
+    ;
+
+vid_ref_expression
     : input_ref_expression {
         $$ = $1;
     }
     | var_ref_expression {
         $$ = $1;
-    }
-
-id_list
-    : INTEGER {
-        auto list = new SourceNodeList();
-        list->addNodeId($1);
-        $$ = list;
-    }
-    | id_list COMMA INTEGER {
-        $$ = $1;
-        $$->addNodeId($3);
     }
     ;
 
@@ -542,7 +566,7 @@ create_schema_prop_list
     ;
 
  create_schema_prop_item
-    : KW_TTL_DURATION ASSIGN INTEGER {
+    : KW_TTL_DURATION ASSIGN unary_integer {
         // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
         if ($3 < 0) {
             $3 = 0;
@@ -623,7 +647,7 @@ alter_schema_prop_list
     ;
 
 alter_schema_prop_item
-    : KW_TTL_DURATION ASSIGN INTEGER {
+    : KW_TTL_DURATION ASSIGN unary_integer {
         // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
         if ($3 < 0) {
             $3 = 0;
@@ -838,7 +862,7 @@ vertex_row_list
     ;
 
 vertex_row_item
-    : INTEGER COLON L_PAREN value_list R_PAREN {
+    : vid COLON L_PAREN value_list R_PAREN {
         $$ = new VertexRowItem($1, $4);
     }
     ;
@@ -887,16 +911,18 @@ edge_row_list
     ;
 
 edge_row_item
-    : INTEGER R_ARROW INTEGER COLON L_PAREN value_list R_PAREN {
+    : vid R_ARROW vid COLON L_PAREN value_list R_PAREN {
         $$ = new EdgeRowItem($1, $3, $6);
     }
-    | INTEGER R_ARROW INTEGER AT INTEGER COLON L_PAREN value_list R_PAREN {
+    | vid R_ARROW vid AT rank COLON L_PAREN value_list R_PAREN {
         $$ = new EdgeRowItem($1, $3, $5, $8);
     }
     ;
 
+rank: unary_integer { $$ = $1; };
+
 update_vertex_sentence
-    : KW_UPDATE KW_VERTEX INTEGER KW_SET update_list where_clause yield_clause {
+    : KW_UPDATE KW_VERTEX vid KW_SET update_list where_clause yield_clause {
         auto sentence = new UpdateVertexSentence();
         sentence->setVid($3);
         sentence->setUpdateList($5);
@@ -904,7 +930,7 @@ update_vertex_sentence
         sentence->setYieldClause($7);
         $$ = sentence;
     }
-    | KW_UPDATE KW_OR KW_INSERT KW_VERTEX INTEGER KW_SET update_list where_clause yield_clause {
+    | KW_UPDATE KW_OR KW_INSERT KW_VERTEX vid KW_SET update_list where_clause yield_clause {
         auto sentence = new UpdateVertexSentence();
         sentence->setInsertable(true);
         sentence->setVid($5);
@@ -933,7 +959,7 @@ update_item
     ;
 
 update_edge_sentence
-    : KW_UPDATE KW_EDGE INTEGER R_ARROW INTEGER
+    : KW_UPDATE KW_EDGE vid R_ARROW vid
       KW_SET update_list where_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setSrcId($3);
@@ -943,7 +969,7 @@ update_edge_sentence
         sentence->setYieldClause($9);
         $$ = sentence;
     }
-    | KW_UPDATE KW_OR KW_INSERT KW_EDGE INTEGER R_ARROW INTEGER
+    | KW_UPDATE KW_OR KW_INSERT KW_EDGE vid R_ARROW vid
       KW_SET update_list where_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setInsertable(true);
@@ -954,7 +980,7 @@ update_edge_sentence
         sentence->setYieldClause($11);
         $$ = sentence;
     }
-    | KW_UPDATE KW_EDGE INTEGER R_ARROW INTEGER AT INTEGER
+    | KW_UPDATE KW_EDGE vid R_ARROW vid AT rank
       KW_SET update_list where_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setSrcId($3);
@@ -965,7 +991,7 @@ update_edge_sentence
         sentence->setYieldClause($11);
         $$ = sentence;
     }
-    | KW_UPDATE KW_OR KW_INSERT KW_EDGE INTEGER R_ARROW INTEGER AT INTEGER KW_SET
+    | KW_UPDATE KW_OR KW_INSERT KW_EDGE vid R_ARROW vid AT rank KW_SET
       update_list where_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setInsertable(true);
@@ -980,7 +1006,7 @@ update_edge_sentence
     ;
 
 delete_vertex_sentence
-    : KW_DELETE KW_VERTEX id_list where_clause {
+    : KW_DELETE KW_VERTEX vid_list where_clause {
         auto sentence = new DeleteVertexSentence($3);
         sentence->setWhereClause($4);
         $$ = sentence;
@@ -988,11 +1014,11 @@ delete_vertex_sentence
     ;
 
 edge_list
-    : INTEGER R_ARROW INTEGER {
+    : vid R_ARROW vid {
         $$ = new EdgeList();
         $$->addEdge($1, $3);
     }
-    | edge_list COMMA INTEGER R_ARROW INTEGER {
+    | edge_list COMMA vid R_ARROW vid {
         $$ = $1;
         $$->addEdge($3, $5);
     }
