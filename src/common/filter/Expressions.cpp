@@ -138,8 +138,7 @@ Expression::decode(folly::StringPiece buffer) noexcept {
 std::string InputPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += "$-";
-    buf += ".";
+    buf += "$-.";
     buf += *prop_;
     return buf;
 }
