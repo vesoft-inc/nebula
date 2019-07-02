@@ -37,14 +37,14 @@ TEST(ActiveHostsManTest, NormalTest) {
     }
 }
 
-TEST(ActiveHostsManTest, NormalTest2) {
+TEST(ActiveHostsManTest, MergeHostInfo) {
     fs::TempDir rootPath("/tmp/ActiveHostsMergeTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     {
         std::vector<kvstore::KV> data;
         for (auto i = 0; i < 3; i++) {
             data.emplace_back(MetaServiceUtils::hostKey(0, i),
-                MetaServiceUtils::hostValOnline());
+                              MetaServiceUtils::hostValOnline());
         }
         kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
             [] (kvstore::ResultCode code) {
@@ -69,7 +69,7 @@ TEST(ActiveHostsManTest, NormalTest2) {
     ASSERT_EQ(0, offlineNum);
 
     ActiveHostsMan ahMan(1, 1, kv.get());
-    sleep(3);
+    sleep(ahMan.intervalSeconds_ + 1);
     onlineNum = 0;
     offlineNum = 0;
     kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);

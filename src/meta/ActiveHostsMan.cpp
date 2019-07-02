@@ -133,7 +133,7 @@ void ActiveHostsMan::cleanExpiredHosts() {
                     bool notFound = hostsMap_.find({host.ip, host.port}) == hostsMap_.end();
                     if (notFound) {
                         data.emplace_back(MetaServiceUtils::hostKey(host.ip, host.port),
-                                MetaServiceUtils::hostValOffline());
+                                          MetaServiceUtils::hostValOffline());
                     }
                 }
                 iter->next();
