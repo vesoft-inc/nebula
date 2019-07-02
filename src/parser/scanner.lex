@@ -249,20 +249,64 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 return TokenType::IPV4;
                             }
 0[Xx]{HEX}+                 {
+                                if (yyleng > 18) {
+                                    auto i = 2;
+                                    while (i < yyleng && yytext[i] == '0') {
+                                        i++;
+                                    }
+                                    if (yyleng - i > 16) {
+                                        yyterminate();
+                                    }
+                                }
                                 int64_t val = 0;
                                 sscanf(yytext, "%lx", &val);
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
 0{OCT}+                     {
+                                if (yyleng > 22) {
+                                    auto i = 1;
+                                    while (i < yyleng && yytext[i] == '0') {
+                                        i++;
+                                    }
+                                    if (yyleng - i > 22) {
+                                        yyterminate();
+                                    } else if (yyleng - i == 22 && yytext[i] != '1') {
+                                        yyterminate();
+                                    }
+                                }
                                 int64_t val = 0;
                                 sscanf(yytext, "%lo", &val);
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
-{DEC}+                      { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
-{DEC}+\.{DEC}*              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
-{DEC}*\.{DEC}+              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+{DEC}+                      {
+                                try {
+                                    folly::StringPiece text(yytext, yyleng);
+                                    yylval->intval = folly::to<int64_t>(text);
+                                } catch (...) {
+                                    yyterminate();
+                                }
+                                return TokenType::INTEGER;
+                            }
+{DEC}+\.{DEC}*              {
+                                try {
+                                    folly::StringPiece text(yytext, yyleng);
+                                    yylval->doubleval = folly::to<double>(text);
+                                } catch (...) {
+                                    yyterminate();
+                                }
+                                return TokenType::DOUBLE;
+                            }
+{DEC}*\.{DEC}+              {
+                                try {
+                                    folly::StringPiece text(yytext, yyleng);
+                                    yylval->doubleval = folly::to<double>(text);
+                                } catch (...) {
+                                    yyterminate();
+                                }
+                                return TokenType::DOUBLE;
+                            }
 
 \${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 

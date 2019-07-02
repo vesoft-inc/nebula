@@ -104,6 +104,29 @@ TEST(Scanner, Basic) {
         }                                                                   \
     })
 
+#define CHECK_LEXICAL_ERROR(STR)                                            \
+    ([] () {                                                                \
+        auto input = [] (char *buf, int) -> int {                           \
+            static bool first = true;                                       \
+            if (!first) { return 0; }                                       \
+            first = false;                                                  \
+            auto size = ::strlen(STR);                                      \
+            ::memcpy(buf, STR, size);                                       \
+            return size;                                                    \
+        };                                                                  \
+        GraphScanner lexer;                                                 \
+        lexer.setReadBuffer(input);                                         \
+        nebula::GraphParser::semantic_type dumyyylval;                      \
+        nebula::GraphParser::location_type dumyyyloc;                       \
+        auto token = lexer.yylex(&dumyyylval, &dumyyyloc);                  \
+        if (token != 0) {                                                   \
+            return AssertionFailure() << "Lexical error should've happened "\
+                                      << "for `" << STR << "'";             \
+        } else {                                                            \
+            return AssertionSuccess();                                      \
+        }                                                                   \
+    })
+
     std::vector<Validator> validators = {
         CHECK_SEMANTIC_TYPE(".", TokenType::DOT),
         CHECK_SEMANTIC_TYPE(",", TokenType::COMMA),
@@ -349,6 +372,17 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("123.", TokenType::DOUBLE, 123.),
         CHECK_SEMANTIC_VALUE(".123", TokenType::DOUBLE, 0.123),
         CHECK_SEMANTIC_VALUE("123.456", TokenType::DOUBLE, 123.456),
+
+        CHECK_SEMANTIC_VALUE("0xFFFFFFFFFFFFFFFF", TokenType::INTEGER, 0xFFFFFFFFFFFFFFFFL),
+        CHECK_SEMANTIC_VALUE("0x00FFFFFFFFFFFFFFFF", TokenType::INTEGER, 0x00FFFFFFFFFFFFFFFFL),
+        CHECK_SEMANTIC_VALUE("9223372036854775807", TokenType::INTEGER, 9223372036854775807L),
+        CHECK_SEMANTIC_VALUE("001777777777777777777777", TokenType::INTEGER,
+                              001777777777777777777777),
+        CHECK_LEXICAL_ERROR("9223372036854775808"),
+        CHECK_LEXICAL_ERROR("0xFFFFFFFFFFFFFFFFF"),
+        CHECK_LEXICAL_ERROR("002777777777777777777777"),
+        // TODO(dutor) It's too tedious to paste an overflowed double number here,
+        // thus we rely on `folly::to<double>' to cover those cases for us.
 
         CHECK_SEMANTIC_VALUE("127.0.0.1", TokenType::IPV4, 0x7F000001),
 
