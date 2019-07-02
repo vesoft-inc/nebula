@@ -217,13 +217,13 @@ Modify configurations in nebula-graphd.conf:
 **Start service**
 
 ```
-> script/nebula.service start all
+> scripts/nebula.service start all
 ```
 
 Make sure all the services are working
 
 ```
-> script/nebula.service status all
+> scripts/nebula.service status all
 ```
 
 **Connect to Nebula**
