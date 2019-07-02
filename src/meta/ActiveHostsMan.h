@@ -36,6 +36,7 @@ struct HostInfo {
 
 class ActiveHostsMan final {
     FRIEND_TEST(ActiveHostsManTest, NormalTest);
+    FRIEND_TEST(ActiveHostsManTest, MergeHostInfo);
     FRIEND_TEST(ProcessorTest, ListHostsTest);
 
 public:
