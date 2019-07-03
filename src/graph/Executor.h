@@ -12,6 +12,7 @@
 #include "cpp/helpers.h"
 #include "graph/ExecutionContext.h"
 #include "gen-cpp2/common_types.h"
+#include "gen-cpp2/storage_types.h"
 #include "dataman/RowWriter.h"
 #include "meta/SchemaManager.h"
 
