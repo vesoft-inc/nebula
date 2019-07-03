@@ -17,6 +17,9 @@
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+#include "meta/SchemaManager.h"
+#include <folly/executors/ThreadPoolExecutor.h>
+#include <folly/executors/CPUThreadPoolExecutor.h>
 
 
 namespace nebula {

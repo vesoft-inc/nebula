@@ -18,7 +18,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "interface/gen-cpp2/common_types.h"
-#include "time/TimeUtils.h"
+#include "time/WallClock.h"
 #include "meta/ActiveHostsMan.h"
 
 DECLARE_string(part_man_type);
@@ -68,7 +68,7 @@ public:
 
     static void registerHB(const std::vector<HostAddr>& hosts) {
          ActiveHostsMan::instance()->reset();
-         auto now = time::TimeUtils::nowInSeconds();
+         auto now = time::WallClock::fastNowInSec();
          for (auto& h : hosts) {
              ActiveHostsMan::instance()->updateHostInfo(h, HostInfo(now));
          }

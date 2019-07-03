@@ -364,6 +364,13 @@ TEST(Parser, InsertVertex) {
         auto result = parser.parse(query);
         ASSERT_FALSE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name,age,married,salary,create_time) "
+                            "VALUES -12345:(\"dutor\", 30, true, 3.14, 1551331900)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, UpdateVertex) {
@@ -408,7 +415,7 @@ TEST(Parser, InsertEdge) {
     {
         GQLParser parser;
         std::string query = "INSERT EDGE transfer(amount, time) "
-                            "VALUES 12345->54321:(3.75, 1537408527)";
+                            "VALUES 12345->-54321:(3.75, 1537408527)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -424,7 +431,7 @@ TEST(Parser, InsertEdge) {
     {
         GQLParser parser;
         std::string query = "INSERT EDGE NO OVERWRITE transfer(amount, time) "
-                            "VALUES 12345->54321:(3.75, 1537408527)";
+                            "VALUES -12345->54321:(3.75, 1537408527)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -438,7 +445,7 @@ TEST(Parser, InsertEdge) {
     {
         GQLParser parser;
         std::string query = "INSERT EDGE NO OVERWRITE transfer(amount, time) "
-                            "VALUES 12345->54321@1537408527:(3.75, 1537408527)";
+                            "VALUES 12345->-54321@1537408527:(3.75, 1537408527)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -687,6 +694,7 @@ TEST(Parser, UserOperation) {
     }
 }
 
+
 TEST(Parser, UnreservedKeywords) {
     {
         GQLParser parser;
@@ -703,6 +711,7 @@ TEST(Parser, UnreservedKeywords) {
         ASSERT_TRUE(result.ok()) << result.status();
     }
 }
+
 
 TEST(Parser, Annotation) {
     {
@@ -737,5 +746,74 @@ TEST(Parser, Annotation) {
     }
 }
 
+TEST(Parser, Agg) {
+    {
+        GQLParser parser;
+        std::string query = "ORDER BY $-.id";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name | "
+                            "ORDER BY name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name | "
+                            "ORDER BY $-.name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name | "
+                            "ORDER BY $-.name ASC";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name | "
+                            "ORDER BY $-.name DESC";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name, friend.age as age | "
+                            "ORDER BY $-.name ASC, $-.age DESC";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 over friend "
+                            "YIELD friend.name as name, friend.age as age | "
+                            "ORDER BY name ASC, age DESC";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, ReentrantRecoveryFromFailure) {
+    GQLParser parser;
+    {
+        std::string query = "USE dumy tag_name";
+        ASSERT_FALSE(parser.parse(query).ok());
+    }
+    {
+        std::string query = "USE space_name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
 
 }   // namespace nebula

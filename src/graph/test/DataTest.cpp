@@ -141,7 +141,7 @@ AssertionResult DataTest::removeData() {
     return TestOK();
 }
 
-TEST_F(DataTest, InsertVertex) {
+TEST_F(DataTest, DISABLED_InsertVertex) {
     // Insert wrong type value
     {
         cpp2::ExecutionResponse resp;

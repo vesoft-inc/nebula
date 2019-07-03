@@ -18,7 +18,8 @@ static constexpr size_t MAX_STRING = 4096;
 
 %}
 
-%x STR
+%x DQ_STR
+%x SQ_STR
 %x COMMENT
 
 GO                          ([Gg][Oo])
@@ -96,6 +97,8 @@ BY                          ([Bb][Yy])
 IN                          ([Ii][Nn])
 TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
 TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
+ORDER                       ([Oo][Rr][Dd][Ee][Rr])
+ASC                         ([Aa][Ss][Cc])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -184,6 +187,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {TTL_COL}                   { return TokenType::KW_TTL_COL; }
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
+{ORDER}                     { return TokenType::KW_ORDER; }
+{ASC}                       { return TokenType::KW_ASC; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -191,8 +196,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 ";"                         { return TokenType::SEMICOLON; }
 "@"                         { return TokenType::AT; }
 
-"+"                         { return TokenType::ADD; }
-"-"                         { return TokenType::SUB; }
+"+"                         { return TokenType::PLUS; }
+"-"                         { return TokenType::MINUS; }
 "*"                         { return TokenType::MUL; }
 "/"                         { return TokenType::DIV; }
 "%"                         { return TokenType::MOD; }
@@ -256,15 +261,16 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
-[+-]?{DEC}+                 { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
-[+-]?{DEC}+\.{DEC}*         { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
-[+-]?{DEC}*\.{DEC}+         { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+{DEC}+                      { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
+{DEC}+\.{DEC}*              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+{DEC}*\.{DEC}+              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
 
 \${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 
 
-\"                          { BEGIN(STR); pos = 0; }
-<STR>\"                     {
+\"                          { BEGIN(DQ_STR); pos = 0; }
+\'                          { BEGIN(SQ_STR); pos = 0; }
+<DQ_STR>\"                  {
                                 yylval->strval = new std::string(sbuf, pos);
                                 BEGIN(INITIAL);
                                 if (yylval->strval->size() > MAX_STRING) {
@@ -272,12 +278,24 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 }
                                 return TokenType::STRING;
                             }
-<STR>\n                     { yyterminate(); }
-<STR>[^\\\n\"]+             {
+<SQ_STR>\'                  {
+                                yylval->strval = new std::string(sbuf, pos);
+                                BEGIN(INITIAL);
+                                if (yylval->strval->size() > MAX_STRING) {
+                                    yyterminate();
+                                }
+                                return TokenType::STRING;
+                            }
+<DQ_STR,SQ_STR>\n           { yyterminate(); }
+<DQ_STR>[^\\\n\"]+          {
                                 ::strncpy(sbuf + pos, yytext, yyleng);
                                 pos += yyleng;
                             }
-<STR>\\{OCT}{1,3}           {
+<SQ_STR>[^\\\n\']+          {
+                                ::strncpy(sbuf + pos, yytext, yyleng);
+                                pos += yyleng;
+                            }
+<DQ_STR,SQ_STR>\\{OCT}{1,3} {
                                 int val = 0;
                                 sscanf(yytext + 1, "%o", &val);
                                 if (val > 0xFF) {
@@ -286,14 +304,14 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 sbuf[pos] = val;
                                 pos++;
                             }
-<STR>\\{DEC}+               { yyterminate(); }
-<STR>\\n                    { sbuf[pos] = '\n'; pos++; }
-<STR>\\t                    { sbuf[pos] = '\t'; pos++; }
-<STR>\\r                    { sbuf[pos] = '\r'; pos++; }
-<STR>\\b                    { sbuf[pos] = '\b'; pos++; }
-<STR>\\f                    { sbuf[pos] = '\f'; pos++; }
-<STR>\\(.|\n)               { sbuf[pos] = yytext[1]; pos++; }
-<STR>\\                     {
+<DQ_STR,SQ_STR>\\{DEC}+     { yyterminate(); }
+<DQ_STR,SQ_STR>\\n          { sbuf[pos] = '\n'; pos++; }
+<DQ_STR,SQ_STR>\\t          { sbuf[pos] = '\t'; pos++; }
+<DQ_STR,SQ_STR>\\r          { sbuf[pos] = '\r'; pos++; }
+<DQ_STR,SQ_STR>\\b          { sbuf[pos] = '\b'; pos++; }
+<DQ_STR,SQ_STR>\\f          { sbuf[pos] = '\f'; pos++; }
+<DQ_STR,SQ_STR>\\(.|\n)     { sbuf[pos] = yytext[1]; pos++; }
+<DQ_STR,SQ_STR>\\           {
                                 // This rule should have never been matched,
                                 // but without this, it somehow triggers the `nodefault' warning of flex.
                                 yyterminate();

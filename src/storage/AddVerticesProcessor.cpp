@@ -8,14 +8,15 @@
 #include "base/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
-#include "time/TimeUtils.h"
+#include "time/WallClock.h"
 
 namespace nebula {
 namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     VLOG(3) << "Receive AddVerticesRequest...";
-    auto now = std::numeric_limits<int64_t>::max() - time::TimeUtils::nowInUSeconds();
+    auto now =
+        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
     const auto& partVertices = req.get_parts();
     auto spaceId = req.get_space_id();
     callingNum_ = partVertices.size();
