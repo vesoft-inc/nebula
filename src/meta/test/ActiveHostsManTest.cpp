@@ -15,7 +15,7 @@ namespace meta {
 TEST(ActiveHostsManTest, NormalTest) {
     fs::TempDir rootPath("/tmp/ActiveHostsManTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto now = time::TimeUtils::nowInSeconds();
+    auto now = time::WallClock::fastNowInSec();
     ActiveHostsMan ahMan(1, 1);
     ahMan.updateHostInfo(HostAddr(0, 0), HostInfo(now));
     ahMan.updateHostInfo(HostAddr(0, 1), HostInfo(now));
@@ -35,6 +35,56 @@ TEST(ActiveHostsManTest, NormalTest) {
         folly::RWSpinLock::ReadHolder rh(&ahMan.lock_);
         ASSERT_EQ(HostInfo(now + 2),  ahMan.hostsMap_[HostAddr(0, 0)]);
     }
+}
+
+TEST(ActiveHostsManTest, MergeHostInfo) {
+    fs::TempDir rootPath("/tmp/ActiveHostsMergeTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    {
+        std::vector<kvstore::KV> data;
+        for (auto i = 0; i < 3; i++) {
+            data.emplace_back(MetaServiceUtils::hostKey(0, i),
+                              MetaServiceUtils::hostValOnline());
+        }
+        kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
+            [] (kvstore::ResultCode code) {
+            CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+        });
+    }
+
+    int onlineNum = 0;
+    int offlineNum = 0;
+    const auto& prefix = MetaServiceUtils::hostPrefix();
+    std::unique_ptr<kvstore::KVIterator> iter;
+    kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    while (iter->valid()) {
+        if (iter->val() == MetaServiceUtils::hostValOnline()) {
+            ++onlineNum;
+        } else {
+            ++offlineNum;
+        }
+        iter->next();
+    }
+    ASSERT_EQ(3, onlineNum);
+    ASSERT_EQ(0, offlineNum);
+
+    ActiveHostsMan ahMan(1, 1, kv.get());
+    sleep(ahMan.intervalSeconds_ + 1);
+    onlineNum = 0;
+    offlineNum = 0;
+    kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    while (iter->valid()) {
+        auto host = MetaServiceUtils::parseHostKey(iter->key());
+        LOG(INFO) << "ip: " << host.ip << ", port: " << host.port << ", status: " << iter->val();
+        if (iter->val() == MetaServiceUtils::hostValOnline()) {
+            ++onlineNum;
+        } else {
+            ++offlineNum;
+        }
+        iter->next();
+    }
+    ASSERT_EQ(0, onlineNum);
+    ASSERT_EQ(3, offlineNum);
 }
 
 }  // namespace meta

@@ -200,7 +200,69 @@ private:
     std::unique_ptr<Sentence>                   sentence_;
 };
 
+class OrderFactor final {
+public:
+    enum OrderType : uint8_t {
+        ASCEND,
+        DESCEND
+    };
 
+    OrderFactor(Expression *expr, OrderType op) {
+        expr_.reset(expr);
+        orderType_ = op;
+    }
+
+    Expression* expr() {
+        return expr_.get();
+    }
+
+    OrderType orderType() {
+        return orderType_;
+    }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<Expression>                 expr_;
+    OrderType                                   orderType_;
+};
+
+class OrderFactors final {
+public:
+    void addFactor(OrderFactor *factor) {
+        factors_.emplace_back(factor);
+    }
+
+    std::vector<OrderFactor*> factors() {
+        std::vector<OrderFactor*> result;
+        result.resize(factors_.size());
+        auto get = [] (auto &factor) { return factor.get(); };
+        std::transform(factors_.begin(), factors_.end(), result.begin(), get);
+        return result;
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::unique_ptr<OrderFactor>>   factors_;
+};
+
+class OrderBySentence final : public Sentence {
+public:
+    explicit OrderBySentence(OrderFactors *factors) {
+        orderFactors_.reset(factors);
+        kind_ = Kind::kOrderBy;
+    }
+
+    std::vector<OrderFactor*> factors() {
+        return orderFactors_->factors();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<OrderFactors>               orderFactors_;
+};
 }   // namespace nebula
 
 #endif  // PARSER_TRAVERSESENTENCES_H_

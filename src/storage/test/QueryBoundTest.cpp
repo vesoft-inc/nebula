@@ -15,6 +15,9 @@
 #include "dataman/RowSetReader.h"
 #include "dataman/RowReader.h"
 
+DECLARE_int32(max_handlers_per_req);
+DECLARE_int32(min_vertices_per_bucket);
+
 namespace nebula {
 namespace storage {
 
@@ -78,7 +81,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     decltype(req.parts) tmpIds;
     for (auto partId = 0; partId < 3; partId++) {
         for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            tmpIds[partId].push_back(vertexId);
+            tmpIds[partId].emplace_back(vertexId);
         }
     }
     req.set_parts(std::move(tmpIds));
@@ -185,7 +188,8 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     buildRequest(req);
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get());
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -207,13 +211,67 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
     buildRequest(req, false);
 
     LOG(INFO) << "Test QueryInBoundRequest...";
-    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), BoundType::IN_BOUND);
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
+                                                    executor.get(), BoundType::IN_BOUND);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
     checkResponse(resp, false);
+}
+
+TEST(QueryBoundTest,  GenBucketsTest) {
+    {
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(10, buckets.size());
+        for (auto& bucket : buckets) {
+            ASSERT_EQ(3, bucket.vertices_.size());
+        }
+    }
+    {
+        FLAGS_max_handlers_per_req = 9;
+        FLAGS_min_vertices_per_bucket = 3;
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(9, buckets.size());
+        for (auto i = 0; i < 3; i++) {
+            ASSERT_EQ(4, buckets[i].vertices_.size());
+        }
+        for (auto i = 3; i < 9; i++) {
+            ASSERT_EQ(3, buckets[i].vertices_.size());
+        }
+    }
+    {
+        FLAGS_max_handlers_per_req = 40;
+        FLAGS_min_vertices_per_bucket = 4;
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(7, buckets.size());
+        for (auto i = 0; i < 2; i++) {
+            ASSERT_EQ(5, buckets[i].vertices_.size());
+        }
+        for (auto i = 2; i < 7; i++) {
+            ASSERT_EQ(4, buckets[i].vertices_.size());
+        }
+    }
+    {
+        FLAGS_min_vertices_per_bucket = 40;
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(1, buckets.size());
+        ASSERT_EQ(30, buckets[0].vertices_.size());
+    }
 }
 
 }  // namespace storage

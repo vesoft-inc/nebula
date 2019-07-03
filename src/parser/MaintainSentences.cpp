@@ -210,5 +210,4 @@ std::string YieldSentence::toString() const {
     buf += yieldColumns_->toString();
     return buf;
 }
-
 }   // namespace nebula
