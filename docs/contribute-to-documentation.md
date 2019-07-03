@@ -3,9 +3,6 @@
 ## Contribute to documentation
 Contributing to the Nebula documentation can be a rewarding experience. We welcome your participation to help make the documentation better!
 
-We welcome your participation to help make the documentation better!
-
-
 ## How to contribute to the docs
 There are many ways to contribute:
 
