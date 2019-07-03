@@ -66,6 +66,7 @@ union ID {
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
     4: common.UserID        user_id,
+    5: common.ClusterID     cluster_id,
 }
 
 struct IdName {
