@@ -109,8 +109,6 @@ int main(int argc, char *argv[]) {
     });
     status = nebula::WebService::start();
     if (!status.ok()) {
-        LOG(ERROR) << "Failed to start web service: " << status;
-        nebula::WebService::stop();
         return EXIT_FAILURE;
     }
 
