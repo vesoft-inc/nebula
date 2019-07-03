@@ -41,6 +41,7 @@ nebula_add_library(
     processors/admin/BalancePlan.cpp
     processors/admin/BalanceTask.cpp
     processors/admin/AdminClient.cpp
+    processors/configMan/RegConfigProcessor.cpp
     processors/configMan/GetConfigProcessor.cpp
     processors/configMan/ListConfigsProcessor.cpp
     processors/configMan/SetConfigProcessor.cpp
@@ -55,7 +56,7 @@ nebula_add_library(
 nebula_add_library(
     meta_client OBJECT
     client/MetaClient.cpp
-    ConfigManager.cpp
+    GflagsManager.cpp
 )
 
 add_subdirectory(test)

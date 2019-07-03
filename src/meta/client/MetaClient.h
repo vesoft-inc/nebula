@@ -52,27 +52,26 @@ using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeTyp
 
 struct ConfigItem {
     ConfigItem() {}
-    ConfigItem(const std::string& space, const cpp2::ConfigModule& module, const std::string&name,
-            const VariantTypeEnum& type, const VariantType& value)
-        : space_(space)
-        , module_(module)
+
+    ConfigItem(const cpp2::ConfigModule& module, const std::string& name,
+               const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
+               const VariantType& value)
+        : module_(module)
         , name_(name)
         , type_(type)
+        , mode_(mode)
         , value_(value) {
     }
 
-    std::string         space_;
     cpp2::ConfigModule  module_;
     std::string         name_;
-    VariantTypeEnum     type_;
+    cpp2::ConfigType    type_;
+    cpp2::ConfigMode    mode_;
     VariantType         value_;
 };
 
 // get config via space, module and name
-using MetaConfigMap = std::unordered_map<
-        std::string,
-        std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>
->;
+using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>;
 
 class MetaChangedListener {
 public:
@@ -199,30 +198,18 @@ public:
     balance();
 
     // Operations for config
-    folly::Future<StatusOr<ConfigItem>>
-    getConfig(const std::string& space, const cpp2::ConfigModule& module, const std::string& name,
-              const cpp2::ConfigType& type);
+    folly::Future<StatusOr<bool>>
+    regConfig(const std::vector<cpp2::ConfigItem>& items);
+
+    folly::Future<StatusOr<std::vector<ConfigItem>>>
+    getConfig(const cpp2::ConfigModule& module, const std::string& name);
 
     folly::Future<StatusOr<bool>>
-    setConfig(const std::string& space, const cpp2::ConfigModule& module, const std::string& name,
+    setConfig(const cpp2::ConfigModule& module, const std::string& name,
               const cpp2::ConfigType& type, const std::string& value);
 
     folly::Future<StatusOr<std::vector<ConfigItem>>>
-    listConfigs(const std::string& space, const cpp2::ConfigModule& module);
-
-    StatusOr<ConfigItem> getConfigFromCache(const std::string& space,
-                                            const cpp2::ConfigModule& module,
-                                            const std::string& name, const VariantTypeEnum& type);
-
-    Status setConfigToCache(const std::string& space, const cpp2::ConfigModule& module,
-                            const std::string& name, const VariantType& value,
-                            const VariantTypeEnum& type);
-
-    StatusOr<std::vector<ConfigItem>> listConfigsFromCache(const std::string& space,
-                                                           const cpp2::ConfigModule& module);
-
-    Status isCfgRegistered(const std::string& space, const cpp2::ConfigModule& module,
-                           const std::string& name, const VariantTypeEnum& type);
+    listConfigs(const cpp2::ConfigModule& module);
 
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
@@ -258,15 +245,30 @@ public:
 
     const std::vector<HostAddr>& getAddresses();
 
+    // operations for config
+    void loadCfgThreadFunc(const cpp2::ConfigModule& module);
+
+    void regCfgThreadFunc(const std::vector<cpp2::ConfigItem>& gflags);
+
+    StatusOr<ConfigItem> getConfigFromCache(const cpp2::ConfigModule& module,
+                                            const std::string& name,
+                                            const cpp2::ConfigType& type);
+
+    // declare is for using GflagsManager in code, We don't check whether config cache ready or not.
+    // We just put default value in cache, and when we load configs stored in meta successfully, it
+    // would replaced by value from meta.
+    Status declareConfig(const cpp2::ConfigModule& module, const std::string& name,
+                         const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
+                         const VariantType& defaultValue);
+
+    Status isCfgRegistered(const cpp2::ConfigModule& module,
+                           const std::string& name, const cpp2::ConfigType& type);
+
 protected:
     void loadDataThreadFunc();
     void loadData();
     void addLoadDataTask();
-
     void heartBeatThreadFunc();
-
-    void loadCfgThreadFunc();
-    void addLoadCfgTask();
 
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
@@ -314,6 +316,8 @@ protected:
 
     PartsMap doGetPartsMap(const HostAddr& host,
                            const LocalCache& localCache);
+
+    void updateGflagsValue(const ConfigItem& item);
 
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;

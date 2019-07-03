@@ -106,9 +106,6 @@ std::string DescribeSpaceSentence::toString() const {
 
 std::string ConfigRowItem::toString() const {
     std::stringstream ss;
-    if (space_ != nullptr) {
-        ss << *space_;
-    }
     if (module_ != nullptr) {
         ss << *module_;
     }

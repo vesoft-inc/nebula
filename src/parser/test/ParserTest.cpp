@@ -1062,43 +1062,43 @@ TEST(Parser, ConfigOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "SHOW VARIABLES space:module";
+        std::string query = "SHOW VARIABLES GRAPH";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE VARIABLES space:module:name=value";
+        std::string query = "UPDATE VARIABLES storage:name=value";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GET VARIABLES space:module:name as int";
+        std::string query = "GET VARIABLES Meta:name";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "DECLARE VARIABLES space:meta:load_config_interval_secs=120 AS INT";
+        std::string query = "DECLARE VARIABLES meta:load_config_interval_secs=120 AS INT";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE VARIABLES :module:name=value";
+        std::string query = "DECLARE VARIABLES meta:load_config_interval_secs=120 AS INT MUTABLE";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GET VARIABLES :module:name as int";
+        std::string query = "UPDATE VARIABLES load_config_interval_secs=120";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "DECLARE VARIABLES :meta:load_config_interval_secs=120 AS INT";
+        std::string query = "GET VARIABLES load_config_interval_secs";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

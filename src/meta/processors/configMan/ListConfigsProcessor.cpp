@@ -12,11 +12,11 @@ namespace meta {
 void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::configLock());
 
-    auto prefix = MetaServiceUtils::configKeyPrefix(req.get_space(), req.get_module());
+    auto prefix = MetaServiceUtils::configKeyPrefix(req.get_module());
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    resp_.set_code(to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
+        resp_.set_code(to(ret));
         onFinished();
         return;
     }
@@ -27,12 +27,12 @@ void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
         auto value = iter->val();
         auto item = MetaServiceUtils::parseConfigValue(value);
         auto configName = MetaServiceUtils::parseConfigKey(key);
-        item.set_space(std::get<0>(configName));
-        item.set_module(std::get<1>(configName));
-        item.set_name(std::get<2>(configName));
+        item.set_module(configName.first);
+        item.set_name(configName.second);
         items.emplace_back(item);
         iter->next();
     }
+    resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     resp_.set_items(std::move(items));
     onFinished();
 }

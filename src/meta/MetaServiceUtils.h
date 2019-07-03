@@ -22,7 +22,7 @@ enum class EntryType : int8_t {
     CONFIG = 0x05,
 };
 
-using ConfigName = std::tuple<std::string, cpp2::ConfigModule, std::string>;
+using ConfigName = std::pair<cpp2::ConfigModule, std::string>;
 
 class MetaServiceUtils final {
 public:
@@ -126,12 +126,14 @@ public:
 
     static UserID parseUserId(folly::StringPiece val);
 
-    static std::string configKey(const std::string& space, const cpp2::ConfigModule& module,
-                                 const std::string& name, const cpp2::ConfigType& configType);
+    static std::string configKey(const cpp2::ConfigModule& module,
+                                 const std::string& name);
 
-    static std::string configKeyPrefix(const std::string& space, const cpp2::ConfigModule& module);
+    static std::string configKeyPrefix(const cpp2::ConfigModule& module);
 
-    static std::string configValue(const cpp2::ConfigType& valueType, const std::string& config);
+    static std::string configValue(const cpp2::ConfigType& valueType,
+                                   const cpp2::ConfigMode& valueMode,
+                                   const std::string& config);
 
     static ConfigName parseConfigKey(folly::StringPiece rawData);
 

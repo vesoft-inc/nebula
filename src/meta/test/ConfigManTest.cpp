@@ -9,10 +9,11 @@
 #include <folly/String.h>
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
-#include "meta/ConfigManager.h"
+#include "meta/GflagsManager.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
+#include "meta/processors/configMan/RegConfigProcessor.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(load_config_interval_secs);
@@ -24,14 +25,58 @@ TEST(ConfigManTest, ConfigProcessorTest) {
     fs::TempDir rootPath("/tmp/ConfigProcessorTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
 
-    // set and get string config
     cpp2::ConfigItem item1;
-    item1.set_space("myspace");
     item1.set_module(cpp2::ConfigModule::STORAGE);
     item1.set_name("k1");
     item1.set_type(cpp2::ConfigType::STRING);
+    item1.set_mode(cpp2::ConfigMode::MUTABLE);
     item1.set_value("v1");
 
+    cpp2::ConfigItem item2;
+    item2.set_module(cpp2::ConfigModule::STORAGE);
+    item2.set_name("k2");
+    item2.set_type(cpp2::ConfigType::STRING);
+    item2.set_value("v2");
+
+    // set and get without register
+    {
+        cpp2::SetConfigReq req;
+        req.set_item(item1);
+
+        auto* processor = SetConfigProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::ConfigItem item;
+        item.set_module(cpp2::ConfigModule::STORAGE);
+        item.set_name("k1");
+        cpp2::GetConfigReq req;
+        req.set_item(item);
+
+        auto* processor = GetConfigProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // register config item1 and item2
+    {
+        std::vector<cpp2::ConfigItem> items;
+        items.emplace_back(item1);
+        items.emplace_back(item2);
+        cpp2::RegConfigReq req;
+        req.set_items(items);
+
+        auto* processor = RegConfigProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    // set and get string config item1
     {
         cpp2::SetConfigReq req;
         req.set_item(item1);
@@ -44,10 +89,8 @@ TEST(ConfigManTest, ConfigProcessorTest) {
     }
     {
         cpp2::ConfigItem item;
-        item.set_space("myspace");
         item.set_module(cpp2::ConfigModule::STORAGE);
         item.set_name("k1");
-        item.set_type(cpp2::ConfigType::STRING);
         cpp2::GetConfigReq req;
         req.set_item(item);
 
@@ -56,15 +99,13 @@ TEST(ConfigManTest, ConfigProcessorTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-        ASSERT_EQ(item1, resp.get_item());
+        ASSERT_EQ(item1, resp.get_items().front());
     }
     // get config not existed
     {
         cpp2::ConfigItem item;
-        item.set_space("not_existed");
         item.set_module(cpp2::ConfigModule::STORAGE);
         item.set_name("not_existed");
-        item.set_type(cpp2::ConfigType::STRING);
         cpp2::GetConfigReq req;
         req.set_item(item);
 
@@ -72,29 +113,11 @@ TEST(ConfigManTest, ConfigProcessorTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
-    }
-
-    cpp2::ConfigItem item2;
-    item2.set_space("myspace");
-    item2.set_module(cpp2::ConfigModule::STORAGE);
-    item2.set_name("k2");
-    item2.set_type(cpp2::ConfigType::STRING);
-    item2.set_value("v2");
-    {
-        cpp2::SetConfigReq req;
-        req.set_item(item2);
-
-        auto* processor = SetConfigProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        ASSERT_EQ(0, resp.get_items().size());
     }
     // list all configs in a module
     {
         cpp2::ListConfigsReq req;
-        req.set_space("myspace");
         req.set_module(cpp2::ConfigModule::STORAGE);
 
         auto* processor = ListConfigsProcessor::instance(kv.get());
@@ -107,35 +130,35 @@ TEST(ConfigManTest, ConfigProcessorTest) {
         auto ret1 = resp.get_items().front();
         auto ret2 = resp.get_items().back();
         if (ret1.get_name() == "k1") {
-            ASSERT_EQ(ret1.get_value(), "v1");
-            ASSERT_EQ(ret2.get_value(), "v2");
+            ASSERT_EQ(ret1, item1);
+            ASSERT_EQ(ret2, item2);
         } else {
-            ASSERT_EQ(ret1.get_value(), "v2");
-            ASSERT_EQ(ret2.get_value(), "v1");
+            ASSERT_EQ(ret1, item2);
+            ASSERT_EQ(ret2, item1);
         }
     }
 
+    // register another config in other module, list all configs in all module
     cpp2::ConfigItem item3;
-    item3.set_space("myspace");
     item3.set_module(cpp2::ConfigModule::META);
     item3.set_name("k1");
     item3.set_type(cpp2::ConfigType::STRING);
     item3.set_value("v1");
-    {
-        cpp2::SetConfigReq req;
-        req.set_item(item3);
 
-        auto* processor = SetConfigProcessor::instance(kv.get());
+    {
+        std::vector<cpp2::ConfigItem> items;
+        items.emplace_back(item3);
+        cpp2::RegConfigReq req;
+        req.set_items(items);
+
+        auto* processor = RegConfigProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
-
-    // list all configs in all module
     {
         cpp2::ListConfigsReq req;
-        req.set_space("");
         req.set_module(cpp2::ConfigModule::ALL);
 
         auto* processor = ListConfigsProcessor::instance(kv.get());
@@ -166,174 +189,142 @@ TEST(ConfigManTest, MetaConfigManTest) {
     client->createSpace(space, 1, 1).get();
     sleep(FLAGS_load_data_interval_secs + 1);
 
-    auto cfgMan = ConfigManager(client.get());
     auto module = cpp2::ConfigModule::STORAGE;
-    // set and get config from meta client cache
+    auto mode = cpp2::ConfigMode::MUTABLE;
+    client->loadCfgThreadFunc(module);
+
+    GflagsManager cfgMan(client.get());
+    cfgMan.module_ = module;
+
+    // immutable configs
     {
-        cfgMan.setConfig(space, module, "int64_key", 60002l, false);
-        auto ret = cfgMan.getConfigAsInt64(space, module, "int64_key");
+        std::string name = "int64_key_immutable";
+        VariantType defaultValue = 100l;
+        auto type = cpp2::ConfigType::INT64;
+
+        sleep(FLAGS_load_config_interval_secs + 1);
+        // get/set without register
+        auto setRet = cfgMan.setConfig(module, name, type, 101l).get();
+        ASSERT_FALSE(setRet.ok());
+        auto getRet = cfgMan.getConfig(module, name).get();
+        ASSERT_FALSE(getRet.ok());
+
+        // register config as immutable and try to update
+        auto regRet = cfgMan.registerConfig(module, name, type, cpp2::ConfigMode::IMMUTABLE,
+                                            defaultValue).get();
+        ASSERT_TRUE(regRet.ok());
+        setRet = cfgMan.setConfig(module, name, cpp2::ConfigType::INT64, 101l).get();
+        ASSERT_FALSE(setRet.ok());
+
+        // get immutable config
+        getRet = cfgMan.getConfig(module, name).get();
+        ASSERT_TRUE(getRet.ok());
+        auto value = boost::get<int64_t>(getRet.value().front().value_);
+        ASSERT_EQ(value, 100);
+
+        sleep(FLAGS_load_config_interval_secs + 1);
+        // get immutable config from cache
+        auto cacheRet = cfgMan.getConfigAsInt64(name);
+        ASSERT_TRUE(cacheRet.ok());
+        ASSERT_EQ(cacheRet.value(), 100);
+    }
+    // mutable config
+    {
+        std::string name = "int64_key";
+        VariantType defaultValue = 100l;
+        auto type = cpp2::ConfigType::INT64;
+
+        // register and update config
+        auto regRet = cfgMan.registerConfig(module, name, type, mode, defaultValue).get();
+        ASSERT_TRUE(regRet.ok());
+        auto setRet = cfgMan.setConfig(module, name, type, 102l).get();
+        ASSERT_TRUE(setRet.ok());
+
+        // get from meta server
+        auto getRet = cfgMan.getConfig(module, name).get();
+        ASSERT_TRUE(getRet.ok());
+        auto value = boost::get<int64_t>(getRet.value().front().value_);
+        ASSERT_EQ(value, 102);
+
+        // get from cache
+        sleep(FLAGS_load_config_interval_secs + 1);
+        auto cacheRet = cfgMan.getConfigAsInt64(name);
+        ASSERT_TRUE(cacheRet.ok());
+        ASSERT_EQ(cacheRet.value(), 102);
+    }
+    {
+        std::string name = "bool_key";
+        VariantType defaultValue = false;
+        auto type = cpp2::ConfigType::BOOL;
+
+        // register and update config
+        auto regRet = cfgMan.registerConfig(module, name, type, mode, defaultValue).get();
+        ASSERT_TRUE(regRet.ok());
+        auto setRet = cfgMan.setConfig(module, name, type, true).get();
+        ASSERT_TRUE(setRet.ok());
+
+        // get from meta server
+        auto getRet = cfgMan.getConfig(module, name).get();
+        ASSERT_TRUE(getRet.ok());
+        auto value = boost::get<bool>(getRet.value().front().value_);
+        ASSERT_EQ(value, true);
+
+        // get from cache
+        sleep(FLAGS_load_config_interval_secs + 1);
+        auto cacheRet = cfgMan.getConfigAsBool(name);
+        ASSERT_TRUE(cacheRet.ok());
+        ASSERT_EQ(cacheRet.value(), true);
+    }
+    {
+        std::string name = "double_key";
+        VariantType defaultValue = 1.23;
+        auto type = cpp2::ConfigType::DOUBLE;
+
+        // register and update config
+        auto regRet = cfgMan.registerConfig(module, name, type, mode, defaultValue).get();
+        ASSERT_TRUE(regRet.ok());
+        auto setRet = cfgMan.setConfig(module, name, type, 3.14).get();
+        ASSERT_TRUE(setRet.ok());
+
+        // get from meta server
+        auto getRet = cfgMan.getConfig(module, name).get();
+        ASSERT_TRUE(getRet.ok());
+        auto value = boost::get<double>(getRet.value().front().value_);
+        ASSERT_EQ(value, 3.14);
+
+        // get from cache
+        sleep(FLAGS_load_config_interval_secs + 1);
+        auto cacheRet = cfgMan.getConfigAsDouble(name);
+        ASSERT_TRUE(cacheRet.ok());
+        ASSERT_EQ(cacheRet.value(), 3.14);
+    }
+    {
+        std::string name = "string_key";
+        VariantType defaultValue = std::string("something");
+        auto type = cpp2::ConfigType::STRING;
+
+        // register and update config
+        auto regRet = cfgMan.registerConfig(module, name, type, mode, defaultValue).get();
+        ASSERT_TRUE(regRet.ok());
+        auto setRet = cfgMan.setConfig(module, name, type, "abc").get();
+        ASSERT_TRUE(setRet.ok());
+
+        // get from meta server
+        auto getRet = cfgMan.getConfig(module, name).get();
+        ASSERT_TRUE(getRet.ok());
+        auto value = boost::get<std::string>(getRet.value().front().value_);
+        ASSERT_EQ(value, "abc");
+
+        // get from cache
+        sleep(FLAGS_load_config_interval_secs + 1);
+        auto cacheRet = cfgMan.getConfigAsString(name);
+        ASSERT_TRUE(cacheRet.ok());
+        ASSERT_EQ(cacheRet.value(), "abc");
+    }
+    {
+        auto ret = cfgMan.listConfigs(module).get();
         ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(ret.value(), 60002);
-    }
-    {
-        cfgMan.setConfig(space, module, "bool_key", true, false);
-        auto ret = cfgMan.getConfigAsBool(space, module, "bool_key");
-        ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(ret.value(), true);
-    }
-    {
-        cfgMan.setConfig(space, module, "double_key", 3.14, false);
-        auto ret = cfgMan.getConfigAsDouble(space, module, "double_key");
-        ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(ret.value(), 3.14);
-    }
-    {
-        cfgMan.setConfig(space, module, "string_key", "abc", false);
-        auto ret = cfgMan.getConfigAsString(space, module, "string_key");
-        ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(ret.value(), "abc");
-    }
-    {
-        // try to get config not existed
-        auto ret = cfgMan.getConfigAsString(space, module, "not_existed");
-        ASSERT_FALSE(ret.ok());
-    }
-    {
-        // try to get config of error type
-        auto ret = cfgMan.getConfigAsDouble(space, module, "string_key");
-        ASSERT_FALSE(ret.ok());
-    }
-    {
-        auto ret = cfgMan.listConfigs(space, module).get();
-        ASSERT_TRUE(ret.ok());
-        ASSERT_EQ(ret.value().size(), 4);
-    }
-}
-
-TEST(ConfigManTest, MacroTest) {
-    FLAGS_load_data_interval_secs = 1;
-    FLAGS_load_config_interval_secs = 1;
-    fs::TempDir rootPath("/tmp/MacroTest.XXXXXX");
-    uint32_t localMetaPort = 0;
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
-    TestUtils::createSomeHosts(sc->kvStore_.get());
-
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    uint32_t localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-    client->init();
-
-    auto cfgMan = *ConfigManager::instance(client.get());
-    auto space = "test_space";
-    auto module = cpp2::ConfigModule::META;
-    client->createSpace(space, 1, 1).get();
-    sleep(FLAGS_load_data_interval_secs + 1);
-
-    {
-        auto name = "int_key";
-        auto type = VariantTypeEnum::INT64;
-
-        // register config, read default value
-        REGISTER(space, module, name, type, 1l);
-        auto status = GET_CONFIG(space, module, name, type);
-        ASSERT_TRUE(status.ok());
-        ASSERT_EQ(boost::get<int64_t>(status.value().value_), 1);
-
-        // set and read configs
-        SET_CONFIG(space, module, name, 3l);
-        status = GET_CONFIG(space, module, name, type);
-        ASSERT_TRUE(status.ok());
-        ASSERT_EQ(boost::get<int64_t>(status.value().value_), 3);
-
-        // read config from cache
-        auto cacheValue = GET_CONFIG_INT(space, module, name);
-        ASSERT_TRUE(cacheValue.ok());
-        ASSERT_EQ(cacheValue.value(), 3);
-    }
-    {
-        auto name = "double_key";
-        auto type = VariantTypeEnum::DOUBLE;
-
-        REGISTER(space, module, name, type, 3.14);
-        auto status = GET_CONFIG(space, module, name, type);
-        ASSERT_TRUE(status.ok());
-        ASSERT_EQ(boost::get<double>(status.value().value_), 3.14);
-
-        SET_CONFIG(space, module, name, 1.23);
-        status = GET_CONFIG(space, module, name, type);
-        ASSERT_TRUE(status.ok());
-        ASSERT_EQ(boost::get<double>(status.value().value_), 1.23);
-
-        auto cacheValue = GET_CONFIG_DOUBLE(space, module, name);
-        ASSERT_TRUE(cacheValue.ok());
-        ASSERT_EQ(cacheValue.value(), 1.23);
-    }
-    {
-        auto name = "bool_key";
-        auto type = VariantTypeEnum::BOOL;
-
-        REGISTER(space, module, name, type, true);
-        auto status = GET_CONFIG(space, module, name, type);
-        ASSERT_TRUE(status.ok());
-        ASSERT_EQ(boost::get<bool>(status.value().value_), true);
-
-        SET_CONFIG(space, module, name, false);
-        status = GET_CONFIG(space, module, name, type);
-        ASSERT_TRUE(status.ok());
-        ASSERT_EQ(boost::get<bool>(status.value().value_), false);
-
-        auto cacheValue = GET_CONFIG_BOOL(space, module, name);
-        ASSERT_TRUE(cacheValue.ok());
-        ASSERT_EQ(cacheValue.value(), false);
-    }
-    {
-        auto name = "string_key";
-        auto type = VariantTypeEnum::STRING;
-
-        REGISTER(space, module, name, type, "abc");
-        auto status = GET_CONFIG(space, module, name, type);
-        ASSERT_TRUE(status.ok());
-        ASSERT_EQ(boost::get<std::string>(status.value().value_), "abc");
-
-        SET_CONFIG(space, module, name, "nebula");
-        status = GET_CONFIG(space, module, name, type);
-        ASSERT_TRUE(status.ok());
-        ASSERT_EQ(boost::get<std::string>(status.value().value_), "nebula");
-
-        auto cacheValue = GET_CONFIG_STRING(space, module, name);
-        ASSERT_TRUE(cacheValue.ok());
-        ASSERT_EQ(cacheValue.value(), "nebula");
-    }
-    {
-        auto name = "load_data_interval_secs";
-        auto type = VariantTypeEnum::INT64;
-
-        // only declare config in cache with default value, but not set in meta
-        DECLARE(space, module, name, type, 10);
-        auto status = GET_CONFIG(space, module, name, type);
-        ASSERT_FALSE(status.ok());
-
-        // read config from cache
-        auto cacheValue = GET_CONFIG_INT(space, module, name);
-        ASSERT_TRUE(cacheValue.ok());
-        ASSERT_EQ(cacheValue.value(), 10);
-
-        // update in another thread
-        auto update = [&space, &module, &name, &type] () {
-            // set and read configs
-            SET_CONFIG(space, module, name, 3l);
-            auto st = GET_CONFIG(space, module, name, type);
-            ASSERT_TRUE(st.ok());
-            ASSERT_EQ(boost::get<int64_t>(st.value().value_), 3);
-        };
-        std::thread t(update);
-        t.join();
-
-        cacheValue = GET_CONFIG_INT(space, module, name);
-        ASSERT_TRUE(cacheValue.ok());
-        ASSERT_EQ(cacheValue.value(), 3);
+        ASSERT_EQ(ret.value().size(), 5);
     }
 }
 

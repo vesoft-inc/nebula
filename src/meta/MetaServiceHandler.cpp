@@ -33,6 +33,7 @@
 #include "meta/processors/admin/HBProcessor.h"
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "meta/processors/admin/BalanceProcessor.h"
+#include "meta/processors/configMan/RegConfigProcessor.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
@@ -258,6 +259,12 @@ MetaServiceHandler::future_checkPassword(const cpp2::CheckPasswordReq& req) {
 folly::Future<cpp2::BalanceResp>
 MetaServiceHandler::future_balance(const cpp2::BalanceReq& req) {
     auto* processor = BalanceProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_regConfig(const cpp2::RegConfigReq &req) {
+    auto* processor = RegConfigProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

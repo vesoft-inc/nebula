@@ -34,13 +34,14 @@ public:
 
 private:
     std::vector<cpp2::ColumnValue> genRow(const meta::ConfigItem& item);
-    meta::cpp2::ConfigModule StringToConfigModule(std::string module);
-    std::string ConfigModuleToString(meta::cpp2::ConfigModule module);
 
     ConfigSentence                           *sentence_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>  resp_;
     ConfigRowItem                            *configItem_{nullptr};
 };
+
+meta::cpp2::ConfigModule toThriftConfigModule(const nebula::ConfigModule& mode);
+meta::cpp2::ConfigMode toThriftConfigMode(const nebula::ConfigMode& mode);
 
 }   // namespace graph
 }   // namespace nebula

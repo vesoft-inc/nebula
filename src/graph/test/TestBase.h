@@ -111,8 +111,6 @@ protected:
                 return v.get_id();
             case ColumnType::bool_val:
                 return v.get_bool_val();
-            case ColumnType::double_precision:
-                return v.get_double_precision();
             default:
                 throw TestError() << "Cannot convert unknown dynamic column type to integer: "
                                   << static_cast<int32_t>(v.getType());

@@ -108,6 +108,7 @@ public:
     STATUS_GENERATOR(CfgNotFound);
     STATUS_GENERATOR(CfgRegistered);
     STATUS_GENERATOR(CfgErrorType);
+    STATUS_GENERATOR(CfgImmutable);
 
 #undef STATUS_GENERATOR
 
@@ -139,6 +140,7 @@ public:
         kCfgNotFound            = 409,
         kCfgRegistered          = 410,
         kCfgErrorType           = 411,
+        kCfgImmutable           = 412,
     };
 
     Code code() const {

@@ -5,14 +5,12 @@
  */
 
 #include "graph/ConfigExecutor.h"
-#include "meta/ConfigManager.h"
+#include "meta/GflagsManager.h"
 
 namespace nebula {
 namespace graph {
 
-const std::string kConfigModuleUnknown = "UNKNOWN"; // NOLINT
-
-using meta::ConfigManager;
+using meta::GflagsManager;
 
 ConfigExecutor::ConfigExecutor(Sentence *sentence,
                                ExecutionContext *ectx) : Executor(ectx) {
@@ -46,39 +44,34 @@ void ConfigExecutor::execute() {
 }
 
 void ConfigExecutor::showVariables() {
-    std::string space;
-    std::string module;
-    meta::cpp2::ConfigModule moduleEnum = meta::cpp2::ConfigModule::ALL;
+    meta::cpp2::ConfigModule module = meta::cpp2::ConfigModule::ALL;
     if (configItem_ != nullptr) {
-        if (configItem_->getSpace() != nullptr) {
-            space = *configItem_->getSpace();
-        }
         if (configItem_->getModule() != nullptr) {
-            module = *configItem_->getModule();
-            moduleEnum = StringToConfigModule(module);
-            if (moduleEnum == meta::cpp2::ConfigModule::UNKNOWN) {
-                DCHECK(onError_);
-                onError_(Status::Error("Illegal module"));
-                return;
-            }
+            module = toThriftConfigModule(*configItem_->getModule());
         }
     }
 
-    auto future = ConfigManager::instance()->listConfigs(space, moduleEnum);
+    if (module == meta::cpp2::ConfigModule::UNKNOWN) {
+        DCHECK(onError_);
+        onError_(Status::Error("Parse config module error"));
+        return;
+    }
+
+    auto future = GflagsManager::instance()->listConfigs(module);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(std::move(resp).status());
+            onError_(std::move(resp.status()));
             return;
         }
 
-        std::vector<std::string> header{"space", "module", "name", "type", "value"};
+        std::vector<std::string> header{"module", "name", "type", "mode", "value"};
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(header));
 
-        auto configs = std::move(resp).value();
+        auto configs = std::move(resp.value());
         std::vector<cpp2::RowValue> rows;
         for (const auto &item : configs) {
             auto row = genRow(item);
@@ -94,31 +87,19 @@ void ConfigExecutor::showVariables() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
-                                                   e.what().c_str())));
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 void ConfigExecutor::setVariables() {
-    std::string space;
-    std::string module;
+    meta::cpp2::ConfigModule module = meta::cpp2::ConfigModule::UNKNOWN;
     std::string name;
     VariantType value;
-    meta::cpp2::ConfigModule moduleEnum;
     if (configItem_ != nullptr) {
-        if (configItem_->getSpace() != nullptr) {
-            space = *configItem_->getSpace();
-        }
         if (configItem_->getModule() != nullptr) {
-            module = *configItem_->getModule();
-            moduleEnum = StringToConfigModule(module);
-            if (moduleEnum == meta::cpp2::ConfigModule::UNKNOWN) {
-                DCHECK(onError_);
-                onError_(Status::Error("Illegal module"));
-                return;
-            }
+            module = toThriftConfigModule(*configItem_->getModule());
         }
         if (configItem_->getName() != nullptr) {
             name = *configItem_->getName();
@@ -128,7 +109,34 @@ void ConfigExecutor::setVariables() {
         }
     }
 
-    auto future = ConfigManager::instance()->setConfig(space, moduleEnum, name, value);
+    if (module == meta::cpp2::ConfigModule::UNKNOWN) {
+        DCHECK(onError_);
+        onError_(Status::Error("Parse config module error"));
+        return;
+    }
+
+    VariantTypeEnum eType = static_cast<VariantTypeEnum>(value.which());
+    meta::cpp2::ConfigType type;
+    switch (eType) {
+        case VariantTypeEnum::INT64:
+            type = meta::cpp2::ConfigType::INT64;
+            break;
+        case VariantTypeEnum::DOUBLE:
+            type = meta::cpp2::ConfigType::DOUBLE;
+            break;
+        case VariantTypeEnum::BOOL:
+            type = meta::cpp2::ConfigType::BOOL;
+            break;
+        case VariantTypeEnum::STRING:
+            type = meta::cpp2::ConfigType::STRING;
+            break;
+        default:
+            DCHECK(onError_);
+            onError_(Status::Error("Parse value type error"));
+            return;
+    }
+
+    auto future = GflagsManager::instance()->setConfig(module, name, type, value);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto && resp) {
@@ -155,68 +163,44 @@ void ConfigExecutor::setVariables() {
 }
 
 void ConfigExecutor::getVariables() {
-    std::string space;
-    std::string module;
+    meta::cpp2::ConfigModule module = meta::cpp2::ConfigModule::UNKNOWN;
     std::string name;
-    ColumnType type;
-    meta::cpp2::ConfigModule moduleEnum;
     if (configItem_ != nullptr) {
-        if (configItem_->getSpace() != nullptr) {
-            space = *configItem_->getSpace();
-        }
         if (configItem_->getModule() != nullptr) {
-            module = *configItem_->getModule();
-            moduleEnum = StringToConfigModule(module);
-            if (moduleEnum == meta::cpp2::ConfigModule::UNKNOWN) {
-                DCHECK(onError_);
-                onError_(Status::Error("Illegal module"));
-                return;
-            }
+            module = toThriftConfigModule(*configItem_->getModule());
         }
         if (configItem_->getName() != nullptr) {
             name = *configItem_->getName();
         }
-        if (configItem_->getType() != nullptr) {
-            type = *configItem_->getType();
-        }
     }
 
-    auto future = [&] () -> folly::Future<StatusOr<meta::ConfigItem>> {
-        switch (type) {
-            case ColumnType::INT:
-                return ConfigManager::instance()->getConfig(space, moduleEnum, name,
-                                                            VariantTypeEnum::INT64);
-            case ColumnType::DOUBLE:
-                return ConfigManager::instance()->getConfig(space, moduleEnum, name,
-                                                            VariantTypeEnum::DOUBLE);
-            case ColumnType::BOOL:
-                return ConfigManager::instance()->getConfig(space, moduleEnum, name,
-                                                            VariantTypeEnum::BOOL);
-            case ColumnType::STRING:
-                return ConfigManager::instance()->getConfig(space, moduleEnum, name,
-                                                            VariantTypeEnum::STRING);
-            default:
-                return Status::Error("parse value type error");
-        }
-    }();
+    if (module == meta::cpp2::ConfigModule::UNKNOWN) {
+        DCHECK(onError_);
+        onError_(Status::Error("Parse config module error"));
+        return;
+    }
+
+    auto future = GflagsManager::instance()->getConfig(module, name);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto && resp) {
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(std::move(resp).status());
+            onError_(std::move(resp.status()));
             return;
         }
 
-        std::vector<std::string> header{"space", "module", "name", "type", "value"};
+        std::vector<std::string> header{"module", "name", "type", "mode", "value"};
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(header));
 
-        auto item = std::move(resp).value();
+        auto configs = std::move(resp.value());
         std::vector<cpp2::RowValue> rows;
-        auto row = genRow(item);
-        rows.emplace_back();
-        rows.back().set_columns(std::move(row));
+        for (const auto &item : configs) {
+            auto row = genRow(item);
+            rows.emplace_back();
+            rows.back().set_columns(std::move(row));
+        }
         resp_->set_rows(std::move(rows));
 
         DCHECK(onFinish_);
@@ -226,57 +210,55 @@ void ConfigExecutor::getVariables() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
-                                                   e.what().c_str())));
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
 void ConfigExecutor::declareVariables() {
-    std::string space;
-    std::string module;
+    meta::cpp2::ConfigModule module = meta::cpp2::ConfigModule::UNKNOWN;
     std::string name;
-    ColumnType type;
+    ColumnType colType;
     VariantType defaultValue;
-    meta::cpp2::ConfigModule moduleEnum;
+    meta::cpp2::ConfigMode mode = meta::cpp2::ConfigMode::IMMUTABLE;
     if (configItem_ != nullptr) {
-        if (configItem_->getSpace() != nullptr) {
-            space = *configItem_->getSpace();
-        }
         if (configItem_->getModule() != nullptr) {
-            module = *configItem_->getModule();
-            moduleEnum = StringToConfigModule(module);
-            if (moduleEnum == meta::cpp2::ConfigModule::UNKNOWN) {
-                DCHECK(onError_);
-                onError_(Status::Error("Illegal module"));
-                return;
-            }
+            module = toThriftConfigModule(*configItem_->getModule());
         }
         if (configItem_->getName() != nullptr) {
             name = *configItem_->getName();
         }
         if (configItem_->getType() != nullptr) {
-            type = *configItem_->getType();
+            colType = *configItem_->getType();
+        }
+        if (configItem_->getMode() != nullptr) {
+            mode = toThriftConfigMode(*configItem_->getMode());
         }
         if (configItem_->getValue() != nullptr) {
             defaultValue = configItem_->getValue()->eval();
         }
     }
 
-    VariantTypeEnum eType;
-    switch (type) {
+    if (module == meta::cpp2::ConfigModule::UNKNOWN) {
+        DCHECK(onError_);
+        onError_(Status::Error("Parse config module error"));
+        return;
+    }
+
+    meta::cpp2::ConfigType type;
+    switch (colType) {
         case ColumnType::INT:
-            eType = VariantTypeEnum::INT64;
+            type = meta::cpp2::ConfigType::INT64;
             break;
         case ColumnType::DOUBLE:
-            eType = VariantTypeEnum::DOUBLE;
+            type = meta::cpp2::ConfigType::DOUBLE;
             break;
         case ColumnType::BOOL:
-            eType = VariantTypeEnum::BOOL;
+            type = meta::cpp2::ConfigType::BOOL;
             break;
         case ColumnType::STRING:
-            eType = VariantTypeEnum::STRING;
+            type = meta::cpp2::ConfigType::STRING;
             break;
         default:
             DCHECK(onError_);
@@ -284,8 +266,16 @@ void ConfigExecutor::declareVariables() {
             return;
     }
 
-    auto future = ConfigManager::instance()->registerConfig(space, moduleEnum, name,
-                                                          eType, defaultValue);
+    // check config has been reigstered or not
+    auto status = GflagsManager::instance()->isCfgRegistered(module, name, type);
+    if (status.code() != Status::kCfgNotFound) {
+        DCHECK(onError_);
+        onError_(status);
+        return;
+    }
+
+    auto future = GflagsManager::instance()->registerConfig(module, name, type, mode,
+                                                            defaultValue);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto && resp) {
@@ -304,8 +294,7 @@ void ConfigExecutor::declareVariables() {
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();
         DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s",
-                                                   e.what().c_str())));
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
         return;
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
@@ -314,51 +303,59 @@ void ConfigExecutor::declareVariables() {
 std::vector<cpp2::ColumnValue> ConfigExecutor::genRow(const meta::ConfigItem& item) {
     std::vector<cpp2::ColumnValue> row;
     row.resize(5);
-    row[0].set_str(item.space_);
-    row[1].set_str(ConfigModuleToString(item.module_));
-    row[2].set_str(item.name_);
+    row[0].set_str(meta::ConfigModuleToString(item.module_));
+    row[1].set_str(item.name_);
+    row[2].set_str(meta::ConfigTypeToString(item.type_));
+    row[3].set_str(meta::ConfigModeToString(item.mode_));
+    // TODO: Console must have same type of the same column over different lines,
+    //       so we transform all kinds of value to string for now.
     switch (item.type_) {
-        case VariantTypeEnum::INT64:
-            row[3].set_str("int64");
-            row[4].set_integer(boost::get<int64_t>(item.value_));
+        case meta::cpp2::ConfigType::INT64:
+            row[4].set_str(std::to_string(boost::get<int64_t>(item.value_)));
             break;
-        case VariantTypeEnum::DOUBLE:
-            row[3].set_str("double");
-            row[4].set_double_precision(boost::get<double>(item.value_));
+        case meta::cpp2::ConfigType::DOUBLE:
+            row[4].set_str(std::to_string(boost::get<double>(item.value_)));
             break;
-        case VariantTypeEnum::BOOL:
-            row[3].set_str("bool");
-            row[4].set_bool_val(boost::get<bool>(item.value_));
+        case meta::cpp2::ConfigType::BOOL:
+            row[4].set_str(boost::get<bool>(item.value_) ? "True" : "False");
             break;
-        case VariantTypeEnum::STRING:
-            row[3].set_str("string");
+        case meta::cpp2::ConfigType::STRING:
             row[4].set_str(boost::get<std::string>(item.value_));
             break;
     }
     return row;
 }
 
-meta::cpp2::ConfigModule ConfigExecutor::StringToConfigModule(std::string module) {
-    std::transform(module.begin(), module.end(), module.begin(), ::toupper);
-    auto it = meta::cpp2::_ConfigModule_NAMES_TO_VALUES.find(module.data());
-    if (it == meta::cpp2::_ConfigModule_NAMES_TO_VALUES.end()) {
-        return meta::cpp2::ConfigModule::UNKNOWN;
-    } else {
-        return it->second;
-    }
-}
-
-std::string ConfigExecutor::ConfigModuleToString(meta::cpp2::ConfigModule module) {
-    auto it = meta::cpp2::_ConfigModule_VALUES_TO_NAMES.find(module);
-    if (it == meta::cpp2::_ConfigModule_VALUES_TO_NAMES.end()) {
-        return kConfigModuleUnknown;
-    } else {
-        return it->second;
-    }
-}
-
 void ConfigExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     resp = std::move(*resp_);
+}
+
+meta::cpp2::ConfigModule toThriftConfigModule(const nebula::ConfigModule& mode) {
+    switch (mode) {
+        case nebula::ConfigModule::ALL:
+            return meta::cpp2::ConfigModule::ALL;
+        case nebula::ConfigModule::GRAPH:
+            return meta::cpp2::ConfigModule::GRAPH;
+        case nebula::ConfigModule::META:
+            return meta::cpp2::ConfigModule::META;
+        case nebula::ConfigModule::STORAGE:
+            return meta::cpp2::ConfigModule::STORAGE;
+        default:
+            return meta::cpp2::ConfigModule::UNKNOWN;
+    }
+}
+
+meta::cpp2::ConfigMode toThriftConfigMode(const nebula::ConfigMode& mode) {
+    switch (mode) {
+        case nebula::ConfigMode::IMMUTABLE:
+            return meta::cpp2::ConfigMode::IMMUTABLE;
+        case nebula::ConfigMode::REBOOT:
+            return meta::cpp2::ConfigMode::REBOOT;
+        case nebula::ConfigMode::MUTABLE:
+            return meta::cpp2::ConfigMode::MUTABLE;
+        default:
+            return meta::cpp2::ConfigMode::IMMUTABLE;
+    }
 }
 
 }   // namespace graph

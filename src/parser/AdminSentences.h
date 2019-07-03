@@ -26,7 +26,7 @@ public:
         kShowEdges,
         kShowUsers,
         kShowUser,
-        kShowRoles,
+        kShowRoles
     };
 
     explicit ShowSentence(ShowType sType) {
@@ -273,47 +273,41 @@ private:
     std::unique_ptr<std::string>     spaceName_;
 };
 
+enum ConfigModule {
+    ALL, GRAPH, META, STORAGE
+};
+
+enum ConfigMode {
+    IMMUTABLE, REBOOT, MUTABLE
+};
+
 class ConfigRowItem {
 public:
-    explicit ConfigRowItem(std::string* space) {
-        space_.reset(space);
+    explicit ConfigRowItem(ConfigModule module) {
+        module_ = std::make_unique<ConfigModule>(module);
     }
 
-    ConfigRowItem(std::string* space, std::string* module) {
-        space_.reset(space);
-        module_.reset(module);
-    }
-
-    ConfigRowItem(std::string* space, std::string* module, std::string* name,
-                  Expression* value) {
-        space_.reset(space);
-        module_.reset(module);
+    ConfigRowItem(ConfigModule module, std::string* name, Expression* value) {
+        module_ = std::make_unique<ConfigModule>(module);
         name_.reset(name);
         value_.reset(value);
     }
 
-    ConfigRowItem(std::string* space, std::string* module, std::string* name,
-                  ColumnType type) {
-        space_.reset(space);
-        module_.reset(module);
+    ConfigRowItem(ConfigModule module, std::string* name) {
+        module_ = std::make_unique<ConfigModule>(module);
         name_.reset(name);
-        type_ = std::make_unique<ColumnType>(type);
     }
 
-    ConfigRowItem(std::string* space, std::string* module, std::string* name,
-                  Expression* value, ColumnType type) {
-        space_.reset(space);
-        module_.reset(module);
+    ConfigRowItem(ConfigModule module, std::string* name, Expression* value, ColumnType type,
+                  ConfigMode mode) {
+        module_ = std::make_unique<ConfigModule>(module);
         name_.reset(name);
         value_.reset(value);
         type_ = std::make_unique<ColumnType>(type);
+        mode_ = std::make_unique<ConfigMode>(mode);
     }
 
-    const std::string* getSpace() {
-        return space_.get();
-    }
-
-    const std::string* getModule() {
+    const ConfigModule* getModule() {
         return module_.get();
     }
 
@@ -329,14 +323,18 @@ public:
         return type_.get();
     }
 
+    const ConfigMode* getMode() {
+        return mode_.get();
+    }
+
     std::string toString() const;
 
 private:
-    std::unique_ptr<std::string>    space_;
-    std::unique_ptr<std::string>    module_;
+    std::unique_ptr<ConfigModule>   module_;
     std::unique_ptr<std::string>    name_;
     std::unique_ptr<Expression>     value_;
     std::unique_ptr<ColumnType>     type_;
+    std::unique_ptr<ConfigMode>     mode_;
 };
 
 class ConfigSentence final : public Sentence {
