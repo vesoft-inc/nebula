@@ -816,4 +816,17 @@ TEST(Parser, ReentrantRecoveryFromFailure) {
     }
 }
 
+
+TEST(Parser, IllegalCharacter) {
+    GQLParser parser;
+    {
+        std::string query = "USE space；";
+        ASSERT_FALSE(parser.parse(query).ok());
+    }
+    {
+        std::string query = "USE space_name；USE space";
+        ASSERT_FALSE(parser.parse(query).ok());
+    }
+}
+
 }   // namespace nebula
