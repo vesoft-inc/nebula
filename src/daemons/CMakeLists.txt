@@ -104,6 +104,10 @@ nebula_link_libraries(
 
 
 install(
-    TARGETS nebula-graphd nebula-storaged nebula-metad
-    DESTINATION bin
+    TARGETS
+        nebula-graphd
+        nebula-storaged
+        nebula-metad
+    DESTINATION
+        bin
 )
