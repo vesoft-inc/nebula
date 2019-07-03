@@ -39,10 +39,14 @@ $storage_ip2:$storage_port2,...
 ```
 
 **Note:**
-Replace the $storage_ip and $storage_port here according to the local_ip and port in nebula-storaged.conf. Separate the hosts by comma.
+Replace the $storage_ip and $storage_port here according to the local_ip and port in nebula-storaged.conf. Separate the hosts by comma. For example:
+
+```
+ADD HOSTS 192.168.8.5:65500
+```
 
 
-- Show active hosts
+- Show hosts
 
 ```
 SHOW HOSTS
@@ -87,6 +91,11 @@ Following are some examples:
 
 ```
 SHOW SPACES
+================
+|         Name |
+================
+| myspace_test |
+----------------
 ```
 
 * Drop a space
@@ -233,16 +242,12 @@ GO FROM 100 OVER like | GO FROM $-.id OVER serve; -- Start from vertex 100, quer
 
 ## Syntax norms
 
-In order to be consistent with ourselves and other nGQL users, we advise
+In order to be consistent with ourselves and other nGQL users, we recommend
 you to follow these syntax norms:
 
 - KEYWORDS are in uppercase
 
   - eg: `SHOW SPACES` the keywords here are all written in uppercase
-
-- node Aliases are in lower camel case (start with lowercase)
-
-  - eg:  node alias userName
 
 - Tags are in upper camel case (start with uppercase）
 
@@ -256,4 +261,12 @@ you to follow these syntax norms:
 
 - Property names are in lower camel case
 
-  - eg: kobeBryant
+  - eg: inService
+
+
+  | Graph entity  | Recommended style | Example |
+  |:-: | :-: | :-: |:-: |
+  |Key words | Upper case   | SHOW SPACES     |
+  |Vertex tags | Upper camel case, beginning with an upper-case character   | ManageTeam   |
+  |Edges | Upper snake case, beginning with an upper-case character   | Play_for   |
+  |Property names | Lower camel case, beginning with a lower-case character   | inService   |
