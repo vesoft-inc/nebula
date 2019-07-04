@@ -142,7 +142,7 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
     std::atomic<bool> successful{true};
 
     for (auto& part : parts) {
-        auto downloader = [&]() {
+        auto downloader = [=]() {
             auto remotePath = folly::stringPrintf("hdfs://%s:%d%s/%d",
                                                   url.c_str(), port, path.c_str(),
                                                   atoi(part.c_str()) + 1);

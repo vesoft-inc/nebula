@@ -212,7 +212,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
                                             port, path.c_str(), partNumbers.c_str(), local.c_str());
         command = folly::stringPrintf("/usr/bin/curl -G \"%s\" 2> /dev/null", download.c_str());
         LOG(INFO) << "Fetch Storage: " << download;
-        threads.push_back(std::thread([&]() {
+        threads.push_back(std::thread([=]() {
             auto downloadResult = ProcessUtils::runCommand(command.c_str());
             if (!downloadResult.ok()) {
                 LOG(ERROR) << "Failed to download SST Files: " << downloadResult.status();

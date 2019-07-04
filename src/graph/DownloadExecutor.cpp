@@ -39,7 +39,7 @@ void DownloadExecutor::execute() {
     auto *local = sentence_->localPath();
 
     auto tmp = "%s \"http://%s:%d/download?url=%s&port=%d&path=%s&local=%s&space=%d\" 2> /dev/null";
-    auto func = [&]() {
+    auto func = [=]() {
         auto command = folly::stringPrintf(tmp, "/usr/bin/curl -G", metaHost.c_str(),
                                            FLAGS_meta_http_port, host->c_str(), port,
                                            path->c_str(), local->c_str(), spaceId);
