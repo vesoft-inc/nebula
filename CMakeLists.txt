@@ -47,7 +47,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++")
+set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -no-pie")
 
 # CMake macro to specify number of jobs to build third-party
 if (NOT THIRD_PARTY_JOBS)
