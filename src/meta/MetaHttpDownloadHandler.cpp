@@ -164,7 +164,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
         auto hostIter_ = hostPartition.find(address);
         if (hostIter_ == hostPartition.end()) {
             std::vector<PartitionID> partitions;
-            hostPartition.insert(std::make_pair(address, partitions));
+            hostPartition.emplace(address, partitions);
         }
         hostItems.emplace_back(item);
         hostIter->next();
@@ -212,7 +212,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
                                             port, path.c_str(), partNumbers.c_str(), local.c_str());
         command = folly::stringPrintf("/usr/bin/curl -G \"%s\" 2> /dev/null", download.c_str());
         LOG(INFO) << "Fetch Storage: " << download;
-        threads.push_back(std::thread([=]() {
+        threads.push_back(std::thread([&, command]() {
             auto downloadResult = ProcessUtils::runCommand(command.c_str());
             if (!downloadResult.ok()) {
                 LOG(ERROR) << "Failed to download SST Files: " << downloadResult.status();
