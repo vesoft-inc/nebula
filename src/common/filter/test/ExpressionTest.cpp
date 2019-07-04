@@ -141,7 +141,9 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
 
 
     TEST_EXPR(16 + 4 + 2, 22, Int);
+    TEST_EXPR(16+4+2, 22, Int);
     TEST_EXPR(16 - 4 - 2, 10, Int);
+    TEST_EXPR(16-4-2, 10, Int);
     TEST_EXPR(16 - (4 - 2), 14, Int);
     TEST_EXPR(16 * 4 * 2, 128, Int);
     TEST_EXPR(16 / 4 / 2, 2, Int);
