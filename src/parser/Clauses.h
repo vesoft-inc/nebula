@@ -196,8 +196,9 @@ private:
 
 class YieldClause final {
 public:
-    explicit YieldClause(YieldColumns *fields) {
+    explicit YieldClause(YieldColumns *fields, bool isDistinct = false) {
         yieldColumns_.reset(fields);
+        isDistinct_ = isDistinct;
     }
 
     std::vector<YieldColumn*> columns() const {
@@ -208,6 +209,7 @@ public:
 
 private:
     std::unique_ptr<YieldColumns>               yieldColumns_;
+    bool                                        isDistinct_;
 };
 
 }   // namespace nebula
