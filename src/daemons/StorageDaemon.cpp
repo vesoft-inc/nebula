@@ -200,10 +200,12 @@ int main(int argc, char *argv[]) {
         gServer->setIOThreadPool(ioThreadPool);
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception& e) {
+        metaClient.reset();
         LOG(ERROR) << "Start thrift server failed, error:" << e.what();
         return EXIT_FAILURE;
     }
 
+    metaClient.reset();
     LOG(INFO) << "The storage Daemon stopped";
 }
 
