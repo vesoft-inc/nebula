@@ -154,21 +154,19 @@ int main(int argc, char *argv[]) {
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
 
     // Meta client
-    auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
-                                                                 std::move(metaAddrsRet.value()),
-                                                                 true);
-    metaClient->init();
+    nebula::meta::MetaClient metaClient {ioThreadPool, std::move(metaAddrsRet.value()), true};
+    metaClient.init();
 
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();
-    schemaMan->init(metaClient.get());
+    schemaMan->init(&metaClient);
 
     LOG(INFO) << "Init kvstore";
     std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
                                                         std::move(paths),
                                                         ioThreadPool,
                                                         workers,
-                                                        metaClient.get(),
+                                                        &metaClient,
                                                         schemaMan.get());
 
     LOG(INFO) << "Starting Storage HTTP Service";

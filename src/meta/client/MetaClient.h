@@ -68,8 +68,16 @@ public:
 
     void init();
 
+    void deInit();
+
     void registerListener(MetaChangedListener* listener) {
+        CHECK(listener_ == nullptr);
         listener_ = listener;
+    }
+
+    void unRegisterListener() {
+        deInit();
+        listener_ = nullptr;
     }
 
     // Operations for parts

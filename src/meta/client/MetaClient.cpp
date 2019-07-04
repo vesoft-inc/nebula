@@ -33,8 +33,7 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
 
 
 MetaClient::~MetaClient() {
-    bgThread_.stop();
-    bgThread_.wait();
+    deInit();
     VLOG(3) << "~MetaClient";
 }
 
@@ -56,6 +55,11 @@ void MetaClient::init() {
                                FLAGS_heartbeat_interval_secs * 1000,
                                &MetaClient::heartBeatThreadFunc, this);
     }
+}
+
+void MetaClient::deInit() {
+    bgThread_.stop();
+    bgThread_.wait();
 }
 
 
