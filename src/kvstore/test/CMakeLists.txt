@@ -171,5 +171,5 @@ nebula_link_libraries(
     boost_regex
 )
 
-nebula_add_test(multi_versions_perf_test_bm)
+# nebula_add_test(multi_versions_perf_test_bm)
 
