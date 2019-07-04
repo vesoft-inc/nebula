@@ -9,9 +9,9 @@
 
 #include <gtest/gtest_prod.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
-#include "time/TimeUtils.h"
 #include "kvstore/KVStore.h"
 #include "network/NetworkUtils.h"
+#include "time/WallClock.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/admin/BalanceTask.h"
 #include "meta/processors/admin/BalancePlan.h"

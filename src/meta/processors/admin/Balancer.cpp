@@ -94,7 +94,7 @@ Status Balancer::buildBalancePlan() {
             iter->next();
         }
     }
-    plan_ = std::make_unique<BalancePlan>(time::TimeUtils::nowInSeconds(), kv_, client_.get());
+    plan_ = std::make_unique<BalancePlan>(time::WallClock::fastNowInSec(), kv_, client_.get());
     for (auto spaceId : spaces) {
         auto tasks = genTasks(spaceId);
         for (auto& task : tasks) {

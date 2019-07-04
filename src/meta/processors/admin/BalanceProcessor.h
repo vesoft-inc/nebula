@@ -10,7 +10,6 @@
 #include <gtest/gtest_prod.h>
 #include "meta/processors/BaseProcessor.h"
 #include "meta/ActiveHostsMan.h"
-#include "time/TimeUtils.h"
 
 namespace nebula {
 namespace meta {

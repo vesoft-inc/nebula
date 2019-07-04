@@ -23,7 +23,7 @@ const std::string kBalanceTaskTable = "__b_task__"; // NOLINT
 void BalanceTask::invoke() {
     CHECK_NOTNULL(client_);
     if (ret_ == Result::FAILED) {
-        endTimeMs_ = time::TimeUtils::nowInSeconds();
+        endTimeMs_ = time::WallClock::fastNowInSec();
         saveInStore();
         onError_();
         return;
@@ -33,7 +33,7 @@ void BalanceTask::invoke() {
             LOG(INFO) << taskIdStr_ << "Start to move part!";
             status_ = Status::CHANGE_LEADER;
             ret_ = Result::IN_PROGRESS;
-            startTimeMs_ = time::TimeUtils::nowInSeconds();
+            startTimeMs_ = time::WallClock::fastNowInSec();
         }
         case Status::CHANGE_LEADER: {
             LOG(INFO) << taskIdStr_ << "Ask the src to give up the leadership.";
@@ -131,7 +131,7 @@ void BalanceTask::invoke() {
         }
         case Status::END: {
             LOG(INFO) << taskIdStr_ <<  "Part has been moved successfully!";
-            endTimeMs_ = time::TimeUtils::nowInSeconds();
+            endTimeMs_ = time::WallClock::fastNowInSec();
             SAVE_STATE();
             onFinished_();
             break;
