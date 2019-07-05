@@ -401,14 +401,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
     LogID prevLogId = 0;
     TermID prevLogTerm = 0;
     LogID committed = 0;
-    {
-        std::lock_guard<std::mutex> g(raftLock_);
-        currTerm = term_;
-        prevLogId = lastLogId_;
-        prevLogTerm = lastLogTerm_;
-        committed = committedLogId_;
-    }
-
+    LogID lastId = 0;
     if (iter.valid()) {
         VLOG(2) << idStr_ << "Ready to append logs from id "
                 << iter.logId() << " (Current term is "
@@ -417,15 +410,42 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
         VLOG(2) << idStr_ << "Ready to send a heartbeat";
     }
 
-    // Step 1: Write WAL
-    if (!wal_->appendLogs(iter)) {
-        LOG(ERROR) << idStr_ << "Failed to write into WAL";
-        sendingPromise_.setValue(AppendLogResult::E_WAL_FAILURE);
-        return;
+    {
+        std::lock_guard<std::mutex> g(raftLock_);
+        if (status_ != Status::RUNNING) {
+            // The partition is not running
+            VLOG(2) << idStr_ << "The partition is stopped";
+            sendingPromise_.setValue(AppendLogResult::E_STOPPED);
+            cachingPromise_.setValue(AppendLogResult::E_STOPPED);
+            logs_.clear();
+            replicatingLogs_ = false;
+            return;
+        }
+
+        if (role_ != Role::LEADER) {
+            // Is not a leader any more
+            VLOG(2) << idStr_ << "The leader has changed";
+            sendingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+            cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+            logs_.clear();
+            replicatingLogs_ = false;
+            return;
+        }
+        currTerm = term_;
+        prevLogId = lastLogId_;
+        prevLogTerm = lastLogTerm_;
+        committed = committedLogId_;
+        // Step 1: Write WAL
+        if (!wal_->appendLogs(iter)) {
+            LOG(ERROR) << idStr_ << "Failed to write into WAL";
+            sendingPromise_.setValue(AppendLogResult::E_WAL_FAILURE);
+            replicatingLogs_ = false;
+            return;
+        }
+        lastId = wal_->lastLogId();
+        VLOG(2) << idStr_ << "Succeeded writing logs ["
+                << iter.firstLogId() << ", " << lastId << "] to WAL";
     }
-    LogID lastId = wal_->lastLogId();
-    VLOG(2) << idStr_ << "Succeeded writing logs ["
-            << iter.firstLogId() << ", " << lastId << "] to WAL";
 
     // Step 2: Replicate to followers
     auto eb = ioThreadPool_->getEventBase();
@@ -436,7 +456,6 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
                   committed,
                   prevLogTerm,
                   prevLogId);
-
     return;
 }
 
@@ -590,6 +609,12 @@ void RaftPart::processAppendLogResponses(
                 sendingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
                 cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
                 logs_.clear();
+                replicatingLogs_ = false;
+                return;
+            }
+            if (currTerm != term_) {
+                LOG(INFO) << idStr_ << "The leader has changed, ABA problem.";
+                sendingPromise_.setValue(AppendLogResult::E_TERM_OUT_OF_DATE);
                 replicatingLogs_ = false;
                 return;
             }
