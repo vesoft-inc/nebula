@@ -259,16 +259,16 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
                                              sIoThreadPool,
                                              local);
     };
-
+    int32_t replicas = 3;
     uint32_t ipInt;
     CHECK(network::NetworkUtils::ipv4ToInt("127.0.0.1", ipInt));
     std::vector<HostAddr> peers;
-    peers.emplace_back(ipInt, network::NetworkUtils::getAvailablePort());
-    peers.emplace_back(ipInt, network::NetworkUtils::getAvailablePort());
-    peers.emplace_back(ipInt, network::NetworkUtils::getAvailablePort());
+    for (int32_t i = 0; i < replicas; i++) {
+        peers.emplace_back(ipInt, network::NetworkUtils::getAvailablePort());
+    }
 
     std::vector<std::unique_ptr<NebulaStore>> stores;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < replicas; i++) {
         stores.emplace_back(initNebulaStore(peers, i, rootPath.path()));
     }
     LOG(INFO) << "Waiting for all leaders elected!";
@@ -333,7 +333,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
             std::string e(reinterpret_cast<const char*>(&end), sizeof(int32_t));
             s = prefix + s;
             e = prefix + e;
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < replicas; i++) {
                 auto ret = stores[i]->engine(0, part);
                 ASSERT(ok(ret));
                 auto* engine = value(std::move(ret));
@@ -353,7 +353,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
             }
         }
         // Let's try to write data on follower;
-        auto followerIndex = (index + 1) % 3;
+        auto followerIndex = (index + 1) % replicas;
         {
             folly::Baton<true, std::atomic> baton;
             stores[followerIndex]->asyncMultiPut(0,
