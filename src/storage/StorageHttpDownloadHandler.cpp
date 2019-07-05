@@ -7,6 +7,7 @@
 #include "storage/StorageHttpDownloadHandler.h"
 #include "webservice/Common.h"
 #include "process/ProcessUtils.h"
+#include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
@@ -135,11 +136,9 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
         return false;
     }
 
-    static folly::IOThreadPoolExecutor executor(FLAGS_download_thread_num);
-    std::condition_variable cv;
-    std::mutex lock;
-    int32_t completed{0};
-    std::atomic<bool> successful{true};
+    std::vector<folly::SemiFuture<bool>> futures;
+    nebula::thread::GenericThreadPool pool;
+    pool.start(parts.size());
 
     for (auto& part : parts) {
         auto downloader = [&, part]() {
@@ -152,22 +151,32 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
             auto result = ProcessUtils::runCommand(command.c_str());
             if (!result.ok()) {
                 LOG(ERROR) << "Failed to download SST Files: " << remotePath;
-                successful = false;
-            }
-            std::unique_lock<std::mutex> uniqueLock(lock);
-            completed++;
-            if (completed == (int32_t)parts.size()) {
-                cv.notify_one();
+                return false;
+            } else {
+                return true;
             }
         };
-        executor.add(downloader);
+        auto future = pool.addTask(downloader);
+        futures.push_back(std::move(future));
     }
 
-    std::unique_lock<std::mutex> uniqueLock(lock);
-    cv.wait(uniqueLock);
+    std::atomic<bool> successfully{true};
+    folly::collectAll(futures).then([&](const std::vector<folly::Try<bool>>& tries) {
+        for (const auto& t : tries) {
+            if (t.hasException()) {
+                LOG(ERROR) << "Download Failed: " << t.exception();
+                successfully = false;
+                break;
+            }
+            if (!t.value()) {
+                successfully = false;
+                break;
+            }
+        }
+    });
     VLOG(3) << "Download tasks have finished";
     isRunning.clear();
-    return successful;
+    return successfully;
 }
 
 bool StorageHttpDownloadHandler::ingestSSTFiles(const std::string& path,
