@@ -41,47 +41,11 @@ ServerBasedSchemaManager::getTagSchema(GraphSpaceID space, TagID tag, SchemaVer 
     return std::shared_ptr<const SchemaProviderIf>();
 }
 
-std::shared_ptr<const SchemaProviderIf>
-ServerBasedSchemaManager::getTagSchema(folly::StringPiece spaceName,
-                                       folly::StringPiece tagName,
-                                       SchemaVer ver) {
-    auto spaceStatus = toGraphSpaceID(spaceName);
-    if (!spaceStatus.ok()) {
-        return std::shared_ptr<const SchemaProviderIf>();
-    }
-    auto spaceId = spaceStatus.value();
-    auto tagStatus = toTagID(spaceId, tagName);
-    if (!tagStatus.ok()) {
-        return std::shared_ptr<const SchemaProviderIf>();
-    }
-    auto tagId = tagStatus.value();
-    return getTagSchema(spaceId, tagId, ver);
-}
-
 // Returns a negative number when the schema does not exist
 StatusOr<SchemaVer> ServerBasedSchemaManager::getNewestTagSchemaVer(GraphSpaceID space,
                                                                     TagID tag) {
     CHECK(metaClient_);
     return  metaClient_->getNewestTagVerFromCache(space, tag);
-}
-
-SchemaVer ServerBasedSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
-                                                          folly::StringPiece tagName) {
-    auto spaceStatus = toGraphSpaceID(spaceName);
-    if (!spaceStatus.ok()) {
-        return -1;
-    }
-    auto spaceId = spaceStatus.value();
-    auto tagStatus = toTagID(spaceId, tagName);
-    if (!tagStatus.ok()) {
-        return -1;
-    }
-    auto tagId = tagStatus.value();
-    auto ret = getNewestTagSchemaVer(spaceId, tagId);
-    if (!ret.ok()) {
-        return -1;
-    }
-    return ret.value();
 }
 
 std::shared_ptr<const SchemaProviderIf>
@@ -105,47 +69,11 @@ ServerBasedSchemaManager::getEdgeSchema(GraphSpaceID space, EdgeType edge, Schem
     return std::shared_ptr<const SchemaProviderIf>();
 }
 
-std::shared_ptr<const SchemaProviderIf>
-ServerBasedSchemaManager::getEdgeSchema(folly::StringPiece spaceName,
-                                        folly::StringPiece typeName,
-                                        SchemaVer ver) {
-    auto spaceStatus = toGraphSpaceID(spaceName);
-    if (!spaceStatus.ok()) {
-        return std::shared_ptr<const SchemaProviderIf>();
-    }
-    auto spaceId = spaceStatus.value();
-    auto edgeStatus = toEdgeType(spaceId, typeName);
-    if (!edgeStatus.ok()) {
-        return std::shared_ptr<const SchemaProviderIf>();
-    }
-    auto edgeType = edgeStatus.value();
-    return getEdgeSchema(spaceId, edgeType, ver);
-}
-
 // Returns a negative number when the schema does not exist
 StatusOr<SchemaVer> ServerBasedSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space,
                                                                      EdgeType edge) {
     CHECK(metaClient_);
     return  metaClient_->getNewestEdgeVerFromCache(space, edge);
-}
-
-SchemaVer ServerBasedSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceName,
-                                                           folly::StringPiece typeName) {
-    auto spaceStatus = toGraphSpaceID(spaceName);
-    if (!spaceStatus.ok()) {
-        return -1;
-    }
-    auto spaceId = spaceStatus.value();
-    auto edgeStatus = toEdgeType(spaceId, typeName);
-    if (!edgeStatus.ok()) {
-        return -1;
-    }
-    auto edgeType = edgeStatus.value();
-    auto ret = getNewestEdgeSchemaVer(spaceId, edgeType);
-    if (!ret.ok()) {
-        return -1;
-    }
-    return ret.value();
 }
 
 StatusOr<GraphSpaceID> ServerBasedSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {

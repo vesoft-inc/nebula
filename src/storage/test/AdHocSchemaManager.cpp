@@ -31,17 +31,6 @@ void AdHocSchemaManager::removeTagSchema(GraphSpaceID space, TagID tag) {
 }
 
 std::shared_ptr<const nebula::meta::SchemaProviderIf>
-AdHocSchemaManager::getTagSchema(folly::StringPiece spaceName,
-                                 folly::StringPiece tagName,
-                                 SchemaVer ver) {
-    UNUSED(spaceName);
-    UNUSED(tagName);
-    UNUSED(ver);
-    LOG(FATAL) << "Unimplement";
-    return std::shared_ptr<const nebula::meta::SchemaProviderIf>();
-}
-
-std::shared_ptr<const nebula::meta::SchemaProviderIf>
 AdHocSchemaManager::getTagSchema(GraphSpaceID space,
                                  TagID tag,
                                  SchemaVer ver) {
@@ -73,14 +62,6 @@ AdHocSchemaManager::getTagSchema(GraphSpaceID space,
     }
 }
 
-SchemaVer AdHocSchemaManager::getNewestTagSchemaVer(folly::StringPiece spaceName,
-                                                    folly::StringPiece tagName) {
-    UNUSED(spaceName);
-    UNUSED(tagName);
-    LOG(FATAL) << "Unimplement";
-    return -1;
-}
-
 StatusOr<SchemaVer> AdHocSchemaManager::getNewestTagSchemaVer(GraphSpaceID space, TagID tag) {
     folly::RWSpinLock::ReadHolder rh(tagLock_);
     auto it = tagSchemas_.find(std::make_pair(space, tag));
@@ -91,16 +72,6 @@ StatusOr<SchemaVer> AdHocSchemaManager::getNewestTagSchemaVer(GraphSpaceID space
         // Now get the latest version
         return it->second.rbegin()->first;
     }
-}
-
-std::shared_ptr<const nebula::meta::SchemaProviderIf>
-AdHocSchemaManager::getEdgeSchema(folly::StringPiece spaceName,
-                                  folly::StringPiece typeName,
-                                  SchemaVer ver) {
-    UNUSED(spaceName);
-    UNUSED(typeName);
-    UNUSED(ver);
-    return std::shared_ptr<const nebula::meta::SchemaProviderIf>();
 }
 
 std::shared_ptr<const nebula::meta::SchemaProviderIf>
@@ -133,14 +104,6 @@ AdHocSchemaManager::getEdgeSchema(GraphSpaceID space,
             }
         }
     }
-}
-
-SchemaVer AdHocSchemaManager::getNewestEdgeSchemaVer(folly::StringPiece spaceName,
-                                                     folly::StringPiece typeName) {
-    UNUSED(spaceName);
-    UNUSED(typeName);
-    LOG(FATAL) << "Unimplement";
-    return -1;
 }
 
 StatusOr<SchemaVer> AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID space, EdgeType edge) {
