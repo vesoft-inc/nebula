@@ -158,6 +158,10 @@ private:
 private:
     std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId, const std::string& path);
 
+    std::shared_ptr<Part> newPart(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  KVEngine* engine);
+
 private:
     // The lock used to protect spaces_
     folly::RWSpinLock lock_;
