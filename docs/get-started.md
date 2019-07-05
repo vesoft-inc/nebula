@@ -5,7 +5,7 @@ This tutorial provides a quick introduction to use Nebula Graph.
 
 ---
 
-### Step 1 Install Nebula Graph
+### Step 1: Install Nebula Graph
 
 The easiest way to startup Nebula is using Docker.
 Docker is a tool designed to make it easier to create, deploy, and run applications by using containers.
@@ -54,7 +54,7 @@ Or create the new file with `vi /etc/docker/daemon.json`, then add the following
 
 ---
 
-### Step 2 Startup Nebula Graph
+### Step 2: Startup Nebula Graph
 
 When `nebula` image is ready, run
 
@@ -107,160 +107,143 @@ Welcome to Nebula Graph (Version 0.1)
 nebula>
 ```
 
-Before query the dataset, you should switch to an existing graph space.
 
-```
-nebula> use nba
-Execution succeeded (Time spent: 154/793 us)
-```
+### Step 3: Build Your Own Graph
+This section describes how to build a graph and make queries. The example is built on the graph below.
 
----
+![Untitled Diagram (1)](https://user-images.githubusercontent.com/51590253/60649144-0774c980-9e74-11e9-86d6-bad1653e70ba.png)
 
-### Step 3 Simple Query Demo
-
-This query comes from a vertex walk up an edge.
-
-```
-nebula> GO FROM 5209979940224249985 OVER like
-========================
-|                   id |
-========================
-| -7187791973189815797 |
-------------------------
-|  3778194419743477824 |
-------------------------
-| -6952676908621237908 |
-------------------------
-........................
+There are three kinds of tags(course, building and team) and two edge types (select and like). The graph schema is:
+```json
+{
+     "tags": {
+       "course": ["name: string", "credits: integer"],
+       "building": ["name: string"],
+       "student": ["name: string", "age: integer", "gender: string"]
+     },
+     "edges": {
+        "select": ["grade: integer"],
+        "like": ["likeness: double"]
+     }
+}
 ```
 
-This query comes from a vertex walk up an edge and the target's age should be greater than or equal to 30, also renames the columns as `Player`, `Friend` and `Age`.
+#### Create Space
+<em>Space</em> is a region that provides physically isolation of graphs in Nebula. First we need to create a space and select it before other operations.
 
-```
-nebula> GO FROM 5209979940224249985 OVER like WHERE $$[player].age >= 30 YIELD $^[player].name AS Player, $$[player].name AS Friend, $$[player].age AS Age
-=============================================
-|          Player |            Friend | Age |
-=============================================
-| Dejounte Murray |      Kevin Durant |  30 |
----------------------------------------------
-| Dejounte Murray |        Chris Paul |  33 |
----------------------------------------------
-| Dejounte Murray |      LeBron James |  34 |
----------------------------------------------
-.............................................
+To list all existing spaces:
+```shell
+nebula> SHOW SPACES;
 ```
 
-This query comes from a vertex walk up an edge and the target's age should be greater than or equal to 30.
+To create a new space called <em>myspace_test2</em>
+```shell
+nebula> CREATE space myspace_test2(partition_num=1, replica_factor=1);
 
-Setting output result as input, query `Player Name`, `FromYear`, `ToYear` and `Team Name` with input's `id`.
-
-In this query, `$^` is delegated the source vertex and `$$` is the target vertex.
-
-`$-` is used to indicate the input from pipeline.
-
-(reference to `regular expressions`, using the special ^ (hat) and $ (dollar sign) metacharacters to describe the start and the end of the line.)
-
+// use this space
+nebula> USE myspace_test2;
 ```
-nebula> GO FROM 5209979940224249985 OVER like WHERE $$[player].age >= 30 | GO FROM $-.id OVER serve YIELD $^[player].name AS Player, serve.start_year AS FromYear, serve.end_year AS ToYear, $$[team].name AS Team
-=====================================================
-|            Player | FromYear | ToYear |      Team |
-=====================================================
-|      Kevin Durant |     2016 |   2019 |  Warriors |
------------------------------------------------------
-|      Kevin Durant |     2007 |   2016 |  Thunders |
------------------------------------------------------
-|        Chris Paul |     2017 |   2021 |   Rockets |
------------------------------------------------------
-.....................................................
+<em>replica_factor</em> specifies the number of replicas in the cluster.
+
+<em>partition_num</em> specifies the number of partitions in one replica.
+
+#### Define Graph Schema
+The **CREATE TAG** statement defines a tag, with a type name and an attribute list.
+```shell
+nebula> CREATE TAG course(name string, credits int);
+nebula> CREATE TAG building(name string);
+nebula> CREATE TAG student(name string, age int, gender string);
 ```
-
-For more detail about Query Language, please see [Traverse The Graph](/nGQL/#traverse-the-graph).
-
----
-
-### Step 4 Advanced Usage
-
-Currently you can create your own graph space, such as :
-
-```
-CREATE space myspace(partition_num=1, replica_factor=1)
+The **CREATE EDGE** statement defines an edge type.
+```shell
+nebula> CREATE EDGE like(likeness double);
+nebula> CREATE EDGE select(grade int);
 ```
 
-When you start `Nebula Graph`, a set of vertices and edges have already existed.
-Currently the default schema is `nba`.
+To list the tags and edge types we just created：
+```shell
+// show tag list
+nebula> SHOW TAGS;
 
-The graph space describes the relationship between players and teams.
-In the graph space, there are two tags (player and team) and two edges (serve and like) which is composed of `string` and `integer`.
-
-The Schema looks like :
-
-```
-Tag team:
-==================
-| Field |   Type |
-==================
-|  name | string |
-------------------
-
-Tag player:
-==================
-| Field |   Type |
-==================
-|  name | string |
-------------------
-|   age |    int |
-------------------
-
-Edge serve:
-=====================
-|      Field | Type |
-=====================
-| start_year |  int |
----------------------
-|   end_year |  int |
----------------------
-
-Edge like:
-===================
-|    Field | Type |
-===================
-| likeness |  int |
--------------------
-
+// show edge type list
+nebula> SHOW EDGES;
 ```
 
-You can create both tag and edge's schema:
+To show the attributes of a tag or an edge type:
+```shell
+// show attributes of a tag
+nebula> DESCRIBE TAG student;
 
-```
-// create tags schema: players and teams:
-CREATE TAG player(name string, age int)
-
-CREATE TAG team(name string)
-
-// create edges schema: players and teams:
-CREATE EDGE like(likeness int)
-
-CREATE EDGE serve(start_year int, end_year int)
+//show attributes of an edge type 
+nebula> DESCRIBE EDGE like;
 ```
 
-You could describe the schema created, for example:
+#### Insert Data
+Insert the vertexes and edges based on the graph above.
+```shell
+//insert vertexes
+nebula> INSERT VERTEX student(name, age, gender) VALUES 200:("Monica", 16, "female");
+nebula> INSERT VERTEX student(name, age, gender) VALUES 201:("Mike", 18, "male");
+nebula> INSERT VERTEX student(name, age, gender) VALUES 202:("Jane", 17, "female");
+nebula> INSERT VERTEX course(name, credits),building(name) VALUES 101:("Math", 3, "No5");
+nebula> INSERT VERTEX course(name, credits),building(name) VALUES 102:("English", 6, "No11");
 
+//insert edges
+nebula> INSERT EDGE select(grade) VALUES 200 -> 101:(5);
+nebula> INSERT EDGE select(grade) VALUES 200 -> 102:(3);
+nebula> INSERT EDGE select(grade) VALUES 201 -> 102:(3);
+nebula> INSERT EDGE select(grade) VALUES 202 -> 102:(3);
+nebula> INSERT EDGE like(likeness) VALUES 200 -> 201:(92.5);
+nebula> INSERT EDGE like(likeness) VALUES 201 -> 200:(85.6);
+nebula> INSERT EDGE like(likeness) VALUES 201 -> 202:(93.2);
 ```
-DESCRIBE TAG player
 
-DESCRIBE EDGE serve
+#### Sample Queries
+Q1. Find the vertexes that 201 likes:
+```shell
+nebula> GO FROM 201 OVER like;
+
+=======
+|  id |
+=======
+| 200 |
+-------
+| 202 |
+-------
+```
+Q2. Find the vertexes that 201 likes, whose age are greater than 17. Return their name, age and gender, and alias the columns as Friend, Age and Gender, respectively.
+
+```shell
+nebula> GO FROM 201 OVER like WHERE $$[student].age >= 17 YIELD $$[student].name AS Friend, $$[student].age AS Age, $$[student].gender AS Gender;
+
+=========================
+| Friend | Age | Gender |
+=========================
+|   Jane |  17 | female |
+-------------------------
+```
+**YIELD** specifies what values or results you might want to return from query.
+
+**$^** represents the source vertex.
+
+**$$** indicates the target vertex.
+
+Q3. Find the courses that the vetexes liked by 201 select and their grade.
+
+```shell
+nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^[student].name AS Student, $$[course].name AS Course, select.grade AS Grade;
+
+=============================
+| Student |  Course | Grade |
+=============================
+|  Monica |    Math |     5 |
+-----------------------------
+|  Monica | English |     3 |
+-----------------------------
+|    Jane | English |     3 |
+-----------------------------
 ```
 
-The insert sentences look like the following commands.
+Symbol ’**|**‘ denotes a pipe. The output of the formal query acts as input to the next one like a pipeline.
 
-```
-// Insert some vertices: players and teams:
-INSERT VERTEX player(name, age) VALUES -8379929135833483044:("Amar'e Stoudemire", 36)
-
-INSERT VERTEX team(name) VALUES -9110170398241263635:("Magic")
-
-// Insert some edges: likes and serves:
-INSERT EDGE like(likeness) VALUES -8379929135833483044 -> 6663720087669302163:(90)
-
-INSERT EDGE serve(start_year, end_year) VALUES -8379929135833483044 -> 868103967282670864:(2002, 2010)
-```
+For more detail, check [nGQL](https://github.com/vesoft-inc/nebula/blob/master/docs/nGQL.md).
