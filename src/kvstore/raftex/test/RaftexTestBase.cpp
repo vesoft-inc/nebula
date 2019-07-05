@@ -233,16 +233,22 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
     }
 }
 
-void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
-                     std::shared_ptr<test::TestShard>& leader) {
+int32_t checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                        std::shared_ptr<test::TestShard>& leader) {
     std::lock_guard<std::mutex> lock(leaderMutex);
-
-    ASSERT_FALSE(!leader);
+    CHECK(!!leader);
+    int32_t leaderIndex = -1;
+    int i = 0;
     for (auto& c : copies) {
-        if (c != nullptr && leader != c && !c->isLearner() && c->isRunning_ == true) {
-            ASSERT_EQ(leader->address(), c->leader());
+        if (c != nullptr && leader != c && !c->isLearner() && c->isRunning_) {
+            EXPECT_EQ(leader->address(), c->leader());
+        } else if (leader == c) {
+            leaderIndex = i;
         }
+        i++;
     }
+    CHECK_GE(leaderIndex, 0);
+    return leaderIndex;
 }
 
 /**

@@ -404,8 +404,9 @@ ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceI
     return partIt->second;
 }
 
-
-ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
+ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
+                               const std::string& extra,
+                               const std::vector<std::string>& files) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
         return error(spaceRet);
