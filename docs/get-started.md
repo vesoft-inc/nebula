@@ -231,7 +231,21 @@ nebula> GO FROM 201 OVER like WHERE $$[student].age >= 17 YIELD $$[student].name
 Q3. Find the courses that the vetexes liked by 201 select and their grade.
 
 ```shell
+// by pipe
 nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^[student].name AS Student, $$[course].name AS Course, select.grade AS Grade;
+
+=============================
+| Student |  Course | Grade |
+=============================
+|  Monica |    Math |     5 |
+-----------------------------
+|  Monica | English |     3 |
+-----------------------------
+|    Jane | English |     3 |
+-----------------------------
+
+// by temporary variable
+nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^[student].name AS Student, $$[course].name AS Course, select.grade AS Grade;
 
 =============================
 | Student |  Course | Grade |
@@ -246,4 +260,8 @@ nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^[student].name
 
 Symbol ’**|**‘ denotes a pipe. The output of the formal query acts as input to the next one like a pipeline.
 
-For more detail, check [nGQL](https://github.com/vesoft-inc/nebula/blob/master/docs/nGQL.md).
+$- refers to the input stream.
+
+The second approach adopts a user-defined variable. The scope of this variable is within the compound statement.
+
+For more details about Query Language, check [nGQL](https://github.com/vesoft-inc/nebula/blob/master/docs/nGQL.md).
