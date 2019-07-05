@@ -110,7 +110,7 @@ nebula>
 If you have any questions or concerns about the deployment procedures, please do not hesitate to open an issue on git.
 
 ### Step 3: Build Your Own Graph
-This section describes how to build a graph and make queries. The example is built on the graph below.
+This section describes how to build a graph and make queries. The example is built on the graph below:
 
 ![Untitled Diagram (1)](https://user-images.githubusercontent.com/51590253/60649144-0774c980-9e74-11e9-86d6-bad1653e70ba.png)
 
@@ -137,11 +137,11 @@ To list all existing spaces:
 nebula> SHOW SPACES;
 ```
 
-To create a new space named <em>myspace_test2</em>
+To create a new space named <em>myspace_test2</em> :
 ```shell
 nebula> CREATE SPACE myspace_test2(partition_num=1, replica_factor=1);
 
-// use this space
+-- Use this space
 nebula> USE myspace_test2;
 ```
 <em>replica_factor</em> specifies the number of replicas in the cluster.
