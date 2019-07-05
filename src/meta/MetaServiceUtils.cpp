@@ -16,8 +16,6 @@ const std::string kPartsTable        = "__parts__";          // NOLINT
 const std::string kHostsTable        = "__hosts__";          // NOLINT
 const std::string kTagsTable         = "__tags__";           // NOLINT
 const std::string kEdgesTable        = "__edges__";          // NOLINT
-const std::string kTagLatestTable    = "__tag_latest__";     // NOLINT
-const std::string kEdgeLatestTable   = "__edge_latest__";    // NOLINT
 const std::string kTagIndexesTable   = "__tag_indexes__";    // NOLINT
 const std::string kEdgeIndexesTable  = "__edge_indexes__";   // NOLINT
 const std::string kIndexTable        = "__index__";          // NOLINT
@@ -172,16 +170,6 @@ std::string MetaServiceUtils::schemaEdgeVal(const std::string& name, nebula::cpp
     return val;
 }
 
-std::string MetaServiceUtils::schemaLatestEdgeKey(GraphSpaceID spaceId,
-                                                  EdgeType edgeType) {
-    std::string key;
-    key.reserve(128);
-    key.append(kEdgeLatestTable.data(), kEdgeLatestTable.size());
-    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
-    key.append(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType));
-    return key;
-}
-
 SchemaVer MetaServiceUtils::parseEdgeVersion(folly::StringPiece key) {
     auto offset = kEdgesTable.size() + sizeof(GraphSpaceID) + sizeof(EdgeType);
     return std::numeric_limits<SchemaVer>::max() -
@@ -208,15 +196,6 @@ std::string MetaServiceUtils::schemaTagVal(const std::string& name, nebula::cpp2
     val.append(name);
     val.append(sval);
     return val;
-}
-
-std::string MetaServiceUtils::schemaLatestTagKey(GraphSpaceID spaceId, TagID tagId) {
-    std::string key;
-    key.reserve(128);
-    key.append(kTagLatestTable.data(), kTagLatestTable.size());
-    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
-    key.append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
-    return key;
 }
 
 SchemaVer MetaServiceUtils::parseTagVersion(folly::StringPiece key) {
@@ -259,7 +238,7 @@ std::string MetaServiceUtils::tagIndexKey(GraphSpaceID spaceID, TagIndexID index
     return key;
 }
 
-std::string MetaServiceUtils::tagIndexVal(nebula::meta::cpp2::TagIndexProperties properties) {
+std::string MetaServiceUtils::tagIndexVal(nebula::meta::cpp2::IndexProperties properties) {
     std::string value;
     apache::thrift::CompactSerializer::serialize(properties, &value);
     return value;
@@ -282,7 +261,7 @@ std::string MetaServiceUtils::edgeIndexKey(GraphSpaceID spaceID, EdgeIndexID ind
     return key;
 }
 
-std::string MetaServiceUtils::edgeIndexVal(nebula::meta::cpp2::EdgeIndexProperties properties) {
+std::string MetaServiceUtils::edgeIndexVal(nebula::meta::cpp2::IndexProperties properties) {
     std::string value;
     apache::thrift::CompactSerializer::serialize(properties, &value);
     return value;
@@ -296,14 +275,14 @@ std::string MetaServiceUtils::edgeIndexPrefix(GraphSpaceID spaceId) {
     return key;
 }
 
-cpp2::TagIndexProperties MetaServiceUtils::parseTagIndex(folly::StringPiece rawData) {
-    cpp2::TagIndexProperties properties;
+cpp2::IndexProperties MetaServiceUtils::parseTagIndex(folly::StringPiece rawData) {
+    cpp2::IndexProperties properties;
     apache::thrift::CompactSerializer::deserialize(rawData, properties);
     return properties;
 }
 
-cpp2::EdgeIndexProperties MetaServiceUtils::parseEdgeIndex(folly::StringPiece rawData) {
-    cpp2::EdgeIndexProperties properties;
+cpp2::IndexProperties MetaServiceUtils::parseEdgeIndex(folly::StringPiece rawData) {
+    cpp2::IndexProperties properties;
     apache::thrift::CompactSerializer::deserialize(rawData, properties);
     return properties;
 }

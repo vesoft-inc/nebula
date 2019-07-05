@@ -12,7 +12,7 @@ namespace nebula {
 namespace meta {
 
 std::unique_ptr<SchemaManager> SchemaManager::create() {
-    auto sm = std::unique_ptr<SchemaManager>(new ServerBasedSchemaManager());
+    auto sm = std::make_unique<ServerBasedSchemaManager>();
     return sm;
 }
 

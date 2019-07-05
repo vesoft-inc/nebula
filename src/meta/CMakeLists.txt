@@ -10,7 +10,6 @@ add_dependencies(
     meta_thrift_obj
     base_obj)
 
-
 add_library(
     meta_service_handler OBJECT
     MetaServiceHandler.cpp
@@ -59,12 +58,12 @@ add_library(
 
 add_dependencies(
     meta_service_handler
+    base_obj
     meta_thrift_obj
     common_thrift_obj
     kvstore_obj
     thread_obj
     stats_obj
-    base_obj
 )
 
 add_library(
@@ -82,9 +81,9 @@ add_library(
 )
 add_dependencies(
     meta_client
+    base_obj
     meta_thrift_obj
     common_thrift_obj
-    schema_obj
-    base_obj)
+    schema_obj)
 
 add_subdirectory(test)

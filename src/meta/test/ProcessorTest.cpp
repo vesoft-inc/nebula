@@ -48,9 +48,9 @@ namespace meta {
 using nebula::cpp2::SupportedType;
 using apache::thrift::FragileConstructor::FRAGILE;
 
-
-TEST(ProcessorTest, HostsTest) {
-    fs::TempDir rootPath("/tmp/HostsTest.XXXXXX");
+/*
+TEST(ProcessorTest, AddHostsTest) {
+    fs::TempDir rootPath("/tmp/AddHostsTest.XXXXXX");
     FLAGS_expired_hosts_check_interval_sec = 2;
     FLAGS_expired_threshold_sec = 2;
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
@@ -194,8 +194,8 @@ TEST(ProcessorTest, ListHostsTest) {
     ActiveHostsMan::instance()->stopClean();
 }
 
-TEST(ProcessorTest, SpaceTest) {
-    fs::TempDir rootPath("/tmp/SpaceTest.XXXXXX");
+TEST(ProcessorTest, CreateSpaceTest) {
+    fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
 
@@ -329,7 +329,7 @@ TEST(ProcessorTest, CreateTagTest) {
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
     }
     {
         // Succeeded
@@ -967,9 +967,6 @@ TEST(ProcessorTest, AlterTagTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         auto tags = resp.get_tags();
-        for (auto item : tags) {
-            LOG(INFO) << item.tag_name;
-        }
         ASSERT_EQ(2, tags.size());
         // TagItems in vector are unordered.So need to get the latest one by comparing the versions.
         auto tag = tags[0].version > 0 ? tags[0] : tags[1];
@@ -1592,7 +1589,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
         ASSERT_EQ("default_tag", tags[0].get_tag_name());
     }
 }
-
+*/
 TEST(ProcessorTest, TagIndexTest) {
     fs::TempDir rootPath("/tmp/TagIndexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
@@ -1600,14 +1597,14 @@ TEST(ProcessorTest, TagIndexTest) {
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockTag(kv.get(), 2);
     {
-        cpp2::TagIndexProperties properties;
+        cpp2::IndexProperties properties;
         std::map<std::string, std::vector<std::string>> tagFields {
             {"tag_0", {"tag_0_col_0"}}
         };
-        properties.set_tag_fields(std::move(tagFields));
+        properties.set_fields(std::move(tagFields));
         cpp2::CreateTagIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("tag_single_field_index");
+        req.set_index_name("single_field_index");
         req.set_properties(std::move(properties));
         auto* processor = CreateTagIndexProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -1616,14 +1613,14 @@ TEST(ProcessorTest, TagIndexTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
-        cpp2::TagIndexProperties properties;
+        cpp2::IndexProperties properties;
         std::map<std::string, std::vector<std::string>> tagFields {
             {"tag_0", {"tag_0_col_0", "tag_0_col_1"}}
         };
-        properties.set_tag_fields(std::move(tagFields));
+        properties.set_fields(std::move(tagFields));
         cpp2::CreateTagIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("tag_multi_field_index");
+        req.set_index_name("multi_field_index");
         req.set_properties(std::move(properties));
         auto* processor = CreateTagIndexProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -1632,47 +1629,15 @@ TEST(ProcessorTest, TagIndexTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
-        cpp2::TagIndexProperties properties;
-        std::map<std::string, std::vector<std::string>> tagFields {
-            {"tag_not_exist", {"tag_0_col_0"}}
-        };
-        properties.set_tag_fields(std::move(tagFields));
-        cpp2::CreateTagIndexReq req;
-        req.set_space_id(1);
-        req.set_index_name("tag_index");
-        req.set_properties(std::move(properties));
-        auto* processor = CreateTagIndexProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
-    }
-    {
-        cpp2::TagIndexProperties properties;
-        std::map<std::string, std::vector<std::string>> tagFields {
-            {"tag_0", {"tag_field_not_exist"}}
-        };
-        properties.set_tag_fields(std::move(tagFields));
-        cpp2::CreateTagIndexReq req;
-        req.set_space_id(1);
-        req.set_index_name("tag_index");
-        req.set_properties(std::move(properties));
-        auto* processor = CreateTagIndexProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
-    }
-    {
-        cpp2::TagIndexProperties properties;
+        cpp2::IndexProperties properties;
         std::map<std::string, std::vector<std::string>> tagFields {
             {"tag_0", {"tag_0_col_0", "tag_0_col_1"}},
             {"tag_1", {"tag_1_col_0", "tag_1_col_1"}}
         };
-        properties.set_tag_fields(std::move(tagFields));
+        properties.set_fields(std::move(tagFields));
         cpp2::CreateTagIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("tag_multi_index");
+        req.set_index_name("multi_tag_index");
         req.set_properties(std::move(properties));
         auto* processor = CreateTagIndexProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -1681,15 +1646,47 @@ TEST(ProcessorTest, TagIndexTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
+        cpp2::IndexProperties properties;
+        std::map<std::string, std::vector<std::string>> tagFields {
+            {"tag_not_exist", {"tag_0_col_0"}}
+        };
+        properties.set_fields(std::move(tagFields));
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("tag_not_exist_index");
+        req.set_properties(std::move(properties));
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    {
+        cpp2::IndexProperties properties;
+        std::map<std::string, std::vector<std::string>> tagFields {
+            {"tag_0", {"field_not_exist"}}
+        };
+        properties.set_fields(std::move(tagFields));
+        cpp2::CreateTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("field_not_exist_index");
+        req.set_properties(std::move(properties));
+        auto* processor = CreateTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    {
         // Test index have exist
-        cpp2::TagIndexProperties properties;
+        cpp2::IndexProperties properties;
         std::map<std::string, std::vector<std::string>> tagFields {
             {"tag_0", {"tag_0_col_0"}}
         };
-        properties.set_tag_fields(std::move(tagFields));
+        properties.set_fields(std::move(tagFields));
         cpp2::CreateTagIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("tag_single_field_index");
+        req.set_index_name("single_field_index");
         req.set_properties(std::move(properties));
         auto* processor = CreateTagIndexProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -1698,19 +1695,85 @@ TEST(ProcessorTest, TagIndexTest) {
         ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
     }
     {
+        cpp2::ListTagIndexesReq req;
+        req.set_space_id(1);
+        auto* processor = ListTagIndexesProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto items = resp.get_items();
+        ASSERT_EQ(3, items.size());
+        for (auto &item : items) {
+            LOG(INFO) << item.get_index_id();
+        }
+        std::map<std::string, std::vector<std::string>> singleField {
+            {"tag_0", {"tag_0_col_0"}}
+        };
+        auto singleItem = items[0];
+        ASSERT_EQ(1, singleItem.get_index_id());
+
+        std::map<std::string, std::vector<std::string>> multiField {
+            {"tag_0", {"tag_0_col_0", "tag_0_col_1"}}
+        };
+        auto multiItem = items[1];
+        ASSERT_EQ(2, multiItem.get_index_id());
+
+        std::map<std::string, std::vector<std::string>> multiTagField {
+            {"tag_0", {"tag_0_col_0", "tag_0_col_1"}},
+            {"tag_1", {"tag_1_col_0", "tag_1_col_1"}}
+        };
+        auto multiTagItem = items[2];
+        ASSERT_EQ(3, multiTagItem.get_index_id());
+    }
+    {
         cpp2::GetTagIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("tag_single_field_index");
+        req.set_index_name("single_field_index");
 
         auto* processor = GetTagIndexProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         auto item = resp.get_item();
-        auto properties = item.get_properties().get_tag_fields();
+        auto properties = item.get_properties().get_fields();
         ASSERT_EQ(1, item.get_index_id());
         std::vector<std::string> fields{"tag_0_col_0"};
         TestUtils::verifyResult(fields, properties["tag_0"]);
+    }
+    {
+        cpp2::DropTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = DropTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::GetTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = GetTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    {
+        cpp2::DropTagIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = DropTagIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
 }
 
@@ -1721,14 +1784,14 @@ TEST(ProcessorTest, EdgeIndexTest) {
     ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
     TestUtils::mockEdge(kv.get(), 2);
     {
-        cpp2::EdgeIndexProperties   properties;
+        cpp2::IndexProperties   properties;
         std::map<std::string, std::vector<std::string>> edgeFields{
             {"edge_0", {"edge_0_col_0"}}
         };
-        properties.set_edge_fields(std::move(edgeFields));
+        properties.set_fields(std::move(edgeFields));
         cpp2::CreateEdgeIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("edge_single_field_index");
+        req.set_index_name("single_field_index");
         req.set_properties(std::move(properties));
 
         auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
@@ -1738,14 +1801,14 @@ TEST(ProcessorTest, EdgeIndexTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
-        cpp2::EdgeIndexProperties   properties;
+        cpp2::IndexProperties   properties;
         std::map<std::string, std::vector<std::string>> edgeFields{
             {"edge_0", {"edge_0_col_0", "edge_0_col_1"}}
         };
-        properties.set_edge_fields(std::move(edgeFields));
+        properties.set_fields(std::move(edgeFields));
         cpp2::CreateEdgeIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("edge_multi_field_index");
+        req.set_index_name("multi_field_index");
         req.set_properties(std::move(properties));
 
         auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
@@ -1755,14 +1818,14 @@ TEST(ProcessorTest, EdgeIndexTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
-        cpp2::EdgeIndexProperties properties;
+        cpp2::IndexProperties properties;
         std::map<std::string, std::vector<std::string>> edgeFields {
             {"edge_not_exist", {"edge_0_col_0"}}
         };
-        properties.set_edge_fields(std::move(edgeFields));
+        properties.set_fields(std::move(edgeFields));
         cpp2::CreateEdgeIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("edge_index");
+        req.set_index_name("edge_not_exist_index");
         req.set_properties(std::move(properties));
         auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -1771,14 +1834,14 @@ TEST(ProcessorTest, EdgeIndexTest) {
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
     {
-        cpp2::EdgeIndexProperties properties;
+        cpp2::IndexProperties properties;
         std::map<std::string, std::vector<std::string>> edgeFields {
             {"edge_0", {"edge_field_not_exist"}}
         };
-        properties.set_edge_fields(std::move(edgeFields));
+        properties.set_fields(std::move(edgeFields));
         cpp2::CreateEdgeIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("edge_index");
+        req.set_index_name("field_not_exist_index");
         req.set_properties(std::move(properties));
         auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -1787,15 +1850,15 @@ TEST(ProcessorTest, EdgeIndexTest) {
         ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
     {
-        cpp2::EdgeIndexProperties   properties;
+        cpp2::IndexProperties   properties;
         std::map<std::string, std::vector<std::string>> edgeFields{
             {"edge_0", {"edge_0_col_0", "edge_0_col_1"}},
             {"edge_1", {"edge_1_col_0", "edge_1_col_1"}}
         };
-        properties.set_edge_fields(std::move(edgeFields));
+        properties.set_fields(std::move(edgeFields));
         cpp2::CreateEdgeIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("edge_multi_index");
+        req.set_index_name("multi_edge_index");
         req.set_properties(std::move(properties));
 
         auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
@@ -1805,14 +1868,14 @@ TEST(ProcessorTest, EdgeIndexTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     }
     {
-        cpp2::EdgeIndexProperties   properties;
+        cpp2::IndexProperties   properties;
         std::map<std::string, std::vector<std::string>> edgeFields{
             {"edge_0", {"edge_0_col_0"}}
         };
-        properties.set_edge_fields(std::move(edgeFields));
+        properties.set_fields(std::move(edgeFields));
         cpp2::CreateEdgeIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("edge_single_field_index");
+        req.set_index_name("single_field_index");
         req.set_properties(std::move(properties));
 
         auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
@@ -1822,17 +1885,86 @@ TEST(ProcessorTest, EdgeIndexTest) {
         ASSERT_EQ(cpp2::ErrorCode::E_EXISTED, resp.get_code());
     }
     {
+        cpp2::ListEdgeIndexesReq req;
+        req.set_space_id(1);
+        auto* processor = ListEdgeIndexesProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+        auto items = resp.get_items();
+        ASSERT_EQ(3, items.size());
+        for (auto &item : items) {
+            LOG(INFO) << item.get_index_id();
+        }
+
+        std::map<std::string, std::vector<std::string>> singleField {
+            {"edge_0", {"edge_0_col_0"}}
+        };
+        auto singleItem = items[0];
+        ASSERT_EQ(1, singleItem.get_index_id());
+        auto singleFieldResult = singleItem.get_properties().get_fields();
+        ASSERT_TRUE(TestUtils::verifyMap(singleFieldResult, singleField));
+
+        std::map<std::string, std::vector<std::string>> multiField {
+            {"edge_0", {"edge_0_col_0", "edge_0_col_1"}}
+        };
+        auto multiItem = items[1];
+        ASSERT_EQ(2, multiItem.get_index_id());
+
+        std::map<std::string, std::vector<std::string>> multiEdgeField {
+            {"edge_0", {"edge_0_col_0", "edge_0_col_1"}},
+            {"edge_1", {"edge_1_col_0", "edge_1_col_1"}}
+        };
+        auto multiEdgeItem = items[2];
+        ASSERT_EQ(3, multiEdgeItem.get_index_id());
+    }
+    {
         cpp2::GetEdgeIndexReq req;
         req.set_space_id(1);
-        req.set_index_name("edge_single_field_index");
+        req.set_index_name("single_field_index");
 
         auto* processor = GetEdgeIndexProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
         auto item = resp.get_item();
-        auto properties = item.get_properties().get_edge_fields();
+        auto properties = item.get_properties().get_fields();
         ASSERT_EQ(1, item.get_index_id());
+    }
+    {
+        cpp2::DropEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = DropEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
+    {
+        cpp2::GetEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = GetEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
+    }
+    {
+        cpp2::DropEdgeIndexReq req;
+        req.set_space_id(1);
+        req.set_index_name("single_field_index");
+
+        auto* processor = DropEdgeIndexProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_NOT_FOUND, resp.get_code());
     }
 }
 

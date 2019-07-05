@@ -111,22 +111,18 @@ struct EdgeItem {
     4: common.Schema        schema,
 }
 
-struct TagIndexProperties {
-    1: map<string, list<string>>(cpp.template = "std::map")  tag_fields,
-}
-
-struct EdgeIndexProperties {
-    1: map<string, list<string>>(cpp.template = "std::map")  edge_fields,
+struct IndexProperties {
+    1: map<string, list<string>>(cpp.template = "std::map")  fields,
 }
 
 struct TagIndexItem {
     1: common.TagIndexID    index_id,
-    2: TagIndexProperties   properties,
+    2: IndexProperties      properties,
 }
 
 struct EdgeIndexItem {
     1: common.EdgeIndexID   index_id,
-    2: EdgeIndexProperties  properties,
+    2: IndexProperties      properties,
 }
 
 enum HostStatus {
@@ -376,7 +372,7 @@ struct HBReq {
 struct CreateTagIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
-    3: TagIndexProperties  properties,
+    3: IndexProperties     properties,
 }
 
 struct DropTagIndexReq {
@@ -408,7 +404,7 @@ struct ListTagIndexesResp {
 struct CreateEdgeIndexReq {
     1: common.GraphSpaceID space_id,
     2: string              index_name,
-    3: EdgeIndexProperties properties,
+    3: IndexProperties     properties,
 }
 
 struct DropEdgeIndexReq {

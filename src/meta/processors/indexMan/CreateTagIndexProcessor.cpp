@@ -17,28 +17,30 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     auto properties = req.get_properties();
     auto ret = getTagIndexID(spaceID, indexName);
     if (ret.ok()) {
-        LOG(ERROR) << "Create Tag Index Failed: " << indexName << " already existed";
+        LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }
 
-    if (properties.get_tag_fields().size() == 0) {
+    if (properties.get_fields().size() == 0) {
+        LOG(ERROR) << "Tag's Field should not empty";
         resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
 
-    for (auto const &element : properties.get_tag_fields()) {
-        auto tagID = getTagId(spaceID, element.first);
+    for (auto const &element : properties.get_fields()) {
+        auto tagName = element.first;
+        auto tagID = getTagId(spaceID, tagName);
         if (!tagID.ok()) {
-            LOG(ERROR) << "Create Tag Index Failed: Tag " << element.first << " not exist";
+            LOG(ERROR) << "Create Tag Index Failed: Tag " << tagName << " not exist";
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
 
-        auto fieldsResult = getLatestTagFields(spaceID, element.first);
+        auto fieldsResult = getLatestTagFields(spaceID, tagName);
         if (!fieldsResult.ok()) {
             LOG(ERROR) << "Get Latest Tag Fields Failed";
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -48,7 +50,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
         auto fields = fieldsResult.value();
         for (auto &field : element.second) {
             if (std::find(fields.begin(), fields.end(), field) == fields.end()) {
-                LOG(ERROR) << "Field " << field << " not found in Tag " << element.first;
+                LOG(ERROR) << "Field " << field << " not found in Tag " << tagName;
                 resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
                 onFinished();
                 return;

@@ -237,10 +237,29 @@ public:
 
         int32_t size = resultColumns.size();
         for (auto i = 0; i < size; i++) {
-            if (resultColumns[i].get_name() != expectedColumns[i].get_name()) {
+            if (resultColumns[i].get_name() != expectedColumns[i].get_name() ||
+                resultColumns[i].get_type() != expectedColumns[i].get_type()) {
                 return false;
             }
         }
+        return true;
+    }
+
+    static bool verifyMap(std::map<std::string, std::vector<std::string>> &result,
+                          std::map<std::string, std::vector<std::string>> &expected) {
+        if (result.size() != expected.size()) {
+            return false;
+        }
+
+        for (auto resultIter = result.begin(), expectedIter = expected.begin();
+             resultIter != result.end(), expectedIter != expected.end();
+             resultIter++, expectedIter++) {
+            if (resultIter->first != expectedIter->first &&
+                !verifyResult(resultIter->second, expectedIter->second)) {
+                return false;
+            }
+        }
+
         return true;
     }
 

@@ -129,12 +129,6 @@ public:
     future_listEdgeIndexes(const cpp2::ListEdgeIndexesReq& req) override;
 
     /**
-     * HeartBeat
-     * */
-    folly::Future<cpp2::HBResp>
-    future_heartBeat(const cpp2::HBReq& req) override;
-
-    /**
      * User manager
      **/
     folly::Future<cpp2::ExecResp>

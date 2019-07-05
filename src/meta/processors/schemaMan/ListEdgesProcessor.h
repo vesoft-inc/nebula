@@ -14,6 +14,11 @@ namespace meta {
 
 class ListEdgesProcessor : public BaseProcessor<cpp2::ListEdgesResp> {
 public:
+    /*
+     *  xxxProcessor is self-management.
+     *  The user should get instance when needed and don't care about the instance deleted.
+     *  The instance should be destroyed inside when onFinished method invoked
+     */
     static ListEdgesProcessor* instance(kvstore::KVStore* kvstore) {
         return new ListEdgesProcessor(kvstore);
     }

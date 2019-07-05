@@ -17,28 +17,30 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     auto properties = req.get_properties();
     auto ret = getEdgeIndexID(spaceID, indexName);
     if (ret.ok()) {
-        LOG(ERROR) << "Create Edge Index Failed: " << indexName << " already existed";
+        LOG(ERROR) << "Create Edge Index Failed: " << indexName << " have existed";
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }
 
-    if (properties.get_edge_fields().size() == 0) {
+    if (properties.get_fields().size() == 0) {
+        LOG(ERROR) << "Edge's Field should not empty";
         resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
 
-    for (auto const &element : properties.get_edge_fields()) {
-        auto edgeType = getEdgeType(spaceID, element.first);
+    for (auto const &element : properties.get_fields()) {
+        auto edgeName = element.first;
+        auto edgeType = getEdgeType(spaceID, edgeName);
         if (!edgeType.ok()) {
-            LOG(ERROR) << "Create Edge Index Failed: " << element.first << " not exist";
+            LOG(ERROR) << "Create Edge Index Failed: " << edgeName << " not exist";
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
             onFinished();
             return;
         }
 
-        auto fieldsResult = getLatestEdgeFields(spaceID, element.first);
+        auto fieldsResult = getLatestEdgeFields(spaceID, edgeName);
         if (!fieldsResult.ok()) {
             LOG(ERROR) << "Get Latest Edge Property Name Failed";
             resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
@@ -48,7 +50,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         auto fields = fieldsResult.value();
         for (auto &field : element.second) {
             if (std::find(fields.begin(), fields.end(), field) == fields.end()) {
-                LOG(ERROR) << "Field " << field << " not found in Edge " << element.first;
+                LOG(ERROR) << "Field " << field << " not found in Edge " << edgeName;
                 resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
                 onFinished();
                 return;

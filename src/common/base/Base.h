@@ -111,9 +111,6 @@ using HostAddr = std::pair<IPv4, Port>;
 
 std::ostream& operator<<(std::ostream &, const HostAddr&);
 
-template <typename T>
-std::ostream& operator<<(std::ostream &, const std::vector<T>&);
-
 template<typename Key, typename T>
 using UnorderedMap = typename std::conditional<
     std::is_same<Key, std::string>::value,

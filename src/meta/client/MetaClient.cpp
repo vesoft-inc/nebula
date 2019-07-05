@@ -206,6 +206,25 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     return true;
 }
 
+bool MetaClient::loadIndexes(GraphSpaceID spaceId,
+                             std::shared_ptr<SpaceInfoCache> cache) {
+    UNUSED(spaceId); UNUSED(cache);
+    return false;
+}
+
+bool
+MetaClient::checkTagFieldsIndexed(GraphSpaceID space, TagID tagID,
+                                  const std::vector<std::string> &fields) {
+    UNUSED(space); UNUSED(tagID); UNUSED(fields);
+    return false;
+}
+
+bool
+MetaClient::checkEdgeFieldsIndexed(GraphSpaceID space, EdgeType edgeType,
+                                   const std::vector<std::string> &fields) {
+    UNUSED(space); UNUSED(edgeType); UNUSED(fields);
+    return false;
+}
 
 std::unordered_map<HostAddr, std::vector<PartitionID>>
 MetaClient::reverse(const PartsAlloc& parts) {
@@ -881,8 +900,8 @@ MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
 folly::Future<StatusOr<TagIndexID>>
 MetaClient::createTagIndex(GraphSpaceID spaceID, std::string name,
                            std::map<std::string, std::vector<std::string>> fields) {
-    cpp2::TagIndexProperties properties;
-    properties.set_tag_fields(fields);
+    cpp2::IndexProperties properties;
+    properties.set_fields(fields);
     cpp2::CreateTagIndexReq req;
     req.set_space_id(spaceID);
     req.set_index_name(name);
@@ -932,8 +951,8 @@ MetaClient::listTagIndexes(GraphSpaceID spaceID) {
 folly::Future<StatusOr<EdgeIndexID>>
 MetaClient::createEdgeIndex(GraphSpaceID spaceID, std::string name,
                             std::map<std::string, std::vector<std::string>> fields) {
-    cpp2::EdgeIndexProperties properties;
-    properties.set_edge_fields(fields);
+    cpp2::IndexProperties properties;
+    properties.set_fields(fields);
     cpp2::CreateEdgeIndexReq req;
     req.set_space_id(spaceID);
     req.set_index_name(name);
@@ -1024,16 +1043,18 @@ MetaClient::getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, Sche
     }
 }
 
-StatusOr<std::shared_ptr<const IndexProviderIf>>
+StatusOr<const cpp2::IndexProperties>
 MetaClient::getTagIndexFromCache(GraphSpaceID spaceID, TagIndexID tagIndexID) {
     UNUSED(spaceID); UNUSED(tagIndexID);
-    return std::shared_ptr<const IndexProviderIf>();
+    cpp2::IndexProperties properties;
+    return properties;
 }
 
-StatusOr<std::shared_ptr<const IndexProviderIf>>
+StatusOr<const cpp2::IndexProperties>
 MetaClient::getEdgeIndexFromCache(GraphSpaceID spaceID, EdgeIndexID edgeIndexID) {
     UNUSED(spaceID); UNUSED(edgeIndexID);
-    return std::shared_ptr<const IndexProviderIf>();
+    cpp2::IndexProperties properties;
+    return properties;
 }
 
 StatusOr<SchemaVer> MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space,

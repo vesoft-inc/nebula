@@ -31,6 +31,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
         onFinished();
         return;
     }
+
     cpp2::EdgeIndexItem item;
     item.set_index_id(edgeIndexIDResult.value());
     item.set_properties(MetaServiceUtils::parseEdgeIndex(edgeResult.value()));

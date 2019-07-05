@@ -19,17 +19,19 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
     auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     resp_.set_code(to(ret));
     if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "List Edge Index Failed: SpaceID " << req.get_space_id();
         onFinished();
         return;
     }
 
     decltype(resp_.items) items;
     while (iter->valid()) {
-        // auto key = iter->key();
+        auto key = iter->key();
         auto val = iter->val();
+        auto edgeIndex = *reinterpret_cast<const EdgeIndexID *>(key.data() + prefix.size());
         auto properties = MetaServiceUtils::parseEdgeIndex(val);
         items.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                           spaceId, properties);
+                           edgeIndex, properties);
         iter->next();
     }
     resp_.set_items(std::move(items));

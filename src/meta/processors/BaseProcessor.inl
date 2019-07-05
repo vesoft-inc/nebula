@@ -241,12 +241,14 @@ BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId,
         LOG(ERROR) << "Tag " << name << " not found";
         return Status::Error(folly::stringPrintf("Tag %s not found", name.c_str()));
     }
+
     auto key = MetaServiceUtils::schemaTagPrefix(spaceId, result.value());
     auto ret = doPrefix(key);
     if (!ret.ok()) {
         LOG(ERROR) << "Tag Prefix " << key << " not found";
-        return Status::Error("Tag Prefix  not found");
+        return Status::Error(folly::stringPrintf("Tag Prefix %s not found", key.c_str()));
     }
+
     auto iter = ret.value().get();
     auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
     std::vector<std::string> propertyNames;
@@ -265,13 +267,15 @@ BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId,
         LOG(ERROR) << "Edge " << name << " not found";
         return Status::Error(folly::stringPrintf("Edge %s not found", name.c_str()));
     }
+
     auto edgeType = to(result.value(), EntryType::EDGE);
     auto key = MetaServiceUtils::schemaEdgePrefix(spaceId, result.value());
     auto ret = doPrefix(key);
     if (!ret.ok()) {
         LOG(ERROR) << "Edge Prefix " << key << " not found";
-        return Status::Error("");
+        return Status::Error(folly::stringPrintf("Edge Prefix %s not found", key.c_str()));
     }
+
     auto iter = ret.value().get();
     auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
     std::vector<std::string> propertyNames;

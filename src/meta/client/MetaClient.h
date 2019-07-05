@@ -16,7 +16,6 @@
 #include "thread/GenericWorker.h"
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
-#include "meta/IndexProviderIf.h"
 
 namespace nebula {
 namespace meta {
@@ -30,8 +29,9 @@ using TagSchemas = std::unordered_map<std::pair<TagID, SchemaVer>,
                                       std::shared_ptr<const SchemaProviderIf>>;
 using EdgeSchemas = std::unordered_map<std::pair<EdgeType, SchemaVer>,
                                        std::shared_ptr<const SchemaProviderIf>>;
-using TagIndexes = std::unordered_map<TagID, std::shared_ptr<const IndexProviderIf>>;
-using EdgeIndexes = std::unordered_map<EdgeType, std::shared_ptr<const IndexProviderIf>>;
+
+using TagIndexes = std::unordered_map<TagIndexID, std::shared_ptr<const cpp2::IndexProperties>>;
+using EdgeIndexes = std::unordered_map<EdgeIndexID, std::shared_ptr<const cpp2::IndexProperties>>;
 
 struct SpaceInfoCache {
     std::string spaceName;
@@ -52,11 +52,6 @@ using SpaceEdgeNameTypeMap = std::unordered_map<std::pair<GraphSpaceID, std::str
 using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, SchemaVer>;
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
-
-// cache for index
-using IndexFields = std::vector<std::string>;
-using VertexIndexFieldsCache = std::unordered_map<nebula::cpp2::TagIndexID, IndexFields>;
-using EdgeIndexFieldsCache = std::unordered_map<nebula::cpp2::EdgeIndexID, IndexFields>;
 
 class MetaChangedListener {
 public:
@@ -232,11 +227,17 @@ public:
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
-    StatusOr<std::shared_ptr<const IndexProviderIf>>
+    StatusOr<const cpp2::IndexProperties>
     getTagIndexFromCache(GraphSpaceID spaceId, TagIndexID tagIndexID);
 
-    StatusOr<std::shared_ptr<const IndexProviderIf>>
+    StatusOr<const cpp2::IndexProperties>
     getEdgeIndexFromCache(GraphSpaceID spaceId, EdgeIndexID edgeIndexID);
+
+    bool checkTagFieldsIndexed(GraphSpaceID space, TagID tagID,
+                               const std::vector<std::string> &fields);
+
+    bool checkEdgeFieldsIndexed(GraphSpaceID space, EdgeType edgeType,
+                                const std::vector<std::string> &fields);
 
 protected:
     void loadDataThreadFunc();
@@ -249,6 +250,9 @@ protected:
                      SpaceEdgeNameTypeMap &edgeNameTypeMap,
                      SpaceNewestTagVerMap &newestTagVerMap,
                      SpaceNewestEdgeVerMap &newestEdgeVerMap);
+
+    bool loadIndexes(GraphSpaceID spaceId,
+                     std::shared_ptr<SpaceInfoCache> cache);
 
     folly::Future<StatusOr<bool>> heartbeat();
 

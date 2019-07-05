@@ -19,15 +19,6 @@ std::ostream& operator <<(std::ostream &os, const HostAddr &addr) {
     return os;
 }
 
-template <typename T>
-std::ostream& operator<<(std::ostream &os, const std::vector<T> &vector) {
-    os << "[ ";
-    for (auto &element : vector) {
-        os << element << " ";
-    }
-    os << "]";
-    return os;
-}
 
 std::string versionString() {
 #if defined(GIT_INFO_SHA)
