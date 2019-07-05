@@ -27,6 +27,8 @@ enum ErrorCode {
     E_INVALID_HOST   = -24,
     E_UNSUPPORTED    = -25,
     E_INVALID_PARM   = -26,
+    E_NOT_DROP       = -27,
+    E_BALANCER_RUNNING = -28,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -37,7 +39,6 @@ enum ErrorCode {
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
-
 
 enum AlterSchemaOp {
     ADD    = 0x01,
@@ -60,7 +61,6 @@ enum RoleType {
     USER   = 0x03,
     GUEST  = 0x04,
 } (cpp.enum_strict)
-
 
 union ID {
     1: common.GraphSpaceID  space_id,
@@ -205,9 +205,10 @@ struct CreateTagReq {
 }
 
 struct AlterTagReq {
-    1: common.GraphSpaceID    space_id,
-    2: string                 tag_name,
-    3: list<AlterSchemaItem>  tag_items,
+    1: common.GraphSpaceID      space_id,
+    2: string                   tag_name,
+    3: list<AlterSchemaItem>    tag_items,
+    4: common.SchemaProp        schema_prop,
 }
 
 struct DropTagReq {
@@ -246,9 +247,10 @@ struct CreateEdgeReq {
 }
 
 struct AlterEdgeReq {
-    1: common.GraphSpaceID     space_id,
-    2: string                  edge_name,
-    3: list<AlterSchemaItem>   edge_items,
+    1: common.GraphSpaceID      space_id,
+    2: string                   edge_name,
+    3: list<AlterSchemaItem>    edge_items,
+    4: common.SchemaProp        schema_prop,
 }
 
 struct GetEdgeReq {
@@ -465,7 +467,7 @@ struct GetUserReq {
 struct GetUserResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,    
+    2: common.HostAddr  leader,
     3: UserItem user_item,
 }
 
@@ -475,7 +477,7 @@ struct ListUsersReq {
 struct ListUsersResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,    
+    2: common.HostAddr  leader,
     3: map<common.UserID, UserItem>(cpp.template = "std::unordered_map") users,
 }
 
@@ -486,7 +488,7 @@ struct ListRolesReq {
 struct ListRolesResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,    
+    2: common.HostAddr  leader,
     3: list<RoleItem> roles,
 }
 
@@ -499,6 +501,19 @@ struct ChangePasswordReq {
 struct CheckPasswordReq {
     1: string account,
     2: string encoded_pwd,
+}
+
+struct BalanceReq {
+    1: optional common.GraphSpaceID space_id,
+    // Specify the balance id to check the status of the related balance plan
+    2: optional i64 id,
+}
+
+struct BalanceResp {
+    1: ErrorCode        code,
+    2: i64              id,
+    // Valid if code equals E_LEADER_CHANGED.
+    3: common.HostAddr  leader,
 }
 
 service MetaService {
@@ -541,8 +556,6 @@ service MetaService {
     GetEdgeIndexResp     getEdgeIndex(1: GetEdgeIndexReq req);
     ListEdgeIndexesResp  listEdgeIndexes(1: ListEdgeIndexesReq req);
 
-    HBResp           heartBeat(1: HBReq req);
-
     ExecResp createUser(1: CreateUserReq req);
     ExecResp dropUser(1: DropUserReq req);
     ExecResp alterUser(1: AlterUserReq req);
@@ -554,5 +567,7 @@ service MetaService {
     ExecResp changePassword(1: ChangePasswordReq req);
     ExecResp checkPassword(1: CheckPasswordReq req);
 
+    HBResp           heartBeat(1: HBReq req);
+    BalanceResp      balance(1: BalanceReq req);
 }
 

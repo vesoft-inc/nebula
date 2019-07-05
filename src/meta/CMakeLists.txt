@@ -50,7 +50,13 @@ add_library(
     processors/customKV/ScanProcessor.cpp
     processors/admin/HBProcessor.cpp
     processors/usersMan/AuthenticationProcessor.cpp
+    processors/admin/BalanceProcessor.cpp
+    processors/admin/Balancer.cpp
+    processors/admin/BalancePlan.cpp
+    processors/admin/BalanceTask.cpp
+    processors/admin/AdminClient.cpp
 )
+
 add_dependencies(
     meta_service_handler
     meta_thrift_obj
@@ -80,6 +86,5 @@ add_dependencies(
     common_thrift_obj
     schema_obj
     base_obj)
-
 
 add_subdirectory(test)

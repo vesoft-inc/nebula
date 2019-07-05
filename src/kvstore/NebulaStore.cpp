@@ -105,15 +105,22 @@ void NebulaStore::init() {
                             spaceId,
                             std::make_unique<SpacePartInfo>()).first;
                     }
-                    for (auto& partId : engine->allParts()) {
+                    spaceIt->second->engines_.emplace_back(std::move(engine));
+                    auto& enginePtr = spaceIt->second->engines_.back();
+                    for (auto& partId : enginePtr->allParts()) {
                         if (!partMan_->partExist(storeSvcAddr_, spaceId, partId)) {
                             LOG(INFO) << "Part " << partId
                                       << " does not exist any more, remove it!";
-                            engine->removePart(partId);
+                            enginePtr->removePart(partId);
                             continue;
+                        } else {
+                            LOG(INFO) << "Load part " << spaceId << ", " << partId << " from disk";
+                            spaceIt->second->parts_.emplace(partId,
+                                                            newPart(spaceId,
+                                                                    partId,
+                                                                    enginePtr.get()));
                         }
                     }
-                    spaceIt->second->engines_.emplace_back(std::move(engine));
                 } catch (std::exception& e) {
                     LOG(FATAL) << "Invalid data directory \"" << dir << "\"";
                 }
@@ -126,16 +133,18 @@ void NebulaStore::init() {
     for (auto& entry : partsMap) {
         auto spaceId = entry.first;
         addSpace(spaceId);
-        for (auto& partEntry : entry.second) {
-            addPart(spaceId, partEntry.first);
+        std::vector<PartitionID> partIds;
+        for (auto it = entry.second.begin(); it != entry.second.end(); it++) {
+            partIds.emplace_back(it->first);
+        }
+        std::sort(partIds.begin(), partIds.end());
+        for (auto& partId : partIds) {
+            addPart(spaceId, partId);
         }
     }
 
     LOG(INFO) << "Register handler...";
     partMan_->registerHandler(this);
-
-    // TODO: we have to wait until leader has been elected, for now we just sleep a few seconds.
-    sleep(3);
 }
 
 
@@ -198,21 +207,26 @@ void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId) {
     targetEngine->addPart(partId);
     spaceIt->second->parts_.emplace(
         partId,
-        std::make_shared<Part>(spaceId,
-                               partId,
-                               raftAddr_,
-                               folly::stringPrintf("%s/wal/%d",
-                                                   targetEngine->getDataRoot(),
-                                                   partId),
-                               targetEngine.get(),
-                               ioPool_,
-                               workers_));
-    // TODO: Need to pass in the peers
-    spaceIt->second->parts_[partId]->start({});
+        newPart(spaceId, partId, targetEngine.get()));
     LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been added!";
     return;
 }
 
+std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
+                                           PartitionID partId,
+                                           KVEngine* engine) {
+    auto part = std::make_shared<Part>(spaceId,
+                                       partId,
+                                       raftAddr_,
+                                       folly::stringPrintf("%s/wal/%d",
+                                               engine->getDataRoot(),
+                                               partId),
+                                       engine,
+                                       ioPool_,
+                                       workers_);
+    part->start({});
+    return part;
+}
 
 void NebulaStore::removeSpace(GraphSpaceID spaceId) {
     folly::RWSpinLock::WriteHolder wh(&lock_);
@@ -316,7 +330,7 @@ void NebulaStore::asyncMultiRemove(GraphSpaceID spaceId,
                                    KVCallback cb) {
     folly::RWSpinLock::ReadHolder rh(&lock_);
     CHECK_FOR_WRITE(spaceId, partId, cb);
-    return partIt->second->asyncMultiRemove(std::move(keys), cb);
+    return partIt->second->asyncMultiRemove(std::move(keys), std::move(cb));
 }
 
 

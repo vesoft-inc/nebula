@@ -6,9 +6,7 @@
 
 #include "base/Base.h"
 #include "graph/InsertEdgeExecutor.h"
-#include "meta/SchemaManager.h"
 #include "storage/client/StorageClient.h"
-#include "dataman/RowWriter.h"
 
 namespace nebula {
 namespace graph {
@@ -35,11 +33,27 @@ Status InsertEdgeExecutor::prepare() {
             break;
         }
         edgeType_ = edgeStatus.value();
-        properties_ = sentence_->properties();
+        auto props = sentence_->properties();
         rows_ = sentence_->rows();
+
         schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType_);
         if (schema_ == nullptr) {
-            status = Status::Error("No schema found for '%s'", sentence_->edge()->c_str());
+            status = Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
+            break;
+        }
+
+        // Now default value is unsupported
+        if (props.size() != schema_->getNumFields()) {
+            LOG(ERROR) << "Input props number " << props.size()
+                       << ", schema fields number " << schema_->getNumFields();
+            status = Status::Error("Wrong number of props");
+            break;
+        }
+
+        // Check field name
+        auto checkStatus = checkFieldName(schema_, props);
+        if (!checkStatus.ok()) {
+            status = checkStatus;
             break;
         }
     } while (false);
@@ -48,40 +62,61 @@ Status InsertEdgeExecutor::prepare() {
 }
 
 
-void InsertEdgeExecutor::execute() {
+StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
     std::vector<storage::cpp2::Edge> edges(rows_.size() * 2);   // inbound and outbound
     auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
-        auto src = row->srcid();
-        auto dst = row->dstid();
-        auto rank = row->rank();
-        auto expressions = row->values();
-        std::vector<VariantType> values;
+        auto status = row->srcid()->prepare();
+        if (!status.ok()) {
+            return status;
+        }
+        auto v = row->srcid()->eval();
+        if (!Expression::isInt(v)) {
+            return Status::Error("Vertex ID should be of type integer");
+        }
+        auto src = Expression::asInt(v);
+        status = row->dstid()->prepare();
+        if (!status.ok()) {
+            return status;
+        }
+        v = row->dstid()->eval();
+        if (!Expression::isInt(v)) {
+            return Status::Error("Vertex ID should be of type integer");
+        }
+        auto dst = Expression::asInt(v);
 
+        int64_t rank = row->rank();
+
+        auto expressions = row->values();
+
+        // Now default value is unsupported
+        if (expressions.size() != schema_->getNumFields()) {
+            LOG(ERROR) << "Input values number " << expressions.size()
+                       << ", schema field number " << schema_->getNumFields();
+            return Status::Error("Wrong number of values");
+        }
+
+        std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
             values.emplace_back(expr->eval());
         }
 
         RowWriter writer(schema_);
+        auto fieldIndex = 0u;
         for (auto &value : values) {
-            switch (value.which()) {
-                case 0:
-                    writer << boost::get<int64_t>(value);
-                    break;
-                case 1:
-                    writer << boost::get<double>(value);
-                    break;
-                case 2:
-                    writer << boost::get<bool>(value);
-                    break;
-                case 3:
-                    writer << boost::get<std::string>(value);
-                    break;
-                default:
-                    LOG(FATAL) << "Unknown value type: " << static_cast<uint32_t>(value.which());
+            // Check value type
+            auto schemaType = schema_->getFieldType(fieldIndex);
+            if (!checkValueType(schemaType, value)) {
+                DCHECK(onError_);
+                LOG(ERROR) << "ValueType is wrong, schema type "
+                           << static_cast<int32_t>(schemaType.type)
+                           << ", input type " <<  value.which();
+                return Status::Error("ValueType is wrong");
             }
+            writeVariantType(writer, value);
+            fieldIndex++;
         }
         {
             auto &out = edges[index++];
@@ -105,8 +140,19 @@ void InsertEdgeExecutor::execute() {
         }
     }
 
+    return edges;
+}
+
+
+void InsertEdgeExecutor::execute() {
+    auto result = prepareEdges();
+    if (!result.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(result).status());
+        return;
+    }
     auto space = ectx()->rctx()->session()->space();
-    auto future = ectx()->storage()->addEdges(space, std::move(edges), overwritable_);
+    auto future = ectx()->storage()->addEdges(space, std::move(result).value(), overwritable_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

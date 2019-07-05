@@ -117,7 +117,8 @@ public:
     folly::Future<StatusOr<TagID>>
     alterTagSchema(GraphSpaceID spaceId,
                    std::string name,
-                   std::vector<cpp2::AlterSchemaItem> items);
+                   std::vector<cpp2::AlterSchemaItem> items,
+                   nebula::cpp2::SchemaProp schemaProp);
 
     folly::Future<StatusOr<std::vector<cpp2::TagItem>>>
     listTagSchemas(GraphSpaceID spaceId);
@@ -135,7 +136,8 @@ public:
     folly::Future<StatusOr<bool>>
     alterEdgeSchema(GraphSpaceID spaceId,
                     std::string name,
-                    std::vector<cpp2::AlterSchemaItem> items);
+                    std::vector<cpp2::AlterSchemaItem> items,
+                    nebula::cpp2::SchemaProp schemaProp);
 
     folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>>
     listEdgeSchemas(GraphSpaceID spaceId);
@@ -194,7 +196,11 @@ public:
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
 
-    // Operations for cache.
+    // Operations for admin
+    folly::Future<StatusOr<int64_t>>
+    balance();
+
+    // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);

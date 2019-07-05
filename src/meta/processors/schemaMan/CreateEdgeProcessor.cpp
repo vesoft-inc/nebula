@@ -5,7 +5,6 @@
  */
 
 #include "meta/processors/schemaMan/CreateEdgeProcessor.h"
-#include "time/TimeUtils.h"
 
 namespace nebula {
 namespace meta {

@@ -24,6 +24,7 @@ const std::string kIndexTable        = "__index__";          // NOLINT
 const std::string kUsersTable        = "__users__";          // NOLINT
 const std::string kRolesTable        = "__roles__";          // NOLINT
 
+
 const std::string kHostOnline = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";     // NOLINT
 
@@ -375,10 +376,11 @@ std::string MetaServiceUtils::assembleSegmentKey(const std::string& segment,
 }
 
 cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                                  nebula::cpp2::SchemaProp&  prop,
                                                   const nebula::cpp2::ColumnDef col,
                                                   const cpp2::AlterSchemaOp op) {
     switch (op) {
-        case cpp2::AlterSchemaOp::ADD :
+        case cpp2::AlterSchemaOp::ADD:
         {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (it->get_name() == col.get_name()) {
@@ -389,7 +391,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             cols.emplace_back(std::move(col));
             return cpp2::ErrorCode::SUCCEEDED;
         }
-        case cpp2::AlterSchemaOp::CHANGE :
+        case cpp2::AlterSchemaOp::CHANGE:
         {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (col.get_name() == it->get_name()) {
@@ -399,12 +401,21 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             }
             break;
         }
-        case cpp2::AlterSchemaOp::DROP :
+        case cpp2::AlterSchemaOp::DROP:
         {
+            auto colName = col.get_name();
             for (auto it = cols.begin(); it != cols.end(); ++it) {
-                if (col.get_name() == it->get_name()) {
-                    cols.erase(it);
-                    return cpp2::ErrorCode::SUCCEEDED;
+                if (colName == it->get_name()) {
+                    // Check if there is a TTL on the column to be deleted
+                    if (!prop.get_ttl_col() ||
+                        (prop.get_ttl_col() && (*prop.get_ttl_col() != colName))) {
+                        cols.erase(it);
+                        return cpp2::ErrorCode::SUCCEEDED;
+                    } else {
+                        LOG(WARNING) << "Column can't be dropped, a TTL attribute on it : "
+                                     << colName;
+                        return cpp2::ErrorCode::E_NOT_DROP;
+                    }
                 }
             }
             break;
@@ -414,6 +425,47 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
     }
     LOG(WARNING) << "Column not found : " << col.get_name();
     return cpp2::ErrorCode::E_NOT_FOUND;
+}
+
+cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                                  nebula::cpp2::SchemaProp& schemaProp,
+                                                  nebula::cpp2::SchemaProp alterSchemaProp) {
+    if (alterSchemaProp.__isset.ttl_duration) {
+        // Graph check  <=0 to = 0
+        schemaProp.set_ttl_duration(*alterSchemaProp.get_ttl_duration());
+    }
+    if (alterSchemaProp.__isset.ttl_col) {
+        auto ttlCol = *alterSchemaProp.get_ttl_col();
+        auto existed = false;
+        for (auto& col : cols) {
+            if (col.get_name() == ttlCol) {
+                // Only integer and timestamp columns can be used as ttl_col
+                if (col.type.type != nebula::cpp2::SupportedType::INT &&
+                    col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
+                    LOG(WARNING) << "TTL column type illegal";
+                    return cpp2::ErrorCode::E_UNSUPPORTED;
+                }
+                existed = true;
+                schemaProp.set_ttl_col(ttlCol);
+                break;
+            }
+        }
+
+        if (!existed) {
+            LOG(WARNING) << "TTL column not found : " << ttlCol;
+            return cpp2::ErrorCode::E_NOT_FOUND;
+        }
+    }
+
+    // Disable implicit TTL mode
+    if ((schemaProp.get_ttl_duration() && (*schemaProp.get_ttl_duration() != 0)) &&
+        (!schemaProp.get_ttl_col() || (schemaProp.get_ttl_col() &&
+         schemaProp.get_ttl_col()->empty()))) {
+        LOG(WARNING) << "Implicit ttl_col not support";
+        return cpp2::ErrorCode::E_UNSUPPORTED;
+    }
+
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 std::string MetaServiceUtils::indexUserKey(const std::string& account) {

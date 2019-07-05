@@ -9,6 +9,7 @@
 #include "parser/TraverseSentences.h"
 #include "graph/GoExecutor.h"
 #include "graph/PipeExecutor.h"
+#include "graph/OrderByExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -29,6 +30,9 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
         case Sentence::Kind::kPipe:
             executor = std::make_unique<PipeExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::kOrderBy:
+            executor = std::make_unique<OrderByExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

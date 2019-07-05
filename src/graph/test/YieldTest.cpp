@@ -40,7 +40,7 @@ TEST_F(YieldTest, Basic) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "YIELD 1 + 1";
+        std::string query = "YIELD 1+1";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t>> expected{

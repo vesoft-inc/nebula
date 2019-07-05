@@ -40,6 +40,7 @@
 #include "meta/processors/customKV/RemoveRangeProcessor.h"
 #include "meta/processors/admin/HBProcessor.h"
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
+#include "meta/processors/admin/BalanceProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -307,5 +308,10 @@ MetaServiceHandler::future_checkPassword(const cpp2::CheckPasswordReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::BalanceResp>
+MetaServiceHandler::future_balance(const cpp2::BalanceReq& req) {
+    auto* processor = BalanceProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
 }  // namespace meta
 }  // namespace nebula

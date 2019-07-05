@@ -18,7 +18,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "interface/gen-cpp2/common_types.h"
-#include "time/TimeUtils.h"
+#include "time/WallClock.h"
 #include "meta/ActiveHostsMan.h"
 
 DECLARE_string(part_man_type);
@@ -43,7 +43,7 @@ public:
         partsMap[0][0] = PartMeta();
 
         std::vector<std::string> paths;
-        paths.push_back(folly::stringPrintf("%s/disk1", rootPath));
+        paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath));
 
         kvstore::KVOptions options;
         options.dataPaths_ = std::move(paths);
@@ -69,7 +69,7 @@ public:
 
     static void registerHB(const std::vector<HostAddr>& hosts) {
          ActiveHostsMan::instance()->reset();
-         auto now = time::TimeUtils::nowInSeconds();
+         auto now = time::WallClock::fastNowInSec();
          for (auto& h : hosts) {
              ActiveHostsMan::instance()->updateHostInfo(h, HostInfo(now));
          }

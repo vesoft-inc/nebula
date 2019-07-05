@@ -167,6 +167,15 @@ public:
     folly::Future<cpp2::ExecResp>
     future_checkPassword(const cpp2::CheckPasswordReq& req) override;
 
+    /**
+     * HeartBeat
+     * */
+    folly::Future<cpp2::HBResp>
+    future_heartBeat(const cpp2::HBReq& req) override;
+
+    folly::Future<cpp2::BalanceResp>
+    future_balance(const cpp2::BalanceReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
 };

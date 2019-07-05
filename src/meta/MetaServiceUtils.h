@@ -8,6 +8,7 @@
 #define META_METAUTILS_H_
 
 #include "base/Base.h"
+#include "base/Status.h"
 #include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
@@ -115,8 +116,13 @@ public:
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 
     static cpp2::ErrorCode alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                           nebula::cpp2::SchemaProp&  prop,
                                            const nebula::cpp2::ColumnDef col,
                                            const cpp2::AlterSchemaOp op);
+
+    static cpp2::ErrorCode alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                           nebula::cpp2::SchemaProp&  schemaProp,
+                                           nebula::cpp2::SchemaProp alterSchemaProp);
 
     static std::string indexUserKey(const std::string& account);
 

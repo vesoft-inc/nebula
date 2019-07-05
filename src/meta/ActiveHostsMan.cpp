@@ -92,7 +92,7 @@ void ActiveHostsMan::loadHostMap() {
     while (iter->valid()) {
         auto host = MetaServiceUtils::parseHostKey(iter->key());
         HostInfo info;
-        info.lastHBTimeInSec_ = time::TimeUtils::nowInSeconds();
+        info.lastHBTimeInSec_ = time::WallClock::fastNowInSec();
         if (iter->val() == MetaServiceUtils::hostValOnline()) {
             LOG(INFO) << "load host " << host.ip << ":" << host.port;
             updateHostInfo({host.ip, host.port}, info);
@@ -102,7 +102,7 @@ void ActiveHostsMan::loadHostMap() {
 }
 
 void ActiveHostsMan::cleanExpiredHosts() {
-    int64_t now = time::TimeUtils::nowInSeconds();
+    int64_t now = time::WallClock::fastNowInSec();
     std::vector<kvstore::KV> data;
     {
         folly::RWSpinLock::WriteHolder rh(&lock_);
@@ -116,6 +116,27 @@ void ActiveHostsMan::cleanExpiredHosts() {
                 it = hostsMap_.erase(it);
             } else {
                 it++;
+            }
+        }
+    }
+
+    // merge host info from kvstore
+    if (kvstore_ != nullptr) {
+        const auto& prefix = MetaServiceUtils::hostPrefix();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        if (ret == kvstore::ResultCode::SUCCEEDED) {
+            while (iter->valid()) {
+                auto host = MetaServiceUtils::parseHostKey(iter->key());
+                if (iter->val() == MetaServiceUtils::hostValOnline()) {
+                    folly::RWSpinLock::ReadHolder rh(&lock_);
+                    bool notFound = hostsMap_.find({host.ip, host.port}) == hostsMap_.end();
+                    if (notFound) {
+                        data.emplace_back(MetaServiceUtils::hostKey(host.ip, host.port),
+                                          MetaServiceUtils::hostValOffline());
+                    }
+                }
+                iter->next();
             }
         }
     }

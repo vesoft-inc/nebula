@@ -5,10 +5,16 @@ nebula_link_libraries(
 )
 nebula_add_test(cord_test)
 
-
 add_executable(cord_bm CordBenchmark.cpp $<TARGET_OBJECTS:base_obj>)
 nebula_link_libraries(
     cord_bm
+    follybenchmark
+    boost_regex
+)
+
+add_executable(logging_bm LoggingBenchmark.cpp $<TARGET_OBJECTS:base_obj>)
+nebula_link_libraries(
+    logging_bm
     follybenchmark
     boost_regex
 )

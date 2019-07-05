@@ -10,7 +10,6 @@
 #include "base/Base.h"
 #include <gtest/gtest_prod.h>
 #include "thread/GenericWorker.h"
-#include "time/TimeUtils.h"
 #include "kvstore/NebulaStore.h"
 
 DECLARE_int32(expired_hosts_check_interval_sec);
@@ -37,6 +36,7 @@ struct HostInfo {
 
 class ActiveHostsMan final {
     FRIEND_TEST(ActiveHostsManTest, NormalTest);
+    FRIEND_TEST(ActiveHostsManTest, MergeHostInfo);
     FRIEND_TEST(ProcessorTest, ListHostsTest);
 
 public:
@@ -75,6 +75,7 @@ private:
     void stopClean() {
         checkThread_.stop();
         checkThread_.wait();
+        kvstore_ = nullptr;
     }
 
     folly::RWSpinLock lock_;

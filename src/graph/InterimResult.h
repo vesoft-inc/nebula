@@ -8,6 +8,7 @@
 #define GRAPH_INTERIMRESULT_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
 #include "dataman/RowSetReader.h"
 #include "dataman/RowSetWriter.h"
 #include "dataman/SchemaWriter.h"
@@ -32,8 +33,13 @@ public:
     explicit InterimResult(std::unique_ptr<RowSetWriter> rsWriter);
     explicit InterimResult(std::vector<VertexID> vids);
 
-    std::vector<VertexID> getVIDs(const std::string &col) const;
+    std::shared_ptr<const meta::SchemaProviderIf> schema() const {
+        return rsReader_->schema();
+    }
 
+    StatusOr<std::vector<VertexID>> getVIDs(const std::string &col) const;
+
+    std::vector<cpp2::RowValue> getRows() const;
     // TODO(dutor) iterating interfaces on rows and columns
 
 private:
