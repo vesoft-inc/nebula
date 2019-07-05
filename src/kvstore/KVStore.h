@@ -54,6 +54,8 @@ class Part;
 /**
  * Interface for all kv-stores
  **/
+class Part;
+
 class KVStore {
 public:
     virtual ~KVStore() = default;

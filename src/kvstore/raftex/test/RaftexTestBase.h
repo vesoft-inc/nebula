@@ -78,8 +78,8 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
                 std::shared_ptr<thread::GenericThreadPool>& workers,
                 std::shared_ptr<test::TestShard>& leader);
 
-void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
-                     std::shared_ptr<test::TestShard>& leader);
+int32_t checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                        std::shared_ptr<test::TestShard>& leader);
 
 void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      size_t index,

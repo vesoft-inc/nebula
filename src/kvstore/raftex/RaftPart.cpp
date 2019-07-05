@@ -349,6 +349,55 @@ void RaftPart::addLearner(const HostAddr& addr) {
     }
 }
 
+void RaftPart::preProcessTransLeader(const HostAddr& target) {
+    CHECK(!raftLock_.try_lock());
+    LOG(INFO) << idStr_ << "Commit transfer leader to " << target;
+    switch (role_) {
+        case Role::FOLLOWER: {
+            if (target != addr_ && target != HostAddr(0, 0)) {
+                LOG(INFO) << idStr_ << "I am follower, just wait for the new leader.";
+            } else {
+                LOG(INFO) << idStr_ << "I will be the new leader, trigger leader election now!";
+                role_ = Role::CANDIDATE;
+                workers_->addTask([self = shared_from_this()] {
+                    self->leaderElection();
+                });
+            }
+            break;
+        }
+        default: {
+            LOG(INFO) << idStr_ << "My role is " << roleStr(role_)
+                      << ", so do nothing when pre process transfer leader";
+            break;
+        }
+    }
+}
+
+void RaftPart::commitTransLeader(const HostAddr& target) {
+    CHECK(!raftLock_.try_lock());
+    LOG(INFO) << idStr_ << "Commit transfer leader to " << target;
+    switch (role_) {
+        case Role::LEADER: {
+            if (target != addr_) {
+                lastMsgRecvDur_.reset();
+                role_ = Role::FOLLOWER;
+                leader_ = HostAddr(0, 0);
+                LOG(INFO) << idStr_ << "Give up my leadership!";
+            } else {
+                LOG(INFO) << idStr_ << "I am already the leader!";
+            }
+            break;
+        }
+        case Role::FOLLOWER:
+        case Role::CANDIDATE:
+        case Role::LEARNER: {
+            CHECK(target != addr_);
+            LOG(INFO) << idStr_ << "I am " << roleStr(role_) << ", just wait for the new leader!";
+            break;
+        }
+    }
+}
+
 folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source,
                                                      std::string log) {
     if (source < 0) {
@@ -746,6 +795,9 @@ bool RaftPart::needToStartElection() {
         (lastMsgRecvDur_.elapsedInSec() >= FLAGS_heartbeat_interval ||
          term_ == 0)) {
         role_ = Role::CANDIDATE;
+        LOG(INFO) << idStr_
+                  << "needToStartElection: lastMsgRecvDur " << lastMsgRecvDur_.elapsedInSec()
+                  << ", term_ " << term_;
     }
 
     return role_ == Role::CANDIDATE;
@@ -1034,13 +1086,18 @@ void RaftPart::processAskForVoteRequest(
     // If the partition used to be a leader, need to fire the callback
     if (oldRole == Role::LEADER) {
         // Need to invoke the onLostLeadership callback
-        VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
+        LOG(INFO) << idStr_ << "Was a leader, need to do some clean-up";
         workers_->addTask(
             [self = shared_from_this(), oldTerm] {
                 self->onLostLeadership(oldTerm);
             });
     }
 
+    LOG(INFO) << idStr_ << "I was " << roleStr(oldRole)
+              << ", discover the new leader " << leader_;
+    workers_->addTask([self = shared_from_this()] {
+        self->onDiscoverNewLeader(self->leader_);
+    });
     return;
 }
 
@@ -1091,10 +1148,6 @@ void RaftPart::processAppendLogRequest(
         resp.set_error_code(cpp2::ErrorCode::E_NOT_READY);
         return;
     }
-
-    TermID oldTerm = term_;
-    Role oldRole = role_;
-
     // Check leadership
     cpp2::ErrorCode err = verifyLeader(req, g);
     if (err != cpp2::ErrorCode::SUCCEEDED) {
@@ -1195,14 +1248,6 @@ void RaftPart::processAppendLogRequest(
     }
 
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
-
-    if (oldRole == Role::LEADER) {
-        // Need to invoke onLostLeadership callback
-        VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
-        workers_->addTask([self = shared_from_this(), oldTerm] {
-            self->onLostLeadership(oldTerm);
-        });
-    }
 }
 
 
@@ -1249,12 +1294,14 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         }
     }
 
+    Role oldRole = role_;
+    TermID oldTerm = term_;
     // Ok, no reason to refuse, just follow the leader
-    VLOG(2) << idStr_ << "The current role is " << roleStr(role_)
-            << ". Will follow the new leader "
-            << network::NetworkUtils::intToIPv4(req.get_leader_ip())
-            << ":" << req.get_leader_port()
-            << " [Term: " << req.get_current_term() << "]";
+    LOG(INFO) << idStr_ << "The current role is " << roleStr(role_)
+              << ". Will follow the new leader "
+              << network::NetworkUtils::intToIPv4(req.get_leader_ip())
+              << ":" << req.get_leader_port()
+              << " [Term: " << req.get_current_term() << "]";
 
     if (role_ != Role::LEARNER) {
         role_ = Role::FOLLOWER;
@@ -1262,7 +1309,17 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     leader_ = std::make_pair(req.get_leader_ip(),
                              req.get_leader_port());
     term_ = proposedTerm_ = req.get_current_term();
+    if (oldRole == Role::LEADER) {
+        // Need to invoke onLostLeadership callback
+        VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
+        workers_->addTask([self = shared_from_this(), oldTerm] {
+            self->onLostLeadership(oldTerm);
+        });
+    }
 
+    workers_->addTask([self = shared_from_this()] {
+        self->onDiscoverNewLeader(self->leader_);
+    });
     return cpp2::ErrorCode::SUCCEEDED;
 }
 

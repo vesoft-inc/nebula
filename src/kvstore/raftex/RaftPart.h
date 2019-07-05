@@ -115,6 +115,10 @@ public:
 
     void addLearner(const HostAddr& learner);
 
+    void commitTransLeader(const HostAddr& target);
+
+    void preProcessTransLeader(const HostAddr& target);
+
     // Change the partition status to RUNNING. This is called
     // by the inherited class, when it's ready to serve
     virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
@@ -195,6 +199,8 @@ protected:
     // This method is called when this partition is elected as
     // a new leader
     virtual void onElected(TermID term) = 0;
+
+    virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
 
     // This method is invoked when handling a CAS log. The inherited
     // class uses this method to do the comparison and decide whether

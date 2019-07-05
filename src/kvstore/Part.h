@@ -15,6 +15,7 @@
 namespace nebula {
 namespace kvstore {
 
+
 class Part : public raftex::RaftPart {
 public:
     Part(GraphSpaceID spaceId,
@@ -45,6 +46,18 @@ public:
                           KVCallback cb);
 
     void asyncAddLearner(const HostAddr& learner, KVCallback cb);
+
+    void asyncTransferLeader(const HostAddr& target, KVCallback cb);
+
+    void registerNewLeaderCb(NewLeaderCallback cb) {
+        newLeaderCb_ = std::move(cb);
+    }
+
+    void unRegisterNewLeaderCb() {
+        newLeaderCb_ = nullptr;
+    }
+
+private:
     /**
      * Methods inherited from RaftPart
      */
@@ -53,6 +66,8 @@ public:
     void onLostLeadership(TermID term) override;
 
     void onElected(TermID term) override;
+
+    void onDiscoverNewLeader(HostAddr nLeader) override;
 
     std::string compareAndSet(const std::string& log) override;
 
@@ -68,6 +83,7 @@ protected:
     PartitionID partId_;
     std::string walPath_;
     KVEngine* engine_ = nullptr;
+    NewLeaderCallback newLeaderCb_ = nullptr;
 };
 
 }  // namespace kvstore
