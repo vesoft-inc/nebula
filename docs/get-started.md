@@ -107,6 +107,7 @@ Welcome to Nebula Graph (Version 0.1)
 nebula>
 ```
 
+If you have any questions or concerns about the deployment procedures, please do not hesitate to open an issue on git.
 
 ### Step 3: Build Your Own Graph
 This section describes how to build a graph and make queries. The example is built on the graph below.
@@ -128,17 +129,17 @@ There are three kinds of tags(course, building and team) and two edge types (sel
 }
 ```
 
-#### Create Space
-<em>Space</em> is a region that provides physically isolation of graphs in Nebula. First we need to create a space and select it before other operations.
+#### Create a Graph Space
+<em>Space</em> is a region that provides physically isolation of graphs in Nebula. First we need to create a space and use it before other operations.
 
 To list all existing spaces:
 ```shell
 nebula> SHOW SPACES;
 ```
 
-To create a new space called <em>myspace_test2</em>
+To create a new space named <em>myspace_test2</em>
 ```shell
-nebula> CREATE space myspace_test2(partition_num=1, replica_factor=1);
+nebula> CREATE SPACE myspace_test2(partition_num=1, replica_factor=1);
 
 // use this space
 nebula> USE myspace_test2;
@@ -162,33 +163,33 @@ nebula> CREATE EDGE select(grade int);
 
 To list the tags and edge types we just created：
 ```shell
-// show tag list
+-- Show tag list
 nebula> SHOW TAGS;
 
-// show edge type list
+-- Show edge type list
 nebula> SHOW EDGES;
 ```
 
 To show the attributes of a tag or an edge type:
 ```shell
-// show attributes of a tag
+-- Show attributes of a tag
 nebula> DESCRIBE TAG student;
 
-//show attributes of an edge type 
+-- Show attributes of an edge type 
 nebula> DESCRIBE EDGE like;
 ```
 
 #### Insert Data
 Insert the vertexes and edges based on the graph above.
 ```shell
-//insert vertexes
+-- Insert vertexes
 nebula> INSERT VERTEX student(name, age, gender) VALUES 200:("Monica", 16, "female");
 nebula> INSERT VERTEX student(name, age, gender) VALUES 201:("Mike", 18, "male");
 nebula> INSERT VERTEX student(name, age, gender) VALUES 202:("Jane", 17, "female");
 nebula> INSERT VERTEX course(name, credits),building(name) VALUES 101:("Math", 3, "No5");
 nebula> INSERT VERTEX course(name, credits),building(name) VALUES 102:("English", 6, "No11");
 
-//insert edges
+-- Insert edges
 nebula> INSERT EDGE select(grade) VALUES 200 -> 101:(5);
 nebula> INSERT EDGE select(grade) VALUES 200 -> 102:(3);
 nebula> INSERT EDGE select(grade) VALUES 201 -> 102:(3);
@@ -231,7 +232,7 @@ nebula> GO FROM 201 OVER like WHERE $$[student].age >= 17 YIELD $$[student].name
 Q3. Find the courses that the vetexes liked by 201 select and their grade.
 
 ```shell
-// by pipe
+-- By pipe
 nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^[student].name AS Student, $$[course].name AS Course, select.grade AS Grade;
 
 =============================
@@ -244,7 +245,7 @@ nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^[student].name
 |    Jane | English |     3 |
 -----------------------------
 
-// by temporary variable
+-- By temporary variable
 nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^[student].name AS Student, $$[course].name AS Course, select.grade AS Grade;
 
 =============================
