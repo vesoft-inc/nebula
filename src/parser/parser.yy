@@ -935,7 +935,7 @@ edge_row_item
     | vid R_ARROW vid COLON L_PAREN value_list R_PAREN {
         $$ = new EdgeRowItem($1, $3, $6);
     }
-    | vid R_ARROW INTEGER AT INTEGER COLON L_PAREN R_PAREN {
+    | vid R_ARROW vid AT rank COLON L_PAREN R_PAREN {
         $$ = new EdgeRowItem($1, $3, $5, new ValueList());
     }
     | vid R_ARROW vid AT rank COLON L_PAREN value_list R_PAREN {
