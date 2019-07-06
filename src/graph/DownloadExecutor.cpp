@@ -33,16 +33,17 @@ void DownloadExecutor::execute() {
     auto  addresses = mc->getAddresses();
     auto  metaHost = network::NetworkUtils::intToIPv4(addresses[0].first);
     auto  spaceId = ectx()->rctx()->session()->space();
-    auto *host  = sentence_->host();
-    auto  port  = sentence_->port();
-    auto *path  = sentence_->path();
-    auto *local = sentence_->localPath();
+    auto *hdfsHost  = sentence_->host();
+    auto  hdfsPort  = sentence_->port();
+    auto *hdfsPath  = sentence_->path();
+    auto *hdfsLocal = sentence_->localPath();
 
-    auto tmp = "%s \"http://%s:%d/download?url=%s&port=%d&path=%s&local=%s&space=%d\" 2> /dev/null";
-    auto func = [=]() {
+    auto func = [metaHost, hdfsHost, hdfsPort, hdfsPath, hdfsLocal, spaceId]() {
+        auto tmp = "%s \"http://%s:%d/download?host=%s&port=%d&path=%s&local=%s&space=%d\" %s";
         auto command = folly::stringPrintf(tmp, "/usr/bin/curl -G", metaHost.c_str(),
-                                           FLAGS_meta_http_port, host->c_str(), port,
-                                           path->c_str(), local->c_str(), spaceId);
+                                           FLAGS_meta_http_port, hdfsHost->c_str(), hdfsPort,
+                                           hdfsPath->c_str(), hdfsLocal->c_str(), spaceId,
+                                           "2> /dev/null");
         LOG(INFO) << "Download Command: " << command;
         auto result = nebula::ProcessUtils::runCommand(command.c_str());
         if (result.ok()) {

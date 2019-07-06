@@ -9,7 +9,7 @@
 #include "network/NetworkUtils.h"
 #include "thread/GenericThreadPool.h"
 #include "storage/StorageServiceHandler.h"
-#include "storage/StorageHttpHandler.h"
+#include "storage/StorageHttpStatusHandler.h"
 #include "storage/StorageHttpDownloadHandler.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
@@ -19,6 +19,7 @@
 #include "meta/SchemaManager.h"
 #include "meta/client/MetaClient.h"
 #include "storage/CompactionFilter.h"
+#include "hdfs/HdfsCommandHelper.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
@@ -176,11 +177,12 @@ int main(int argc, char *argv[]) {
 
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
-        return new nebula::storage::StorageHttpHandler();
+        return new nebula::storage::StorageHttpStatusHandler();
     });
-    nebula::WebService::registerHandler("/download", [kvstore_] {
+    nebula::WebService::registerHandler("/download", [] {
         auto handler = new nebula::storage::StorageHttpDownloadHandler();
-        handler->init(kvstore_);
+        auto helper_ = std::make_unique<nebula::hdfs::HdfsCommandHelper>();
+        handler->init(helper_.get());
         return handler;
     });
 

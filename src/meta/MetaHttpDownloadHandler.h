@@ -11,6 +11,7 @@
 #include "webservice/Common.h"
 #include "proxygen/httpserver/RequestHandler.h"
 #include "kvstore/KVStore.h"
+#include "hdfs/HdfsHelper.h"
 
 namespace nebula {
 namespace meta {
@@ -21,7 +22,7 @@ class MetaHttpDownloadHandler : public proxygen::RequestHandler {
 public:
     MetaHttpDownloadHandler() = default;
 
-    void init(nebula::kvstore::KVStore *kvstore);
+    void init(nebula::kvstore::KVStore *kvstore, nebula::hdfs::HdfsHelper *helper);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -36,21 +37,20 @@ public:
     void onError(proxygen::ProxygenError error) noexcept override;
 
 private:
-    std::string toStr(folly::dynamic& vals) const;
-    bool dispatchSSTFiles(const std::string& url,
-                          int port,
+    bool dispatchSSTFiles(const std::string& host,
+                          int32_t port,
                           const std::string& path,
                           const std::string& local);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    bool returnJson_{false};
-    std::string hdfsUrl_;
+    std::string hdfsHost_;
     int32_t hdfsPort_;
     std::string hdfsPath_;
     std::string localPath_;
     GraphSpaceID spaceID_;
     nebula::kvstore::KVStore *kvstore_;
+    nebula::hdfs::HdfsHelper *helper_;
 };
 
 }  // namespace meta

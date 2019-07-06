@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include "webservice/Common.h"
-#include "kvstore/KVStore.h"
+#include "hdfs/HdfsHelper.h"
 #include "proxygen/httpserver/RequestHandler.h"
 
 namespace nebula {
@@ -21,7 +21,7 @@ class StorageHttpDownloadHandler : public proxygen::RequestHandler {
 public:
     StorageHttpDownloadHandler() = default;
 
-    void init(nebula::kvstore::KVStore *kvstore);
+    void init(nebula::hdfs::HdfsHelper *helper);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -36,7 +36,6 @@ public:
     void onError(proxygen::ProxygenError error) noexcept override;
 
 private:
-    std::string toStr(folly::dynamic& vals) const;
     bool downloadSSTFiles(const std::string& url,
                           int port,
                           const std::string& path,
@@ -48,13 +47,12 @@ private:
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    bool returnJson_{false};
-    std::string hdfsUrl_;
-    int hdfsPort_;
+    std::string hdfsHost_;
+    int32_t hdfsPort_;
     std::string hdfsPath_;
     std::string partitions_;
     std::string localPath_;
-    nebula::kvstore::KVStore *kvstore_;
+    nebula::hdfs::HdfsHelper *helper_;
 };
 
 }  // namespace storage

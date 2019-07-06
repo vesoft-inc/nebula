@@ -7,11 +7,12 @@
 #include "base/Base.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/MetaServiceHandler.h"
-#include "meta/MetaHttpHandler.h"
+#include "meta/MetaHttpStatusHandler.h"
 #include "meta/MetaHttpDownloadHandler.h"
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
+#include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
@@ -119,11 +120,12 @@ int main(int argc, char *argv[]) {
 
     LOG(INFO) << "Starting Meta HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
-        return new nebula::meta::MetaHttpHandler();
+        return new nebula::meta::MetaHttpStatusHandler();
     });
     nebula::WebService::registerHandler("/download", [kvstore_] {
         auto handler = new nebula::meta::MetaHttpDownloadHandler();
-        handler->init(kvstore_);
+        auto helper_ = std::make_unique<nebula::hdfs::HdfsCommandHelper>();
+        handler->init(kvstore_, helper_.get());
         return handler;
     });
     status = nebula::WebService::start();

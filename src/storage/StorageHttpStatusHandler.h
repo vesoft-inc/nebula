@@ -4,26 +4,26 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_METAHTTPHANDLER_H_
-#define META_METAHTTPHANDLER_H_
+#ifndef STORAGE_STORAGEHTTPHANDLER_H_
+#define STORAGE_STORAGEHTTPHANDLER_H_
 
 #include "base/Base.h"
 #include "webservice/Common.h"
-#include "proxygen/httpserver/RequestHandler.h"
 #include "kvstore/KVStore.h"
+#include "proxygen/httpserver/RequestHandler.h"
 
 namespace nebula {
-namespace meta {
+namespace storage {
 
 using nebula::HttpCode;
 
-class MetaHttpHandler : public proxygen::RequestHandler {
+class StorageHttpStatusHandler : public proxygen::RequestHandler {
 public:
-    MetaHttpHandler() = default;
+    StorageHttpStatusHandler() = default;
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
-    void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override;
+    void onBody(std::unique_ptr<folly::IOBuf> body)  noexcept override;
 
     void onEOM() noexcept override;
 
@@ -48,10 +48,10 @@ private:
     bool returnJson_{false};
     std::vector<std::string> statusNames_;
     std::vector<std::string> statusAllNames_{"status"};
-    std::shared_ptr<nebula::kvstore::KVStore> kvstore_{nullptr};
+    nebula::kvstore::KVStore *kvstore_;
 };
 
-}  // namespace meta
+}  // namespace storage
 }  // namespace nebula
 
-#endif  // META_METAHTTPHANDLER_H_
+#endif  // STORAGE_STORAGEHTTPHANDLER_H_

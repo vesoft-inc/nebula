@@ -7,6 +7,7 @@
 #include "storage/StorageHttpDownloadHandler.h"
 #include "webservice/Common.h"
 #include "process/ProcessUtils.h"
+#include "hdfs/HdfsHelper.h"
 #include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
@@ -25,9 +26,9 @@ using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
 
-void StorageHttpDownloadHandler::init(nebula::kvstore::KVStore *kvstore) {
-    kvstore_ = kvstore;
-    CHECK_NOTNULL(kvstore_);
+void StorageHttpDownloadHandler::init(nebula::hdfs::HdfsHelper *helper) {
+    helper_ = helper;
+    CHECK_NOTNULL(helper_);
 }
 
 void StorageHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
@@ -37,19 +38,16 @@ void StorageHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers)
         return;
     }
 
-    if (headers->hasQueryParam("returnjson")) {
-        returnJson_ = true;
-    }
-
-     if (!headers->hasQueryParam("url") ||
+     if (!headers->hasQueryParam("host") ||
          !headers->hasQueryParam("port") ||
          !headers->hasQueryParam("path") ||
          !headers->hasQueryParam("parts") ||
          !headers->hasQueryParam("local")) {
+         LOG(ERROR) << "Illegal Argument";
          err_ = HttpCode::E_ILLEGAL_ARGUMENT;
          return;
      }
-     hdfsUrl_ = headers->getQueryParam("url");
+     hdfsHost_ = headers->getQueryParam("host");
      hdfsPort_ = headers->getIntQueryParam("port");
      partitions_ = headers->getQueryParam("parts");
      hdfsPath_ = headers->getQueryParam("path");
@@ -79,10 +77,10 @@ void StorageHttpDownloadHandler::onEOM() noexcept {
     }
 
     if (auto hadoopHome = std::getenv("HADOOP_HOME")) {
-        LOG(INFO) << "Hadoop Path : " << hadoopHome;
+        LOG(INFO) << "HADOOP_HOME: " << hadoopHome;
         std::vector<std::string> parts;
         folly::split(",", partitions_, parts, true);
-        if (downloadSSTFiles(hdfsUrl_, hdfsPort_, hdfsPath_, parts, localPath_)) {
+        if (downloadSSTFiles(hdfsHost_, hdfsPort_, hdfsPath_, parts, localPath_)) {
             ResponseBuilder(downstream_)
                 .status(200, "SSTFile download successfully")
                 .body("SSTFile download successfully")
@@ -90,9 +88,11 @@ void StorageHttpDownloadHandler::onEOM() noexcept {
         } else {
             ResponseBuilder(downstream_)
                 .status(404, "SSTFile download failed")
+                .body("SSTFile download failed")
                 .sendWithEOM();
         }
     } else {
+        LOG(ERROR) << "HADOOP_HOME not exist";
         ResponseBuilder(downstream_)
             .status(404, "HADOOP_HOME not exist")
             .sendWithEOM();
@@ -111,26 +111,15 @@ void StorageHttpDownloadHandler::requestComplete() noexcept {
 
 
 void StorageHttpDownloadHandler::onError(ProxygenError error) noexcept {
-    LOG(ERROR) << "Web service StorageHttpDownloadHandler got error: "
+    LOG(ERROR) << "Web Service StorageHttpDownloadHandler got error: "
                << proxygen::getErrorString(error);
 }
 
-std::string StorageHttpDownloadHandler::toStr(folly::dynamic& vals) const {
-    std::stringstream ss;
-    for (auto& counter : vals) {
-        auto& val = counter["value"];
-        ss << counter["name"].asString() << "="
-           << val.asString()
-           << "\n";
-    }
-    return ss.str();
-}
-
-bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
-                                          int port,
-                                          const std::string& path,
-                                          const std::vector<std::string>& parts,
-                                          const std::string& local) {
+bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
+                                                  int32_t hdfsPort,
+                                                  const std::string& hdfsPath,
+                                                  const std::vector<std::string>& parts,
+                                                  const std::string& localPath) {
     if (isRunning.test_and_set()) {
         LOG(ERROR) << "Download is not completed";
         return false;
@@ -141,16 +130,13 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
     pool.start(parts.size());
 
     for (auto& part : parts) {
-        auto downloader = [&, part]() {
-            auto remotePath = folly::stringPrintf("hdfs://%s:%d%s/%d",
-                                                  url.c_str(), port, path.c_str(),
-                                                  atoi(part.c_str()) + 1);
-            auto command = folly::stringPrintf("hdfs dfs -copyToLocal %s %s",
-                                               remotePath.c_str(), local.c_str());
-            LOG(INFO) << "Download SST Files: " << command;
-            auto result = ProcessUtils::runCommand(command.c_str());
-            if (!result.ok()) {
-                LOG(ERROR) << "Failed to download SST Files: " << remotePath;
+        auto downloader = [hdfsHost, hdfsPort, hdfsPath, localPath, part, this]() {
+            auto hdfsPartPath = folly::stringPrintf("%s%d", hdfsPath.c_str(),
+                                                    atoi(part.c_str()));
+            auto result = this->helper_->copyToLocal(hdfsHost, hdfsPort,
+                                                     hdfsPartPath, localPath);
+            if (!result.ok() || !result.value().empty()) {
+                LOG(ERROR) << "Download SSTFile Failed";
                 return false;
             } else {
                 return true;
@@ -173,8 +159,8 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& url,
                 break;
             }
         }
-    });
-    VLOG(3) << "Download tasks have finished";
+    }).wait();
+    LOG(INFO) << "Download tasks have finished";
     isRunning.clear();
     return successfully;
 }

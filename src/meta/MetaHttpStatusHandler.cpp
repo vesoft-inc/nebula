@@ -4,15 +4,20 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/StorageHttpHandler.h"
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include "meta/MetaHttpStatusHandler.h"
+#include "meta/MetaServiceUtils.h"
 #include "webservice/Common.h"
+#include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 
 namespace nebula {
-namespace storage {
+namespace meta {
 
 using proxygen::HTTPMessage;
 using proxygen::HTTPMethod;
@@ -20,7 +25,7 @@ using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
 
-void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
+void MetaHttpStatusHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
         // Unsupported method
         err_ = HttpCode::E_UNSUPPORTED_METHOD;
@@ -38,12 +43,12 @@ void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcep
 }
 
 
-void StorageHttpHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
+void MetaHttpStatusHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
     // Do nothing, we only support GET
 }
 
 
-void StorageHttpHandler::onEOM() noexcept {
+void MetaHttpStatusHandler::onEOM() noexcept {
     switch (err_) {
         case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
@@ -69,25 +74,25 @@ void StorageHttpHandler::onEOM() noexcept {
 }
 
 
-void StorageHttpHandler::onUpgrade(UpgradeProtocol) noexcept {
+void MetaHttpStatusHandler::onUpgrade(UpgradeProtocol) noexcept {
     // Do nothing
 }
 
 
-void StorageHttpHandler::requestComplete() noexcept {
+void MetaHttpStatusHandler::requestComplete() noexcept {
     delete this;
 }
 
 
-void StorageHttpHandler::onError(ProxygenError error) noexcept {
-    LOG(ERROR) << "Web service StorageHttpHandler got error: "
+void MetaHttpStatusHandler::onError(ProxygenError error) noexcept {
+    LOG(ERROR) << "Web service MetaHttpHandler got error : "
                << proxygen::getErrorString(error);
 }
 
 
-void StorageHttpHandler::addOneStatus(folly::dynamic& vals,
-                                      const std::string& statusName,
-                                      const std::string& statusValue) const {
+void MetaHttpStatusHandler::addOneStatus(folly::dynamic& vals,
+                                   const std::string& statusName,
+                                   const std::string& statusValue) const {
     folly::dynamic status = folly::dynamic::object();
     status["name"] = statusName;
     status["value"] = statusValue;
@@ -95,7 +100,7 @@ void StorageHttpHandler::addOneStatus(folly::dynamic& vals,
 }
 
 
-std::string StorageHttpHandler::readValue(std::string& statusName) {
+std::string MetaHttpStatusHandler::readValue(std::string& statusName) {
     folly::toLowerAscii(statusName);
     if (statusName == "status") {
         return "running";
@@ -105,7 +110,7 @@ std::string StorageHttpHandler::readValue(std::string& statusName) {
 }
 
 
-void StorageHttpHandler::readAllValue(folly::dynamic& vals) {
+void MetaHttpStatusHandler::readAllValue(folly::dynamic& vals) {
     for (auto& sn : statusAllNames_) {
         std::string statusValue = readValue(sn);
         addOneStatus(vals, sn, statusValue);
@@ -113,7 +118,7 @@ void StorageHttpHandler::readAllValue(folly::dynamic& vals) {
 }
 
 
-folly::dynamic StorageHttpHandler::getStatus() {
+folly::dynamic MetaHttpStatusHandler::getStatus() {
     auto status = folly::dynamic::array();
     if (statusNames_.empty()) {
         // Read all status
@@ -128,7 +133,7 @@ folly::dynamic StorageHttpHandler::getStatus() {
 }
 
 
-std::string StorageHttpHandler::toStr(folly::dynamic& vals) const {
+std::string MetaHttpStatusHandler::toStr(folly::dynamic& vals) const {
     std::stringstream ss;
     for (auto& counter : vals) {
         auto& val = counter["value"];
@@ -139,5 +144,5 @@ std::string StorageHttpHandler::toStr(folly::dynamic& vals) const {
     return ss.str();
 }
 
-}  // namespace storage
+}  // namespace meta
 }  // namespace nebula

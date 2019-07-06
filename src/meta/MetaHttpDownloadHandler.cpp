@@ -11,6 +11,7 @@
 #include "meta/MetaServiceUtils.h"
 #include "webservice/Common.h"
 #include "network/NetworkUtils.h"
+#include "hdfs/HdfsHelper.h"
 #include "process/ProcessUtils.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
@@ -27,9 +28,12 @@ using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
 
-void MetaHttpDownloadHandler::init(nebula::kvstore::KVStore *kvstore) {
+void MetaHttpDownloadHandler::init(nebula::kvstore::KVStore *kvstore,
+                                   nebula::hdfs::HdfsHelper *helper) {
     kvstore_ = kvstore;
+    helper_ = helper;
     CHECK_NOTNULL(kvstore_);
+    CHECK_NOTNULL(helper_);
 }
 
 void MetaHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
@@ -39,11 +43,7 @@ void MetaHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers) no
         return;
     }
 
-    if (headers->hasQueryParam("returnjson")) {
-        returnJson_ = true;
-    }
-
-    if (!headers->hasQueryParam("url") ||
+    if (!headers->hasQueryParam("host") ||
         !headers->hasQueryParam("port") ||
         !headers->hasQueryParam("path") ||
         !headers->hasQueryParam("local") ||
@@ -52,7 +52,7 @@ void MetaHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers) no
         return;
     }
 
-    hdfsUrl_ = headers->getQueryParam("url");
+    hdfsHost_ = headers->getQueryParam("host");
     hdfsPort_ = headers->getIntQueryParam("port");
     hdfsPath_ = headers->getQueryParam("path");
     localPath_ = headers->getQueryParam("local");
@@ -83,7 +83,7 @@ void MetaHttpDownloadHandler::onEOM() noexcept {
 
     if (auto hadoopHome = std::getenv("HADOOP_HOME")) {
         LOG(INFO) << "Hadoop Path : " << hadoopHome;
-        if (dispatchSSTFiles(hdfsUrl_, hdfsPort_, hdfsPath_, localPath_)) {
+        if (dispatchSSTFiles(hdfsHost_, hdfsPort_, hdfsPath_, localPath_)) {
             ResponseBuilder(downstream_)
                 .status(200, "SSTFile dispatch successfully")
                 .body("SSTFile dispatch successfully")
@@ -92,6 +92,7 @@ void MetaHttpDownloadHandler::onEOM() noexcept {
             LOG(ERROR) << "SSTFile dispatch failed";
             ResponseBuilder(downstream_)
                 .status(404, "SSTFile dispatch failed")
+                .body("SSTFile dispatch failed")
                 .sendWithEOM();
         }
     } else {
@@ -114,33 +115,19 @@ void MetaHttpDownloadHandler::requestComplete() noexcept {
 
 
 void MetaHttpDownloadHandler::onError(ProxygenError error) noexcept {
-    LOG(ERROR) << "Web service MetaHttpDownloadHandler got error : "
+    LOG(ERROR) << "Web Service MetaHttpDownloadHandler got error : "
                << proxygen::getErrorString(error);
 }
 
-std::string MetaHttpDownloadHandler::toStr(folly::dynamic& vals) const {
-    std::stringstream ss;
-    for (auto& counter : vals) {
-        auto& val = counter["value"];
-        ss << counter["name"].asString() << "="
-           << val.asString()
-           << "\n";
+bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
+                                               int hdfsPort,
+                                               const std::string& hdfsPath,
+                                               const std::string& localPath) {
+    auto result = helper_->ls(hdfsHost, hdfsPort, hdfsPath);
+    if (!result.ok()) {
+        LOG(ERROR) << "Dispatch SSTFile Failed";
+        return false;
     }
-    return ss.str();
-}
-
-bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
-                                       int port,
-                                       const std::string& path,
-                                       const std::string& local) {
-    auto command = folly::stringPrintf("hdfs dfs -ls hdfs://%s:%d%s ",
-                                       url.c_str(), port, path.c_str());
-    LOG(INFO) << "Download Command: " << command;
-    /**
-     * HDFS command output looks like:
-     * -rw-r--r--   1 user supergroup 0 2019-06-11 10:27 hdfs://host:port/path/part-{part_number}
-     **/
-    auto result = ProcessUtils::runCommand(command.c_str());
     std::vector<std::string> files;
     folly::split("\n", result.value(), files, true);
     int32_t  partNumber = files.size() - 1;
@@ -150,6 +137,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
     auto hostPrefix = MetaServiceUtils::hostPrefix();
     auto hostRet = kvstore_->prefix(0, 0, hostPrefix, &hostIter);
     if (hostRet != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Fetch Hosts Failed";
         return false;
     }
 
@@ -174,6 +162,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
     auto prefix = MetaServiceUtils::partPrefix(spaceID_);
     auto ret = kvstore_->prefix(0, 0, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Fetch Parts Failed";
         return false;
     }
 
@@ -201,18 +190,20 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
     for (auto &pair : hostPartition) {
         std::vector<PartitionID> partitions;
         for (auto part : pair.second) {
-            partitions.emplace_back(part - 1);
+            partitions.emplace_back(part);
         }
         std::string partNumbers;
         folly::join(",", partitions, partNumbers);
 
-        auto host = network::NetworkUtils::intToIPv4(pair.first.first);
-        auto t = "http://%s:%d/download?url=%s&port=%d&path=%s&parts=%s&local=%s";
-        auto download = folly::stringPrintf(t, host.c_str(), FLAGS_storage_http_port, url.c_str(),
-                                            port, path.c_str(), partNumbers.c_str(), local.c_str());
-        command = folly::stringPrintf("/usr/bin/curl -G \"%s\" 2> /dev/null", download.c_str());
-        LOG(INFO) << "Fetch Storage: " << download;
-        threads.push_back(std::thread([&, command]() {
+        auto storageHost = network::NetworkUtils::intToIPv4(pair.first.first);
+        threads.push_back(std::thread([storageHost, hdfsHost, hdfsPort, hdfsPath,
+                                       partNumbers, localPath, &completed]() {
+            auto tmp = "http://%s:%d/download?host=%s&port=%d&path=%s&parts=%s&local=%s";
+            auto download = folly::stringPrintf(tmp, storageHost.c_str(), FLAGS_storage_http_port,
+                                                hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(),
+                                                partNumbers.c_str(), localPath.c_str());
+            auto command = folly::stringPrintf("/usr/bin/curl -G \"%s\" 2> /dev/null",
+                                               download.c_str());
             auto downloadResult = ProcessUtils::runCommand(command.c_str());
             if (!downloadResult.ok()) {
                 LOG(ERROR) << "Failed to download SST Files: " << downloadResult.status();
@@ -226,11 +217,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& url,
     for (auto &thread : threads) {
         thread.join();
     }
-    if (completed == (int32_t)hostPartition.size()) {
-        return true;
-    } else {
-        return false;
-    }
+    return completed == (int32_t)hostPartition.size();
 }
 
 }  // namespace meta

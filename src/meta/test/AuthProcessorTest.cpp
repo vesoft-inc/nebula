@@ -254,7 +254,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     // setup space
     GraphSpaceID spaceId;
     {
-        TestUtils::createSomeHosts(kv.get());
+        TestUtils::createHosts(kv.get());
         cpp2::CreateSpaceReq req(FRAGILE,
                                  cpp2::SpaceProperties(FRAGILE, "test_space", 1, 1));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
