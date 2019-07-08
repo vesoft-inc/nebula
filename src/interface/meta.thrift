@@ -27,6 +27,7 @@ enum ErrorCode {
     E_INVALID_HOST   = -24,
     E_UNSUPPORTED    = -25,
     E_NOT_DROP       = -26,
+    E_BALANCER_RUNNING = -27,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -417,6 +418,19 @@ struct CheckPasswordReq {
     2: string encoded_pwd,
 }
 
+struct BalanceReq {
+    1: optional common.GraphSpaceID space_id,
+    // Specify the balance id to check the status of the related balance plan
+    2: optional i64 id,
+}
+
+struct BalanceResp {
+    1: ErrorCode        code,
+    2: i64              id,
+    // Valid if code equals E_LEADER_CHANGED.
+    3: common.HostAddr  leader,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -448,8 +462,6 @@ service MetaService {
     ExecResp removeRange(1: RemoveRangeReq req);
     ScanResp scan(1: ScanReq req);
 
-    HBResp           heartBeat(1: HBReq req);
-
     ExecResp createUser(1: CreateUserReq req);
     ExecResp dropUser(1: DropUserReq req);
     ExecResp alterUser(1: AlterUserReq req);
@@ -461,5 +473,7 @@ service MetaService {
     ExecResp changePassword(1: ChangePasswordReq req);
     ExecResp checkPassword(1: CheckPasswordReq req);
 
+    HBResp           heartBeat(1: HBReq req);
+    BalanceResp      balance(1: BalanceReq req);
 }
 
