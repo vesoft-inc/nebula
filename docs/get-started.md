@@ -148,12 +148,12 @@ There are three kinds of tags (_course_, _building_ and _team_) and two edge typ
 **SPACE** is a region that provides physically isolation of graphs in Nebula. First we need to create a space and use it before other operations.
 
 To list all existing spaces:
-```shell
+```
 nebula> SHOW SPACES;
 ```
 
 To create a new space named _myspace_test2_ :
-```shell
+```
 nebula> CREATE SPACE myspace_test2(partition_num=1, replica_factor=1);
 
 -- Use this space
@@ -166,19 +166,19 @@ nebula> USE myspace_test2;
 #### Define Graph Schema
 
 The `CREATE TAG` statement defines a tag, with a type name and an attribute list.
-```shell
+```
 nebula> CREATE TAG course(name string, credits int);
 nebula> CREATE TAG building(name string);
 nebula> CREATE TAG student(name string, age int, gender string);
 ```
 The `CREATE EDGE` statement defines an edge type.
-```shell
+```
 nebula> CREATE EDGE like(likeness double);
 nebula> CREATE EDGE select(grade int);
 ```
 
 To list the tags and edge types that we just created：
-```shell
+```
 -- Show tag list
 nebula> SHOW TAGS;
 
@@ -187,7 +187,7 @@ nebula> SHOW EDGES;
 ```
 
 To show the attributes of a tag or an edge type:
-```shell
+```
 -- Show attributes of a tag
 nebula> DESCRIBE TAG student;
 
@@ -198,7 +198,7 @@ nebula> DESCRIBE EDGE like;
 #### Insert Data
 
 Insert the vertexes and edges based on the graph above.
-```shell
+```
 -- Insert vertexes
 nebula> INSERT VERTEX student(name, age, gender) VALUES 200:("Monica", 16, "female");
 nebula> INSERT VERTEX student(name, age, gender) VALUES 201:("Mike", 18, "male");
@@ -219,7 +219,7 @@ nebula> INSERT EDGE like(likeness) VALUES 201 -> 202:(93.2);
 #### Sample Queries
 
 Q1. Find the vertexes that 201 likes:
-```shell
+```
 nebula> GO FROM 201 OVER like;
 
 =======
@@ -232,7 +232,7 @@ nebula> GO FROM 201 OVER like;
 ```
 Q2. Find the vertexes that 201 likes, whose age are greater than 17. Return their name, age and gender, and alias the columns as Friend, Age and Gender, respectively.
 
-```shell
+```
 nebula> GO FROM 201 OVER like WHERE $$[student].age >= 17 YIELD $$[student].name AS Friend, $$[student].age AS Age, $$[student].gender AS Gender;
 
 =========================
@@ -249,7 +249,7 @@ nebula> GO FROM 201 OVER like WHERE $$[student].age >= 17 YIELD $$[student].name
 
 Q3. Find the courses that the vetexes liked by 201 select and their grade.
 
-```shell
+```
 -- By pipe
 nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^[student].name AS Student, $$[course].name AS Course, select.grade AS Grade;
 
