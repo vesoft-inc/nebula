@@ -1,31 +1,52 @@
 # Data modeling and design concept
 ------
+<<<<<<< HEAD
 **Nebula Graph** is comprised of four components: storage layer, metadata service, computation layer and client console. In this documentation, we'll discuss data modeling and architecture of Nebula Graph.
+=======
+**Nebula Graph** is comprised of four components: storage layer, metadata service, compute layer and client console. In this documentation, we'll discuss data modeling and architecture of Nebula Graph.
+>>>>>>> add nebula architecture
 
 ---
 ## Directed property graph
 
+<<<<<<< HEAD
 Modeling data with directed property graph, Nebula Graph is very easy to understand,
 i.e. Nebula Graph consists of two graph elements: vertex and edge. Each
 vertex represents an entity, and each edge represents how two vertices are associated.
+=======
+Modeling data with directed property graph, Nebula Graph is very easy to understand.
+That is to say, Nebula Graph consists of two graph elements:
+>>>>>>> add nebula architecture
 
 ![image][example1]
 
 <!-- ### Vertex
 
+<<<<<<< HEAD
 Vertices are typically used to store entities with properties. In the preceding example, vertices are **player** and **team**.
+=======
+Vertices are typically used to store entity information. In the preceding example, vertices are **players** and **team**.
+>>>>>>> add nebula architecture
 
 ### Edges
 
 Edges are used to connect vertices to one another and therefore provide a means
+<<<<<<< HEAD
 of building your entities. Edges in Nebula Graph always have a type, a start (src)and an end vertex (dst), and a direction. It should be noted that there
+=======
+of building your entities. Edges in Nebula Graph always have a type, a start (src)and an end vertex (dst), and a direction. They can be self-referencing/looping but can never be dangling (missing a start or end node). It should be noted that there
+>>>>>>> add nebula architecture
 may be multiple edges of the same or different types at the same time between the
 start (src)and end vertex (dst). In the preceding example, edges are **serve**
 and **likeness**.
 
 ### Properties
 
+<<<<<<< HEAD
 Both vertices and edges can have properties, which are effectively key/value pairs. We call them **schema** in Nebula Graph. Like Mysql, Nebula Graph is a strong schema database. The name and data type of the properties are determined before the data is written. Vertex can have one or more properties, and edges can have properties too.
+=======
+Both vertices and edges are containers for properties, which are effectively key/value pairs. We call them **schema** in Nebula Graph. Like Mysql, Nebula Graph is a strong schema database. The name and data type of the properties are determined before the data is written. Vertex can have one or more properties, and edges can have properties too.
+>>>>>>> add nebula architecture
 
 In the preceding example, the schema of **player** has three kind of properties:
 
@@ -94,7 +115,11 @@ in-key, respectively. The out-key and the edge's corresponding starting point ar
 
 ## Architecture
 
+<<<<<<< HEAD
 Nebula Graph includes four modules: storage layer, metadata service, computation layer
+=======
+Nebula Graph includes four modules: storage layer, metadata service, compute layer
+>>>>>>> add nebula architecture
 and client console.
 
 ![image][example5]
@@ -121,12 +146,21 @@ Raft protocol ensures data consistency  by leader/follower mechanism. Based on t
 
       When added to cluster, new machines will be tagged as learner and pull data
   from leader/follower synchronically. The learner will be tagged as follower and
+<<<<<<< HEAD
   participate in Raft protocol when it catches up leader.
 
 - Load-balance
 
       For machines with high stress, migrate the partition they serve to machines
   with  low stress for better load balancing.
+=======
+  participate in Raft protocol when it exceeds leader.
+
+- Load-balance
+
+      For machines with high access, migrate the partition they serve to machines
+  with  low access for better load balancing.
+>>>>>>> add nebula architecture
 
 ![image][example6]
 
@@ -162,7 +196,11 @@ The Meta Service layer is state, and just like the Storage layer, it maintains s
 
 ### Query Engine & Query Language (nGQL)
 
+<<<<<<< HEAD
 The process corresponding to the computation layer is nebula-graphd, which consists
+=======
+The process corresponding to the calculation layer is nebula-graphd, which consists
+>>>>>>> add nebula architecture
 of computing vertices that are fully equal, stateless, and unrelated. There is no
 communication among the computing vertices.
 
@@ -174,9 +212,15 @@ The main optimizations of the Query Engine layer are:
 
       Since both IO and network are long-latency operations, asynchronous and concurrent operations are required. In addition, to avoid a single long query affecting subsequent queries, a separate resource pool is set for each query to guarantee quality of service (QoS).
 
+<<<<<<< HEAD
 - Push down
 
       Too much data passing back form storage layer to computation layer occupies  too much bandwidth, to avoid that, operators such as conditional filtering (where) are sent to the storage layer along with the query filters.
+=======
+- Calculate sinking
+
+      Too much data passing back form storage layer to computing layer occupies  too much bandwidth, to avoid that, operators such as conditional filtering (where) are sent to the storage layer along with the query filters.
+>>>>>>> add nebula architecture
 
 - Execution plan optimization
 
@@ -186,9 +230,15 @@ The main optimizations of the Query Engine layer are:
 
 ![image][example8]
 
+<<<<<<< HEAD
 ### API and SDK
 
 Nebula Graph provides SDKs in C++, Java, and Golang. Nebula Graph uses RPC to communicate among servers, and the communication protocol is Facebook-Thrift. Users can also use Nebula Graph on Linux. Nebula Graph's web SDK is in progress and will be released soon.
+=======
+### API and console
+
+Nebula Graph provides consoles in C++, Java, and Golang. Nebula Graph uses RPC to communicate among servers, and the communication protocol is Facebook-Thrift. Users can also use Nebula Graph on Linux. Nebula Graph's web console is in progress and will be released soon.
+>>>>>>> add nebula architecture
 
 
 
