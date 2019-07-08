@@ -6,7 +6,8 @@
 ## Directed property graph
 
 Modeling data with directed property graph, Nebula Graph is very easy to understand.
-That is to say, Nebula Graph consists of two graph elements:
+That is to say, Nebula Graph consists of two graph elements: vertex and edge. Each
+vertex represents an entity, and each edge represents how two vertices are associated.
 
 ![image][example1]
 
