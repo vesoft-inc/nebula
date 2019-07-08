@@ -159,7 +159,11 @@ public:
     folly::Future<StatusOr<bool>>
     removeRange(std::string segment, std::string start, std::string end);
 
-    // Operations for cache.
+    // Operations for admin
+    folly::Future<StatusOr<int64_t>>
+    balance();
+
+    // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
