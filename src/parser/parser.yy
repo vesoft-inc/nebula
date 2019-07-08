@@ -259,14 +259,14 @@ input_ref_expression
     ;
 
 src_ref_expression
-    : SRC_REF LABEL DOT LABEL {
-        $$ = new SourcePropertyExpression($2, $4);
+    : SRC_REF DOT LABEL DOT LABEL {
+        $$ = new SourcePropertyExpression($3, $5);
     }
     ;
 
 dst_ref_expression
-    : DST_REF LABEL DOT LABEL {
-        $$ = new DestPropertyExpression($2, $4);
+    : DST_REF DOT LABEL DOT LABEL {
+        $$ = new DestPropertyExpression($3, $5);
     }
     ;
 

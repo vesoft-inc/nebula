@@ -205,8 +205,8 @@ TEST_F(DataTest, InsertVertex) {
     // Get result
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "GO FROM hash(\"Tom\") OVER schoolmate YIELD $^person.name,"
-                          "schoolmate.likeness, $$person.name";
+        std::string cmd = "GO FROM hash(\"Tom\") OVER schoolmate YIELD $^.person.name,"
+                          "schoolmate.likeness, $$.person.name";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
@@ -228,8 +228,8 @@ TEST_F(DataTest, InsertVertex) {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "GO FROM hash(\"Lucy\") OVER schoolmate YIELD "
-                          "schoolmate.likeness, $$person.name,"
-                          "$$student.grade, $$student.number";
+                          "schoolmate.likeness, $$.person.name,"
+                          "$$.student.grade, $$.student.number";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         using valueType = std::tuple<int64_t, std::string, std::string, int64_t>;
@@ -260,7 +260,7 @@ TEST_F(DataTest, InsertVertex) {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "GO FROM hash(\"Laura\") OVER schoolmate "
-                          "YIELD $$student.number, $$person.name";
+                          "YIELD $$.student.number, $$.person.name";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         using valueType = std::tuple<int64_t, std::string>;

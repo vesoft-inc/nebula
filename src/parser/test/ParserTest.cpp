@@ -58,9 +58,24 @@ TEST(Parser, Go) {
     {
         GQLParser parser;
         std::string query = "GO FROM 1 OVER friend "
-                            "YIELD $^manager.name,$^manager.age";
+                            "YIELD $^.manager.name,$^.manager.age";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER friend "
+                            "YIELD $$.manager.name,$$.manager.age";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    // Test wrong syntax
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER friend "
+                            "YIELD $^[manager].name,$^[manager].age";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
