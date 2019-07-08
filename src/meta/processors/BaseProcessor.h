@@ -17,32 +17,12 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
+#include "meta/processors/Common.h"
 
 namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
-
-const PartitionID kDefaultPartId = 0;
-const GraphSpaceID kDefaultSpaceId = 0;
-
-class LockUtils {
-public:
-    LockUtils() = delete;
-#define GENERATE_LOCK(Entry) \
-    static folly::SharedMutex& Entry##Lock() { \
-        static folly::SharedMutex l; \
-        return l; \
-    }
-
-GENERATE_LOCK(space);
-GENERATE_LOCK(id);
-GENERATE_LOCK(tag);
-GENERATE_LOCK(edge);
-GENERATE_LOCK(user);
-
-#undef GENERATE_LOCK
-};
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
