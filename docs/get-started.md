@@ -110,22 +110,35 @@ nebula>
 If you have any questions or concerns about the deployment procedures, please do not hesitate to open an issue on git.
 
 ### Step 3: Build Your Own Graph
-This section describes how to build a graph and make queries. The example is built on the graph below:
+This section describes how to build a graph and run queries. The example is built on the graph below:
 
 ![Untitled Diagram (1)](https://user-images.githubusercontent.com/51590253/60649144-0774c980-9e74-11e9-86d6-bad1653e70ba.png)
 
 There are three kinds of tags(course, building and team) and two edge types (select and like). The graph schema is:
 ```json
-{
-     "tags": {
-       "course": ["name: string", "credits: integer"],
-       "building": ["name: string"],
-       "student": ["name: string", "age: integer", "gender: string"]
-     },
-     "edges": {
-        "select": ["grade: integer"],
-        "like": ["likeness: double"]
-     }
+{  
+   "tags":{  
+      "course":[  
+         "name: string",
+         "credits: integer"
+      ],
+      "building":[  
+         "name: string"
+      ],
+      "student":[  
+         "name: string",
+         "age: integer",
+         "gender: string"
+      ]
+   },
+   "edges":{  
+      "select":[  
+         "grade: integer"
+      ],
+      "like":[  
+         "likeness: double"
+      ]
+   }
 }
 ```
 
