@@ -245,9 +245,9 @@ It's common to refer a property in the statement, such as in <span style="color:
 <alias\_name> ::= <label\> <br>
 <alias\_with\_tag> ::= <alias\_name> '[' <tag\_name> "]" <br>
 
-<var\> always starts with "$". There are two special variables: $_ and $$.
+<var\> always starts with "$". There are two special variables: $- and $$.
 
-$_ refers to the input stream, while $$ refers to the destination objects
+$- refers to the input stream, while $$ refers to the destination objects
 
 All property names start with a letter. There are a few system property names starting with "\_". All properties names starting with "\_" are reserved.
 

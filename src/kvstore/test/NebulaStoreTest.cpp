@@ -118,7 +118,6 @@ TEST(NebulaStoreTest, SimpleTest) {
     EXPECT_EQ(100, num);
 }
 
-
 TEST(NebulaStoreTest, PartsTest) {
     fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
     auto partMan = std::make_unique<MemPartManager>();
@@ -137,7 +136,7 @@ TEST(NebulaStoreTest, PartsTest) {
     for (size_t i = 0; i < paths.size(); i++) {
         auto db = std::make_unique<RocksEngine>(
             0, /* spaceId */
-            folly::stringPrintf("%s/nebula/%d/data", paths[i].c_str(), 0));
+            paths[i]);
         for (auto partId = 0; partId < 3; partId++) {
             db->addPart(5 * i + partId);
         }
@@ -159,10 +158,6 @@ TEST(NebulaStoreTest, PartsTest) {
                                                local);
 
     auto check = [&](GraphSpaceID spaceId) {
-        // After init, the parts should be 0-9, and the distribution should be
-        // disk1: 0, 1, 2, x, y
-        // disk2: 5, 6, 7, x1, y1
-        // x, y, x1, y1 in {3, 4, 8, 9}
         for (auto i = 0; i < 2; i++) {
             ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/%d",
                                           rootPath.path(),
@@ -175,6 +170,26 @@ TEST(NebulaStoreTest, PartsTest) {
         }
     };
     check(0);
+    // After init, the parts should be 0-9, and the distribution should be
+    // disk1: 0, 1, 2, 3, 8
+    // disk2: 4, 5, 6, 7, 9
+    // After restart, the original order should not been broken.
+    {
+        auto parts = store->spaces_[0]->engines_[0]->allParts();
+        ASSERT_EQ(0, parts[0]);
+        ASSERT_EQ(1, parts[1]);
+        ASSERT_EQ(2, parts[2]);
+        ASSERT_EQ(3, parts[3]);
+        ASSERT_EQ(8, parts[4]);
+    }
+    {
+        auto parts = store->spaces_[0]->engines_[1]->allParts();
+        ASSERT_EQ(4, parts[0]);
+        ASSERT_EQ(5, parts[1]);
+        ASSERT_EQ(6, parts[2]);
+        ASSERT_EQ(7, parts[3]);
+        ASSERT_EQ(9, parts[4]);
+    }
 
     auto* pm = dynamic_cast<MemPartManager*>(store->partMan_.get());
     // Let's create another space with 10 parts.
@@ -182,6 +197,22 @@ TEST(NebulaStoreTest, PartsTest) {
         pm->addPart(1, partId);
     }
     check(1);
+    {
+        auto parts = store->spaces_[1]->engines_[0]->allParts();
+        ASSERT_EQ(0, parts[0]);
+        ASSERT_EQ(2, parts[1]);
+        ASSERT_EQ(4, parts[2]);
+        ASSERT_EQ(6, parts[3]);
+        ASSERT_EQ(8, parts[4]);
+    }
+    {
+        auto parts = store->spaces_[1]->engines_[1]->allParts();
+        ASSERT_EQ(1, parts[0]);
+        ASSERT_EQ(3, parts[1]);
+        ASSERT_EQ(5, parts[2]);
+        ASSERT_EQ(7, parts[3]);
+        ASSERT_EQ(9, parts[4]);
+    }
 
     // Let's remove space some parts in GraphSpace 0
     for (auto partId = 0; partId < 5; partId++) {

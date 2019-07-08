@@ -392,6 +392,10 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("\"He\\\nllo\"", TokenType::STRING, "He\nllo"),
         CHECK_SEMANTIC_VALUE("\"\\\"Hello\\\"\"", TokenType::STRING, "\"Hello\""),
 
+        CHECK_SEMANTIC_VALUE("'Hello'", TokenType::STRING, "Hello"),
+        CHECK_SEMANTIC_VALUE("'\"Hello\"'", TokenType::STRING, "\"Hello\""),
+        CHECK_SEMANTIC_VALUE("'\\'Hello\\''", TokenType::STRING, "'Hello'"),
+
         // escape Normal character
         CHECK_SEMANTIC_VALUE("\"Hell\\o\"", TokenType::STRING, "Hello"),
         CHECK_SEMANTIC_VALUE("\"Hell\\\\o\"", TokenType::STRING, "Hell\\o"),
