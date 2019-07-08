@@ -107,14 +107,15 @@ Welcome to Nebula Graph (Version 0.1)
 nebula>
 ```
 
-If you have any questions or concerns about the deployment procedures, please do not hesitate to open an issue on git.
+If you have any questions or concerns about the deployment procedures, please do not hesitate to open an issue on GitHub.
 
 ### Step 3: Build Your Own Graph
+
 This section describes how to build a graph and run queries. The example is built on the graph below:
 
 ![Untitled Diagram (1)](https://user-images.githubusercontent.com/51590253/60649144-0774c980-9e74-11e9-86d6-bad1653e70ba.png)
 
-There are three kinds of tags(course, building and team) and two edge types (select and like). The graph schema is:
+There are three kinds of tags (_course_, _building_ and _team_) and two edge types (_select_ and _like_). The graph schema is:
 ```json
 {  
    "tags":{  
@@ -143,38 +144,40 @@ There are three kinds of tags(course, building and team) and two edge types (sel
 ```
 
 #### Create a Graph Space
-<em>Space</em> is a region that provides physically isolation of graphs in Nebula. First we need to create a space and use it before other operations.
+
+**SPACE** is a region that provides physically isolation of graphs in Nebula. First we need to create a space and use it before other operations.
 
 To list all existing spaces:
 ```shell
 nebula> SHOW SPACES;
 ```
 
-To create a new space named <em>myspace_test2</em> :
+To create a new space named _myspace_test2_ :
 ```shell
 nebula> CREATE SPACE myspace_test2(partition_num=1, replica_factor=1);
 
 -- Use this space
 nebula> USE myspace_test2;
 ```
-<em>replica_factor</em> specifies the number of replicas in the cluster.
+`replica_factor` specifies the number of replicas in the cluster.
 
-<em>partition_num</em> specifies the number of partitions in one replica.
+`partition_num` specifies the number of partitions in one replica.
 
 #### Define Graph Schema
-The **CREATE TAG** statement defines a tag, with a type name and an attribute list.
+
+The `CREATE TAG` statement defines a tag, with a type name and an attribute list.
 ```shell
 nebula> CREATE TAG course(name string, credits int);
 nebula> CREATE TAG building(name string);
 nebula> CREATE TAG student(name string, age int, gender string);
 ```
-The **CREATE EDGE** statement defines an edge type.
+The `CREATE EDGE` statement defines an edge type.
 ```shell
 nebula> CREATE EDGE like(likeness double);
 nebula> CREATE EDGE select(grade int);
 ```
 
-To list the tags and edge types we just created：
+To list the tags and edge types that we just created：
 ```shell
 -- Show tag list
 nebula> SHOW TAGS;
@@ -193,6 +196,7 @@ nebula> DESCRIBE EDGE like;
 ```
 
 #### Insert Data
+
 Insert the vertexes and edges based on the graph above.
 ```shell
 -- Insert vertexes
@@ -213,6 +217,7 @@ nebula> INSERT EDGE like(likeness) VALUES 201 -> 202:(93.2);
 ```
 
 #### Sample Queries
+
 Q1. Find the vertexes that 201 likes:
 ```shell
 nebula> GO FROM 201 OVER like;
@@ -236,11 +241,11 @@ nebula> GO FROM 201 OVER like WHERE $$[student].age >= 17 YIELD $$[student].name
 |   Jane |  17 | female |
 -------------------------
 ```
-**YIELD** specifies what values or results you might want to return from query.
+`YIELD` specifies what values or results you might want to return from query.
 
-**$^** represents the source vertex.
+`$^` represents the source vertex.
 
-**$$** indicates the target vertex.
+`$$` indicates the target vertex.
 
 Q3. Find the courses that the vetexes liked by 201 select and their grade.
 
