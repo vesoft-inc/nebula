@@ -274,6 +274,9 @@ var_ref_expression
     : VARIABLE DOT LABEL {
         $$ = new VariablePropertyExpression($1, $3);
     }
+    | VARIABLE {
+        $$ = new VariablePropertyExpression($1, new std::string("id"));
+    }
     ;
 
 alias_ref_expression

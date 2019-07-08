@@ -114,6 +114,43 @@ TEST_F(GoTest, OneStepOutBound) {
     }
 }
 
+
+TEST_F(GoTest, AssignmentSimple) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tracy McGrady"];
+        auto *fmt = "$var = GO FROM %ld OVER like; "
+                    "GO FROM $var.id OVER like";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<uint64_t>> expected = {
+            {players_["Kobe Bryant"].vid()},
+            {players_["Grant Hill"].vid()},
+            {players_["Rudy Gay"].vid()},
+        };
+    }
+}
+
+
+TEST_F(GoTest, AssignmentPipe) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tracy McGrady"];
+        auto *fmt = "$var = (GO FROM %ld OVER like | GO FROM $- OVER like);"
+                    "GO FROM $var OVER like";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<uint64_t>> expected = {
+            {players_["Kobe Bryant"].vid()},
+            {players_["Grant Hill"].vid()},
+            {players_["Tony Parker"].vid()},
+            {players_["Tim Duncan"].vid()},
+        };
+    }
+}
+
 // REVERSELY not supported yet
 TEST_F(GoTest, DISABLED_OneStepInBound) {
     {

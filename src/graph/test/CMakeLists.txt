@@ -24,6 +24,12 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:thrift_obj>
 )
 
+add_library(graph_test_common_obj OBJECT
+    TestMain.cpp
+    TestEnv.cpp
+    TestBase.cpp
+)
+
 
 add_executable(
     session_manager_test
@@ -43,11 +49,9 @@ nebula_add_test(session_manager_test)
 
 add_executable(
     query_engine_test
-    TestMain.cpp
-    TestEnv.cpp
-    TestBase.cpp
     YieldTest.cpp
     SchemaTest.cpp
+    $<TARGET_OBJECTS:graph_test_common_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
     ${GRAPH_TEST_LIBS}
@@ -64,10 +68,8 @@ nebula_add_test(query_engine_test)
 
 add_executable(
     go_test
-    TestMain.cpp
-    TestEnv.cpp
-    TestBase.cpp
     GoTest.cpp
+    $<TARGET_OBJECTS:graph_test_common_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
     ${GRAPH_TEST_LIBS}
@@ -84,10 +86,8 @@ nebula_add_test(go_test)
 
 add_executable(
     graph_http_test
-    TestMain.cpp
-    TestEnv.cpp
-    TestBase.cpp
     GraphHttpHandlerTest.cpp
+    $<TARGET_OBJECTS:graph_test_common_obj>
     $<TARGET_OBJECTS:graph_http_handler>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:ws_obj>
@@ -109,10 +109,8 @@ nebula_add_test(graph_http_test)
 
 add_executable(
     data_test
-    TestMain.cpp
-    TestEnv.cpp
-    TestBase.cpp
     DataTest.cpp
+    $<TARGET_OBJECTS:graph_test_common_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
     ${GRAPH_TEST_LIBS}
@@ -129,10 +127,8 @@ nebula_add_test(data_test)
 
 add_executable(
     order_by_test
-    TestMain.cpp
-    TestEnv.cpp
-    TestBase.cpp
     OrderByTest.cpp
+    $<TARGET_OBJECTS:graph_test_common_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
     ${GRAPH_TEST_LIBS}
