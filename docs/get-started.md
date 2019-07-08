@@ -277,10 +277,10 @@ nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^[student].na
 -----------------------------
 ```
 
-Symbol ’**|**‘ denotes a pipe. The output of the formal query acts as input to the next one like a pipeline.
+`|` denotes a pipe. The output of the formal query acts as input to the next one like a pipeline.
 
-$- refers to the input stream.
+`$-` refers to the input stream.
 
-The second approach adopts a user-defined variable. The scope of this variable is within the compound statement.
+The second approach adopts a user-defined variable `$a`. The scope of this variable is within the compound statement.
 
 For more details about Query Language, check [nGQL](https://github.com/vesoft-inc/nebula/blob/master/docs/nGQL.md).
