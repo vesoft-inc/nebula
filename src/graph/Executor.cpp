@@ -122,6 +122,7 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kOrderBy:
             executor = std::make_unique<OrderByExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kCreateUser:
             executor = std::make_unique<CreateUserExecutor>(sentence, ectx());
             break;
