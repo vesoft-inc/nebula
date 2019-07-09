@@ -68,6 +68,7 @@ FileBasedWal::~FileBasedWal() {
 
     // Close the last file
     closeCurrFile();
+    LOG(INFO) << "~FileBasedWal, dir = " << dir_;
 }
 
 
