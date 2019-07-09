@@ -320,7 +320,6 @@ AssertionResult TraverseTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "USE nba";
@@ -361,7 +360,7 @@ AssertionResult TraverseTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_load_data_interval_secs + 3);
     return TestOK();
 }
 
