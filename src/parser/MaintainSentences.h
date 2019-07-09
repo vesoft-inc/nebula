@@ -34,7 +34,7 @@ public:
     }
 
 private:
-    ColumnType                                  type_;
+    ColumnType                                  type_{ColumnType::UNKNOWN};
     std::unique_ptr<std::string>                name_;
 };
 

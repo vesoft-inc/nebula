@@ -587,12 +587,14 @@ create_tag_sentence
         $$ = new CreateTagSentence($3, new ColumnSpecificationList(), $6);
     }
     | KW_CREATE KW_TAG name_label L_PAREN column_spec_list R_PAREN create_schema_prop_list {
+        CHECK_COLUMN_SPACES(false, $5);
         if ($7 == nullptr) {
             $7 = new SchemaPropList();
         }
         $$ = new CreateTagSentence($3, $5, $7);
     }
     | KW_CREATE KW_TAG name_label L_PAREN column_spec_list COMMA R_PAREN create_schema_prop_list {
+        CHECK_COLUMN_SPACES(false, $5);
         if ($8 == nullptr) {
             $8 = new SchemaPropList();
         }
@@ -625,13 +627,16 @@ alter_schema_opt_list
 
 alter_schema_opt_item
     : KW_ADD L_PAREN column_spec_list R_PAREN {
+        CHECK_COLUMN_SPACES(false, $3);
         $$ = new AlterSchemaOptItem(AlterSchemaOptItem::ADD, $3);
     }
     | KW_CHANGE L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterSchemaOptItem(AlterSchemaOptItem::CHANGE, $3);
+        CHECK_COLUMN_SPACES(false, $3);
+        $$ = new AlterSchemaOptItem(AlterSchemaOptItem::CHANGE, $3);
     }
     | KW_DROP L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterSchemaOptItem(AlterSchemaOptItem::DROP, $3);
+        CHECK_COLUMN_SPACES(true, $3);
+        $$ = new AlterSchemaOptItem(AlterSchemaOptItem::DROP, $3);
     }
     ;
 
@@ -668,12 +673,14 @@ create_edge_sentence
         $$ = new CreateEdgeSentence($3,  new ColumnSpecificationList(), $6);
     }
     | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list R_PAREN create_schema_prop_list {
+        CHECK_COLUMN_SPACES(false, $5);
         if ($7 == nullptr) {
             $7 = new SchemaPropList();
         }
         $$ = new CreateEdgeSentence($3, $5, $7);
     }
     | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list COMMA R_PAREN create_schema_prop_list {
+        CHECK_COLUMN_SPACES(false, $5);
         if ($8 == nullptr) {
             $8 = new SchemaPropList();
         }

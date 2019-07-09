@@ -15,6 +15,18 @@
 
 namespace nebula {
 
+#define CHECK_COLUMN_SPACES(isDrop, columns)                    \
+for (auto& column : columns->columnSpecs()) {                   \
+    if ((isDrop && column->type() != ColumnType::UNKNOWN) ||    \
+        (!isDrop && column->type() == ColumnType::UNKNOWN)) {   \
+        std::ostringstream os;                                  \
+        os << (isDrop ? "Useless dtype clause" :                \
+                       "Missing dtype clause");                 \
+        errmsg = os.str();                                      \
+        YYERROR;                                                \
+    }                                                           \
+}                                                               \
+
 namespace graph {
 class SequentialExecutor;
 }

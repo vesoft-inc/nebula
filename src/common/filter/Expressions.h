@@ -16,7 +16,7 @@ namespace nebula {
 class Cord;
 
 enum ColumnType {
-    INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
+    INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP, UNKNOWN,
 };
 
 std::string columnTypeToString(ColumnType type);
