@@ -40,8 +40,8 @@ TEST_F(OrderByTest, SyntaxError) {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
         auto *fmt = "GO FROM %ld OVER serve YIELD "
-                    "$^[player].name as name, serve.start_year as start, $$[team].name"
-                    "| ORDER BY $-.$$[team].name";
+                    "$^.player.name as name, serve.start_year as start, $$.team.name"
+                    "| ORDER BY $-.$$.team.name";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
@@ -61,7 +61,7 @@ TEST_F(OrderByTest, NoInput) {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Nobody"];
         auto *fmt = "GO FROM %ld OVER serve YIELD "
-                    "$^[player].name as name, serve.start_year as start, $$[team].name as name"
+                    "$^.player.name as name, serve.start_year as start, $$.team.name as name"
                     "| ORDER BY $-.name";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -72,7 +72,7 @@ TEST_F(OrderByTest, NoInput) {
 
 TEST_F(OrderByTest, WrongFactor) {
     std::string go = "GO FROM %ld OVER serve YIELD "
-                     "$^[player].name as name, serve.start_year as start, $$[team].name as team";
+                     "$^.player.name as name, serve.start_year as start, $$.team.name as team";
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -94,7 +94,7 @@ TEST_F(OrderByTest, WrongFactor) {
 
 TEST_F(OrderByTest, SingleFactor) {
     std::string go = "GO FROM %ld OVER serve YIELD "
-                     "$^[player].name as name, serve.start_year as start, $$[team].name as team";
+                     "$^.player.name as name, serve.start_year as start, $$.team.name as team";
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
@@ -163,8 +163,8 @@ TEST_F(OrderByTest, SingleFactor) {
 
 TEST_F(OrderByTest, MultiFactors) {
     std::string go = "GO FROM %ld,%ld OVER serve WHERE serve.start_year >= 2012 YIELD "
-                    "$$[team].name as team, $^[player].name as player, "
-                    "$^[player].age as age, serve.start_year as start";
+                    "$$.team.name as team, $^.player.name as player, "
+                    "$^.player.age as age, serve.start_year as start";
     {
         cpp2::ExecutionResponse resp;
         auto &boris = players_["Boris Diaw"];
