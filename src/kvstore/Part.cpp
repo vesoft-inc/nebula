@@ -5,7 +5,6 @@
  */
 
 #include "kvstore/Part.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/LogEncoder.h"
 
 DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
@@ -30,12 +29,6 @@ ResultCode toResultCode(AppendLogResult res) {
     }
 }
 
-
-wal::BufferFlusher* getBufferFlusher() {
-    static wal::BufferFlusher flusher;
-    return &flusher;
-}
-
 }  // Anonymous namespace
 
 
@@ -45,13 +38,14 @@ Part::Part(GraphSpaceID spaceId,
            const std::string& walPath,
            KVEngine* engine,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
-           std::shared_ptr<thread::GenericThreadPool> workers)
+           std::shared_ptr<thread::GenericThreadPool> workers,
+           wal::BufferFlusher* flusher)
         : RaftPart(FLAGS_cluster_id,
                    spaceId,
                    partId,
                    localAddr,
                    walPath,
-                   getBufferFlusher(),
+                   flusher,
                    ioPool,
                    workers)
         , spaceId_(spaceId)

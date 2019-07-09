@@ -42,7 +42,9 @@ void BaseProcessor<RESP>::doPut(GraphSpaceID spaceId,
         thriftResult.set_part_id(partId);
         if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
             nebula::cpp2::HostAddr leader;
-            auto addr = kvstore_->partLeader(spaceId, partId);
+            auto addrRet = kvstore_->partLeader(spaceId, partId);
+            CHECK(ok(addrRet));
+            auto addr = value(std::move(addrRet));
             leader.set_ip(addr.first);
             leader.set_port(addr.second);
             thriftResult.set_leader(leader);

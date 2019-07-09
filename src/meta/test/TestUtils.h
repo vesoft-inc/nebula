@@ -31,8 +31,6 @@ using apache::thrift::FragileConstructor::FRAGILE;
 class TestUtils {
 public:
     static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
-        auto workers = std::make_shared<thread::GenericThreadPool>();
-        workers->start(4);
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto partMan = std::make_unique<kvstore::MemPartManager>();
 
@@ -51,7 +49,6 @@ public:
 
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
-                                                            workers,
                                                             localhost);
         sleep(1);
         return std::move(store);

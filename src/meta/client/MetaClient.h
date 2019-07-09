@@ -38,6 +38,8 @@ struct SpaceInfoCache {
     EdgeTypeSchemas edgeSchemas_;
 };
 
+using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;
+
 using SpaceNameIdMap = std::unordered_map<std::string, GraphSpaceID>;
 // get tagID via spaceId and tagName
 using SpaceTagNameIdMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, TagID>;
@@ -216,7 +218,7 @@ protected:
         leader_ = active_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
-    void diff(const std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>& newCache);
+    void diff(const LocalCache& oldCache, const LocalCache& newCache);
 
     template<typename RESP>
     Status handleResponse(const RESP& resp);
@@ -243,14 +245,13 @@ protected:
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 
     PartsMap doGetPartsMap(const HostAddr& host,
-                           const std::unordered_map<
-                                        GraphSpaceID,
-                                        std::shared_ptr<SpaceInfoCache>>& localCache);
+                           const LocalCache& localCache);
 
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     std::shared_ptr<thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>> clientsMan_;
-    std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>> localCache_;
+
+    LocalCache localCache_;
     std::vector<HostAddr> addrs_;
     // The lock used to protect active_ and leader_.
     folly::RWSpinLock hostLock_;

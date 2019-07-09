@@ -290,7 +290,7 @@ private:
         LogID prevLogId);
 
 
-private:
+protected:
     template<class ValueType>
     class PromiseSet final {
     public:
