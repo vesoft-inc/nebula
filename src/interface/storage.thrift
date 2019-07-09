@@ -160,6 +160,25 @@ struct AddEdgesRequest {
     3: bool overwritable,
 }
 
+struct AdminExecResp {
+
+}
+
+struct AddPartReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+}
+
+struct RemovePartReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+}
+
+struct MemberChangeReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+}
+
 service StorageService {
     QueryResponse getOutBound(1: GetNeighborsRequest req)
     QueryResponse getInBound(1: GetNeighborsRequest req)
@@ -173,5 +192,10 @@ service StorageService {
 
     ExecResponse addVertices(1: AddVerticesRequest req);
     ExecResponse addEdges(1: AddEdgesRequest req);
+
+    // Interfaces for admin operations
+    AdminExecResp addPart(1: AddPartReq req);
+    AdminExecResp removePart(1: RemovePartReq req);
+    AdminExecResp memberChange(1: MemberChangeReq req);
 }
 

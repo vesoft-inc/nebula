@@ -311,10 +311,10 @@ service THBaseService {
    */
   bool exists(
     /** the table to check on */
-    1: required binary table,
+    1: binary table,
 
     /** the TGet to check for */
-    2: required TGet tget
+    2: TGet tget
   ) throws (1:TIOError io)
 
 
@@ -326,10 +326,10 @@ service THBaseService {
   */
   list<bool> existsAll(
     /** the table to check on */
-    1: required binary table,
+    1: binary table,
 
     /** a list of TGets to check for */
-    2: required list<TGet> tgets
+    2: list<TGet> tgets
   ) throws (1:TIOError io)
 
   /**
@@ -342,10 +342,10 @@ service THBaseService {
    */
   TResult get(
     /** the table to get from */
-    1: required binary table,
+    1: binary table,
 
     /** the TGet to fetch */
-    2: required TGet tget
+    2: TGet tget
   ) throws (1: TIOError io)
 
   /**
@@ -359,12 +359,12 @@ service THBaseService {
    */
   list<TResult> getMultiple(
     /** the table to get from */
-    1: required binary table,
+    1: binary table,
 
     /** a list of TGets to fetch, the Result list
         will have the Results at corresponding positions
         or null if there was an error */
-    2: required list<TGet> tgets
+    2: list<TGet> tgets
   ) throws (1: TIOError io)
 
   /**
@@ -372,10 +372,10 @@ service THBaseService {
    */
   void put(
     /** the table to put data in */
-    1: required binary table,
+    1: binary table,
 
     /** the TPut to put */
-    2: required TPut tput
+    2: TPut tput
   ) throws (1: TIOError io)
 
   /**
@@ -386,16 +386,16 @@ service THBaseService {
    */
   bool checkAndPut(
     /** to check in and put to */
-    1: required binary table,
+    1: binary table,
 
     /** row to check */
-    2: required binary row,
+    2: binary row,
 
     /** column family to check */
-    3: required binary family,
+    3: binary family,
 
     /** column qualifier to check */
-    4: required binary qualifier,
+    4: binary qualifier,
 
     /** the expected value, if not provided the
         check is for the non-existence of the
@@ -403,7 +403,7 @@ service THBaseService {
     5: binary value,
 
     /** the TPut to put if the check succeeds */
-    6: required TPut tput
+    6: TPut tput
   ) throws (1: TIOError io)
 
   /**
@@ -411,10 +411,10 @@ service THBaseService {
    */
   void putMultiple(
     /** the table to put data in */
-    1: required binary table,
+    1: binary table,
 
     /** a list of TPuts to commit */
-    2: required list<TPut> tputs
+    2: list<TPut> tputs
   ) throws (1: TIOError io)
 
   /**
@@ -425,10 +425,10 @@ service THBaseService {
    */
   void deleteSingle(
     /** the table to delete from */
-    1: required binary table,
+    1: binary table,
 
     /** the TDelete to delete */
-    2: required TDelete tdelete
+    2: TDelete tdelete
   ) throws (1: TIOError io)
 
   /**
@@ -440,10 +440,10 @@ service THBaseService {
    */
   list<TDelete> deleteMultiple(
     /** the table to delete from */
-    1: required binary table,
+    1: binary table,
 
     /** list of TDeletes to delete */
-    2: required list<TDelete> tdeletes
+    2: list<TDelete> tdeletes
   ) throws (1: TIOError io)
 
   /**
@@ -454,16 +454,16 @@ service THBaseService {
    */
   bool checkAndDelete(
     /** to check in and delete from */
-    1: required binary table,
+    1: binary table,
 
     /** row to check */
-    2: required binary row,
+    2: binary row,
 
     /** column family to check */
-    3: required binary family,
+    3: binary family,
 
     /** column qualifier to check */
-    4: required binary qualifier,
+    4: binary qualifier,
 
     /** the expected value, if not provided the
         check is for the non-existence of the
@@ -471,23 +471,23 @@ service THBaseService {
     5: binary value,
 
     /** the TDelete to execute if the check succeeds */
-    6: required TDelete tdelete
+    6: TDelete tdelete
   ) throws (1: TIOError io)
 
   TResult increment(
     /** the table to increment the value on */
-    1: required binary table,
+    1: binary table,
 
     /** the TIncrement to increment */
-    2: required TIncrement tincrement
+    2: TIncrement tincrement
   ) throws (1: TIOError io)
 
   TResult append(
     /** the table to append the value on */
-    1: required binary table,
+    1: binary table,
 
     /** the TAppend to append */
-    2: required TAppend tappend
+    2: TAppend tappend
   ) throws (1: TIOError io)
 
   /**
@@ -497,10 +497,10 @@ service THBaseService {
    */
   i32 openScanner(
     /** the table to get the Scanner for */
-    1: required binary table,
+    1: binary table,
 
     /** the scan object to get a Scanner for */
-    2: required TScan tscan,
+    2: TScan tscan,
   ) throws (1: TIOError io)
 
   /**
@@ -510,7 +510,7 @@ service THBaseService {
    */
   list<TResult> getScannerRows(
     /** the Id of the Scanner to return rows from. This is an Id returned from the openScanner function. */
-    1: required i32 scannerId,
+    1: i32 scannerId,
 
     /** number of rows to return */
     2: i32 numRows = 1
@@ -528,7 +528,7 @@ service THBaseService {
    */
   void closeScanner(
     /** the Id of the Scanner to close **/
-    1: required i32 scannerId
+    1: i32 scannerId
   ) throws (
     1: TIOError io,
 
@@ -541,10 +541,10 @@ service THBaseService {
   */
   void mutateRow(
   /** table to apply the mutations */
-    1: required binary table,
+    1: binary table,
 
     /** mutations to apply */
-    2: required TRowMutations trowMutations
+    2: TRowMutations trowMutations
   ) throws (1: TIOError io)
 
   /**
@@ -555,10 +555,10 @@ service THBaseService {
    */
   list<TResult> getScannerResults(
     /** the table to get the Scanner for */
-    1: required binary table,
+    1: binary table,
 
     /** the scan object to get a Scanner for */
-    2: required TScan tscan,
+    2: TScan tscan,
 
     /** number of rows to return */
     3: i32 numRows = 1
@@ -574,8 +574,8 @@ service THBaseService {
    * will be fetched from meta.
    */
   THRegionLocation getRegionLocation(
-    1: required binary table,
-    2: required binary row,
+    1: binary table,
+    2: binary row,
     3: bool reload,
   ) throws (
     1: TIOError io
@@ -585,7 +585,7 @@ service THBaseService {
    * Get all of the region locations for a given table.
    **/
   list<THRegionLocation> getAllRegionLocations(
-    1: required binary table,
+    1: binary table,
   ) throws (
     1: TIOError io
   )
@@ -598,25 +598,25 @@ service THBaseService {
    */
   bool checkAndMutate(
     /** to check in and delete from */
-    1: required binary table,
+    1: binary table,
 
     /** row to check */
-    2: required binary row,
+    2: binary row,
 
     /** column family to check */
-    3: required binary family,
+    3: binary family,
 
     /** column qualifier to check */
-    4: required binary qualifier,
+    4: binary qualifier,
 
     /** comparison to make on the value */
-    5: required TCompareOp compareOp,
+    5: TCompareOp compareOp,
 
     /** the expected value to be compared against, if not provided the
         check is for the non-existence of the column in question */
     6: binary value,
 
     /** row mutations to execute if the value matches */
-    7: required TRowMutations rowMutations
+    7: TRowMutations rowMutations
   ) throws (1: TIOError io)
 }

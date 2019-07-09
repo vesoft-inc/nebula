@@ -966,5 +966,14 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);
 }
+
+folly::Future<StatusOr<int64_t>> MetaClient::balance() {
+    cpp2::BalanceReq req;
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_balance(request);
+    }, [] (cpp2::BalanceResp&& resp) -> int64_t {
+        return resp.id;
+    }, true);
+}
 }  // namespace meta
 }  // namespace nebula
