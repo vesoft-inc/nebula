@@ -172,7 +172,7 @@ const char* InputPropertyExpression::decode(const char *pos, const char *end) {
 std::string DestPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += "$$";
+    buf += "$$.";
     buf += *tag_;
     buf += ".";
     buf += *prop_;
@@ -493,7 +493,7 @@ const char* EdgeRankExpression::decode(const char *pos, const char *end) {
 std::string SourcePropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += "$^";
+    buf += "$^.";
     buf += *tag_;
     buf += ".";
     buf += *prop_;
