@@ -154,5 +154,24 @@ TEST_F(GoTest, DISABLED_OneStepInOutBound) {
     }
 }
 
+TEST_F(GoTest, Distinct) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve "
+                    "YIELD DISTINCT serve._dst, $$[team].name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string>> expected = {
+            {teams_["Spurs"].vid(), "Spurs"},
+            {teams_["Hornets"].vid(), "Hornets"},
+            {teams_["Trail Blazers"].vid(), "Trail Blazers"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula

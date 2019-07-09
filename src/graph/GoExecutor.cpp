@@ -53,6 +53,10 @@ Status GoExecutor::prepare() {
         if (!status.ok()) {
             break;
         }
+        status = prepareDistinct();
+        if (!status.ok()) {
+            break;
+        }
     } while (false);
 
     if (!status.ok()) {
@@ -74,6 +78,13 @@ void GoExecutor::execute() {
     if (starts_.empty()) {
         onEmptyInputs();
         return;
+    }
+    if (distinct_) {
+        std::unordered_set<VertexID> uniqID;
+        for (auto id : starts_) {
+            uniqID.emplace(id);
+        }
+        starts_ = std::vector<VertexID>(uniqID.begin(), uniqID.end());
     }
     stepOut();
 }
@@ -219,6 +230,16 @@ Status GoExecutor::prepareNeededProps() {
     return status;
 }
 
+Status GoExecutor::prepareDistinct() {
+    auto *clause = sentence_->yieldClause();
+    if (clause != nullptr) {
+        distinct_ = clause->isDistinct();
+        // TODO Consider distinct pushdown later, depends on filter and some other clause pushdown.
+        distinctPushDown_ =
+            !((expCtx_->hasSrcTagProp() || expCtx_->hasEdgeProp()) && expCtx_->hasDstTagProp());
+    }
+    return Status::OK();
+}
 
 Status GoExecutor::setupStarts() {
     // Literal vertex ids
@@ -355,12 +376,14 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
 
 
 void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
+    auto outputs = setupInterimResult(std::move(rpcResp));
     if (onResult_) {
-        onResult_(setupInterimResult(std::move(rpcResp)));
+        onResult_(std::move(outputs));
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        setupResponseHeader(*resp_);
-        setupResponseBody(rpcResp, *resp_);
+        resp_->set_column_names(getResultColumnNames());
+        auto rows = outputs->getRows();
+        resp_->set_rows(std::move(rows));
     }
     DCHECK(onFinish_);
     onFinish_();
@@ -482,6 +505,7 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
     // Generic results
     std::shared_ptr<SchemaWriter> schema;
     std::unique_ptr<RowSetWriter> rsWriter;
+    auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     using nebula::cpp2::SupportedType;
     auto cb = [&] (std::vector<VariantType> record) {
         if (schema == nullptr) {
@@ -530,7 +554,15 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
                     LOG(FATAL) << "Unknown VariantType: " << column.which();
             }
         }
-        rsWriter->addRow(writer);
+        std::string encode = writer.encode();
+        if (distinct_) {
+            if (uniqResult->count(encode) == 0) {
+                uniqResult->emplace(encode);
+                rsWriter->addRow(writer);
+            }
+        } else {
+            rsWriter->addRow(writer);
+        }
     };  // cb
     processFinalResult(rpcResp, cb);
     // No results populated
@@ -539,12 +571,6 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
     }
     return std::make_unique<InterimResult>(std::move(rsWriter));
 }
-
-
-void GoExecutor::setupResponseHeader(cpp2::ExecutionResponse &resp) const {
-    resp.set_column_names(getResultColumnNames());
-}
-
 
 VariantType getProp(const std::string &prop,
                     const RowReader *reader,
@@ -587,39 +613,6 @@ VariantType getProp(const std::string &prop,
             return "";
     }
 }
-
-
-void GoExecutor::setupResponseBody(RpcResponse &rpcResp, cpp2::ExecutionResponse &resp) const {
-    std::vector<cpp2::RowValue> rows;
-    auto cb = [&] (std::vector<VariantType> record) {
-        std::vector<cpp2::ColumnValue> row;
-        row.reserve(record.size());
-        for (auto &column : record) {
-            row.emplace_back();
-            switch (column.which()) {
-                case 0:
-                    row.back().set_integer(boost::get<int64_t>(column));
-                    break;
-                case 1:
-                    row.back().set_double_precision(boost::get<double>(column));
-                    break;
-                case 2:
-                    row.back().set_bool_val(boost::get<bool>(column));
-                    break;
-                case 3:
-                    row.back().set_str(boost::get<std::string>(column));
-                    break;
-                default:
-                    LOG(FATAL) << "Unknown VariantType: " << column.which();
-            }
-        }
-        rows.emplace_back();
-        rows.back().set_columns(std::move(row));
-    };
-    processFinalResult(rpcResp, cb);
-    resp.set_rows(std::move(rows));
-}
-
 
 void GoExecutor::onEmptyInputs() {
     if (onResult_) {
