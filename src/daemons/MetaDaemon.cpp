@@ -27,7 +27,6 @@ DEFINE_string(peers, "", "It is a list of IPs split by comma,"
                          "the ips number equals replica number."
                          "If empty, it means replica is 1");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
-DEFINE_int32(num_workers, 4, "Number of worker threads");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DECLARE_string(part_man_type);
 
@@ -75,16 +74,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    LOG(INFO) << "Starting Meta HTTP Service";
-    nebula::WebService::registerHandler("/status", [] {
-        return new nebula::meta::MetaHttpHandler();
-    });
-    status = nebula::WebService::start();
-    if (!status.ok()) {
-        LOG(ERROR) << "Failed to start web service: " << status;
-        return EXIT_FAILURE;
-    }
-
     auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
     if (!result.ok()) {
         LOG(ERROR) << "Get local ip failed! status:" << result.status();
@@ -102,10 +91,21 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
         return EXIT_FAILURE;
     }
+
+    LOG(INFO) << "Starting Meta HTTP Service";
+    nebula::WebService::registerHandler("/status", [] {
+        return new nebula::meta::MetaHttpHandler();
+    });
+    status = nebula::WebService::start();
+    if (!status.ok()) {
+        return EXIT_FAILURE;
+    }
+
     // Setup the signal handlers
     status = setupSignalHandler();
     if (!status.ok()) {
         LOG(ERROR) << status;
+        nebula::WebService::stop();
         return EXIT_FAILURE;
     }
 
@@ -113,10 +113,6 @@ int main(int argc, char *argv[]) {
         = std::make_unique<nebula::kvstore::MemPartManager>();
     // The meta server has only one space, one part.
     partMan->addPart(0, 0, std::move(peersRet.value()));
-
-    // Generic thread pool
-    auto workers = std::make_shared<nebula::thread::GenericThreadPool>();
-    workers->start(FLAGS_num_workers);
 
     // folly IOThreadPoolExecutor
     auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
@@ -127,7 +123,6 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<nebula::kvstore::KVStore> kvstore =
         std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
                                                        ioPool,
-                                                       workers,
                                                        localhost);
 
     auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());

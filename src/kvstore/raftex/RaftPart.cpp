@@ -203,6 +203,7 @@ RaftPart::~RaftPart() {
 
     // Make sure the partition has stopped
     CHECK(status_ == Status::STOPPED);
+    LOG(INFO) << idStr_ << "~RaftPart()";
 }
 
 
@@ -266,19 +267,21 @@ void RaftPart::stop() {
         hosts = std::move(peerHosts_);
     }
 
-    for (auto& h : *hosts) {
-        h.second->stop();
-    }
-    VLOG(2) << idStr_ << "Invoked stop() on all peer hosts";
+    if (hosts) {
+        for (auto& h : *hosts) {
+            h.second->stop();
+        }
 
-    for (auto& h : *hosts) {
-        VLOG(2) << idStr_ << "Waiting " << h.second->idStr() << " to stop";
-        h.second->waitForStop();
-        VLOG(2) << idStr_ << h.second->idStr() << "has stopped";
-    }
-    VLOG(2) << idStr_ << "All hosts are stopped";
+        VLOG(2) << idStr_ << "Invoked stop() on all peer hosts";
 
-    VLOG(2) << idStr_ << "Partition has been stopped";
+        for (auto& h : *hosts) {
+            VLOG(2) << idStr_ << "Waiting " << h.second->idStr() << " to stop";
+            h.second->waitForStop();
+            VLOG(2) << idStr_ << h.second->idStr() << "has stopped";
+        }
+        VLOG(2) << idStr_ << "All hosts are stopped";
+    }
+    LOG(INFO) << idStr_ << "Partition has been stopped";
 }
 
 
@@ -850,6 +853,7 @@ bool RaftPart::leaderElection() {
             {
                 std::lock_guard<std::mutex> g(raftLock_);
                 if (status_ == Status::RUNNING) {
+                    leader_ = addr_;
                     workers_->addTask([self = shared_from_this(),
                                        term = voteReq.get_term()] {
                         self->onElected(term);
