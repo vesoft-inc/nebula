@@ -37,6 +37,7 @@ enum class AppendLogResult {
     E_NOT_READY = -4,
     E_BUFFER_OVERFLOW = -5,
     E_WAL_FAILURE = -6,
+    E_TERM_OUT_OF_DATE = -7,
 };
 
 enum class LogType {
@@ -308,7 +309,7 @@ private:
         LogID prevLogId);
 
 
-private:
+protected:
     template<class ValueType>
     class PromiseSet final {
     public:

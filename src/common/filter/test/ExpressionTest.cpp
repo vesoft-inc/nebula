@@ -141,7 +141,9 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
 
 
     TEST_EXPR(16 + 4 + 2, 22, Int);
+    TEST_EXPR(16+4+2, 22, Int);
     TEST_EXPR(16 - 4 - 2, 10, Int);
+    TEST_EXPR(16-4-2, 10, Int);
     TEST_EXPR(16 - (4 - 2), 14, Int);
     TEST_EXPR(16 * 4 * 2, 128, Int);
     TEST_EXPR(16 / 4 / 2, 2, Int);
@@ -444,7 +446,7 @@ TEST_F(ExpressionTest, InputReference) {
 TEST_F(ExpressionTest, SourceTagReference) {
     GQLParser parser;
     {
-        std::string query = "GO FROM 1 OVER follow WHERE $^[person].name == \"dutor\"";
+        std::string query = "GO FROM 1 OVER follow WHERE $^.person.name == \"dutor\"";
         auto parsed = parser.parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());

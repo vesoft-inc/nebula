@@ -281,7 +281,7 @@ protected:
 };
 
 
-// $_.any_prop_name
+// $-.any_prop_name or $-
 class InputPropertyExpression final : public Expression {
 public:
     InputPropertyExpression() {

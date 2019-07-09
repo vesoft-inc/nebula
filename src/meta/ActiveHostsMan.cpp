@@ -120,12 +120,35 @@ void ActiveHostsMan::cleanExpiredHosts() {
         }
     }
 
+    // merge host info from kvstore
+    if (kvstore_ != nullptr) {
+        const auto& prefix = MetaServiceUtils::hostPrefix();
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        if (ret == kvstore::ResultCode::SUCCEEDED) {
+            while (iter->valid()) {
+                auto host = MetaServiceUtils::parseHostKey(iter->key());
+                if (iter->val() == MetaServiceUtils::hostValOnline()) {
+                    folly::RWSpinLock::ReadHolder rh(&lock_);
+                    bool notFound = hostsMap_.find({host.ip, host.port}) == hostsMap_.end();
+                    if (notFound) {
+                        data.emplace_back(MetaServiceUtils::hostKey(host.ip, host.port),
+                                          MetaServiceUtils::hostValOffline());
+                    }
+                }
+                iter->next();
+            }
+        }
+    }
+
     if (!data.empty() && kvstore_ != nullptr) {
         folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
         LOG(INFO) << "set " << data.size() << " expired hosts to offline in meta rocksdb";
         kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
                                 [] (kvstore::ResultCode code) {
-            CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            if (code != kvstore::ResultCode::SUCCEEDED) {
+                LOG(WARNING) << "put failed, ret " << static_cast<int32_t>(code);
+            }
         });
     }
 }

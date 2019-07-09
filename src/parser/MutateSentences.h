@@ -47,6 +47,9 @@ class VertexTagItem final {
      }
 
      std::vector<std::string*> properties() const {
+         if (nullptr == properties_) {
+             return {};
+         }
          return properties_->properties();
      }
 
@@ -101,13 +104,13 @@ private:
 
 class VertexRowItem final {
 public:
-    VertexRowItem(int64_t id, ValueList *values) {
-        id_ = id;
+    VertexRowItem(Expression *id, ValueList *values) {
+        id_.reset(id);
         values_.reset(values);
     }
 
-    int64_t id() const {
-        return id_;
+    Expression* id() const {
+        return id_.get();
     }
 
     std::vector<Expression*> values() const {
@@ -117,7 +120,7 @@ public:
     std::string toString() const;
 
 private:
-    int64_t                                     id_;
+    std::unique_ptr<Expression>                 id_;
     std::unique_ptr<ValueList>                  values_;
 };
 
@@ -185,28 +188,28 @@ private:
 
 class EdgeRowItem final {
 public:
-    EdgeRowItem(int64_t srcid, int64_t dstid, ValueList *values) {
-        srcid_ = srcid;
-        dstid_ = dstid;
+    EdgeRowItem(Expression *srcid, Expression *dstid, ValueList *values) {
+        srcid_.reset(srcid);
+        dstid_.reset(dstid);
         values_.reset(values);
     }
 
-    EdgeRowItem(int64_t srcid, int64_t dstid, int64_t rank, ValueList *values) {
-        srcid_ = srcid;
-        dstid_ = dstid;
+    EdgeRowItem(Expression *srcid, Expression *dstid, int64_t rank, ValueList *values) {
+        srcid_.reset(srcid);
+        dstid_.reset(dstid);
         rank_ = rank;
         values_.reset(values);
     }
 
-    int64_t srcid() const {
-        return srcid_;
+    auto srcid() const {
+        return srcid_.get();
     }
 
-    int64_t dstid() const {
-        return dstid_;
+    auto dstid() const {
+        return dstid_.get();
     }
 
-    int64_t rank() const {
+    auto rank() const {
         return rank_;
     }
 
@@ -217,9 +220,9 @@ public:
     std::string toString() const;
 
 private:
-    int64_t                                     srcid_{0};
-    int64_t                                     dstid_{0};
-    int64_t                                     rank_{0};
+    std::unique_ptr<Expression>                 srcid_;
+    std::unique_ptr<Expression>                 dstid_;
+    int64_t                                     rank_;
     std::unique_ptr<ValueList>                  values_;
 };
 
@@ -271,6 +274,9 @@ public:
     }
 
     std::vector<std::string*> properties() const {
+        if (nullptr == properties_) {
+            return {};
+        }
         return properties_->properties();
     }
 
@@ -326,8 +332,8 @@ public:
         insertable_ = insertable;
     }
 
-    void setVid(int64_t vid) {
-        vid_ = vid;
+    void setVid(Expression *vid) {
+        vid_.reset(vid);
     }
 
     void setUpdateList(UpdateList *items) {
@@ -346,7 +352,7 @@ public:
 
 private:
     bool                                        insertable_{false};
-    int64_t                                     vid_{0};
+    std::unique_ptr<Expression>                 vid_;
     std::unique_ptr<UpdateList>                 updateItems_;
     std::unique_ptr<WhereClause>                whereClause_;
     std::unique_ptr<YieldClause>                yieldClause_;
@@ -359,12 +365,12 @@ public:
         insertable_ = insertable;
     }
 
-    void setSrcId(int64_t srcid) {
-        srcid_ = srcid;
+    void setSrcId(Expression *srcid) {
+        srcid_.reset(srcid);
     }
 
-    void setDstId(int64_t dstid) {
-        dstid_ = dstid;
+    void setDstId(Expression *dstid) {
+        dstid_.reset(dstid);
     }
 
     void setRank(int64_t rank) {
@@ -387,23 +393,24 @@ public:
 
 private:
     bool                                        insertable_{false};
-    int64_t                                     srcid_{0};
-    int64_t                                     dstid_{0};
+    std::unique_ptr<Expression>                 srcid_;
+    std::unique_ptr<Expression>                 dstid_;
     int64_t                                     rank_{0};
     std::unique_ptr<UpdateList>                 updateItems_;
     std::unique_ptr<WhereClause>                whereClause_;
     std::unique_ptr<YieldClause>                yieldClause_;
 };
 
+
 class DeleteVertexSentence final : public Sentence {
 public:
-    explicit DeleteVertexSentence(SourceNodeList *srcNodeList) {
-        srcNodeList_.reset(srcNodeList);
+    explicit DeleteVertexSentence(VertexIDList *vidList) {
+        vidList_.reset(vidList);
         kind_ = Kind::kDeleteVertex;
     }
 
-    const SourceNodeList* srcNodeLists() const {
-        return srcNodeList_.get();
+    auto vidList() const {
+        return vidList_->vidList();
     }
 
     void setWhereClause(WhereClause *clause) {
@@ -417,25 +424,28 @@ public:
     std::string toString() const override;
 
 private:
-    std::unique_ptr<SourceNodeList>            srcNodeList_;
-    std::unique_ptr<WhereClause>               whereClause_;
+    std::unique_ptr<VertexIDList>               vidList_;
+    std::unique_ptr<WhereClause>                whereClause_;
 };
+
 
 class EdgeList final {
 public:
-    void addEdge(int64_t srcid, int64_t dstid) {
-        edges_.emplace_back(std::make_pair(srcid, dstid));
+    void addEdge(Expression *srcid, Expression *dstid) {
+        edges_.emplace_back(srcid, dstid);
     }
 
-    const std::vector<std::pair<int64_t, int64_t>>& edges() const {
+    const auto& edges() const {
         return edges_;
     }
 
     std::string toString() const;
 
 private:
-    std::vector<std::pair<int64_t, int64_t>>    edges_;
+    using EdgeItem = std::pair<std::unique_ptr<Expression>, std::unique_ptr<Expression>>;
+    std::vector<EdgeItem>                       edges_;
 };
+
 
 class DeleteEdgeSentence final : public Sentence {
 public:

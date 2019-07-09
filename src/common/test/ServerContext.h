@@ -40,7 +40,7 @@ struct ServerContext {
         server_->setPort(port);
         thread_ = std::make_unique<thread::NamedThread>(name, [this, name] {
             server_->serve();
-            LOG(INFO) << "The " << name << " server has stopped";
+            LOG(INFO) << "The " << name << " server has been stopped";
         });
 
         while (!server_->getServeEventBase() ||

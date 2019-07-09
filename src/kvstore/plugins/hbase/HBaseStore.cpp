@@ -64,7 +64,7 @@ std::shared_ptr<const meta::SchemaProviderIf> HBaseStore::getSchema(GraphSpaceID
     } else {
         LOG(ERROR) << "Key Type Error : " << key;
     }
-    return std::move(schema);
+    return schema;
 }
 
 
