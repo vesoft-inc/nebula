@@ -119,9 +119,10 @@ void MetaClient::loadDataThreadFunc() {
         cache.emplace(spaceId, spaceCache);
         spaceIndexByName.emplace(space.second, spaceId);
     }
-    diff(cache);
+    decltype(localCache_) oldCache;
     {
         folly::RWSpinLock::WriteHolder holder(localCacheLock_);
+        oldCache = std::move(localCache_);
         localCache_ = std::move(cache);
         spaceIndexByName_ = std::move(spaceIndexByName);
         spaceTagIndexByName_ = std::move(spaceTagIndexByName);
@@ -129,6 +130,7 @@ void MetaClient::loadDataThreadFunc() {
         spaceNewestTagVerMap_ = std::move(spaceNewestTagVerMap);
         spaceNewestEdgeVerMap_ = std::move(spaceNewestEdgeVerMap);
     }
+    diff(oldCache, localCache_);
     ready_ = true;
     LOG(INFO) << "Load data completed!";
 }
@@ -319,9 +321,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
 
 
 PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
-                                   const std::unordered_map<
-                                                GraphSpaceID,
-                                                std::shared_ptr<SpaceInfoCache>>& localCache) {
+                                   const LocalCache& localCache) {
     PartsMap partMap;
     for (auto it = localCache.begin(); it != localCache.end(); it++) {
         auto spaceId = it->first;
@@ -342,15 +342,14 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
 }
 
 
-void MetaClient::diff(const std::unordered_map<GraphSpaceID,
-                                               std::shared_ptr<SpaceInfoCache>>& newCache) {
+void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
     if (listener_ == nullptr) {
         VLOG(3) << "Listener is null!";
         return;
     }
     auto localHost = listener_->getLocalHost();
     auto newPartsMap = doGetPartsMap(localHost, newCache);
-    auto oldPartsMap = getPartsMapFromCache(localHost);
+    auto oldPartsMap = doGetPartsMap(localHost, oldCache);
     VLOG(1) << "Let's check if any new parts added/updated for " << localHost;
     for (auto it = newPartsMap.begin(); it != newPartsMap.end(); it++) {
         auto spaceId = it->first;
