@@ -33,6 +33,11 @@ set(CMAKE_SKIP_RPATH TRUE)
 option(SKIP_JAVA_CLIENT "Whether to skip building the java client" OFF)
 option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
 option(ENABLE_NATIVE "Whether to build native client" OFF)
+option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
+option(ENABLE_ASAN "Whether to turn AddressSanitizer ON or OFF" OFF)
+
+message(STATUS "ASAN: ${ENABLE_ASAN}")
+
 
 if (ENABLE_NATIVE)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
@@ -48,6 +53,24 @@ endif()
 set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++")
+
+# To detect if ccache available
+find_program(ccache_program_found "ccache")
+if (ENABLE_CCACHE AND ccache_program_found)
+    message(STATUS "CCACHE: ON")
+    if (NOT $ENV{CCACHE_DIR} STREQUAL "")
+        message(STATUS "CCACHE_DIR: $ENV{CCACHE_DIR}")
+    else()
+        message(STATUS "CCACHE_DIR: $ENV{HOME}/.ccache")
+    endif()
+    set(CMAKE_CXX_COMPILER_LAUNCHER "ccache")
+elseif (ENABLE_CCACHE)
+    message(STATUS "CCACHE: enabled but not found")
+    set(CMAKE_CXX_COMPILER_LAUNCHER)
+else ()
+    message(STATUS "CCACHE: OFF")
+    set(CMAKE_CXX_COMPILER_LAUNCHER)
+endif()
 
 # CMake macro to specify number of jobs to build third-party
 if (NOT THIRD_PARTY_JOBS)
@@ -147,10 +170,6 @@ if(NOT ${NEBULA_GPERF_BIN_DIR} STREQUAL "")
     list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_GPERF_BIN_DIR})
 endif()
 
-option(asan "Whether to turn AddressSanitizer ON or OFF" OFF)
-
-message(STATUS "ASAN: ${asan}")
-
 string(REPLACE ";" ":" INCLUDE_PATH_STR "${CMAKE_INCLUDE_PATH}")
 string(REPLACE ";" ":" LIBRARY_PATH_STR "${CMAKE_LIBRARY_PATH}")
 string(REPLACE ";" ":" PROGRAM_PATH_STR "${CMAKE_PROGRAM_PATH}")
@@ -168,7 +187,7 @@ find_package(FLEX REQUIRED)
 find_package(Readline REQUIRED)
 find_package(NCURSES REQUIRED)
 find_package(LibLZMA MODULE)
-if(NOT asan AND NOT ENABLE_NATIVE)
+if(NOT ENABLE_ASAN AND NOT ENABLE_NATIVE)
     find_package(PCHSupport)
     add_compile_options(-Winvalid-pch)
 endif()
@@ -181,7 +200,7 @@ add_compile_options(-Wshadow)
 # This requries GCC 5.1+
 add_compile_options(-Wsuggest-override)
 
-if(asan)
+if(ENABLE_ASAN)
     add_definitions(-DBUILT_WITH_SANITIZER)
     add_compile_options(-fsanitize=address)
     add_compile_options(-g)
