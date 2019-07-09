@@ -125,4 +125,32 @@ std::string OrderFactors::toString() const {
 std::string OrderBySentence::toString() const {
     return folly::stringPrintf("ORDER BY %s", orderFactors_->toString().c_str());
 }
+
+std::string FetchVerticesSentence::toString() const {
+    return folly::stringPrintf("FETCH PROP ON %s %s",
+            vidList_->toString().c_str(), yieldClause_->toString().c_str());
+}
+
+std::string EdgeKey::toString() const {
+    return folly::stringPrintf("%s->%s@%ld,",
+            srcid_->toString().c_str(), dstid_->toString().c_str(), rank_);
+}
+
+std::string EdgeKeys::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &key : keys_) {
+        buf += key->toString();
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+
+    return buf;
+}
+
+std::string FetchEdgesSentence::toString() const {
+    return folly::stringPrintf("FETCH PROP ON %s %s",
+            edgeKeys_->toString().c_str(), yieldClause_->toString().c_str());
+}
 }   // namespace nebula

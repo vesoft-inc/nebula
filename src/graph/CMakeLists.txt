@@ -38,6 +38,7 @@ add_library(
     IngestExecutor.cpp
     ConfigExecutor.cpp
     SchemaHelper.cpp
+    FetchVerticesExecutor.cpp
 )
 add_dependencies(
     graph_obj

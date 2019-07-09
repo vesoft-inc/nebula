@@ -263,6 +263,146 @@ public:
 private:
     std::unique_ptr<OrderFactors>               orderFactors_;
 };
+
+class FetchVerticesSentence final : public Sentence {
+public:
+    explicit FetchVerticesSentence(VertexIDList *vidList) {
+        kind_ = Kind::kFetchVertices;
+        vidList_.reset(vidList);
+    }
+
+    explicit FetchVerticesSentence(Expression *ref) {
+        kind_ = Kind::kFetchVertices;
+        vidRef_.reset(ref);
+    }
+
+    void setYieldClause(YieldClause *clause) {
+        yieldClause_.reset(clause);
+    }
+
+    VertexIDList* getVidList() {
+        return vidList_.get();
+    }
+
+    YieldClause* getYieldClause() {
+        return yieldClause_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<VertexIDList>   vidList_;
+    std::unique_ptr<Expression>     vidRef_;
+    std::unique_ptr<YieldClause>    yieldClause_;
+};
+
+class EdgeKey final {
+public:
+    EdgeKey(Expression *srcid, Expression *dstid, int64_t rank) {
+        srcid_.reset(srcid);
+        dstid_.reset(dstid);
+        rank_ = rank;
+    }
+
+    Expression* srcid() const {
+        return srcid_.get();
+    }
+
+    Expression* dstid() const {
+        return dstid_.get();
+    }
+
+    int64_t rank() {
+        return rank_;
+    }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<Expression>     srcid_;
+    std::unique_ptr<Expression>     dstid_;
+    int64_t                         rank_;
+};
+
+class EdgeKeys final {
+public:
+    EdgeKeys() = default;
+
+    void addEdgeKey(EdgeKey *key) {
+        keys_.emplace_back(key);
+    }
+
+    std::vector<EdgeKey*> keys() {
+        std::vector<EdgeKey*> result;
+        result.resize(keys_.size());
+        auto get = [](const auto&key) { return key.get(); };
+        std::transform(keys_.begin(), keys_.end(), result.begin(), get);
+        return result;
+    }
+
+    std::string toString() const;
+
+private:
+    std::vector<std::unique_ptr<EdgeKey>>   keys_;
+};
+
+class EdgeKeyRef final {
+public:
+    EdgeKeyRef(Expression *srcid, Expression *dstid, Expression *rank) {
+        srcid_.reset(srcid);
+        dstid_.reset(dstid);
+        rank_.reset(rank);
+    }
+
+private:
+    std::unique_ptr<Expression>     srcid_;
+    std::unique_ptr<Expression>     dstid_;
+    std::unique_ptr<Expression>     rank_;
+};
+
+class FetchEdgesSentence final : public Sentence {
+public:
+    explicit FetchEdgesSentence(std::string *edgeType) {
+        kind_ = Kind::kFetchEdges;
+        edgeType_.reset(edgeType);
+    }
+
+    bool isRef() const  {
+        return keyRef_ != nullptr;
+    }
+
+    void setKeyRef(EdgeKeyRef *ref) {
+        keyRef_.reset(ref);
+    }
+
+    EdgeKeyRef* keyRef() const {
+        return keyRef_.get();
+    }
+
+    void setKeys(EdgeKeys *keys) {
+        edgeKeys_.reset(keys);
+    }
+
+    EdgeKeys* keys() const {
+        return edgeKeys_.get();
+    }
+
+    void setYieldClause(YieldClause *clause) {
+        yieldClause_.reset(clause);
+    }
+
+    YieldClause* getYieldClause() const {
+        return yieldClause_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>    edgeType_;
+    std::unique_ptr<EdgeKeys>       edgeKeys_;
+    std::unique_ptr<EdgeKeyRef>     keyRef_;
+    std::unique_ptr<YieldClause>    yieldClause_;
+};
 }   // namespace nebula
 
 #endif  // PARSER_TRAVERSESENTENCES_H_
