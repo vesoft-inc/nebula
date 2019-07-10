@@ -9,9 +9,9 @@
 #include "fs/FileUtils.h"
 
 DEFINE_string(addr, "127.0.0.1", "Nebula daemon IP address");
-DEFINE_int32(port, 3699, "Nebula daemon listening port");
-DEFINE_string(u, "user", "Username used to authenticate");
-DEFINE_string(p, "password", "Password used to authenticate");
+DEFINE_int32(port, 0, "Nebula daemon listening port");
+DEFINE_string(u, "", "Username used to authenticate");
+DEFINE_string(p, "", "Password used to authenticate");
 
 
 int main(int argc, char *argv[]) {

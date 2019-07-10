@@ -68,7 +68,7 @@ void CmdProcessor::calColumnWidths(
                     }
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%lds |", widths[idx]);
+                            folly::stringPrintf(" %%-%lds |", widths[idx]);
                     }
                     break;
                 }
@@ -76,7 +76,7 @@ void CmdProcessor::calColumnWidths(
                     GET_VALUE_WIDTH(int64_t, integer, "%ld")
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldld |", widths[idx]);
+                            folly::stringPrintf(" %%-%ldld |", widths[idx]);
                     }
                     break;
                 }
@@ -88,7 +88,7 @@ void CmdProcessor::calColumnWidths(
                     }
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldLX |", widths[idx]);
+                            folly::stringPrintf(" %%-%ldLX |", widths[idx]);
                     }
                     break;
                 }
@@ -96,7 +96,7 @@ void CmdProcessor::calColumnWidths(
                     GET_VALUE_WIDTH(float, single_precision, "%f")
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldf |", widths[idx]);
+                            folly::stringPrintf(" %%-%ldf |", widths[idx]);
                     }
                     break;
                 }
@@ -104,7 +104,7 @@ void CmdProcessor::calColumnWidths(
                     GET_VALUE_WIDTH(double, double_precision, "%lf")
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldlf |", widths[idx]);
+                            folly::stringPrintf(" %%-%ldlf |", widths[idx]);
                     }
                     break;
                 }
@@ -116,7 +116,7 @@ void CmdProcessor::calColumnWidths(
                     }
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%lds |", widths[idx]);
+                            folly::stringPrintf(" %%-%lds |", widths[idx]);
                     }
                     break;
                 }
@@ -124,7 +124,7 @@ void CmdProcessor::calColumnWidths(
                     GET_VALUE_WIDTH(int64_t, timestamp, "%ld")
                     if (genFmt) {
                         formats[idx] =
-                            folly::stringPrintf(" %%%ldld |", widths[idx]);
+                            folly::stringPrintf(" %%-%ldld |", widths[idx]);
                     }
                     break;
                 }
@@ -134,7 +134,7 @@ void CmdProcessor::calColumnWidths(
                         genFmt = true;
                     }
                     if (genFmt) {
-                        formats[idx] = folly::stringPrintf(" %%%ldd |", widths[idx]);
+                        formats[idx] = folly::stringPrintf(" %%-%ldd |", widths[idx]);
                     }
                     break;
                 }
@@ -219,7 +219,7 @@ void CmdProcessor::printHeader(
 
     size_t idx = 0;
     for (auto& cname : (*resp.get_column_names())) {
-        std::string fmt = folly::stringPrintf(" %%%lds |", widths[idx++]);
+        std::string fmt = folly::stringPrintf(" %%-%lds |", widths[idx++]);
         std::cout << folly::stringPrintf(fmt.c_str(), cname.c_str());
     }
     std::cout << "\n";
@@ -243,7 +243,7 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
         for (auto& col : row.get_columns()) {
             switch (col.getType()) {
                 case cpp2::ColumnValue::Type::__EMPTY__: {
-                    std::string fmt = folly::stringPrintf(" %%%ldc |", widths[cIdx]);
+                    std::string fmt = folly::stringPrintf(" %%-%ldc |", widths[cIdx]);
                     std::cout << folly::stringPrintf(fmt.c_str(), ' ');
                     break;
                 }
