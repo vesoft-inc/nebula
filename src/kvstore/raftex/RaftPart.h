@@ -40,9 +40,22 @@ enum class AppendLogResult {
     E_TERM_OUT_OF_DATE = -7,
 };
 
+enum class LogType {
+    NORMAL      = 0x00,
+    CAS         = 0x01,
+    /**
+      COMMAND is similar to CAS, but not the same. There are two differences:
+      1. Normal logs after CAS could be committed together. In opposite, Normal logs
+         after COMMAND should be hold until the COMMAND committed, but the logs before
+         COMMAND could be committed together.
+      2. CAS maybe failed. So we use SinglePromise for it. But COMMAND not, so it could
+         share one promise with the normal logs before it.
+     * */
+    COMMAND     = 0x02,
+};
+
 class Host;
 class AppendLogsIterator;
-
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
@@ -123,6 +136,11 @@ public:
      * Asynchronously compare and set
      ***************************************************************/
     folly::Future<AppendLogResult> casAsync(std::string log);
+
+    /**
+     * Asynchronously send one command.
+     * */
+    folly::Future<AppendLogResult> sendCommandAsync(std::string log);
 
     /*****************************************************
      *
@@ -209,11 +227,11 @@ private:
     // resp -- AppendLogResponse
     using AppendLogResponses = std::vector<cpp2::AppendLogResponse>;
 
-    // <source, term, isCAS, log>
+    // <source, term, logType, log>
     using LogCache = std::vector<
         std::tuple<ClusterID,
                    TermID,
-                   bool,
+                   LogType,
                    std::string>>;
 
 
@@ -266,7 +284,7 @@ private:
     AppendLogResult canAppendLogs(std::lock_guard<std::mutex>& lck);
 
     folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
-                                                  bool isCAS,
+                                                  LogType logType,
                                                   std::string log);
 
     void appendLogsInternal(AppendLogsIterator iter);
@@ -324,6 +342,14 @@ protected:
             rollSharedPromise_ = true;
 
             return singlePromises_.back().getFuture();
+        }
+
+        folly::Future<ValueType> getAndRollSharedFuture() {
+            if (rollSharedPromise_) {
+                sharedPromises_.emplace_back();
+            }
+            rollSharedPromise_ = true;
+            return sharedPromises_.back().getFuture();
         }
 
         template<class VT>
