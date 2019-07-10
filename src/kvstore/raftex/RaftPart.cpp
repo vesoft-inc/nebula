@@ -299,9 +299,8 @@ void RaftPart::stop() {
 }
 
 
-AppendLogResult RaftPart::canAppendLogs(
-        std::lock_guard<std::mutex>& lck) {
-    UNUSED(lck);
+AppendLogResult RaftPart::canAppendLogs() {
+    CHECK(!raftLock_.try_lock());
     if (status_ == Status::STARTING) {
         LOG(ERROR) << idStr_ << "The partition is still starting";
         return AppendLogResult::E_NOT_READY;
@@ -344,17 +343,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
     auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
 
     {
-        std::lock_guard<std::mutex> lck(raftLock_);
-
-        auto res = canAppendLogs(lck);
-        if (res != AppendLogResult::SUCCEEDED) {
-            LOG(ERROR) << idStr_
-                       << "Cannot append logs, clean the buffer";
-            cachingPromise_.setValue(std::move(res));
-            cachingPromise_.reset();
-            logs_.clear();
-            return res;
-        }
+        std::lock_guard<std::mutex> lck(logsLock_);
 
         VLOG(2) << idStr_ << "Checking whether buffer overflow";
 
@@ -382,22 +371,34 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                 retFuture = cachingPromise_.getSharedFuture();
                 break;
         }
-        if (replicatingLogs_) {
+
+        bool expected = false;
+        if (replicatingLogs_.compare_exchange_strong(expected, true)) {
+            // We need to send logs to all followers
+            VLOG(2) << idStr_ << "Preparing to send AppendLog request";
+            sendingPromise_ = std::move(cachingPromise_);
+            cachingPromise_.reset();
+            std::swap(swappedOutLogs, logs_);
+        } else {
             VLOG(2) << idStr_
                     << "Another AppendLogs request is ongoing,"
                        " just return";
             return retFuture;
-        } else {
-            // We need to send logs to all followers
-            VLOG(2) << idStr_ << "Preparing to send AppendLog request";
-            replicatingLogs_ = true;
-            sendingPromise_ = std::move(cachingPromise_);
-            cachingPromise_.reset();
-            std::swap(swappedOutLogs, logs_);
-            firstId = lastLogId_ + 1;
         }
     }
 
+    {
+        std::lock_guard<std::mutex> g(raftLock_);
+        auto res = canAppendLogs();
+        if (res != AppendLogResult::SUCCEEDED) {
+            LOG(ERROR) << idStr_
+                       << "Cannot append logs, clean the buffer";
+            sendingPromise_.setValue(std::move(res));
+            replicatingLogs_ = false;
+            return res;
+        }
+        firstId = lastLogId_ + 1;
+    }
     // Replicate buffered logs to all followers
     // Replication will happen on a separate thread and will block
     // until majority accept the logs, the leadership changes, or
@@ -440,8 +441,6 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
             // The partition is not running
             VLOG(2) << idStr_ << "The partition is stopped";
             sendingPromise_.setValue(AppendLogResult::E_STOPPED);
-            cachingPromise_.setValue(AppendLogResult::E_STOPPED);
-            logs_.clear();
             replicatingLogs_ = false;
             return;
         }
@@ -450,8 +449,6 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
             // Is not a leader any more
             VLOG(2) << idStr_ << "The leader has changed";
             sendingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
-            cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
-            logs_.clear();
             replicatingLogs_ = false;
             return;
         }
@@ -501,8 +498,6 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
             // The partition is not running
             VLOG(2) << idStr_ << "The partition is stopped";
             sendingPromise_.setValue(AppendLogResult::E_STOPPED);
-            cachingPromise_.setValue(AppendLogResult::E_STOPPED);
-            logs_.clear();
             replicatingLogs_ = false;
             return;
         }
@@ -511,8 +506,6 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
             // Is not a leader any more
             VLOG(2) << idStr_ << "The leader has changed";
             sendingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
-            cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
-            logs_.clear();
             replicatingLogs_ = false;
             return;
         }
@@ -615,14 +608,13 @@ void RaftPart::processAppendLogResponses(
         VLOG(2) << idStr_ << numSucceeded
                 << " hosts have accepted the logs";
 
+        LogID firstLogId = 0;
         {
             std::lock_guard<std::mutex> g(raftLock_);
             if (status_ != Status::RUNNING) {
                 // The partition is not running
                 VLOG(2) << idStr_ << "The partition is stopped";
                 sendingPromise_.setValue(AppendLogResult::E_STOPPED);
-                cachingPromise_.setValue(AppendLogResult::E_STOPPED);
-                logs_.clear();
                 replicatingLogs_ = false;
                 return;
             }
@@ -631,8 +623,6 @@ void RaftPart::processAppendLogResponses(
                 // Is not a leader any more
                 VLOG(2) << idStr_ << "The leader has changed";
                 sendingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
-                cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
-                logs_.clear();
                 replicatingLogs_ = false;
                 return;
             }
@@ -651,49 +641,48 @@ void RaftPart::processAppendLogResponses(
             // Step 3: Commit the batch
             if (commitLogs(std::move(walIt))) {
                 committedLogId_ = lastLogId;
-
-                // Step 4: Fulfill the promise
-                if (iter.hasNonCASLogs()) {
-                    sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
-                }
-                if (iter.leadByCAS()) {
-                    sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
-                }
-                VLOG(2) << idStr_ << "Succeeded in committing the logs";
-
-                // Step 5: Check whether need to continue
-                // the log replication
-                CHECK(replicatingLogs_);
-                // Continue to process the original AppendLogsIterator if necessary
-                iter.resume();
-                if (iter.empty()) {
-                    if (logs_.size() > 0) {
-                        // continue to replicate the logs
-                        sendingPromise_ = std::move(cachingPromise_);
-                        cachingPromise_.reset();
-                        iter = AppendLogsIterator(
-                            lastLogId_ + 1,
-                            std::move(logs_),
-                            [this] (const std::string& log) -> std::string {
-                                auto res = compareAndSet(log);
-                                if (res.empty()) {
-                                    // Failed
-                                    sendingPromise_.setOneSingleValue(
-                                        AppendLogResult::E_CAS_FAILURE);
-                                }
-                                return res;
-                            });
-                        logs_.clear();
-                    } else {
-                        replicatingLogs_ = false;
-                        VLOG(2) << idStr_ << "No more log to be replicated";
-                    }
-                }
+                firstLogId = lastLogId_ + 1;
             } else {
                 LOG(FATAL) << idStr_ << "Failed to commit logs";
             }
+            VLOG(2) << idStr_ << "Succeeded in committing the logs";
         }
-
+        // Step 4: Fulfill the promise
+        if (iter.hasNonCASLogs()) {
+            sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
+        }
+        if (iter.leadByCAS()) {
+            sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
+        }
+        // Step 5: Check whether need to continue
+        // the log replication
+        CHECK(replicatingLogs_);
+        // Continue to process the original AppendLogsIterator if necessary
+        iter.resume();
+        if (iter.empty()) {
+            std::lock_guard<std::mutex> lck(logsLock_);
+            if (logs_.size() > 0) {
+                // continue to replicate the logs
+                sendingPromise_ = std::move(cachingPromise_);
+                cachingPromise_.reset();
+                iter = AppendLogsIterator(
+                    firstLogId,
+                    std::move(logs_),
+                    [this] (const std::string& log) -> std::string {
+                        auto res = compareAndSet(log);
+                        if (res.empty()) {
+                            // Failed
+                            sendingPromise_.setOneSingleValue(
+                                AppendLogResult::E_CAS_FAILURE);
+                        }
+                        return res;
+                    });
+                logs_.clear();
+            } else {
+                replicatingLogs_ = false;
+                VLOG(2) << idStr_ << "No more log to be replicated";
+            }
+        }
         if (!iter.empty()) {
             appendLogsInternal(std::move(iter));
         }
@@ -898,6 +887,7 @@ bool RaftPart::leaderElection() {
     }
 
     LOG(FATAL) << "Should not reach here";
+    return false;
 }
 
 

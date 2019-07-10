@@ -278,7 +278,7 @@ private:
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
-    AppendLogResult canAppendLogs(std::lock_guard<std::mutex>& lck);
+    AppendLogResult canAppendLogs();
 
     folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
                                                   LogType logType,
@@ -394,13 +394,16 @@ protected:
         peerHosts_;
     size_t quorum_{0};
 
+    // The lock is used to protect logs_ and cachingPromise_
+    mutable std::mutex logsLock_;
+    std::atomic_bool replicatingLogs_{false};
+    PromiseSet<AppendLogResult> cachingPromise_;
+    LogCache logs_;
+
     // Partition level lock to synchronize the access of the partition
     mutable std::mutex raftLock_;
 
-    bool replicatingLogs_{false};
-    PromiseSet<AppendLogResult> cachingPromise_;
     PromiseSet<AppendLogResult> sendingPromise_;
-    LogCache logs_;
 
     Status status_;
     Role role_;
