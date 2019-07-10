@@ -189,7 +189,7 @@ TEST(ProcessorTest, ListHostsTest) {
 TEST(ProcessorTest, CreateSpaceTest) {
     fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
-    auto hostsNum = TestUtils::createHosts(kv.get());
+    auto hostsNum = TestUtils::createSomeHosts(kv.get());
 
     {
         cpp2::SpaceProperties properties;
@@ -274,7 +274,7 @@ TEST(ProcessorTest, CreateSpaceTest) {
 TEST(ProcessorTest, CreateTagTest) {
     fs::TempDir rootPath("/tmp/CreateTagTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
-    TestUtils::createHosts(kv.get());
+    TestUtils::createSomeHosts(kv.get());
 
     {
         cpp2::SpaceProperties properties;
@@ -386,7 +386,7 @@ TEST(ProcessorTest, CreateTagTest) {
 TEST(ProcessorTest, CreateEdgeTest) {
     fs::TempDir rootPath("/tmp/CreateEdgeTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
-    TestUtils::createHosts(kv.get());
+    TestUtils::createSomeHosts(kv.get());
 
     {
         cpp2::SpaceProperties properties;
@@ -500,7 +500,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
 TEST(ProcessorTest, KVOperationTest) {
     fs::TempDir rootPath("/tmp/KVOperationTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
-    TestUtils::createHosts(kv.get());
+    TestUtils::createSomeHosts(kv.get());
 
     {
         cpp2::SpaceProperties properties;

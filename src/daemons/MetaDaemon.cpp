@@ -12,6 +12,7 @@
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
+#include "hdfs/HdfsHelper.h"
 #include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
@@ -109,16 +110,19 @@ int main(int argc, char *argv[]) {
                                                        ioPool,
                                                        localhost);
 
-   auto *kvstore_ = kvstore.get();
+    auto *kvstore_ = kvstore.get();
+
+    std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
+        std::make_unique<nebula::hdfs::HdfsCommandHelper>();
+    auto *helperPtr = helper.get();
 
     LOG(INFO) << "Starting Meta HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::meta::MetaHttpStatusHandler();
     });
-    nebula::WebService::registerHandler("/download", [kvstore_] {
+    nebula::WebService::registerHandler("/download-dispatch", [kvstore_, helperPtr] {
         auto handler = new nebula::meta::MetaHttpDownloadHandler();
-        auto helper_ = std::make_unique<nebula::hdfs::HdfsCommandHelper>();
-        handler->init(kvstore_, helper_.get());
+        handler->init(kvstore_, helperPtr);
         return handler;
     });
     status = nebula::WebService::start();

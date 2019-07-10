@@ -141,23 +141,6 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
         return false;
     }
 
-    std::unordered_map<HostAddr, std::vector<PartitionID>> hostPartition;
-    while (hostIter->valid()) {
-        cpp2::HostItem item;
-        nebula::cpp2::HostAddr host;
-        auto hostAddrPiece = hostIter->key().subpiece(hostPrefix.size());
-        memcpy(&host, hostAddrPiece.data(), hostAddrPiece.size());
-        item.set_hostAddr(host);
-        auto address = std::make_pair(host.get_ip(), host.get_port());
-        auto hostIter_ = hostPartition.find(address);
-        if (hostIter_ == hostPartition.end()) {
-            std::vector<PartitionID> partitions;
-            hostPartition.emplace(address, partitions);
-        }
-        hostItems.emplace_back(item);
-        hostIter->next();
-    }
-
     std::unique_ptr<kvstore::KVIterator> iter;
     auto prefix = MetaServiceUtils::partPrefix(spaceID_);
     auto ret = kvstore_->prefix(0, 0, prefix, &iter);
@@ -167,12 +150,18 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
     }
 
     int32_t partSize{0};
+    std::unordered_map<HostAddr, std::vector<PartitionID>> hostPartition;
     while (iter->valid()) {
         auto key = iter->key();
         PartitionID partId;
         memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
         for (auto host : MetaServiceUtils::parsePartVal(iter->val())) {
             auto address = std::make_pair(host.get_ip(), host.get_port());
+            auto addressIter = hostPartition.find(address);
+            if (addressIter == hostPartition.end()) {
+                std::vector<PartitionID> partitions;
+                hostPartition.emplace(address, partitions);
+            }
             hostPartition[address].emplace_back(partId);
         }
         partSize++;
@@ -192,23 +181,22 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
         for (auto part : pair.second) {
             partitions.emplace_back(part);
         }
-        std::string partNumbers;
-        folly::join(",", partitions, partNumbers);
+        std::string partsStr;
+        folly::join(",", partitions, partsStr);
 
         auto storageHost = network::NetworkUtils::intToIPv4(pair.first.first);
         threads.push_back(std::thread([storageHost, hdfsHost, hdfsPort, hdfsPath,
-                                       partNumbers, localPath, &completed]() {
+                                       partsStr, localPath, &completed]() {
             auto tmp = "http://%s:%d/download?host=%s&port=%d&path=%s&parts=%s&local=%s";
-            auto download = folly::stringPrintf(tmp, storageHost.c_str(), FLAGS_storage_http_port,
-                                                hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(),
-                                                partNumbers.c_str(), localPath.c_str());
-            auto command = folly::stringPrintf("/usr/bin/curl -G \"%s\" 2> /dev/null",
-                                               download.c_str());
+            auto url = folly::stringPrintf(tmp, storageHost.c_str(), FLAGS_storage_http_port,
+                                           hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(),
+                                           partsStr.c_str(), localPath.c_str());
+            auto command = folly::stringPrintf("/usr/bin/curl -G \"%s\"", url.c_str());
+            LOG(INFO) << "Command: " << command;
             auto downloadResult = ProcessUtils::runCommand(command.c_str());
-            if (!downloadResult.ok()) {
-                LOG(ERROR) << "Failed to download SST Files: " << downloadResult.status();
+            if (!downloadResult.ok() || downloadResult.value() != "SSTFile download successfully") {
+                LOG(ERROR) << "Failed to download SST Files: " << downloadResult.value();
             } else {
-                LOG(INFO) << "Download SST Files successfully";
                 completed++;
             }
         }));

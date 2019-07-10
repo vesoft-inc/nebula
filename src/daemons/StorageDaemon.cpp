@@ -19,6 +19,7 @@
 #include "meta/SchemaManager.h"
 #include "meta/client/MetaClient.h"
 #include "storage/CompactionFilter.h"
+#include "hdfs/HdfsHelper.h"
 #include "hdfs/HdfsCommandHelper.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
@@ -166,14 +167,17 @@ int main(int argc, char *argv[]) {
                                                         schemaMan.get());
     auto *kvstore_ = kvstore.get();
 
+    std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
+        std::make_unique<nebula::hdfs::HdfsCommandHelper>();
+    auto *helperPtr = helper.get();
+
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::storage::StorageHttpStatusHandler();
     });
-    nebula::WebService::registerHandler("/download", [] {
+    nebula::WebService::registerHandler("/download", [helperPtr] {
         auto handler = new nebula::storage::StorageHttpDownloadHandler();
-        auto helper_ = std::make_unique<nebula::hdfs::HdfsCommandHelper>();
-        handler->init(helper_.get());
+        handler->init(helperPtr);
         return handler;
     });
 

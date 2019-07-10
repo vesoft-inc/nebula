@@ -28,7 +28,6 @@ public:
                                       const std::string& localPath) override {
         UNUSED(hdfsHost); UNUSED(hdfsPort); UNUSED(hdfsPath); UNUSED(localPath);
         sleep(1);
-        LOG(INFO) << "MockHdfsOKHelper copyToLocal";
         return "";
     }
 };
@@ -49,7 +48,6 @@ public:
                                       const std::string& localPath) override {
         UNUSED(hdfsHost); UNUSED(hdfsPort); UNUSED(hdfsPath); UNUSED(localPath);
         sleep(1);
-        LOG(INFO) << "MockHdfsExistHelper copyToLocal";
         return "copyToLocal: `/data/': File exists";
     }
 };

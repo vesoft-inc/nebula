@@ -28,7 +28,7 @@ public:
                                       const std::string& localPath) override {
         UNUSED(hdfsHost); UNUSED(hdfsPort); UNUSED(hdfsPath); UNUSED(localPath);
         sleep(1);
-        return Status::OK();
+        return "";
     }
 };
 

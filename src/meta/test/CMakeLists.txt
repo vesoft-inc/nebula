@@ -175,6 +175,7 @@ nebula_add_test(meta_http_status_test)
 add_executable(
     meta_http_download_test
     MetaHttpDownloadHandlerTest.cpp
+    $<TARGET_OBJECTS:storage_http_handler>
     $<TARGET_OBJECTS:meta_http_handler>
     $<TARGET_OBJECTS:meta_client>
     $<TARGET_OBJECTS:meta_service_handler>

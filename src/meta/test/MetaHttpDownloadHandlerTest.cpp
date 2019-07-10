@@ -11,6 +11,7 @@
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/test/MockHdfsHelper.h"
 #include "meta/test/TestUtils.h"
+#include "storage/StorageHttpDownloadHandler.h"
 #include "fs/TempDir.h"
 
 DECLARE_int32(load_data_interval_secs);
@@ -24,18 +25,23 @@ std::unique_ptr<hdfs::HdfsHelper> helper = std::make_unique<meta::MockHdfsOKHelp
 class MetaHttpDownloadHandlerTestEnv : public ::testing::Environment {
 public:
     void SetUp() override {
-        FLAGS_ws_http_port = 0;
+        FLAGS_ws_http_port = 12000;
         FLAGS_ws_h2_port = 0;
         VLOG(1) << "Starting web service...";
 
-        rootPath = std::make_unique<fs::TempDir>("/tmp/MetaHttpDownloadHandler.XXXXXX");
-        kv = TestUtils::initKV(rootPath->path());
-        TestUtils::createHosts(kv.get());
-        TestUtils::assembleSpace(kv.get(), 1, 2);
+        rootPath_ = std::make_unique<fs::TempDir>("/tmp/MetaHttpDownloadHandler.XXXXXX");
+        kv_ = TestUtils::initKV(rootPath_->path());
+        TestUtils::createSomeHosts(kv_.get());
+        TestUtils::assembleSpace(kv_.get(), 1, 2);
 
-        WebService::registerHandler("/download", [this] {
+        WebService::registerHandler("/downloa-dispatch", [this] {
             auto handler = new meta::MetaHttpDownloadHandler();
-            handler->init(kv.get(), helper.get());
+            handler->init(kv_.get(), helper.get());
+            return handler;
+        });
+        WebService::registerHandler("/download", [this] {
+            auto handler = new storage::StorageHttpDownloadHandler();
+            handler->init(helper.get());
             return handler;
         });
         auto status = WebService::start();
@@ -43,32 +49,32 @@ public:
     }
 
     void TearDown() override {
-        kv = nullptr;
-        rootPath = nullptr;
+        kv_.reset();
+        rootPath_.reset();
         WebService::stop();
         VLOG(1) << "Web service stopped";
     }
 
 private:
-    std::unique_ptr<fs::TempDir> rootPath;
-    std::unique_ptr<kvstore::KVStore> kv;
+    std::unique_ptr<fs::TempDir> rootPath_;
+    std::unique_ptr<kvstore::KVStore> kv_;
 };
 
 TEST(MetaHttpDownloadHandlerTest, MetaDownloadTest) {
     {
         std::string resp;
-        ASSERT_TRUE(getUrl("/download", resp));
+        ASSERT_TRUE(getUrl("/downloa-dispatch", resp));
         ASSERT_TRUE(resp.empty());
     }
     {
-        auto url = "/download?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
+        auto url = "/downloa-dispatch?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile dispatch successfully", resp);
     }
     {
         helper = std::make_unique<nebula::meta::MockHdfsNotExistHelper>();
-        auto url = "/download?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
+        auto url = "/downloa-dispatch?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile dispatch failed", resp);

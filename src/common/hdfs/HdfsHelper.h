@@ -15,6 +15,8 @@ namespace hdfs {
 
 class HdfsHelper {
 public:
+    virtual ~HdfsHelper() = default;
+
     virtual StatusOr<std::string> ls(const std::string& hdfsHost,
                                      int32_t hdfsPort,
                                      const std::string& hdfsPath) = 0;

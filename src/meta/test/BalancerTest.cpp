@@ -388,7 +388,7 @@ TEST(BalanceTest, NormalTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     FLAGS_expired_hosts_check_interval_sec = 1;
     FLAGS_expired_threshold_sec = 1;
-    TestUtils::createHosts(kv.get());
+    TestUtils::createSomeHosts(kv.get());
     {
         cpp2::SpaceProperties properties;
         properties.set_space_name("default_space");
@@ -474,7 +474,7 @@ TEST(BalanceTest, RecoveryTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     FLAGS_expired_hosts_check_interval_sec = 1;
     FLAGS_expired_threshold_sec = 1;
-    TestUtils::createHosts(kv.get());
+    TestUtils::createSomeHosts(kv.get());
     {
         cpp2::SpaceProperties properties;
         properties.set_space_name("default_space");
