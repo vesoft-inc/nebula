@@ -16,10 +16,6 @@ namespace nebula {
 
 class ColumnSpecification final {
 public:
-    explicit ColumnSpecification(std::string *name) {
-        name_.reset(name);
-    }
-
     ColumnSpecification(ColumnType type, std::string *name) {
         type_ = type;
         name_.reset(name);
@@ -34,7 +30,7 @@ public:
     }
 
 private:
-    ColumnType                                  type_{ColumnType::UNKNOWN};
+    ColumnType                                  type_;
     std::unique_ptr<std::string>                name_;
 };
 
@@ -56,6 +52,26 @@ public:
 
 private:
     std::vector<std::unique_ptr<ColumnSpecification>> columns_;
+};
+
+class ColumnNameList final {
+public:
+    ColumnNameList() = default;
+
+    void addColumn(std::string *column) {
+        columns_.emplace_back(column);
+    }
+
+    std::vector<std::string*> columnNames() const {
+        std::vector<std::string*> result;
+        result.resize(columns_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(columns_.begin(), columns_.end(), result.begin(), get);
+        return result;
+    }
+
+private:
+    std::vector<std::unique_ptr<std::string>> columns_;
 };
 
 
@@ -246,8 +262,17 @@ public:
         columns_.reset(columns);
     }
 
+    AlterSchemaOptItem(OptionType op, ColumnNameList *colNames) {
+        optType_ = op;
+        colNames_.reset(colNames);
+    }
+
     std::vector<ColumnSpecification*> columnSpecs() const {
         return columns_->columnSpecs();
+    }
+
+    std::vector<std::string*> columnNames() const {
+        return colNames_->columnNames();
     }
 
     OptionType getOptType() {
@@ -261,6 +286,7 @@ public:
 private:
     OptionType                                  optType_;
     std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<ColumnNameList>             colNames_;
 };
 
 

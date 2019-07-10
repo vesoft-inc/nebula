@@ -39,6 +39,7 @@ class GraphScanner;
     nebula::SequentialSentences            *sentences;
     nebula::ColumnSpecification            *colspec;
     nebula::ColumnSpecificationList        *colspeclist;
+    nebula::ColumnNameList                 *colsnamelist;
     nebula::ColumnType                      type;
     nebula::StepClause                     *step_clause;
     nebula::FromClause                     *from_clause;
@@ -157,6 +158,7 @@ class GraphScanner;
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
+%type <colsnamelist> column_name_list
 
 %type <with_user_opt_list> with_user_opt_list
 %type <with_user_opt_item> with_user_opt_item
@@ -587,14 +589,12 @@ create_tag_sentence
         $$ = new CreateTagSentence($3, new ColumnSpecificationList(), $6);
     }
     | KW_CREATE KW_TAG name_label L_PAREN column_spec_list R_PAREN create_schema_prop_list {
-        CHECK_COLUMN_SPACES(false, $5);
         if ($7 == nullptr) {
             $7 = new SchemaPropList();
         }
         $$ = new CreateTagSentence($3, $5, $7);
     }
     | KW_CREATE KW_TAG name_label L_PAREN column_spec_list COMMA R_PAREN create_schema_prop_list {
-        CHECK_COLUMN_SPACES(false, $5);
         if ($8 == nullptr) {
             $8 = new SchemaPropList();
         }
@@ -627,15 +627,12 @@ alter_schema_opt_list
 
 alter_schema_opt_item
     : KW_ADD L_PAREN column_spec_list R_PAREN {
-        CHECK_COLUMN_SPACES(false, $3);
         $$ = new AlterSchemaOptItem(AlterSchemaOptItem::ADD, $3);
     }
     | KW_CHANGE L_PAREN column_spec_list R_PAREN {
-        CHECK_COLUMN_SPACES(false, $3);
         $$ = new AlterSchemaOptItem(AlterSchemaOptItem::CHANGE, $3);
     }
-    | KW_DROP L_PAREN column_spec_list R_PAREN {
-        CHECK_COLUMN_SPACES(true, $3);
+    | KW_DROP L_PAREN column_name_list R_PAREN {
         $$ = new AlterSchemaOptItem(AlterSchemaOptItem::DROP, $3);
     }
     ;
@@ -673,14 +670,12 @@ create_edge_sentence
         $$ = new CreateEdgeSentence($3,  new ColumnSpecificationList(), $6);
     }
     | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list R_PAREN create_schema_prop_list {
-        CHECK_COLUMN_SPACES(false, $5);
         if ($7 == nullptr) {
             $7 = new SchemaPropList();
         }
         $$ = new CreateEdgeSentence($3, $5, $7);
     }
     | KW_CREATE KW_EDGE name_label L_PAREN column_spec_list COMMA R_PAREN create_schema_prop_list {
-        CHECK_COLUMN_SPACES(false, $5);
         if ($8 == nullptr) {
             $8 = new SchemaPropList();
         }
@@ -700,6 +695,17 @@ alter_edge_sentence
     }
     ;
 
+column_name_list
+    : name_label {
+        $$ = new ColumnNameList();
+        $$->addColumn($1);
+    }
+    | column_name_list COMMA name_label {
+        $$ = $1;
+        $$->addColumn($3);
+    }
+    ;
+
 column_spec_list
     : column_spec {
         $$ = new ColumnSpecificationList();
@@ -712,8 +718,7 @@ column_spec_list
     ;
 
 column_spec
-    : name_label { $$ = new ColumnSpecification($1); }
-    | name_label type_spec { $$ = new ColumnSpecification($2, $1); }
+    : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
     ;
 
 describe_tag_sentence
