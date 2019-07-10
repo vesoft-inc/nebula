@@ -28,7 +28,7 @@ const int32_t kMaxCommandLineLen = 1024;
 CliManager::CliManager() {
     ::using_history();
     initAutoCompletion();
-    curSpaceName_ = std::move(std::string("(none)"));
+    curSpaceName_ = std::string("(none)");
 }
 
 

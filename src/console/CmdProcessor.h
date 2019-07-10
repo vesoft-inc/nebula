@@ -25,7 +25,7 @@ public:
     // the method returns true
     bool process(folly::StringPiece cmd);
 
-    std::string getSpaceName();
+    const std::string& getSpaceName() const;
 
 private:
     std::unique_ptr<GraphClient> client_;
