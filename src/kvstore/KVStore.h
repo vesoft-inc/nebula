@@ -13,6 +13,7 @@
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/ClusterManager.h"
 #include "kvstore/CompactionFilter.h"
 
 namespace nebula {
@@ -26,6 +27,9 @@ struct KVOptions {
 
     //  PartManager instance for kvstore.
     std::unique_ptr<PartManager> partMan_{nullptr};
+
+    // ClusterManager instance for kvstore.
+    std::shared_ptr<ClusterManager> clusterMan_{nullptr};
 
     // Custom MergeOperator used in rocksdb.merge method.
     std::shared_ptr<rocksdb::MergeOperator> mergeOp_{nullptr};
@@ -128,8 +132,22 @@ public:
                                    const std::string& prefix,
                                    KVCallback cb) = 0;
 
+    virtual ClusterID getClusterId() {
+        folly::RWSpinLock::ReadHolder holder(&lock_);
+        return clusterId_;
+    }
+
+    virtual void setClusterId(ClusterID clusterId) {
+        folly::RWSpinLock::WriteHolder rh(&lock_);
+        clusterId_ = clusterId;
+    }
+
 protected:
     KVStore() = default;
+
+private:
+    folly::RWSpinLock lock_;
+    ClusterID clusterId_{0};
 };
 
 }  // namespace kvstore

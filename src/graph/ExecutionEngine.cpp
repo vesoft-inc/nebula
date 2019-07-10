@@ -29,7 +29,9 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
         return addrs.status();
     }
     metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()));
-    metaClient_->init();
+    metaClient_->waitForMetadReady();
+    metaClient_->startHeartBeat();
+    metaClient_->startLoadData();
 
     schemaManager_ = meta::SchemaManager::create();
     schemaManager_->init(metaClient_.get());

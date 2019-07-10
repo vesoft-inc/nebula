@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <cstdint>
 #include "network/NetworkUtils.h"
-#include "time/TimeUtils.h"
 #include "fs/FileUtils.h"
 #include "kvstore/RocksEngine.h"
 
@@ -75,9 +74,9 @@ DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom
 namespace nebula {
 namespace kvstore {
 
-const char* NebulaStore::kClusterIdKey_ = "cluster_id_key";
-
 void NebulaStore::init() {
+    setClusterId(clusterMan_->getClusterId());
+
     CHECK(!!partMan_);
     LOG(INFO) << "Scan the local path, and init the spaces_";
     {
@@ -101,14 +100,6 @@ void NebulaStore::init() {
                         continue;
                     }
                     auto engine = newEngine(spaceId, path);
-                    if (dir == "0") {
-                        auto result = loadClusterId(engine);
-                        if (result != ResultCode::SUCCEEDED) {
-                            LOG(INFO) << "loadClusterId error";
-                            createClusterId();
-                            dumpClusterId(engine);
-                        }
-                    }
                     auto spaceIt = this->spaces_.find(spaceId);
                     if (spaceIt == this->spaces_.end()) {
                         LOG(INFO) << "Load space " << spaceId << " from disk";
@@ -144,41 +135,6 @@ void NebulaStore::init() {
 
     LOG(INFO) << "Register handler...";
     partMan_->registerHandler(this);
-}
-
-
-ResultCode NebulaStore::loadClusterId(std::unique_ptr<KVEngine>& kv) {
-    std::string strClusterId;
-    auto result = kv->get(kClusterIdKey_, &strClusterId);
-    if (result == ResultCode::SUCCEEDED) {
-        LOG(INFO) << "loadClusterId succeed! string clusterId: " << strClusterId;
-        clusterId_ = std::stol(strClusterId);
-        LOG(INFO) << "int clusterId: " << clusterId_;
-    }
-    return result;
-}
-
-
-ResultCode NebulaStore::createClusterId() {
-    // localhost int ip
-    uint32_t intIp = storeSvcAddr_.first;;
-    uint32_t intPort = storeSvcAddr_.second;
-    std::string curStrIp = nebula::network::NetworkUtils::ipFromHostAddr(storeSvcAddr_);
-    LOG(INFO) << "curStrIp: " << curStrIp << ", intPort: " << intPort;
-
-    int32_t nowTime = nebula::time::TimeUtils::nowInSeconds();
-    clusterId_ = nowTime;
-    clusterId_ <<= 32;
-    clusterId_ += intIp;
-    clusterId_ += intPort;
-    return ResultCode::SUCCEEDED;
-}
-
-
-ResultCode NebulaStore::dumpClusterId(std::unique_ptr<KVEngine>& kv) {
-    std::string strClusterId = std::to_string(clusterId_);
-    LOG(INFO) << "dump strClusterId: " << strClusterId;
-    return kv->put(kClusterIdKey_, strClusterId);
 }
 
 

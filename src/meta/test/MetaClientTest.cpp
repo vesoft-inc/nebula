@@ -454,6 +454,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     auto listener = std::make_unique<TestListener>();
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(localIp, 10001)},
+                                               nullptr,
                                                true);  // send heartbeat
     client->registerListener(listener.get());
     client->init();

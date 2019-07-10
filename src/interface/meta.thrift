@@ -26,6 +26,8 @@ enum ErrorCode {
     E_NOT_FOUND      = -23,
     E_INVALID_HOST   = -24,
     E_UNSUPPORTED    = -25,
+    E_WRONGCLUSTER   = -26,
+
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -345,10 +347,12 @@ struct ScanResp {
 struct HBResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
+    3: common.ClusterID clusterId,
 }
 
 struct HBReq {
     1: common.HostAddr host,
+    2: common.ClusterID clusterId,
 }
 
 struct CreateUserReq {

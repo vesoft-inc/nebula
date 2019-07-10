@@ -13,6 +13,7 @@
 #include "process/ProcessUtils.h"
 #include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/ClusterManager.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
 
@@ -113,6 +114,14 @@ int main(int argc, char *argv[]) {
     // The meta server has only one space, one part.
     partMan->addPart(0, 0, std::move(peersRet.value()));
 
+    auto clusterMan
+        = std::make_shared<nebula::kvstore::ClusterManager>(localhost, FLAGS_data_path);
+    auto ret = clusterMan->init();
+    if (ret != nebula::kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "clusterId init error!";
+        return EXIT_FAILURE;
+    }
+
     // Generic thread pool
     auto workers = std::make_shared<nebula::thread::GenericThreadPool>();
     workers->start(FLAGS_num_workers);
@@ -123,6 +132,7 @@ int main(int argc, char *argv[]) {
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
+    options.clusterMan_ = clusterMan;
     std::unique_ptr<nebula::kvstore::KVStore> kvstore =
         std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
                                                        ioPool,

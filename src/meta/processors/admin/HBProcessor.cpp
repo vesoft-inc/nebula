@@ -28,6 +28,17 @@ void HBProcessor::process(const cpp2::HBReq& req) {
         return;
     }
 
+    ClusterID peerCluserId = req.clusterId;
+    if (peerCluserId == 0) {
+        LOG(INFO) << "Set clusterId for new host " << host << "!";
+        resp_.set_clusterId(kvstore_->getClusterId());
+    } else if (peerCluserId != kvstore_->getClusterId()) {
+        LOG(INFO) << "Reject wrong cluster host " << host << "!";
+        resp_.set_code(cpp2::ErrorCode::E_WRONGCLUSTER);
+        onFinished();
+        return;
+    }
+
     LOG(INFO) << "Receive heartbeat from " << host;
     HostInfo info;
     info.lastHBTimeInSec_ = time::TimeUtils::nowInSeconds();

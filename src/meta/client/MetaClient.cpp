@@ -17,9 +17,11 @@ namespace meta {
 
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                        std::vector<HostAddr> addrs,
+                       std::shared_ptr<nebula::kvstore::ClusterManager> clusterMan,
                        bool sendHeartBeat)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
+    , clusterMan_(clusterMan)
     , sendHeartBeat_(sendHeartBeat) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
@@ -40,22 +42,53 @@ MetaClient::~MetaClient() {
 
 
 void MetaClient::init() {
+    startHeartBeat();
+    startLoadData();
+}
+
+
+void MetaClient::waitForMetadReady() {
+    if (sendHeartBeat_) {
+        while (true) {
+            if (listener_ == nullptr) {
+                VLOG(1) << "Can't send heartbeat due to listener_ is nullptr!";
+                exit(1);
+            }
+            auto ret = heartbeat().get();
+            if (!ret.ok()) {
+                LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
+                ::sleep(1);
+            } else {
+                break;
+            }
+        }  // end while
+    }  // end if (sendHeartBeat_)
+}
+
+
+void MetaClient::startLoadData() {
     loadDataThreadFunc();
     CHECK(bgThread_.start());
-    {
-        size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
-        LOG(INFO) << "Register timer task for load data!";
-        bgThread_.addTimerTask(delayMS,
-                               FLAGS_load_data_interval_secs * 1000,
-                               &MetaClient::loadDataThreadFunc, this);
+    size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
+    LOG(INFO) << "Register timer task for load data!";
+    bgThread_.addTimerTask(delayMS,
+                           FLAGS_load_data_interval_secs * 1000,
+                           &MetaClient::loadDataThreadFunc, this);
+}
+
+
+void MetaClient::startHeartBeat() {
+    if (clusterMan_) {
+        clusterMan_->getClusterId();
     }
+    CHECK(bgThread_.start());
     if (sendHeartBeat_) {
         LOG(INFO) << "Register time task for heartbeat!";
         size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
         bgThread_.addTimerTask(delayMS,
                                FLAGS_heartbeat_interval_secs * 1000,
                                &MetaClient::heartBeatThreadFunc, this);
-    }
+    }  // end if (sendHeartBeat_)
 }
 
 
@@ -250,6 +283,51 @@ folly::Future<StatusOr<Response>> MetaClient::getResponse(
             return;
         }
         // succeeded
+        p.setValue(respGen(std::move(resp)));
+    });
+    return f;
+}
+
+
+template<typename Request,
+         typename RemoteFunc,
+         typename RespGenerator,
+         typename RpcResponse,
+         typename Response>
+folly::Future<StatusOr<Response>> MetaClient::getResponseWithCluId(
+                                     Request req,
+                                     RemoteFunc remoteFunc,
+                                     RespGenerator respGen,
+                                     bool toLeader) {
+    folly::Promise<StatusOr<Response>> pro;
+    auto f = pro.getFuture();
+    auto* evb = ioThreadPool_->getEventBase();
+    HostAddr host;
+    {
+        folly::RWSpinLock::ReadHolder holder(&hostLock_);
+        host = toLeader ? leader_ : active_;
+    }
+    auto client = clientsMan_->client(host, evb);
+    remoteFunc(client, std::move(req))
+         .then(evb, [p = std::move(pro), respGen, this] (folly::Try<RpcResponse>&& t) mutable {
+        // exception occurred during RPC
+        if (t.hasException()) {
+            p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
+                                                         t.exception().what().c_str())));
+            updateHost();
+            return;
+        }
+        // errored
+        auto&& resp = t.value();
+        if (resp.code != cpp2::ErrorCode::SUCCEEDED) {
+            p.setValue(this->handleResponse(resp));
+            return;
+        }
+        // succeeded
+        if (clusterMan_ && !clusterMan_->isClusterIdSet()) {
+            // set clusterId_ first time
+            clusterMan_->setClusterId(resp.get_clusterId());
+        }
         p.setValue(respGen(std::move(resp)));
     });
     return f;
@@ -951,7 +1029,12 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     thriftHost.set_ip(localHost.first);
     thriftHost.set_port(localHost.second);
     req.set_host(std::move(thriftHost));
-    return getResponse(std::move(req), [] (auto client, auto request) {
+    if (clusterMan_) {
+        req.set_clusterId(clusterMan_->getClusterId());
+    } else {
+        req.set_clusterId(0);
+    }
+    return getResponseWithCluId(std::move(req), [] (auto client, auto request) {
         return client->future_heartBeat(request);
     }, [] (cpp2::HBResp&& resp) -> bool {
         return resp.code == cpp2::ErrorCode::SUCCEEDED;

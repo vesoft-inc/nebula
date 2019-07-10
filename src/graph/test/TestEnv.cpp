@@ -37,7 +37,10 @@ void TestEnv::SetUp() {
     auto addrsRet
         = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", metaServerPort()));
     CHECK(addrsRet.ok()) << addrsRet.status();
-    mClient_ = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
+    mClient_ = std::make_unique<meta::MetaClient>(threadPool,
+                                                  std::move(addrsRet.value()),
+                                                  nullptr,
+                                                  true);
     mClient_->init();
     uint32_t localIp;
     nebula::network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);

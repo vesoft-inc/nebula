@@ -1,6 +1,7 @@
 add_library(
     kvstore_obj OBJECT
     Part.cpp
+    ClusterManager.cpp
     RocksEngine.cpp
     PartManager.cpp
     NebulaStore.cpp

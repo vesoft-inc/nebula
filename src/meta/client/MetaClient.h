@@ -13,6 +13,7 @@
 #include "gen-cpp2/MetaServiceAsyncClient.h"
 #include "base/Status.h"
 #include "base/StatusOr.h"
+#include "kvstore/ClusterManager.h"
 #include "thread/GenericWorker.h"
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
@@ -62,11 +63,18 @@ class MetaClient {
 public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                         std::vector<HostAddr> addrs,
+                        std::shared_ptr<nebula::kvstore::ClusterManager> clusterMan = nullptr,
                         bool sendHeartBeat = false);
 
     virtual ~MetaClient();
 
     void init();
+
+    void waitForMetadReady();
+
+    void startLoadData();
+
+    void startHeartBeat();
 
     void registerListener(MetaChangedListener* listener) {
         listener_ = listener;
@@ -230,6 +238,21 @@ protected:
                                                   RespGenerator respGen,
                                                   bool toLeader = false);
 
+    template<class Request,
+             class RemoteFunc,
+             class RespGenerator,
+             class RpcResponse =
+                typename std::result_of<
+                    RemoteFunc(std::shared_ptr<meta::cpp2::MetaServiceAsyncClient>, Request)
+                >::type::value_type,
+             class Response =
+                typename std::result_of<RespGenerator(RpcResponse)>::type
+    >
+    folly::Future<StatusOr<Response>> getResponseWithCluId(Request req,
+                                                  RemoteFunc remoteFunc,
+                                                  RespGenerator respGen,
+                                                  bool toLeader = false);
+
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
     std::vector<HostStatus> toHostStatus(const std::vector<cpp2::HostItem>& thosts);
@@ -250,6 +273,7 @@ private:
     folly::RWSpinLock hostLock_;
     HostAddr active_;
     HostAddr leader_;
+    std::shared_ptr<nebula::kvstore::ClusterManager> clusterMan_;
     thread::GenericWorker bgThread_;
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;

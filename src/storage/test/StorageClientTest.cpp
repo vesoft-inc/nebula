@@ -43,7 +43,10 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
     CHECK(addrsRet.ok()) << addrsRet.status();
     auto mClient
-        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
+        = std::make_unique<meta::MetaClient>(threadPool,
+                                             std::move(addrsRet.value()),
+                                             nullptr,
+                                             true);
     mClient->init();
 
     LOG(INFO) << "Start data server....";

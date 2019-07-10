@@ -153,11 +153,21 @@ int main(int argc, char *argv[]) {
     // folly IOThreadPoolExecutor
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
 
+    auto clusterMan
+        = std::make_shared<nebula::kvstore::ClusterManager>(localhost, FLAGS_data_path);
+    auto ret = clusterMan->loadClusterId();
+    if (ret != nebula::kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "clusterId init error!";
+    }
+
     // Meta client
     auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
                                                                  std::move(metaAddrsRet.value()),
+                                                                 clusterMan,
                                                                  true);
-    metaClient->init();
+    metaClient->waitForMetadReady();
+    metaClient->startHeartBeat();
+    metaClient->startLoadData();
 
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();

@@ -13,6 +13,7 @@
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/ClusterManager.h"
 #include "kvstore/Part.h"
 #include "kvstore/KVEngine.h"
 
@@ -40,6 +41,7 @@ public:
             , raftAddr_(getRaftAddr(serviceAddr))
             , options_(std::move(options)) {
         partMan_ = std::move(options_.partMan_);
+        clusterMan_ = options_.clusterMan_;
         init();
     }
 
@@ -159,15 +161,6 @@ private:
     std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId, const std::string& path);
 
 private:
-    // Next three functions used to deal with clusterId_ of metad
-    ResultCode loadClusterId(std::unique_ptr<KVEngine>& kv);
-
-    ResultCode createClusterId();
-
-    ResultCode dumpClusterId(std::unique_ptr<KVEngine>& kv);
-
-
-private:
     // The lock used to protect spaces_
     folly::RWSpinLock lock_;
     std::unordered_map<GraphSpaceID, std::unique_ptr<SpacePartInfo>> spaces_;
@@ -177,15 +170,10 @@ private:
     HostAddr storeSvcAddr_;
     HostAddr raftAddr_;
     KVOptions options_;
-    // ClusterID clusterId_;
-    int64_t clusterId_{0};
-    static const char* kClusterIdKey_;
-
     std::unique_ptr<PartManager> partMan_{nullptr};
-
+    std::shared_ptr<ClusterManager> clusterMan_{nullptr};
     std::shared_ptr<raftex::RaftexService> raftService_;
 };
-
 
 }  // namespace kvstore
 }  // namespace nebula
