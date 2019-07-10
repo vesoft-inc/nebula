@@ -28,6 +28,7 @@ const int32_t kMaxCommandLineLen = 1024;
 CliManager::CliManager() {
     ::using_history();
     initAutoCompletion();
+    curSpaceName_ = std::move(std::string("(none)"));
 }
 
 
@@ -137,6 +138,10 @@ void CliManager::loop() {
         if (!cmdProcessor_->process(cmd)) {
             break;
         }
+
+        if (!cmdProcessor_->getSpaceName().empty()) {
+            curSpaceName_ = cmdProcessor_->getSpaceName();
+        }
         cmd.clear();
     }
     saveHistory();
@@ -148,14 +153,15 @@ bool CliManager::readLine(std::string &line, bool linebreak) {
     char prompt[256];
     static auto color = 0u;
     ::snprintf(prompt, sizeof(prompt),
-                "\001"          // RL_PROMPT_START_IGNORE
-                "\033[1;%um"    // color codes start
-                "\002"          // RL_PROMPT_END_IGNORE
-                "nebula> "      // prompt
-                "\001"          // RL_PROMPT_START_IGNORE
-                "\033[0m"       // restore color code
-                "\002",         // RL_PROMPT_END_IGNORE
-                color++ % 6 + 31);
+                "\001"              // RL_PROMPT_START_IGNORE
+                "\033[1;%um"        // color codes start
+                "\002"              // RL_PROMPT_END_IGNORE
+                "(%s@%s) [%s]> "    // prompt "(user@host) [spaceName]"
+                "\001"              // RL_PROMPT_START_IGNORE
+                "\033[0m"           // restore color code
+                "\002",             // RL_PROMPT_END_IGNORE
+                color++ % 6 + 31, username_.c_str(),
+                addr_.c_str(), curSpaceName_.c_str());
     auto *input = ::readline(linebreak ? "": prompt);
 
     do {

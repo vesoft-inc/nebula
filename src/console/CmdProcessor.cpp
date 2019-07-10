@@ -332,6 +332,10 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
     cpp2::ErrorCode res = client_->execute(cmd, resp);
     if (res == cpp2::ErrorCode::SUCCEEDED) {
         // Succeeded
+        auto *spaceName = resp.get_space_name();
+        if (spaceName && !spaceName->empty()) {
+            curSpaceName_ = std::move(*spaceName);
+        }
         printResult(resp);
         if (resp.get_rows() != nullptr) {
             std::cout << "Got " << resp.get_rows()->size()
@@ -343,6 +347,7 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
                       << resp.get_latency_in_us() << "/"
                       << dur.elapsedInUSec() << " us)\n";
         }
+        std::cout << std::endl;
     } else if (res == cpp2::ErrorCode::E_SYNTAX_ERROR) {
         static const std::regex range("at 1.([0-9]+)-([0-9]+)");
         static const std::regex single("at 1.([0-9]+)");
@@ -396,6 +401,11 @@ void CmdProcessor::normalize(folly::StringPiece &command) {
         command = command.subpiece(0, command.size() - 1);
         command = folly::trimWhitespace(command);
     }
+}
+
+
+std::string CmdProcessor::getSpaceName() {
+    return curSpaceName_;
 }
 
 }  // namespace graph

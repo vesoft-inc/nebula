@@ -25,8 +25,12 @@ public:
     // the method returns true
     bool process(folly::StringPiece cmd);
 
+    std::string getSpaceName();
+
 private:
     std::unique_ptr<GraphClient> client_;
+
+    std::string curSpaceName_;
 
     // The method returns true if the given command is a client command
     // and has been processed. Otherwise, the method returns false
