@@ -62,9 +62,10 @@ bool Balancer::recovery() {
         CHECK_EQ(1, corruptedPlans.size());
         plan_ = std::make_unique<BalancePlan>(corruptedPlans[0], kv_, client_.get());
         plan_->onFinished_ = [this] () {
-            plan_.reset();
             bool expected = true;
-            CHECK(running_.compare_exchange_strong(expected, false));
+            auto &running = this->running_;   // Get the reference before the captured `this' lost
+            plan_.reset();
+            CHECK(running.compare_exchange_strong(expected, false));
         };
         if (!plan_->recovery()) {
             LOG(ERROR) << "Can't recovery plan " << corruptedPlans[0];
@@ -102,9 +103,10 @@ Status Balancer::buildBalancePlan() {
         }
     }
     plan_->onFinished_ = [this] () {
-        plan_.reset();
         bool expected = true;
-        CHECK(running_.compare_exchange_strong(expected, false));
+        auto &running = this->running_;   // Get the reference before the captured `this' lost
+        plan_.reset();
+        CHECK(running.compare_exchange_strong(expected, false));
     };
     if (plan_->tasks_.empty()) {
         plan_->onFinished_();
