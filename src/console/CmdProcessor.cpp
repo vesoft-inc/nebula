@@ -404,7 +404,7 @@ void CmdProcessor::normalize(folly::StringPiece &command) {
 }
 
 
-std::string CmdProcessor::getSpaceName() {
+const std::string& CmdProcessor::getSpaceName() const {
     return curSpaceName_;
 }
 
