@@ -54,7 +54,7 @@ TEST_F(LogCommandTest, StartWithCommandLog) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -97,7 +97,7 @@ TEST_F(LogCommandTest, CommandInMiddle) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -131,7 +131,7 @@ TEST_F(LogCommandTest, EndWithCommand) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -164,7 +164,7 @@ TEST_F(LogCommandTest, AllCommandLogs) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -228,7 +228,7 @@ TEST_F(LogCommandTest, MixedLogs) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
