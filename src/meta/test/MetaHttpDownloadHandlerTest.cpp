@@ -28,8 +28,8 @@ public:
         FLAGS_ws_h2_port = 0;
         VLOG(1) << "Starting web service...";
 
-        fs::TempDir rootPath("/tmp/MetaHttpDownloadHandler.XXXXXX");
-        kv = TestUtils::initKV(rootPath.path());
+        rootPath = std::make_unique<fs::TempDir>("/tmp/MetaHttpDownloadHandler.XXXXXX");
+        kv = TestUtils::initKV(rootPath->path());
         TestUtils::createHosts(kv.get());
         TestUtils::assembleSpace(kv.get(), 1, 2);
 
@@ -44,11 +44,13 @@ public:
 
     void TearDown() override {
         kv = nullptr;
+        rootPath = nullptr;
         WebService::stop();
         VLOG(1) << "Web service stopped";
     }
 
 private:
+    std::unique_ptr<fs::TempDir> rootPath;
     std::unique_ptr<kvstore::KVStore> kv;
 };
 

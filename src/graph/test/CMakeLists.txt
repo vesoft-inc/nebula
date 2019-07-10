@@ -118,7 +118,6 @@ add_executable(
     $<TARGET_OBJECTS:adHocSchema_obj>
     ${GRAPH_TEST_LIBS}
 )
-
 nebula_link_libraries(
     data_test
     ${THRIFT_LIBRARIES}

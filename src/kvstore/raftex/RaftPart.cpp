@@ -203,6 +203,7 @@ RaftPart::~RaftPart() {
 
     // Make sure the partition has stopped
     CHECK(status_ == Status::STOPPED);
+    LOG(INFO) << idStr_ << "~RaftPart()";
 }
 
 
@@ -266,19 +267,21 @@ void RaftPart::stop() {
         hosts = std::move(peerHosts_);
     }
 
-    for (auto& h : *hosts) {
-        h.second->stop();
-    }
-    VLOG(2) << idStr_ << "Invoked stop() on all peer hosts";
+    if (hosts) {
+        for (auto& h : *hosts) {
+            h.second->stop();
+        }
 
-    for (auto& h : *hosts) {
-        VLOG(2) << idStr_ << "Waiting " << h.second->idStr() << " to stop";
-        h.second->waitForStop();
-        VLOG(2) << idStr_ << h.second->idStr() << "has stopped";
-    }
-    VLOG(2) << idStr_ << "All hosts are stopped";
+        VLOG(2) << idStr_ << "Invoked stop() on all peer hosts";
 
-    VLOG(2) << idStr_ << "Partition has been stopped";
+        for (auto& h : *hosts) {
+            VLOG(2) << idStr_ << "Waiting " << h.second->idStr() << " to stop";
+            h.second->waitForStop();
+            VLOG(2) << idStr_ << h.second->idStr() << "has stopped";
+        }
+        VLOG(2) << idStr_ << "All hosts are stopped";
+    }
+    LOG(INFO) << idStr_ << "Partition has been stopped";
 }
 
 
@@ -401,14 +404,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
     LogID prevLogId = 0;
     TermID prevLogTerm = 0;
     LogID committed = 0;
-    {
-        std::lock_guard<std::mutex> g(raftLock_);
-        currTerm = term_;
-        prevLogId = lastLogId_;
-        prevLogTerm = lastLogTerm_;
-        committed = committedLogId_;
-    }
-
+    LogID lastId = 0;
     if (iter.valid()) {
         VLOG(2) << idStr_ << "Ready to append logs from id "
                 << iter.logId() << " (Current term is "
@@ -417,15 +413,42 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
         VLOG(2) << idStr_ << "Ready to send a heartbeat";
     }
 
-    // Step 1: Write WAL
-    if (!wal_->appendLogs(iter)) {
-        LOG(ERROR) << idStr_ << "Failed to write into WAL";
-        sendingPromise_.setValue(AppendLogResult::E_WAL_FAILURE);
-        return;
+    {
+        std::lock_guard<std::mutex> g(raftLock_);
+        if (status_ != Status::RUNNING) {
+            // The partition is not running
+            VLOG(2) << idStr_ << "The partition is stopped";
+            sendingPromise_.setValue(AppendLogResult::E_STOPPED);
+            cachingPromise_.setValue(AppendLogResult::E_STOPPED);
+            logs_.clear();
+            replicatingLogs_ = false;
+            return;
+        }
+
+        if (role_ != Role::LEADER) {
+            // Is not a leader any more
+            VLOG(2) << idStr_ << "The leader has changed";
+            sendingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+            cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+            logs_.clear();
+            replicatingLogs_ = false;
+            return;
+        }
+        currTerm = term_;
+        prevLogId = lastLogId_;
+        prevLogTerm = lastLogTerm_;
+        committed = committedLogId_;
+        // Step 1: Write WAL
+        if (!wal_->appendLogs(iter)) {
+            LOG(ERROR) << idStr_ << "Failed to write into WAL";
+            sendingPromise_.setValue(AppendLogResult::E_WAL_FAILURE);
+            replicatingLogs_ = false;
+            return;
+        }
+        lastId = wal_->lastLogId();
+        VLOG(2) << idStr_ << "Succeeded writing logs ["
+                << iter.firstLogId() << ", " << lastId << "] to WAL";
     }
-    LogID lastId = wal_->lastLogId();
-    VLOG(2) << idStr_ << "Succeeded writing logs ["
-            << iter.firstLogId() << ", " << lastId << "] to WAL";
 
     // Step 2: Replicate to followers
     auto eb = ioThreadPool_->getEventBase();
@@ -436,7 +459,6 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
                   committed,
                   prevLogTerm,
                   prevLogId);
-
     return;
 }
 
@@ -572,63 +594,83 @@ void RaftPart::processAppendLogResponses(
         VLOG(2) << idStr_ << numSucceeded
                 << " hosts have accepted the logs";
 
-        std::unique_ptr<LogIterator> walIt;
         {
             std::lock_guard<std::mutex> g(raftLock_);
+            if (status_ != Status::RUNNING) {
+                // The partition is not running
+                VLOG(2) << idStr_ << "The partition is stopped";
+                sendingPromise_.setValue(AppendLogResult::E_STOPPED);
+                cachingPromise_.setValue(AppendLogResult::E_STOPPED);
+                logs_.clear();
+                replicatingLogs_ = false;
+                return;
+            }
 
+            if (role_ != Role::LEADER) {
+                // Is not a leader any more
+                VLOG(2) << idStr_ << "The leader has changed";
+                sendingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+                cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+                logs_.clear();
+                replicatingLogs_ = false;
+                return;
+            }
+            if (currTerm != term_) {
+                LOG(INFO) << idStr_ << "The leader has changed, ABA problem.";
+                sendingPromise_.setValue(AppendLogResult::E_TERM_OUT_OF_DATE);
+                replicatingLogs_ = false;
+                return;
+            }
             lastLogId_ = lastLogId;
             lastLogTerm_ = currTerm;
 
             lastMsgSentDur_.reset();
 
-            walIt = wal_->iterator(committedId + 1, lastLogId);
-        }
+            auto walIt = wal_->iterator(committedId + 1, lastLogId);
+            // Step 3: Commit the batch
+            if (commitLogs(std::move(walIt))) {
+                committedLogId_ = lastLogId;
 
-        // Step 3: Commit the batch
-        if (commitLogs(std::move(walIt))) {
-            std::lock_guard<std::mutex> g(raftLock_);
-
-            committedLogId_ = lastLogId;
-
-            // Step 4: Fulfill the promise
-            if (iter.hasLogs()) {
-                sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
-            }
-            if (iter.leadByCAS()) {
-                sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
-            }
-            VLOG(2) << idStr_ << "Succeeded in committing the logs";
-
-            // Step 5: Check whether need to continue
-            // the log replication
-            CHECK(replicatingLogs_);
-            // Continue to process the original AppendLogsIterator if necessary
-            iter.resume();
-            if (iter.empty()) {
-                if (logs_.size() > 0) {
-                    // continue to replicate the logs
-                    sendingPromise_ = std::move(cachingPromise_);
-                    cachingPromise_.reset();
-                    iter = AppendLogsIterator(
-                        lastLogId_ + 1,
-                        std::move(logs_),
-                        [this] (const std::string& log) -> std::string {
-                            auto res = compareAndSet(log);
-                            if (res.empty()) {
-                                // Failed
-                                sendingPromise_.setOneSingleValue(
-                                    AppendLogResult::E_CAS_FAILURE);
-                            }
-                            return res;
-                        });
-                    logs_.clear();
-                } else {
-                    replicatingLogs_ = false;
-                    VLOG(2) << idStr_ << "No more log to be replicated";
+                // Step 4: Fulfill the promise
+                if (iter.hasLogs()) {
+                    sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
                 }
+                if (iter.leadByCAS()) {
+                    sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
+                }
+                VLOG(2) << idStr_ << "Succeeded in committing the logs";
+
+                // Step 5: Check whether need to continue
+                // the log replication
+                CHECK(replicatingLogs_);
+                // Continue to process the original AppendLogsIterator if necessary
+                iter.resume();
+                if (iter.empty()) {
+                    if (logs_.size() > 0) {
+                        // continue to replicate the logs
+                        sendingPromise_ = std::move(cachingPromise_);
+                        cachingPromise_.reset();
+                        iter = AppendLogsIterator(
+                            lastLogId_ + 1,
+                            std::move(logs_),
+                            [this] (const std::string& log) -> std::string {
+                                auto res = compareAndSet(log);
+                                if (res.empty()) {
+                                    // Failed
+                                    sendingPromise_.setOneSingleValue(
+                                        AppendLogResult::E_CAS_FAILURE);
+                                }
+                                return res;
+                            });
+                        logs_.clear();
+                    } else {
+                        replicatingLogs_ = false;
+                        VLOG(2) << idStr_ << "No more log to be replicated";
+                    }
+                }
+            } else {
+                LOG(FATAL) << idStr_ << "Failed to commit logs";
             }
-        } else {
-            LOG(FATAL) << idStr_ << "Failed to commit logs";
         }
 
         if (!iter.empty()) {
@@ -811,6 +853,7 @@ bool RaftPart::leaderElection() {
             {
                 std::lock_guard<std::mutex> g(raftLock_);
                 if (status_ == Status::RUNNING) {
+                    leader_ = addr_;
                     workers_->addTask([self = shared_from_this(),
                                        term = voteReq.get_term()] {
                         self->onElected(term);

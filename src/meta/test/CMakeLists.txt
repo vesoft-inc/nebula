@@ -137,7 +137,6 @@ nebula_link_libraries(
 )
 nebula_add_test(active_hosts_man_test)
 
-
 add_executable(
     meta_http_status_test
     MetaHttpStatusHandlerTest.cpp
@@ -172,7 +171,6 @@ nebula_link_libraries(
     gtest
 )
 nebula_add_test(meta_http_status_test)
-
 
 add_executable(
     meta_http_download_test
@@ -210,6 +208,34 @@ nebula_link_libraries(
 nebula_add_test(meta_http_download_test)
 
 add_executable(
+    balancer_test
+    BalancerTest.cpp
+    $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:meta_client>
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:wal_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:network_obj>
+)
+nebula_link_libraries(
+    balancer_test
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    gtest
+)
+nebula_add_test(balancer_test)
+
+add_executable(
     authentication_test
     AuthProcessorTest.cpp
     $<TARGET_OBJECTS:meta_service_handler>
@@ -230,12 +256,11 @@ add_executable(
 )
 nebula_link_libraries(
     authentication_test
-    proxygenhttpserver
-    proxygenlib
     ${ROCKSDB_LIBRARIES}
     ${THRIFT_LIBRARIES}
     wangle
     gtest
 )
+
 nebula_add_test(authentication_test)
 

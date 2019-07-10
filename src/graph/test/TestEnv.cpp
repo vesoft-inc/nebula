@@ -29,7 +29,9 @@ TestEnv::~TestEnv() {
 void TestEnv::SetUp() {
     FLAGS_load_data_interval_secs = 1;
     // Create metaServer
-    metaServer_ = nebula::meta::TestUtils::mockMetaServer(0, metaRootPath_.path());
+    metaServer_ = nebula::meta::TestUtils::mockMetaServer(
+                                                    network::NetworkUtils::getAvailablePort(),
+                                                    metaRootPath_.path());
     FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", metaServerPort());
 
     // Create storageServer
@@ -41,11 +43,12 @@ void TestEnv::SetUp() {
     mClient_->init();
     IPv4 localIp;
     nebula::network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    storageServer_ = nebula::storage::TestUtils::mockStorageServer(mClient_.get(),
-                                                                   storageRootPath_.path(),
-                                                                   localIp,
-                                                                   0,
-                                                                   true);
+    storageServer_ = nebula::storage::TestUtils::mockStorageServer(
+                                                        mClient_.get(),
+                                                        storageRootPath_.path(),
+                                                        localIp,
+                                                        network::NetworkUtils::getAvailablePort(),
+                                                        true);
 
     // Create graphServer
     graphServer_ = TestUtils::mockGraphServer(0);

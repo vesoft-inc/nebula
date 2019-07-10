@@ -170,7 +170,7 @@ TEST(ProcessorTest, ListHostsTest) {
     }
     {
         // host info expired
-        sleep(FLAGS_expired_hosts_check_interval_sec + FLAGS_expired_threshold_sec);
+        sleep(FLAGS_expired_hosts_check_interval_sec + FLAGS_expired_threshold_sec + 1);
         cpp2::ListHostsReq req;
         auto* processor = ListHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();

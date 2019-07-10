@@ -47,6 +47,9 @@ class VertexTagItem final {
      }
 
      std::vector<std::string*> properties() const {
+         if (nullptr == properties_) {
+             return {};
+         }
          return properties_->properties();
      }
 
@@ -271,6 +274,9 @@ public:
     }
 
     std::vector<std::string*> properties() const {
+        if (nullptr == properties_) {
+            return {};
+        }
         return properties_->properties();
     }
 

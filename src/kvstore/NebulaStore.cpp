@@ -15,6 +15,7 @@
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom compaction");
+DEFINE_int32(num_workers, 4, "Number of worker threads");
 
 /**
  * Check spaceId, partId exists or not.
@@ -31,25 +32,6 @@ DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom
         cb(ResultCode::ERR_PART_NOT_FOUND); \
         return; \
     }
-
-/**
- * Check spaceId, partId and return related storage engine.
- * */
-#define CHECK_AND_RETURN_ENGINE(spaceId, partId) \
-    KVEngine* engine = nullptr; \
-    do { \
-        auto it = spaces_.find(spaceId); \
-        if (UNLIKELY(it == spaces_.end())) { \
-            return ResultCode::ERR_SPACE_NOT_FOUND; \
-        } \
-        auto& parts = it->second->parts_; \
-        auto partIt = parts.find(partId); \
-        if (UNLIKELY(partIt == parts.end())) { \
-            return ResultCode::ERR_PART_NOT_FOUND; \
-        } \
-        engine = partIt->second->engine(); \
-        CHECK_NOTNULL(engine); \
-    } while (false)
 
 /**
  * Check spaceId is exist and return related partitions.
@@ -74,7 +56,23 @@ DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom
 namespace nebula {
 namespace kvstore {
 
+NebulaStore::~NebulaStore() {
+    workers_->stop();
+    workers_->wait();
+    spaces_.clear();
+    LOG(INFO) << "Stop the raft service...";
+    raftService_->stop();
+    raftService_->waitUntilStop();
+    LOG(INFO) << "~NebulaStore()";
+}
+
 void NebulaStore::init() {
+    LOG(INFO) << "Start the raft service...";
+    workers_ = std::make_shared<thread::GenericThreadPool>();
+    workers_->start(FLAGS_num_workers);
+    raftService_ = raftex::RaftexService::createService(ioPool_, raftAddr_.second);
+    raftService_->waitUntilReady();
+    flusher_ = std::make_unique<wal::BufferFlusher>();
     CHECK(!!partMan_);
     LOG(INFO) << "Scan the local path, and init the spaces_";
     {
@@ -105,15 +103,22 @@ void NebulaStore::init() {
                             spaceId,
                             std::make_unique<SpacePartInfo>()).first;
                     }
-                    for (auto& partId : engine->allParts()) {
+                    spaceIt->second->engines_.emplace_back(std::move(engine));
+                    auto& enginePtr = spaceIt->second->engines_.back();
+                    for (auto& partId : enginePtr->allParts()) {
                         if (!partMan_->partExist(storeSvcAddr_, spaceId, partId)) {
                             LOG(INFO) << "Part " << partId
                                       << " does not exist any more, remove it!";
-                            engine->removePart(partId);
+                            enginePtr->removePart(partId);
                             continue;
+                        } else {
+                            LOG(INFO) << "Load part " << spaceId << ", " << partId << " from disk";
+                            spaceIt->second->parts_.emplace(partId,
+                                                            newPart(spaceId,
+                                                                    partId,
+                                                                    enginePtr.get()));
                         }
                     }
-                    spaceIt->second->engines_.emplace_back(std::move(engine));
                 } catch (std::exception& e) {
                     LOG(FATAL) << "Invalid data directory \"" << dir << "\"";
                 }
@@ -126,8 +131,13 @@ void NebulaStore::init() {
     for (auto& entry : partsMap) {
         auto spaceId = entry.first;
         addSpace(spaceId);
-        for (auto& partEntry : entry.second) {
-            addPart(spaceId, partEntry.first);
+        std::vector<PartitionID> partIds;
+        for (auto it = entry.second.begin(); it != entry.second.end(); it++) {
+            partIds.emplace_back(it->first);
+        }
+        std::sort(partIds.begin(), partIds.end());
+        for (auto& partId : partIds) {
+            addPart(spaceId, partId);
         }
     }
 
@@ -152,6 +162,19 @@ std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
     }
 }
 
+ErrorOr<ResultCode, HostAddr> NebulaStore::partLeader(GraphSpaceID spaceId, PartitionID partId) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
+    auto it = spaces_.find(spaceId);
+    if (UNLIKELY(it == spaces_.end())) {
+        return ResultCode::ERR_SPACE_NOT_FOUND;
+    }
+    auto& parts = it->second->parts_;
+    auto partIt = parts.find(partId);
+    if (UNLIKELY(partIt == parts.end())) {
+        return ResultCode::ERR_PART_NOT_FOUND;
+    }
+    return getStoreAddr(partIt->second->leader());
+}
 
 void NebulaStore::addSpace(GraphSpaceID spaceId) {
     folly::RWSpinLock::WriteHolder wh(&lock_);
@@ -195,21 +218,36 @@ void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId) {
     targetEngine->addPart(partId);
     spaceIt->second->parts_.emplace(
         partId,
-        std::make_shared<Part>(spaceId,
-                               partId,
-                               raftAddr_,
-                               folly::stringPrintf("%s/wal/%d",
-                                                   targetEngine->getDataRoot(),
-                                                   partId),
-                               targetEngine.get(),
-                               ioPool_,
-                               workers_));
-    // TODO: Need to pass in the peers
-    spaceIt->second->parts_[partId]->start({});
+        newPart(spaceId, partId, targetEngine.get()));
     LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been added!";
     return;
 }
 
+std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
+                                           PartitionID partId,
+                                           KVEngine* engine) {
+    auto part = std::make_shared<Part>(spaceId,
+                                       partId,
+                                       raftAddr_,
+                                       folly::stringPrintf("%s/wal/%d",
+                                               engine->getDataRoot(),
+                                               partId),
+                                       engine,
+                                       ioPool_,
+                                       workers_,
+                                       flusher_.get());
+    auto partMeta = partMan_->partMeta(spaceId, partId);
+    std::vector<HostAddr> peers;
+    for (auto& h : partMeta.peers_) {
+        if (h != storeSvcAddr_) {
+            peers.emplace_back(getRaftAddr(h));
+            VLOG(1) << "Add peer " << peers.back();
+        }
+    }
+    raftService_->addPartition(part);
+    part->start(std::move(peers));
+    return part;
+}
 
 void NebulaStore::removeSpace(GraphSpaceID spaceId) {
     folly::RWSpinLock::WriteHolder wh(&lock_);
@@ -238,6 +276,7 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
             CHECK_NOTNULL(e);
             // Stop the raft
             partIt->second->stop();
+            raftService_->removePartition(partIt->second);
             spaceIt->second->parts_.erase(partId);
             e->removePart(partId);
         }
@@ -250,9 +289,12 @@ ResultCode NebulaStore::get(GraphSpaceID spaceId,
                             PartitionID partId,
                             const std::string& key,
                             std::string* value) {
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    CHECK_AND_RETURN_ENGINE(spaceId, partId);
-    return engine->get(key, value);
+    auto ret = engine(spaceId, partId);
+    if (!ok(ret)) {
+        return error(ret);
+    }
+    auto* e = nebula::value(ret);
+    return e->get(key, value);
 }
 
 
@@ -260,9 +302,12 @@ ResultCode NebulaStore::multiGet(GraphSpaceID spaceId,
                                  PartitionID partId,
                                  const std::vector<std::string>& keys,
                                  std::vector<std::string>* values) {
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    CHECK_AND_RETURN_ENGINE(spaceId, partId);
-    return engine->multiGet(keys, values);
+    auto ret = engine(spaceId, partId);
+    if (!ok(ret)) {
+        return error(ret);
+    }
+    auto* e = nebula::value(ret);
+    return e->multiGet(keys, values);
 }
 
 
@@ -271,9 +316,12 @@ ResultCode NebulaStore::range(GraphSpaceID spaceId,
                               const std::string& start,
                               const std::string& end,
                               std::unique_ptr<KVIterator>* iter) {
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    CHECK_AND_RETURN_ENGINE(spaceId, partId);
-    return engine->range(start, end, iter);
+    auto ret = engine(spaceId, partId);
+    if (!ok(ret)) {
+        return error(ret);
+    }
+    auto* e = nebula::value(ret);
+    return e->range(start, end, iter);
 }
 
 
@@ -281,11 +329,13 @@ ResultCode NebulaStore::prefix(GraphSpaceID spaceId,
                                PartitionID partId,
                                const std::string& prefix,
                                std::unique_ptr<KVIterator>* iter) {
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    CHECK_AND_RETURN_ENGINE(spaceId, partId);
-    return engine->prefix(prefix, iter);
+    auto ret = engine(spaceId, partId);
+    if (!ok(ret)) {
+        return error(ret);
+    }
+    auto* e = nebula::value(ret);
+    return e->prefix(prefix, iter);
 }
-
 
 void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
                                 PartitionID partId,
@@ -416,6 +466,20 @@ bool NebulaStore::isLeader(GraphSpaceID spaceId, PartitionID partId) {
         }
     }
     return false;
+}
+
+ErrorOr<ResultCode, KVEngine*> NebulaStore::engine(GraphSpaceID spaceId, PartitionID partId) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
+    auto it = spaces_.find(spaceId);
+    if (UNLIKELY(it == spaces_.end())) {
+        return ResultCode::ERR_SPACE_NOT_FOUND;
+    }
+    auto& parts = it->second->parts_;
+    auto partIt = parts.find(partId);
+    if (UNLIKELY(partIt == parts.end())) {
+        return ResultCode::ERR_PART_NOT_FOUND;
+    }
+    return partIt->second->engine();
 }
 
 }  // namespace kvstore
