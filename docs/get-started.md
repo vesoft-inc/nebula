@@ -27,30 +27,7 @@ docker pull vesoft/nebula-graph:latest
 ```
 to get `nebula` image and `docker images` that can display images status.
 
-If the pulling is slow when pulling the image, configure a new mirror.
-1. Check if the `/etc/docker` folder exists, if not, create a new one with `mkdir -p /etc/docker`. Generally the folder will exist after Docker installation.
-2. Create the new file `daemon.json` with the following command
 
-```
-tee /etc/docker/daemon.json <<-'EOF'
-{
-  "registry-mirrors": [
-    "https://dockerhub.azk8s.cn",
-    "https://reg-mirror.qiniu.com"
-  ]
-}
-EOF
-```
-Or create the new file with `vi /etc/docker/daemon.json`, then add the following content
-
-```
-{
-  "registry-mirrors": [
-    "https://dockerhub.azk8s.cn",
-    "https://reg-mirror.qiniu.com"
-  ]
-}
-```
 
 ---
 
@@ -219,6 +196,7 @@ nebula> INSERT EDGE like(likeness) VALUES 201 -> 202:(93.2);
 #### Sample Queries
 
 Q1. Find the vertexes that 201 likes:
+
 ```
 nebula> GO FROM 201 OVER like;
 
@@ -230,6 +208,7 @@ nebula> GO FROM 201 OVER like;
 | 202 |
 -------
 ```
+
 Q2. Find the vertexes that 201 likes, whose age are greater than 17. Return their name, age and gender, and alias the columns as Friend, Age and Gender, respectively.
 
 ```
@@ -281,6 +260,34 @@ nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^[student].na
 
 `$-` refers to the input stream.
 
+
 The second approach adopts a user-defined variable `$a`. The scope of this variable is within the compound statement.
 
 For more details about Query Language, check [nGQL](https://github.com/vesoft-inc/nebula/blob/master/docs/nGQL.md).
+
+
+<!-- If the pulling is slow when pulling the image, configure a new mirror.
+1. Check if the `/etc/docker` folder exists, if not, create a new one with `mkdir -p /etc/docker`. Generally the folder will exist after Docker installation.
+2. Create the new file `daemon.json` with the following command
+
+```
+tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": [
+    "https://dockerhub.azk8s.cn",
+    "https://reg-mirror.qiniu.com"
+  ]
+}
+EOF
+```
+Or create the new file with `vi /etc/docker/daemon.json`, then add the following content
+
+```
+{
+  "registry-mirrors": [
+    "https://dockerhub.azk8s.cn",
+    "https://reg-mirror.qiniu.com"
+  ]
+}
+``` -->
+

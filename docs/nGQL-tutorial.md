@@ -240,7 +240,7 @@ GO FROM 100 OVER like | GO FROM $-.id OVER serve; -- Start from vertex 100, quer
 
 
 
-## Syntax norms
+<!-- ## Syntax norms
 
 In order to be consistent with ourselves and other nGQL users, we recommend
 you to follow these syntax norms:
@@ -269,4 +269,4 @@ you to follow these syntax norms:
   |Key words | Upper case   | SHOW SPACES     |
   |Vertex tags | Upper camel case, beginning with an upper-case character   | ManageTeam   |
   |Edges | Upper snake case, beginning with an upper-case character   | Play_for   |
-  |Property names | Lower camel case, beginning with a lower-case character   | inService   |
+  |Property names | Lower camel case, beginning with a lower-case character   | inService   | -->
