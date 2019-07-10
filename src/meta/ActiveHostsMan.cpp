@@ -146,7 +146,9 @@ void ActiveHostsMan::cleanExpiredHosts() {
         LOG(INFO) << "set " << data.size() << " expired hosts to offline in meta rocksdb";
         kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
                                 [] (kvstore::ResultCode code) {
-            CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            if (code != kvstore::ResultCode::SUCCEEDED) {
+                LOG(WARNING) << "put failed, ret " << static_cast<int32_t>(code);
+            }
         });
     }
 }

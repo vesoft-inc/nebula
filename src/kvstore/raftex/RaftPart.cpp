@@ -47,7 +47,10 @@ public:
             , casCB_(std::move(casCB)) {
         leadByCAS_ = processCAS();
         valid_ = idx_ < logs_.size();
-        hasLogs_ = !leadByCAS_ && valid_;
+        hasNonCASLogs_ = !leadByCAS_ && valid_;
+        if (valid_) {
+            currLogType_ = lastLogType_ = logType();
+        }
     }
 
     AppendLogsIterator(const AppendLogsIterator&) = delete;
@@ -60,8 +63,8 @@ public:
         return leadByCAS_;
     }
 
-    bool hasLogs() const {
-        return hasLogs_;
+    bool hasNonCASLogs() const {
+        return hasNonCASLogs_;
     }
 
     LogID firstLogId() const {
@@ -72,8 +75,8 @@ public:
     bool processCAS() {
         while (idx_ < logs_.size()) {
             auto& tup = logs_.at(idx_);
-            bool isCAS = std::get<2>(tup);
-            if (!isCAS) {
+            auto logType = std::get<2>(tup);
+            if (logType != LogType::CAS) {
                 // Not a CAS
                 return false;
             }
@@ -97,9 +100,16 @@ public:
     LogIterator& operator++() override {
         ++idx_;
         ++logId_;
-        valid_ = (idx_ < logs_.size()) && !isCAS();
-        if (valid_) {
-            hasLogs_ = true;
+        if (idx_ < logs_.size()) {
+            currLogType_ = logType();
+            valid_ = currLogType_ != LogType::CAS;
+            if (valid_) {
+                hasNonCASLogs_ = true;
+            }
+            valid_ = valid_ && lastLogType_ != LogType::COMMAND;
+            lastLogType_ = currLogType_;
+        } else {
+            valid_ = false;
         }
         return *this;
     }
@@ -127,7 +137,7 @@ public:
 
     folly::StringPiece logMsg() const override {
         DCHECK(valid());
-        if (isCAS()) {
+        if (currLogType_ == LogType::CAS) {
             return casResult_;
         } else {
             return std::get<3>(logs_.at(idx_));
@@ -145,20 +155,24 @@ public:
         if (!empty()) {
             leadByCAS_ = processCAS();
             valid_ = idx_ < logs_.size();
-            hasLogs_ = !leadByCAS_ && valid_;
+            hasNonCASLogs_ = !leadByCAS_ && valid_;
+            if (valid_) {
+                currLogType_ = lastLogType_ = logType();
+            }
         }
     }
 
-private:
-    bool isCAS() const {
-        return std::get<2>(logs_.at(idx_));
+    LogType logType() const {
+        return  std::get<2>(logs_.at(idx_));
     }
 
 private:
     size_t idx_{0};
     bool leadByCAS_{false};
-    bool hasLogs_{false};
+    bool hasNonCASLogs_{false};
     bool valid_{true};
+    LogType lastLogType_{LogType::NORMAL};
+    LogType currLogType_{LogType::NORMAL};
     std::string casResult_;
     LogID firstLogId_;
     LogID logId_;
@@ -203,6 +217,7 @@ RaftPart::~RaftPart() {
 
     // Make sure the partition has stopped
     CHECK(status_ == Status::STOPPED);
+    LOG(INFO) << idStr_ << "~RaftPart()";
 }
 
 
@@ -266,19 +281,21 @@ void RaftPart::stop() {
         hosts = std::move(peerHosts_);
     }
 
-    for (auto& h : *hosts) {
-        h.second->stop();
-    }
-    VLOG(2) << idStr_ << "Invoked stop() on all peer hosts";
+    if (hosts) {
+        for (auto& h : *hosts) {
+            h.second->stop();
+        }
 
-    for (auto& h : *hosts) {
-        VLOG(2) << idStr_ << "Waiting " << h.second->idStr() << " to stop";
-        h.second->waitForStop();
-        VLOG(2) << idStr_ << h.second->idStr() << "has stopped";
-    }
-    VLOG(2) << idStr_ << "All hosts are stopped";
+        VLOG(2) << idStr_ << "Invoked stop() on all peer hosts";
 
-    VLOG(2) << idStr_ << "Partition has been stopped";
+        for (auto& h : *hosts) {
+            VLOG(2) << idStr_ << "Waiting " << h.second->idStr() << " to stop";
+            h.second->waitForStop();
+            VLOG(2) << idStr_ << h.second->idStr() << "has stopped";
+        }
+        VLOG(2) << idStr_ << "All hosts are stopped";
+    }
+    LOG(INFO) << idStr_ << "Partition has been stopped";
 }
 
 
@@ -307,17 +324,20 @@ folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source,
     if (source < 0) {
         source = clusterId_;
     }
-    return appendLogAsync(source, false, std::move(log));
+    return appendLogAsync(source, LogType::NORMAL, std::move(log));
 }
 
 
 folly::Future<AppendLogResult> RaftPart::casAsync(std::string log) {
-    return appendLogAsync(clusterId_, true, std::move(log));
+    return appendLogAsync(clusterId_, LogType::CAS, std::move(log));
 }
 
+folly::Future<AppendLogResult> RaftPart::sendCommandAsync(std::string log) {
+    return appendLogAsync(clusterId_, LogType::COMMAND, std::move(log));
+}
 
 folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
-                                                        bool isCAS,
+                                                        LogType logType,
                                                         std::string log) {
     LogCache swappedOutLogs;
     LogID firstId;
@@ -350,14 +370,18 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
 
         // Append new logs to the buffer
         DCHECK_GE(source, 0);
-        if (isCAS) {
-            logs_.emplace_back(source, term_, true, std::move(log));
-            retFuture = cachingPromise_.getSingleFuture();
-        } else {
-            logs_.emplace_back(source, term_, false, std::move(log));
-            retFuture = cachingPromise_.getSharedFuture();
+        logs_.emplace_back(source, term_, logType, std::move(log));
+        switch (logType) {
+            case LogType::CAS:
+                retFuture = cachingPromise_.getSingleFuture();
+                break;
+            case LogType::COMMAND:
+                retFuture = cachingPromise_.getAndRollSharedFuture();
+                break;
+            case LogType::NORMAL:
+                retFuture = cachingPromise_.getSharedFuture();
+                break;
         }
-
         if (replicatingLogs_) {
             VLOG(2) << idStr_
                     << "Another AppendLogs request is ongoing,"
@@ -401,14 +425,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
     LogID prevLogId = 0;
     TermID prevLogTerm = 0;
     LogID committed = 0;
-    {
-        std::lock_guard<std::mutex> g(raftLock_);
-        currTerm = term_;
-        prevLogId = lastLogId_;
-        prevLogTerm = lastLogTerm_;
-        committed = committedLogId_;
-    }
-
+    LogID lastId = 0;
     if (iter.valid()) {
         VLOG(2) << idStr_ << "Ready to append logs from id "
                 << iter.logId() << " (Current term is "
@@ -417,15 +434,42 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
         VLOG(2) << idStr_ << "Ready to send a heartbeat";
     }
 
-    // Step 1: Write WAL
-    if (!wal_->appendLogs(iter)) {
-        LOG(ERROR) << idStr_ << "Failed to write into WAL";
-        sendingPromise_.setValue(AppendLogResult::E_WAL_FAILURE);
-        return;
+    {
+        std::lock_guard<std::mutex> g(raftLock_);
+        if (status_ != Status::RUNNING) {
+            // The partition is not running
+            VLOG(2) << idStr_ << "The partition is stopped";
+            sendingPromise_.setValue(AppendLogResult::E_STOPPED);
+            cachingPromise_.setValue(AppendLogResult::E_STOPPED);
+            logs_.clear();
+            replicatingLogs_ = false;
+            return;
+        }
+
+        if (role_ != Role::LEADER) {
+            // Is not a leader any more
+            VLOG(2) << idStr_ << "The leader has changed";
+            sendingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+            cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+            logs_.clear();
+            replicatingLogs_ = false;
+            return;
+        }
+        currTerm = term_;
+        prevLogId = lastLogId_;
+        prevLogTerm = lastLogTerm_;
+        committed = committedLogId_;
+        // Step 1: Write WAL
+        if (!wal_->appendLogs(iter)) {
+            LOG(ERROR) << idStr_ << "Failed to write into WAL";
+            sendingPromise_.setValue(AppendLogResult::E_WAL_FAILURE);
+            replicatingLogs_ = false;
+            return;
+        }
+        lastId = wal_->lastLogId();
+        VLOG(2) << idStr_ << "Succeeded writing logs ["
+                << iter.firstLogId() << ", " << lastId << "] to WAL";
     }
-    LogID lastId = wal_->lastLogId();
-    VLOG(2) << idStr_ << "Succeeded writing logs ["
-            << iter.firstLogId() << ", " << lastId << "] to WAL";
 
     // Step 2: Replicate to followers
     auto eb = ioThreadPool_->getEventBase();
@@ -436,7 +480,6 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
                   committed,
                   prevLogTerm,
                   prevLogId);
-
     return;
 }
 
@@ -572,63 +615,83 @@ void RaftPart::processAppendLogResponses(
         VLOG(2) << idStr_ << numSucceeded
                 << " hosts have accepted the logs";
 
-        std::unique_ptr<LogIterator> walIt;
         {
             std::lock_guard<std::mutex> g(raftLock_);
+            if (status_ != Status::RUNNING) {
+                // The partition is not running
+                VLOG(2) << idStr_ << "The partition is stopped";
+                sendingPromise_.setValue(AppendLogResult::E_STOPPED);
+                cachingPromise_.setValue(AppendLogResult::E_STOPPED);
+                logs_.clear();
+                replicatingLogs_ = false;
+                return;
+            }
 
+            if (role_ != Role::LEADER) {
+                // Is not a leader any more
+                VLOG(2) << idStr_ << "The leader has changed";
+                sendingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+                cachingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+                logs_.clear();
+                replicatingLogs_ = false;
+                return;
+            }
+            if (currTerm != term_) {
+                LOG(INFO) << idStr_ << "The leader has changed, ABA problem.";
+                sendingPromise_.setValue(AppendLogResult::E_TERM_OUT_OF_DATE);
+                replicatingLogs_ = false;
+                return;
+            }
             lastLogId_ = lastLogId;
             lastLogTerm_ = currTerm;
 
             lastMsgSentDur_.reset();
 
-            walIt = wal_->iterator(committedId + 1, lastLogId);
-        }
+            auto walIt = wal_->iterator(committedId + 1, lastLogId);
+            // Step 3: Commit the batch
+            if (commitLogs(std::move(walIt))) {
+                committedLogId_ = lastLogId;
 
-        // Step 3: Commit the batch
-        if (commitLogs(std::move(walIt))) {
-            std::lock_guard<std::mutex> g(raftLock_);
-
-            committedLogId_ = lastLogId;
-
-            // Step 4: Fulfill the promise
-            if (iter.hasLogs()) {
-                sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
-            }
-            if (iter.leadByCAS()) {
-                sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
-            }
-            VLOG(2) << idStr_ << "Succeeded in committing the logs";
-
-            // Step 5: Check whether need to continue
-            // the log replication
-            CHECK(replicatingLogs_);
-            // Continue to process the original AppendLogsIterator if necessary
-            iter.resume();
-            if (iter.empty()) {
-                if (logs_.size() > 0) {
-                    // continue to replicate the logs
-                    sendingPromise_ = std::move(cachingPromise_);
-                    cachingPromise_.reset();
-                    iter = AppendLogsIterator(
-                        lastLogId_ + 1,
-                        std::move(logs_),
-                        [this] (const std::string& log) -> std::string {
-                            auto res = compareAndSet(log);
-                            if (res.empty()) {
-                                // Failed
-                                sendingPromise_.setOneSingleValue(
-                                    AppendLogResult::E_CAS_FAILURE);
-                            }
-                            return res;
-                        });
-                    logs_.clear();
-                } else {
-                    replicatingLogs_ = false;
-                    VLOG(2) << idStr_ << "No more log to be replicated";
+                // Step 4: Fulfill the promise
+                if (iter.hasNonCASLogs()) {
+                    sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
                 }
+                if (iter.leadByCAS()) {
+                    sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
+                }
+                VLOG(2) << idStr_ << "Succeeded in committing the logs";
+
+                // Step 5: Check whether need to continue
+                // the log replication
+                CHECK(replicatingLogs_);
+                // Continue to process the original AppendLogsIterator if necessary
+                iter.resume();
+                if (iter.empty()) {
+                    if (logs_.size() > 0) {
+                        // continue to replicate the logs
+                        sendingPromise_ = std::move(cachingPromise_);
+                        cachingPromise_.reset();
+                        iter = AppendLogsIterator(
+                            lastLogId_ + 1,
+                            std::move(logs_),
+                            [this] (const std::string& log) -> std::string {
+                                auto res = compareAndSet(log);
+                                if (res.empty()) {
+                                    // Failed
+                                    sendingPromise_.setOneSingleValue(
+                                        AppendLogResult::E_CAS_FAILURE);
+                                }
+                                return res;
+                            });
+                        logs_.clear();
+                    } else {
+                        replicatingLogs_ = false;
+                        VLOG(2) << idStr_ << "No more log to be replicated";
+                    }
+                }
+            } else {
+                LOG(FATAL) << idStr_ << "Failed to commit logs";
             }
-        } else {
-            LOG(FATAL) << idStr_ << "Failed to commit logs";
         }
 
         if (!iter.empty()) {
@@ -811,6 +874,7 @@ bool RaftPart::leaderElection() {
             {
                 std::lock_guard<std::mutex> g(raftLock_);
                 if (status_ == Status::RUNNING) {
+                    leader_ = addr_;
                     workers_->addTask([self = shared_from_this(),
                                        term = voteReq.get_term()] {
                         self->onElected(term);
