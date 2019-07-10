@@ -78,6 +78,7 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
         ++(*iter);
     }
     VLOG(2) << "TestShard: Committed log " << firstId << " to " << lastId;
+    commitTimes_++;
     return true;
 }
 
