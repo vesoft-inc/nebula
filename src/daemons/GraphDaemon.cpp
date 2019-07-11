@@ -7,6 +7,8 @@
 #include "base/Base.h"
 #include "network/NetworkUtils.h"
 #include <signal.h>
+#include <errno.h>
+#include <string.h>
 #include "base/Status.h"
 #include "fs/FileUtils.h"
 #include "process/ProcessUtils.h"
@@ -24,7 +26,7 @@ using nebula::network::NetworkUtils;
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
-static void setupSignalHandler();
+static Status setupSignalHandler();
 static Status setupLogging();
 static void printHelp(const char *prog);
 
@@ -130,26 +132,60 @@ int main(int argc, char *argv[]) {
     gServer->setThreadStackSizeMB(5);
 
     // Setup the signal handlers
-    setupSignalHandler();
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        nebula::WebService::stop();
+        return EXIT_FAILURE;
+    }
 
     FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);
     try {
         gServer->serve();  // Blocking wait until shut down via gServer->stop()
     } catch (const std::exception &e) {
+        nebula::WebService::stop();
         FLOG_ERROR("Exception thrown while starting the RPC server: %s", e.what());
         return EXIT_FAILURE;
     }
 
+    nebula::WebService::stop();
     FLOG_INFO("nebula-graphd on %s:%d has been stopped", localIP.c_str(), FLAGS_port);
 
     return EXIT_SUCCESS;
 }
 
 
-void setupSignalHandler() {
-    ::signal(SIGPIPE, SIG_IGN);
-    ::signal(SIGINT, signalHandler);
-    ::signal(SIGTERM, signalHandler);
+Status installHandler(int signum, sighandler_t handler) {
+    // signal() returns the previous value of the signal handler, or SIG_ERR on error.
+    sighandler_t ret = ::signal(signum, handler);
+    if (ret == SIG_ERR) {
+        return Status::Error("Failed to install handler for %d(%s), error: %s", 
+                                signum, ::strsignal(signum), ::strerror(errno));
+    }
+    else {
+        return Status::OK();
+    }
+}
+
+
+Status setupSignalHandler() {
+    Status status = Status::OK();
+    do {
+        status = installHandler(SIGPIPE, SIG_IGN);
+        if (!status.ok())
+            break;
+
+        status = installHandler(SIGINT, signalHandler);
+        if (!status.ok())
+            break;
+
+        status = installHandler(SIGTERM, signalHandler);
+        if (!status.ok())
+            break;
+
+    } while (false);
+
+    return status;
 }
 
 
@@ -158,7 +194,6 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            nebula::WebService::stop();
             gServer->stop();
             break;
         default:

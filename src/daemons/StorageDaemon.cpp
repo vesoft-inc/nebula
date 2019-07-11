@@ -51,7 +51,7 @@ using nebula::ProcessUtils;
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
-static void setupSignalHandler();
+static Status setupSignalHandler();
 
 
 std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
@@ -68,9 +68,15 @@ std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
     options.cfFactory_ = std::shared_ptr<nebula::kvstore::KVCompactionFilterFactory>(
             new nebula::storage::NebulaCompactionFilterFactory(schemaMan));
     if (FLAGS_store_type == "nebula") {
-        return std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
-                                                              ioPool,
-                                                              localhost);
+        auto nbStore = std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
+                                                                      ioPool,
+                                                                      localhost);
+        if (!(nbStore->init())) {
+            LOG(ERROR) << "nebula store init failed";
+            return nullptr;
+        }
+
+        return nbStore;
     } else if (FLAGS_store_type == "hbase") {
         LOG(FATAL) << "HBase store has not been implemented";
     } else {
@@ -168,6 +174,10 @@ int main(int argc, char *argv[]) {
                                                         ioThreadPool,
                                                         metaClient.get(),
                                                         schemaMan.get());
+    if (nullptr == kvstore) {
+        return EXIT_FAILURE;
+    }
+
     auto *kvstore_ = kvstore.get();
 
     std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
@@ -190,7 +200,12 @@ int main(int argc, char *argv[]) {
     }
 
     // Setup the signal handlers
-    setupSignalHandler();
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        nebula::WebService::stop();
+        return EXIT_FAILURE;
+    }
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore_, schemaMan.get());
     try {
@@ -203,18 +218,48 @@ int main(int argc, char *argv[]) {
         gServer->setIOThreadPool(ioThreadPool);
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception& e) {
+        nebula::WebService::stop();
         LOG(ERROR) << "Start thrift server failed, error:" << e.what();
         return EXIT_FAILURE;
     }
 
+    nebula::WebService::stop();
     LOG(INFO) << "The storage Daemon stopped";
+    return EXIT_SUCCESS;
 }
 
 
-void setupSignalHandler() {
-    ::signal(SIGPIPE, SIG_IGN);
-    ::signal(SIGINT, signalHandler);
-    ::signal(SIGTERM, signalHandler);
+Status installHandler(int signum, sighandler_t handler) {
+    // signal() returns the previous value of the signal handler, or SIG_ERR on error.
+    sighandler_t ret = ::signal(signum, handler);
+    if (ret == SIG_ERR) {
+        return Status::Error("Failed to install handler for %d(%s), error: %s", 
+                                signum, ::strsignal(signum), ::strerror(errno));
+    }
+    else {
+        return Status::OK();
+    }
+}
+
+
+Status setupSignalHandler() {
+    Status status = Status::OK();
+    do {
+        status = installHandler(SIGPIPE, SIG_IGN);
+        if (!status.ok())
+            break;
+
+        status = installHandler(SIGINT, signalHandler);
+        if (!status.ok())
+            break;
+
+        status = installHandler(SIGTERM, signalHandler);
+        if (!status.ok())
+            break;
+
+    } while (false);
+
+    return status;
 }
 
 
@@ -223,7 +268,6 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            nebula::WebService::stop();
             gServer->stop();
             break;
         default:
