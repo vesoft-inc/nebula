@@ -29,7 +29,10 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
         return addrs.status();
     }
     metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()));
-    metaClient_->init();
+    bool loadDataOk = metaClient_->threadLoadData();
+    if (!loadDataOk) {
+        LOG(ERROR) << "ExecutionEngine::init loadData by thread error!";
+    }
 
     schemaManager_ = meta::SchemaManager::create();
     schemaManager_->init(metaClient_.get());
