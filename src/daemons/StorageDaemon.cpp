@@ -152,9 +152,9 @@ int main(int argc, char *argv[]) {
     // Meta client
     auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
                                                                  std::move(metaAddrsRet.value()),
+                                                                 localhost,
                                                                  true);
-    metaClient->init();
-
+    metaClient->waitForMetadReady();
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();
     schemaMan->init(metaClient.get());

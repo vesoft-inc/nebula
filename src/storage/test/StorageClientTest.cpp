@@ -42,14 +42,24 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     auto addrsRet
         = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
     CHECK(addrsRet.ok()) << addrsRet.status();
+    auto& addrs = addrsRet.value();
+    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
+    auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
+    auto& localHost = hostRet.value();
     auto mClient
-        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
-    mClient->init();
+        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrs), localHost, true);
+    LOG(INFO) << "Add hosts and create space....";
+    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
+    ASSERT_TRUE(r.ok());
+    mClient->waitForMetadReady();
+    while (meta::ActiveHostsMan::instance()->getActiveHosts().size() == 0) {
+        usleep(1000);
+    }
+    VLOG(1) << "The storage server has been added to the meta service";
 
     LOG(INFO) << "Start data server....";
 
     // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
-    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
     auto sc = TestUtils::mockStorageServer(mClient.get(),
                                            dataPath.c_str(),
@@ -59,14 +69,6 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                                            // SchemaMan We need to switch to Meta Server
                                            // based version
                                            false);
-
-    LOG(INFO) << "Add hosts and create space....";
-    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
-    ASSERT_TRUE(r.ok());
-    while (meta::ActiveHostsMan::instance()->getActiveHosts().size() == 0) {
-        usleep(1000);
-    }
-    VLOG(1) << "The storage server has been added to the meta service";
 
     auto ret = mClient->createSpace("default", 10, 1).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
