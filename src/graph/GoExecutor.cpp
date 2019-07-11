@@ -554,10 +554,11 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
                     LOG(FATAL) << "Unknown VariantType: " << column.which();
             }
         }
+        // TODO Consider float/double, and need to reduce mem copy.
         std::string encode = writer.encode();
         if (distinct_) {
-            if (uniqResult->count(encode) == 0) {
-                uniqResult->emplace(encode);
+            auto ret = uniqResult->emplace(encode);
+            if (ret.second) {
                 rsWriter->addRow(writer);
             }
         } else {
