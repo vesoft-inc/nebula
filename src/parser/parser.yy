@@ -39,6 +39,7 @@ class GraphScanner;
     nebula::SequentialSentences            *sentences;
     nebula::ColumnSpecification            *colspec;
     nebula::ColumnSpecificationList        *colspeclist;
+    nebula::ColumnNameList                 *colsnamelist;
     nebula::ColumnType                      type;
     nebula::StepClause                     *step_clause;
     nebula::FromClause                     *from_clause;
@@ -157,6 +158,7 @@ class GraphScanner;
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
+%type <colsnamelist> column_name_list
 
 %type <with_user_opt_list> with_user_opt_list
 %type <with_user_opt_item> with_user_opt_item
@@ -629,10 +631,10 @@ alter_schema_opt_item
         $$ = new AlterSchemaOptItem(AlterSchemaOptItem::ADD, $3);
     }
     | KW_CHANGE L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterSchemaOptItem(AlterSchemaOptItem::CHANGE, $3);
+        $$ = new AlterSchemaOptItem(AlterSchemaOptItem::CHANGE, $3);
     }
-    | KW_DROP L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterSchemaOptItem(AlterSchemaOptItem::DROP, $3);
+    | KW_DROP L_PAREN column_name_list R_PAREN {
+        $$ = new AlterSchemaOptItem(AlterSchemaOptItem::DROP, $3);
     }
     ;
 
@@ -694,6 +696,17 @@ alter_edge_sentence
     }
     ;
 
+column_name_list
+    : name_label {
+        $$ = new ColumnNameList();
+        $$->addColumn($1);
+    }
+    | column_name_list COMMA name_label {
+        $$ = $1;
+        $$->addColumn($3);
+    }
+    ;
+
 column_spec_list
     : column_spec {
         $$ = new ColumnSpecificationList();
@@ -706,8 +719,7 @@ column_spec_list
     ;
 
 column_spec
-    : name_label { $$ = new ColumnSpecification($1); }
-    | name_label type_spec { $$ = new ColumnSpecification($2, $1); }
+    : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
     ;
 
 describe_tag_sentence
