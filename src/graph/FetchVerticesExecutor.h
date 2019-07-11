@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "graph/TraverseExecutor.h"
+#include "storage/client/StorageClient.h"
 
 namespace nebula {
 namespace graph {
@@ -27,6 +28,26 @@ public:
     void feedResult(std::unique_ptr<InterimResult> result) override;
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
+
+private:
+    Status setupVids();
+
+    void onEmptyInputs();
+
+    StatusOr<std::vector<storage::cpp2::PropDef>> getPropNames();
+
+    void fetchVertices();
+
+    using RpcResponse = storage::StorageRpcResponse<storage::cpp2::QueryResponse>;
+    void processResult(RpcResponse &&result);
+
+private:
+    FetchVerticesSentence                      *sentence_;
+    std::unique_ptr<InterimResult>              inputs_;
+    std::vector<VertexID>                       vids_;
+    std::string                                *varname_;
+    std::string                                *colname_;
+    std::unique_ptr<cpp2::ExecutionResponse>    resp_;
 };
 }  // namespace graph
 }  // namespace nebula

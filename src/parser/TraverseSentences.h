@@ -266,31 +266,44 @@ private:
 
 class FetchVerticesSentence final : public Sentence {
 public:
-    explicit FetchVerticesSentence(VertexIDList *vidList) {
+    FetchVerticesSentence(std::string  *tag,
+                          VertexIDList *vidList,
+                          YieldClause  *clause) {
         kind_ = Kind::kFetchVertices;
+        tag_.reset(tag);
         vidList_.reset(vidList);
-    }
-
-    explicit FetchVerticesSentence(Expression *ref) {
-        kind_ = Kind::kFetchVertices;
-        vidRef_.reset(ref);
-    }
-
-    void setYieldClause(YieldClause *clause) {
         yieldClause_.reset(clause);
     }
 
-    VertexIDList* getVidList() {
-        return vidList_.get();
+    FetchVerticesSentence(std::string  *tag,
+                          Expression   *ref,
+                          YieldClause  *clause) {
+        kind_ = Kind::kFetchVertices;
+        tag_.reset(tag);
+        vidRef_.reset(ref);
+        yieldClause_.reset(clause);
     }
 
-    YieldClause* getYieldClause() {
+    auto vidList() {
+        return vidList_->vidList();
+    }
+
+    bool isRef() {
+        return vidRef_ != nullptr;
+    }
+
+    Expression* ref() {
+        return vidRef_.get();
+    }
+
+    YieldClause* yieldClause() {
         return yieldClause_.get();
     }
 
     std::string toString() const override;
 
 private:
+    std::unique_ptr<std::string>    tag_;
     std::unique_ptr<VertexIDList>   vidList_;
     std::unique_ptr<Expression>     vidRef_;
     std::unique_ptr<YieldClause>    yieldClause_;
@@ -362,9 +375,22 @@ private:
 
 class FetchEdgesSentence final : public Sentence {
 public:
-    explicit FetchEdgesSentence(std::string *edgeType) {
+    FetchEdgesSentence(std::string *edgeType,
+                       EdgeKeys    *keys,
+                       YieldClause *clause) {
         kind_ = Kind::kFetchEdges;
         edgeType_.reset(edgeType);
+        edgeKeys_.reset(keys);
+        yieldClause_.reset(clause);
+    }
+
+    FetchEdgesSentence(std::string *edgeType,
+                       EdgeKeyRef  *ref,
+                       YieldClause *clause) {
+        kind_ = Kind::kFetchEdges;
+        edgeType_.reset(edgeType);
+        keyRef_.reset(ref);
+        yieldClause_.reset(clause);
     }
 
     bool isRef() const  {

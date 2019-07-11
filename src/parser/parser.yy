@@ -613,14 +613,12 @@ order_by_sentence
     ;
 
 fetch_vertices_sentence
-    : KW_FETCH KW_PROP KW_ON vid_list yield_clause {
-        auto fetch = new FetchVerticesSentence($4);
-        fetch->setYieldClause($5);
+    : KW_FETCH KW_PROP KW_ON name_label vid_list yield_clause {
+        auto fetch = new FetchVerticesSentence($4, $5, $6);
         $$ = fetch;
     }
-    | KW_FETCH KW_PROP KW_ON vid_ref_expression yield_clause {
-        auto fetch = new FetchVerticesSentence($4);
-        fetch->setYieldClause($5);
+    | KW_FETCH KW_PROP KW_ON name_label vid_ref_expression yield_clause {
+        auto fetch = new FetchVerticesSentence($4, $5, $6);
         $$ = fetch;
     }
     ;
@@ -659,15 +657,11 @@ edge_key_ref:
 
 fetch_edges_sentence
     : KW_FETCH KW_PROP KW_ON name_label edge_keys yield_clause {
-        auto fetch = new FetchEdgesSentence($4);
-        fetch->setKeys($5);
-        fetch->setYieldClause($6);
+        auto fetch = new FetchEdgesSentence($4, $5,$6);
         $$ = fetch;
     }
     | KW_FETCH KW_PROP KW_ON name_label edge_key_ref yield_clause {
-        auto fetch = new FetchEdgesSentence($4);
-        fetch->setKeyRef($5);
-        fetch->setYieldClause($6);
+        auto fetch = new FetchEdgesSentence($4, $5, $6);
         $$ = fetch;
     }
     ;
