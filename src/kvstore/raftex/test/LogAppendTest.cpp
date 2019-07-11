@@ -56,7 +56,7 @@ TEST(LogAppend, SimpleAppendWithOneCopy) {
         ASSERT_EQ(100, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader->firstCommittedLogId_;
     for (int i = 0; i < 100; ++i, ++id) {
         for (auto& c : copies) {
             folly::StringPiece msg;
@@ -103,7 +103,7 @@ TEST(LogAppend, SimpleAppendWithThreeCopies) {
         ASSERT_EQ(100, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader->firstCommittedLogId_;
     for (int i = 0; i < 100; ++i, ++id) {
         for (auto& c : copies) {
             folly::StringPiece msg;
@@ -172,7 +172,7 @@ TEST(LogAppend, MultiThreadAppend) {
         ASSERT_EQ(numThreads * numLogs, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader->firstCommittedLogId_;
     for (int i = 0; i < numThreads * numLogs; ++i, ++id) {
         folly::StringPiece msg;
         ASSERT_TRUE(leader->getLogMsg(id, msg));
