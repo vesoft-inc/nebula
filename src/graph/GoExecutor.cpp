@@ -10,6 +10,7 @@
 #include "dataman/RowSetReader.h"
 #include "dataman/ResultSchemaProvider.h"
 
+
 namespace nebula {
 namespace graph {
 
@@ -140,11 +141,16 @@ Status GoExecutor::prepareFrom() {
                 break;
             }
             auto value = expr->eval();
-            if (!Expression::isInt(value)) {
+            if (!value.ok()) {
+                status = Status::Error();
+                break;
+            }
+            auto v = value.value();
+            if (!Expression::isInt(v)) {
                 status = Status::Error("Vertex ID should be of type integer");
                 break;
             }
-            starts_.push_back(Expression::asInt(value));
+            starts_.push_back(Expression::asInt(v));
         }
         if (!status.ok()) {
             break;
@@ -374,21 +380,30 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
     return std::vector<VertexID>(set.begin(), set.end());
 }
 
-
 void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
-    auto outputs = setupInterimResult(std::move(rpcResp));
+    std::unique_ptr<InterimResult> outputs;
+
+    if (!setupInterimResult(std::move(rpcResp), outputs)) {
+        return;
+    }
+
     if (onResult_) {
         onResult_(std::move(outputs));
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(getResultColumnNames());
-        auto rows = outputs->getRows();
+
+        std::vector<cpp2::RowValue> rows;
+
+        if (outputs != nullptr) {
+            rows = std::move(outputs->getRows());
+        }
+
         resp_->set_rows(std::move(rows));
     }
     DCHECK(onFinish_);
     onFinish_();
 }
-
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() const {
     std::vector<storage::cpp2::PropDef> props;
@@ -500,14 +515,13 @@ std::vector<std::string> GoExecutor::getResultColumnNames() const {
     return result;
 }
 
-
-std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcResp) {
+bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<InterimResult> &result) {
     // Generic results
     std::shared_ptr<SchemaWriter> schema;
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     using nebula::cpp2::SupportedType;
-    auto cb = [&] (std::vector<VariantType> record) {
+    auto cb = [&](std::vector<VariantType> record) {
         if (schema == nullptr) {
             schema = std::make_shared<SchemaWriter>();
             auto colnames = getResultColumnNames();
@@ -531,9 +545,9 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
                         LOG(FATAL) << "Unknown VariantType: " << record[i].which();
                 }
                 schema->appendCol(colnames[i], type);
-            }   // for
+            }  // for
             rsWriter = std::make_unique<RowSetWriter>(schema);
-        }   // if
+        }  // if
 
         RowWriter writer(schema);
         for (auto &column : record) {
@@ -555,8 +569,8 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
             }
         }
         // TODO Consider float/double, and need to reduce mem copy.
-        std::string encode = writer.encode();
         if (distinct_) {
+            std::string encode = writer.encode();
             auto ret = uniqResult->emplace(encode);
             if (ret.second) {
                 rsWriter->addRow(writer);
@@ -565,55 +579,60 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
             rsWriter->addRow(writer);
         }
     };  // cb
-    processFinalResult(rpcResp, cb);
-    // No results populated
-    if (rsWriter == nullptr) {
-        return nullptr;
+
+    if (!processFinalResult(rpcResp, cb)) {
+        return false;
     }
-    return std::make_unique<InterimResult>(std::move(rsWriter));
+
+    if (rsWriter != nullptr) {
+        result = std::make_unique<InterimResult>(std::move(rsWriter));
+    }
+
+    return true;
 }
 
-VariantType getProp(const std::string &prop,
-                    const RowReader *reader,
-                    ResultSchemaProvider *schema) {
+
+OptVariantType getProp(const std::string &prop, const RowReader *reader,
+                       ResultSchemaProvider *schema) {
     using nebula::cpp2::SupportedType;
     auto type = schema->getFieldType(prop).type;
     switch (type) {
         case SupportedType::BOOL: {
             bool v;
             reader->getBool(prop, v);
-            return v;
+            return OptVariantType(v);
         }
         case SupportedType::INT: {
             int64_t v;
             reader->getInt(prop, v);
-            return v;
+            return OptVariantType(v);
         }
         case SupportedType::VID: {
             VertexID v;
             reader->getVid(prop, v);
-            return v;
+            return OptVariantType(v);
         }
         case SupportedType::FLOAT: {
             float v;
             reader->getFloat(prop, v);
-            return static_cast<double>(v);
+            return OptVariantType(static_cast<double>(v));
         }
         case SupportedType::DOUBLE: {
             double v;
             reader->getDouble(prop, v);
-            return v;
+            return OptVariantType(v);
         }
         case SupportedType::STRING: {
             folly::StringPiece v;
             reader->getString(prop, v);
-            return v.toString();
+            return OptVariantType(v.toString());
         }
         default:
             LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(type);
-            return "";
+            return OptVariantType(Status::Error("Unknow type: %d", static_cast<int32_t>(type)));
     }
 }
+
 
 void GoExecutor::onEmptyInputs() {
     if (onResult_) {
@@ -625,7 +644,7 @@ void GoExecutor::onEmptyInputs() {
 }
 
 
-void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
+bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
     auto all = rpcResp.responses();
     for (auto &resp : all) {
         if (resp.get_vertices() == nullptr) {
@@ -651,21 +670,35 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             RowSetReader rsReader(eschema, vdata.edge_data);
             auto iter = rsReader.begin();
             while (iter) {
+                auto dst = getProp("_dst", &*iter, eschema.get());
+                if (dst.ok() && vertexHolder_ != nullptr &&
+                    !vertexHolder_->exist(boost::get<int64_t>(dst.value()))) {
+                    ++iter;
+                    continue;
+                }
+
                 auto &getters = expCtx_->getters();
-                getters.getEdgeProp = [&] (const std::string &prop) -> VariantType {
+                getters.getEdgeProp = [&] (const std::string &prop) {
                     return getProp(prop, &*iter, eschema.get());
                 };
                 getters.getSrcTagProp = [&] (const std::string&, const std::string &prop) {
                     return getProp(prop, vreader.get(), vschema.get());
                 };
-                getters.getDstTagProp = [&] (const std::string&, const std::string &prop) {
-                    auto dst = getProp("_dst", &*iter, eschema.get());
-                    return vertexHolder_->get(boost::get<int64_t>(dst), prop);
+                getters.getDstTagProp = [&](const std::string &, const std::string &prop) {
+                    if (dst.ok()) {
+                        return vertexHolder_->get(boost::get<int64_t>(dst.value()), prop);
+                    }
+                    return dst;
                 };
+
                 // Evaluate filter
                 if (filter_ != nullptr) {
                     auto value = filter_->eval();
-                    if (!Expression::asBool(value)) {
+                    if (!value.ok()) {
+                        onError_(value.status());
+                        return false;
+                    }
+                    if (!Expression::asBool(value.value())) {
                         ++iter;
                         continue;
                     }
@@ -674,23 +707,35 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 record.reserve(yields_.size());
                 for (auto *column : yields_) {
                     auto *expr = column->expr();
-                    // TODO(dutor) `eval' may fail
                     auto value = expr->eval();
-                    record.emplace_back(std::move(value));
+                    if (!value.ok()) {
+                        onError_(value.status());
+                        return false;
+                    }
+                    record.emplace_back(std::move(value.value()));
                 }
                 cb(std::move(record));
                 ++iter;
             }   // while `iter'
         }   // for `vdata'
     }   // for `resp'
+    return true;
 }
 
+bool GoExecutor::VertexHolder::exist(VertexID id) const {
+    auto iter = data_.find(id);
+    if (iter == data_.end()) {
+        return false;
+    }
 
-VariantType GoExecutor::VertexHolder::get(VertexID id, const std::string &prop) const {
+    return true;
+}
+
+OptVariantType GoExecutor::VertexHolder::get(VertexID id, const std::string &prop) const {
     DCHECK(schema_ != nullptr);
     auto iter = data_.find(id);
 
-    // TODO(dutor) We need a type to represent NULL or non-existing prop
+    // TODO(dutor) We need a type to represent NULL
     CHECK(iter != data_.end());
 
     auto reader = RowReader::getRowReader(iter->second, schema_);
@@ -704,16 +749,24 @@ void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
     if (vertices == nullptr) {
         return;
     }
+
+    if (vertices->empty()) {
+        return;
+    }
+
     if (resp.get_vertex_schema() == nullptr) {
         return;
     }
+
     if (schema_ == nullptr) {
         schema_ = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
     }
 
     for (auto &vdata : *vertices) {
         DCHECK(vdata.__isset.vertex_data);
-        data_[vdata.vertex_id] = vdata.vertex_data;
+        if (!vdata.vertex_data.empty()) {
+            data_[vdata.vertex_id] = vdata.vertex_data;
+        }
     }
 }
 

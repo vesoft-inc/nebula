@@ -183,5 +183,38 @@ TEST_F(GoTest, Distinct) {
     }
 }
 
+TEST_F(GoTest, EMPTY_DST_VERTEX) {
+    {
+        // Maybe we should insert directly when the data is generated.
+        cpp2::ExecutionResponse resp;
+        auto &team = teams_["Rockets"];
+        auto *fmt =
+            "GO FROM %ld OVER belong YIELD "
+            "$^.team.name, $$.city.name";
+        auto query = folly::stringPrintf(fmt, team.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, std::string>> expected = {
+            {"Rockets", "Houston"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        // Maybe we should insert directly when the data is generated.
+        cpp2::ExecutionResponse resp;
+        auto &team = teams_["Cavaliers"];
+        auto *fmt =
+            "GO FROM %ld OVER belong YIELD "
+            "$^.team.name as team, $$.city.name as city";
+        auto query = folly::stringPrintf(fmt, team.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, std::string>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula

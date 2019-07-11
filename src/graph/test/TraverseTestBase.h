@@ -184,6 +184,37 @@ protected:
             return name_;
         }
 
+        void belong(std::string name, int64_t start_year) {
+            belong_ = std::make_tuple(std::move(name), start_year);
+        }
+
+        const auto &belongs() const { return belong_; }
+
+        int64_t vid() const {
+            return vid_;
+        }
+
+    private:
+     using Belong = std::tuple<std::string, int64_t>;
+     std::string name_;
+     int64_t vid_{0};
+     Belong belong_;
+    };
+
+    class City final {
+    public:
+        explicit City(std::string name, bool hidden = false) {
+            name_ = std::move(name);
+            vid_ = std::hash<std::string>()(name_);
+            hidden_ = hidden;
+        }
+
+        const std::string& name() const {
+            return name_;
+        }
+
+        const bool hidden() const { return hidden_; }
+
         int64_t vid() const {
             return vid_;
         }
@@ -191,6 +222,7 @@ protected:
     private:
         std::string                             name_;
         int64_t                                 vid_{0};
+        bool                                    hidden_;
     };
 
 protected:
@@ -198,6 +230,7 @@ protected:
     static std::unique_ptr<GraphClient>         client_;
     static VertexHolder<Player>                 players_;
     static VertexHolder<Team>                   teams_;
+    static VertexHolder<City>                   cities_;
 };
 
 uint16_t TraverseTestBase::storagePort_ = 0;
@@ -263,6 +296,7 @@ TraverseTestBase::VertexHolder<TraverseTestBase::Player> TraverseTestBase::playe
     }
 };
 
+
 TraverseTestBase::VertexHolder<TraverseTestBase::Team> TraverseTestBase::teams_ = {
     [] (const auto &team) { return team.name(); }, {
         Team{"Warriors"},
@@ -299,6 +333,38 @@ TraverseTestBase::VertexHolder<TraverseTestBase::Team> TraverseTestBase::teams_ 
     }
 };
 
+TraverseTestBase::VertexHolder<TraverseTestBase::City> TraverseTestBase::cities_ = {
+    [](const auto &city) { return city.name(); },
+    {
+        City{"Oakland"},
+        City{"Denver"},
+        City{"Houston"},
+        City{"Portland"},
+        City{"San Antonio"},
+        City{"Oklahoma City"},
+        City{"Salt Lake City"},
+        City{"Los Angeles"},
+        City{"Sacrmaento"},
+        City{"Minneapolis"},
+        City{"New Orleans"},
+        City{"Memphis"},
+        City{"Dallas"},
+        City{"Phoenix"},
+        City{"Charlotte", true},
+        City{"Cleveland", true},
+        City{"Boston", true},
+        City{"Toronto", true},
+        City{"Philadelphia", true},
+        City{"Indianapolis", true},
+        City{"Chicago", true},
+        City{"Atlanta", true},
+        City{"New York", true},
+        City{"Detroit", true},
+        City{"Milwaukee", true},
+        City{"Orlando", true},
+        City{"Washington", true},
+        City{"Miami", true},
+    }};
 
 // static
 AssertionResult TraverseTestBase::prepareSchema() {
@@ -346,6 +412,14 @@ AssertionResult TraverseTestBase::prepareSchema() {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG city(name string)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE EDGE serve(start_year int, end_year int)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
@@ -360,6 +434,16 @@ AssertionResult TraverseTestBase::prepareSchema() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
+
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE EDGE belong(start_year int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd << " failed";
+        }
+    }
+
     sleep(FLAGS_load_data_interval_secs + 3);
     return TestOK();
 }
@@ -652,6 +736,38 @@ AssertionResult TraverseTestBase::prepareData() {
                            .like("Kristaps Porzingis", 90)
                            .like("James Harden", 80);
 
+    teams_["Warriors"].belong("Oakland", 1977);
+    teams_["Nuggets"].belong("Denver", 1977);
+    teams_["Rockets"].belong("Houston", 1988);
+    teams_["Trail Blazers"].belong("Portland", 1999);
+    teams_["Spurs"].belong("San Antonio", 2000);
+    teams_["Thunders"].belong("Oklahoma City", 1099);
+    teams_["Jazz"].belong("Salt Lake City", 1000);
+    teams_["Clippers"].belong("Los Angeles", 1000);
+    teams_["Kings"].belong("Sacrmaento", 1000);
+    teams_["Timberwolves"].belong("Minneapolis", 1000);
+    teams_["Lakers"].belong("Los Angeles", 1000);
+    teams_["Pelicans"].belong("New Orleans", 1000);
+    teams_["Grizzlies"].belong("Memphis", 1000);
+    teams_["Mavericks"].belong("Dallas", 1000);
+    teams_["Suns"].belong("Phoenix", 1000);
+
+    teams_["Hornets"].belong("Charlotte", 1000);
+    teams_["Cavaliers"].belong("Cleveland", 1000);
+    teams_["Celtics"].belong("Boston", 1000);
+    teams_["Raptors"].belong("Toronto", 1000);
+    teams_["76ers"].belong("Philadelphia", 1000);
+    teams_["Pacers"].belong("Indianapolis", 1000);
+    teams_["Bulls"].belong("Chicago", 1000);
+    teams_["Hawks"].belong("Atlanta", 1000);
+    teams_["Knicks"].belong("New York", 1000);
+    teams_["Pistons"].belong("Detroit", 1000);
+    teams_["Bucks"].belong("Milwaukee", 1000);
+    teams_["Magic"].belong("Orlando", 1000);
+    teams_["Nets"].belong("New York", 1000);
+    teams_["Wizards"].belong("Washington", 1000);
+    teams_["Heat"].belong("Miami", 1000);
+
     {
         cpp2::ExecutionResponse resp;
         std::string query = "USE nba";
@@ -704,6 +820,31 @@ AssertionResult TraverseTestBase::prepareData() {
         auto code = client_->execute(query, resp);
         if (code != cpp2::ErrorCode::SUCCEEDED) {
             return TestError() << "Insert `teams' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+    {
+        // Insert vertices `city'
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT VERTEX city(name) VALUES ";
+        for (auto &city : cities_) {
+            if (city.hidden()) {
+                continue;
+            }
+            query += std::to_string(city.vid());
+            query += ": ";
+            query += "(";
+            query += "\"";
+            query += city.name();
+            query += "\"";
+            query += "),\n\t";
+        }
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `cities' failed: "
                                << static_cast<int32_t>(code);
         }
     }
@@ -762,6 +903,33 @@ AssertionResult TraverseTestBase::prepareData() {
                                << static_cast<int32_t>(code);
         }
     }
+
+    {
+        // Insert edges `belong'
+        cpp2::ExecutionResponse resp;
+        std::string query;
+        query.reserve(1024);
+        query += "INSERT EDGE belong(start_year) VALUES ";
+        for (auto &team : teams_) {
+            auto &city = std::get<0>(team.belongs());
+            auto start_year = std::get<1>(team.belongs());
+            query += std::to_string(team.vid());
+            query += " -> ";
+            query += std::to_string(cities_[city].vid());
+            query += ": ";
+            query += "(";
+            query += std::to_string(start_year);
+            query += "),\n\t";
+        }
+
+        query.resize(query.size() - 3);
+        auto code = client_->execute(query, resp);
+        if (code != cpp2::ErrorCode::SUCCEEDED) {
+            return TestError() << "Insert `belong' failed: "
+                               << static_cast<int32_t>(code);
+        }
+    }
+
     return TestOK();
 }
 
