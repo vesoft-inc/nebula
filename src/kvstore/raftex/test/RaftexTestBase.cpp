@@ -89,6 +89,9 @@ void waitUntilLeaderElected(
                 }
             });
 
+            // Sleep some time to wait until resp of heartbeat has come back when elected as leader
+            usleep(10000);
+
             bool sameLeader = true;
             for (auto& c : copies) {
                 if (c != nullptr && leader != c) {
