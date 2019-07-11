@@ -106,6 +106,9 @@ std::string YieldClause::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "YIELD ";
+    if (distinct_) {
+        buf += "DISTINCT ";
+    }
     buf += yieldColumns_->toString();
     return buf;
 }
