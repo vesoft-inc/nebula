@@ -1360,6 +1360,9 @@ sentences
     | sentences SEMICOLON {
         $$ = $1;
     }
+    | %empty {
+        $$ = nullptr;
+    }
     ;
 
 
