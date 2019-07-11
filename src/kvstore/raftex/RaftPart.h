@@ -248,11 +248,8 @@ private:
     /*****************************************************************
      * Asynchronously send a heartbeat (An empty log entry)
      *
-     * The code path is similar to appendLog() and the heartbeat will
-     * be put into the log batch, but will not be added to WAL
      ****************************************************************/
     folly::Future<AppendLogResult> sendHeartbeat();
-    void doneHeartbeat();
 
     /****************************************************
      *

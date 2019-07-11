@@ -69,16 +69,25 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
     VLOG(2) << "TestShard: Committing logs";
     LogID firstId = -1;
     LogID lastId = -1;
+    int32_t commitLogsNum = 0;
     while (iter->valid()) {
         if (firstId < 0) {
             firstId = iter->logId();
         }
         lastId = iter->logId();
-        data_.emplace(iter->logId(), iter->logMsg().toString());
+        if (!iter->logMsg().empty()) {
+            if (firstCommittedLogId_ < 0) {
+                firstCommittedLogId_ = iter->logId();
+            }
+            data_.emplace(iter->logId(), iter->logMsg().toString());
+            commitLogsNum++;
+        }
         ++(*iter);
     }
     VLOG(2) << "TestShard: Committed log " << firstId << " to " << lastId;
-    commitTimes_++;
+    if (commitLogsNum > 0) {
+        commitTimes_++;
+    }
     return true;
 }
 
