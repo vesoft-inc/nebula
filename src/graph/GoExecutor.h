@@ -53,6 +53,8 @@ private:
 
     Status prepareNeededProps();
 
+    Status prepareDistinct();
+
     /**
      * To check if this is the final step.
      */
@@ -154,6 +156,9 @@ private:
     public:
         VariantType get(VertexID id, const std::string &prop) const;
         void add(const storage::cpp2::QueryResponse &resp);
+        const auto* schema() const {
+            return schema_.get();
+        }
 
     private:
         std::shared_ptr<ResultSchemaProvider>       schema_;
@@ -171,6 +176,8 @@ private:
     std::string                                *colname_{nullptr};
     Expression                                 *filter_{nullptr};
     std::vector<YieldColumn*>                   yields_;
+    bool                                        distinct_{false};
+    bool                                        distinctPushDown_{false};
     std::unique_ptr<InterimResult>              inputs_;
     std::unique_ptr<ExpressionContext>          expCtx_;
     std::vector<VertexID>                       starts_;

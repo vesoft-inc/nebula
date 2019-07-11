@@ -101,6 +101,7 @@ TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
 TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
 ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 ASC                         ([Aa][Ss][Cc])
+DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -191,6 +192,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {ORDER}                     { return TokenType::KW_ORDER; }
 {ASC}                       { return TokenType::KW_ASC; }
+{DISTINCT}                  { return TokenType::KW_DISTINCT; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
