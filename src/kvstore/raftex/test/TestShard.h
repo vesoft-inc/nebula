@@ -54,6 +54,10 @@ public:
     size_t getNumLogs() const;
     bool getLogMsg(LogID id, folly::StringPiece& msg) const;
 
+public:
+    int32_t commitTimes_ = 0;
+    int32_t firstCommittedLogId_ = -1;
+
 private:
     const size_t idx_;
     std::shared_ptr<RaftexService> service_;

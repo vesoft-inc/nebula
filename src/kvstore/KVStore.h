@@ -15,6 +15,7 @@
 #include "kvstore/PartManager.h"
 #include "kvstore/CompactionFilter.h"
 #include "meta/SchemaManager.h"
+#include "base/ErrorOr.h"
 
 namespace nebula {
 namespace kvstore {
@@ -63,7 +64,7 @@ public:
     // Retrieve the current leader for the given partition. This
     // is usually called when ERR_LEADER_CHANGED result code is
     // returned
-    virtual HostAddr partLeader(GraphSpaceID spaceId, PartitionID partID) = 0;
+    virtual ErrorOr<ResultCode, HostAddr> partLeader(GraphSpaceID spaceId, PartitionID partID) = 0;
 
     virtual PartManager* partManager() const {
         return nullptr;

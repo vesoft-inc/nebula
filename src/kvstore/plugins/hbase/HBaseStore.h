@@ -70,7 +70,7 @@ public:
     }
 
     // Return the current leader
-    HostAddr partLeader(GraphSpaceID spaceId, PartitionID partId) override {
+    ErrorOr<ResultCode, HostAddr> partLeader(GraphSpaceID spaceId, PartitionID partId) override {
         UNUSED(spaceId);
         UNUSED(partId);
         return {-1, -1};
