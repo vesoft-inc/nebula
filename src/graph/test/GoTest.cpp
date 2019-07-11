@@ -157,10 +157,20 @@ TEST_F(GoTest, DISABLED_OneStepInOutBound) {
 TEST_F(GoTest, Distinct) {
     {
         cpp2::ExecutionResponse resp;
+        auto &player = players_["Nobody"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD DISTINCT $^.player.name as name, $$.team.name as name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
         auto *fmt = "GO FROM %ld OVER like "
                     "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve "
-                    "YIELD DISTINCT serve._dst, $$[team].name";
+                    "YIELD DISTINCT serve._dst, $$.team.name";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
