@@ -280,10 +280,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 }
                                 return TokenType::STRING;
                             }
-<DQ_STR><<EOF>>             {
-                                // Must match ""
-                                throw GraphParser::syntax_error(*yylloc, "unterminated string \"\"");
-                            }
 <SQ_STR>\'                  {
                                 yylval->strval = new std::string(sbuf, pos);
                                 BEGIN(INITIAL);
@@ -292,9 +288,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 }
                                 return TokenType::STRING;
                             }
-<SQ_STR><<EOF>>             {
-                                // Must match ''
-                                throw GraphParser::syntax_error(*yylloc, "unterminated string ''");
+<DQ_STR,SQ_STR><<EOF>>      {
+                                // Must match '' or ""
+                                throw GraphParser::syntax_error(*yylloc, "unterminated string");
                             }
 <DQ_STR,SQ_STR>\n           { yyterminate(); }
 <DQ_STR>[^\\\n\"]+          {
