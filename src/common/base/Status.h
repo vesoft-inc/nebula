@@ -97,7 +97,7 @@ public:
     // Graph engine errors
     STATUS_GENERATOR(SyntaxError);
     // Nothing is executed When command is comment
-    STATUS_GENERATOR(SyntaxDoNone);
+    STATUS_GENERATOR(StatementEmpty);
 
     // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
     STATUS_GENERATOR(SpaceNotFound);
@@ -124,7 +124,7 @@ public:
         kNotSupported           = 103,
         // 2xx, for graph engine errors
         kSyntaxError            = 201,
-        kSyntaxDoNone           = 202,
+        kStatementEmpty         = 202,
         // 3xx, for storage engine errors
         // ...
         // 4xx, for meta service errors

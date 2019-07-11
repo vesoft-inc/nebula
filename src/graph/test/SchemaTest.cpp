@@ -35,7 +35,7 @@ TEST_F(SchemaTest, TestComment) {
         cpp2::ExecutionResponse resp;
         std::string cmd = "# CREATE TAG TAG1";
         auto code = client->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_DO_NONE, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_STATEMENT_EMTPY, code);
     }
     {
         cpp2::ExecutionResponse resp;

@@ -361,7 +361,7 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         }
         std::cout << "[ERROR (" << static_cast<int32_t>(res)
                   << ")]: " << verbose << "\n";
-    } else if (res == cpp2::ErrorCode::E_DO_NONE) {
+    } else if (res == cpp2::ErrorCode::E_STATEMENT_EMTPY) {
         return;
     } else {
         // TODO(sye) Need to print human-readable error strings

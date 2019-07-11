@@ -59,7 +59,7 @@ public:
         }
 
         if (sentences_ == nullptr) {
-            return Status::SyntaxDoNone();
+            return Status::StatementEmpty();
         }
         auto *sentences = sentences_;
         sentences_ = nullptr;

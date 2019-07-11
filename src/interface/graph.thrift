@@ -26,7 +26,7 @@ enum ErrorCode {
     E_SYNTAX_ERROR = -7,
     E_EXECUTION_ERROR = -8,
     // Nothing is executed When command is comment
-    E_DO_NONE = -9,
+    E_STATEMENT_EMTPY = -9,
 } (cpp.enum_strict)
 
 

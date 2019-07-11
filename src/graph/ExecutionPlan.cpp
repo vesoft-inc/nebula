@@ -69,8 +69,8 @@ void ExecutionPlan::onError(Status status) {
     auto *rctx = ectx()->rctx();
     if (status.isSyntaxError()) {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_SYNTAX_ERROR);
-    } else if (status.isSyntaxDoNone()) {
-        rctx->resp().set_error_code(cpp2::ErrorCode::E_DO_NONE);
+    } else if (status.isStatementEmpty()) {
+        rctx->resp().set_error_code(cpp2::ErrorCode::E_STATEMENT_EMTPY);
     } else {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_EXECUTION_ERROR);
     }
