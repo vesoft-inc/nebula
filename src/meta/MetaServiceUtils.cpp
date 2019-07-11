@@ -20,6 +20,7 @@ const std::string kIndexTable  = "__index__";   // NOLINT
 const std::string kUsersTable  = "__users__";    // NOLINT
 const std::string kRolesTable  = "__roles__";    // NOLINT
 
+
 const std::string kHostOnline = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";     // NOLINT
 

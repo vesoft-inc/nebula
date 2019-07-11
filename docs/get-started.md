@@ -5,7 +5,7 @@ This tutorial provides a quick introduction to use Nebula Graph.
 
 ---
 
-### Step 1 Install Nebula Graph
+### Step 1: Install Nebula Graph
 
 The easiest way to startup Nebula is using Docker.
 Docker is a tool designed to make it easier to create, deploy, and run applications by using containers.
@@ -27,34 +27,11 @@ docker pull vesoft/nebula-graph:latest
 ```
 to get `nebula` image and `docker images` that can display images status.
 
-If the pulling is slow when pulling the image, configure a new mirror.
-1. Check if the `/etc/docker` folder exists, if not, create a new one with `mkdir -p /etc/docker`. Generally the folder will exist after Docker installation.
-2. Create the new file `daemon.json` with the following command
 
-```
-tee /etc/docker/daemon.json <<-'EOF'
-{
-  "registry-mirrors": [
-    "https://dockerhub.azk8s.cn",
-    "https://reg-mirror.qiniu.com"
-  ]
-}
-EOF
-```
-Or create the new file with `vi /etc/docker/daemon.json`, then add the following content
-
-```
-{
-  "registry-mirrors": [
-    "https://dockerhub.azk8s.cn",
-    "https://reg-mirror.qiniu.com"
-  ]
-}
-```
 
 ---
 
-### Step 2 Startup Nebula Graph
+### Step 2: Startup Nebula Graph
 
 When `nebula` image is ready, run
 
@@ -107,160 +84,210 @@ Welcome to Nebula Graph (Version 0.1)
 nebula>
 ```
 
-Before query the dataset, you should switch to an existing graph space.
+If you have any questions or concerns about the deployment procedures, please do not hesitate to open an issue on GitHub.
 
-```
-nebula> use nba
-Execution succeeded (Time spent: 154/793 us)
-```
+### Step 3: Build Your Own Graph
 
----
+This section describes how to build a graph and run queries. The example is built on the graph below:
 
-### Step 3 Simple Query Demo
+![Untitled Diagram (1)](https://user-images.githubusercontent.com/51590253/60649144-0774c980-9e74-11e9-86d6-bad1653e70ba.png)
 
-This query comes from a vertex walk up an edge.
-
-```
-nebula> GO FROM 5209979940224249985 OVER like
-========================
-|                   id |
-========================
-| -7187791973189815797 |
-------------------------
-|  3778194419743477824 |
-------------------------
-| -6952676908621237908 |
-------------------------
-........................
-```
-
-This query comes from a vertex walk up an edge and the target's age should be greater than or equal to 30, also renames the columns as `Player`, `Friend` and `Age`.
-
-```
-nebula> GO FROM 5209979940224249985 OVER like WHERE $$[player].age >= 30 YIELD $^[player].name AS Player, $$[player].name AS Friend, $$[player].age AS Age
-=============================================
-|          Player |            Friend | Age |
-=============================================
-| Dejounte Murray |      Kevin Durant |  30 |
----------------------------------------------
-| Dejounte Murray |        Chris Paul |  33 |
----------------------------------------------
-| Dejounte Murray |      LeBron James |  34 |
----------------------------------------------
-.............................................
+There are three kinds of tags (_course_, _building_ and _team_) and two edge types (_select_ and _like_). The graph schema is:
+```json
+{  
+   "tags":{  
+      "course":[  
+         "name: string",
+         "credits: integer"
+      ],
+      "building":[  
+         "name: string"
+      ],
+      "student":[  
+         "name: string",
+         "age: integer",
+         "gender: string"
+      ]
+   },
+   "edges":{  
+      "select":[  
+         "grade: integer"
+      ],
+      "like":[  
+         "likeness: double"
+      ]
+   }
+}
 ```
 
-This query comes from a vertex walk up an edge and the target's age should be greater than or equal to 30.
+#### Create a Graph Space
 
-Setting output result as input, query `Player Name`, `FromYear`, `ToYear` and `Team Name` with input's `id`.
+**SPACE** is a region that provides physically isolation of graphs in Nebula. First we need to create a space and use it before other operations.
 
-In this query, `$^` is delegated the source vertex and `$$` is the target vertex.
-
-`$-` is used to indicate the input from pipeline.
-
-(reference to `regular expressions`, using the special ^ (hat) and $ (dollar sign) metacharacters to describe the start and the end of the line.)
-
+To list all existing spaces:
 ```
-nebula> GO FROM 5209979940224249985 OVER like WHERE $$[player].age >= 30 | GO FROM $-.id OVER serve YIELD $^[player].name AS Player, serve.start_year AS FromYear, serve.end_year AS ToYear, $$[team].name AS Team
-=====================================================
-|            Player | FromYear | ToYear |      Team |
-=====================================================
-|      Kevin Durant |     2016 |   2019 |  Warriors |
------------------------------------------------------
-|      Kevin Durant |     2007 |   2016 |  Thunders |
------------------------------------------------------
-|        Chris Paul |     2017 |   2021 |   Rockets |
------------------------------------------------------
-.....................................................
+nebula> SHOW SPACES;
 ```
 
-For more detail about Query Language, please see [Traverse The Graph](/nGQL/#traverse-the-graph).
-
----
-
-### Step 4 Advanced Usage
-
-Currently you can create your own graph space, such as :
-
+To create a new space named _myspace_test2_ :
 ```
-CREATE space myspace(partition_num=1, replica_factor=1)
+nebula> CREATE SPACE myspace_test2(partition_num=1, replica_factor=1);
+
+-- Use this space
+nebula> USE myspace_test2;
 ```
+`replica_factor` specifies the number of replicas in the cluster.
 
-When you start `Nebula Graph`, a set of vertices and edges have already existed.
-Currently the default schema is `nba`.
+`partition_num` specifies the number of partitions in one replica.
 
-The graph space describes the relationship between players and teams.
-In the graph space, there are two tags (player and team) and two edges (serve and like) which is composed of `string` and `integer`.
+#### Define Graph Schema
 
-The Schema looks like :
-
+The `CREATE TAG` statement defines a tag, with a type name and an attribute list.
 ```
-Tag team:
-==================
-| Field |   Type |
-==================
-|  name | string |
-------------------
-
-Tag player:
-==================
-| Field |   Type |
-==================
-|  name | string |
-------------------
-|   age |    int |
-------------------
-
-Edge serve:
-=====================
-|      Field | Type |
-=====================
-| start_year |  int |
----------------------
-|   end_year |  int |
----------------------
-
-Edge like:
-===================
-|    Field | Type |
-===================
-| likeness |  int |
--------------------
-
+nebula> CREATE TAG course(name string, credits int);
+nebula> CREATE TAG building(name string);
+nebula> CREATE TAG student(name string, age int, gender string);
+```
+The `CREATE EDGE` statement defines an edge type.
+```
+nebula> CREATE EDGE like(likeness double);
+nebula> CREATE EDGE select(grade int);
 ```
 
-You can create both tag and edge's schema:
-
+To list the tags and edge types that we just created：
 ```
-// create tags schema: players and teams:
-CREATE TAG player(name string, age int)
+-- Show tag list
+nebula> SHOW TAGS;
 
-CREATE TAG team(name string)
-
-// create edges schema: players and teams:
-CREATE EDGE like(likeness int)
-
-CREATE EDGE serve(start_year int, end_year int)
+-- Show edge type list
+nebula> SHOW EDGES;
 ```
 
-You could describe the schema created, for example:
+To show the attributes of a tag or an edge type:
+```
+-- Show attributes of a tag
+nebula> DESCRIBE TAG student;
+
+-- Show attributes of an edge type 
+nebula> DESCRIBE EDGE like;
+```
+
+#### Insert Data
+
+Insert the vertexes and edges based on the graph above.
+```
+-- Insert vertexes
+nebula> INSERT VERTEX student(name, age, gender) VALUES 200:("Monica", 16, "female");
+nebula> INSERT VERTEX student(name, age, gender) VALUES 201:("Mike", 18, "male");
+nebula> INSERT VERTEX student(name, age, gender) VALUES 202:("Jane", 17, "female");
+nebula> INSERT VERTEX course(name, credits),building(name) VALUES 101:("Math", 3, "No5");
+nebula> INSERT VERTEX course(name, credits),building(name) VALUES 102:("English", 6, "No11");
+
+-- Insert edges
+nebula> INSERT EDGE select(grade) VALUES 200 -> 101:(5);
+nebula> INSERT EDGE select(grade) VALUES 200 -> 102:(3);
+nebula> INSERT EDGE select(grade) VALUES 201 -> 102:(3);
+nebula> INSERT EDGE select(grade) VALUES 202 -> 102:(3);
+nebula> INSERT EDGE like(likeness) VALUES 200 -> 201:(92.5);
+nebula> INSERT EDGE like(likeness) VALUES 201 -> 200:(85.6);
+nebula> INSERT EDGE like(likeness) VALUES 201 -> 202:(93.2);
+```
+
+#### Sample Queries
+
+Q1. Find the vertexes that 201 likes:
 
 ```
-DESCRIBE TAG player
+nebula> GO FROM 201 OVER like;
 
-DESCRIBE EDGE serve
+=======
+|  id |
+=======
+| 200 |
+-------
+| 202 |
+-------
 ```
 
-The insert sentences look like the following commands.
+Q2. Find the vertexes that 201 likes, whose age are greater than 17. Return their name, age and gender, and alias the columns as Friend, Age and Gender, respectively.
 
 ```
-// Insert some vertices: players and teams:
-INSERT VERTEX player(name, age) VALUES -8379929135833483044:("Amar'e Stoudemire", 36)
+nebula> GO FROM 201 OVER like WHERE $$[student].age >= 17 YIELD $$[student].name AS Friend, $$[student].age AS Age, $$[student].gender AS Gender;
 
-INSERT VERTEX team(name) VALUES -9110170398241263635:("Magic")
-
-// Insert some edges: likes and serves:
-INSERT EDGE like(likeness) VALUES -8379929135833483044 -> 6663720087669302163:(90)
-
-INSERT EDGE serve(start_year, end_year) VALUES -8379929135833483044 -> 868103967282670864:(2002, 2010)
+=========================
+| Friend | Age | Gender |
+=========================
+|   Jane |  17 | female |
+-------------------------
 ```
+`YIELD` specifies what values or results you might want to return from query.
+
+`$^` represents the source vertex.
+
+`$$` indicates the target vertex.
+
+Q3. Find the courses that the vetexes liked by 201 select and their grade.
+
+```
+-- By pipe
+nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^[student].name AS Student, $$[course].name AS Course, select.grade AS Grade;
+
+=============================
+| Student |  Course | Grade |
+=============================
+|  Monica |    Math |     5 |
+-----------------------------
+|  Monica | English |     3 |
+-----------------------------
+|    Jane | English |     3 |
+-----------------------------
+
+-- By temporary variable
+nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^[student].name AS Student, $$[course].name AS Course, select.grade AS Grade;
+
+=============================
+| Student |  Course | Grade |
+=============================
+|  Monica |    Math |     5 |
+-----------------------------
+|  Monica | English |     3 |
+-----------------------------
+|    Jane | English |     3 |
+-----------------------------
+```
+
+`|` denotes a pipe. The output of the formal query acts as input to the next one like a pipeline.
+
+`$-` refers to the input stream.
+
+
+The second approach adopts a user-defined variable `$a`. The scope of this variable is within the compound statement.
+
+For more details about Query Language, check [nGQL](https://github.com/vesoft-inc/nebula/blob/master/docs/nGQL.md).
+
+
+<!-- If the pulling is slow when pulling the image, configure a new mirror.
+1. Check if the `/etc/docker` folder exists, if not, create a new one with `mkdir -p /etc/docker`. Generally the folder will exist after Docker installation.
+2. Create the new file `daemon.json` with the following command
+
+```
+tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": [
+    "https://dockerhub.azk8s.cn",
+    "https://reg-mirror.qiniu.com"
+  ]
+}
+EOF
+```
+Or create the new file with `vi /etc/docker/daemon.json`, then add the following content
+
+```
+{
+  "registry-mirrors": [
+    "https://dockerhub.azk8s.cn",
+    "https://reg-mirror.qiniu.com"
+  ]
+}
+``` -->
+

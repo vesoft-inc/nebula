@@ -39,6 +39,7 @@ class GraphScanner;
     nebula::SequentialSentences            *sentences;
     nebula::ColumnSpecification            *colspec;
     nebula::ColumnSpecificationList        *colspeclist;
+    nebula::ColumnNameList                 *colsnamelist;
     nebula::ColumnType                      type;
     nebula::StepClause                     *step_clause;
     nebula::FromClause                     *from_clause;
@@ -157,6 +158,7 @@ class GraphScanner;
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
+%type <colsnamelist> column_name_list
 
 %type <with_user_opt_list> with_user_opt_list
 %type <with_user_opt_item> with_user_opt_item
@@ -259,14 +261,14 @@ input_ref_expression
     ;
 
 src_ref_expression
-    : SRC_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new SourcePropertyExpression($3, $6);
+    : SRC_REF DOT LABEL DOT LABEL {
+        $$ = new SourcePropertyExpression($3, $5);
     }
     ;
 
 dst_ref_expression
-    : DST_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new DestPropertyExpression($3, $6);
+    : DST_REF DOT LABEL DOT LABEL {
+        $$ = new DestPropertyExpression($3, $5);
     }
     ;
 
@@ -628,10 +630,10 @@ alter_schema_opt_item
         $$ = new AlterSchemaOptItem(AlterSchemaOptItem::ADD, $3);
     }
     | KW_CHANGE L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterSchemaOptItem(AlterSchemaOptItem::CHANGE, $3);
+        $$ = new AlterSchemaOptItem(AlterSchemaOptItem::CHANGE, $3);
     }
-    | KW_DROP L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterSchemaOptItem(AlterSchemaOptItem::DROP, $3);
+    | KW_DROP L_PAREN column_name_list R_PAREN {
+        $$ = new AlterSchemaOptItem(AlterSchemaOptItem::DROP, $3);
     }
     ;
 
@@ -693,6 +695,17 @@ alter_edge_sentence
     }
     ;
 
+column_name_list
+    : name_label {
+        $$ = new ColumnNameList();
+        $$->addColumn($1);
+    }
+    | column_name_list COMMA name_label {
+        $$ = $1;
+        $$->addColumn($3);
+    }
+    ;
+
 column_spec_list
     : column_spec {
         $$ = new ColumnSpecificationList();
@@ -705,8 +718,7 @@ column_spec_list
     ;
 
 column_spec
-    : name_label { $$ = new ColumnSpecification($1); }
-    | name_label type_spec { $$ = new ColumnSpecification($2, $1); }
+    : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
     ;
 
 describe_tag_sentence
@@ -828,7 +840,7 @@ vertex_tag_list
     ;
 
 vertex_tag_item
-    : name_label {
+    : name_label L_PAREN R_PAREN{
         $$ = new VertexTagItem($1);
     }
     | name_label L_PAREN prop_list R_PAREN {
@@ -862,7 +874,10 @@ vertex_row_list
     ;
 
 vertex_row_item
-    : vid COLON L_PAREN value_list R_PAREN {
+    : vid COLON L_PAREN R_PAREN {
+        $$ = new VertexRowItem($1, new ValueList());
+    }
+    | vid COLON L_PAREN value_list R_PAREN {
         $$ = new VertexRowItem($1, $4);
     }
     ;
@@ -882,11 +897,26 @@ value_list
     ;
 
 insert_edge_sentence
-    : KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
+    : KW_INSERT KW_EDGE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgeSentence();
+        sentence->setEdge($3);
+        sentence->setProps(new PropertyList());
+        sentence->setRows($7);
+        $$ = sentence;
+    }
+    | KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setEdge($3);
         sentence->setProps($5);
         sentence->setRows($8);
+        $$ = sentence;
+    }
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgeSentence();
+        sentence->setOverwrite(false);
+        sentence->setEdge($5);
+        sentence->setProps(new PropertyList());
+        sentence->setRows($9);
         $$ = sentence;
     }
     | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
@@ -911,8 +941,14 @@ edge_row_list
     ;
 
 edge_row_item
-    : vid R_ARROW vid COLON L_PAREN value_list R_PAREN {
+    : vid R_ARROW vid COLON L_PAREN R_PAREN {
+        $$ = new EdgeRowItem($1, $3, new ValueList());
+    }
+    | vid R_ARROW vid COLON L_PAREN value_list R_PAREN {
         $$ = new EdgeRowItem($1, $3, $6);
+    }
+    | vid R_ARROW vid AT rank COLON L_PAREN R_PAREN {
+        $$ = new EdgeRowItem($1, $3, $5, new ValueList());
     }
     | vid R_ARROW vid AT rank COLON L_PAREN value_list R_PAREN {
         $$ = new EdgeRowItem($1, $3, $5, $8);
