@@ -281,7 +281,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 return TokenType::STRING;
                             }
 <DQ_STR><<EOF>>             {
-                                // Must match ''
+                                // Must match ""
                                 throw GraphParser::syntax_error(*yylloc, "unterminated string \"\"");
                             }
 <SQ_STR>\'                  {
