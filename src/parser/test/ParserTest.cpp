@@ -479,6 +479,22 @@ TEST(Parser, InsertVertex) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    // Test insert prop unterminated ""
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name, age) "
+                            "VALUES 12345:(\"dutor, 30)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxError());
+    }
+    // Test insert prop unterminated ''
+    {
+        GQLParser parser;
+        std::string query = "INSERT VERTEX person(name, age) "
+                            "VALUES 12345:(\'dutor, 30)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxError());
+    }
 }
 
 TEST(Parser, UpdateVertex) {
@@ -838,6 +854,36 @@ TEST(Parser, UnreservedKeywords) {
 
 
 TEST(Parser, Annotation) {
+    {
+        GQLParser parser;
+        std::string query = "show spaces /* test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxError());
+    }
+    {
+        GQLParser parser;
+        std::string query = "// test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isStatementEmpty());
+    }
+    {
+        GQLParser parser;
+        std::string query = "# test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isStatementEmpty());
+    }
+    {
+        GQLParser parser;
+        std::string query = "-- test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isStatementEmpty());
+    }
+    {
+        GQLParser parser;
+        std::string query = "/* test comment....*/";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isStatementEmpty());
+    }
     {
         GQLParser parser;
         std::string query = "CREATE TAG TAG1(space string) // test....";
