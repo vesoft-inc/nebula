@@ -67,20 +67,33 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
     auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
-        auto status = row->srcid()->prepare();
+        auto sid = row->srcid();
+        auto status = sid->prepare();
         if (!status.ok()) {
             return status;
         }
-        auto v = row->srcid()->eval();
+        auto ovalue = sid->eval();
+        if (!ovalue.ok()) {
+            return ovalue.status();
+        }
+
+        auto v = ovalue.value();
         if (!Expression::isInt(v)) {
             return Status::Error("Vertex ID should be of type integer");
         }
         auto src = Expression::asInt(v);
-        status = row->dstid()->prepare();
+
+        auto did = row->dstid();
+        status = did->prepare();
         if (!status.ok()) {
             return status;
         }
-        v = row->dstid()->eval();
+        ovalue = did->eval();
+        if (!ovalue.ok()) {
+            return ovalue.status();
+        }
+
+        v = ovalue.value();
         if (!Expression::isInt(v)) {
             return Status::Error("Vertex ID should be of type integer");
         }
@@ -100,7 +113,11 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
-            values.emplace_back(expr->eval());
+            ovalue = expr->eval();
+            if (!ovalue.ok()) {
+                return ovalue.status();
+            }
+            values.emplace_back(ovalue.value());
         }
 
         RowWriter writer(schema_);

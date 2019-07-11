@@ -28,7 +28,10 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
                 return ret;
             }
         }
-        vResp.set_vertex_data(writer.encode());
+
+        if (writer.size() > 1) {
+          vResp.set_vertex_data(writer.encode());
+        }
     }
 
     if (!this->edgeContext_.props_.empty()) {
