@@ -80,11 +80,17 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
-        auto status = row->id()->prepare();
+        auto rid = row->id();
+        auto status = rid->prepare();
         if (!status.ok()) {
             return status;
         }
-        auto v = row->id()->eval();
+        auto ovalue = rid->eval();
+        if (!ovalue.ok()) {
+            return ovalue.status();
+        }
+
+        auto v = ovalue.value();
         if (!Expression::isInt(v)) {
             return Status::Error("Vertex ID should be of type integer");
         }
@@ -94,7 +100,11 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
         std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
-            values.emplace_back(expr->eval());
+            ovalue = expr->eval();
+            if (!ovalue.ok()) {
+                return ovalue.status();
+            }
+            values.emplace_back(ovalue.value());
         }
 
         storage::cpp2::Vertex vertex;

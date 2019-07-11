@@ -137,14 +137,14 @@ private:
     /**
      * To setup the body of the execution result.
      */
-    void setupResponseBody(RpcResponse &rpcResp, cpp2::ExecutionResponse &resp) const;
+    bool setupResponseBody(RpcResponse &rpcResp, cpp2::ExecutionResponse &resp) const;
 
     /**
      * To iterate on the final data collection, and evaluate the filter and yield columns.
      * For each row that matches the filter, `cb' would be invoked.
      */
     using Callback = std::function<void(std::vector<VariantType>)>;
-    void processFinalResult(RpcResponse &rpcResp, Callback cb) const;
+    bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
 
     /**
      * A container to hold the mapping from vertex id to its properties, used for lookups
@@ -152,8 +152,9 @@ private:
      */
     class VertexHolder final {
     public:
-        VariantType get(VertexID id, const std::string &prop) const;
+        OptVariantType get(VertexID id, const std::string &prop) const;
         void add(const storage::cpp2::QueryResponse &resp);
+        bool exist(VertexID id) const;
 
     private:
         std::shared_ptr<ResultSchemaProvider>       schema_;

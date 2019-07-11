@@ -154,5 +154,33 @@ TEST_F(GoTest, DISABLED_OneStepInOutBound) {
     }
 }
 
+TEST_F(GoTest, EMPTY_DST_EDGE) {
+    {
+        // Maybe we should insert directly when the data is generated.
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt =
+            "GO FROM %ld OVER serve YIELD "
+            "$^[player].name, serve.start_year, serve.end_year, $$[team].name";
+        auto *fmt2 = "INSERT EDGE serve (start_year, end_year) VALUES %ld -> %ld:(2033, 2044)";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto query2 =
+            folly::stringPrintf(fmt2, player.vid(), std::hash<std::string>{}("Inter Milan"));
+        auto query3 = folly::stringPrintf(fmt2, player.vid(), std::hash<std::string>{}("Milan"));
+        auto code = client_->execute(query2, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        code = client_->execute(query3, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {player.name(), 2003, 2005, "Hawks"},   {player.name(), 2005, 2008, "Suns"},
+            {player.name(), 2008, 2012, "Hornets"}, {player.name(), 2012, 2016, "Spurs"},
+            {player.name(), 2016, 2017, "Jazz"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
