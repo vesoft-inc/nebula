@@ -840,6 +840,36 @@ TEST(Parser, UnreservedKeywords) {
 TEST(Parser, Annotation) {
     {
         GQLParser parser;
+        std::string query = "show spaces /* test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxError());
+    }
+    {
+        GQLParser parser;
+        std::string query = "// test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxDoNone());
+    }
+    {
+        GQLParser parser;
+        std::string query = "# test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxDoNone());
+    }
+    {
+        GQLParser parser;
+        std::string query = "-- test comment....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxDoNone());
+    }
+    {
+        GQLParser parser;
+        std::string query = "/* test comment....*/";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.status().isSyntaxDoNone());
+    }
+    {
+        GQLParser parser;
         std::string query = "CREATE TAG TAG1(space string) // test....";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();

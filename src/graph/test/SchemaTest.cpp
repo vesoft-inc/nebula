@@ -27,6 +27,24 @@ protected:
     }
 };
 
+TEST_F(SchemaTest, TestComment) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    // Test command is comment
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "# CREATE TAG TAG1";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_DO_NONE, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "SHOW SPACES # show all spaces";
+        auto code = client->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+}
+
 TEST_F(SchemaTest, metaCommunication) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);

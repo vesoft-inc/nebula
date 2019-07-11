@@ -57,6 +57,10 @@ public:
             }
             return Status::SyntaxError(error_);
         }
+
+        if (sentences_ == nullptr) {
+            return Status::SyntaxDoNone();
+        }
         auto *sentences = sentences_;
         sentences_ = nullptr;
         return sentences;

@@ -329,7 +329,11 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "--".*                      // Skip the annotation
 "/*"                        { BEGIN(COMMENT); }
 <COMMENT>"*/"               { BEGIN(INITIAL); }
-<COMMENT>([^*]|\n)+|.       // Skip the annotation
+<COMMENT>([^*]|\n)+|.
+<COMMENT><<EOF>>            {
+                                // Must match /* */
+                                throw GraphParser::syntax_error(*yylloc, "incomplete comment");
+                            }
 .                           {
                                 /**
                                  * Any other unmatched byte sequences will get us here,
