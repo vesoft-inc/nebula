@@ -56,6 +56,7 @@ public:
 
 public:
     int32_t commitTimes_ = 0;
+    int32_t firstCommittedLogId_ = -1;
 
 private:
     const size_t idx_;
