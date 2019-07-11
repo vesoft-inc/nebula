@@ -204,6 +204,10 @@ protected:
     // a batch of log messages
     virtual bool commitLogs(std::unique_ptr<LogIterator> iter) = 0;
 
+    virtual bool preProcessLog(LogID logId,
+                               TermID termId,
+                               ClusterID clusterId,
+                               const std::string& log) = 0;
 
 private:
     enum class Status {

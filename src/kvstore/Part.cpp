@@ -235,6 +235,17 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     return engine_->commitBatchWrite(std::move(batch)) == ResultCode::SUCCEEDED;
 }
 
+bool Part::preProcessLog(LogID logId,
+                         TermID termId,
+                         ClusterID clusterId,
+                         const std::string& log) {
+    VLOG(3) << idStr_ << "logId " << logId
+            << ", termId " << termId
+            << ", clusterId " << clusterId
+            << ", log " << log;
+    return true;
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

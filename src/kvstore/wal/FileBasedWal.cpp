@@ -24,20 +24,23 @@ using nebula::fs::FileUtils;
 std::shared_ptr<FileBasedWal> FileBasedWal::getWal(
         const folly::StringPiece dir,
         FileBasedWalPolicy policy,
-        BufferFlusher* flusher) {
+        BufferFlusher* flusher,
+        PreProcessor preProcessor) {
     return std::shared_ptr<FileBasedWal>(
-        new FileBasedWal(dir, std::move(policy), flusher));
+        new FileBasedWal(dir, std::move(policy), flusher, std::move(preProcessor)));
 }
 
 
 FileBasedWal::FileBasedWal(const folly::StringPiece dir,
                            FileBasedWalPolicy policy,
-                           BufferFlusher* flusher)
+                           BufferFlusher* flusher,
+                           PreProcessor preProcessor)
         : flusher_(flusher)
         , dir_(dir.toString())
         , policy_(std::move(policy))
         , maxFileSize_(policy_.fileSize * 1024L * 1024L)
-        , maxBufferSize_(policy_.bufferSize * 1024L * 1024L) {
+        , maxBufferSize_(policy_.bufferSize * 1024L * 1024L)
+        , preProcessor_(std::move(preProcessor)) {
     // Make sure WAL directory exist
     if (FileUtils::fileType(dir_.c_str()) == fs::FileType::NOTEXIST) {
         FileUtils::makeDir(dir_);
@@ -439,6 +442,10 @@ bool FileBasedWal::appendLogInternal(BufferPtr& buffer,
         LOG(ERROR) << "There is a gap in the log id. The last log id is "
                    << lastLogId_
                    << ", and the id being appended is " << id;
+        return false;
+    }
+    if (!preProcessor_(id, term, cluster, msg)) {
+        LOG(ERROR) << "Pre process failed for log " << id;
         return false;
     }
 
