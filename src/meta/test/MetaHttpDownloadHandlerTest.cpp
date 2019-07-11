@@ -34,7 +34,7 @@ public:
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 2);
 
-        WebService::registerHandler("/downloa-dispatch", [this] {
+        WebService::registerHandler("/download-dispatch", [this] {
             auto handler = new meta::MetaHttpDownloadHandler();
             handler->init(kv_.get(), helper.get());
             return handler;
@@ -63,18 +63,18 @@ private:
 TEST(MetaHttpDownloadHandlerTest, MetaDownloadTest) {
     {
         std::string resp;
-        ASSERT_TRUE(getUrl("/downloa-dispatch", resp));
+        ASSERT_TRUE(getUrl("/download-dispatch", resp));
         ASSERT_TRUE(resp.empty());
     }
     {
-        auto url = "/downloa-dispatch?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
+        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile dispatch successfully", resp);
     }
     {
         helper = std::make_unique<nebula::meta::MockHdfsNotExistHelper>();
-        auto url = "/downloa-dispatch?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
+        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile dispatch failed", resp);

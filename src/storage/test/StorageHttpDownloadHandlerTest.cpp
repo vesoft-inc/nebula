@@ -55,6 +55,12 @@ TEST(StorageHttpDownloadHandlerTest, StorageDownloadTest) {
         ASSERT_EQ("SSTFile download successfully", resp);
     }
     {
+        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=illegal-part&local=/tmp";
+        std::string resp;
+        ASSERT_TRUE(getUrl(url, resp));
+        ASSERT_EQ("SSTFile download failed", resp);
+    }
+    {
         helper = std::make_unique<nebula::storage::MockHdfsExistHelper>();
         auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&local=/tmp";
         std::string resp;

@@ -132,15 +132,6 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
     folly::split("\n", result.value(), files, true);
     int32_t  partNumber = files.size() - 1;
 
-    std::vector<cpp2::HostItem> hostItems;
-    std::unique_ptr<kvstore::KVIterator> hostIter;
-    auto hostPrefix = MetaServiceUtils::hostPrefix();
-    auto hostRet = kvstore_->prefix(0, 0, hostPrefix, &hostIter);
-    if (hostRet != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Fetch Hosts Failed";
-        return false;
-    }
-
     std::unique_ptr<kvstore::KVIterator> iter;
     auto prefix = MetaServiceUtils::partPrefix(spaceID_);
     auto ret = kvstore_->prefix(0, 0, prefix, &iter);
@@ -177,18 +168,14 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
     std::atomic<int> completed(0);
     std::vector<std::thread> threads;
     for (auto &pair : hostPartition) {
-        std::vector<PartitionID> partitions;
-        for (auto part : pair.second) {
-            partitions.emplace_back(part);
-        }
         std::string partsStr;
-        folly::join(",", partitions, partsStr);
+        folly::join(",", pair.second, partsStr);
 
-        auto storageHost = network::NetworkUtils::intToIPv4(pair.first.first);
-        threads.push_back(std::thread([storageHost, hdfsHost, hdfsPort, hdfsPath,
+        auto storageIP = network::NetworkUtils::intToIPv4(pair.first.first);
+        threads.push_back(std::thread([storageIP, hdfsHost, hdfsPort, hdfsPath,
                                        partsStr, localPath, &completed]() {
             auto tmp = "http://%s:%d/download?host=%s&port=%d&path=%s&parts=%s&local=%s";
-            auto url = folly::stringPrintf(tmp, storageHost.c_str(), FLAGS_storage_http_port,
+            auto url = folly::stringPrintf(tmp, storageIP.c_str(), FLAGS_storage_http_port,
                                            hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(),
                                            partsStr.c_str(), localPath.c_str());
             auto command = folly::stringPrintf("/usr/bin/curl -G \"%s\"", url.c_str());
