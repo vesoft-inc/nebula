@@ -473,6 +473,18 @@ private:
     std::unique_ptr<WhereClause>                whereClause_;
 };
 
+class IngestSentence final : public Sentence {
+public:
+    explicit IngestSentence(std::string *path) {
+        path_.reset(path);
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string> path_;
+};
+
 }  // namespace nebula
 
 #endif  // PARSER_MUTATESENTENCES_H_

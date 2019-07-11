@@ -940,6 +940,14 @@ TEST(Parser, ReentrantRecoveryFromFailure) {
     }
 }
 
+TEST(Parser, DownloadAndIngest) {
+    {
+        GQLParser parser;
+        std::string query = "INGEST FROM \"/tmp/data\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
 
 TEST(Parser, IllegalCharacter) {
     GQLParser parser;

@@ -22,6 +22,7 @@ add_dependencies(
 add_library(
     storage_http_handler OBJECT
     StorageHttpHandler.cpp
+    StorageHttpIngestHandler.cpp
 )
 add_dependencies(
     storage_http_handler

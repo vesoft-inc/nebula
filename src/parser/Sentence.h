@@ -51,6 +51,7 @@ public:
         kRevoke,
         kChangePassword,
         kOrderBy,
+        kIngest,
     };
 
     Kind kind() const {

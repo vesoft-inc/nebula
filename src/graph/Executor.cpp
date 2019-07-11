@@ -32,6 +32,7 @@
 #include "graph/DropSpaceExecutor.h"
 #include "graph/YieldExecutor.h"
 #include "graph/OrderByExecutor.h"
+#include "graph/IngestExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -105,6 +106,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kOrderBy:
             executor = std::make_unique<OrderByExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kIngest:
+            executor = std::make_unique<IngestExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

@@ -10,6 +10,7 @@
 #include "thread/GenericThreadPool.h"
 #include "storage/StorageServiceHandler.h"
 #include "storage/StorageHttpHandler.h"
+#include "storage/StorageHttpIngestHandler.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "process/ProcessUtils.h"
@@ -162,10 +163,16 @@ int main(int argc, char *argv[]) {
                                                         ioThreadPool,
                                                         metaClient.get(),
                                                         schemaMan.get());
+    auto *kvstore_ = kvstore.get();
 
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::storage::StorageHttpHandler();
+    });
+    nebula::WebService::registerHandler("/ingest", [kvstore_] {
+        auto handler = new nebula::storage::StorageHttpIngestHandler();
+        handler->init(kvstore_);
+        return handler;
     });
 
     status = nebula::WebService::start();

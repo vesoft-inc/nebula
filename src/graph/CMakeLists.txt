@@ -34,6 +34,7 @@ add_library(
     ShowExecutor.cpp
     YieldExecutor.cpp
     OrderByExecutor.cpp
+    IngestExecutor.cpp
     SchemaHelper.cpp
 )
 add_dependencies(

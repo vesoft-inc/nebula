@@ -323,6 +323,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("ASC", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("Asc", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("asc", TokenType::KW_ASC),
+        CHECK_SEMANTIC_TYPE("INGEST", TokenType::KW_INGEST),
+        CHECK_SEMANTIC_TYPE("Ingest", TokenType::KW_INGEST),
+        CHECK_SEMANTIC_TYPE("ingest", TokenType::KW_INGEST),
 
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),

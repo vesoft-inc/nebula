@@ -265,4 +265,8 @@ std::string DeleteEdgeSentence::toString() const {
     return buf;
 }
 
+std::string IngestSentence::toString() const {
+    return folly::stringPrintf("INGEST FROM \"%s\"", path_.get()->c_str());
+}
+
 }   // namespace nebula
