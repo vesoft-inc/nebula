@@ -23,6 +23,8 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:meta_gflags_man_obj>
+    $<TARGET_OBJECTS:gflags_man_obj>
 )
 
 nebula_add_library(

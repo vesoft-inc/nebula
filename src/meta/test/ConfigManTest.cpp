@@ -10,6 +10,8 @@
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
 #include "meta/GflagsManager.h"
+#include "meta/ClientBasedGflagsManager.h"
+#include "meta/KVBasedGflagsManager.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
 #include "meta/processors/configMan/ListConfigsProcessor.h"
@@ -184,17 +186,17 @@ TEST(ConfigManTest, MetaConfigManTest) {
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-    client->init();
     auto space = "test_space";
     client->createSpace(space, 1, 1).get();
     sleep(FLAGS_load_data_interval_secs + 1);
 
     auto module = cpp2::ConfigModule::STORAGE;
     auto mode = cpp2::ConfigMode::MUTABLE;
-    client->loadCfgThreadFunc(module);
 
-    GflagsManager cfgMan(client.get());
+    ClientBasedGflagsManager cfgMan(client.get());
     cfgMan.module_ = module;
+    CHECK(cfgMan.bgThread_.start());
+    cfgMan.loadCfgThreadFunc();
 
     // immutable configs
     {
@@ -306,7 +308,8 @@ TEST(ConfigManTest, MetaConfigManTest) {
         // register and update config
         auto regRet = cfgMan.registerConfig(module, name, type, mode, defaultValue).get();
         ASSERT_TRUE(regRet.ok());
-        auto setRet = cfgMan.setConfig(module, name, type, "abc").get();
+        std::string newValue = "abc";
+        auto setRet = cfgMan.setConfig(module, name, type, newValue).get();
         ASSERT_TRUE(setRet.ok());
 
         // get from meta server
@@ -325,6 +328,100 @@ TEST(ConfigManTest, MetaConfigManTest) {
         auto ret = cfgMan.listConfigs(module).get();
         ASSERT_TRUE(ret.ok());
         ASSERT_EQ(ret.value().size(), 5);
+    }
+}
+
+TEST(ConfigManTest, KVConfigManTest) {
+    FLAGS_load_config_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/KVConfigManTest.XXXXXX");
+    uint32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+
+    KVBasedGflagsManager kvCfgMan(sc->kvStore_.get());
+    kvCfgMan.module_ = cpp2::ConfigModule::META;
+    CHECK(kvCfgMan.bgThread_.start());
+
+    // test declare and load config in KVBasedGflagsManager
+    auto module = cpp2::ConfigModule::META;
+    auto type = cpp2::ConfigType::STRING;
+    auto mode = cpp2::ConfigMode::MUTABLE;
+    for (int i = 0; i < 10; i++) {
+        std::string name = "k" + std::to_string(i);
+        std::string value = "v" + std::to_string(i);
+        kvCfgMan.declareConfig(module, name, type, mode, value);
+        kvCfgMan.gflagsDeclared_.emplace_back(
+                GflagsManager::toThriftConfigItem(module, name, type, mode, value));
+    }
+    kvCfgMan.regCfgThreadFunc();
+    kvCfgMan.loadCfgThreadFunc();
+
+    sleep(FLAGS_load_config_interval_secs + 1);
+    for (int i = 0; i < 10; i++) {
+        std::string name = "k" + std::to_string(i);
+        std::string value = "v" + std::to_string(i);
+        auto cacheRet = kvCfgMan.getConfigAsString(name);
+        ASSERT_TRUE(cacheRet.ok());
+        ASSERT_EQ(cacheRet.value(), value);
+    }
+
+    // mock one ClientBaseGflagsManager and one KVBasedGflagsManager, and do some update
+    // value in console, check if it works
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    uint32_t localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    auto client = std::make_shared<MetaClient>(threadPool,
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    ClientBasedGflagsManager clientCfgMan(client.get());
+    CHECK(clientCfgMan.bgThread_.start());
+    clientCfgMan.module_ = cpp2::ConfigModule::META;
+    clientCfgMan.loadCfgThreadFunc();
+
+    sleep(FLAGS_load_config_interval_secs + 1);
+    for (int i = 0; i < 10; i++) {
+        std::string name = "k" + std::to_string(i);
+        std::string value = "v" + std::to_string(i);
+        auto cacheRet = clientCfgMan.getConfigAsString(name);
+        ASSERT_TRUE(cacheRet.ok());
+        ASSERT_EQ(cacheRet.value(), value);
+    }
+
+    auto consoleClient = std::make_shared<MetaClient>(threadPool,
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    ClientBasedGflagsManager console(consoleClient.get());
+    // update in console
+    for (int i = 0; i < 10; i++) {
+        std::string name = "k" + std::to_string(i);
+        std::string value = "updated" + std::to_string(i);
+        auto setRet = console.setConfig(module, name, type, value).get();
+        ASSERT_TRUE(setRet.ok());
+    }
+    // get in console
+    for (int i = 0; i < 10; i++) {
+        std::string name = "k" + std::to_string(i);
+        std::string value = "updated" + std::to_string(i);
+
+        auto getRet = console.getConfig(module, name).get();
+        ASSERT_TRUE(getRet.ok());
+        ASSERT_EQ(boost::get<std::string>(getRet.value().front().value_), value);
+    }
+
+    // check values in KVBaseGflagsManager
+    sleep(FLAGS_load_config_interval_secs + 1);
+    for (int i = 0; i < 10; i++) {
+        std::string name = "k" + std::to_string(i);
+        std::string value = "updated" + std::to_string(i);
+        auto cacheRet = kvCfgMan.getConfigAsString(name);
+        ASSERT_TRUE(cacheRet.ok());
+        ASSERT_EQ(cacheRet.value(), value);
+    }
+    // check values in ClientBaseGflagsManager
+    for (int i = 0; i < 10; i++) {
+        std::string name = "k" + std::to_string(i);
+        std::string value = "updated" + std::to_string(i);
+        auto cacheRet = clientCfgMan.getConfigAsString(name);
+        ASSERT_TRUE(cacheRet.ok());
+        ASSERT_EQ(cacheRet.value(), value);
     }
 }
 

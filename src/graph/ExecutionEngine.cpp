@@ -9,7 +9,7 @@
 #include "graph/ExecutionContext.h"
 #include "graph/ExecutionPlan.h"
 #include "storage/client/StorageClient.h"
-#include "meta/GflagsManager.h"
+#include "meta/ClientBasedGflagsManager.h"
 
 DECLARE_string(meta_server_addrs);
 
@@ -38,7 +38,7 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
 
     schemaManager_ = meta::SchemaManager::create();
     schemaManager_->init(metaClient_.get());
-    meta::GflagsManager::instance(metaClient_.get());
+    meta::ClientBasedGflagsManager::instance(metaClient_.get());
     storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
     return Status::OK();
 }

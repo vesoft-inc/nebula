@@ -1012,10 +1012,10 @@ MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
                 return client->future_regConfig(request);
             }, [this] (cpp2::ExecResp&& resp) -> decltype(auto) {
                 return resp.code == cpp2::ErrorCode::SUCCEEDED;
-            });
+            }, true);
 }
 
-folly::Future<StatusOr<std::vector<ConfigItem>>>
+folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name) {
     cpp2::ConfigItem item;
     item.set_module(module);
@@ -1026,11 +1026,7 @@ MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name)
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_getConfig(request);
             }, [this] (cpp2::GetConfigResp&& resp) -> decltype(auto) {
-                std::vector<ConfigItem> configs;
-                for (const auto& tItem : resp.get_items()) {
-                    configs.emplace_back(std::move(toConfigItem(tItem)));
-                }
-                return configs;
+                return std::move(resp).get_items();
             });
 }
 
@@ -1050,179 +1046,18 @@ MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
                 return client->future_setConfig(request);
             }, [this] (cpp2::ExecResp&& resp) -> decltype(auto) {
                 return resp.code == cpp2::ErrorCode::SUCCEEDED;
-            });
+            }, true);
 }
 
-folly::Future<StatusOr<std::vector<ConfigItem>>>
+folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 MetaClient::listConfigs(const cpp2::ConfigModule& module) {
     cpp2::ListConfigsReq req;
     req.set_module(module);
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_listConfigs(request);
             }, [this] (cpp2::ListConfigsResp&& resp) -> decltype(auto) {
-                std::vector<ConfigItem> configs;
-                for (const auto& tItem : resp.get_items()) {
-                    configs.emplace_back(std::move(toConfigItem(tItem)));
-                }
-                return configs;
+                return std::move(resp).get_items();
             });
-}
-
-ConfigItem MetaClient::toConfigItem(const cpp2::ConfigItem& item) {
-    VariantType value;
-    switch (item.get_type()) {
-        case cpp2::ConfigType::INT64:
-            value = *reinterpret_cast<const int64_t*>(item.get_value().data());
-            break;
-        case cpp2::ConfigType::BOOL:
-            value = *reinterpret_cast<const bool*>(item.get_value().data());
-            break;
-        case cpp2::ConfigType::DOUBLE:
-            value = *reinterpret_cast<const double*>(item.get_value().data());
-            break;
-        case cpp2::ConfigType::STRING:
-            value = item.get_value();
-            break;
-    }
-    return ConfigItem(item.get_module(), item.get_name(), item.get_type(), item.get_mode(), value);
-}
-
-StatusOr<ConfigItem> MetaClient::getConfigFromCache(const cpp2::ConfigModule& module,
-                                                    const std::string& name,
-                                                    const cpp2::ConfigType& type) {
-    if (!configReady_) {
-        return Status::Error("Config cache not ready!");
-    }
-    {
-        folly::RWSpinLock::ReadHolder holder(configCacheLock_);
-        auto it = metaConfigMap_.find({module, name});
-        if (it != metaConfigMap_.end()) {
-            if (it->second.type_ != type) {
-                return Status::CfgErrorType();
-            }
-            return it->second;
-        }
-        return Status::CfgNotFound();
-    }
-}
-
-Status MetaClient::declareConfig(const cpp2::ConfigModule& module,
-                                 const std::string& name,
-                                 const cpp2::ConfigType& type,
-                                 const cpp2::ConfigMode& mode,
-                                 const VariantType& value) {
-    {
-        folly::RWSpinLock::WriteHolder holder(configCacheLock_);
-        std::pair<cpp2::ConfigModule, std::string> key = {module, name};
-        ConfigItem item(module, name, type, mode, value);
-        metaConfigMap_[key] = item;
-        return Status::OK();
-    }
-}
-
-Status MetaClient::isCfgRegistered(const cpp2::ConfigModule& module, const std::string& name,
-                                   const cpp2::ConfigType& type) {
-    if (!configReady_) {
-        return Status::Error("Config cache not ready!");
-    }
-
-    std::pair<cpp2::ConfigModule, std::string> key = {module, name};
-    {
-        folly::RWSpinLock::ReadHolder holder(configCacheLock_);
-        auto it = metaConfigMap_.find(key);
-        if (it == metaConfigMap_.end()) {
-            return Status::CfgNotFound();
-        } else if (it->second.type_ != type) {
-            return Status::CfgErrorType();
-        }
-    }
-    return Status::CfgRegistered();
-}
-
-void MetaClient::updateGflagsValue(const ConfigItem& item) {
-    if (item.mode_ != cpp2::ConfigMode::MUTABLE) {
-        return;
-    }
-
-    std::string metaValue;
-    switch (item.type_) {
-        case cpp2::ConfigType::INT64:
-            metaValue = folly::to<std::string>(boost::get<int64_t>(item.value_));
-            break;
-        case cpp2::ConfigType::DOUBLE:
-            metaValue = folly::to<std::string>(boost::get<double>(item.value_));
-            break;
-        case cpp2::ConfigType::BOOL:
-            metaValue = boost::get<bool>(item.value_) ? "true" : "false";
-            break;
-        case cpp2::ConfigType::STRING:
-            metaValue = boost::get<std::string>(item.value_);
-            break;
-    }
-
-    std::string curValue;
-    if (!gflags::GetCommandLineOption(item.name_.c_str(), &curValue)) {
-        return;
-    } else if (curValue != metaValue) {
-        LOG(INFO) << "update " << item.name_ << " from " << curValue << " to " << metaValue;
-        gflags::SetCommandLineOption(item.name_.c_str(), metaValue.c_str());
-    }
-}
-
-
-void MetaClient::loadCfgThreadFunc(const cpp2::ConfigModule& module) {
-    // only load current module's config is enough
-    auto ret = listConfigs(module).get();
-    MetaConfigMap metaConfigMap;
-    if (ret.ok()) {
-        auto items = ret.value();
-        for (auto& item : items) {
-            std::pair<cpp2::ConfigModule, std::string> key = {item.module_, item.name_};
-            metaConfigMap.emplace(std::move(key), std::move(item));
-        }
-        {
-            folly::RWSpinLock::ReadHolder holder(configCacheLock_);
-            // For any configurations that is in meta, update in cache to replace previous value
-            for (const auto& entry : metaConfigMap) {
-                auto& key = entry.first;
-                if (metaConfigMap_.find(key) == metaConfigMap_.end() ||
-                        metaConfigMap[key].value_ != metaConfigMap_[key].value_) {
-                    updateGflagsValue(entry.second);
-                    folly::RWSpinLock::UpgradedHolder uh(configCacheLock_);
-                    LOG(INFO) << "update config in cache " << key.second
-                        << " from " << metaConfigMap_[key].value_
-                        << " to " << metaConfigMap[key].value_;
-                    metaConfigMap_[key] = entry.second;
-                }
-            }
-        }
-        configReady_ = true;
-    } else {
-        LOG(INFO) << "Load configs failed: " << ret.status();
-    }
-
-    std::string flag;
-    gflags::GetCommandLineOption("load_config_interval_secs", &flag);
-    size_t delayMS = stoi(flag) * 1000 + folly::Random::rand32(900);
-    bgThread_.addDelayTask(delayMS, &MetaClient::loadCfgThreadFunc, this, module);
-    LOG(INFO) << "Load configs after " << delayMS << " ms";
-}
-
-void MetaClient::regCfgThreadFunc(const std::vector<cpp2::ConfigItem>& gflags) {
-    if (gflags.empty()) {
-        LOG(INFO) << "There are no gflags to register";
-        return;
-    }
-    auto status = regConfig(gflags).get();
-    if (status.ok()) {
-        LOG(INFO) << "Register flags ok " << gflags.size();
-        return;
-    }
-    std::string flag;
-    gflags::GetCommandLineOption("load_config_interval_secs", &flag);
-    size_t delayMS = stoi(flag) * 1000 + folly::Random::rand32(900);
-    bgThread_.addDelayTask(delayMS, &MetaClient::regCfgThreadFunc, this, gflags);
-    LOG(INFO) << "Register fail, try it after " << delayMS << " ms " << status.status();
 }
 
 

@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "graph/Executor.h"
+#include "meta/ClientBasedGflagsManager.h"
 
 namespace nebula {
 namespace graph {
@@ -42,6 +43,9 @@ private:
 
 meta::cpp2::ConfigModule toThriftConfigModule(const nebula::ConfigModule& mode);
 meta::cpp2::ConfigMode toThriftConfigMode(const nebula::ConfigMode& mode);
+std::string ConfigModuleToString(const meta::cpp2::ConfigModule& module);
+std::string ConfigModeToString(const meta::cpp2::ConfigMode& mode);
+std::string ConfigTypeToString(const meta::cpp2::ConfigType& type);
 
 }   // namespace graph
 }   // namespace nebula

@@ -5,12 +5,11 @@
  */
 
 #include "graph/ConfigExecutor.h"
-#include "meta/GflagsManager.h"
 
 namespace nebula {
 namespace graph {
 
-using meta::GflagsManager;
+const std::string kConfigUnknown = "UNKNOWN"; // NOLINT
 
 ConfigExecutor::ConfigExecutor(Sentence *sentence,
                                ExecutionContext *ectx) : Executor(ectx) {
@@ -57,7 +56,7 @@ void ConfigExecutor::showVariables() {
         return;
     }
 
-    auto future = GflagsManager::instance()->listConfigs(module);
+    auto future = meta::ClientBasedGflagsManager::instance()->listConfigs(module);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
@@ -136,7 +135,7 @@ void ConfigExecutor::setVariables() {
             return;
     }
 
-    auto future = GflagsManager::instance()->setConfig(module, name, type, value);
+    auto future = meta::ClientBasedGflagsManager::instance()->setConfig(module, name, type, value);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto && resp) {
@@ -180,7 +179,7 @@ void ConfigExecutor::getVariables() {
         return;
     }
 
-    auto future = GflagsManager::instance()->getConfig(module, name);
+    auto future = meta::ClientBasedGflagsManager::instance()->getConfig(module, name);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto && resp) {
@@ -267,15 +266,15 @@ void ConfigExecutor::declareVariables() {
     }
 
     // check config has been reigstered or not
-    auto status = GflagsManager::instance()->isCfgRegistered(module, name, type);
+    auto status = meta::ClientBasedGflagsManager::instance()->isCfgRegistered(module, name, type);
     if (status.code() != Status::kCfgNotFound) {
         DCHECK(onError_);
         onError_(status);
         return;
     }
 
-    auto future = GflagsManager::instance()->registerConfig(module, name, type, mode,
-                                                            defaultValue);
+    auto future = meta::ClientBasedGflagsManager::instance()
+        ->registerConfig(module, name, type, mode, defaultValue);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto && resp) {
@@ -303,10 +302,10 @@ void ConfigExecutor::declareVariables() {
 std::vector<cpp2::ColumnValue> ConfigExecutor::genRow(const meta::ConfigItem& item) {
     std::vector<cpp2::ColumnValue> row;
     row.resize(5);
-    row[0].set_str(meta::ConfigModuleToString(item.module_));
+    row[0].set_str(ConfigModuleToString(item.module_));
     row[1].set_str(item.name_);
-    row[2].set_str(meta::ConfigTypeToString(item.type_));
-    row[3].set_str(meta::ConfigModeToString(item.mode_));
+    row[2].set_str(ConfigTypeToString(item.type_));
+    row[3].set_str(ConfigModeToString(item.mode_));
     // TODO: Console must have same type of the same column over different lines,
     //       so we transform all kinds of value to string for now.
     switch (item.type_) {
@@ -355,6 +354,33 @@ meta::cpp2::ConfigMode toThriftConfigMode(const nebula::ConfigMode& mode) {
             return meta::cpp2::ConfigMode::MUTABLE;
         default:
             return meta::cpp2::ConfigMode::IMMUTABLE;
+    }
+}
+
+std::string ConfigModuleToString(const meta::cpp2::ConfigModule& module) {
+    auto it = meta::cpp2::_ConfigModule_VALUES_TO_NAMES.find(module);
+    if (it == meta::cpp2::_ConfigModule_VALUES_TO_NAMES.end()) {
+        return kConfigUnknown;
+    } else {
+        return it->second;
+    }
+}
+
+std::string ConfigModeToString(const meta::cpp2::ConfigMode& mode) {
+    auto it = meta::cpp2::_ConfigMode_VALUES_TO_NAMES.find(mode);
+    if (it == meta::cpp2::_ConfigMode_VALUES_TO_NAMES.end()) {
+        return kConfigUnknown;
+    } else {
+        return it->second;
+    }
+}
+
+std::string ConfigTypeToString(const meta::cpp2::ConfigType& type) {
+    auto it = meta::cpp2::_ConfigType_VALUES_TO_NAMES.find(type);
+    if (it == meta::cpp2::_ConfigType_VALUES_TO_NAMES.end()) {
+        return kConfigUnknown;
+    } else {
+        return it->second;
     }
 }
 

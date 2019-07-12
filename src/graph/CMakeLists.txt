@@ -38,6 +38,7 @@ nebula_add_library(
     SchemaHelper.cpp
     ConfigExecutor.cpp
 )
+nebula_add_base_obj(graph_obj)
 
 nebula_add_library(
     graph_http_handler OBJECT

@@ -12,7 +12,7 @@ namespace meta {
 void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
     std::vector<kvstore::KV> data;
     {
-        folly::SharedMutex::ReadHolder rHolder(LockUtils::configLock());
+        folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
         for (const auto& item : req.get_items()) {
             auto module = item.get_module();
             auto name = item.get_name();
@@ -28,11 +28,11 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
             std::string configValue = MetaServiceUtils::configValue(type, mode, value);
             data.emplace_back(configKey, configValue);
         }
-    }
-    if (!data.empty()) {
-        folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
-        doPut(std::move(data));
-        return;
+
+        if (!data.empty()) {
+            doPut(std::move(data));
+            return;
+        }
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);
     onFinished();

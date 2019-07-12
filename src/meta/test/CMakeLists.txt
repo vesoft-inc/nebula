@@ -132,6 +132,8 @@ nebula_add_test(
         $<TARGET_OBJECTS:raftex_obj>
         $<TARGET_OBJECTS:raftex_thrift_obj>
         $<TARGET_OBJECTS:wal_obj>
+        $<TARGET_OBJECTS:meta_gflags_man_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

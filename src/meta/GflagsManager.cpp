@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -9,24 +9,9 @@
 namespace nebula {
 namespace meta {
 
-const std::string kConfigUnknown = "UNKNOWN"; // NOLINT
-
-GflagsManager* GflagsManager::instance(MetaClient* client) {
-    static auto gflagsMan = std::unique_ptr<GflagsManager>(new GflagsManager(client));
-    static std::once_flag initFlag;
-    std::call_once(initFlag, &GflagsManager::init, gflagsMan.get());
-    return gflagsMan.get();
-}
-
-GflagsManager::GflagsManager(MetaClient *client) {
-    metaClient_ = client;
-    CHECK_NOTNULL(metaClient_);
-}
-
 GflagsManager::~GflagsManager() {
-    if (nullptr != metaClient_) {
-        metaClient_ = nullptr;
-    }
+    bgThread_.stop();
+    bgThread_.wait();
 }
 
 template<typename ValueType>
@@ -41,12 +26,6 @@ template<>
 std::string GflagsManager::gflagsValueToThriftValue<std::string>(
         const gflags::CommandLineFlagInfo& flag) {
     return flag.current_value;
-}
-
-void GflagsManager::init() {
-    declareGflags();
-    metaClient_->loadCfgThreadFunc(module_);
-    metaClient_->regCfgThreadFunc(gflagsDeclared_);
 }
 
 void GflagsManager::declareGflags() {
@@ -66,7 +45,7 @@ void GflagsManager::declareGflags() {
         LOG(ERROR) << "Should not reach here";
     }
 
-    // declare all gflags in GflagsManager
+    // declare all gflags in ClientBasedGflagsManager
     std::vector<gflags::CommandLineFlagInfo> flags;
     gflags::GetAllFlags(&flags);
     for (auto& flag : flags) {
@@ -103,156 +82,146 @@ void GflagsManager::declareGflags() {
         }
 
         // declare all gflags in cache
-        metaClient_->declareConfig(module_, name, cType, mode, defaultValue);
-        gflagsDeclared_.emplace_back(
-                toThriftConfigItem(module_, name, cType, mode, valueStr));
+        declareConfig(module_, name, cType, mode, defaultValue);
+        gflagsDeclared_.emplace_back(toThriftConfigItem(module_, name, cType, mode, valueStr));
     }
 }
 
-template<typename ValueType>
-folly::Future<Status> GflagsManager::set(const cpp2::ConfigModule& module,
-                                         const std::string& name,
-                                         const cpp2::ConfigType& type,
-                                         const ValueType& value) {
-    std::string valueStr;
-    valueStr.append(reinterpret_cast<const char*>(&value), sizeof(value));
-
-    auto ret = metaClient_->setConfig(module, name, type, valueStr).get();
-    if (ret.ok()) {
-        return Status::OK();
-    }
-    return ret.status();
-}
-
-template<>
-folly::Future<Status> GflagsManager::set<std::string>(const cpp2::ConfigModule& module,
-                                                      const std::string& name,
-                                                      const cpp2::ConfigType& type,
-                                                      const std::string& value) {
-    auto ret = metaClient_->setConfig(module, name, type, value).get();
-    if (ret.ok()) {
-        return Status::OK();
-    }
-    return ret.status();
-}
-
-folly::Future<Status>
-GflagsManager::setConfig(const cpp2::ConfigModule& module, folly::StringPiece name,
-                         const cpp2::ConfigType& type, const VariantType &value) {
-    switch (type) {
-        case cpp2::ConfigType::INT64:
-            return set(module, name.str(), type, boost::get<int64_t>(value));
-        case cpp2::ConfigType::DOUBLE:
-            return set(module, name.str(), type, boost::get<double>(value));
-        case cpp2::ConfigType::BOOL:
-            return set(module, name.str(), type, boost::get<bool>(value));
-        case cpp2::ConfigType::STRING:
-            return set(module, name.str(), type, boost::get<std::string>(value));
-        default:
-            return Status::Error("parse value type error");
-    }
-}
-
-folly::Future<Status>
-GflagsManager::setConfig(const cpp2::ConfigModule& module, folly::StringPiece name,
-                         const cpp2::ConfigType& type, const char* value) {
-    std::string str = value;
-    VariantType val = str;
-    return setConfig(module, name, type, val);
-}
-
-folly::Future<StatusOr<std::vector<ConfigItem>>>
-GflagsManager::getConfig(const cpp2::ConfigModule& module, folly::StringPiece name) {
-    auto ret = metaClient_->getConfig(module, name.str()).get();
-    if (ret.ok()) {
-        return ret.value();
-    }
-    return ret.status();
-}
-
-folly::Future<StatusOr<std::vector<ConfigItem>>>
-GflagsManager::listConfigs(const cpp2::ConfigModule& module) {
-    return metaClient_->listConfigs(module).get();
-}
-
-folly::Future<Status>
-GflagsManager::registerConfig(const cpp2::ConfigModule& module, const std::string& name,
-                              const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
-                              const VariantType& value) {
-    std::string valueStr;
-    switch (type) {
-        case cpp2::ConfigType::INT64: {
-            int64_t val = boost::get<int64_t>(value);
-            valueStr.append(reinterpret_cast<const char*>(&val), sizeof(val));
-            break;
-        }
-        case cpp2::ConfigType::DOUBLE: {
-            double val = boost::get<double>(value);
-            valueStr.append(reinterpret_cast<const char*>(&val), sizeof(val));
-            break;
-        }
-        case cpp2::ConfigType::BOOL: {
-            bool val = boost::get<bool>(value);
-            valueStr.append(reinterpret_cast<const char*>(&val), sizeof(val));
-            break;
-        }
-        case cpp2::ConfigType::STRING: {
-            valueStr = boost::get<std::string>(value);
-            break;
-        }
-        default:
-            return Status::Error("parse value type error");
-    }
-
-    auto item = toThriftConfigItem(module, name, type, mode, valueStr);
-    std::vector<cpp2::ConfigItem> items;
-    items.emplace_back(item);
-    auto ret = metaClient_->regConfig(items).get();
-    if (ret.ok()) {
-        return Status::OK();
-    }
-    return ret.status();
-}
-
-StatusOr<int64_t>
-GflagsManager::getConfigAsInt64(folly::StringPiece name) {
-    auto ret = metaClient_->getConfigFromCache(module_, name.str(), cpp2::ConfigType::INT64);
+StatusOr<int64_t> GflagsManager::getConfigAsInt64(folly::StringPiece name) {
+    auto ret = getConfigFromCache(module_, name.str(), cpp2::ConfigType::INT64);
     if (ret.ok()) {
         return boost::get<int64_t>(ret.value().value_);
     }
     return ret.status();
 }
 
-StatusOr<double>
-GflagsManager::getConfigAsDouble(folly::StringPiece name) {
-    auto ret = metaClient_->getConfigFromCache(module_, name.str(), cpp2::ConfigType::DOUBLE);
+StatusOr<double> GflagsManager::getConfigAsDouble(folly::StringPiece name) {
+    auto ret = getConfigFromCache(module_, name.str(), cpp2::ConfigType::DOUBLE);
     if (ret.ok()) {
         return boost::get<double>(ret.value().value_);
     }
     return ret.status();
 }
 
-StatusOr<bool>
-GflagsManager::getConfigAsBool(folly::StringPiece name) {
-    auto ret = metaClient_->getConfigFromCache(module_, name.str(), cpp2::ConfigType::BOOL);
+StatusOr<bool> GflagsManager::getConfigAsBool(folly::StringPiece name) {
+    auto ret = getConfigFromCache(module_, name.str(), cpp2::ConfigType::BOOL);
     if (ret.ok()) {
         return boost::get<bool>(ret.value().value_);
     }
     return ret.status();
 }
 
-StatusOr<std::string>
-GflagsManager::getConfigAsString(folly::StringPiece name) {
-    auto ret = metaClient_->getConfigFromCache(module_, name.str(), cpp2::ConfigType::STRING);
+StatusOr<std::string> GflagsManager::getConfigAsString(folly::StringPiece name) {
+    auto ret = getConfigFromCache(module_, name.str(), cpp2::ConfigType::STRING);
     if (ret.ok()) {
         return boost::get<std::string>(ret.value().value_);
     }
     return ret.status();
 }
 
+StatusOr<ConfigItem> GflagsManager::getConfigFromCache(const cpp2::ConfigModule& module,
+                                                       const std::string& name,
+                                                       const cpp2::ConfigType& type) {
+    if (!configReady_) {
+        return Status::Error("Config cache not ready!");
+    }
+    {
+        folly::RWSpinLock::ReadHolder holder(configCacheLock_);
+        auto it = metaConfigMap_.find({module, name});
+        if (it != metaConfigMap_.end()) {
+            if (it->second.type_ != type) {
+                return Status::CfgErrorType();
+            }
+            return it->second;
+        }
+        return Status::CfgNotFound();
+    }
+}
+
+Status GflagsManager::declareConfig(const cpp2::ConfigModule& module,
+                                    const std::string& name,
+                                    const cpp2::ConfigType& type,
+                                    const cpp2::ConfigMode& mode,
+                                    const VariantType& value) {
+    {
+        folly::RWSpinLock::WriteHolder holder(configCacheLock_);
+        std::pair<cpp2::ConfigModule, std::string> key = {module, name};
+        ConfigItem item(module, name, type, mode, value);
+        metaConfigMap_[key] = item;
+        return Status::OK();
+    }
+}
+
 Status GflagsManager::isCfgRegistered(const cpp2::ConfigModule& module, const std::string& name,
                                       const cpp2::ConfigType& type) {
-    return metaClient_->isCfgRegistered(module, name, type);
+    if (!configReady_) {
+        return Status::Error("Config cache not ready!");
+    }
+
+    std::pair<cpp2::ConfigModule, std::string> key = {module, name};
+    {
+        folly::RWSpinLock::ReadHolder holder(configCacheLock_);
+        auto it = metaConfigMap_.find(key);
+        if (it == metaConfigMap_.end()) {
+            return Status::CfgNotFound();
+        } else if (it->second.type_ != type) {
+            return Status::CfgErrorType();
+        }
+    }
+    return Status::CfgRegistered();
+}
+
+void GflagsManager::updateConfigCache(const std::vector<ConfigItem>& items) {
+    MetaConfigMap metaConfigMap;
+    for (auto& item : items) {
+        std::pair<cpp2::ConfigModule, std::string> key = {item.module_, item.name_};
+        metaConfigMap.emplace(std::move(key), std::move(item));
+    }
+    {
+        // For any configurations that is in meta, update in cache to replace previous value
+        folly::RWSpinLock::WriteHolder holder(configCacheLock_);
+        for (const auto& entry : metaConfigMap) {
+            auto& key = entry.first;
+            if (metaConfigMap_.find(key) == metaConfigMap_.end() ||
+                    metaConfigMap[key].value_ != metaConfigMap_[key].value_) {
+                updateGflagsValue(entry.second);
+                LOG(INFO) << "update config in cache " << key.second
+                          << " to " << metaConfigMap[key].value_;
+                metaConfigMap_[key] = entry.second;
+            }
+        }
+    }
+    configReady_ = true;
+}
+
+void GflagsManager::updateGflagsValue(const ConfigItem& item) {
+    if (item.mode_ != cpp2::ConfigMode::MUTABLE) {
+        return;
+    }
+
+    std::string metaValue;
+    switch (item.type_) {
+        case cpp2::ConfigType::INT64:
+            metaValue = folly::to<std::string>(boost::get<int64_t>(item.value_));
+            break;
+        case cpp2::ConfigType::DOUBLE:
+            metaValue = folly::to<std::string>(boost::get<double>(item.value_));
+            break;
+        case cpp2::ConfigType::BOOL:
+            metaValue = boost::get<bool>(item.value_) ? "true" : "false";
+            break;
+        case cpp2::ConfigType::STRING:
+            metaValue = boost::get<std::string>(item.value_);
+            break;
+    }
+
+    std::string curValue;
+    if (!gflags::GetCommandLineOption(item.name_.c_str(), &curValue)) {
+        return;
+    } else if (curValue != metaValue) {
+        LOG(INFO) << "update " << item.name_ << " from " << curValue << " to " << metaValue;
+        gflags::SetCommandLineOption(item.name_.c_str(), metaValue.c_str());
+    }
 }
 
 cpp2::ConfigItem GflagsManager::toThriftConfigItem(const cpp2::ConfigModule& module,
@@ -269,32 +238,25 @@ cpp2::ConfigItem GflagsManager::toThriftConfigItem(const cpp2::ConfigModule& mod
     return item;
 }
 
-std::string ConfigModuleToString(const cpp2::ConfigModule& module) {
-    auto it = cpp2::_ConfigModule_VALUES_TO_NAMES.find(module);
-    if (it == cpp2::_ConfigModule_VALUES_TO_NAMES.end()) {
-        return kConfigUnknown;
-    } else {
-        return it->second;
+ConfigItem GflagsManager::toConfigItem(const cpp2::ConfigItem& item) {
+    VariantType value;
+    switch (item.get_type()) {
+        case cpp2::ConfigType::INT64:
+            value = *reinterpret_cast<const int64_t*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::BOOL:
+            value = *reinterpret_cast<const bool*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::DOUBLE:
+            value = *reinterpret_cast<const double*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::STRING:
+            value = item.get_value();
+            break;
     }
-}
-
-std::string ConfigModeToString(const cpp2::ConfigMode& mode) {
-    auto it = cpp2::_ConfigMode_VALUES_TO_NAMES.find(mode);
-    if (it == cpp2::_ConfigMode_VALUES_TO_NAMES.end()) {
-        return kConfigUnknown;
-    } else {
-        return it->second;
-    }
-}
-
-std::string ConfigTypeToString(const cpp2::ConfigType& type) {
-    auto it = cpp2::_ConfigType_VALUES_TO_NAMES.find(type);
-    if (it == cpp2::_ConfigType_VALUES_TO_NAMES.end()) {
-        return kConfigUnknown;
-    } else {
-        return it->second;
-    }
+    return ConfigItem(item.get_module(), item.get_name(), item.get_type(), item.get_mode(), value);
 }
 
 }  // namespace meta
 }  // namespace nebula
+

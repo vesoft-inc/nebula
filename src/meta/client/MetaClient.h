@@ -50,29 +50,6 @@ using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, 
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 
-struct ConfigItem {
-    ConfigItem() {}
-
-    ConfigItem(const cpp2::ConfigModule& module, const std::string& name,
-               const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
-               const VariantType& value)
-        : module_(module)
-        , name_(name)
-        , type_(type)
-        , mode_(mode)
-        , value_(value) {
-    }
-
-    cpp2::ConfigModule  module_;
-    std::string         name_;
-    cpp2::ConfigType    type_;
-    cpp2::ConfigMode    mode_;
-    VariantType         value_;
-};
-
-// get config via space, module and name
-using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>;
-
 class MetaChangedListener {
 public:
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
@@ -201,14 +178,14 @@ public:
     folly::Future<StatusOr<bool>>
     regConfig(const std::vector<cpp2::ConfigItem>& items);
 
-    folly::Future<StatusOr<std::vector<ConfigItem>>>
+    folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     getConfig(const cpp2::ConfigModule& module, const std::string& name);
 
     folly::Future<StatusOr<bool>>
     setConfig(const cpp2::ConfigModule& module, const std::string& name,
               const cpp2::ConfigType& type, const std::string& value);
 
-    folly::Future<StatusOr<std::vector<ConfigItem>>>
+    folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module);
 
     // Opeartions for cache.
@@ -312,12 +289,8 @@ protected:
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 
-    ConfigItem toConfigItem(const cpp2::ConfigItem& tConfigs);
-
     PartsMap doGetPartsMap(const HostAddr& host,
                            const LocalCache& localCache);
-
-    void updateGflagsValue(const ConfigItem& item);
 
 private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
@@ -341,9 +314,6 @@ private:
     folly::RWSpinLock     listenerLock_;
     bool                  sendHeartBeat_ = false;
     std::atomic_bool      ready_{false};
-    MetaConfigMap         metaConfigMap_;
-    folly::RWSpinLock     configCacheLock_;
-    std::atomic_bool      configReady_{false};
 };
 
 }  // namespace meta

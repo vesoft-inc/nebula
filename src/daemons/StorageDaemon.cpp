@@ -18,7 +18,7 @@
 #include "webservice/WebService.h"
 #include "meta/SchemaManager.h"
 #include "meta/client/MetaClient.h"
-#include "meta/GflagsManager.h"
+#include "meta/ClientBasedGflagsManager.h"
 #include "storage/CompactionFilter.h"
 #include "hdfs/HdfsHelper.h"
 #include "hdfs/HdfsCommandHelper.h"
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "waitForMetadReady error!";
         return EXIT_FAILURE;
     }
-    nebula::meta::GflagsManager::instance(metaClient.get());
+    nebula::meta::ClientBasedGflagsManager::instance(metaClient.get());
 
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();
