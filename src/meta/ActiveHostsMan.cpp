@@ -34,10 +34,9 @@ ActiveHostsMan::ActiveHostsMan(int32_t intervalSeconds, int32_t expiredSeconds,
 bool ActiveHostsMan::updateHostInfo(const HostAddr& hostAddr, const HostInfo& info) {
     std::vector<kvstore::KV> data;
     {
-        folly::RWSpinLock::ReadHolder rh(&lock_);
+        folly::RWSpinLock::WriteHolder wh(&lock_);
         auto it = hostsMap_.find(hostAddr);
         if (it == hostsMap_.end()) {
-            folly::RWSpinLock::UpgradedHolder uh(&lock_);
             hostsMap_.emplace(hostAddr, std::move(info));
             data.emplace_back(MetaServiceUtils::hostKey(hostAddr.first, hostAddr.second),
                               MetaServiceUtils::hostValOnline());
