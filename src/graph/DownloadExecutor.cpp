@@ -37,6 +37,12 @@ void DownloadExecutor::execute() {
     auto  hdfsPort  = sentence_->port();
     auto *hdfsPath  = sentence_->path();
     auto *hdfsLocal = sentence_->localPath();
+    if (hdfsHost == nullptr || hdfsPort == 0 || hdfsPath == nullptr || hdfsLocal == nullptr) {
+        LOG(ERROR) << "URL Parse Failed";
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        onError_(Status::Error("URL Parse Failed"));
+        return;
+    }
 
     auto func = [metaHost, hdfsHost, hdfsPort, hdfsPath, hdfsLocal, spaceId]() {
         auto tmp = "%s \"http://%s:%d/%s?host=%s&port=%d&path=%s&local=%s&space=%d\"";

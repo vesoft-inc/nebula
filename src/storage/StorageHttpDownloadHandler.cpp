@@ -80,6 +80,13 @@ void StorageHttpDownloadHandler::onEOM() noexcept {
         LOG(INFO) << "HADOOP_HOME: " << hadoopHome;
         std::vector<std::string> parts;
         folly::split(",", partitions_, parts, true);
+        if (parts.size() == 0) {
+            ResponseBuilder(downstream_)
+                .status(400, "SSTFile download failed")
+                .body("Partitions should be not empty")
+                .sendWithEOM();
+        }
+
         if (downloadSSTFiles(hdfsHost_, hdfsPort_, hdfsPath_, parts, localPath_)) {
             ResponseBuilder(downstream_)
                 .status(200, "SSTFile download successfully")
@@ -126,8 +133,8 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
     }
 
     std::vector<folly::SemiFuture<bool>> futures;
-    nebula::thread::GenericThreadPool pool;
-    pool.start(parts.size());
+    static nebula::thread::GenericThreadPool pool;
+    pool.start(FLAGS_download_thread_num);
 
     for (auto& part : parts) {
         auto downloader = [hdfsHost, hdfsPort, hdfsPath, localPath, part, this]() {
