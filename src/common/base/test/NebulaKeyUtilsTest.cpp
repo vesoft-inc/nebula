@@ -17,11 +17,12 @@ TEST(NebulaKeyUtilsTest, SimpleTest) {
     TagVersion tagVersion = 20L;
     EdgeType type = 101;
     EdgeRanking rank = 10L;
-    EdgeVersion edgeVersion = 20;
+    EdgeVersion edgeVersion = 20L;
 
     auto vertexKey = NebulaKeyUtils::vertexKey(partId, srcId, tagId, tagVersion);
     ASSERT_TRUE(NebulaKeyUtils::isVertex(vertexKey));
     ASSERT_EQ(tagId, NebulaKeyUtils::getTagId(vertexKey));
+    ASSERT_EQ(tagVersion, NebulaKeyUtils::getTagVersion(vertexKey));
 
     auto edgeKey = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, edgeVersion);
     ASSERT_TRUE(NebulaKeyUtils::isEdge(edgeKey));
@@ -31,6 +32,24 @@ TEST(NebulaKeyUtilsTest, SimpleTest) {
     ASSERT_EQ(rank, NebulaKeyUtils::getRank(edgeKey));
     auto uuidKey = NebulaKeyUtils::uuidKey(partId, "nebula");
     ASSERT_TRUE(NebulaKeyUtils::isUUIDKey(uuidKey));
+    ASSERT_EQ(edgeVersion, NebulaKeyUtils::getEdgeVersion(edgeKey));
+
+    int versionByte = 1;
+    for (auto i = 0; i < 99999; i++) {
+        auto vKey = NebulaKeyUtils::vertexKey(partId, srcId, tagId, i);
+        auto eKey = NebulaKeyUtils::edgeKey(partId, srcId, type, rank, dstId, i);
+        CHECK_EQ(i, NebulaKeyUtils::getTagVersion(vKey));
+        CHECK_EQ(i, NebulaKeyUtils::getEdgeVersion(eKey));
+        auto v = i >> (7 * versionByte);
+        if (v > 0) {
+            versionByte++;
+        }
+        CHECK_EQ(NebulaKeyUtils::kVertexWithNoVersionLen + versionByte,
+                 vKey.size());
+        CHECK_EQ(NebulaKeyUtils::kEdgeWithNoVersionLen + versionByte,
+                 eKey.size());
+    }
+    CHECK_EQ(versionByte, 3);
 }
 
 }  // namespace nebula

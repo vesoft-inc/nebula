@@ -256,7 +256,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     {
         TestUtils::createSomeHosts(kv.get());
         cpp2::CreateSpaceReq req(FRAGILE,
-                                 cpp2::SpaceProperties(FRAGILE, "test_space", 1, 1));
+                                 cpp2::SpaceProperties(FRAGILE, "test_space", 1, 1, false));
         auto* processor = CreateSpaceProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);

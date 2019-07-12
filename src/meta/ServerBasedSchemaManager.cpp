@@ -21,6 +21,15 @@ void ServerBasedSchemaManager::init(MetaClient *client) {
     CHECK_NOTNULL(metaClient_);
 }
 
+bool ServerBasedSchemaManager::isSupportTimeSeries(GraphSpaceID spaceId) {
+    CHECK(metaClient_);
+    auto ret =  metaClient_->getSpaceTimeSeriesFromCache(spaceId);
+    if (!ret.ok()) {
+        return false;
+    }
+    return ret.value();
+}
+
 std::shared_ptr<const SchemaProviderIf>
 ServerBasedSchemaManager::getTagSchema(GraphSpaceID space, TagID tag, SchemaVer ver) {
     VLOG(3) << "Get Tag Schema Space " << space << ", TagID " << tag << ", Version " << ver;

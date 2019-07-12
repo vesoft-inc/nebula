@@ -79,8 +79,8 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "DESCRIBE SPACE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int, std::string, int, int>> expected{
-            {1, "default_space", 9, 1},
+        std::vector<std::tuple<int, std::string, int, int, bool>> expected{
+            {1, "default_space", 9, 1, false},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -90,8 +90,8 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "DESC SPACE default_space";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int, std::string, int, int>> expected{
-            {1, "default_space", 9, 1},
+        std::vector<std::tuple<int, std::string, int, int, bool>> expected{
+            {1, "default_space", 9, 1, false},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -119,14 +119,37 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "DESCRIBE SPACE space_with_default_options";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int, std::string, int, int>> expected{
-            {2, "space_with_default_options", 1024, 1},
+        std::vector<std::tuple<int, std::string, int, int, bool>> expected{
+            {2, "space_with_default_options", 1024, 1, false},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE space_with_default_options";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE space_with_time_series(partition_num=9,"
+                            "replica_factor=1, time_series='Y')";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DESCRIBE SPACE space_with_time_series";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int, std::string, int, int, bool>> expected{
+            {3, "space_with_time_series", 9, 1, true},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "DROP SPACE space_with_time_series";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

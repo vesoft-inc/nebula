@@ -31,6 +31,9 @@ Status CreateSpaceExecutor::prepare() {
                     return Status::Error("Replica_factor value should be greater than zero");
                 }
                 break;
+            case SpaceOptItem::TIME_SERIES:
+                isTimeSeries_ = item->is_time_series();
+                break;
         }
     }
     return Status::OK();
@@ -38,7 +41,8 @@ Status CreateSpaceExecutor::prepare() {
 
 
 void CreateSpaceExecutor::execute() {
-    auto future = ectx()->getMetaClient()->createSpace(*spaceName_, partNum_, replicaFactor_);
+    auto future = ectx()->getMetaClient()->createSpace(*spaceName_, partNum_,
+                                                       replicaFactor_, isTimeSeries_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

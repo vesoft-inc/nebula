@@ -130,10 +130,10 @@ private:
 
 class SpaceOptItem final {
 public:
-    using Value = boost::variant<int64_t, std::string>;
+    using Value = boost::variant<int64_t, std::string, bool>;
 
     enum OptionType : uint8_t {
-        PARTITION_NUM, REPLICA_FACTOR
+        PARTITION_NUM, REPLICA_FACTOR, TIME_SERIES,
     };
 
     SpaceOptItem(OptionType op, std::string val) {
@@ -146,6 +146,11 @@ public:
         optValue_ = val;
     }
 
+    SpaceOptItem(OptionType op, bool val) {
+        optType_ = op;
+        optValue_ = val;
+    }
+
     int64_t asInt() {
         return boost::get<int64_t>(optValue_);
     }
@@ -154,12 +159,20 @@ public:
         return boost::get<std::string>(optValue_);
     }
 
+    const bool asBool() {
+        return boost::get<bool>(optValue_);
+    }
+
     bool isInt() {
         return optValue_.which() == 0;
     }
 
     bool isString() {
         return optValue_.which() == 1;
+    }
+
+    bool isBool() {
+        return optValue_.which() == 2;
     }
 
     int64_t get_partition_num() {
@@ -176,6 +189,15 @@ public:
             return asInt();
         } else {
             LOG(ERROR) << "replica_factor value illegal.";
+            return 0;
+        }
+    }
+
+    bool is_time_series() {
+        if (isBool()) {
+            return asBool();
+        } else {
+            LOG(ERROR) << "time_series value illegal.";
             return 0;
         }
     }

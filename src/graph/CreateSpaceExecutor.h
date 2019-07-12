@@ -32,6 +32,7 @@ private:
     // it's impossible to express *not specified*, so we use 0 to indicate this.
     int32_t                         partNum_{0};
     int32_t                         replicaFactor_{0};
+    bool                            isTimeSeries_{false};
 };
 
 }   // namespace graph

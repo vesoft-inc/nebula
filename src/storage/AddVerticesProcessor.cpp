@@ -14,13 +14,14 @@ namespace nebula {
 namespace storage {
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
-    auto version =
-        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
-    // Switch version to big-endian, make sure the key is in ordered.
-    version = folly::Endian::big(version);
+    VLOG(3) << "Receive AddVerticesRequest...";
+    auto spaceId = req.get_space_id();
+    auto version = 0;
+    if (this->schemaMan_->isSupportTimeSeries(spaceId)) {
+        version = std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
+    }
 
     const auto& partVertices = req.get_parts();
-    auto spaceId = req.get_space_id();
     callingNum_ = partVertices.size();
     CHECK_NOTNULL(kvstore_);
     std::for_each(partVertices.begin(), partVertices.end(), [&](auto& pv) {

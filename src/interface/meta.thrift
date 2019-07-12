@@ -82,6 +82,7 @@ struct SpaceProperties {
     1: string               space_name,
     2: i32                  partition_num,
     3: i32                  replica_factor,
+    4: bool                 time_series,
 }
 
 struct SpaceItem {

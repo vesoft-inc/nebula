@@ -9,6 +9,22 @@
 namespace nebula {
 namespace storage {
 
+void AdHocSchemaManager::setSpaceTimeSeries(GraphSpaceID space, bool isSupportTimeSeries) {
+    folly::RWSpinLock::WriteHolder wh(seriesLock_);
+    timeSeries_[space] = isSupportTimeSeries;
+}
+
+bool AdHocSchemaManager::isSupportTimeSeries(GraphSpaceID space) {
+    folly::RWSpinLock::ReadHolder rh(seriesLock_);
+    auto it = timeSeries_.find(space);
+    if (it == timeSeries_.end()) {
+        // Not found
+        return false;
+    } else {
+        return it->second;
+    }
+}
+
 void AdHocSchemaManager::addTagSchema(GraphSpaceID space,
                                       TagID tag,
                                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema) {

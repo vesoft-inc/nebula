@@ -21,6 +21,10 @@ public:
     AdHocSchemaManager() = default;
     ~AdHocSchemaManager() = default;
 
+    void setSpaceTimeSeries(GraphSpaceID space, bool timeSeries);
+
+    bool isSupportTimeSeries(GraphSpaceID space) override;
+
     void addTagSchema(GraphSpaceID space,
                       TagID tag,
                       std::shared_ptr<nebula::meta::SchemaProviderIf> schema);
@@ -101,6 +105,9 @@ protected:
     std::set<GraphSpaceID> spaces_;
     // Key: spaceId + tagName,  Val: tagId
     std::unordered_map<std::string, TagID> tagNameToId_;
+    folly::RWSpinLock seriesLock_;
+    // space -> timeSeries
+    std::unordered_map<GraphSpaceID, bool> timeSeries_;
 };
 
 }  // namespace storage

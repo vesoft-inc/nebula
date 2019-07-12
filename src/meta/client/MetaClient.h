@@ -36,6 +36,7 @@ using EdgeTypeSchemas = std::unordered_map<std::pair<EdgeType, SchemaVer>,
 
 struct SpaceInfoCache {
     std::string spaceName;
+    bool timeSeries;
     PartsAlloc partsAlloc_;
     std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
     TagIDSchemas tagSchemas_;
@@ -125,7 +126,8 @@ public:
      * TODO(dangleptr): Use one struct to represent space description.
      * */
     folly::Future<StatusOr<GraphSpaceID>>
-    createSpace(std::string name, int32_t partsNum, int32_t replicaFactor);
+    createSpace(std::string name, int32_t partsNum, int32_t replicaFactor,
+                bool is_time_series = false);
 
     folly::Future<StatusOr<std::vector<SpaceIdName>>>
     listSpaces();
@@ -232,6 +234,8 @@ public:
 
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
+
+    StatusOr<bool> getSpaceTimeSeriesFromCache(const GraphSpaceID& spaceId);
 
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
 

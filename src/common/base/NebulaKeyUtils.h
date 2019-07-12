@@ -8,6 +8,15 @@
 #define COMMON_BASE_NEBULAKEYUTILS_H_
 
 #include "base/Base.h"
+#include <gtest/gtest_prod.h>
+
+#define CHECK_VERTEX(rawSize) \
+        CHECK_GT(rawSize, kVertexWithNoVersionLen); \
+        CHECK_LE(rawSize, kVertexWithVersionMaxLen);
+
+#define CHECK_EDGE(rawSize) \
+        CHECK_GT(rawSize, kEdgeWithNoVersionLen); \
+        CHECK_LE(rawSize, kEdgeWithVersionMaxLen);
 
 namespace nebula {
 
@@ -36,6 +45,8 @@ enum class NebulaSystemKeyType : uint32_t {
  * This class supply some utils for transition between Vertex/Edge and key in kvstore.
  * */
 class NebulaKeyUtils final {
+    FRIEND_TEST(NebulaKeyUtilsTest, SimpleTest);
+
 public:
     ~NebulaKeyUtils() = default;
     /**
@@ -92,9 +103,10 @@ public:
     }
 
     static TagID getTagId(const folly::StringPiece& rawKey) {
-        CHECK_EQ(rawKey.size(), kVertexLen);
+        CHECK_VERTEX(rawKey.size())
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
-        return readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
+        return readInt<TagID>(rawKey.data() + offset,
+                              rawKey.size() - offset);
     }
 
     static bool isEdge(const folly::StringPiece& rawKey) {
@@ -131,19 +143,19 @@ public:
     }
 
     static VertexID getSrcId(const folly::StringPiece& rawKey) {
-        CHECK_EQ(rawKey.size(), kEdgeLen);
+        CHECK_EDGE(rawKey.size());
         return readInt<VertexID>(rawKey.data() + sizeof(PartitionID), sizeof(VertexID));
     }
 
     static VertexID getDstId(const folly::StringPiece& rawKey) {
-        CHECK_EQ(rawKey.size(), kEdgeLen);
+        CHECK_EDGE(rawKey.size());
         auto offset = sizeof(PartitionID) + sizeof(VertexID) +
                       sizeof(EdgeType) + sizeof(EdgeRanking);
         return readInt<VertexID>(rawKey.data() + offset, sizeof(VertexID));
     }
 
     static EdgeType getEdgeType(const folly::StringPiece& rawKey) {
-        CHECK_EQ(rawKey.size(), kEdgeLen);
+        CHECK_EDGE(rawKey.size());
         constexpr int32_t edgeMask = 0xBFFFFFFF;
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
         EdgeType type = readInt<EdgeType>(rawKey.data() + offset, sizeof(EdgeType));
@@ -151,9 +163,27 @@ public:
     }
 
     static EdgeRanking getRank(const folly::StringPiece& rawKey) {
-        CHECK_EQ(rawKey.size(), kEdgeLen);
+        CHECK_EDGE(rawKey.size())
         auto offset = sizeof(PartitionID) + sizeof(VertexID) + sizeof(EdgeType);
         return readInt<EdgeRanking>(rawKey.data() + offset, sizeof(EdgeRanking));
+    }
+
+    static TagVersion getTagVersion(const folly::StringPiece& rawKey) {
+        CHECK_VERTEX(rawKey.size());
+        TagVersion v;
+        decodeVersion<TagVersion>(rawKey.data() + kVertexWithNoVersionLen,
+                                  rawKey.size() - kVertexWithNoVersionLen,
+                                  v);
+        return v;
+    }
+
+    static EdgeVersion getEdgeVersion(const folly::StringPiece& rawKey) {
+        CHECK_EDGE(rawKey.size());
+        EdgeVersion v;
+        decodeVersion<EdgeVersion>(rawKey.data() + kEdgeWithNoVersionLen,
+                                   rawKey.size() - kEdgeWithNoVersionLen,
+                                   v);
+        return v;
     }
 
     template<typename T>
@@ -184,24 +214,42 @@ public:
     }
 
     static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
-        // TODO(heng) We should change the method if varint data version supportted.
-        return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
+        if (isVertex(rawKey)) {
+            return rawKey.subpiece(0, kVertexWithNoVersionLen);
+        } else {
+            return rawKey.subpiece(0, kEdgeWithNoVersionLen);
+        }
     }
 
 private:
     NebulaKeyUtils() = delete;
 
-private:
-    static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(VertexID)
-                                        + sizeof(TagID) + sizeof(TagVersion);
+    template<typename T>
+    static typename std::enable_if<std::is_integral<T>::value, int32_t>::type
+    encodeVersion(T v, uint8_t *encode);
 
-    static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexID)
-                                      + sizeof(EdgeType) + sizeof(VertexID)
-                                      + sizeof(EdgeRanking) + sizeof(EdgeVersion);
+    template<typename T>
+    static typename std::enable_if<std::is_integral<T>::value>::type
+    decodeVersion(const char* data, int32_t len, T& v);
+
+private:
+    static constexpr int32_t kVarintVersionMaxLen = 10;
+    static constexpr int32_t kVertexWithNoVersionLen = sizeof(PartitionID) + sizeof(VertexID)
+                                                       + sizeof(TagID);
+    static constexpr int32_t kVertexWithVersionMaxLen = kVertexWithNoVersionLen
+                                                        + kVarintVersionMaxLen;
+
+    static constexpr int32_t kEdgeWithNoVersionLen = sizeof(PartitionID) + sizeof(VertexID)
+                                                     + sizeof(EdgeType) + sizeof(EdgeRanking)
+                                                     + sizeof(VertexID);
+    static constexpr int32_t kEdgeWithVersionMaxLen = kEdgeWithNoVersionLen + kVarintVersionMaxLen;
 
     static constexpr int32_t kSystemLen = sizeof(PartitionID) + sizeof(NebulaSystemKeyType);
 };
 
 }  // namespace nebula
+
+#include "base/NebulaKeyUtils.inl"
+
 #endif  // COMMON_BASE_NEBULAKEYUTILS_H_
 

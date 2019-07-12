@@ -164,7 +164,6 @@ TEST(ProcessorTest, CreateSpaceTest) {
     fs::TempDir rootPath("/tmp/CreateSpaceTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
     auto hostsNum = TestUtils::createSomeHosts(kv.get());
-
     {
         cpp2::SpaceProperties properties;
         properties.set_space_name("default_space");
@@ -190,8 +189,37 @@ TEST(ProcessorTest, CreateSpaceTest) {
         ASSERT_EQ("default_space", resp.item.properties.space_name);
         ASSERT_EQ(8, resp.item.properties.partition_num);
         ASSERT_EQ(3, resp.item.properties.replica_factor);
+        ASSERT_EQ(false, resp.item.properties.time_series);
     }
 
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("space_support_time_series");
+        properties.set_partition_num(8);
+        properties.set_replica_factor(3);
+        properties.set_time_series(true);
+        cpp2::CreateSpaceReq req;
+        req.set_properties(std::move(properties));
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(2, resp.get_id().get_space_id());
+    }
+    {
+        cpp2::GetSpaceReq req;
+        req.set_space_name("space_support_time_series");
+        auto* processor = GetSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ("space_support_time_series", resp.item.properties.space_name);
+        ASSERT_EQ(8, resp.item.properties.partition_num);
+        ASSERT_EQ(3, resp.item.properties.replica_factor);
+        ASSERT_EQ(true, resp.item.properties.time_series);
+    }
     {
         cpp2::ListSpacesReq req;
         auto* processor = ListSpacesProcessor::instance(kv.get());
@@ -199,9 +227,11 @@ TEST(ProcessorTest, CreateSpaceTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(1, resp.spaces.size());
+        ASSERT_EQ(2, resp.spaces.size());
         ASSERT_EQ(1, resp.spaces[0].id.get_space_id());
         ASSERT_EQ("default_space", resp.spaces[0].name);
+        ASSERT_EQ(2, resp.spaces[1].id.get_space_id());
+        ASSERT_EQ("space_support_time_series", resp.spaces[1].name);
     }
     // Check the result. The dispatch way from part to hosts is in a round robin fashion.
     {
@@ -240,7 +270,7 @@ TEST(ProcessorTest, CreateSpaceTest) {
         processor->process(req);
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-        ASSERT_EQ(0, resp.spaces.size());
+        ASSERT_EQ(1, resp.spaces.size());
     }
 }
 
@@ -373,7 +403,6 @@ TEST(ProcessorTest, CreateEdgeTest) {
     fs::TempDir rootPath("/tmp/CreateEdgeTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
     TestUtils::createSomeHosts(kv.get());
-
     {
         cpp2::SpaceProperties properties;
         properties.set_space_name("default_space");

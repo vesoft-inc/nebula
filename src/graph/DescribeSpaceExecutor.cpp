@@ -31,18 +31,20 @@ void DescribeSpaceExecutor::execute() {
         }
 
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        std::vector<std::string> header{"ID", "Name", "Partition number", "Replica Factor"};
+        std::vector<std::string> header{"ID", "Name", "Partition number",
+                                        "Replica Factor", "Time Series"};
         resp_->set_column_names(std::move(header));
 
         std::vector<cpp2::RowValue> rows;
         std::vector<cpp2::ColumnValue> row;
-        row.resize(4);
+        row.resize(5);
         row[0].set_integer(resp.value().get_space_id());
 
         auto properties = resp.value().get_properties();
         row[1].set_str(properties.get_space_name());
         row[2].set_integer(properties.get_partition_num());
         row[3].set_integer(properties.get_replica_factor());
+        row[4].set_bool_val(properties.get_time_series());
 
         rows.emplace_back();
         rows.back().set_columns(std::move(row));

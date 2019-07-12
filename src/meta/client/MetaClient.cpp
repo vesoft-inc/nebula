@@ -152,6 +152,14 @@ bool MetaClient::loadData() {
         VLOG(2) << "Load space " << spaceId
                 << ", parts num:" << spaceCache->partsAlloc_.size();
 
+        auto res = getSpace(space.second).get();
+        if (!res.ok()) {
+            LOG(ERROR) << "Get space failed for spaceId " << spaceId
+                       << ", status " << res.status();
+            return;
+        }
+        spaceCache->timeSeries = res.value().properties.time_series;
+
         // loadSchemas
         if (!loadSchemas(spaceId,
                          spaceCache,
@@ -512,11 +520,13 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
 /// ================================== public methods =================================
 
 folly::Future<StatusOr<GraphSpaceID>>
-MetaClient::createSpace(std::string name, int32_t partsNum, int32_t replicaFactor) {
+MetaClient::createSpace(std::string name, int32_t partsNum,
+                        int32_t replicaFactor, bool is_time_series) {
     cpp2::SpaceProperties properties;
     properties.set_space_name(std::move(name));
     properties.set_partition_num(partsNum);
     properties.set_replica_factor(replicaFactor);
+    properties.set_time_series(is_time_series);
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
     folly::Promise<StatusOr<GraphSpaceID>> promise;
@@ -656,6 +666,19 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
         return it->second;
     }
     return Status::SpaceNotFound();
+}
+
+
+StatusOr<bool> MetaClient::getSpaceTimeSeriesFromCache(const GraphSpaceID& spaceId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(spaceId);
+    if (it == localCache_.end()) {
+        return Status::Error("Space is not exist!");
+    }
+    return it->second->timeSeries;
 }
 
 

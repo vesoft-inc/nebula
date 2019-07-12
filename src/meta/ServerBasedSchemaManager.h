@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -19,6 +19,8 @@ class ServerBasedSchemaManager : public SchemaManager {
 public:
     ServerBasedSchemaManager() = default;
     ~ServerBasedSchemaManager();
+
+    bool isSupportTimeSeries(GraphSpaceID spaceId) override;
 
     // return the newest one if ver less 0
     std::shared_ptr<const SchemaProviderIf> getTagSchema(

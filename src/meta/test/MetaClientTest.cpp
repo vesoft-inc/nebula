@@ -60,7 +60,7 @@ TEST(MetaClientTest, InterfacesTest) {
     {
         // Test createSpace, listSpaces, getPartsAlloc.
         {
-            auto ret = client->createSpace("default_space", 8, 3).get();
+            auto ret = client->createSpace("default_space", 8, 3, false).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
             spaceId = ret.value();
         }
@@ -211,6 +211,11 @@ TEST(MetaClientTest, InterfacesTest) {
         auto ret = client->getSpaceIdByNameFromCache("default_space_1");
         ASSERT_FALSE(ret.ok());
         ASSERT_EQ(Status::SpaceNotFound(), ret.status());
+    }
+    {
+        auto ret = client->getSpaceTimeSeriesFromCache(spaceId);
+        ASSERT_TRUE(ret.ok());
+        ASSERT_EQ(false, ret.value());
     }
     {
         // Multi Put Test

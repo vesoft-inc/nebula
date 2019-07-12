@@ -366,6 +366,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     }
     // Will decode the properties according to the schema version
     // stored along with the properties
+    // TODO(zlcook) support for returning multiple versions
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
         this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
@@ -398,6 +399,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         auto val = iter->val();
         auto rank = NebulaKeyUtils::getRank(key);
         auto dstId = NebulaKeyUtils::getDstId(key);
+        // TODO(zlcook) support for returning multiple versions
         if (!firstLoop && rank == lastRank && lastDstId == dstId) {
             VLOG(3) << "Only get the latest version for each edge.";
             continue;

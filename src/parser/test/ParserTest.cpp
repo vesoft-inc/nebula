@@ -118,6 +118,27 @@ TEST(Parser, SpaceOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            " time_series='Y')";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            " time_series='N')";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
+                            " time_series=\"Y\")";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
+    {
+        GQLParser parser;
         std::string query = "USE default_space";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();

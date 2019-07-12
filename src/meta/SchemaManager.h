@@ -21,6 +21,8 @@ public:
 
     static std::unique_ptr<SchemaManager> create();
 
+    virtual bool isSupportTimeSeries(GraphSpaceID spaceId) = 0;
+
     virtual std::shared_ptr<const SchemaProviderIf> getTagSchema(GraphSpaceID space,
                                                                  TagID tag,
                                                                  SchemaVer ver = -1) = 0;

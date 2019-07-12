@@ -7,6 +7,7 @@
 #include "base/NebulaKeyUtils.h"
 #include <algorithm>
 #include <limits>
+#include <atomic>
 #include "time/WallClock.h"
 
 namespace nebula {
@@ -14,10 +15,10 @@ namespace storage {
 
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     auto spaceId = req.get_space_id();
-    auto version =
-        std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
-    // Switch version to big-endian, make sure the key is in ordered.
-    version = folly::Endian::big(version);
+    auto version = 0;
+    if (this->schemaMan_->isSupportTimeSeries(spaceId)) {
+        version = std::numeric_limits<int64_t>::max() - time::WallClock::fastNowInMicroSec();
+    }
 
     callingNum_ = req.parts.size();
     CHECK_NOTNULL(kvstore_);
