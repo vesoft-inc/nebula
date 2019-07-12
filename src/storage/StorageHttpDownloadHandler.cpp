@@ -12,6 +12,7 @@
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
+#include <mutex>
 
 DEFINE_int32(download_thread_num, 3, "download thread number");
 
@@ -19,6 +20,7 @@ namespace nebula {
 namespace storage {
 
 static std::atomic_flag isRunning = ATOMIC_FLAG_INIT;
+std::once_flag poolStartFlag;
 
 using proxygen::HTTPMessage;
 using proxygen::HTTPMethod;
@@ -134,7 +136,10 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
 
     std::vector<folly::SemiFuture<bool>> futures;
     static nebula::thread::GenericThreadPool pool;
-    pool.start(FLAGS_download_thread_num);
+    std::call_once(poolStartFlag, []() {
+        LOG(INFO) << "Download Thread Pool start";
+        pool.start(FLAGS_download_thread_num);
+    });
 
     for (auto& part : parts) {
         auto downloader = [hdfsHost, hdfsPort, hdfsPath, localPath, part, this]() {
@@ -177,12 +182,6 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
     LOG(INFO) << "Download tasks have finished";
     isRunning.clear();
     return successfully;
-}
-
-bool StorageHttpDownloadHandler::ingestSSTFiles(const std::string& path,
-                                                GraphSpaceID spaceID) {
-    UNUSED(path); UNUSED(spaceID);
-    return false;
 }
 
 }  // namespace storage

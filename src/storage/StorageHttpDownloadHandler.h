@@ -42,8 +42,6 @@ private:
                           const std::vector<std::string>& parts,
                           const std::string& local);
 
-    bool ingestSSTFiles(const std::string& path,
-                        GraphSpaceID spaceID);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
