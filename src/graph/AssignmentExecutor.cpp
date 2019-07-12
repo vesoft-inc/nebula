@@ -27,12 +27,7 @@ Status AssignmentExecutor::prepare() {
 
     var_ = sentence_->var();
     executor_ = TraverseExecutor::makeTraverseExecutor(sentence_->sentence(), ectx());
-    status = executor_->prepare();
-    if (!status.ok()) {
-        FLOG_ERROR("Prepare executor `%s' failed: %s",
-                    executor_->name(), status.toString().c_str());
-        return status;
-    }
+
     auto onError = [this] (Status s) {
         DCHECK(onError_);
         onError_(std::move(s));
@@ -47,6 +42,13 @@ Status AssignmentExecutor::prepare() {
     executor_->setOnError(onError);
     executor_->setOnFinish(onFinish);
     executor_->setOnResult(onResult);
+
+    status = executor_->prepare();
+    if (!status.ok()) {
+        FLOG_ERROR("Prepare executor `%s' failed: %s",
+                    executor_->name(), status.toString().c_str());
+        return status;
+    }
 
     return Status::OK();
 }
