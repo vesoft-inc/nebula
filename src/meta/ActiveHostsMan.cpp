@@ -34,20 +34,9 @@ ActiveHostsMan::ActiveHostsMan(int32_t intervalSeconds, int32_t expiredSeconds,
 bool ActiveHostsMan::updateHostInfo(const HostAddr& hostAddr, const HostInfo& info) {
     std::vector<kvstore::KV> data;
     {
-        using ReadHolder = folly::RWSpinLock::ReadHolder;
-        using WriteHolder = folly::RWSpinLock::WriteHolder;
-        using UpgradedHolder = folly::RWSpinLock::UpgradedHolder;
-        // Acquire the read lock
-        ReadHolder rh(&lock_);
+        folly::RWSpinLock::WriteHolder wh(&lock_);
         auto it = hostsMap_.find(hostAddr);
         if (it == hostsMap_.end()) {
-            // Step to Upgraded phase to stop new readers
-            UpgradedHolder uh(&lock_);
-            // Unlock the read lock
-            rh.reset();
-            // Wait for existing readers to finish and then acquire the write lock
-            WriteHolder wh(std::move(uh));
-            // Now we are safe to write
             hostsMap_.emplace(hostAddr, std::move(info));
             data.emplace_back(MetaServiceUtils::hostKey(hostAddr.first, hostAddr.second),
                               MetaServiceUtils::hostValOnline());
