@@ -329,6 +329,7 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
         case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
             return Status::Error("Key Not Found");
         default:
+            LOG(WARNING) << "Get peers failed, error " << static_cast<int32_t>(code);
             break;
     }
     return Status::Error("Get Failed");
