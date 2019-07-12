@@ -23,9 +23,12 @@ public:
          const std::string& walPath,
          KVEngine* engine,
          std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-         std::shared_ptr<thread::GenericThreadPool> workers);
+         std::shared_ptr<thread::GenericThreadPool> workers,
+         wal::BufferFlusher* flusher);
 
-    virtual ~Part() = default;
+    virtual ~Part() {
+        LOG(INFO) << idStr_ << "~Part()";
+    }
 
     KVEngine* engine() {
         return engine_;
