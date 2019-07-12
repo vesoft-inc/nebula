@@ -27,17 +27,14 @@ public:
         uint16_t port = 0);
     virtual ~RaftexService();
 
-    // Block until the service is ready to serve
-    void waitUntilReady();
-
     uint32_t getServerPort() const {
         return serverPort_;
     }
 
     std::shared_ptr<folly::IOThreadPoolExecutor> getIOThreadPool() const;
 
+    bool start();
     void stop();
-    void waitUntilStop();
 
     void askForVote(cpp2::AskForVoteResponse& resp,
                     const cpp2::AskForVoteRequest& req) override;
@@ -49,6 +46,23 @@ public:
     void removePartition(std::shared_ptr<RaftPart> part);
 
 private:
+    void initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool, uint16_t port = 0);
+    bool setup();
+    void serve();
+
+    enum RaftServiceStatus{
+        STATUS_INIT             = 0,
+        STATUS_START_FAILED     = 1,
+        STATUS_RUNNING          = 2,
+        STATUS_STOPPING         = 3,
+        STATUS_STOPPED          = 4
+    };
+    void notifyRaftServiceStatus(RaftServiceStatus status);
+
+    // Block until the service is ready to serve
+    void waitUntilReady();
+    void waitUntilStop();
+
     RaftexService() = default;
 
     std::shared_ptr<RaftPart> findPart(GraphSpaceID spaceId,
@@ -61,7 +75,7 @@ private:
 
     std::mutex readyMutex_;
     std::condition_variable readyCV_;
-    bool ready_{false};
+    RaftServiceStatus status_{STATUS_INIT};
 
     folly::RWSpinLock partsLock_;
     std::unordered_map<std::pair<GraphSpaceID, PartitionID>,

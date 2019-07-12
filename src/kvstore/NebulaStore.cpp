@@ -66,12 +66,16 @@ NebulaStore::~NebulaStore() {
     LOG(INFO) << "~NebulaStore()";
 }
 
-void NebulaStore::init() {
+bool NebulaStore::init() {
     LOG(INFO) << "Start the raft service...";
     workers_ = std::make_shared<thread::GenericThreadPool>();
     workers_->start(FLAGS_num_workers);
     raftService_ = raftex::RaftexService::createService(ioPool_, raftAddr_.second);
-    raftService_->waitUntilReady();
+    if (!raftService_->start()) {
+        LOG(INFO) << "Start the raft service failed";
+        return false;
+    }
+
     flusher_ = std::make_unique<wal::BufferFlusher>();
     CHECK(!!partMan_);
     LOG(INFO) << "Scan the local path, and init the spaces_";
@@ -143,6 +147,8 @@ void NebulaStore::init() {
 
     LOG(INFO) << "Register handler...";
     partMan_->registerHandler(this);
+
+    return true;
 }
 
 

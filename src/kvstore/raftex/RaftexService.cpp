@@ -21,43 +21,13 @@ std::shared_ptr<RaftexService> RaftexService::createService(
         std::shared_ptr<folly::IOThreadPoolExecutor> pool,
         uint16_t port) {
     auto svc = std::shared_ptr<RaftexService>(new RaftexService());
+    CHECK(svc != nullptr) << "Failed to create a raft service";
 
     svc->server_ = std::make_unique<apache::thrift::ThriftServer>();
     CHECK(svc->server_ != nullptr) << "Failed to create a thrift server";
-
     svc->server_->setInterface(svc);
-    svc->server_->setPort(port);
-    if (pool != nullptr) {
-        svc->server_->setIOThreadPool(pool);
-    }
 
-    svc->serverThread_.reset(new std::thread([svc] {
-        svc->server_->setup();
-        svc->serverPort_ = svc->server_->getAddress().getPort();
-        LOG(INFO) << "Starting the Raftex Service on " << svc->serverPort_;
-        SCOPE_EXIT {
-            svc->server_->cleanUp();
-        };
-
-        {
-            std::lock_guard<std::mutex> g(svc->readyMutex_);
-            svc->ready_ = true;
-        }
-        svc->readyCV_.notify_all();
-
-        svc->server_
-           ->getEventBaseManager()
-           ->getEventBase()
-           ->loopForever();
-
-        {
-            std::lock_guard<std::mutex> g(svc->readyMutex_);
-            svc->ready_ = false;
-        }
-
-        LOG(INFO) << "The Raftex Service stopped";
-    }));
-
+    svc->initThriftServer(pool, port);
     return svc;
 }
 
@@ -66,11 +36,82 @@ RaftexService::~RaftexService() {
 }
 
 
+bool RaftexService::start() {
+    serverThread_.reset(new std::thread([&] {
+        serve();
+    }));
+
+    waitUntilReady();
+    if (status_ != STATUS_RUNNING) {
+        waitUntilStop();
+        server_.reset();
+        return false;
+    }
+
+    return true;
+}
+
+
+void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool, 
+                                     uint16_t port) {
+    LOG(INFO) << "Init thrift server for raft service.";
+    server_->setPort(port);
+    if (pool != nullptr) {
+        server_->setIOThreadPool(pool);
+    }
+}
+
+
+bool RaftexService::setup() {
+    LOG(INFO) << "Starting the Raftex Service";
+
+    try {
+        server_->setup();
+        serverPort_ = server_->getAddress().getPort();
+
+        LOG(INFO) << "Starting the Raftex Service on " << svc->serverPort_;
+    }
+    catch (const std::exception &e) {
+        LOG(ERROR) << "Start the Raftex Service failed, error:" << e.what();
+        return false;
+    }
+
+    return true;
+}
+
+
+void RaftexService::notifyRaftServiceStatus(RaftServiceStatus status) {
+    {
+        std::lock_guard<std::mutex> g(readyMutex_);
+        status_ = status;
+    }
+    readyCV_.notify_all();
+}
+
+
+void RaftexService::serve() {
+    if (!setup()) {
+        notifyRaftServiceStatus(STATUS_START_FAILED);
+        return;
+    }
+
+    notifyRaftServiceStatus(STATUS_RUNNING);
+    SCOPE_EXIT {
+        server_->cleanUp();
+    };
+
+    server_->getEventBaseManager()->getEventBase()->loopForever();
+    notifyRaftServiceStatus(STATUS_STOPPED);
+
+    LOG(INFO) << "The Raftex Service stopped";
+}
+
+
 void RaftexService::waitUntilReady() {
     std::unique_lock<std::mutex> lock(readyMutex_);
-    if (!ready_) {
+    if (STATUS_INIT == status_ || STATUS_STOPPED == status_) {
         readyCV_.wait(lock, [this] {
-            return ready_;
+            return STATUS_INIT != status_ && STATUS_STOPPED != status_;
         });
     }
 }
@@ -83,6 +124,20 @@ RaftexService::getIOThreadPool() const {
 
 
 void RaftexService::stop() {
+    // note: if service start failed, the status_ will change to STATUS_INIT_FAILED, 
+    // and will reclaim resource of serverThread_ in start function, so here we no
+    // need in stop logic if service not running.
+    {
+        std::lock_guard<std::mutex> g(readyMutex_);
+        if (STATUS_RUNNING != status_) {
+            LOG(INFO) << "raft service is not running, no need stop.";
+            return;
+        }
+
+        status_ = STATUS_STOPPING;
+    }
+
+    // stop service
     LOG(INFO) << "Stopping the raftex service on port " << serverPort_;
     {
         folly::RWSpinLock::WriteHolder wh(partsLock_);
@@ -93,6 +148,10 @@ void RaftexService::stop() {
         LOG(INFO) << "All partitions have stopped";
     }
     server_->stop();
+
+    // reclaim resource
+    waitUntilStop();
+    server_.reset();
 }
 
 
