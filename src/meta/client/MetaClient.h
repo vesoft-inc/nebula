@@ -68,15 +68,14 @@ public:
 
     void init();
 
-    void deInit();
-
     void registerListener(MetaChangedListener* listener) {
         CHECK(listener_ == nullptr);
+        folly::RWSpinLock::WriteHolder holder(listenerLock_);
         listener_ = listener;
     }
 
     void unRegisterListener() {
-        deInit();
+        folly::RWSpinLock::WriteHolder holder(listenerLock_);
         listener_ = nullptr;
     }
 
@@ -268,6 +267,7 @@ private:
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
+    folly::RWSpinLock     listenerLock_;
     bool                  sendHeartBeat_ = false;
     std::atomic_bool      ready_{false};
 };

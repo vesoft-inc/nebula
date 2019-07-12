@@ -33,7 +33,8 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
 
 
 MetaClient::~MetaClient() {
-    deInit();
+    bgThread_.stop();
+    bgThread_.wait();
     VLOG(3) << "~MetaClient";
 }
 
@@ -57,13 +58,9 @@ void MetaClient::init() {
     }
 }
 
-void MetaClient::deInit() {
-    bgThread_.stop();
-    bgThread_.wait();
-}
-
 
 void MetaClient::heartBeatThreadFunc() {
+    folly::RWSpinLock::ReadHolder holder(listenerLock_);
     if (listener_ == nullptr) {
         VLOG(1) << "Can't send heartbeat due to listener_ is nullptr!";
         return;
@@ -348,6 +345,7 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
 
 void MetaClient::diff(const std::unordered_map<GraphSpaceID,
                                                std::shared_ptr<SpaceInfoCache>>& newCache) {
+    folly::RWSpinLock::WriteHolder holder(listenerLock_);
     if (listener_ == nullptr) {
         VLOG(3) << "Listener is null!";
         return;
