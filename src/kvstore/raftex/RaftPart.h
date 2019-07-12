@@ -227,10 +227,9 @@ private:
     // resp -- AppendLogResponse
     using AppendLogResponses = std::vector<cpp2::AppendLogResponse>;
 
-    // <source, term, logType, log>
+    // <source, logType, log>
     using LogCache = std::vector<
         std::tuple<ClusterID,
-                   TermID,
                    LogType,
                    std::string>>;
 
@@ -284,7 +283,7 @@ private:
                                                   LogType logType,
                                                   std::string log);
 
-    void appendLogsInternal(AppendLogsIterator iter);
+    void appendLogsInternal(AppendLogsIterator iter, TermID termId);
 
     void replicateLogs(
         folly::EventBase* eb,

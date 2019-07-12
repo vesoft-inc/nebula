@@ -39,9 +39,11 @@ using nebula::wal::BufferFlusher;
 class AppendLogsIterator final : public LogIterator {
 public:
     AppendLogsIterator(LogID firstLogId,
+                       TermID termId,
                        RaftPart::LogCache logs,
                        std::function<std::string(const std::string&)> casCB)
             : firstLogId_(firstLogId)
+            , termId_(termId)
             , logId_(firstLogId)
             , logs_(std::move(logs))
             , casCB_(std::move(casCB)) {
@@ -75,7 +77,7 @@ public:
     bool processCAS() {
         while (idx_ < logs_.size()) {
             auto& tup = logs_.at(idx_);
-            auto logType = std::get<2>(tup);
+            auto logType = std::get<1>(tup);
             if (logType != LogType::CAS) {
                 // Not a CAS
                 return false;
@@ -83,7 +85,7 @@ public:
 
             // Process CAS log
             CHECK(!!casCB_);
-            casResult_ = casCB_(std::get<3>(tup));
+            casResult_ = casCB_(std::get<2>(tup));
             if (casResult_.size() > 0) {
                 // CAS Succeeded
                 return true;
@@ -126,8 +128,7 @@ public:
     }
 
     TermID logTerm() const override {
-        DCHECK(valid());
-        return std::get<1>(logs_.at(idx_));
+        return termId_;
     }
 
     ClusterID logSource() const override {
@@ -140,7 +141,7 @@ public:
         if (currLogType_ == LogType::CAS) {
             return casResult_;
         } else {
-            return std::get<3>(logs_.at(idx_));
+            return std::get<2>(logs_.at(idx_));
         }
     }
 
@@ -163,7 +164,7 @@ public:
     }
 
     LogType logType() const {
-        return  std::get<2>(logs_.at(idx_));
+        return  std::get<1>(logs_.at(idx_));
     }
 
 private:
@@ -175,6 +176,7 @@ private:
     LogType currLogType_{LogType::NORMAL};
     std::string casResult_;
     LogID firstLogId_;
+    TermID termId_;
     LogID logId_;
     RaftPart::LogCache logs_;
     std::function<std::string(const std::string&)> casCB_;
@@ -339,7 +341,6 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                                                         LogType logType,
                                                         std::string log) {
     LogCache swappedOutLogs;
-    LogID firstId;
     auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
 
     {
@@ -359,7 +360,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
 
         // Append new logs to the buffer
         DCHECK_GE(source, 0);
-        logs_.emplace_back(source, term_, logType, std::move(log));
+        logs_.emplace_back(source, logType, std::move(log));
         switch (logType) {
             case LogType::CAS:
                 retFuture = cachingPromise_.getSingleFuture();
@@ -387,6 +388,8 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
         }
     }
 
+    LogID firstId = 0;
+    TermID termId = 0;
     {
         std::lock_guard<std::mutex> g(raftLock_);
         auto res = canAppendLogs();
@@ -398,6 +401,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
             return res;
         }
         firstId = lastLogId_ + 1;
+        termId = term_;
     }
     // Replicate buffered logs to all followers
     // Replication will happen on a separate thread and will block
@@ -406,6 +410,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
     VLOG(2) << idStr_ << "Calling appendLogsInternal()";
     AppendLogsIterator it(
         firstId,
+        termId,
         std::move(swappedOutLogs),
         [this] (const std::string& msg) -> std::string {
             auto res = compareAndSet(msg);
@@ -415,13 +420,13 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
             }
             return res;
         });
-    appendLogsInternal(std::move(it));
+    appendLogsInternal(std::move(it), termId);
 
     return retFuture;
 }
 
 
-void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
+void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     TermID currTerm = 0;
     LogID prevLogId = 0;
     TermID prevLogTerm = 0;
@@ -449,6 +454,12 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter) {
             // Is not a leader any more
             VLOG(2) << idStr_ << "The leader has changed";
             sendingPromise_.setValue(AppendLogResult::E_NOT_A_LEADER);
+            replicatingLogs_ = false;
+            return;
+        }
+        if (term_ != termId) {
+            VLOG(2) << idStr_ << "Term has been updated, origin " << termId << ", new " << term_;
+            sendingPromise_.setValue(AppendLogResult::E_TERM_OUT_OF_DATE);
             replicatingLogs_ = false;
             return;
         }
@@ -667,6 +678,7 @@ void RaftPart::processAppendLogResponses(
                 cachingPromise_.reset();
                 iter = AppendLogsIterator(
                     firstLogId,
+                    currTerm,
                     std::move(logs_),
                     [this] (const std::string& log) -> std::string {
                         auto res = compareAndSet(log);
@@ -684,7 +696,7 @@ void RaftPart::processAppendLogResponses(
             }
         }
         if (!iter.empty()) {
-            appendLogsInternal(std::move(iter));
+            appendLogsInternal(std::move(iter), currTerm);
         }
     } else {
         // Not enough hosts accepted the log, re-try
