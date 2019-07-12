@@ -37,10 +37,17 @@ bool ActiveHostsMan::updateHostInfo(const HostAddr& hostAddr, const HostInfo& in
         using ReadHolder = folly::RWSpinLock::ReadHolder;
         using WriteHolder = folly::RWSpinLock::WriteHolder;
         using UpgradedHolder = folly::RWSpinLock::UpgradedHolder;
+        // Acquire the read lock
         ReadHolder rh(&lock_);
         auto it = hostsMap_.find(hostAddr);
         if (it == hostsMap_.end()) {
-            WriteHolder wh(UpgradedHolder(&lock_));
+            // Step to Upgraded phase to stop new readers
+            UpgradedHolder uh(&lock_);
+            // Unlock the read lock
+            rh.reset();
+            // Wait for existing readers to finish and then acquire the write lock
+            WriteHolder wh(std::move(uh));
+            // Now we are safe to write
             hostsMap_.emplace(hostAddr, std::move(info));
             data.emplace_back(MetaServiceUtils::hostKey(hostAddr.first, hostAddr.second),
                               MetaServiceUtils::hostValOnline());
