@@ -30,6 +30,8 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
+    Status prepareYield();
+
     Status setupVids();
 
     void onEmptyInputs();
@@ -43,6 +45,7 @@ private:
 
 private:
     FetchVerticesSentence                      *sentence_;
+    std::unique_ptr<ExpressionContext>          expCtx_;
     std::unique_ptr<InterimResult>              inputs_;
     std::vector<VertexID>                       vids_;
     std::string                                *varname_;

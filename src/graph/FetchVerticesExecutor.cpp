@@ -51,9 +51,10 @@ Status FetchVerticesExecutor::prepare() {
 }
 
 Status FetchVerticesExecutor::prepareYield() {
+    Status status = Status::OK();
     auto *clause = sentence_->yieldClause();
-    if (clause != null) {
-        auto yields = clause_->columns();
+    if (clause != nullptr) {
+        auto yields = clause->columns();
         for (auto *col : yields) {
             col->expr()->setContext(expCtx_.get());
             status = col->expr()->prepare();
@@ -64,6 +65,8 @@ Status FetchVerticesExecutor::prepareYield() {
     } else {
         // TODO
     }
+
+    return Status::OK();
 }
 
 void FetchVerticesExecutor::execute() {
