@@ -397,6 +397,8 @@ include_directories(AFTER src/common)
 include_directories(AFTER src/interface)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/interface)
+include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/kvstore/plugins)
+include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/kvstore/plugins/hbase)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src/parser)
 
 link_directories(
@@ -500,13 +502,13 @@ add_custom_target(
     clean-build
     COMMAND ${CMAKE_MAKE_PROGRAM} clean
     COMMAND "find" "." "-name" "Testing" "|" "xargs" "rm" "-fr"
-    DEPENDS clean-interface clean-pch
+    DEPENDS clean-interface clean-pch clean-hbase
 )
 
 if (NOT SKIP_JAVA_CLIENT)
-    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-java-client)
+    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase clean-java-client)
 else()
-    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch )
+    set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase)
 endif()
 
 add_custom_target(

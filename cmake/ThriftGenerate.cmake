@@ -44,7 +44,7 @@ endmacro()
 # This will prevent cmake from complaining about missing source files
 #
 
-macro(thrift_generate file_name services file_path output_path)
+macro(thrift_generate file_name services file_path output_path include_prefix)
 set("${file_name}-cpp2-HEADERS"
   ${output_path}/gen-cpp2/${file_name}_constants.h
   ${output_path}/gen-cpp2/${file_name}_data.h
@@ -82,7 +82,7 @@ add_custom_command(
   COMMAND ${THRIFT1}
     --strict "--allow-neg-enum-vals"
     --templates ${THRIFT_TEMPLATES}
-    --gen "mstch_cpp2:include_prefix=\"interface\",process_in_event_base,stack_arguments"
+    --gen "mstch_cpp2:include_prefix=${include_prefix},process_in_event_base,stack_arguments"
     --gen "java:hashcode"
     --gen "go"
     -o "." "${file_path}/${file_name}.thrift"
