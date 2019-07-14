@@ -5,7 +5,7 @@
 ---
 ## Directed property graph
 
-**Nebula Graph** handles the **Directed Property Graph**, whose edge is directional
+**Nebula Graph** handles the **Directed Property Graph Model**, whose edge is directional
 and both edges and vertices can have properties. It can be represented as
 
 **G = < V, E, P<sub>V</sub>, P<sub>E</sub> >**
@@ -24,8 +24,9 @@ Vertices are typically used to store entities with properties. In the preceding 
 ### Edges
 
 
-Edges are used to connect vertices. They usually represent a relationship (i.e. ownership, friendship, and so on) or a behavior (i.e. transfer, like, and so on) between two vertices. In **Nebula Graph**, an edge is always directional and of a specific edge type. But between any two vertices, there could be multiple edges of
-the same edge type. These edges will be differentiated by their rankings. So, any
+Edges are used to connect vertices. They usually represent a relationship (i.e. ownership, friendship, and so on) or a behavior (i.e. transfer, like, and so on) between two vertices. In **Nebula Graph**, an edge is always directional and of a specific edge type. However, from the source vertex to the target vertex, there could be multiple edges of
+the same edge type.
+These edges will be differentiated by their rankings. So, any
 edge is uniquely identified by the tuple [src_vertex, dst_vertex, edge_type, ranking]. In
 the preceding example, edges are **serve**
 and **likeness**.
@@ -119,12 +120,12 @@ Nebula Graph includes four modules: storage service, metadata service, query eng
 
 ### Storage serve
 
-The corresponding process of storage service is nebula-storaged, and provides a key-value store. Separated storage and computing makes storage service flexible, and multiple storage engines like RocksDB and HBase are supported, with the former one set as default engine. To build a resilient distributed system, [Raft](https://raft.github.io/) is implemented as the consensus algorithm.
+The corresponding process of storage service is nebula-storaged, and provides a key-value store. Separated storage and computing makes storage service flexible, and multiple storage engines like RocksDB and HBase are supported, with RocksDB set as default engine. To build a resilient distributed system, [Raft](https://raft.github.io/) is implemented as the consensus algorithm.
 
 Currently it supports
 multiple storage engines like Rocksdb and HBase, etc.
 
-Raft protocol ensures data consistency  by leader/follower mechanism. Based on that, Nebula Storage makes the following optimizations:
+Raft achieves data consensus via an elected leader. Based on that, Nebula Storage makes the following optimizations:
 
 - Parallel Raft
 
@@ -135,11 +136,9 @@ Raft protocol ensures data consistency  by leader/follower mechanism. Based on t
       In Raft protocol, multi-machine synchronization depends on log ID orders, which
   lead to low throughput. Nebula Graph achieves high throughput by batch and out-of-order commit.
 
-- Add Raft Learner based on synchronism
+- Add Raft Learner
 
-      When added to cluster, new machines will be tagged as learner and pull data
-  from leader/follower synchronically. The learner can neither vote nor count towards quorum. Once it catches up to leader, the learner will be tagged as follower and
-  participate in Raft Protocol.
+      When a new server joins the cluster, it can be added as a learner node. The learner node can neither vote nor count towards quorum. Once it catches up to the leader's logs, it can be promoted to follower as a normal voting node.
 
 - Load-balance
 
