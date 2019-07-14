@@ -350,8 +350,7 @@ nebula> INSERT VERTEX student(name, age, gender) VALUES 201:("Mike", 18, "male")
 nebula> INSERT VERTEX student(name, age, gender) VALUES 202:("Jane", 17, "female");
 nebula> INSERT VERTEX course(name, credits),building(name) VALUES 101:("Math", 3, "No5");
 nebula> INSERT VERTEX course(name, credits),building(name) VALUES 102:("English", 6, "No11");
-=======
-nebula> CREATE space myspace(partition_num=1, replica_factor=1)
+
 ```
 
 ```
