@@ -93,7 +93,7 @@ class GraphScanner;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
-%token KW_ROLES KW_BY
+%token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC
 %token KW_DISTINCT
@@ -180,6 +180,7 @@ class GraphScanner;
 %type <sentence> order_by_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
 %type <sentence> grant_sentence revoke_sentence
+%type <sentence> download_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -1054,6 +1055,15 @@ delete_vertex_sentence
     }
     ;
 
+download_sentence
+    : KW_DOWNLOAD KW_HDFS STRING KW_TO STRING {
+        auto sentence = new DownloadSentence();
+        sentence->setUrl($3);
+        sentence->setLocalPath($5);
+        $$ = sentence;
+    }
+    ;
+
 edge_list
     : vid R_ARROW vid {
         $$ = new EdgeList();
@@ -1312,6 +1322,7 @@ mutate_sentence
     | update_edge_sentence { $$ = $1; }
     | delete_vertex_sentence { $$ = $1; }
     | delete_edge_sentence { $$ = $1; }
+    | download_sentence { $$ = $1; }
     ;
 
 maintain_sentence
