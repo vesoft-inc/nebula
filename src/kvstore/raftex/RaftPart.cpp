@@ -19,8 +19,6 @@
 #include "kvstore/raftex/Host.h"
 
 
-DEFINE_bool(accept_log_append_during_pulling, false,
-            "Whether to accept new logs during pulling the snapshot");
 DEFINE_uint32(raft_heartbeat_interval_secs, 5,
              "Seconds between each heartbeat");
 
@@ -419,6 +417,82 @@ void RaftPart::commitTransLeader(const HostAddr& target) {
             break;
         }
     }
+}
+
+void RaftPart::updateQuorum() {
+    CHECK(!raftLock_.try_lock());
+    int32_t total = 0;
+    for (auto& h : hosts_) {
+        if (!h->isLearner()) {
+            total++;
+        }
+    }
+    quorum_ = (total + 1) / 2;
+}
+
+void RaftPart::addPeer(const HostAddr& peer) {
+    CHECK(!raftLock_.try_lock());
+    if (peer == addr_) {
+        LOG(INFO) << idStr_ << "I am already in the raft group!";
+        return;
+    }
+    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
+                return h->address() == peer;
+            });
+    if (it == hosts_.end()) {
+        hosts_.emplace_back(std::make_shared<Host>(peer, shared_from_this()));
+        updateQuorum();
+        LOG(INFO) << idStr_ << "Add peer " << peer;
+    } else {
+        if ((*it)->isLearner()) {
+            LOG(INFO) << idStr_ << "The host " << peer
+                      << " has been existed as learner, promote it!";
+            (*it)->setLearner(false);
+            updateQuorum();
+        } else {
+            LOG(INFO) << idStr_ << "The host " << peer << " has been existed as follower!";
+        }
+    }
+}
+
+void RaftPart::removePeer(const HostAddr& peer) {
+    CHECK(!raftLock_.try_lock());
+    LOG(INFO) << idStr_ << "Remove peer " << peer;
+    if (peer == addr_) {
+        status_ = Status::STOPPED;
+        LOG(INFO) << idStr_ << "Remove myself from the raft group, just stop.";
+        return;
+    }
+    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&peer] (const auto& h) {
+                  return h->address() == peer;
+              });
+    if (it == hosts_.end()) {
+        LOG(INFO) << idStr_ << "The peer " << peer << " not exist!";
+    } else {
+        CHECK(!(*it)->isLearner()) << idStr_ << "Peer " << peer << " should not be learner!";
+        hosts_.erase(it);
+        updateQuorum();
+        LOG(INFO) << idStr_ << "Remove peer " << peer;
+    }
+}
+
+void RaftPart::preProcessRemovePeer(const HostAddr& peer) {
+    CHECK(!raftLock_.try_lock());
+    if (role_ == Role::LEADER) {
+        LOG(INFO) << idStr_ << "I am leader, skip remove peer in preProcessLog";
+        return;
+    }
+    removePeer(peer);
+}
+
+void RaftPart::commitRemovePeer(const HostAddr& peer) {
+    CHECK(!raftLock_.try_lock());
+    if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
+        LOG(INFO) << idStr_ << "I am follower, skip remove peer in commit";
+        return;
+    }
+    CHECK(Role::LEADER == role_);
+    removePeer(peer);
 }
 
 folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source,
@@ -1534,6 +1608,25 @@ void RaftPart::reset() {
     lastLogId_ = committedLogId_ = 0;
     lastTotalCount_ = 0;
     lastTotalSize_ = 0;
+}
+
+AppendLogResult RaftPart::isCatchedUp(const HostAddr& peer) {
+    std::lock_guard<std::mutex> lck(logsLock_);
+    if (role_ != Role::LEADER) {
+        LOG(INFO) << idStr_ << "I am not the leader";
+        return AppendLogResult::E_NOT_A_LEADER;
+    }
+    if (peer == addr_) {
+        LOG(INFO) << idStr_ << "I am the leader";
+        return AppendLogResult::SUCCEEDED;
+    }
+    for (auto& host : hosts_) {
+        if (host->addr_ == peer) {
+            return host->sendingSnapshot_ ? AppendLogResult::E_SENDING_SNAPSHOT
+                                          : AppendLogResult::SUCCEEDED;
+        }
+    }
+    return AppendLogResult::E_INVALID_PEER;
 }
 
 }  // namespace raftex

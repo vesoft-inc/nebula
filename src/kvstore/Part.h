@@ -54,6 +54,10 @@ public:
 
     void asyncTransferLeader(const HostAddr& target, KVCallback cb);
 
+    void asyncAddPeer(const HostAddr& peer, KVCallback cb);
+
+    void asyncRemovePeer(const HostAddr& peer, KVCallback cb);
+
     void registerNewLeaderCb(NewLeaderCallback cb) {
         newLeaderCb_ = std::move(cb);
     }

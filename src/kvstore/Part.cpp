@@ -143,7 +143,7 @@ void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
 }
 
 void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
-    std::string log = encodeLearner(learner);
+    std::string log = encodeHost(OP_ADD_LEARNER, learner);
     sendCommandAsync(std::move(log))
         .then([callback = std::move(cb)] (AppendLogResult res) mutable {
         callback(toResultCode(res));
@@ -151,7 +151,23 @@ void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
 }
 
 void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
-    std::string log = encodeTransLeader(target);
+    std::string log = encodeHost(OP_TRANS_LEADER, target);
+    sendCommandAsync(std::move(log))
+        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        callback(toResultCode(res));
+    });
+}
+
+void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
+    std::string log = encodeHost(OP_ADD_PEER, peer);
+    sendCommandAsync(std::move(log))
+        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        callback(toResultCode(res));
+    });
+}
+
+void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
+    std::string log = encodeHost(OP_REMOVE_PEER, peer);
     sendCommandAsync(std::move(log))
         .then([callback = std::move(cb)] (AppendLogResult res) mutable {
         callback(toResultCode(res));
@@ -246,13 +262,18 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             }
             break;
         }
+        case OP_ADD_PEER:
         case OP_ADD_LEARNER: {
             break;
         }
         case OP_TRANS_LEADER: {
-            auto newLeader = decodeTransLeader(log);
+            auto newLeader = decodeHost(OP_TRANS_LEADER, log);
             commitTransLeader(newLeader);
-            LOG(INFO) << idStr_ << "Transfer leader to " << newLeader;
+            break;
+        }
+        case OP_REMOVE_PEER: {
+            auto peer = decodeHost(OP_REMOVE_PEER, log);
+            commitRemovePeer(peer);
             break;
         }
         default: {
@@ -320,15 +341,23 @@ bool Part::preProcessLog(LogID logId,
     if (!log.empty()) {
         switch (log[sizeof(int64_t)]) {
             case OP_ADD_LEARNER: {
-                auto learner = decodeLearner(log);
+                auto learner = decodeHost(OP_ADD_LEARNER, log);
                 addLearner(learner);
-                LOG(INFO) << idStr_ << "Preprocess add learner " << learner;
                 break;
             }
             case OP_TRANS_LEADER: {
-                auto newLeader = decodeTransLeader(log);
+                auto newLeader = decodeHost(OP_TRANS_LEADER, log);
                 preProcessTransLeader(newLeader);
-                LOG(INFO) << idStr_ << "Preprocess transfer leader to " << newLeader;
+                break;
+            }
+            case OP_ADD_PEER: {
+                auto peer = decodeHost(OP_ADD_PEER, log);
+                addPeer(peer);
+                break;
+            }
+            case OP_REMOVE_PEER: {
+                auto peer = decodeHost(OP_REMOVE_PEER, log);
+                preProcessRemovePeer(peer);
                 break;
             }
             default: {

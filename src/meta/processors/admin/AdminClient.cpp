@@ -24,7 +24,7 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
     storage::cpp2::TransLeaderReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
-    req.set_new_leader(to(dst));
+    req.set_new_leader(toThriftHost(dst));
     return getResponse(leader, std::move(req), [] (auto client, auto request) {
                return client->future_transLeader(request);
            }, [] (auto&& resp) -> Status {
@@ -63,13 +63,16 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
            });
 }
 
-folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId, PartitionID partId) {
+folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
+                                              PartitionID partId,
+                                              const HostAddr& learner) {
     if (injector_) {
         return injector_->addLearner();
     }
     storage::cpp2::AddLearnerReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
+    req.set_learner(toThriftHost(learner));
     auto ret = getPeers(spaceId, partId);
     if (!ret.ok()) {
         return ret.status();
@@ -83,13 +86,15 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId, PartitionID 
 }
 
 folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
-                                                         PartitionID partId) {
+                                                         PartitionID partId,
+                                                         const HostAddr& target) {
     if (injector_) {
         return injector_->waitingForCatchUpData();
     }
     storage::cpp2::CatchUpDataReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
+    req.set_target(toThriftHost(target));
     auto ret = getPeers(spaceId, partId);
     if (!ret.ok()) {
         return ret.status();
@@ -102,13 +107,18 @@ folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
     return f;
 }
 
-folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId, PartitionID partId) {
+folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
+                                                PartitionID partId,
+                                                const HostAddr& peer,
+                                                bool added) {
     if (injector_) {
         return injector_->memberChange();
     }
     storage::cpp2::MemberChangeReq req;
     req.set_space_id(spaceId);
     req.set_part_id(partId);
+    req.set_add(added);
+    req.set_peer(toThriftHost(peer));
     auto ret = getPeers(spaceId, partId);
     if (!ret.ok()) {
         return ret.status();
@@ -141,7 +151,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
     std::vector<nebula::cpp2::HostAddr> thriftPeers;
     thriftPeers.resize(peers.size());
     std::transform(peers.begin(), peers.end(), thriftPeers.begin(), [this](const auto& h) {
-        return to(h);
+        return toThriftHost(h);
     });
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
@@ -308,7 +318,7 @@ void AdminClient::getResponse(
     });  // via
 }
 
-nebula::cpp2::HostAddr AdminClient::to(const HostAddr& addr) {
+nebula::cpp2::HostAddr AdminClient::toThriftHost(const HostAddr& addr) {
     nebula::cpp2::HostAddr thriftAddr;
     thriftAddr.set_ip(addr.first);
     thriftAddr.set_port(addr.second);

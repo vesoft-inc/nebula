@@ -32,6 +32,8 @@ enum ErrorCode {
     // Invalid request
     E_INVALID_FILTER = -31,
     E_INVALID_UPDATER = -32,
+    E_INVALID_STORE = -33,
+    E_INVALID_PEER  = -34,
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -221,6 +223,9 @@ struct RemovePartReq {
 struct MemberChangeReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
+    3: common.HostAddr     peer,
+    // true means add a peer, false means remove a peer.
+    4: bool                add,
 }
 
 struct TransLeaderReq {

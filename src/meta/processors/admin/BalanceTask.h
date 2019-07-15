@@ -60,15 +60,16 @@ public:
 
 private:
     enum class Status : uint8_t {
-        START               = 0x01,
-        CHANGE_LEADER       = 0x02,
-        ADD_PART_ON_DST     = 0x03,
-        ADD_LEARNER         = 0x04,
-        CATCH_UP_DATA       = 0x05,
-        MEMBER_CHANGE       = 0x06,
-        UPDATE_PART_META    = 0x07,  // After this state, we can't rollback anymore.
-        REMOVE_PART_ON_SRC  = 0x08,
-        END                 = 0xFF,
+        START                   = 0x01,
+        CHANGE_LEADER           = 0x02,
+        ADD_PART_ON_DST         = 0x03,
+        ADD_LEARNER             = 0x04,
+        CATCH_UP_DATA           = 0x05,
+        MEMBER_CHANGE_ADD       = 0x06,
+        MEMBER_CHANGE_REMOVE    = 0x07,
+        UPDATE_PART_META        = 0x08,  // After this state, we can't rollback anymore.
+        REMOVE_PART_ON_SRC      = 0x09,
+        END                     = 0xFF,
     };
 
     enum class Result : uint8_t {

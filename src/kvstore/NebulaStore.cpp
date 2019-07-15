@@ -90,7 +90,8 @@ bool NebulaStore::init() {
                             spaceIt->second->parts_.emplace(partId,
                                                             newPart(spaceId,
                                                                     partId,
-                                                                    enginePtr.get()));
+                                                                    enginePtr.get(),
+                                                                    false));
                         }
                     }
                 } catch (std::exception& e) {
@@ -111,7 +112,7 @@ bool NebulaStore::init() {
         }
         std::sort(partIds.begin(), partIds.end());
         for (auto& partId : partIds) {
-            addPart(spaceId, partId);
+            addPart(spaceId, partId, false);
         }
     }
 
@@ -165,7 +166,7 @@ void NebulaStore::addSpace(GraphSpaceID spaceId) {
 }
 
 
-void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId) {
+void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId, bool asLearner) {
     folly::RWSpinLock::WriteHolder wh(&lock_);
     auto spaceIt = this->spaces_.find(spaceId);
     CHECK(spaceIt != this->spaces_.end()) << "Space should exist!";
@@ -192,13 +193,15 @@ void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId) {
     targetEngine->addPart(partId);
     spaceIt->second->parts_.emplace(
         partId,
-        newPart(spaceId, partId, targetEngine.get()));
-    LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been added!";
+        newPart(spaceId, partId, targetEngine.get(), asLearner));
+    LOG(INFO) << "Space " << spaceId << ", part " << partId
+              << " has been added, asLearner " << asLearner;
 }
 
 std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                            PartitionID partId,
-                                           KVEngine* engine) {
+                                           KVEngine* engine,
+                                           bool asLearner) {
     auto part = std::make_shared<Part>(spaceId,
                                        partId,
                                        raftAddr_,
@@ -219,7 +222,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
         }
     }
     raftService_->addPartition(part);
-    part->start(std::move(peers));
+    part->start(std::move(peers), asLearner);
     return part;
 }
 

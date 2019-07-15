@@ -64,7 +64,7 @@ void BalanceTask::invoke() {
         case Status::ADD_LEARNER: {
             LOG(INFO) << taskIdStr_ << "Add learner dst.";
             SAVE_STATE();
-            client_->addLearner(spaceId_, partId_).thenValue([this](auto&& resp) {
+            client_->addLearner(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
                     ret_ = Result::FAILED;
                 } else {
@@ -77,22 +77,35 @@ void BalanceTask::invoke() {
         case Status::CATCH_UP_DATA: {
             LOG(INFO) << taskIdStr_ << "Waiting for the data catch up.";
             SAVE_STATE();
-            client_->waitingForCatchUpData(spaceId_, partId_).thenValue([this](auto&& resp) {
+            client_->waitingForCatchUpData(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
                     ret_ = Result::FAILED;
                 } else {
-                    status_ = Status::MEMBER_CHANGE;
+                    status_ = Status::MEMBER_CHANGE_ADD;
                 }
                 invoke();
             });
             break;
         }
-        case Status::MEMBER_CHANGE: {
+        case Status::MEMBER_CHANGE_ADD: {
             LOG(INFO) << taskIdStr_ << "Send member change request to the leader"
-                      << ", it will add the new member on dst host"
-                      << " and remove the old member on src host.";
+                      << ", it will add the new member on dst host";
             SAVE_STATE();
-            client_->memberChange(spaceId_, partId_).thenValue([this](auto&& resp) {
+            client_->memberChange(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
+                if (!resp.ok()) {
+                    ret_ = Result::FAILED;
+                } else {
+                    status_ = Status::MEMBER_CHANGE_REMOVE;
+                }
+                invoke();
+            });
+            break;
+        }
+        case Status::MEMBER_CHANGE_REMOVE: {
+            LOG(INFO) << taskIdStr_ << "Send member change request to the leader"
+                      << ", it will remove the old member on src host";
+            SAVE_STATE();
+            client_->memberChange(spaceId_, partId_, src_, false).thenValue([this](auto&& resp) {
                 if (!resp.ok()) {
                     ret_ = Result::FAILED;
                 } else {
