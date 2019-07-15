@@ -27,6 +27,8 @@ const int32_t kMaxPasswordLen = 24;
 const int32_t kMaxCommandLineLen = 1024;
 
 CliManager::CliManager() {
+    curSpaceName_ = std::string("(none)");
+
     if (!fs::FileUtils::isStdinTTY()) {
         enableHistroy_ = false;
         isInteractive_ = false;
@@ -152,6 +154,10 @@ void CliManager::loop() {
         if (!cmdProcessor_->process(cmd)) {
             break;
         }
+
+        if (!cmdProcessor_->getSpaceName().empty()) {
+            curSpaceName_ = cmdProcessor_->getSpaceName();
+        }
         cmd.clear();
     }
     saveHistory();
@@ -164,14 +170,15 @@ bool CliManager::readLine(std::string &line, bool linebreak) {
     if (isInteractive_) {
         static auto color = 0u;
         ::snprintf(prompt, sizeof(prompt),
-                   "\001"          // RL_PROMPT_START_IGNORE
-                   "\033[1;%um"    // color codes start
-                   "\002"          // RL_PROMPT_END_IGNORE
-                   "nebula> "      // prompt
-                   "\001"          // RL_PROMPT_START_IGNORE
-                   "\033[0m"       // restore color code
-                   "\002",         // RL_PROMPT_END_IGNORE
-                   color++ % 6 + 31);
+                   "\001"              // RL_PROMPT_START_IGNORE
+                   "\033[1;%um"        // color codes start
+                   "\002"              // RL_PROMPT_END_IGNORE
+                   "(%s@%s) [%s]> "    // prompt "(user@host) [spaceName]"
+                   "\001"              // RL_PROMPT_START_IGNORE
+                   "\033[0m"           // restore color code
+                   "\002",             // RL_PROMPT_END_IGNORE
+                   color++ % 6 + 31, username_.c_str(),
+                   addr_.c_str(), curSpaceName_.c_str());
     } else {
         prompt[0] = '\0';   // prompt
     }
