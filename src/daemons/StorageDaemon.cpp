@@ -154,7 +154,10 @@ int main(int argc, char *argv[]) {
                                                                  std::move(metaAddrsRet.value()),
                                                                  localhost,
                                                                  true);
-    metaClient->waitForMetadReady();
+    if (!metaClient->waitForMetadReady()) {
+        LOG(ERROR) << "waitForMetadReady error!";
+        return EXIT_FAILURE;
+    }
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();
     schemaMan->init(metaClient.get());

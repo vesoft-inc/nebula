@@ -29,7 +29,10 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
         return addrs.status();
     }
     metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()));
-    metaClient_->waitForMetadReady();
+    if (!metaClient_->waitForMetadReady()) {
+        LOG(ERROR) << "ExecutionEngine::init waitForMetadReady failed";
+        return Status::Error("ExecutionEngine::init waitForMetadReady failed");
+    }
 
     schemaManager_ = meta::SchemaManager::create();
     schemaManager_->init(metaClient_.get());

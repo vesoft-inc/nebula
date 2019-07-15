@@ -47,13 +47,13 @@ bool MetaClient::waitForMetadReady() {
             auto ret = heartbeat().get();
             if (!ret.ok()) {
                 LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                 continue;
             }
         }  // end if
         loadDataThreadFunc();
         if (!ready_) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
     }  // end while
 
