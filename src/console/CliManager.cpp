@@ -16,6 +16,7 @@
 
 DECLARE_string(u);
 DECLARE_string(p);
+DEFINE_bool(enable_history, false, "Whether to force saving the command history");
 
 namespace nebula {
 namespace graph {
@@ -26,8 +27,22 @@ const int32_t kMaxPasswordLen = 24;
 const int32_t kMaxCommandLineLen = 1024;
 
 CliManager::CliManager() {
-    ::using_history();
-    initAutoCompletion();
+    if (!fs::FileUtils::isStdinTTY()) {
+        enableHistroy_ = false;
+        isInteractive_ = false;
+    }
+
+    if (FLAGS_enable_history) {
+        enableHistroy_ = true;
+    }
+
+    if (enableHistroy_) {
+        ::using_history();
+    }
+
+    if (isInteractive_) {
+        initAutoCompletion();
+    }
 }
 
 
@@ -146,16 +161,21 @@ void CliManager::loop() {
 bool CliManager::readLine(std::string &line, bool linebreak) {
     auto ok = true;
     char prompt[256];
-    static auto color = 0u;
-    ::snprintf(prompt, sizeof(prompt),
-                "\001"          // RL_PROMPT_START_IGNORE
-                "\033[1;%um"    // color codes start
-                "\002"          // RL_PROMPT_END_IGNORE
-                "nebula> "      // prompt
-                "\001"          // RL_PROMPT_START_IGNORE
-                "\033[0m"       // restore color code
-                "\002",         // RL_PROMPT_END_IGNORE
-                color++ % 6 + 31);
+    if (isInteractive_) {
+        static auto color = 0u;
+        ::snprintf(prompt, sizeof(prompt),
+                   "\001"          // RL_PROMPT_START_IGNORE
+                   "\033[1;%um"    // color codes start
+                   "\002"          // RL_PROMPT_END_IGNORE
+                   "nebula> "      // prompt
+                   "\001"          // RL_PROMPT_START_IGNORE
+                   "\033[0m"       // restore color code
+                   "\002",         // RL_PROMPT_END_IGNORE
+                   color++ % 6 + 31);
+    } else {
+        prompt[0] = '\0';   // prompt
+    }
+
     auto *input = ::readline(linebreak ? "": prompt);
 
     do {
@@ -184,6 +204,9 @@ bool CliManager::readLine(std::string &line, bool linebreak) {
 
 
 void CliManager::updateHistory(const char *line) {
+    if (!enableHistroy_) {
+        return;
+    }
     auto **hists = ::history_list();
     auto i = 0;
     // Search in history
@@ -208,6 +231,9 @@ void CliManager::updateHistory(const char *line) {
 
 
 void CliManager::saveHistory() {
+    if (!enableHistroy_) {
+        return;
+    }
     std::string histfile;
     histfile += ::getenv("HOME");
     histfile += "/.nebula_history";
@@ -225,6 +251,9 @@ void CliManager::saveHistory() {
 
 
 void CliManager::loadHistory() {
+    if (!enableHistroy_) {
+        return;
+    }
     std::string histfile;
     histfile += ::getenv("HOME");
     histfile += "/.nebula_history";
