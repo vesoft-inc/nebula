@@ -53,7 +53,7 @@ TEST_F(LogCASTest, StartWithValidCAS) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -88,7 +88,7 @@ TEST_F(LogCASTest, StartWithInvalidCAS) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -131,7 +131,7 @@ TEST_F(LogCASTest, ValidCASInMiddle) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -173,7 +173,7 @@ TEST_F(LogCASTest, InvalidCASInMiddle) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -209,7 +209,7 @@ TEST_F(LogCASTest, EndWithValidCAS) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -243,7 +243,7 @@ TEST_F(LogCASTest, EndWithInvalidCAS) {
         ASSERT_EQ(8, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 8; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -276,7 +276,7 @@ TEST_F(LogCASTest, AllValidCAS) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = 1;
+    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;

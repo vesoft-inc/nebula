@@ -9,7 +9,7 @@
 #include <folly/json.h>
 #include "webservice/WebService.h"
 #include "webservice/test/TestUtils.h"
-#include "storage/StorageHttpHandler.h"
+#include "storage/StorageHttpStatusHandler.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 #include "fs/TempDir.h"
@@ -18,18 +18,19 @@ DECLARE_string(meta_server_addrs);
 DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
+namespace storage {
 
 using nebula::storage::TestUtils;
 using nebula::fs::TempDir;
 
-class StorageHttpHandlerTestEnv : public ::testing::Environment {
+class StorageHttpStatusHandlerTestEnv : public ::testing::Environment {
 public:
     void SetUp() override {
         FLAGS_ws_http_port = 0;
         FLAGS_ws_h2_port = 0;
         VLOG(1) << "Starting web service...";
         WebService::registerHandler("/status", [] {
-            return new storage::StorageHttpHandler();
+            return new storage::StorageHttpStatusHandler();
         });
         auto status = WebService::start();
         ASSERT_TRUE(status.ok()) << status;
@@ -42,7 +43,7 @@ public:
 };
 
 
-TEST(StoragehHttpHandlerTest, StorageStatusTest) {
+TEST(StoragehHttpStatusHandlerTest, StorageStatusTest) {
     {
         std::string resp;
         ASSERT_TRUE(getUrl("/status", resp));
@@ -84,6 +85,7 @@ TEST(StoragehHttpHandlerTest, StorageStatusTest) {
     }
 }
 
+}  // namespace storage
 }  // namespace nebula
 
 
@@ -92,7 +94,7 @@ int main(int argc, char** argv) {
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
 
-    ::testing::AddGlobalTestEnvironment(new nebula::StorageHttpHandlerTestEnv());
+    ::testing::AddGlobalTestEnvironment(new nebula::storage::StorageHttpStatusHandlerTestEnv());
 
     return RUN_ALL_TESTS();
 }

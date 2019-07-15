@@ -9,7 +9,9 @@
 #include "parser/GraphScanner.h"
 #include "GraphParser.hpp"
 
-#define YY_USER_ACTION  yylloc->columns(yyleng);
+#define YY_USER_ACTION                  \
+    yylloc->step();                     \
+    yylloc->columns(yyleng);
 
 using TokenType = nebula::GraphParser::token;
 
@@ -97,8 +99,11 @@ BY                          ([Bb][Yy])
 IN                          ([Ii][Nn])
 TTL_DURATION                ([Tt][Tt][Ll][_][Dd][Uu][Rr][Aa][Tt][Ii][Oo][Nn])
 TTL_COL                     ([Tt][Tt][Ll][_][Cc][Oo][Ll])
+DOWNLOAD                    ([Dd][Oo][Ww][Nn][Ll][Oo][Aa][Dd])
+HDFS                        ([Hh][Dd][Ff][Ss])
 ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 ASC                         ([Aa][Ss][Cc])
+DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -185,10 +190,13 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {IN}                        { return TokenType::KW_IN; }
 {TTL_DURATION}              { return TokenType::KW_TTL_DURATION; }
 {TTL_COL}                   { return TokenType::KW_TTL_COL; }
+{DOWNLOAD}                  { return TokenType::KW_DOWNLOAD; }
+{HDFS}                      { return TokenType::KW_HDFS; }
 {TRUE}                      { yylval->boolval = true; return TokenType::BOOL; }
 {FALSE}                     { yylval->boolval = false; return TokenType::BOOL; }
 {ORDER}                     { return TokenType::KW_ORDER; }
 {ASC}                       { return TokenType::KW_ASC; }
+{DISTINCT}                  { return TokenType::KW_DISTINCT; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
@@ -250,20 +258,64 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 return TokenType::IPV4;
                             }
 0[Xx]{HEX}+                 {
+                                if (yyleng > 18) {
+                                    auto i = 2;
+                                    while (i < yyleng && yytext[i] == '0') {
+                                        i++;
+                                    }
+                                    if (yyleng - i > 16) {
+                                        yyterminate();
+                                    }
+                                }
                                 int64_t val = 0;
                                 sscanf(yytext, "%lx", &val);
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
 0{OCT}+                     {
+                                if (yyleng > 22) {
+                                    auto i = 1;
+                                    while (i < yyleng && yytext[i] == '0') {
+                                        i++;
+                                    }
+                                    if (yyleng - i > 22) {
+                                        yyterminate();
+                                    } else if (yyleng - i == 22 && yytext[i] != '1') {
+                                        yyterminate();
+                                    }
+                                }
                                 int64_t val = 0;
                                 sscanf(yytext, "%lo", &val);
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
-{DEC}+                      { yylval->intval = ::atoll(yytext); return TokenType::INTEGER; }
-{DEC}+\.{DEC}*              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
-{DEC}*\.{DEC}+              { yylval->doubleval = ::atof(yytext); return TokenType::DOUBLE; }
+{DEC}+                      {
+                                try {
+                                    folly::StringPiece text(yytext, yyleng);
+                                    yylval->intval = folly::to<int64_t>(text);
+                                } catch (...) {
+                                    yyterminate();
+                                }
+                                return TokenType::INTEGER;
+                            }
+{DEC}+\.{DEC}*              {
+                                try {
+                                    folly::StringPiece text(yytext, yyleng);
+                                    yylval->doubleval = folly::to<double>(text);
+                                } catch (...) {
+                                    yyterminate();
+                                }
+                                return TokenType::DOUBLE;
+                            }
+{DEC}*\.{DEC}+              {
+                                try {
+                                    folly::StringPiece text(yytext, yyleng);
+                                    yylval->doubleval = folly::to<double>(text);
+                                } catch (...) {
+                                    yyterminate();
+                                }
+                                return TokenType::DOUBLE;
+                            }
 
 \${LABEL}                   { yylval->strval = new std::string(yytext + 1, yyleng - 1); return TokenType::VARIABLE; }
 
@@ -285,6 +337,10 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                     yyterminate();
                                 }
                                 return TokenType::STRING;
+                            }
+<DQ_STR,SQ_STR><<EOF>>      {
+                                // Must match '' or ""
+                                throw GraphParser::syntax_error(*yylloc, "unterminated string");
                             }
 <DQ_STR,SQ_STR>\n           { yyterminate(); }
 <DQ_STR>[^\\\n\"]+          {
@@ -317,18 +373,44 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 yyterminate();
                             }
 
-[ \r\t]                     { yylloc->step(); }
+[ \r\t]                     { }
 \n                          {
                                 yylineno++;
                                 yylloc->lines(yyleng);
-                                yylloc->step();
                             }
 "#".*                       // Skip the annotation
 "//".*                      // Skip the annotation
 "--".*                      // Skip the annotation
 "/*"                        { BEGIN(COMMENT); }
 <COMMENT>"*/"               { BEGIN(INITIAL); }
-<COMMENT>([^*]|\n)+|.       // Skip the annotation
-.                           { printf("error %c\n", *yytext); yyterminate(); }
+<COMMENT>([^*]|\n)+|.
+<COMMENT><<EOF>>            {
+                                // Must match /* */
+                                throw GraphParser::syntax_error(*yylloc, "unterminated comment");
+                            }
+.                           {
+                                /**
+                                 * Any other unmatched byte sequences will get us here,
+                                 * including the non-ascii ones, which are negative
+                                 * in terms of type of `signed char'. At the same time, because
+                                 * Bison translates all negative tokens to EOF(i.e. YY_NULL),
+                                 * so we have to cast illegal characters to type of `unsinged char'
+                                 * This will make Bison receive an unknown token, which leads to
+                                 * a syntax error.
+                                 *
+                                 * Please note that it is not Flex but Bison to regard illegal
+                                 * characters as errors, in such case.
+                                 */
+                                return static_cast<unsigned char>(yytext[0]);
+
+                                /**
+                                 * Alternatively, we could report illegal characters by
+                                 * throwing a `syntax_error' exception.
+                                 * In such a way, we could distinguish illegal characters
+                                 * from normal syntax errors, but at cost of poor performance
+                                 * incurred by the expensive exception handling.
+                                 */
+                                // throw GraphParser::syntax_error(*yylloc, "char illegal");
+                            }
 
 %%

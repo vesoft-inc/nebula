@@ -155,6 +155,11 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     while (iter->valid()) {
         lastId = iter->logId();
         auto log = iter->logMsg();
+        if (log.empty()) {
+            VLOG(3) << idStr_ << "Skip the heartbeat!";
+            ++(*iter);
+            continue;
+        }
         DCHECK_GE(log.size(), sizeof(int64_t) + 1 + sizeof(uint32_t));
         // Skip the timestamp (type of int64_t)
         switch (log[sizeof(int64_t)]) {

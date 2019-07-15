@@ -57,10 +57,12 @@ add_dependencies(
 
 add_library(
     meta_http_handler OBJECT
-    MetaHttpHandler.cpp
+    MetaHttpDownloadHandler.cpp
+    MetaHttpStatusHandler.cpp
 )
 add_dependencies(
     meta_http_handler
+    hdfs_helper_obj
     base_obj
 )
 
