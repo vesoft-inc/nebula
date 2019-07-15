@@ -75,7 +75,7 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId, PartitionID 
     }
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(ret.value(), 0, req, [] (auto client, auto request) {
+    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
         return client->future_addLearner(request);
     }, 0, std::move(pro), FLAGS_max_retry_times_admin_op);
     return f;
@@ -95,7 +95,7 @@ folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
     }
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(ret.value(), 0, req, [] (auto client, auto request) {
+    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
         return client->future_waitingForCatchUpData(request);
     }, 0, std::move(pro), FLAGS_max_retry_times_admin_op);
     return f;
@@ -114,7 +114,7 @@ folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId, PartitionI
     }
     folly::Promise<Status> pro;
     auto f = pro.getFuture();
-    getResponse(ret.value(), 0, req, [] (auto client, auto request) {
+    getResponse(ret.value(), 0, std::move(req), [] (auto client, auto request) {
         return client->future_memberChange(request);
     }, 0, std::move(pro), FLAGS_max_retry_times_admin_op);
     return f;
@@ -203,7 +203,7 @@ folly::Future<Status> AdminClient::getResponse(
                                                          t.exception().what().c_str())));
             return;
         }
-        auto&& resp = t.value();
+        auto&& resp = std::move(t).value();
         p.setValue(respGen(std::move(resp)));
     });
     return f;
