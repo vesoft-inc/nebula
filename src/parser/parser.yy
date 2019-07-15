@@ -93,9 +93,10 @@ class GraphScanner;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
-%token KW_ROLES KW_BY
+%token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC
+%token KW_DISTINCT
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -180,6 +181,7 @@ class GraphScanner;
 %type <sentence> order_by_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
 %type <sentence> grant_sentence revoke_sentence
+%type <sentence> download_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -276,6 +278,9 @@ dst_ref_expression
 var_ref_expression
     : VARIABLE DOT LABEL {
         $$ = new VariablePropertyExpression($1, $3);
+    }
+    | VARIABLE {
+        $$ = new VariablePropertyExpression($1, new std::string("id"));
     }
     ;
 
@@ -509,6 +514,7 @@ where_clause
 yield_clause
     : %empty { $$ = nullptr; }
     | KW_YIELD yield_columns { $$ = new YieldClause($2); }
+    | KW_YIELD KW_DISTINCT yield_columns { $$ = new YieldClause($3, true); }
     ;
 
 yield_columns
@@ -1050,6 +1056,15 @@ delete_vertex_sentence
     }
     ;
 
+download_sentence
+    : KW_DOWNLOAD KW_HDFS STRING KW_TO STRING {
+        auto sentence = new DownloadSentence();
+        sentence->setUrl($3);
+        sentence->setLocalPath($5);
+        $$ = sentence;
+    }
+    ;
+
 edge_list
     : vid R_ARROW vid {
         $$ = new EdgeList();
@@ -1315,6 +1330,7 @@ mutate_sentence
     | update_edge_sentence { $$ = $1; }
     | delete_vertex_sentence { $$ = $1; }
     | delete_edge_sentence { $$ = $1; }
+    | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
     ;
 
@@ -1366,6 +1382,9 @@ sentences
     }
     | sentences SEMICOLON {
         $$ = $1;
+    }
+    | %empty {
+        $$ = nullptr;
     }
     ;
 

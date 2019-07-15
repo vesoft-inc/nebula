@@ -260,11 +260,11 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
                                              local);
     };
     int32_t replicas = 3;
-    uint32_t ipInt;
-    CHECK(network::NetworkUtils::ipv4ToInt("127.0.0.1", ipInt));
+    IPv4 ip;
+    CHECK(network::NetworkUtils::ipv4ToInt("127.0.0.1", ip));
     std::vector<HostAddr> peers;
     for (int32_t i = 0; i < replicas; i++) {
-        peers.emplace_back(ipInt, network::NetworkUtils::getAvailablePort());
+        peers.emplace_back(ip, network::NetworkUtils::getAvailablePort());
     }
 
     std::vector<std::unique_ptr<NebulaStore>> stores;

@@ -485,6 +485,84 @@ private:
     std::unique_ptr<std::string> path_;
 };
 
+class DownloadSentence final : public Sentence {
+public:
+    DownloadSentence() {
+        kind_ = Kind::kDownload;
+    }
+
+    const std::string* host() const {
+        return host_.get();
+    }
+
+    void setHost(std::string *host) {
+        host_.reset(host);
+    }
+
+    const int32_t port() const {
+        return port_;
+    }
+
+    void setPort(int32_t port) {
+        port_ = port;
+    }
+
+    const std::string* path() const {
+        return path_.get();
+    }
+
+    void setPath(std::string *path) {
+        path_.reset(path);
+    }
+
+    const std::string* localPath() const {
+        return localPath_.get();
+    }
+
+    void setLocalPath(std::string *localPath) {
+        localPath_.reset(localPath);
+    }
+
+    void setUrl(std::string *url) {
+        static std::string hdfsPrefix = "hdfs://";
+        if (url->find(hdfsPrefix) != 0) {
+            LOG(ERROR) << "URL should start with " << hdfsPrefix;
+            delete url;
+            return;
+        }
+
+        std::string u = url->substr(hdfsPrefix.size(), url->size());
+        std::vector<folly::StringPiece> tokens;
+        folly::split(":", u, tokens);
+        if (tokens.size() == 2) {
+            host_ = std::make_unique<std::string>(tokens[0]);
+            int32_t position = tokens[1].find_first_of("/");
+            if (position != -1) {
+                try {
+                    port_ = folly::to<int32_t>(tokens[1].toString().substr(0, position).c_str());
+                } catch (const std::exception& ex) {
+                    LOG(ERROR) << "URL's port parse failed: " << *url;
+                }
+                path_ = std::make_unique<std::string>(
+                            tokens[1].toString().substr(position, tokens[1].size()));
+            } else {
+                LOG(ERROR) << "URL Parse Failed: " << *url;
+            }
+        } else {
+            LOG(ERROR) << "URL Parse Failed: " << *url;
+        }
+        delete url;
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string>                host_;
+    int32_t                                     port_;
+    std::unique_ptr<std::string>                path_;
+    std::unique_ptr<std::string>                localPath_;
+};
+
 }  // namespace nebula
 
 #endif  // PARSER_MUTATESENTENCES_H_

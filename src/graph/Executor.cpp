@@ -31,6 +31,7 @@
 #include "graph/DescribeSpaceExecutor.h"
 #include "graph/DropSpaceExecutor.h"
 #include "graph/YieldExecutor.h"
+#include "graph/DownloadExecutor.h"
 #include "graph/OrderByExecutor.h"
 #include "graph/IngestExecutor.h"
 
@@ -103,6 +104,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kYield:
             executor = std::make_unique<YieldExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kDownload:
+            executor = std::make_unique<DownloadExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kOrderBy:
             executor = std::make_unique<OrderByExecutor>(sentence, ectx());

@@ -265,6 +265,11 @@ std::string DeleteEdgeSentence::toString() const {
     return buf;
 }
 
+std::string DownloadSentence::toString() const {
+    return folly::stringPrintf("DOWNLOAD HDFS \"%s:%d/%s\" TO \"%s\"", host_.get()->c_str(),
+                               port_, path_.get()->c_str(), localPath_.get()->c_str());
+}
+
 std::string IngestSentence::toString() const {
     return folly::stringPrintf("INGEST FROM \"%s\"", path_.get()->c_str());
 }

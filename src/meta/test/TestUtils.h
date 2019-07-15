@@ -73,7 +73,7 @@ public:
 
     static int32_t createSomeHosts(kvstore::KVStore* kv,
                                    std::vector<HostAddr> hosts
-                                        = {{0, 0}, {1, 1}, {2, 2}, {3, 3}}) {
+                                       = {{0, 0}, {1, 1}, {2, 2}, {3, 3}}) {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         thriftHosts.resize(hosts.size());
         std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
@@ -107,10 +107,17 @@ public:
         return hosts.size();
     }
 
-    static bool assembleSpace(kvstore::KVStore* kv, GraphSpaceID id) {
+    static bool assembleSpace(kvstore::KVStore* kv, GraphSpaceID id, int32_t partitionNum) {
         bool ret = false;
         std::vector<nebula::kvstore::KV> data;
         data.emplace_back(MetaServiceUtils::spaceKey(id), "test_space");
+        for (auto partId = 1; partId <= partitionNum; partId++) {
+            std::vector<nebula::cpp2::HostAddr> hosts;
+            hosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, 0, 0);
+            data.emplace_back(MetaServiceUtils::partKey(id, partId),
+                              MetaServiceUtils::partVal(hosts));
+        }
+
         kv->asyncMultiPut(0, 0, std::move(data),
                           [&] (kvstore::ResultCode code) {
                               ret = (code == kvstore::ResultCode::SUCCEEDED);
