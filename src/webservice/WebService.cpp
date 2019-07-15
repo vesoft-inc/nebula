@@ -159,6 +159,11 @@ Status WebService::start() {
         cv.wait(lck, [&]() {
             return serverStartedDone;
         });
+
+        if (!status.ok()){
+            LOG(ERROR) << "Failed to start web service: " << status;
+            wsThread_->join();
+        }
     }
     return status;
 }

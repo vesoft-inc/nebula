@@ -33,7 +33,6 @@ DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
 DEFINE_string(store_type, "nebula",
               "Which type of KVStore to be used by the storage daemon."
               " Options can be \"nebula\", \"hbase\", etc.");
-DEFINE_int32(num_workers, 4, "Number of worker threads");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 
 using nebula::operator<<;
@@ -56,7 +55,6 @@ std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
         HostAddr localhost,
         std::vector<std::string> paths,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
-        std::shared_ptr<nebula::thread::GenericThreadPool> workers,
         nebula::meta::MetaClient* metaClient,
         nebula::meta::SchemaManager* schemaMan) {
     nebula::kvstore::KVOptions options;
@@ -69,7 +67,6 @@ std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
     if (FLAGS_store_type == "nebula") {
         return std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
                                                               ioPool,
-                                                              workers,
                                                               localhost);
     } else if (FLAGS_store_type == "hbase") {
         LOG(FATAL) << "HBase store has not been implemented";
@@ -147,11 +144,6 @@ int main(int argc, char *argv[]) {
          return EXIT_FAILURE;
     }
 
-    // Generic thread pool
-    auto workers = std::make_shared<nebula::thread::GenericThreadPool>();
-    workers->start(FLAGS_num_workers);
-
-    // folly IOThreadPoolExecutor
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
 
     // Meta client
@@ -168,7 +160,6 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
                                                         std::move(paths),
                                                         ioThreadPool,
-                                                        workers,
                                                         metaClient.get(),
                                                         schemaMan.get());
 
@@ -179,7 +170,6 @@ int main(int argc, char *argv[]) {
 
     status = nebula::WebService::start();
     if (!status.ok()) {
-        LOG(ERROR) << "Failed to start web service: " << status;
         return EXIT_FAILURE;
     }
 
@@ -187,6 +177,7 @@ int main(int argc, char *argv[]) {
     status = setupSignalHandler();
     if (!status.ok()) {
         LOG(ERROR) << status;
+        nebula::WebService::stop();
         return EXIT_FAILURE;
     }
 
