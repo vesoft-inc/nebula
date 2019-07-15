@@ -197,6 +197,8 @@ public:
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
+    const std::vector<HostAddr>& getAddresses();
+
 protected:
     void loadDataThreadFunc();
 
@@ -268,6 +270,7 @@ private:
     bool                  sendHeartBeat_ = false;
     std::atomic_bool      ready_{false};
 };
+
 }  // namespace meta
 }  // namespace nebula
 #endif  // META_METACLIENT_H_

@@ -9,7 +9,7 @@
 #include <folly/json.h>
 #include "webservice/WebService.h"
 #include "webservice/test/TestUtils.h"
-#include "meta/MetaHttpHandler.h"
+#include "meta/MetaHttpStatusHandler.h"
 #include "meta/test/TestUtils.h"
 #include "fs/TempDir.h"
 
@@ -21,14 +21,14 @@ namespace nebula {
 using nebula::meta::TestUtils;
 using nebula::fs::TempDir;
 
-class MetaHttpHandlerTestEnv : public ::testing::Environment {
+class MetaHttpStatusHandlerTestEnv : public ::testing::Environment {
 public:
     void SetUp() override {
         FLAGS_ws_http_port = 0;
         FLAGS_ws_h2_port = 0;
         VLOG(1) << "Starting web service...";
         WebService::registerHandler("/status", [] {
-            return new meta::MetaHttpHandler();
+            return new meta::MetaHttpStatusHandler();
         });
         auto status = WebService::start();
         ASSERT_TRUE(status.ok()) << status;
@@ -41,11 +41,7 @@ public:
 };
 
 
-TEST(MetaHttpHandlerTest, MetaStatusTest) {
-    FLAGS_load_data_interval_secs = 1;
-    fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockMetaServer(10001, rootPath.path());
-
+TEST(MetaHttpStatusHandlerTest, MetaStatusTest) {
     {
         std::string resp;
         ASSERT_TRUE(getUrl("/status", resp));
@@ -95,7 +91,7 @@ int main(int argc, char** argv) {
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
 
-    ::testing::AddGlobalTestEnvironment(new nebula::MetaHttpHandlerTestEnv());
+    ::testing::AddGlobalTestEnvironment(new nebula::MetaHttpStatusHandlerTestEnv());
 
     return RUN_ALL_TESTS();
 }

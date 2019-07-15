@@ -13,6 +13,7 @@ enum class HttpCode {
     SUCCEEDED            = 0,
     E_UNSUPPORTED_METHOD = -1,
     E_UNPROCESSABLE      = -2,
+    E_ILLEGAL_ARGUMENT   = -3,
 };
 
 }  // namespace nebula
