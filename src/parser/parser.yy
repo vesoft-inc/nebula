@@ -96,6 +96,7 @@ class GraphScanner;
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC
+%token KW_DISTINCT
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -276,6 +277,9 @@ dst_ref_expression
 var_ref_expression
     : VARIABLE DOT LABEL {
         $$ = new VariablePropertyExpression($1, $3);
+    }
+    | VARIABLE {
+        $$ = new VariablePropertyExpression($1, new std::string("id"));
     }
     ;
 
@@ -509,6 +513,7 @@ where_clause
 yield_clause
     : %empty { $$ = nullptr; }
     | KW_YIELD yield_columns { $$ = new YieldClause($2); }
+    | KW_YIELD KW_DISTINCT yield_columns { $$ = new YieldClause($3, true); }
     ;
 
 yield_columns
@@ -1368,6 +1373,9 @@ sentences
     }
     | sentences SEMICOLON {
         $$ = $1;
+    }
+    | %empty {
+        $$ = nullptr;
     }
     ;
 
