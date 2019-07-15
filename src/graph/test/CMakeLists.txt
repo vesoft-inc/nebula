@@ -30,6 +30,8 @@ add_library(graph_test_common_obj OBJECT
     TestBase.cpp
 )
 
+add_dependencies(graph_test_common_obj meta_thrift_obj graph_thrift_obj)
+
 
 add_executable(
     session_manager_test
