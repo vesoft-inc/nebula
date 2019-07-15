@@ -9,7 +9,8 @@
 #include "network/NetworkUtils.h"
 #include "thread/GenericThreadPool.h"
 #include "storage/StorageServiceHandler.h"
-#include "storage/StorageHttpHandler.h"
+#include "storage/StorageHttpStatusHandler.h"
+#include "storage/StorageHttpDownloadHandler.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "process/ProcessUtils.h"
@@ -18,6 +19,8 @@
 #include "meta/SchemaManager.h"
 #include "meta/client/MetaClient.h"
 #include "storage/CompactionFilter.h"
+#include "hdfs/HdfsHelper.h"
+#include "hdfs/HdfsCommandHelper.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
@@ -48,7 +51,7 @@ using nebula::ProcessUtils;
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
-static Status setupSignalHandler();
+static void setupSignalHandler();
 
 
 std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
@@ -162,10 +165,20 @@ int main(int argc, char *argv[]) {
                                                         ioThreadPool,
                                                         metaClient.get(),
                                                         schemaMan.get());
+    auto *kvstore_ = kvstore.get();
+
+    std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
+        std::make_unique<nebula::hdfs::HdfsCommandHelper>();
+    auto *helperPtr = helper.get();
 
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
-        return new nebula::storage::StorageHttpHandler();
+        return new nebula::storage::StorageHttpStatusHandler();
+    });
+    nebula::WebService::registerHandler("/download", [helperPtr] {
+        auto handler = new nebula::storage::StorageHttpDownloadHandler();
+        handler->init(helperPtr);
+        return handler;
     });
 
     status = nebula::WebService::start();
@@ -174,14 +187,9 @@ int main(int argc, char *argv[]) {
     }
 
     // Setup the signal handlers
-    status = setupSignalHandler();
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        nebula::WebService::stop();
-        return EXIT_FAILURE;
-    }
+    setupSignalHandler();
 
-    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());
+    auto handler = std::make_shared<StorageServiceHandler>(kvstore_, schemaMan.get());
     try {
         LOG(INFO) << "The storage deamon start on " << localhost;
         gServer = std::make_unique<apache::thrift::ThriftServer>();
@@ -200,11 +208,10 @@ int main(int argc, char *argv[]) {
 }
 
 
-Status setupSignalHandler() {
+void setupSignalHandler() {
     ::signal(SIGPIPE, SIG_IGN);
     ::signal(SIGINT, signalHandler);
     ::signal(SIGTERM, signalHandler);
-    return Status::OK();
 }
 
 
