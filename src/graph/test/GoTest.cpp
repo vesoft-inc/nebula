@@ -154,6 +154,16 @@ TEST_F(GoTest, AssignmentPipe) {
 }
 
 
+TEST_F(GoTest, VariableUndefined) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM $var OVER like";
+        auto code = client_->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+}
+
+
 TEST_F(GoTest, AssignmentEmptyResult) {
     {
         cpp2::ExecutionResponse resp;
