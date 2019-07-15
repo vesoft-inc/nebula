@@ -94,10 +94,8 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
                                folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
                                3001 + i*2));
     }
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                               folly::stringPrintf("_dst")));
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                               folly::stringPrintf("_rank")));
+    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "_dst"));
+    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "_rank"));
     // Return edge props col_0, col_2, col_4 ... col_18
     for (int i = 0; i < 10; i++) {
         tmpColumns.emplace_back(
