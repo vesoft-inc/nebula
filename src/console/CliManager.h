@@ -42,6 +42,9 @@ private:
     std::string addr_;
     uint16_t port_;
     std::string username_;
+    std::string curSpaceName_;
+    bool enableHistroy_{true};
+    bool isInteractive_{true};
 
     std::unique_ptr<CmdProcessor> cmdProcessor_;
 };

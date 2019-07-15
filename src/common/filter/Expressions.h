@@ -88,8 +88,16 @@ public:
         return std::vector<std::string>(edgeProps_.begin(), edgeProps_.end());
     }
 
+    bool hasSrcTagProp() const {
+        return !srcTagProps_.empty();
+    }
+
     bool hasDstTagProp() const {
         return !dstTagProps_.empty();
+    }
+
+    bool hasEdgeProp() const {
+        return !edgeProps_.empty();
     }
 
     struct Getters {

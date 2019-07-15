@@ -25,6 +25,8 @@ enum ErrorCode {
 
     E_SYNTAX_ERROR = -7,
     E_EXECUTION_ERROR = -8,
+    // Nothing is executed When command is comment
+    E_STATEMENT_EMTPY = -9,
 } (cpp.enum_strict)
 
 
@@ -90,6 +92,7 @@ struct ExecutionResponse {
     3: optional string error_msg;
     4: optional list<binary> column_names;  // Column names
     5: optional list<RowValue> rows;
+    6: optional string space_name;
 }
 
 
