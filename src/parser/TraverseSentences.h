@@ -284,20 +284,28 @@ public:
         yieldClause_.reset(clause);
     }
 
-    auto vidList() {
+    auto tag() const {
+        return tag_.get();
+    }
+
+    auto vidList() const {
         return vidList_->vidList();
     }
 
-    bool isRef() {
+    bool isRef() const {
         return vidRef_ != nullptr;
     }
 
-    Expression* ref() {
+    Expression* ref() const {
         return vidRef_.get();
     }
 
-    YieldClause* yieldClause() {
+    YieldClause* yieldClause() const {
         return yieldClause_.get();
+    }
+
+    void setYieldClause(YieldClause *clause) {
+        yieldClause_.reset(clause);
     }
 
     std::string toString() const override;

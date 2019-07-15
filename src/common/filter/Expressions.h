@@ -79,7 +79,7 @@ public:
     }
 
     bool hasEdgeProp() const {
-        return !edgeProps_.empty();
+        return !aliasProps_.empty();
     }
 
     bool hasVariableProp() const {

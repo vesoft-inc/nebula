@@ -127,8 +127,19 @@ std::string OrderBySentence::toString() const {
 }
 
 std::string FetchVerticesSentence::toString() const {
-    return folly::stringPrintf("FETCH PROP ON %s %s",
-            vidList_->toString().c_str(), yieldClause_->toString().c_str());
+    std::string buf;
+    buf.reserve(256);
+    buf += "FETCH PROP ON ";
+    if (isRef()) {
+        buf += vidRef_->toString();
+    } else {
+        buf += vidList_->toString();
+    }
+    if (yieldClause_ != nullptr) {
+        buf += " ";
+        buf += yieldClause_->toString();
+    }
+    return buf;
 }
 
 std::string EdgeKey::toString() const {

@@ -111,7 +111,9 @@ std::string AliasPropertyExpression::toString() const {
     buf.reserve(64);
     buf += *ref_;
     buf += *alias_;
-    buf += ".";
+    if (*alias_ != "") {
+        buf += ".";
+    }
     buf += *prop_;
     return buf;
 }
