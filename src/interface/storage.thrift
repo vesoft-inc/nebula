@@ -161,12 +161,15 @@ struct AddEdgesRequest {
 }
 
 struct AdminExecResp {
-
+    1: ErrorCode code,
+    // Only valid when code is E_LEADER_CHANAGED.
+    2: common.HostAddr  leader,
 }
 
 struct AddPartReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
+    3: bool                as_learner,
 }
 
 struct RemovePartReq {
@@ -178,6 +181,25 @@ struct MemberChangeReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
 }
+
+struct TransLeaderReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: common.HostAddr     new_leader,
+}
+
+struct AddLearnerReq {
+    1: common.GraphSpaceID space_id,
+    2: common.PartitionID  part_id,
+    3: common.HostAddr     learner,
+}
+
+struct CatchUpDataReq {
+    1: common.GraphSpaceID space_id,
+    2: common.GraphSpaceID part_id,
+    3: common.HostAddr     target,
+}
+
 
 service StorageService {
     QueryResponse getOutBound(1: GetNeighborsRequest req)
@@ -194,7 +216,10 @@ service StorageService {
     ExecResponse addEdges(1: AddEdgesRequest req);
 
     // Interfaces for admin operations
+    AdminExecResp transLeader(1: TransLeaderReq req);
     AdminExecResp addPart(1: AddPartReq req);
+    AdminExecResp addLearner(1: AddLearnerReq req);
+    AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
 }
