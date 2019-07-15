@@ -277,10 +277,6 @@ enum ConfigModule {
     ALL, GRAPH, META, STORAGE
 };
 
-enum ConfigMode {
-    IMMUTABLE, REBOOT, MUTABLE
-};
-
 class ConfigRowItem {
 public:
     explicit ConfigRowItem(ConfigModule module) {
@@ -298,15 +294,6 @@ public:
         name_.reset(name);
     }
 
-    ConfigRowItem(ConfigModule module, std::string* name, Expression* value, ColumnType type,
-                  ConfigMode mode) {
-        module_ = std::make_unique<ConfigModule>(module);
-        name_.reset(name);
-        value_.reset(value);
-        type_ = std::make_unique<ColumnType>(type);
-        mode_ = std::make_unique<ConfigMode>(mode);
-    }
-
     const ConfigModule* getModule() {
         return module_.get();
     }
@@ -319,22 +306,12 @@ public:
         return value_.get();
     }
 
-    const ColumnType* getType() {
-        return type_.get();
-    }
-
-    const ConfigMode* getMode() {
-        return mode_.get();
-    }
-
     std::string toString() const;
 
 private:
     std::unique_ptr<ConfigModule>   module_;
     std::unique_ptr<std::string>    name_;
     std::unique_ptr<Expression>     value_;
-    std::unique_ptr<ColumnType>     type_;
-    std::unique_ptr<ConfigMode>     mode_;
 };
 
 class ConfigSentence final : public Sentence {
@@ -344,7 +321,6 @@ public:
         kShow,
         kSet,
         kGet,
-        kDeclare
     };
 
     explicit ConfigSentence(SubType subType) {

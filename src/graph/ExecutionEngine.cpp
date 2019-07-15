@@ -9,7 +9,6 @@
 #include "graph/ExecutionContext.h"
 #include "graph/ExecutionPlan.h"
 #include "storage/client/StorageClient.h"
-#include "meta/ClientBasedGflagsManager.h"
 
 DECLARE_string(meta_server_addrs);
 
@@ -38,7 +37,10 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
 
     schemaManager_ = meta::SchemaManager::create();
     schemaManager_->init(metaClient_.get());
-    meta::ClientBasedGflagsManager::instance(metaClient_.get());
+
+    gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
+    gflagsManager_->init();
+
     storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
     return Status::OK();
 }
@@ -46,6 +48,7 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
 void ExecutionEngine::execute(RequestContextPtr rctx) {
     auto ectx = std::make_unique<ExecutionContext>(std::move(rctx),
                                                    schemaManager_.get(),
+                                                   gflagsManager_.get(),
                                                    storage_.get(),
                                                    metaClient_.get());
     // TODO(dutor) add support to plan cache

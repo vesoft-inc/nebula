@@ -33,9 +33,6 @@ void ConfigExecutor::execute() {
         case ConfigSentence::SubType::kGet:
             getVariables();
             break;
-        case ConfigSentence::SubType::kDeclare:
-            declareVariables();
-            break;
         case ConfigSentence::SubType::kUnknown:
             onError_(Status::Error("Type unknown"));
             break;
@@ -56,7 +53,7 @@ void ConfigExecutor::showVariables() {
         return;
     }
 
-    auto future = meta::ClientBasedGflagsManager::instance()->listConfigs(module);
+    auto future = ectx()->gflagsManager()->listConfigs(module);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {
@@ -114,19 +111,18 @@ void ConfigExecutor::setVariables() {
         return;
     }
 
-    VariantTypeEnum eType = static_cast<VariantTypeEnum>(value.which());
     meta::cpp2::ConfigType type;
-    switch (eType) {
-        case VariantTypeEnum::INT64:
+    switch (value.which()) {
+        case VAR_INT64:
             type = meta::cpp2::ConfigType::INT64;
             break;
-        case VariantTypeEnum::DOUBLE:
+        case VAR_DOUBLE:
             type = meta::cpp2::ConfigType::DOUBLE;
             break;
-        case VariantTypeEnum::BOOL:
+        case VAR_BOOL:
             type = meta::cpp2::ConfigType::BOOL;
             break;
-        case VariantTypeEnum::STRING:
+        case VAR_STR:
             type = meta::cpp2::ConfigType::STRING;
             break;
         default:
@@ -135,13 +131,13 @@ void ConfigExecutor::setVariables() {
             return;
     }
 
-    auto future = meta::ClientBasedGflagsManager::instance()->setConfig(module, name, type, value);
+    auto future = ectx()->gflagsManager()->setConfig(module, name, type, value);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto && resp) {
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(std::move(resp));
+            onError_(std::move(resp.status()));
             return;
         }
 
@@ -179,7 +175,7 @@ void ConfigExecutor::getVariables() {
         return;
     }
 
-    auto future = meta::ClientBasedGflagsManager::instance()->getConfig(module, name);
+    auto future = ectx()->gflagsManager()->getConfig(module, name);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto && resp) {
@@ -215,111 +211,32 @@ void ConfigExecutor::getVariables() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-void ConfigExecutor::declareVariables() {
-    meta::cpp2::ConfigModule module = meta::cpp2::ConfigModule::UNKNOWN;
-    std::string name;
-    ColumnType colType;
-    VariantType defaultValue;
-    meta::cpp2::ConfigMode mode = meta::cpp2::ConfigMode::IMMUTABLE;
-    if (configItem_ != nullptr) {
-        if (configItem_->getModule() != nullptr) {
-            module = toThriftConfigModule(*configItem_->getModule());
-        }
-        if (configItem_->getName() != nullptr) {
-            name = *configItem_->getName();
-        }
-        if (configItem_->getType() != nullptr) {
-            colType = *configItem_->getType();
-        }
-        if (configItem_->getMode() != nullptr) {
-            mode = toThriftConfigMode(*configItem_->getMode());
-        }
-        if (configItem_->getValue() != nullptr) {
-            defaultValue = configItem_->getValue()->eval();
-        }
-    }
-
-    if (module == meta::cpp2::ConfigModule::UNKNOWN) {
-        DCHECK(onError_);
-        onError_(Status::Error("Parse config module error"));
-        return;
-    }
-
-    meta::cpp2::ConfigType type;
-    switch (colType) {
-        case ColumnType::INT:
-            type = meta::cpp2::ConfigType::INT64;
-            break;
-        case ColumnType::DOUBLE:
-            type = meta::cpp2::ConfigType::DOUBLE;
-            break;
-        case ColumnType::BOOL:
-            type = meta::cpp2::ConfigType::BOOL;
-            break;
-        case ColumnType::STRING:
-            type = meta::cpp2::ConfigType::STRING;
-            break;
-        default:
-            DCHECK(onError_);
-            onError_(Status::Error("Parse value type error"));
-            return;
-    }
-
-    // check config has been reigstered or not
-    auto status = meta::ClientBasedGflagsManager::instance()->isCfgRegistered(module, name, type);
-    if (status.code() != Status::kCfgNotFound) {
-        DCHECK(onError_);
-        onError_(status);
-        return;
-    }
-
-    auto future = meta::ClientBasedGflagsManager::instance()
-        ->registerConfig(module, name, type, mode, defaultValue);
-    auto *runner = ectx()->rctx()->runner();
-
-    auto cb = [this] (auto && resp) {
-        if (!resp.ok()) {
-            DCHECK(onError_);
-            onError_(std::move(resp));
-            return;
-        }
-
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-
-        DCHECK(onFinish_);
-        onFinish_();
-    };
-
-    auto error = [this] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        DCHECK(onError_);
-        onError_(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
-        return;
-    };
-    std::move(future).via(runner).thenValue(cb).thenError(error);
-}
-
-std::vector<cpp2::ColumnValue> ConfigExecutor::genRow(const meta::ConfigItem& item) {
+std::vector<cpp2::ColumnValue> ConfigExecutor::genRow(const meta::cpp2::ConfigItem& item) {
     std::vector<cpp2::ColumnValue> row;
     row.resize(5);
-    row[0].set_str(ConfigModuleToString(item.module_));
-    row[1].set_str(item.name_);
-    row[2].set_str(ConfigTypeToString(item.type_));
-    row[3].set_str(ConfigModeToString(item.mode_));
+    row[0].set_str(ConfigModuleToString(item.get_module()));
+    row[1].set_str(item.get_name());
+    row[2].set_str(ConfigTypeToString(item.get_type()));
+    row[3].set_str(ConfigModeToString(item.get_mode()));
     // TODO: Console must have same type of the same column over different lines,
     //       so we transform all kinds of value to string for now.
-    switch (item.type_) {
+    VariantType value;
+    switch (item.get_type()) {
         case meta::cpp2::ConfigType::INT64:
-            row[4].set_str(std::to_string(boost::get<int64_t>(item.value_)));
+            value = *reinterpret_cast<const int64_t*>(item.get_value().data());
+            row[4].set_str(std::to_string(boost::get<int64_t>(value)));
             break;
         case meta::cpp2::ConfigType::DOUBLE:
-            row[4].set_str(std::to_string(boost::get<double>(item.value_)));
+            value = *reinterpret_cast<const double*>(item.get_value().data());
+            row[4].set_str(std::to_string(boost::get<double>(value)));
             break;
         case meta::cpp2::ConfigType::BOOL:
-            row[4].set_str(boost::get<bool>(item.value_) ? "True" : "False");
+            value = *reinterpret_cast<const bool*>(item.get_value().data());
+            row[4].set_str(boost::get<bool>(value) ? "True" : "False");
             break;
         case meta::cpp2::ConfigType::STRING:
-            row[4].set_str(boost::get<std::string>(item.value_));
+            value = item.get_value();
+            row[4].set_str(boost::get<std::string>(value));
             break;
     }
     return row;
@@ -341,19 +258,6 @@ meta::cpp2::ConfigModule toThriftConfigModule(const nebula::ConfigModule& mode) 
             return meta::cpp2::ConfigModule::STORAGE;
         default:
             return meta::cpp2::ConfigModule::UNKNOWN;
-    }
-}
-
-meta::cpp2::ConfigMode toThriftConfigMode(const nebula::ConfigMode& mode) {
-    switch (mode) {
-        case nebula::ConfigMode::IMMUTABLE:
-            return meta::cpp2::ConfigMode::IMMUTABLE;
-        case nebula::ConfigMode::REBOOT:
-            return meta::cpp2::ConfigMode::REBOOT;
-        case nebula::ConfigMode::MUTABLE:
-            return meta::cpp2::ConfigMode::MUTABLE;
-        default:
-            return meta::cpp2::ConfigMode::IMMUTABLE;
     }
 }
 

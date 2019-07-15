@@ -173,6 +173,50 @@ TEST(ConfigManTest, ConfigProcessorTest) {
     }
 }
 
+void mockRegisterGflags(ClientBasedGflagsManager* cfgMan) {
+    auto module = cpp2::ConfigModule::STORAGE;
+    auto mode = meta::cpp2::ConfigMode::MUTABLE;
+
+    int64_t valInt = 100L;
+    cfgMan->registerConfig(module, "int64_key_immutable", cpp2::ConfigType::INT64,
+                           cpp2::ConfigMode::IMMUTABLE,
+                           toThriftValueStr(cpp2::ConfigType::INT64, valInt));
+    valInt = 101L;
+    cfgMan->registerConfig(module, "int64_key", cpp2::ConfigType::INT64, mode,
+                           toThriftValueStr(cpp2::ConfigType::INT64, valInt));
+
+    bool valBool = false;
+    cfgMan->registerConfig(module, "bool_key", cpp2::ConfigType::BOOL, mode,
+                           toThriftValueStr(cpp2::ConfigType::BOOL, valBool));
+
+    double valDouble = 1.23;
+    cfgMan->registerConfig(module, "double_key", cpp2::ConfigType::DOUBLE, mode,
+                           toThriftValueStr(cpp2::ConfigType::DOUBLE, valDouble));
+
+    std::string valString = "something";
+    cfgMan->registerConfig(module, "string_key", cpp2::ConfigType::STRING, mode,
+                           toThriftValueStr(cpp2::ConfigType::STRING, valString));
+}
+
+ConfigItem toConfigItem(const cpp2::ConfigItem& item) {
+    VariantType value;
+    switch (item.get_type()) {
+        case cpp2::ConfigType::INT64:
+            value = *reinterpret_cast<const int64_t*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::BOOL:
+            value = *reinterpret_cast<const bool*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::DOUBLE:
+            value = *reinterpret_cast<const double*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::STRING:
+            value = item.get_value();
+            break;
+    }
+    return ConfigItem(item.get_module(), item.get_name(), item.get_type(), item.get_mode(), value);
+}
+
 TEST(ConfigManTest, MetaConfigManTest) {
     FLAGS_load_data_interval_secs = 1;
     FLAGS_load_config_interval_secs = 1;
@@ -182,26 +226,22 @@ TEST(ConfigManTest, MetaConfigManTest) {
     TestUtils::createSomeHosts(sc->kvStore_.get());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-    auto space = "test_space";
-    client->createSpace(space, 1, 1).get();
-    sleep(FLAGS_load_data_interval_secs + 1);
 
     auto module = cpp2::ConfigModule::STORAGE;
-    auto mode = cpp2::ConfigMode::MUTABLE;
+    auto client = std::make_shared<MetaClient>(threadPool,
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    client->init();
+    client->setGflagsModule(module);
 
     ClientBasedGflagsManager cfgMan(client.get());
     cfgMan.module_ = module;
-    CHECK(cfgMan.bgThread_.start());
-    cfgMan.loadCfgThreadFunc();
+    mockRegisterGflags(&cfgMan);
 
-    // immutable configs
+    // try to set/get config not registered
     {
-        std::string name = "int64_key_immutable";
-        VariantType defaultValue = 100l;
+        std::string name = "not_existed";
         auto type = cpp2::ConfigType::INT64;
 
         sleep(FLAGS_load_config_interval_secs + 1);
@@ -210,18 +250,21 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_FALSE(setRet.ok());
         auto getRet = cfgMan.getConfig(module, name).get();
         ASSERT_FALSE(getRet.ok());
+    }
+    // immutable configs
+    {
+        std::string name = "int64_key_immutable";
+        auto type = cpp2::ConfigType::INT64;
 
         // register config as immutable and try to update
-        auto regRet = cfgMan.registerConfig(module, name, type, cpp2::ConfigMode::IMMUTABLE,
-                                            defaultValue).get();
-        ASSERT_TRUE(regRet.ok());
-        setRet = cfgMan.setConfig(module, name, cpp2::ConfigType::INT64, 101l).get();
+        auto setRet = cfgMan.setConfig(module, name, type, 101l).get();
         ASSERT_FALSE(setRet.ok());
 
         // get immutable config
-        getRet = cfgMan.getConfig(module, name).get();
+        auto getRet = cfgMan.getConfig(module, name).get();
         ASSERT_TRUE(getRet.ok());
-        auto value = boost::get<int64_t>(getRet.value().front().value_);
+        auto item = toConfigItem(getRet.value().front());
+        auto value = boost::get<int64_t>(item.value_);
         ASSERT_EQ(value, 100);
 
         sleep(FLAGS_load_config_interval_secs + 1);
@@ -233,19 +276,17 @@ TEST(ConfigManTest, MetaConfigManTest) {
     // mutable config
     {
         std::string name = "int64_key";
-        VariantType defaultValue = 100l;
         auto type = cpp2::ConfigType::INT64;
 
-        // register and update config
-        auto regRet = cfgMan.registerConfig(module, name, type, mode, defaultValue).get();
-        ASSERT_TRUE(regRet.ok());
+        // update config
         auto setRet = cfgMan.setConfig(module, name, type, 102l).get();
         ASSERT_TRUE(setRet.ok());
 
         // get from meta server
         auto getRet = cfgMan.getConfig(module, name).get();
         ASSERT_TRUE(getRet.ok());
-        auto value = boost::get<int64_t>(getRet.value().front().value_);
+        auto item = toConfigItem(getRet.value().front());
+        auto value = boost::get<int64_t>(item.value_);
         ASSERT_EQ(value, 102);
 
         // get from cache
@@ -256,19 +297,17 @@ TEST(ConfigManTest, MetaConfigManTest) {
     }
     {
         std::string name = "bool_key";
-        VariantType defaultValue = false;
         auto type = cpp2::ConfigType::BOOL;
 
-        // register and update config
-        auto regRet = cfgMan.registerConfig(module, name, type, mode, defaultValue).get();
-        ASSERT_TRUE(regRet.ok());
+        // update config
         auto setRet = cfgMan.setConfig(module, name, type, true).get();
         ASSERT_TRUE(setRet.ok());
 
         // get from meta server
         auto getRet = cfgMan.getConfig(module, name).get();
         ASSERT_TRUE(getRet.ok());
-        auto value = boost::get<bool>(getRet.value().front().value_);
+        auto item = toConfigItem(getRet.value().front());
+        auto value = boost::get<bool>(item.value_);
         ASSERT_EQ(value, true);
 
         // get from cache
@@ -279,19 +318,17 @@ TEST(ConfigManTest, MetaConfigManTest) {
     }
     {
         std::string name = "double_key";
-        VariantType defaultValue = 1.23;
         auto type = cpp2::ConfigType::DOUBLE;
 
-        // register and update config
-        auto regRet = cfgMan.registerConfig(module, name, type, mode, defaultValue).get();
-        ASSERT_TRUE(regRet.ok());
+        // update config
         auto setRet = cfgMan.setConfig(module, name, type, 3.14).get();
         ASSERT_TRUE(setRet.ok());
 
         // get from meta server
         auto getRet = cfgMan.getConfig(module, name).get();
         ASSERT_TRUE(getRet.ok());
-        auto value = boost::get<double>(getRet.value().front().value_);
+        auto item = toConfigItem(getRet.value().front());
+        auto value = boost::get<double>(item.value_);
         ASSERT_EQ(value, 3.14);
 
         // get from cache
@@ -302,12 +339,9 @@ TEST(ConfigManTest, MetaConfigManTest) {
     }
     {
         std::string name = "string_key";
-        VariantType defaultValue = std::string("something");
         auto type = cpp2::ConfigType::STRING;
 
-        // register and update config
-        auto regRet = cfgMan.registerConfig(module, name, type, mode, defaultValue).get();
-        ASSERT_TRUE(regRet.ok());
+        // update config
         std::string newValue = "abc";
         auto setRet = cfgMan.setConfig(module, name, type, newValue).get();
         ASSERT_TRUE(setRet.ok());
@@ -315,7 +349,8 @@ TEST(ConfigManTest, MetaConfigManTest) {
         // get from meta server
         auto getRet = cfgMan.getConfig(module, name).get();
         ASSERT_TRUE(getRet.ok());
-        auto value = boost::get<std::string>(getRet.value().front().value_);
+        auto item = toConfigItem(getRet.value().front());
+        auto value = boost::get<std::string>(item.value_);
         ASSERT_EQ(value, "abc");
 
         // get from cache
@@ -331,51 +366,34 @@ TEST(ConfigManTest, MetaConfigManTest) {
     }
 }
 
-TEST(ConfigManTest, KVConfigManTest) {
+TEST(ConfigManTest, MockConfigTest) {
     FLAGS_load_config_interval_secs = 1;
-    fs::TempDir rootPath("/tmp/KVConfigManTest.XXXXXX");
+    fs::TempDir rootPath("/tmp/MockConfigTest.XXXXXX");
     uint32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
-    KVBasedGflagsManager kvCfgMan(sc->kvStore_.get());
-    kvCfgMan.module_ = cpp2::ConfigModule::META;
-    CHECK(kvCfgMan.bgThread_.start());
-
-    // test declare and load config in KVBasedGflagsManager
-    auto module = cpp2::ConfigModule::META;
+    // mock one ClientBaseGflagsManager, and do some update value in console, check if it works
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto module = cpp2::ConfigModule::STORAGE;
     auto type = cpp2::ConfigType::STRING;
     auto mode = cpp2::ConfigMode::MUTABLE;
-    for (int i = 0; i < 10; i++) {
-        std::string name = "k" + std::to_string(i);
-        std::string value = "v" + std::to_string(i);
-        kvCfgMan.declareConfig(module, name, type, mode, value);
-        kvCfgMan.gflagsDeclared_.emplace_back(
-                GflagsManager::toThriftConfigItem(module, name, type, mode, value));
-    }
-    kvCfgMan.regCfgThreadFunc();
-    kvCfgMan.loadCfgThreadFunc();
-
-    sleep(FLAGS_load_config_interval_secs + 1);
-    for (int i = 0; i < 10; i++) {
-        std::string name = "k" + std::to_string(i);
-        std::string value = "v" + std::to_string(i);
-        auto cacheRet = kvCfgMan.getConfigAsString(name);
-        ASSERT_TRUE(cacheRet.ok());
-        ASSERT_EQ(cacheRet.value(), value);
-    }
-
-    // mock one ClientBaseGflagsManager and one KVBasedGflagsManager, and do some update
-    // value in console, check if it works
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    uint32_t localIp;
-    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    client->init();
+    client->setGflagsModule(module);
     ClientBasedGflagsManager clientCfgMan(client.get());
-    CHECK(clientCfgMan.bgThread_.start());
-    clientCfgMan.module_ = cpp2::ConfigModule::META;
-    clientCfgMan.loadCfgThreadFunc();
+    clientCfgMan.module_ = module;
+
+    for (int i = 0; i < 10; i++) {
+        std::string name = "k" + std::to_string(i);
+        std::string value = "v" + std::to_string(i);
+        clientCfgMan.gflagsDeclared_.emplace_back(
+                toThriftConfigItem(module, name, type, mode, value));
+    }
+    clientCfgMan.registerGflags();
 
     sleep(FLAGS_load_config_interval_secs + 1);
     for (int i = 0; i < 10; i++) {
@@ -403,19 +421,12 @@ TEST(ConfigManTest, KVConfigManTest) {
 
         auto getRet = console.getConfig(module, name).get();
         ASSERT_TRUE(getRet.ok());
-        ASSERT_EQ(boost::get<std::string>(getRet.value().front().value_), value);
+        auto item = toConfigItem(getRet.value().front());
+        ASSERT_EQ(boost::get<std::string>(item.value_), value);
     }
 
-    // check values in KVBaseGflagsManager
-    sleep(FLAGS_load_config_interval_secs + 1);
-    for (int i = 0; i < 10; i++) {
-        std::string name = "k" + std::to_string(i);
-        std::string value = "updated" + std::to_string(i);
-        auto cacheRet = kvCfgMan.getConfigAsString(name);
-        ASSERT_TRUE(cacheRet.ok());
-        ASSERT_EQ(cacheRet.value(), value);
-    }
     // check values in ClientBaseGflagsManager
+    sleep(FLAGS_load_config_interval_secs + 1);
     for (int i = 0; i < 10; i++) {
         std::string name = "k" + std::to_string(i);
         std::string value = "updated" + std::to_string(i);

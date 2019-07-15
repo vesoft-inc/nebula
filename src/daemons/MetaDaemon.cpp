@@ -136,7 +136,8 @@ int main(int argc, char *argv[]) {
     setupSignalHandler();
     auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore_);
     nebula::meta::ActiveHostsMan::instance(kvstore_);
-    nebula::meta::KVBasedGflagsManager::instance(kvstore.get());
+    auto gflagsManager = std::make_unique<nebula::meta::KVBasedGflagsManager>(kvstore.get());
+    gflagsManager->init();
 
     LOG(INFO) << "The meta deamon start on " << localhost;
     try {

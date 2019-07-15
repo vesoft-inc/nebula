@@ -115,9 +115,6 @@ std::string ConfigRowItem::toString() const {
     if (value_ != nullptr) {
         ss << "=" << value_->eval();
     }
-    if (type_ != nullptr) {
-        ss << " as " << columnTypeToString(*type_);
-    }
     return ss.str();
 }
 
@@ -129,8 +126,6 @@ std::string ConfigSentence::toString() const {
             return std::string("SET VARIABLES ") + configItem_->toString();
         case SubType::kGet:
             return std::string("GET VARIABLES ") + configItem_->toString();
-        case SubType::kDeclare:
-            return std::string("DECLARE VARIABLES ") + configItem_->toString();
         default:
             FLOG_FATAL("Type illegal");
     }

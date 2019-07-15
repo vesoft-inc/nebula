@@ -50,6 +50,29 @@ using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, 
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 
+struct ConfigItem {
+    ConfigItem() {}
+
+    ConfigItem(const cpp2::ConfigModule& module, const std::string& name,
+               const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
+               const VariantType& value)
+        : module_(module)
+        , name_(name)
+        , type_(type)
+        , mode_(mode)
+        , value_(value) {
+    }
+
+    cpp2::ConfigModule  module_;
+    std::string         name_;
+    cpp2::ConfigType    type_;
+    cpp2::ConfigMode    mode_;
+    VariantType         value_;
+};
+
+// config cahce, get config via module and name
+using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>;
+
 class MetaChangedListener {
 public:
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
@@ -188,6 +211,14 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module);
 
+    StatusOr<ConfigItem> getConfigFromCache(const cpp2::ConfigModule& module,
+                                            const std::string& name,
+                                            const cpp2::ConfigType& type);
+
+    cpp2::ConfigModule& getGflagsModule() {return gflagsModule_;}
+
+    void setGflagsModule(const cpp2::ConfigModule& module = cpp2::ConfigModule::UNKNOWN);
+
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
@@ -222,30 +253,16 @@ public:
 
     const std::vector<HostAddr>& getAddresses();
 
-    // operations for config
-    void loadCfgThreadFunc(const cpp2::ConfigModule& module);
-
-    void regCfgThreadFunc(const std::vector<cpp2::ConfigItem>& gflags);
-
-    StatusOr<ConfigItem> getConfigFromCache(const cpp2::ConfigModule& module,
-                                            const std::string& name,
-                                            const cpp2::ConfigType& type);
-
-    // declare is for using GflagsManager in code, We don't check whether config cache ready or not.
-    // We just put default value in cache, and when we load configs stored in meta successfully, it
-    // would replaced by value from meta.
-    Status declareConfig(const cpp2::ConfigModule& module, const std::string& name,
-                         const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
-                         const VariantType& defaultValue);
-
-    Status isCfgRegistered(const cpp2::ConfigModule& module,
-                           const std::string& name, const cpp2::ConfigType& type);
-
 protected:
     void loadDataThreadFunc();
     void loadData();
     void addLoadDataTask();
+
     void heartBeatThreadFunc();
+
+    void loadCfgThreadFunc();
+    void updateConfigCache(const std::vector<cpp2::ConfigItem>& items);
+    void updateGflagsValue(const ConfigItem& item);
 
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
@@ -289,6 +306,8 @@ protected:
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 
+    ConfigItem toConfigItem(const cpp2::ConfigItem& item);
+
     PartsMap doGetPartsMap(const HostAddr& host,
                            const LocalCache& localCache);
 
@@ -314,6 +333,9 @@ private:
     folly::RWSpinLock     listenerLock_;
     bool                  sendHeartBeat_ = false;
     std::atomic_bool      ready_{false};
+    MetaConfigMap         metaConfigMap_;
+    folly::RWSpinLock     configCacheLock_;
+    cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
 };
 
 }  // namespace meta

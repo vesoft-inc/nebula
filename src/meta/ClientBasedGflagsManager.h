@@ -17,44 +17,47 @@ namespace meta {
 
 class ClientBasedGflagsManager : public GflagsManager {
     FRIEND_TEST(ConfigManTest, MetaConfigManTest);
-    FRIEND_TEST(ConfigManTest, KVConfigManTest);
+    FRIEND_TEST(ConfigManTest, MockConfigTest);
 
 public:
-    static ClientBasedGflagsManager* instance(MetaClient* client = nullptr);
+    explicit ClientBasedGflagsManager(MetaClient *metaClient);
 
     ~ClientBasedGflagsManager();
 
-    folly::Future<Status> setConfig(const cpp2::ConfigModule& module,
-                                    folly::StringPiece name,
-                                    const cpp2::ConfigType& type,
-                                    const VariantType& value) override;
+    folly::Future<StatusOr<bool>> setConfig(const cpp2::ConfigModule& module,
+                                            const std::string& name,
+                                            const cpp2::ConfigType& type,
+                                            const VariantType& value) override;
 
-    folly::Future<StatusOr<std::vector<ConfigItem>>>
-    getConfig(const cpp2::ConfigModule& module, folly::StringPiece name) override;
+    folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
+    getConfig(const cpp2::ConfigModule& module, const std::string& name) override;
 
-    folly::Future<StatusOr<std::vector<ConfigItem>>>
+    folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module) override;
 
-    folly::Future<Status> registerConfig(const cpp2::ConfigModule& module,
-                                         const std::string& name,
-                                         const cpp2::ConfigType& type,
-                                         const cpp2::ConfigMode& mode,
-                                         const VariantType& defaultValue) override;
+    folly::Future<StatusOr<bool>> registerConfig(const cpp2::ConfigModule& module,
+                                                 const std::string& name,
+                                                 const cpp2::ConfigType& type,
+                                                 const cpp2::ConfigMode& mode,
+                                                 const std::string& defaultValue) override;
 
-protected:
-    void loadCfgThreadFunc() override;
-    void regCfgThreadFunc() override;
+    Status init() override;
 
 private:
-    explicit ClientBasedGflagsManager(MetaClient *metaClient);
+    Status registerGflags();
 
-    void init();
+    // methods for code to get config from cache
+    StatusOr<int64_t> getConfigAsInt64(const std::string& name);
 
-    void updateGflagsValue(const ConfigItem& item);
+    StatusOr<double> getConfigAsDouble(const std::string& name);
+
+    StatusOr<bool> getConfigAsBool(const std::string& name);
+
+    StatusOr<std::string> getConfigAsString(const std::string& name);
 
     template<typename ValueType>
-    folly::Future<Status> set(const cpp2::ConfigModule& module, const std::string& name,
-                              const cpp2::ConfigType& type, const ValueType& value);
+    folly::Future<StatusOr<bool>> set(const cpp2::ConfigModule& module, const std::string& name,
+                                      const cpp2::ConfigType& type, const ValueType& value);
 
     MetaClient                          *metaClient_{nullptr};
 };

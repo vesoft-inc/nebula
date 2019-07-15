@@ -9,6 +9,7 @@
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
 #include "meta/test/TestUtils.h"
+#include "meta/ClientBasedGflagsManager.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(load_config_interval_secs);
@@ -29,29 +30,72 @@ protected:
     }
 };
 
+void mockRegisterGflags(meta::ClientBasedGflagsManager* cfgMan) {
+    {
+        auto module = meta::cpp2::ConfigModule::STORAGE;
+        auto type = meta::cpp2::ConfigType::INT64;
+        int64_t value = 0L;
+        cfgMan->registerConfig(module, "k0", type, meta::cpp2::ConfigMode::IMMUTABLE,
+                               meta::toThriftValueStr(type, value));
+        cfgMan->registerConfig(module, "k1", type, meta::cpp2::ConfigMode::MUTABLE,
+                               meta::toThriftValueStr(type, value));
+    }
+    {
+        auto module = meta::cpp2::ConfigModule::STORAGE;
+        auto type = meta::cpp2::ConfigType::BOOL;
+        auto mode = meta::cpp2::ConfigMode::MUTABLE;
+        bool value = false;
+        cfgMan->registerConfig(module, "k2", type, mode, meta::toThriftValueStr(type, value));
+    }
+    {
+        auto module = meta::cpp2::ConfigModule::META;
+        auto mode = meta::cpp2::ConfigMode::MUTABLE;
+        auto type = meta::cpp2::ConfigType::DOUBLE;
+        double value = 1.0;
+        cfgMan->registerConfig(module, "k1", type, mode, meta::toThriftValueStr(type, value));
+    }
+    {
+        auto module = meta::cpp2::ConfigModule::META;
+        auto mode = meta::cpp2::ConfigMode::MUTABLE;
+        auto type = meta::cpp2::ConfigType::STRING;
+        std::string value = "nebula";
+        cfgMan->registerConfig(module, "k2", type, mode, meta::toThriftValueStr(type, value));
+    }
+    {
+        auto type = meta::cpp2::ConfigType::STRING;
+        auto mode = meta::cpp2::ConfigMode::MUTABLE;
+        std::string value = "nebula";
+        cfgMan->registerConfig(meta::cpp2::ConfigModule::GRAPH, "k3",
+                               type, mode, meta::toThriftValueStr(type, value));
+        cfgMan->registerConfig(meta::cpp2::ConfigModule::META, "k3",
+                               type, mode, meta::toThriftValueStr(type, value));
+        cfgMan->registerConfig(meta::cpp2::ConfigModule::STORAGE, "k3",
+                               type, mode, meta::toThriftValueStr(type, value));
+    }
+}
+
 TEST_F(ConfigTest, ConfigTest) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
 
+    mockRegisterGflags(gEnv->gflagsManager());
+
     // set/get without declaration
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "UPDATE VARIABLES storage:k0=123";
+        std::string query = "UPDATE VARIABLES storage:notRegistered=123";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
 
-        query = "GET VARIABLES storage:k0";
+        query = "GET VARIABLES storage:notRegistered";
         code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // update immutable config will fail, read-only
     {
         cpp2::ExecutionResponse resp;
-        std::string declare = "DECLARE VARIABLES storage:k0=0 AS INT";
-        auto code = client->execute(declare, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::string query = "UPDATE VARIABLES storage:k0=123";
-        code = client->execute(query, resp);
+        auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
@@ -66,11 +110,8 @@ TEST_F(ConfigTest, ConfigTest) {
     // set and get config after declaration
     {
         cpp2::ExecutionResponse resp;
-        std::string declare = "DECLARE VARIABLES storage:k1=0 AS INT MUTABLE";
-        auto code = client->execute(declare, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::string query = "UPDATE VARIABLES storage:k1=123";
-        code = client->execute(query, resp);
+        auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
@@ -84,11 +125,8 @@ TEST_F(ConfigTest, ConfigTest) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string declare = "DECLARE VARIABLES meta:k1=1.0 AS DOUBLE MUTABLE";
-        auto code = client->execute(declare, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::string query = "UPDATE VARIABLES meta:k1=3.14";
-        code = client->execute(query, resp);
+        auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
@@ -102,11 +140,8 @@ TEST_F(ConfigTest, ConfigTest) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string declare = "DECLARE VARIABLES storage:k2=false AS BOOL MUTABLE";
-        auto code = client->execute(declare, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::string query = "UPDATE VARIABLES storage:k2=True";
-        code = client->execute(query, resp);
+        auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
@@ -121,11 +156,8 @@ TEST_F(ConfigTest, ConfigTest) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string declare = "DECLARE VARIABLES meta:k2=nebula AS STRING MUTABLE";
-        auto code = client->execute(declare, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::string query = "UPDATE VARIABLES meta:k2=abc";
-        code = client->execute(query, resp);
+        auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
@@ -144,30 +176,16 @@ TEST_F(ConfigTest, ConfigTest) {
         std::string query = "SHOW VARIABLES storage";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(3, resp.get_rows()->size());
+        ASSERT_EQ(4, resp.get_rows()->size());
     }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW VARIABLES meta";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(2, resp.get_rows()->size());
+        ASSERT_EQ(3, resp.get_rows()->size());
     }
     // set and get a config of all module
-    {
-        cpp2::ExecutionResponse resp;
-        std::string declare = "DECLARE VARIABLES meta:k3=nebula AS STRING MUTABLE";
-        auto code = client->execute(declare, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-
-        declare = "DECLARE VARIABLES graph:k3=nebula AS STRING MUTABLE";
-        code = client->execute(declare, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-
-        declare = "DECLARE VARIABLES storage:k3=nebula AS STRING MUTABLE";
-        code = client->execute(declare, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "UPDATE VARIABLES k3=vesoft";

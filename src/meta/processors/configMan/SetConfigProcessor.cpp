@@ -46,7 +46,7 @@ void SetConfigProcessor::setOneConfig(const cpp2::ConfigModule& module, const st
     }
 
     cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(ret.value());
-    if (item.get_mode() != cpp2::ConfigMode::MUTABLE) {
+    if (item.get_mode() == cpp2::ConfigMode::IMMUTABLE) {
         resp_.set_code(cpp2::ErrorCode::E_CONFIG_IMMUTABLE);
         onFinished();
         return;

@@ -8,15 +8,10 @@
 #include "meta/processors/Common.h"
 #include "meta/MetaServiceUtils.h"
 
+DECLARE_int32(load_config_interval_secs);
+
 namespace nebula {
 namespace meta {
-
-KVBasedGflagsManager* KVBasedGflagsManager::instance(kvstore::KVStore* kv) {
-    static auto gflagsMan = std::unique_ptr<KVBasedGflagsManager>(new KVBasedGflagsManager(kv));
-    static std::once_flag initFlag;
-    std::call_once(initFlag, &KVBasedGflagsManager::init, gflagsMan.get());
-    return gflagsMan.get();
-}
 
 KVBasedGflagsManager::KVBasedGflagsManager(kvstore::KVStore* kv) {
     kvstore_ = dynamic_cast<kvstore::NebulaStore*>(kv);
@@ -27,127 +22,119 @@ KVBasedGflagsManager::~KVBasedGflagsManager() {
     kvstore_ = nullptr;
 }
 
-void KVBasedGflagsManager::init() {
-    CHECK(bgThread_.start());
+Status KVBasedGflagsManager::init() {
+    getGflagsModule();
     declareGflags();
-    loadCfgThreadFunc();
-    regCfgThreadFunc();
+    return registerGflags();
 }
 
-folly::Future<Status>
-KVBasedGflagsManager::setConfig(const cpp2::ConfigModule& module, folly::StringPiece name,
+folly::Future<StatusOr<bool>>
+KVBasedGflagsManager::setConfig(const cpp2::ConfigModule& module, const std::string& name,
                                 const cpp2::ConfigType& type, const VariantType &value) {
-    UNUSED(module);
-    UNUSED(name);
-    UNUSED(type);
-    UNUSED(value);
+    UNUSED(module); UNUSED(name); UNUSED(type); UNUSED(value);
     LOG(FATAL) << "Unimplement!";
     return Status::OK();
 }
 
-folly::Future<StatusOr<std::vector<ConfigItem>>>
-KVBasedGflagsManager::getConfig(const cpp2::ConfigModule& module, folly::StringPiece name) {
-    UNUSED(module);
-    UNUSED(name);
+folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
+KVBasedGflagsManager::getConfig(const cpp2::ConfigModule& module, const std::string& name) {
+    UNUSED(module); UNUSED(name);
     LOG(FATAL) << "Unimplement!";
     return Status::OK();
 }
 
-folly::Future<StatusOr<std::vector<ConfigItem>>>
+folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 KVBasedGflagsManager::listConfigs(const cpp2::ConfigModule& module) {
     UNUSED(module);
     LOG(FATAL) << "Unimplement!";
     return Status::OK();
 }
 
-folly::Future<Status>
+folly::Future<StatusOr<bool>>
 KVBasedGflagsManager::registerConfig(const cpp2::ConfigModule& module, const std::string& name,
                                      const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
-                                     const VariantType& value) {
-    UNUSED(module);
-    UNUSED(name);
-    UNUSED(type);
-    UNUSED(mode);
-    UNUSED(value);
+                                     const std::string& value) {
+    UNUSED(module); UNUSED(name); UNUSED(type); UNUSED(mode); UNUSED(value);
     LOG(FATAL) << "Unimplement!";
     return Status::OK();
 }
 
-void KVBasedGflagsManager::loadCfgThreadFunc() {
-    std::string flag;
-    gflags::GetCommandLineOption("load_config_interval_secs", &flag);
-    size_t delayMS = stoi(flag) * 1000 + folly::Random::rand32(900);
-    bgThread_.addDelayTask(delayMS, &KVBasedGflagsManager::loadCfgThreadFunc, this);
-    LOG(INFO) << "Load configs after " << delayMS << " ms";
-
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::configLock());
-    auto prefix = MetaServiceUtils::configKeyPrefix(module_);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        return;
+void KVBasedGflagsManager::getGflagsModule() {
+    // get current process according to gflags pid_file
+    gflags::CommandLineFlagInfo pid;
+    if (gflags::GetCommandLineFlagInfo("pid_file", &pid)) {
+        auto defaultPid = pid.default_value;
+        if (defaultPid.find("nebula-graphd") != std::string::npos) {
+            module_ = cpp2::ConfigModule::GRAPH;
+        } else if (defaultPid.find("nebula-storaged") != std::string::npos) {
+            module_ = cpp2::ConfigModule::STORAGE;
+        } else if (defaultPid.find("nebula-metad") != std::string::npos) {
+            module_ = cpp2::ConfigModule::META;
+        } else {
+            LOG(ERROR) << "Should not reach here";
+        }
+    } else {
+        LOG(ERROR) << "Should not reach here";
     }
-
-    std::vector<ConfigItem> items;
-    while (iter->valid()) {
-        auto key = iter->key();
-        auto value = iter->val();
-        auto item = MetaServiceUtils::parseConfigValue(value);
-        auto configName = MetaServiceUtils::parseConfigKey(key);
-        item.set_module(configName.first);
-        item.set_name(configName.second);
-        items.emplace_back(toConfigItem(item));
-        iter->next();
-    }
-
-    updateConfigCache(items);
 }
 
-void KVBasedGflagsManager::regCfgThreadFunc() {
-    std::vector<kvstore::KV> data;
-    folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
-    for (const auto& item : gflagsDeclared_) {
-        auto module = item.get_module();
-        auto name = item.get_name();
-        auto type = item.get_type();
-        auto mode = item.get_mode();
-        auto value = item.get_value();
-
-        std::string configKey = MetaServiceUtils::configKey(module, name);
-        std::string configValue;
-        // ignore config which has been registered before
-        auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, configKey, &configValue);
-        if (ret == kvstore::ResultCode::SUCCEEDED) {
-            continue;
-        }
-        configValue = MetaServiceUtils::configValue(type, mode, value);
-        data.emplace_back(configKey, configValue);
-    }
-
+Status KVBasedGflagsManager::registerGflags() {
+    // based on kv, so we will retry until register config successfully
     bool succeeded = false;
-    if (!data.empty()) {
-        if (kvstore_->isLeader(kDefaultSpaceId, kDefaultPartId)) {
+    while (!succeeded) {
+        std::vector<kvstore::KV> data;
+        folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
+        for (const auto& item : gflagsDeclared_) {
+            auto module = item.get_module();
+            auto name = item.get_name();
+            auto type = item.get_type();
+            auto mode = item.get_mode();
+            auto value = item.get_value();
+
+            std::string configKey = MetaServiceUtils::configKey(module, name);
+            std::string configValue;
+            // ignore config which has been registered before
+            auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, configKey, &configValue);
+            if (ret == kvstore::ResultCode::SUCCEEDED) {
+                continue;
+            }
+            configValue = MetaServiceUtils::configValue(type, mode, value);
+            data.emplace_back(configKey, configValue);
+        }
+
+        if (!data.empty()) {
+            // still have some gflags unregistered, try to write
             folly::Baton<true, std::atomic> baton;
             kvstore_->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
                                     [&] (kvstore::ResultCode code) {
                 if (code == kvstore::ResultCode::SUCCEEDED) {
                     succeeded = true;
+                } else if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+                    auto leader = kvstore_->partLeader(kDefaultSpaceId, kDefaultPartId);
+                    if (ok(leader)) {
+                        auto addr = value(std::move(leader));
+                        // HostAddr(0, 0) means no leader exists
+                        if (addr != HostAddr(0, 0)) {
+                            succeeded = true;
+                        }
+                    }
                 }
                 baton.post();
             });
             baton.wait();
+        } else {
+            // all gflags has been registered through leader
+            succeeded = true;
         }
-    } else {
-        succeeded = true;
-    }
 
-    if (!succeeded) {
-        std::string flag;
-        gflags::GetCommandLineOption("load_config_interval_secs", &flag);
-        size_t delayMS = stoi(flag) * 1000 + folly::Random::rand32(900);
-        bgThread_.addDelayTask(delayMS, &KVBasedGflagsManager::regCfgThreadFunc, this);
-        LOG(INFO) << "Register fail, try it after " << delayMS << " ms ";
+        if (!succeeded) {
+            LOG(INFO) << "Register gflags failed, try after 1s";
+            sleep(1);
+        } else {
+            LOG(INFO) << "Register gflags ok";
+        }
     }
+    return Status::OK();
 }
 
 }  // namespace meta

@@ -78,13 +78,12 @@ class GraphScanner;
     nebula::OrderFactor                    *order_factor;
     nebula::OrderFactors                   *order_factors;
     nebula::ConfigModule                    config_module;
-    nebula::ConfigMode                      config_mode;
     nebula::ConfigRowItem                  *config_row_item;
 }
 
 /* destructors */
 %destructor {} <sentences>
-%destructor {} <boolval> <intval> <doubleval> <type> <config_mode> <config_module>
+%destructor {} <boolval> <intval> <doubleval> <type> <config_module>
 %destructor { delete $$; } <*>
 
 /* keywords */
@@ -97,8 +96,7 @@ class GraphScanner;
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
-%toekn KW_VARIABLES KW_GET KW_DECLARE
-%token KW_IMMUTABLE KW_MUTABLE KW_REBOOT KW_GRAPH KW_META KW_STORAGE
+%token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC
 %token KW_DISTINCT
@@ -159,9 +157,8 @@ class GraphScanner;
 %type <alter_schema_prop_item> alter_schema_prop_item
 %type <order_factor> order_factor
 %type <order_factors> order_factors
-%type <config_mode> config_mode_enum
 %type <config_module> config_module_enum
-%type <config_row_item> show_config_item get_config_item set_config_item declare_config_item
+%type <config_row_item> show_config_item get_config_item set_config_item
 
 %type <intval> port unary_integer rank
 
@@ -189,7 +186,7 @@ class GraphScanner;
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
 %type <sentence> grant_sentence revoke_sentence
 %type <sentence> download_sentence
-%type <sentence> set_config_sentence get_config_sentence declare_config_sentence
+%type <sentence> set_config_sentence get_config_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -558,7 +555,6 @@ match_sentence
 
 find_sentence
     : KW_FIND prop_list KW_FROM name_label where_clause {
-
         auto sentence = new FindSentence($4, $2);
         sentence->setWhereClause($5);
         $$ = sentence;
@@ -1161,25 +1157,10 @@ host_item
 
 port : INTEGER { $$ = $1; }
 
-config_mode_enum
-    : KW_IMMUTABLE  { $$ = ConfigMode::IMMUTABLE; }
-    | KW_REBOOT     { $$ = ConfigMode::REBOOT; }
-    | KW_MUTABLE    { $$ = ConfigMode::MUTABLE; }
-    ;
-
 config_module_enum
     : KW_GRAPH      { $$ = ConfigModule::GRAPH; }
     | KW_META       { $$ = ConfigModule::META; }
     | KW_STORAGE    { $$ = ConfigModule::STORAGE; }
-    ;
-
-declare_config_item
-    : config_module_enum COLON name_label ASSIGN expression KW_AS type_spec {
-        $$ = new ConfigRowItem($1, $3, $5, $7, ConfigMode::IMMUTABLE);
-    }
-    | config_module_enum COLON name_label ASSIGN expression KW_AS type_spec config_mode_enum {
-        $$ = new ConfigRowItem($1, $3, $5, $7, $8);
-    }
     ;
 
 get_config_item
@@ -1388,12 +1369,6 @@ set_config_sentence
     }
     ;
 
-declare_config_sentence
-    : KW_DECLARE KW_VARIABLES declare_config_item {
-        $$ = new ConfigSentence(ConfigSentence::SubType::kDeclare, $3);
-    }
-    ;
-
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -1433,7 +1408,6 @@ maintain_sentence
     | revoke_sentence { $$ = $1; }
     | get_config_sentence { $$ = $1; }
     | set_config_sentence { $$ = $1; }
-    | declare_config_sentence { $$ = $1; }
     ;
 
 sentence

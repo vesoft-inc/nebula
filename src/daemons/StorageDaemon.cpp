@@ -160,6 +160,8 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     nebula::meta::ClientBasedGflagsManager::instance(metaClient.get());
+    auto gflagsManager = std::make_unique<nebula::meta::ClientBasedGflagsManager>(metaClient.get());
+    gflagsManager->init();
 
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();

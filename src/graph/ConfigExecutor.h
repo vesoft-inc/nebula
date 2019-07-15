@@ -31,10 +31,9 @@ public:
     void showVariables();
     void setVariables();
     void getVariables();
-    void declareVariables();
 
 private:
-    std::vector<cpp2::ColumnValue> genRow(const meta::ConfigItem& item);
+    std::vector<cpp2::ColumnValue> genRow(const meta::cpp2::ConfigItem& item);
 
     ConfigSentence                           *sentence_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>  resp_;
@@ -42,7 +41,6 @@ private:
 };
 
 meta::cpp2::ConfigModule toThriftConfigModule(const nebula::ConfigModule& mode);
-meta::cpp2::ConfigMode toThriftConfigMode(const nebula::ConfigMode& mode);
 std::string ConfigModuleToString(const meta::cpp2::ConfigModule& module);
 std::string ConfigModeToString(const meta::cpp2::ConfigMode& mode);
 std::string ConfigTypeToString(const meta::cpp2::ConfigType& type);

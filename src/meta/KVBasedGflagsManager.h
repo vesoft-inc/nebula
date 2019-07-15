@@ -8,6 +8,7 @@
 #define META_KVBASEDGFLAGSMANAGER_H_
 
 #include "base/Base.h"
+#include "base/Status.h"
 #include "meta/GflagsManager.h"
 #include "kvstore/NebulaStore.h"
 
@@ -15,39 +16,34 @@ namespace nebula {
 namespace meta {
 
 class KVBasedGflagsManager : public GflagsManager {
-    FRIEND_TEST(ConfigManTest, KVConfigManTest);
-
 public:
-    static KVBasedGflagsManager* instance(kvstore::KVStore* kv = nullptr);
+    explicit KVBasedGflagsManager(kvstore::KVStore* kv);
 
     ~KVBasedGflagsManager();
 
-    folly::Future<Status> setConfig(const cpp2::ConfigModule& module,
-                                    folly::StringPiece name,
-                                    const cpp2::ConfigType& type,
-                                    const VariantType& value) override;
+    folly::Future<StatusOr<bool>> setConfig(const cpp2::ConfigModule& module,
+                                            const std::string& name,
+                                            const cpp2::ConfigType& type,
+                                            const VariantType& value) override;
 
-    folly::Future<StatusOr<std::vector<ConfigItem>>>
-    getConfig(const cpp2::ConfigModule& module, folly::StringPiece name) override;
+    folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
+    getConfig(const cpp2::ConfigModule& module, const std::string& name) override;
 
-    folly::Future<StatusOr<std::vector<ConfigItem>>>
+    folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module) override;
 
-    folly::Future<Status> registerConfig(const cpp2::ConfigModule& module,
-                                         const std::string& name,
-                                         const cpp2::ConfigType& type,
-                                         const cpp2::ConfigMode& mode,
-                                         const VariantType& defaultValue) override;
+    folly::Future<StatusOr<bool>> registerConfig(const cpp2::ConfigModule& module,
+                                                 const std::string& name,
+                                                 const cpp2::ConfigType& type,
+                                                 const cpp2::ConfigMode& mode,
+                                                 const std::string& defaultValue) override;
 
-protected:
-    void loadCfgThreadFunc() override;
-
-    void regCfgThreadFunc() override;
+    Status init() override;
 
 private:
-    explicit KVBasedGflagsManager(kvstore::KVStore* kv);
+    Status registerGflags();
 
-    void init();
+    void getGflagsModule();
 
     kvstore::NebulaStore* kvstore_ = nullptr;
 };

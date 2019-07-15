@@ -1080,18 +1080,6 @@ TEST(Parser, ConfigOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "DECLARE VARIABLES meta:load_config_interval_secs=120 AS INT";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
-        std::string query = "DECLARE VARIABLES meta:load_config_interval_secs=120 AS INT MUTABLE";
-        auto result = parser.parse(query);
-        ASSERT_TRUE(result.ok()) << result.status();
-    }
-    {
-        GQLParser parser;
         std::string query = "UPDATE VARIABLES load_config_interval_secs=120";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();

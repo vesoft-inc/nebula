@@ -38,7 +38,7 @@ void GetConfigProcessor::getOneConfig(const cpp2::ConfigModule& module,
                                       const std::string& name,
                                       std::vector<cpp2::ConfigItem>& items) {
     std::string configKey = MetaServiceUtils::configKey(module, name);
-    auto ret = doGet(std::move(configKey));
+    auto ret = doGet(configKey);
     if (!ret.ok()) {
         return;
     }
