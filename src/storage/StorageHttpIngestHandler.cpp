@@ -30,12 +30,14 @@ void StorageHttpIngestHandler::onRequest(std::unique_ptr<HTTPMessage> headers) n
         return;
     }
 
-    if (!headers->hasQueryParam("path")) {
-        LOG(ERROR) << "Illegal Argument";
+    if (!headers->hasQueryParam("path") ||
+        !headers->hasQueryParam("space")) {
         err_ = HttpCode::E_ILLEGAL_ARGUMENT;
         return;
     }
+
     path_ = headers->getQueryParam("path");
+    space_ = headers->getIntQueryParam("space");
 }
 
 void StorageHttpIngestHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
@@ -58,7 +60,8 @@ void StorageHttpIngestHandler::onEOM() noexcept {
             break;
     }
 
-    if (ingestSSTFiles(path_)) {
+    if (ingestSSTFiles(space_, path_)) {
+        LOG(ERROR) << "SSTFile ingest successfully " << path_;
         ResponseBuilder(downstream_)
             .status(200, "SSTFile ingest successfully")
             .body("SSTFile ingest successfully")
@@ -86,9 +89,14 @@ void StorageHttpIngestHandler::onError(ProxygenError error) noexcept {
                << proxygen::getErrorString(error);
 }
 
-bool StorageHttpIngestHandler::ingestSSTFiles(const std::string& path) {
-    UNUSED(path);
-    return true;
+bool StorageHttpIngestHandler::ingestSSTFiles(GraphSpaceID space, const std::string& path) {
+    auto code = kvstore_->ingest(space, path);
+    if (code == kvstore::ResultCode::SUCCEEDED) {
+        return true;
+    } else {
+        LOG(ERROR) << "SSTFile Ingest Failed: " << code;
+        return false;
+    }
 }
 
 }  // namespace storage

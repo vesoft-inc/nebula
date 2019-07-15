@@ -136,6 +136,11 @@ public:
                                    const std::string& prefix,
                                    KVCallback cb) = 0;
 
+    virtual ResultCode ingest(GraphSpaceID spaceId,
+                              const std::string& extra) = 0;
+
+    virtual ResultCode compactAll(GraphSpaceID spaceId) = 0;
+
 protected:
     KVStore() = default;
 };

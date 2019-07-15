@@ -140,8 +140,7 @@ public:
                            KVCallback cb) override;
 
     ResultCode ingest(GraphSpaceID spaceId,
-                      const std::string& extra,
-                      const std::vector<std::string>& files);
+                      const std::string& extra) override;
 
     ResultCode setOption(GraphSpaceID spaceId,
                          const std::string& configKey,
@@ -151,7 +150,7 @@ public:
                            const std::string& configKey,
                            const std::string& configValue);
 
-    ResultCode compactAll(GraphSpaceID spaceId);
+    ResultCode compactAll(GraphSpaceID spaceId) override;
 
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 

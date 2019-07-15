@@ -473,17 +473,6 @@ private:
     std::unique_ptr<WhereClause>                whereClause_;
 };
 
-class IngestSentence final : public Sentence {
-public:
-    explicit IngestSentence(std::string *path) {
-        path_.reset(path);
-    }
-
-    std::string toString() const override;
-
-private:
-    std::unique_ptr<std::string> path_;
-};
 
 class DownloadSentence final : public Sentence {
 public:
@@ -562,6 +551,25 @@ private:
     std::unique_ptr<std::string>                path_;
     std::unique_ptr<std::string>                localPath_;
 };
+
+
+class IngestSentence final : public Sentence {
+public:
+    explicit IngestSentence(std::string *path) {
+        path_.reset(path);
+        kind_ = Kind::kIngest;
+    }
+
+    const std::string* path() const {
+        return path_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<std::string> path_;
+};
+
 
 }  // namespace nebula
 

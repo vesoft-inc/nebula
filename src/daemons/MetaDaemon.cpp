@@ -126,6 +126,11 @@ int main(int argc, char *argv[]) {
         handler->init(kvstore_, helperPtr);
         return handler;
     });
+    nebula::WebService::registerHandler("/ingest-dispatch", [kvstore_] {
+        auto handler = new nebula::meta::MetaHttpIngestHandler();
+        handler->init(kvstore_);
+        return handler;
+    });
     status = nebula::WebService::start();
     if (!status.ok()) {
         LOG(ERROR) << "Failed to start web service: " << status;

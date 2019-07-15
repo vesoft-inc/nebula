@@ -4,10 +4,16 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "meta/MetaServiceUtils.h"
 #include "meta/MetaHttpIngestHandler.h"
+#include "webservice/Common.h"
+#include "network/NetworkUtils.h"
+#include "process/ProcessUtils.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
+
+DEFINE_int32(storage_ingest_http_port, 12000, "Storage daemon's http port");
 
 namespace nebula {
 namespace meta {
@@ -30,12 +36,14 @@ void MetaHttpIngestHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noex
         return;
     }
 
-    if (!headers->hasQueryParam("path")) {
+    if (!headers->hasQueryParam("path") ||
+        !headers->hasQueryParam("space")) {
         err_ = HttpCode::E_ILLEGAL_ARGUMENT;
         return;
     }
 
     path_ = headers->getQueryParam("path");
+    space_ = headers->getIntQueryParam("space");
 }
 
 void MetaHttpIngestHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
@@ -59,7 +67,8 @@ void MetaHttpIngestHandler::onEOM() noexcept {
             break;
     }
 
-    if (ingestSSTFiles(path_)) {
+    if (ingestSSTFiles(space_, path_)) {
+        LOG(INFO) << "SSTFile ingest successfully " << path_;
         ResponseBuilder(downstream_)
             .status(200, "SSTFile ingest successfully")
             .body("SSTFile ingest successfully")
@@ -88,9 +97,49 @@ void MetaHttpIngestHandler::onError(ProxygenError error) noexcept {
                << proxygen::getErrorString(error);
 }
 
-bool MetaHttpIngestHandler::ingestSSTFiles(const std::string& path) {
-    UNUSED(path);
-    return true;
+bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space, const std::string& path) {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto prefix = MetaServiceUtils::partPrefix(space);
+    auto ret = kvstore_->prefix(0, 0, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Fetch Parts Failed";
+        return false;
+    }
+
+    std::vector<std::string> storageIPs;
+    while (iter->valid()) {
+        for (auto host : MetaServiceUtils::parsePartVal(iter->val())) {
+            auto storageIP = network::NetworkUtils::intToIPv4(host.get_ip());
+            if (std::find(storageIPs.begin(), storageIPs.end(), storageIP) == storageIPs.end()) {
+                storageIPs.push_back(std::move(storageIP));
+            }
+        }
+        iter->next();
+    }
+
+    std::atomic<int> completed(0);
+    std::vector<std::thread> threads;
+    for (auto &storageIP : storageIPs) {
+        threads.push_back(std::thread([storageIP, space, path, &completed]() {
+            auto tmp = "http://%s:%d/ingest?path=%s&space=%d";
+            auto url = folly::stringPrintf(tmp, storageIP.c_str(), FLAGS_storage_ingest_http_port,
+                                           path.c_str(), space);
+            auto command = folly::stringPrintf("/usr/bin/curl -G \"%s\"", url.c_str());
+            LOG(INFO) << "Command: " << command;
+            auto ingestResult = ProcessUtils::runCommand(command.c_str());
+            if (!ingestResult.ok() || ingestResult.value() != "SSTFile ingest successfully") {
+                LOG(ERROR) << "Failed to ingest SST Files: " << ingestResult.value();
+            } else {
+                completed++;
+            }
+        }));
+    }
+
+    for (auto &thread : threads) {
+        thread.join();
+    }
+
+    return completed == (int32_t)storageIPs.size();
 }
 
 }  // namespace meta

@@ -25,8 +25,11 @@ public:
 
     void execute() override;
 
+    void setupResponse(cpp2::ExecutionResponse &resp) override;
+
 private:
-    IngestSentence        *sentence_{nullptr};
+    IngestSentence                             *sentence_{nullptr};
+    std::unique_ptr<cpp2::ExecutionResponse>    resp_;
 };
 
 }   // namespace graph

@@ -126,6 +126,11 @@ public:
                            const std::string& prefix,
                            KVCallback cb) override;
 
+    ResultCode ingest(GraphSpaceID spaceId,
+                      const std::string& extra) override;
+
+    ResultCode compactAll(GraphSpaceID spaceId) override;
+
 private:
     std::string getRowKey(const std::string& key) {
         return key.substr(sizeof(PartitionID), key.size() - sizeof(PartitionID));

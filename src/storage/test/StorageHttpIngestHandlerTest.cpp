@@ -11,6 +11,7 @@
 #include "storage/test/TestUtils.h"
 #include "storage/StorageHttpIngestHandler.h"
 #include <gtest/gtest.h>
+#include <rocksdb/sst_file_writer.h>
 
 namespace nebula {
 namespace storage {
@@ -22,9 +23,8 @@ public:
         FLAGS_ws_h2_port = 0;
         VLOG(1) << "Starting web service...";
 
-        rootPath_ = std::make_unique<fs::TempDir>("/tmp/MetaHttpIngestHandler.XXXXXX");
-        kv_ = TestUtils::initKV(rootPath_->path());
-
+        rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpIngestHandler.XXXXXX");
+        kv_ = TestUtils::initKV("/tmp/StorageHttpIngestHandler");
         WebService::registerHandler("/ingest", [this] {
             auto handler = new storage::StorageHttpIngestHandler();
             handler->init(kv_.get());
@@ -35,6 +35,8 @@ public:
     }
 
     void TearDown() override {
+        kv_.reset();
+        rootPath_.reset();
         WebService::stop();
         VLOG(1) << "Web service stopped";
     }
@@ -45,14 +47,40 @@ private:
 };
 
 TEST(StorageHttpIngestHandlerTest, StorageIngestTest) {
+    auto path = "/tmp/StorageHttpIngestData.XXXXXX";
+    std::unique_ptr<fs::TempDir> externalPath_ = std::make_unique<fs::TempDir>(path);
+    auto partPath = folly::stringPrintf("%s/1", externalPath_->path());
+    ASSERT_TRUE(nebula::fs::FileUtils::makeDir(partPath));
+
+    auto options = rocksdb::Options();
+    auto env = rocksdb::EnvOptions();
+    rocksdb::SstFileWriter writer{env, options};
+    auto sstPath = folly::stringPrintf("%s/data.sst", partPath.c_str());
+    auto status = writer.Open(sstPath);
+    ASSERT_EQ(rocksdb::Status::OK(), status);
+
+    for (auto i = 0; i < 10; i++) {
+        status = writer.Put(folly::stringPrintf("key_%d", i),
+                            folly::stringPrintf("val_%d", i));
+        ASSERT_EQ(rocksdb::Status::OK(), status);
+    }
+    status = writer.Finish();
+    ASSERT_EQ(rocksdb::Status::OK(), status);
+
     {
-        auto url = "";
+        auto url = "/ingest";
+        std::string resp;
+        ASSERT_TRUE(getUrl(url, resp));
+        ASSERT_EQ("", resp);
+    }
+    {
+        auto url = folly::stringPrintf("/ingest?path=%s&space=%d", externalPath_->path(), 0);
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile ingest successfully", resp);
     }
     {
-        auto url = "";
+        auto url = folly::stringPrintf("/ingest?path=%s&space=%d", "/tmp/maybe-not-exist/", 0);
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile ingest failed", resp);

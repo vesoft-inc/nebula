@@ -35,12 +35,13 @@ public:
 
     void onError(proxygen::ProxygenError error) noexcept override;
 
-    bool ingestSSTFiles(const std::string& path);
+    bool ingestSSTFiles(GraphSpaceID space, const std::string& path);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
     nebula::kvstore::KVStore *kvstore_;
     std::string path_;
+    GraphSpaceID space_;
 };
 
 }  // namespace meta

@@ -387,23 +387,19 @@ void NebulaStore::asyncRemovePrefix(GraphSpaceID spaceId,
 
 
 ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
-                               const std::string& extra,
-                               const std::vector<std::string>& files) {
+                               const std::string& extra) {
     decltype(spaces_)::iterator it;
     folly::RWSpinLock::ReadHolder rh(&lock_);
     RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
     for (auto& engine : it->second->engines_) {
-        auto parts = engine->allParts();
         std::vector<std::string> extras;
+        auto parts = nebula::fs::FileUtils::listAllDirsInDir(extra.c_str());
         for (auto part : parts) {
+            auto path = folly::stringPrintf("%s/%s", extra.c_str(), part.c_str());
+            auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
             for (auto file : files) {
-                auto extraPath = folly::stringPrintf("%s/nebula/%d/%d/%s",
-                                                     extra.c_str(),
-                                                     spaceId,
-                                                     part,
-                                                     file.c_str());
-                LOG(INFO) << "Loading extra path : " << extraPath;
-                extras.emplace_back(std::move(extraPath));
+                LOG(INFO) << "Loading extra path : " << file;
+                extras.emplace_back(std::move(file));
             }
         }
         auto code = engine->ingest(std::move(extras));
