@@ -106,7 +106,7 @@ TEST(AdminClientTest, SimpleTest) {
     sc->mockCommon("storage", 0, handler);
     LOG(INFO) << "Start storage server on " << sc->port_;
 
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     fs::TempDir rootPath("/tmp/AdminTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
@@ -147,7 +147,7 @@ TEST(AdminClientTest, RetryTest) {
     sc1->mockCommon("storage", 0, handler1);
     LOG(INFO) << "Start storage1 server on " << sc1->port_;
 
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
     auto sc2 = std::make_unique<test::ServerContext>();
