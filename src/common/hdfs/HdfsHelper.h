@@ -25,6 +25,8 @@ public:
                                               int32_t hdfsPort,
                                               const std::string& hdfsPath,
                                               const std::string& localPath) = 0;
+
+    virtual bool checkHadoopPath() = 0;
 };
 
 }   // namespace hdfs
