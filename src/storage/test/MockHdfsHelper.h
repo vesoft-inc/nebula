@@ -30,6 +30,10 @@ public:
         sleep(1);
         return "";
     }
+
+    bool checkHadoopPath() override {
+        return true;
+    }
 };
 
 class MockHdfsExistHelper : public nebula::hdfs::HdfsHelper {
@@ -49,6 +53,10 @@ public:
         UNUSED(hdfsHost); UNUSED(hdfsPort); UNUSED(hdfsPath); UNUSED(localPath);
         sleep(1);
         return "copyToLocal: `/data/': File exists";
+    }
+
+    bool checkHadoopPath() override {
+        return true;
     }
 };
 
