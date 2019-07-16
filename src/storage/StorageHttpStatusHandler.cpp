@@ -4,8 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/StorageHttpHandler.h"
+#include "storage/StorageHttpStatusHandler.h"
 #include "webservice/Common.h"
+#include "process/ProcessUtils.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
@@ -19,14 +20,14 @@ using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
 
-void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
+void StorageHttpStatusHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
         // Unsupported method
         err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
 
-    if (headers->getQueryParamPtr("returnjson") != nullptr) {
+    if (headers->hasQueryParam("returnjson")) {
         returnJson_ = true;
     }
 
@@ -37,12 +38,12 @@ void StorageHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcep
 }
 
 
-void StorageHttpHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
+void StorageHttpStatusHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
     // Do nothing, we only support GET
 }
 
 
-void StorageHttpHandler::onEOM() noexcept {
+void StorageHttpStatusHandler::onEOM() noexcept {
     switch (err_) {
         case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
@@ -53,7 +54,6 @@ void StorageHttpHandler::onEOM() noexcept {
             break;
     }
 
-    // read storage daemon status
     folly::dynamic vals = getStatus();
     if (returnJson_) {
         ResponseBuilder(downstream_)
@@ -69,23 +69,23 @@ void StorageHttpHandler::onEOM() noexcept {
 }
 
 
-void StorageHttpHandler::onUpgrade(UpgradeProtocol) noexcept {
+void StorageHttpStatusHandler::onUpgrade(UpgradeProtocol) noexcept {
     // Do nothing
 }
 
 
-void StorageHttpHandler::requestComplete() noexcept {
+void StorageHttpStatusHandler::requestComplete() noexcept {
     delete this;
 }
 
 
-void StorageHttpHandler::onError(ProxygenError error) noexcept {
+void StorageHttpStatusHandler::onError(ProxygenError error) noexcept {
     LOG(ERROR) << "Web service StorageHttpHandler got error: "
                << proxygen::getErrorString(error);
 }
 
 
-void StorageHttpHandler::addOneStatus(folly::dynamic& vals,
+void StorageHttpStatusHandler::addOneStatus(folly::dynamic& vals,
                                       const std::string& statusName,
                                       const std::string& statusValue) const {
     folly::dynamic status = folly::dynamic::object();
@@ -95,7 +95,7 @@ void StorageHttpHandler::addOneStatus(folly::dynamic& vals,
 }
 
 
-std::string StorageHttpHandler::readValue(std::string& statusName) {
+std::string StorageHttpStatusHandler::readValue(std::string& statusName) {
     folly::toLowerAscii(statusName);
     if (statusName == "status") {
         return "running";
@@ -105,7 +105,7 @@ std::string StorageHttpHandler::readValue(std::string& statusName) {
 }
 
 
-void StorageHttpHandler::readAllValue(folly::dynamic& vals) {
+void StorageHttpStatusHandler::readAllValue(folly::dynamic& vals) {
     for (auto& sn : statusAllNames_) {
         std::string statusValue = readValue(sn);
         addOneStatus(vals, sn, statusValue);
@@ -113,7 +113,7 @@ void StorageHttpHandler::readAllValue(folly::dynamic& vals) {
 }
 
 
-folly::dynamic StorageHttpHandler::getStatus() {
+folly::dynamic StorageHttpStatusHandler::getStatus() {
     auto status = folly::dynamic::array();
     if (statusNames_.empty()) {
         // Read all status
@@ -128,7 +128,7 @@ folly::dynamic StorageHttpHandler::getStatus() {
 }
 
 
-std::string StorageHttpHandler::toStr(folly::dynamic& vals) const {
+std::string StorageHttpStatusHandler::toStr(folly::dynamic& vals) const {
     std::stringstream ss;
     for (auto& counter : vals) {
         auto& val = counter["value"];
