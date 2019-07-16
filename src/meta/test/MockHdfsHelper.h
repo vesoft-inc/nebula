@@ -30,6 +30,10 @@ public:
         sleep(1);
         return "";
     }
+
+    bool checkHadoopPath() override {
+        return true;
+    }
 };
 
 class MockHdfsNotExistHelper : public nebula::hdfs::HdfsHelper {
@@ -49,6 +53,10 @@ public:
         UNUSED(hdfsHost); UNUSED(hdfsPort); UNUSED(localPath);
         sleep(1);
         return Status::Error(folly::stringPrintf("HDFS Path %s Not Exist", hdfsPath.c_str()));
+    }
+
+    bool checkHadoopPath() override {
+        return true;
     }
 };
 
