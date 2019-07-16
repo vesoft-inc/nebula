@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "common/base/SignalHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "network/NetworkUtils.h"
 #include "thread/GenericThreadPool.h"
@@ -229,37 +230,12 @@ int main(int argc, char *argv[]) {
 }
 
 
-Status installHandler(int signum, sighandler_t handler) {
-    // signal() returns the previous value of the signal handler, or SIG_ERR on error.
-    sighandler_t ret = ::signal(signum, handler);
-    if (ret == SIG_ERR) {
-        return Status::Error("Failed to install handler for %d(%s), error: %s", 
-                                signum, ::strsignal(signum), ::strerror(errno));
-    }
-    else {
-        return Status::OK();
-    }
-}
-
-
 Status setupSignalHandler() {
-    Status status = Status::OK();
-    do {
-        status = installHandler(SIGPIPE, SIG_IGN);
-        if (!status.ok())
-            break;
-
-        status = installHandler(SIGINT, signalHandler);
-        if (!status.ok())
-            break;
-
-        status = installHandler(SIGTERM, signalHandler);
-        if (!status.ok())
-            break;
-
-    } while (false);
-
-    return status;
+    return nebula::SignalHandler::install(
+        {SIGINT, SIGTERM}, 
+        [](nebula::SignalHandler::GeneralSignalInfo *info) {
+            signalHandler(info->sig());
+        });
 }
 
 

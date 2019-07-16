@@ -10,14 +10,22 @@
 namespace nebula {
 
 SignalHandler::SignalHandler() {
+}
+
+
+Status SignalHandler::init() {
     // Ignore SIGPIPE and SIGHUP
     auto ignored = {SIGPIPE, SIGHUP};
     for (auto sig : ignored) {
         struct sigaction act;
         ::memset(&act, 0, sizeof(act));
         act.sa_handler = SIG_IGN;
-        ::sigaction(sig, &act, nullptr);
+        if (0 != ::sigaction(sig, &act, nullptr)) {
+            return Status::Error("Register signal %d failed: %s", sig, ::strerror(errno));
+        }
     }
+
+    return Status::OK();
 }
 
 
@@ -29,6 +37,15 @@ SignalHandler& SignalHandler::get() {
 
 // static
 Status SignalHandler::install(int sig, Handler handler) {
+    static bool init_ = false;
+    if (!init_) {
+        auto status = get().init();
+        if (!status.ok()) {
+            return status;
+        }
+        init_ = true;
+    }
+
     CHECK(sig >= 1 && sig <= 64);
     CHECK(sig != SIGKILL) << "SIGKILL cannot be handled";
     CHECK(sig != SIGSTOP) << "SIGKSTOP cannot be handled";
