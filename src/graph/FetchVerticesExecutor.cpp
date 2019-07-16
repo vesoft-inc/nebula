@@ -50,6 +50,7 @@ Status FetchVerticesExecutor::prepareVids() {
             } else {
                 LOG(FATAL) << "Unknown kind of expression.";
             }
+            break;
         }
 
         auto vidList = sentence_->vidList();
@@ -77,6 +78,9 @@ Status FetchVerticesExecutor::prepareYield() {
     do {
         if (clause == nullptr) {
             status = setupColumns();
+            if (!status.ok()) {
+                break;
+            }
         } else {
             yields_ = clause->columns();
         }
@@ -92,6 +96,17 @@ Status FetchVerticesExecutor::prepareYield() {
         if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
             status = Status::SyntaxError(
                     "Only support form of alias.prop in fetch sentence.");
+            break;
+        }
+
+        auto *tag = sentence_->tag();
+        auto aliasProps = expCtx_->aliasProps();
+        for (auto pair : aliasProps) {
+            if (pair.first != *tag) {
+                status = Status::SyntaxError(
+                    "[%s.%s] tag not declared in %s.", pair.first, pair.second, *tag);
+                break;
+            }
         }
     } while (false);
 
@@ -137,6 +152,7 @@ void FetchVerticesExecutor::fetchVertices() {
     if (!status.ok()) {
         DCHECK(onError_);
         onError_(status.status());
+        return;
     }
 
     auto props = status.value();
@@ -197,7 +213,9 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
         for (auto &vdata : resp.vertices) {
             std::unique_ptr<RowReader> vreader;
             if (vschema != nullptr) {
-                DCHECK(vdata.__isset.vertex_data);
+                if (!vdata.__isset.vertex_data || vdata.vertex_data.empty()) {
+                    continue;
+                }
                 vreader = RowReader::getRowReader(vdata.vertex_data, vschema);
             }
             if (outputSchema == nullptr) {
@@ -226,15 +244,21 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
 }
 
 void FetchVerticesExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
-    auto outputs = std::make_unique<InterimResult>(std::move(rsWriter));
+    std::unique_ptr<InterimResult> outputs;
+    if (rsWriter != nullptr) {
+        outputs = std::make_unique<InterimResult>(std::move(rsWriter));
+    }
+
     if (onResult_) {
         onResult_(std::move(outputs));
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         auto colnames = getResultColumnNames();
         resp_->set_column_names(std::move(colnames));
-        auto rows = outputs->getRows();
-        resp_->set_rows(std::move(rows));
+        if (outputs != nullptr) {
+            auto rows = outputs->getRows();
+            resp_->set_rows(std::move(rows));
+        }
     }
     DCHECK(onFinish_);
     onFinish_();

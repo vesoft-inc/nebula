@@ -59,14 +59,14 @@ private:
     void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
 
 private:
-    FetchVerticesSentence                      *sentence_;
+    FetchVerticesSentence                      *sentence_{nullptr};
     std::vector<YieldColumn*>                   yields_;
     GraphSpaceID                                spaceId_;
     std::unique_ptr<ExpressionContext>          expCtx_;
     std::unique_ptr<InterimResult>              inputs_;
     std::vector<VertexID>                       vids_;
-    std::string                                *varname_;
-    std::string                                *colname_;
+    std::string                                *varname_{nullptr};
+    std::string                                *colname_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
 };
 }  // namespace graph

@@ -51,6 +51,109 @@ TEST_F(FetchVerticesTest, base) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld over like "
+                    "| FETCH PROP ON player $- YIELD player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {"Tony Parker", players_["Tony Parker"].age()},
+            {"Tim Duncan", players_["Tim Duncan"].age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "$var = GO FROM %ld over like;"
+                    "FETCH PROP ON player $var.id YIELD player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {"Tony Parker", players_["Tony Parker"].age()},
+            {"Tim Duncan", players_["Tim Duncan"].age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "$var = GO FROM %ld over like;"
+                    "FETCH PROP ON player $var.id YIELD player.name as name, player.age"
+                    " | ORDER BY name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {"Tim Duncan", players_["Tim Duncan"].age()},
+            {"Tony Parker", players_["Tony Parker"].age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected, false));
+    }
+}
+
+TEST_F(FetchVerticesTest, syntaxError) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player %ld YIELD $^.player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player %ld YIELD $$.player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player %ld YIELD abc.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+}
+
+TEST_F(FetchVerticesTest, executionError) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON abc %ld";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
+TEST_F(FetchVerticesTest, nonExistVetex) {
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "FETCH PROP ON player %ld";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
 }
 }  // namespace graph
 }  // namespace nebula

@@ -37,6 +37,9 @@ int64_t RowWriter::size() const noexcept {
 
 
 std::string RowWriter::encode() noexcept {
+    if (cord_.size() == 0) {
+        return "";
+    }
     std::string encoded;
     // Reserve enough space so resize will not happen
     encoded.reserve(sizeof(int64_t) * blockOffsets_.size() + cord_.size() + 11);

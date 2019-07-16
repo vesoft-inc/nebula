@@ -10,6 +10,7 @@
 #include "graph/GoExecutor.h"
 #include "graph/PipeExecutor.h"
 #include "graph/OrderByExecutor.h"
+#include "graph/FetchVerticesExecutor.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 
@@ -35,6 +36,9 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
         case Sentence::Kind::kOrderBy:
             executor = std::make_unique<OrderByExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::kFetchVertices:
+            executor = std::make_unique<FetchVerticesExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

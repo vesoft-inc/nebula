@@ -11,11 +11,18 @@ namespace nebula {
 namespace graph {
 FetchEdgesExecutor::FetchEdgesExecutor(Sentence *sentence, ExecutionContext *ectx)
         :TraverseExecutor(ectx) {
-    UNUSED(sentence);
+    sentence_ = static_cast<FetchEdgesSentence*>(sentence);
 }
 
 Status FetchEdgesExecutor::prepare() {
-    return Status::OK();
+    DCHECK_NOTNULL(sentence_);
+    Status status = Status::OK();
+    expCtx_ = std::make_unique<ExpressionContext>();
+    spaceId_ = ectx()->rctx()->session()->space();
+
+    do {
+    } while (false);
+    return status;
 }
 
 void FetchEdgesExecutor::execute() {
