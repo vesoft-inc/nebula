@@ -50,15 +50,6 @@ private:
     bool setup();
     void serve();
 
-    enum RaftServiceStatus{
-        STATUS_INIT             = 0,
-        STATUS_START_FAILED     = 1,
-        STATUS_RUNNING          = 2,
-        STATUS_STOPPING         = 3,
-        STATUS_STOPPED          = 4
-    };
-    void notifyRaftServiceStatus(RaftServiceStatus status);
-
     // Block until the service is ready to serve
     void waitUntilReady();
     void waitUntilStop();
@@ -73,9 +64,12 @@ private:
     std::unique_ptr<std::thread> serverThread_;
     uint32_t serverPort_;
 
-    std::mutex readyMutex_;
-    std::condition_variable readyCV_;
-    RaftServiceStatus status_{STATUS_INIT};
+    enum RaftServiceStatus{
+        STATUS_NOT_RUNNING      = 0,
+        STATUS_SETUP_FAILED     = 1,
+        STATUS_RUNNING          = 2
+    };
+    std::atomic_int status_{STATUS_NOT_RUNNING};
 
     folly::RWSpinLock partsLock_;
     std::unordered_map<std::pair<GraphSpaceID, PartitionID>,

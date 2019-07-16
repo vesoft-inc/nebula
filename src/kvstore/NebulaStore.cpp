@@ -72,7 +72,7 @@ bool NebulaStore::init() {
     workers_->start(FLAGS_num_workers);
     raftService_ = raftex::RaftexService::createService(ioPool_, raftAddr_.second);
     if (!raftService_->start()) {
-        LOG(INFO) << "Start the raft service failed";
+        LOG(ERROR) << "Start the raft service failed";
         return false;
     }
 

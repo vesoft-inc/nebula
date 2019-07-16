@@ -37,18 +37,24 @@ RaftexService::~RaftexService() {
 
 
 bool RaftexService::start() {
-    serverThread_.reset(new std::thread([&] {
-        serve();
-    }));
+    serverThread_.reset(new std::thread([&] {serve();}));
 
     waitUntilReady();
-    if (status_ != STATUS_RUNNING) {
+
+    // start failed, reclaim resource
+    if (status_.load() != STATUS_RUNNING) {
         waitUntilStop();
-        server_.reset();
         return false;
     }
 
     return true;
+}
+
+
+void RaftexService::waitUntilReady() {
+    while (status_.load() == STATUS_NOT_RUNNING) {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
 }
 
 
@@ -63,8 +69,6 @@ void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor
 
 
 bool RaftexService::setup() {
-    LOG(INFO) << "Starting the Raftex Service";
-
     try {
         server_->setup();
         serverPort_ = server_->getAddress().getPort();
@@ -72,7 +76,7 @@ bool RaftexService::setup() {
         LOG(INFO) << "Starting the Raftex Service on " << svc->serverPort_;
     }
     catch (const std::exception &e) {
-        LOG(ERROR) << "Start the Raftex Service failed, error:" << e.what();
+        LOG(ERROR) << "Setup the Raftex Service failed, error: " << e.what();
         return false;
     }
 
@@ -80,40 +84,24 @@ bool RaftexService::setup() {
 }
 
 
-void RaftexService::notifyRaftServiceStatus(RaftServiceStatus status) {
-    {
-        std::lock_guard<std::mutex> g(readyMutex_);
-        status_ = status;
-    }
-    readyCV_.notify_all();
-}
-
-
 void RaftexService::serve() {
+    LOG(INFO) << "Starting the Raftex Service";
+
     if (!setup()) {
-        notifyRaftServiceStatus(STATUS_START_FAILED);
+        status_.store(STATUS_SETUP_FAILED);
         return;
     }
 
-    notifyRaftServiceStatus(STATUS_RUNNING);
     SCOPE_EXIT {
         server_->cleanUp();
     };
 
+    status_.store(STATUS_RUNNING);
+    LOG(INFO) << "Start the Raftex Service successfully";
     server_->getEventBaseManager()->getEventBase()->loopForever();
-    notifyRaftServiceStatus(STATUS_STOPPED);
 
+    status_.store(STATUS_NOT_RUNNING);
     LOG(INFO) << "The Raftex Service stopped";
-}
-
-
-void RaftexService::waitUntilReady() {
-    std::unique_lock<std::mutex> lock(readyMutex_);
-    if (STATUS_INIT == status_ || STATUS_STOPPED == status_) {
-        readyCV_.wait(lock, [this] {
-            return STATUS_INIT != status_ && STATUS_STOPPED != status_;
-        });
-    }
 }
 
 
@@ -124,19 +112,10 @@ RaftexService::getIOThreadPool() const {
 
 
 void RaftexService::stop() {
-    // note: if service start failed, the status_ will change to STATUS_INIT_FAILED, 
-    // and will reclaim resource of serverThread_ in start function, so here we no
-    // need in stop logic if service not running.
-    {
-        std::lock_guard<std::mutex> g(readyMutex_);
-        if (STATUS_RUNNING != status_) {
-            LOG(INFO) << "raft service is not running, no need stop.";
-            return;
-        }
-
-        status_ = STATUS_STOPPING;
+    if (status_.load() != STATUS_RUNNING) {
+        return;
     }
-
+    
     // stop service
     LOG(INFO) << "Stopping the raftex service on port " << serverPort_;
     {
@@ -151,12 +130,12 @@ void RaftexService::stop() {
 
     // reclaim resource
     waitUntilStop();
-    server_.reset();
 }
 
 
 void RaftexService::waitUntilStop() {
     serverThread_->join();
+    server_.reset();
     LOG(INFO) << "Server thread has stopped. Service on port "
               << serverPort_ << " is ready to be destroyed";
 }
