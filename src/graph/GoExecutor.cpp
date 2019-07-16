@@ -382,8 +382,10 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(getResultColumnNames());
-        auto rows = outputs->getRows();
-        resp_->set_rows(std::move(rows));
+        if (outputs != nullptr) {
+            auto rows = outputs->getRows();
+            resp_->set_rows(std::move(rows));
+        }
     }
     DCHECK(onFinish_);
     onFinish_();
