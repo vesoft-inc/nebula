@@ -55,7 +55,7 @@ echo "current version is [ $rpm_version ], release is [$rpm_release]"
 echo "current rpmbuild is [ $rpmbuilddir ]"
 
 # because of use the static third-party lib, the rpmbuild can't check the file in rpm packet, so change the check to warnning
-sudo sed -i "s/_unpackaged_files_terminate_build.*/_unpackaged_files_terminate_build      0/g" /usr/lib/rpm/macros
+sudo sed -i 's/^%__check_files/#&/' /usr/lib/rpm/macros
 
 # modify nebula.spec's version
 sed -i "s/@VERSION@/$rpm_version/g" nebula.spec
@@ -65,4 +65,6 @@ sed -i "s/@RELEASE@/$rpm_release/g" nebula.spec
 rpmbuild -D"_topdir $rpmbuilddir" -D"_bindir $bindir" \
          -D"_datadir $datadir" -D"_sysconfdir $sysconfdir" \
          -D"_sharedir $sharedir" -D"_resourcesdir $resourcesdir" \
+         -D"_version $rpm_version" -D"_release $rpm_release" \
+         -D"_install_dir $prefix" \
          -ba nebula.spec
