@@ -208,7 +208,18 @@ RaftPart::RaftPart(ClusterID clusterId,
         , ioThreadPool_{pool}
         , workers_{workers} {
     // TODO Configure the wal policy
-    wal_ = FileBasedWal::getWal(walRoot, FileBasedWalPolicy(), flusher);
+    wal_ = FileBasedWal::getWal(walRoot,
+                                FileBasedWalPolicy(),
+                                flusher,
+                                [this] (LogID logId,
+                                        TermID logTermId,
+                                        ClusterID logClusterId,
+                                        const std::string& log) {
+                                    return this->preProcessLog(logId,
+                                                               logTermId,
+                                                               logClusterId,
+                                                               log);
+                                });
     lastLogId_ = wal_->lastLogId();
     term_ = proposedTerm_ = lastLogTerm_ = wal_->lastLogTerm();
 }
