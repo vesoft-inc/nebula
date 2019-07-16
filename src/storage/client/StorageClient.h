@@ -139,6 +139,25 @@ public:
         VertexID vid,
         folly::EventBase* evb = nullptr);
 
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::UpdateResponse>> updateVertex(
+        GraphSpaceID space,
+        std::vector<VertexID> vertices,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<storage::cpp2::PropDef> returnCols,
+        bool insertable,
+        folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::UpdateResponse>> updateEdge(
+        GraphSpaceID space,
+        std::vector<storage::cpp2::EdgeKey> edges,
+        EdgeType edge_type,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<storage::cpp2::PropDef> returnCols,
+        bool insertable,
+        folly::EventBase* evb = nullptr);
+
 protected:
     // Calculate the partition id for the given vertex id
     PartitionID partId(GraphSpaceID spaceId, int64_t id) const;

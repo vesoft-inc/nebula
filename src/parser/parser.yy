@@ -110,7 +110,7 @@ class GraphScanner;
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND XOR LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
-%token DOT COLON SEMICOLON L_ARROW R_ARROW AT
+%token DOT COLON SEMICOLON L_ARROW R_ARROW AT KW_OF
 %token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
 
 /* token type specification */
@@ -1168,51 +1168,58 @@ update_item
     : name_label ASSIGN expression {
         $$ = new UpdateItem($1, $3);
     }
+    | alias_ref_expression ASSIGN expression {
+        $$ = new UpdateItem($1, $3);
+    }
     ;
 
 update_edge_sentence
-    : KW_UPDATE KW_EDGE vid R_ARROW vid
+    : KW_UPDATE KW_EDGE vid R_ARROW vid KW_OF name_label
       KW_SET update_list where_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setSrcId($3);
         sentence->setDstId($5);
-        sentence->setUpdateList($7);
-        sentence->setWhereClause($8);
-        sentence->setYieldClause($9);
-        $$ = sentence;
-    }
-    | KW_UPDATE KW_OR KW_INSERT KW_EDGE vid R_ARROW vid
-      KW_SET update_list where_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence();
-        sentence->setInsertable(true);
-        sentence->setSrcId($5);
-        sentence->setDstId($7);
+        sentence->setEdgeType($7);
         sentence->setUpdateList($9);
         sentence->setWhereClause($10);
         sentence->setYieldClause($11);
         $$ = sentence;
     }
-    | KW_UPDATE KW_EDGE vid R_ARROW vid AT rank
+    | KW_UPDATE KW_OR KW_INSERT KW_EDGE vid R_ARROW vid KW_OF name_label
+      KW_SET update_list where_clause yield_clause {
+        auto sentence = new UpdateEdgeSentence();
+        sentence->setInsertable(true);
+        sentence->setSrcId($5);
+        sentence->setDstId($7);
+        sentence->setEdgeType($9);
+        sentence->setUpdateList($11);
+        sentence->setWhereClause($12);
+        sentence->setYieldClause($13);
+        $$ = sentence;
+    }
+    | KW_UPDATE KW_EDGE vid R_ARROW vid AT rank KW_OF name_label
       KW_SET update_list where_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setSrcId($3);
         sentence->setDstId($5);
         sentence->setRank($7);
-        sentence->setUpdateList($9);
-        sentence->setWhereClause($10);
-        sentence->setYieldClause($11);
+        sentence->setEdgeType($9);
+        sentence->setUpdateList($11);
+        sentence->setWhereClause($12);
+        sentence->setYieldClause($13);
         $$ = sentence;
     }
-    | KW_UPDATE KW_OR KW_INSERT KW_EDGE vid R_ARROW vid AT rank KW_SET
-      update_list where_clause yield_clause {
+    | KW_UPDATE KW_OR KW_INSERT KW_EDGE vid R_ARROW vid AT rank KW_OF name_label
+      KW_SET update_list where_clause yield_clause {
         auto sentence = new UpdateEdgeSentence();
         sentence->setInsertable(true);
         sentence->setSrcId($5);
         sentence->setDstId($7);
         sentence->setRank($9);
-        sentence->setUpdateList($11);
-        sentence->setWhereClause($12);
-        sentence->setYieldClause($13);
+        sentence->setEdgeType($11);
+        sentence->setUpdateList($13);
+        sentence->setWhereClause($14);
+        sentence->setYieldClause($15);
         $$ = sentence;
     }
     ;

@@ -41,6 +41,11 @@
                 "TAG", "EDGE", "ADD", "CHANGE", "DROP"
             ]
         },
+        "UPDATE": {
+            "sub_keywords": [
+                "VERTEX", "EDGE", "SET", "WHERE", "YIELD", "OF"
+            ]
+        },
         "DELETE": {
             "sub_keywords": [
                 "VERTEX", "EDGE"

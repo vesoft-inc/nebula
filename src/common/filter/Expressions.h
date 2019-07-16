@@ -311,7 +311,6 @@ public:
         kEdgeSrcId,
         kEdgeType,
         kAliasProp,
-        kEdgeProp,
         kVariableProp,
         kDestProp,
         kInputProp,
@@ -351,7 +350,6 @@ private:
     friend class EdgeDstIdExpression;
     friend class EdgeSrcIdExpression;
     friend class EdgeTypeExpression;
-    friend class EdgePropertyExpression;
     friend class VariablePropertyExpression;
     friend class InputPropertyExpression;
 
@@ -452,10 +450,17 @@ public:
 
     Status MUST_USE_RESULT prepare() override;
 
+    void setPreEval() const {
+        preEval_ = true;
+    }
+
 private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
+
+private:
+    mutable bool                                preEval_{false};
 };
 
 

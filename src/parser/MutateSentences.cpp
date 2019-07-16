@@ -187,7 +187,7 @@ std::string UpdateVertexSentence::toString() const {
     buf += "VERTEX ";
     buf += vid_->toString();
     buf += " SET ";
-    buf += updateItems_->toString();
+    buf += updateList_->toString();
     if (whereClause_ != nullptr) {
         buf += " ";
         buf += whereClause_->toString();
@@ -212,8 +212,12 @@ std::string UpdateEdgeSentence::toString() const {
     buf += srcid_->toString();
     buf += "->";
     buf += dstid_->toString();
+    if (hasRank_) {
+        buf += " AT" + std::to_string(rank_);
+    }
+    buf += " OF " + *edgeType_;
     buf += " SET ";
-    buf += updateItems_->toString();
+    buf += updateList_->toString();
     if (whereClause_ != nullptr) {
         buf += " ";
         buf += whereClause_->toString();

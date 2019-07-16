@@ -107,9 +107,10 @@ struct TagContext {
                         const std::string& propName,
                         const nebula::cpp2::ValueType& type) {
         PropContext pc;
-        pc.prop_.name = propName;
+        pc.prop_.set_owner(cpp2::PropOwner::SOURCE);
+        pc.prop_.set_name(propName);
+        pc.prop_.set_tag_id(tagId_);
         pc.type_ = type;
-        pc.prop_.owner = cpp2::PropOwner::SOURCE;
         pc.retIndex_ = props_.size();
         pc.setTagOrEdgeName(tagName);
         props_.emplace_back(std::move(pc));

@@ -31,6 +31,9 @@ enum ErrorCode {
 
     // Invalid request
     E_INVALID_FILTER = -31,
+    E_FALSE_FILTER = -32,
+    E_INVALID_UPDATER = -33,
+    E_FALSE_UPDATER = -34,
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -105,7 +108,6 @@ struct EdgePropResponse {
     2: optional common.Schema schema,          // edge related props
     3: optional binary data,
 }
-
 
 struct QueryStatsResponse {
     1: required ResponseCommon result,
@@ -249,6 +251,44 @@ struct GetLeaderResp {
     2: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts;
 }
 
+struct UpdateRespData {
+    1: bool upsert,
+    2: common.VertexID vertex_id,       // Only valid when update vertex
+    3: EdgeKey edge_key,                // Only valid when update edge
+    4: binary data,
+}
+
+struct UpdateResponse {
+    1: required ResponseCommon result,
+    2: optional common.Schema schema,   // return column related props
+    3: optional list<UpdateRespData> return_data,
+}
+
+struct UpdateItem {
+    1: required binary name,    // Tag or EdgeType schema name
+    2: required binary field,   // property name of scheam
+    3: required binary value,   // expression which is encoded
+}
+
+struct UpdateVertexRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
+    3: common.EdgeType edge_type,
+    4: binary filter,
+    5: list<UpdateItem> update_items,
+    6: list<PropDef> return_columns,
+    7: bool insertable,
+}
+
+struct UpdateEdgeRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
+    3: common.EdgeType edge_type,
+    4: binary filter,
+    5: list<UpdateItem> update_items,
+    6: list<PropDef> return_columns,
+    7: bool insertable,
+}
 
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
@@ -265,6 +305,9 @@ service StorageService {
     EdgeKeyResponse getEdgeKeys(1: EdgeKeyRequest req);
     ExecResponse deleteEdges(1: DeleteEdgesRequest req);
     ExecResponse deleteVertex(1: DeleteVertexRequest req);
+
+    UpdateResponse updateVertex(1: UpdateVertexRequest req)
+    UpdateResponse updateEdge(1: UpdateEdgeRequest req)
 
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);

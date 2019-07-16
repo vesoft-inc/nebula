@@ -89,10 +89,13 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                     TagContext tc;
                     tc.tagId_ = tagId;
                     tc.props_.emplace_back(std::move(prop));
+                    tc.propNameIndex_.emplace(col.name, tc.props_.size() - 1);
                     tagContexts_.emplace_back(std::move(tc));
                     tagIndex.emplace(tagId, tagContexts_.size() - 1);
                 } else {
                     tagContexts_[it->second].props_.emplace_back(std::move(prop));
+                    tagContexts_[it->second].propNameIndex_.emplace(col.name,
+                            tagContexts_[it->second].props_.size() - 1);
                 }
                 break;
             }
@@ -240,7 +243,6 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
             return true;
         }
         case Expression::kAliasProp:
-        case Expression::kEdgeProp: {
             if (edgeContexts_.empty()) {
                 VLOG(1) << "No edge requested!";
                 return false;
@@ -348,7 +350,6 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
         }  // if reader != nullptr
     }  // for
 }
-
 
 template<typename REQ, typename RESP>
 kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(

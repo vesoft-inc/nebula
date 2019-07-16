@@ -176,7 +176,7 @@ public:
 
 
     static ErrorOr<ResultType, VariantType> getPropByIndex(const RowReader *reader,
-                                                           int64_t index) {
+                                                           const int64_t index) {
         auto& vType = reader->getSchema()->getFieldType(index);
         switch (vType.get_type()) {
             case nebula::cpp2::SupportedType::BOOL: {

@@ -222,6 +222,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
 }
 
 
+<<<<<<< HEAD
 folly::Future<StatusOr<cpp2::EdgeKeyResponse>> StorageClient::getEdgeKeys(
     GraphSpaceID space,
     VertexID vid,
@@ -274,7 +275,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::deleteE
            const cpp2::DeleteEdgesRequest& r) {
             return client->future_deleteEdges(r);
         });
-}
 
 
 folly::Future<StatusOr<cpp2::ExecResponse>> StorageClient::deleteVertex(
@@ -304,11 +304,81 @@ folly::Future<StatusOr<cpp2::ExecResponse>> StorageClient::deleteVertex(
 }
 
 
+folly::SemiFuture<StorageRpcResponse<cpp2::UpdateResponse>> StorageClient::updateVertex(
+        GraphSpaceID space,
+        std::vector<VertexID> vertices,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<storage::cpp2::PropDef> returnCols,
+        bool insertable,
+        folly::EventBase* evb) {
+    auto clusters = clusterIdsToHosts(
+        space,
+        vertices,
+        [] (const VertexID& v) {
+            return v;
+        });
+
+    std::unordered_map<HostAddr, cpp2::UpdateVertexRequest> requests;
+    for (auto& c : clusters) {
+        auto& host = c.first;
+        auto& req = requests[host];
+        req.set_space_id(space);
+        req.set_parts(std::move(c.second));
+        req.set_filter(filter);
+        req.set_update_items(std::move(updateItems));
+        req.set_return_columns(returnCols);
+        req.set_insertable(insertable);
+    }
+
+    return collectResponse(
+        evb, std::move(requests),
+        [](cpp2::StorageServiceAsyncClient* client,
+           const cpp2::UpdateVertexRequest& r) {
+            return client->future_updateVertex(r);
+        });
+}
+
+
+folly::SemiFuture<StorageRpcResponse<cpp2::UpdateResponse>> StorageClient::updateEdge(
+        GraphSpaceID space,
+        std::vector<storage::cpp2::EdgeKey> edges,
+        EdgeType edge_type,
+        std::string filter,
+        std::vector<storage::cpp2::UpdateItem> updateItems,
+        std::vector<storage::cpp2::PropDef> returnCols,
+        bool insertable,
+        folly::EventBase* evb) {
+    auto clusters = clusterIdsToHosts(
+        space,
+        edges,
+        [] (const storage::cpp2::EdgeKey& e) {
+            return e.get_src();
+        });
+
+    std::unordered_map<HostAddr, cpp2::UpdateEdgeRequest> requests;
+        req.set_edge_type(edge_type);
+        req.set_filter(filter);
+        req.set_update_items(std::move(updateItems));
+        req.set_return_columns(returnCols);
+        req.set_insertable(insertable);
+    }
+
+    return collectResponse(
+        evb, std::move(requests),
+        [](cpp2::StorageServiceAsyncClient* client,
+           const cpp2::UpdateEdgeRequest& r) {
+            return client->future_updateEdge(r);
+        });
+}
+
+
 PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     auto parts = partsNum(spaceId);
     auto s = ID_HASH(id, parts);
     CHECK_GE(s, 0U);
     return s;
 }
+
 }   // namespace storage
 }   // namespace nebula

@@ -114,6 +114,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req, const std::vector<EdgeType>& e
     req.set_return_columns(std::move(tmpColumns));
 }
 
+
 void checkResponse(cpp2::QueryResponse& resp,
                    int32_t vertexNum,
                    int32_t edgeFields,
@@ -250,6 +251,60 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
     checkResponse(resp, 30, 2, 20001, 5, false);
 }
 
+
+TEST(QueryBoundTest, GenBucketsTest) {
+    {
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(10, buckets.size());
+        for (auto& bucket : buckets) {
+            ASSERT_EQ(3, bucket.vertices_.size());
+        }
+    }
+    {
+        FLAGS_max_handlers_per_req = 9;
+        FLAGS_min_vertices_per_bucket = 3;
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(9, buckets.size());
+        for (auto i = 0; i < 3; i++) {
+            ASSERT_EQ(4, buckets[i].vertices_.size());
+        }
+        for (auto i = 3; i < 9; i++) {
+            ASSERT_EQ(3, buckets[i].vertices_.size());
+        }
+    }
+    {
+        FLAGS_max_handlers_per_req = 40;
+        FLAGS_min_vertices_per_bucket = 4;
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(7, buckets.size());
+        for (auto i = 0; i < 2; i++) {
+            ASSERT_EQ(5, buckets[i].vertices_.size());
+        }
+        for (auto i = 2; i < 7; i++) {
+            ASSERT_EQ(4, buckets[i].vertices_.size());
+        }
+    }
+    {
+        FLAGS_min_vertices_per_bucket = 40;
+        cpp2::GetNeighborsRequest req;
+        buildRequest(req, false);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        auto buckets = pro.genBuckets(req);
+        ASSERT_EQ(1, buckets.size());
+        ASSERT_EQ(30, buckets[0].vertices_.size());
+    }
+}
+
+
 TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
@@ -282,6 +337,7 @@ TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
     LOG(INFO) << "Check the results...";
     checkResponse(resp, 30, 12, 10007, 1, true);
 }
+
 
 TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
@@ -316,7 +372,7 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
     checkResponse(resp, 10, 12, 10001, 7, true);
 }
 
-TEST(QueryBoundTest,  GenBucketsTest) {
+TEST(QueryBoundTest, GenBucketsTest) {
     {
         cpp2::GetNeighborsRequest req;
         std::vector<EdgeType> et = {-101};
@@ -372,6 +428,7 @@ TEST(QueryBoundTest,  GenBucketsTest) {
     }
 }
 
+
 TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
@@ -414,6 +471,7 @@ TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
     checkResponse(resp, 10, 12, 10007, 1, true);
 }
 
+
 TEST(QueryBoundTest, FilterTest_InvalidFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
@@ -444,6 +502,7 @@ TEST(QueryBoundTest, FilterTest_InvalidFilter) {
     EXPECT_TRUE(nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER
                     == resp.result.failed_codes[0].code);
 }
+
 
 TEST(QueryBoundTest, MultiEdgeQueryTest) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
