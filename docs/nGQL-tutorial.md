@@ -156,7 +156,7 @@ DESCRIBE EDGE serve;
 ```
 
 ```
-CREATE EDGE like (likeness double)；
+CREATE EDGE like (likeness double);
 ```
 
 ```
