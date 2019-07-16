@@ -23,7 +23,7 @@ if(Fbthrift_INCLUDE_DIR AND Fbthrift_LIBRARY AND Fbthrift_BIN)
     mark_as_advanced(
         Fbthrift_INCLUDE_DIR
         Fbthrift_LIBRARY
-        Fbthrift1_BIN
+        Fbthrift_BIN
     )
 endif()
 
