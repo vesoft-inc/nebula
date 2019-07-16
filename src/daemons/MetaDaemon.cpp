@@ -7,10 +7,13 @@
 #include "base/Base.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/MetaServiceHandler.h"
-#include "meta/MetaHttpHandler.h"
+#include "meta/MetaHttpStatusHandler.h"
+#include "meta/MetaHttpDownloadHandler.h"
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
+#include "hdfs/HdfsHelper.h"
+#include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
@@ -36,7 +39,7 @@ DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
-static Status setupSignalHandler();
+static void setupSignalHandler();
 
 int main(int argc, char *argv[]) {
     google::SetVersionString(nebula::versionString());
@@ -85,27 +88,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     auto& localhost = hostAddrRet.value();
-
     auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_peers);
     if (!peersRet.ok()) {
         LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
-        return EXIT_FAILURE;
-    }
-
-    LOG(INFO) << "Starting Meta HTTP Service";
-    nebula::WebService::registerHandler("/status", [] {
-        return new nebula::meta::MetaHttpHandler();
-    });
-    status = nebula::WebService::start();
-    if (!status.ok()) {
-        return EXIT_FAILURE;
-    }
-
-    // Setup the signal handlers
-    status = setupSignalHandler();
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        nebula::WebService::stop();
         return EXIT_FAILURE;
     }
 
@@ -125,8 +110,31 @@ int main(int argc, char *argv[]) {
                                                        ioPool,
                                                        localhost);
 
-    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
-    nebula::meta::ActiveHostsMan::instance(kvstore.get());
+    auto *kvstore_ = kvstore.get();
+
+    std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
+        std::make_unique<nebula::hdfs::HdfsCommandHelper>();
+    auto *helperPtr = helper.get();
+
+    LOG(INFO) << "Starting Meta HTTP Service";
+    nebula::WebService::registerHandler("/status", [] {
+        return new nebula::meta::MetaHttpStatusHandler();
+    });
+    nebula::WebService::registerHandler("/download-dispatch", [kvstore_, helperPtr] {
+        auto handler = new nebula::meta::MetaHttpDownloadHandler();
+        handler->init(kvstore_, helperPtr);
+        return handler;
+    });
+    status = nebula::WebService::start();
+    if (!status.ok()) {
+        LOG(ERROR) << "Failed to start web service: " << status;
+        return EXIT_FAILURE;
+    }
+
+    // Setup the signal handlers
+    setupSignalHandler();
+    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore_);
+    nebula::meta::ActiveHostsMan::instance(kvstore_);
 
     LOG(INFO) << "The meta deamon start on " << localhost;
     try {
@@ -146,11 +154,10 @@ int main(int argc, char *argv[]) {
 }
 
 
-Status setupSignalHandler() {
+void setupSignalHandler() {
     ::signal(SIGPIPE, SIG_IGN);
     ::signal(SIGINT, signalHandler);
     ::signal(SIGTERM, signalHandler);
-    return Status::OK();
 }
 
 

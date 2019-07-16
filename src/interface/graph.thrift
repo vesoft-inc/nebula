@@ -92,6 +92,7 @@ struct ExecutionResponse {
     3: optional string error_msg;
     4: optional list<binary> column_names;  // Column names
     5: optional list<RowValue> rows;
+    6: optional string space_name;
 }
 
 

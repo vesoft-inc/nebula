@@ -50,6 +50,8 @@ public:
         kGrant,
         kRevoke,
         kChangePassword,
+        kDownload,
+        kIngest,
         kOrderBy,
     };
 
