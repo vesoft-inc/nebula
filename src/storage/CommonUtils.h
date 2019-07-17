@@ -13,17 +13,11 @@
 namespace nebula {
 namespace storage {
 
-class CommonUtils {
-public:
-    static std::string buildTagKeyInFilter(const std::string& tag, const std::string& prop) {
-        return folly::stringPrintf("%s_%s", tag.c_str(), prop.c_str());
-    }
-};
+using TagProp = std::pair<std::string, std::string>;
 
 struct FilterContext {
-    // key: tagName + propName -> propValue
-    // TODO(heng): figure out a better way.
-    std::unordered_map<std::string, VariantType> tagFilters_;
+    // key: <tagName, propName> -> propValue
+    std::unordered_map<TagProp, VariantType> tagFilters_;
 };
 
 class PropContext {
@@ -53,14 +47,14 @@ public:
                 && filtered_;
     }
 
-    const std::string& tagFilterKey() const {
+    const std::string& tagOrEdgeName() const {
         CHECK(filtered_);
-        return tagFilterKey_;
+        return tagOrEdgeName_;
     }
 
-    void setTagFilterKey(const std::string& tagName, const std::string& propName) {
+    void setTagOrEdgeName(const std::string& tagName) {
         filtered_ = true;
-        tagFilterKey_ = CommonUtils::buildTagKeyInFilter(tagName, propName);
+        tagOrEdgeName_ = tagName;
     }
 
     bool filtered() const {
@@ -78,9 +72,9 @@ public:
     bool    returned_ = false;
 
 private:
-    // filter Key inside tagFilters of FilterContext.  Only valid when filtered_ is true.
-    // Make it private, because it should be accessed through tagFilterKey() and setTagFilterKey().
-    std::string tagFilterKey_;
+    // If the prop is from tag, it is tagName otherwise it is edge name.
+    // It is only valid when filtered_ is true.
+    std::string tagOrEdgeName_;
     // The prop comes from filter.
     bool    filtered_ = false;
 };
@@ -92,12 +86,13 @@ struct TagContext {
 
     TagID tagId_ = 0;
     std::vector<PropContext> props_;
+    std::unordered_map<std::string, int32_t> propNameIndex_;
 
     PropContext* findProp(const std::string& propName) {
-        for (auto& prop : props_) {
-            if (prop.prop_.name == propName) {
-                return &prop;
-            }
+        auto it = propNameIndex_.find(propName);
+        if (it != propNameIndex_.end()) {
+            CHECK(it->second >= 0 && (size_t)it->second < props_.size());
+            return &props_[it->second];
         }
         return nullptr;
     }
@@ -110,8 +105,9 @@ struct TagContext {
         pc.type_ = type;
         pc.prop_.owner = cpp2::PropOwner::SOURCE;
         pc.retIndex_ = props_.size();
-        pc.setTagFilterKey(tagName, propName);
+        pc.setTagOrEdgeName(tagName);
         props_.emplace_back(std::move(pc));
+        propNameIndex_.emplace(propName, props_.size() - 1);
     }
 };
 

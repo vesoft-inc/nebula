@@ -73,8 +73,7 @@ protected:
                       Collector* collector);
 
     virtual kvstore::ResultCode processVertex(PartitionID partID,
-                                              VertexID vId,
-                                              FilterContext* fcontext) = 0;
+                                              VertexID vId) = 0;
 
     virtual void onProcessFinished(int32_t retNum) = 0;
 

@@ -67,14 +67,14 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
 
 
 kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
-                                                       VertexID vId,
-                                                       FilterContext* fcontext) {
+                                                       VertexID vId) {
+    FilterContext fcontext;
     for (auto& tc : tagContexts_) {
         auto ret = this->collectVertexProps(partId,
                                             vId,
                                             tc.tagId_,
                                             tc.props_,
-                                            fcontext,
+                                            &fcontext,
                                             &collector_);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
@@ -86,14 +86,14 @@ kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
                                        vId,
                                        this->edgeContext_.edgeType_,
                                        this->edgeContext_.props_,
-                                       fcontext,
+                                       &fcontext,
                                        [&, this] (RowReader* reader,
                                                   folly::StringPiece key,
                                                   const std::vector<PropContext>& props) {
                                            this->collectProps(reader,
                                                               key,
                                                               props,
-                                                              fcontext,
+                                                              &fcontext,
                                                               &collector_);
                                        });
     }

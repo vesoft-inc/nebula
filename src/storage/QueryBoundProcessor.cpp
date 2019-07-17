@@ -14,8 +14,8 @@ namespace nebula {
 namespace storage {
 
 kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
-                                                       VertexID vId,
-                                                       FilterContext* fcontext) {
+                                                       VertexID vId) {
+    FilterContext fcontext;
     cpp2::VertexData vResp;
     vResp.set_vertex_id(vId);
     if (!tagContexts_.empty()) {
@@ -24,7 +24,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
         for (auto& tc : tagContexts_) {
             VLOG(3) << "partId " << partId << ", vId " << vId
                     << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
-            auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_, fcontext, &collector);
+            auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_, &fcontext, &collector);
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
             }
@@ -43,7 +43,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
         auto ret = collectEdgeProps(partId, vId,
                                     edgeContext_.edgeType_,
                                     edgeContext_.props_,
-                                    fcontext,
+                                    &fcontext,
                                     [&, this] (RowReader* reader,
                                                folly::StringPiece key,
                                                const std::vector<PropContext>& props) {
@@ -52,7 +52,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
                                         this->collectProps(reader,
                                                            key,
                                                            props,
-                                                           fcontext,
+                                                           &fcontext,
                                                            &collector);
                                         rsWriter.addRow(writer);
                                     });

@@ -183,7 +183,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
                     if (prop == nullptr) {
                         tc.pushFilterProp(tagName, propName, field->getType());
                     } else if (!prop->filtered()) {
-                        prop->setTagFilterKey(tagName, propName);
+                        prop->setTagOrEdgeName(tagName);
                     }
                     return true;
                 }
@@ -274,20 +274,20 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
             }
             auto&& v = value(std::move(res));
             if (prop.fromTagFilter()) {
-                fcontext->tagFilters_.emplace(prop.tagFilterKey(), v);
+                fcontext->tagFilters_.emplace(std::make_pair(prop.tagOrEdgeName(), name), v);
             }
             if (prop.returned_) {
                 switch (v.which()) {
-                    case 0:
+                    case VAR_INT64:
                         collector->collectInt64(boost::get<int64_t>(v), prop);
                         break;
-                    case 1:
+                    case VAR_DOUBLE:
                         collector->collectDouble(boost::get<double>(v), prop);
                         break;
-                    case 2:
+                    case VAR_BOOL:
                         collector->collectBool(boost::get<bool>(v), prop);
                         break;
-                    case 3:
+                    case VAR_STR:
                         collector->collectString(boost::get<std::string>(v), prop);
                         break;
                     default:
@@ -370,8 +370,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 };
                 getters.getSrcTagProp = [&, this] (const std::string& tag,
                                                    const std::string& prop) -> VariantType {
-                    auto tagKey = CommonUtils::buildTagKeyInFilter(tag, prop);
-                    auto it = fcontext->tagFilters_.find(tagKey);
+                    auto it = fcontext->tagFilters_.find(std::make_pair(tag, prop));
                     CHECK(it != fcontext->tagFilters_.end());
                     VLOG(1) << "Hit srcProp filter for tag " << tag << ", prop "
                             << prop << ", value " << it->second;
@@ -402,10 +401,9 @@ QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(Bucket bucket) {
         std::vector<OneVertexResp> codes;
         codes.reserve(b.vertices_.size());
         for (auto& pv : b.vertices_) {
-            FilterContext filterContext;
             codes.emplace_back(pv.first,
                                pv.second,
-                               processVertex(pv.first, pv.second, &filterContext));
+                               processVertex(pv.first, pv.second));
         }
         p.setValue(std::move(codes));
     });

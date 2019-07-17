@@ -225,7 +225,7 @@ TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto schemaMan = TestUtils::mockSchemaMan();;
+    auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build filter...";
@@ -258,7 +258,7 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto schemaMan = TestUtils::mockSchemaMan();;
+    auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build filter...";
@@ -343,7 +343,7 @@ TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto schemaMan = TestUtils::mockSchemaMan();;
+    auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build filter...";
@@ -385,7 +385,7 @@ TEST(QueryBoundTest, FilterTest_InvalidFilter) {
     fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
     LOG(INFO) << "Prepare meta...";
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    auto schemaMan = TestUtils::mockSchemaMan();;
+    auto schemaMan = TestUtils::mockSchemaMan();
     mockData(kv.get());
 
     LOG(INFO) << "Build filter...";

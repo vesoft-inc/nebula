@@ -36,8 +36,7 @@ protected:
                              cpp2::QueryResponse>(kvstore, schemaMan, executor, type) {}
 
     kvstore::ResultCode processVertex(PartitionID partID,
-                                      VertexID vId,
-                                      FilterContext* fcontext) override;
+                                      VertexID vId) override;
 
     void onProcessFinished(int32_t retNum) override;
 

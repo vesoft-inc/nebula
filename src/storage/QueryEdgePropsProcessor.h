@@ -35,7 +35,7 @@ private:
 
     void addDefaultProps();
 
-    kvstore::ResultCode processVertex(PartitionID, VertexID, FilterContext*) override {
+    kvstore::ResultCode processVertex(PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";
         return kvstore::ResultCode::SUCCEEDED;
     }
