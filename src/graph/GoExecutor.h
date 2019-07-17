@@ -165,8 +165,38 @@ private:
         std::unordered_map<VertexID, std::string>   data_;
     };
 
+    class VertexBackTracker final {
+    public:
+        void add(VertexID src, VertexID dst) {
+            VertexID value = src;
+            auto iter = mapping_.find(src);
+            if (iter != mapping_.end()) {
+                value = iter->second;
+            }
+            mapping_[dst] = value;
+        }
+
+        VertexID get(VertexID id) {
+            auto iter = mapping_.find(id);
+            DCHECK(iter != mapping_.end());
+            return iter->second;
+        }
+
+    private:
+         std::unordered_map<VertexID, VertexID>     mapping_;
+    };
+
+    VariantType getPropFromInterim(VertexID id, const std::string &prop) const;
+
+    enum FromType {
+        kInstantExpr,
+        kVariable,
+        kPipe,
+    };
+
 private:
     GoSentence                                 *sentence_{nullptr};
+    FromType                                    fromType_{kInstantExpr};
     uint32_t                                    steps_{1};
     uint32_t                                    curStep_{1};
     bool                                        upto_{false};
@@ -179,9 +209,12 @@ private:
     bool                                        distinct_{false};
     bool                                        distinctPushDown_{false};
     std::unique_ptr<InterimResult>              inputs_;
+    using InterimIndex = InterimResult::InterimResultIndex;
+    std::unique_ptr<InterimIndex>               index_;
     std::unique_ptr<ExpressionContext>          expCtx_;
     std::vector<VertexID>                       starts_;
     std::unique_ptr<VertexHolder>               vertexHolder_;
+    std::unique_ptr<VertexBackTracker>          backTracker_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
 };
 
