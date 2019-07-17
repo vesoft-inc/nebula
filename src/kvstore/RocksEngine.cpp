@@ -96,7 +96,8 @@ public:
 RocksEngine::RocksEngine(GraphSpaceID spaceId,
                          const std::string& dataPath,
                          std::shared_ptr<rocksdb::MergeOperator> mergeOp,
-                         std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory)
+                         std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory,
+                         bool bOpenForWrite)
         : KVEngine(spaceId)
         , dataPath_(folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId)) {
     auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
@@ -105,18 +106,30 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     }
     LOG(INFO) << "open rocksdb on " << path;
 
+    rocksdb::Status status;
     rocksdb::Options options;
-    rocksdb::DB* db = nullptr;
-    rocksdb::Status status = initRocksdbOptions(options);
-    CHECK(status.ok());
+
+    // set rocks option
+    if (bOpenForWrite) {
+        status = initRocksdbOptions(options);
+        CHECK(status.ok());
+    }
     if (mergeOp != nullptr) {
         options.merge_operator = mergeOp;
     }
     if (cfFactory != nullptr) {
         options.compaction_filter_factory = cfFactory;
     }
-    status = rocksdb::DB::Open(options, path, &db);
+
+    // open db
+    rocksdb::DB* db = nullptr;
+    if (bOpenForWrite) {
+        status = rocksdb::DB::Open(options, path, &db);
+    } else {
+        status = rocksdb::DB::OpenForReadOnly(options, path, &db);
+    }
     CHECK(status.ok());
+
     db_.reset(db);
     partsNum_ = allParts().size();
 }

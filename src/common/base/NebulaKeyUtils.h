@@ -39,6 +39,8 @@ public:
                                EdgeType type, EdgeRanking rank,
                                VertexID dstId, EdgeVersion ts);
 
+    static std::string prefix(PartitionID partId);
+
     /**
      * Prefix for srcId edges with some edgeType
      * */
@@ -60,6 +62,12 @@ public:
         CHECK_EQ(rawKey.size(), kVertexLen);
         auto offset = sizeof(PartitionID) + sizeof(VertexID);
         return readInt<TagID>(rawKey.data() + offset, sizeof(TagID));
+    }
+
+    static VertexID getVertexID(const folly::StringPiece& rawKey) {
+        CHECK_EQ(rawKey.size(), kVertexLen);
+        auto offset = sizeof(PartitionID);
+        return readInt<TagID>(rawKey.data() + offset, sizeof(VertexID));
     }
 
     static bool isEdge(const folly::StringPiece& rawKey) {

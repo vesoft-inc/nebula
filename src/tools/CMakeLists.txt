@@ -1,4 +1,5 @@
 add_subdirectory(storage-perf)
+add_subdirectory(dump-tool)
 if (ENABLE_NATIVE)
     add_subdirectory(native-client)
 endif()

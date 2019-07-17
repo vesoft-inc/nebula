@@ -49,6 +49,14 @@ std::string NebulaKeyUtils::prefix(PartitionID partId, VertexID srcId, EdgeType 
 }
 
 // static
+std::string NebulaKeyUtils::prefix(PartitionID partId) {
+    std::string key;
+    key.reserve(sizeof(PartitionID));
+    key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
+    return key;
+}
+
+// static
 std::string NebulaKeyUtils::prefix(PartitionID partId, VertexID vId) {
     std::string key;
     key.reserve(sizeof(PartitionID) + sizeof(VertexID));
