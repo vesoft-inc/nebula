@@ -93,9 +93,10 @@ class GraphScanner;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
-%token KW_ROLES KW_BY
+%token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC
+%token KW_DISTINCT
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -179,6 +180,7 @@ class GraphScanner;
 %type <sentence> order_by_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
 %type <sentence> grant_sentence revoke_sentence
+%type <sentence> download_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -223,7 +225,7 @@ primary_expression
     | BOOL {
         $$ = new PrimaryExpression($1);
     }
-    | LABEL {
+    | name_label {
         $$ = new PrimaryExpression(*$1);
         delete $1;
     }
@@ -251,7 +253,7 @@ primary_expression
     ;
 
 input_ref_expression
-    : INPUT_REF DOT LABEL {
+    : INPUT_REF DOT name_label {
         $$ = new InputPropertyExpression($3);
     }
     | INPUT_REF {
@@ -261,43 +263,46 @@ input_ref_expression
     ;
 
 src_ref_expression
-    : SRC_REF DOT LABEL DOT LABEL {
+    : SRC_REF DOT name_label DOT name_label {
         $$ = new SourcePropertyExpression($3, $5);
     }
     ;
 
 dst_ref_expression
-    : DST_REF DOT LABEL DOT LABEL {
+    : DST_REF DOT name_label DOT name_label {
         $$ = new DestPropertyExpression($3, $5);
     }
     ;
 
 var_ref_expression
-    : VARIABLE DOT LABEL {
+    : VARIABLE DOT name_label {
         $$ = new VariablePropertyExpression($1, $3);
+    }
+    | VARIABLE {
+        $$ = new VariablePropertyExpression($1, new std::string("id"));
     }
     ;
 
 alias_ref_expression
-    : LABEL DOT LABEL {
+    : name_label DOT name_label {
         $$ = new EdgePropertyExpression($1, $3);
     }
-    | LABEL DOT TYPE_PROP {
+    | name_label DOT TYPE_PROP {
         $$ = new EdgeTypeExpression($1);
     }
-    | LABEL DOT SRC_ID_PROP {
+    | name_label DOT SRC_ID_PROP {
         $$ = new EdgeSrcIdExpression($1);
     }
-    | LABEL DOT DST_ID_PROP {
+    | name_label DOT DST_ID_PROP {
         $$ = new EdgeDstIdExpression($1);
     }
-    | LABEL DOT RANK_PROP {
+    | name_label DOT RANK_PROP {
         $$ = new EdgeRankExpression($1);
     }
     ;
 
 function_call_expression
-    : name_label L_PAREN argument_list R_PAREN {
+    : LABEL L_PAREN argument_list R_PAREN {
         $$ = new FunctionCallExpression($1, $3);
     }
     ;
@@ -508,6 +513,7 @@ where_clause
 yield_clause
     : %empty { $$ = nullptr; }
     | KW_YIELD yield_columns { $$ = new YieldClause($2); }
+    | KW_YIELD KW_DISTINCT yield_columns { $$ = new YieldClause($3, true); }
     ;
 
 yield_columns
@@ -761,15 +767,15 @@ order_factor
     | input_ref_expression KW_DESC {
         $$ = new OrderFactor($1, OrderFactor::DESCEND);
     }
-    | LABEL {
+    | name_label {
         auto inputRef = new InputPropertyExpression($1);
         $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
     }
-    | LABEL KW_ASC {
+    | name_label KW_ASC {
         auto inputRef = new InputPropertyExpression($1);
         $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
     }
-    | LABEL KW_DESC {
+    | name_label KW_DESC {
         auto inputRef = new InputPropertyExpression($1);
         $$ = new OrderFactor(inputRef, OrderFactor::DESCEND);
     }
@@ -1049,6 +1055,15 @@ delete_vertex_sentence
     }
     ;
 
+download_sentence
+    : KW_DOWNLOAD KW_HDFS STRING KW_TO STRING {
+        auto sentence = new DownloadSentence();
+        sentence->setUrl($3);
+        sentence->setLocalPath($5);
+        $$ = sentence;
+    }
+    ;
+
 edge_list
     : vid R_ARROW vid {
         $$ = new EdgeList();
@@ -1307,6 +1322,7 @@ mutate_sentence
     | update_edge_sentence { $$ = $1; }
     | delete_vertex_sentence { $$ = $1; }
     | delete_edge_sentence { $$ = $1; }
+    | download_sentence { $$ = $1; }
     ;
 
 maintain_sentence
@@ -1357,6 +1373,9 @@ sentences
     }
     | sentences SEMICOLON {
         $$ = $1;
+    }
+    | %empty {
+        $$ = nullptr;
     }
     ;
 

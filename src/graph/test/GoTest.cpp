@@ -114,6 +114,44 @@ TEST_F(GoTest, OneStepOutBound) {
     }
 }
 
+
+TEST_F(GoTest, AssignmentSimple) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tracy McGrady"];
+        auto *fmt = "$var = GO FROM %ld OVER like; "
+                    "GO FROM $var.id OVER like";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<uint64_t>> expected = {
+            {players_["Kobe Bryant"].vid()},
+            {players_["Grant Hill"].vid()},
+            {players_["Rudy Gay"].vid()},
+        };
+    }
+}
+
+
+TEST_F(GoTest, AssignmentPipe) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Tracy McGrady"];
+        auto *fmt = "$var = (GO FROM %ld OVER like | GO FROM $- OVER like);"
+                    "GO FROM $var OVER like";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<uint64_t>> expected = {
+            {players_["Kobe Bryant"].vid()},
+            {players_["Grant Hill"].vid()},
+            {players_["Tony Parker"].vid()},
+            {players_["Tim Duncan"].vid()},
+        };
+    }
+}
+
+
 // REVERSELY not supported yet
 TEST_F(GoTest, DISABLED_OneStepInBound) {
     {
@@ -151,6 +189,102 @@ TEST_F(GoTest, DISABLED_OneStepInOutBound) {
     }
     // Ever been teammates
     {
+    }
+}
+
+TEST_F(GoTest, Distinct) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Nobody"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD DISTINCT $^.player.name as name, $$.team.name as name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve "
+                    "YIELD DISTINCT serve._dst, $$.team.name";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, std::string>> expected = {
+            {teams_["Spurs"].vid(), "Spurs"},
+            {teams_["Hornets"].vid(), "Hornets"},
+            {teams_["Trail Blazers"].vid(), "Trail Blazers"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+TEST_F(GoTest, VertexNotExist) {
+    std::string name = "NON EXIST VERTEX ID";
+    int64_t nonExistPlayerID = std::hash<std::string>()(name);
+    auto iter = players_.begin();
+    while (iter != players_.end()) {
+        if (iter->vid() == nonExistPlayerID) {
+            ++nonExistPlayerID;
+            iter = players_.begin();
+            continue;
+        }
+        ++iter;
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD "
+                    "$^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD DISTINCT "
+                    "$^.player.name, serve.start_year, serve.end_year, $$.team.name";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve | GO FROM $-.id OVER serve";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like "
+                    "| (GO FROM $-.id OVER like | GO FROM $-.id OVER serve)";
+        auto query = folly::stringPrintf(fmt, nonExistPlayerID);
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
     }
 }
 

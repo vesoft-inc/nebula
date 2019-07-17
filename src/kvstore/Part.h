@@ -57,6 +57,11 @@ public:
 
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
+    bool preProcessLog(LogID logId,
+                       TermID termId,
+                       ClusterID clusterId,
+                       const std::string& log) override;
+
 protected:
     GraphSpaceID spaceId_;
     PartitionID partId_;
