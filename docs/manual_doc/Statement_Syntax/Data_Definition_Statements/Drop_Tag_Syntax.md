@@ -1,0 +1,11 @@
+```
+DROP TAG tag_name
+```
+You must have the DROP privilege for the tag.
+>Be careful with this statement
+
+Since a vertex can have either only one tag (types) or multiple tags (types). 
+In the former case, such a vertex can NOT be accessable after the statement --- which may result in DANGLING edges those are connecting with such vertex.
+In the later case, such a vertex is still accessable. But all the properties defined by this dropped tag are not accessable.
+All the files and directories in the disk are NOT deleted directly. They can only be released by furture operations (see TODO).
+
