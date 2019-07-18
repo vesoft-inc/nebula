@@ -8,14 +8,14 @@
 #define GRAPH_FETCHVERTICESEXECUTOR_H_
 
 #include "base/Base.h"
-#include "graph/TraverseExecutor.h"
+#include "graph/FetchExecutor.h"
 #include "storage/client/StorageClient.h"
 #include "meta/SchemaProviderIf.h"
 #include "dataman/SchemaWriter.h"
 
 namespace nebula {
 namespace graph {
-class FetchVerticesExecutor final : public TraverseExecutor {
+class FetchVerticesExecutor final : public FetchExecutor {
 public:
     FetchVerticesExecutor(Sentence *sentence, ExecutionContext *ectx);
 
@@ -27,10 +27,6 @@ public:
 
     void execute() override;
 
-    void feedResult(std::unique_ptr<InterimResult> result) override;
-
-    void setupResponse(cpp2::ExecutionResponse &resp) override;
-
 private:
     Status prepareVids();
 
@@ -40,7 +36,9 @@ private:
 
     Status setupVids();
 
-    void onEmptyInputs();
+    Status setupVidsFromRef();
+
+    Status setupVidsFromExpr();
 
     StatusOr<std::vector<storage::cpp2::PropDef>> getPropNames();
 
@@ -49,25 +47,11 @@ private:
     using RpcResponse = storage::StorageRpcResponse<storage::cpp2::QueryResponse>;
     void processResult(RpcResponse &&result);
 
-    void getOutputSchema(
-            meta::SchemaProviderIf *schema,
-            RowReader *reader,
-            SchemaWriter *outputSchema) const;
-
-    std::vector<std::string> getResultColumnNames() const;
-
-    void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
-
 private:
     FetchVerticesSentence                      *sentence_{nullptr};
-    std::vector<YieldColumn*>                   yields_;
-    GraphSpaceID                                spaceId_;
-    std::unique_ptr<ExpressionContext>          expCtx_;
-    std::unique_ptr<InterimResult>              inputs_;
     std::vector<VertexID>                       vids_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
-    std::unique_ptr<cpp2::ExecutionResponse>    resp_;
 };
 }  // namespace graph
 }  // namespace nebula

@@ -10,7 +10,7 @@
 namespace nebula {
 namespace graph {
 FetchEdgesExecutor::FetchEdgesExecutor(Sentence *sentence, ExecutionContext *ectx)
-        :TraverseExecutor(ectx) {
+        : FetchExecutor(ectx) {
     sentence_ = static_cast<FetchEdgesSentence*>(sentence);
 }
 
@@ -56,40 +56,10 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
             rank_ = edgeKeyRef->rank();
             auto ret = edgeKeyRef->varname();
             if (!ret.ok()) {
-                status = ret.status();
-                break;
+                status = std::move(ret).status();
             }
             varname_ = ret.value();
             break;
-        }
-
-        auto edgeKeyExprs = sentence_->keys()->keys();
-        for (auto *keyExpr : edgeKeyExprs) {
-            auto *srcExpr = keyExpr->srcid();
-            auto *dstExpr = keyExpr->dstid();
-            auto rank = keyExpr->rank();
-
-            status = srcExpr->prepare();
-            if (!status.ok()) {
-                break;
-            }
-            status = dstExpr->prepare();
-            if (!status.ok()) {
-                break;
-            }
-            auto srcid = srcExpr->eval();
-            auto dstid = dstExpr->eval();
-            if (!Expression::isInt(srcid) || !Expression::isInt(dstid)) {
-                status = Status::Error("ID should be of type integer.");
-                break;
-            }
-            storage::cpp2::EdgeKey key;
-            key.set_src(Expression::asInt(srcid));
-            key.set_edge_type(edgeType_);
-            key.set_dst(Expression::asInt(dstid));
-            key.set_ranking(rank);
-
-            edgeKeys_.emplace_back(std::move(key));
         }
     } while (false);
 
@@ -112,6 +82,11 @@ Status FetchEdgesExecutor::prepareYield() {
             status = col->expr()->prepare();
             if (!status.ok()) {
                 break;
+            }
+            if (col->alias() == nullptr) {
+                resultColNames_.emplace_back(col->expr()->toString());
+            } else {
+                resultColNames_.emplace_back(*col->alias());
             }
         }
 
@@ -168,23 +143,31 @@ void FetchEdgesExecutor::execute() {
 }
 
 Status FetchEdgesExecutor::setupEdgeKeys() {
-    if (!edgeKeys_.empty()) {
-        return Status::OK();
+    Status status = Status::OK();
+    if (sentence_->isRef()) {
+        status = setupEdgeKeysFromRef();
+    } else {
+        status = setupEdgeKeysFromExpr();
     }
 
-    const auto *inputs = inputs_.get();
-    if (!(sentence_->ref()->isInputExpr())) {
-        auto *varInputs = ectx()->variableHolder()->get(varname_);
-        if (varInputs == nullptr) {
+    return status;
+}
+
+Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
+    const InterimResult *inputs;
+    if (sentence_->ref()->isInputExpr()) {
+        inputs = inputs_.get();
+        if (inputs == nullptr) {
+            // we have empty imputs from pipe.
+            return Status::OK();
+        }
+    } else {
+        inputs = ectx()->variableHolder()->get(varname_);
+        if (inputs == nullptr) {
             return Status::Error("Variable `%s' not defined", varname_.c_str());
         }
-        DCHECK(inputs == nullptr);
-        inputs = varInputs;
     }
 
-    if (inputs == nullptr) {
-        return Status::OK();
-    }
 
     auto ret = inputs->getVIDs(*srcid_);
     if (!ret.ok()) {
@@ -217,6 +200,40 @@ Status FetchEdgesExecutor::setupEdgeKeys() {
     }
 
     return Status::OK();
+}
+
+Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
+    Status status = Status::OK();
+    auto edgeKeyExprs = sentence_->keys()->keys();
+    for (auto *keyExpr : edgeKeyExprs) {
+        auto *srcExpr = keyExpr->srcid();
+        auto *dstExpr = keyExpr->dstid();
+        auto rank = keyExpr->rank();
+
+        status = srcExpr->prepare();
+        if (!status.ok()) {
+            break;
+        }
+        status = dstExpr->prepare();
+        if (!status.ok()) {
+            break;
+        }
+        auto srcid = srcExpr->eval();
+        auto dstid = dstExpr->eval();
+        if (!Expression::isInt(srcid) || !Expression::isInt(dstid)) {
+            status = Status::Error("ID should be of type integer.");
+            break;
+        }
+        storage::cpp2::EdgeKey key;
+        key.set_src(Expression::asInt(srcid));
+        key.set_edge_type(edgeType_);
+        key.set_dst(Expression::asInt(dstid));
+        key.set_ranking(rank);
+
+        edgeKeys_.emplace_back(std::move(key));
+    }
+
+    return status;
 }
 
 void FetchEdgesExecutor::fetchEdges() {
@@ -265,18 +282,6 @@ StatusOr<std::vector<storage::cpp2::PropDef>> FetchEdgesExecutor::getPropNames()
     return props;
 }
 
-std::vector<std::string> FetchEdgesExecutor::getResultColumnNames() const {
-    std::vector<std::string> result;
-    result.reserve(yields_.size());
-    for (auto *col : yields_) {
-        if (col->alias() == nullptr) {
-            result.emplace_back(col->expr()->toString());
-        } else {
-            result.emplace_back(*col->alias());
-        }
-    }
-    return result;
-}
 
 void FetchEdgesExecutor::processResult(RpcResponse &&result) {
     auto all = result.responses();
@@ -325,88 +330,6 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
     }  // for `resp'
 
     finishExecution(std::move(rsWriter));
-}
-
-void FetchEdgesExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
-    std::unique_ptr<InterimResult> outputs;
-    if (rsWriter != nullptr) {
-        outputs = std::make_unique<InterimResult>(std::move(rsWriter));
-    }
-
-    if (onResult_) {
-        onResult_(std::move(outputs));
-    } else {
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        auto colnames = getResultColumnNames();
-        resp_->set_column_names(std::move(colnames));
-        if (outputs != nullptr) {
-            auto rows = outputs->getRows();
-            resp_->set_rows(std::move(rows));
-        }
-    }
-    DCHECK(onFinish_);
-    onFinish_();
-}
-
-void FetchEdgesExecutor::getOutputSchema(
-        meta::SchemaProviderIf *schema,
-        const RowReader *reader,
-        SchemaWriter *outputSchema) const {
-    auto collector = std::make_unique<Collector>(schema);
-    auto &getters = expCtx_->getters();
-    getters.getAliasProp = [&] (const std::string&, const std::string &prop) {
-        return collector->getProp(prop, reader);
-    };
-    std::vector<VariantType> record;
-    for (auto *column : yields_) {
-        auto *expr = column->expr();
-        auto value = expr->eval();
-        record.emplace_back(std::move(value));
-    }
-
-    using nebula::cpp2::SupportedType;
-    auto colnames = getResultColumnNames();
-    for (auto index = 0u; index < record.size(); ++index) {
-        SupportedType type;
-        switch (record[index].which()) {
-            case 0:
-                // all integers in InterimResult are regarded as type of VID
-                type = SupportedType::VID;
-                break;
-            case 1:
-                type = SupportedType::DOUBLE;
-                break;
-            case 2:
-                type = SupportedType::BOOL;
-                break;
-            case 3:
-                type = SupportedType::STRING;
-                break;
-            default:
-                LOG(FATAL) << "Unknown VariantType: " << record[index].which();
-        }
-        outputSchema->appendCol(colnames[index], type);
-    }
-}
-
-void FetchEdgesExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    inputs_ = std::move(result);
-}
-
-void FetchEdgesExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
-    if (resp_ == nullptr) {
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-    }
-    resp = std::move(*resp_);
-}
-
-void FetchEdgesExecutor::onEmptyInputs() {
-    if (onResult_) {
-        onResult_(nullptr);
-    } else if (resp_ == nullptr) {
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-    }
-    onFinish_();
 }
 }  // namespace graph
 }  // namespace nebula

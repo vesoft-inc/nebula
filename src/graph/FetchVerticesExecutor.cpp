@@ -12,7 +12,7 @@
 namespace nebula {
 namespace graph {
 FetchVerticesExecutor::FetchVerticesExecutor(Sentence *sentence, ExecutionContext *ectx)
-        :TraverseExecutor(ectx) {
+        : FetchExecutor(ectx) {
     sentence_ = static_cast<FetchVerticesSentence*>(sentence);
 }
 
@@ -52,20 +52,6 @@ Status FetchVerticesExecutor::prepareVids() {
             }
             break;
         }
-
-        auto vidList = sentence_->vidList();
-        for (auto *expr : vidList) {
-            status = expr->prepare();
-            if (!status.ok()) {
-                break;
-            }
-            auto value = expr->eval();
-            if (!Expression::isInt(value)) {
-                status = Status::Error("Vertex ID should be of type integer");
-                break;
-            }
-            vids_.push_back(Expression::asInt(value));
-        }
     } while (false);
 
     return status;
@@ -90,6 +76,11 @@ Status FetchVerticesExecutor::prepareYield() {
             status = col->expr()->prepare();
             if (!status.ok()) {
                 break;
+            }
+            if (col->alias() == nullptr) {
+                resultColNames_.emplace_back(col->expr()->toString());
+            } else {
+                resultColNames_.emplace_back(*col->alias());
             }
         }
 
@@ -244,108 +235,48 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     finishExecution(std::move(rsWriter));
 }
 
-void FetchVerticesExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {
-    std::unique_ptr<InterimResult> outputs;
-    if (rsWriter != nullptr) {
-        outputs = std::make_unique<InterimResult>(std::move(rsWriter));
-    }
-
-    if (onResult_) {
-        onResult_(std::move(outputs));
-    } else {
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        auto colnames = getResultColumnNames();
-        resp_->set_column_names(std::move(colnames));
-        if (outputs != nullptr) {
-            auto rows = outputs->getRows();
-            resp_->set_rows(std::move(rows));
-        }
-    }
-    DCHECK(onFinish_);
-    onFinish_();
-}
-
-void FetchVerticesExecutor::getOutputSchema(
-        meta::SchemaProviderIf *schema,
-        RowReader *reader,
-        SchemaWriter *outputSchema) const {
-    auto collector = std::make_unique<Collector>(schema);
-    auto &getters = expCtx_->getters();
-    getters.getAliasProp = [&] (const std::string&, const std::string &prop) {
-        return collector->getProp(prop, reader);
-    };
-    std::vector<VariantType> record;
-    for (auto *column : yields_) {
-        auto *expr = column->expr();
-        auto value = expr->eval();
-        record.emplace_back(std::move(value));
-    }
-
-    using nebula::cpp2::SupportedType;
-    auto colnames = getResultColumnNames();
-    for (auto index = 0u; index < record.size(); ++index) {
-        SupportedType type;
-        switch (record[index].which()) {
-            case 0:
-                // all integers in InterimResult are regarded as type of VID
-                type = SupportedType::VID;
-                break;
-            case 1:
-                type = SupportedType::DOUBLE;
-                break;
-            case 2:
-                type = SupportedType::BOOL;
-                break;
-            case 3:
-                type = SupportedType::STRING;
-                break;
-            default:
-                LOG(FATAL) << "Unknown VariantType: " << record[index].which();
-        }
-        outputSchema->appendCol(colnames[index], type);
-    }
-}
-
-std::vector<std::string> FetchVerticesExecutor::getResultColumnNames() const {
-    std::vector<std::string> result;
-    result.reserve(yields_.size());
-    for (auto *col : yields_) {
-        if (col->alias() == nullptr) {
-            result.emplace_back(col->expr()->toString());
-        } else {
-            result.emplace_back(*col->alias());
-        }
-    }
-    return result;
-}
-
-void FetchVerticesExecutor::onEmptyInputs() {
-    if (onResult_) {
-        onResult_(nullptr);
-    } else if (resp_ == nullptr) {
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-    }
-    onFinish_();
-}
-
 Status FetchVerticesExecutor::setupVids() {
-    if (!vids_.empty()) {
-        return Status::OK();
+    Status status = Status::OK();
+    if (sentence_->isRef()) {
+        status = setupVidsFromRef();
+    } else {
+        status = setupVidsFromExpr();
     }
 
-    const auto *inputs = inputs_.get();
-    // Take one column from a variable
-    if (varname_ != nullptr) {
-        auto *varInputs = ectx()->variableHolder()->get(*varname_);
-        if (varInputs == nullptr) {
+    return status;
+}
+
+Status FetchVerticesExecutor::setupVidsFromExpr() {
+    Status status = Status::OK();
+    auto vidList = sentence_->vidList();
+    for (auto *expr : vidList) {
+        status = expr->prepare();
+        if (!status.ok()) {
+            break;
+        }
+        auto value = expr->eval();
+        if (!Expression::isInt(value)) {
+            status = Status::Error("Vertex ID should be of type integer");
+            break;
+        }
+        vids_.push_back(Expression::asInt(value));
+    }
+
+    return status;
+}
+
+Status FetchVerticesExecutor::setupVidsFromRef() {
+    const InterimResult *inputs;
+    if (varname_ == nullptr) {
+        inputs = inputs_.get();
+        if (inputs == nullptr) {
+            return Status::OK();
+        }
+    } else {
+        inputs = ectx()->variableHolder()->get(*varname_);
+        if (inputs == nullptr) {
             return Status::Error("Variable `%s' not defined", varname_->c_str());
         }
-        DCHECK(inputs == nullptr);
-        inputs = varInputs;
-    }
-    // No error happened, but we are having empty inputs
-    if (inputs == nullptr) {
-        return Status::OK();
     }
 
     auto result = inputs->getVIDs(*colname_);
@@ -356,15 +287,6 @@ Status FetchVerticesExecutor::setupVids() {
     return Status::OK();
 }
 
-void FetchVerticesExecutor::feedResult(std::unique_ptr<InterimResult> result) {
-    inputs_ = std::move(result);
-}
 
-void FetchVerticesExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
-    if (resp_ == nullptr) {
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-    }
-    resp = std::move(*resp_);
-}
 }  // namespace graph
 }  // namespace nebula
