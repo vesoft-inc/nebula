@@ -68,8 +68,14 @@ void QueryStatsProcessor::calcResult(std::vector<PropContext>&& props) {
 
 kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
                                                        VertexID vId) {
-    for (auto& tc : this->tagContexts_) {
-        auto ret = this->collectVertexProps(partId, vId, tc.tagId_, tc.props_, &collector_);
+    FilterContext fcontext;
+    for (auto& tc : tagContexts_) {
+        auto ret = this->collectVertexProps(partId,
+                                            vId,
+                                            tc.tagId_,
+                                            tc.props_,
+                                            &fcontext,
+                                            &collector_);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             return ret;
         }
@@ -80,10 +86,15 @@ kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
                                        vId,
                                        this->edgeContext_.edgeType_,
                                        this->edgeContext_.props_,
+                                       &fcontext,
                                        [&, this] (RowReader* reader,
                                                   folly::StringPiece key,
                                                   const std::vector<PropContext>& props) {
-                                           this->collectProps(reader, key, props, &collector_);
+                                           this->collectProps(reader,
+                                                              key,
+                                                              props,
+                                                              &fcontext,
+                                                              &collector_);
                                        });
     }
     return kvstore::ResultCode::SUCCEEDED;
@@ -95,10 +106,13 @@ void QueryStatsProcessor::onProcessFinished(int32_t retNum) {
     props.reserve(retNum);
     for (auto& tc : this->tagContexts_) {
         for (auto& prop : tc.props_) {
-            props.emplace_back(std::move(prop));
+            if (prop.returned_) {
+                props.emplace_back(std::move(prop));
+            }
         }
     }
     for (auto& prop : this->edgeContext_.props_) {
+        CHECK(prop.returned_);
         props.emplace_back(std::move(prop));
     }
     std::sort(props.begin(), props.end(), [](auto& l, auto& r){
