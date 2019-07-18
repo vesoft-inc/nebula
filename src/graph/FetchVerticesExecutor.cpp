@@ -104,7 +104,8 @@ Status FetchVerticesExecutor::prepareYield() {
         for (auto pair : aliasProps) {
             if (pair.first != *tag) {
                 status = Status::SyntaxError(
-                    "[%s.%s] tag not declared in %s.", pair.first, pair.second, *tag);
+                    "[%s.%s] tag not declared in %s.",
+                    pair.first.c_str(), pair.second.c_str(), (*tag).c_str());
                 break;
             }
         }

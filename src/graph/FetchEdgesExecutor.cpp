@@ -69,6 +69,14 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
             auto *dstExpr = keyExpr->dstid();
             auto rank = keyExpr->rank();
 
+            status = srcExpr->prepare();
+            if (!status.ok()) {
+                break;
+            }
+            status = dstExpr->prepare();
+            if (!status.ok()) {
+                break;
+            }
             auto srcid = srcExpr->eval();
             auto dstid = dstExpr->eval();
             if (!Expression::isInt(srcid) || !Expression::isInt(dstid)) {
@@ -118,7 +126,8 @@ Status FetchEdgesExecutor::prepareYield() {
         for (auto pair : aliasProps) {
             if (pair.first != *label) {
                 status = Status::SyntaxError(
-                    "[%s.%s] not declared in %s.", pair.first, pair.second, *label);
+                    "[%s.%s] not declared in %s.",
+                    pair.first.c_str(), pair.second.c_str(), (*label).c_str());
                 break;
             }
         }

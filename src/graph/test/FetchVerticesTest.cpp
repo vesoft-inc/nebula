@@ -93,6 +93,18 @@ TEST_F(FetchVerticesTest, base) {
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player hash(\"%s\")";
+        auto query = folly::stringPrintf(fmt, player.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {player.name(), player.age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
 TEST_F(FetchVerticesTest, syntaxError) {
