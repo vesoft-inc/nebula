@@ -29,6 +29,8 @@ enum ErrorCode {
     E_TAG_PROP_NOT_FOUND = -22,
     E_IMPROPER_DATA_TYPE = -23,
 
+    // Invalid request
+    E_INVALID_FILTER = -31,
     E_UNKNOWN = -100,
 } (cpp.enum_strict)
 
@@ -141,7 +143,8 @@ struct EdgePropRequest {
     // partId => edges
     2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
     3: common.EdgeType edge_type,
-    4: list<PropDef> return_columns,
+    4: binary filter,
+    5: list<PropDef> return_columns,
 }
 
 struct AddVerticesRequest {
