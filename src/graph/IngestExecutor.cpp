@@ -32,8 +32,9 @@ void IngestExecutor::execute() {
     auto *path  = sentence_->path();
 
     auto func = [metaHost, path, spaceId]() {
-        auto tmp = "/usr/bin/curl -G \"http://%s:%d/%s?path=%s&space=%d\"";
-        auto command = folly::stringPrintf(tmp, metaHost.c_str(), FLAGS_meta_ingest_http_port,
+        std::string tmp = "/usr/bin/curl -G \"http://%s:%d/%s?path=%s&space=%d\"";
+        auto command = folly::stringPrintf(tmp.c_str(), metaHost.c_str(),
+                                           FLAGS_meta_ingest_http_port,
                                            "ingest-dispatch", path->c_str(), spaceId);
         LOG(INFO) << "Ingest Command: " << command;
         auto result = nebula::ProcessUtils::runCommand(command.c_str());

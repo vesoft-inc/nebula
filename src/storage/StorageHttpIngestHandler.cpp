@@ -48,12 +48,14 @@ void StorageHttpIngestHandler::onEOM() noexcept {
     switch (err_) {
         case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
-                .status(405, "Method Not Allowed")
+                .status(WebServiceUtils::to(HttpStatusCode::METHOD_NOT_ALLOWED),
+                        WebServiceUtils::toString(HttpStatusCode::METHOD_NOT_ALLOWED))
                 .sendWithEOM();
             return;
         case HttpCode::E_ILLEGAL_ARGUMENT:
             ResponseBuilder(downstream_)
-                .status(400, "Bad Request")
+                .status(WebServiceUtils::to(HttpStatusCode::BAD_REQUEST),
+                        WebServiceUtils::toString(HttpStatusCode::BAD_REQUEST))
                 .sendWithEOM();
             return;
         default:
@@ -63,13 +65,15 @@ void StorageHttpIngestHandler::onEOM() noexcept {
     if (ingestSSTFiles(space_, path_)) {
         LOG(ERROR) << "SSTFile ingest successfully " << path_;
         ResponseBuilder(downstream_)
-            .status(200, "SSTFile ingest successfully")
+            .status(WebServiceUtils::to(HttpStatusCode::OK),
+                    WebServiceUtils::toString(HttpStatusCode::OK))
             .body("SSTFile ingest successfully")
             .sendWithEOM();
     } else {
         LOG(ERROR) << "SSTFile ingest failed";
         ResponseBuilder(downstream_)
-            .status(404, "SSTFile ingest failed")
+            .status(WebServiceUtils::to(HttpStatusCode::FORBIDDEN),
+                    WebServiceUtils::toString(HttpStatusCode::FORBIDDEN))
             .body("SSTFile ingest failed")
             .sendWithEOM();
     }

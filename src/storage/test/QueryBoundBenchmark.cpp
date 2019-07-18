@@ -31,26 +31,26 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (auto partId = 0; partId < 6; partId++) {
+    for (int32_t partId = 0; partId < 6; partId++) {
         std::vector<kvstore::KV> data;
-        for (auto vertexId = 1; vertexId < 1000; vertexId++) {
-            for (auto tagId = 3001; tagId < 3010; tagId++) {
+        for (int32_t vertexId = 1; vertexId < 1000; vertexId++) {
+            for (int32_t tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
                 for (uint64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;
                 }
-                for (auto numString = 3; numString < 6; numString++) {
+                for (int32_t numString = 3; numString < 6; numString++) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
                 data.emplace_back(std::move(key), std::move(val));
             }
             // Generate 7 out-edges for each edgeType.
-            for (auto dstId = 10001; dstId <= 10007; dstId++) {
+            for (int32_t dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 // Write multi versions,  we should get the latest version.
-                for (auto version = 0; version < 3; version++) {
+                for (int32_t version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101,
                                                  dstId - 10001, dstId,
                                                  std::numeric_limits<int>::max() - version);
@@ -58,7 +58,7 @@ void mockData(kvstore::KVStore* kv) {
                     for (uint64_t numInt = 0; numInt < 10; numInt++) {
                         writer << numInt;
                     }
-                    for (auto numString = 10; numString < 20; numString++) {
+                    for (int32_t numString = 10; numString < 20; numString++) {
                         writer << folly::stringPrintf("string_col_%d_%d", numString, version);
                     }
                     auto val = writer.encode();
@@ -66,9 +66,9 @@ void mockData(kvstore::KVStore* kv) {
                 }
             }
             // Generate 5 in-edges for each edgeType, the edgeType is negative
-            for (auto srcId = 20001; srcId <= 20005; srcId++) {
+            for (int32_t srcId = 20001; srcId <= 20005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
-                for (auto version = 0; version < 3; version++) {
+                for (int32_t version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101,
                                                  srcId - 20001, srcId,
                                                  std::numeric_limits<int>::max() - version);
@@ -89,7 +89,7 @@ void setUp(const char* path) {
     schema.reset(new storage::AdHocSchemaManager());
     schema->addEdgeSchema(
         0 /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
-    for (auto tagId = 3001; tagId < 3010; tagId++) {
+    for (int32_t tagId = 3001; tagId < 3010; tagId++) {
         schema->addTagSchema(
             0 /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));
     }
@@ -100,8 +100,8 @@ cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
     cpp2::GetNeighborsRequest req;
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
-    for (auto partId = 0; partId < FLAGS_req_parts; partId++) {
-        for (auto vertexId = 1; vertexId <= FLAGS_vrpp; vertexId++) {
+    for (int32_t partId = 0; partId < FLAGS_req_parts; partId++) {
+        for (int32_t vertexId = 1; vertexId <= FLAGS_vrpp; vertexId++) {
             tmpIds[partId].push_back(vertexId);
         }
     }
@@ -109,7 +109,7 @@ cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
     req.set_edge_type(outBound ? 101 : -101);
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
-    for (int i = 0; i < 3; i++) {
+    for (int32_t i = 0; i < 3; i++) {
         tmpColumns.emplace_back(
             TestUtils::propDef(cpp2::PropOwner::SOURCE,
                                folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
@@ -120,7 +120,7 @@ cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
     tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
                                                folly::stringPrintf("_rank")));
     // Return edge props col_0, col_2, col_4 ... col_18
-    for (int i = 0; i < 10; i++) {
+    for (int32_t i = 0; i < 10; i++) {
         tmpColumns.emplace_back(
             TestUtils::propDef(cpp2::PropOwner::EDGE,
                                folly::stringPrintf("col_%d", i*2)));

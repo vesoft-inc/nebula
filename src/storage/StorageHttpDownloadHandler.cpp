@@ -19,9 +19,6 @@ DEFINE_int32(download_thread_num, 3, "download thread number");
 namespace nebula {
 namespace storage {
 
-static std::atomic_flag isRunning = ATOMIC_FLAG_INIT;
-std::once_flag poolStartFlag;
-
 using proxygen::HTTPMessage;
 using proxygen::HTTPMethod;
 using proxygen::ProxygenError;
@@ -66,12 +63,14 @@ void StorageHttpDownloadHandler::onEOM() noexcept {
     switch (err_) {
         case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
-                .status(405, "Method Not Allowed")
+                .status(WebServiceUtils::to(HttpStatusCode::METHOD_NOT_ALLOWED),
+                        WebServiceUtils::toString(HttpStatusCode::METHOD_NOT_ALLOWED))
                 .sendWithEOM();
             return;
         case HttpCode::E_ILLEGAL_ARGUMENT:
             ResponseBuilder(downstream_)
-                .status(400, "Bad Request")
+                .status(WebServiceUtils::to(HttpStatusCode::BAD_REQUEST),
+                        WebServiceUtils::toString(HttpStatusCode::BAD_REQUEST))
                 .sendWithEOM();
             return;
         default:
@@ -91,19 +90,22 @@ void StorageHttpDownloadHandler::onEOM() noexcept {
 
         if (downloadSSTFiles(hdfsHost_, hdfsPort_, hdfsPath_, parts, localPath_)) {
             ResponseBuilder(downstream_)
-                .status(200, "SSTFile download successfully")
+                .status(WebServiceUtils::to(HttpStatusCode::OK),
+                        WebServiceUtils::toString(HttpStatusCode::OK))
                 .body("SSTFile download successfully")
                 .sendWithEOM();
         } else {
             ResponseBuilder(downstream_)
-                .status(404, "SSTFile download failed")
+                .status(WebServiceUtils::to(HttpStatusCode::FORBIDDEN),
+                        WebServiceUtils::toString(HttpStatusCode::FORBIDDEN))
                 .body("SSTFile download failed")
                 .sendWithEOM();
         }
     } else {
         LOG(ERROR) << "HADOOP_HOME not exist";
         ResponseBuilder(downstream_)
-            .status(404, "HADOOP_HOME not exist")
+            .status(WebServiceUtils::to(HttpStatusCode::NOT_FOUND),
+                    WebServiceUtils::toString(HttpStatusCode::NOT_FOUND))
             .sendWithEOM();
     }
 }
@@ -129,6 +131,7 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
                                                   const std::string& hdfsPath,
                                                   const std::vector<std::string>& parts,
                                                   const std::string& localPath) {
+    static std::atomic_flag isRunning = ATOMIC_FLAG_INIT;
     if (isRunning.test_and_set()) {
         LOG(ERROR) << "Download is not completed";
         return false;
@@ -136,7 +139,9 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
 
     std::vector<folly::SemiFuture<bool>> futures;
     static nebula::thread::GenericThreadPool pool;
-    std::call_once(poolStartFlag, []() {
+
+    std::once_flag downloadPoolStartFlag;
+    std::call_once(downloadPoolStartFlag, []() {
         LOG(INFO) << "Download Thread Pool start";
         pool.start(FLAGS_download_thread_num);
     });
@@ -154,18 +159,13 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
             auto hdfsPartPath = folly::stringPrintf("%s/%d", hdfsPath.c_str(), partInt);
             auto result = this->helper_->copyToLocal(hdfsHost, hdfsPort,
                                                      hdfsPartPath, localPath);
-            if (!result.ok() || !result.value().empty()) {
-                LOG(ERROR) << "Download SSTFile Failed";
-                return false;
-            } else {
-                return true;
-            }
+            return result.ok() && result.value().empty();
         };
         auto future = pool.addTask(downloader);
         futures.push_back(std::move(future));
     }
 
-    std::atomic<bool> successfully{true};
+    bool successfully{true};
     folly::collectAll(futures).then([&](const std::vector<folly::Try<bool>>& tries) {
         for (const auto& t : tries) {
             if (t.hasException()) {

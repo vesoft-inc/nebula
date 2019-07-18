@@ -22,26 +22,26 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (auto partId = 0; partId < 3; partId++) {
+    for (int32_t partId = 1; partId <= 3; partId++) {
         std::vector<kvstore::KV> data;
-        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (auto tagId = 3001; tagId < 3010; tagId++) {
+        for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            for (int32_t tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
                 for (uint64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;
                 }
-                for (auto numString = 3; numString < 6; numString++) {
+                for (int32_t numString = 3; numString < 6; numString++) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
                 data.emplace_back(std::move(key), std::move(val));
             }
             // Generate 7 out-edges for each edgeType.
-            for (auto dstId = 10001; dstId <= 10007; dstId++) {
+            for (int32_t dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 // Write multi versions,  we should get the latest version.
-                for (auto version = 0; version < 3; version++) {
+                for (int32_t version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101,
                                                        0, dstId,
                                                        std::numeric_limits<int>::max() - version);
@@ -49,7 +49,7 @@ void mockData(kvstore::KVStore* kv) {
                     for (uint64_t numInt = 0; numInt < 10; numInt++) {
                         writer << numInt;
                     }
-                    for (auto numString = 10; numString < 20; numString++) {
+                    for (int32_t numString = 10; numString < 20; numString++) {
                         writer << folly::stringPrintf("string_col_%d_%d", numString, version);
                     }
                     auto val = writer.encode();
@@ -57,9 +57,9 @@ void mockData(kvstore::KVStore* kv) {
                 }
             }
             // Generate 5 in-edges for each edgeType, the edgeType is negative
-            for (auto srcId = 20001; srcId <= 20005; srcId++) {
+            for (int32_t srcId = 20001; srcId <= 20005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
-                for (auto version = 0; version < 3; version++) {
+                for (int32_t version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101,
                                                        0, srcId,
                                                        std::numeric_limits<int>::max() - version);
@@ -79,8 +79,8 @@ void mockData(kvstore::KVStore* kv) {
 void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
-    for (auto partId = 0; partId < 3; partId++) {
-        for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+    for (int32_t partId = 1; partId <= 3; partId++) {
+        for (int32_t vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             tmpIds[partId].emplace_back(vertexId);
         }
     }
@@ -88,7 +88,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     req.set_edge_type(outBound ? 101 : -101);
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
-    for (int i = 0; i < 3; i++) {
+    for (int32_t i = 0; i < 3; i++) {
         tmpColumns.emplace_back(
             TestUtils::propDef(cpp2::PropOwner::SOURCE,
                                folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
@@ -97,7 +97,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "_dst"));
     tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "_rank"));
     // Return edge props col_0, col_2, col_4 ... col_18
-    for (int i = 0; i < 10; i++) {
+    for (int32_t i = 0; i < 10; i++) {
         tmpColumns.emplace_back(
             TestUtils::propDef(cpp2::PropOwner::EDGE,
                                folly::stringPrintf("col_%d", i*2)));
@@ -153,13 +153,13 @@ void checkResponse(cpp2::QueryResponse& resp, bool outBound = true) {
             }
             if (outBound) {
                 // col_0, col_2 ... col_8
-                for (auto i = 2; i < 7; i++) {
+                for (int32_t i = 2; i < 7; i++) {
                     int64_t v;
                     EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
                     CHECK_EQ((i - 2) * 2, v);
                 }
                 // col_10, col_12 ... col_18
-                for (auto i = 7; i < 12; i++) {
+                for (int32_t i = 7; i < 12; i++) {
                     folly::StringPiece v;
                     EXPECT_EQ(ResultType::SUCCEEDED, it->getString(i, v));
                     CHECK_EQ(folly::stringPrintf("string_col_%d_%d", (i - 7 + 5) * 2, 2), v);
@@ -239,10 +239,10 @@ TEST(QueryBoundTest,  GenBucketsTest) {
         QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(9, buckets.size());
-        for (auto i = 0; i < 3; i++) {
+        for (int32_t i = 0; i < 3; i++) {
             ASSERT_EQ(4, buckets[i].vertices_.size());
         }
-        for (auto i = 3; i < 9; i++) {
+        for (int32_t i = 3; i < 9; i++) {
             ASSERT_EQ(3, buckets[i].vertices_.size());
         }
     }
@@ -254,10 +254,10 @@ TEST(QueryBoundTest,  GenBucketsTest) {
         QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(7, buckets.size());
-        for (auto i = 0; i < 2; i++) {
+        for (int32_t i = 0; i < 2; i++) {
             ASSERT_EQ(5, buckets[i].vertices_.size());
         }
-        for (auto i = 2; i < 7; i++) {
+        for (int32_t i = 2; i < 7; i++) {
             ASSERT_EQ(4, buckets[i].vertices_.size());
         }
     }

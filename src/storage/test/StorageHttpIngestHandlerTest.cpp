@@ -24,7 +24,8 @@ public:
         VLOG(1) << "Starting web service...";
 
         rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpIngestHandler.XXXXXX");
-        kv_ = TestUtils::initKV("/tmp/StorageHttpIngestHandler");
+        kv_ = TestUtils::initKV(rootPath_->path(), 1);
+
         WebService::registerHandler("/ingest", [this] {
             auto handler = new storage::StorageHttpIngestHandler();
             handler->init(kv_.get());
@@ -80,7 +81,7 @@ TEST(StorageHttpIngestHandlerTest, StorageIngestTest) {
         ASSERT_EQ("SSTFile ingest successfully", resp);
     }
     {
-        auto url = folly::stringPrintf("/ingest?path=%s&space=%d", "/tmp/maybe-not-exist/", 0);
+        auto url = folly::stringPrintf("/ingest?path=%s&space=%d", "/tmp/maybe-not-exist", 0);
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile ingest failed", resp);

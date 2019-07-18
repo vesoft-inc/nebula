@@ -13,11 +13,13 @@
 #include "network/NetworkUtils.h"
 #include "hdfs/HdfsHelper.h"
 #include "process/ProcessUtils.h"
+#include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 
 DEFINE_int32(storage_http_port, 12000, "Storage daemon's http port");
+DEFINE_int32(meta_download_thread_num, 3, "Meta daemon's download thread number");
 
 namespace nebula {
 namespace meta {
@@ -69,12 +71,14 @@ void MetaHttpDownloadHandler::onEOM() noexcept {
     switch (err_) {
         case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
-                .status(405, "Method Not Allowed")
+                .status(WebServiceUtils::to(HttpStatusCode::METHOD_NOT_ALLOWED),
+                        WebServiceUtils::toString(HttpStatusCode::METHOD_NOT_ALLOWED))
                 .sendWithEOM();
             return;
         case HttpCode::E_ILLEGAL_ARGUMENT:
             ResponseBuilder(downstream_)
-                .status(400, "Bad Request")
+                .status(WebServiceUtils::to(HttpStatusCode::BAD_REQUEST),
+                        WebServiceUtils::toString(HttpStatusCode::BAD_REQUEST))
                 .sendWithEOM();
             return;
         default:
@@ -85,20 +89,23 @@ void MetaHttpDownloadHandler::onEOM() noexcept {
         LOG(INFO) << "Hadoop Path : " << hadoopHome;
         if (dispatchSSTFiles(hdfsHost_, hdfsPort_, hdfsPath_, localPath_)) {
             ResponseBuilder(downstream_)
-                .status(200, "SSTFile dispatch successfully")
+                .status(WebServiceUtils::to(HttpStatusCode::OK),
+                        WebServiceUtils::toString(HttpStatusCode::OK))
                 .body("SSTFile dispatch successfully")
                 .sendWithEOM();
         } else {
             LOG(ERROR) << "SSTFile dispatch failed";
             ResponseBuilder(downstream_)
-                .status(404, "SSTFile dispatch failed")
+                .status(WebServiceUtils::to(HttpStatusCode::FORBIDDEN),
+                        WebServiceUtils::toString(HttpStatusCode::FORBIDDEN))
                 .body("SSTFile dispatch failed")
                 .sendWithEOM();
         }
     } else {
         LOG(ERROR) << "Hadoop Home not exist";
         ResponseBuilder(downstream_)
-            .status(404, "HADOOP_HOME not exist")
+            .status(WebServiceUtils::to(HttpStatusCode::NOT_FOUND),
+                    WebServiceUtils::toString(HttpStatusCode::NOT_FOUND))
             .sendWithEOM();
     }
 }
@@ -165,15 +172,21 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
         return false;
     }
 
-    std::atomic<int> completed(0);
-    std::vector<std::thread> threads;
+    std::vector<folly::SemiFuture<bool>> futures;
+    static nebula::thread::GenericThreadPool pool;
+    static std::once_flag downloadPoolStartFlag;
+    std::call_once(downloadPoolStartFlag, []() {
+        LOG(INFO) << "Download Thread Pool start";
+        pool.start(FLAGS_meta_download_thread_num);
+    });
+
     for (auto &pair : hostPartition) {
         std::string partsStr;
         folly::join(",", pair.second, partsStr);
 
         auto storageIP = network::NetworkUtils::intToIPv4(pair.first.first);
-        threads.push_back(std::thread([storageIP, hdfsHost, hdfsPort, hdfsPath,
-                                       partsStr, localPath, &completed]() {
+        auto dispatcher = [storageIP, hdfsHost, hdfsPort, hdfsPath,
+                           partsStr, localPath]() {
             auto tmp = "http://%s:%d/download?host=%s&port=%d&path=%s&parts=%s&local=%s";
             auto url = folly::stringPrintf(tmp, storageIP.c_str(), FLAGS_storage_http_port,
                                            hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(),
@@ -181,18 +194,29 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
             auto command = folly::stringPrintf("/usr/bin/curl -G \"%s\"", url.c_str());
             LOG(INFO) << "Command: " << command;
             auto downloadResult = ProcessUtils::runCommand(command.c_str());
-            if (!downloadResult.ok() || downloadResult.value() != "SSTFile download successfully") {
-                LOG(ERROR) << "Failed to download SST Files: " << downloadResult.value();
-            } else {
-                completed++;
-            }
-        }));
+            return downloadResult.ok() && downloadResult.value() == "SSTFile download successfully";
+        };
+        auto future = pool.addTask(dispatcher);
+        futures.push_back(std::move(future));
     }
 
-    for (auto &thread : threads) {
-        thread.join();
-    }
-    return completed == (int32_t)hostPartition.size();
+    bool successfully{true};
+    folly::collectAll(futures).then([&](const std::vector<folly::Try<bool>>& tries) {
+        for (const auto& t : tries) {
+            if (t.hasException()) {
+                LOG(ERROR) << "Download Failed: " << t.exception();
+                successfully = false;
+                break;
+            }
+            if (!t.value()) {
+                successfully = false;
+                break;
+            }
+        }
+    }).wait();
+
+    LOG(INFO) << "Download tasks have finished";
+    return successfully;
 }
 
 }  // namespace meta

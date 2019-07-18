@@ -92,7 +92,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 for (uint64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;
                 }
-                for (auto numString = 3; numString < 6; numString++) {
+                for (int32_t numString = 3; numString < 6; numString++) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 t.set_props(writer.encode());
@@ -119,7 +119,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         for (int32_t vId = 0; vId < 10; vId++) {
             vIds.emplace_back(vId);
         }
-        for (int i = 0; i < 3; i++) {
+        for (int32_t i = 0; i < 3; i++) {
             retCols.emplace_back(
                 TestUtils::propDef(cpp2::PropOwner::SOURCE,
                                    folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
@@ -206,7 +206,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             edgeKey.set_ranking(srcId*100 + 3);
             edgeKeys.emplace_back(std::move(edgeKey));
         }
-        for (int i = 0; i < 20; i++) {
+        for (int32_t i = 0; i < 20; i++) {
             retCols.emplace_back(
                 TestUtils::propDef(cpp2::PropOwner::EDGE,
                                    folly::stringPrintf("col_%d", i)));

@@ -45,8 +45,8 @@ void DownloadExecutor::execute() {
     }
 
     auto func = [metaHost, hdfsHost, hdfsPort, hdfsPath, hdfsLocal, spaceId]() {
-        auto tmp = "%s \"http://%s:%d/%s?host=%s&port=%d&path=%s&local=%s&space=%d\"";
-        auto command = folly::stringPrintf(tmp, "/usr/bin/curl -G", metaHost.c_str(),
+        std::string tmp = "%s \"http://%s:%d/%s?host=%s&port=%d&path=%s&local=%s&space=%d\"";
+        auto command = folly::stringPrintf(tmp.c_str(), "/usr/bin/curl -G", metaHost.c_str(),
                                            FLAGS_meta_http_port, "download-dispatch",
                                            hdfsHost->c_str(), hdfsPort, hdfsPath->c_str(),
                                            hdfsLocal->c_str(), spaceId);

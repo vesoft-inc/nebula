@@ -392,18 +392,26 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
     folly::RWSpinLock::ReadHolder rh(&lock_);
     RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
     for (auto& engine : it->second->engines_) {
+        auto parts = engine->allParts();
         std::vector<std::string> extras;
-        auto parts = nebula::fs::FileUtils::listAllDirsInDir(extra.c_str());
         for (auto part : parts) {
-            auto path = folly::stringPrintf("%s/%s", extra.c_str(), part.c_str());
+            LOG(INFO) << "Loading Part " << part;
+            auto path = folly::stringPrintf("%s/%d", extra.c_str(), part);
+            if (!nebula::fs::FileUtils::exist(path)) {
+                LOG(ERROR) << path << " not existed";
+                return ResultCode::ERR_IO_ERROR;
+            }
+
             auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
             for (auto file : files) {
-                LOG(INFO) << "Loading extra path : " << file;
-                extras.emplace_back(std::move(file));
+                VLOG(3) << "Loading extra path : " << file;
+                extras.emplace_back(file);
             }
         }
-        auto code = engine->ingest(std::move(extras));
-        RETURN_ON_FAILURE(code);
+        if (extras.size() != 0) {
+            auto code = engine->ingest(std::move(extras));
+            RETURN_ON_FAILURE(code);
+        }
     }
     return ResultCode::SUCCEEDED;
 }
