@@ -54,6 +54,9 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                     return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
                 }
                 const auto& ftype = schema->getFieldType(col.name);
+                if (UNLIKELY(ftype == CommonConstants::kInvalidValueType())) {
+                    return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
+                }
                 prop.type_ = ftype;
                 prop.retIndex_ = index++;
                 if (col.__isset.stat && !validOperation(ftype.type, col.stat)) {
@@ -87,6 +90,9 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                         return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
                     const auto& ftype = schema->getFieldType(col.name);
+                    if (UNLIKELY(ftype == CommonConstants::kInvalidValueType())) {
+                        return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
+                    }
                     prop.type_ = ftype;
                 } else {
                     VLOG(3) << "InBound has none props, skip it!";
