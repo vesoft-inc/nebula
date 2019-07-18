@@ -121,7 +121,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 
                 // Check value type
                 auto schemaType = schema->getFieldType(fieldIndex);
-                if (!checkValueType(schema->getFieldType(fieldIndex), value)) {
+                if (!checkValueType(schemaType, value)) {
                     LOG(ERROR) << "ValueType is wrong, schema type "
                                << static_cast<int32_t>(schemaType.type)
                                << ", input type " <<  value.which();

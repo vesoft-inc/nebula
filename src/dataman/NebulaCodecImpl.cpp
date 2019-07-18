@@ -66,6 +66,9 @@ NebulaCodecImpl::decode(std::string encoded,
     std::unordered_map<std::string, Value> result;
     for (size_t index = 0; index < schema->getNumFields(); index++) {
         auto field = schema->getFieldName(index);
+        if (UNLIKELY(nullptr == field)) {
+            return Status::Error("invalid field index");
+        }
         switch (schema->getFieldType(index).get_type()) {
             case cpp2::SupportedType::BOOL:
                 bool b;
