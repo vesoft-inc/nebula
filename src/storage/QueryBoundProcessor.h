@@ -35,12 +35,17 @@ protected:
         : QueryBaseProcessor<cpp2::GetNeighborsRequest,
                              cpp2::QueryResponse>(kvstore, schemaMan, executor, type) {}
 
-    kvstore::ResultCode processVertex(PartitionID partID, VertexID vId) override;
+    kvstore::ResultCode processVertex(PartitionID partID,
+                                      VertexID vId) override;
 
     void onProcessFinished(int32_t retNum) override;
 
 private:
     std::vector<cpp2::VertexData> vertices_;
+
+protected:
+    // Indicate the request only get vertex props.
+    bool onlyVertexProps_ = false;
 };
 
 }  // namespace storage
