@@ -36,13 +36,15 @@ void mockData(kvstore::KVStore* kv) {
                 data.emplace_back(std::move(key), std::move(val));
             }
         }
+        folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(
             0, partId, std::move(data),
             [&](kvstore::ResultCode code) {
                 EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                baton.post();
             });
+        baton.wait();
     }
-    sleep(1);
 }
 
 

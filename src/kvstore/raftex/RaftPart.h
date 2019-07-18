@@ -115,7 +115,7 @@ public:
     void addLearner(const HostAddr& learner);
 
     // Change the partition status to RUNNING. This is called
-    // by the inherited class, when it's ready to server
+    // by the inherited class, when it's ready to serve
     virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
 
     // Change the partition status to STOPPED. This is called

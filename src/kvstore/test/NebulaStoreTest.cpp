@@ -93,11 +93,12 @@ TEST(NebulaStoreTest, SimpleTest) {
                                                sizeof(int32_t)),
                           folly::stringPrintf("val_%d", i));
     }
-    store->asyncMultiPut(1, 1, std::move(data), [](ResultCode code){
+    folly::Baton<true, std::atomic> baton;
+    store->asyncMultiPut(1, 1, std::move(data), [&] (ResultCode code){
         EXPECT_EQ(ResultCode::SUCCEEDED, code);
+        baton.post();
     });
-
-    sleep(1);
+    baton.wait();
     int32_t start = 0;
     int32_t end = 100;
     std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
