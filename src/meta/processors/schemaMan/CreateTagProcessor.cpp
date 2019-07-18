@@ -11,17 +11,31 @@ namespace meta {
 
 void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    {
+        // if there is an edge of the same name
+        folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
+        auto conflictRet = getEdgeType(req.get_space_id(), req.get_tag_name());
+        if (conflictRet.ok()) {
+            LOG(ERROR) << "Create Tag Failed :" << req.get_tag_name() << " has same name edge";
+            resp_.set_id(to(conflictRet.value(), EntryType::TAG));
+            resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+            onFinished();
+            return;
+        }
+    }
+
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagLock());
     auto ret = getTagId(req.get_space_id(), req.get_tag_name());
-    std::vector<kvstore::KV> data;
     if (ret.ok()) {
-        LOG(ERROR) << "Create Tag Failed :" << req.get_tag_name() << " have existed";
+        LOG(ERROR) << "Create Tag Failed :" << req.get_tag_name() << " has existed";
         resp_.set_id(to(ret.value(), EntryType::TAG));
         resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }
+
     TagID tagId = autoIncrementId();
+    std::vector<kvstore::KV> data;
     data.emplace_back(MetaServiceUtils::indexTagKey(req.get_space_id(), req.get_tag_name()),
                       std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId)));
     LOG(INFO) << "Create Tag " << req.get_tag_name() << ", tagId " << tagId;

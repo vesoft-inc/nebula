@@ -11,6 +11,18 @@ namespace meta {
 
 void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
+    {
+        folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
+        auto conflictRet = getTagId(req.get_space_id(), req.get_edge_name());
+        if (conflictRet.ok()) {
+            LOG(ERROR) << "Create Edge Failed :" << req.get_edge_name() << " has same name tag";
+            resp_.set_id(to(conflictRet.value(), EntryType::EDGE));
+            resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
+            onFinished();
+            return;
+        }
+    }
+
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeLock());
     auto ret = getEdgeType(req.get_space_id(), req.get_edge_name());
     if (ret.ok()) {
@@ -19,6 +31,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
         onFinished();
         return;
     }
+
     std::vector<kvstore::KV> data;
     EdgeType edgeType = autoIncrementId();
     data.emplace_back(MetaServiceUtils::indexEdgeKey(req.get_space_id(), req.get_edge_name()),
