@@ -58,10 +58,10 @@ public:
 
     VariantType collect(const std::string &prop,
                    const RowReader *reader,
-                   RowWriter *writer);
+                   RowWriter *writer) const;
 
     VariantType getProp(const std::string &prop,
-                        const RowReader *reader);
+                        const RowReader *reader) const;
 
 private:
     meta::SchemaProviderIf   *schema_;

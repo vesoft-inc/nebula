@@ -11,6 +11,7 @@
 #include "graph/PipeExecutor.h"
 #include "graph/OrderByExecutor.h"
 #include "graph/FetchVerticesExecutor.h"
+#include "graph/FetchEdgesExecutor.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 
@@ -40,6 +41,9 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
         case Sentence::Kind::kFetchVertices:
             executor = std::make_unique<FetchVerticesExecutor>(sentence, ectx);
             break;
+        case Sentence::Kind::kFetchEdges:
+            executor = std::make_unique<FetchEdgesExecutor>(sentence, ectx);
+            break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
             break;
@@ -53,7 +57,7 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
 VariantType Collector::collect(
         const std::string &prop,
         const RowReader *reader,
-        RowWriter *writer) {
+        RowWriter *writer) const {
     DCHECK_NOTNULL(reader);
     VariantType var = getProp(prop, reader);
     switch (var.which()) {
@@ -77,7 +81,7 @@ VariantType Collector::collect(
 }
 
 VariantType Collector::getProp(const std::string &prop,
-                               const RowReader *reader) {
+                               const RowReader *reader) const {
     DCHECK_NOTNULL(reader);
     DCHECK_NOTNULL(schema_);
     using nebula::cpp2::SupportedType;

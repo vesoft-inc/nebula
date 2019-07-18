@@ -369,16 +369,37 @@ private:
 
 class EdgeKeyRef final {
 public:
-    EdgeKeyRef(Expression *srcid, Expression *dstid, Expression *rank) {
+    EdgeKeyRef(
+            Expression *srcid,
+            Expression *dstid,
+            Expression *rank,
+            bool isInputExpr = true) {
         srcid_.reset(srcid);
         dstid_.reset(dstid);
         rank_.reset(rank);
+        isInputExpr_ = isInputExpr;
     }
 
+    StatusOr<std::string> varname() const;
+
+    std::string* srcid();
+
+    std::string* dstid();
+
+    std::string* rank();
+
+    bool isInputExpr() const {
+        return isInputExpr_;
+    }
+
+    std::string toString() const;
+
 private:
-    std::unique_ptr<Expression>     srcid_;
-    std::unique_ptr<Expression>     dstid_;
-    std::unique_ptr<Expression>     rank_;
+    std::unique_ptr<Expression>             srcid_;
+    std::unique_ptr<Expression>             dstid_;
+    std::unique_ptr<Expression>             rank_;
+    std::unordered_set<std::string>         uniqVar_;
+    bool                                    isInputExpr_;
 };
 
 class FetchEdgesSentence final : public Sentence {
@@ -409,7 +430,7 @@ public:
         keyRef_.reset(ref);
     }
 
-    EdgeKeyRef* keyRef() const {
+    EdgeKeyRef* ref() const {
         return keyRef_.get();
     }
 
@@ -425,8 +446,12 @@ public:
         yieldClause_.reset(clause);
     }
 
-    YieldClause* getYieldClause() const {
+    YieldClause* yieldClause() const {
         return yieldClause_.get();
+    }
+
+    std::string* label() const {
+        return edgeType_.get();
     }
 
     std::string toString() const override;

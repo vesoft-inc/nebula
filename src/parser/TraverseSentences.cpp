@@ -105,6 +105,7 @@ std::string OrderFactor::toString() const {
         case DESCEND:
             return folly::stringPrintf("%s DESC,", expr_->toString().c_str());
         default:
+
             LOG(FATAL) << "Unkown Order Type: " << orderType_;
             return "";
     }
@@ -160,8 +161,103 @@ std::string EdgeKeys::toString() const {
     return buf;
 }
 
+std::string* EdgeKeyRef::srcid() {
+    if (isInputExpr_) {
+        auto *iSrcExpr = static_cast<InputPropertyExpression*>(srcid_.get());
+        auto *colname = iSrcExpr->prop();
+        return colname;
+    } else {
+        auto *vSrcExpr = static_cast<VariablePropertyExpression*>(srcid_.get());
+        auto *var = vSrcExpr->var();
+        auto *colname = vSrcExpr->prop();
+        uniqVar_.emplace(*var);
+        return colname;
+    }
+}
+
+std::string* EdgeKeyRef::dstid() {
+    if (isInputExpr_) {
+        auto *iDstExpr = static_cast<InputPropertyExpression*>(dstid_.get());
+        auto *colname = iDstExpr->prop();
+        return colname;
+    } else {
+        auto *vDstExpr = static_cast<VariablePropertyExpression*>(dstid_.get());
+        auto *var = vDstExpr->var();
+        auto *colname = vDstExpr->prop();
+        uniqVar_.emplace(*var);
+        return colname;
+    }
+}
+
+
+std::string* EdgeKeyRef::rank() {
+    if (rank_ == nullptr) {
+        return nullptr;
+    }
+
+    if (isInputExpr_) {
+        auto *iRankExpr = static_cast<InputPropertyExpression*>(rank_.get());
+        auto *colname = iRankExpr->prop();
+        return colname;
+    } else {
+        auto *vRankExpr = static_cast<VariablePropertyExpression*>(rank_.get());
+        auto *var = vRankExpr->var();
+        auto *colname = vRankExpr->prop();
+        uniqVar_.emplace(*var);
+        return colname;
+    }
+}
+
+StatusOr<std::string> EdgeKeyRef::varname() const {
+    std::string result = "";
+    if (isInputExpr_) {
+        return result;
+    }
+
+    if (uniqVar_.size() != 1) {
+        return Status::SyntaxError(
+            "Near %s, Only support single data source.", toString());
+    }
+
+    for (auto &var : uniqVar_) {
+        result = std::move(var);
+    }
+
+    return result;
+}
+
+std::string EdgeKeyRef::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "FETCH PTOP ON ";
+    if (srcid_ != nullptr) {
+        buf += srcid_->toString();
+    }
+    if (dstid_ != nullptr) {
+        buf += "->";
+        buf += dstid_->toString();
+    }
+    if (rank_ != nullptr) {
+        buf += "@";
+        buf += rank_->toString();
+    }
+    return buf;
+}
+
 std::string FetchEdgesSentence::toString() const {
-    return folly::stringPrintf("FETCH PROP ON %s %s",
-            edgeKeys_->toString().c_str(), yieldClause_->toString().c_str());
+    std::string buf;
+    buf.reserve(256);
+    buf += "FETCH PROP ON ";
+    if (isRef()) {
+        buf += keyRef_->toString();
+    } else {
+        buf += edgeKeys_->toString();
+    }
+
+    if (yieldClause_ != nullptr) {
+        buf += " ";
+        buf += yieldClause_->toString();
+    }
+    return buf;
 }
 }   // namespace nebula

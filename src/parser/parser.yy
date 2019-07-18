@@ -627,6 +627,9 @@ edge_key
     : vid R_ARROW vid AT rank {
         $$ = new EdgeKey($1, $3, $5);
     }
+	| vid R_ARROW vid {
+        $$ = new EdgeKey($1, $3, 0);
+	}
     ;
 
 edge_keys
@@ -642,22 +645,26 @@ edge_keys
     ;
 
 edge_key_ref:
-    vid_ref_expression R_ARROW vid_ref_expression AT vid_ref_expression {
+    input_ref_expression R_ARROW input_ref_expression AT input_ref_expression {
         $$ = new EdgeKeyRef($1, $3, $5);
     }
     |
-    vid_ref_expression R_ARROW vid_ref_expression {
+    var_ref_expression R_ARROW var_ref_expression AT var_ref_expression {
+        $$ = new EdgeKeyRef($1, $3, $5, false);
+    }
+	|
+    input_ref_expression R_ARROW input_ref_expression {
         $$ = new EdgeKeyRef($1, $3, nullptr);
     }
-    |
-    vid_ref_expression R_ARROW {
-        $$ = new EdgeKeyRef($1, nullptr, nullptr);
+	|
+    var_ref_expression R_ARROW var_ref_expression {
+        $$ = new EdgeKeyRef($1, $3, nullptr, false);
     }
     ;
 
 fetch_edges_sentence
     : KW_FETCH KW_PROP KW_ON name_label edge_keys yield_clause {
-        auto fetch = new FetchEdgesSentence($4, $5,$6);
+        auto fetch = new FetchEdgesSentence($4, $5, $6);
         $$ = fetch;
     }
     | KW_FETCH KW_PROP KW_ON name_label edge_key_ref yield_clause {
