@@ -12,6 +12,7 @@
 #include "storage/QueryVertexPropsProcessor.h"
 #include "storage/QueryEdgePropsProcessor.h"
 #include "storage/QueryStatsProcessor.h"
+#include "storage/AdminProcessor.h"
 
 #define RETURN_FUTURE(processor) \
     auto f = processor->getFuture(); \
@@ -76,6 +77,43 @@ StorageServiceHandler::future_addEdges(const cpp2::AddEdgesRequest& req) {
     auto* processor = AddEdgesProcessor::instance(kvstore_, schemaMan_);
     RETURN_FUTURE(processor);
 }
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_transLeader(const cpp2::TransLeaderReq& req) {
+    auto* processor = TransLeaderProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_addPart(const cpp2::AddPartReq& req) {
+    auto* processor = AddPartProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_addLearner(const cpp2::AddLearnerReq& req) {
+    auto* processor = AddLearnerProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_waitingForCatchUpData(const cpp2::CatchUpDataReq& req) {
+    auto* processor = WaitingForCatchUpDataProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_removePart(const cpp2::RemovePartReq& req) {
+    auto* processor = RemovePartProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::AdminExecResp>
+StorageServiceHandler::future_memberChange(const cpp2::MemberChangeReq& req) {
+    auto* processor = MemberChangeProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 }  // namespace storage
 }  // namespace nebula
 
