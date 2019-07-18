@@ -575,48 +575,6 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
     return std::make_unique<InterimResult>(std::move(rsWriter));
 }
 
-VariantType getProp(const std::string &prop,
-                    const RowReader *reader,
-                    ResultSchemaProvider *schema) {
-    using nebula::cpp2::SupportedType;
-    auto type = schema->getFieldType(prop).type;
-    switch (type) {
-        case SupportedType::BOOL: {
-            bool v;
-            reader->getBool(prop, v);
-            return v;
-        }
-        case SupportedType::INT: {
-            int64_t v;
-            reader->getInt(prop, v);
-            return v;
-        }
-        case SupportedType::VID: {
-            VertexID v;
-            reader->getVid(prop, v);
-            return v;
-        }
-        case SupportedType::FLOAT: {
-            float v;
-            reader->getFloat(prop, v);
-            return static_cast<double>(v);
-        }
-        case SupportedType::DOUBLE: {
-            double v;
-            reader->getDouble(prop, v);
-            return v;
-        }
-        case SupportedType::STRING: {
-            folly::StringPiece v;
-            reader->getString(prop, v);
-            return v.toString();
-        }
-        default:
-            LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(type);
-            return "";
-    }
-}
-
 void GoExecutor::onEmptyInputs() {
     if (onResult_) {
         onResult_(nullptr);
@@ -655,14 +613,19 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             while (iter) {
                 auto &getters = expCtx_->getters();
                 getters.getEdgeProp = [&] (const std::string &prop) -> VariantType {
-                    return getProp(prop, &*iter, eschema.get());
+                    auto res = RowReader::getProp(&*iter, prop);
+                    CHECK(ok(res));
+                    return value(std::move(res));
                 };
                 getters.getSrcTagProp = [&] (const std::string&, const std::string &prop) {
-                    return getProp(prop, vreader.get(), vschema.get());
+                    auto res = RowReader::getProp(vreader.get(), prop);
+                    CHECK(ok(res));
+                    return value(std::move(res));
                 };
                 getters.getDstTagProp = [&] (const std::string&, const std::string &prop) {
-                    auto dst = getProp("_dst", &*iter, eschema.get());
-                    return vertexHolder_->get(boost::get<int64_t>(dst), prop);
+                    auto dst = RowReader::getProp(&*iter, "_dst");
+                    CHECK(ok(dst));
+                    return vertexHolder_->get(boost::get<int64_t>(value(std::move(dst))), prop);
                 };
                 // Evaluate filter
                 if (filter_ != nullptr) {
@@ -697,7 +660,9 @@ VariantType GoExecutor::VertexHolder::get(VertexID id, const std::string &prop) 
 
     auto reader = RowReader::getRowReader(iter->second, schema_);
 
-    return getProp(prop, reader.get(), schema_.get());
+    auto res = RowReader::getProp(reader.get(), prop);
+    CHECK(ok(res));
+    return value(std::move(res));
 }
 
 
