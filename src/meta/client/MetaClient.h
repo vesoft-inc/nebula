@@ -70,9 +70,7 @@ public:
 
     bool isMetadReady();
 
-    bool waitForMetadReady();
-
-    bool threadLoadData();
+    bool waitForMetadReady(int count = -1, int retryIntervalSecs = 2);
 
     void registerListener(MetaChangedListener* listener) {
         folly::RWSpinLock::WriteHolder holder(listenerLock_);

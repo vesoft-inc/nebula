@@ -29,7 +29,8 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
         return addrs.status();
     }
     metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()));
-    bool loadDataOk = metaClient_->threadLoadData();
+    // load data try 3 time
+    bool loadDataOk = metaClient_->waitForMetadReady(3);
     if (!loadDataOk) {
         LOG(ERROR) << "ExecutionEngine::init loadData by thread error!";
     }
