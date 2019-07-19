@@ -35,6 +35,7 @@ public:
 
     bool start();
     void stop();
+    void waitUntilStop();
 
     void askForVote(cpp2::AskForVoteResponse& resp,
                     const cpp2::AskForVoteRequest& req) override;
@@ -52,7 +53,6 @@ private:
 
     // Block until the service is ready to serve
     void waitUntilReady();
-    void waitUntilStop();
 
     RaftexService() = default;
 

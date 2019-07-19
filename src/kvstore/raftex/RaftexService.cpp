@@ -58,7 +58,7 @@ void RaftexService::waitUntilReady() {
 }
 
 
-void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool, 
+void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool,
                                      uint16_t port) {
     LOG(INFO) << "Init thrift server for raft service.";
     server_->setPort(port);
@@ -115,7 +115,7 @@ void RaftexService::stop() {
     if (status_.load() != STATUS_RUNNING) {
         return;
     }
-    
+
     // stop service
     LOG(INFO) << "Stopping the raftex service on port " << serverPort_;
     {
@@ -127,17 +127,18 @@ void RaftexService::stop() {
         LOG(INFO) << "All partitions have stopped";
     }
     server_->stop();
-
-    // reclaim resource
-    waitUntilStop();
 }
 
 
 void RaftexService::waitUntilStop() {
-    serverThread_->join();
-    server_.reset();
-    LOG(INFO) << "Server thread has stopped. Service on port "
-              << serverPort_ << " is ready to be destroyed";
+    if (serverThread_) {
+        serverThread_->join();
+
+        serverThread_.reset();
+        server_.reset();
+        LOG(INFO) << "Server thread has stopped. Service on port "
+                << serverPort_ << " is ready to be destroyed";
+    }
 }
 
 
