@@ -172,6 +172,10 @@ protected:
                                << (errmsg == nullptr ? "'" : "': " + *errmsg);
         }
 
+        if (resp.get_rows() == nullptr && expected.empty()) {
+            return TestOK();
+        }
+
         std::vector<Tuple> rows;
         try {
             rows = rowsToTuples<Tuple>(respToRecords(resp));
