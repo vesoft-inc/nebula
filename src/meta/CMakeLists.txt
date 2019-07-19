@@ -49,6 +49,7 @@ add_dependencies(
     meta_service_handler
     base_obj
     meta_thrift_obj
+    storage_thrift_obj
     common_thrift_obj
     kvstore_obj
     thread_obj
@@ -57,10 +58,12 @@ add_dependencies(
 
 add_library(
     meta_http_handler OBJECT
-    MetaHttpHandler.cpp
+    MetaHttpDownloadHandler.cpp
+    MetaHttpStatusHandler.cpp
 )
 add_dependencies(
     meta_http_handler
+    hdfs_helper_obj
     base_obj
 )
 

@@ -29,7 +29,7 @@ void mockData(kvstore::KVStore* kv) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
                 for (uint64_t numInt = 0; numInt < 3; numInt++) {
-                    writer << numInt;
+                    writer << (vertexId + tagId + numInt);
                 }
                 for (auto numString = 3; numString < 6; numString++) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
@@ -47,7 +47,7 @@ void mockData(kvstore::KVStore* kv) {
                                                        std::numeric_limits<int>::max() - version);
                     RowWriter writer(nullptr);
                     for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                        writer << numInt;
+                        writer << (dstId + numInt);
                     }
                     for (auto numString = 10; numString < 20; numString++) {
                         writer << folly::stringPrintf("string_col_%d_%d", numString, version);
@@ -94,10 +94,8 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
                                folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
                                3001 + i*2));
     }
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                               folly::stringPrintf("_dst")));
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                               folly::stringPrintf("_rank")));
+    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "_dst"));
+    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "_rank"));
     // Return edge props col_0, col_2, col_4 ... col_18
     for (int i = 0; i < 10; i++) {
         tmpColumns.emplace_back(
@@ -107,29 +105,30 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     req.set_return_columns(std::move(tmpColumns));
 }
 
-
-void checkResponse(cpp2::QueryResponse& resp, bool outBound = true) {
-    int32_t edgeFields = outBound ? 12 : 2;
-    int32_t dstIdFrom = outBound ? 10001 : 20001;
-    int32_t edgeNum = outBound ? 7 : 5;
+void checkResponse(cpp2::QueryResponse& resp,
+                   int32_t vertexNum,
+                   int32_t edgeFields,
+                   int32_t dstIdFrom,
+                   int32_t edgeNum,
+                   bool outBound) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
     EXPECT_EQ(edgeFields, resp.edge_schema.columns.size());
     EXPECT_EQ(3, resp.vertex_schema.columns.size());
     auto provider = std::make_shared<ResultSchemaProvider>(resp.edge_schema);
     auto tagProvider = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
-    EXPECT_EQ(30, resp.vertices.size());
+    EXPECT_EQ(vertexNum, resp.vertices.size());
     for (auto& vp : resp.vertices) {
         VLOG(1) << "Check vertex props...";
         auto tagReader = RowReader::getRowReader(vp.vertex_data, tagProvider);
         EXPECT_EQ(3, tagReader->numFields());
         int64_t col1;
         EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getInt<int64_t>("tag_3001_col_0", col1));
-        EXPECT_EQ(col1, 0);
+        EXPECT_EQ(col1, vp.vertex_id + 3001);
 
         int64_t col2;
         EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getInt<int64_t>("tag_3003_col_2", col2));
-        EXPECT_EQ(col2, 2);
+        EXPECT_EQ(col2, vp.vertex_id + 3003 + 2);
 
         folly::StringPiece col3;
         EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getString("tag_3005_col_4", col3));
@@ -141,11 +140,11 @@ void checkResponse(cpp2::QueryResponse& resp, bool outBound = true) {
         int32_t rowNum = 0;
         while (static_cast<bool>(it)) {
             EXPECT_EQ(edgeFields, it->numFields());
+            int64_t dstId;
             {
                 // _dst
-                int64_t v;
-                EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(0, v));
-                CHECK_EQ(dstIdFrom + rowNum, v);
+                EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(0, dstId));
+                CHECK_EQ(dstIdFrom + rowNum, dstId);
             }
             {
                 // _rank
@@ -158,7 +157,7 @@ void checkResponse(cpp2::QueryResponse& resp, bool outBound = true) {
                 for (auto i = 2; i < 7; i++) {
                     int64_t v;
                     EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
-                    CHECK_EQ((i - 2) * 2, v);
+                    CHECK_EQ((i - 2) * 2 + dstId, v);
                 }
                 // col_10, col_12 ... col_18
                 for (auto i = 7; i < 12; i++) {
@@ -195,7 +194,7 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkResponse(resp);
+    checkResponse(resp, 30, 12, 10001, 7, true);
 }
 
 
@@ -219,7 +218,73 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    checkResponse(resp, false);
+    checkResponse(resp, 30, 2, 20001, 5, false);
+}
+
+TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
+    fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
+    LOG(INFO) << "Prepare meta...";
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto schemaMan = TestUtils::mockSchemaMan();
+    mockData(kv.get());
+
+    LOG(INFO) << "Build filter...";
+    auto* edgeProp = new std::string("col_0");
+    auto* alias = new std::string("e101");
+    auto* edgeExp = new EdgePropertyExpression(alias, edgeProp);
+    auto* priExp = new PrimaryExpression(10007L);
+    auto relExp = std::make_unique<RelationalExpression>(edgeExp,
+                                                         RelationalExpression::Operator::GE,
+                                                         priExp);
+    cpp2::GetNeighborsRequest req;
+    buildRequest(req);
+    req.set_filter(Expression::encode(relExp.get()));
+
+    LOG(INFO) << "Test QueryOutBoundRequest...";
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    executor.get(),
+                                                    BoundType::OUT_BOUND);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    checkResponse(resp, 30, 12, 10007, 1, true);
+}
+
+TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
+    fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
+    LOG(INFO) << "Prepare meta...";
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto schemaMan = TestUtils::mockSchemaMan();
+    mockData(kv.get());
+
+    LOG(INFO) << "Build filter...";
+    auto* tag = new std::string("3001");
+    auto* prop = new std::string("tag_3001_col_0");
+    auto* srcExp = new SourcePropertyExpression(tag, prop);
+    auto* priExp = new PrimaryExpression(20 + 3001L);
+    auto relExp = std::make_unique<RelationalExpression>(srcExp,
+                                                         RelationalExpression::Operator::GE,
+                                                         priExp);
+    cpp2::GetNeighborsRequest req;
+    buildRequest(req);
+    req.set_filter(Expression::encode(relExp.get()));
+
+    LOG(INFO) << "Test QueryOutBoundRequest...";
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    executor.get(),
+                                                    BoundType::OUT_BOUND);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    checkResponse(resp, 10, 12, 10001, 7, true);
 }
 
 TEST(QueryBoundTest,  GenBucketsTest) {
@@ -274,6 +339,78 @@ TEST(QueryBoundTest,  GenBucketsTest) {
     }
 }
 
+TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
+    fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
+    LOG(INFO) << "Prepare meta...";
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto schemaMan = TestUtils::mockSchemaMan();
+    mockData(kv.get());
+
+    LOG(INFO) << "Build filter...";
+    auto* tag = new std::string("3001");
+    auto* prop = new std::string("tag_3001_col_0");
+    auto* srcExp = new SourcePropertyExpression(tag, prop);
+    auto* priExp = new PrimaryExpression(20 + 3001L);
+    auto* left = new RelationalExpression(srcExp,
+                                          RelationalExpression::Operator::GE,
+                                          priExp);
+    auto* edgeProp = new std::string("col_0");
+    auto* alias = new std::string("e101");
+    auto* edgeExp = new EdgePropertyExpression(alias, edgeProp);
+    auto* priExp2 = new PrimaryExpression(10007L);
+    auto* right = new RelationalExpression(edgeExp,
+                                           RelationalExpression::Operator::GE,
+                                           priExp2);
+    auto logExp = std::make_unique<LogicalExpression>(left, LogicalExpression::AND, right);
+
+    cpp2::GetNeighborsRequest req;
+    buildRequest(req);
+    req.set_filter(Expression::encode(logExp.get()));
+
+    LOG(INFO) << "Test QueryOutBoundRequest...";
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    executor.get(),
+                                                    BoundType::OUT_BOUND);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    checkResponse(resp, 10, 12, 10007, 1, true);
+}
+
+TEST(QueryBoundTest, FilterTest_InvalidFilter) {
+    fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
+    LOG(INFO) << "Prepare meta...";
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    auto schemaMan = TestUtils::mockSchemaMan();
+    mockData(kv.get());
+
+    LOG(INFO) << "Build filter...";
+    auto* prop = new std::string("tag_3001_col_0");
+    auto inputExp = std::make_unique<InputPropertyExpression>(prop);
+
+    cpp2::GetNeighborsRequest req;
+    buildRequest(req);
+    req.set_filter(Expression::encode(inputExp.get()));
+
+    LOG(INFO) << "Test QueryOutBoundRequest...";
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryBoundProcessor::instance(kv.get(),
+                                                    schemaMan.get(),
+                                                    executor.get(),
+                                                    BoundType::OUT_BOUND);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    EXPECT_EQ(3, resp.result.failed_codes.size());
+    EXPECT_TRUE(nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER
+                    == resp.result.failed_codes[0].code);
+}
 }  // namespace storage
 }  // namespace nebula
 

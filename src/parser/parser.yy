@@ -39,6 +39,7 @@ class GraphScanner;
     nebula::SequentialSentences            *sentences;
     nebula::ColumnSpecification            *colspec;
     nebula::ColumnSpecificationList        *colspeclist;
+    nebula::ColumnNameList                 *colsnamelist;
     nebula::ColumnType                      type;
     nebula::StepClause                     *step_clause;
     nebula::FromClause                     *from_clause;
@@ -92,9 +93,10 @@ class GraphScanner;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
-%token KW_ROLES KW_BY
+%token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC
+%token KW_DISTINCT
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -157,6 +159,7 @@ class GraphScanner;
 
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
+%type <colsnamelist> column_name_list
 
 %type <with_user_opt_list> with_user_opt_list
 %type <with_user_opt_item> with_user_opt_item
@@ -177,6 +180,7 @@ class GraphScanner;
 %type <sentence> order_by_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
 %type <sentence> grant_sentence revoke_sentence
+%type <sentence> download_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -221,7 +225,7 @@ primary_expression
     | BOOL {
         $$ = new PrimaryExpression($1);
     }
-    | LABEL {
+    | name_label {
         $$ = new PrimaryExpression(*$1);
         delete $1;
     }
@@ -249,7 +253,7 @@ primary_expression
     ;
 
 input_ref_expression
-    : INPUT_REF DOT LABEL {
+    : INPUT_REF DOT name_label {
         $$ = new InputPropertyExpression($3);
     }
     | INPUT_REF {
@@ -259,43 +263,46 @@ input_ref_expression
     ;
 
 src_ref_expression
-    : SRC_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new SourcePropertyExpression($3, $6);
+    : SRC_REF DOT name_label DOT name_label {
+        $$ = new SourcePropertyExpression($3, $5);
     }
     ;
 
 dst_ref_expression
-    : DST_REF L_BRACKET LABEL R_BRACKET DOT LABEL {
-        $$ = new DestPropertyExpression($3, $6);
+    : DST_REF DOT name_label DOT name_label {
+        $$ = new DestPropertyExpression($3, $5);
     }
     ;
 
 var_ref_expression
-    : VARIABLE DOT LABEL {
+    : VARIABLE DOT name_label {
         $$ = new VariablePropertyExpression($1, $3);
+    }
+    | VARIABLE {
+        $$ = new VariablePropertyExpression($1, new std::string("id"));
     }
     ;
 
 alias_ref_expression
-    : LABEL DOT LABEL {
+    : name_label DOT name_label {
         $$ = new EdgePropertyExpression($1, $3);
     }
-    | LABEL DOT TYPE_PROP {
+    | name_label DOT TYPE_PROP {
         $$ = new EdgeTypeExpression($1);
     }
-    | LABEL DOT SRC_ID_PROP {
+    | name_label DOT SRC_ID_PROP {
         $$ = new EdgeSrcIdExpression($1);
     }
-    | LABEL DOT DST_ID_PROP {
+    | name_label DOT DST_ID_PROP {
         $$ = new EdgeDstIdExpression($1);
     }
-    | LABEL DOT RANK_PROP {
+    | name_label DOT RANK_PROP {
         $$ = new EdgeRankExpression($1);
     }
     ;
 
 function_call_expression
-    : name_label L_PAREN argument_list R_PAREN {
+    : LABEL L_PAREN argument_list R_PAREN {
         $$ = new FunctionCallExpression($1, $3);
     }
     ;
@@ -506,6 +513,7 @@ where_clause
 yield_clause
     : %empty { $$ = nullptr; }
     | KW_YIELD yield_columns { $$ = new YieldClause($2); }
+    | KW_YIELD KW_DISTINCT yield_columns { $$ = new YieldClause($3, true); }
     ;
 
 yield_columns
@@ -628,10 +636,10 @@ alter_schema_opt_item
         $$ = new AlterSchemaOptItem(AlterSchemaOptItem::ADD, $3);
     }
     | KW_CHANGE L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterSchemaOptItem(AlterSchemaOptItem::CHANGE, $3);
+        $$ = new AlterSchemaOptItem(AlterSchemaOptItem::CHANGE, $3);
     }
-    | KW_DROP L_PAREN column_spec_list R_PAREN {
-      $$ = new AlterSchemaOptItem(AlterSchemaOptItem::DROP, $3);
+    | KW_DROP L_PAREN column_name_list R_PAREN {
+        $$ = new AlterSchemaOptItem(AlterSchemaOptItem::DROP, $3);
     }
     ;
 
@@ -693,6 +701,17 @@ alter_edge_sentence
     }
     ;
 
+column_name_list
+    : name_label {
+        $$ = new ColumnNameList();
+        $$->addColumn($1);
+    }
+    | column_name_list COMMA name_label {
+        $$ = $1;
+        $$->addColumn($3);
+    }
+    ;
+
 column_spec_list
     : column_spec {
         $$ = new ColumnSpecificationList();
@@ -705,8 +724,7 @@ column_spec_list
     ;
 
 column_spec
-    : name_label { $$ = new ColumnSpecification($1); }
-    | name_label type_spec { $$ = new ColumnSpecification($2, $1); }
+    : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
     ;
 
 describe_tag_sentence
@@ -749,15 +767,15 @@ order_factor
     | input_ref_expression KW_DESC {
         $$ = new OrderFactor($1, OrderFactor::DESCEND);
     }
-    | LABEL {
+    | name_label {
         auto inputRef = new InputPropertyExpression($1);
         $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
     }
-    | LABEL KW_ASC {
+    | name_label KW_ASC {
         auto inputRef = new InputPropertyExpression($1);
         $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
     }
-    | LABEL KW_DESC {
+    | name_label KW_DESC {
         auto inputRef = new InputPropertyExpression($1);
         $$ = new OrderFactor(inputRef, OrderFactor::DESCEND);
     }
@@ -828,7 +846,7 @@ vertex_tag_list
     ;
 
 vertex_tag_item
-    : name_label {
+    : name_label L_PAREN R_PAREN{
         $$ = new VertexTagItem($1);
     }
     | name_label L_PAREN prop_list R_PAREN {
@@ -862,7 +880,10 @@ vertex_row_list
     ;
 
 vertex_row_item
-    : vid COLON L_PAREN value_list R_PAREN {
+    : vid COLON L_PAREN R_PAREN {
+        $$ = new VertexRowItem($1, new ValueList());
+    }
+    | vid COLON L_PAREN value_list R_PAREN {
         $$ = new VertexRowItem($1, $4);
     }
     ;
@@ -882,11 +903,26 @@ value_list
     ;
 
 insert_edge_sentence
-    : KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
+    : KW_INSERT KW_EDGE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgeSentence();
+        sentence->setEdge($3);
+        sentence->setProps(new PropertyList());
+        sentence->setRows($7);
+        $$ = sentence;
+    }
+    | KW_INSERT KW_EDGE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
         auto sentence = new InsertEdgeSentence();
         sentence->setEdge($3);
         sentence->setProps($5);
         sentence->setRows($8);
+        $$ = sentence;
+    }
+    | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgeSentence();
+        sentence->setOverwrite(false);
+        sentence->setEdge($5);
+        sentence->setProps(new PropertyList());
+        sentence->setRows($9);
         $$ = sentence;
     }
     | KW_INSERT KW_EDGE KW_NO KW_OVERWRITE name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
@@ -911,8 +947,14 @@ edge_row_list
     ;
 
 edge_row_item
-    : vid R_ARROW vid COLON L_PAREN value_list R_PAREN {
+    : vid R_ARROW vid COLON L_PAREN R_PAREN {
+        $$ = new EdgeRowItem($1, $3, new ValueList());
+    }
+    | vid R_ARROW vid COLON L_PAREN value_list R_PAREN {
         $$ = new EdgeRowItem($1, $3, $6);
+    }
+    | vid R_ARROW vid AT rank COLON L_PAREN R_PAREN {
+        $$ = new EdgeRowItem($1, $3, $5, new ValueList());
     }
     | vid R_ARROW vid AT rank COLON L_PAREN value_list R_PAREN {
         $$ = new EdgeRowItem($1, $3, $5, $8);
@@ -1009,6 +1051,15 @@ delete_vertex_sentence
     : KW_DELETE KW_VERTEX vid_list where_clause {
         auto sentence = new DeleteVertexSentence($3);
         sentence->setWhereClause($4);
+        $$ = sentence;
+    }
+    ;
+
+download_sentence
+    : KW_DOWNLOAD KW_HDFS STRING KW_TO STRING {
+        auto sentence = new DownloadSentence();
+        sentence->setUrl($3);
+        sentence->setLocalPath($5);
         $$ = sentence;
     }
     ;
@@ -1271,6 +1322,7 @@ mutate_sentence
     | update_edge_sentence { $$ = $1; }
     | delete_vertex_sentence { $$ = $1; }
     | delete_edge_sentence { $$ = $1; }
+    | download_sentence { $$ = $1; }
     ;
 
 maintain_sentence
@@ -1321,6 +1373,9 @@ sentences
     }
     | sentences SEMICOLON {
         $$ = $1;
+    }
+    | %empty {
+        $$ = nullptr;
     }
     ;
 

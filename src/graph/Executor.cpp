@@ -31,6 +31,7 @@
 #include "graph/DescribeSpaceExecutor.h"
 #include "graph/DropSpaceExecutor.h"
 #include "graph/YieldExecutor.h"
+#include "graph/DownloadExecutor.h"
 #include "graph/OrderByExecutor.h"
 
 namespace nebula {
@@ -103,6 +104,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kYield:
             executor = std::make_unique<YieldExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kDownload:
+            executor = std::make_unique<DownloadExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kOrderBy:
             executor = std::make_unique<OrderByExecutor>(sentence, ectx());
             break;
@@ -172,6 +176,9 @@ Status Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> sc
                                 std::vector<std::string*> props) {
     for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
         auto schemaFieldName = schema->getFieldName(fieldIndex);
+        if (UNLIKELY(nullptr == schemaFieldName)) {
+            return Status::Error("invalid field index");
+        }
         if (schemaFieldName != *props[fieldIndex]) {
             LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
                        << ", input field " << *props[fieldIndex];

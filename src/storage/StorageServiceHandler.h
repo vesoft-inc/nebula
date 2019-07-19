@@ -49,6 +49,25 @@ public:
     folly::Future<cpp2::ExecResponse>
     future_addEdges(const cpp2::AddEdgesRequest& req) override;
 
+    // Admin operations
+    folly::Future<cpp2::AdminExecResp>
+    future_transLeader(const cpp2::TransLeaderReq& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_addPart(const cpp2::AddPartReq& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_addLearner(const cpp2::AddLearnerReq& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_waitingForCatchUpData(const cpp2::CatchUpDataReq& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_removePart(const cpp2::RemovePartReq& req) override;
+
+    folly::Future<cpp2::AdminExecResp>
+    future_memberChange(const cpp2::MemberChangeReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
     meta::SchemaManager* schemaMan_;

@@ -12,6 +12,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
@@ -158,8 +159,8 @@ nebula_add_test(storage_client_test)
 
 
 add_executable(
-    storage_http_test
-    StorageHttpHandlerTest.cpp
+    storage_http_status_test
+    StorageHttpStatusHandlerTest.cpp
     $<TARGET_OBJECTS:storage_http_handler>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:stats_obj>
@@ -169,7 +170,7 @@ add_executable(
     ${storage_test_deps}
 )
 nebula_link_libraries(
-    storage_http_test
+    storage_http_status_test
     proxygenhttpserver
     proxygenlib
     ${ROCKSDB_LIBRARIES}
@@ -177,7 +178,29 @@ nebula_link_libraries(
     wangle
     gtest
 )
-nebula_add_test(storage_http_test)
+nebula_add_test(storage_http_status_test)
+
+add_executable(
+    storage_http_download_test
+    StorageHttpDownloadHandlerTest.cpp
+    $<TARGET_OBJECTS:storage_http_handler>
+    $<TARGET_OBJECTS:ws_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:adHocSchema_obj>
+    $<TARGET_OBJECTS:meta_service_handler>
+    ${storage_test_deps}
+)
+nebula_link_libraries(
+    storage_http_download_test
+    proxygenhttpserver
+    proxygenlib
+    ${ROCKSDB_LIBRARIES}
+    ${THRIFT_LIBRARIES}
+    wangle
+    gtest
+)
+nebula_add_test(storage_http_download_test)
 
 add_executable(
     compaction_test
@@ -194,6 +217,7 @@ add_executable(
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:schema_obj>
+    $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:time_obj>
@@ -215,25 +239,10 @@ nebula_add_test(compaction_test)
 add_executable(
     query_bound_bm
     QueryBoundBenchmark.cpp
+    ${storage_test_deps}
     $<TARGET_OBJECTS:adHocSchema_obj>
-    $<TARGET_OBJECTS:storage_service_handler>
-    $<TARGET_OBJECTS:kvstore_obj>
-    $<TARGET_OBJECTS:raftex_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:meta_client>
-    $<TARGET_OBJECTS:meta_thrift_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
-    $<TARGET_OBJECTS:dataman_obj>
-    $<TARGET_OBJECTS:schema_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:time_obj>
-    $<TARGET_OBJECTS:fs_obj>
 )
+
 nebula_link_libraries(
     query_bound_bm
     ${ROCKSDB_LIBRARIES}
