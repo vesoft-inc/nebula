@@ -157,12 +157,12 @@ std::string encodeLearner(const HostAddr& learner) {
     return encoded;
 }
 
-HostAddr decodeLearner(folly::StringPiece encoded) {
+HostAddr decodeLearner(const std::string& encoded) {
     HostAddr addr;
     CHECK_EQ(kHeadLen + sizeof(HostAddr), encoded.size());
-    memcpy(&addr.first, encoded.begin() + kHeadLen, sizeof(addr.first));
+    memcpy(&addr.first, encoded.data() + kHeadLen, sizeof(addr.first));
     memcpy(&addr.second,
-           encoded.begin() + kHeadLen + sizeof(addr.first),
+           encoded.data() + kHeadLen + sizeof(addr.first),
            sizeof(addr.second));
     return addr;
 }

@@ -623,9 +623,9 @@ void RaftPart::processAppendLogResponses(
         std::vector<std::shared_ptr<Host>> hosts) {
     // Make sure majority have succeeded
     size_t numSucceeded = 0;
-    size_t index = 0;
     for (auto& res : resps) {
-        if (!hosts[index++]->isLearner() && res.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
+        if (!hosts[res.first]->isLearner()
+                && res.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
         }
     }
@@ -799,7 +799,7 @@ typename RaftPart::Role RaftPart::processElectionResponses(
 
     size_t numSucceeded = 0;
     for (auto& r : results) {
-        if (r.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
+        if (r.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
         }
     }

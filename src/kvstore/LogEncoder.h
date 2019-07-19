@@ -34,7 +34,7 @@ std::string encodeMultiValues(LogType type,
 std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded);
 
 std::string encodeLearner(const HostAddr& learner);
-HostAddr decodeLearner(folly::StringPiece encoded);
+HostAddr decodeLearner(const std::string& encoded);
 
 }  // namespace kvstore
 }  // namespace nebula

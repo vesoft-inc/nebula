@@ -52,7 +52,7 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
                 folly::Try<FutureReturnType<FutureIter>>&& t) {
             if (!ctx->promise.isFulfilled()) {
                 if (!t.hasException() && ctx->eval(index, t.value())) {
-                    ctx->results.emplace_back(std::move(t.value()));
+                    ctx->results.emplace_back(index, std::move(t.value()));
                 }
                 if ((++ctx->numCompleted) == ctx->nTotal ||
                     ctx->results.size() == n) {

@@ -234,11 +234,11 @@ private:
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AskForVoteResponse
-    using ElectionResponses = std::vector<cpp2::AskForVoteResponse>;
+    using ElectionResponses = std::vector<std::pair<size_t, cpp2::AskForVoteResponse>>;
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AppendLogResponse
-    using AppendLogResponses = std::vector<cpp2::AppendLogResponse>;
+    using AppendLogResponses = std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
 
     // <source, logType, log>
     using LogCache = std::vector<
