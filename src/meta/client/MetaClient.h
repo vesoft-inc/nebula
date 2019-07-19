@@ -69,8 +69,8 @@ public:
     void init();
 
     void registerListener(MetaChangedListener* listener) {
-        CHECK(listener_ == nullptr);
         folly::RWSpinLock::WriteHolder holder(listenerLock_);
+        CHECK(listener_ == nullptr);
         listener_ = listener;
     }
 
