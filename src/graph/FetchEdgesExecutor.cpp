@@ -112,14 +112,19 @@ Status FetchEdgesExecutor::prepareYield() {
 }
 
 Status FetchEdgesExecutor::setupColumns() {
-    auto label = sentence_->label();
+    auto *label = sentence_->label();
     auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
     auto iter = schema->begin();
+    if (yieldColumns_ == nullptr) {
+        yieldColumns_ = std::make_unique<YieldColumns>();
+    }
     while (iter) {
         auto *name = iter->getName();
         auto *ref = new std::string("");
-        Expression *expr = new AliasPropertyExpression(ref, label, new std::string(name));
+        auto *labelName = new std::string(*label);
+        Expression *expr = new AliasPropertyExpression(ref, labelName, new std::string(name));
         YieldColumn *column = new YieldColumn(expr);
+        yieldColumns_->addColumn(column);
         yields_.emplace_back(column);
         ++iter;
     }

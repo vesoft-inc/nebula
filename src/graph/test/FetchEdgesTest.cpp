@@ -30,34 +30,6 @@ TEST_F(FetchEdgesTest, base) {
         auto &player = players_["Boris Diaw"];
         auto &serve = player.serves()[0];
         auto &team = teams_[std::get<0>(serve)];
-        auto *fmt = "FETCH PROP ON serve %ld->%ld";
-        auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto &player = players_["Boris Diaw"];
-        auto &serve = player.serves()[0];
-        auto &team = teams_[std::get<0>(serve)];
-        auto *fmt = "FETCH PROP ON serve %ld->%ld@0";
-        auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {std::get<1>(serve), std::get<2>(serve)},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto &player = players_["Boris Diaw"];
-        auto &serve = player.serves()[0];
-        auto &team = teams_[std::get<0>(serve)];
         auto *fmt = "FETCH PROP ON serve %ld->%ld"
                     " YIELD serve.start_year, serve.end_year";
         auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
@@ -133,6 +105,52 @@ TEST_F(FetchEdgesTest, base) {
             std::tuple<int64_t, int64_t> result(std::get<1>(serve), std::get<2>(serve));
             expected.emplace_back(std::move(result));
         }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve hash(\"%s\")->hash(\"%s\")"
+                    " YIELD serve.start_year, serve.end_year";
+        auto query = folly::stringPrintf(fmt, player.name().c_str(), team.name().c_str());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {std::get<1>(serve), std::get<2>(serve)},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(FetchEdgesTest, noYield) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve %ld->%ld";
+        auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {std::get<1>(serve), std::get<2>(serve)},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto &serve = player.serves()[0];
+        auto &team = teams_[std::get<0>(serve)];
+        auto *fmt = "FETCH PROP ON serve %ld->%ld@0";
+        auto query = folly::stringPrintf(fmt, player.vid(), team.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {std::get<1>(serve), std::get<2>(serve)},
+        };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     {

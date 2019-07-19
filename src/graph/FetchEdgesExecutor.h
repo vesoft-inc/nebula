@@ -55,6 +55,7 @@ private:
     std::string                                *dstid_;
     std::string                                *rank_;
     std::string                                 varname_;
+    std::unique_ptr<YieldColumns>               yieldColumns_;
 };
 }  // namespace graph
 }  // namespace nebula

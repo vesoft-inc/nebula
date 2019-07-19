@@ -52,6 +52,7 @@ private:
     std::vector<VertexID>                       vids_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
+    std::unique_ptr<YieldColumns>               yieldColumns_;
 };
 }  // namespace graph
 }  // namespace nebula

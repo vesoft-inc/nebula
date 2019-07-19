@@ -114,11 +114,16 @@ Status FetchVerticesExecutor::setupColumns() {
     auto tagID = result.value();
     auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagID);
     auto iter = schema->begin();
+    if (yieldColumns_ == nullptr) {
+        yieldColumns_ = std::make_unique<YieldColumns>();
+    }
     while (iter) {
         auto *name = iter->getName();
         auto *ref = new std::string("");
-        Expression *expr = new AliasPropertyExpression(ref, tag, new std::string(name));
+        auto *tagName = new std::string(*tag);
+        Expression *expr = new AliasPropertyExpression(ref, tagName, new std::string(name));
         YieldColumn *column = new YieldColumn(expr);
+        yieldColumns_->addColumn(column);
         yields_.emplace_back(column);
         ++iter;
     }
