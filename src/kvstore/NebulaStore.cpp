@@ -59,10 +59,10 @@ namespace kvstore {
 NebulaStore::~NebulaStore() {
     workers_->stop();
     workers_->wait();
-    spaces_.clear();
     LOG(INFO) << "Stop the raft service...";
     raftService_->stop();
     raftService_->waitUntilStop();
+    spaces_.clear();
     LOG(INFO) << "~NebulaStore()";
 }
 
