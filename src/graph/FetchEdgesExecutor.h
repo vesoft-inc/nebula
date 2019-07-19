@@ -51,11 +51,11 @@ private:
     FetchEdgesSentence                         *sentence_{nullptr};
     std::vector<storage::cpp2::EdgeKey>         edgeKeys_;
     EdgeType                                    edgeType_;
-    std::string                                *srcid_;
-    std::string                                *dstid_;
-    std::string                                *rank_;
+    std::string                                *srcid_{nullptr};
+    std::string                                *dstid_{nullptr};
+    std::string                                *rank_{nullptr};
     std::string                                 varname_;
-    std::unique_ptr<YieldColumns>               yieldColumns_;
+    std::unique_ptr<YieldColumns>               yieldColsHolder_;
 };
 }  // namespace graph
 }  // namespace nebula

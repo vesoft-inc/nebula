@@ -115,8 +115,8 @@ Status FetchEdgesExecutor::setupColumns() {
     auto *label = sentence_->label();
     auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
     auto iter = schema->begin();
-    if (yieldColumns_ == nullptr) {
-        yieldColumns_ = std::make_unique<YieldColumns>();
+    if (yieldColsHolder_ == nullptr) {
+        yieldColsHolder_ = std::make_unique<YieldColumns>();
     }
     while (iter) {
         auto *name = iter->getName();
@@ -124,7 +124,7 @@ Status FetchEdgesExecutor::setupColumns() {
         auto *labelName = new std::string(*label);
         Expression *expr = new AliasPropertyExpression(ref, labelName, new std::string(name));
         YieldColumn *column = new YieldColumn(expr);
-        yieldColumns_->addColumn(column);
+        yieldColsHolder_->addColumn(column);
         yields_.emplace_back(column);
         ++iter;
     }
