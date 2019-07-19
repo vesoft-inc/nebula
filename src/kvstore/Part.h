@@ -11,12 +11,14 @@
 #include "raftex/RaftPart.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
+#include "kvstore/raftex/SnapshotManager.h"
 
 namespace nebula {
 namespace kvstore {
 
 
 class Part : public raftex::RaftPart {
+    friend class SnapshotManager;
 public:
     Part(GraphSpaceID spaceId,
          PartitionID partId,
@@ -25,7 +27,8 @@ public:
          KVEngine* engine,
          std::shared_ptr<folly::IOThreadPoolExecutor> pool,
          std::shared_ptr<thread::GenericThreadPool> workers,
-         std::shared_ptr<folly::Executor> handlers);
+         std::shared_ptr<folly::Executor> handlers,
+         std::shared_ptr<raftex::SnapshotManager> snapshotMan);
 
     virtual ~Part() {
         LOG(INFO) << idStr_ << "~Part()";
@@ -77,6 +80,15 @@ private:
                        TermID termId,
                        ClusterID clusterId,
                        const std::string& log) override;
+
+    std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
+                                               LogID committedLogId,
+                                               TermID committedLogTerm,
+                                               bool finished) override;
+
+    void cleanup() override {
+        LOG(INFO) << idStr_ << "Clean up all data, not implement!";
+    }
 
 protected:
     GraphSpaceID spaceId_;

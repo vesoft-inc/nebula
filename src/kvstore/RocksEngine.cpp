@@ -32,7 +32,7 @@ private:
     rocksdb::DB* db_{nullptr};
 
 public:
-    explicit RocksWriteBatch(rocksdb::DB* db) : db_(db) {}
+    explicit RocksWriteBatch(rocksdb::DB* db) : batch_(4096), db_(db) {}
 
     virtual ~RocksWriteBatch() = default;
 

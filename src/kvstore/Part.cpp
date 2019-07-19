@@ -39,7 +39,8 @@ Part::Part(GraphSpaceID spaceId,
            KVEngine* engine,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
            std::shared_ptr<thread::GenericThreadPool> workers,
-           std::shared_ptr<folly::Executor> handlers)
+           std::shared_ptr<folly::Executor> handlers,
+           std::shared_ptr<raftex::SnapshotManager> snapshotMan)
         : RaftPart(FLAGS_cluster_id,
                    spaceId,
                    partId,
@@ -47,7 +48,8 @@ Part::Part(GraphSpaceID spaceId,
                    walPath,
                    ioPool,
                    workers,
-                   handlers)
+                   handlers,
+                   snapshotMan)
         , spaceId_(spaceId)
         , partId_(partId)
         , walPath_(walPath)
@@ -270,6 +272,30 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     }
 
     return engine_->commitBatchWrite(std::move(batch)) == ResultCode::SUCCEEDED;
+}
+
+std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>& rows,
+                                                 LogID committedLogId,
+                                                 TermID committedLogTerm,
+                                                 bool finished) {
+    auto batch = engine_->startBatchWrite();
+    int64_t count = 0;
+    int64_t size = 0;
+    for (auto& row : rows) {
+        count++;
+        size += row.size();
+        auto kv = decodeKV(row);
+        CHECK_EQ(ResultCode::SUCCEEDED, batch->put(kv.first, kv.second));
+    }
+    if (finished) {
+        std::string commitMsg;
+        commitMsg.reserve(sizeof(LogID) + sizeof(TermID));
+        commitMsg.append(reinterpret_cast<char*>(&committedLogId), sizeof(LogID));
+        commitMsg.append(reinterpret_cast<char*>(&committedLogTerm), sizeof(TermID));
+        batch->put(folly::stringPrintf("%s%d", kCommitKeyPrefix, partId_), commitMsg);
+    }
+    CHECK_EQ(ResultCode::SUCCEEDED, engine_->commitBatchWrite(std::move(batch)));
+    return std::make_pair(count, size);
 }
 
 bool Part::preProcessLog(LogID logId,

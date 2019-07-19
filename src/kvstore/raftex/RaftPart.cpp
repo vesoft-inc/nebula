@@ -23,6 +23,9 @@ DEFINE_bool(accept_log_append_during_pulling, false,
             "Whether to accept new logs during pulling the snapshot");
 DEFINE_uint32(raft_heartbeat_interval_secs, 5,
              "Seconds between each heartbeat");
+
+DEFINE_uint64(raft_snapshot_timeout, 60 * 5, "Max seconds between two snapshot requests");
+
 DEFINE_uint32(max_batch_size, 256, "The max number of logs in a batch");
 
 DEFINE_int32(wal_ttl, 86400, "Default wal ttl");
@@ -198,7 +201,8 @@ RaftPart::RaftPart(ClusterID clusterId,
                    const folly::StringPiece walRoot,
                    std::shared_ptr<folly::IOThreadPoolExecutor> pool,
                    std::shared_ptr<thread::GenericThreadPool> workers,
-                   std::shared_ptr<folly::Executor> executor)
+                   std::shared_ptr<folly::Executor> executor,
+                   std::shared_ptr<SnapshotManager> snapshotMan)
         : idStr_{folly::stringPrintf("[Port: %d, Space: %d, Part: %d] ",
                                      localAddr.second, spaceId, partId)}
         , clusterId_{clusterId}
@@ -210,13 +214,15 @@ RaftPart::RaftPart(ClusterID clusterId,
         , leader_{0, 0}
         , ioThreadPool_{pool}
         , bgWorkers_{workers}
-        , executor_(executor) {
+        , executor_(executor)
+        , snapshot_(snapshotMan) {
     FileBasedWalPolicy policy;
     policy.ttl = FLAGS_wal_ttl;
     policy.fileSize = FLAGS_wal_file_size;
     policy.bufferSize = FLAGS_wal_buffer_size;
     policy.numBuffers = FLAGS_wal_buffer_num;
     wal_ = FileBasedWal::getWal(walRoot,
+                                idStr_,
                                 policy,
                                 [this] (LogID logId,
                                         TermID logTermId,
@@ -832,6 +838,9 @@ bool RaftPart::needToStartElection() {
         role_ == Role::FOLLOWER &&
         (lastMsgRecvDur_.elapsedInSec() >= FLAGS_raft_heartbeat_interval_secs ||
          term_ == 0)) {
+        LOG(INFO) << idStr_ << "Start leader election, reason: lastMsgDur "
+                  << lastMsgRecvDur_.elapsedInSec()
+                  << ", term " << term_;
         role_ = Role::CANDIDATE;
         LOG(INFO) << idStr_
                   << "needToStartElection: lastMsgRecvDur " << lastMsgRecvDur_.elapsedInSec()
@@ -1029,10 +1038,15 @@ void RaftPart::statusPolling() {
         VLOG(2) << idStr_ << "Need to send heartbeat";
         sendHeartbeat();
     }
-    wal_->cleanWAL();
+    if (needToCleanupSnapshot()) {
+        LOG(INFO) << idStr_ << "Clean up the snapshot";
+        cleanupSnapshot();
+    }
+    wal_->cleanWAL(FLAGS_wal_ttl);
     {
         std::lock_guard<std::mutex> g(raftLock_);
-        if (status_ == Status::RUNNING) {
+        if (status_ == Status::RUNNING || status_ == Status::WAITING_SNAPSHOT) {
+            VLOG(3) << idStr_ << "Schedule new task";
             bgWorkers_->addDelayTask(
                 delay,
                 [self = shared_from_this()] {
@@ -1042,6 +1056,22 @@ void RaftPart::statusPolling() {
     }
 }
 
+bool RaftPart::needToCleanupSnapshot() {
+    std::lock_guard<std::mutex> g(raftLock_);
+    return status_ == Status::WAITING_SNAPSHOT &&
+           role_ != Role::LEADER &&
+           lastSnapshotRecvDur_.elapsedInSec() >= FLAGS_raft_snapshot_timeout;
+}
+
+void RaftPart::cleanupSnapshot() {
+    LOG(INFO) << idStr_ << "Clean up the snapshot";
+    std::lock_guard<std::mutex> g(raftLock_);
+    wal_->reset();
+    cleanup();
+    lastLogId_ = committedLogId_ = 0;
+    lastTotalCount_ = lastTotalSize_ = 0;
+    status_ = Status::RUNNING;
+}
 
 void RaftPart::processAskForVoteRequest(
         const cpp2::AskForVoteRequest& req,
@@ -1142,8 +1172,6 @@ void RaftPart::processAskForVoteRequest(
 void RaftPart::processAppendLogRequest(
         const cpp2::AppendLogRequest& req,
         cpp2::AppendLogResponse& resp) {
-    bool hasSnapshot = req.get_snapshot_uri() != nullptr;
-
     VLOG(2) << idStr_
             << "Received logAppend "
             << ": GraphSpaceId = " << req.get_space()
@@ -1159,9 +1187,9 @@ void RaftPart::processAppendLogRequest(
                     ", num_logs = %ld, logTerm = %ld",
                     req.get_log_str_list().size(),
                     req.get_log_term())
-            << (hasSnapshot
-                ? ", SnapshotURI = " + *(req.get_snapshot_uri())
-                : "");
+            << ", sendingSnapshot = " << req.get_sending_snapshot()
+            << ", local lastLogId = " << lastLogId_
+            << ", local committedLogId = " << committedLogId_;
 
     std::lock_guard<std::mutex> g(raftLock_);
 
@@ -1171,7 +1199,6 @@ void RaftPart::processAppendLogRequest(
     resp.set_committed_log_id(committedLogId_);
     resp.set_last_log_id(lastLogId_);
     resp.set_last_log_term(lastLogTerm_);
-    resp.set_pulling_snapshot(false);
 
     // Check status
     if (UNLIKELY(status_ == Status::STOPPED)) {
@@ -1197,22 +1224,52 @@ void RaftPart::processAppendLogRequest(
     // Reset the timeout timer
     lastMsgRecvDur_.reset();
 
-    // TODO Check snapshot pulling status
-//      if (hasSnapshot && !isPullingSnapshot()) {
-//          // We need to pull the snapshot
-//          startSnapshotPullingThread(std::move(req.get_snapshot_uri()));
-//      }
-//      if (isPullingSnapshot()) {
-//          CHECK_NE(oldRole, Role::LEADER);
-//          resp.set_pulling_snapshot(true);
-//          if (!FLAGS_accept_log_append_during_pulling) {
-//              VLOG(2) << idStr_
-//                      << "Pulling the snapshot and not allowed to accept"
-//                         " the LogAppend Requests";
-//              resp.set_error_code(cpp2::ErrorCode::E_PULLING_SNAPSHOT);
-//              return;
-//          }
-//      }
+    if (req.get_sending_snapshot() && status_ != Status::WAITING_SNAPSHOT) {
+        LOG(INFO) << idStr_ << "Begin to wait for the snapshot";
+        wal_->reset();
+        cleanup();
+        lastLogId_ = committedLogId_ = 0;
+        lastTotalCount_ = lastTotalSize_ = 0;
+        status_ = Status::WAITING_SNAPSHOT;
+        resp.set_error_code(cpp2::ErrorCode::E_WAITING_SNAPSHOT);
+        return;
+    }
+
+    if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
+        VLOG(2) << idStr_
+                << "The part is receiving snapshot,"
+                << "so just accept the new wals, but don't commit them."
+                << "last_log_id_sent " << req.get_last_log_id_sent()
+                << ", total log number " << req.get_log_str_list().size();
+        if (lastLogId_ > 0 && req.get_last_log_id_sent() > lastLogId_) {
+            // There is a gap
+            LOG(INFO) << idStr_ << "Local is missing logs from id "
+                      << lastLogId_ << ". Need to catch up";
+            resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
+            return;
+        }
+        // Append new logs
+        size_t numLogs = req.get_log_str_list().size();
+        LogID firstId = req.get_last_log_id_sent() + 1;
+
+        VLOG(2) << idStr_ << "Writing log [" << firstId
+                << ", " << firstId + numLogs - 1 << "] to WAL";
+        LogStrListIterator iter(firstId,
+                                req.get_log_term(),
+                                req.get_log_str_list());
+        if (wal_->appendLogs(iter)) {
+            CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId());
+            lastLogId_ = wal_->lastLogId();
+            lastLogTerm_ = wal_->lastLogTerm();
+            resp.set_last_log_id(lastLogId_);
+            resp.set_last_log_term(lastLogTerm_);
+            resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            LOG(ERROR) << idStr_ << "Failed to append logs to WAL";
+            resp.set_error_code(cpp2::ErrorCode::E_WAL_FAIL);
+        }
+        return;
+    }
 
     if (req.get_last_log_id_sent() < committedLogId_) {
         LOG(INFO) << idStr_ << "The log " << req.get_last_log_id_sent()
@@ -1222,7 +1279,7 @@ void RaftPart::processAppendLogRequest(
         return;
     }
     if (lastLogTerm_ > 0 && req.get_last_log_term_sent() != lastLogTerm_) {
-        VLOG(2) << idStr_ << "The local last log term is " << lastLogTerm_
+        LOG(INFO) << idStr_ << "The local last log term is " << lastLogTerm_
                 << ", which is different from the leader's prevLogTerm "
                 << req.get_last_log_term_sent()
                 << ". So need to rollback to last committedLogId_ " << committedLogId_;
@@ -1236,12 +1293,14 @@ void RaftPart::processAppendLogRequest(
          return;
     } else if (req.get_last_log_id_sent() > lastLogId_) {
         // There is a gap
-        VLOG(2) << idStr_ << "Local is missing logs from id "
+        LOG(INFO) << idStr_ << "Local is missing logs from id "
                 << lastLogId_ << ". Need to catch up";
         resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
         return;
     } else if (req.get_last_log_id_sent() < lastLogId_) {
-        // Local has some extra logs, which need to be rolled back
+        LOG(INFO) << idStr_ << "Local " << lastLogId_
+                  << " has some extra logs, which need to be rolled back to "
+                  << req.get_last_log_id_sent();
         wal_->rollbackToLog(req.get_last_log_id_sent());
         lastLogId_ = wal_->lastLogId();
         lastLogTerm_ = wal_->lastLogTerm();
@@ -1276,7 +1335,7 @@ void RaftPart::processAppendLogRequest(
         LogID lastLogIdCanCommit = std::min(lastLogId_, req.get_committed_log_id());
         CHECK(committedLogId_ + 1 <= lastLogIdCanCommit);
         if (commitLogs(wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit))) {
-            VLOG(2) << idStr_ << "Follower succeeded committing log "
+            VLOG(1) << idStr_ << "Follower succeeded committing log "
                               << committedLogId_ + 1 << " to "
                               << lastLogIdCanCommit;
             committedLogId_ = lastLogIdCanCommit;
@@ -1368,6 +1427,54 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     return cpp2::ErrorCode::SUCCEEDED;
 }
 
+void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
+                                          cpp2::SendSnapshotResponse& resp) {
+    LOG(INFO) << idStr_ << "Receive snapshot, total rows " << req.get_rows().size()
+              << ", total count received " << req.get_total_count()
+              << ", total size received " << req.get_total_size()
+              << ", finished " << req.get_done();
+    std::lock_guard<std::mutex> g(raftLock_);
+    // Check status
+    if (UNLIKELY(status_ == Status::STOPPED)) {
+        VLOG(2) << idStr_
+                << "The part has been stopped, skip the request";
+        resp.set_error_code(cpp2::ErrorCode::E_BAD_STATE);
+        return;
+    }
+    if (UNLIKELY(status_ == Status::STARTING)) {
+        VLOG(2) << idStr_ << "The partition is still starting";
+        resp.set_error_code(cpp2::ErrorCode::E_NOT_READY);
+        return;
+    }
+    if (status_ != Status::WAITING_SNAPSHOT) {
+        LOG(INFO) << idStr_ << "Begin to receive the snapshot";
+        wal_->reset();
+        cleanup();
+        lastLogId_ = committedLogId_ = 0;
+        lastTotalCount_ = 0;
+        lastTotalSize_ = 0;
+        status_ = Status::WAITING_SNAPSHOT;
+    }
+    lastSnapshotRecvDur_.reset();
+    // TODO(heng): Maybe we should save them into one sst firstly?
+    // And before commit the snapshot, we should clean up all data.
+    auto ret = commitSnapshot(req.get_rows(),
+                              req.get_committed_log_id(),
+                              req.get_committed_log_term(),
+                              req.get_done());
+    lastTotalCount_ += ret.first;
+    lastTotalSize_ += ret.second;
+    CHECK_EQ(lastTotalCount_, req.get_total_count());
+    CHECK_EQ(lastTotalSize_, req.get_total_size());
+    if (req.get_done()) {
+        committedLogId_ = req.get_committed_log_id();
+        status_ = Status::RUNNING;
+        LOG(INFO) << idStr_ << "Receive all snapshot, committedLogId_ = " << committedLogId_
+                  << ", lastLodId " << lastLogId_;
+    }
+    resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+    return;
+}
 
 folly::Future<AppendLogResult> RaftPart::sendHeartbeat() {
     VLOG(2) << idStr_ << "Send heartbeat";

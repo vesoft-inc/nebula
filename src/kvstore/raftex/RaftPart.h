@@ -14,6 +14,7 @@
 #include "time/Duration.h"
 #include "thread/GenericThreadPool.h"
 #include "base/LogIterator.h"
+#include "kvstore/raftex/SnapshotManager.h"
 
 namespace folly {
 class IOThreadPoolExecutor;
@@ -67,6 +68,7 @@ using AtomicOp = folly::Function<std::string(void)>;
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
     friend class Host;
+    friend class SnapshotManager;
 public:
     virtual ~RaftPart();
 
@@ -178,6 +180,10 @@ public:
         const cpp2::AppendLogRequest& req,
         cpp2::AppendLogResponse& resp);
 
+    // Process sendSnapshot request
+    void processSendSnapshotRequest(
+        const cpp2::SendSnapshotRequest& req,
+        cpp2::SendSnapshotResponse& resp);
 
 protected:
     // Protected constructor to prevent from instantiating directly
@@ -188,7 +194,8 @@ protected:
              const folly::StringPiece walRoot,
              std::shared_ptr<folly::IOThreadPoolExecutor> pool,
              std::shared_ptr<thread::GenericThreadPool> workers,
-             std::shared_ptr<folly::Executor> executor);
+             std::shared_ptr<folly::Executor> executor,
+             std::shared_ptr<SnapshotManager> snapshotMan);
 
     const char* idStr() const {
         return idStr_.c_str();
@@ -220,11 +227,21 @@ protected:
                                ClusterID clusterId,
                                const std::string& log) = 0;
 
+    // Return <size, count> committed;
+    virtual std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
+                                                       LogID committedLogId,
+                                                       TermID committedLogTerm,
+                                                       bool finished) = 0;
+
+    // Clean up all data about current part in storage.
+    virtual void cleanup() = 0;
+
 private:
     enum class Status {
         STARTING = 0,   // The part is starting, not ready for service
         RUNNING,        // The part is running
-        STOPPED         // The part has been stopped
+        STOPPED,        // The part has been stopped
+        WAITING_SNAPSHOT  // Waiting for the snapshot.
     };
 
     enum class Role {
@@ -278,6 +295,10 @@ private:
     bool needToStartElection();
 
     void statusPolling();
+
+    bool needToCleanupSnapshot();
+
+    void cleanupSnapshot();
 
     // The method sends out AskForVote request
     // It return true if a leader is elected, otherwise returns false
@@ -465,6 +486,13 @@ protected:
     std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
     // Workers pool
     std::shared_ptr<folly::Executor> executor_;
+
+    std::shared_ptr<SnapshotManager> snapshot_;
+
+    // Used in snapshot, record the last total count and total size received from request
+    int64_t lastTotalCount_ = 0;
+    int64_t lastTotalSize_ = 0;
+    time::Duration lastSnapshotRecvDur_;
 };
 
 }  // namespace raftex
