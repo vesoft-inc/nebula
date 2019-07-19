@@ -231,6 +231,8 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         ASSERT_EQ((expected), Expression::asBool(value));               \
     } while (false)
 
+    TEST_EXPR(!-1, false);
+    TEST_EXPR(!!-1, true);
     TEST_EXPR(1 == 1, true);
     TEST_EXPR(1 != 1, false);
     TEST_EXPR(1 > 1, false);
