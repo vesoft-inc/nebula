@@ -249,8 +249,26 @@ FunctionManager::FunctionManager() {
         attr.minArity_ = 1;
         attr.maxArity_ = 1;
         attr.body_ = [] (const auto &args) {
-            auto &str = Expression::asString(args[0]);
-            return static_cast<int64_t>(std::hash<std::string>()(str));
+            switch (args[0].which()) {
+                case 0: {
+                    auto v = Expression::asInt(args[0]);
+                    return static_cast<int64_t>(std::hash<int64_t>()(v));
+                }
+                case 1: {
+                    auto v = Expression::asDouble(args[0]);
+                    return static_cast<int64_t>(std::hash<double>()(v));
+                }
+                case 2: {
+                    auto v = Expression::asBool(args[0]);
+                    return static_cast<int64_t>(std::hash<bool>()(v));
+                }
+                case 3: {
+                    auto &v = Expression::asString(args[0]);
+                    return static_cast<int64_t>(std::hash<std::string>()(v));
+                }
+                default:
+                    return INT64_MIN;
+            }
         };
     }
 }
