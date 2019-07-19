@@ -323,16 +323,16 @@ argument_list
 
 unary_expression
     : primary_expression { $$ = $1; }
-    | PLUS primary_expression {
+    | PLUS unary_expression {
         $$ = new UnaryExpression(UnaryExpression::PLUS, $2);
     }
-    | MINUS primary_expression {
+    | MINUS unary_expression {
         $$ = new UnaryExpression(UnaryExpression::NEGATE, $2);
     }
-    | NOT primary_expression {
+    | NOT unary_expression {
         $$ = new UnaryExpression(UnaryExpression::NOT, $2);
     }
-    | L_PAREN type_spec R_PAREN primary_expression {
+    | L_PAREN type_spec R_PAREN unary_expression {
         $$ = new TypeCastingExpression($2, $4);
     }
     ;
