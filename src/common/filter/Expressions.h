@@ -35,10 +35,6 @@ struct AliasInfo {
     std::string                             data_;
 };
 
-
-using VariantType = boost::variant<int64_t, double, bool, std::string>;
-
-
 class ExpressionContext final {
 public:
     void addSrcTagProp(const std::string &tag, const std::string &prop) {
@@ -215,7 +211,6 @@ public:
 
     static void print(const VariantType &value);
 
-protected:
     enum Kind : uint8_t {
         kUnknown = 0,
 
@@ -245,6 +240,7 @@ protected:
         return kind_;
     }
 
+protected:
     static uint8_t kindToInt(Kind kind) {
         return static_cast<uint8_t>(kind);
     }
@@ -410,6 +406,14 @@ public:
 
     Status MUST_USE_RESULT prepare() override;
 
+    const std::string& alias() const {
+        return *alias_;
+    }
+
+    const std::string& prop() const {
+        return *prop_;
+    }
+
 private:
     void encode(Cord &cord) const override;
 
@@ -551,6 +555,14 @@ public:
     VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
+
+    const std::string& tag() const {
+        return *tag_;
+    }
+
+    const std::string& prop() const {
+        return *prop_;
+    }
 
 private:
     void encode(Cord &cord) const override;
@@ -697,6 +709,10 @@ public:
         operand_->setContext(context);
     }
 
+    const Expression* operand() const {
+        return operand_.get();
+    }
+
 private:
     void encode(Cord &cord) const override;
 
@@ -730,6 +746,10 @@ public:
     void setContext(ExpressionContext *context) override {
         Expression::setContext(context);
         operand_->setContext(context);
+    }
+
+    const Expression* operand() const {
+        return operand_.get();
     }
 
 private:
@@ -778,6 +798,14 @@ public:
         right_->setContext(context);
     }
 
+    const Expression* left() const {
+        return left_.get();
+    }
+
+    const Expression* right() const {
+        return right_.get();
+    }
+
 private:
     void encode(Cord &cord) const override;
 
@@ -819,6 +847,14 @@ public:
         Expression::setContext(context);
         left_->setContext(context);
         right_->setContext(context);
+    }
+
+    const Expression* left() const {
+        return left_.get();
+    }
+
+    const Expression* right() const {
+        return right_.get();
     }
 
 private:
@@ -863,6 +899,14 @@ public:
         Expression::setContext(context);
         left_->setContext(context);
         right_->setContext(context);
+    }
+
+    const Expression* left() const {
+        return left_.get();
+    }
+
+    const Expression* right() const {
+        return right_.get();
     }
 
 private:
