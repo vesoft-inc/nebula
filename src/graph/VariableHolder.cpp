@@ -38,10 +38,16 @@ void VariableHolder::add(const std::string &var, std::unique_ptr<InterimResult> 
 }
 
 
-const InterimResult* VariableHolder::get(const std::string &var) const {
+const InterimResult* VariableHolder::get(const std::string &var, bool *existing) const {
     auto iter = holder_.find(var);
     if (iter == holder_.end()) {
+        if (existing != nullptr) {
+            *existing = false;
+        }
         return nullptr;
+    }
+    if (existing != nullptr) {
+        *existing = true;
     }
     return iter->second.get();
 }
