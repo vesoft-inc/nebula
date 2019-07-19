@@ -20,6 +20,18 @@
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(load_config_interval_secs);
 
+// some gflags to register
+DEFINE_int64(int64_key_immutable, 100, "test");
+DEFINE_int64(int64_key, 101, "test");
+DEFINE_bool(bool_key, false, "test");
+DEFINE_double(double_key, 1.23, "test");
+DEFINE_string(string_key, "something", "test");
+DEFINE_string(test0, "v0", "test");
+DEFINE_string(test1, "v1", "test");
+DEFINE_string(test2, "v2", "test");
+DEFINE_string(test3, "v3", "test");
+DEFINE_string(test4, "v4", "test");
+
 namespace nebula {
 namespace meta {
 
@@ -173,31 +185,6 @@ TEST(ConfigManTest, ConfigProcessorTest) {
     }
 }
 
-void mockRegisterGflags(ClientBasedGflagsManager* cfgMan) {
-    auto module = cpp2::ConfigModule::STORAGE;
-    auto mode = meta::cpp2::ConfigMode::MUTABLE;
-
-    int64_t valInt = 100L;
-    cfgMan->registerConfig(module, "int64_key_immutable", cpp2::ConfigType::INT64,
-                           cpp2::ConfigMode::IMMUTABLE,
-                           toThriftValueStr(cpp2::ConfigType::INT64, valInt));
-    valInt = 101L;
-    cfgMan->registerConfig(module, "int64_key", cpp2::ConfigType::INT64, mode,
-                           toThriftValueStr(cpp2::ConfigType::INT64, valInt));
-
-    bool valBool = false;
-    cfgMan->registerConfig(module, "bool_key", cpp2::ConfigType::BOOL, mode,
-                           toThriftValueStr(cpp2::ConfigType::BOOL, valBool));
-
-    double valDouble = 1.23;
-    cfgMan->registerConfig(module, "double_key", cpp2::ConfigType::DOUBLE, mode,
-                           toThriftValueStr(cpp2::ConfigType::DOUBLE, valDouble));
-
-    std::string valString = "something";
-    cfgMan->registerConfig(module, "string_key", cpp2::ConfigType::STRING, mode,
-                           toThriftValueStr(cpp2::ConfigType::STRING, valString));
-}
-
 ConfigItem toConfigItem(const cpp2::ConfigItem& item) {
     VariantType value;
     switch (item.get_type()) {
@@ -232,12 +219,32 @@ TEST(ConfigManTest, MetaConfigManTest) {
     auto module = cpp2::ConfigModule::STORAGE;
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-    client->init();
+    client->waitForMetadReady();
     client->setGflagsModule(module);
 
     ClientBasedGflagsManager cfgMan(client.get());
     cfgMan.module_ = module;
-    mockRegisterGflags(&cfgMan);
+    // mock some test gflags to meta
+    {
+        auto mode = meta::cpp2::ConfigMode::MUTABLE;
+        cfgMan.gflagsDeclared_.emplace_back(toThriftConfigItem(
+            module, "int64_key_immutable", cpp2::ConfigType::INT64, cpp2::ConfigMode::IMMUTABLE,
+            toThriftValueStr(cpp2::ConfigType::INT64, 100L)));
+        cfgMan.gflagsDeclared_.emplace_back(toThriftConfigItem(
+            module, "int64_key", cpp2::ConfigType::INT64,
+            mode, toThriftValueStr(cpp2::ConfigType::INT64, 101L)));
+        cfgMan.gflagsDeclared_.emplace_back(toThriftConfigItem(
+            module, "bool_key", cpp2::ConfigType::BOOL,
+            mode, toThriftValueStr(cpp2::ConfigType::BOOL, false)));
+        cfgMan.gflagsDeclared_.emplace_back(toThriftConfigItem(
+            module, "double_key", cpp2::ConfigType::DOUBLE,
+            mode, toThriftValueStr(cpp2::ConfigType::DOUBLE, 1.23)));
+        std::string defaultValue = "something";
+        cfgMan.gflagsDeclared_.emplace_back(toThriftConfigItem(
+            module, "string_key", cpp2::ConfigType::STRING,
+            mode, toThriftValueStr(cpp2::ConfigType::STRING, defaultValue)));
+        cfgMan.registerGflags();
+    }
 
     // try to set/get config not registered
     {
@@ -268,15 +275,13 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, 100);
 
         sleep(FLAGS_load_config_interval_secs + 1);
-        // get immutable config from cache
-        auto cacheRet = cfgMan.getConfigAsInt64(name);
-        ASSERT_TRUE(cacheRet.ok());
-        ASSERT_EQ(cacheRet.value(), 100);
+        ASSERT_EQ(FLAGS_int64_key_immutable, 100);
     }
     // mutable config
     {
         std::string name = "int64_key";
         auto type = cpp2::ConfigType::INT64;
+        ASSERT_EQ(FLAGS_int64_key, 101);
 
         // update config
         auto setRet = cfgMan.setConfig(module, name, type, 102l).get();
@@ -291,13 +296,12 @@ TEST(ConfigManTest, MetaConfigManTest) {
 
         // get from cache
         sleep(FLAGS_load_config_interval_secs + 1);
-        auto cacheRet = cfgMan.getConfigAsInt64(name);
-        ASSERT_TRUE(cacheRet.ok());
-        ASSERT_EQ(cacheRet.value(), 102);
+        ASSERT_EQ(FLAGS_int64_key, 102);
     }
     {
         std::string name = "bool_key";
         auto type = cpp2::ConfigType::BOOL;
+        ASSERT_EQ(FLAGS_bool_key, false);
 
         // update config
         auto setRet = cfgMan.setConfig(module, name, type, true).get();
@@ -312,13 +316,12 @@ TEST(ConfigManTest, MetaConfigManTest) {
 
         // get from cache
         sleep(FLAGS_load_config_interval_secs + 1);
-        auto cacheRet = cfgMan.getConfigAsBool(name);
-        ASSERT_TRUE(cacheRet.ok());
-        ASSERT_EQ(cacheRet.value(), true);
+        ASSERT_EQ(FLAGS_bool_key, true);
     }
     {
         std::string name = "double_key";
         auto type = cpp2::ConfigType::DOUBLE;
+        ASSERT_EQ(FLAGS_double_key, 1.23);
 
         // update config
         auto setRet = cfgMan.setConfig(module, name, type, 3.14).get();
@@ -333,13 +336,12 @@ TEST(ConfigManTest, MetaConfigManTest) {
 
         // get from cache
         sleep(FLAGS_load_config_interval_secs + 1);
-        auto cacheRet = cfgMan.getConfigAsDouble(name);
-        ASSERT_TRUE(cacheRet.ok());
-        ASSERT_EQ(cacheRet.value(), 3.14);
+        ASSERT_EQ(FLAGS_double_key, 3.14);
     }
     {
         std::string name = "string_key";
         auto type = cpp2::ConfigType::STRING;
+        ASSERT_EQ(FLAGS_string_key, "something");
 
         // update config
         std::string newValue = "abc";
@@ -355,9 +357,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
 
         // get from cache
         sleep(FLAGS_load_config_interval_secs + 1);
-        auto cacheRet = cfgMan.getConfigAsString(name);
-        ASSERT_TRUE(cacheRet.ok());
-        ASSERT_EQ(cacheRet.value(), "abc");
+        ASSERT_EQ(FLAGS_string_key, "abc");
     }
     {
         auto ret = cfgMan.listConfigs(module).get();
@@ -382,41 +382,32 @@ TEST(ConfigManTest, MockConfigTest) {
 
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-    client->init();
+    client->waitForMetadReady();
     client->setGflagsModule(module);
     ClientBasedGflagsManager clientCfgMan(client.get());
     clientCfgMan.module_ = module;
 
-    for (int i = 0; i < 10; i++) {
-        std::string name = "k" + std::to_string(i);
+    for (int i = 0; i < 5; i++) {
+        std::string name = "test" + std::to_string(i);
         std::string value = "v" + std::to_string(i);
         clientCfgMan.gflagsDeclared_.emplace_back(
                 toThriftConfigItem(module, name, type, mode, value));
     }
     clientCfgMan.registerGflags();
 
-    sleep(FLAGS_load_config_interval_secs + 1);
-    for (int i = 0; i < 10; i++) {
-        std::string name = "k" + std::to_string(i);
-        std::string value = "v" + std::to_string(i);
-        auto cacheRet = clientCfgMan.getConfigAsString(name);
-        ASSERT_TRUE(cacheRet.ok());
-        ASSERT_EQ(cacheRet.value(), value);
-    }
-
     auto consoleClient = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
     ClientBasedGflagsManager console(consoleClient.get());
     // update in console
-    for (int i = 0; i < 10; i++) {
-        std::string name = "k" + std::to_string(i);
+    for (int i = 0; i < 5; i++) {
+        std::string name = "test" + std::to_string(i);
         std::string value = "updated" + std::to_string(i);
         auto setRet = console.setConfig(module, name, type, value).get();
         ASSERT_TRUE(setRet.ok());
     }
     // get in console
-    for (int i = 0; i < 10; i++) {
-        std::string name = "k" + std::to_string(i);
+    for (int i = 0; i < 5; i++) {
+        std::string name = "test" + std::to_string(i);
         std::string value = "updated" + std::to_string(i);
 
         auto getRet = console.getConfig(module, name).get();
@@ -427,13 +418,11 @@ TEST(ConfigManTest, MockConfigTest) {
 
     // check values in ClientBaseGflagsManager
     sleep(FLAGS_load_config_interval_secs + 1);
-    for (int i = 0; i < 10; i++) {
-        std::string name = "k" + std::to_string(i);
-        std::string value = "updated" + std::to_string(i);
-        auto cacheRet = clientCfgMan.getConfigAsString(name);
-        ASSERT_TRUE(cacheRet.ok());
-        ASSERT_EQ(cacheRet.value(), value);
-    }
+    ASSERT_EQ(FLAGS_test0, "updated0");
+    ASSERT_EQ(FLAGS_test1, "updated1");
+    ASSERT_EQ(FLAGS_test2, "updated2");
+    ASSERT_EQ(FLAGS_test3, "updated3");
+    ASSERT_EQ(FLAGS_test4, "updated4");
 }
 
 }  // namespace meta

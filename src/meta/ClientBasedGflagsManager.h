@@ -46,15 +46,6 @@ public:
 private:
     Status registerGflags();
 
-    // methods for code to get config from cache
-    StatusOr<int64_t> getConfigAsInt64(const std::string& name);
-
-    StatusOr<double> getConfigAsDouble(const std::string& name);
-
-    StatusOr<bool> getConfigAsBool(const std::string& name);
-
-    StatusOr<std::string> getConfigAsString(const std::string& name);
-
     template<typename ValueType>
     folly::Future<StatusOr<bool>> set(const cpp2::ConfigModule& module, const std::string& name,
                                       const cpp2::ConfigType& type, const ValueType& value);

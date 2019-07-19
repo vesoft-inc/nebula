@@ -211,10 +211,6 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module);
 
-    StatusOr<ConfigItem> getConfigFromCache(const cpp2::ConfigModule& module,
-                                            const std::string& name,
-                                            const cpp2::ConfigType& type);
-
     cpp2::ConfigModule& getGflagsModule() {return gflagsModule_;}
 
     void setGflagsModule(const cpp2::ConfigModule& module = cpp2::ConfigModule::UNKNOWN);
@@ -261,7 +257,8 @@ protected:
     void heartBeatThreadFunc();
 
     void loadCfgThreadFunc();
-    void updateConfigCache(const std::vector<cpp2::ConfigItem>& items);
+    void loadCfg();
+    void addLoadCfgTask();
     void updateGflagsValue(const ConfigItem& item);
 
     bool loadSchemas(GraphSpaceID spaceId,

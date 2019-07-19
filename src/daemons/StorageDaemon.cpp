@@ -159,7 +159,6 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "waitForMetadReady error!";
         return EXIT_FAILURE;
     }
-    nebula::meta::ClientBasedGflagsManager::instance(metaClient.get());
     auto gflagsManager = std::make_unique<nebula::meta::ClientBasedGflagsManager>(metaClient.get());
     gflagsManager->init();
 

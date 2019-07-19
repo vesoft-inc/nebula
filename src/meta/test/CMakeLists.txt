@@ -122,6 +122,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:fs_obj>

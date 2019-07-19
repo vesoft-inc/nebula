@@ -67,6 +67,7 @@ void GflagsManager::declareGflags() {
             mode = cpp2::ConfigMode::IMMUTABLE;
         }
 
+        LOG(INFO) << name << " " << value;
         gflagsDeclared_.emplace_back(toThriftConfigItem(module_, name, cType, mode, valueStr));
     }
 }

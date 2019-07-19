@@ -91,37 +91,5 @@ Status ClientBasedGflagsManager::registerGflags() {
     return Status::Error("Register gflags failed");
 }
 
-StatusOr<int64_t> ClientBasedGflagsManager::getConfigAsInt64(const std::string& name) {
-    auto ret = metaClient_->getConfigFromCache(module_, name, cpp2::ConfigType::INT64);
-    if (ret.ok()) {
-        return boost::get<int64_t>(ret.value().value_);
-    }
-    return ret.status();
-}
-
-StatusOr<double> ClientBasedGflagsManager::getConfigAsDouble(const std::string& name) {
-    auto ret = metaClient_->getConfigFromCache(module_, name, cpp2::ConfigType::DOUBLE);
-    if (ret.ok()) {
-        return boost::get<double>(ret.value().value_);
-    }
-    return ret.status();
-}
-
-StatusOr<bool> ClientBasedGflagsManager::getConfigAsBool(const std::string& name) {
-    auto ret = metaClient_->getConfigFromCache(module_, name, cpp2::ConfigType::BOOL);
-    if (ret.ok()) {
-        return boost::get<bool>(ret.value().value_);
-    }
-    return ret.status();
-}
-
-StatusOr<std::string> ClientBasedGflagsManager::getConfigAsString(const std::string& name) {
-    auto ret = metaClient_->getConfigFromCache(module_, name, cpp2::ConfigType::STRING);
-    if (ret.ok()) {
-        return boost::get<std::string>(ret.value().value_);
-    }
-    return ret.status();
-}
-
 }  // namespace meta
 }  // namespace nebula
