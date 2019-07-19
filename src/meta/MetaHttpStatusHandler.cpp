@@ -4,8 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/MetaHttpHandler.h"
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include "meta/MetaHttpStatusHandler.h"
+#include "meta/MetaServiceUtils.h"
 #include "webservice/Common.h"
+#include "network/NetworkUtils.h"
+#include "process/ProcessUtils.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
@@ -19,14 +25,14 @@ using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
 
-void MetaHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
+void MetaHttpStatusHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
     if (headers->getMethod().value() != HTTPMethod::GET) {
         // Unsupported method
         err_ = HttpCode::E_UNSUPPORTED_METHOD;
         return;
     }
 
-    if (headers->getQueryParamPtr("returnjson") != nullptr) {
+    if (headers->hasQueryParam("returnjson")) {
         returnJson_ = true;
     }
 
@@ -37,12 +43,12 @@ void MetaHttpHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
 }
 
 
-void MetaHttpHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
+void MetaHttpStatusHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
     // Do nothing, we only support GET
 }
 
 
-void MetaHttpHandler::onEOM() noexcept {
+void MetaHttpStatusHandler::onEOM() noexcept {
     switch (err_) {
         case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
@@ -53,7 +59,6 @@ void MetaHttpHandler::onEOM() noexcept {
             break;
     }
 
-    // read meta daemon status
     folly::dynamic vals = getStatus();
     if (returnJson_) {
         ResponseBuilder(downstream_)
@@ -69,23 +74,23 @@ void MetaHttpHandler::onEOM() noexcept {
 }
 
 
-void MetaHttpHandler::onUpgrade(UpgradeProtocol) noexcept {
+void MetaHttpStatusHandler::onUpgrade(UpgradeProtocol) noexcept {
     // Do nothing
 }
 
 
-void MetaHttpHandler::requestComplete() noexcept {
+void MetaHttpStatusHandler::requestComplete() noexcept {
     delete this;
 }
 
 
-void MetaHttpHandler::onError(ProxygenError error) noexcept {
+void MetaHttpStatusHandler::onError(ProxygenError error) noexcept {
     LOG(ERROR) << "Web service MetaHttpHandler got error : "
                << proxygen::getErrorString(error);
 }
 
 
-void MetaHttpHandler::addOneStatus(folly::dynamic& vals,
+void MetaHttpStatusHandler::addOneStatus(folly::dynamic& vals,
                                    const std::string& statusName,
                                    const std::string& statusValue) const {
     folly::dynamic status = folly::dynamic::object();
@@ -95,7 +100,7 @@ void MetaHttpHandler::addOneStatus(folly::dynamic& vals,
 }
 
 
-std::string MetaHttpHandler::readValue(std::string& statusName) {
+std::string MetaHttpStatusHandler::readValue(std::string& statusName) {
     folly::toLowerAscii(statusName);
     if (statusName == "status") {
         return "running";
@@ -105,7 +110,7 @@ std::string MetaHttpHandler::readValue(std::string& statusName) {
 }
 
 
-void MetaHttpHandler::readAllValue(folly::dynamic& vals) {
+void MetaHttpStatusHandler::readAllValue(folly::dynamic& vals) {
     for (auto& sn : statusAllNames_) {
         std::string statusValue = readValue(sn);
         addOneStatus(vals, sn, statusValue);
@@ -113,7 +118,7 @@ void MetaHttpHandler::readAllValue(folly::dynamic& vals) {
 }
 
 
-folly::dynamic MetaHttpHandler::getStatus() {
+folly::dynamic MetaHttpStatusHandler::getStatus() {
     auto status = folly::dynamic::array();
     if (statusNames_.empty()) {
         // Read all status
@@ -128,7 +133,7 @@ folly::dynamic MetaHttpHandler::getStatus() {
 }
 
 
-std::string MetaHttpHandler::toStr(folly::dynamic& vals) const {
+std::string MetaHttpStatusHandler::toStr(folly::dynamic& vals) const {
     std::stringstream ss;
     for (auto& counter : vals) {
         auto& val = counter["value"];

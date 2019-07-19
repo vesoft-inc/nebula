@@ -60,6 +60,7 @@ void MetaClient::init() {
 
 
 void MetaClient::heartBeatThreadFunc() {
+    folly::RWSpinLock::ReadHolder holder(listenerLock_);
     if (listener_ == nullptr) {
         VLOG(1) << "Can't send heartbeat due to listener_ is nullptr!";
         return;
@@ -343,6 +344,7 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
 
 
 void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
+    folly::RWSpinLock::WriteHolder holder(listenerLock_);
     if (listener_ == nullptr) {
         VLOG(3) << "Listener is null!";
         return;
@@ -922,6 +924,9 @@ StatusOr<std::shared_ptr<const SchemaProviderIf>> MetaClient::getEdgeSchemaFromC
     }
 }
 
+const std::vector<HostAddr>& MetaClient::getAddresses() {
+    return addrs_;
+}
 
 StatusOr<SchemaVer> MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space,
                                                          const TagID& tagId) {

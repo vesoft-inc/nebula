@@ -20,11 +20,6 @@ namespace nebula {
  *
  * */
 
-
-using Vertex = std::tuple<VertexID, TagID>;
-
-using Edge = std::tuple<VertexID, EdgeType, VertexID, EdgeRanking>;
-
 /**
  * This class supply some utils for transition between Vertex/Edge and key in kvstore.
  * */

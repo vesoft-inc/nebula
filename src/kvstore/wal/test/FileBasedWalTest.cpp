@@ -42,7 +42,12 @@ TEST(FileBasedWal, AppendLogs) {
     TempDir walDir("/tmp/testWal.XXXXXX");
 
     // Create a new WAL, add one log and close it
-    auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    policy,
+                                    flusher.get(),
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
     EXPECT_EQ(0, wal->lastLogId());
 
     for (int i = 1; i <= 10; i++) {
@@ -55,7 +60,12 @@ TEST(FileBasedWal, AppendLogs) {
     wal.reset();
 
     // Now let's open it to read
-    wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    wal = FileBasedWal::getWal(walDir.path(),
+                               policy,
+                               flusher.get(),
+                               [](LogID, TermID, ClusterID, const std::string&) {
+                                   return true;
+                               });
     EXPECT_EQ(10, wal->lastLogId());
 
     auto it = wal->iterator(1, 10);
@@ -80,9 +90,13 @@ TEST(FileBasedWal, CacheOverflow) {
     policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
-
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    policy,
+                                    flusher.get(),
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
     // Create a new WAL, add one log and close it
-    auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
     EXPECT_EQ(0, wal->lastLogId());
 
     // Append > 10MB logs in total
@@ -105,7 +119,13 @@ TEST(FileBasedWal, CacheOverflow) {
     ASSERT_EQ(11, files.size());
 
     // Now let's open it to read
-    wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    wal = FileBasedWal::getWal(walDir.path(),
+                               policy,
+                               flusher.get(),
+                               [](LogID, TermID, ClusterID, const std::string&) {
+                                   return true;
+                               });
+
     EXPECT_EQ(10000, wal->lastLogId());
 
     auto it = wal->iterator(1, 10000);
@@ -129,9 +149,13 @@ TEST(FileBasedWal, Rollback) {
     policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
-
     // Create a new WAL, add one log and close it
-    auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    policy,
+                                    flusher.get(),
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
     EXPECT_EQ(0, wal->lastLogId());
 
     // Append > 10MB logs in total
@@ -203,9 +227,13 @@ TEST(FileBasedWal, RollbackToFile) {
     policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
-
     // Create a new WAL, add one log and close it
-    auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    policy,
+                                    flusher.get(),
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
     EXPECT_EQ(0, wal->lastLogId());
     // Append > 1MB logs in total
     for (int i = 1; i <= 1000; i++) {
@@ -225,7 +253,12 @@ TEST(FileBasedWal, RollbackToFile) {
     ASSERT_EQ(2, files.size());
 
     // Now let's open it to read
-    wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    wal = FileBasedWal::getWal(walDir.path(),
+                               policy,
+                               flusher.get(),
+                               [](LogID, TermID, ClusterID, const std::string&) {
+                                   return true;
+                               });
     EXPECT_EQ(1000, wal->lastLogId());
 
     // Let's verify the logs
@@ -265,9 +298,13 @@ TEST(FileBasedWal, RollbackToMemory) {
     policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
-
     // Create a new WAL, add one log and close it
-    auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    policy,
+                                    flusher.get(),
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
     EXPECT_EQ(0, wal->lastLogId());
 
     // Append < 1MB logs in total
@@ -317,9 +354,13 @@ TEST(FileBasedWal, RollbackToZero) {
     policy.numBuffers = 2;
 
     TempDir walDir("/tmp/testWal.XXXXXX");
-
     // Create a new WAL, add one log and close it
-    auto wal = FileBasedWal::getWal(walDir.path(), policy, flusher.get());
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    policy,
+                                    flusher.get(),
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
     ASSERT_EQ(0, wal->lastLogId());
     // Rollback
     ASSERT_TRUE(wal->rollbackToLog(0));

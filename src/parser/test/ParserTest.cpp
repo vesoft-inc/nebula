@@ -850,6 +850,26 @@ TEST(Parser, UnreservedKeywords) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 123 OVER guest WHERE $-.EMAIL";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 123 OVER like YIELD $$.tag1.EMAIL, like.users,"
+                            "like._src, like._dst, like.type, $^.tag2.SPACE "
+                            "| ORDER BY $-.SPACE";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "$var = GO FROM 123 OVER like;GO FROM $var.SPACE OVER like";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 
@@ -911,6 +931,15 @@ TEST(Parser, Annotation) {
     {
         GQLParser parser;
         std::string query = "CREATE TAG TAG1/* tag name */(space string) // test....";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, DownloadLoad) {
+    {
+        GQLParser parser;
+        std::string query = "DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\" TO \"/tmp\"";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

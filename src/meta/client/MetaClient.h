@@ -71,7 +71,14 @@ public:
     void init();
 
     void registerListener(MetaChangedListener* listener) {
+        folly::RWSpinLock::WriteHolder holder(listenerLock_);
+        CHECK(listener_ == nullptr);
         listener_ = listener;
+    }
+
+    void unRegisterListener() {
+        folly::RWSpinLock::WriteHolder holder(listenerLock_);
+        listener_ = nullptr;
     }
 
     // Operations for parts
@@ -197,6 +204,8 @@ public:
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
+    const std::vector<HostAddr>& getAddresses();
+
 protected:
     void loadDataThreadFunc();
 
@@ -265,9 +274,11 @@ private:
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
+    folly::RWSpinLock     listenerLock_;
     bool                  sendHeartBeat_ = false;
     std::atomic_bool      ready_{false};
 };
+
 }  // namespace meta
 }  // namespace nebula
 #endif  // META_METACLIENT_H_
