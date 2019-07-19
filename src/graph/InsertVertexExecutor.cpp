@@ -80,7 +80,15 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
-        auto id = row->id();
+        auto status = row->id()->prepare();
+        if (!status.ok()) {
+            return status;
+        }
+        auto v = row->id()->eval();
+        if (!Expression::isInt(v)) {
+            return Status::Error("Vertex ID should be of type integer");
+        }
+        auto id = Expression::asInt(v);
         auto expressions = row->values();
 
         std::vector<VariantType> values;
@@ -113,7 +121,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 
                 // Check value type
                 auto schemaType = schema->getFieldType(fieldIndex);
-                if (!checkValueType(schema->getFieldType(fieldIndex), value)) {
+                if (!checkValueType(schemaType, value)) {
                     LOG(ERROR) << "ValueType is wrong, schema type "
                                << static_cast<int32_t>(schemaType.type)
                                << ", input type " <<  value.which();

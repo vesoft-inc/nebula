@@ -51,40 +51,56 @@ private:
 };
 
 
-class FromClause final {
+
+class VertexIDList final {
 public:
-    explicit FromClause(SourceNodeList *srcNodeList) {
-        srcNodeList_.reset(srcNodeList);
-        isRef_ = false;
+    void add(Expression *expr) {
+        vidList_.emplace_back(expr);
     }
 
-    explicit FromClause(Expression *expr) {
-        ref_.reset(expr);
-        isRef_ = true;
-    }
-
-    void setSourceNodeList(SourceNodeList *srcNodeList) {
-        srcNodeList_.reset(srcNodeList);
-    }
-
-    SourceNodeList* srcNodeList() const {
-        return srcNodeList_.get();
-    }
-
-    Expression* ref() const {
-        return ref_.get();
-    }
-
-    bool isRef() const {
-        return isRef_;
+    std::vector<Expression*> vidList() const {
+        std::vector<Expression*> result;
+        result.reserve(vidList_.size());
+        for (auto &expr : vidList_) {
+            result.push_back(expr.get());
+        }
+        return result;
     }
 
     std::string toString() const;
 
 private:
-    std::unique_ptr<SourceNodeList>             srcNodeList_;
+    std::vector<std::unique_ptr<Expression>>    vidList_;
+};
+
+
+class FromClause final {
+public:
+    explicit FromClause(VertexIDList *vidList) {
+        vidList_.reset(vidList);
+    }
+
+    explicit FromClause(Expression *ref) {
+        ref_.reset(ref);
+    }
+
+    auto vidList() const {
+        return vidList_->vidList();
+    }
+
+    auto isRef() const {
+        return ref_ != nullptr;
+    }
+
+    auto ref() const {
+        return ref_.get();
+    }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<VertexIDList>               vidList_;
     std::unique_ptr<Expression>                 ref_;
-    bool                                        isRef_{false};
 };
 
 
@@ -180,18 +196,24 @@ private:
 
 class YieldClause final {
 public:
-    explicit YieldClause(YieldColumns *fields) {
+    explicit YieldClause(YieldColumns *fields, bool distinct = false) {
         yieldColumns_.reset(fields);
+        distinct_ = distinct;
     }
 
     std::vector<YieldColumn*> columns() const {
         return yieldColumns_->columns();
     }
 
+    bool isDistinct() const {
+        return distinct_;
+    }
+
     std::string toString() const;
 
 private:
     std::unique_ptr<YieldColumns>               yieldColumns_;
+    bool                                        distinct_;
 };
 
 }   // namespace nebula

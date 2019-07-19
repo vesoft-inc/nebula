@@ -104,13 +104,36 @@ TEST(Scanner, Basic) {
         }                                                                   \
     })
 
+#define CHECK_LEXICAL_ERROR(STR)                                            \
+    ([] () {                                                                \
+        auto input = [] (char *buf, int) -> int {                           \
+            static bool first = true;                                       \
+            if (!first) { return 0; }                                       \
+            first = false;                                                  \
+            auto size = ::strlen(STR);                                      \
+            ::memcpy(buf, STR, size);                                       \
+            return size;                                                    \
+        };                                                                  \
+        GraphScanner lexer;                                                 \
+        lexer.setReadBuffer(input);                                         \
+        nebula::GraphParser::semantic_type dumyyylval;                      \
+        nebula::GraphParser::location_type dumyyyloc;                       \
+        auto token = lexer.yylex(&dumyyylval, &dumyyyloc);                  \
+        if (token != 0) {                                                   \
+            return AssertionFailure() << "Lexical error should've happened "\
+                                      << "for `" << STR << "'";             \
+        } else {                                                            \
+            return AssertionSuccess();                                      \
+        }                                                                   \
+    })
+
     std::vector<Validator> validators = {
         CHECK_SEMANTIC_TYPE(".", TokenType::DOT),
         CHECK_SEMANTIC_TYPE(",", TokenType::COMMA),
         CHECK_SEMANTIC_TYPE(":", TokenType::COLON),
         CHECK_SEMANTIC_TYPE(";", TokenType::SEMICOLON),
-        CHECK_SEMANTIC_TYPE("+", TokenType::ADD),
-        CHECK_SEMANTIC_TYPE("-", TokenType::SUB),
+        CHECK_SEMANTIC_TYPE("+", TokenType::PLUS),
+        CHECK_SEMANTIC_TYPE("-", TokenType::MINUS),
         CHECK_SEMANTIC_TYPE("*", TokenType::MUL),
         CHECK_SEMANTIC_TYPE("/", TokenType::DIV),
         CHECK_SEMANTIC_TYPE("%", TokenType::MOD),
@@ -317,13 +340,18 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("TTL_COL", TokenType::KW_TTL_COL),
         CHECK_SEMANTIC_TYPE("ttl_col", TokenType::KW_TTL_COL),
         CHECK_SEMANTIC_TYPE("Ttl_col", TokenType::KW_TTL_COL),
+        CHECK_SEMANTIC_TYPE("DOWNLOAD", TokenType::KW_DOWNLOAD),
+        CHECK_SEMANTIC_TYPE("download", TokenType::KW_DOWNLOAD),
+        CHECK_SEMANTIC_TYPE("Download", TokenType::KW_DOWNLOAD),
+        CHECK_SEMANTIC_TYPE("HDFS", TokenType::KW_HDFS),
+        CHECK_SEMANTIC_TYPE("Hdfs", TokenType::KW_HDFS),
+        CHECK_SEMANTIC_TYPE("hdfs", TokenType::KW_HDFS),
         CHECK_SEMANTIC_TYPE("ORDER", TokenType::KW_ORDER),
         CHECK_SEMANTIC_TYPE("Order", TokenType::KW_ORDER),
         CHECK_SEMANTIC_TYPE("order", TokenType::KW_ORDER),
         CHECK_SEMANTIC_TYPE("ASC", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("Asc", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("asc", TokenType::KW_ASC),
-
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
@@ -343,15 +371,23 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("label123", TokenType::LABEL, "label123"),
 
         CHECK_SEMANTIC_VALUE("123", TokenType::INTEGER, 123),
-        CHECK_SEMANTIC_VALUE("-123", TokenType::INTEGER, -123),
         CHECK_SEMANTIC_VALUE("0x123", TokenType::INTEGER, 0x123),
         CHECK_SEMANTIC_VALUE("0xdeadbeef", TokenType::INTEGER, 0xdeadbeef),
         CHECK_SEMANTIC_VALUE("0123", TokenType::INTEGER, 0123),
         CHECK_SEMANTIC_VALUE("123.", TokenType::DOUBLE, 123.),
         CHECK_SEMANTIC_VALUE(".123", TokenType::DOUBLE, 0.123),
         CHECK_SEMANTIC_VALUE("123.456", TokenType::DOUBLE, 123.456),
-        CHECK_SEMANTIC_VALUE("+123.456", TokenType::DOUBLE, 123.456),
-        CHECK_SEMANTIC_VALUE("-123.456", TokenType::DOUBLE, -123.456),
+
+        CHECK_SEMANTIC_VALUE("0xFFFFFFFFFFFFFFFF", TokenType::INTEGER, 0xFFFFFFFFFFFFFFFFL),
+        CHECK_SEMANTIC_VALUE("0x00FFFFFFFFFFFFFFFF", TokenType::INTEGER, 0x00FFFFFFFFFFFFFFFFL),
+        CHECK_SEMANTIC_VALUE("9223372036854775807", TokenType::INTEGER, 9223372036854775807L),
+        CHECK_SEMANTIC_VALUE("001777777777777777777777", TokenType::INTEGER,
+                              001777777777777777777777),
+        CHECK_LEXICAL_ERROR("9223372036854775808"),
+        CHECK_LEXICAL_ERROR("0xFFFFFFFFFFFFFFFFF"),
+        CHECK_LEXICAL_ERROR("002777777777777777777777"),
+        // TODO(dutor) It's too tedious to paste an overflowed double number here,
+        // thus we rely on `folly::to<double>' to cover those cases for us.
 
         CHECK_SEMANTIC_VALUE("127.0.0.1", TokenType::IPV4, 0x7F000001),
 
@@ -360,6 +396,10 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("\"He\\nllo\"", TokenType::STRING, "He\nllo"),
         CHECK_SEMANTIC_VALUE("\"He\\\nllo\"", TokenType::STRING, "He\nllo"),
         CHECK_SEMANTIC_VALUE("\"\\\"Hello\\\"\"", TokenType::STRING, "\"Hello\""),
+
+        CHECK_SEMANTIC_VALUE("'Hello'", TokenType::STRING, "Hello"),
+        CHECK_SEMANTIC_VALUE("'\"Hello\"'", TokenType::STRING, "\"Hello\""),
+        CHECK_SEMANTIC_VALUE("'\\'Hello\\''", TokenType::STRING, "'Hello'"),
 
         // escape Normal character
         CHECK_SEMANTIC_VALUE("\"Hell\\o\"", TokenType::STRING, "Hello"),
@@ -377,6 +417,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_VALUE("\"\\\\\\\110 \"", TokenType::STRING, "\\H "),
         CHECK_SEMANTIC_VALUE("\"\\\\\\\\110 \"", TokenType::STRING, "\\\\110 "),
         CHECK_SEMANTIC_VALUE("\"\\\\\\\\\110 \"", TokenType::STRING, "\\\\H "),
+
+
+        CHECK_SEMANTIC_VALUE("\"己所不欲，勿施于人\"", TokenType::STRING, "己所不欲，勿施于人"),
     };
 #undef CHECK_SEMANTIC_TYPE
 #undef CHECK_SEMANTIC_VALUE

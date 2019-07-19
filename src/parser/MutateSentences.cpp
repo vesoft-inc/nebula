@@ -69,7 +69,7 @@ std::string ValueList::toString() const {
 std::string VertexRowItem::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += std::to_string(id_);
+    buf += id_->toString();
     buf += ":";
     buf += "(";
     buf += values_->toString();
@@ -107,9 +107,9 @@ std::string EdgeRowItem::toString() const {
     std::string buf;
     buf.reserve(256);
 
-    buf += std::to_string(srcid_);
+    buf += srcid_->toString();
     buf += "->";
-    buf += std::to_string(dstid_);
+    buf += dstid_->toString();
     if (rank_ != 0) {
         buf += "@";
         buf += std::to_string(rank_);
@@ -185,7 +185,7 @@ std::string UpdateVertexSentence::toString() const {
         buf += "OR INSERT ";
     }
     buf += "VERTEX ";
-    buf += std::to_string(vid_);
+    buf += vid_->toString();
     buf += " SET ";
     buf += updateItems_->toString();
     if (whereClause_ != nullptr) {
@@ -209,9 +209,9 @@ std::string UpdateEdgeSentence::toString() const {
         buf += "OR INSERT ";
     }
     buf += "EDGE ";
-    buf += std::to_string(srcid_);
+    buf += srcid_->toString();
     buf += "->";
-    buf += std::to_string(dstid_);
+    buf += dstid_->toString();
     buf += " SET ";
     buf += updateItems_->toString();
     if (whereClause_ != nullptr) {
@@ -230,7 +230,7 @@ std::string DeleteVertexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "DELETE VERTEX ";
-    buf += srcNodeList_->toString();
+    buf += vidList_->toString();
     if (whereClause_ != nullptr) {
         buf += " ";
         buf += whereClause_->toString();
@@ -241,10 +241,10 @@ std::string DeleteVertexSentence::toString() const {
 std::string EdgeList::toString() const {
     std::string buf;
     buf.reserve(256);
-    for (auto edge : edges_) {
-        buf += std::to_string(edge.first);
+    for (auto &edge : edges_) {
+        buf += edge.first->toString();
         buf += "->";
-        buf += std::to_string(edge.second);
+        buf += edge.second->toString();
         buf += ",";
     }
     if (!buf.empty()) {
@@ -263,6 +263,11 @@ std::string DeleteEdgeSentence::toString() const {
         buf += whereClause_->toString();
     }
     return buf;
+}
+
+std::string DownloadSentence::toString() const {
+    return folly::stringPrintf("DOWNLOAD HDFS \"%s:%d/%s\" TO \"%s\"", host_.get()->c_str(),
+                               port_, path_.get()->c_str(), localPath_.get()->c_str());
 }
 
 }   // namespace nebula

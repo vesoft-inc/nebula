@@ -21,6 +21,7 @@ std::string StepClause::toString() const {
     return buf;
 }
 
+
 std::string SourceNodeList::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -34,14 +35,27 @@ std::string SourceNodeList::toString() const {
     return buf;
 }
 
+std::string VertexIDList::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &expr : vidList_) {
+        buf += expr->toString();
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
 std::string FromClause::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "FROM ";
-    if (!isRef_) {
-        buf += srcNodeList_->toString();
-    } else {
+    if (isRef()) {
         buf += ref_->toString();
+    } else {
+        buf += vidList_->toString();
     }
     return buf;
 }
@@ -92,6 +106,9 @@ std::string YieldClause::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += "YIELD ";
+    if (distinct_) {
+        buf += "DISTINCT ";
+    }
     buf += yieldColumns_->toString();
     return buf;
 }

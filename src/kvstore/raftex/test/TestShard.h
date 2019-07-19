@@ -51,8 +51,19 @@ public:
     std::string compareAndSet(const std::string& log) override;
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
+    bool preProcessLog(LogID,
+                       TermID,
+                       ClusterID,
+                       const std::string&) override {
+        return true;
+    }
+
     size_t getNumLogs() const;
     bool getLogMsg(LogID id, folly::StringPiece& msg) const;
+
+public:
+    int32_t commitTimes_ = 0;
+    int32_t firstCommittedLogId_ = -1;
 
 private:
     const size_t idx_;

@@ -11,6 +11,7 @@
 #include <gtest/gtest_prod.h>
 #include <folly/RWSpinLock.h>
 #include "kvstore/raftex/RaftexService.h"
+#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/Part.h"
@@ -20,6 +21,12 @@ namespace nebula {
 namespace kvstore {
 
 struct SpacePartInfo {
+    ~SpacePartInfo() {
+        parts_.clear();
+        engines_.clear();
+        LOG(INFO) << "~SpacePartInfo()";
+    }
+
     std::unordered_map<PartitionID, std::shared_ptr<Part>> parts_;
     std::vector<std::unique_ptr<KVEngine>> engines_;
 };
@@ -28,14 +35,13 @@ struct SpacePartInfo {
 class NebulaStore : public KVStore, public Handler {
     FRIEND_TEST(NebulaStoreTest, SimpleTest);
     FRIEND_TEST(NebulaStoreTest, PartsTest);
+    FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
 
 public:
     NebulaStore(KVOptions options,
                 std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
-                std::shared_ptr<thread::GenericThreadPool> workers,
                 HostAddr serviceAddr)
             : ioPool_(ioPool)
-            , workers_(workers)
             , storeSvcAddr_(serviceAddr)
             , raftAddr_(getRaftAddr(serviceAddr))
             , options_(std::move(options)) {
@@ -43,11 +49,21 @@ public:
         init();
     }
 
-    ~NebulaStore() = default;
+    ~NebulaStore();
 
     // Calculate the raft service address based on the storage service address
     static HostAddr getRaftAddr(HostAddr srvcAddr) {
+        if (srvcAddr == HostAddr(0, 0)) {
+            return srvcAddr;
+        }
         return HostAddr(srvcAddr.first, srvcAddr.second + 1);
+    }
+
+    static HostAddr getStoreAddr(HostAddr raftAddr) {
+        if (raftAddr == HostAddr(0, 0)) {
+            return raftAddr;
+        }
+        return HostAddr(raftAddr.first, raftAddr.second - 1);
     }
 
     // Pull meta information from the PartManager and initiate
@@ -67,11 +83,7 @@ public:
     }
 
     // Return the current leader
-    HostAddr partLeader(GraphSpaceID spaceId, PartitionID partId) override {
-        UNUSED(spaceId);
-        UNUSED(partId);
-        return {0, 0};
-    }
+    ErrorOr<ResultCode, HostAddr> partLeader(GraphSpaceID spaceId, PartitionID partId) override;
 
     PartManager* partManager() const override {
         return partMan_.get();
@@ -155,8 +167,13 @@ private:
 
     void removePart(GraphSpaceID spaceId, PartitionID partId) override;
 
-private:
     std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId, const std::string& path);
+
+    std::shared_ptr<Part> newPart(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  KVEngine* engine);
+
+    ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
 
 private:
     // The lock used to protect spaces_
@@ -172,6 +189,7 @@ private:
     std::unique_ptr<PartManager> partMan_{nullptr};
 
     std::shared_ptr<raftex::RaftexService> raftService_;
+    std::unique_ptr<wal::BufferFlusher> flusher_;
 };
 
 }  // namespace kvstore

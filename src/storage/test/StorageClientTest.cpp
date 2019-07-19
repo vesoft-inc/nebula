@@ -27,11 +27,11 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     GraphSpaceID spaceId = 0;
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
     // Let the system choose an available port for us
-    uint32_t localMetaPort = 0;
+    uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
     auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str());
@@ -49,7 +49,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     LOG(INFO) << "Start data server....";
 
     // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
-    uint32_t localDataPort = 0;
+    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
     auto sc = TestUtils::mockStorageServer(mClient.get(),
                                            dataPath.c_str(),
@@ -59,7 +59,6 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                                            // SchemaMan We need to switch to Meta Server
                                            // based version
                                            false);
-    localDataPort = sc->port_;
 
     LOG(INFO) << "Add hosts and create space....";
     auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();

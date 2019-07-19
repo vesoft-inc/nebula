@@ -37,11 +37,25 @@ enum class AppendLogResult {
     E_NOT_READY = -4,
     E_BUFFER_OVERFLOW = -5,
     E_WAL_FAILURE = -6,
+    E_TERM_OUT_OF_DATE = -7,
+};
+
+enum class LogType {
+    NORMAL      = 0x00,
+    CAS         = 0x01,
+    /**
+      COMMAND is similar to CAS, but not the same. There are two differences:
+      1. Normal logs after CAS could be committed together. In opposite, Normal logs
+         after COMMAND should be hold until the COMMAND committed, but the logs before
+         COMMAND could be committed together.
+      2. CAS maybe failed. So we use SinglePromise for it. But COMMAND not, so it could
+         share one promise with the normal logs before it.
+     * */
+    COMMAND     = 0x02,
 };
 
 class Host;
 class AppendLogsIterator;
-
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
@@ -123,6 +137,11 @@ public:
      ***************************************************************/
     folly::Future<AppendLogResult> casAsync(std::string log);
 
+    /**
+     * Asynchronously send one command.
+     * */
+    folly::Future<AppendLogResult> sendCommandAsync(std::string log);
+
     /*****************************************************
      *
      * Methods to process incoming raft requests
@@ -185,6 +204,10 @@ protected:
     // a batch of log messages
     virtual bool commitLogs(std::unique_ptr<LogIterator> iter) = 0;
 
+    virtual bool preProcessLog(LogID logId,
+                               TermID termId,
+                               ClusterID clusterId,
+                               const std::string& log) = 0;
 
 private:
     enum class Status {
@@ -208,11 +231,10 @@ private:
     // resp -- AppendLogResponse
     using AppendLogResponses = std::vector<cpp2::AppendLogResponse>;
 
-    // <source, term, isCAS, log>
+    // <source, logType, log>
     using LogCache = std::vector<
         std::tuple<ClusterID,
-                   TermID,
-                   bool,
+                   LogType,
                    std::string>>;
 
 
@@ -229,11 +251,8 @@ private:
     /*****************************************************************
      * Asynchronously send a heartbeat (An empty log entry)
      *
-     * The code path is similar to appendLog() and the heartbeat will
-     * be put into the log batch, but will not be added to WAL
      ****************************************************************/
     folly::Future<AppendLogResult> sendHeartbeat();
-    void doneHeartbeat();
 
     /****************************************************
      *
@@ -262,13 +281,13 @@ private:
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
-    AppendLogResult canAppendLogs(std::lock_guard<std::mutex>& lck);
+    AppendLogResult canAppendLogs();
 
     folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
-                                                  bool isCAS,
+                                                  LogType logType,
                                                   std::string log);
 
-    void appendLogsInternal(AppendLogsIterator iter);
+    void appendLogsInternal(AppendLogsIterator iter, TermID termId);
 
     void replicateLogs(
         folly::EventBase* eb,
@@ -290,7 +309,7 @@ private:
         LogID prevLogId);
 
 
-private:
+protected:
     template<class ValueType>
     class PromiseSet final {
     public:
@@ -323,6 +342,14 @@ private:
             rollSharedPromise_ = true;
 
             return singlePromises_.back().getFuture();
+        }
+
+        folly::Future<ValueType> getAndRollSharedFuture() {
+            if (rollSharedPromise_) {
+                sharedPromises_.emplace_back();
+            }
+            rollSharedPromise_ = true;
+            return sharedPromises_.back().getFuture();
         }
 
         template<class VT>
@@ -370,13 +397,16 @@ private:
         peerHosts_;
     size_t quorum_{0};
 
+    // The lock is used to protect logs_ and cachingPromise_
+    mutable std::mutex logsLock_;
+    std::atomic_bool replicatingLogs_{false};
+    PromiseSet<AppendLogResult> cachingPromise_;
+    LogCache logs_;
+
     // Partition level lock to synchronize the access of the partition
     mutable std::mutex raftLock_;
 
-    bool replicatingLogs_{false};
-    PromiseSet<AppendLogResult> cachingPromise_;
     PromiseSet<AppendLogResult> sendingPromise_;
-    LogCache logs_;
 
     Status status_;
     Role role_;

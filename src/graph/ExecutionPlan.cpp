@@ -55,6 +55,8 @@ void ExecutionPlan::onFinish() {
     executor_->setupResponse(rctx->resp());
     auto latency = rctx->duration().elapsedInUSec();
     rctx->resp().set_latency_in_us(latency);
+    auto &spaceName = rctx->session()->spaceName();
+    rctx->resp().set_space_name(spaceName);
     rctx->finish();
 
     // The `ExecutionPlan' is the root node holding all resources during the execution.
@@ -69,6 +71,8 @@ void ExecutionPlan::onError(Status status) {
     auto *rctx = ectx()->rctx();
     if (status.isSyntaxError()) {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_SYNTAX_ERROR);
+    } else if (status.isStatementEmpty()) {
+        rctx->resp().set_error_code(cpp2::ErrorCode::E_STATEMENT_EMTPY);
     } else {
         rctx->resp().set_error_code(cpp2::ErrorCode::E_EXECUTION_ERROR);
     }

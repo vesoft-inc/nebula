@@ -163,11 +163,13 @@ StatusOr<GraphSpaceID> AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spa
     return -1;
 }
 
-// This interface is disabled
 StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {
     UNUSED(space);
-    UNUSED(tagName);
-    LOG(FATAL) << "Unimplement";
+    try {
+        return folly::to<TagID>(tagName);
+    } catch (const std::exception& e) {
+        LOG(FATAL) << e.what();
+    }
     return -1;
 }
 

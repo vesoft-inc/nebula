@@ -89,6 +89,9 @@ void waitUntilLeaderElected(
                 }
             });
 
+            // Sleep some time to wait until resp of heartbeat has come back when elected as leader
+            usleep(10000);
+
             bool sameLeader = true;
             for (auto& c : copies) {
                 if (c != nullptr && leader != c) {
@@ -118,7 +121,7 @@ void setupRaft(
         std::vector<std::shared_ptr<RaftexService>>& services,
         std::vector<std::shared_ptr<test::TestShard>>& copies,
         std::shared_ptr<test::TestShard>& leader) {
-    uint32_t ipInt;
+    IPv4 ipInt;
     CHECK(NetworkUtils::ipv4ToInt("127.0.0.1", ipInt));
 
     workers = std::make_shared<thread::GenericThreadPool>();

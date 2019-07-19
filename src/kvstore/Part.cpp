@@ -5,7 +5,6 @@
  */
 
 #include "kvstore/Part.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/LogEncoder.h"
 
 DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
@@ -30,12 +29,6 @@ ResultCode toResultCode(AppendLogResult res) {
     }
 }
 
-
-wal::BufferFlusher* getBufferFlusher() {
-    static wal::BufferFlusher flusher;
-    return &flusher;
-}
-
 }  // Anonymous namespace
 
 
@@ -45,13 +38,14 @@ Part::Part(GraphSpaceID spaceId,
            const std::string& walPath,
            KVEngine* engine,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
-           std::shared_ptr<thread::GenericThreadPool> workers)
+           std::shared_ptr<thread::GenericThreadPool> workers,
+           wal::BufferFlusher* flusher)
         : RaftPart(FLAGS_cluster_id,
                    spaceId,
                    partId,
                    localAddr,
                    walPath,
-                   getBufferFlusher(),
+                   flusher,
                    ioPool,
                    workers)
         , spaceId_(spaceId)
@@ -161,6 +155,11 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     while (iter->valid()) {
         lastId = iter->logId();
         auto log = iter->logMsg();
+        if (log.empty()) {
+            VLOG(3) << idStr_ << "Skip the heartbeat!";
+            ++(*iter);
+            continue;
+        }
         DCHECK_GE(log.size(), sizeof(int64_t) + 1 + sizeof(uint32_t));
         // Skip the timestamp (type of int64_t)
         switch (log[sizeof(int64_t)]) {
@@ -234,6 +233,17 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     }
 
     return engine_->commitBatchWrite(std::move(batch)) == ResultCode::SUCCEEDED;
+}
+
+bool Part::preProcessLog(LogID logId,
+                         TermID termId,
+                         ClusterID clusterId,
+                         const std::string& log) {
+    VLOG(3) << idStr_ << "logId " << logId
+            << ", termId " << termId
+            << ", clusterId " << clusterId
+            << ", log " << log;
+    return true;
 }
 
 }  // namespace kvstore
