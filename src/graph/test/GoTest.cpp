@@ -125,10 +125,10 @@ TEST_F(GoTest, AssignmentSimple) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<uint64_t>> expected = {
-            {players_["Kobe Bryant"].vid()},
-            {players_["Grant Hill"].vid()},
-            {players_["Rudy Gay"].vid()},
+            {players_["Tracy McGrady"].vid()},
+            {players_["LaMarcus Aldridge"].vid()},
         };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 
@@ -145,9 +145,35 @@ TEST_F(GoTest, AssignmentPipe) {
         std::vector<std::tuple<uint64_t>> expected = {
             {players_["Kobe Bryant"].vid()},
             {players_["Grant Hill"].vid()},
+            {players_["Rudy Gay"].vid()},
             {players_["Tony Parker"].vid()},
             {players_["Tim Duncan"].vid()},
         };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+TEST_F(GoTest, VariableUndefined) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM $var OVER like";
+        auto code = client_->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+}
+
+
+TEST_F(GoTest, AssignmentEmptyResult) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "$var = GO FROM -1 OVER like; "
+                     "GO FROM $var.id OVER like";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<uint64_t>> expected = {
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 
