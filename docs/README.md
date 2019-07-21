@@ -33,6 +33,7 @@ click [Contribute to Nebula Graph Docs](contribute-to-documentation/)
 
 In order to prevent cloud providers monetarizing from the project without contributing back, we added [Common Clause 1.0](https://commonsclause.com/) to the project. As mentioned above, we fully commit to the open source community. We would love to hear your thoughts on the licensing model and are willing to make it more suitable for the community.
 
-## Our Community
+## Contact
 - Please use [GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) for reporting bugs or feature requests.
 - Join [![](https://img.shields.io/badge/slack-nebula-519dd9.svg)](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200).
+- Visit Nebula Graph [home page](http://nebula-graph.io/) for more features.

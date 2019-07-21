@@ -87,7 +87,7 @@ TEST_F(LogCommandTest, CommandInMiddle) {
     }
     LOG(INFO) << "<===== Finish appending logs";
 
-    ASSERT_EQ(2, leader_->commitTimes_);
+    ASSERT_EQ(3, leader_->commitTimes_);
     // Sleep a while to make sure the last log has been committed on
     // followers
     sleep(FLAGS_heartbeat_interval);
@@ -121,7 +121,7 @@ TEST_F(LogCommandTest, EndWithCommand) {
     fut.wait();
     LOG(INFO) << "<===== Finish appending logs";
 
-    ASSERT_EQ(1, leader_->commitTimes_);
+    ASSERT_EQ(2, leader_->commitTimes_);
     // Sleep a while to make sure the last log has been committed on
     // followers
     sleep(FLAGS_heartbeat_interval);

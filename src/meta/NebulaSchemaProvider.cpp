@@ -29,24 +29,30 @@ int64_t NebulaSchemaProvider::getFieldIndex(const folly::StringPiece name) const
 }
 
 const char* NebulaSchemaProvider::getFieldName(int64_t index) const {
-    CHECK_GE(index, 0) << "Invalid index " << index;
-    CHECK_LT(index, fields_.size()) << "Index is out of range";
+    if (UNLIKELY(index < 0) || UNLIKELY(index >= static_cast<int64_t>(fields_.size()))) {
+        LOG(ERROR) << "Index[" << index << "] is out of range[0-" << fields_.size() << "]";
+        return nullptr;
+    }
 
     return fields_[index]->getName();
 }
 
 const cpp2::ValueType& NebulaSchemaProvider::getFieldType(int64_t index) const {
-    CHECK_GE(index, 0) << "Invalid index " << index;
-    CHECK_LT(index, fields_.size()) << "Index is out of range";
+    if (UNLIKELY(index < 0) || UNLIKELY(index >= static_cast<int64_t>(fields_.size()))) {
+        LOG(ERROR) << "Index[" << index << "] is out of range[0-" << fields_.size() << "]";
+        return CommonConstants::kInvalidValueType();
+    }
 
     return fields_[index]->getType();
 }
 
-const cpp2::ValueType& NebulaSchemaProvider::getFieldType(const folly::StringPiece name)
-        const {
+const cpp2::ValueType& NebulaSchemaProvider::getFieldType(const folly::StringPiece name) const {
     auto it = fieldNameIndex_.find(name.toString());
-    CHECK(it != fieldNameIndex_.end())
-        << "Unknown field \"" << name.toString() << "\"";
+    if (UNLIKELY(fieldNameIndex_.end() == it)) {
+        LOG(ERROR) << "Unknown field \"" << name.toString() << "\"";
+        return CommonConstants::kInvalidValueType();
+    }
+
     return fields_[it->second]->getType();
 }
 
