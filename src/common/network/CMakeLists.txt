@@ -1,6 +1,5 @@
 add_library(network_obj OBJECT NetworkUtils.cpp)
-
-add_dependencies(network_obj base_obj)
+nebula_add_base_obj(network_obj)
 
 add_subdirectory(test)
 
