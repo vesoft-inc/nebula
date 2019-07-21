@@ -4,8 +4,7 @@ add_library(
     ServerBasedSchemaManager.cpp
     NebulaSchemaProvider.cpp
 )
-add_dependencies(schema_obj base_obj common_thrift_obj meta_thrift_obj)
-
+nebula_add_base_obj(schema_obj)
 
 add_library(
     meta_service_handler OBJECT
@@ -44,38 +43,19 @@ add_library(
     processors/admin/BalanceTask.cpp
     processors/admin/AdminClient.cpp
 )
-
-add_dependencies(
-    meta_service_handler
-    base_obj
-    meta_thrift_obj
-    storage_thrift_obj
-    common_thrift_obj
-    kvstore_obj
-    thread_obj
-    stats_obj
-)
+nebula_add_base_obj(meta_service_handler)
 
 add_library(
     meta_http_handler OBJECT
     MetaHttpDownloadHandler.cpp
     MetaHttpStatusHandler.cpp
 )
-add_dependencies(
-    meta_http_handler
-    hdfs_helper_obj
-    base_obj
-)
+nebula_add_base_obj(meta_http_handler)
 
 add_library(
     meta_client OBJECT
     client/MetaClient.cpp
 )
-add_dependencies(
-    meta_client
-    base_obj
-    meta_thrift_obj
-    common_thrift_obj
-    schema_obj)
+nebula_add_base_obj(meta_client)
 
 add_subdirectory(test)

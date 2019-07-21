@@ -1,5 +1,5 @@
 add_library(console_obj OBJECT CliManager.cpp CmdProcessor.cpp)
-add_dependencies(console_obj base_obj)
+nebula_add_base_obj(console_obj)
 
 add_executable(
     nebula
