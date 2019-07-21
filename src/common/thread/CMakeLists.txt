@@ -4,6 +4,6 @@ add_library(
         GenericWorker.cpp
         GenericThreadPool.cpp
 )
-add_dependencies(thread_obj base_obj)
+nebula_add_base_obj(thread_obj)
 
 add_subdirectory(test)
