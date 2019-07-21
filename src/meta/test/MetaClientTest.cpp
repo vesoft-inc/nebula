@@ -130,6 +130,9 @@ TEST(MetaClientTest, InterfacesTest) {
             auto outSchema = schemaMan->getTagSchema(spaceId, tagId);
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("tagItem0", outSchema->getFieldName(0));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(-1));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(5));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(6));
             auto retVer = schemaMan->getNewestTagSchemaVer(spaceId, tagId);
             ASSERT_TRUE(retVer.ok());
             auto version = retVer.value();
@@ -137,6 +140,9 @@ TEST(MetaClientTest, InterfacesTest) {
             auto outSchema1 = schemaMan->getTagSchema(spaceId, tagId, version);
             ASSERT_TRUE(outSchema1 != nullptr);
             ASSERT_EQ(5, outSchema1->getNumFields());
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(-1));
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(5));
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(6));
             ASSERT_STREQ("tagItem0", outSchema1->getFieldName(0));
         }
         {
@@ -163,6 +169,9 @@ TEST(MetaClientTest, InterfacesTest) {
             auto outSchema = schemaMan->getEdgeSchema(spaceId, edgeType);
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("edgeItem0", outSchema->getFieldName(0));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(-1));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(5));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(6));
             auto versionRet = schemaMan->getNewestEdgeSchemaVer(spaceId, edgeType);
             ASSERT_TRUE(versionRet.ok());
             auto version = versionRet.value();
@@ -170,6 +179,9 @@ TEST(MetaClientTest, InterfacesTest) {
             auto outSchema1 = schemaMan->getEdgeSchema(spaceId, edgeType, version);
             ASSERT_TRUE(outSchema1 != nullptr);
             ASSERT_EQ(5, outSchema1->getNumFields());
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(-1));
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(5));
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(6));
             ASSERT_STREQ("edgeItem0", outSchema1->getFieldName(0));
         }
     }
