@@ -4,7 +4,7 @@ add_library(
     Duration.cpp
     WallClock.cpp
 )
-add_dependencies(time_obj base_obj)
+nebula_add_base_obj(time_obj)
 
 add_subdirectory(test)
 

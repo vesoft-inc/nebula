@@ -8,9 +8,10 @@ add_library(
     SignalHandler.cpp
     NebulaKeyUtils.cpp
 )
-add_dependencies(base_obj third-party)
+
+add_dependencies(base_obj common_thrift_obj graph_thrift_obj raftex_thrift_obj storage_thrift_obj meta_thrift_obj hbase_thrift_obj)
 IF(${PCHSupport_FOUND})
-    add_precompiled_header(base_obj Base.h third-party)
+    add_precompiled_header(base_obj Base.h common_thrift_obj graph_thrift_obj raftex_thrift_obj storage_thrift_obj meta_thrift_obj hbase_thrift_obj)
 ENDIF(${PCHSupport_FOUND})
 
 add_custom_target(
