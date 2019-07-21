@@ -20,7 +20,7 @@
 #   NEBULA_OPENSSL_ROOT            -- Specify the root directory for openssl
 #   NEBULA_BOOST_ROOT              -- Specify the root directory for boost
 
-#   NEBULA_THIRDPART_ROOT          -- Specify the root directory for third-party
+#   NEBULA_THIRDPARTY_ROOT          -- Specify the root directory for third-party
 #
 #   SKIP_JAVA_CLIENT               -- Skip building the java client
 #   ENABLE_JEMALLOC                -- Link jemalloc into all executables
