@@ -85,12 +85,14 @@ public:
 public:
     int32_t commitTimes_ = 0;
     int32_t currLogId_ = -1;
+    bool isRunning_ = false;
 
 private:
     const size_t idx_;
     std::shared_ptr<RaftexService> service_;
 
     std::unordered_map<LogID, std::string> data_;
+    mutable folly::RWSpinLock lock_;
 
     std::function<void(size_t idx, const char*, TermID)>
         leadershipLostCB_;

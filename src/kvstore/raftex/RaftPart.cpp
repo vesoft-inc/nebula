@@ -291,6 +291,7 @@ void RaftPart::stop() {
     {
         std::unique_lock<std::mutex> lck(raftLock_);
         status_ = Status::STOPPED;
+        leader_ = {0, 0};
 
         hosts = std::move(hosts_);
     }
@@ -1228,7 +1229,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     }
 
     // Make sure the remote term is greater than local's
-    if (req.get_current_term() <= term_) {
+    if (req.get_current_term() < term_) {
         LOG(ERROR) << idStr_ << "The local term is " << term_
                    << ". The remote term is not newer";
         return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;

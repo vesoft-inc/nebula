@@ -11,6 +11,8 @@
 #include "kvstore/raftex/test/TestShard.h"
 #include "thrift/ThriftClientManager.h"
 
+DECLARE_uint32(heartbeat_interval);
+
 namespace nebula {
 namespace raftex {
 
@@ -105,7 +107,7 @@ void waitUntilLeaderElected(
             bool sameLeader = true;
             int32_t index = 0;
             for (auto& c : copies) {
-                if (!isLearner[index] && c != nullptr && leader != c) {
+                if (c != nullptr && leader != c && c->isRunning_ == true) {
                     if (leader->address() != c->leader()) {
                         sameLeader = false;
                         break;
@@ -118,6 +120,27 @@ void waitUntilLeaderElected(
             }
         }
 
+        // Wait for one second
+        sleep(1);
+    }
+    // Wait for 50ms for the hb
+    usleep(FLAGS_heartbeat_interval);
+}
+
+void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& copies) {
+    while (true) {
+        bool allHaveLeader = true;
+        for (auto& c : copies) {
+            if (c != nullptr && c->isRunning_ == true) {
+                if (c->leader().first == 0 && c->leader().second == 0) {
+                    allHaveLeader = false;
+                    break;
+                }
+            }
+        }
+        if (allHaveLeader) {
+            return;
+        }
         // Wait for one second
         sleep(1);
     }
@@ -155,6 +178,7 @@ void setupRaft(
         services.back()->waitUntilReady();
         uint16_t port = services.back()->getServerPort();
         allHosts.emplace_back(ipInt, port);
+        LOG(INFO) << "### " << ipInt << " " << port;
     }
 
     if (isLearner.empty()) {
@@ -186,6 +210,7 @@ void setupRaft(
         services[i]->addPartition(copies.back());
         copies.back()->start(getPeers(allHosts, allHosts[i], isLearner),
                              isLearner[i]);
+        copies.back()->isRunning_ = true;
     }
 
     // Wait untill all copies agree on the same leader
@@ -220,7 +245,7 @@ void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
 
     ASSERT_FALSE(!leader);
     for (auto& c : copies) {
-        if (c != nullptr && leader != c && !c->isLearner()) {
+        if (c != nullptr && leader != c && c->isRunning_ == true) {
             ASSERT_EQ(leader->address(), c->leader());
         }
     }
@@ -243,7 +268,7 @@ void appendLogs(int start,
                 std::vector<std::string>& msgs,
                 LogID& firstLogId) {
     // Append 100 logs
-    LOG(INFO) << "=====> Start appending logs";
+    LOG(INFO) << "=====> Start appending logs from " << start << " to " << end;
     firstLogId = -1;
     for (int i = start; i <= end; ++i) {
         msgs.emplace_back(
@@ -255,9 +280,49 @@ void appendLogs(int start,
             firstLogId = leader->currLogId_;
         }
     }
-    LOG(INFO) << "<===== Finish appending logs";
+    LOG(INFO) << "<===== Finish appending logs from " << start << " to " << end;
 }
 
+void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                    std::shared_ptr<test::TestShard>& leader,
+                    size_t start, size_t end,
+                    std::vector<std::string>& msgs) {
+    sleep(FLAGS_heartbeat_interval);
+    // Check every copy
+    LogID id = leader->currLogId_ - (end - start);
+    for (size_t i = start; i <= end; i++, id++) {
+        for (auto& c : copies) {
+            if (c != nullptr && c->isRunning_ == true) {
+                folly::StringPiece msg;
+                ASSERT_TRUE(c->getLogMsg(id, msg));
+                ASSERT_EQ(msgs[i], msg.toString());
+            }
+        }
+    }
+}
+
+void killOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
+                 std::vector<std::shared_ptr<test::TestShard>>& copies,
+                 std::shared_ptr<test::TestShard>& leader,
+                 size_t index) {
+    copies[index]->isRunning_ = false;
+    services[index]->removePartition(copies[index]);
+    if (index == leader->index()) {
+        std::lock_guard<std::mutex> lock(leaderMutex);
+        leader.reset();
+    }
+    LOG(INFO) << "copies " << index << " stop";
+}
+
+void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
+                   std::vector<std::shared_ptr<test::TestShard>>& copies,
+                   std::vector<HostAddr> allHosts,
+                   size_t index) {
+    services[index]->addPartition(copies[index]);
+    copies[index]->start(getPeers(allHosts, allHosts[index]));
+    copies[index]->isRunning_ = true;
+    LOG(INFO) << "copies " << index << " reboot";
+}
 
 }  // namespace raftex
 }  // namespace nebula

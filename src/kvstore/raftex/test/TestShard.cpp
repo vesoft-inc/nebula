@@ -99,6 +99,7 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
                 }
                 default: {
                     VLOG(1) << idStr_ << "Write " << iter->logId() << ":" << log;
+                    folly::RWSpinLock::WriteHolder wh(&lock_);
                     data_.emplace(iter->logId(), log.toString());
                     currLogId_ = iter->logId();
                     break;
@@ -122,6 +123,7 @@ size_t TestShard::getNumLogs() const {
 
 
 bool TestShard::getLogMsg(LogID id, folly::StringPiece& msg) const {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
     auto it = data_.find(id);
     if (it == data_.end()) {
         // Not found

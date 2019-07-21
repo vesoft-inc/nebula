@@ -60,6 +60,8 @@ void waitUntilLeaderElected(
         std::shared_ptr<test::TestShard>& leader,
         std::vector<bool> isLearner = {});
 
+void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& copies);
+
 void setupRaft(
         int32_t numCopies,
         fs::TempDir& walRoot,
@@ -88,6 +90,21 @@ void appendLogs(int start,
                 std::shared_ptr<test::TestShard> leader,
                 std::vector<std::string>& msgs,
                 LogID& firstLogId);
+
+void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                    std::shared_ptr<test::TestShard>& leader,
+                    size_t start, size_t end,
+                    std::vector<std::string>& msgs);
+
+void killOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
+                 std::vector<std::shared_ptr<test::TestShard>>& copies,
+                 std::shared_ptr<test::TestShard>& leader,
+                 size_t index);
+
+void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
+                   std::vector<std::shared_ptr<test::TestShard>>& copies,
+                   std::vector<HostAddr> allHosts,
+                   size_t index);
 
 class RaftexTestFixture : public ::testing::Test {
 public:
