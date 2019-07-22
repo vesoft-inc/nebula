@@ -234,7 +234,7 @@ TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
     LOG(INFO) << "Build filter...";
     auto* edgeProp = new std::string("col_0");
     auto* alias = new std::string("e101");
-    auto* edgeExp = new EdgePropertyExpression(alias, edgeProp);
+    auto* edgeExp = new AliasPropertyExpression(new std::string(""), alias, edgeProp);
     auto* priExp = new PrimaryExpression(10007L);
     auto relExp = std::make_unique<RelationalExpression>(edgeExp,
                                                          RelationalExpression::Operator::GE,
@@ -359,7 +359,7 @@ TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
                                           priExp);
     auto* edgeProp = new std::string("col_0");
     auto* alias = new std::string("e101");
-    auto* edgeExp = new EdgePropertyExpression(alias, edgeProp);
+    auto* edgeExp = new AliasPropertyExpression(new std::string(""), alias, edgeProp);
     auto* priExp2 = new PrimaryExpression(10007L);
     auto* right = new RelationalExpression(edgeExp,
                                            RelationalExpression::Operator::GE,

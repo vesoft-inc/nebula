@@ -168,7 +168,7 @@ std::string* EdgeKeyRef::srcid() {
         return colname;
     } else {
         auto *vSrcExpr = static_cast<VariablePropertyExpression*>(srcid_.get());
-        auto *var = vSrcExpr->var();
+        auto *var = vSrcExpr->alias();
         auto *colname = vSrcExpr->prop();
         uniqVar_.emplace(*var);
         return colname;
@@ -182,7 +182,7 @@ std::string* EdgeKeyRef::dstid() {
         return colname;
     } else {
         auto *vDstExpr = static_cast<VariablePropertyExpression*>(dstid_.get());
-        auto *var = vDstExpr->var();
+        auto *var = vDstExpr->alias();
         auto *colname = vDstExpr->prop();
         uniqVar_.emplace(*var);
         return colname;
@@ -201,7 +201,7 @@ std::string* EdgeKeyRef::rank() {
         return colname;
     } else {
         auto *vRankExpr = static_cast<VariablePropertyExpression*>(rank_.get());
-        auto *var = vRankExpr->var();
+        auto *var = vRankExpr->alias();
         auto *colname = vRankExpr->prop();
         uniqVar_.emplace(*var);
         return colname;

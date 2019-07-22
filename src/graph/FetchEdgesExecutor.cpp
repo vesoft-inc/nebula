@@ -300,9 +300,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             continue;
         }
 
-        std::shared_ptr<ResultSchemaProvider> eschema
-            = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
-
+        auto eschema = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
         RowSetReader rsReader(eschema, *(resp.get_data()));
         auto iter = rsReader.begin();
         if (outputSchema == nullptr) {

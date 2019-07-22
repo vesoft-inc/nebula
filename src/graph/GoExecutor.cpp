@@ -134,7 +134,7 @@ Status GoExecutor::prepareFrom() {
             } else if (expr->isVariableExpression()) {
                 fromType_ = kVariable;
                 auto *vexpr = static_cast<VariablePropertyExpression*>(expr);
-                varname_ = vexpr->var();
+                varname_ = vexpr->alias();
                 colname_ = vexpr->prop();
             } else {
                 // No way to happen except memory corruption

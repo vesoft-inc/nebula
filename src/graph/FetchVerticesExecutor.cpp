@@ -45,7 +45,7 @@ Status FetchVerticesExecutor::prepareVids() {
                 colname_ = iexpr->prop();
             } else if (expr->isVariableExpression()) {
                 auto *vexpr = static_cast<VariablePropertyExpression*>(expr);
-                varname_ = vexpr->var();
+                varname_ = vexpr->alias();
                 colname_ = vexpr->prop();
             } else {
                 LOG(FATAL) << "Unknown kind of expression.";
@@ -200,21 +200,17 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     std::shared_ptr<SchemaWriter> outputSchema;
     std::unique_ptr<RowSetWriter> rsWriter;
     for (auto &resp : all) {
-        if (resp.get_vertices() == nullptr) {
+        if (!resp.__isset.vertices || !resp.__isset.vertex_schema
+                || resp.get_vertices() == nullptr || resp.get_vertex_schema() == nullptr) {
             continue;
         }
-        std::shared_ptr<ResultSchemaProvider> vschema;
-        if (resp.get_vertex_schema() != nullptr) {
-            vschema = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
-        }
+        auto vschema = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
         for (auto &vdata : resp.vertices) {
             std::unique_ptr<RowReader> vreader;
-            if (vschema != nullptr) {
-                if (!vdata.__isset.vertex_data || vdata.vertex_data.empty()) {
-                    continue;
-                }
-                vreader = RowReader::getRowReader(vdata.vertex_data, vschema);
+            if (!vdata.__isset.vertex_data || vdata.vertex_data.empty()) {
+                continue;
             }
+            vreader = RowReader::getRowReader(vdata.vertex_data, vschema);
             if (outputSchema == nullptr) {
                 outputSchema = std::make_shared<SchemaWriter>();
                 getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());

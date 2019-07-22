@@ -223,11 +223,11 @@ public:
         kEdgeDstId,
         kEdgeSrcId,
         kEdgeType,
+        kAliasProp,
         kEdgeProp,
         kVariableProp,
         kDestProp,
         kInputProp,
-        kAliasProp,
 
         kMax,
     };
@@ -304,6 +304,14 @@ public:
 
     Status MUST_USE_RESULT prepare() override;
 
+    std::string* alias() const {
+        return alias_.get();
+    }
+
+    std::string* prop() const {
+        return prop_.get();
+    }
+
 private:
     void encode(Cord &cord) const override;
     const char* decode(const char *pos, const char *end) override;
@@ -331,10 +339,6 @@ public:
     VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-    std::string* prop() const {
-        return prop_.get();
-    }
 
 private:
     void encode(Cord &cord) const override;
@@ -385,14 +389,6 @@ public:
     VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-    std::string* var() const {
-        return alias_.get();
-    }
-
-    std::string* prop() const {
-        return prop_.get();
-    }
 
 private:
     void encode(Cord &cord) const override;
@@ -518,14 +514,6 @@ public:
     VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-    const std::string& tag() const {
-        return *tag_;
-    }
-
-    const std::string& prop() const {
-        return *prop_;
-    }
 
 private:
     void encode(Cord &cord) const override;
