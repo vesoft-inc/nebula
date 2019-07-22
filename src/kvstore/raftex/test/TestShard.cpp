@@ -38,6 +38,7 @@ TestShard::TestShard(size_t idx,
                      wal::BufferFlusher* flusher,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,
+                     std::vector<LogID>& lastCommittedLogId,
                      std::function<void(size_t idx, const char*, TermID)>
                         leadershipLostCB,
                      std::function<void(size_t idx, const char*, TermID)>
@@ -52,6 +53,7 @@ TestShard::TestShard(size_t idx,
                    workers)
         , idx_(idx)
         , service_(svc)
+        , lastCommittedLogId_(lastCommittedLogId)
         , leadershipLostCB_(leadershipLostCB)
         , becomeLeaderCB_(becomeLeaderCB) {
 }
@@ -82,7 +84,6 @@ std::string TestShard::compareAndSet(const std::string& log) {
 
 
 bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
-    VLOG(2) << "TestShard: Committing logs";
     LogID firstId = -1;
     LogID lastId = -1;
     int32_t commitLogsNum = 0;
@@ -98,10 +99,12 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
                     break;
                 }
                 default: {
-                    VLOG(1) << idStr_ << "Write " << iter->logId() << ":" << log;
                     folly::RWSpinLock::WriteHolder wh(&lock_);
-                    data_.emplace(iter->logId(), log.toString());
                     currLogId_ = iter->logId();
+                    data_.emplace_back(currLogId_, log.toString());
+                    lastCommittedLogId_[idx_] = currLogId_;
+                    VLOG(1) << idStr_ << "Write: " << log << ", LogId: " << currLogId_
+                            << " state machine log size: " << data_.size();
                     break;
                 }
             }
@@ -109,7 +112,7 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
         }
         ++(*iter);
     }
-    VLOG(2) << "TestShard: Committed log " << firstId << " to " << lastId;
+    VLOG(2) << "TestShard: " << idStr_ << "Committed log " << firstId << " to " << lastId;
     if (commitLogsNum > 0) {
         commitTimes_++;
     }
@@ -122,15 +125,12 @@ size_t TestShard::getNumLogs() const {
 }
 
 
-bool TestShard::getLogMsg(LogID id, folly::StringPiece& msg) const {
+bool TestShard::getLogMsg(size_t index, folly::StringPiece& msg) {
     folly::RWSpinLock::ReadHolder rh(&lock_);
-    auto it = data_.find(id);
-    if (it == data_.end()) {
-        // Not found
+    if (index > data_.size()) {
         return false;
     }
-
-    msg = it->second;
+    msg = data_[index].second;
     return true;
 }
 

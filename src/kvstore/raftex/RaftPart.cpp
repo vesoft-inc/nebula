@@ -292,6 +292,7 @@ void RaftPart::stop() {
         std::unique_lock<std::mutex> lck(raftLock_);
         status_ = Status::STOPPED;
         leader_ = {0, 0};
+        role_ = Role::FOLLOWER;
 
         hosts = std::move(hosts_);
     }
@@ -1171,13 +1172,16 @@ void RaftPart::processAppendLogRequest(
 
     if (req.get_committed_log_id() > committedLogId_) {
         // Commit some logs
-        if (commitLogs(wal_->iterator(committedLogId_ + 1,
-                                      req.get_committed_log_id()))) {
+        // We can only commit logs from firstId to min(lastLogId_, leader's commit log id),
+        // follower can't always commit to leader's commit id because of lack of log
+        LogID lastLogIdCanCommit = std::min(lastLogId_, req.get_committed_log_id());
+        CHECK(committedLogId_ + 1<= lastLogIdCanCommit);
+        if (commitLogs(wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit))) {
             VLOG(2) << idStr_ << "Succeeded committing log "
                               << committedLogId_ + 1 << " to "
-                              << req.get_committed_log_id();
-            committedLogId_ = req.get_committed_log_id();
-            resp.set_committed_log_id(committedLogId_);
+                              << lastLogIdCanCommit;
+            committedLogId_ = lastLogIdCanCommit;
+            resp.set_committed_log_id(lastLogIdCanCommit);
         } else {
             LOG(ERROR) << idStr_ << "Failed to commit log "
                        << committedLogId_ + 1 << " to "

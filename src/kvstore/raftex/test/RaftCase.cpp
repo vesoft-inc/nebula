@@ -24,40 +24,50 @@ namespace raftex {
 TEST(RaftTest, LeaderCrashAndComeBack) {
     LOG(INFO) << "=====> Start LeaderCrash test";
 
+    int32_t size = 3;
     fs::TempDir walRoot("/tmp/leader_crash_and_come_back.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
     std::vector<HostAddr> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
+    std::vector<LogID> lastCommittedLogId;
     std::shared_ptr<test::TestShard> leader;
-    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+    setupRaft(size, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
-    // Let's kill the old leader
     LOG(INFO) << "=====> Now let's kill the old leader";
     size_t idx = leader->index();
-    copies[idx]->isRunning_ = false;
-    services[idx]->removePartition(copies[idx]);
-    {
-        std::lock_guard<std::mutex> lock(leaderMutex);
-        leader.reset();
-    }
+    killOneCopy(services, copies, leader, idx);
 
     // Wait untill all copies agree on the same leader
     waitUntilLeaderElected(copies, leader);
-
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
     LOG(INFO) << "=====> Now old leader comes back";
     // Crashed leader reboot
-    services[idx]->addPartition(copies[idx]);
-    copies[idx]->start(getPeers(allHosts, allHosts[idx]));
-    copies[idx]->isRunning_ = true;
+    rebootOneCopy(services, copies, allHosts, idx);
 
+    waitUntilAllHasLeader(copies);
+    checkLeadership(copies, leader);
+
+    LOG(INFO) << "=====> Now let's kill leader and a follower, no quorum";
+    idx = leader->index();
+    killOneCopy(services, copies, leader, idx);
+    killOneCopy(services, copies, leader, (idx + 1) % size);
+    sleep(2* FLAGS_heartbeat_interval);
+    checkNoLeader(copies);
+
+    LOG(INFO) << "=====> Now one of dead copy rejoin, quorum arises";
+    rebootOneCopy(services, copies, allHosts, idx);
+    waitUntilLeaderElected(copies, leader);
+
+    LOG(INFO) << "=====> Now all copy rejoin, should not disrupt leader";
+    rebootOneCopy(services, copies, allHosts, idx);
+    sleep(FLAGS_heartbeat_interval);
     waitUntilAllHasLeader(copies);
     checkLeadership(copies, leader);
 
@@ -69,7 +79,7 @@ TEST(RaftTest, LeaderCrashAndComeBack) {
 TEST(LeaderElection, ConsensusWhenFollowDisconnect) {
     LOG(INFO) << "=====> Start ConsensusWhenFollowDisconnect test";
 
-    int size = 3;
+    int32_t size = 3;
     fs::TempDir walRoot("/tmp/consensu_when_follower_disconnect.XXXXXX");
     std::shared_ptr<thread::GenericThreadPool> workers;
     std::vector<std::string> wals;
@@ -77,41 +87,39 @@ TEST(LeaderElection, ConsensusWhenFollowDisconnect) {
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
     std::shared_ptr<test::TestShard> leader;
-    setupRaft(size, walRoot, workers, wals, allHosts, services, copies, leader);
+    std::vector<LogID> lastCommittedLogId;
+    setupRaft(size, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
     LOG(INFO) << "=====> TestShard" << leader->index() << " has become leader";
 
     std::vector<std::string> msgs;
-    LogID id = -1;
-    appendLogs(0, 0, leader, msgs, id);
-    checkConsensus(copies, leader, 0, 0, msgs);
+    appendLogs(0, 0, leader, msgs);
+    sleep(FLAGS_heartbeat_interval);
+    checkConsensus(copies, 0, 0, msgs);
 
     // Let's kill one follower
     LOG(INFO) << "=====> Now let's kill one follower";
     size_t idx = (leader->index() + 1) % size;
-    copies[idx]->isRunning_ = false;
-    services[idx]->removePartition(copies[idx]);
+    killOneCopy(services, copies, leader, idx);
 
-    appendLogs(1, 2, leader, msgs, id);
-    checkConsensus(copies, leader, 1, 2, msgs);
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
-    appendLogs(3, 4, leader, msgs, id);
-    checkConsensus(copies, leader, 3, 4, msgs);
+    appendLogs(1, 4, leader, msgs);
+    sleep(FLAGS_heartbeat_interval);
+    checkConsensus(copies, 1, 4, msgs);
 
     LOG(INFO) << "=====> Now follower comes back";
     // Crashed follower reboot
-    services[idx]->addPartition(copies[idx]);
-    copies[idx]->start(getPeers(allHosts, allHosts[idx]));
-    copies[idx]->isRunning_ = true;
+    rebootOneCopy(services, copies, allHosts, idx);
 
     waitUntilAllHasLeader(copies);
     checkLeadership(copies, leader);
 
-    appendLogs(5, 6, leader, msgs, id);
-    checkConsensus(copies, leader, 5, 6, msgs);
+    appendLogs(5, 6, leader, msgs);
+    sleep(FLAGS_heartbeat_interval);
+    checkConsensus(copies, 5, 6, msgs);
 
     finishRaft(services, copies, workers, leader);
 

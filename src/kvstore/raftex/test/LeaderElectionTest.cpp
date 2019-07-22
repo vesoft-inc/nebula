@@ -27,9 +27,10 @@ TEST(LeaderElection, ElectionWithThreeCopies) {
     std::vector<HostAddr> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
+    std::vector<LogID> lastCommittedLogId;
 
     std::shared_ptr<test::TestShard> leader;
-    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
@@ -48,9 +49,10 @@ TEST(LeaderElection, ElectionWithOneCopy) {
     std::vector<HostAddr> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
+    std::vector<LogID> lastCommittedLogId;
 
     std::shared_ptr<test::TestShard> leader;
-    setupRaft(1, walRoot, workers, wals, allHosts, services, copies, leader);
+    setupRaft(1, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
@@ -70,9 +72,10 @@ TEST(LeaderElection, LeaderCrash) {
     std::vector<HostAddr> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
+    std::vector<LogID> lastCommittedLogId;
 
     std::shared_ptr<test::TestShard> leader;
-    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
@@ -89,6 +92,7 @@ TEST(LeaderElection, LeaderCrash) {
     }
 
     // Add a new copy
+    lastCommittedLogId.emplace_back(0);
     copies.emplace_back(std::make_shared<test::TestShard>(
         copies.size(),
         services[idx],
@@ -98,6 +102,7 @@ TEST(LeaderElection, LeaderCrash) {
         flusher.get(),
         services[idx]->getIOThreadPool(),
         workers,
+        lastCommittedLogId,
         std::bind(&onLeadershipLost,
                   std::ref(copies),
                   std::ref(leader),

@@ -107,7 +107,7 @@ void waitUntilLeaderElected(
             bool sameLeader = true;
             int32_t index = 0;
             for (auto& c : copies) {
-                if (c != nullptr && leader != c && c->isRunning_ == true) {
+                if (!isLearner[index] && c != nullptr && leader != c && c->isRunning_ == true) {
                     if (leader->address() != c->leader()) {
                         sameLeader = false;
                         break;
@@ -123,8 +123,6 @@ void waitUntilLeaderElected(
         // Wait for one second
         sleep(1);
     }
-    // Wait for 50ms for the hb
-    usleep(FLAGS_heartbeat_interval);
 }
 
 void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& copies) {
@@ -155,6 +153,7 @@ void setupRaft(
         std::vector<HostAddr>& allHosts,
         std::vector<std::shared_ptr<RaftexService>>& services,
         std::vector<std::shared_ptr<test::TestShard>>& copies,
+        std::vector<LogID>& lastCommittedLogId,
         std::shared_ptr<test::TestShard>& leader,
         std::vector<bool> isLearner) {
     IPv4 ipInt;
@@ -178,7 +177,7 @@ void setupRaft(
         services.back()->waitUntilReady();
         uint16_t port = services.back()->getServerPort();
         allHosts.emplace_back(ipInt, port);
-        LOG(INFO) << "### " << ipInt << " " << port;
+        lastCommittedLogId.emplace_back(0);
     }
 
     if (isLearner.empty()) {
@@ -195,6 +194,7 @@ void setupRaft(
             flusher.get(),
             services[i]->getIOThreadPool(),
             workers,
+            lastCommittedLogId,
             std::bind(&onLeadershipLost,
                       std::ref(copies),
                       std::ref(leader),
@@ -238,14 +238,13 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
     }
 }
 
-
 void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      std::shared_ptr<test::TestShard>& leader) {
     std::lock_guard<std::mutex> lock(leaderMutex);
 
     ASSERT_FALSE(!leader);
     for (auto& c : copies) {
-        if (c != nullptr && leader != c && c->isRunning_ == true) {
+        if (c != nullptr && leader != c && !c->isLearner() && c->isRunning_ == true) {
             ASSERT_EQ(leader->address(), c->leader());
         }
     }
@@ -262,39 +261,49 @@ void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
     ASSERT_EQ(leader->address(), copies[index]->address());
 }
 
+void checkNoLeader(std::vector<std::shared_ptr<test::TestShard>>& copies) {
+    for (auto& c : copies) {
+        if (c != nullptr && c->isRunning_ == true) {
+            ASSERT_FALSE(c->isLeader());
+        }
+    }
+}
+
 void appendLogs(int start,
                 int end,
                 std::shared_ptr<test::TestShard> leader,
                 std::vector<std::string>& msgs,
-                LogID& firstLogId) {
+                bool waitLastLog) {
     // Append 100 logs
-    LOG(INFO) << "=====> Start appending logs from " << start << " to " << end;
-    firstLogId = -1;
+    LOG(INFO) << "=====> Start appending logs from index " << start << " to " << end;
     for (int i = start; i <= end; ++i) {
         msgs.emplace_back(
             folly::stringPrintf("Test Log Message %03d", i));
         auto fut = leader->appendAsync(0, msgs.back());
-        ASSERT_EQ(AppendLogResult::SUCCEEDED,
-                  std::move(fut).get());
-        if (firstLogId < 0) {
-            firstLogId = leader->currLogId_;
+        if (i == end && waitLastLog) {
+            fut.wait();
         }
     }
-    LOG(INFO) << "<===== Finish appending logs from " << start << " to " << end;
+    LOG(INFO) << "<===== Finish appending logs from index " << start << " to " << end;
 }
 
 void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
-                    std::shared_ptr<test::TestShard>& leader,
                     size_t start, size_t end,
                     std::vector<std::string>& msgs) {
+    // Sleep a while to make sure the last log has been committed on followers
     sleep(FLAGS_heartbeat_interval);
+
     // Check every copy
-    LogID id = leader->currLogId_ - (end - start);
-    for (size_t i = start; i <= end; i++, id++) {
+    for (auto& c : copies) {
+        if (c != nullptr && c->isRunning_ == true) {
+            ASSERT_EQ(msgs.size(), c->getNumLogs());
+        }
+    }
+    for (size_t i = start; i <= end; i++) {
         for (auto& c : copies) {
             if (c != nullptr && c->isRunning_ == true) {
                 folly::StringPiece msg;
-                ASSERT_TRUE(c->getLogMsg(id, msg));
+                ASSERT_TRUE(c->getLogMsg(i, msg));
                 ASSERT_EQ(msgs[i], msg.toString());
             }
         }
@@ -307,7 +316,7 @@ void killOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                  size_t index) {
     copies[index]->isRunning_ = false;
     services[index]->removePartition(copies[index]);
-    if (index == leader->index()) {
+    if (leader != nullptr && index == leader->index()) {
         std::lock_guard<std::mutex> lock(leaderMutex);
         leader.reset();
     }

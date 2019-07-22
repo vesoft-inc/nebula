@@ -70,6 +70,7 @@ void setupRaft(
         std::vector<HostAddr>& allHosts,
         std::vector<std::shared_ptr<RaftexService>>& services,
         std::vector<std::shared_ptr<test::TestShard>>& copies,
+        std::vector<LogID>& lastCommittedLogId,
         std::shared_ptr<test::TestShard>& leader,
         std::vector<bool> isLearner = {});
 
@@ -84,15 +85,15 @@ void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
 void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      size_t index,
                      std::shared_ptr<test::TestShard>& leader);
+void checkNoLeader(std::vector<std::shared_ptr<test::TestShard>>& copies);
 
 void appendLogs(int start,
                 int end,
                 std::shared_ptr<test::TestShard> leader,
                 std::vector<std::string>& msgs,
-                LogID& firstLogId);
+                bool waitLastLog = false);
 
 void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
-                    std::shared_ptr<test::TestShard>& leader,
                     size_t start, size_t end,
                     std::vector<std::string>& msgs);
 
@@ -115,7 +116,8 @@ public:
     void SetUp() override {
         walRoot_ = std::make_unique<fs::TempDir>(
             folly::stringPrintf("/tmp/%s.XXXXXX", testName_.c_str()).c_str());
-        setupRaft(3, *walRoot_, workers_, wals_, allHosts_, services_, copies_, leader_);
+        setupRaft(3, *walRoot_, workers_, wals_, allHosts_, services_, copies_,
+                  lastCommittedLogId_, leader_);
 
         // Check all hosts agree on the same leader
         checkLeadership(copies_, leader_);
@@ -134,7 +136,7 @@ protected:
     std::vector<HostAddr> allHosts_;
     std::vector<std::shared_ptr<RaftexService>> services_;
     std::vector<std::shared_ptr<test::TestShard>> copies_;
-
+    std::vector<LogID> lastCommittedLogId_;
     std::shared_ptr<test::TestShard> leader_;
 };
 
