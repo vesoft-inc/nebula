@@ -30,10 +30,6 @@ public:
 private:
     Status prepareEdgeKeys();
 
-    Status prepareYield();
-
-    Status setupColumns();
-
     Status setupEdgeKeys();
 
     Status setupEdgeKeysFromExpr();
@@ -55,7 +51,6 @@ private:
     std::string                                *dstid_{nullptr};
     std::string                                *rank_{nullptr};
     std::string                                 varname_;
-    std::unique_ptr<YieldColumns>               yieldColsHolder_;
 };
 }  // namespace graph
 }  // namespace nebula

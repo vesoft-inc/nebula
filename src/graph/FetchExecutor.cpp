@@ -10,6 +10,68 @@
 namespace nebula {
 namespace graph {
 
+Status FetchExecutor::prepareYield() {
+    Status status = Status::OK();
+
+    do {
+        if (yieldClause_ == nullptr) {
+            setupColumns();
+        } else {
+            yields_ = yieldClause_->columns();
+        }
+
+        for (auto *col : yields_) {
+            col->expr()->setContext(expCtx_.get());
+            status = col->expr()->prepare();
+            if (!status.ok()) {
+                return status;
+            }
+            if (col->alias() == nullptr) {
+                resultColNames_.emplace_back(col->expr()->toString());
+            } else {
+                resultColNames_.emplace_back(*col->alias());
+            }
+        }
+
+        if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
+            status = Status::SyntaxError(
+                    "Only support form of alias.prop in fetch sentence.");
+            break;
+        }
+
+        auto aliasProps = expCtx_->aliasProps();
+        for (auto pair : aliasProps) {
+            if (pair.first != *labelName_) {
+                status = Status::SyntaxError(
+                    "[%s.%s] tag not declared in %s.",
+                    pair.first.c_str(), pair.second.c_str(), (*labelName_).c_str());
+                break;
+            }
+        }
+    } while (false);
+
+    return status;
+}
+
+void FetchExecutor::setupColumns() {
+    DCHECK_NOTNULL(labelSchema_);
+    auto iter = labelSchema_->begin();
+    if (yieldColsHolder_ == nullptr) {
+        yieldColsHolder_ = std::make_unique<YieldColumns>();
+    }
+    while (iter) {
+        auto *ref = new std::string("");
+        auto *alias = new std::string(*labelName_);
+        auto *prop = iter->getName();
+        Expression *expr =
+            new AliasPropertyExpression(ref, alias, new std::string(prop));
+        YieldColumn *column = new YieldColumn(expr);
+        yieldColsHolder_->addColumn(column);
+        yields_.emplace_back(column);
+        ++iter;
+    }
+}
+
 void FetchExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();

@@ -30,10 +30,6 @@ public:
 private:
     Status prepareVids();
 
-    Status prepareYield();
-
-    Status setupColumns();
-
     Status setupVids();
 
     Status setupVidsFromRef();
@@ -50,9 +46,9 @@ private:
 private:
     FetchVerticesSentence                      *sentence_{nullptr};
     std::vector<VertexID>                       vids_;
+    TagID                                       tagID_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
-    std::unique_ptr<YieldColumns>               yieldColsHolder_;
 };
 }  // namespace graph
 }  // namespace nebula

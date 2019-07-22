@@ -24,6 +24,10 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 protected:
+    Status prepareYield();
+
+    void setupColumns();
+
     void onEmptyInputs();
 
     void getOutputSchema(
@@ -34,12 +38,16 @@ protected:
     void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
 
 protected:
-    GraphSpaceID                                spaceId_;
-    std::unique_ptr<ExpressionContext>          expCtx_;
-    std::vector<YieldColumn*>                   yields_;
-    std::unique_ptr<InterimResult>              inputs_;
-    std::vector<std::string>                    resultColNames_;
-    std::unique_ptr<cpp2::ExecutionResponse>    resp_;
+    GraphSpaceID                                    spaceId_;
+    std::unique_ptr<ExpressionContext>              expCtx_;
+    std::string                                    *labelName_{nullptr};
+    std::shared_ptr<const meta::SchemaProviderIf>   labelSchema_;
+    YieldClause                                    *yieldClause_{nullptr};
+    std::vector<YieldColumn*>                       yields_;
+    std::unique_ptr<YieldColumns>                   yieldColsHolder_;
+    std::unique_ptr<InterimResult>                  inputs_;
+    std::vector<std::string>                        resultColNames_;
+    std::unique_ptr<cpp2::ExecutionResponse>        resp_;
 };
 }  // namespace graph
 }  // namespace nebula

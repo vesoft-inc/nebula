@@ -17,10 +17,24 @@ FetchEdgesExecutor::FetchEdgesExecutor(Sentence *sentence, ExecutionContext *ect
 Status FetchEdgesExecutor::prepare() {
     DCHECK_NOTNULL(sentence_);
     Status status = Status::OK();
-    expCtx_ = std::make_unique<ExpressionContext>();
-    spaceId_ = ectx()->rctx()->session()->space();
 
     do {
+        expCtx_ = std::make_unique<ExpressionContext>();
+        spaceId_ = ectx()->rctx()->session()->space();
+        yieldClause_ = sentence_->yieldClause();
+        labelName_ = sentence_->edge();
+        auto result = ectx()->schemaManager()->toEdgeType(spaceId_, *labelName_);
+        if (!result.ok()) {
+            status = result.status();
+            break;
+        }
+        edgeType_ = result.value();
+        labelSchema_ = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
+        if (labelSchema_ == nullptr) {
+            LOG(ERROR) << *labelName_ << " edge schema not exist.";
+            return Status::Error("%s edge schema not exist.", labelName_->c_str());
+        }
+
         status = prepareEdgeKeys();
         if (!status.ok()) {
             break;
@@ -35,101 +49,24 @@ Status FetchEdgesExecutor::prepare() {
 
 Status FetchEdgesExecutor::prepareEdgeKeys() {
     Status status = Status::OK();
-    do {
-        auto *label = sentence_->label();
-        auto result = ectx()->schemaManager()->toEdgeType(spaceId_, *label);
-        if (!result.ok()) {
-            status = result.status();
-            break;
+    if (sentence_->isRef()) {
+        auto *edgeKeyRef = sentence_->ref();
+
+        srcid_ = edgeKeyRef->srcid();
+        DCHECK_NOTNULL(srcid_);
+
+        dstid_ = edgeKeyRef->dstid();
+        DCHECK_NOTNULL(dstid_);
+
+        rank_ = edgeKeyRef->rank();
+        auto ret = edgeKeyRef->varname();
+        if (!ret.ok()) {
+            status = std::move(ret).status();
         }
-        edgeType_ = result.value();
-
-        if (sentence_->isRef()) {
-            auto *edgeKeyRef = sentence_->ref();
-
-            srcid_ = edgeKeyRef->srcid();
-            DCHECK_NOTNULL(srcid_);
-
-            dstid_ = edgeKeyRef->dstid();
-            DCHECK_NOTNULL(dstid_);
-
-            rank_ = edgeKeyRef->rank();
-            auto ret = edgeKeyRef->varname();
-            if (!ret.ok()) {
-                status = std::move(ret).status();
-                break;
-            }
-            varname_ = ret.value();
-            break;
-        }
-    } while (false);
+        varname_ = ret.value();
+    }
 
     return status;
-}
-
-Status FetchEdgesExecutor::prepareYield() {
-    Status status = Status::OK();
-    auto *clause = sentence_->yieldClause();
-
-    do {
-        if (clause == nullptr) {
-            setupColumns();
-        } else {
-            yields_ = clause->columns();
-        }
-
-        for (auto *col : yields_) {
-            col->expr()->setContext(expCtx_.get());
-            status = col->expr()->prepare();
-            if (!status.ok()) {
-                return status;
-            }
-            if (col->alias() == nullptr) {
-                resultColNames_.emplace_back(col->expr()->toString());
-            } else {
-                resultColNames_.emplace_back(*col->alias());
-            }
-        }
-
-        if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
-            status = Status::SyntaxError(
-                    "Only support form of alias.prop in fetch sentence.");
-            break;
-        }
-
-        auto *label = sentence_->label();
-        auto aliasProps = expCtx_->aliasProps();
-        for (auto pair : aliasProps) {
-            if (pair.first != *label) {
-                status = Status::SyntaxError(
-                    "[%s.%s] not declared in %s.",
-                    pair.first.c_str(), pair.second.c_str(), (*label).c_str());
-                break;
-            }
-        }
-    } while (false);
-
-    return status;
-}
-
-Status FetchEdgesExecutor::setupColumns() {
-    auto *label = sentence_->label();
-    auto schema = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
-    auto iter = schema->begin();
-    if (yieldColsHolder_ == nullptr) {
-        yieldColsHolder_ = std::make_unique<YieldColumns>();
-    }
-    while (iter) {
-        auto *name = iter->getName();
-        auto *ref = new std::string("");
-        auto *labelName = new std::string(*label);
-        Expression *expr = new AliasPropertyExpression(ref, labelName, new std::string(name));
-        YieldColumn *column = new YieldColumn(expr);
-        yieldColsHolder_->addColumn(column);
-        yields_.emplace_back(column);
-        ++iter;
-    }
-    return Status::OK();
 }
 
 void FetchEdgesExecutor::execute() {
