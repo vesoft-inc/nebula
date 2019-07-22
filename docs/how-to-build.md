@@ -45,7 +45,7 @@ The project itself includes the source code of several 3rd-party libraries, whic
 
 ### How to build
   - 1. create build dir : `cd nebula && mkdir build && cd build`
-  - 2. generate makefile : `cmake -DNEBULA_THIRDPARTY_ROOT=/opt/nebula/third-party ..`
+  - 2. generate makefile : `cmake -DNEBULA_THIRDPARTY_ROOT=${3rd-party_install_root} ..`
   - 3. make : `make or make -j${threadnum}`
   - 4. install: `make install`
   - notes : the default install dir is **/usr/local/**, if you want to change the dir, on step 2, your command can be `cmake -DCMAKE_INSTALL_PREFIX=$your_nebula_install_dir ..` 
