@@ -46,20 +46,24 @@ TEST_F(ExpressionTest, LiteralConstants) {
         auto *expr = getFilterExpr(parsed.value().get());               \
         ASSERT_NE(nullptr, expr);                                       \
         auto value = expr->eval();                                      \
-        ASSERT_TRUE(Expression::is##type(value));                       \
+        ASSERT_TRUE(value.ok());                                        \
+        auto v = value.value();                                         \
+        ASSERT_TRUE(Expression::is##type(v));                           \
         if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(value));  \
+            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
         } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(value));         \
+            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
         }                                                               \
         auto decoded = Expression::decode(Expression::encode(expr));    \
         ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
         value = decoded.value()->eval();                                \
-        ASSERT_TRUE(Expression::is##type(value));                       \
+        ASSERT_TRUE(value.ok());                                        \
+        v = value.value();                                              \
+        ASSERT_TRUE(Expression::is##type(v));                           \
         if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(value));  \
+            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
         } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(value));         \
+            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
         }                                                               \
     } while (false)
 
@@ -85,8 +89,10 @@ TEST_F(ExpressionTest, LiteralConstants) {
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
         auto value = expr->eval();
-        ASSERT_TRUE(Expression::isString(value));
-        ASSERT_EQ("string_literal", Expression::asString(value));
+        ASSERT_TRUE(value.ok());
+        auto v = value.value();
+        ASSERT_TRUE(Expression::isString(v));
+        ASSERT_EQ("string_literal", Expression::asString(v));
 
         auto buffer = Expression::encode(expr);
         ASSERT_FALSE(buffer.empty());
@@ -94,8 +100,10 @@ TEST_F(ExpressionTest, LiteralConstants) {
         ASSERT_TRUE(decoded.ok()) << decoded.status();
         ASSERT_NE(nullptr, decoded.value());
         value = decoded.value()->eval();
-        ASSERT_TRUE(Expression::isString(value));
-        ASSERT_EQ("string_literal", Expression::asString(value));
+        ASSERT_TRUE(value.ok());
+        v = value.value();
+        ASSERT_TRUE(Expression::isString(v));
+        ASSERT_EQ("string_literal", Expression::asString(v));
     }
 }
 
@@ -110,24 +118,28 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
         auto *expr = getFilterExpr(parsed.value().get());               \
         ASSERT_NE(nullptr, expr);                                       \
         auto value = expr->eval();                                      \
-        ASSERT_TRUE(Expression::is##type(value));                       \
+        ASSERT_TRUE(value.ok());                                        \
+        auto v = value.value();                                         \
+        ASSERT_TRUE(Expression::is##type(v));                           \
         if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(value));  \
-            ASSERT_DOUBLE_EQ((expected), Expression::as##type(value));  \
+            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
+            ASSERT_DOUBLE_EQ((expected), Expression::as##type(v));      \
         } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(value));         \
-            ASSERT_EQ((expected), Expression::as##type(value));         \
+            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
+            ASSERT_EQ((expected), Expression::as##type(v));             \
         }                                                               \
         auto decoded = Expression::decode(Expression::encode(expr));    \
         ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
         value = decoded.value()->eval();                                \
-        ASSERT_TRUE(Expression::is##type(value));                       \
+        ASSERT_TRUE(value.ok());                                        \
+        v = value.value();                                              \
+        ASSERT_TRUE(Expression::is##type(v));                           \
         if (#type == std::string("Double")) {                           \
-            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(value));  \
-            ASSERT_DOUBLE_EQ((expected), Expression::as##type(value));  \
+            ASSERT_DOUBLE_EQ((expr_arg), Expression::as##type(v));      \
+            ASSERT_DOUBLE_EQ((expected), Expression::as##type(v));      \
         } else {                                                        \
-            ASSERT_EQ((expr_arg), Expression::as##type(value));         \
-            ASSERT_EQ((expected), Expression::as##type(value));         \
+            ASSERT_EQ((expr_arg), Expression::as##type(v));             \
+            ASSERT_EQ((expected), Expression::as##type(v));             \
         }                                                               \
     } while (false)
 
@@ -195,8 +207,10 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
         auto value = expr->eval();
-        ASSERT_TRUE(Expression::isInt(value));
-        ASSERT_EQ(16, Expression::asInt(value));
+        ASSERT_TRUE(value.ok());
+        auto v = value.value();
+        ASSERT_TRUE(Expression::isInt(v));
+        ASSERT_EQ(16, Expression::asInt(v));
 
         auto buffer = Expression::encode(expr);
         ASSERT_FALSE(buffer.empty());
@@ -204,8 +218,10 @@ TEST_F(ExpressionTest, LiteralContantsArithmetic) {
         ASSERT_TRUE(decoded.ok()) << decoded.status();
         ASSERT_NE(nullptr, decoded.value());
         value = decoded.value()->eval();
-        ASSERT_TRUE(Expression::isInt(value));
-        ASSERT_EQ(16, Expression::asInt(value));
+        ASSERT_TRUE(value.ok());
+        v = value.value();
+        ASSERT_TRUE(Expression::isInt(v));
+        ASSERT_EQ(16, Expression::asInt(v));
     }
 }
 
@@ -220,15 +236,19 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         auto *expr = getFilterExpr(parsed.value().get());               \
         ASSERT_NE(nullptr, expr);                                       \
         auto value = expr->eval();                                      \
-        ASSERT_TRUE(Expression::isBool(value));                         \
-        ASSERT_EQ((expr_arg), Expression::asBool(value));               \
-        ASSERT_EQ((expected), Expression::asBool(value));               \
+        ASSERT_TRUE(value.ok());                                        \
+        auto v = value.value();                                         \
+        ASSERT_TRUE(Expression::isBool(v));                             \
+        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
+        ASSERT_EQ((expected), Expression::asBool(v));                   \
         auto decoded = Expression::decode(Expression::encode(expr));    \
         ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
         value = decoded.value()->eval();                                \
-        ASSERT_TRUE(Expression::isBool(value));                         \
-        ASSERT_EQ((expr_arg), Expression::asBool(value));               \
-        ASSERT_EQ((expected), Expression::asBool(value));               \
+        ASSERT_TRUE(value.ok());                                        \
+        v = value.value();                                              \
+        ASSERT_TRUE(Expression::isBool(v));                             \
+        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
+        ASSERT_EQ((expected), Expression::asBool(v));                   \
     } while (false)
 
     TEST_EXPR(!-1, false);
@@ -292,13 +312,17 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
         auto value = expr->eval();
-        ASSERT_TRUE(Expression::isBool(value));
-        ASSERT_TRUE(Expression::asBool(value));
+        ASSERT_TRUE(value.ok());
+        auto v = value.value();
+        ASSERT_TRUE(Expression::isBool(v));
+        ASSERT_TRUE(Expression::asBool(v));
         auto decoded = Expression::decode(Expression::encode(expr));
         ASSERT_TRUE(decoded.ok()) << decoded.status();
         value = decoded.value()->eval();
-        ASSERT_TRUE(Expression::isBool(value));
-        ASSERT_TRUE(Expression::asBool(value));
+        ASSERT_TRUE(value.ok());
+        v = value.value();
+        ASSERT_TRUE(Expression::isBool(v));
+        ASSERT_TRUE(Expression::asBool(v));
     }
     {
         std::string query = "GO FROM 1 OVER follow WHERE 3.14 * 3 * 3 / 2 != 3.14 * 1.5 * 1.5 / 2";
@@ -307,13 +331,17 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
         auto value = expr->eval();
-        ASSERT_TRUE(Expression::isBool(value));
-        ASSERT_TRUE(Expression::asBool(value));
+        ASSERT_TRUE(value.ok());
+        auto v = value.value();
+        ASSERT_TRUE(Expression::isBool(v));
+        ASSERT_TRUE(Expression::asBool(v));
         auto decoded = Expression::decode(Expression::encode(expr));
         ASSERT_TRUE(decoded.ok()) << decoded.status();
         value = decoded.value()->eval();
-        ASSERT_TRUE(Expression::isBool(value));
-        ASSERT_TRUE(Expression::asBool(value));
+        ASSERT_TRUE(value.ok());
+        v = value.value();
+        ASSERT_TRUE(Expression::isBool(v));
+        ASSERT_TRUE(Expression::asBool(v));
     }
 
 #undef TEST_EXPR
@@ -330,15 +358,19 @@ TEST_F(ExpressionTest, LiteralConstantsLogical) {
         auto *expr = getFilterExpr(parsed.value().get());               \
         ASSERT_NE(nullptr, expr);                                       \
         auto value = expr->eval();                                      \
-        ASSERT_TRUE(Expression::isBool(value));                         \
-        ASSERT_EQ((expr_arg), Expression::asBool(value));               \
-        ASSERT_EQ((expected), Expression::asBool(value));               \
+        ASSERT_TRUE(value.ok());                                        \
+        auto v = value.value();                                         \
+        ASSERT_TRUE(Expression::isBool(v));                             \
+        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
+        ASSERT_EQ((expected), Expression::asBool(v));                   \
         auto decoded = Expression::decode(Expression::encode(expr));    \
         ASSERT_TRUE(decoded.ok()) << decoded.status();                  \
         value = decoded.value()->eval();                                \
-        ASSERT_TRUE(Expression::isBool(value));                         \
-        ASSERT_EQ((expr_arg), Expression::asBool(value));               \
-        ASSERT_EQ((expected), Expression::asBool(value));               \
+        ASSERT_TRUE(value.ok());                                        \
+        v = value.value();                                              \
+        ASSERT_TRUE(Expression::isBool(v));                             \
+        ASSERT_EQ((expr_arg), Expression::asBool(v));                   \
+        ASSERT_EQ((expected), Expression::asBool(v));                   \
     } while (false)
 
     // AND
@@ -420,8 +452,10 @@ TEST_F(ExpressionTest, InputReference) {
         };
         expr->setContext(ctx.get());
         auto value = expr->eval();
-        ASSERT_TRUE(Expression::isString(value));
-        ASSERT_EQ("Freddie", Expression::asString(value));
+        ASSERT_TRUE(value.ok());
+        auto v = value.value();
+        ASSERT_TRUE(Expression::isString(v));
+        ASSERT_EQ("Freddie", Expression::asString(v));
     }
     {
         std::string query = "GO FROM 1 OVER follow WHERE $-.age >= 18";
@@ -439,8 +473,10 @@ TEST_F(ExpressionTest, InputReference) {
         };
         expr->setContext(ctx.get());
         auto value = expr->eval();
-        ASSERT_TRUE(Expression::isBool(value));
-        ASSERT_TRUE(Expression::asBool(value));
+        ASSERT_TRUE(value.ok());
+        auto v = value.value();
+        ASSERT_TRUE(Expression::isBool(v));
+        ASSERT_TRUE(Expression::asBool(v));
     }
 }
 
@@ -462,8 +498,10 @@ TEST_F(ExpressionTest, SourceTagReference) {
         };
         expr->setContext(ctx.get());
         auto value = expr->eval();
-        ASSERT_TRUE(Expression::isBool(value));
-        ASSERT_TRUE(Expression::asBool(value));
+        ASSERT_TRUE(value.ok());
+        auto v = value.value();
+        ASSERT_TRUE(Expression::isBool(v));
+        ASSERT_TRUE(Expression::asBool(v));
     }
 }
 
@@ -493,8 +531,10 @@ TEST_F(ExpressionTest, EdgeReference) {
         };
         expr->setContext(ctx.get());
         auto value = expr->eval();
-        ASSERT_TRUE(Expression::isBool(value));
-        ASSERT_FALSE(Expression::asBool(value));
+        ASSERT_TRUE(value.ok());
+        auto v = value.value();
+        ASSERT_TRUE(Expression::isBool(v));
+        ASSERT_FALSE(Expression::asBool(v));
     }
 }
 
@@ -515,15 +555,17 @@ TEST_F(ExpressionTest, FunctionCall) {
         auto status = decoded.value()->prepare();                       \
         ASSERT_TRUE(status.ok()) << status;                             \
         auto value = decoded.value()->eval();                           \
-        ASSERT_TRUE(Expression::is##type(value));                       \
+        ASSERT_TRUE(value.ok());                                        \
+        auto v = value.value();                                         \
+        ASSERT_TRUE(Expression::is##type(v));                           \
         if (#type == std::string("Double")) {                           \
             if (#op != std::string("EQ")) {                             \
-                ASSERT_##op(expected, Expression::as##type(value));     \
+                ASSERT_##op(expected, Expression::as##type(v));         \
             } else {                                                    \
-                ASSERT_DOUBLE_EQ(expected, Expression::as##type(value));\
+                ASSERT_DOUBLE_EQ(expected, Expression::as##type(v));    \
             }                                                           \
         } else {                                                        \
-            ASSERT_##op(expected, Expression::as##type(value));         \
+            ASSERT_##op(expected, Expression::as##type(v));             \
         }                                                               \
     } while (false)
 
@@ -573,6 +615,42 @@ TEST_F(ExpressionTest, FunctionCall) {
     TEST_EXPR(0, LT, strcasecmp("HelLo", "hell"), Int);
     TEST_EXPR(0, GT, strcasecmp("HelLo", "World"), Int);
 
+#undef TEST_EXPR
+}
+
+TEST_F(ExpressionTest, InvalidExpressionTest) {
+    GQLParser parser;
+
+#define TEST_EXPR(expr_arg)                                           \
+    do {                                                              \
+        std::string query = "GO FROM 1 OVER follow WHERE " #expr_arg; \
+        auto parsed = parser.parse(query);                            \
+        ASSERT_TRUE(parsed.ok()) << parsed.status();                  \
+        auto *expr = getFilterExpr(parsed.value().get());             \
+        ASSERT_NE(nullptr, expr);                                     \
+        auto decoded = Expression::decode(Expression::encode(expr));  \
+        ASSERT_TRUE(decoded.ok()) << decoded.status();                \
+        auto ctx = std::make_unique<ExpressionContext>();             \
+        decoded.value()->setContext(ctx.get());                       \
+        auto status = decoded.value()->prepare();                     \
+        ASSERT_TRUE(status.ok()) << status;                           \
+        auto value = decoded.value()->eval();                         \
+        ASSERT_TRUE(!value.ok());                                     \
+    } while (false)
+
+    TEST_EXPR("a" + 1);
+    TEST_EXPR(3.14 + "a");
+    TEST_EXPR("ab" - "c");
+    TEST_EXPR(1 - "a");
+    TEST_EXPR("a" * 1);
+    TEST_EXPR(1.0 * "a");
+    TEST_EXPR(1 / "a");
+    TEST_EXPR("a" / "b");
+    TEST_EXPR(1.0 % 2.0);
+    TEST_EXPR(1.0 % 3);
+    TEST_EXPR(1.0 % "a");
+    TEST_EXPR(-"A");
+    TEST_EXPR(TRUE + FALSE);
 #undef TEST_EXPR
 }
 

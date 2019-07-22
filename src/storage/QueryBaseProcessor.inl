@@ -366,7 +366,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 // TODO(heng): We could remove the lock with one filter one bucket.
                 std::lock_guard<std::mutex> lg(this->lock_);
                 auto& getters = expCtx_->getters();
-                getters.getEdgeProp = [&] (const std::string &prop) -> VariantType {
+                getters.getEdgeProp = [&] (const std::string &prop) -> OptVariantType {
                     auto res = RowReader::getProp(reader.get(), prop);
                     CHECK(ok(res));
                     return value(std::move(res));
@@ -375,7 +375,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                     return rank;
                 };
                 getters.getSrcTagProp = [&, this] (const std::string& tag,
-                                                   const std::string& prop) -> VariantType {
+                                                   const std::string& prop) -> OptVariantType {
                     auto it = fcontext->tagFilters_.find(std::make_pair(tag, prop));
                     CHECK(it != fcontext->tagFilters_.end());
                     VLOG(1) << "Hit srcProp filter for tag " << tag << ", prop "
@@ -383,7 +383,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                     return it->second;
                 };
                 auto value = exp_->eval();
-                if (!Expression::asBool(value)) {
+                if (value.ok() && !Expression::asBool(value.value())) {
                     VLOG(1) << "Filter the edge "
                             << vId << "-> " << dstId << "@" << rank << ":" << edgeType;
                     continue;

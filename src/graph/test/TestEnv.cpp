@@ -56,9 +56,9 @@ void TestEnv::SetUp() {
 
 
 void TestEnv::TearDown() {
-    mClient_.reset();
     graphServer_.reset();
     storageServer_.reset();
+    mClient_.reset();
     metaServer_.reset();
 }
 
