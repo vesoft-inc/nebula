@@ -107,7 +107,12 @@ bool CliManager::connect(const std::string& addr,
     auto client = std::make_unique<GraphClient>(addr_, port_);
     cpp2::ErrorCode res = client->connect(user, pass);
     if (res == cpp2::ErrorCode::SUCCEEDED) {
-        std::cerr << "\nWelcome to Nebula Graph (Version 0.1)\n\n";
+#if defined(NEBULA_BUILD_VERSION)
+        std::cerr << "\nWelcome to Nebula Graph (Version "
+                  << NEBULA_STRINGIFY(NEBULA_BUILD_VERSION) << ")\n\n";
+#else
+        std::cerr << "\nWelcome to Nebula Graph\n\n";
+#endif
         cmdProcessor_ = std::make_unique<CmdProcessor>(std::move(client));
         return true;
     } else {

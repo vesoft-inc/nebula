@@ -307,6 +307,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("existed!");
         case cpp2::ErrorCode::E_NOT_FOUND:
             return Status::Error("not existed!");
+        case cpp2::ErrorCode::E_NO_HOSTS:
+            return Status::Error("no hosts!");
         case cpp2::ErrorCode::E_LEADER_CHANGED: {
             HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
             {
