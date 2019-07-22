@@ -113,5 +113,10 @@ std::shared_ptr<const meta::SchemaProviderIf::Field> ResultSchemaProvider::field
     return std::make_shared<ResultSchemaField>(&(columns_[index]));
 }
 
+std::vector<std::string> ResultSchemaProvider::getFieldNames() const {
+    std::vector<std::string> result;
+    return result;
+}
+
 }  // namespace nebula
 

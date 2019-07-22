@@ -99,6 +99,8 @@ public:
     virtual std::shared_ptr<const Field> field(int64_t index) const = 0;
     virtual std::shared_ptr<const Field> field(const folly::StringPiece name) const = 0;
 
+    virtual std::vector<std::string> getFieldNames() const = 0;
+
     /******************************************
      *
      * Iterator implementation

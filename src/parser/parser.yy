@@ -94,7 +94,7 @@ class GraphScanner;
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
-%token KW_TTL_DURATION KW_TTL_COL
+%token KW_TTL_DURATION KW_TTL_COL KW_DEFAULT
 %token KW_ORDER KW_ASC
 %token KW_DISTINCT
 /* symbols */
@@ -725,6 +725,22 @@ column_spec_list
 
 column_spec
     : name_label type_spec { $$ = new ColumnSpecification($2, $1); }
+    | name_label type_spec KW_DEFAULT INTEGER {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setIntValue($4);
+    }
+    | name_label type_spec KW_DEFAULT BOOL {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setBoolValue($4);
+    }
+    | name_label type_spec KW_DEFAULT DOUBLE {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setDoubleValue($4);
+    }
+    |  name_label type_spec KW_DEFAULT STRING {
+        $$ = new ColumnSpecification($2, $1);
+        $$->setStringValue($4);
+    }
     ;
 
 describe_tag_sentence

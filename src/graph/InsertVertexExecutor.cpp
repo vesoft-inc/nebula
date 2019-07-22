@@ -7,9 +7,12 @@
 #include "base/Base.h"
 #include "graph/InsertVertexExecutor.h"
 #include "storage/client/StorageClient.h"
+#include "meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 namespace graph {
+
+using nebula::meta::NebulaSchemaProvider;
 
 InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
                                            ExecutionContext *ectx) : Executor(ectx) {
@@ -53,8 +56,70 @@ Status InsertVertexExecutor::prepare() {
             }
 
             auto props = item->properties();
+            auto fields = schema->getFieldNames();
             // Now default value is unsupported, props should equal to schema's fields
             if (schema->getNumFields() != props.size()) {
+                auto *mc = ectx()->getMetaClient();
+
+                std::vector<std::string> properties;
+                for (auto& prop : props) {
+                    properties.emplace_back(*prop);
+                }
+
+                for (size_t i = 0; i < schema->getNumFields(); i++) {
+                    auto name = folly::stringPrintf("%s", schema->getFieldName(i));
+                    auto it = std::find(properties.begin(), properties.end(), name);
+                    if (it != properties.end()) {
+                        LOG(INFO) << "Unfind Name: " << name;
+                    }
+                }
+
+                for (auto& name : fields) {
+                    LOG(INFO) << "Name: " << name;
+                }
+                for (auto& prop : props) {
+                    LOG(INFO) << "Prop: " << *prop;
+                }
+
+                std::sort(begin(fields), end(fields));
+                std::sort(begin(properties), end(properties));
+
+                std::vector<std::string> diff(fields.size());
+                auto iter = std::set_difference(begin(fields), end(fields), begin(properties),
+                                                end(properties), diff.begin());
+                diff.resize(iter - diff.begin());
+                LOG(INFO) << "---------";
+                for (auto ele : diff) {
+                    LOG(INFO) << "Ele: " << ele;
+                    auto type = schema->getFieldType(ele).type;
+                    if (mc->hasDefaultValue(ele)) {
+                        switch (type) {
+                            case nebula::cpp2::SupportedType::BOOL:
+                                LOG(INFO) << "Ele: " << ele << " bool default value "
+                                          << mc->getTagBoolDefaultValue(spaceId_, tagId).value();
+                                break;
+                            case nebula::cpp2::SupportedType::INT:
+                                LOG(INFO) << "Ele: " << ele << " int default value "
+                                          << mc->getTagIntDefultValue(spaceId_, tagId).value();
+                                break;
+                            case nebula::cpp2::SupportedType::DOUBLE:
+                                LOG(INFO) << "Ele: " << ele << " double default value "
+                                          << mc->getTagDoublelDefaultValue(spaceId_, tagId).value();
+                                break;
+                            case nebula::cpp2::SupportedType::STRING:
+                                LOG(INFO) << "Ele: " << ele << " string default value "
+                                          << mc->getTagStringDefaultValue(spaceId_, tagId).value();
+                                break;
+                            default:
+                                break;
+                        }
+                    } else {
+                        LOG(ERROR) << "No default value";
+                        return Status::Error("No default value");
+                    }
+                }
+
+
                 LOG(ERROR) << "props number " << props.size()
                            << ", schema field number " << schema->getNumFields();
                 return Status::Error("Wrong number of props");

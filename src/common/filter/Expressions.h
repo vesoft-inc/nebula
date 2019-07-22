@@ -288,6 +288,29 @@ protected:
     Kind                                        kind_{kUnknown};
 };
 
+/*
+class ValueExpression final : public Expression {
+public:
+    explicit ValueExpression(bool value) {
+        value_ = value;
+    }
+
+    explicit ValueExpression(int64_t value) {
+        value_ = value;
+    }
+
+    explicit ValueExpression(double value) {
+        value_ = value;
+    }
+
+    explicit ValueExpression(std::string value) {
+        value_ = value;
+    }
+
+private:
+    VariantType value_;
+};
+*/
 
 // $-.any_prop_name or $-
 class InputPropertyExpression final : public Expression {

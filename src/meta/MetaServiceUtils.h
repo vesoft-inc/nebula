@@ -122,6 +122,16 @@ public:
     static UserID parseRoleUserId(folly::StringPiece val);
 
     static UserID parseUserId(folly::StringPiece val);
+
+    static std::string defaultPrefix();
+
+    static std::string tagDefaultKey(GraphSpaceID spaceId,
+                                     TagID tag,
+                                     const std::string& field);
+
+    static std::string edgeDefaultKey(GraphSpaceID spaceId,
+                                      EdgeType edge,
+                                      const std::string& field);
 };
 
 }  // namespace meta

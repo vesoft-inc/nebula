@@ -104,6 +104,7 @@ HDFS                        ([Hh][Dd][Ff][Ss])
 ORDER                       ([Oo][Rr][Dd][Ee][Rr])
 ASC                         ([Aa][Ss][Cc])
 DISTINCT                    ([Dd][Ii][Ss][Tt][Ii][Nn][Cc][Tt])
+DEFAULT                     ([Dd][Ee][Ff][Aa][Uu][Ll][Tt])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -197,6 +198,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {ORDER}                     { return TokenType::KW_ORDER; }
 {ASC}                       { return TokenType::KW_ASC; }
 {DISTINCT}                  { return TokenType::KW_DISTINCT; }
+{DEFAULT}                   { return TokenType::KW_DEFAULT; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

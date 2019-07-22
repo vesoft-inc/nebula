@@ -50,6 +50,8 @@ public:
     std::shared_ptr<const meta::SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
 
+    std::vector<std::string> getFieldNames() const override;
+
 protected:
     SchemaVer schemaVer_{0};
 

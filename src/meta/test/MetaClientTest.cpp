@@ -24,6 +24,7 @@ namespace meta {
 
 using nebula::cpp2::SupportedType;
 using nebula::cpp2::ValueType;
+using nebula::cpp2::Value;
 using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(MetaClientTest, InterfacesTest) {
@@ -317,12 +318,21 @@ TEST(MetaClientTest, TagTest) {
 
     {
         std::vector<nebula::cpp2::ColumnDef> columns;
+        auto intValue = Value();
+        intValue.set_int_value(0);
         columns.emplace_back(FRAGILE, "column_i",
-                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr));
+                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr),
+                             intValue);
+        auto doubleValue = Value();
+        doubleValue.set_double_value(3.14);
         columns.emplace_back(FRAGILE, "column_d",
-                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr));
+                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr),
+                             doubleValue);
+        auto stringValue = Value();
+        stringValue.set_string_value("test");
         columns.emplace_back(FRAGILE, "column_s",
-                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr));
+                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr),
+                             stringValue);
         nebula::cpp2::Schema schema;
         auto result = client->createTagSchema(spaceId, "test_tag", schema).get();
         ASSERT_TRUE(result.ok());

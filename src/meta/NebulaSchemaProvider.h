@@ -60,6 +60,8 @@ public:
 
     const nebula::cpp2::SchemaProp getProp() const;
 
+    std::vector<std::string> getFieldNames() const override;
+
 protected:
     NebulaSchemaProvider() = default;
 

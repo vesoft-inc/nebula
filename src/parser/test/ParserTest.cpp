@@ -175,6 +175,23 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "CREATE TAG woman(name string, age int, "
+                            "married bool, salary double, create_time timestamp)"
+                            "ttl_duration = 100, ttl_col = create_time, "
+                            "ttl_duration = 200, ttl_col = salary";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE TAG woman(name string, age int default 22, "
+                            "married bool default false, salary double default 1000.0, "
+                            "create_time timestamp)";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "ALTER TAG person ADD (col1 int, col2 string), "
                             "CHANGE (married int, salary int), "
                             "DROP (age, create_time)";

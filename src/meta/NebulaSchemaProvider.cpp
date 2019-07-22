@@ -84,7 +84,7 @@ std::shared_ptr<const SchemaProviderIf::Field> NebulaSchemaProvider::field(
 void NebulaSchemaProvider::addField(folly::StringPiece name,
                                     nebula::cpp2::ValueType&& type) {
     fields_.emplace_back(std::make_shared<SchemaField>(name.toString(),
-                                                    std::move(type)));
+                                                       std::move(type)));
     fieldNameIndex_.emplace(name.toString(),
                             static_cast<int64_t>(fields_.size() - 1));
 }
@@ -95,6 +95,14 @@ void NebulaSchemaProvider::setProp(nebula::cpp2::SchemaProp schemaProp) {
 
 const nebula::cpp2::SchemaProp NebulaSchemaProvider::getProp() const {
     return schemaProp_;
+}
+
+std::vector<std::string> NebulaSchemaProvider::getFieldNames() const {
+    std::vector<std::string> result;
+    for (auto it = fields_.begin(); it != fields_.end(); ++it) {
+        result.emplace_back(it->get()->getName());
+    }
+    return result;
 }
 
 }  // namespace meta

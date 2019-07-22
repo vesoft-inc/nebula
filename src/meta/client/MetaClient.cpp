@@ -977,5 +977,53 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance() {
         return resp.id;
     }, true);
 }
+
+bool MetaClient::hasDefaultValue(const std::string& field) {
+    UNUSED(field);
+    return true;
+}
+
+StatusOr<bool> MetaClient::getTagBoolDefaultValue(GraphSpaceID spaceId, TagID tagID) {
+    UNUSED(spaceId); UNUSED(tagID);
+    return true;
+}
+
+StatusOr<double> MetaClient::getTagDoublelDefaultValue(GraphSpaceID spaceId, TagID tagID) {
+    UNUSED(spaceId); UNUSED(tagID);
+    return 3.14;
+}
+
+StatusOr<int64_t> MetaClient::getTagIntDefultValue(GraphSpaceID spaceId, TagID tagID) {
+    UNUSED(spaceId); UNUSED(tagID);
+    return 0;
+}
+
+StatusOr<std::string> MetaClient::getTagStringDefaultValue(GraphSpaceID spaceId, TagID tagID) {
+    UNUSED(spaceId); UNUSED(tagID);
+    return "";
+}
+
+StatusOr<bool> MetaClient::getEdgeBoolDefaultValue(GraphSpaceID spaceId, EdgeType edgeType) {
+    UNUSED(spaceId); UNUSED(edgeType);
+    return true;
+}
+
+StatusOr<double> MetaClient::getEdgeDoublelDefaultValue(GraphSpaceID spaceId, EdgeType edgeType) {
+    UNUSED(spaceId); UNUSED(edgeType);
+    return 3.14;
+}
+
+StatusOr<int64_t> MetaClient::getEdgeIntDefultValue(GraphSpaceID spaceId, EdgeType edgeType) {
+    UNUSED(spaceId); UNUSED(edgeType);
+    return 0;
+}
+
+StatusOr<std::string> MetaClient::getEdgeStringDefaultValue(GraphSpaceID spaceId,
+                                                            EdgeType edgeType) {
+    UNUSED(spaceId); UNUSED(edgeType);
+    return "";
+}
+
+
 }  // namespace meta
 }  // namespace nebula

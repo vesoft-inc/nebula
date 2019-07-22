@@ -199,6 +199,34 @@ public:
 
     const std::vector<HostAddr>& getAddresses();
 
+    bool hasTagDefaultValue(GraphSpaceID spaceId, TagID tagId, const std::string& field);
+
+    bool hasEdgeDefaultValue(GraphSpaceID spaceId, EdgeType edgeType, const std::string& field);
+
+    StatusOr<nebula::cpp2::Value> getTagDefaultValue(GraphSpaceID spaceId,
+                                                     TagID tagId,
+                                                     nebula::cpp2::SupportedType type);
+
+    StatusOr<nebula::cpp2::Value> getEdgeDefaultValue(GraphSpaceID spaceId,
+                                                      EdgeType edgeType ,
+                                                      nebula::cpp2::SupportedType type);
+
+    StatusOr<bool> getTagBoolDefaultValue(GraphSpaceID spaceId, TagID tagID);
+
+    StatusOr<double> getTagDoublelDefaultValue(GraphSpaceID spaceId, TagID tagID);
+
+    StatusOr<int64_t> getTagIntDefultValue(GraphSpaceID spaceId, TagID tagID);
+
+    StatusOr<std::string> getTagStringDefaultValue(GraphSpaceID spaceId, TagID tagID);
+
+    StatusOr<bool> getEdgeBoolDefaultValue(GraphSpaceID spaceId, EdgeType edgeType);
+
+    StatusOr<double> getEdgeDoublelDefaultValue(GraphSpaceID spaceId, EdgeType edgeType);
+
+    StatusOr<int64_t> getEdgeIntDefultValue(GraphSpaceID spaceId, EdgeType edgeType);
+
+    StatusOr<std::string> getEdgeStringDefaultValue(GraphSpaceID spaceId, EdgeType edgeType);
+
 protected:
     void loadDataThreadFunc();
 

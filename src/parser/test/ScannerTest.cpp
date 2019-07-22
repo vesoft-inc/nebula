@@ -352,6 +352,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("ASC", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("Asc", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("asc", TokenType::KW_ASC),
+        CHECK_SEMANTIC_TYPE("DISTINCT", TokenType::KW_DISTINCT),
+        CHECK_SEMANTIC_TYPE("Distinct", TokenType::KW_DISTINCT),
+        CHECK_SEMANTIC_TYPE("distinct", TokenType::KW_DISTINCT),
+        CHECK_SEMANTIC_TYPE("DEFAULT", TokenType::KW_DEFAULT),
+        CHECK_SEMANTIC_TYPE("Default", TokenType::KW_DEFAULT),
+        CHECK_SEMANTIC_TYPE("default", TokenType::KW_DEFAULT),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
