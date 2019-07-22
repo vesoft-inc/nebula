@@ -36,7 +36,7 @@ TEST(MetaClientTest, InterfacesTest) {
 
     GraphSpaceID spaceId = 0;
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
@@ -134,6 +134,9 @@ TEST(MetaClientTest, InterfacesTest) {
             auto outSchema = schemaMan->getTagSchema(spaceId, tagId);
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("tagItem0", outSchema->getFieldName(0));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(-1));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(5));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(6));
             auto retVer = schemaMan->getNewestTagSchemaVer(spaceId, tagId);
             ASSERT_TRUE(retVer.ok());
             auto version = retVer.value();
@@ -141,6 +144,9 @@ TEST(MetaClientTest, InterfacesTest) {
             auto outSchema1 = schemaMan->getTagSchema(spaceId, tagId, version);
             ASSERT_TRUE(outSchema1 != nullptr);
             ASSERT_EQ(5, outSchema1->getNumFields());
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(-1));
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(5));
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(6));
             ASSERT_STREQ("tagItem0", outSchema1->getFieldName(0));
         }
         {
@@ -167,6 +173,9 @@ TEST(MetaClientTest, InterfacesTest) {
             auto outSchema = schemaMan->getEdgeSchema(spaceId, edgeType);
             ASSERT_EQ(5, outSchema->getNumFields());
             ASSERT_STREQ("edgeItem0", outSchema->getFieldName(0));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(-1));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(5));
+            ASSERT_EQ(nullptr, outSchema->getFieldName(6));
             auto versionRet = schemaMan->getNewestEdgeSchemaVer(spaceId, edgeType);
             ASSERT_TRUE(versionRet.ok());
             auto version = versionRet.value();
@@ -174,6 +183,9 @@ TEST(MetaClientTest, InterfacesTest) {
             auto outSchema1 = schemaMan->getEdgeSchema(spaceId, edgeType, version);
             ASSERT_TRUE(outSchema1 != nullptr);
             ASSERT_EQ(5, outSchema1->getNumFields());
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(-1));
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(5));
+            ASSERT_EQ(nullptr, outSchema1->getFieldName(6));
             ASSERT_STREQ("edgeItem0", outSchema1->getFieldName(0));
         }
     }
@@ -290,7 +302,7 @@ TEST(MetaClientTest, TagTest) {
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
@@ -364,7 +376,7 @@ TEST(MetaClientTest, EdgeTest) {
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
@@ -444,7 +456,7 @@ TEST(MetaClientTest, TagIndexTest) {
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
@@ -567,7 +579,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
@@ -727,7 +739,7 @@ TEST(MetaClientTest, DiffTest) {
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
     auto client = std::make_shared<MetaClient>(threadPool,
@@ -779,7 +791,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     auto sc = TestUtils::mockMetaServer(10001, rootPath.path());
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
     auto client = std::make_shared<MetaClient>(threadPool,

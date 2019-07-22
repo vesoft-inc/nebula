@@ -178,7 +178,7 @@ TEST(ProcessorTest, ListHostsTest) {
     }
     {
         // host info expired
-        sleep(FLAGS_expired_hosts_check_interval_sec + FLAGS_expired_threshold_sec);
+        sleep(FLAGS_expired_hosts_check_interval_sec + FLAGS_expired_threshold_sec + 1);
         cpp2::ListHostsReq req;
         auto* processor = ListHostsProcessor::instance(kv.get());
         auto f = processor->getFuture();
@@ -519,8 +519,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
 TEST(ProcessorTest, KVOperationTest) {
     fs::TempDir rootPath("/tmp/KVOperationTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
-    auto hostsNum = TestUtils::createSomeHosts(kv.get());
-    UNUSED(hostsNum);
+    TestUtils::createSomeHosts(kv.get());
 
     {
         cpp2::SpaceProperties properties;
@@ -659,7 +658,7 @@ TEST(ProcessorTest, KVOperationTest) {
 TEST(ProcessorTest, ListOrGetTagsTest) {
     fs::TempDir rootPath("/tmp/ListOrGetTagsTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
-    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
     TestUtils::mockTag(kv.get(), 10);
 
     // Test ListTagsProcessor
@@ -733,7 +732,7 @@ TEST(ProcessorTest, ListOrGetTagsTest) {
 TEST(ProcessorTest, ListOrGetEdgesTest) {
     fs::TempDir rootPath("/tmp/ListOrGetEdgesTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
-    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
     TestUtils::mockEdge(kv.get(), 10);
 
     // Test ListEdgesProcessor
@@ -809,7 +808,7 @@ TEST(ProcessorTest, ListOrGetEdgesTest) {
 TEST(ProcessorTest, DropTagTest) {
     fs::TempDir rootPath("/tmp/DropTagTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
-    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
     TestUtils::mockTag(kv.get(), 1);
 
     // Space not exist
@@ -865,7 +864,7 @@ TEST(ProcessorTest, DropTagTest) {
 TEST(ProcessorTest, DropEdgeTest) {
     fs::TempDir rootPath("/tmp/DropEdgeTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
-    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
     TestUtils::mockEdge(kv.get(), 1);
 
     // Space not exist
@@ -920,7 +919,7 @@ TEST(ProcessorTest, DropEdgeTest) {
 TEST(ProcessorTest, AlterTagTest) {
     fs::TempDir rootPath("/tmp/AlterTagTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
-    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
     TestUtils::mockTag(kv.get(), 1);
     // Alter tag options test
     {
@@ -1161,7 +1160,7 @@ TEST(ProcessorTest, AlterTagTest) {
 TEST(ProcessorTest, AlterEdgeTest) {
     fs::TempDir rootPath("/tmp/AlterEdgeTest.XXXXXX");
     auto kv = TestUtils::initKV(rootPath.path());
-    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
     TestUtils::mockEdge(kv.get(), 1);
 
     // Drop all, then add
@@ -1594,7 +1593,7 @@ TEST(ProcessorTest, TagIndexTest) {
     fs::TempDir rootPath("/tmp/TagIndexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
-    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
     TestUtils::mockTag(kv.get(), 2);
     {
         cpp2::IndexProperties properties;
@@ -1781,7 +1780,7 @@ TEST(ProcessorTest, EdgeIndexTest) {
     fs::TempDir rootPath("/tmp/EdgeIndexTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     TestUtils::createSomeHosts(kv.get());
-    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1));
+    ASSERT_TRUE(TestUtils::assembleSpace(kv.get(), 1, 1));
     TestUtils::mockEdge(kv.get(), 2);
     {
         cpp2::IndexProperties   properties;

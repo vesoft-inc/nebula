@@ -231,6 +231,8 @@ TEST_F(ExpressionTest, LiteralConstantsRelational) {
         ASSERT_EQ((expected), Expression::asBool(value));               \
     } while (false)
 
+    TEST_EXPR(!-1, false);
+    TEST_EXPR(!!-1, true);
     TEST_EXPR(1 == 1, true);
     TEST_EXPR(1 != 1, false);
     TEST_EXPR(1 > 1, false);
@@ -446,7 +448,7 @@ TEST_F(ExpressionTest, InputReference) {
 TEST_F(ExpressionTest, SourceTagReference) {
     GQLParser parser;
     {
-        std::string query = "GO FROM 1 OVER follow WHERE $^[person].name == \"dutor\"";
+        std::string query = "GO FROM 1 OVER follow WHERE $^.person.name == \"dutor\"";
         auto parsed = parser.parse(query);
         ASSERT_TRUE(parsed.ok()) << parsed.status();
         auto *expr = getFilterExpr(parsed.value().get());

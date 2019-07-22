@@ -24,7 +24,7 @@ using nebula::network::NetworkUtils;
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
-static Status setupSignalHandler();
+static void setupSignalHandler();
 static Status setupLogging();
 static void printHelp(const char *prog);
 
@@ -86,17 +86,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    LOG(INFO) << "Starting Graph HTTP Service";
-    // http://127.0.0.1:XXXX/status is equivalent to http://127.0.0.1:XXXX
-    nebula::WebService::registerHandler("/status", [] {
-        return new nebula::graph::GraphHttpHandler();
-    });
-    status = nebula::WebService::start();
-    if (!status.ok()) {
-        LOG(ERROR) << "Failed to start web service: " << status;
-        return EXIT_FAILURE;
-    }
-
     // Get the IPv4 address the server will listen on
     std::string localIP;
     {
@@ -112,6 +101,17 @@ int main(int argc, char *argv[]) {
         LOG(WARNING) << "Number netio threads should be greater than zero";
         return EXIT_FAILURE;
     }
+
+    LOG(INFO) << "Starting Graph HTTP Service";
+    // http://127.0.0.1:XXXX/status is equivalent to http://127.0.0.1:XXXX
+    nebula::WebService::registerHandler("/status", [] {
+        return new nebula::graph::GraphHttpHandler();
+    });
+    status = nebula::WebService::start();
+    if (!status.ok()) {
+        return EXIT_FAILURE;
+    }
+
     gServer = std::make_unique<apache::thrift::ThriftServer>();
     gServer->getIOThreadPool()->setNumThreads(FLAGS_num_netio_threads);
     auto interface = std::make_shared<GraphService>(gServer->getIOThreadPool());
@@ -130,11 +130,7 @@ int main(int argc, char *argv[]) {
     gServer->setThreadStackSizeMB(5);
 
     // Setup the signal handlers
-    status = setupSignalHandler();
-    if (!status.ok()) {
-        LOG(ERROR) << status;
-        return EXIT_FAILURE;
-    }
+    setupSignalHandler();
 
     FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);
     try {
@@ -150,11 +146,10 @@ int main(int argc, char *argv[]) {
 }
 
 
-Status setupSignalHandler() {
+void setupSignalHandler() {
     ::signal(SIGPIPE, SIG_IGN);
     ::signal(SIGINT, signalHandler);
     ::signal(SIGTERM, signalHandler);
-    return Status::OK();
 }
 
 

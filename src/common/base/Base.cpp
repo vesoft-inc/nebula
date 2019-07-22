@@ -21,13 +21,18 @@ std::ostream& operator <<(std::ostream &os, const HostAddr &addr) {
 
 
 std::string versionString() {
-#if defined(GIT_INFO_SHA)
-    return folly::stringPrintf("Git: %s, Build Time: %s %s",
-                                NEBULA_STRINGIFY(GIT_INFO_SHA),
-                                __DATE__, __TIME__);
-#else
-    return folly::stringPrintf("Build Time: %s %s", __DATE__, __TIME__);
+    std::string version;
+#if defined(NEBULA_BUILD_VERSION)
+    version = folly::stringPrintf("%s, ", NEBULA_STRINGIFY(NEBULA_BUILD_VERSION));
 #endif
+
+#if defined(GIT_INFO_SHA)
+    version += folly::stringPrintf("Git: %s", NEBULA_STRINGIFY(GIT_INFO_SHA));
+#endif
+    version += folly::stringPrintf(", Build Time: %s %s", __DATE__, __TIME__);
+    version += "\nThis source code is licensed under Apache 2.0 License,"
+               " attached with Common Clause Condition 1.0.";
+    return version;
 }
 
 }   // namespace nebula

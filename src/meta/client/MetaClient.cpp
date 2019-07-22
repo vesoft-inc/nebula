@@ -60,6 +60,7 @@ void MetaClient::init() {
 
 
 void MetaClient::heartBeatThreadFunc() {
+    folly::RWSpinLock::ReadHolder holder(listenerLock_);
     if (listener_ == nullptr) {
         VLOG(1) << "Can't send heartbeat due to listener_ is nullptr!";
         return;
@@ -119,9 +120,10 @@ void MetaClient::loadDataThreadFunc() {
         cache.emplace(spaceId, spaceCache);
         spaceIndexByName.emplace(space.second, spaceId);
     }
-    diff(cache);
+    decltype(localCache_) oldCache;
     {
         folly::RWSpinLock::WriteHolder holder(localCacheLock_);
+        oldCache = std::move(localCache_);
         localCache_ = std::move(cache);
         spaceIndexByName_ = std::move(spaceIndexByName);
         spaceTagIndexByName_ = std::move(spaceTagIndexByName);
@@ -129,6 +131,7 @@ void MetaClient::loadDataThreadFunc() {
         spaceNewestTagVerMap_ = std::move(spaceNewestTagVerMap);
         spaceNewestEdgeVerMap_ = std::move(spaceNewestEdgeVerMap);
     }
+    diff(oldCache, localCache_);
     ready_ = true;
     LOG(INFO) << "Load data completed!";
 }
@@ -323,6 +326,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("existed!");
         case cpp2::ErrorCode::E_NOT_FOUND:
             return Status::Error("not existed!");
+        case cpp2::ErrorCode::E_NO_HOSTS:
+            return Status::Error("no hosts!");
         case cpp2::ErrorCode::E_LEADER_CHANGED: {
             HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
             {
@@ -338,9 +343,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
 
 
 PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
-                                   const std::unordered_map<
-                                                GraphSpaceID,
-                                                std::shared_ptr<SpaceInfoCache>>& localCache) {
+                                   const LocalCache& localCache) {
     PartsMap partMap;
     for (auto it = localCache.begin(); it != localCache.end(); it++) {
         auto spaceId = it->first;
@@ -361,15 +364,15 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
 }
 
 
-void MetaClient::diff(const std::unordered_map<GraphSpaceID,
-                                               std::shared_ptr<SpaceInfoCache>>& newCache) {
+void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
+    folly::RWSpinLock::WriteHolder holder(listenerLock_);
     if (listener_ == nullptr) {
         VLOG(3) << "Listener is null!";
         return;
     }
     auto localHost = listener_->getLocalHost();
     auto newPartsMap = doGetPartsMap(localHost, newCache);
-    auto oldPartsMap = getPartsMapFromCache(localHost);
+    auto oldPartsMap = doGetPartsMap(localHost, oldCache);
     VLOG(1) << "Let's check if any new parts added/updated for " << localHost;
     for (auto it = newPartsMap.begin(); it != newPartsMap.end(); it++) {
         auto spaceId = it->first;
@@ -1055,6 +1058,10 @@ MetaClient::getEdgeIndexFromCache(GraphSpaceID spaceID, EdgeIndexID edgeIndexID)
     UNUSED(spaceID); UNUSED(edgeIndexID);
     cpp2::IndexProperties properties;
     return properties;
+}
+
+const std::vector<HostAddr>& MetaClient::getAddresses() {
+    return addrs_;
 }
 
 StatusOr<SchemaVer> MetaClient::getNewestTagVerFromCache(const GraphSpaceID& space,
