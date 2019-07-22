@@ -95,6 +95,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "_build")
 set(NEBULA_HOME ${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(-DNEBULA_HOME=${NEBULA_HOME})
 
+if (NEBULA_BUILD_VERSION)
+    add_definitions(-DNEBULA_BUILD_VERSION=${NEBULA_BUILD_VERSION})
+endif()
+
 find_package(Git)
 if (GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
     execute_process(
