@@ -84,7 +84,7 @@ StatusOr<std::unordered_map<std::string, std::string>> NetworkUtils::listDeviceA
 }
 
 
-bool NetworkUtils::getDynamicPortRange(uint16_t& low, uint16_t& high) {
+bool NetworkUtils::getLocalPortRange(uint16_t& low, uint16_t& high) {
     FILE* pipe = popen("cat /proc/sys/net/ipv4/ip_local_port_range", "r");
     if (!pipe) {
         LOG(ERROR) << "Failed to open /proc/sys/net/ipv4/ip_local_port_range: "
@@ -125,18 +125,18 @@ std::unordered_set<uint16_t> NetworkUtils::getPortsInUse() {
 }
 
 
-uint16_t NetworkUtils::getAvailablePort() {
+uint16_t NetworkUtils::getRandomPortToListen() {
     uint16_t low = 0;
     uint16_t high = 0;
 
-    CHECK(getDynamicPortRange(low, high))
-        << "Failed to get the dynamic port range";
-    VLOG(1) << "Dynamic port range is [" << low << ", " << high << "]";
+    CHECK(getLocalPortRange(low, high))
+        << "Failed to get the local port range";
+    VLOG(1) << "Local port range is [" << low << ", " << high << "]";
 
     std::unordered_set<uint16_t> portsInUse = getPortsInUse();
     uint16_t port = 0;
     do {
-        port = folly::Random::rand32(low, static_cast<int32_t>(high) + 1);
+        port = folly::Random::rand32(1024, low);
     } while (portsInUse.find(port) != portsInUse.end());
 
     return port;

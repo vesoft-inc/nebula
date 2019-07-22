@@ -31,7 +31,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
     // Let the system choose an available port for us
-    uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
+    uint32_t localMetaPort = network::NetworkUtils::getRandomPortToListen();
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
     auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str());
@@ -43,7 +43,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
     CHECK(addrsRet.ok()) << addrsRet.status();
     auto& addrs = addrsRet.value();
-    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
+    uint32_t localDataPort = network::NetworkUtils::getRandomPortToListen();
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
     auto& localHost = hostRet.value();
     auto mClient

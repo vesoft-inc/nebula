@@ -26,12 +26,12 @@ public:
     static StatusOr<std::vector<std::string>> listIPv4s();
     // List out all network devices and its cooresponding Ipv4 address.
     static StatusOr<std::unordered_map<std::string, std::string>> listDeviceAndIPv4s();
-    // Get the local dynamic port range [low, high], only works for IPv4
-    static bool getDynamicPortRange(uint16_t& low, uint16_t& high);
+    // Get the local port range [low, high], only works for IPv4
+    static bool getLocalPortRange(uint16_t& low, uint16_t& high);
     // Get all ports that are currently in use
     static std::unordered_set<uint16_t> getPortsInUse();
-    // Get a dynamic port that is not in use
-    static uint16_t getAvailablePort();
+    // Get a random port number that is not in use and outside the local port range
+    static uint16_t getRandomPortToListen();
 
     // Convert the given IP (must be in the form of "xx.xx.xx.xx") and Port to a HostAddr
     static StatusOr<HostAddr> toHostAddr(folly::StringPiece ip, int32_t port);

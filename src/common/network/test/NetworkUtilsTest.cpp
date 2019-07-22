@@ -75,15 +75,15 @@ TEST(NetworkUtils, intIPv4Conversion) {
 }
 
 
-TEST(NetworkUtils, getDynamicPortRange) {
+TEST(NetworkUtils, getLocalPortRange) {
     uint16_t low, high;
-    ASSERT_TRUE(NetworkUtils::getDynamicPortRange(low, high));
+    ASSERT_TRUE(NetworkUtils::getLocalPortRange(low, high));
     ASSERT_NE(low, high);
 }
 
 
-TEST(NetworkUtils, getAvailablePort) {
-    auto port = NetworkUtils::getAvailablePort();
+TEST(NetworkUtils, getRandomPortToListen) {
+    auto port = NetworkUtils::getRandomPortToListen();
     ASSERT_GT(port, 0);
 }
 
