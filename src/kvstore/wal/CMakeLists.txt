@@ -5,7 +5,7 @@ add_library(
     FileBasedWalIterator.cpp
     FileBasedWal.cpp
 )
-add_dependencies(wal_obj base_obj)
+nebula_add_base_obj(wal_obj)
 
 add_subdirectory(test)
 

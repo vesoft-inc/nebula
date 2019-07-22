@@ -11,6 +11,6 @@ add_library(
     RowWriter.cpp
     NebulaCodecImpl.cpp
 )
-add_dependencies(dataman_obj base_obj graph_thrift_obj)
+nebula_add_base_obj(dataman_obj)
 
 add_subdirectory(test)

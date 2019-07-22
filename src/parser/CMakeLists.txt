@@ -21,7 +21,6 @@ add_library(
         AdminSentences.cpp
         UserSentences.cpp
 )
-
-add_dependencies(parser_obj base_obj filter_obj meta_thrift_obj)
+nebula_add_base_obj(parser_obj)
 
 add_subdirectory(test)
