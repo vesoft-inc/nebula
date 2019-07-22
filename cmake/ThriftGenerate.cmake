@@ -78,7 +78,7 @@ foreach(service ${services})
 endforeach()
 
 add_custom_command(
-  OUTPUT ${${file_name}-cpp2-HEADERS} ${${file_name}-cpp2-SOURCES}
+  OUTPUT ${${file_name}-cpp2-SOURCES}
   COMMAND ${THRIFT1}
     --strict "--allow-neg-enum-vals"
     --templates ${THRIFT_TEMPLATES}
