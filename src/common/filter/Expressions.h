@@ -247,9 +247,9 @@ public:
                 return boost::get<int64_t>(value);
             case 1:
                 return static_cast<int64_t>(boost::get<double>(value));
-            case 3:
+            case 2:
                 return boost::get<bool>(value) ? 1.0 : 0.0;
-            case 4:
+            case 3:
                 return boost::get<int64_t>(value);
         }
         LOG(FATAL) << "unknown type: " << value.which();
