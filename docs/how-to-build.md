@@ -40,11 +40,12 @@ The project itself includes the source code of several 3rd-party libraries, whic
   - zstd
 
 ### How to get 3rd-party Libraries
+[Install guide](https://github.com/vesoft-inc/nebula-3rdparty/blob/master/README.md)
 
 
 ### How to build
   - 1. create build dir : `cd nebula && mkdir build && cd build`
-  - 2. generate makefile : `cmake ..`
+  - 2. generate makefile : `cmake -DNEBULA_THIRDPARTY_ROOT=/opt/nebula/third-party ..`
   - 3. make : `make or make -j${threadnum}`
   - 4. install: `make install`
   - notes : the default install dir is **/usr/local/**, if you want to change the dir, on step 2, your command can be `cmake -DCMAKE_INSTALL_PREFIX=$your_nebula_install_dir ..` 

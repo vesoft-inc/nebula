@@ -171,6 +171,12 @@ if(NOT ${NEBULA_GPERF_BIN_DIR} STREQUAL "")
     list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_GPERF_BIN_DIR})
 endif()
 
+# When NEBULA_THIRDPARTY_ROOT is null, set default value is /opt/nebula/third-party
+if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
+    SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
+    message(STATUS "Auto set NEBULA_THIRDPARTY_ROOT: " ${NEBULA_THIRDPARTY_ROOT})
+endif()
+
 # third-party
 if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_THIRDPARTY_ROOT: " ${NEBULA_THIRDPARTY_ROOT})
@@ -249,10 +255,6 @@ if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
     list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_THIRDPARTY_ROOT}/zstd/bin)
 
 endif()
-
-option(asan "Whether to turn AddressSanitizer ON or OFF" OFF)
-
-message(STATUS "ASAN: ${asan}")
 
 string(REPLACE ";" ":" INCLUDE_PATH_STR "${CMAKE_INCLUDE_PATH}")
 string(REPLACE ";" ":" LIBRARY_PATH_STR "${CMAKE_LIBRARY_PATH}")
