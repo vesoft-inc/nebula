@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     }
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();
-    schemaMan->init(&metaClient);
+    schemaMan->init(metaClient.get());
 
     LOG(INFO) << "Init kvstore";
     std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
