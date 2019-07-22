@@ -6,59 +6,50 @@
 %global project_name nebula
 
 Name:     %{project_name}
-Version:  @VERSION@
-Release:  @RELEASE@%{?dist}
+Version:  %{_version}
+Release:  %{_release}%{?dist}
 Summary:  %{project_name}
 License:  Apache 2.0 + Common Clause 1.0
-# the url to get tar.gz
-#URL:      http://
-# tar name, this is a temp name
-Source:   %{project_name}-@VERSION@.tar.gz
 
 # BuildRoot dir
 BuildRoot:%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 # TODO: we should check dependence's version after adapt to different system versions
-BuildRequires:   gcc, gcc-c++
-BuildRequires:   libstdc++-static
-BuildRequires:   cmake
 BuildRequires:   make
 BuildRequires:   autoconf
 BuildRequires:   automake
-BuildRequires:   flex
-BuildRequires:   gperf
 BuildRequires:   libtool
 BuildRequires:   bison
 BuildRequires:   unzip
-BuildRequires:   boost
-BuildRequires:   boost-devel
-BuildRequires:   boost-static
-BuildRequires:   openssl
-BuildRequires:   openssl-devel
-BuildRequires:   libunwind
-BuildRequires:   libunwind-devel
+BuildRequires:   readline
 BuildRequires:   ncurses
 BuildRequires:   ncurses-devel
-BuildRequires:   readline
-BuildRequires:   readline-devel
 BuildRequires:   python
 BuildRequires:   java-1.8.0-openjdk
 BuildRequires:   java-1.8.0-openjdk-devel
-#Requires:        krb5
 
 %description
 A high performance distributed graph database
 
 %prep
-%setup -q
 
 %build
-cmake ./
+cmake -DCMAKE_BUILD_TYPE=Release -DNEBULA_BUILD_VERSION=%{_version} -DCMAKE_INSTALL_PREFIX=%{_install_dir} ./
 make -j2
 
 %install
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
+
+# After install, if config file is non-existent, copy default config file
+%post
+daemons=(metad graphd storaged)
+for daemon in ${daemons[@]}
+do
+    if [[ ! -f %{_install_dir}/etc/nebula-${daemon}.conf ]]; then
+        cp %{_install_dir}/etc/nebula-${daemon}.conf.default %{_install_dir}/etc/nebula-${daemon}.conf
+    fi
+done
 
 %package metad
 Summary: nebula meta server daemon
@@ -92,70 +83,41 @@ Group: Applications/Databases
 # the files include exe, config file, scripts
 # base rpm include files
 %files
-%{_datadir}/nebula.service
-%{_datadir}/utils.sh
+%attr(0755,root,root) %{_datadir}/nebula.service
+%attr(0755,root,root) %{_datadir}/utils.sh
 
 # metad rpm include files
 %files metad
-%defattr(-,root,root,-)
-%{_bindir}/nebula-metad
-%{_sysconfdir}/nebula-metad.conf.default
-%{_datadir}/nebula-metad.service
-
-# after install , arg 1:install new packet, arg 2: update exist packet
-#%%post metad
-#%%systemd_post nebula-metad.service
-
-# before uninstall, arg 0:delete  arg 1:update
-#%%preun metad
-#%%systemd_preun nebula-metad.service
-
-# upgrade, arg 0:delete  arg 1:update
-#%%postun metad
-#%%systemd_postun nebula-metad.service
+%attr(0755,root,root) %{_bindir}/nebula-metad
+%attr(0644,root,root) %{_sysconfdir}/nebula-metad.conf.default
+%attr(0755,root,root) %{_datadir}/nebula-metad.service
 
 # graphd rpm include files
 %files graphd
-%defattr(-,root,root,-)
-%{_bindir}/nebula-graphd
-%config%{_sysconfdir}/nebula-graphd.conf.default
-%{_datadir}/nebula-graphd.service
-
-#%%post graphd
-#%%systemd_post nebula-graphd.service
-
-#%%preun graphd
-#%%systemd_preun nebula-graphd.service
-
-#%%postun graphd
-#%%systemd_postun nebula-graphd.service
+%attr(0755,root,root) %{_bindir}/nebula-graphd
+%attr(0644,root,root) %config%{_sysconfdir}/nebula-graphd.conf.default
+%attr(0755,root,root) %{_datadir}/nebula-graphd.service
 
 # storaged rpm include files
 %files storaged
-%defattr(-,root,root,-)
-%{_bindir}/nebula-storaged
-%config%{_sysconfdir}/nebula-storaged.conf.default
-%{_datadir}/nebula-storaged.service
-
-#%%post storaged
-#%%systemd_post nebula-storaged.service
-
-#%%preun storaged
-#%%systemd_preun nebula-storaged.service
-
-#%%postun storaged
-#%%systemd_postun nebula-storaged.service
+%attr(0755,root,root) %{_bindir}/nebula-storaged
+%attr(0644,root,root) %config%{_sysconfdir}/nebula-storaged.conf.default
+%attr(0755,root,root) %{_datadir}/nebula-storaged.service
 
 %files nebula
-%defattr(-,root,root,-)
-%{_bindir}/nebula
-%{_resourcesdir}/completion.json
+%attr(0755,root,root) %{_bindir}/nebula
+%attr(0644,root,root) %{_resourcesdir}/completion.json
 
 
 # storage_perf rpm
 #%%files storage_perf
 #%%defattr(-,root,root,-)
 #%%{_bindir}/storage_perf
+
+%debug_package
+
+# missing third-part ids
+%undefine _missing_build_ids_terminate_build
 
 %changelog
 

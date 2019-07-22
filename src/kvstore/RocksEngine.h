@@ -100,7 +100,9 @@ public:
                 std::shared_ptr<rocksdb::MergeOperator> mergeOp = nullptr,
                 std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr);
 
-    ~RocksEngine() = default;
+    ~RocksEngine() {
+        LOG(INFO) << "Release rocksdb on " << dataPath_;
+    }
 
     const char* getDataRoot() const override {
         return dataPath_.c_str();

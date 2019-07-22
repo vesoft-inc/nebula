@@ -60,6 +60,7 @@ void MetaClient::init() {
 
 
 void MetaClient::heartBeatThreadFunc() {
+    folly::RWSpinLock::ReadHolder holder(listenerLock_);
     if (listener_ == nullptr) {
         VLOG(1) << "Can't send heartbeat due to listener_ is nullptr!";
         return;
@@ -306,6 +307,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("existed!");
         case cpp2::ErrorCode::E_NOT_FOUND:
             return Status::Error("not existed!");
+        case cpp2::ErrorCode::E_NO_HOSTS:
+            return Status::Error("no hosts!");
         case cpp2::ErrorCode::E_LEADER_CHANGED: {
             HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
             {
@@ -343,6 +346,7 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host,
 
 
 void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
+    folly::RWSpinLock::WriteHolder holder(listenerLock_);
     if (listener_ == nullptr) {
         VLOG(3) << "Listener is null!";
         return;
