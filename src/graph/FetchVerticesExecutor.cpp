@@ -75,7 +75,7 @@ Status FetchVerticesExecutor::prepareYield() {
             col->expr()->setContext(expCtx_.get());
             status = col->expr()->prepare();
             if (!status.ok()) {
-                break;
+                return status;
             }
             if (col->alias() == nullptr) {
                 resultColNames_.emplace_back(col->expr()->toString());
@@ -189,7 +189,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> FetchVerticesExecutor::getPropName
             return Status::Error("No Schema found for '%s'", prop.first);
         }
         pd.tag_id = status.value();
-        props.emplace_back(pd);
+        props.emplace_back(std::move(pd));
     }
 
     return props;
@@ -230,7 +230,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
-                auto value = expr->eval();
+                expr->eval();
             }
 
             rsWriter->addRow(*writer);

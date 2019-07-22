@@ -57,6 +57,7 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
             auto ret = edgeKeyRef->varname();
             if (!ret.ok()) {
                 status = std::move(ret).status();
+                break;
             }
             varname_ = ret.value();
             break;
@@ -81,7 +82,7 @@ Status FetchEdgesExecutor::prepareYield() {
             col->expr()->setContext(expCtx_.get());
             status = col->expr()->prepare();
             if (!status.ok()) {
-                break;
+                return status;
             }
             if (col->alias() == nullptr) {
                 resultColNames_.emplace_back(col->expr()->toString());
@@ -195,7 +196,7 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
         ranks = std::move(ret).value();
     }
 
-    for (auto index = 0u; index < srcVids.size(); ++index) {
+    for (decltype(srcVids.size()) index = 0u; index < srcVids.size(); ++index) {
         storage::cpp2::EdgeKey key;
         key.set_src(srcVids[index]);
         key.set_edge_type(edgeType_);
@@ -281,7 +282,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> FetchEdgesExecutor::getPropNames()
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
         pd.name = prop.second;
-        props.emplace_back(pd);
+        props.emplace_back(std::move(pd));
     }
 
     return props;
@@ -293,30 +294,23 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
     std::shared_ptr<SchemaWriter> outputSchema;
     std::unique_ptr<RowSetWriter> rsWriter;
     for (auto &resp : all) {
-        if (!resp.__isset.schema || !resp.__isset.data) {
+        if (!resp.__isset.schema || !resp.__isset.data
+                || resp.get_schema() == nullptr || resp.get_data() == nullptr
+                || resp.data.empty()) {
             continue;
         }
 
-        std::shared_ptr<ResultSchemaProvider> eschema;
-        if (resp.get_schema() != nullptr) {
-            eschema = std::make_shared<ResultSchemaProvider>(resp.schema);
-        } else {
-            continue;
-        }
+        std::shared_ptr<ResultSchemaProvider> eschema
+            = std::make_shared<ResultSchemaProvider>(*(resp.get_schema()));
 
-        auto *data = resp.get_data();
-        if (data == nullptr || data->empty()) {
-            continue;
-        }
-        RowSetReader rsReader(eschema, *data);
+        RowSetReader rsReader(eschema, *(resp.get_data()));
         auto iter = rsReader.begin();
+        if (outputSchema == nullptr) {
+            outputSchema = std::make_shared<SchemaWriter>();
+            getOutputSchema(eschema.get(), &*iter, outputSchema.get());
+            rsWriter = std::make_unique<RowSetWriter>(outputSchema);
+        }
         while (iter) {
-            if (outputSchema == nullptr) {
-                outputSchema = std::make_shared<SchemaWriter>();
-                getOutputSchema(eschema.get(), &*iter, outputSchema.get());
-                rsWriter = std::make_unique<RowSetWriter>(outputSchema);
-            }
-
             auto collector = std::make_unique<Collector>(eschema.get());
             auto writer = std::make_unique<RowWriter>(outputSchema);
 
