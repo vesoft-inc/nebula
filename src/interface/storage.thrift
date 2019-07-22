@@ -41,9 +41,14 @@ enum PropOwner {
     EDGE = 3,
 } (cpp.enum_strict)
 
+union PropId {
+    1: common.TagID tag_id,
+    2: common.EdgeType edge_type,
+}
+
 struct PropDef {
     1: PropOwner owner,
-    2: common.TagID tag_id,       // Only valid when owner is SOURCE or DEST
+    2: PropId    id,
     3: string name,      // Property name
     4: StatType stat,    // calc stats when setted.
 }
@@ -127,7 +132,7 @@ struct GetNeighborsRequest {
     // partId => ids
     2: map<common.PartitionID, list<common.VertexID>>(cpp.template = "std::unordered_map") parts,
     // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
-    3: common.EdgeType edge_type,
+    3: list<common.EdgeType> edge_types,
     4: binary filter,
     5: list<PropDef> return_columns,
 }
@@ -142,7 +147,7 @@ struct EdgePropRequest {
     1: common.GraphSpaceID space_id,
     // partId => edges
     2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
-    3: common.EdgeType edge_type,
+    3: list<common.EdgeType> edge_types,
     4: binary filter,
     5: list<PropDef> return_columns,
 }
@@ -205,11 +210,9 @@ struct CatchUpDataReq {
 
 
 service StorageService {
-    QueryResponse getOutBound(1: GetNeighborsRequest req)
-    QueryResponse getInBound(1: GetNeighborsRequest req)
+    QueryResponse getBound(1: GetNeighborsRequest req)
 
-    QueryStatsResponse outBoundStats(1: GetNeighborsRequest req)
-    QueryStatsResponse inBoundStats(1: GetNeighborsRequest req)
+    QueryStatsResponse boundStats(1: GetNeighborsRequest req)
 
     // When return_columns is empty, return all properties
     QueryResponse getProps(1: VertexPropRequest req);
@@ -226,4 +229,3 @@ service StorageService {
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
 }
-

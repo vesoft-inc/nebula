@@ -120,10 +120,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             vIds.emplace_back(vId);
         }
         for (int i = 0; i < 3; i++) {
-            retCols.emplace_back(
-                TestUtils::propDef(cpp2::PropOwner::SOURCE,
-                                   folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
-                                   3001 + i*2));
+            retCols.emplace_back(TestUtils::vetexPropDef(
+                folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
         }
         auto f = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
@@ -207,9 +205,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             edgeKeys.emplace_back(std::move(edgeKey));
         }
         for (int i = 0; i < 20; i++) {
-            retCols.emplace_back(
-                TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                   folly::stringPrintf("col_%d", i)));
+            retCols.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("col_%d", i), 101));
         }
         auto f = client->getEdgeProps(spaceId, std::move(edgeKeys), std::move(retCols));
         auto resp = std::move(f).get();
@@ -266,5 +262,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-

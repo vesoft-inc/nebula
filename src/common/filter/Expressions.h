@@ -33,6 +33,7 @@ std::string aliasKindToString(AliasKind kind);
 struct AliasInfo {
     AliasKind                               kind_;
     std::string                             data_;
+    EdgeType                                id_;
 };
 
 class ExpressionContext final {
@@ -45,8 +46,8 @@ public:
         dstTagProps_.emplace(tag, prop);
     }
 
-    void addEdgeProp(const std::string &prop) {
-        edgeProps_.emplace(prop);
+    void addEdgeProp(const std::string &prop, const EdgeType id) {
+        edgeProps_.emplace(prop, id);
     }
 
     Status addAliasProp(const std::string &alias, const std::string &prop);
@@ -56,10 +57,12 @@ public:
         aliasInfo_[alias].kind_ = kind;
     }
 
-    void addAlias(const std::string &alias, AliasKind kind, const std::string &data) {
+    void addAlias(const std::string &alias, AliasKind kind, const std::string &data,
+                  const EdgeType id) {
         auto &entry = aliasInfo_[alias];
         entry.kind_ = kind;
         entry.data_ = data;
+        entry.id_ = id;
     }
 
     AliasKind aliasKind(const std::string &alias) {
@@ -71,6 +74,7 @@ public:
     }
 
     using TagProp = std::pair<std::string, std::string>;
+    using EdgeProp = std::pair<std::string, EdgeType>;
 
     std::vector<TagProp> srcTagProps() const {
         return std::vector<TagProp>(srcTagProps_.begin(), srcTagProps_.end());
@@ -80,8 +84,8 @@ public:
         return std::vector<TagProp>(dstTagProps_.begin(), dstTagProps_.end());
     }
 
-    std::vector<std::string> edgeProps() const {
-        return std::vector<std::string>(edgeProps_.begin(), edgeProps_.end());
+    std::vector<EdgeProp> edgeProps() const {
+        return std::vector<EdgeProp>(edgeProps_.begin(), edgeProps_.end());
     }
 
     bool hasSrcTagProp() const {
@@ -115,7 +119,7 @@ private:
     std::unordered_map<std::string, AliasInfo>  aliasInfo_;
     std::unordered_set<TagProp>                 srcTagProps_;
     std::unordered_set<TagProp>                 dstTagProps_;
-    std::unordered_set<std::string>             edgeProps_;
+    std::unordered_set<EdgeProp>                edgeProps_;
 };
 
 

@@ -13,8 +13,7 @@
 namespace nebula {
 namespace storage {
 
-kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
-                                                       VertexID vId) {
+kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, VertexID vId) {
     FilterContext fcontext;
     cpp2::VertexData vResp;
     vResp.set_vertex_id(vId);
@@ -22,8 +21,8 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
         RowWriter writer;
         PropsCollector collector(&writer);
         for (auto& tc : tagContexts_) {
-            VLOG(3) << "partId " << partId << ", vId " << vId
-                    << ", tagId " << tc.tagId_ << ", prop size " << tc.props_.size();
+            VLOG(3) << "partId " << partId << ", vId " << vId << ", tagId " << tc.tagId_
+                    << ", prop size " << tc.props_.size();
             auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_, &fcontext, &collector);
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
@@ -37,44 +36,43 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
         return kvstore::ResultCode::SUCCEEDED;
     }
 
-    if (!edgeContext_.props_.empty()) {
-        CHECK(!onlyVertexProps_);
-        RowSetWriter rsWriter;
-        auto ret = collectEdgeProps(partId, vId,
-                                    edgeContext_.edgeType_,
-                                    edgeContext_.props_,
-                                    &fcontext,
-                                    [&, this] (RowReader* reader,
-                                               folly::StringPiece key,
-                                               const std::vector<PropContext>& props) {
-                                        RowWriter writer(rsWriter.schema());
-                                        PropsCollector collector(&writer);
-                                        this->collectProps(reader,
-                                                           key,
-                                                           props,
-                                                           &fcontext,
-                                                           &collector);
-                                        rsWriter.addRow(writer);
-                                    });
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            return ret;
-        }
-        if (!rsWriter.data().empty()) {
-            vResp.set_edge_data(std::move(rsWriter.data()));
-            // Only return the vertex if edges existed.
-            std::lock_guard<std::mutex> lg(this->lock_);
-            vertices_.emplace_back(std::move(vResp));
+    RowSetWriter rsWriter;
+    for (const auto& ec : edgeContext_) {
+        auto edgeType = ec.first;
+        auto& props = ec.second;
+        if (!props.empty()) {
+            CHECK(!onlyVertexProps_);
+            auto ret =
+                collectEdgeProps(partId, vId, edgeType, props, &fcontext,
+                                 [&, this](RowReader* reader, folly::StringPiece key,
+                                           const std::vector<PropContext>& p) {
+                                     RowWriter writer(rsWriter.schema());
+                                     PropsCollector collector(&writer);
+                                     this->collectProps(reader, key, p, &fcontext, &collector);
+                                     rsWriter.addRow(writer);
+                                 });
+            if (ret != kvstore::ResultCode::SUCCEEDED) {
+                return ret;
+            }
         }
     }
+    if (!rsWriter.data().empty()) {
+        vResp.set_edge_data(std::move(rsWriter.data()));
+        // Only return the vertex if edges existed.
+        std::lock_guard<std::mutex> lg(this->lock_);
+        vertices_.emplace_back(std::move(vResp));
+    }
+
     return kvstore::ResultCode::SUCCEEDED;
 }
 
-
 void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
     resp_.set_vertices(std::move(vertices_));
+    auto edgePropsSize = std::accumulate(edgeContext_.cbegin(), edgeContext_.cend(), 0,
+                                         [](int ac, auto& ec) { return ac + ec.second.size(); });
     if (!this->tagContexts_.empty()) {
         nebula::cpp2::Schema respTag;
-        respTag.columns.reserve(retNum - this->edgeContext_.props_.size());
+        respTag.columns.reserve(retNum - edgePropsSize);
         for (auto& tc : this->tagContexts_) {
             for (auto& prop : tc.props_) {
                 if (prop.returned_) {
@@ -87,19 +85,22 @@ void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
             resp_.set_vertex_schema(std::move(respTag));
         }
     }
-    if (!this->edgeContext_.props_.empty()) {
-        nebula::cpp2::Schema respEdge;
-        decltype(respEdge.columns) cols;
-        cols.reserve(this->edgeContext_.props_.size());
-        for (auto& prop : this->edgeContext_.props_) {
-            CHECK(prop.returned_);
-            cols.emplace_back(columnDef(std::move(prop.prop_.name),
-                                                  prop.type_.type));
+
+    nebula::cpp2::Schema respEdge;
+    decltype(respEdge.columns) cols;
+
+    for (auto& ec : edgeContext_) {
+        auto& props = ec.second;
+        if (!props.empty()) {
+            for (auto& prop : props) {
+                CHECK(prop.returned_);
+                cols.emplace_back(columnDef(std::move(prop.prop_.name), prop.type_.type));
+            }
         }
+    }
+    if (!cols.empty()) {
         respEdge.set_columns(std::move(cols));
-        if (!respEdge.get_columns().empty()) {
-            resp_.set_edge_schema(std::move(respEdge));
-        }
+        resp_.set_edge_schema(std::move(respEdge));
     }
 }
 

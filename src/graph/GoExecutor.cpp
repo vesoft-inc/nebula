@@ -157,27 +157,30 @@ Status GoExecutor::prepareFrom() {
 Status GoExecutor::prepareOver() {
     Status status = Status::OK();
     auto *clause = sentence_->overClause();
-    do {
-        if (clause == nullptr) {
-            LOG(FATAL) << "Over clause shall never be null";
-        }
-        auto spaceId = ectx()->rctx()->session()->space();
-        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *clause->edge());
-        if (!edgeStatus.ok()) {
-            status = edgeStatus.status();
-            break;
-        }
-        edgeType_ = edgeStatus.value();
-        reversely_ = clause->isReversely();
-        if (clause->alias() != nullptr) {
-            expCtx_->addAlias(*clause->alias(), AliasKind::Edge, *clause->edge());
-        } else {
-            expCtx_->addAlias(*clause->edge(), AliasKind::Edge, *clause->edge());
-        }
-    } while (false);
+    if (clause == nullptr) {
+        LOG(FATAL) << "Over clause shall never be null";
+    }
 
-    if (isReversely()) {
-        return Status::Error("`REVERSELY' not supported yet");
+    auto edges = clause->edges();
+    for (auto e : edges) {
+        auto spaceId = ectx()->rctx()->session()->space();
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *e->edge());
+        if (!edgeStatus.ok()) {
+            return edgeStatus.status();
+        }
+
+        if (e->isReversely()) {
+            edgeTypes_.push_back(-edgeStatus.value());
+            return Status::Error("`REVERSELY' not supported yet");
+        }
+
+        auto v = edgeStatus.value();
+        edgeTypes_.push_back(v);
+        if (e->alias() != nullptr) {
+            expCtx_->addAlias(*e->alias(), AliasKind::Edge, *e->edge(), v);
+        } else {
+            expCtx_->addAlias(*e->edge(), AliasKind::Edge, *e->edge(), v);
+        }
     }
 
     return status;
@@ -290,8 +293,7 @@ void GoExecutor::stepOut() {
     auto returns = status.value();
     auto future = ectx()->storage()->getNeighbors(spaceId,
                                                   starts_,
-                                                  edgeType_,
-                                                  !reversely_,
+                                                  edgeTypes_,
                                                   "",
                                                   std::move(returns));
     auto *runner = ectx()->rctx()->runner();
@@ -395,10 +397,11 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() const {
     std::vector<storage::cpp2::PropDef> props;
-    {
+    for (auto &e : edgeTypes_) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
         pd.name = "_dst";
+        pd.id.set_edge_type(e);
         props.emplace_back(std::move(pd));
     }
 
@@ -416,13 +419,15 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() cons
             return Status::Error("No schema found for '%s'", tagProp.first);
         }
         auto tagId = status.value();
-        pd.set_tag_id(tagId);
+        pd.id.set_tag_id(tagId);
         props.emplace_back(std::move(pd));
     }
+
     for (auto &prop : expCtx_->edgeProps()) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
-        pd.name = prop;
+        pd.name = prop.first;
+        pd.id.set_edge_type(prop.second);
         props.emplace_back(std::move(pd));
     }
 
@@ -442,7 +447,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() const {
             return Status::Error("No schema found for '%s'", tagProp.first);
         }
         auto tagId = status.value();
-        pd.set_tag_id(tagId);
+        pd.id.set_tag_id(tagId);
         props.emplace_back(std::move(pd));
     }
     return props;

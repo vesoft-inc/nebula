@@ -81,22 +81,22 @@ kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
         }
     }
 
-    if (!this->edgeContext_.props_.empty()) {
-         return this->collectEdgeProps(partId,
-                                       vId,
-                                       this->edgeContext_.edgeType_,
-                                       this->edgeContext_.props_,
-                                       &fcontext,
-                                       [&, this] (RowReader* reader,
-                                                  folly::StringPiece key,
-                                                  const std::vector<PropContext>& props) {
-                                           this->collectProps(reader,
-                                                              key,
-                                                              props,
-                                                              &fcontext,
-                                                              &collector_);
-                                       });
+    for (auto& ec : this->edgeContext_) {
+        auto edgeType = ec.first;
+        auto& props = ec.second;
+        if (!props.empty()) {
+            auto r = this->collectEdgeProps(partId, vId, edgeType, props, &fcontext,
+                                            [&, this](RowReader* reader, folly::StringPiece key,
+                                                      const std::vector<PropContext>& p) {
+                                                this->collectProps(reader, key,  p, &fcontext,
+                                                                   &collector_);
+                                            });
+            if (r != kvstore::ResultCode::SUCCEEDED) {
+                return r;
+            }
+        }
     }
+
     return kvstore::ResultCode::SUCCEEDED;
 }
 
@@ -111,9 +111,12 @@ void QueryStatsProcessor::onProcessFinished(int32_t retNum) {
             }
         }
     }
-    for (auto& prop : this->edgeContext_.props_) {
-        CHECK(prop.returned_);
-        props.emplace_back(std::move(prop));
+
+    for (auto& ec : this->edgeContext_) {
+        auto p = ec.second;
+        for (auto& prop : p) {
+            props.emplace_back(std::move(prop));
+        }
     }
     std::sort(props.begin(), props.end(), [](auto& l, auto& r){
         return l.retIndex_ < r.retIndex_;

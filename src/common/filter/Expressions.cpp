@@ -23,12 +23,13 @@ namespace nebula {
 
 
 Status ExpressionContext::addAliasProp(const std::string &alias, const std::string &prop) {
-    auto kind = aliasKind(alias);
-    if (kind == AliasKind::Unknown) {
+    auto iter = aliasInfo_.find(alias);
+    if (iter == aliasInfo_.end()) {
         return Status::Error("Alias `%s' not defined", alias.c_str());
     }
-    if (kind == AliasKind::Edge) {
-        addEdgeProp(prop);
+
+    if (iter->second.kind_ == AliasKind::Edge) {
+        addEdgeProp(prop, iter->second.id_);
         return Status::OK();
     }
     return Status::Error("Illegal alias `%s'", alias.c_str());

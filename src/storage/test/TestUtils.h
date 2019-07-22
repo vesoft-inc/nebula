@@ -152,25 +152,30 @@ public:
             new ResultSchemaProvider(std::move(schema)));
     }
 
-
-    static cpp2::PropDef propDef(cpp2::PropOwner owner,
-                                 std::string name,
-                                 TagID tagId = -1) {
+    static cpp2::PropDef vetexPropDef(std::string name, TagID tagId) {
         cpp2::PropDef prop;
         prop.set_name(std::move(name));
-        prop.set_owner(owner);
-        if (tagId != -1) {
-            prop.set_tag_id(tagId);
-        }
+        prop.set_owner(cpp2::PropOwner::SOURCE);
+        prop.id.set_tag_id(tagId);
         return prop;
     }
 
+    static cpp2::PropDef edgePropDef(std::string name, EdgeType eType) {
+        cpp2::PropDef prop;
+        prop.set_name(std::move(name));
+        prop.set_owner(cpp2::PropOwner::EDGE);
+        prop.id.set_edge_type(eType);
+        return prop;
+    }
 
-    static cpp2::PropDef propDef(cpp2::PropOwner owner,
-                                 std::string name,
-                                 cpp2::StatType type,
-                                 TagID tagId = -1) {
-        auto prop = TestUtils::propDef(owner, std::move(name), tagId);
+    static cpp2::PropDef vetexPropDef(std::string name, cpp2::StatType type, TagID tagId) {
+        auto prop = TestUtils::vetexPropDef(std::move(name), tagId);
+        prop.set_stat(type);
+        return prop;
+    }
+
+    static cpp2::PropDef edgePropDef(std::string name, cpp2::StatType type, EdgeType eType) {
+        auto prop = TestUtils::edgePropDef(std::move(name), eType);
         prop.set_stat(type);
         return prop;
     }

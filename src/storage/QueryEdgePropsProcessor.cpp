@@ -39,17 +39,17 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
     return ret;
 }
 
-void QueryEdgePropsProcessor::addDefaultProps() {
-    this->edgeContext_.props_.emplace_back("_src", 0, PropContext::PropInKeyType::SRC);
-    this->edgeContext_.props_.emplace_back("_rank", 1, PropContext::PropInKeyType::RANK);
-    this->edgeContext_.props_.emplace_back("_dst", 2, PropContext::PropInKeyType::DST);
-}
-
 void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     spaceId_ = req.get_space_id();
     // By default, _src, _rank, _dst will be returned as the first 3 fields
-    addDefaultProps();
-    int32_t returnColumnsNum = req.get_return_columns().size() + this->edgeContext_.props_.size();
+
+    if (req.__isset.edge_types) {
+        initContext(req.edge_types, true);
+    }
+    int32_t edgeSize = std::accumulate(edgeContext_.cbegin(), edgeContext_.cend(), 0,
+                                       [](int ac, auto& ec) { return ac + ec.second.size(); });
+
+    int32_t returnColumnsNum = req.get_return_columns().size() + edgeSize;
     auto retCode = this->checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {
@@ -64,9 +64,11 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
         auto partId = partE.first;
         kvstore::ResultCode ret;
         for (auto& edgeKey : partE.second) {
-            ret = this->collectEdgesProps(partId, edgeKey, this->edgeContext_.props_, rsWriter);
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
-                break;
+            for (auto& ec : edgeContext_) {
+                ret = this->collectEdgesProps(partId, edgeKey, ec.second, rsWriter);
+                if (ret != kvstore::ResultCode::SUCCEEDED) {
+                    break;
+                }
             }
         }
         // TODO handle failures
@@ -76,9 +78,13 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
 
     std::vector<PropContext> props;
     props.reserve(returnColumnsNum);
-    for (auto& prop : this->edgeContext_.props_) {
-        props.emplace_back(std::move(prop));
+     for (auto& ec : this->edgeContext_) {
+        auto p = ec.second;
+        for (auto& prop : p) {
+            props.emplace_back(std::move(prop));
+        }
     }
+
     std::sort(props.begin(), props.end(), [](auto& l, auto& r){
         return l.retIndex_ < r.retIndex_;
     });

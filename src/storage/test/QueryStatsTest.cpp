@@ -64,21 +64,19 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
         }
     }
     req.set_parts(std::move(tmpIds));
-    req.set_edge_type(101);
+    std::vector<EdgeType> et = {101};
+    req.set_edge_types(et);
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 2; i++) {
-        tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE,
-                                                   folly::stringPrintf("tag_%d_col_%d",
-                                                                       3001 + i*2, i*2),
-                                                   cpp2::StatType::AVG,
-                                                   3001 + i*2));
+        tmpColumns.emplace_back(
+            TestUtils::vetexPropDef(folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2),
+                                    cpp2::StatType::AVG, 3001 + i * 2));
     }
     // Return edge props col_0, col_2, col_4 ... col_18
     for (int i = 0; i < 5; i++) {
-        tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                                   folly::stringPrintf("col_%d", i*2),
-                                                   cpp2::StatType::SUM));
+        tmpColumns.emplace_back(
+            TestUtils::edgePropDef(folly::stringPrintf("col_%d", i * 2), cpp2::StatType::SUM, 101));
     }
     req.set_return_columns(std::move(tmpColumns));
 }
@@ -163,5 +161,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-
-

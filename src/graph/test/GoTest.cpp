@@ -314,5 +314,23 @@ TEST_F(GoTest, VertexNotExist) {
     }
 }
 
+TEST_F(GoTest, MULTI_EDGES) {
+    // Ever served in the same team
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve, like";
+        auto &player = players_["Russell Westbrook"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Thunders"].vid()},
+            {players_["Paul George"].vid()},
+            {players_["James Harden"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula

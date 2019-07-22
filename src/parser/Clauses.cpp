@@ -61,10 +61,9 @@ std::string FromClause::toString() const {
 }
 
 
-std::string OverClause::toString() const {
+std::string OverEdge::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "OVER ";
     buf += *edge_;
     if (alias_ != nullptr) {
         buf += " AS ";
@@ -73,6 +72,25 @@ std::string OverClause::toString() const {
     if (isReversely_) {
         buf += " REVERSELY";
     }
+    return buf;
+}
+
+std::string OverEdges::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &e : edges_) {
+        buf += e->toString();
+    }
+
+    return buf;
+}
+
+std::string OverClause::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "OVER ";
+    buf += overEdges_->toString();
+
     return buf;
 }
 

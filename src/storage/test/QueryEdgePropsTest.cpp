@@ -57,12 +57,12 @@ void buildRequest(cpp2::EdgePropRequest& req) {
         }
     }
     req.set_parts(std::move(tmpEdges));
-    req.set_edge_type(101);
+    std::vector<EdgeType> et = {101};
+    req.set_edge_types(et);
     // Return edge props col_0, col_2, col_4 ... col_18
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 10; i++) {
-        tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                                   folly::stringPrintf("col_%d", i*2)));
+        tmpColumns.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("col_%d", i * 2), 101));
     }
     req.set_return_columns(std::move(tmpColumns));
 }
@@ -150,5 +150,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-

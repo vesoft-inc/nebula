@@ -85,22 +85,23 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
         }
     }
     req.set_parts(std::move(tmpIds));
-    req.set_edge_type(outBound ? 101 : -101);
+    auto edge_type = outBound ? 101 : -101;
+    std::vector<EdgeType> et = {edge_type};
+    req.set_edge_types(et);
+
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 3; i++) {
-        tmpColumns.emplace_back(
-            TestUtils::propDef(cpp2::PropOwner::SOURCE,
-                               folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
-                               3001 + i*2));
+        tmpColumns.emplace_back(TestUtils::vetexPropDef(
+            folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
     }
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "_dst"));
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "_rank"));
+
+    tmpColumns.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("_dst"), edge_type));
+    tmpColumns.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("_rank"), edge_type));
     // Return edge props col_0, col_2, col_4 ... col_18
     for (int i = 0; i < 10; i++) {
         tmpColumns.emplace_back(
-            TestUtils::propDef(cpp2::PropOwner::EDGE,
-                               folly::stringPrintf("col_%d", i*2)));
+            TestUtils::edgePropDef(folly::stringPrintf("col_%d", i * 2), edge_type));
     }
     req.set_return_columns(std::move(tmpColumns));
 }
@@ -212,7 +213,7 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
     LOG(INFO) << "Test QueryInBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(),
-                                                    executor.get(), BoundType::IN_BOUND);
+                                                    executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -244,8 +245,7 @@ TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
-                                                    executor.get(),
-                                                    BoundType::OUT_BOUND);
+                                                    executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -277,8 +277,7 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
-                                                    executor.get(),
-                                                    BoundType::OUT_BOUND);
+                                                    executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -291,7 +290,7 @@ TEST(QueryBoundTest,  GenBucketsTest) {
     {
         cpp2::GetNeighborsRequest req;
         buildRequest(req, false);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(10, buckets.size());
         for (auto& bucket : buckets) {
@@ -303,7 +302,7 @@ TEST(QueryBoundTest,  GenBucketsTest) {
         FLAGS_min_vertices_per_bucket = 3;
         cpp2::GetNeighborsRequest req;
         buildRequest(req, false);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(9, buckets.size());
         for (auto i = 0; i < 3; i++) {
@@ -318,7 +317,7 @@ TEST(QueryBoundTest,  GenBucketsTest) {
         FLAGS_min_vertices_per_bucket = 4;
         cpp2::GetNeighborsRequest req;
         buildRequest(req, false);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(7, buckets.size());
         for (auto i = 0; i < 2; i++) {
@@ -332,7 +331,7 @@ TEST(QueryBoundTest,  GenBucketsTest) {
         FLAGS_min_vertices_per_bucket = 40;
         cpp2::GetNeighborsRequest req;
         buildRequest(req, false);
-        QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
+        QueryBoundProcessor pro(nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(1, buckets.size());
         ASSERT_EQ(30, buckets[0].vertices_.size());
@@ -371,8 +370,7 @@ TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
-                                                    executor.get(),
-                                                    BoundType::OUT_BOUND);
+                                                    executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -400,8 +398,7 @@ TEST(QueryBoundTest, FilterTest_InvalidFilter) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryBoundProcessor::instance(kv.get(),
                                                     schemaMan.get(),
-                                                    executor.get(),
-                                                    BoundType::OUT_BOUND);
+                                                    executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -421,5 +418,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-
