@@ -342,7 +342,7 @@ public:
 private:
     std::unique_ptr<Expression>     srcid_;
     std::unique_ptr<Expression>     dstid_;
-    int64_t                         rank_;
+    EdgeRanking                     rank_;
 };
 
 class EdgeKeys final {

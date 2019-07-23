@@ -118,7 +118,6 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
         }
     }
 
-
     auto ret = inputs->getVIDs(*srcid_);
     if (!ret.ok()) {
         return ret.status();
@@ -131,7 +130,7 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
     }
     auto dstVids = std::move(ret).value();
 
-    std::vector<int64_t> ranks;
+    std::vector<EdgeRanking> ranks;
     if (rank_ != nullptr) {
         ret = inputs->getVIDs(*rank_);
         if (!ret.ok()) {
@@ -254,7 +253,6 @@ StatusOr<std::vector<storage::cpp2::PropDef>> FetchEdgesExecutor::getPropNames()
 
     return props;
 }
-
 
 void FetchEdgesExecutor::processResult(RpcResponse &&result) {
     auto all = result.responses();

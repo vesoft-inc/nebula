@@ -11,48 +11,42 @@ namespace nebula {
 namespace graph {
 
 Status FetchExecutor::prepareYield() {
-    Status status = Status::OK();
+    if (yieldClause_ == nullptr) {
+        setupColumns();
+    } else {
+        yields_ = yieldClause_->columns();
+        // TODO 'distinct' could always pushdown in fetch.
+        distinct_ = yieldClause_->isDistinct();
+    }
 
-    do {
-        if (yieldClause_ == nullptr) {
-            setupColumns();
+    for (auto *col : yields_) {
+        col->expr()->setContext(expCtx_.get());
+        Status status = col->expr()->prepare();
+        if (!status.ok()) {
+            return status;
+        }
+        if (col->alias() == nullptr) {
+            resultColNames_.emplace_back(col->expr()->toString());
         } else {
-            yields_ = yieldClause_->columns();
-            // TODO 'distinct' could always pushdown in fetch.
-            distinct_ = yieldClause_->isDistinct();
+            resultColNames_.emplace_back(*col->alias());
         }
+    }
 
-        for (auto *col : yields_) {
-            col->expr()->setContext(expCtx_.get());
-            status = col->expr()->prepare();
-            if (!status.ok()) {
-                return status;
-            }
-            if (col->alias() == nullptr) {
-                resultColNames_.emplace_back(col->expr()->toString());
-            } else {
-                resultColNames_.emplace_back(*col->alias());
-            }
-        }
-
-        if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
-            status = Status::SyntaxError(
+    if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
+        return Status::SyntaxError(
                     "Only support form of alias.prop in fetch sentence.");
-            break;
-        }
+    }
 
-        auto aliasProps = expCtx_->aliasProps();
-        for (auto pair : aliasProps) {
-            if (pair.first != *labelName_) {
-                status = Status::SyntaxError(
-                    "[%s.%s] tag not declared in %s.",
+    auto aliasProps = expCtx_->aliasProps();
+    for (auto pair : aliasProps) {
+        if (pair.first != *labelName_) {
+            return Status::SyntaxError(
+                "[%s.%s] tag not declared in %s.",
                     pair.first.c_str(), pair.second.c_str(), (*labelName_).c_str());
-                break;
-            }
         }
-    } while (false);
+    }
 
-    return status;
+    return Status::OK();
 }
 
 void FetchExecutor::setupColumns() {
@@ -113,17 +107,17 @@ void FetchExecutor::getOutputSchema(
     for (auto index = 0u; index < record.size(); ++index) {
         SupportedType type;
         switch (record[index].which()) {
-            case WhichVariant::INT64_VAR:
+            case VAR_INT64:
                 // all integers in InterimResult are regarded as type of VID
                 type = SupportedType::VID;
                 break;
-            case WhichVariant::DOUBLE_VAR:
+            case VAR_DOUBLE:
                 type = SupportedType::DOUBLE;
                 break;
-            case WhichVariant::BOOL_VAR:
+            case VAR_BOOL:
                 type = SupportedType::BOOL;
                 break;
-            case WhichVariant::STRING_VAR:
+            case VAR_STR:
                 type = SupportedType::STRING;
                 break;
             default:

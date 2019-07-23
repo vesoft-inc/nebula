@@ -61,16 +61,16 @@ VariantType Collector::collect(
     DCHECK_NOTNULL(reader);
     VariantType var = getProp(prop, reader);
     switch (var.which()) {
-        case WhichVariant::INT64_VAR:
+        case VAR_INT64:
             (*writer) << boost::get<int64_t>(var);
             break;
-        case WhichVariant::DOUBLE_VAR:
+        case VAR_DOUBLE:
             (*writer) << boost::get<double>(var);
             break;
-        case WhichVariant::BOOL_VAR:
+        case VAR_BOOL:
             (*writer) << boost::get<bool>(var);
             break;
-        case WhichVariant::STRING_VAR:
+        case VAR_STR:
             (*writer) << boost::get<std::string>(var);
             break;
         default:
