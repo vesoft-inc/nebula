@@ -275,7 +275,7 @@ There are three kinds of tags (_course_, _building_ and _student_) and two edge 
       "select":[  
          "grade: integer"
       ],
-      like":[  
+      "like":[  
          "likeness: double"
       ]
    }
