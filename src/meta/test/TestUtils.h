@@ -16,6 +16,7 @@
 #include "meta/processors/partsMan/ListHostsProcessor.h"
 #include "meta/MetaServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+#include <folly/synchronization/Baton.h>
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "time/WallClock.h"
@@ -117,11 +118,13 @@ public:
             data.emplace_back(MetaServiceUtils::partKey(id, partId),
                               MetaServiceUtils::partVal(hosts));
         }
-
+        folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(0, 0, std::move(data),
                           [&] (kvstore::ResultCode code) {
                               ret = (code == kvstore::ResultCode::SUCCEEDED);
+                              baton.post();
                           });
+        baton.wait();
         return ret;
     }
 
@@ -143,11 +146,13 @@ public:
             tags.emplace_back(MetaServiceUtils::schemaTagKey(1, tagId, ver++),
                               MetaServiceUtils::schemaTagVal(tagName, srcsch));
         }
-
+        folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(0, 0, std::move(tags),
-                          [] (kvstore::ResultCode code) {
+                          [&] (kvstore::ResultCode code) {
                                 ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+                                baton.post();
                           });
+        baton.wait();
     }
 
     static void mockEdge(kvstore::KVStore* kv, int32_t edgeNum, SchemaVer version = 0) {
@@ -170,9 +175,12 @@ public:
                                MetaServiceUtils::schemaEdgeVal(edgeName, srcsch));
         }
 
-        kv->asyncMultiPut(0, 0, std::move(edges), [] (kvstore::ResultCode code) {
+        folly::Baton<true, std::atomic> baton;
+        kv->asyncMultiPut(0, 0, std::move(edges), [&] (kvstore::ResultCode code) {
             ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, code);
+            baton.post();
         });
+        baton.wait();
     }
 
     static std::unique_ptr<test::ServerContext> mockMetaServer(uint16_t port,

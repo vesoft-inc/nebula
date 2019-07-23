@@ -42,6 +42,7 @@ TEST_F(LogCASTest, StartWithValidCAS) {
             fut.wait();
         }
     }
+    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     // Sleep a while to make sure the last log has been committed on
@@ -53,7 +54,6 @@ TEST_F(LogCASTest, StartWithValidCAS) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -77,6 +77,7 @@ TEST_F(LogCASTest, StartWithInvalidCAS) {
             fut.wait();
         }
     }
+    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     // Sleep a while to make sure the last log has been committed on
@@ -88,7 +89,6 @@ TEST_F(LogCASTest, StartWithInvalidCAS) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -120,6 +120,7 @@ TEST_F(LogCASTest, ValidCASInMiddle) {
             fut.wait();
         }
     }
+    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     // Sleep a while to make sure the last log has been committed on
@@ -131,7 +132,6 @@ TEST_F(LogCASTest, ValidCASInMiddle) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -162,6 +162,7 @@ TEST_F(LogCASTest, InvalidCASInMiddle) {
             fut.wait();
         }
     }
+    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     // Sleep a while to make sure the last log has been committed on
@@ -173,7 +174,6 @@ TEST_F(LogCASTest, InvalidCASInMiddle) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -198,6 +198,7 @@ TEST_F(LogCASTest, EndWithValidCAS) {
     auto fut = leader_->casAsync("TCAS Log Message");
     msgs.emplace_back("CAS Log Message");
     fut.wait();
+    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     // Sleep a while to make sure the last log has been committed on
@@ -209,7 +210,6 @@ TEST_F(LogCASTest, EndWithValidCAS) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -232,6 +232,7 @@ TEST_F(LogCASTest, EndWithInvalidCAS) {
     leader_->casAsync("FCAS Log Message");
     auto fut = leader_->casAsync("FCAS Log Message");
     fut.wait();
+    LogID id = leader_->currLogId_ - 7;
     LOG(INFO) << "<===== Finish appending logs";
 
     // Sleep a while to make sure the last log has been committed on
@@ -243,7 +244,6 @@ TEST_F(LogCASTest, EndWithInvalidCAS) {
         ASSERT_EQ(8, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 8; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;
@@ -265,6 +265,7 @@ TEST_F(LogCASTest, AllValidCAS) {
             fut.wait();
         }
     }
+    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     // Sleep a while to make sure the last log has been committed on
@@ -276,7 +277,6 @@ TEST_F(LogCASTest, AllValidCAS) {
         ASSERT_EQ(10, c->getNumLogs());
     }
 
-    LogID id = leader_->firstCommittedLogId_;
     for (int i = 0; i < 10; ++i, ++id) {
         for (auto& c : copies_) {
             folly::StringPiece msg;

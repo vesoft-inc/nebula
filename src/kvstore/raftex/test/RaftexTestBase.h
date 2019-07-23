@@ -38,7 +38,8 @@ extern std::condition_variable leaderCV;
 
 
 std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
-                               const HostAddr& self);
+                               const HostAddr& self,
+                               std::vector<bool> isLearner = {});
 
 void onLeaderElected(
         std::vector<std::shared_ptr<test::TestShard>>& copies,
@@ -56,7 +57,8 @@ void onLeadershipLost(
 
 void waitUntilLeaderElected(
         const std::vector<std::shared_ptr<test::TestShard>>& copies,
-        std::shared_ptr<test::TestShard>& leader);
+        std::shared_ptr<test::TestShard>& leader,
+        std::vector<bool> isLearner = {});
 
 void setupRaft(
         int32_t numCopies,
@@ -66,7 +68,8 @@ void setupRaft(
         std::vector<HostAddr>& allHosts,
         std::vector<std::shared_ptr<RaftexService>>& services,
         std::vector<std::shared_ptr<test::TestShard>>& copies,
-        std::shared_ptr<test::TestShard>& leader);
+        std::shared_ptr<test::TestShard>& leader,
+        std::vector<bool> isLearner = {});
 
 void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
                 std::vector<std::shared_ptr<test::TestShard>>& copies,
@@ -76,6 +79,15 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
 void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      std::shared_ptr<test::TestShard>& leader);
 
+void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                     size_t index,
+                     std::shared_ptr<test::TestShard>& leader);
+
+void appendLogs(int start,
+                int end,
+                std::shared_ptr<test::TestShard> leader,
+                std::vector<std::string>& msgs,
+                LogID& firstLogId);
 
 class RaftexTestFixture : public ::testing::Test {
 public:
