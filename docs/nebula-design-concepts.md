@@ -6,11 +6,11 @@
 ## Directed property graph
 
 **Nebula Graph** handles the **Directed Property Graph Model**, whose edge is directional
-and both edges and vertices can have properties. It can be represented as
+and both edges and vertices can have properties. It can be represented as:
 
 **G = < V, E, P<sub>V</sub>, P<sub>E</sub> >**
 
-Here **V** is a set of nodes, aka vertices, **E** is the set of directional edges,
+Here **V** is a set of nodes, aka vertices, **E** is a set of directional edges,
 **P<sub>V</sub>** represents properties on vertices, and **P<sub>E</sub>** is the properties on edges.
 
 
@@ -68,15 +68,15 @@ In Nebula Graph, the type of vertex is called **tag**. **A vertex must be labele
 
 Consider the above picture as example, there are two tags: **player** and **team**. Player has three properties: id (vid), Name(string), and Age(int); team has two properties: id (vid) and Name(string).
 
-Like Mysql, Nebula Graph is a strong schema database. The property name and data type are determined before the data is written.
+Like Mysql, Nebula Graph is a strong typed database. The property name and data type are determined before the data is written.
 
-### Edge, edgetype and the corresponding edge properties
+### Edge, edge type and the corresponding edge properties
 
-**Edges in Nebula Graph always have a type, a start (src)and an end vertex (dst), and a direction.** They can be self-referencing/looping but can never be dangling (missing a start or end node). **Each edge has an edgetype, and each edgetype defines the properties of the edge.**
+**Edges in Nebula Graph always have a type, a start (src)and an end vertex (dst), and a direction.** They can be self-referencing/looping but can never be dangling (missing a start or end vertex). **Each edge has an edge type, and each edge type defines the properties of the edge.**
 
 In the preceding example, there are two kinds of edges, one is **like** pointing
 from player to player, the property is likeness (double); the other is **serve**,
-pointing from team to serve, the properties are start_year(int) and end_year(int).
+pointing from player to team, the properties are start_year(int) and end_year(int).
 
 It should be noted that there may be **multiple edges of the same or different types
 at the same time** between the start (src)and end vertex (dst).
@@ -99,9 +99,8 @@ In applications such as social networks, or road networks, the number of vertice
 
 Data is stored as key-value pairs in Nebula Graph. For vertices, as illustrated in the diagram above, the key consists of four parts: partID (4 bit), vertexID (8 bit), tagID (4 bit) and Version (8 bit). And they are spread across various partitions based on the hash of their vertexIds (vid).
 
-For edges, the key consists of two separate key-values, i.e. out-key and
-in-key, respectively. The out-key and the edge's corresponding starting point are stored in one partition, while the in-key and end point are stored in another one.
-
+For edges, the key consists of two separate key-values, i.e. out-edge key and
+in-edge key, respectively. The out-edge keys are stored together with source vertices, while the in-edge keys are with destination vertices. The difference between out-edge key and in-edge key is the edge type, which is negative for in-edge key.
 
 
 ![image](https://user-images.githubusercontent.com/42762957/61120260-1c360a80-a4cf-11e9-8a43-8c4ca2d73572.png)
@@ -118,27 +117,25 @@ Nebula Graph includes four modules: storage service, metadata service, query eng
 
 
 
-### Storage serve
+### Storage service
 
-The corresponding process of storage service is nebula-storaged, and provides a key-value store. Separated storage and computing makes storage service flexible, and multiple storage engines like RocksDB and HBase are supported, with RocksDB set as default engine. To build a resilient distributed system, [Raft](https://raft.github.io/) is implemented as the consensus algorithm.
-
-Currently it supports
+The corresponding process of storage service is nebula-storaged, which provides a key-value store. Separated storage and computing makes storage service flexible, and multiple storage engines like RocksDB and HBase are supported, with RocksDB set as default engine. To build a resilient distributed system, [Raft](https://raft.github.io/) is implemented as the consensus algorithm. Currently Nebula Graph supports
 multiple storage engines like Rocksdb and HBase, etc.
 
-Raft achieves data consensus via an elected leader. Based on that, Nebula Storage makes the following optimizations:
+Raft achieves data consensus via an elected leader. Based on that, nebula-storaged makes the following optimizations:
 
 - Parallel Raft
 
-      Partitions of same ID from multiple machines form a raft group. And the concurrent operations are implemented with multiple sets of Raft groups.
+      Partitions of the same ID from multiple machines form a raft group. And the parallel operations are implemented with multiple sets of Raft groups.
 
 - Write Path & batch
 
-      In Raft protocol, multi-machine synchronization depends on log ID orders, which
-  lead to low throughput. Nebula Graph achieves high throughput by batch and out-of-order commit.
+      In Raft protocol, the master replicates log entries to all the followers and commits the entries in order. To improve throughput, Nebula Graph makes
+      one host hold many raft groups, and the operations on different group could be invoked simultaneously.
 
 - Add Raft Learner
 
-      When a new server joins the cluster, it can be added as a learner node. The learner node can neither vote nor count towards quorum. Once it catches up to the leader's logs, it can be promoted to follower as a normal voting node.
+      When a new server joins the cluster, it can be added as a learner, which can neither vote nor count towards quorum. Once it catches up to the leader's logs, it can be promoted to follower as a normal voting node.
 
 - Load-balance
 
@@ -152,15 +149,15 @@ Raft achieves data consensus via an elected leader. Based on that, Nebula Storag
 
 ### Metadata service
 
-The process corresponding to the Meta service is nebula-metad, and its main functions are:
+The process corresponding to the meta service is nebula-metad, and its main functions are:
 
 -  User management
 
-      In Nebula Graph different roles are assigned diverse privileges. We provide the following native roles: God user，Admin，Use and Guest.
+      In Nebula Graph different roles are assigned diverse privileges. We provide the following native roles: God user, Admin, User and Guest.
 
 - Cluster configuration management
 
-      Metadata service manages the servers and partitions in the cluster, e.g. records location of the partitions, receives Heartbeat from servers, etc. It balances the partitions and manages the communication traffic in case of server failure.
+      Metadata service manages the servers and partitions in the cluster, e.g. records location of the partitions, receives heartbeat from servers, etc. It balances the partitions and manages the communication traffic in case of server failure.
 
 - Graph space management
 
@@ -170,13 +167,13 @@ The process corresponding to the Meta service is nebula-metad, and its main func
 
       Nebula Graph is a strong typed database.
 
-      - Types of Tag and Edge properties are recorded by Meta service. Supported types are: int, double, timestamp, list, etc.
+      - Types of tag and edge properties are recorded by meta service. Supported data types are: int, double, timestamp, list, etc.
 
       - Multi-version management, supporting adding, modifying and deleting schema, and recording its version.
 
       - TTL (time-to-live) management, supporting automatic data deletion and space reclamation.
 
-The Meta Service is stateful, and just like the Storage service, it it persists data to a key-value store.
+The meta service is stateful, and just like the storage service, it persists data to a key-value store.
 
 
 ![image](https://user-images.githubusercontent.com/42762957/61120413-8cdd2700-a4cf-11e9-8846-14b5d8bd6693.png)
@@ -187,13 +184,13 @@ The Meta Service is stateful, and just like the Storage service, it it persists 
 The process corresponding to the query engine is nebula-graphd, which consists
 of nodes that are stateless, equally privileged and isolated from each other.
 
-The main function of the Query Engine layer is to analysis the nGQL text sent by the client and generate an execution plan through lexical analysis (Lexer) and parsing (Parser). Then the execution plan will be passed to the the execution engine. The query execution engine takes the query plans and interacts with meta server and the storage engine to retrieve the schema and data.
+Query engine accepts the message from the client and generates the query plan after lexical analysis (Lexer), parsing (Parser) and query optimization. Then the execution plan will be passed to the execution engine. The query execution engine takes the query plans and interacts with meta server and the storage engine to retrieve the schema and data.
 
-The main optimizations of the Query Engine layer are:
+The main optimizations of the query engine are:
 
 - Asynchronous and parallel execution
 
-      I/O operations and network transmission are time-consuming. Thus asynchronous and parallel operations are adopted in Nebula Query Engine to guarantee quality of service (QoS).Also, a separate resource pool is set for each query to avoid the long tail effect of those time-consuming queries.
+      I/O operations and network transmission are time-consuming. Thus asynchronous and parallel operations are adopted in Nebula query engine to guarantee quality of service (QoS).Also, a separate resource pool is set for each query to avoid the long tail effect of those time-consuming queries.
 
 - Pushing down computation
 
@@ -201,7 +198,7 @@ The main optimizations of the Query Engine layer are:
 
 - Query optimizer
 
-      Query optimizer for SQL has experienced a long-term development, but not for graph database. Nebula Graph makes an effort in the optimizations of graph query, including cache executing plan and execute context-free queries in parallel.
+      Query optimizer for SQL has experienced a long-term development, but not for graph database. Nebula Graph has made an effort in the optimizations of graph query, including cache executing plan and executing context-free queries in parallel.
 
 
 ![image](https://user-images.githubusercontent.com/42762957/61119795-26a3d480-a4ce-11e9-97e9-102bf14e72d8.png)
