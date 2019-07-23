@@ -14,6 +14,22 @@ namespace nebula {
 namespace raftex {
 namespace test {
 
+std::string encodeLearner(const HostAddr& addr) {
+    std::string str;
+    CommandType type = CommandType::ADD_LEARNER;
+    str.append(reinterpret_cast<const char*>(&type), 1);
+    str.append(reinterpret_cast<const char*>(&addr), sizeof(HostAddr));
+    return str;
+}
+
+HostAddr decodeLearner(const folly::StringPiece& log) {
+    HostAddr learner;
+    memcpy(&learner.first, log.begin() + 1, sizeof(learner.first));
+    memcpy(&learner.second, log.begin() + 1 + sizeof(learner.first), sizeof(learner.second));
+    return learner;
+}
+
+
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
@@ -75,11 +91,19 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
             firstId = iter->logId();
         }
         lastId = iter->logId();
-        if (!iter->logMsg().empty()) {
-            if (firstCommittedLogId_ < 0) {
-                firstCommittedLogId_ = iter->logId();
+        auto log = iter->logMsg();
+        if (!log.empty()) {
+            switch (static_cast<CommandType>(log[0])) {
+                case CommandType::ADD_LEARNER: {
+                    break;
+                }
+                default: {
+                    VLOG(1) << idStr_ << "Write " << iter->logId() << ":" << log;
+                    data_.emplace(iter->logId(), log.toString());
+                    currLogId_ = iter->logId();
+                    break;
+                }
             }
-            data_.emplace(iter->logId(), iter->logMsg().toString());
             commitLogsNum++;
         }
         ++(*iter);

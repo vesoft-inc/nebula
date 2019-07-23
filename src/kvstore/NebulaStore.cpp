@@ -339,9 +339,13 @@ void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<KV> keyValues,
                                 KVCallback cb) {
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    CHECK_FOR_WRITE(spaceId, partId, cb);
-    return partIt->second->asyncMultiPut(std::move(keyValues), std::move(cb));
+    auto ret = part(spaceId, partId);
+    if (!ok(ret)) {
+        cb(error(ret));
+        return;
+    }
+    auto part = nebula::value(ret);
+    return part->asyncMultiPut(std::move(keyValues), std::move(cb));
 }
 
 
@@ -349,9 +353,13 @@ void NebulaStore::asyncRemove(GraphSpaceID spaceId,
                               PartitionID partId,
                               const std::string& key,
                               KVCallback cb) {
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    CHECK_FOR_WRITE(spaceId, partId, cb);
-    return partIt->second->asyncRemove(key, std::move(cb));
+    auto ret = part(spaceId, partId);
+    if (!ok(ret)) {
+        cb(error(ret));
+        return;
+    }
+    auto part = nebula::value(ret);
+    return part->asyncRemove(key, std::move(cb));
 }
 
 
@@ -359,9 +367,13 @@ void NebulaStore::asyncMultiRemove(GraphSpaceID spaceId,
                                    PartitionID  partId,
                                    std::vector<std::string> keys,
                                    KVCallback cb) {
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    CHECK_FOR_WRITE(spaceId, partId, cb);
-    return partIt->second->asyncMultiRemove(std::move(keys), std::move(cb));
+    auto ret = part(spaceId, partId);
+    if (!ok(ret)) {
+        cb(error(ret));
+        return;
+    }
+    auto part = nebula::value(ret);
+    return part->asyncMultiRemove(std::move(keys), std::move(cb));
 }
 
 
@@ -370,9 +382,13 @@ void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,
                                    const std::string& start,
                                    const std::string& end,
                                    KVCallback cb) {
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    CHECK_FOR_WRITE(spaceId, partId, cb);
-    return partIt->second->asyncRemoveRange(start, end, std::move(cb));
+    auto ret = part(spaceId, partId);
+    if (!ok(ret)) {
+        cb(error(ret));
+        return;
+    }
+    auto part = nebula::value(ret);
+    return part->asyncRemoveRange(start, end, std::move(cb));
 }
 
 
@@ -380,9 +396,28 @@ void NebulaStore::asyncRemovePrefix(GraphSpaceID spaceId,
                                     PartitionID partId,
                                     const std::string& prefix,
                                     KVCallback cb) {
+    auto ret = part(spaceId, partId);
+    if (!ok(ret)) {
+        cb(error(ret));
+        return;
+    }
+    auto part = nebula::value(ret);
+    return part->asyncRemovePrefix(prefix, std::move(cb));
+}
+
+ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceId,
+                                                             PartitionID partId) {
     folly::RWSpinLock::ReadHolder rh(&lock_);
-    CHECK_FOR_WRITE(spaceId, partId, cb);
-    return partIt->second->asyncRemovePrefix(prefix, std::move(cb));
+    auto it = spaces_.find(spaceId);
+    if (UNLIKELY(it == spaces_.end())) {
+        return ResultCode::ERR_SPACE_NOT_FOUND;
+    }
+    auto& parts = it->second->parts_;
+    auto partIt = parts.find(partId);
+    if (UNLIKELY(partIt == parts.end())) {
+        return ResultCode::ERR_PART_NOT_FOUND;
+    }
+    return partIt->second;
 }
 
 
