@@ -6,11 +6,7 @@ add_library(
     SetFlagsHandler.cpp
     GetStatsHandler.cpp
 )
-add_dependencies(
-    ws_obj
-    base_obj
-    thread_obj
-)
+nebula_add_base_obj(ws_obj)
 
 add_subdirectory(test)
 

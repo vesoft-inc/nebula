@@ -397,7 +397,7 @@ nebula> GO FROM 201 OVER like WHERE $$.student.age >= 17 YIELD $$.student.name A
 
 `$$` indicates the target vertex.
 
-Q3. Find the courses that the vertices liked by 201 select and their grade.
+Q3. Find the selected courses and corresponding grades of students liked by 201.
 
 ```
 

@@ -43,6 +43,7 @@ MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr host, meta::Meta
 MetaServerBasedPartManager::~MetaServerBasedPartManager() {
     VLOG(3) << "~MetaServerBasedPartManager";
     if (nullptr != client_) {
+        client_->unRegisterListener();
         client_ = nullptr;
     }
 }
@@ -104,4 +105,3 @@ void MetaServerBasedPartManager::onPartUpdated(const PartMeta& partMeta) {
 
 }  // namespace kvstore
 }  // namespace nebula
-

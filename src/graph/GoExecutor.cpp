@@ -249,8 +249,9 @@ Status GoExecutor::setupStarts() {
     const auto *inputs = inputs_.get();
     // Take one column from a variable
     if (varname_ != nullptr) {
-        auto *varInputs = ectx()->variableHolder()->get(*varname_);
-        if (varInputs == nullptr) {
+        bool existing = false;
+        auto *varInputs = ectx()->variableHolder()->get(*varname_, &existing);
+        if (varInputs == nullptr && !existing) {
             return Status::Error("Variable `%s' not defined", varname_->c_str());
         }
         DCHECK(inputs == nullptr);
