@@ -5,6 +5,7 @@
  */
 #include "base/Base.h"
 #include <gtest/gtest.h>
+#include <folly/synchronization/Baton.h>
 #include "meta/ActiveHostsMan.h"
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
@@ -46,10 +47,13 @@ TEST(ActiveHostsManTest, MergeHostInfo) {
             data.emplace_back(MetaServiceUtils::hostKey(0, i),
                               MetaServiceUtils::hostValOnline());
         }
+        folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data),
-            [] (kvstore::ResultCode code) {
+            [&] (kvstore::ResultCode code) {
             CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
         });
+        baton.wait();
     }
 
     int onlineNum = 0;
