@@ -87,11 +87,18 @@ void FetchEdgesExecutor::execute() {
 
 Status FetchEdgesExecutor::setupEdgeKeys() {
     Status status = Status::OK();
+    hash_ = [] (const storage::cpp2::EdgeKey &key) -> size_t {
+            return std::hash<VertexID>()(key.src)
+                    ^ std::hash<VertexID>()(key.dst)
+                    ^ std::hash<EdgeRanking>()(key.ranking);
+    };
     if (sentence_->isRef()) {
         status = setupEdgeKeysFromRef();
     } else {
         status = setupEdgeKeysFromExpr();
     }
+
+    VLOG(3) << "EdgeKey length: " << edgeKeys_.size();
 
     return status;
 }
@@ -133,13 +140,25 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
         ranks = std::move(ret).value();
     }
 
+    std::unique_ptr<EdgeKeyHashSet> uniq;
+    if (distinct_) {
+        uniq = std::make_unique<EdgeKeyHashSet>(256, hash_);
+    }
     for (decltype(srcVids.size()) index = 0u; index < srcVids.size(); ++index) {
         storage::cpp2::EdgeKey key;
         key.set_src(srcVids[index]);
         key.set_edge_type(edgeType_);
         key.set_dst(dstVids[index]);
         key.set_ranking(rank_ == nullptr ? 0 : ranks[index]);
-        edgeKeys_.emplace_back(std::move(key));
+
+        if (distinct_) {
+            auto result = uniq->emplace(key);
+            if (result.second) {
+                edgeKeys_.emplace_back(std::move(key));
+            }
+        } else {
+            edgeKeys_.emplace_back(std::move(key));
+        }
     }
 
     return Status::OK();
@@ -147,6 +166,10 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
 
 Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
     Status status = Status::OK();
+    std::unique_ptr<EdgeKeyHashSet> uniq;
+    if (distinct_) {
+        uniq = std::make_unique<EdgeKeyHashSet>(256, hash_);
+    }
     auto edgeKeyExprs = sentence_->keys()->keys();
     for (auto *keyExpr : edgeKeyExprs) {
         auto *srcExpr = keyExpr->srcid();
@@ -173,7 +196,14 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
         key.set_dst(Expression::asInt(dstid));
         key.set_ranking(rank);
 
-        edgeKeys_.emplace_back(std::move(key));
+        if (distinct_) {
+            auto ret = uniq->emplace(key);
+            if (ret.second) {
+                edgeKeys_.emplace_back(std::move(key));
+            }
+        } else {
+            edgeKeys_.emplace_back(std::move(key));
+        }
     }
 
     return status;
@@ -197,7 +227,7 @@ void FetchEdgesExecutor::fetchEdges() {
             onError_(Status::Error("Get props failed"));
             return;
         } else if (completeness != 100) {
-            LOG(INFO) << "Get vertices partially failed: "  << completeness << "%";
+            LOG(INFO) << "Get edges partially failed: "  << completeness << "%";
             for (auto &error : result.failedParts()) {
                 LOG(ERROR) << "part: " << error.first
                            << "error code: " << static_cast<int>(error.second);
@@ -230,6 +260,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
     auto all = result.responses();
     std::shared_ptr<SchemaWriter> outputSchema;
     std::unique_ptr<RowSetWriter> rsWriter;
+    auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     for (auto &resp : all) {
         if (!resp.__isset.schema || !resp.__isset.data
                 || resp.get_schema() == nullptr || resp.get_data() == nullptr
@@ -246,6 +277,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
         while (iter) {
+            VLOG(3) << "collect.";
             auto collector = std::make_unique<Collector>(eschema.get());
             auto writer = std::make_unique<RowWriter>(outputSchema);
 
@@ -258,7 +290,16 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                 auto value = expr->eval();
             }
 
-            rsWriter->addRow(*writer);
+            // TODO Consider float/double, and need to reduce mem copy.
+            std::string encode = writer->encode();
+            if (distinct_) {
+                auto ret = uniqResult->emplace(encode);
+                if (ret.second) {
+                    rsWriter->addRow(*writer);
+                }
+            } else {
+                rsWriter->addRow(*writer);
+            }
             ++iter;
         }  // while `iter'
     }  // for `resp'

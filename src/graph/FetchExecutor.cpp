@@ -18,6 +18,8 @@ Status FetchExecutor::prepareYield() {
             setupColumns();
         } else {
             yields_ = yieldClause_->columns();
+            // TODO 'distinct' could always pushdown in fetch.
+            distinct_ = yieldClause_->isDistinct();
         }
 
         for (auto *col : yields_) {
@@ -111,17 +113,17 @@ void FetchExecutor::getOutputSchema(
     for (auto index = 0u; index < record.size(); ++index) {
         SupportedType type;
         switch (record[index].which()) {
-            case 0:
+            case WhichVariant::INT64_VAR:
                 // all integers in InterimResult are regarded as type of VID
                 type = SupportedType::VID;
                 break;
-            case 1:
+            case WhichVariant::DOUBLE_VAR:
                 type = SupportedType::DOUBLE;
                 break;
-            case 2:
+            case WhichVariant::BOOL_VAR:
                 type = SupportedType::BOOL;
                 break;
-            case 3:
+            case WhichVariant::STRING_VAR:
                 type = SupportedType::STRING;
                 break;
             default:

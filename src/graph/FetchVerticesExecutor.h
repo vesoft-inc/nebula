@@ -28,7 +28,7 @@ public:
     void execute() override;
 
 private:
-    Status prepareVids();
+    void prepareVids();
 
     Status setupVids();
 

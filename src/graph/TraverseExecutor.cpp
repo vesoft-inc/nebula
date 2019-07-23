@@ -61,16 +61,16 @@ VariantType Collector::collect(
     DCHECK_NOTNULL(reader);
     VariantType var = getProp(prop, reader);
     switch (var.which()) {
-        case 0:
+        case WhichVariant::INT64_VAR:
             (*writer) << boost::get<int64_t>(var);
             break;
-        case 1:
+        case WhichVariant::DOUBLE_VAR:
             (*writer) << boost::get<double>(var);
             break;
-        case 2:
+        case WhichVariant::BOOL_VAR:
             (*writer) << boost::get<bool>(var);
             break;
-        case 3:
+        case WhichVariant::STRING_VAR:
             (*writer) << boost::get<std::string>(var);
             break;
         default:
@@ -90,31 +90,37 @@ VariantType Collector::getProp(const std::string &prop,
         case SupportedType::BOOL: {
             bool v;
             reader->getBool(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
             return v;
         }
         case SupportedType::INT: {
             int64_t v;
             reader->getInt(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
             return v;
         }
         case SupportedType::VID: {
             VertexID v;
             reader->getVid(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
             return v;
         }
         case SupportedType::FLOAT: {
             float v;
             reader->getFloat(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
             return static_cast<double>(v);
         }
         case SupportedType::DOUBLE: {
             double v;
             reader->getDouble(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
             return v;
         }
         case SupportedType::STRING: {
             folly::StringPiece v;
             reader->getString(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
             return v.toString();
         }
         default:

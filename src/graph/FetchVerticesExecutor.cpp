@@ -37,10 +37,8 @@ Status FetchVerticesExecutor::prepare() {
             return Status::Error("%s tag schema not exist.", labelName_->c_str());
         }
 
-        status = prepareVids();
-        if (!status.ok()) {
-            break;
-        }
+        prepareVids();
+
         status = prepareYield();
         if (!status.ok()) {
             break;
@@ -49,8 +47,7 @@ Status FetchVerticesExecutor::prepare() {
     return status;
 }
 
-Status FetchVerticesExecutor::prepareVids() {
-    Status status = Status::OK();
+void FetchVerticesExecutor::prepareVids() {
     if (sentence_->isRef()) {
         auto *expr = sentence_->ref();
         if (expr->isInputExpression()) {
@@ -63,12 +60,9 @@ Status FetchVerticesExecutor::prepareVids() {
         } else {
             //  should never come to here.
             //  only support input and variable yet.
-            status = Status::Error("Unkown kind of expression.");
             LOG(FATAL) << "Unknown kind of expression.";
         }
     }
-
-    return status;
 }
 
 void FetchVerticesExecutor::execute() {
@@ -136,6 +130,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
     auto all = result.responses();
     std::shared_ptr<SchemaWriter> outputSchema;
     std::unique_ptr<RowSetWriter> rsWriter;
+    auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
     for (auto &resp : all) {
         if (!resp.__isset.vertices || !resp.__isset.vertex_schema
                 || resp.get_vertices() == nullptr || resp.get_vertex_schema() == nullptr) {
@@ -165,8 +160,16 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 auto *expr = column->expr();
                 expr->eval();
             }
-
-            rsWriter->addRow(*writer);
+            // TODO Consider float/double, and need to reduce mem copy.
+            std::string encode = writer->encode();
+            if (distinct_) {
+                auto ret = uniqResult->emplace(encode);
+                if (ret.second) {
+                    rsWriter->addRow(*writer);
+                }
+            } else {
+                rsWriter->addRow(*writer);
+            }
         }  // for `vdata'
     }  // for `resp'
 
@@ -186,6 +189,10 @@ Status FetchVerticesExecutor::setupVids() {
 
 Status FetchVerticesExecutor::setupVidsFromExpr() {
     Status status = Status::OK();
+    std::unique_ptr<std::unordered_set<VertexID>> uniqID;
+    if (distinct_) {
+        uniqID = std::make_unique<std::unordered_set<VertexID>>();
+    }
     auto vidList = sentence_->vidList();
     for (auto *expr : vidList) {
         status = expr->prepare();
@@ -197,7 +204,16 @@ Status FetchVerticesExecutor::setupVidsFromExpr() {
             status = Status::Error("Vertex ID should be of type integer");
             break;
         }
-        vids_.push_back(Expression::asInt(value));
+
+        auto valInt = Expression::asInt(value);
+        if (distinct_) {
+            auto result = uniqID->emplace(valInt);
+            if (result.second) {
+                vids_.emplace_back(valInt);
+            }
+        } else {
+            vids_.emplace_back(valInt);
+        }
     }
 
     return status;
@@ -217,7 +233,12 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
         }
     }
 
-    auto result = inputs->getVIDs(*colname_);
+    StatusOr<std::vector<VertexID>> result;
+    if (distinct_) {
+        result = inputs->getDistinctVIDs(*colname_);
+    } else {
+        result = inputs->getVIDs(*colname_);
+    }
     if (!result.ok()) {
         return std::move(result).status();
     }

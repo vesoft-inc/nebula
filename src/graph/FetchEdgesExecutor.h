@@ -43,6 +43,11 @@ private:
     using RpcResponse = storage::StorageRpcResponse<storage::cpp2::EdgePropResponse>;
     void processResult(RpcResponse &&result);
 
+
+    using EdgeKeyHashSet = std::unordered_set<
+            storage::cpp2::EdgeKey,
+            std::function<size_t(const storage::cpp2::EdgeKey& key)>>;
+
 private:
     FetchEdgesSentence                         *sentence_{nullptr};
     std::vector<storage::cpp2::EdgeKey>         edgeKeys_;
@@ -51,6 +56,7 @@ private:
     std::string                                *dstid_{nullptr};
     std::string                                *rank_{nullptr};
     std::string                                 varname_;
+    std::function<size_t(const storage::cpp2::EdgeKey)> hash_;
 };
 }  // namespace graph
 }  // namespace nebula

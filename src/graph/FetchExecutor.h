@@ -45,6 +45,7 @@ protected:
     YieldClause                                    *yieldClause_{nullptr};
     std::vector<YieldColumn*>                       yields_;
     std::unique_ptr<YieldColumns>                   yieldColsHolder_;
+    bool                                            distinct_{false};
     std::unique_ptr<InterimResult>                  inputs_;
     std::vector<std::string>                        resultColNames_;
     std::unique_ptr<cpp2::ExecutionResponse>        resp_;

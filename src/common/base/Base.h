@@ -139,6 +139,13 @@ using PartsMap  = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionI
 
 using VariantType = boost::variant<int64_t, double, bool, std::string>;
 
+enum WhichVariant {
+    INT64_VAR = 0,
+    DOUBLE_VAR = 1,
+    BOOL_VAR = 2,
+    STRING_VAR = 3
+};
+
 #ifndef VAR_INT64
 #define VAR_INT64 0
 #endif

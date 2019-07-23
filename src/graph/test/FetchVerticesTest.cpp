@@ -123,6 +123,36 @@ TEST_F(FetchVerticesTest, noYield) {
     }
 }
 
+TEST_F(FetchVerticesTest, distinct) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player %ld,%ld"
+                    " YIELD DISTINCT player.name, player.age";
+        auto query = folly::stringPrintf(fmt, player.vid(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+            {player.name(), player.age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &boris = players_["Boris Diaw"];
+        auto &tony = players_["Tony Parker"];
+        auto *fmt = "FETCH PROP ON player %ld,%ld"
+                    " YIELD DISTINCT player.age";
+        auto query = folly::stringPrintf(fmt, boris.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {boris.age()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 TEST_F(FetchVerticesTest, syntaxError) {
     {
         cpp2::ExecutionResponse resp;
