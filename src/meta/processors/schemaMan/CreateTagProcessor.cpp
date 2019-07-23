@@ -16,7 +16,8 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
         folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
         auto conflictRet = getEdgeType(req.get_space_id(), req.get_tag_name());
         if (conflictRet.ok()) {
-            LOG(ERROR) << "Create Tag Failed :" << req.get_tag_name() << " has same name edge";
+            LOG(ERROR) << "Failed to create tag `" << req.get_tag_name()
+                       << "': some edge with the same name already exists.";
             resp_.set_id(to(conflictRet.value(), EntryType::TAG));
             resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
             onFinished();

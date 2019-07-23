@@ -12,10 +12,12 @@ namespace meta {
 void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
     {
+        // if there is an tag of the same name
         folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
         auto conflictRet = getTagId(req.get_space_id(), req.get_edge_name());
         if (conflictRet.ok()) {
-            LOG(ERROR) << "Create Edge Failed :" << req.get_edge_name() << " has same name tag";
+            LOG(ERROR) << "Failed to create edge `" << req.get_edge_name()
+                       << "': some tag with the same name already exists.";
             resp_.set_id(to(conflictRet.value(), EntryType::EDGE));
             resp_.set_code(cpp2::ErrorCode::E_CONFLICT);
             onFinished();
