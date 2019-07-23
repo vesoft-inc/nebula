@@ -107,6 +107,7 @@ void waitUntilLeaderElected(
             bool sameLeader = true;
             int32_t index = 0;
             for (auto& c : copies) {
+                // if a copy in abnormal state, its leader is (0, 0)
                 if (!isLearner[index] && c != nullptr && leader != c && c->isRunning_ == true) {
                     if (leader->address() != c->leader()) {
                         sameLeader = false;
@@ -331,6 +332,46 @@ void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
     copies[index]->start(getPeers(allHosts, allHosts[index]));
     copies[index]->isRunning_ = true;
     LOG(INFO) << "copies " << index << " reboot";
+}
+
+void disconnectOneCopy(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                       std::shared_ptr<test::TestShard>& disconnected) {
+    // target break connection with others
+    for (auto& c : copies) {
+        if (c->address() != disconnected->address()) {
+            disconnected->disconnect(c->address());
+        }
+    }
+    disconnected->isRunning_ = false;
+
+    for (auto& c : copies) {
+        if (c == nullptr) {
+            continue;
+        } else if (c->address() != disconnected->address()) {
+            // all other copy break connection with target
+            c->disconnect(disconnected->address());
+        }
+    }
+}
+
+void reconnectOneCopy(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                      std::shared_ptr<test::TestShard>& reconnected) {
+    // target create connection with others
+    for (auto& c : copies) {
+        if (c->address() != reconnected->address() && c->isRunning_) {
+            reconnected->connect(c->address());
+        }
+    }
+    reconnected->isRunning_ = true;
+
+    for (auto& c : copies) {
+        if (c == nullptr) {
+            continue;
+        } else if (c->address() != reconnected->address() && c->isRunning_) {
+            // all other copy create connection with target
+            c->connect(reconnected->address());
+        }
+    }
 }
 
 }  // namespace raftex

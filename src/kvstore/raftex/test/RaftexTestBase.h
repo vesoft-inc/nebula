@@ -107,16 +107,23 @@ void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                    std::vector<HostAddr> allHosts,
                    size_t index);
 
+void disconnectOneCopy(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                       std::shared_ptr<test::TestShard>& copy);
+
+void reconnectOneCopy(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                      std::shared_ptr<test::TestShard>& reconnected);
+
 class RaftexTestFixture : public ::testing::Test {
 public:
-    explicit RaftexTestFixture(const std::string& testName)
-        : testName_(testName) {}
+    explicit RaftexTestFixture(const std::string& testName, int32_t size = 3)
+        : testName_(testName)
+        , size_(size) {}
     ~RaftexTestFixture() = default;
 
     void SetUp() override {
         walRoot_ = std::make_unique<fs::TempDir>(
             folly::stringPrintf("/tmp/%s.XXXXXX", testName_.c_str()).c_str());
-        setupRaft(3, *walRoot_, workers_, wals_, allHosts_, services_, copies_,
+        setupRaft(size_, *walRoot_, workers_, wals_, allHosts_, services_, copies_,
                   lastCommittedLogId_, leader_);
 
         // Check all hosts agree on the same leader
@@ -130,6 +137,7 @@ public:
 
 protected:
     const std::string testName_;
+    int32_t size_;
     std::unique_ptr<fs::TempDir> walRoot_;
     std::shared_ptr<thread::GenericThreadPool> workers_;
     std::vector<std::string> wals_;

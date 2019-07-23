@@ -21,109 +21,248 @@ DECLARE_uint32(heartbeat_interval);
 namespace nebula {
 namespace raftex {
 
-TEST(RaftTest, LeaderCrashAndComeBack) {
-    LOG(INFO) << "=====> Start LeaderCrash test";
+class ThreeRaftTest : public RaftexTestFixture {
+public:
+    ThreeRaftTest() : RaftexTestFixture("three_raft_test") {}
+};
 
-    int32_t size = 3;
-    fs::TempDir walRoot("/tmp/leader_crash_and_come_back.XXXXXX");
-    std::shared_ptr<thread::GenericThreadPool> workers;
-    std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
-    std::vector<std::shared_ptr<RaftexService>> services;
-    std::vector<std::shared_ptr<test::TestShard>> copies;
-    std::vector<LogID> lastCommittedLogId;
-    std::shared_ptr<test::TestShard> leader;
-    setupRaft(size, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader);
+class FiveRaftTest : public RaftexTestFixture {
+public:
+    FiveRaftTest() : RaftexTestFixture("five_raft_test", 5) {}
+};
 
-    // Check all hosts agree on the same leader
-    checkLeadership(copies, leader);
+TEST_F(ThreeRaftTest, leaderCrashAndComeBack) {
+    FLAGS_heartbeat_interval = 1;
+    LOG(INFO) << "=====> Start leaderCrash test";
 
     LOG(INFO) << "=====> Now let's kill the old leader";
-    size_t idx = leader->index();
-    killOneCopy(services, copies, leader, idx);
+    size_t idx = leader_->index();
+    killOneCopy(services_, copies_, leader_, idx);
 
-    // Wait untill all copies agree on the same leader
-    waitUntilLeaderElected(copies, leader);
-    // Check all hosts agree on the same leader
-    checkLeadership(copies, leader);
+    // Wait untill all copies agree on the same leader_
+    waitUntilLeaderElected(copies_, leader_);
+    // Check all hosts agree on the same leader_
+    checkLeadership(copies_, leader_);
 
     LOG(INFO) << "=====> Now old leader comes back";
     // Crashed leader reboot
-    rebootOneCopy(services, copies, allHosts, idx);
+    rebootOneCopy(services_, copies_, allHosts_, idx);
 
-    waitUntilAllHasLeader(copies);
-    checkLeadership(copies, leader);
+    waitUntilAllHasLeader(copies_);
+    checkLeadership(copies_, leader_);
 
     LOG(INFO) << "=====> Now let's kill leader and a follower, no quorum";
-    idx = leader->index();
-    killOneCopy(services, copies, leader, idx);
-    killOneCopy(services, copies, leader, (idx + 1) % size);
-    sleep(2* FLAGS_heartbeat_interval);
-    checkNoLeader(copies);
+    idx = leader_->index();
+    killOneCopy(services_, copies_, leader_, idx);
+    killOneCopy(services_, copies_, leader_, (idx + 1) % copies_.size());
+    sleep(FLAGS_heartbeat_interval);
+    checkNoLeader(copies_);
 
     LOG(INFO) << "=====> Now one of dead copy rejoin, quorum arises";
-    rebootOneCopy(services, copies, allHosts, idx);
-    waitUntilLeaderElected(copies, leader);
+    rebootOneCopy(services_, copies_, allHosts_, idx);
+    waitUntilLeaderElected(copies_, leader_);
 
     LOG(INFO) << "=====> Now all copy rejoin, should not disrupt leader";
-    rebootOneCopy(services, copies, allHosts, idx);
+    rebootOneCopy(services_, copies_, allHosts_, idx);
     sleep(FLAGS_heartbeat_interval);
-    waitUntilAllHasLeader(copies);
-    checkLeadership(copies, leader);
+    waitUntilAllHasLeader(copies_);
+    checkLeadership(copies_, leader_);
 
-    finishRaft(services, copies, workers, leader);
-
-    LOG(INFO) << "<===== Done LeaderCrash test";
+    LOG(INFO) << "<===== Done leaderCrash test";
 }
 
-TEST(LeaderElection, ConsensusWhenFollowDisconnect) {
+TEST_F(ThreeRaftTest, ConsensusWhenFollowDisconnect) {
     LOG(INFO) << "=====> Start ConsensusWhenFollowDisconnect test";
 
-    int32_t size = 3;
-    fs::TempDir walRoot("/tmp/consensu_when_follower_disconnect.XXXXXX");
-    std::shared_ptr<thread::GenericThreadPool> workers;
-    std::vector<std::string> wals;
-    std::vector<HostAddr> allHosts;
-    std::vector<std::shared_ptr<RaftexService>> services;
-    std::vector<std::shared_ptr<test::TestShard>> copies;
-    std::shared_ptr<test::TestShard> leader;
-    std::vector<LogID> lastCommittedLogId;
-    setupRaft(size, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader);
-
-    // Check all hosts agree on the same leader
-    checkLeadership(copies, leader);
-    LOG(INFO) << "=====> TestShard" << leader->index() << " has become leader";
-
     std::vector<std::string> msgs;
-    appendLogs(0, 0, leader, msgs);
-    sleep(FLAGS_heartbeat_interval);
-    checkConsensus(copies, 0, 0, msgs);
+    appendLogs(0, 0, leader_, msgs);
+    checkConsensus(copies_, 0, 0, msgs);
 
     // Let's kill one follower
     LOG(INFO) << "=====> Now let's kill one follower";
-    size_t idx = (leader->index() + 1) % size;
-    killOneCopy(services, copies, leader, idx);
+    size_t idx = (leader_->index() + 1) % (copies_.size());
+    killOneCopy(services_, copies_, leader_, idx);
 
     // Check all hosts agree on the same leader
-    checkLeadership(copies, leader);
-    appendLogs(1, 4, leader, msgs);
-    sleep(FLAGS_heartbeat_interval);
-    checkConsensus(copies, 1, 4, msgs);
+    checkLeadership(copies_, leader_);
+    appendLogs(1, 4, leader_, msgs);
+    checkConsensus(copies_, 1, 4, msgs);
 
     LOG(INFO) << "=====> Now follower comes back";
     // Crashed follower reboot
-    rebootOneCopy(services, copies, allHosts, idx);
+    rebootOneCopy(services_, copies_, allHosts_, idx);
 
-    waitUntilAllHasLeader(copies);
-    checkLeadership(copies, leader);
+    waitUntilAllHasLeader(copies_);
+    checkLeadership(copies_, leader_);
 
-    appendLogs(5, 6, leader, msgs);
-    sleep(FLAGS_heartbeat_interval);
-    checkConsensus(copies, 5, 6, msgs);
-
-    finishRaft(services, copies, workers, leader);
+    appendLogs(5, 6, leader_, msgs);
+    checkConsensus(copies_, 5, 6, msgs);
 
     LOG(INFO) << "<===== Done ConsensusWhenFollowDisconnect test";
+}
+
+TEST_F(ThreeRaftTest, LeaderNetworkFailure) {
+    LOG(INFO) << "=====> Start LeaderNetworkFailure test";
+
+    std::vector<std::string> msgs;
+    appendLogs(0, 0, leader_, msgs);
+    checkConsensus(copies_, 0, 0, msgs);
+
+    LOG(INFO) << "=====> Now leader of term 1 disconnect";
+    auto leader1 = leader_;
+    disconnectOneCopy(copies_, leader1);
+    leader_.reset();
+    leader1->appendAsync(0, "Invalid Log Message 1");
+    leader1->appendAsync(0, "Invalid Log Message 2");
+    leader1->appendAsync(0, "Invalid Log Message 3");
+
+    LOG(INFO) << "=====> Wait until leader of term 2 elected";
+    // Wait untill all copies agree on the same leader_
+    waitUntilLeaderElected(copies_, leader_);
+    auto leader2 = leader_;
+    ASSERT_NE(leader1, leader2);
+
+    appendLogs(1, 3, leader_, msgs);
+    checkConsensus(copies_, 1, 3, msgs);
+
+    LOG(INFO) << "=====> Now leader of term 2 disconnect, no quorum";
+    disconnectOneCopy(copies_, leader2);
+    leader_.reset();
+    leader2->appendAsync(0, "Invalid Log Message 4");
+    leader2->appendAsync(0, "Invalid Log Message 5");
+    leader2->appendAsync(0, "Invalid Log Message 6");
+
+    LOG(INFO) << "=====> Now leader of term 1 reconnect, quorum arises";
+    reconnectOneCopy(copies_, leader1);
+    waitUntilLeaderElected(copies_, leader_);
+    // only leader3 can be elected as leader, it will rollback leader1's invalid log
+    auto leader3 = leader_;
+    ASSERT_NE(leader1, leader3);
+    ASSERT_NE(leader2, leader3);
+
+    appendLogs(4, 6, leader_, msgs);
+    checkConsensus(copies_, 4, 6, msgs);
+
+    LOG(INFO) << "=====> Now leader of term 2 reconnect, should not disrupt leader";
+    reconnectOneCopy(copies_, leader1);
+    appendLogs(7, 9, leader_, msgs);
+    checkConsensus(copies_, 7, 9, msgs);
+    checkLeadership(copies_, leader3);
+
+    LOG(INFO) << "<===== Done LeaderNetworkFailure test";
+}
+
+TEST_F(ThreeRaftTest, Persistance) {
+    LOG(INFO) << "=====> Start persistance test";
+
+    LOG(INFO) << "=====> Now let's kill random copy";
+    std::vector<std::string> msgs;
+    for (int32_t i = 0; i < 3; i++) {
+        appendLogs(i, i, leader_, msgs, true);
+        // randomly kill one copy and restart
+        size_t idx = folly::Random::rand32(3);
+        bool waitForNewLeader = false;
+        if (idx == leader_->index()) {
+            waitForNewLeader = true;
+        }
+        killOneCopy(services_, copies_, leader_, idx);
+        rebootOneCopy(services_, copies_, allHosts_, idx);
+        if (waitForNewLeader) {
+            waitUntilLeaderElected(copies_, leader_);
+        }
+    }
+    checkConsensus(copies_, 0, 2, msgs);
+
+    LOG(INFO) << "=====> Now let's disconnect random copy";
+    for (int32_t i = 3; i < 6; i++) {
+        appendLogs(i, i, leader_, msgs, true);
+        // randomly disconnect one copy and reconnect
+        size_t idx = folly::Random::rand32(3);
+        bool waitForNewLeader = false;
+        if (idx == leader_->index()) {
+            waitForNewLeader = true;
+        }
+        disconnectOneCopy(copies_, copies_[idx]);
+        reconnectOneCopy(copies_, copies_[idx]);
+        if (waitForNewLeader) {
+            waitUntilLeaderElected(copies_, leader_);
+        }
+    }
+    checkConsensus(copies_, 3, 5, msgs);
+
+    LOG(INFO) << "<===== Done leaderCrash test";
+}
+
+TEST_F(FiveRaftTest, Figure8) {
+    // Test the scenarios described in Figure 8 of the extended Raft paper.
+    // The purpose is to test leader in a new term may try to finish replicating log entries
+    // of previous term that haven't been committed yet. So we append log by leader (may or may
+    // not succeed), and then crash and reboot, so the term will increase because of leadership
+    // change, new leader should commit logs of previous term when its appendLogs of current term
+    // has been accepted by quorum.
+    LOG(INFO) << "=====> Start figure 8 test";
+    int32_t alive = size_;
+    int32_t quorum = (size_ + 1) / 2;
+
+    for (int32_t i = 0; i < 500; i++) {
+        decltype(leader_) leader;
+        {
+            std::lock_guard<std::mutex> lock(leaderMutex);
+            if (leader_ != nullptr) {
+                leader = leader_;
+            }
+        }
+        if (leader != nullptr) {
+            if (folly::Random::rand32(1000) < 100) {
+                leader->appendAsync(0, folly::stringPrintf("Log Message probably ok %03d", i));
+                usleep(300000);
+            } else {
+                leader->appendAsync(0, folly::stringPrintf("Log Message probably failed %03d", i));
+                usleep(10000);
+            }
+        }
+
+        if (leader != nullptr) {
+            killOneCopy(services_, copies_, leader, leader->index());
+            --alive;
+        }
+
+        if (alive < quorum) {
+            size_t idx = folly::Random::rand32(size_);
+            if (!copies_[idx]->isRunning_) {
+                rebootOneCopy(services_, copies_, allHosts_, idx);
+                ++alive;
+            }
+        }
+    }
+
+    LOG(INFO) << "=====> Now let's reboot all copy and check consensus";
+    for (int32_t i = 0; i < size_; i++) {
+        if (!copies_[i]->isRunning_) {
+            rebootOneCopy(services_, copies_, allHosts_, i);
+        }
+    }
+
+    // wait until all has been committed
+    sleep(5 * FLAGS_heartbeat_interval);
+    size_t count = leader_->getNumLogs();
+    LOG(INFO) << "=====> Check all copies have " << count << " logs";
+
+    // Check every copy
+    for (auto& c : copies_) {
+        ASSERT_EQ(count, c->getNumLogs());
+    }
+    for (size_t i = 0; i < count; i++) {
+        folly::StringPiece expected;
+        leader_->getLogMsg(i, expected);
+        for (auto& c : copies_) {
+            folly::StringPiece msg;
+            ASSERT_TRUE(c->getLogMsg(i, msg));
+            ASSERT_EQ(expected, msg);
+        }
+    }
+
+    LOG(INFO) << "<===== Done leaderCrash test";
 }
 
 }  // namespace raftex

@@ -9,6 +9,7 @@
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/wal/FileBasedWal.h"
 #include "kvstore/wal/BufferFlusher.h"
+#include "kvstore/raftex/Host.h"
 
 namespace nebula {
 namespace raftex {
@@ -28,7 +29,6 @@ HostAddr decodeLearner(const folly::StringPiece& log) {
     memcpy(&learner.second, log.begin() + 1 + sizeof(learner.first), sizeof(learner.second));
     return learner;
 }
-
 
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
@@ -58,20 +58,17 @@ TestShard::TestShard(size_t idx,
         , becomeLeaderCB_(becomeLeaderCB) {
 }
 
-
 void TestShard::onLostLeadership(TermID term) {
     if (leadershipLostCB_) {
         leadershipLostCB_(idx_, idStr(), term);
     }
 }
 
-
 void TestShard::onElected(TermID term) {
     if (becomeLeaderCB_) {
         becomeLeaderCB_(idx_, idStr(), term);
     }
 }
-
 
 std::string TestShard::compareAndSet(const std::string& log) {
     switch (log[0]) {
@@ -81,7 +78,6 @@ std::string TestShard::compareAndSet(const std::string& log) {
             return std::string();
     }
 }
-
 
 bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
     LogID firstId = -1;
@@ -102,7 +98,6 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
                     folly::RWSpinLock::WriteHolder wh(&lock_);
                     currLogId_ = iter->logId();
                     data_.emplace_back(currLogId_, log.toString());
-                    lastCommittedLogId_[idx_] = currLogId_;
                     VLOG(1) << idStr_ << "Write: " << log << ", LogId: " << currLogId_
                             << " state machine log size: " << data_.size();
                     break;
@@ -113,17 +108,18 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
         ++(*iter);
     }
     VLOG(2) << "TestShard: " << idStr_ << "Committed log " << firstId << " to " << lastId;
+    if (lastId > -1) {
+        lastCommittedLogId_[idx_] = lastId;
+    }
     if (commitLogsNum > 0) {
         commitTimes_++;
     }
     return true;
 }
 
-
 size_t TestShard::getNumLogs() const {
     return data_.size();
 }
-
 
 bool TestShard::getLogMsg(size_t index, folly::StringPiece& msg) {
     folly::RWSpinLock::ReadHolder rh(&lock_);
@@ -132,6 +128,40 @@ bool TestShard::getLogMsg(size_t index, folly::StringPiece& msg) {
     }
     msg = data_[index].second;
     return true;
+}
+
+void TestShard::connect(const HostAddr& addr) {
+    std::lock_guard<std::mutex> g(raftLock_);
+    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&addr] (const auto& h) {
+                return h->address() == addr;
+            });
+    if (it == hosts_.end()) {
+        hosts_.emplace_back(std::make_shared<Host>(addr, shared_from_this()));
+        LOG(INFO) << idStr_ << "Add peers " << addr;
+    } else {
+        LOG(INFO) << idStr_ << "The host " << addr << " exists";
+    }
+}
+
+void TestShard::disconnect(const HostAddr& addr) {
+    std::shared_ptr<Host> host;
+    {
+        std::lock_guard<std::mutex> g(raftLock_);
+        auto it = std::find_if(hosts_.begin(), hosts_.end(), [&addr] (const auto& h) {
+                    return h->address() == addr;
+                });
+        if (it != hosts_.end()) {
+            host = *it;
+            hosts_.erase(it);
+        } else {
+            LOG(INFO) << idStr_ << "The host " << addr << " doesn't exists.";
+        }
+    }
+    if (host != nullptr) {
+        host->stop();
+        host->waitForStop();
+        LOG(INFO) << idStr_ << "disconnect with " << addr;
+    }
 }
 
 }  // namespace test

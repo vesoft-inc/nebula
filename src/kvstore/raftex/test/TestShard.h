@@ -83,6 +83,9 @@ public:
     size_t getNumLogs() const;
     bool getLogMsg(size_t index, folly::StringPiece& msg);
 
+    void connect(const HostAddr& addr);
+    void disconnect(const HostAddr& addr);
+
 public:
     int32_t commitTimes_ = 0;
     int32_t currLogId_ = -1;
