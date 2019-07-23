@@ -22,7 +22,9 @@ DECLARE_int32(heartbeat_interval_secs);
 namespace nebula {
 namespace storage {
 
+
 TEST(StorageClientTest, VerticesInterfacesTest) {
+    using network::NetworkUtils;
     FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
@@ -31,7 +33,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
     // Let the system choose an available port for us
-    uint32_t localMetaPort = network::NetworkUtils::getRandomPortToListen();
+    uint32_t localMetaPort = NetworkUtils::getRandomPortToListen(testing::portPlusOneIsUsable);
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
     auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str());
@@ -43,7 +45,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
     CHECK(addrsRet.ok()) << addrsRet.status();
     auto& addrs = addrsRet.value();
-    uint32_t localDataPort = network::NetworkUtils::getRandomPortToListen();
+    uint32_t localDataPort = NetworkUtils::getRandomPortToListen(testing::portPlusOneIsUsable);
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
     auto& localHost = hostRet.value();
     auto mClient

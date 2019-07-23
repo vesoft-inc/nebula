@@ -8,7 +8,7 @@
 #define META_TEST_TESTUTILS_H_
 
 #include "base/Base.h"
-#include "test/ServerContext.h"
+#include "testing/Testing.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
@@ -183,11 +183,11 @@ public:
         baton.wait();
     }
 
-    static std::unique_ptr<test::ServerContext> mockMetaServer(uint16_t port,
+    static std::unique_ptr<testing::ServerContext> mockMetaServer(uint16_t port,
                                                                const char* dataPath) {
         LOG(INFO) << "Initializing KVStore at \"" << dataPath << "\"";
 
-        auto sc = std::make_unique<test::ServerContext>();
+        auto sc = std::make_unique<testing::ServerContext>();
         sc->kvStore_ = TestUtils::initKV(dataPath);
 
         auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get());

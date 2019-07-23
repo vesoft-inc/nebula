@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "test/ServerContext.h"
+#include "testing/Testing.h"
 #include "graph/GraphService.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
@@ -15,8 +15,8 @@ namespace graph {
 
 class TestUtils {
 public:
-    static std::unique_ptr<test::ServerContext> mockGraphServer(uint32_t port) {
-        auto sc = std::make_unique<test::ServerContext>();
+    static std::unique_ptr<testing::ServerContext> mockGraphServer(uint32_t port) {
+        auto sc = std::make_unique<testing::ServerContext>();
         auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
         auto interface = std::make_shared<GraphService>(threadPool);
         sc->mockCommon("graph", port, interface);

@@ -125,7 +125,7 @@ std::unordered_set<uint16_t> NetworkUtils::getPortsInUse() {
 }
 
 
-uint16_t NetworkUtils::getRandomPortToListen() {
+uint16_t NetworkUtils::getRandomPortToListen(Callback cb) {
     uint16_t low = 0;
     uint16_t high = 0;
 
@@ -137,7 +137,7 @@ uint16_t NetworkUtils::getRandomPortToListen() {
     uint16_t port = 0;
     do {
         port = folly::Random::rand32(1024, low);
-    } while (portsInUse.find(port) != portsInUse.end());
+    } while (portsInUse.count(port) != 0 || (cb && !cb(portsInUse, port)));
 
     return port;
 }

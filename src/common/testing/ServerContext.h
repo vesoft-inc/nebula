@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#ifndef COMMON_TEST_SERVERCONTEXT_H_
-#define COMMON_TEST_SERVERCONTEXT_H_
+#ifndef COMMON_TESTING_SERVERCONTEXT_H_
+#define COMMON_TESTING_SERVERCONTEXT_H_
 
 #include "base/Base.h"
 #include "thread/NamedThread.h"
@@ -14,7 +14,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 namespace nebula {
-namespace test {
+namespace testing {
 
 struct ServerContext {
     ~ServerContext() {
@@ -60,6 +60,6 @@ struct ServerContext {
 };
 
 
-}   // namespace test
+}   // namespace testing
 }   // namespace nebula
 #endif  // COMMON_TEST_SERVERCONTEXT_H_

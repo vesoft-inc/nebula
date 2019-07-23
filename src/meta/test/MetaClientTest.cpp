@@ -28,6 +28,7 @@ using nebula::cpp2::ValueType;
 using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(MetaClientTest, InterfacesTest) {
+    using network::NetworkUtils;
     FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
 
@@ -39,7 +40,7 @@ TEST(MetaClientTest, InterfacesTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto clientPort = network::NetworkUtils::getAvailablePort();
+    auto clientPort = NetworkUtils::getRandomPortToListen(testing::portPlusOneIsUsable);
     HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
@@ -456,6 +457,7 @@ TEST(MetaClientTest, DiffTest) {
 }
 
 TEST(MetaClientTest, HeartbeatTest) {
+    using network::NetworkUtils;
     ActiveHostsMan::instance()->reset();
     FLAGS_load_data_interval_secs = 5;
     FLAGS_heartbeat_interval_secs = 1;
@@ -466,7 +468,7 @@ TEST(MetaClientTest, HeartbeatTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
-    auto clientPort = network::NetworkUtils::getAvailablePort();
+    auto clientPort = NetworkUtils::getRandomPortToListen(testing::portPlusOneIsUsable);
     HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(localIp, 10001)},

@@ -84,7 +84,24 @@ TEST(NetworkUtils, getLocalPortRange) {
 
 TEST(NetworkUtils, getRandomPortToListen) {
     auto port = NetworkUtils::getRandomPortToListen();
-    ASSERT_GT(port, 0);
+    uint16_t low = 0;
+    uint16_t high = 0;
+    ASSERT_TRUE(NetworkUtils::getLocalPortRange(low, high));
+    ASSERT_GE(port, 1024);
+    ASSERT_LT(port, low);
+}
+
+
+TEST(NetworkUtils, getRandomPortToListenWithCallback) {
+    auto cb = [] (const auto &portsInUse, auto port) {
+        return portsInUse.count(port + 1) == 0UL;
+    };
+    auto port = NetworkUtils::getRandomPortToListen(cb);
+    uint16_t low = 0;
+    uint16_t high = 0;
+    ASSERT_TRUE(NetworkUtils::getLocalPortRange(low, high));
+    ASSERT_GE(port, 1024);
+    ASSERT_LT(port, low);
 }
 
 }   // namespace network

@@ -29,8 +29,9 @@ TestEnv::~TestEnv() {
 void TestEnv::SetUp() {
     FLAGS_load_data_interval_secs = 1;
     // Create metaServer
+    auto port = network::NetworkUtils::getRandomPortToListen(testing::portPlusOneIsUsable);
     metaServer_ = nebula::meta::TestUtils::mockMetaServer(
-                                                    network::NetworkUtils::getRandomPortToListen(),
+                                                    port,
                                                     metaRootPath_.path());
     FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", metaServerPort());
 
@@ -39,7 +40,7 @@ void TestEnv::SetUp() {
     auto addrsRet
         = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", metaServerPort()));
     CHECK(addrsRet.ok()) << addrsRet.status();
-    auto storagePort = network::NetworkUtils::getRandomPortToListen();
+    auto storagePort = network::NetworkUtils::getRandomPortToListen(testing::portPlusOneIsUsable);
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", storagePort);
     if (!hostRet.ok()) {
         LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();

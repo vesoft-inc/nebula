@@ -10,7 +10,7 @@
 #include "meta/processors/admin/Balancer.h"
 #include "interface/gen-cpp2/StorageService.h"
 #include "fs/TempDir.h"
-#include "test/ServerContext.h"
+#include "testing/Testing.h"
 #include "meta/test/TestUtils.h"
 
 #define RETURN_OK(req) \
@@ -101,7 +101,7 @@ private:
 };
 
 TEST(AdminClientTest, SimpleTest) {
-    auto sc = std::make_unique<test::ServerContext>();
+    auto sc = std::make_unique<testing::ServerContext>();
     auto handler = std::make_shared<TestStorageService>();
     sc->mockCommon("storage", 0, handler);
     LOG(INFO) << "Start storage server on " << sc->port_;
@@ -142,7 +142,7 @@ TEST(AdminClientTest, SimpleTest) {
 }
 
 TEST(AdminClientTest, RetryTest) {
-    auto sc1 = std::make_unique<test::ServerContext>();
+    auto sc1 = std::make_unique<testing::ServerContext>();
     auto handler1 = std::make_shared<TestStorageService>();
     sc1->mockCommon("storage", 0, handler1);
     LOG(INFO) << "Start storage1 server on " << sc1->port_;
@@ -150,7 +150,7 @@ TEST(AdminClientTest, RetryTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
 
-    auto sc2 = std::make_unique<test::ServerContext>();
+    auto sc2 = std::make_unique<testing::ServerContext>();
     auto handler2 = std::make_shared<TestStorageServiceRetry>(localIp, sc1->port_);
     sc2->mockCommon("storage", 0, handler2);
     LOG(INFO) << "Start storage2 server on " << sc2->port_;

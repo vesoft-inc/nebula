@@ -30,8 +30,18 @@ public:
     static bool getLocalPortRange(uint16_t& low, uint16_t& high);
     // Get all ports that are currently in use
     static std::unordered_set<uint16_t> getPortsInUse();
-    // Get a random port number that is not in use and outside the local port range
-    static uint16_t getRandomPortToListen();
+    /**
+     * Get a random port number that is not in use and outside the local port range
+     * Optionally, the caller could provide a callback to do some additional checks
+     * to tell if the chosen port number is really usable.
+     *
+     * The callback has two parameters: one set holding the ports in use,
+     * and the port has been chosen, which is usable at the time being.
+     *
+     * Please note that the usability of the returned port number is still not guaranteed.
+     */
+    using Callback = std::function<bool(const std::unordered_set<uint16_t>&, uint16_t)>;
+    static uint16_t getRandomPortToListen(Callback cb = nullptr);
 
     // Convert the given IP (must be in the form of "xx.xx.xx.xx") and Port to a HostAddr
     static StatusOr<HostAddr> toHostAddr(folly::StringPiece ip, int32_t port);

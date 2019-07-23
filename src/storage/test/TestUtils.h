@@ -8,7 +8,7 @@
 #define STORAGE_TEST_TESTUTILS_H_
 
 #include "AdHocSchemaManager.h"
-#include "test/ServerContext.h"
+#include "testing/Testing.h"
 #include "base/Base.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
@@ -177,12 +177,12 @@ public:
     }
 
     // If kvstore should init files in dataPath, input port can't be 0
-    static std::unique_ptr<test::ServerContext> mockStorageServer(meta::MetaClient* mClient,
-                                                                  const char* dataPath,
-                                                                  uint32_t ip,
-                                                                  uint32_t port = 0,
-                                                                  bool useMetaServer = false) {
-        auto sc = std::make_unique<test::ServerContext>();
+    static std::unique_ptr<testing::ServerContext> mockStorageServer(meta::MetaClient* mClient,
+                                                                     const char* dataPath,
+                                                                     uint32_t ip,
+                                                                     uint32_t port = 0,
+                                                                     bool useMetaServer = false) {
+        auto sc = std::make_unique<testing::ServerContext>();
         // Always use the Meta Service in this case
         sc->kvStore_ = TestUtils::initKV(dataPath, {ip, port}, mClient, true);
 

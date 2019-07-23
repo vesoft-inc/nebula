@@ -7,12 +7,12 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
-#include <iostream>
 #include "fs/TempDir.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
 #include "network/NetworkUtils.h"
+#include "testing/Testing.h"
 
 DECLARE_uint32(heartbeat_interval);
 
@@ -265,8 +265,9 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
     IPv4 ip;
     CHECK(network::NetworkUtils::ipv4ToInt("127.0.0.1", ip));
     std::vector<HostAddr> peers;
+    using network::NetworkUtils;
     for (int32_t i = 0; i < replicas; i++) {
-        peers.emplace_back(ip, network::NetworkUtils::getRandomPortToListen());
+        peers.emplace_back(ip, NetworkUtils::getRandomPortToListen(testing::portPlusOneIsUsable));
     }
 
     std::vector<std::unique_ptr<NebulaStore>> stores;

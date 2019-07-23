@@ -10,7 +10,7 @@
 #include "base/Base.h"
 #include "fs/TempDir.h"
 #include "client/cpp/GraphClient.h"
-#include "test/ServerContext.h"
+#include "testing/Testing.h"
 #include <gtest/gtest.h>
 #include "TestUtils.h"
 
@@ -36,9 +36,9 @@ public:
 private:
     nebula::fs::TempDir                             metaRootPath_{"/tmp/MetaTest.XXXXXX"};
     nebula::fs::TempDir                             storageRootPath_{"/tmp/StorageTest.XXXXXX"};
-    std::unique_ptr<test::ServerContext>            metaServer_{nullptr};
-    std::unique_ptr<test::ServerContext>            storageServer_{nullptr};
-    std::unique_ptr<test::ServerContext>            graphServer_{nullptr};
+    std::unique_ptr<testing::ServerContext>         metaServer_{nullptr};
+    std::unique_ptr<testing::ServerContext>         storageServer_{nullptr};
+    std::unique_ptr<testing::ServerContext>         graphServer_{nullptr};
     std::unique_ptr<meta::MetaClient>               mClient_{nullptr};
 };
 

@@ -16,7 +16,7 @@ namespace nebula {
 namespace meta {
 
 TEST(BalanceIntegrationTest, SimpleTest) {
-    auto sc = std::make_unique<test::ServerContext>();
+    auto sc = std::make_unique<testing::ServerContext>();
     auto handler = std::make_shared<nebula::storage::StorageServiceHandler>(nullptr, nullptr);
     sc->mockCommon("storage", 0, handler);
     LOG(INFO) << "Start storage server on " << sc->port_;
