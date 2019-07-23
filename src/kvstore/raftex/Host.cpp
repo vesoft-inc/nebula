@@ -155,7 +155,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
         lastLogTermSent_ = prevLogTerm;
         lastLogIdSent_ = prevLogId;
         committedLogId_ = committedLogId;
-
+        pendingReq_ = std::make_tuple(0, 0, 0, 0, 0);
         promise_ = std::move(cachingPromise_);
         cachingPromise_ = folly::SharedPromise<cpp2::AppendLogResponse>();
         ret = promise_.getFuture();
