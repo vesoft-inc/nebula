@@ -5,12 +5,11 @@ include(ThriftGenerate)
 # Target object name : hbase_thrift_obj
 thrift_generate("hbase" "THBaseService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} "hbase")
 
-add_library(
+nebula_add_library(
     hbasestore_obj OBJECT
     HBaseStore.cpp
     HBaseClient.cpp
 )
-nebula_add_base_obj(hbasestore_obj)
 
 add_subdirectory(test)
 

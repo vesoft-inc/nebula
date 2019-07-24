@@ -1,12 +1,11 @@
-add_library(
+nebula_add_library(
     schema_obj OBJECT
     SchemaManager.cpp
     ServerBasedSchemaManager.cpp
     NebulaSchemaProvider.cpp
 )
-nebula_add_base_obj(schema_obj)
 
-add_library(
+nebula_add_library(
     meta_service_handler OBJECT
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
@@ -43,19 +42,16 @@ add_library(
     processors/admin/BalanceTask.cpp
     processors/admin/AdminClient.cpp
 )
-nebula_add_base_obj(meta_service_handler)
 
-add_library(
+nebula_add_library(
     meta_http_handler OBJECT
     MetaHttpDownloadHandler.cpp
     MetaHttpStatusHandler.cpp
 )
-nebula_add_base_obj(meta_http_handler)
 
-add_library(
+nebula_add_library(
     meta_client OBJECT
     client/MetaClient.cpp
 )
-nebula_add_base_obj(meta_client)
 
 add_subdirectory(test)
