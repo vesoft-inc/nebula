@@ -42,14 +42,21 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     auto addrsRet
         = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
     CHECK(addrsRet.ok()) << addrsRet.status();
+    auto& addrs = addrsRet.value();
+    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
+    auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
+    auto& localHost = hostRet.value();
     auto mClient
-        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
-    mClient->init();
+        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrs), localHost, true);
+    LOG(INFO) << "Add hosts and create space....";
+    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
+    ASSERT_TRUE(r.ok());
+    mClient->waitForMetadReady();
+    VLOG(1) << "The storage server has been added to the meta service";
 
     LOG(INFO) << "Start data server....";
 
     // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
-    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
     auto sc = TestUtils::mockStorageServer(mClient.get(),
                                            dataPath.c_str(),
@@ -60,20 +67,29 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                                            // based version
                                            false);
 
-    LOG(INFO) << "Add hosts and create space....";
-    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
-    ASSERT_TRUE(r.ok());
-    while (meta::ActiveHostsMan::instance()->getActiveHosts().size() == 0) {
-        usleep(1000);
-    }
-    VLOG(1) << "The storage server has been added to the meta service";
-
     auto ret = mClient->createSpace("default", 10, 1).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
     LOG(INFO) << "Created space \"default\", its id is " << spaceId;
-    sleep(2 * FLAGS_load_data_interval_secs + 1);
-
+    sleep(FLAGS_load_data_interval_secs + 1);
+    auto* nKV = static_cast<kvstore::NebulaStore*>(sc->kvStore_.get());
+    while (true) {
+        int readyNum = 0;
+        for (auto partId = 1; partId <= 10; partId++) {
+            auto retLeader = nKV->partLeader(spaceId, partId);
+            if (ok(retLeader)) {
+                auto leader = value(std::move(retLeader));
+                if (leader != HostAddr(0, 0)) {
+                    readyNum++;
+                }
+            }
+        }
+        if (readyNum == 10) {
+            LOG(INFO) << "All leaders have been elected!";
+            break;
+        }
+        usleep(100000);
+    }
     auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
 
     // VerticesInterfacesTest(addVertices and getVertexProps)

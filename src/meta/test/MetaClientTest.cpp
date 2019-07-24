@@ -19,6 +19,7 @@
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
 
+
 namespace nebula {
 namespace meta {
 
@@ -38,10 +39,12 @@ TEST(MetaClientTest, InterfacesTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto clientPort = network::NetworkUtils::getAvailablePort();
+    HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-
-    client->init();
+                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
+                                               localHost);
+    client->waitForMetadReady();
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
@@ -306,11 +309,10 @@ TEST(MetaClientTest, TagTest) {
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-
-    client->init();
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
     ASSERT_TRUE(r.ok());
+    client->waitForMetadReady();
     TestUtils::registerHB(hosts);
     auto ret = client->createSpace("default_space", 9, 3).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
@@ -721,7 +723,7 @@ public:
         partChanged++;
     }
 
-    HostAddr getLocalHost() override {
+    HostAddr getLocalHost() {
         return HostAddr(0, 0);
     }
 
@@ -743,10 +745,9 @@ TEST(MetaClientTest, DiffTest) {
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
     auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-
+                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    client->waitForMetadReady();
     client->registerListener(listener.get());
-    client->init();
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}};
@@ -785,6 +786,7 @@ TEST(MetaClientTest, DiffTest) {
 }
 
 TEST(MetaClientTest, HeartbeatTest) {
+    ActiveHostsMan::instance()->reset();
     FLAGS_load_data_interval_secs = 5;
     FLAGS_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
@@ -794,14 +796,18 @@ TEST(MetaClientTest, HeartbeatTest) {
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
+    auto clientPort = network::NetworkUtils::getAvailablePort();
+    HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(localIp, 10001)},
+                                               localHost,
                                                true);  // send heartbeat
+    client->addHosts({localHost});
+    client->waitForMetadReady();
     client->registerListener(listener.get());
-    client->init();
     {
         // Test addHost, listHosts interface.
-        std::vector<HostAddr> hosts = {{0, 0}};
+        std::vector<HostAddr> hosts = {localHost};
         auto r = client->addHosts(hosts).get();
         ASSERT_TRUE(r.ok());
         auto ret = client->listHosts().get();
