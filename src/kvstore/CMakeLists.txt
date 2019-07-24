@@ -1,4 +1,4 @@
-add_library(
+nebula_add_library(
     kvstore_obj OBJECT
     Part.cpp
     RocksEngine.cpp
@@ -7,7 +7,6 @@ add_library(
     RocksEngineConfig.cpp
     LogEncoder.cpp
 )
-nebula_add_base_obj(kvstore_obj)
 
 add_subdirectory(raftex)
 add_subdirectory(wal)
