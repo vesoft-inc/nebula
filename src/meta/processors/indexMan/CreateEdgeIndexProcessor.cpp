@@ -15,17 +15,17 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::edgeIndexLock());
     auto properties = req.get_properties();
-    auto ret = getEdgeIndexID(spaceID, indexName);
-    if (ret.ok()) {
-        LOG(ERROR) << "Create Edge Index Failed: " << indexName << " have existed";
-        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+    if (properties.get_fields().size() == 0) {
+        LOG(ERROR) << "Edge's Field should not empty";
+        resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
 
-    if (properties.get_fields().size() == 0) {
-        LOG(ERROR) << "Edge's Field should not empty";
-        resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
+    auto ret = getEdgeIndexID(spaceID, indexName);
+    if (ret.ok()) {
+        LOG(ERROR) << "Create Edge Index Failed: " << indexName << " have existed";
+        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }

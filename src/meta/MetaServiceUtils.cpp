@@ -159,7 +159,8 @@ std::string MetaServiceUtils::schemaEdgeKey(GraphSpaceID spaceId,
     return key;
 }
 
-std::string MetaServiceUtils::schemaEdgeVal(const std::string& name, nebula::cpp2::Schema schema) {
+std::string MetaServiceUtils::schemaEdgeVal(const std::string& name,
+                                            const nebula::cpp2::Schema& schema) {
     auto len = name.size();
     std::string val, sval;
     apache::thrift::CompactSerializer::serialize(schema, &sval);
@@ -187,7 +188,8 @@ std::string MetaServiceUtils::schemaTagKey(GraphSpaceID spaceId, TagID tagId, Sc
     return key;
 }
 
-std::string MetaServiceUtils::schemaTagVal(const std::string& name, nebula::cpp2::Schema schema) {
+std::string MetaServiceUtils::schemaTagVal(const std::string& name,
+                                           const nebula::cpp2::Schema& schema) {
     int32_t len = name.size();
     std::string val, sval;
     apache::thrift::CompactSerializer::serialize(schema, &sval);
@@ -238,7 +240,7 @@ std::string MetaServiceUtils::tagIndexKey(GraphSpaceID spaceID, TagIndexID index
     return key;
 }
 
-std::string MetaServiceUtils::tagIndexVal(nebula::meta::cpp2::IndexProperties properties) {
+std::string MetaServiceUtils::tagIndexVal(const nebula::meta::cpp2::IndexProperties& properties) {
     std::string value;
     apache::thrift::CompactSerializer::serialize(properties, &value);
     return value;
@@ -261,7 +263,7 @@ std::string MetaServiceUtils::edgeIndexKey(GraphSpaceID spaceID, EdgeIndexID ind
     return key;
 }
 
-std::string MetaServiceUtils::edgeIndexVal(nebula::meta::cpp2::IndexProperties properties) {
+std::string MetaServiceUtils::edgeIndexVal(const nebula::meta::cpp2::IndexProperties& properties) {
     std::string value;
     apache::thrift::CompactSerializer::serialize(properties, &value);
     return value;
@@ -275,13 +277,13 @@ std::string MetaServiceUtils::edgeIndexPrefix(GraphSpaceID spaceId) {
     return key;
 }
 
-cpp2::IndexProperties MetaServiceUtils::parseTagIndex(folly::StringPiece rawData) {
+cpp2::IndexProperties MetaServiceUtils::parseTagIndex(const folly::StringPiece& rawData) {
     cpp2::IndexProperties properties;
     apache::thrift::CompactSerializer::deserialize(rawData, properties);
     return properties;
 }
 
-cpp2::IndexProperties MetaServiceUtils::parseEdgeIndex(folly::StringPiece rawData) {
+cpp2::IndexProperties MetaServiceUtils::parseEdgeIndex(const folly::StringPiece& rawData) {
     cpp2::IndexProperties properties;
     apache::thrift::CompactSerializer::deserialize(rawData, properties);
     return properties;

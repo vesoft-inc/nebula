@@ -143,13 +143,12 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
     folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     static const std::string kIdKey = "__id__";
     int32_t id;
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, kIdKey, &val);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        CHECK_EQ(kvstore::ResultCode::ERR_KEY_NOT_FOUND, ret);
+    auto ret = doGet(kIdKey);
+    if (!ret.ok()) {
+        CHECK_EQ(Status::Error("Key Not Found"), ret.status());
         id = 1;
     } else {
-        id = *reinterpret_cast<const int32_t*>(val.c_str()) + 1;
+        id = *reinterpret_cast<const int32_t*>(ret.value().c_str()) + 1;
     }
 
     std::vector<kvstore::KV> data;
@@ -181,9 +180,8 @@ template<typename RESP>
 Status BaseProcessor<RESP>::userExist(UserID spaceId) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
     auto userKey = MetaServiceUtils::userKey(spaceId);
-    std::string val;
-    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, userKey, &val);
-    if (ret == kvstore::ResultCode::SUCCEEDED) {
+    auto ret = doGet(userKey);
+    if (ret.ok()) {
         return Status::OK();
     }
     return Status::UserNotFound();
@@ -253,7 +251,7 @@ BaseProcessor<RESP>::getLatestTagFields(GraphSpaceID spaceId,
     auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
     std::vector<std::string> propertyNames;
     for (auto &column : latestSchema.get_columns()) {
-        propertyNames.emplace_back(column.get_name());
+        propertyNames.emplace_back(std::move(column.get_name()));
     }
     return propertyNames;
 }
@@ -280,7 +278,7 @@ BaseProcessor<RESP>::getLatestEdgeFields(GraphSpaceID spaceId,
     auto latestSchema = MetaServiceUtils::parseSchema(iter->val());
     std::vector<std::string> propertyNames;
     for (auto &column : latestSchema.get_columns()) {
-        propertyNames.emplace_back(column.get_name());
+        propertyNames.emplace_back(std::move(column.get_name()));
     }
     return propertyNames;
 }
@@ -324,8 +322,7 @@ bool BaseProcessor<RESP>::checkPassword(UserID userId, const std::string& passwo
     auto userKey = MetaServiceUtils::userKey(userId);
     auto ret = doGet(userKey);
     if (ret.ok()) {
-        auto len = *reinterpret_cast<const int32_t *>(ret.value().data());
-        return password == ret.value().substr(sizeof(int32_t), len);
+        return  ret.value().compare(sizeof(int32_t), password.size(), password) == 0;
     }
     return false;
 }

@@ -920,11 +920,12 @@ folly::Future<StatusOr<TagIndexID>>
 MetaClient::createTagIndex(GraphSpaceID spaceID, std::string name,
                            std::map<std::string, std::vector<std::string>> fields) {
     cpp2::IndexProperties properties;
-    properties.set_fields(fields);
+    properties.set_fields(std::move(fields));
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(spaceID);
-    req.set_index_name(name);
-    req.set_properties(properties);
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+    req.set_properties(std::move(properties));
+
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_createTagIndex(request);
     }, [] (cpp2::ExecResp&& resp) -> TagIndexID {
@@ -935,8 +936,9 @@ MetaClient::createTagIndex(GraphSpaceID spaceID, std::string name,
 folly::Future<StatusOr<bool>>
 MetaClient::dropTagIndex(GraphSpaceID spaceID, std::string name) {
     cpp2::DropTagIndexReq req;
-    req.set_space_id(spaceID);
-    req.set_index_name(name);
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_dropTagIndex(request);
     }, [] (cpp2::ExecResp&& resp) -> TagIndexID {
@@ -947,8 +949,9 @@ MetaClient::dropTagIndex(GraphSpaceID spaceID, std::string name) {
 folly::Future<StatusOr<cpp2::TagIndexItem>>
 MetaClient::getTagIndex(GraphSpaceID spaceID, std::string name) {
     cpp2::GetTagIndexReq req;
-    req.set_space_id(spaceID);
-    req.set_index_name(name);
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_getTagIndex(request);
     }, [] (cpp2::GetTagIndexResp&& resp) -> nebula::meta::cpp2::TagIndexItem {
@@ -959,7 +962,8 @@ MetaClient::getTagIndex(GraphSpaceID spaceID, std::string name) {
 folly::Future<StatusOr<std::vector<cpp2::TagIndexItem>>>
 MetaClient::listTagIndexes(GraphSpaceID spaceID) {
     cpp2::ListTagIndexesReq req;
-    req.set_space_id(spaceID);
+    req.set_space_id(std::move(spaceID));
+
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listTagIndexes(request);
     }, [] (cpp2::ListTagIndexesResp&& resp) -> decltype(auto) {
@@ -971,11 +975,12 @@ folly::Future<StatusOr<EdgeIndexID>>
 MetaClient::createEdgeIndex(GraphSpaceID spaceID, std::string name,
                             std::map<std::string, std::vector<std::string>> fields) {
     cpp2::IndexProperties properties;
-    properties.set_fields(fields);
+    properties.set_fields(std::move(fields));
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(spaceID);
-    req.set_index_name(name);
-    req.set_properties(properties);
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+    req.set_properties(std::move(properties));
+
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_createEdgeIndex(request);
     }, [] (cpp2::ExecResp&& resp) -> EdgeIndexID {
@@ -986,8 +991,9 @@ MetaClient::createEdgeIndex(GraphSpaceID spaceID, std::string name,
 folly::Future<StatusOr<bool>>
 MetaClient::dropEdgeIndex(GraphSpaceID spaceID, std::string name) {
     cpp2::DropEdgeIndexReq req;
-    req.set_space_id(spaceID);
-    req.set_index_name(name);
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_dropEdgeIndex(request);
     }, [] (cpp2::ExecResp&& resp) -> EdgeIndexID {
@@ -998,8 +1004,9 @@ MetaClient::dropEdgeIndex(GraphSpaceID spaceID, std::string name) {
 folly::Future<StatusOr<cpp2::EdgeIndexItem>>
 MetaClient::getEdgeIndex(GraphSpaceID spaceID, std::string name) {
     cpp2::GetEdgeIndexReq req;
-    req.set_space_id(spaceID);
-    req.set_index_name(name);
+    req.set_space_id(std::move(spaceID));
+    req.set_index_name(std::move(name));
+
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_getEdgeIndex(request);
     }, [] (cpp2::GetEdgeIndexResp&& resp) -> nebula::meta::cpp2::EdgeIndexItem {
@@ -1010,7 +1017,8 @@ MetaClient::getEdgeIndex(GraphSpaceID spaceID, std::string name) {
 folly::Future<StatusOr<std::vector<cpp2::EdgeIndexItem>>>
 MetaClient::listEdgeIndexes(GraphSpaceID spaceID) {
     cpp2::ListEdgeIndexesReq req;
-    req.set_space_id(spaceID);
+    req.set_space_id(std::move(spaceID));
+
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_listEdgeIndexes(request);
     }, [] (cpp2::ListEdgeIndexesResp&& resp) -> decltype(auto) {

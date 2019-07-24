@@ -383,7 +383,7 @@ TEST(MetaClientTest, EdgeTest) {
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
 
-    client->init();
+    client->waitForMetadReady();
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
     ASSERT_TRUE(r.ok());
@@ -462,7 +462,7 @@ TEST(MetaClientTest, TagIndexTest) {
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-    client->init();
+    client->waitForMetadReady();
 
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
@@ -586,7 +586,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
 
-    client->init();
+    client->waitForMetadReady();
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
     ASSERT_TRUE(r.ok());

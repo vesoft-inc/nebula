@@ -15,17 +15,17 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     CHECK_SPACE_ID_AND_RETURN(spaceID);
     folly::SharedMutex::WriteHolder wHolder(LockUtils::tagIndexLock());
     auto properties = req.get_properties();
-    auto ret = getTagIndexID(spaceID, indexName);
-    if (ret.ok()) {
-        LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";
-        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
+    if (properties.get_fields().size() == 0) {
+        LOG(ERROR) << "Tag's Field should not empty";
+        resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
         onFinished();
         return;
     }
 
-    if (properties.get_fields().size() == 0) {
-        LOG(ERROR) << "Tag's Field should not empty";
-        resp_.set_code(cpp2::ErrorCode::E_INVALID_PARM);
+    auto ret = getTagIndexID(spaceID, indexName);
+    if (ret.ok()) {
+        LOG(ERROR) << "Create Tag Index Failed: " << indexName << " have existed";
+        resp_.set_code(cpp2::ErrorCode::E_EXISTED);
         onFinished();
         return;
     }
