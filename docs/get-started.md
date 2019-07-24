@@ -254,7 +254,7 @@ This section describes how to build a graph and run queries. The example is buil
 
 ![Untitled Diagram (1)](https://user-images.githubusercontent.com/51590253/60649144-0774c980-9e74-11e9-86d6-bad1653e70ba.png)
 
-There are three kinds of tags (_course_, _building_ and _team_) and two edge types (_select_ and _like_). The graph schema is:
+There are three kinds of tags (_course_, _building_ and _student_) and two edge types (_select_ and _like_). The graph schema is:
 ```json
 {  
    "tags":{  
