@@ -33,26 +33,6 @@ DEFINE_int32(num_workers, 4, "Number of worker threads");
         return; \
     }
 
-/**
- * Check spaceId is exist and return related partitions.
- */
-#define RETURN_IF_SPACE_NOT_FOUND(spaceId, it) \
-    it = spaces_.find(spaceId); \
-    do { \
-        if (UNLIKELY(it == spaces_.end())) { \
-            return ResultCode::ERR_SPACE_NOT_FOUND; \
-        } \
-    } while (false)
-
-/**
- * Check result and return code when it's unsuccess.
- * */
-#define RETURN_ON_FAILURE(code) \
-    if (code != ResultCode::SUCCEEDED) { \
-        return code; \
-    }
-
-
 namespace nebula {
 namespace kvstore {
 
@@ -424,10 +404,12 @@ ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceI
 ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
                                const std::string& extra,
                                const std::vector<std::string>& files) {
-    decltype(spaces_)::iterator it;
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
-    for (auto& engine : it->second->engines_) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
+    }
+    auto space = nebula::value(spaceRet);
+    for (auto& engine : space->engines_) {
         auto parts = engine->allParts();
         std::vector<std::string> extras;
         for (auto part : parts) {
@@ -442,7 +424,9 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
             }
         }
         auto code = engine->ingest(std::move(extras));
-        RETURN_ON_FAILURE(code);
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
     }
     return ResultCode::SUCCEEDED;
 }
@@ -451,12 +435,16 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
 ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
                                   const std::string& configKey,
                                   const std::string& configValue) {
-    decltype(spaces_)::iterator it;
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
-    for (auto& engine : it->second->engines_) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
+    }
+    auto space = nebula::value(spaceRet);
+    for (auto& engine : space->engines_) {
         auto code = engine->setOption(configKey, configValue);
-        RETURN_ON_FAILURE(code);
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
     }
     return ResultCode::SUCCEEDED;
 }
@@ -465,24 +453,47 @@ ResultCode NebulaStore::setOption(GraphSpaceID spaceId,
 ResultCode NebulaStore::setDBOption(GraphSpaceID spaceId,
                                     const std::string& configKey,
                                     const std::string& configValue) {
-    decltype(spaces_)::iterator it;
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
-    for (auto& engine : it->second->engines_) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
+    }
+    auto space = nebula::value(spaceRet);
+    for (auto& engine : space->engines_) {
         auto code = engine->setDBOption(configKey, configValue);
-        RETURN_ON_FAILURE(code);
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
     }
     return ResultCode::SUCCEEDED;
 }
 
 
-ResultCode NebulaStore::compactAll(GraphSpaceID spaceId) {
-    decltype(spaces_)::iterator it;
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
-    for (auto& engine : it->second->engines_) {
-        auto code = engine->compactAll();
-        RETURN_ON_FAILURE(code);
+ResultCode NebulaStore::compact(GraphSpaceID spaceId) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
+    }
+    auto space = nebula::value(spaceRet);
+    for (auto& engine : space->engines_) {
+        auto code = engine->compact();
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
+    }
+    return ResultCode::SUCCEEDED;
+}
+
+ResultCode NebulaStore::flush(GraphSpaceID spaceId) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
+    }
+    auto space = nebula::value(spaceRet);
+    for (auto& engine : space->engines_) {
+        auto code = engine->flush();
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
     }
     return ResultCode::SUCCEEDED;
 }
@@ -513,6 +524,15 @@ ErrorOr<ResultCode, KVEngine*> NebulaStore::engine(GraphSpaceID spaceId, Partiti
         return ResultCode::ERR_PART_NOT_FOUND;
     }
     return partIt->second->engine();
+}
+
+ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> NebulaStore::space(GraphSpaceID spaceId) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
+    auto it = spaces_.find(spaceId);
+    if (UNLIKELY(it == spaces_.end())) {
+        return ResultCode::ERR_SPACE_NOT_FOUND;
+    }
+    return it->second;
 }
 
 }  // namespace kvstore

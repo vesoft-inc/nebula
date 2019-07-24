@@ -161,7 +161,9 @@ public:
     ResultCode setDBOption(const std::string& configKey,
                            const std::string& configValue) override;
 
-    ResultCode compactAll() override;
+    ResultCode compact() override;
+
+    ResultCode flush() override;
 
 private:
     std::string partKey(PartitionID partId);

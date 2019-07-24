@@ -154,7 +154,9 @@ public:
                            const std::string& configKey,
                            const std::string& configValue);
 
-    ResultCode compactAll(GraphSpaceID spaceId);
+    ResultCode compact(GraphSpaceID spaceId) override;
+
+    ResultCode flush(GraphSpaceID spaceId) override;
 
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 
@@ -178,10 +180,12 @@ private:
 
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
 
+    ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
+
 private:
     // The lock used to protect spaces_
     folly::RWSpinLock lock_;
-    std::unordered_map<GraphSpaceID, std::unique_ptr<SpacePartInfo>> spaces_;
+    std::unordered_map<GraphSpaceID, std::shared_ptr<SpacePartInfo>> spaces_;
 
     std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;
     std::shared_ptr<thread::GenericThreadPool> workers_;
