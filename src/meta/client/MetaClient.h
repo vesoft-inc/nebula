@@ -57,18 +57,20 @@ public:
     virtual void onPartAdded(const PartMeta& partMeta) = 0;
     virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) = 0;
     virtual void onPartUpdated(const PartMeta& partMeta) = 0;
-    virtual HostAddr getLocalHost() = 0;
 };
 
 class MetaClient {
 public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                         std::vector<HostAddr> addrs,
+                        HostAddr localHost = HostAddr(0, 0),
                         bool sendHeartBeat = false);
 
     virtual ~MetaClient();
 
-    void init();
+    bool isMetadReady();
+
+    bool waitForMetadReady(int count = -1, int retryIntervalSecs = 2);
 
     void registerListener(MetaChangedListener* listener) {
         folly::RWSpinLock::WriteHolder holder(listenerLock_);
@@ -266,6 +268,7 @@ private:
     folly::RWSpinLock hostLock_;
     HostAddr active_;
     HostAddr leader_;
+    HostAddr localHost_;
     thread::GenericWorker bgThread_;
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
