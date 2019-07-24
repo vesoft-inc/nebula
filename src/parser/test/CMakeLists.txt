@@ -13,7 +13,6 @@ nebula_add_test(
     OBJECTS ${PARSER_TEST_LIBS}
     LIBRARIES gtest gtest_main
 )
-target_include_directories(parser_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
 
 nebula_add_test(
     NAME scanner_test
@@ -21,7 +20,6 @@ nebula_add_test(
     OBJECTS ${PARSER_TEST_LIBS}
     LIBRARIES gtest gtest_main
 )
-target_include_directories(scanner_test SYSTEM BEFORE PUBLIC ${FLEX_INCLUDE_DIRS})
 
 nebula_add_executable(
     NAME parser_benchmark
