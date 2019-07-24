@@ -1,37 +1,20 @@
-add_executable(
-    file_utils_test
-    FileUtilsTest.cpp
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:base_obj>
+nebula_add_test(
+    NAME file_utils_test
+    SOURCES FileUtilsTest.cpp
+    OBJECTS $<TARGET_OBJECTS:fs_obj> $<TARGET_OBJECTS:base_obj>
+    LIBRARIES gtest
 )
-nebula_link_libraries(
-    file_utils_test
-    gtest
-)
-nebula_add_test(file_utils_test)
 
-add_executable(
-    temp_dir_test
-    TempDirTest.cpp
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:base_obj>
+nebula_add_test(
+    NAME temp_dir_test
+    SOURCES TempDirTest.cpp
+    OBJECTS $<TARGET_OBJECTS:fs_obj> $<TARGET_OBJECTS:base_obj>
+    LIBRARIES gtest
 )
-nebula_link_libraries(
-    temp_dir_test
-    gtest
-)
-nebula_add_test(temp_dir_test)
 
-add_executable(
-    temp_file_test
-    TempFileTest.cpp
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:base_obj>
+nebula_add_test(
+    NAME temp_file_test
+    SOURCES TempFileTest.cpp
+    OBJECTS $<TARGET_OBJECTS:fs_obj> $<TARGET_OBJECTS:base_obj>
+    LIBRARIES gtest gtest_main
 )
-nebula_link_libraries(
-    temp_file_test
-    gtest
-    gtest_main
-)
-nebula_add_test(temp_file_test)
-

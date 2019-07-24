@@ -1,4 +1,6 @@
-add_library(process_obj OBJECT ProcessUtils.cpp)
-nebula_add_base_obj(process_obj)
+nebula_add_library(
+    process_obj OBJECT
+    ProcessUtils.cpp
+)
 
 add_subdirectory(test)
