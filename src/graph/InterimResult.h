@@ -38,6 +38,10 @@ public:
         return rsReader_->schema();
     }
 
+    std::string& data() const {
+        return rsWriter_->data();
+    }
+
     StatusOr<std::vector<VertexID>> getVIDs(const std::string &col) const;
 
     StatusOr<std::vector<VertexID>> getDistinctVIDs(const std::string &col) const;

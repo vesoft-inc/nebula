@@ -409,6 +409,14 @@ TEST(Parser, Set) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "(GO FROM 1 OVER friend | "
+                            "GO FROM 2 OVER friend) UNION "
+                            "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, Pipe) {

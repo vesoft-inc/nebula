@@ -146,6 +146,18 @@ public:
 
     std::string toString() const override;
 
+    auto left() {
+        return left_.get();
+    }
+
+    auto right() {
+        return right_.get();
+    }
+
+    auto op() {
+        return op_;
+    }
+
 private:
     Operator                                    op_;
     std::unique_ptr<Sentence>                   left_;

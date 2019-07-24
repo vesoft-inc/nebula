@@ -886,6 +886,7 @@ traverse_sentence
     | find_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
+    | L_PAREN piped_sentence R_PAREN { $$ = $2; }
     ;
 
 set_sentence
@@ -893,7 +894,6 @@ set_sentence
     | set_sentence KW_UNION traverse_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
     | set_sentence KW_INTERSECT traverse_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
     | set_sentence KW_MINUS traverse_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
-    | L_PAREN piped_sentence R_PAREN { $$ = $2; }
     ;
 
 piped_sentence
