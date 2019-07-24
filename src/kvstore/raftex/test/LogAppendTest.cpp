@@ -29,10 +29,9 @@ TEST(LogAppend, SimpleAppendWithOneCopy) {
     std::vector<HostAddr> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
-    std::vector<LogID> lastCommittedLogId;
 
     std::shared_ptr<test::TestShard> leader;
-    setupRaft(1, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader);
+    setupRaft(1, walRoot, workers, wals, allHosts, services, copies, leader);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
@@ -52,10 +51,9 @@ TEST(LogAppend, SimpleAppendWithThreeCopies) {
     std::vector<HostAddr> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
-    std::vector<LogID> lastCommittedLogId;
 
     std::shared_ptr<test::TestShard> leader;
-    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader);
+    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
@@ -75,10 +73,9 @@ TEST(LogAppend, MultiThreadAppend) {
     std::vector<HostAddr> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
-    std::vector<LogID> lastCommittedLogId;
 
     std::shared_ptr<test::TestShard> leader;
-    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader);
+    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);

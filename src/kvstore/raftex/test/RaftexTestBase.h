@@ -70,7 +70,6 @@ void setupRaft(
         std::vector<HostAddr>& allHosts,
         std::vector<std::shared_ptr<RaftexService>>& services,
         std::vector<std::shared_ptr<test::TestShard>>& copies,
-        std::vector<LogID>& lastCommittedLogId,
         std::shared_ptr<test::TestShard>& leader,
         std::vector<bool> isLearner = {});
 
@@ -107,12 +106,6 @@ void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                    std::vector<HostAddr> allHosts,
                    size_t index);
 
-void disconnectOneCopy(std::vector<std::shared_ptr<test::TestShard>>& copies,
-                       std::shared_ptr<test::TestShard>& copy);
-
-void reconnectOneCopy(std::vector<std::shared_ptr<test::TestShard>>& copies,
-                      std::shared_ptr<test::TestShard>& reconnected);
-
 class RaftexTestFixture : public ::testing::Test {
 public:
     explicit RaftexTestFixture(const std::string& testName, int32_t size = 3)
@@ -123,8 +116,7 @@ public:
     void SetUp() override {
         walRoot_ = std::make_unique<fs::TempDir>(
             folly::stringPrintf("/tmp/%s.XXXXXX", testName_.c_str()).c_str());
-        setupRaft(size_, *walRoot_, workers_, wals_, allHosts_, services_, copies_,
-                  lastCommittedLogId_, leader_);
+        setupRaft(size_, *walRoot_, workers_, wals_, allHosts_, services_, copies_, leader_);
 
         // Check all hosts agree on the same leader
         checkLeadership(copies_, leader_);
@@ -144,7 +136,6 @@ protected:
     std::vector<HostAddr> allHosts_;
     std::vector<std::shared_ptr<RaftexService>> services_;
     std::vector<std::shared_ptr<test::TestShard>> copies_;
-    std::vector<LogID> lastCommittedLogId_;
     std::shared_ptr<test::TestShard> leader_;
 };
 

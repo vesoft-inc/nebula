@@ -29,13 +29,11 @@ TEST(LearnerTest, OneLeaderOneFollowerOneLearnerTest) {
     std::vector<HostAddr> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
-    std::vector<LogID> lastCommittedLogId;
 
     std::shared_ptr<test::TestShard> leader;
     std::vector<bool> isLearner = {false, false, true};
     // The last one is learner
-    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader,
-              isLearner);
+    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
 
     checkLeadership(copies, leader);
 
@@ -56,13 +54,11 @@ TEST(LearnerTest, OneLeaderTwoLearnerTest) {
     std::vector<HostAddr> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
-    std::vector<LogID> lastCommittedLogId;
 
     std::shared_ptr<test::TestShard> leader;
     std::vector<bool> isLearner = {false, true, true};
     // Start three services, the first one will be the leader, the left two will be learners.
-    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader,
-              isLearner);
+    setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
 
     // The copies[0] is the leader.
     checkLeadership(copies, 0, leader);
@@ -94,12 +90,10 @@ TEST(LearnerTest, CatchUpDataTest) {
     std::vector<HostAddr> allHosts;
     std::vector<std::shared_ptr<RaftexService>> services;
     std::vector<std::shared_ptr<test::TestShard>> copies;
-    std::vector<LogID> lastCommittedLogId;
 
     std::shared_ptr<test::TestShard> leader;
     std::vector<bool> isLearner = {false, false, false, true};
-    setupRaft(4, walRoot, workers, wals, allHosts, services, copies, lastCommittedLogId, leader,
-              isLearner);
+    setupRaft(4, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);

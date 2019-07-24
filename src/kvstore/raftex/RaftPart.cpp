@@ -596,8 +596,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
                    prevLogTerm,
                    pHosts = std::move(hosts)] (folly::Try<AppendLogResponses>&& result) mutable {
             VLOG(2) << self->idStr_ << "Received enough response";
-            // TODO: since we kill some peers in ut, this may fail, handle exception if necessary
-            // CHECK(!result.hasException());
+            CHECK(!result.hasException());
 
             self->processAppendLogResponses(*result,
                                             eb,
@@ -1239,6 +1238,13 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         LOG(ERROR) << idStr_ << "The local term is " << term_
                    << ". The remote term is not newer";
         return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
+    }
+    if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
+        if (req.get_current_term() == term_ && leader_ != std::make_pair(0, 0)) {
+            LOG(ERROR) << idStr_ << "The local term is same as remote term " << term_
+                       << ". But I believe leader exists.";
+            return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
+        }
     }
 
     // Ok, no reason to refuse, just follow the leader

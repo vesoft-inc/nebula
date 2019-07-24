@@ -36,14 +36,13 @@ public:
         wal::BufferFlusher* flusher,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
         std::shared_ptr<thread::GenericThreadPool> workers,
-        std::vector<LogID>& lastCommittedLogId,
         std::function<void(size_t idx, const char*, TermID)>
             leadershipLostCB,
         std::function<void(size_t idx, const char*, TermID)>
             becomeLeaderCB);
 
     LogID lastCommittedLogId() override {
-        return lastCommittedLogId_[idx_];
+        return lastCommittedLogId_;
     }
 
     std::shared_ptr<RaftexService> getService() const {
@@ -83,9 +82,6 @@ public:
     size_t getNumLogs() const;
     bool getLogMsg(size_t index, folly::StringPiece& msg);
 
-    void connect(const HostAddr& addr);
-    void disconnect(const HostAddr& addr);
-
 public:
     int32_t commitTimes_ = 0;
     int32_t currLogId_ = -1;
@@ -96,7 +92,7 @@ private:
     std::shared_ptr<RaftexService> service_;
 
     std::vector<std::pair<LogID, std::string>> data_;
-    std::vector<LogID> lastCommittedLogId_;
+    LogID lastCommittedLogId_ = 0L;
     mutable folly::RWSpinLock lock_;
 
     std::function<void(size_t idx, const char*, TermID)>

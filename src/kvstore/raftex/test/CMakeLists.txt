@@ -42,12 +42,14 @@ nebula_add_test(
     LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
 )
 
+
 nebula_add_test(
     NAME log_command_test
     SOURCES LogCommandTest.cpp RaftexTestBase.cpp TestShard.cpp
     OBJECTS ${RAFTEX_TEST_LIBS}
     LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
 )
+
 
 nebula_add_test(
     NAME raft_case_test

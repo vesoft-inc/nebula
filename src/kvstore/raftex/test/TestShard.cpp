@@ -38,7 +38,6 @@ TestShard::TestShard(size_t idx,
                      wal::BufferFlusher* flusher,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,
-                     std::vector<LogID>& lastCommittedLogId,
                      std::function<void(size_t idx, const char*, TermID)>
                         leadershipLostCB,
                      std::function<void(size_t idx, const char*, TermID)>
@@ -53,7 +52,6 @@ TestShard::TestShard(size_t idx,
                    workers)
         , idx_(idx)
         , service_(svc)
-        , lastCommittedLogId_(lastCommittedLogId)
         , leadershipLostCB_(leadershipLostCB)
         , becomeLeaderCB_(becomeLeaderCB) {
 }
@@ -109,7 +107,7 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
     }
     VLOG(2) << "TestShard: " << idStr_ << "Committed log " << firstId << " to " << lastId;
     if (lastId > -1) {
-        lastCommittedLogId_[idx_] = lastId;
+        lastCommittedLogId_ = lastId;
     }
     if (commitLogsNum > 0) {
         commitTimes_++;
@@ -128,40 +126,6 @@ bool TestShard::getLogMsg(size_t index, folly::StringPiece& msg) {
     }
     msg = data_[index].second;
     return true;
-}
-
-void TestShard::connect(const HostAddr& addr) {
-    std::lock_guard<std::mutex> g(raftLock_);
-    auto it = std::find_if(hosts_.begin(), hosts_.end(), [&addr] (const auto& h) {
-                return h->address() == addr;
-            });
-    if (it == hosts_.end()) {
-        hosts_.emplace_back(std::make_shared<Host>(addr, shared_from_this()));
-        LOG(INFO) << idStr_ << "Add peers " << addr;
-    } else {
-        LOG(INFO) << idStr_ << "The host " << addr << " exists";
-    }
-}
-
-void TestShard::disconnect(const HostAddr& addr) {
-    std::shared_ptr<Host> host;
-    {
-        std::lock_guard<std::mutex> g(raftLock_);
-        auto it = std::find_if(hosts_.begin(), hosts_.end(), [&addr] (const auto& h) {
-                    return h->address() == addr;
-                });
-        if (it != hosts_.end()) {
-            host = *it;
-            hosts_.erase(it);
-        } else {
-            LOG(INFO) << idStr_ << "The host " << addr << " doesn't exists.";
-        }
-    }
-    if (host != nullptr) {
-        host->stop();
-        host->waitForStop();
-        LOG(INFO) << idStr_ << "disconnect with " << addr;
-    }
 }
 
 }  // namespace test
