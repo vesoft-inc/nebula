@@ -1,4 +1,4 @@
-add_library(
+nebula_add_library(
     ws_obj OBJECT
     WebService.cpp
     NotFoundHandler.cpp
@@ -6,7 +6,5 @@ add_library(
     SetFlagsHandler.cpp
     GetStatsHandler.cpp
 )
-nebula_add_base_obj(ws_obj)
 
 add_subdirectory(test)
-
