@@ -32,6 +32,7 @@ DEFINE_string(peers, "", "It is a list of IPs split by comma,"
                          "If empty, it means replica is 1");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
+DEFINE_int32(meta_download_thread_num, 3, "Number of meta daemon's download thread");
 DECLARE_string(part_man_type);
 
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
@@ -117,13 +118,20 @@ int main(int argc, char *argv[]) {
         std::make_unique<nebula::hdfs::HdfsCommandHelper>();
     auto *helperPtr = helper.get();
 
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool =
+        std::make_unique<nebula::thread::GenericThreadPool>();
+    pool->start(FLAGS_meta_download_thread_num);
+    LOG(INFO) << "Download Thread Pool started";
+    auto* poolPtr = pool.get();
+
+
     LOG(INFO) << "Starting Meta HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::meta::MetaHttpStatusHandler();
     });
-    nebula::WebService::registerHandler("/download-dispatch", [kvstore_, helperPtr] {
+    nebula::WebService::registerHandler("/download-dispatch", [kvstore_, helperPtr, poolPtr] {
         auto handler = new nebula::meta::MetaHttpDownloadHandler();
-        handler->init(kvstore_, helperPtr);
+        handler->init(kvstore_, helperPtr, poolPtr);
         return handler;
     });
     nebula::WebService::registerHandler("/ingest-dispatch", [kvstore_] {

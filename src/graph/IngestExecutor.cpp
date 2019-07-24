@@ -4,13 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "http/HttpClient.h"
 #include "graph/IngestExecutor.h"
 #include "process/ProcessUtils.h"
+#include "webservice/Common.h"
+#include "webservice/WebService.h"
 
 #include <folly/executors/Async.h>
 #include <folly/futures/Future.h>
-
-DEFINE_int32(meta_ingest_http_port, 11000, "Default meta daemon's http port");
 
 namespace nebula {
 namespace graph {
@@ -29,15 +30,13 @@ void IngestExecutor::execute() {
     auto  addresses = mc->getAddresses();
     auto  metaHost = network::NetworkUtils::intToIPv4(addresses[0].first);
     auto  spaceId = ectx()->rctx()->session()->space();
-    auto *path  = sentence_->path();
 
-    auto func = [metaHost, path, spaceId]() {
-        std::string tmp = "/usr/bin/curl -G \"http://%s:%d/%s?path=%s&space=%d\"";
-        auto command = folly::stringPrintf(tmp.c_str(), metaHost.c_str(),
-                                           FLAGS_meta_ingest_http_port,
-                                           "ingest-dispatch", path->c_str(), spaceId);
-        LOG(INFO) << "Ingest Command: " << command;
-        auto result = nebula::ProcessUtils::runCommand(command.c_str());
+    auto func = [metaHost, spaceId]() {
+        std::string tmp = "http://%s:%d/%s?path=%s&space=%d";
+        auto url = folly::stringPrintf(tmp.c_str(), metaHost.c_str(),
+                                       FLAGS_ws_meta_http_port,
+                                       "ingest-dispatch", spaceId);
+        auto result = http::HttpClient::get(url);
         if (result.ok() && result.value() == "SSTFile ingest successfully") {
             LOG(INFO) << "Ingest Successfully";
             return true;

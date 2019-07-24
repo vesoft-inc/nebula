@@ -25,9 +25,14 @@ using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
 
-void StorageHttpDownloadHandler::init(nebula::hdfs::HdfsHelper *helper) {
+void StorageHttpDownloadHandler::init(nebula::hdfs::HdfsHelper *helper,
+                                      nebula::thread::GenericThreadPool *pool,
+                                      std::string localPath) {
     helper_ = helper;
+    pool_ = pool;
+    localPath_ = localPath;
     CHECK_NOTNULL(helper_);
+    CHECK_NOTNULL(pool_);
 }
 
 void StorageHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
@@ -40,17 +45,16 @@ void StorageHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers)
      if (!headers->hasQueryParam("host") ||
          !headers->hasQueryParam("port") ||
          !headers->hasQueryParam("path") ||
-         !headers->hasQueryParam("parts") ||
-         !headers->hasQueryParam("local")) {
+         !headers->hasQueryParam("parts")) {
          LOG(ERROR) << "Illegal Argument";
          err_ = HttpCode::E_ILLEGAL_ARGUMENT;
          return;
      }
+
      hdfsHost_ = headers->getQueryParam("host");
      hdfsPort_ = headers->getIntQueryParam("port");
-     partitions_ = headers->getQueryParam("parts");
      hdfsPath_ = headers->getQueryParam("path");
-     localPath_ = headers->getQueryParam("local");
+     partitions_ = headers->getQueryParam("parts");
 }
 
 
@@ -137,13 +141,6 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
     }
 
     std::vector<folly::SemiFuture<bool>> futures;
-    static nebula::thread::GenericThreadPool pool;
-
-    std::once_flag downloadPoolStartFlag;
-    std::call_once(downloadPoolStartFlag, []() {
-        LOG(INFO) << "Download Thread Pool start";
-        pool.start(FLAGS_download_thread_num);
-    });
 
     for (auto& part : parts) {
         auto downloader = [hdfsHost, hdfsPort, hdfsPath, localPath, part, this]() {
@@ -160,7 +157,7 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
                                                      hdfsPartPath, localPath);
             return result.ok() && result.value().empty();
         };
-        auto future = pool.addTask(downloader);
+        auto future = pool_->addTask(downloader);
         futures.push_back(std::move(future));
     }
 

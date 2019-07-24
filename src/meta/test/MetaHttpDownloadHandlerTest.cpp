@@ -34,14 +34,17 @@ public:
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 2);
 
+        pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
+        pool_->start(3);
+
         WebService::registerHandler("/download-dispatch", [this] {
             auto handler = new meta::MetaHttpDownloadHandler();
-            handler->init(kv_.get(), helper.get());
+            handler->init(kv_.get(), helper.get(), pool_.get());
             return handler;
         });
         WebService::registerHandler("/download", [this] {
             auto handler = new storage::StorageHttpDownloadHandler();
-            handler->init(helper.get());
+            handler->init(helper.get(), pool_.get(), "/data");
             return handler;
         });
         auto status = WebService::start();
@@ -51,6 +54,7 @@ public:
     void TearDown() override {
         kv_.reset();
         rootPath_.reset();
+        pool_->stop();
         WebService::stop();
         VLOG(1) << "Web service stopped";
     }
@@ -58,6 +62,7 @@ public:
 private:
     std::unique_ptr<fs::TempDir> rootPath_;
     std::unique_ptr<kvstore::KVStore> kv_;
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool_;
 };
 
 TEST(MetaHttpDownloadHandlerTest, MetaDownloadTest) {
@@ -67,14 +72,14 @@ TEST(MetaHttpDownloadHandlerTest, MetaDownloadTest) {
         ASSERT_TRUE(resp.empty());
     }
     {
-        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
+        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&space=1";
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile dispatch successfully", resp);
     }
     {
         helper = std::make_unique<nebula::meta::MockHdfsNotExistHelper>();
-        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
+        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&space=1";
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile dispatch failed", resp);

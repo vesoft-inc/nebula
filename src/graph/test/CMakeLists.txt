@@ -37,10 +37,15 @@ nebula_add_base_obj(graph_test_common_obj)
 add_executable(
     session_manager_test
     SessionManagerTest.cpp
+    $<TARGET_OBJECTS:http_client_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:ws_obj>
     ${GRAPH_TEST_LIBS}
 )
 nebula_link_libraries(
     session_manager_test
+    proxygenhttpserver
+    proxygenlib
     ${THRIFT_LIBRARIES}
     ${ROCKSDB_LIBRARIES}
     wangle
@@ -55,12 +60,17 @@ add_executable(
     YieldTest.cpp
     SchemaTest.cpp
     $<TARGET_OBJECTS:graph_test_common_obj>
+    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:ws_obj>
     ${GRAPH_TEST_LIBS}
 )
 nebula_link_libraries(
     query_engine_test
+    proxygenhttpserver
+    proxygenlib
     ${THRIFT_LIBRARIES}
     ${ROCKSDB_LIBRARIES}
     wangle
@@ -73,12 +83,17 @@ add_executable(
     go_test
     GoTest.cpp
     $<TARGET_OBJECTS:graph_test_common_obj>
+    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:ws_obj>
     ${GRAPH_TEST_LIBS}
 )
 nebula_link_libraries(
     go_test
+    proxygenhttpserver
+    proxygenlib
     ${THRIFT_LIBRARIES}
     ${ROCKSDB_LIBRARIES}
     wangle
@@ -91,6 +106,7 @@ add_executable(
     graph_http_test
     GraphHttpHandlerTest.cpp
     $<TARGET_OBJECTS:graph_test_common_obj>
+    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:graph_http_handler>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:ws_obj>
@@ -114,12 +130,17 @@ add_executable(
     data_test
     DataTest.cpp
     $<TARGET_OBJECTS:graph_test_common_obj>
+    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:ws_obj>
     ${GRAPH_TEST_LIBS}
 )
 nebula_link_libraries(
     data_test
+    proxygenhttpserver
+    proxygenlib
     ${THRIFT_LIBRARIES}
     ${ROCKSDB_LIBRARIES}
     wangle
@@ -131,13 +152,18 @@ add_executable(
     order_by_test
     OrderByTest.cpp
     $<TARGET_OBJECTS:graph_test_common_obj>
+    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:client_cpp_obj>
     $<TARGET_OBJECTS:adHocSchema_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:ws_obj>
     ${GRAPH_TEST_LIBS}
 )
 
 nebula_link_libraries(
     order_by_test
+    proxygenhttpserver
+    proxygenlib
     ${THRIFT_LIBRARIES}
     ${ROCKSDB_LIBRARIES}
     wangle

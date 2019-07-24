@@ -268,7 +268,7 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
     auto* tag = new std::string("3001");
     auto* prop = new std::string("tag_3001_col_0");
     auto* srcExp = new SourcePropertyExpression(tag, prop);
-    auto* priExp = new PrimaryExpression(20 + 3001L);
+    auto* priExp = new PrimaryExpression(30 + 3001L);
     auto relExp = std::make_unique<RelationalExpression>(srcExp,
                                                          RelationalExpression::Operator::GE,
                                                          priExp);
@@ -353,7 +353,7 @@ TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
     auto* tag = new std::string("3001");
     auto* prop = new std::string("tag_3001_col_0");
     auto* srcExp = new SourcePropertyExpression(tag, prop);
-    auto* priExp = new PrimaryExpression(20 + 3001L);
+    auto* priExp = new PrimaryExpression(30 + 3001L);
     auto* left = new RelationalExpression(srcExp,
                                           RelationalExpression::Operator::GE,
                                           priExp);

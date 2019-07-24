@@ -1057,10 +1057,9 @@ delete_vertex_sentence
     ;
 
 download_sentence
-    : KW_DOWNLOAD KW_HDFS STRING KW_TO STRING {
+    : KW_DOWNLOAD KW_HDFS STRING {
         auto sentence = new DownloadSentence();
         sentence->setUrl($3);
-        sentence->setLocalPath($5);
         $$ = sentence;
     }
     ;
@@ -1085,8 +1084,8 @@ delete_edge_sentence
     ;
 
 ingest_sentence
-    : KW_INGEST KW_FROM STRING {
-        auto sentence = new IngestSentence($3);
+    : KW_INGEST {
+        auto sentence = new IngestSentence();
         $$ = sentence;
     }
     ;

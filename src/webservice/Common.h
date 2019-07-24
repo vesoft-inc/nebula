@@ -7,6 +7,8 @@
 #ifndef WEBSERVICE_COMMON_H_
 #define WEBSERVICE_COMMON_H_
 
+#include "base/Base.h"
+
 namespace nebula {
 
 enum class HttpCode {

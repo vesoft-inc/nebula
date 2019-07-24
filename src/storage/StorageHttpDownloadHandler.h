@@ -10,7 +10,8 @@
 #include "base/Base.h"
 #include "webservice/Common.h"
 #include "hdfs/HdfsHelper.h"
-#include "proxygen/httpserver/RequestHandler.h"
+#include "thread/GenericThreadPool.h"
+#include <proxygen/httpserver/RequestHandler.h>
 
 namespace nebula {
 namespace storage {
@@ -21,11 +22,13 @@ class StorageHttpDownloadHandler : public proxygen::RequestHandler {
 public:
     StorageHttpDownloadHandler() = default;
 
-    void init(nebula::hdfs::HdfsHelper *helper);
+    void init(nebula::hdfs::HdfsHelper *helper,
+              nebula::thread::GenericThreadPool *pool,
+              std::string localPath);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
-    void onBody(std::unique_ptr<folly::IOBuf> body)  noexcept override;
+    void onBody(std::unique_ptr<folly::IOBuf> body) noexcept override;
 
     void onEOM() noexcept override;
 
@@ -51,6 +54,7 @@ private:
     std::string partitions_;
     std::string localPath_;
     nebula::hdfs::HdfsHelper *helper_;
+    nebula::thread::GenericThreadPool *pool_;
 };
 
 }  // namespace storage

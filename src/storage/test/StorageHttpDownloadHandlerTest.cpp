@@ -26,10 +26,14 @@ public:
     void SetUp() override {
         FLAGS_ws_http_port = 0;
         FLAGS_ws_h2_port = 0;
+        pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
+        pool_->start(1);
+        auto poolPtr = pool_.get();
+
         VLOG(1) << "Starting web service...";
-        WebService::registerHandler("/download", [] {
+        WebService::registerHandler("/download", [poolPtr] {
             auto handler =  new storage::StorageHttpDownloadHandler();
-            handler->init(helper.get());
+            handler->init(helper.get(), poolPtr, "/data");
             return handler;
         });
         auto status = WebService::start();
@@ -40,6 +44,9 @@ public:
         WebService::stop();
         VLOG(1) << "Web service stopped";
     }
+
+private:
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool_;
 };
 
 TEST(StorageHttpDownloadHandlerTest, StorageDownloadTest) {

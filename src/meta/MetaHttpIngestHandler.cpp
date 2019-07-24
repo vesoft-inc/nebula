@@ -7,14 +7,16 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/MetaHttpIngestHandler.h"
 #include "webservice/Common.h"
+#include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
+#include "http/HttpClient.h"
 #include "process/ProcessUtils.h"
 #include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 
-DEFINE_int32(storage_ingest_http_port, 12000, "Storage daemon's http port");
+// DEFINE_int32(storage_ingest_http_port, 12000, "Storage daemon's http port");
 DEFINE_int32(meta_ingest_thread_num, 3, "Meta daemon's ingest thread number");
 
 namespace nebula {
@@ -134,11 +136,9 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space, const std::string
     for (auto &storageIP : storageIPs) {
         auto dispatcher = [storageIP, space, path]() {
             auto tmp = "http://%s:%d/ingest?path=%s&space=%d";
-            auto url = folly::stringPrintf(tmp, storageIP.c_str(), FLAGS_storage_ingest_http_port,
+            auto url = folly::stringPrintf(tmp, storageIP.c_str(), FLAGS_ws_storage_http_port,
                                            path.c_str(), space);
-            auto command = folly::stringPrintf("/usr/bin/curl -G \"%s\"", url.c_str());
-            LOG(INFO) << "Command: " << command;
-            auto ingestResult = ProcessUtils::runCommand(command.c_str());
+            auto ingestResult = nebula::http::HttpClient::get(url);
             return ingestResult.ok() && ingestResult.value() == "SSTFile ingest successfully";
         };
         auto future = pool.addTask(dispatcher);

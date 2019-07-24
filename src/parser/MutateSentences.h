@@ -253,6 +253,7 @@ public:
     InsertEdgeSentence() {
         kind_ = Kind::kInsertEdge;
     }
+
     void setOverwrite(bool overwritable) {
         overwritable_ = overwritable;
     }
@@ -504,14 +505,6 @@ public:
         path_.reset(path);
     }
 
-    const std::string* localPath() const {
-        return localPath_.get();
-    }
-
-    void setLocalPath(std::string *localPath) {
-        localPath_.reset(localPath);
-    }
-
     void setUrl(std::string *url) {
         static std::string hdfsPrefix = "hdfs://";
         if (url->find(hdfsPrefix) != 0) {
@@ -549,25 +542,16 @@ private:
     std::unique_ptr<std::string>                host_;
     int32_t                                     port_;
     std::unique_ptr<std::string>                path_;
-    std::unique_ptr<std::string>                localPath_;
 };
 
 
 class IngestSentence final : public Sentence {
 public:
-    explicit IngestSentence(std::string *path) {
-        path_.reset(path);
+    IngestSentence() {
         kind_ = Kind::kIngest;
     }
 
-    const std::string* path() const {
-        return path_.get();
-    }
-
     std::string toString() const override;
-
-private:
-    std::unique_ptr<std::string> path_;
 };
 
 

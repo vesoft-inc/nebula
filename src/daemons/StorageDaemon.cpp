@@ -38,6 +38,7 @@ DEFINE_string(store_type, "nebula",
               "Which type of KVStore to be used by the storage daemon."
               " Options can be \"nebula\", \"hbase\", etc.");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
+DEFINE_int32(storage_download_thread_num, 3, "Number of storage daemon's download thread");
 
 using nebula::operator<<;
 using nebula::Status;
@@ -167,13 +168,19 @@ int main(int argc, char *argv[]) {
         std::make_unique<nebula::hdfs::HdfsCommandHelper>();
     auto *helperPtr = helper.get();
 
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool =
+        std::make_unique<nebula::thread::GenericThreadPool>();
+    pool->start(FLAGS_storage_download_thread_num);
+    LOG(INFO) << "Download Thread Pool started";
+    auto* poolPtr = pool.get();
+
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::storage::StorageHttpStatusHandler();
     });
-    nebula::WebService::registerHandler("/download", [helperPtr] {
+    nebula::WebService::registerHandler("/download", [helperPtr, poolPtr] {
         auto handler = new nebula::storage::StorageHttpDownloadHandler();
-        handler->init(helperPtr);
+        handler->init(helperPtr, poolPtr, FLAGS_data_path);
         return handler;
     });
     nebula::WebService::registerHandler("/ingest", [kvstore_] {
