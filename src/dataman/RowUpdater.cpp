@@ -33,7 +33,7 @@ std::string RowUpdater::encode() const noexcept {
     // TODO Reserve enough space so resize will not happen
     encodeTo(encoded);
 
-    return std::move(encoded);
+    return encoded;
 }
 
 

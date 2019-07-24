@@ -1,13 +1,13 @@
-add_executable(
-    process_test
-    ProcessTest.cpp
-    $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:base_obj>
+nebula_add_test(
+    NAME
+        process_test
+    SOURCES
+        ProcessTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:base_obj>
+    LIBRARIES
+        gtest
+        gtest_main
 )
-nebula_link_libraries(
-    process_test
-    gtest
-    gtest_main
-)
-nebula_add_test(process_test)
