@@ -3,6 +3,6 @@ add_library(
         Barrier.cpp
         Latch.cpp
 )
-add_dependencies(concurrent_obj base_obj)
+nebula_add_base_obj(concurrent_obj)
 
 add_subdirectory(test)

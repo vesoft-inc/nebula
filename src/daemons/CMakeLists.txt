@@ -51,6 +51,7 @@ add_executable(
     $<TARGET_OBJECTS:dataman_obj>
     $<TARGET_OBJECTS:schema_obj>
     $<TARGET_OBJECTS:hdfs_helper_obj>
+    $<TARGET_OBJECTS:filter_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:thread_obj>
@@ -107,6 +108,10 @@ nebula_link_libraries(
 
 
 install(
-    TARGETS nebula-graphd nebula-storaged nebula-metad
-    DESTINATION bin
+    TARGETS
+        nebula-graphd
+        nebula-storaged
+        nebula-metad
+    DESTINATION
+        bin
 )

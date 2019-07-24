@@ -1,6 +1,7 @@
 add_executable(
     duration_test
     DurationTest.cpp
+    $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:thread_obj>
 )
@@ -25,6 +26,7 @@ nebula_add_test(wallclock_test)
 add_executable(
     duration_bm
     DurationBenchmark.cpp
+    $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:thread_obj>
 )
