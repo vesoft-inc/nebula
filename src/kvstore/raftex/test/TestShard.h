@@ -17,6 +17,14 @@ class RaftexService;
 
 namespace test {
 
+enum class CommandType : int8_t {
+    ADD_LEARNER = 0x01,
+};
+
+std::string encodeLearner(const HostAddr& addr);
+
+HostAddr decodeLearner(const folly::StringPiece& log);
+
 class TestShard : public RaftPart {
 public:
     TestShard(
@@ -51,12 +59,32 @@ public:
     std::string compareAndSet(const std::string& log) override;
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
+    bool preProcessLog(LogID,
+                       TermID,
+                       ClusterID,
+                       const std::string& log) override {
+        if (!log.empty()) {
+            switch (static_cast<CommandType>(log[0])) {
+                case CommandType::ADD_LEARNER: {
+                    auto learner = decodeLearner(log);
+                    addLearner(learner);
+                    LOG(INFO) << idStr_ << "Add learner " << learner;
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+        }
+        return true;
+    }
+
     size_t getNumLogs() const;
     bool getLogMsg(LogID id, folly::StringPiece& msg) const;
 
 public:
     int32_t commitTimes_ = 0;
-    int32_t firstCommittedLogId_ = -1;
+    int32_t currLogId_ = -1;
 
 private:
     const size_t idx_;

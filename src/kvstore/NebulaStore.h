@@ -139,6 +139,9 @@ public:
                            const std::string& prefix,
                            KVCallback cb) override;
 
+    ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
+                                                    PartitionID partId) override;
+
     ResultCode ingest(GraphSpaceID spaceId,
                       const std::string& extra) override;
 

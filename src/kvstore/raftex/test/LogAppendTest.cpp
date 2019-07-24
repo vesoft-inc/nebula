@@ -36,17 +36,9 @@ TEST(LogAppend, SimpleAppendWithOneCopy) {
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
-    // Append 100 logs
-    LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    for (int i = 1; i <= 100; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader->appendAsync(0, msgs.back());
-        ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
-    }
-    LOG(INFO) << "<===== Finish appending logs";
-
+    LogID id = -1;
+    appendLogs(1, 100, leader, msgs, id);
     // Sleep a while to make sure the last log has been committed on
     // followers
     sleep(FLAGS_heartbeat_interval);
@@ -56,7 +48,6 @@ TEST(LogAppend, SimpleAppendWithOneCopy) {
         ASSERT_EQ(100, c->getNumLogs());
     }
 
-    LogID id = leader->firstCommittedLogId_;
     for (int i = 0; i < 100; ++i, ++id) {
         for (auto& c : copies) {
             folly::StringPiece msg;
@@ -83,17 +74,9 @@ TEST(LogAppend, SimpleAppendWithThreeCopies) {
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
-    // Append 100 logs
-    LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    for (int i = 1; i <= 100; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader->appendAsync(0, msgs.back());
-        ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
-    }
-    LOG(INFO) << "<===== Finish appending logs";
-
+    LogID id = -1;
+    appendLogs(1, 100, leader, msgs, id);
     // Sleep a while to make sure the last log has been committed on
     // followers
     sleep(FLAGS_heartbeat_interval);
@@ -103,7 +86,6 @@ TEST(LogAppend, SimpleAppendWithThreeCopies) {
         ASSERT_EQ(100, c->getNumLogs());
     }
 
-    LogID id = leader->firstCommittedLogId_;
     for (int i = 0; i < 100; ++i, ++id) {
         for (auto& c : copies) {
             folly::StringPiece msg;
@@ -172,7 +154,8 @@ TEST(LogAppend, MultiThreadAppend) {
         ASSERT_EQ(numThreads * numLogs, c->getNumLogs());
     }
 
-    LogID id = leader->firstCommittedLogId_;
+    // The first log should be heart beat
+    LogID id = 2;
     for (int i = 0; i < numThreads * numLogs; ++i, ++id) {
         folly::StringPiece msg;
         ASSERT_TRUE(leader->getLogMsg(id, msg));

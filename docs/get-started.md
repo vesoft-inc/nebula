@@ -91,7 +91,7 @@ to display the services' running status.
 
 Please make sure the services are working.
 
-`bin/nebula` is a `console` which can be used to insert and query data.
+<!-- `bin/nebula` is a `console` which can be used to insert and query data.
 
 `--port` is used for specifying the graph server port and the default value is `3699`.
 
@@ -103,9 +103,9 @@ Run
  > bin/nebula --port=3699 -u=user -p=password
 ```
 
-to connect to the graph server.
+to connect to the graph server. -->
 
-One easier way to start console is to run
+To connect to the graph server, run
 
 ```
 > ./start-console.sh
@@ -383,7 +383,7 @@ nebula> GO FROM 201 OVER like;
 Q2. Find the vertexes that 201 likes, whose age are greater than 17. Return their name, age and gender, and alias the columns as Friend, Age and Gender, respectively.
 
 ```
-nebula> GO FROM 201 OVER like WHERE $$[student].age >= 17 YIELD $$[student].name AS Friend, $$[student].age AS Age, $$[student].gender AS Gender;
+nebula> GO FROM 201 OVER like WHERE $$.student.age >= 17 YIELD $$.student.name AS Friend, $$.student.age AS Age, $$.student.gender AS Gender;
 
 =========================
 | Friend | Age | Gender |
@@ -397,12 +397,12 @@ nebula> GO FROM 201 OVER like WHERE $$[student].age >= 17 YIELD $$[student].name
 
 `$$` indicates the target vertex.
 
-Q3. Find the courses that the vertices liked by 201 select and their grade.
+Q3. Find the selected courses and corresponding grades of students liked by 201.
 
 ```
 
 -- By pipe
-nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^[student].name AS Student, $$[course].name AS Course, select.grade AS Grade;
+nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
 
 =============================
 | Student |  Course | Grade |
@@ -415,7 +415,7 @@ nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^[student].name
 -----------------------------
 
 -- By temporary variable
-nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^[student].name AS Student, $$[course].name AS Course, select.grade AS Grade;
+nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
 
 =============================
 | Student |  Course | Grade |

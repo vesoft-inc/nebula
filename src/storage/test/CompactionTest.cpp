@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include "base/NebulaKeyUtils.h"
 #include <gtest/gtest.h>
+#include <folly/synchronization/Baton.h>
 #include "fs/TempDir.h"
 #include "storage/test/TestUtils.h"
 #include "storage/CompactionFilter.h"
@@ -61,11 +62,14 @@ void mockData(kvstore::KVStore* kv) {
                 }
             }
         }
+        folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(
             0, partId, std::move(data),
             [&](kvstore::ResultCode code) {
                 EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                baton.post();
             });
+        baton.wait();
     }
 }
 

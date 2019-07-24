@@ -132,6 +132,13 @@ void Part::asyncRemoveRange(folly::StringPiece start,
         });
 }
 
+void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
+    std::string log = encodeLearner(learner);
+    sendCommandAsync(std::move(log))
+        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        callback(toResultCode(res));
+    });
+}
 
 void Part::onLostLeadership(TermID term) {
     VLOG(1) << "Lost the leadership for the term " << term;
@@ -219,6 +226,9 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
             }
             break;
         }
+        case OP_ADD_LEARNER: {
+            break;
+        }
         default: {
             LOG(FATAL) << "Unknown operation: " << static_cast<uint8_t>(log[0]);
         }
@@ -233,6 +243,30 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     }
 
     return engine_->commitBatchWrite(std::move(batch)) == ResultCode::SUCCEEDED;
+}
+
+bool Part::preProcessLog(LogID logId,
+                         TermID termId,
+                         ClusterID clusterId,
+                         const std::string& log) {
+    VLOG(3) << idStr_ << "logId " << logId
+            << ", termId " << termId
+            << ", clusterId " << clusterId
+            << ", log " << log;
+    if (!log.empty()) {
+        switch (log[sizeof(int64_t)]) {
+            case OP_ADD_LEARNER: {
+                auto learner = decodeLearner(log);
+                addLearner(learner);
+                LOG(INFO) << idStr_ << "Add learner " << learner;
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
+    return true;
 }
 
 }  // namespace kvstore

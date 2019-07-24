@@ -85,8 +85,7 @@ void MetaHttpDownloadHandler::onEOM() noexcept {
             break;
     }
 
-    if (auto hadoopHome = std::getenv("HADOOP_HOME")) {
-        LOG(INFO) << "Hadoop Path : " << hadoopHome;
+    if (helper_->checkHadoopPath()) {
         if (dispatchSSTFiles(hdfsHost_, hdfsPort_, hdfsPath_, localPath_)) {
             ResponseBuilder(downstream_)
                 .status(WebServiceUtils::to(HttpStatusCode::OK),

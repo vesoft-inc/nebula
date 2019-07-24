@@ -82,6 +82,11 @@ public:
         return role_ == Role::FOLLOWER;
     }
 
+    bool isLearner() const {
+        std::lock_guard<std::mutex> g(raftLock_);
+        return role_ == Role::LEARNER;
+    }
+
     ClusterID clusterId() const {
         return clusterId_;
     }
@@ -107,9 +112,11 @@ public:
         return wal_;
     }
 
+    void addLearner(const HostAddr& learner);
+
     // Change the partition status to RUNNING. This is called
     // by the inherited class, when it's ready to serve
-    virtual void start(std::vector<HostAddr>&& peers);
+    virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
 
     // Change the partition status to STOPPED. This is called
     // by the inherited class, when it's about to stop
@@ -204,6 +211,10 @@ protected:
     // a batch of log messages
     virtual bool commitLogs(std::unique_ptr<LogIterator> iter) = 0;
 
+    virtual bool preProcessLog(LogID logId,
+                               TermID termId,
+                               ClusterID clusterId,
+                               const std::string& log) = 0;
 
 private:
     enum class Status {
@@ -215,22 +226,23 @@ private:
     enum class Role {
         LEADER = 1,     // the leader
         FOLLOWER,       // following a leader
-        CANDIDATE       // Has sent AskForVote request
+        CANDIDATE,      // Has sent AskForVote request
+        LEARNER         // It is the same with FOLLOWER,
+                        // except it does not participate in leader election
     };
 
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AskForVoteResponse
-    using ElectionResponses = std::vector<cpp2::AskForVoteResponse>;
+    using ElectionResponses = std::vector<std::pair<size_t, cpp2::AskForVoteResponse>>;
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AppendLogResponse
-    using AppendLogResponses = std::vector<cpp2::AppendLogResponse>;
+    using AppendLogResponses = std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
 
-    // <source, term, logType, log>
+    // <source, logType, log>
     using LogCache = std::vector<
         std::tuple<ClusterID,
-                   TermID,
                    LogType,
                    std::string>>;
 
@@ -271,20 +283,20 @@ private:
     // return FALSE
     bool prepareElectionRequest(
         cpp2::AskForVoteRequest& req,
-        std::shared_ptr<std::unordered_map<HostAddr, std::shared_ptr<Host>>>& hosts);
+        std::vector<std::shared_ptr<Host>>& hosts);
 
     // The method returns the partition's role after the election
     Role processElectionResponses(const ElectionResponses& results);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
-    AppendLogResult canAppendLogs(std::lock_guard<std::mutex>& lck);
+    AppendLogResult canAppendLogs();
 
     folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
                                                   LogType logType,
                                                   std::string log);
 
-    void appendLogsInternal(AppendLogsIterator iter);
+    void appendLogsInternal(AppendLogsIterator iter, TermID termId);
 
     void replicateLogs(
         folly::EventBase* eb,
@@ -303,8 +315,10 @@ private:
         LogID lastLogId,
         LogID committedId,
         TermID prevLogTerm,
-        LogID prevLogId);
+        LogID prevLogId,
+        std::vector<std::shared_ptr<Host>> hosts);
 
+    std::vector<std::shared_ptr<Host>> followers() const;
 
 protected:
     template<class ValueType>
@@ -390,17 +404,19 @@ protected:
     const GraphSpaceID spaceId_;
     const PartitionID partId_;
     const HostAddr addr_;
-    std::shared_ptr<std::unordered_map<HostAddr, std::shared_ptr<Host>>>
-        peerHosts_;
+    std::vector<std::shared_ptr<Host>> hosts_;
     size_t quorum_{0};
+
+    // The lock is used to protect logs_ and cachingPromise_
+    mutable std::mutex logsLock_;
+    std::atomic_bool replicatingLogs_{false};
+    PromiseSet<AppendLogResult> cachingPromise_;
+    LogCache logs_;
 
     // Partition level lock to synchronize the access of the partition
     mutable std::mutex raftLock_;
 
-    bool replicatingLogs_{false};
-    PromiseSet<AppendLogResult> cachingPromise_;
     PromiseSet<AppendLogResult> sendingPromise_;
-    LogCache logs_;
 
     Status status_;
     Role role_;

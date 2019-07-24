@@ -226,7 +226,7 @@ primary_expression
     | BOOL {
         $$ = new PrimaryExpression($1);
     }
-    | LABEL {
+    | name_label {
         $$ = new PrimaryExpression(*$1);
         delete $1;
     }
@@ -254,7 +254,7 @@ primary_expression
     ;
 
 input_ref_expression
-    : INPUT_REF DOT LABEL {
+    : INPUT_REF DOT name_label {
         $$ = new InputPropertyExpression($3);
     }
     | INPUT_REF {
@@ -264,19 +264,19 @@ input_ref_expression
     ;
 
 src_ref_expression
-    : SRC_REF DOT LABEL DOT LABEL {
+    : SRC_REF DOT name_label DOT name_label {
         $$ = new SourcePropertyExpression($3, $5);
     }
     ;
 
 dst_ref_expression
-    : DST_REF DOT LABEL DOT LABEL {
+    : DST_REF DOT name_label DOT name_label {
         $$ = new DestPropertyExpression($3, $5);
     }
     ;
 
 var_ref_expression
-    : VARIABLE DOT LABEL {
+    : VARIABLE DOT name_label {
         $$ = new VariablePropertyExpression($1, $3);
     }
     | VARIABLE {
@@ -285,25 +285,25 @@ var_ref_expression
     ;
 
 alias_ref_expression
-    : LABEL DOT LABEL {
+    : name_label DOT name_label {
         $$ = new EdgePropertyExpression($1, $3);
     }
-    | LABEL DOT TYPE_PROP {
+    | name_label DOT TYPE_PROP {
         $$ = new EdgeTypeExpression($1);
     }
-    | LABEL DOT SRC_ID_PROP {
+    | name_label DOT SRC_ID_PROP {
         $$ = new EdgeSrcIdExpression($1);
     }
-    | LABEL DOT DST_ID_PROP {
+    | name_label DOT DST_ID_PROP {
         $$ = new EdgeDstIdExpression($1);
     }
-    | LABEL DOT RANK_PROP {
+    | name_label DOT RANK_PROP {
         $$ = new EdgeRankExpression($1);
     }
     ;
 
 function_call_expression
-    : name_label L_PAREN argument_list R_PAREN {
+    : LABEL L_PAREN argument_list R_PAREN {
         $$ = new FunctionCallExpression($1, $3);
     }
     ;
@@ -324,16 +324,16 @@ argument_list
 
 unary_expression
     : primary_expression { $$ = $1; }
-    | PLUS primary_expression {
+    | PLUS unary_expression {
         $$ = new UnaryExpression(UnaryExpression::PLUS, $2);
     }
-    | MINUS primary_expression {
+    | MINUS unary_expression {
         $$ = new UnaryExpression(UnaryExpression::NEGATE, $2);
     }
-    | NOT primary_expression {
+    | NOT unary_expression {
         $$ = new UnaryExpression(UnaryExpression::NOT, $2);
     }
-    | L_PAREN type_spec R_PAREN primary_expression {
+    | L_PAREN type_spec R_PAREN unary_expression {
         $$ = new TypeCastingExpression($2, $4);
     }
     ;
@@ -768,15 +768,15 @@ order_factor
     | input_ref_expression KW_DESC {
         $$ = new OrderFactor($1, OrderFactor::DESCEND);
     }
-    | LABEL {
+    | name_label {
         auto inputRef = new InputPropertyExpression($1);
         $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
     }
-    | LABEL KW_ASC {
+    | name_label KW_ASC {
         auto inputRef = new InputPropertyExpression($1);
         $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
     }
-    | LABEL KW_DESC {
+    | name_label KW_DESC {
         auto inputRef = new InputPropertyExpression($1);
         $$ = new OrderFactor(inputRef, OrderFactor::DESCEND);
     }

@@ -180,6 +180,9 @@ Status Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> sc
                                 std::vector<std::string*> props) {
     for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
         auto schemaFieldName = schema->getFieldName(fieldIndex);
+        if (UNLIKELY(nullptr == schemaFieldName)) {
+            return Status::Error("invalid field index");
+        }
         if (schemaFieldName != *props[fieldIndex]) {
             LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
                        << ", input field " << *props[fieldIndex];

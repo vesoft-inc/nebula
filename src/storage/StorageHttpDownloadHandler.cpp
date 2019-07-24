@@ -77,8 +77,7 @@ void StorageHttpDownloadHandler::onEOM() noexcept {
             break;
     }
 
-    if (auto hadoopHome = std::getenv("HADOOP_HOME")) {
-        LOG(INFO) << "HADOOP_HOME: " << hadoopHome;
+    if (helper_->checkHadoopPath()) {
         std::vector<std::string> parts;
         folly::split(",", partitions_, parts, true);
         if (parts.size() == 0) {

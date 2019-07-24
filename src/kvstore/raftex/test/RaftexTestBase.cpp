@@ -25,15 +25,21 @@ std::condition_variable leaderCV;
 
 
 std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
-                               const HostAddr& self) {
+                               const HostAddr& self,
+                               std::vector<bool> isLearner) {
+    if (isLearner.empty()) {
+        isLearner.resize(all.size(), false);
+    }
     std::vector<HostAddr> peers;
+    size_t index = 0;
     for (const auto& host : all) {
-        if (host != self) {
+        if (host != self && !isLearner[index]) {
             VLOG(2) << "Adding host "
                     << NetworkUtils::intToIPv4(host.first)
                     << ":" << host.second;
             peers.emplace_back(host);
         }
+        index++;
     }
 
     return peers;
@@ -77,7 +83,11 @@ void onLeadershipLost(
 
 void waitUntilLeaderElected(
         const std::vector<std::shared_ptr<test::TestShard>>& copies,
-        std::shared_ptr<test::TestShard>& leader) {
+        std::shared_ptr<test::TestShard>& leader,
+        std::vector<bool> isLearner) {
+    if (isLearner.empty()) {
+        isLearner.resize(copies.size(), false);
+    }
     while (true) {
         {
             std::unique_lock<std::mutex> lock(leaderMutex);
@@ -89,14 +99,19 @@ void waitUntilLeaderElected(
                 }
             });
 
+            // Sleep some time to wait until resp of heartbeat has come back when elected as leader
+            usleep(30000);
+
             bool sameLeader = true;
+            int32_t index = 0;
             for (auto& c : copies) {
-                if (c != nullptr && leader != c) {
+                if (!isLearner[index] && c != nullptr && leader != c) {
                     if (leader->address() != c->leader()) {
                         sameLeader = false;
                         break;
                     }
                 }
+                index++;
             }
             if (sameLeader) {
                 break;
@@ -117,7 +132,8 @@ void setupRaft(
         std::vector<HostAddr>& allHosts,
         std::vector<std::shared_ptr<RaftexService>>& services,
         std::vector<std::shared_ptr<test::TestShard>>& copies,
-        std::shared_ptr<test::TestShard>& leader) {
+        std::shared_ptr<test::TestShard>& leader,
+        std::vector<bool> isLearner) {
     IPv4 ipInt;
     CHECK(NetworkUtils::ipv4ToInt("127.0.0.1", ipInt));
 
@@ -141,6 +157,9 @@ void setupRaft(
         allHosts.emplace_back(ipInt, port);
     }
 
+    if (isLearner.empty()) {
+        isLearner.resize(allHosts.size(), false);
+    }
     // Create one copy of the shard for each service
     for (size_t i = 0; i < services.size(); i++) {
         copies.emplace_back(std::make_shared<test::TestShard>(
@@ -165,11 +184,12 @@ void setupRaft(
                       std::placeholders::_2,
                       std::placeholders::_3)));
         services[i]->addPartition(copies.back());
-        copies.back()->start(getPeers(allHosts, allHosts[i]));
+        copies.back()->start(getPeers(allHosts, allHosts[i], isLearner),
+                             isLearner[i]);
     }
 
     // Wait untill all copies agree on the same leader
-    waitUntilLeaderElected(copies, leader);
+    waitUntilLeaderElected(copies, leader, isLearner);
 }
 
 
@@ -184,8 +204,10 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
     for (auto& svc : services) {
         svc->stop();
     }
+    LOG(INFO) << "Stopping workers...";
     workers->stop();
     workers->wait();
+    LOG(INFO) << "Waiting for all service stopped";
     for (auto& svc : services) {
         svc->waitUntilStop();
     }
@@ -198,11 +220,44 @@ void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
 
     ASSERT_FALSE(!leader);
     for (auto& c : copies) {
-        if (c != nullptr && leader != c) {
+        if (c != nullptr && leader != c && !c->isLearner()) {
             ASSERT_EQ(leader->address(), c->leader());
         }
     }
 }
+
+/**
+ * Check copies[index] is the leader.
+ * */
+void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                     size_t index,
+                     std::shared_ptr<test::TestShard>& leader) {
+    std::lock_guard<std::mutex> lock(leaderMutex);
+    ASSERT_FALSE(!leader);
+    ASSERT_EQ(leader->address(), copies[index]->address());
+}
+
+void appendLogs(int start,
+                int end,
+                std::shared_ptr<test::TestShard> leader,
+                std::vector<std::string>& msgs,
+                LogID& firstLogId) {
+    // Append 100 logs
+    LOG(INFO) << "=====> Start appending logs";
+    firstLogId = -1;
+    for (int i = start; i <= end; ++i) {
+        msgs.emplace_back(
+            folly::stringPrintf("Test Log Message %03d", i));
+        auto fut = leader->appendAsync(0, msgs.back());
+        ASSERT_EQ(AppendLogResult::SUCCEEDED,
+                  std::move(fut).get());
+        if (firstLogId < 0) {
+            firstLogId = leader->currLogId_;
+        }
+    }
+    LOG(INFO) << "<===== Finish appending logs";
+}
+
 
 }  // namespace raftex
 }  // namespace nebula
