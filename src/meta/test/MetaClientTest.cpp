@@ -15,6 +15,7 @@
 #include "meta/ServerBasedSchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "meta/test/TestUtils.h"
+#include "meta/ClusterManager.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
@@ -304,8 +305,8 @@ TEST(MetaClientTest, TagTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
     ASSERT_TRUE(r.ok());
@@ -468,9 +469,18 @@ TEST(MetaClientTest, HeartbeatTest) {
     auto listener = std::make_unique<TestListener>();
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
+    std::string clusterIdPath = "/tmp/storage.cluster.id.";
+    time_t curTime = ::time(nullptr);
+    clusterIdPath += folly::stringPrintf("%ld", curTime);
+    auto clusterMan
+        = std::make_unique<nebula::meta::ClusterManager>("", clusterIdPath);
+    if (!clusterMan->loadClusterId()) {
+        LOG(ERROR) << "storaged clusterId load error!";
+    }
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(localIp, 10001)},
                                                localHost,
+                                               clusterMan.get(),
                                                true);  // send heartbeat
     client->addHosts({localHost});
     client->waitForMetadReady();

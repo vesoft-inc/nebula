@@ -8,6 +8,7 @@
 #define META_HBPROCESSOR_H_
 
 #include <gtest/gtest_prod.h>
+#include "meta/ClusterManager.h"
 #include "meta/processors/BaseProcessor.h"
 
 
@@ -19,15 +20,16 @@ class HBProcessor : public BaseProcessor<cpp2::HBResp> {
     FRIEND_TEST(MetaClientTest, HeartbeatTest);
 
 public:
-    static HBProcessor* instance(kvstore::KVStore* kvstore) {
-        return new HBProcessor(kvstore);
+    static HBProcessor* instance(kvstore::KVStore* kvstore,
+                                 ClusterManager* clusterMan) {
+        return new HBProcessor(kvstore, clusterMan);
     }
 
     void process(const cpp2::HBReq& req);
 
 private:
-    explicit HBProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::HBResp>(kvstore) {}
+    explicit HBProcessor(kvstore::KVStore* kvstore, ClusterManager* clusterMan)
+            : BaseProcessor<cpp2::HBResp>(kvstore, clusterMan) {}
 };
 
 }  // namespace meta

@@ -14,6 +14,7 @@
 #include "base/StatusOr.h"
 #include "time/Duration.h"
 #include "kvstore/KVStore.h"
+#include "meta/ClusterManager.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
@@ -51,8 +52,10 @@ using nebula::network::NetworkUtils;
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(kvstore::KVStore* kvstore)
-            : kvstore_(kvstore) {}
+    explicit BaseProcessor(kvstore::KVStore* kvstore,
+                           ClusterManager* clusterMan = nullptr)
+            : kvstore_(kvstore),
+            clusterMan_(clusterMan) {}
 
     virtual ~BaseProcessor() = default;
 
@@ -210,6 +213,7 @@ protected:
 
 protected:
     kvstore::KVStore* kvstore_ = nullptr;
+    ClusterManager* clusterMan_ = nullptr;
     RESP resp_;
     folly::Promise<RESP> promise_;
 };

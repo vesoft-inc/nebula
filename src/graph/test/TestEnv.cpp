@@ -8,6 +8,7 @@
 #include "graph/test/TestEnv.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
+#include "meta/ClusterManager.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_string(meta_server_addrs);
@@ -45,9 +46,19 @@ void TestEnv::SetUp() {
         LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();
     }
     auto& localhost = hostRet.value();
+
+    std::string clusterIdPath = "/tmp/storage.cluster.id.";
+    time_t curTime = ::time(nullptr);
+    clusterIdPath += folly::stringPrintf("%ld", curTime);
+    auto clusterMan
+        = std::make_unique<nebula::meta::ClusterManager>("", clusterIdPath);
+    if (!clusterMan->loadClusterId()) {
+        LOG(ERROR) << "storaged clusterId load error!";
+    }
     mClient_ = std::make_unique<meta::MetaClient>(threadPool,
                                                   std::move(addrsRet.value()),
                                                   localhost,
+                                                  clusterMan.get(),
                                                   true);
     auto r = mClient_->addHosts({localhost}).get();
     ASSERT_TRUE(r.ok());

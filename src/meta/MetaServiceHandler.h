@@ -11,14 +11,17 @@
 #include <mutex>
 #include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/KVStore.h"
+#include "meta/ClusterManager.h"
 
 namespace nebula {
 namespace meta {
 
 class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 public:
-    explicit MetaServiceHandler(kvstore::KVStore* kv)
-                : kvstore_(kv) {}
+    explicit MetaServiceHandler(kvstore::KVStore* kv,
+                                ClusterManager* clusterMan = nullptr)
+                : kvstore_(kv),
+                clusterMan_(clusterMan) {}
 
     /**
      * Parts distribution related operations.
@@ -157,6 +160,7 @@ public:
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;
+    ClusterManager* clusterMan_ = nullptr;
 };
 
 }  // namespace meta

@@ -34,6 +34,7 @@ DEFINE_string(local_ip, "", "IP address which is used to identify this server, "
 DEFINE_bool(mock_server, true, "start mock server");
 DEFINE_bool(daemonize, true, "Whether to run the process as a daemon");
 DEFINE_string(pid_file, "pids/nebula-storaged.pid", "File to hold the process id");
+DEFINE_string(clusterid_file, "data/storage.cluster.id", "File to hold the cluster id");
 DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
                                      "the format looks like ip1:port1, ip2:port2, ip3:port3");
 DEFINE_string(store_type, "nebula",
@@ -159,10 +160,17 @@ int main(int argc, char *argv[]) {
 
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
 
+    auto clusterMan
+        = std::make_unique<nebula::meta::ClusterManager>("", FLAGS_clusterid_file);
+    if (!clusterMan->loadClusterId()) {
+        LOG(ERROR) << "storaged clusterId load error!";
+    }
+
     // Meta client
     auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
                                                                  std::move(metaAddrsRet.value()),
                                                                  localhost,
+                                                                 clusterMan.get(),
                                                                  true);
     if (!metaClient->waitForMetadReady()) {
         LOG(ERROR) << "waitForMetadReady error!";
