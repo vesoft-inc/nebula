@@ -171,10 +171,9 @@ if(NOT ${NEBULA_GPERF_BIN_DIR} STREQUAL "")
     list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_GPERF_BIN_DIR})
 endif()
 
-# When NEBULA_THIRDPARTY_ROOT is null, set default value is /opt/nebula/third-party
+# When NEBULA_THIRDPARTY_ROOT is null, set default value as /opt/nebula/third-party
 if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
     SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
-    message(STATUS "Auto set NEBULA_THIRDPARTY_ROOT: " ${NEBULA_THIRDPARTY_ROOT})
 endif()
 
 # third-party
@@ -450,7 +449,7 @@ endmacro(nebula_link_libraries)
 
 if (NOT SKIP_JAVA_CLIENT)
     if (NOT EXISTS "${NEBULA_THIRDPARTY_ROOT}/fbthrift/thrift-1.0-SNAPSHOT.jar")
-        message(FATAL_ERROR "Have not thrift-1.0-SNAPSHOT.jar")
+        message(FATAL_ERROR "Doesn't have thrift-1.0-SNAPSHOT.jar")
     endif()
     set(java-fbthrift-jar ${NEBULA_THIRDPARTY_ROOT}/fbthrift/thrift-1.0-SNAPSHOT.jar)
     set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase clean-java-client)
