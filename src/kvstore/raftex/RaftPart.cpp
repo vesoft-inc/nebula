@@ -970,7 +970,7 @@ void RaftPart::statusPolling() {
         VLOG(2) << idStr_ << "Need to send heartbeat";
         sendHeartbeat();
     }
-
+    wal_->cleanWAL();
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING) {
