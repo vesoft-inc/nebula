@@ -49,6 +49,7 @@ set("${file_name}-cpp2-HEADERS"
   ${output_path}/gen-cpp2/${file_name}_constants.h
   ${output_path}/gen-cpp2/${file_name}_data.h
   ${output_path}/gen-cpp2/${file_name}_types.h
+  ${output_path}/gen-cpp2/${file_name}_types_custom_protocol.h
   ${output_path}/gen-cpp2/${file_name}_types.tcc
 )
 
@@ -65,8 +66,6 @@ foreach(service ${services})
     ${output_path}/gen-cpp2/${service}.tcc
     ${output_path}/gen-cpp2/${service}AsyncClient.h
     ${output_path}/gen-cpp2/${service}_custom_protocol.h
-    ${output_path}/gen-cpp2/${service}_processmap_binary.h
-    ${output_path}/gen-cpp2/${service}_processmap_compact.h
   )
   set("${file_name}-cpp2-SOURCES"
     ${${file_name}-cpp2-SOURCES}
@@ -90,7 +89,7 @@ add_custom_command(
   COMMENT "Generating ${file_name} files. Output: ${output_path}"
 )
 
-bypass_source_check(${file_name}_cpp2-SOURCES})
+bypass_source_check(${file_name}_cpp2-SOURCES)
 add_library(
   "${file_name}_thrift_obj"
   OBJECT
