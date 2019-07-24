@@ -92,12 +92,12 @@ void BalancePlan::invoke() {
         }  // for (auto j = 0; j < buckets_[i].size(); j++)
     }  // for (auto i = 0; i < buckets_.size(); i++)
 
+    saveInStore(true);
     for (auto& bucket : buckets_) {
         if (!bucket.empty()) {
             tasks_[bucket[0]].invoke();
         }
     }
-    saveInStore(true);
 }
 
 bool BalancePlan::saveInStore(bool onlyPlan) {
