@@ -887,18 +887,21 @@ traverse_sentence
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
     | L_PAREN piped_sentence R_PAREN { $$ = $2; }
+    | L_PAREN set_sentence R_PAREN { $$ = $2; }
     ;
 
 set_sentence
-    : traverse_sentence { $$ = $1; }
-    | set_sentence KW_UNION traverse_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
-    | set_sentence KW_INTERSECT traverse_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
-    | set_sentence KW_MINUS traverse_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
+	: piped_sentence KW_UNION piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
+    | piped_sentence KW_INTERSECT piped_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | piped_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
+	| set_sentence KW_UNION piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
+    | set_sentence KW_INTERSECT piped_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | set_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
     ;
 
 piped_sentence
-    : set_sentence { $$ = $1; }
-    | piped_sentence PIPE set_sentence { $$ = new PipedSentence($1, $3); }
+    : traverse_sentence { $$ = $1; }
+    | piped_sentence PIPE traverse_sentence { $$ = new PipedSentence($1, $3); }
     ;
 
 assignment_sentence
@@ -1496,7 +1499,8 @@ maintain_sentence
 sentence
     : maintain_sentence { $$ = $1; }
     | use_sentence { $$ = $1; }
-    | piped_sentence { $$ = $1; }
+	| set_sentence { $$ = $1; }
+	| piped_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }
     ;

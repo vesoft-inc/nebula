@@ -110,6 +110,33 @@ TEST_F(SetTest, UnionTest) {
     }
     {
         cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER like | "
+                    "GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
+                    " UNION "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &like : tim.likes()) {
+            auto &player = players_[std::get<0>(like)];
+            for (auto &serve : player.serves()) {
+                std::tuple<std::string, int64_t, std::string> record(
+                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                expected.emplace_back(std::move(record));
+            }
+        }
+        for (auto &serve : tony.serves()) {
+            std::tuple<std::string, int64_t, std::string> record(
+                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(record));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
                     " UNION "
                     "(GO FROM %ld OVER like | "
@@ -137,13 +164,39 @@ TEST_F(SetTest, UnionTest) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER like"
+        auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
                     " UNION "
-                    "GO FROM %ld OVER like"
-                    " | GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
+                    "GO FROM %ld OVER like | "
+                    "GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
-        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto query = folly::stringPrintf(fmt, tony.vid(), tim.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &like : tim.likes()) {
+            auto &player = players_[std::get<0>(like)];
+            for (auto &serve : player.serves()) {
+                std::tuple<std::string, int64_t, std::string> record(
+                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                expected.emplace_back(std::move(record));
+            }
+        }
+        for (auto &serve : tony.serves()) {
+            std::tuple<std::string, int64_t, std::string> record(
+                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(record));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "(GO FROM %ld OVER like UNION GO FROM %ld OVER like)"
+                    " | GO FROM $- OVER serve"
+                    " YIELD $^.player.name, serve.start_year, $$.team.name";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tony.vid(), tim.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t, std::string>> expected;
@@ -163,7 +216,6 @@ TEST_F(SetTest, UnionTest) {
                 expected.emplace_back(std::move(record));
             }
         }
-        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 
@@ -185,8 +237,8 @@ TEST_F(SetTest, SyntaxError) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "GO FROM 123 OVER like"
-                     " | GO FROM $- OVER serve"
-                     " UNION GO FROM 456 OVER serve";
+                     " | (GO FROM $- OVER serve"
+                     " UNION GO FROM 456 OVER serve)";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
