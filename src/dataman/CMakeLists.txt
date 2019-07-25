@@ -1,6 +1,4 @@
-set(CMAKE_CXX_FLAGS "-w")
-
-add_library(
+nebula_add_library(
     dataman_obj OBJECT
     ResultSchemaProvider.cpp
     SchemaWriter.cpp
@@ -11,6 +9,5 @@ add_library(
     RowWriter.cpp
     NebulaCodecImpl.cpp
 )
-nebula_add_base_obj(dataman_obj)
 
 add_subdirectory(test)

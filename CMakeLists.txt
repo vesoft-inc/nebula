@@ -171,6 +171,11 @@ if(NOT ${NEBULA_GPERF_BIN_DIR} STREQUAL "")
     list(INSERT CMAKE_PROGRAM_PATH 0 ${NEBULA_GPERF_BIN_DIR})
 endif()
 
+# When NEBULA_THIRDPARTY_ROOT is null, set default value as /opt/nebula/third-party
+if("${NEBULA_THIRDPARTY_ROOT}" STREQUAL "")
+    SET(NEBULA_THIRDPARTY_ROOT "/opt/nebula/third-party")
+endif()
+
 # third-party
 if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
     message(STATUS "Specified NEBULA_THIRDPARTY_ROOT: " ${NEBULA_THIRDPARTY_ROOT})
@@ -250,10 +255,6 @@ if(NOT ${NEBULA_THIRDPARTY_ROOT} STREQUAL "")
 
 endif()
 
-option(asan "Whether to turn AddressSanitizer ON or OFF" OFF)
-
-message(STATUS "ASAN: ${asan}")
-
 string(REPLACE ";" ":" INCLUDE_PATH_STR "${CMAKE_INCLUDE_PATH}")
 string(REPLACE ";" ":" LIBRARY_PATH_STR "${CMAKE_LIBRARY_PATH}")
 string(REPLACE ";" ":" PROGRAM_PATH_STR "${CMAKE_PROGRAM_PATH}")
@@ -309,18 +310,62 @@ if(ENABLE_ASAN)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
 endif()
 
-macro(nebula_add_test test_name)
-    add_test(NAME ${test_name} COMMAND ${test_name})
-    # e.g. cmake -DNEBULA_ASAN_PRELOAD=/path/to/libasan.so
-    # or,  cmake -DNEBULA_ASAN_PRELOAD=`/path/to/gcc --print-file-name=libasan.so`
-    if (NEBULA_ASAN_PRELOAD)
-        set_property(TEST ${test_name} PROPERTY ENVIRONMENT LD_PRELOAD=${NEBULA_ASAN_PRELOAD})
-    endif(NEBULA_ASAN_PRELOAD)
-endmacro(nebula_add_test)
+macro(nebula_add_executable)
+    cmake_parse_arguments(
+        nebula_exec                 # prefix
+        ""                          # <options>
+        "NAME"                      # <one_value_args>
+        "SOURCES;OBJECTS;LIBRARIES" # <multi_value_args>
+        ${ARGN}
+    )
+    add_executable(
+        ${nebula_exec_NAME}
+        ${nebula_exec_SOURCES}
+        ${nebula_exec_OBJECTS}
+    )
+    nebula_link_libraries(
+        ${nebula_exec_NAME}
+        ${nebula_exec_LIBRARIES}
+    )
+endmacro()
 
-macro(nebula_add_base_obj obj_name)
+macro(nebula_add_test)
+    cmake_parse_arguments(
+        nebula_test                 # prefix
+        "DISABLED"                  # <options>
+        "NAME"                      # <one_value_args>
+        "SOURCES;OBJECTS;LIBRARIES" # <multi_value_args>
+        ${ARGN}
+    )
+
+    nebula_add_executable(
+        NAME ${nebula_test_NAME}
+        SOURCES ${nebula_test_SOURCES}
+        OBJECTS ${nebula_test_OBJECTS}
+        LIBRARIES ${nebula_test_LIBRARIES}
+    )
+
+    if (NOT ${nebula_test_DISABLED})
+        add_test(NAME ${nebula_test_NAME} COMMAND ${nebula_test_NAME})
+        # e.g. cmake -DNEBULA_ASAN_PRELOAD=/path/to/libasan.so
+        # or,  cmake -DNEBULA_ASAN_PRELOAD=`/path/to/gcc --print-file-name=libasan.so`
+        if (NEBULA_ASAN_PRELOAD)
+            set_property(
+                TEST ${nebula_test_NAME}
+                PROPERTY ENVIRONMENT LD_PRELOAD=${NEBULA_ASAN_PRELOAD}
+            )
+        endif()
+    endif()
+endmacro()
+
+macro(nebula_build_after_base obj_name)
     add_dependencies(${obj_name} base_obj)
-endmacro(nebula_add_base_obj)
+endmacro()
+
+macro(nebula_add_library name type)
+    add_library(${name} ${type} ${ARGN})
+    nebula_build_after_base(${name})
+endmacro()
 
 include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/bzip2/include)
 include_directories(SYSTEM ${NEBULA_THIRDPARTY_ROOT}/double-conversion/include)
@@ -448,7 +493,7 @@ endmacro(nebula_link_libraries)
 
 if (NOT SKIP_JAVA_CLIENT)
     if (NOT EXISTS "${NEBULA_THIRDPARTY_ROOT}/fbthrift/thrift-1.0-SNAPSHOT.jar")
-        message(FATAL_ERROR "Have not thrift-1.0-SNAPSHOT.jar")
+        message(FATAL_ERROR "Doesn't have thrift-1.0-SNAPSHOT.jar")
     endif()
     set(java-fbthrift-jar ${NEBULA_THIRDPARTY_ROOT}/fbthrift/thrift-1.0-SNAPSHOT.jar)
     set(NEBULA_CLEAN_ALL_DEPS clean-interface clean-pch clean-hbase clean-java-client)

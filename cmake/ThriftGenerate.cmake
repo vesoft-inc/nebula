@@ -86,7 +86,7 @@ add_custom_command(
     --gen "go"
     -o "." "${file_path}/${file_name}.thrift"
   DEPENDS "${file_path}/${file_name}.thrift"
-  COMMENT "Generating ${file_name} files. Output: ${output_path}"
+  COMMENT "Generating thrift files for ${file_name}"
 )
 
 bypass_source_check(${file_name}_cpp2-SOURCES)
@@ -101,6 +101,4 @@ add_dependencies(
   "common_thrift_obj"
 )
 endif()
-
-message("Thrift will create the Object file : ${file_name}_thrift_obj")
 endmacro()
