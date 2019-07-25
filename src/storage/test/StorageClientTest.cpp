@@ -273,6 +273,83 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     threadPool.reset();
 }
 
+#define RETURN_LEADER_CHANGED(req, leader) \
+    UNUSED(req); \
+    do { \
+        folly::Promise<storage::cpp2::QueryResponse> pro; \
+        auto f = pro.getFuture(); \
+        storage::cpp2::QueryResponse resp; \
+        storage::cpp2::ResponseCommon rc; \
+        rc.failed_codes.emplace_back(); \
+        auto& code = rc.failed_codes.back(); \
+        code.set_part_id(1); \
+        code.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED); \
+        code.set_leader(leader); \
+        resp.set_result(std::move(rc)); \
+        pro.setValue(std::move(resp)); \
+        return f; \
+    } while (false)
+
+class TestStorageServiceRetry : public storage::cpp2::StorageServiceSvIf {
+public:
+    TestStorageServiceRetry(IPv4 ip, Port port) {
+        leader_.set_ip(ip);
+        leader_.set_port(port);
+    }
+
+    folly::Future<cpp2::QueryResponse>
+    future_getOutBound(const cpp2::GetNeighborsRequest& req) override {
+        RETURN_LEADER_CHANGED(req, leader_);
+    }
+
+private:
+    nebula::cpp2::HostAddr leader_;
+};
+
+class TestStorageClient : public StorageClient {
+public:
+    explicit TestStorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool)
+        : StorageClient(ioThreadPool, nullptr) {}
+
+    int32_t partsNum(GraphSpaceID) const override {
+        return parts_.size();
+    }
+
+    PartMeta getPartMeta(GraphSpaceID, PartitionID partId) const override {
+        auto it = parts_.find(partId);
+        CHECK(it != parts_.end());
+        return it->second;
+    }
+
+    std::unordered_map<PartitionID, PartMeta> parts_;
+};
+
+TEST(StorageClientTest, LeaderChangeTest) {
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    auto sc = std::make_unique<test::ServerContext>();
+    auto handler = std::make_shared<TestStorageServiceRetry>(localIp, 10010);
+    sc->mockCommon("storage", 0, handler);
+    LOG(INFO) << "Start storage server on " << sc->port_;
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    TestStorageClient tsc(threadPool);
+    PartMeta pm;
+    pm.spaceId_ = 1;
+    pm.partId_ = 1;
+    pm.peers_.emplace_back(HostAddr(localIp, sc->port_));
+    tsc.parts_.emplace(1, std::move(pm));
+
+    folly::Baton<true, std::atomic> baton;
+    tsc.getNeighbors(0, {1, 2, 3}, 0, true, "", {}).via(threadPool.get()).then([&] {
+        baton.post();
+    });
+    baton.wait();
+    ASSERT_EQ(1, tsc.leaders_.size());
+    ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(0, 1)]);
+}
+
 }  // namespace storage
 }  // namespace nebula
 
