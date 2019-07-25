@@ -1,4 +1,4 @@
-| **  Name  **   | ** Description  **   | 
+|  Name    |  Description    | 
 |:----|:----:|:----|:----:|
 |   &&     |   Logical AND     | 
 |   !    |   Logical NOT     | 
