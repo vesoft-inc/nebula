@@ -1,5 +1,5 @@
 |  Name    |  Description    | 
-|:----|:----:|:----|:----:|
+|:----|:----:|
 |   &&     |   Logical AND     | 
 |   !    |   Logical NOT     | 
 |   \|\|   |   Logical OR   | 
@@ -8,7 +8,9 @@
 In nGQL, nonzero numbers are evaluted to _true_. The precedence of the operators refer to [Operator Precedence] (./Operator_Precendence.md)
 
 * &&
+
 Logical AND:
+
 ```
 nebula> YIELD -1 && true;
 ================
@@ -19,18 +21,23 @@ nebula> YIELD -1 && true;
 ```
 
 * !
+
 Logical NOT:
+
 ```
-nebula> nebula> YIELD !(-1);
+nebula> YIELD !(-1);
 ===========
 | !(-(1)) |
 ===========
 |   false |
 -----------
+
 ```
 
 * ||
+
 Logical OR:
+
 ```
 nebula> YIELD 1 || !1;
 =============
