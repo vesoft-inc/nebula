@@ -6,6 +6,7 @@
 
 
 In nGQL, nonzero numbers are evaluted to _true_. The precedence of the operators refer to [Operator Precedence](./Operator_Precedence.md).
+
 * &&
 
 Logical AND:
