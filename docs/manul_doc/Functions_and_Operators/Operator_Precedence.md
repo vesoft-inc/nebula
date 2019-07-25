@@ -1,4 +1,5 @@
 The following list shows the precedence of nGQL operators, in descending order. Operators on a line have the same precedence.
+
 ```
 !
 - (unary minus)
