@@ -25,148 +25,142 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:base_obj>
 )
 
-add_library(graph_test_common_obj OBJECT
+nebula_add_library(
+    graph_test_common_obj OBJECT
     TestMain.cpp
     TestEnv.cpp
     TestBase.cpp
 )
 
-nebula_add_base_obj(graph_test_common_obj)
-
-
-add_executable(
-    session_manager_test
-    SessionManagerTest.cpp
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:ws_obj>
-    ${GRAPH_TEST_LIBS}
-)
-nebula_link_libraries(
-    session_manager_test
-    proxygenhttpserver
-    proxygenlib
-    ${THRIFT_LIBRARIES}
-    ${ROCKSDB_LIBRARIES}
-    wangle
-    gtest
-    gtest_main
-)
-nebula_add_test(session_manager_test)
-
-
-add_executable(
-    query_engine_test
-    YieldTest.cpp
-    SchemaTest.cpp
-    $<TARGET_OBJECTS:graph_test_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:client_cpp_obj>
-    $<TARGET_OBJECTS:adHocSchema_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:ws_obj>
-    ${GRAPH_TEST_LIBS}
-)
-nebula_link_libraries(
-    query_engine_test
-    proxygenhttpserver
-    proxygenlib
-    ${THRIFT_LIBRARIES}
-    ${ROCKSDB_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(query_engine_test)
-
-
-add_executable(
-    go_test
-    GoTest.cpp
-    $<TARGET_OBJECTS:graph_test_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:client_cpp_obj>
-    $<TARGET_OBJECTS:adHocSchema_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:ws_obj>
-    ${GRAPH_TEST_LIBS}
-)
-nebula_link_libraries(
-    go_test
-    proxygenhttpserver
-    proxygenlib
-    ${THRIFT_LIBRARIES}
-    ${ROCKSDB_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(go_test)
-
-
-add_executable(
-    graph_http_test
-    GraphHttpHandlerTest.cpp
-    $<TARGET_OBJECTS:graph_test_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:graph_http_handler>
-    $<TARGET_OBJECTS:client_cpp_obj>
-    $<TARGET_OBJECTS:ws_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:process_obj>
-    $<TARGET_OBJECTS:adHocSchema_obj>
-    ${GRAPH_TEST_LIBS}
-)
-nebula_link_libraries(
-    graph_http_test
-    proxygenhttpserver
-    proxygenlib
-    ${THRIFT_LIBRARIES}
-    ${ROCKSDB_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(graph_http_test)
-
-add_executable(
-    data_test
-    DataTest.cpp
-    $<TARGET_OBJECTS:graph_test_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:client_cpp_obj>
-    $<TARGET_OBJECTS:adHocSchema_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:ws_obj>
-    ${GRAPH_TEST_LIBS}
-)
-nebula_link_libraries(
-    data_test
-    proxygenhttpserver
-    proxygenlib
-    ${THRIFT_LIBRARIES}
-    ${ROCKSDB_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(data_test)
-
-add_executable(
-    order_by_test
-    OrderByTest.cpp
-    $<TARGET_OBJECTS:graph_test_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
-    $<TARGET_OBJECTS:client_cpp_obj>
-    $<TARGET_OBJECTS:adHocSchema_obj>
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:ws_obj>
-    ${GRAPH_TEST_LIBS}
+nebula_add_test(
+    NAME
+        session_manager_test
+    SOURCES
+        SessionManagerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+        gtest_main
 )
 
-nebula_link_libraries(
-    order_by_test
-    proxygenhttpserver
-    proxygenlib
-    ${THRIFT_LIBRARIES}
-    ${ROCKSDB_LIBRARIES}
-    wangle
-    gtest
+nebula_add_test(
+    NAME
+        query_engine_test
+    SOURCES
+        YieldTest.cpp
+        SchemaTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
 )
-nebula_add_test(order_by_test)
+
+nebula_add_test(
+    NAME
+        go_test
+    SOURCES
+        GoTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        graph_http_test
+    SOURCES
+        GraphHttpHandlerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:graph_http_handler>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        data_test
+    SOURCES
+        DataTest.cpp
+        OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        order_by_test
+    SOURCES
+        OrderByTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)

@@ -1,20 +1,20 @@
-add_executable(
+nebula_add_test(
+    NAME
         http_client_test
+    SOURCES
         HttpClientTest.cpp
+    OBJECTS
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:base_obj>
-)
-nebula_link_libraries(
-        http_client_test
+    LIBRARIES
         proxygenhttpserver
         proxygenlib
         wangle
         gtest
         gtest_main
 )
-nebula_add_test(http_client_test)
 

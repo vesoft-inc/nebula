@@ -1,4 +1,4 @@
-add_library(
+nebula_add_library(
     graph_obj OBJECT
     GraphFlags.cpp
     GraphService.cpp
@@ -38,12 +38,10 @@ add_library(
     IngestExecutor.cpp
     SchemaHelper.cpp
 )
-nebula_add_base_obj(graph_obj)
 
-add_library(
+nebula_add_library(
     graph_http_handler OBJECT
     GraphHttpHandler.cpp
 )
 
 add_subdirectory(test)
-
