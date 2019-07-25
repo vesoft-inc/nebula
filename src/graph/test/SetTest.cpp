@@ -26,7 +26,7 @@ protected:
     }
 };
 
-TEST_F(SetTest, unionTest) {
+TEST_F(SetTest, UnionTest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
@@ -167,8 +167,65 @@ TEST_F(SetTest, unionTest) {
     }
 }
 
-TEST_F(SetTest, syntaxError) {
+TEST_F(SetTest, NoInput) {
     {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name"
+                    " UNION "
+                    "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name";
+        auto &nobody = players_["Nobody"];
+        auto query = folly::stringPrintf(fmt, nobody.vid(), nobody.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
+}
+
+TEST_F(SetTest, SyntaxError) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM 123 OVER like"
+                     " | GO FROM $- OVER serve"
+                     " UNION GO FROM 456 OVER serve";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+}
+
+TEST_F(SetTest, ExecutionError) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
+                    " UNION "
+                    "GO FROM %ld OVER serve YIELD $^.player.name1, serve.start_year, $$.team.name";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year"
+                    " UNION "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name as name, $$.team.name as player"
+                    " UNION "
+                    "GO FROM %ld OVER serve "
+                    "YIELD $^.player.name as name, serve.start_year as player";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
 }  // namespace graph

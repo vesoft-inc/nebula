@@ -52,6 +52,7 @@ private:
     std::unique_ptr<InterimResult>                  rightResult_;
     folly::Promise<folly::Unit>                     leftP_;
     folly::Promise<folly::Unit>                     rightP_;
+    std::vector<Status>                             errs_;
     std::vector<std::string>                        colNames_;
     std::shared_ptr<const meta::SchemaProviderIf>   resultSchema_;
     std::unique_ptr<cpp2::ExecutionResponse>        resp_;

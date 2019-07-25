@@ -27,9 +27,6 @@ Status SetExecutor::prepare() {
     DCHECK(right_ != nullptr);
 
 
-    auto onError = [this] (Status s) {
-        this->onError_(std::move(s));
-    };
 
     auto onFinish = [] () {
         return;
@@ -39,8 +36,13 @@ Status SetExecutor::prepare() {
         futures_.emplace_back(leftP_.getFuture());
         auto onResult = [this] (std::unique_ptr<InterimResult> result) {
             this->leftResult_ = std::move(result);
-            leftP_.setValue();
             VLOG(3) << "Left result set.";
+            leftP_.setValue();
+        };
+        auto onError = [this] (Status s) {
+            errs_.emplace_back(std::move(s));
+            VLOG(3) << "Left error.";
+            leftP_.setValue();
         };
         left_->setOnResult(onResult);
         left_->setOnFinish(onFinish);
@@ -50,8 +52,12 @@ Status SetExecutor::prepare() {
         futures_.emplace_back(rightP_.getFuture());
         auto onResult = [this] (std::unique_ptr<InterimResult> result) {
             this->rightResult_ = std::move(result);
+            VLOG(3) << "Right error.";
             rightP_.setValue();
-            VLOG(3) << "Right result set.";
+        };
+        auto onError = [this] (Status s) {
+            errs_.emplace_back(std::move(s));
+            rightP_.setValue();
         };
         right_->setOnResult(onResult);
         right_->setOnFinish(onFinish);
@@ -82,6 +88,14 @@ void SetExecutor::execute() {
 
     auto cb = [this] (auto &&result) {
         UNUSED(result);
+        if (!errs_.empty()) {
+            std::string msg;
+            for (auto &s : errs_) {
+                msg += s.toString();
+            }
+            onError_(Status::Error(msg));
+            return;
+        }
         switch (sentence_->op()) {
             case SetSentence::Operator::UNION:
                 doUnion();
@@ -122,6 +136,7 @@ void SetExecutor::doUnion() {
     if (!status.ok()) {
         DCHECK(onError_);
         onError_(status);
+        return;
     }
 
     auto rsWriter = std::make_unique<RowSetWriter>(resultSchema_);

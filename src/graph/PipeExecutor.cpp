@@ -94,7 +94,7 @@ Status PipeExecutor::prepare() {
 
 Status PipeExecutor::syntaxPreCheck() {
     if (sentence_->right()->kind() == Sentence::Kind::kSet) {
-        return Status::SyntaxError("syntax error, %s", sentence_->right()->toString().c_str());
+        return Status::SyntaxError("near UNION.");
     }
 
     return Status::OK();
