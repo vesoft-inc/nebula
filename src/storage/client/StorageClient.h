@@ -8,6 +8,7 @@
 #define STORAGE_CLIENT_STORAGECLIENT_H_
 
 #include "base/Base.h"
+#include <gtest/gtest_prod.h>
 #include <folly/futures/Future.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include "gen-cpp2/StorageServiceAsyncClient.h"
@@ -76,10 +77,12 @@ private:
  *
  * The class is NOT re-entriable
  */
-class StorageClient final {
+class StorageClient {
+    FRIEND_TEST(StorageClientTest, LeaderChangeTest);
+
 public:
-    explicit StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                           meta::MetaClient *client = nullptr);
+    StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
+                  meta::MetaClient *client);
     ~StorageClient();
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
@@ -124,15 +127,34 @@ public:
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
 
-private:
-    std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
-    meta::MetaClient *client_{nullptr};
-    std::unique_ptr<thrift::ThriftClientManager<
-                        storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
-
-private:
+protected:
     // Calculate the partition id for the given vertex id
     PartitionID partId(GraphSpaceID spaceId, int64_t id) const;
+
+    const HostAddr& leader(const PartMeta& partMeta) const {
+        {
+            folly::RWSpinLock::ReadHolder rh(leadersLock_);
+            auto it = leaders_.find(std::make_pair(partMeta.spaceId_, partMeta.partId_));
+            if (it != leaders_.end()) {
+                return it->second;
+            }
+        }
+        VLOG(1) << "No leader exists. Choose one random.";
+        return partMeta.peers_[folly::Random::rand32(partMeta.peers_.size())];
+    }
+
+    void updateLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader) {
+        folly::RWSpinLock::WriteHolder wh(leadersLock_);
+        leaders_[std::make_pair(spaceId, partId)] = leader;
+    }
+
+    void invalidLeader(GraphSpaceID spaceId, PartitionID partId) {
+        folly::RWSpinLock::WriteHolder wh(leadersLock_);
+        auto it = leaders_.find(std::make_pair(spaceId, partId));
+        if (it != leaders_.end()) {
+            leaders_.erase(it);
+        }
+    }
 
     template<class Request,
              class RemoteFunc,
@@ -164,13 +186,31 @@ private:
                           > clusters;
         for (auto& id : ids) {
             PartitionID part = partId(spaceId, f(id));
-            auto partMeta = client_->getPartMetaFromCache(spaceId, part);
+            auto partMeta = getPartMeta(spaceId, part);
             CHECK_GT(partMeta.peers_.size(), 0U);
-            // TODO We need to use the leader here
-            clusters[partMeta.peers_.front()][part].emplace_back(std::move(id));
+            const auto& leader = this->leader(partMeta);
+            clusters[leader][part].emplace_back(std::move(id));
         }
         return clusters;
     }
+
+    virtual int32_t partsNum(GraphSpaceID spaceId) const {
+        CHECK(client_ != nullptr);
+        return client_->partsNum(spaceId);
+    }
+
+    virtual PartMeta getPartMeta(GraphSpaceID spaceId, PartitionID partId) const {
+        CHECK(client_ != nullptr);
+        return client_->getPartMetaFromCache(spaceId, partId);
+    }
+
+private:
+    std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
+    meta::MetaClient *client_{nullptr};
+    std::unique_ptr<thrift::ThriftClientManager<
+                        storage::cpp2::StorageServiceAsyncClient>> clientsMan_;
+    mutable folly::RWSpinLock leadersLock_;
+    std::unordered_map<std::pair<GraphSpaceID, PartitionID>, HostAddr> leaders_;
 };
 
 }   // namespace storage
