@@ -1,0 +1,1 @@
+One major difference between nGQL 
