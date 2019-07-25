@@ -1,5 +1,4 @@
-
-| **  Name  **   | ** Description  **   | 
+| Name  | Description | 
 |:----|:----:|:----|:----:|
 |   ==     |   Equal operator     | 
 |   >     |   Greater than operator     | 
