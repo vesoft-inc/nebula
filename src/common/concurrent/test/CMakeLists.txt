@@ -1,14 +1,13 @@
-add_executable(
-    concurrent_test
-    BarrierTest.cpp
-    LatchTest.cpp
-    $<TARGET_OBJECTS:concurrent_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:time_obj>
+nebula_add_test(
+    NAME
+        concurrent_test
+    SOURCES
+        BarrierTest.cpp LatchTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:concurrent_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:time_obj>
+    LIBRARIES
+        gtest
+        gtest_main
 )
-nebula_link_libraries(
-    concurrent_test
-    gtest
-    gtest_main
-)
-nebula_add_test(concurrent_test)

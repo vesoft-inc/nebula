@@ -126,6 +126,11 @@ public:
                            const std::string& prefix,
                            KVCallback cb) override;
 
+    ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID,
+                                                    PartitionID) override {
+        LOG(FATAL) << "Unsupported!";
+    }
+
 private:
     std::string getRowKey(const std::string& key) {
         return key.substr(sizeof(PartitionID), key.size() - sizeof(PartitionID));

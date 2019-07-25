@@ -1,8 +1,4 @@
-add_executable(
-    leader_election_test
-    LeaderElectionTest.cpp
-    RaftexTestBase.cpp
-    TestShard.cpp
+set(RAFTEX_TEST_LIBS
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:wal_obj>
@@ -13,82 +9,43 @@ add_executable(
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
 )
-nebula_link_libraries(
-    leader_election_test
-    ${THRIFT_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(leader_election_test)
 
 
-add_executable(
-    log_append_test
-    LogAppendTest.cpp
-    RaftexTestBase.cpp
-    TestShard.cpp
-    $<TARGET_OBJECTS:raftex_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:time_obj>
+nebula_add_test(
+    NAME leader_election_test
+    SOURCES LeaderElectionTest.cpp RaftexTestBase.cpp TestShard.cpp
+    OBJECTS ${RAFTEX_TEST_LIBS}
+    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
 )
-nebula_link_libraries(
-    log_append_test
-    ${THRIFT_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(log_append_test)
 
 
-add_executable(
-    log_cas_test
-    LogCASTest.cpp
-    RaftexTestBase.cpp
-    TestShard.cpp
-    $<TARGET_OBJECTS:raftex_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:time_obj>
+nebula_add_test(
+    NAME log_append_test
+    SOURCES LogAppendTest.cpp RaftexTestBase.cpp TestShard.cpp
+    OBJECTS ${RAFTEX_TEST_LIBS}
+    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
 )
-nebula_link_libraries(
-    log_cas_test
-    ${THRIFT_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(log_cas_test)
 
-add_executable(
-    log_command_test
-    LogCommandTest.cpp
-    RaftexTestBase.cpp
-    TestShard.cpp
-    $<TARGET_OBJECTS:raftex_obj>
-    $<TARGET_OBJECTS:raftex_thrift_obj>
-    $<TARGET_OBJECTS:wal_obj>
-    $<TARGET_OBJECTS:base_obj>
-    $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:fs_obj>
-    $<TARGET_OBJECTS:network_obj>
-    $<TARGET_OBJECTS:thrift_obj>
-    $<TARGET_OBJECTS:time_obj>
-)
-nebula_link_libraries(
-    log_command_test
-    ${THRIFT_LIBRARIES}
-    wangle
-    gtest
-)
-nebula_add_test(log_command_test)
 
+nebula_add_test(
+    NAME log_cas_test
+    SOURCES LogCASTest.cpp RaftexTestBase.cpp TestShard.cpp
+    OBJECTS ${RAFTEX_TEST_LIBS}
+    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
+)
+
+
+nebula_add_test(
+    NAME learner_test
+    SOURCES LearnerTest.cpp RaftexTestBase.cpp TestShard.cpp
+    OBJECTS ${RAFTEX_TEST_LIBS}
+    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
+)
+
+
+nebula_add_test(
+    NAME log_command_test
+    SOURCES LogCommandTest.cpp RaftexTestBase.cpp TestShard.cpp
+    OBJECTS ${RAFTEX_TEST_LIBS}
+    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
+)

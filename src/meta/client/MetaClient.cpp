@@ -17,9 +17,11 @@ namespace meta {
 
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                        std::vector<HostAddr> addrs,
+                       HostAddr localHost,
                        bool sendHeartBeat)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
+    , localHost_(localHost)
     , sendHeartBeat_(sendHeartBeat) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
@@ -39,8 +41,27 @@ MetaClient::~MetaClient() {
 }
 
 
-void MetaClient::init() {
+bool MetaClient::isMetadReady() {
+    if (sendHeartBeat_) {
+        auto ret = heartbeat().get();
+        if (!ret.ok()) {
+            LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
+            ready_ = false;
+            return ready_;
+        }
+    }  // end if
     loadDataThreadFunc();
+    return ready_;
+}
+
+
+bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
+    int tryCount = count;
+    while (!isMetadReady() && ((count == -1) || (tryCount > 0))) {
+        --tryCount;
+        ::sleep(retryIntervalSecs);
+    }  // end while
+
     CHECK(bgThread_.start());
     {
         size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
@@ -56,15 +77,11 @@ void MetaClient::init() {
                                FLAGS_heartbeat_interval_secs * 1000,
                                &MetaClient::heartBeatThreadFunc, this);
     }
+    return true;
 }
 
 
 void MetaClient::heartBeatThreadFunc() {
-    folly::RWSpinLock::ReadHolder holder(listenerLock_);
-    if (listener_ == nullptr) {
-        VLOG(1) << "Can't send heartbeat due to listener_ is nullptr!";
-        return;
-    }
     auto ret = heartbeat().get();
     if (!ret.ok()) {
         LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
@@ -351,10 +368,9 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
         VLOG(3) << "Listener is null!";
         return;
     }
-    auto localHost = listener_->getLocalHost();
-    auto newPartsMap = doGetPartsMap(localHost, newCache);
-    auto oldPartsMap = doGetPartsMap(localHost, oldCache);
-    VLOG(1) << "Let's check if any new parts added/updated for " << localHost;
+    auto newPartsMap = doGetPartsMap(localHost_, newCache);
+    auto oldPartsMap = doGetPartsMap(localHost_, oldCache);
+    VLOG(1) << "Let's check if any new parts added/updated for " << localHost_;
     for (auto it = newPartsMap.begin(); it != newPartsMap.end(); it++) {
         auto spaceId = it->first;
         const auto& newParts = it->second;
@@ -959,12 +975,10 @@ StatusOr<SchemaVer> MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& sp
 
 
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
-    CHECK_NOTNULL(listener_);
-    auto localHost = listener_->getLocalHost();
     cpp2::HBReq req;
     nebula::cpp2::HostAddr thriftHost;
-    thriftHost.set_ip(localHost.first);
-    thriftHost.set_port(localHost.second);
+    thriftHost.set_ip(localHost_.first);
+    thriftHost.set_port(localHost_.second);
     req.set_host(std::move(thriftHost));
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_heartBeat(request);
