@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 |  Name    |  Description    | 
 |:----|:----:|
 |  abs()      |  Return the absolute value      | 
