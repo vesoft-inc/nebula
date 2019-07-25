@@ -1,5 +1,5 @@
 | Name  | Description | 
-|:----|:----:|:----|:----:|
+|:----|:----:|
 |   ==     |   Equal operator     | 
 |   >     |   Greater than operator     | 
 |   >=     |   Greater than or equal operator     | 
@@ -11,7 +11,9 @@
 Comparison operations result in a value of _true_ and _false_.
 
 * ==
+
 Equal. String comparisons are case-sensitive. Values of different type are not equal.
+
 ```
 nebula> YIELD 'A' == 'a';
 ==============
@@ -28,19 +30,23 @@ nebula> YIELD '2' == 2;
 ------------
 ```
 
-* >
-Less than： 
+* &gt;
+
+Greater than： 
+
 ```
-nebula> YIELD 3 < 2;
+nebula> YIELD 3 > 2;
 =========
-| (3<2) |
+| (3>2) |
 =========
-| false |
+| true |
 ---------
 ```
 
-* >=
+* &ge;
+
 Greater than or equal:
+
 ```
 nebula> YIELD 2 >= 2;
 ==========
@@ -50,8 +56,10 @@ nebula> YIELD 2 >= 2;
 ----------
 ```
 
-* <
+* &lt;
+
 Less than:
+
 ```
 nebula> YIELD 2.0 < 1.9;
 =======================
@@ -61,8 +69,10 @@ nebula> YIELD 2.0 < 1.9;
 -----------------------
 ```
 
-* <=
+* &le;
+
 Less than or equal:
+
 ```
 nebula> YIELD 0.11 <= 0.11;
 ========================
@@ -73,7 +83,9 @@ nebula> YIELD 0.11 <= 0.11;
 ```
 
 * !=
+
 Not equal:
+
 ```
 nebula> YIELD 1 != '1'
 ============
@@ -82,4 +94,3 @@ nebula> YIELD 1 != '1'
 |     true |
 ------------
 ```
-
