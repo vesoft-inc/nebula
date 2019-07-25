@@ -6,15 +6,16 @@ Nebula supports four comment styles:
 
 Nested comments are not supported
 The following example demonstrates all these comment styles:
+
 ```
 nebula> YIELD 1+1     # This comment continues to the end of line
 nebula> YIELD 1+1     -- This comment continues to the end of line
 nebula> YIELD 1+1     // This comment continues to the end of line
 nebula> YIELD 1 /* this is an in-line comment */ + 1
-nebula> YIELD 1 +  \  
+nebula> YIELD 11 + \  
 /* Multiple-line comment \
 Use backslash \
 as line break. \
-*/ 1
+*/ 12
 ```
 

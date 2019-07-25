@@ -7,23 +7,29 @@ prop_name_list:
 prop_value_list:
   [prop_value [, prop_value] ...]
 ```
-INSERT EDGE statements inserts an (directed) edge from a starting vertex (given by src_vid) to an ending vertex (given by dst_vid) . 
-* `edge_name` denotes the edge type, which must be created before INSERT EDGE.
-* `prop_name_list` is the property name list as the given edge_name.
+
+INSERT EDGE statements inserts an (directed) edge from a starting vertex (given by src_vid) to an ending vertex (given by dst_vid).
+* `edge_name` denotes the edge type, which must be created before `INSERT EDGE`.
+* `prop_name_list` is the property name list as the given `edge_name`.
 * `prop_value_list` must provide the value list accouding to `prop_name_list`. If any value doesn't match its type, an error will be returned.
+
 >No default value is given in this release.
+
 ### Examples
+
 ```
-# CREATE EDGE e1()               -- create edge t1 with empty property
+# CREATE EDGE e1()                    -- create edge t1 with empty property
 INSERT EDGE e1 () VALUES 10->11:()    -- insert an edge from vertex 10 to vertex 11 with empty property
 ```
 
 ```
-# CREATE EDGE e2 (name string, age int)  -- create edge e2 with two properties
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12) -- insert edge from 11to 13 with two properties
+# CREATE EDGE e2 (name string, age int)                 -- create edge e2 with two properties
+INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12)     -- insert edge from 11to 13 with two properties
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")  -- WRONG. "a13" is not int
 ```
+
 An edge can be inserted/wrote multiple times. Only the last write values can be read.
+
 ```
 -- insert edge with new version of values. 
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12) 

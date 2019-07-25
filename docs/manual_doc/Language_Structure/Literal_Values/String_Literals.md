@@ -1,10 +1,11 @@
 A string is a sequence of bytes or characters, enclosed within either single quote (') or double quote (") characters. Examples:
+
 ```
 nebula> YIELD 'a string'
 nebula> YIELD "another string"
 ```
 
-Certain backslash escapes (\) have been supported (as known as the *escape character*). They are shown in the following table:
+Certain backslash escapes (\) have been supported (also known as the *escape character*). They are shown in the following table:
 | **Escape Sequence**   | **Character Represented by Sequence**   | 
 |:----|:----|
 | \'   | A single quote (') character   | 
