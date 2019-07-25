@@ -1,5 +1,5 @@
 |  Name    |  Description    | 
-|:----|:----:|:----|:----:|
+|:----|:----:|
 |  abs()      |  Return the absolute value      | 
 |  acos()  |  Return the arc cosine | 
 |  asin()  |  Return the arc sine  | 
