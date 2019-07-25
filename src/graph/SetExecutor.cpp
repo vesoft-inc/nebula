@@ -26,8 +26,6 @@ Status SetExecutor::prepare() {
     DCHECK(left_ != nullptr);
     DCHECK(right_ != nullptr);
 
-
-
     auto onFinish = [] () {
         return;
     };
@@ -40,8 +38,8 @@ Status SetExecutor::prepare() {
             leftP_.setValue();
         };
         auto onError = [this] (Status s) {
-            errs_.emplace_back(std::move(s));
-            VLOG(3) << "Left error.";
+            VLOG(3) << "Left error:" << s.toString();
+            leftS_ = std::move(s);
             leftP_.setValue();
         };
         left_->setOnResult(onResult);
@@ -52,11 +50,12 @@ Status SetExecutor::prepare() {
         futures_.emplace_back(rightP_.getFuture());
         auto onResult = [this] (std::unique_ptr<InterimResult> result) {
             this->rightResult_ = std::move(result);
-            VLOG(3) << "Right error.";
+            VLOG(3) << "Right result set.";
             rightP_.setValue();
         };
         auto onError = [this] (Status s) {
-            errs_.emplace_back(std::move(s));
+            VLOG(3) << "Right error: " << s.toString();
+            rightS_ = std::move(s);
             rightP_.setValue();
         };
         right_->setOnResult(onResult);
@@ -88,11 +87,12 @@ void SetExecutor::execute() {
 
     auto cb = [this] (auto &&result) {
         UNUSED(result);
-        if (!errs_.empty()) {
+        if (!leftS_.ok() || !rightS_.ok()) {
             std::string msg;
-            for (auto &s : errs_) {
-                msg += s.toString();
-            }
+            msg += "left: ";
+            msg += leftS_.toString();
+            msg += " right: ";
+            msg += rightS_.toString();
             onError_(Status::Error(msg));
             return;
         }
@@ -153,17 +153,6 @@ Status SetExecutor::checkSchema() {
     auto rightIter = rightSchema->begin();
 
     while (leftIter && rightIter) {
-        auto *leftName = leftIter->getName();
-        auto *rightName = rightIter->getName();
-        if (std::strcmp(leftName, rightName) != 0) {
-            return Status::Error("Field name not equal, [%s]:[%s]",
-                    leftName, rightName);
-        }
-
-        if (leftIter->getType() != rightIter->getType()) {
-            return Status::Error("Field type not equal, [%s]:[%s]",
-                    leftName, rightName);
-        }
          ++leftIter;
          ++rightIter;
     }
@@ -209,8 +198,9 @@ void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
 }
 
 void SetExecutor::feedResult(std::unique_ptr<InterimResult> result) {
+    // Feed input for set operator is an act of reservation.
     UNUSED(result);
-    LOG(FATAL) << "Set operation not support input.";
+    LOG(FATAL) << "Set operation not support input yet.";
 }
 
 void SetExecutor::setupResponse(cpp2::ExecutionResponse &resp) {

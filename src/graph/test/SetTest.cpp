@@ -236,9 +236,12 @@ TEST_F(SetTest, NoInput) {
 TEST_F(SetTest, SyntaxError) {
     {
         cpp2::ExecutionResponse resp;
+        // This is an act of reservation.
+        // For now, we treat it as an syntax error.
         auto query = "GO FROM 123 OVER like"
-                     " | (GO FROM $- OVER serve"
-                     " UNION GO FROM 456 OVER serve)";
+                     " YIELD like._src as src, like._dst as dst"
+                     " | (GO FROM $-.src OVER serve"
+                     " UNION GO FROM $-.dst OVER serve)";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }

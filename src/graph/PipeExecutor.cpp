@@ -94,7 +94,7 @@ Status PipeExecutor::prepare() {
 
 Status PipeExecutor::syntaxPreCheck() {
     if (sentence_->right()->kind() == Sentence::Kind::kSet) {
-        return Status::SyntaxError("near UNION.");
+        return Status::SyntaxError("Set op not support input.");
     }
 
     return Status::OK();
