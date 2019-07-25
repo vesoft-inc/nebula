@@ -75,7 +75,7 @@ void NebulaStore::init() {
     raftService_ = raftex::RaftexService::createService(ioPool_, raftAddr_.second);
     raftService_->waitUntilReady();
     flusher_ = std::make_unique<wal::BufferFlusher>();
-    CHECK(!!partMan_);
+    CHECK(!!options_.partMan_);
     LOG(INFO) << "Scan the local path, and init the spaces_";
     {
         folly::RWSpinLock::WriteHolder wh(&lock_);
@@ -86,7 +86,7 @@ void NebulaStore::init() {
                 LOG(INFO) << "Scan path \"" << path << "/" << dir << "\"";
                 try {
                     auto spaceId = folly::to<GraphSpaceID>(dir);
-                    if (!partMan_->spaceExist(storeSvcAddr_, spaceId)) {
+                    if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId)) {
                         // TODO We might want to have a second thought here.
                         // Removing the data directly feels a little strong
                         LOG(INFO) << "Space " << spaceId
@@ -108,7 +108,7 @@ void NebulaStore::init() {
                     spaceIt->second->engines_.emplace_back(std::move(engine));
                     auto& enginePtr = spaceIt->second->engines_.back();
                     for (auto& partId : enginePtr->allParts()) {
-                        if (!partMan_->partExist(storeSvcAddr_, spaceId, partId)) {
+                        if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId)) {
                             LOG(INFO) << "Part " << partId
                                       << " does not exist any more, remove it!";
                             enginePtr->removePart(partId);
@@ -129,7 +129,7 @@ void NebulaStore::init() {
     }
 
     LOG(INFO) << "Init data from partManager for " << storeSvcAddr_;
-    auto partsMap = partMan_->parts(storeSvcAddr_);
+    auto partsMap = options_.partMan_->parts(storeSvcAddr_);
     for (auto& entry : partsMap) {
         auto spaceId = entry.first;
         addSpace(spaceId);
@@ -144,7 +144,7 @@ void NebulaStore::init() {
     }
 
     LOG(INFO) << "Register handler...";
-    partMan_->registerHandler(this);
+    options_.partMan_->registerHandler(this);
 }
 
 
@@ -238,7 +238,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                        ioPool_,
                                        workers_,
                                        flusher_.get());
-    auto partMeta = partMan_->partMeta(spaceId, partId);
+    auto partMeta = options_.partMan_->partMeta(spaceId, partId);
     std::vector<HostAddr> peers;
     for (auto& h : partMeta.peers_) {
         if (h != storeSvcAddr_) {
