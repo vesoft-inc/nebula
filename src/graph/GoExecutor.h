@@ -113,6 +113,10 @@ private:
     std::vector<VertexID> getDstIdsFromResp(RpcResponse &rpcResp) const;
 
     /**
+     * get the edgeName from response when over all edges
+     */
+    std::vector<std::string> getEdgeNamesFromResp(RpcResponse &rpcResp) const;
+    /**
      * All required data have arrived, finish the execution.
      */
     void finishExecution(RpcResponse &&rpcResp);

@@ -42,37 +42,6 @@ void QueryBaseProcessor<REQ, RESP>::addDefaultProps(std::vector<PropContext>& p,
 }
 
 template <typename REQ, typename RESP>
-kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::initContext(const REQ& req) {
-    for (auto& pv : req.get_parts()) {
-        auto pid = pv.first;
-        for (auto& vid : pv.second) {
-            auto prefix = NebulaKeyUtils::prefix(pid, vid);
-
-            std::unique_ptr<kvstore::KVIterator> iter;
-            auto ret = this->kvstore_->prefix(spaceId_, pid, prefix, &iter);
-            if (ret != kvstore::ResultCode::SUCCEEDED || !iter) {
-                return ret;
-            }
-
-            for (; iter->valid(); iter->next()) {
-                auto key = iter->key();
-                if (NebulaKeyUtils::isEdge(key)) {
-                    auto edge_type = NebulaKeyUtils::getEdgeType(key);
-                    auto it = edgeContext_.find(edge_type);
-                    if (it == edgeContext_.end()) {
-                        std::vector<PropContext> prop;
-                        addDefaultProps(prop, edge_type);
-                        edgeContext_.emplace(edge_type, std::move(prop));
-                    }
-                }
-            }
-        }
-    }
-
-    return kvstore::ResultCode::SUCCEEDED;
-}
-
-template <typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::initContext(const std::vector<EdgeType>& eTypes,
                                                 bool need_default_props) {
     std::transform(eTypes.cbegin(), eTypes.cend(), std::inserter(edgeContext_, edgeContext_.end()),
@@ -88,7 +57,7 @@ void QueryBaseProcessor<REQ, RESP>::initContext(const std::vector<EdgeType>& eTy
 template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& req) {
     // Handle the case for query edges which should return some columns by default.
-
+    overAllEdge_ = req.over_all_edges;
     int32_t index = std::accumulate(edgeContext_.cbegin(), edgeContext_.cend(), 0,
                                     [](int ac, auto& ec) { return ac + ec.second.size(); });
     std::unordered_map<TagID, int32_t> tagIndex;
@@ -156,7 +125,16 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                 prop.prop_ = std::move(col);
                 prop.returned_ = true;
                 auto it2 = edgeContext_.find(edgeType);
-                CHECK(it2 != edgeContext_.end());
+                if (it2 == edgeContext_.end()) {
+                    if (overAllEdge_) {
+                        std::vector<PropContext> v{std::move(prop)};
+                        edgeContext_.emplace(edgeType, std::move(v));
+                        break;
+                    } else {
+                        CHECK(it2 != edgeContext_.end());
+                    }
+                }
+
                 it2->second.emplace_back(std::move(prop));
                 break;
             }

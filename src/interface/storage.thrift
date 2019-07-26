@@ -66,10 +66,16 @@ struct ResultCode {
     3: optional common.HostAddr  leader,
 }
 
+struct EdgeData {
+    1: common.EdgeType type,
+    2: common.Schema  schema,
+    4: binary         data,   // decode according to edge_schema.
+}
+
 struct VertexData {
     1: common.VertexID vertex_id,
     2: binary vertex_data, // decode according to vertex_schema.
-    3: binary edge_data,   // decode according to edge_schema.
+    3: list<EdgeData> edge_data,
 }
 
 struct ResponseCommon {
@@ -82,7 +88,6 @@ struct ResponseCommon {
 struct QueryResponse {
     1: required ResponseCommon result,
     2: optional common.Schema vertex_schema,   // vertex related props
-    3: optional common.Schema edge_schema,     // edge related props
     4: optional list<VertexData> vertices,
 }
 
@@ -135,6 +140,7 @@ struct GetNeighborsRequest {
     3: list<common.EdgeType> edge_types,
     4: binary filter,
     5: list<PropDef> return_columns,
+    6: bool over_all_edges,
 }
 
 struct VertexPropRequest {
@@ -150,6 +156,7 @@ struct EdgePropRequest {
     3: list<common.EdgeType> edge_types,
     4: binary filter,
     5: list<PropDef> return_columns,
+    6: bool over_all_edges,
 }
 
 struct AddVerticesRequest {

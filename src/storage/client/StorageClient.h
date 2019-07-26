@@ -100,6 +100,7 @@ public:
         std::vector<EdgeType> edgeTypes,
         std::string filter,
         std::vector<storage::cpp2::PropDef> returnCols,
+        bool overAll = false,
         folly::EventBase* evb = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryStatsResponse>> neighborStats(

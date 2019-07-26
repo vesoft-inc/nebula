@@ -80,6 +80,7 @@ std::string OverEdges::toString() const {
     buf.reserve(256);
     for (auto &e : edges_) {
         buf += e->toString();
+        buf += ",";
     }
 
     return buf;

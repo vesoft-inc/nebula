@@ -75,6 +75,9 @@ public:
     // This interface is disabled
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
+    // This interface is disabled
+    StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
+
     void init(nebula::meta::MetaClient *client = nullptr) override {
         UNUSED(client);
     }
@@ -96,5 +99,3 @@ protected:
 }  // namespace storage
 }  // namespace nebula
 #endif  // META_ADHOCSCHEMAMANAGER_H_
-
-

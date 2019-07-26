@@ -41,6 +41,15 @@ protected:
 private:
     std::vector<cpp2::VertexData> vertices_;
 
+    kvstore::ResultCode processEdge(PartitionID partId, VertexID vId, FilterContext &fcontext,
+                                    cpp2::VertexData& vdata);
+    kvstore::ResultCode processAllEdge(PartitionID partId, VertexID vId, FilterContext &fcontext,
+                                    cpp2::VertexData& vdata);
+    kvstore::ResultCode processEdgeImpl(const PartitionID partId, const VertexID vId,
+                                        const EdgeType edgeType,
+                                        const std::vector<PropContext>& props,
+                                        FilterContext& fcontext, cpp2::VertexData& vdata);
+
 protected:
     // Indicate the request only get vertex props.
     bool onlyVertexProps_ = false;

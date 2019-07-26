@@ -10,6 +10,7 @@
 #include "base/StatusOr.h"
 #include "base/Status.h"
 #include <boost/variant.hpp>
+#include  <boost/unordered_set.hpp>
 
 namespace nebula {
 
@@ -31,13 +32,14 @@ enum AliasKind {
 std::string aliasKindToString(AliasKind kind);
 
 struct AliasInfo {
-    AliasKind                               kind_;
-    std::string                             data_;
-    EdgeType                                id_;
+    AliasKind kind_;
+    std::string data_;
+    EdgeType id_;
 };
 
 class ExpressionContext final {
 public:
+    using EdgeInfo = boost::variant<std::string, EdgeType>;
     void addSrcTagProp(const std::string &tag, const std::string &prop) {
         srcTagProps_.emplace(tag, prop);
     }
@@ -46,11 +48,13 @@ public:
         dstTagProps_.emplace(tag, prop);
     }
 
-    void addEdgeProp(const std::string &prop, const EdgeType id) {
-        edgeProps_.emplace(prop, id);
+    void addEdgeProp(const std::string &prop, const EdgeInfo &edgeInfo) {
+        edgeProps_.emplace(prop, edgeInfo);
     }
 
     Status addAliasProp(const std::string &alias, const std::string &prop);
+
+    Status addAliasProp(const std::string &prop);
 
     // TODO(dutor) check duplications on aliases
     void addAlias(const std::string &alias, AliasKind kind) {
@@ -59,10 +63,19 @@ public:
 
     void addAlias(const std::string &alias, AliasKind kind, const std::string &data,
                   const EdgeType id) {
-        auto &entry = aliasInfo_[alias];
-        entry.kind_ = kind;
-        entry.data_ = data;
-        entry.id_ = id;
+        auto it = aliasInfo_.find(alias);
+        if (it == aliasInfo_.end()) {
+            auto &entry = aliasInfo_[alias];
+            entry.kind_ = kind;
+            entry.data_ = data;
+            entry.id_   = id;
+        }
+    }
+
+    EdgeType getEdgeType(const std::string &alias) const {
+        auto it = aliasInfo_.find(alias);
+        DCHECK(it != aliasInfo_.end());
+        return it->second.id_;
     }
 
     AliasKind aliasKind(const std::string &alias) {
@@ -74,7 +87,8 @@ public:
     }
 
     using TagProp = std::pair<std::string, std::string>;
-    using EdgeProp = std::pair<std::string, EdgeType>;
+    // (prop, (edge_name, edge_type))
+    using EdgeProp = std::pair<std::string, EdgeInfo>;
 
     std::vector<TagProp> srcTagProps() const {
         return std::vector<TagProp>(srcTagProps_.begin(), srcTagProps_.end());
@@ -114,12 +128,17 @@ public:
 
     void print() const;
 
+    bool isOverAllEdge() const { return overAll_; }
+
+    void setOverAllEdge() { overAll_ = true; }
+
 private:
     Getters                                     getters_;
     std::unordered_map<std::string, AliasInfo>  aliasInfo_;
     std::unordered_set<TagProp>                 srcTagProps_;
     std::unordered_set<TagProp>                 dstTagProps_;
-    std::unordered_set<EdgeProp>                edgeProps_;
+    boost::unordered_set<EdgeProp>              edgeProps_;
+    bool                                        overAll_{false};
 };
 
 
@@ -143,6 +162,11 @@ public:
 
     virtual bool isVariableExpression() const {
         return kind_ == kVariableProp;
+    }
+
+    virtual bool isEdgeExpression() const {
+        return (kind_ == kEdgeRank) || (kind_ == kEdgeType) || (kind_ == kEdgeProp) ||
+               (kind_ == kEdgeDstId) || (kind_ == kEdgeSrcId);
     }
 
     /**

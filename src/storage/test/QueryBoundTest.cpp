@@ -114,10 +114,9 @@ void checkResponse(cpp2::QueryResponse& resp,
                    bool outBound) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
-    EXPECT_EQ(edgeFields, resp.edge_schema.columns.size());
     EXPECT_EQ(3, resp.vertex_schema.columns.size());
-    auto provider = std::make_shared<ResultSchemaProvider>(resp.edge_schema);
     auto tagProvider = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
+
     EXPECT_EQ(vertexNum, resp.vertices.size());
     for (auto& vp : resp.vertices) {
         VLOG(1) << "Check vertex props...";
@@ -135,43 +134,47 @@ void checkResponse(cpp2::QueryResponse& resp,
         EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getString("tag_3005_col_4", col3));
         EXPECT_EQ(folly::stringPrintf("tag_string_col_4"), col3);
 
-        VLOG(1) << "Check edge props...";
-        RowSetReader rsReader(provider, vp.edge_data);
-        auto it = rsReader.begin();
-        int32_t rowNum = 0;
-        while (static_cast<bool>(it)) {
-            EXPECT_EQ(edgeFields, it->numFields());
-            int64_t dstId;
-            {
-                // _dst
-                EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(0, dstId));
-                CHECK_EQ(dstIdFrom + rowNum, dstId);
-            }
-            {
-                // _rank
-                int64_t v;
-                EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(1, v));
-                CHECK_EQ(0, v);
-            }
-            if (outBound) {
-                // col_0, col_2 ... col_8
-                for (auto i = 2; i < 7; i++) {
+        for (auto& ep : vp.edge_data) {
+            EXPECT_EQ(edgeFields, ep.schema.columns.size());
+            auto provider = std::make_shared<ResultSchemaProvider>(ep.schema);
+            VLOG(1) << "Check edge props...";
+            RowSetReader rsReader(provider, ep.data);
+            auto it = rsReader.begin();
+            int32_t rowNum = 0;
+            while (static_cast<bool>(it)) {
+                EXPECT_EQ(edgeFields, it->numFields());
+                int64_t dstId;
+                {
+                    // _dst
+                    EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(0, dstId));
+                    CHECK_EQ(dstIdFrom + rowNum, dstId);
+                }
+                {
+                    // _rank
                     int64_t v;
-                    EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
-                    CHECK_EQ((i - 2) * 2 + dstId, v);
+                    EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(1, v));
+                    CHECK_EQ(0, v);
                 }
-                // col_10, col_12 ... col_18
-                for (auto i = 7; i < 12; i++) {
-                    folly::StringPiece v;
-                    EXPECT_EQ(ResultType::SUCCEEDED, it->getString(i, v));
-                    CHECK_EQ(folly::stringPrintf("string_col_%d_%d", (i - 7 + 5) * 2, 2), v);
+                if (outBound) {
+                    // col_0, col_2 ... col_8
+                    for (auto i = 2; i < 7; i++) {
+                        int64_t v;
+                        EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
+                        CHECK_EQ((i - 2) * 2 + dstId, v);
+                    }
+                    // col_10, col_12 ... col_18
+                    for (auto i = 7; i < 12; i++) {
+                        folly::StringPiece v;
+                        EXPECT_EQ(ResultType::SUCCEEDED, it->getString(i, v));
+                        CHECK_EQ(folly::stringPrintf("string_col_%d_%d", (i - 7 + 5) * 2, 2), v);
+                    }
                 }
+                ++it;
+                rowNum++;
             }
-            ++it;
-            rowNum++;
+            EXPECT_EQ(it, rsReader.end());
+            EXPECT_EQ(edgeNum, rowNum);
         }
-        EXPECT_EQ(it, rsReader.end());
-        EXPECT_EQ(edgeNum, rowNum);
     }
 }
 

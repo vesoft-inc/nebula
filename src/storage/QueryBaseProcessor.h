@@ -57,7 +57,6 @@ protected:
     /**
      * init edge context
      **/
-    kvstore::ResultCode initContext(const REQ& req);
     void initContext(const std::vector<EdgeType> &eTypes, bool need_default_props = false);
 
     /**
@@ -111,6 +110,7 @@ protected:
     std::vector<TagContext> tagContexts_;
     std::unordered_map<EdgeType, std::vector<PropContext>> edgeContext_;
     folly::Executor* executor_ = nullptr;
+    bool             overAllEdge_{false};
 };
 
 }  // namespace storage

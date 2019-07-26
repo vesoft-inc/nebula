@@ -425,12 +425,17 @@ go_sentence
         go->setOverClause($4);
         go->setWhereClause($5);
         if ($6 == nullptr) {
-            auto *edge = new std::string(*$4->edges()[0]->edge());
-            auto *expr = new EdgeDstIdExpression(edge);
-            auto *alias = new std::string("id");
-            auto *col = new YieldColumn(expr, alias);
             auto *cols = new YieldColumns();
-            cols->addColumn(col);
+            for (auto e : $4->edges()) {
+	        if (e->isOverAll()) {
+		    continue;
+		}
+                auto *edge = new std::string(*e->edge());
+                auto *expr = new EdgeDstIdExpression(edge);
+                auto *alias = new std::string(*edge + "_id");
+                auto *col = new YieldColumn(expr, alias);
+                cols->addColumn(col);
+	    }
             $6 = new YieldClause(cols);
         }
         go->setYieldClause($6);
@@ -522,7 +527,21 @@ over_edges
     ;
 
 over_clause
-    : KW_OVER over_edges {
+    : KW_OVER MUL {
+        auto edges = new OverEdges();
+	auto s = new std::string("*");
+	auto edge = new OverEdge(s, nullptr, false);
+	edges->addEdge(edge);
+        $$ = new OverClause(edges);
+    }
+    | KW_OVER MUL KW_REVERSELY {
+        auto edges = new OverEdges();
+	auto s = new std::string("*");
+	auto edge = new OverEdge(s, nullptr, false);
+	edges->addEdge(edge);
+        $$ = new OverClause(edges);
+    }
+    | KW_OVER over_edges {
 	$$ = new OverClause($2);
     }
     ;

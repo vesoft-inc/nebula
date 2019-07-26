@@ -113,6 +113,8 @@ public:
 
     bool isReversely() const { return isReversely_; }
 
+    bool isOverAll() const { return *edge_ == "*"; }
+
     std::string *edge() const { return edge_.get(); }
 
     std::string *alias() const { return alias_.get(); }

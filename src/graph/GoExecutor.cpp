@@ -163,6 +163,11 @@ Status GoExecutor::prepareOver() {
 
     auto edges = clause->edges();
     for (auto e : edges) {
+        if (e->isOverAll()) {
+            expCtx_->setOverAllEdge();
+            return status;
+        }
+
         auto spaceId = ectx()->rctx()->session()->space();
         auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *e->edge());
         if (!edgeStatus.ok()) {
@@ -291,11 +296,12 @@ void GoExecutor::stepOut() {
         return;
     }
     auto returns = status.value();
-    auto future = ectx()->storage()->getNeighbors(spaceId,
-                                                  starts_,
-                                                  edgeTypes_,
-                                                  "",
-                                                  std::move(returns));
+    auto future  = ectx()->storage()->getNeighbors(spaceId,
+                                                   starts_,
+                                                   edgeTypes_,
+                                                   "",
+                                                   std::move(returns),
+                                                   expCtx_->isOverAllEdge());
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&result) {
         auto completeness = result.completeness();
@@ -353,6 +359,28 @@ void GoExecutor::onVertexProps(RpcResponse &&rpcResp) {
     UNUSED(rpcResp);
 }
 
+std::vector<std::string> GoExecutor::getEdgeNamesFromResp(RpcResponse &rpcResp) const {
+    std::vector<std::string> names;
+    auto spaceId = ectx()->rctx()->session()->space();
+    for (auto &resp : rpcResp.responses()) {
+        auto *vertices = resp.get_vertices();
+        if (vertices == nullptr) {
+            continue;
+        }
+
+        for (auto &vdata : *vertices) {
+            for (auto &edata : vdata.edge_data) {
+                auto edgeType = edata.type;
+                auto status   = ectx()->schemaManager()->toEdgeName(spaceId, edgeType);
+                DCHECK(status.ok());
+                auto edgeName = status.value();
+                names.emplace_back(std::move(edgeName));
+            }
+        }
+    }
+
+    return names;
+}
 
 std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const {
     std::unordered_set<VertexID> set;
@@ -361,24 +389,40 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
         if (vertices == nullptr) {
             continue;
         }
-        auto schema = std::make_shared<ResultSchemaProvider>(resp.edge_schema);
+
         for (auto &vdata : *vertices) {
-            RowSetReader rsReader(schema, vdata.edge_data);
-            auto iter = rsReader.begin();
-            while (iter) {
-                VertexID dst;
-                auto rc = iter->getVid("_dst", dst);
-                CHECK(rc == ResultType::SUCCEEDED);
-                set.emplace(dst);
-                ++iter;
+            for (auto &edata : vdata.edge_data) {
+                auto schema = std::make_shared<ResultSchemaProvider>(edata.schema);
+                RowSetReader rsReader(schema, edata.data);
+                auto iter = rsReader.begin();
+                while (iter) {
+                    VertexID dst;
+                    auto rc = iter->getVid("_dst", dst);
+                    CHECK(rc == ResultType::SUCCEEDED);
+                    set.emplace(dst);
+                    ++iter;
+                }
             }
         }
     }
     return std::vector<VertexID>(set.begin(), set.end());
 }
 
-
 void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
+    // MayBe we can do better.
+    std::vector<std::unique_ptr<YieldColumn>> yc;
+    if (expCtx_->isOverAllEdge() && yields_.empty()) {
+        auto edgeNames = getEdgeNamesFromResp(rpcResp);
+        for (const auto &name : edgeNames) {
+            auto dummy     = new std::string(name + "_id");
+            auto dummy_exp = new EdgeDstIdExpression(dummy);
+            auto ptr       = std::make_unique<YieldColumn>(dummy_exp);
+            dummy_exp->setContext(expCtx_.get());
+            yields_.emplace_back(ptr.get());
+            yc.emplace_back(std::move(ptr));
+        }
+    }
+
     auto outputs = setupInterimResult(std::move(rpcResp));
     if (onResult_) {
         onResult_(std::move(outputs));
@@ -393,7 +437,6 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     DCHECK(onFinish_);
     onFinish_();
 }
-
 
 StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() const {
     std::vector<storage::cpp2::PropDef> props;
@@ -427,7 +470,20 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() cons
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
         pd.name = prop.first;
-        pd.id.set_edge_type(prop.second);
+        if (expCtx_->isOverAllEdge()) {
+            auto edgeName = boost::get<std::string>(prop.second);
+
+            auto status = ectx()->schemaManager()->toEdgeType(spaceId, edgeName);
+            if (!status.ok()) {
+                return Status::Error("No schema found for '%s'",
+                                     boost::get<std::string>(prop.second));
+            }
+            auto edgeType = status.value();
+            pd.id.set_edge_type(edgeType);
+            expCtx_->addAlias(edgeName, AliasKind::Edge, edgeName, edgeType);
+        } else {
+            pd.id.set_edge_type(boost::get<EdgeType>(prop.second));
+        }
         props.emplace_back(std::move(pd));
     }
 
@@ -598,12 +654,9 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             continue;
         }
         std::shared_ptr<ResultSchemaProvider> vschema;
-        std::shared_ptr<ResultSchemaProvider> eschema;
+
         if (resp.get_vertex_schema() != nullptr) {
             vschema = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
-        }
-        if (resp.get_edge_schema() != nullptr) {
-            eschema = std::make_shared<ResultSchemaProvider>(resp.edge_schema);
         }
 
         for (auto &vdata : resp.vertices) {
@@ -613,45 +666,54 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 vreader = RowReader::getRowReader(vdata.vertex_data, vschema);
             }
             DCHECK(vdata.__isset.edge_data);
-            DCHECK(eschema != nullptr);
-            RowSetReader rsReader(eschema, vdata.edge_data);
-            auto iter = rsReader.begin();
-            while (iter) {
-                auto &getters = expCtx_->getters();
-                getters.getEdgeProp = [&] (const std::string &prop) -> VariantType {
-                    auto res = RowReader::getProp(&*iter, prop);
-                    CHECK(ok(res));
-                    return value(std::move(res));
-                };
-                getters.getSrcTagProp = [&] (const std::string&, const std::string &prop) {
-                    auto res = RowReader::getProp(vreader.get(), prop);
-                    CHECK(ok(res));
-                    return value(std::move(res));
-                };
-                getters.getDstTagProp = [&] (const std::string&, const std::string &prop) {
-                    auto dst = RowReader::getProp(&*iter, "_dst");
-                    CHECK(ok(dst));
-                    return vertexHolder_->get(boost::get<int64_t>(value(std::move(dst))), prop);
-                };
-                // Evaluate filter
-                if (filter_ != nullptr) {
-                    auto value = filter_->eval();
-                    if (!Expression::asBool(value)) {
-                        ++iter;
-                        continue;
+
+            for (auto &edata : vdata.edge_data) {
+                std::shared_ptr<ResultSchemaProvider> eschema;
+
+                eschema = std::make_shared<ResultSchemaProvider>(edata.schema);
+
+                DCHECK(eschema != nullptr);
+                RowSetReader rsReader(eschema, edata.data);
+                auto iter = rsReader.begin();
+                while (iter) {
+                    auto &getters = expCtx_->getters();
+                    // TODO(Simon.Liu) We must get prop according to the edge_type
+                    getters.getEdgeProp = [&](const std::string &prop) -> VariantType {
+                        auto res = RowReader::getProp(&*iter, prop);
+                        CHECK(ok(res));
+                        return value(std::move(res));
+                    };
+                    getters.getSrcTagProp = [&](const std::string &, const std::string &prop) {
+                        auto res = RowReader::getProp(vreader.get(), prop);
+                        CHECK(ok(res));
+                        return value(std::move(res));
+                    };
+                    getters.getDstTagProp = [&](const std::string &, const std::string &prop) {
+                        auto dst = RowReader::getProp(&*iter, "_dst");
+                        CHECK(ok(dst));
+                        return vertexHolder_->get(boost::get<int64_t>(value(std::move(dst))), prop);
+                    };
+                    // Evaluate filter
+                    if (filter_ != nullptr) {
+                        auto value = filter_->eval();
+                        if (!Expression::asBool(value)) {
+                            ++iter;
+                            continue;
+                        }
                     }
-                }
-                std::vector<VariantType> record;
-                record.reserve(yields_.size());
-                for (auto *column : yields_) {
-                    auto *expr = column->expr();
-                    // TODO(dutor) `eval' may fail
-                    auto value = expr->eval();
-                    record.emplace_back(std::move(value));
-                }
-                cb(std::move(record));
-                ++iter;
-            }   // while `iter'
+
+                    std::vector<VariantType> record;
+                    record.reserve(yields_.size());
+                    for (auto *column : yields_) {
+                        auto *expr = column->expr();
+                        // TODO(dutor) `eval' may fail
+                        auto value = expr->eval();
+                        record.emplace_back(std::move(value));
+                    }
+                    cb(std::move(record));
+                    ++iter;
+                }  // while `iter'
+            }
         }   // for `vdata'
     }   // for `resp'
 }
