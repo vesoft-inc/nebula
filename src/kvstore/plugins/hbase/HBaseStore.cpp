@@ -379,9 +379,8 @@ void HBaseStore::asyncRemovePrefix(GraphSpaceID spaceId,
     return cb(removePrefix());
 }
 
-ResultCode HBaseStore::ingest(GraphSpaceID spaceId,
-                              const std::string& extra) {
-    UNUSED(spaceId); UNUSED(extra);
+ResultCode HBaseStore::ingest(GraphSpaceID spaceId) {
+    UNUSED(spaceId);
     return ResultCode::ERR_NOT_SUPPORTED;
 }
 

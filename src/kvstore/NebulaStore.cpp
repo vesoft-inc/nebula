@@ -421,8 +421,7 @@ ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceI
 }
 
 
-ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
-                               const std::string& extra) {
+ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
     decltype(spaces_)::iterator it;
     folly::RWSpinLock::ReadHolder rh(&lock_);
     RETURN_IF_SPACE_NOT_FOUND(spaceId, it);
@@ -430,16 +429,21 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
         auto parts = engine->allParts();
         std::vector<std::string> extras;
         for (auto part : parts) {
+            auto ret = this->engine(spaceId, part);
+            if (!ok(ret)) {
+                return error(ret);
+            }
+
+            auto path = value(ret)->getDataRoot();
             LOG(INFO) << "Loading Part " << part;
-            auto path = folly::stringPrintf("%s/%d", extra.c_str(), part);
-            if (!nebula::fs::FileUtils::exist(path)) {
+            if (!fs::FileUtils::exist(path)) {
                 LOG(ERROR) << path << " not existed";
                 return ResultCode::ERR_IO_ERROR;
             }
 
-            auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
+            auto files = nebula::fs::FileUtils::listAllFilesInDir(path, true, "*.sst");
             for (auto file : files) {
-                VLOG(3) << "Loading extra path : " << file;
+                VLOG(3) << "Loading extra file: " << file;
                 extras.emplace_back(file);
             }
         }
@@ -517,6 +521,25 @@ ErrorOr<ResultCode, KVEngine*> NebulaStore::engine(GraphSpaceID spaceId, Partiti
         return ResultCode::ERR_PART_NOT_FOUND;
     }
     return partIt->second->engine();
+}
+
+ErrorOr<ResultCode, std::string> NebulaStore::getDataPath(GraphSpaceID spaceId,
+                                                          PartitionID partId) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
+    auto it = spaces_.find(spaceId);
+    if (UNLIKELY(it == spaces_.end())) {
+        return ResultCode::ERR_SPACE_NOT_FOUND;
+    }
+    auto& parts = it->second->parts_;
+    auto partIt = parts.find(partId);
+    if (UNLIKELY(partIt == parts.end())) {
+        return ResultCode::ERR_PART_NOT_FOUND;
+    }
+    auto ret = this->engine(spaceId, partId);
+    if (!ok(ret)) {
+        return error(ret);
+    }
+    return value(ret)->getDataRoot();
 }
 
 }  // namespace kvstore

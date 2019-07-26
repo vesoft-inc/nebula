@@ -44,7 +44,7 @@ public:
         });
         WebService::registerHandler("/download", [this] {
             auto handler = new storage::StorageHttpDownloadHandler();
-            handler->init(helper.get(), pool_.get(), "/data");
+            handler->init(helper.get(), pool_.get(), kv_.get());
             return handler;
         });
         auto status = WebService::start();

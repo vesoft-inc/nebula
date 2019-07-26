@@ -27,12 +27,13 @@ using proxygen::ResponseBuilder;
 
 void StorageHttpDownloadHandler::init(nebula::hdfs::HdfsHelper *helper,
                                       nebula::thread::GenericThreadPool *pool,
-                                      std::string localPath) {
+                                      nebula::kvstore::KVStore *kvstore) {
     helper_ = helper;
     pool_ = pool;
-    localPath_ = localPath;
+    kvstore_ = kvstore;
     CHECK_NOTNULL(helper_);
     CHECK_NOTNULL(pool_);
+    CHECK_NOTNULL(kvstore_);
 }
 
 void StorageHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
@@ -45,7 +46,8 @@ void StorageHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers)
      if (!headers->hasQueryParam("host") ||
          !headers->hasQueryParam("port") ||
          !headers->hasQueryParam("path") ||
-         !headers->hasQueryParam("parts")) {
+         !headers->hasQueryParam("parts") ||
+         !headers->hasQueryParam("space")) {
          LOG(ERROR) << "Illegal Argument";
          err_ = HttpCode::E_ILLEGAL_ARGUMENT;
          return;
@@ -55,6 +57,7 @@ void StorageHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers)
      hdfsPort_ = headers->getIntQueryParam("port");
      hdfsPath_ = headers->getQueryParam("path");
      partitions_ = headers->getQueryParam("parts");
+     spaceID_ = headers->getIntQueryParam("space");
 }
 
 
@@ -91,7 +94,7 @@ void StorageHttpDownloadHandler::onEOM() noexcept {
                 .sendWithEOM();
         }
 
-        if (downloadSSTFiles(hdfsHost_, hdfsPort_, hdfsPath_, parts, localPath_)) {
+        if (downloadSSTFiles(hdfsHost_, hdfsPort_, hdfsPath_, parts)) {
             ResponseBuilder(downstream_)
                 .status(WebServiceUtils::to(HttpStatusCode::OK),
                         WebServiceUtils::toString(HttpStatusCode::OK))
@@ -132,8 +135,7 @@ void StorageHttpDownloadHandler::onError(ProxygenError error) noexcept {
 bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
                                                   int32_t hdfsPort,
                                                   const std::string& hdfsPath,
-                                                  const std::vector<std::string>& parts,
-                                                  const std::string& localPath) {
+                                                  const std::vector<std::string>& parts) {
     static std::atomic_flag isRunning = ATOMIC_FLAG_INIT;
     if (isRunning.test_and_set()) {
         LOG(ERROR) << "Download is not completed";
@@ -143,16 +145,25 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
     std::vector<folly::SemiFuture<bool>> futures;
 
     for (auto& part : parts) {
-        auto downloader = [hdfsHost, hdfsPort, hdfsPath, localPath, part, this]() {
-            int32_t partInt;
+        auto downloader = [hdfsHost, hdfsPort, hdfsPath, part, this]() {
+            PartitionID partId;
             try {
-                partInt = folly::to<int32_t>(part);
+                partId = folly::to<PartitionID>(part);
             } catch (const std::exception& ex) {
                 LOG(ERROR) << "Invalid part: \"" << part << "\"";
                 return false;
             }
 
-            auto hdfsPartPath = folly::stringPrintf("%s/%d", hdfsPath.c_str(), partInt);
+            auto hdfsPartPath = folly::stringPrintf("%s/%d", hdfsPath.c_str(), partId);
+            auto dataPathResult = kvstore_->getDataPath(spaceID_, partId);
+            if (!ok(dataPathResult)) {
+                LOG(ERROR) << "Can't found space: " << spaceID_ << ", part: " << partId;
+                return false;
+            }
+
+            LOG(INFO) << "local path: " << nebula::value(dataPathResult);
+            auto localPath = folly::stringPrintf("%s/download/",
+                                                 value(dataPathResult).c_str());
             auto result = this->helper_->copyToLocal(hdfsHost, hdfsPort,
                                                      hdfsPartPath, localPath);
             return result.ok() && result.value().empty();

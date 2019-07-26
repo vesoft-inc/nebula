@@ -40,13 +40,11 @@ void MetaHttpIngestHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noex
         return;
     }
 
-    if (!headers->hasQueryParam("path") ||
-        !headers->hasQueryParam("space")) {
+    if (!headers->hasQueryParam("space")) {
         err_ = HttpCode::E_ILLEGAL_ARGUMENT;
         return;
     }
 
-    path_ = headers->getQueryParam("path");
     space_ = headers->getIntQueryParam("space");
 }
 
@@ -73,8 +71,8 @@ void MetaHttpIngestHandler::onEOM() noexcept {
             break;
     }
 
-    if (ingestSSTFiles(space_, path_)) {
-        LOG(INFO) << "SSTFile ingest successfully " << path_;
+    if (ingestSSTFiles(space_)) {
+        LOG(INFO) << "SSTFile ingest successfully ";
         ResponseBuilder(downstream_)
             .status(WebServiceUtils::to(HttpStatusCode::OK),
                     WebServiceUtils::toString(HttpStatusCode::OK))
@@ -105,7 +103,7 @@ void MetaHttpIngestHandler::onError(ProxygenError error) noexcept {
                << proxygen::getErrorString(error);
 }
 
-bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space, const std::string& path) {
+bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto prefix = MetaServiceUtils::partPrefix(space);
     auto ret = kvstore_->prefix(0, 0, prefix, &iter);
@@ -134,10 +132,10 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space, const std::string
     });
 
     for (auto &storageIP : storageIPs) {
-        auto dispatcher = [storageIP, space, path]() {
-            auto tmp = "http://%s:%d/ingest?path=%s&space=%d";
-            auto url = folly::stringPrintf(tmp, storageIP.c_str(), FLAGS_ws_storage_http_port,
-                                           path.c_str(), space);
+        auto dispatcher = [storageIP, space]() {
+            auto tmp = "http://%s:%d/ingest?space=%d";
+            auto url = folly::stringPrintf(tmp, storageIP.c_str(),
+                                           FLAGS_ws_storage_http_port, space);
             auto ingestResult = nebula::http::HttpClient::get(url);
             return ingestResult.ok() && ingestResult.value() == "SSTFile ingest successfully";
         };

@@ -32,7 +32,7 @@ void IngestExecutor::execute() {
     auto  spaceId = ectx()->rctx()->session()->space();
 
     auto func = [metaHost, spaceId]() {
-        std::string tmp = "http://%s:%d/%s?path=%s&space=%d";
+        std::string tmp = "http://%s:%d/%s?space=%d";
         auto url = folly::stringPrintf(tmp.c_str(), metaHost.c_str(),
                                        FLAGS_ws_meta_http_port,
                                        "ingest-dispatch", spaceId);
@@ -59,7 +59,6 @@ void IngestExecutor::execute() {
         DCHECK(onFinish_);
         onFinish_();
     };
-
 
     auto error = [this] (auto &&e) {
         LOG(ERROR) << "Exception caught: " << e.what();

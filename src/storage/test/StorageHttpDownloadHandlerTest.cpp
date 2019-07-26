@@ -26,14 +26,18 @@ public:
     void SetUp() override {
         FLAGS_ws_http_port = 0;
         FLAGS_ws_h2_port = 0;
+
+        rootPath_ = std::make_unique<fs::TempDir>("/tmp/StorageHttpDownloadHandler.XXXXXX");
+        kv_ = TestUtils::initKV(rootPath_->path());
+
         pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
         pool_->start(1);
         auto poolPtr = pool_.get();
 
         VLOG(1) << "Starting web service...";
-        WebService::registerHandler("/download", [poolPtr] {
+        WebService::registerHandler("/download", [poolPtr, this] {
             auto handler =  new storage::StorageHttpDownloadHandler();
-            handler->init(helper.get(), poolPtr, "/data");
+            handler->init(helper.get(), poolPtr, kv_.get());
             return handler;
         });
         auto status = WebService::start();
@@ -41,11 +45,15 @@ public:
     }
 
     void TearDown() override {
+        kv_.reset();
+        rootPath_.reset();
         WebService::stop();
         VLOG(1) << "Web service stopped";
     }
 
 private:
+    std::unique_ptr<fs::TempDir> rootPath_;
+    std::unique_ptr<kvstore::KVStore> kv_;
     std::unique_ptr<nebula::thread::GenericThreadPool> pool_;
 };
 
@@ -56,20 +64,20 @@ TEST(StorageHttpDownloadHandlerTest, StorageDownloadTest) {
         ASSERT_TRUE(resp.empty());
     }
     {
-        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&local=/tmp";
+        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=0";
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile download successfully", resp);
     }
     {
-        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=illegal-part&local=/tmp";
+        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=illegal-part&space=0";
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile download failed", resp);
     }
     {
         helper = std::make_unique<nebula::storage::MockHdfsExistHelper>();
-        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&local=/tmp";
+        auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=0";
         std::string resp;
         ASSERT_TRUE(getUrl(url, resp));
         ASSERT_EQ("SSTFile download failed", resp);

@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "webservice/Common.h"
 #include "hdfs/HdfsHelper.h"
+#include "kvstore/KVStore.h"
 #include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 
@@ -24,7 +25,7 @@ public:
 
     void init(nebula::hdfs::HdfsHelper *helper,
               nebula::thread::GenericThreadPool *pool,
-              std::string localPath);
+              nebula::kvstore::KVStore *kvstore);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -42,19 +43,19 @@ private:
     bool downloadSSTFiles(const std::string& url,
                           int port,
                           const std::string& path,
-                          const std::vector<std::string>& parts,
-                          const std::string& local);
+                          const std::vector<std::string>& parts);
 
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
+    GraphSpaceID spaceID_;
     std::string hdfsHost_;
     int32_t hdfsPort_;
     std::string hdfsPath_;
     std::string partitions_;
-    std::string localPath_;
     nebula::hdfs::HdfsHelper *helper_;
     nebula::thread::GenericThreadPool *pool_;
+    nebula::kvstore::KVStore *kvstore_;
 };
 
 }  // namespace storage

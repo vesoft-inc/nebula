@@ -126,13 +126,17 @@ public:
                            const std::string& prefix,
                            KVCallback cb) override;
 
-    ResultCode ingest(GraphSpaceID spaceId,
-                      const std::string& extra) override;
+    ResultCode ingest(GraphSpaceID spaceId) override;
 
     ResultCode compactAll(GraphSpaceID spaceId) override;
 
     ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID,
                                                     PartitionID) override {
+        LOG(FATAL) << "Unsupported!";
+    }
+
+    ErrorOr<ResultCode, std::string> getDataPath(GraphSpaceID,
+                                                 PartitionID) override {
         LOG(FATAL) << "Unsupported!";
     }
 

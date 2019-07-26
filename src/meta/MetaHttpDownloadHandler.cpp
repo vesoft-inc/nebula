@@ -53,6 +53,7 @@ void MetaHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers) no
         !headers->hasQueryParam("port") ||
         !headers->hasQueryParam("path") ||
         !headers->hasQueryParam("space")) {
+        LOG(INFO) << "Illegal Argument";
         err_ = HttpCode::E_ILLEGAL_ARGUMENT;
         return;
     }
@@ -135,6 +136,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
         LOG(ERROR) << "Dispatch SSTFile Failed";
         return false;
     }
+    LOG(INFO) << "Result: Path " << hdfsPath << ", "  << result.value();
     std::vector<std::string> files;
     folly::split("\n", result.value(), files, true);
     int32_t  partNumber = files.size() - 1;
@@ -179,11 +181,12 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
         folly::join(",", pair.second, partsStr);
 
         auto storageIP = network::NetworkUtils::intToIPv4(pair.first.first);
-        auto dispatcher = [storageIP, hdfsHost, hdfsPort, hdfsPath, partsStr]() {
-            auto tmp = "http://%s:%d/download?host=%s\\&port=%d\\&path=%s\\&parts=%s";
-            auto url = folly::stringPrintf(tmp, storageIP.c_str(), FLAGS_ws_storage_http_port,
-                                           hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(),
-                                           partsStr.c_str());
+        auto dispatcher = [storageIP, hdfsHost, hdfsPort, hdfsPath, partsStr, this]() {
+            auto tmp = "http://%s:%d/download?host=%s\\&port=%d\\&path=%s\\&parts=%s\\&space=%d";
+            std::string url = folly::stringPrintf(tmp, storageIP.c_str(),
+                                                  FLAGS_ws_storage_http_port,
+                                                  hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(),
+                                                  partsStr.c_str(), spaceID_);
             auto downloadResult = nebula::http::HttpClient::get(url);
             return downloadResult.ok() && downloadResult.value() == "SSTFile download successfully";
         };

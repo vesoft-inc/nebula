@@ -186,9 +186,9 @@ int main(int argc, char *argv[]) {
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::storage::StorageHttpStatusHandler();
     });
-    nebula::WebService::registerHandler("/download", [helperPtr, poolPtr] {
+    nebula::WebService::registerHandler("/download", [helperPtr, poolPtr, kvstore_] {
         auto handler = new nebula::storage::StorageHttpDownloadHandler();
-        handler->init(helperPtr, poolPtr, FLAGS_data_path);
+        handler->init(helperPtr, poolPtr, kvstore_);
         return handler;
     });
     nebula::WebService::registerHandler("/ingest", [kvstore_] {
