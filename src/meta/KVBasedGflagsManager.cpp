@@ -33,21 +33,21 @@ KVBasedGflagsManager::setConfig(const cpp2::ConfigModule& module, const std::str
                                 const cpp2::ConfigType& type, const VariantType &value) {
     UNUSED(module); UNUSED(name); UNUSED(type); UNUSED(value);
     LOG(FATAL) << "Unimplement!";
-    return Status::OK();
+    return Status::NotSupported();
 }
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 KVBasedGflagsManager::getConfig(const cpp2::ConfigModule& module, const std::string& name) {
     UNUSED(module); UNUSED(name);
     LOG(FATAL) << "Unimplement!";
-    return Status::OK();
+    return Status::NotSupported();
 }
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 KVBasedGflagsManager::listConfigs(const cpp2::ConfigModule& module) {
     UNUSED(module);
     LOG(FATAL) << "Unimplement!";
-    return Status::OK();
+    return Status::NotSupported();
 }
 
 folly::Future<StatusOr<bool>>
@@ -56,7 +56,7 @@ KVBasedGflagsManager::registerConfig(const cpp2::ConfigModule& module, const std
                                      const std::string& value) {
     UNUSED(module); UNUSED(name); UNUSED(type); UNUSED(mode); UNUSED(value);
     LOG(FATAL) << "Unimplement!";
-    return Status::OK();
+    return Status::NotSupported();
 }
 
 void KVBasedGflagsManager::getGflagsModule() {
