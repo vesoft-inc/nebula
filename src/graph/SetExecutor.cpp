@@ -96,6 +96,12 @@ void SetExecutor::execute() {
             onError_(Status::Error(msg));
             return;
         }
+
+        if (leftResult_ == nullptr && rightResult_ == nullptr) {
+            VLOG(3) << "Set op no input.";
+            onEmptyInputs();
+            return;
+        }
         switch (sentence_->op()) {
             case SetSentence::Operator::UNION:
                 doUnion();
@@ -114,12 +120,7 @@ void SetExecutor::execute() {
 }
 
 void SetExecutor::doUnion() {
-    if (leftResult_ == nullptr && rightResult_ == nullptr) {
-        VLOG(3) << "Union no input.";
-        onEmptyInputs();
-        return;
-    }
-
+    VLOG(3) << "Do Union.";
     if (leftResult_ == nullptr) {
         VLOG(3) << "Union has right result.";
         finishExecution(std::move(rightResult_));
@@ -157,16 +158,9 @@ void SetExecutor::doUnion() {
         leftRows.insert(leftRows.end(), rightRows.begin(), rightRows.end());
         rows = std::move(leftRows);
     }
-    if (onResult_) {
-        auto outputs = InterimResult::getInterim(resultSchema_, rows);
-        onResult_(std::move(outputs));
-    } else {
-        resp_ = std::make_unique<cpp2::ExecutionResponse>();
-        resp_->set_column_names(std::move(colNames_));
-        resp_->set_rows(std::move(rows));
-    }
-    DCHECK(onFinish_);
-    onFinish_();
+
+    finishExecution(std::move(rows));
+    return;
 }
 
 Status SetExecutor::checkSchema() {
@@ -249,9 +243,89 @@ std::vector<cpp2::RowValue> SetExecutor::doDistinct(
 }
 
 void SetExecutor::doIntersect() {
+    VLOG(3) << "Do InterSect.";
+    if (leftResult_ == nullptr || rightResult_ == nullptr) {
+        VLOG(3) << "No intersect.";
+        onEmptyInputs();
+        return;
+    }
+
+    Status status = checkSchema();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(status);
+        return;
+    }
+
+    auto leftRows = leftResult_->getRows();
+    auto rightRows = rightResult_->getRows();
+    if (!castingMap_.empty()) {
+        Status stat = doCasting(rightRows);
+        if (!stat.ok()) {
+            DCHECK(onError_);
+            onError_(status);
+            return;
+        }
+    }
+
+    std::vector<cpp2::RowValue> rows;
+    for (auto &lr : leftRows) {
+        for (auto &rr : rightRows) {
+            if (rr == lr) {
+                rows.emplace_back(std::move(rr));
+                break;
+            }
+        }
+    }
+
+    finishExecution(std::move(rows));
+    return;
 }
 
 void SetExecutor::doMinus() {
+    VLOG(3) << "Do Minus.";
+    if (leftResult_ == nullptr) {
+        VLOG(3) << "Minus has only right result.";
+        onEmptyInputs();
+        return;
+    }
+
+    if (rightResult_ == nullptr) {
+        VLOG(3) << "Minus has left result.";
+        finishExecution(std::move(leftResult_));
+        return;
+    }
+
+    Status status = checkSchema();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(status);
+        return;
+    }
+
+    auto leftRows = leftResult_->getRows();
+    auto rightRows = rightResult_->getRows();
+    if (!castingMap_.empty()) {
+        Status stat = doCasting(rightRows);
+        if (!stat.ok()) {
+            DCHECK(onError_);
+            onError_(status);
+            return;
+        }
+    }
+
+    for (auto &rr : rightRows) {
+        for (auto iter = leftRows.begin(); iter < leftRows.end();) {
+            if (rr == *iter) {
+                iter = leftRows.erase(iter);
+            } else {
+                ++iter;
+            }
+        }
+    }
+
+    finishExecution(std::move(leftRows));
+    return;
 }
 
 void SetExecutor::onEmptyInputs() {
@@ -276,6 +350,19 @@ void SetExecutor::finishExecution(std::unique_ptr<InterimResult> result) {
         }
     }
 
+    DCHECK(onFinish_);
+    onFinish_();
+}
+
+void SetExecutor::finishExecution(std::vector<cpp2::RowValue> rows) {
+    if (onResult_) {
+        auto outputs = InterimResult::getInterim(resultSchema_, rows);
+        onResult_(std::move(outputs));
+    } else {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(colNames_));
+        resp_->set_rows(std::move(rows));
+    }
     DCHECK(onFinish_);
     onFinish_();
 }

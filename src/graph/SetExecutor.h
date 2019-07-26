@@ -34,6 +34,8 @@ public:
 private:
     void finishExecution(std::unique_ptr<InterimResult> result);
 
+    void finishExecution(std::vector<cpp2::RowValue> leftRows);
+
     void doUnion();
 
     void doIntersect();

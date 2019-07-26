@@ -295,6 +295,56 @@ TEST_F(SetTest, UnionDistinct) {
     }
 }
 
+TEST_F(SetTest, Minus) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "(GO FROM %ld OVER like | "
+                    "GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+                    " MINUS "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &like : tim.likes()) {
+            auto &player = players_[std::get<0>(like)];
+            if (player.name() == tony.name()) {
+                continue;
+            }
+            for (auto &serve : player.serves()) {
+                std::tuple<std::string, int64_t, std::string> record(
+                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                expected.emplace_back(std::move(record));
+            }
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(SetTest, Intersectt) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "(GO FROM %ld OVER like | "
+                    "GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+                    " INTERSECT "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &serve : tony.serves()) {
+            std::tuple<std::string, int64_t, std::string> record(
+                    tony.name(), std::get<1>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(record));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 TEST_F(SetTest, NoInput) {
     {
         cpp2::ExecutionResponse resp;
