@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -33,6 +33,8 @@ protected:
     void dumpOneField(const nebula::cpp2::ValueType &type, const int64_t index);
     void dumpAllFields();
 
+    void reset();
+
     virtual void dumpPrefix() = 0;
 
 protected:
@@ -66,8 +68,8 @@ protected:
 
 class RowDumperFactory {
 public:
-    static std::shared_ptr<RowDumper> createRowDumper(kvstore::KVIterator *iter,
-        const GraphSpaceID &spaceId, SchemaManager *schemaMngPtr);
+    static RowDumper* createRowDumper(kvstore::KVIterator *iter, const GraphSpaceID &spaceId,
+        SchemaManager *schemaMngPtr);
 };
 
 }  // namespace nebula

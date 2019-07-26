@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -57,6 +57,16 @@ void RowDumper::dumpOneField(const cpp2::ValueType &type, const int64_t index) {
 }
 
 
+void RowDumper::reset() {
+    row_ = nullptr;
+    schema_.reset();
+    reader_.reset();
+
+    nameStream_.str("");
+    valStream_.str("");
+}
+
+
 void RowDumper::dumpAllFields() {
     auto fieldNum = schema_->getNumFields();
     for (decltype(fieldNum) i = 0; i < fieldNum; ++i) {
@@ -88,6 +98,8 @@ RowFormat RowDumper::dump() {
 
 bool TagDumper::init(kvstore::KVIterator *iter, const GraphSpaceID &spaceId,
     SchemaManager *schemaMngPtr) {
+    reset();
+
     row_ = iter;
     auto key = iter->key();
     auto val = iter->val();
@@ -118,6 +130,8 @@ void TagDumper::dumpPrefix() {
 
 bool EdgeDumper::init(kvstore::KVIterator *iter, const GraphSpaceID &spaceId,
     SchemaManager *schemaMngPtr) {
+    reset();
+
     row_ = iter;
     auto key = iter->key();
     auto val = iter->val();
@@ -161,25 +175,26 @@ void EdgeDumper::dumpPrefix() {
 }
 
 
-std::shared_ptr<RowDumper> RowDumperFactory::createRowDumper(kvstore::KVIterator *iter,
+RowDumper* RowDumperFactory::createRowDumper(kvstore::KVIterator *iter,
     const GraphSpaceID &spaceId, SchemaManager *schemaMngPtr) {
     auto key = iter->key();
 
     if (NebulaKeyUtils::isVertex(key)) {
-        auto ret = std::make_shared<TagDumper>();
-        if (ret->init(iter, spaceId, schemaMngPtr)) {
-            return ret;
+        static TagDumper dumper;
+        if (dumper.init(iter, spaceId, schemaMngPtr)) {
+            return &dumper;
         }
     } else if (NebulaKeyUtils::isEdge(key)) {
-        auto ret = std::make_shared<EdgeDumper>();
-        if (ret->init(iter, spaceId, schemaMngPtr)) {
-            return ret;
+        static EdgeDumper dumper;
+        if (dumper.init(iter, spaceId, schemaMngPtr)) {
+            return &dumper;
         }
     } else {
         // do nothing
+        LOG(INFO) << "other key " << key;
     }
 
-    return std::shared_ptr<RowDumper>();
+    return nullptr;
 }
 
 }  // namespace nebula

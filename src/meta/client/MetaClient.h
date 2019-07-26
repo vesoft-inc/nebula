@@ -177,6 +177,8 @@ public:
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
+    StatusOr<std::string> getSpaceNameByIdFromCache(const GraphSpaceID& spaceId);
+
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
     StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,

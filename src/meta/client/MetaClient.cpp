@@ -553,6 +553,22 @@ MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
 }
 
 
+StatusOr<std::string>
+MetaClient::getSpaceNameByIdFromCache(const GraphSpaceID& spaceId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    for (auto iter = spaceIndexByName_.begin(); iter != spaceIndexByName_.end(); ++iter) {
+        if (iter->second == spaceId) {
+            return iter->first;
+        }
+    }
+    return Status::SpaceNotFound();
+}
+
+
 StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
                                                     const std::string& name) {
     if (!ready_) {

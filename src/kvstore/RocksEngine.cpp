@@ -97,7 +97,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
                          const std::string& dataPath,
                          std::shared_ptr<rocksdb::MergeOperator> mergeOp,
                          std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory,
-                         bool bOpenForWrite)
+                         bool openForWrite)
         : KVEngine(spaceId)
         , dataPath_(folly::stringPrintf("%s/nebula/%d", dataPath.c_str(), spaceId)) {
     auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
@@ -110,7 +110,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     rocksdb::Options options;
 
     // set rocks option
-    if (bOpenForWrite) {
+    if (openForWrite) {
         status = initRocksdbOptions(options);
         CHECK(status.ok());
     }
@@ -123,7 +123,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
 
     // open db
     rocksdb::DB* db = nullptr;
-    if (bOpenForWrite) {
+    if (openForWrite) {
         status = rocksdb::DB::Open(options, path, &db);
     } else {
         status = rocksdb::DB::OpenForReadOnly(options, path, &db);

@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -46,13 +46,15 @@ int main(int argc, char *argv[]) {
         return FLAGS_path_prefix+"/"+folly::trimWhitespace(p).str();
     });
     if (paths.empty()) {
-         LOG(ERROR) << "Bad data_path format:" << FLAGS_data_path;
-         return 0;
+        LOG(ERROR) << "Bad data_path format:" << FLAGS_data_path;
+        return 0;
     }
 
     // dump data
     nebula::DbDumper dumper;
-    dumper.init(schemaMan.get(), std::move(paths));
+    dumper.init(schemaMan.get(), metaClient.get(), std::move(paths));
     dumper.dump();
+
+    LOG(INFO) << "dump db end";
     return 0;
 }
