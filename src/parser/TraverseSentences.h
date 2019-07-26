@@ -158,10 +158,19 @@ public:
         return op_;
     }
 
+    void setDistinct() {
+        distinct_ = true;
+    }
+
+    auto distinct() {
+        return distinct_;
+    }
+
 private:
     Operator                                    op_;
     std::unique_ptr<Sentence>                   left_;
     std::unique_ptr<Sentence>                   right_;
+    bool                                        distinct_{false};
 };
 
 
@@ -476,4 +485,26 @@ private:
 };
 }   // namespace nebula
 
+class YieldSentence final : public Sentence {
+public:
+    explicit YieldSentence(YieldColumns *fields) {
+        yieldColumns_.reset(fields);
+        kind_ = Kind::kYield;
+    }
+
+    std::vector<YieldColumn*> columns() const {
+        return yieldColumns_->columns();
+    }
+
+    void setWhereClause(WhereClause *clause) {
+        whereClause_.reset(clause);
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<YieldColumns>              yieldColumns_;
+    std::unique_ptr<WhereClause>               whereClause_;
+};
+}   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_

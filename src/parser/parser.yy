@@ -104,6 +104,7 @@ class GraphScanner;
 %token KW_ORDER KW_ASC
 %token KW_DISTINCT
 %token KW_FETCH KW_PROP
+%token KW_DISTINCT KW_ALL
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -553,8 +554,10 @@ yield_column
     ;
 
 yield_sentence
-    : KW_YIELD yield_columns {
-        $$ = new YieldSentence($2);
+    : KW_YIELD yield_columns where_clause {
+        auto *sentence = new YieldSentence($2);
+		sentence->setWhereClause($3);
+		$$ = sentence;
     }
     ;
 
@@ -886,15 +889,36 @@ traverse_sentence
     | find_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
+    | yield_sentence { $$ = $1; }
     | L_PAREN piped_sentence R_PAREN { $$ = $2; }
     | L_PAREN set_sentence R_PAREN { $$ = $2; }
     ;
 
 set_sentence
-	: piped_sentence KW_UNION piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
+	: piped_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
+	| piped_sentence KW_UNION piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $3);
+        s->setDistinct();
+        $$ = s;
+    }
+	| piped_sentence KW_UNION KW_DISTINCT piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $4);
+        s->setDistinct();
+        $$ = s;
+    }
     | piped_sentence KW_INTERSECT piped_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
     | piped_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
-	| set_sentence KW_UNION piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
+	| set_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
+	| set_sentence KW_UNION piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $3);
+        s->setDistinct();
+        $$ = s;
+    }
+	| set_sentence KW_UNION KW_DISTINCT piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $4);
+        s->setDistinct();
+        $$ = s;
+    }
     | set_sentence KW_INTERSECT piped_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
     | set_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
     ;
@@ -1480,11 +1504,6 @@ maintain_sentence
     | create_space_sentence { $$ = $1; }
     | describe_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
-    | yield_sentence {
-        // Now we take YIELD as a normal maintenance sentence.
-        // In the future, we might make it able to be used in pipe.
-        $$ = $1;
-    }
     ;
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }

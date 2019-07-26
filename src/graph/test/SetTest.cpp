@@ -26,11 +26,11 @@ protected:
     }
 };
 
-TEST_F(SetTest, UnionTest) {
+TEST_F(SetTest, UnionAllTest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
-                    " UNION "
+                    " UNION ALL "
                     "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
@@ -53,9 +53,9 @@ TEST_F(SetTest, UnionTest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
-                    " UNION "
+                    " UNION ALL "
                     "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
-                    " UNION "
+                    " UNION ALL "
                     "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
@@ -85,7 +85,7 @@ TEST_F(SetTest, UnionTest) {
         cpp2::ExecutionResponse resp;
         auto *fmt = "(GO FROM %ld OVER like | "
                     "GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
-                    " UNION "
+                    " UNION ALL "
                     "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
@@ -112,7 +112,7 @@ TEST_F(SetTest, UnionTest) {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER like | "
                     "GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
-                    " UNION "
+                    " UNION ALL "
                     "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
@@ -138,7 +138,7 @@ TEST_F(SetTest, UnionTest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
-                    " UNION "
+                    " UNION ALL "
                     "(GO FROM %ld OVER like | "
                     "GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)";
         auto &tim = players_["Tim Duncan"];
@@ -165,7 +165,7 @@ TEST_F(SetTest, UnionTest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
-                    " UNION "
+                    " UNION ALL "
                     "GO FROM %ld OVER like | "
                     "GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
@@ -191,7 +191,7 @@ TEST_F(SetTest, UnionTest) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "(GO FROM %ld OVER like UNION GO FROM %ld OVER like)"
+        auto *fmt = "(GO FROM %ld OVER like UNION ALL GO FROM %ld OVER like)"
                     " | GO FROM $- OVER serve"
                     " YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
@@ -216,6 +216,82 @@ TEST_F(SetTest, UnionTest) {
                 expected.emplace_back(std::move(record));
             }
         }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        // Although the corresponding column name and type not match,
+        // we still do the union via implicit type casting for the query .
+        auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name as name, $$.team.name as player"
+                    " UNION ALL "
+                    "GO FROM %ld OVER serve "
+                    "YIELD $^.player.name as name, serve.start_year";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, std::string>> expected;
+        for (auto &serve : tim.serves()) {
+            std::tuple<std::string, std::string> record(
+                    tim.name(), std::get<0>(serve));
+            expected.emplace_back(std::move(record));
+        }
+        for (auto &serve : tony.serves()) {
+            std::tuple<std::string, std::string> record(
+                    tony.name(),
+                    folly::to<std::string>(std::get<1>(serve)));
+            expected.emplace_back(std::move(record));
+        }
+    }
+}
+
+TEST_F(SetTest, UnionDistinct) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "(GO FROM %ld OVER like | "
+                    "GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+                    " UNION "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
+                    " UNION "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto &manu = players_["Manu Ginobili"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid(), manu.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &like : tim.likes()) {
+            auto &player = players_[std::get<0>(like)];
+            for (auto &serve : player.serves()) {
+                std::tuple<std::string, int64_t, std::string> record(
+                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                expected.emplace_back(std::move(record));
+            }
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "(GO FROM %ld OVER like | "
+                    "GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+                    " UNION DISTINCT "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &like : tim.likes()) {
+            auto &player = players_[std::get<0>(like)];
+            for (auto &serve : player.serves()) {
+                std::tuple<std::string, int64_t, std::string> record(
+                    player.name(), std::get<1>(serve), std::get<0>(serve));
+                expected.emplace_back(std::move(record));
+            }
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 
@@ -264,18 +340,6 @@ TEST_F(SetTest, ExecutionError) {
         auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year"
                     " UNION "
                     "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
-        auto &tim = players_["Tim Duncan"];
-        auto &tony = players_["Tony Parker"];
-        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER serve YIELD $^.player.name as name, $$.team.name as player"
-                    " UNION "
-                    "GO FROM %ld OVER serve "
-                    "YIELD $^.player.name as name, serve.start_year as player";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());

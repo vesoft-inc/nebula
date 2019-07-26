@@ -22,6 +22,7 @@
 namespace nebula {
 namespace graph {
 
+
 class InterimResult final {
 public:
     InterimResult() = default;
@@ -33,6 +34,16 @@ public:
 
     explicit InterimResult(std::unique_ptr<RowSetWriter> rsWriter);
     explicit InterimResult(std::vector<VertexID> vids);
+
+    static std::unique_ptr<InterimResult> getInterim(
+            std::shared_ptr<const meta::SchemaProviderIf> resultSchema,
+            std::vector<cpp2::RowValue> &rows);
+    static Status castTo(cpp2::ColumnValue *col,
+                         const nebula::cpp2::SupportedType &type);
+    static Status castToInt(cpp2::ColumnValue *col);
+    static Status castToDouble(cpp2::ColumnValue *col);
+    static Status castToBool(cpp2::ColumnValue *col);
+    static Status castToStr(cpp2::ColumnValue *col);
 
     std::shared_ptr<const meta::SchemaProviderIf> schema() const {
         return rsReader_->schema();

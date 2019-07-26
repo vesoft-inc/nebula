@@ -42,6 +42,12 @@ private:
 
     Status checkSchema();
 
+    Status doCasting(std::vector<cpp2::RowValue> &rows) const;
+
+    std::vector<cpp2::RowValue> doDistinct(
+            std::vector<cpp2::RowValue> &leftRows,
+            std::vector<cpp2::RowValue> &rightRows) const;
+
     void onEmptyInputs();
 
 private:
@@ -52,12 +58,13 @@ private:
     std::unique_ptr<InterimResult>                  rightResult_;
     folly::Promise<folly::Unit>                     leftP_;
     folly::Promise<folly::Unit>                     rightP_;
+    std::vector<folly::Future<folly::Unit>>         futures_;
     Status                                          leftS_;
     Status                                          rightS_;
+    std::map<uint64_t, nebula::cpp2::ValueType>     castingMap_;
     std::vector<std::string>                        colNames_;
     std::shared_ptr<const meta::SchemaProviderIf>   resultSchema_;
     std::unique_ptr<cpp2::ExecutionResponse>        resp_;
-    std::vector<folly::Future<folly::Unit>>         futures_;
 };
 
 }   // namespace graph

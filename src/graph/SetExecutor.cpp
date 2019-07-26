@@ -139,11 +139,34 @@ void SetExecutor::doUnion() {
         return;
     }
 
-    auto rsWriter = std::make_unique<RowSetWriter>(resultSchema_);
-    rsWriter->addAll(leftResult_->data());
-    rsWriter->addAll(rightResult_->data());
-    auto outputs = std::make_unique<InterimResult>(std::move(rsWriter));
-    finishExecution(std::move(outputs));
+    auto leftRows = leftResult_->getRows();
+    auto rightRows = rightResult_->getRows();
+    if (!castingMap_.empty()) {
+        auto stat = doCasting(rightRows);
+        if (!stat.ok()) {
+            DCHECK(onError_);
+            onError_(status);
+            return;
+        }
+    }
+
+    std::vector<cpp2::RowValue> rows;
+    if (sentence_->distinct()) {
+        rows = doDistinct(leftRows, rightRows);
+    } else {
+        leftRows.insert(leftRows.end(), rightRows.begin(), rightRows.end());
+        rows = std::move(leftRows);
+    }
+    if (onResult_) {
+        auto outputs = InterimResult::getInterim(resultSchema_, rows);
+        onResult_(std::move(outputs));
+    } else {
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(colNames_));
+        resp_->set_rows(std::move(rows));
+    }
+    DCHECK(onFinish_);
+    onFinish_();
 }
 
 Status SetExecutor::checkSchema() {
@@ -152,9 +175,18 @@ Status SetExecutor::checkSchema() {
     auto leftIter = leftSchema->begin();
     auto rightIter = rightSchema->begin();
 
+    auto index = 0u;
     while (leftIter && rightIter) {
-         ++leftIter;
-         ++rightIter;
+        auto *colName = rightIter->getName();
+        if (leftIter->getType() != rightIter->getType()) {
+            castingMap_.emplace(index, leftIter->getType());
+        }
+
+        colNames_.emplace_back(std::string(colName));
+
+        ++index;
+        ++leftIter;
+        ++rightIter;
     }
 
     if (leftIter || rightIter) {
@@ -164,6 +196,56 @@ Status SetExecutor::checkSchema() {
     resultSchema_ = std::move(leftSchema);
 
     return Status::OK();
+}
+
+Status SetExecutor::doCasting(std::vector<cpp2::RowValue> &rows) const {
+    for (auto &row : rows) {
+       auto cols = row.get_columns();
+       for (auto &pair : castingMap_) {
+           auto stat =
+               InterimResult::castTo(&cols[pair.first], pair.second.get_type());
+            if (!stat.ok()) {
+                return stat;
+            }
+       }
+       row.set_columns(std::move(cols));
+    }
+
+    return Status::OK();
+}
+
+
+std::vector<cpp2::RowValue> SetExecutor::doDistinct(
+        std::vector<cpp2::RowValue> &leftRows,
+        std::vector<cpp2::RowValue> &rightRows) const {
+    std::vector<cpp2::RowValue> rows;
+    for (auto &lr : leftRows) {
+        auto iter = rows.begin();
+        while (iter != rows.end()) {
+            if (lr == *iter) {
+                break;
+            }
+            ++iter;
+        }
+        if (iter == rows.end()) {
+            rows.emplace_back(std::move(lr));
+        }
+    }
+
+    for (auto &rr : rightRows) {
+        auto iter = rows.begin();
+        while (iter != rows.end()) {
+            if (rr == *iter) {
+                break;
+            }
+            ++iter;
+        }
+        if (iter == rows.end()) {
+            rows.emplace_back(std::move(rr));
+        }
+    }
+
+    return rows;
 }
 
 void SetExecutor::doIntersect() {
@@ -178,6 +260,7 @@ void SetExecutor::onEmptyInputs() {
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
     }
+    DCHECK(onFinish_);
     onFinish_();
 }
 
