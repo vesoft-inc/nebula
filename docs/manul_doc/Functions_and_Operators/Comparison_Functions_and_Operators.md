@@ -1,4 +1,3 @@
-
 | Name  | Description | 
 |:----|:----:|
 |   ==     |   Equal operator     | 
