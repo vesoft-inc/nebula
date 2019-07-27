@@ -554,10 +554,8 @@ yield_column
     ;
 
 yield_sentence
-    : KW_YIELD yield_columns where_clause {
-        auto *sentence = new YieldSentence($2);
-		sentence->setWhereClause($3);
-		$$ = sentence;
+    : KW_YIELD yield_columns {
+        $$ = new YieldSentence($2);
     }
     ;
 
@@ -895,26 +893,26 @@ traverse_sentence
     ;
 
 set_sentence
-	: piped_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
-	| piped_sentence KW_UNION piped_sentence {
+    : piped_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
+    | piped_sentence KW_UNION piped_sentence {
         auto *s = new SetSentence($1, SetSentence::UNION, $3);
         s->setDistinct();
         $$ = s;
     }
-	| piped_sentence KW_UNION KW_DISTINCT piped_sentence {
+    | piped_sentence KW_UNION KW_DISTINCT piped_sentence {
         auto *s = new SetSentence($1, SetSentence::UNION, $4);
         s->setDistinct();
         $$ = s;
     }
     | piped_sentence KW_INTERSECT piped_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
     | piped_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
-	| set_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
-	| set_sentence KW_UNION piped_sentence {
+    | set_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
+    | set_sentence KW_UNION piped_sentence {
         auto *s = new SetSentence($1, SetSentence::UNION, $3);
         s->setDistinct();
         $$ = s;
     }
-	| set_sentence KW_UNION KW_DISTINCT piped_sentence {
+    | set_sentence KW_UNION KW_DISTINCT piped_sentence {
         auto *s = new SetSentence($1, SetSentence::UNION, $4);
         s->setDistinct();
         $$ = s;
@@ -1504,6 +1502,11 @@ maintain_sentence
     | create_space_sentence { $$ = $1; }
     | describe_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
+    | yield_sentence {
+        // Now we take YIELD as a normal maintenance sentence.
+        // In the future, we might make it able to be used in pipe.
+        $$ = $1;
+    }
     ;
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }
@@ -1518,8 +1521,8 @@ maintain_sentence
 sentence
     : maintain_sentence { $$ = $1; }
     | use_sentence { $$ = $1; }
-	| set_sentence { $$ = $1; }
-	| piped_sentence { $$ = $1; }
+    | set_sentence { $$ = $1; }
+    | piped_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }
     ;
