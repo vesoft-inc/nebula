@@ -261,7 +261,8 @@ void ShowExecutor::showCreateSpace() {
 
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
-            onError_(Status::Error("Space not found"));
+            DCHECK(onError_);
+            onError_(std::move(resp).status());
             return;
         }
 
@@ -319,7 +320,7 @@ void ShowExecutor::showCreateTag() {
         auto *tagName =  sentence_->getName();
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(Status::Error("Schema not found for tag '%s'", tagName->c_str()));
+            onError_(std::move(resp).status());
             return;
         }
 
@@ -396,7 +397,7 @@ void ShowExecutor::showCreateEdge() {
         auto *edgeName =  sentence_->getName();
         if (!resp.ok()) {
             DCHECK(onError_);
-            onError_(Status::Error("Schema not found for edge '%s'",  edgeName->c_str()));
+            onError_(std::move(resp).status());
             return;
         }
 
