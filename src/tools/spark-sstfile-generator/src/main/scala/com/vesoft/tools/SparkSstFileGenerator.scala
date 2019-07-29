@@ -1,9 +1,3 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
- */
-
 package com.vesoft.tools
 
 import java.nio.charset.{Charset, UnsupportedCharsetException}
@@ -57,19 +51,15 @@ object SparkSstFileGenerator {
       .builder("ti")
       .longOpt("datasource_type_input")
       .hasArg()
-      .desc(
-        "Data source types supported, must be among [hive|hbase|csv] for now, default=hive"
-      )
+      .desc("Data source types supported, must be among [hive|hbase|csv] for now, default=hive")
       .build
 
     val defaultColumnMapPolicy = CliOption
       .builder("ci")
       .longOpt("default_column_mapping_policy")
       .hasArg()
-      .desc(
-        "If omitted, what policy to use when mapping column to property," +
-          "all columns except primary_key's column will be mapped to tag's property with the same name by default"
-      )
+      .desc("If omitted, what policy to use when mapping column to property," +
+        "all columns except primary_key's column will be mapped to tag's property with the same name by default")
       .build
 
     val mappingFileInput = CliOption
@@ -86,8 +76,7 @@ object SparkSstFileGenerator {
       .required()
       .hasArg()
       .desc(
-        "Which local directory those generated sst files will be put, should starts with file:///"
-      )
+        "Which local directory those generated sst files will be put, should starts with file:///")
       .build
 
     val hdfsSstFileOutput = CliOption
@@ -95,9 +84,7 @@ object SparkSstFileGenerator {
       .longOpt("hdfs_sst_file_output")
       .required()
       .hasArg()
-      .desc(
-        "Which hdfs directory will those sstfiles be put, should not starts with file:///"
-      )
+      .desc("Which hdfs directory will those sstfiles be put, should not starts with file:///")
       .build
 
     val datePartitionKey = CliOption
@@ -105,9 +92,7 @@ object SparkSstFileGenerator {
       .longOpt("date_partition_input")
       .required()
       .hasArg()
-      .desc(
-        "A partition field of type String of hive table, which represent a Date, and has format of YYY-MM-dd"
-      )
+      .desc("A partition field of type String of hive table, which represent a Date, and has format of YYY-MM-dd")
       .build
 
 
@@ -125,9 +110,7 @@ object SparkSstFileGenerator {
       .builder("ri")
       .longOpt("repartition_number_input")
       .hasArg()
-      .desc(
-        "Repartition number. Some optimization trick to improve generation speed and data skewness. Need tuning to suit your data."
-      )
+      .desc("Repartition number. Some optimization trick to improve generation speed and data skewness. Need tuning to suit your data.")
       .build
 
 
@@ -137,18 +120,14 @@ object SparkSstFileGenerator {
       .longOpt("limit_input")
 
       .hasArg()
-      .desc(
-        "Return at most this number of edges/vertex, usually used in POC stage, when omitted, fetch all data."
-      )
+      .desc("Return at most this number of edges/vertex, usually used in POC stage, when omitted, fetch all data.")
       .build
 
     val charset = CliOption
       .builder("hi")
       .longOpt("string_value_charset_input")
       .hasArg()
-      .desc(
-        "When the value is of type String,what charset is used when encoded,default to UTF-8"
-      )
+      .desc("When the value is of type String,what charset is used when encoded,default to UTF-8")
       .build
 
     val opts = new Options()
@@ -180,11 +159,9 @@ object SparkSstFileGenerator {
     * @param `type`       tag/edge type
     * @param valueEncoded vertex/edge key encoded by native client
     */
-  case class GraphPartitionIdAndKeyValueEncoded(
-      partitionId: Int,
-      `type`: Int,
-      valueEncoded: BytesWritable
-  )
+  case class GraphPartitionIdAndKeyValueEncoded(partitionId: Int,
+                                                `type`: Int,
+                                                valueEncoded: BytesWritable)
 
   /**
     * partition by the partitionId part of key
@@ -193,9 +170,7 @@ object SparkSstFileGenerator {
     override def numPartitions: Int = num
 
     override def getPartition(key: Any): Int = {
-      (key
-        .asInstanceOf[GraphPartitionIdAndKeyValueEncoded]
-        .partitionId % numPartitions)
+      (key.asInstanceOf[GraphPartitionIdAndKeyValueEncoded].partitionId % numPartitions)
     }
   }
 
@@ -237,8 +212,7 @@ object SparkSstFileGenerator {
     // make sure use local file system to write sst file
     if (!localSstFileOutput.toLowerCase.startsWith("file://")) {
       throw new IllegalArgumentException(
-        "Argument: -so --local_sst_file_output should start with file:///"
-      )
+        "Argument: -so --local_sst_file_output should start with file:///")
     }
 
     var hdfsSstFileOutput: String = cmd.getOptionValue("ho")
@@ -248,8 +222,7 @@ object SparkSstFileGenerator {
 
     if (hdfsSstFileOutput.toLowerCase.startsWith("file:///")) {
       throw new IllegalArgumentException(
-        "Argument: -ho --hdfs_sst_file_output should not start with file:///"
-      )
+        "Argument: -ho --hdfs_sst_file_output should not start with file:///")
     }
 
     val limitOption: String = cmd.getOptionValue("li")
@@ -275,8 +248,7 @@ object SparkSstFileGenerator {
         } catch {
           case e: Exception => {
             log.error(
-              s"Argument: -ri --repartition_number_input should be int, but found:${repartitionNumberOpt}"
-            )
+              s"Argument: -ri --repartition_number_input should be int, but found:${repartitionNumberOpt}")
             None
           }
         }
@@ -295,8 +267,7 @@ object SparkSstFileGenerator {
           } catch {
             case e: UnsupportedCharsetException => {
               log.error(
-                s"Argument: -hi --string_value_charset_input is a not supported charset:${repartitionNumberOpt}"
-              )
+                s"Argument: -hi --string_value_charset_input is a not supported charset:${repartitionNumberOpt}")
               DefaultCharset
             }
           }
@@ -304,17 +275,14 @@ object SparkSstFileGenerator {
       }
 
     // parse mapping file
-    val mappingConfiguration: MappingConfiguration = MappingConfiguration(
-      mappingFileInput
-    )
+    val mappingConfiguration: MappingConfiguration = MappingConfiguration(mappingFileInput)
 
     val sparkConf  = new SparkConf().setAppName("nebula-graph-sstFileGenerator")
     val sc         = new SparkContext(sparkConf)
     val sqlContext = new HiveContext(sc)
 
     // to pass sst file dir to SstFileOutputFormat
-    sc.hadoopConfiguration
-      .set(SSF_OUTPUT_LOCAL_DIR_CONF_KEY, localSstFileOutput)
+    sc.hadoopConfiguration.set(SSF_OUTPUT_LOCAL_DIR_CONF_KEY, localSstFileOutput)
     sc.hadoopConfiguration.set(SSF_OUTPUT_HDFS_DIR_CONF_KEY, hdfsSstFileOutput)
 
     // disable file output compression, because rocksdb can't recognize it
@@ -324,13 +292,15 @@ object SparkSstFileGenerator {
     //TODO: support id generator function other than FNV hash
 
     //TODO: handle hash collision, might cause data corruption
-    val idGeneratorFunction =
-      mappingConfiguration.keyPolicy.map(_.toLowerCase) match {
-        case Some("hash_primary_key") => (key: String) => FNVHash.hash64(key)
-        case Some(a @ _) =>
-          throw new IllegalStateException(s"Not supported key generator=${a}")
-        case None => (key: String) => FNVHash.hash64(key)
-      }
+    val idGeneratorFunction = mappingConfiguration.keyPolicy.map(_.toLowerCase) match {
+      case Some("hash_primary_key") =>
+        (key: String) =>
+          FNVHash.hash64a(key.getBytes("UTF-8"))
+      case Some(a @ _) => throw new IllegalStateException(s"Not supported key generator=${a}")
+      case None =>
+        (key: String) =>
+          FNVHash.hash64a(key.getBytes("UTF-8"))
+    }
 
 
     // implicit ordering used by PairedRDD.repartitionAndSortWithinPartitions whose key is PartitionIdAndBytesEncoded typed
@@ -346,19 +316,15 @@ object SparkSstFileGenerator {
       case (tag: Tag, tagType: Int) => {
 
         //all column w/o PK column, allColumns does not include primaryKey
-        val (allColumns, _) = validateColumns(
-          sqlContext,
-          tag,
-          Seq(tag.primaryKey),
-          Seq(tag.primaryKey),
-          mappingConfiguration.databaseName
-        )
+        val (allColumns, _) = validateColumns(sqlContext,
+                                              tag,
+                                              Seq(tag.primaryKey),
+                                              Seq(tag.primaryKey),
+                                              mappingConfiguration.databaseName)
         val columnExpression = {
           if (allColumns.isEmpty) {
             log.warn(
-              s"Tag:${tag.name} in database doesn't has any column, so three will be no property defined."
-            )
-
+              s"Tag:${tag.name} in database doesn't has any column, so three will be no property defined.")
           }
 
           allColumns.map(_.columnName).fold(tag.primaryKey) { (acc, column) =>
@@ -367,9 +333,7 @@ object SparkSstFileGenerator {
         }
 
         val whereClause = tag.typePartitionKey
-          .map(
-            key => s"${key}='${tag.name}' AND ${datePartitionKey}='${latestDate}'"
-          )
+          .map(key => s"${key}='${tag.name}' AND ${datePartitionKey}='${latestDate}'")
           .getOrElse(s"${datePartitionKey}='${latestDate}'")
         //TODO:to handle multiple partition columns' Cartesian product
         val sql =
@@ -378,61 +342,43 @@ object SparkSstFileGenerator {
         val tagDF = sqlContext.sql(sql)
         //RDD[(businessKey->values)]
         val tagKeyAndValues: RDD[(String, Seq[AnyRef])] = tagDF.map(row => {
-          (
-            row.getAs[String](tag.primaryKey) + "_" + tag.tableName, //businessId_tableName will be unique, and used as key before HASH
-            allColumns
-              .filter(!_.columnName.equalsIgnoreCase(tag.primaryKey))
-              .map(valueExtractor(row, _, charset))
-          )
+          (row.getAs[String](tag.primaryKey) + "_" + tag.tableName, //businessId_tableName will be unique, and used as key before HASH
+           allColumns
+             .filter(!_.columnName.equalsIgnoreCase(tag.primaryKey))
+             .map(valueExtractor(row, _, charset)))
         })
 
         tagKeyAndValues
           .map {
             case (key, values) => {
-              val vertexId: Long = idGeneratorFunction.apply(key)
+              val vertexId: BigInt = idGeneratorFunction.apply(key)
+              assert(vertexId > 0)
               // hash function generated sign long, but partition id should be unsigned
-              val graphPartitionId: Int =
-                (Math.abs(vertexId) % mappingConfiguration.partitions)
-                  .asInstanceOf[Int]
+              val graphPartitionId: Int = (vertexId % mappingConfiguration.partitions).toInt
 
               // use NativeClient to generate key and encode values
-              val keyEncoded: Array[Byte] = NativeClient.createVertexKey(
-                graphPartitionId,
-                vertexId,
-                tagType,
-                DefaultVersion
-              )
-              val valuesEncoded: Array[Byte] =
-                NativeClient.encode(values.toArray)
-              log.debug(
-                s"Tag(partition=${graphPartitionId}): " + DatatypeConverter
-                  .printHexBinary(keyEncoded) + " = " + DatatypeConverter
-                  .printHexBinary(valuesEncoded)
-              )
-              (
-                GraphPartitionIdAndKeyValueEncoded(
-                  graphPartitionId,
-                  tagType,
-                  new BytesWritable(keyEncoded)
-                ),
-                new PropertyValueAndTypeWritable(
-                  new BytesWritable(valuesEncoded)
-                )
-              )
+              val keyEncoded: Array[Byte] = NativeClient.createVertexKey(graphPartitionId,
+                                                                         vertexId.toLong,
+                                                                         tagType,
+                                                                         DefaultVersion)
+              val valuesEncoded: Array[Byte] = NativeClient.encode(values.toArray)
+              log.error(
+                s"vertexId=${vertexId}, Tag(partition=${graphPartitionId}): " + DatatypeConverter
+                  .printHexBinary(keyEncoded) + " = " + DatatypeConverter.printHexBinary(
+                  valuesEncoded))
+              (GraphPartitionIdAndKeyValueEncoded(graphPartitionId,
+                                                  tagType,
+                                                  new BytesWritable(keyEncoded)),
+               new PropertyValueAndTypeWritable(new BytesWritable(valuesEncoded)))
             }
 
           }
-          .repartitionAndSortWithinPartitions(
-            new SortByKeyPartitioner(
-              repartitionNumber.getOrElse(tagKeyAndValues.partitions.length)
-            )
-          )
-          .saveAsNewAPIHadoopFile(
-            localSstFileOutput,
-            classOf[GraphPartitionIdAndKeyValueEncoded],
-            classOf[PropertyValueAndTypeWritable],
-            classOf[SstFileOutputFormat]
-          )
+          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(
+            repartitionNumber.getOrElse(tagKeyAndValues.partitions.length)))
+          .saveAsNewAPIHadoopFile(localSstFileOutput,
+                                  classOf[GraphPartitionIdAndKeyValueEncoded],
+                                  classOf[PropertyValueAndTypeWritable],
+                                  classOf[SstFileOutputFormat])
       }
     }
 
@@ -445,13 +391,12 @@ object SparkSstFileGenerator {
       case (edge: Edge, edgeType: Int) => {
 
         //all column w/o PK column
-        val (allColumns, _) = validateColumns(
-          sqlContext,
-          edge,
-          Seq(edge.fromForeignKeyColumn),
-          Seq(edge.fromForeignKeyColumn, edge.toForeignKeyColumn),
-          mappingConfiguration.databaseName
-        )
+        val (allColumns, _) =
+          validateColumns(sqlContext,
+                          edge,
+                          Seq(edge.fromForeignKeyColumn),
+                          Seq(edge.fromForeignKeyColumn, edge.toForeignKeyColumn),
+                          mappingConfiguration.databaseName)
 
 
         val columnExpression = {
@@ -462,94 +407,65 @@ object SparkSstFileGenerator {
         }
 
         val whereClause = edge.typePartitionKey
-          .map(
-            key => s"${key}='${edge.name}' AND ${datePartitionKey}='${latestDate}'"
-          )
+          .map(key => s"${key}='${edge.name}' AND ${datePartitionKey}='${latestDate}'")
           .getOrElse(s"${datePartitionKey}='${latestDate}'")
 
 
         //TODO: join FROM_COLUMN and join TO_COLUMN from the table where this columns referencing, to make sure that the claimed id really exists in the reference table.BUT with HUGE Perf penalty
         val edgeDf = sqlContext.sql(
-          s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${edge.tableName} WHERE ${whereClause} ${limit}"
-        )
+          s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${edge.tableName} WHERE ${whereClause} ${limit}")
         assert(edgeDf.count() > 0)
         //RDD[Tuple3(from_vertex_businessKey,end_vertex_businessKey,values)]
-        val edgeKeyAndValues: RDD[(String, String, Seq[AnyRef])] =
-          edgeDf.map(
-            row => {
-              (
-                row.getAs[String](edge.fromForeignKeyColumn), // consistent with vertexId generation logic, to make sure that vertex and its' outbound edges are in the same partition
-                row.getAs[String](edge.toForeignKeyColumn),
-                allColumns
-                  .filterNot(
-                    col =>
-                      (col.columnName.equalsIgnoreCase(
-                        edge.fromForeignKeyColumn
-                      ) || col.columnName
-                        .equalsIgnoreCase(edge.toForeignKeyColumn))
-                  )
-                  .map(valueExtractor(row, _, charset))
-              )
-            }
-
-          )
+        val edgeKeyAndValues: RDD[(String, String, Seq[AnyRef])] = edgeDf.map(row => {
+          (row.getAs[String](edge.fromForeignKeyColumn), // consistent with vertexId generation logic, to make sure that vertex and its' outbound edges are in the same partition
+           row.getAs[String](edge.toForeignKeyColumn),
+           allColumns
+             .filterNot(col =>
+               (col.columnName.equalsIgnoreCase(edge.fromForeignKeyColumn) || col.columnName
+                 .equalsIgnoreCase(edge.toForeignKeyColumn)))
+             .map(valueExtractor(row, _, charset)))
+        })
 
         edgeKeyAndValues
           .map {
             case (srcIDString, dstIdString, values) => {
               val id = idGeneratorFunction.apply(srcIDString)
-              val graphPartitionId: Int =
-                (Math.abs(id) % mappingConfiguration.partitions)
-                  .asInstanceOf[Int]
+              assert(id > 0)
+              val graphPartitionId: Int = (id % mappingConfiguration.partitions).toInt
 
-              val srcId = Math.abs(idGeneratorFunction.apply(srcIDString))
-              val dstId = Math.abs(idGeneratorFunction.apply(dstIdString))
+              val srcId = idGeneratorFunction.apply(srcIDString)
+              val dstId = idGeneratorFunction.apply(dstIdString)
 
               // TODO: support edge ranking,like create_time desc
-              val keyEncoded = NativeClient.createEdgeKey(
-                graphPartitionId,
-                srcId,
-                1,
-                -1L,
-                dstId,
-                DefaultVersion
-              )
+              val keyEncoded = NativeClient.createEdgeKey(graphPartitionId,
+                                                          srcId.toLong,
+                                                          1,
+                                                          -1L,
+                                                          dstId.toLong,
+                                                          DefaultVersion)
               //val keyEncoded = NativeClient.createEdgeKey(partitionId, srcId, edgeType, -1L, dstId, DefaultVersion)
 
               // TODO: only support a single edge type , put edge_type value in 0th index. Nebula server side must define extra edge property: edge_type
-              val valuesEncoded: Array[Byte] = NativeClient.encode(
-                (edge.name.getBytes(charset) +: values).toArray
-              )
+              val valuesEncoded: Array[Byte] =
+                NativeClient.encode((edge.name.getBytes(charset) +: values).toArray)
               //val valuesEncoded: Array[Byte] = NativeClient.encode(values.toArray)
-              log.debug(
-                s"Edge(partition=${graphPartitionId}): " + DatatypeConverter
-                  .printHexBinary(keyEncoded) + " = " + DatatypeConverter
-                  .printHexBinary(valuesEncoded)
-              )
-              (
-                GraphPartitionIdAndKeyValueEncoded(
-                  graphPartitionId,
-                  1,
-                  new BytesWritable(keyEncoded)
-                ),
-                new PropertyValueAndTypeWritable(
-                  new BytesWritable(valuesEncoded),
-                  VertexOrEdgeEnum.Edge
-                )
-              )
+              log.error(
+                s"id=${id}, Edge(partition=${graphPartitionId}): " + DatatypeConverter
+                  .printHexBinary(keyEncoded) + " = " + DatatypeConverter.printHexBinary(
+                  valuesEncoded))
+              (GraphPartitionIdAndKeyValueEncoded(graphPartitionId,
+                                                  1,
+                                                  new BytesWritable(keyEncoded)),
+               new PropertyValueAndTypeWritable(new BytesWritable(valuesEncoded),
+                                                VertexOrEdgeEnum.Edge))
             }
           }
-          .repartitionAndSortWithinPartitions(
-            new SortByKeyPartitioner(
-              repartitionNumber.getOrElse(edgeKeyAndValues.partitions.length)
-            )
-          )
-          .saveAsNewAPIHadoopFile(
-            localSstFileOutput,
-            classOf[GraphPartitionIdAndKeyValueEncoded],
-            classOf[PropertyValueAndTypeWritable],
-            classOf[SstFileOutputFormat]
-          )
+          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(
+            repartitionNumber.getOrElse(edgeKeyAndValues.partitions.length)))
+          .saveAsNewAPIHadoopFile(localSstFileOutput,
+                                  classOf[GraphPartitionIdAndKeyValueEncoded],
+                                  classOf[PropertyValueAndTypeWritable],
+                                  classOf[SstFileOutputFormat])
       }
     }
   }
@@ -565,8 +481,7 @@ object SparkSstFileGenerator {
       case "LONG"    => Long.box(row.getAs[Long](col.columnName))
       case "DOUBLE"  => Double.box(row.getAs[Double](col.columnName))
       case "BOOL"    => Boolean.box(row.getAs[Boolean](col.columnName))
-      case a @ _ =>
-        throw new IllegalStateException(s"Unsupported edge data type ${a}")
+      case a @ _     => throw new IllegalStateException(s"Unsupported edge data type ${a}")
     }
   }
 
@@ -576,15 +491,12 @@ object SparkSstFileGenerator {
     *
     * @return Tuple2(AllColumns w/o partition columns, partition columns)
     */
-  private def validateColumns(
-      sqlContext: HiveContext,
-      edge: WithColumnMapping,
-      colsMustCheck: Seq[String],
-      colsMustFilter: Seq[String],
-      databaseName: String
-  ): (Seq[Column], Seq[String]) = {
-    val descriptionDF =
-      sqlContext.sql(s"DESC ${databaseName}.${edge.tableName}")
+  private def validateColumns(sqlContext: HiveContext,
+                              edge: WithColumnMapping,
+                              colsMustCheck: Seq[String],
+                              colsMustFilter: Seq[String],
+                              databaseName: String): (Seq[Column], Seq[String]) = {
+    val descriptionDF = sqlContext.sql(s"DESC ${databaseName}.${edge.tableName}")
     // all columns' name ---> type mapping in db
     val allColumnsMapInDB: Seq[(String, String)] = descriptionDF
       .map {
@@ -597,22 +509,15 @@ object SparkSstFileGenerator {
 
     // columns that generated by DESC are separated by comments, before comments are non-partition columns, after comments are partition columns
     val commentsStart = allColumnsMapInDB.indexWhere(_._1.startsWith("#"))
-    val (allColumnMap, partitionColumns): (
-        Map[String, String],
-        Seq[(String, String)]
-    ) =
+    val (allColumnMap, partitionColumns): (Map[String, String], Seq[(String, String)]) =
       if (commentsStart == -1) {
         (allColumnsMapInDB.toMap, Seq.empty[(String, String)])
       } else {
         val commentsEnd = allColumnsMapInDB.lastIndexWhere(_._1.startsWith("#"))
-        assert(
-          (commentsEnd >= commentsStart) && ((commentsEnd + 1) < allColumnsMapInDB.size)
-        )
+        assert((commentsEnd >= commentsStart) && ((commentsEnd + 1) < allColumnsMapInDB.size))
         // all columns except partition columns
-        (
-          allColumnsMapInDB.slice(0, commentsStart).toMap,
-          allColumnsMapInDB.slice(commentsEnd + 1, allColumnsMapInDB.size)
-        )
+        (allColumnsMapInDB.slice(0, commentsStart).toMap,
+         allColumnsMapInDB.slice(commentsEnd + 1, allColumnsMapInDB.size))
       }
 
 
@@ -620,27 +525,23 @@ object SparkSstFileGenerator {
     colsMustCheck.map(_.toUpperCase).foreach { col =>
       if (allColumnMap.get(col).isEmpty) {
         throw new IllegalStateException(
-          s"${edge.name}'s from column: ${col} not defined in table=${edge.tableName}"
-        )
+          s"${edge.name}'s from column: ${col} not defined in table=${edge.tableName}")
       }
 
     }
 
     if (edge.columnMappings.isEmpty) {
       //only (from,to) columns are checked, but all columns should be returned
-
-      (
-        allColumnMap
-          .filter(!partitionColumns.contains(_))
-          .filter(!colsMustFilter.contains(_))
-          .map {
-            case (colName, colType) => {
-              Column(colName, colName, colType) // propertyName default=colName
-            }
-          }
-          .toSeq,
-        partitionColumns.map(_._1)
-      )
+      (allColumnMap
+         .filter(!partitionColumns.contains(_))
+         .filter(!colsMustFilter.contains(_))
+         .map {
+           case (colName, colType) => {
+             Column(colName, colName, colType) // propertyName default=colName
+           }
+         }
+         .toSeq,
+       partitionColumns.map(_._1))
     } else {
 
       // tag/edge's columnMappings should be checked and returned
@@ -649,8 +550,7 @@ object SparkSstFileGenerator {
         .filter(
           col => {
             val typeInDb = allColumnMap.get(col.columnName.toUpperCase)
-            typeInDb.isEmpty || !DataTypeCompatibility
-              .isCompatible(col.`type`, typeInDb.get)
+            typeInDb.isEmpty || !DataTypeCompatibility.isCompatible(col.`type`, typeInDb.get)
           }
         )
         .map {
@@ -659,8 +559,7 @@ object SparkSstFileGenerator {
 
       if (notValid.nonEmpty) {
         throw new IllegalStateException(
-          s"${edge.name}'s columns: ${notValid.mkString("\t")} not defined in or compatible with db's definitions"
-        )
+          s"${edge.name}'s columns: ${notValid.mkString("\t")} not defined in or compatible with db's definitions")
       } else {
         (columnMappings, partitionColumns.map(_._1))
       }

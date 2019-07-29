@@ -13,42 +13,28 @@ package com.vesoft.tools
   */
 object FNVHash {
 
-  private val FNV_64_INIT = 0xcbf29ce484222325L
-  private val FNV_64_PRIME = 0x100000001b3L
-  private val FNV_32_INIT = 0x811c9dc5
+  private val INIT64 = BigInt("cbf29ce484222325", 16)
+  private val PRIME64 = BigInt("100000001b3", 16)
+  private val MOD64 = BigInt("2").pow(64)
+  private val MASK = 0xff
 
-  private val FNV_32_PRIME = 0x01000193
-
-  /**
-    * hash to int32
-    */
-  def hash32(value: String): Int = {
-    var rv  = FNV_32_INIT
-    val len = value.length
-    var i   = 0
-    while (i < len) {
-      rv ^= value.charAt(i)
-      rv *= FNV_32_PRIME
-      i += 1
-    }
-
-    rv
-  }
+  @inline
+  private final def calc(prime: BigInt, mod: BigInt)(hash: BigInt, b: Byte): BigInt = ((hash * prime) % mod) ^ (b & MASK)
+  @inline private final def calcA(prime: BigInt, mod: BigInt)(hash: BigInt, b: Byte): BigInt = ((hash ^ (b & MASK)) * prime) % mod
 
   /**
-    * hash to int64
+    * Calculates 64bit FNV-1 hash
+    * @param data the data to be hashed
+    * @return a 64bit hash value
     */
-  def hash64(value: String): Long = {
-    var rv  = FNV_64_INIT
-    val len = value.length
-    var i   = 0
-    while (i < len) {
-      rv ^= value.charAt(i)
-      rv *= FNV_64_PRIME
+  @inline final def hash64(data: Array[Byte]): BigInt = data.foldLeft(INIT64)(calc(PRIME64, MOD64))
 
-      i += 1
-    }
+  /**
+    * Calculates 64bit FNV-1a hash
+    * @param data the data to be hashed
+    * @return a 64bit hash value
+    */
+  @inline final def hash64a(data: Array[Byte]): BigInt = data.foldLeft(INIT64)(calcA(PRIME64, MOD64))
 
-    rv
-  }
+
 }
