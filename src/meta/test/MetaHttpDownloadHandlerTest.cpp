@@ -39,7 +39,7 @@ public:
             handler->init(kv_.get(), helper.get());
             return handler;
         });
-        WebService::registerHandler("/download", [this] {
+        WebService::registerHandler("/download", [] {
             auto handler = new storage::StorageHttpDownloadHandler();
             handler->init(helper.get());
             return handler;
@@ -94,4 +94,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

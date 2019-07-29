@@ -300,7 +300,15 @@ add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
 
 # This requries GCC 5.1+
-add_compile_options(-Wsuggest-override)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.1)
+   add_compile_options(-Wsuggest-override)
+endif()
+
+
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    add_compile_options(-Wno-overloaded-virtual)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -latomic")
+endif()
 
 if(ENABLE_ASAN)
     add_definitions(-DBUILT_WITH_SANITIZER)

@@ -362,15 +362,17 @@ TEST(EitherOr, MoveOutValue) {
 TEST(EitherOr, SelfAssignment) {
     {
         EitherOr<int, std::string> r("SomeValue");
-        r = r;
-        ASSERT_TRUE(r.isRightType());
-        EXPECT_EQ("SomeValue", r.right());
+        decltype(r) r1;
+        r1 = r;
+        ASSERT_TRUE(r1.isRightType());
+        EXPECT_EQ("SomeValue", r1.right());
     }
     {
         EitherOr<int, std::string> r("SomeValue");
-        r = std::move(r);
-        ASSERT_TRUE(r.isRightType());
-        EXPECT_EQ("SomeValue", r.right());
+        decltype(r) r2;
+        r2 = std::move(r);
+        ASSERT_TRUE(r2.isRightType());
+        EXPECT_EQ("SomeValue", r2.right());
     }
 }
 
@@ -390,4 +392,3 @@ TEST(EitherOr, Destruct) {
 }
 
 }   // namespace nebula
-

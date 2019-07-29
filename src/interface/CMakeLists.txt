@@ -1,4 +1,10 @@
-add_compile_options(-Wno-maybe-uninitialized)
+if (CMAKE_GUN_COMPILER_ID)
+  add_compile_options(-Wno-maybe-uninitialized)
+endif()
+
+if (CMAKE_CLANG_COMPILER_ID)
+  add_compile_options(-Wno-uninitialized)
+endif()
 
 set(THRIFT1 ${Fbthrift_BIN})
 set(THRIFT_TEMPLATES ${Fbthrift_INCLUDE_DIR}/thrift/templates)
