@@ -602,7 +602,6 @@ bool FileBasedWal::rollbackToLog(LogID id) {
         }
 
         auto it = walFiles_.upper_bound(id);
-        CHECK(it != walFiles_.end());
 
         // We need to remove wal files whose entire log range
         // are rolled back
