@@ -158,7 +158,7 @@ public:
     // Operations for index
     folly::Future<StatusOr<TagIndexID>>
     createTagIndex(GraphSpaceID spaceID, std::string name,
-                   std::map<std::string, std::vector<std::string>> fields);
+                   std::map<std::string, std::vector<std::string>>&& fields);
 
     folly::Future<StatusOr<bool>>
     dropTagIndex(GraphSpaceID spaceId, std::string name);
@@ -171,7 +171,7 @@ public:
 
     folly::Future<StatusOr<EdgeIndexID>>
     createEdgeIndex(GraphSpaceID spaceID, std::string name,
-                    std::map<std::string, std::vector<std::string>> fields);
+                    std::map<std::string, std::vector<std::string>>&& fields);
 
     folly::Future<StatusOr<bool>>
     dropEdgeIndex(GraphSpaceID spaceId, std::string name);

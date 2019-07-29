@@ -362,50 +362,44 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                                                   const cpp2::AlterSchemaOp op) {
     switch (op) {
         case cpp2::AlterSchemaOp::ADD:
-        {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (it->get_name() == col.get_name()) {
-                    LOG(WARNING) << "Column existing : " << col.get_name();
+                    LOG(ERROR) << "Column existing: " << col.get_name();
                     return cpp2::ErrorCode::E_EXISTED;
                 }
             }
             cols.emplace_back(std::move(col));
             return cpp2::ErrorCode::SUCCEEDED;
-        }
         case cpp2::AlterSchemaOp::CHANGE:
-        {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (col.get_name() == it->get_name()) {
                     *it = col;
                     return cpp2::ErrorCode::SUCCEEDED;
                 }
             }
-            break;
-        }
+            LOG(ERROR) << "Column not found: " << col.get_name();
+            return cpp2::ErrorCode::E_NOT_FOUND;
         case cpp2::AlterSchemaOp::DROP:
-        {
-            auto colName = col.get_name();
             for (auto it = cols.begin(); it != cols.end(); ++it) {
-                if (colName == it->get_name()) {
+                if (col.get_name() == it->get_name()) {
                     // Check if there is a TTL on the column to be deleted
                     if (!prop.get_ttl_col() ||
-                        (prop.get_ttl_col() && (*prop.get_ttl_col() != colName))) {
+                        (prop.get_ttl_col() && (*prop.get_ttl_col() != col.get_name()))) {
                         cols.erase(it);
                         return cpp2::ErrorCode::SUCCEEDED;
                     } else {
-                        LOG(WARNING) << "Column can't be dropped, a TTL attribute on it : "
-                                     << colName;
+                        LOG(ERROR) << "Column can't be dropped, a TTL attribute on it : "
+                                   << col.get_name();
                         return cpp2::ErrorCode::E_NOT_DROP;
                     }
                 }
             }
-            break;
-        }
-        default :
-            return cpp2::ErrorCode::E_UNKNOWN;
+            LOG(ERROR) << "Column not found: " << col.get_name();
+            return cpp2::ErrorCode::E_NOT_FOUND;
+        default:
+            LOG(ERROR) << "Alter schema operator not supported";
+            return cpp2::ErrorCode::E_UNSUPPORTED;
     }
-    LOG(WARNING) << "Column not found : " << col.get_name();
-    return cpp2::ErrorCode::E_NOT_FOUND;
 }
 
 cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
@@ -541,7 +535,7 @@ std::string MetaServiceUtils::changePassword(folly::StringPiece val, folly::Stri
 }
 
 cpp2::UserItem MetaServiceUtils::parseUserItem(folly::StringPiece val) {
-    cpp2:: UserItem user;
+    cpp2::UserItem user;
     apache::thrift::CompactSerializer::deserialize(userItemVal(val), user);
     return user;
 }

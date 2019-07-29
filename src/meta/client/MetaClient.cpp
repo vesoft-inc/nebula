@@ -918,7 +918,7 @@ MetaClient::dropEdgeSchema(GraphSpaceID spaceId, std::string name) {
 
 folly::Future<StatusOr<TagIndexID>>
 MetaClient::createTagIndex(GraphSpaceID spaceID, std::string name,
-                           std::map<std::string, std::vector<std::string>> fields) {
+                           std::map<std::string, std::vector<std::string>>&& fields) {
     cpp2::IndexProperties properties;
     properties.set_fields(std::move(fields));
     cpp2::CreateTagIndexReq req;
@@ -973,7 +973,7 @@ MetaClient::listTagIndexes(GraphSpaceID spaceID) {
 
 folly::Future<StatusOr<EdgeIndexID>>
 MetaClient::createEdgeIndex(GraphSpaceID spaceID, std::string name,
-                            std::map<std::string, std::vector<std::string>> fields) {
+                            std::map<std::string, std::vector<std::string>>&& fields) {
     cpp2::IndexProperties properties;
     properties.set_fields(std::move(fields));
     cpp2::CreateEdgeIndexReq req;

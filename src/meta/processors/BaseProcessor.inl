@@ -335,8 +335,7 @@ StatusOr<std::string> BaseProcessor<RESP>::getUserAccount(UserID userId) {
         return Status::UserNotFound(folly::stringPrintf("User not found by id %d", userId));
     }
 
-    auto user = MetaServiceUtils::parseUserItem(ret.value());
-    return user.get_account();
+    return MetaServiceUtils::parseUserItem(ret.value()).get_account();
 }
 
 }  // namespace meta

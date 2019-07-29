@@ -485,40 +485,45 @@ TEST(MetaClientTest, TagIndexTest) {
         }
     }
     {
-        std::map<std::string, std::vector<std::string>> fields {
+        std::map<std::string, std::vector<std::string>>&& fields {
             {"tag_0", {"tag_0_col_0"}}
         };
-        auto result = client->createTagIndex(spaceId, "tag_single_field_index", fields).get();
+        auto result = client->createTagIndex(spaceId, "tag_single_field_index",
+                                             std::move(fields)).get();
         ASSERT_TRUE(result.ok());
     }
     {
-        std::map<std::string, std::vector<std::string>> fields {
+        std::map<std::string, std::vector<std::string>>&& fields {
             {"tag_0", {"tag_0_col_0",  "tag_0_col_1"}}
         };
-        auto result = client->createTagIndex(spaceId, "tag_multi_field_index", fields).get();
+        auto result = client->createTagIndex(spaceId, "tag_multi_field_index",
+                                             std::move(fields)).get();
         ASSERT_TRUE(result.ok());
     }
     {
-        std::map<std::string, std::vector<std::string>> fields {
+        std::map<std::string, std::vector<std::string>>&& fields {
             {"tag_0", {"tag_0_col_0",  "tag_0_col_1"}},
             {"tag_1", {"tag_1_col_0",  "tag_1_col_1"}}
         };
-        auto result = client->createTagIndex(spaceId, "tag_multi_tag_index", fields).get();
+        auto result = client->createTagIndex(spaceId, "tag_multi_tag_index",
+                                             std::move(fields)).get();
         ASSERT_TRUE(result.ok());
     }
     {
-        std::map<std::string, std::vector<std::string>> fields {
+        std::map<std::string, std::vector<std::string>>&& fields {
             {"tag_0", {"tag_0_col_0",  "not_exist_field"}}
         };
-        auto result = client->createTagIndex(spaceId, "tag_field_not_exist_index", fields).get();
+        auto result = client->createTagIndex(spaceId, "tag_field_not_exist_index",
+                                             std::move(fields)).get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        std::map<std::string, std::vector<std::string>> fields {
+        std::map<std::string, std::vector<std::string>>&& fields {
             {"tag_not_exist", {"tag_0_col_0",  "tag_0_col_1"}}
         };
-        auto result = client->createTagIndex(spaceId, "tag_not_exist_index", fields).get();
+        auto result = client->createTagIndex(spaceId, "tag_not_exist_index",
+                                             std::move(fields)).get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
@@ -608,40 +613,45 @@ TEST(MetaClientTest, EdgeIndexTest) {
         }
     }
     {
-        std::map<std::string, std::vector<std::string>> fields {
+        std::map<std::string, std::vector<std::string>>&& fields {
             {"edge_0", {"edge_0_col_0"}}
         };
-        auto result = client->createEdgeIndex(spaceId, "edge_single_field_index", fields).get();
+        auto result = client->createEdgeIndex(spaceId, "edge_single_field_index",
+                                              std::move(fields)).get();
         ASSERT_TRUE(result.ok());
     }
     {
-        std::map<std::string, std::vector<std::string>> fields {
+        std::map<std::string, std::vector<std::string>>&& fields {
             {"edge_0", {"edge_0_col_0",  "edge_0_col_1"}}
         };
-        auto result = client->createEdgeIndex(spaceId, "edge_multi_field_index", fields).get();
+        auto result = client->createEdgeIndex(spaceId, "edge_multi_field_index",
+                                              std::move(fields)).get();
         ASSERT_TRUE(result.ok());
     }
     {
-        std::map<std::string, std::vector<std::string>> fields {
+        std::map<std::string, std::vector<std::string>>&& fields {
             {"edge_0", {"edge_0_col_0",  "edge_0_col_1"}},
             {"edge_1", {"edge_1_col_0",  "edge_1_col_1"}}
         };
-        auto result = client->createEdgeIndex(spaceId, "edge_multi_tag_index", fields).get();
+        auto result = client->createEdgeIndex(spaceId, "edge_multi_tag_index",
+                                              std::move(fields)).get();
         ASSERT_TRUE(result.ok());
     }
     {
-        std::map<std::string, std::vector<std::string>> fields {
+        std::map<std::string, std::vector<std::string>>&& fields {
             {"edge_not_exist", {"edge_0_col_0",  "edge_0_col_1"}}
         };
-        auto result = client->createEdgeIndex(spaceId, "edge_not_exist_index", fields).get();
+        auto result = client->createEdgeIndex(spaceId, "edge_not_exist_index",
+                                              std::move(fields)).get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
     {
-        std::map<std::string, std::vector<std::string>> fields {
+        std::map<std::string, std::vector<std::string>>&& fields {
             {"edge_0", {"edge_0_col_0",  "not_exist_field"}}
         };
-        auto result = client->createEdgeIndex(spaceId, "edge_field_not_exist_index", fields).get();
+        auto result = client->createEdgeIndex(spaceId, "edge_field_not_exist_index",
+                                              std::move(fields)).get();
         ASSERT_FALSE(result.ok());
         ASSERT_EQ(Status::Error("not existed!"), result.status());
     }
