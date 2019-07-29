@@ -115,12 +115,8 @@ private:
         storage::cpp2::Tag tag;
         tag.set_tag_id(FLAGS_default_tag_id);
         RowWriter writer;
-        for (uint64_t numInt = 0; numInt < 3; numInt++) {
-            writer << numInt;
-        }
-        for (auto numString = 3; numString < 6; numString++) {
-            writer << folly::stringPrintf("tag_string_col_%d", numString);
-        }
+        static std::string data(1024, 'A');
+        writer << data;
         tag.set_props(writer.encode());
         tags.emplace_back(std::move(tag));
         v.set_tags(std::move(tags));
@@ -154,7 +150,12 @@ private:
         auto* evb = threadPool_->getEventBase();
         auto f = client_->getNeighbors(FLAGS_default_space_id, randomVertices(),
                                        FLAGS_default_edge_type, true, "", randomCols())
-                            .via(evb).then([this]() {
+                            .via(evb).then([this](auto&& resps) {
+                                if (!resps.succeeded()) {
+                                    LOG(ERROR) << "Request failed!";
+                                } else {
+                                    VLOG(3) << "request successed!";
+                                }
                                 this->finishedRequests_++;
                                 VLOG(3) << "request successed!";
                              }).onError([](folly::FutureException&) {
@@ -165,9 +166,13 @@ private:
     void addVerticesTask() {
         auto* evb = threadPool_->getEventBase();
         auto f = client_->addVertices(FLAGS_default_space_id, genVertices(), true)
-                    .via(evb).then([this]() {
+                    .via(evb).then([this](auto&& resps) {
+                        if (!resps.succeeded()) {
+                            LOG(ERROR) << "Request failed!";
+                        } else {
+                            VLOG(3) << "request successed!";
+                        }
                         this->finishedRequests_++;
-                        VLOG(3) << "request successed!";
                      }).onError([](folly::FutureException&) {
                         LOG(ERROR) << "Request failed!";
                      });
@@ -176,7 +181,12 @@ private:
     void addEdgesTask() {
         auto* evb = threadPool_->getEventBase();
         auto f = client_->addEdges(FLAGS_default_space_id, genEdges(), true)
-                    .via(evb).then([this]() {
+                    .via(evb).then([this](auto&& resps) {
+                        if (!resps.succeeded()) {
+                            LOG(ERROR) << "Request failed!";
+                        } else {
+                            VLOG(3) << "request successed!";
+                        }
                         this->finishedRequests_++;
                         VLOG(3) << "request successed!";
                      }).onError([](folly::FutureException&) {
@@ -187,7 +197,12 @@ private:
     void getVerticesTask() {
         auto* evb = threadPool_->getEventBase();
         auto f = client_->getVertexProps(FLAGS_default_space_id, randomVertices(), randomCols())
-                    .via(evb).then([this]() {
+                    .via(evb).then([this](auto&& resps) {
+                        if (!resps.succeeded()) {
+                            LOG(ERROR) << "Request failed!";
+                        } else {
+                            VLOG(3) << "request successed!";
+                        }
                         this->finishedRequests_++;
                         VLOG(3) << "request successed!";
                      }).onError([](folly::FutureException&) {
