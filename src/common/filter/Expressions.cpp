@@ -23,12 +23,13 @@ namespace nebula {
 
 
 Status ExpressionContext::addAliasProp(const std::string &alias, const std::string &prop) {
-    auto kind = aliasKind(alias);
-    if (kind == AliasKind::Unknown) {
+    auto iter = aliasInfo_.find(alias);
+    if (iter == aliasInfo_.end()) {
         return Status::Error("Alias `%s' not defined", alias.c_str());
     }
-    if (kind == AliasKind::Edge) {
-        addEdgeProp(prop);
+
+    if (iter->second.kind_ == AliasKind::Edge) {
+        addEdgeProp(prop, iter->second.id_);
         return Status::OK();
     }
     return Status::Error("Illegal alias `%s'", alias.c_str());
@@ -294,11 +295,13 @@ VariantType EdgePropertyExpression::eval() const {
     return context_->getters().getEdgeProp(*prop_);
 }
 
-
 Status EdgePropertyExpression::prepare() {
+    if (context_->isOverAllEdge()) {
+        context_->addEdgeProp(*prop_, *alias_);
+        return Status::OK();
+    }
     return context_->addAliasProp(*alias_, *prop_);
 }
-
 
 void EdgePropertyExpression::encode(Cord &cord) const {
     // TODO(dutor) We better replace `alias_' with integral edge type
@@ -347,11 +350,13 @@ VariantType EdgeTypeExpression::eval() const {
     return *alias_;
 }
 
-
 Status EdgeTypeExpression::prepare() {
+    if (context_->isOverAllEdge()) {
+        context_->addEdgeProp("_type", *alias_);
+        return Status::OK();
+    }
     return context_->addAliasProp(*alias_, "_type");
 }
-
 
 void EdgeTypeExpression::encode(Cord &cord) const {
     cord << kindToInt(kind());
@@ -386,11 +391,13 @@ VariantType EdgeSrcIdExpression::eval() const {
     return context_->getters().getEdgeProp("_src");
 }
 
-
 Status EdgeSrcIdExpression::prepare() {
+    if (context_->isOverAllEdge()) {
+        context_->addEdgeProp("_src", *alias_);
+        return Status::OK();
+    }
     return context_->addAliasProp(*alias_, "_src");
 }
-
 
 void EdgeSrcIdExpression::encode(Cord &cord) const {
     cord << kindToInt(kind());
@@ -425,11 +432,13 @@ VariantType EdgeDstIdExpression::eval() const {
     return context_->getters().getEdgeProp("_dst");
 }
 
-
 Status EdgeDstIdExpression::prepare() {
+    if (context_->isOverAllEdge()) {
+        context_->addEdgeProp("_dst", *alias_);
+        return Status::OK();
+    }
     return context_->addAliasProp(*alias_, "_dst");
 }
-
 
 void EdgeDstIdExpression::encode(Cord &cord) const {
     cord << kindToInt(kind());
@@ -464,11 +473,13 @@ VariantType EdgeRankExpression::eval() const {
     return context_->getters().getEdgeProp("_rank");
 }
 
-
 Status EdgeRankExpression::prepare() {
+    if (context_->isOverAllEdge()) {
+        context_->addEdgeProp("_rank", *alias_);
+        return Status::OK();
+    }
     return context_->addAliasProp(*alias_, "_rank");
 }
-
 
 void EdgeRankExpression::encode(Cord &cord) const {
     cord << kindToInt(kind());

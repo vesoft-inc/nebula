@@ -136,10 +136,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             vIds.emplace_back(vId);
         }
         for (int i = 0; i < 3; i++) {
-            retCols.emplace_back(
-                TestUtils::propDef(cpp2::PropOwner::SOURCE,
-                                   folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
-                                   3001 + i*2));
+            retCols.emplace_back(TestUtils::vetexPropDef(
+                folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
         }
         auto f = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
@@ -223,9 +221,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             edgeKeys.emplace_back(std::move(edgeKey));
         }
         for (int i = 0; i < 20; i++) {
-            retCols.emplace_back(
-                TestUtils::propDef(cpp2::PropOwner::EDGE,
-                                   folly::stringPrintf("col_%d", i)));
+            retCols.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("col_%d", i), 101));
         }
         auto f = client->getEdgeProps(spaceId, std::move(edgeKeys), std::move(retCols));
         auto resp = std::move(f).get();
@@ -298,7 +294,7 @@ public:
     }
 
     folly::Future<cpp2::QueryResponse>
-    future_getOutBound(const cpp2::GetNeighborsRequest& req) override {
+    future_getBound(const cpp2::GetNeighborsRequest& req) override {
         RETURN_LEADER_CHANGED(req, leader_);
     }
 
@@ -342,7 +338,7 @@ TEST(StorageClientTest, LeaderChangeTest) {
     tsc.parts_.emplace(1, std::move(pm));
 
     folly::Baton<true, std::atomic> baton;
-    tsc.getNeighbors(0, {1, 2, 3}, 0, true, "", {}).via(threadPool.get()).then([&] {
+    tsc.getNeighbors(0, {1, 2, 3}, {0}, "", {}).via(threadPool.get()).then([&] {
         baton.post();
     });
     baton.wait();
@@ -359,5 +355,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-

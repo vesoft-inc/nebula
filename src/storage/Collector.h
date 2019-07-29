@@ -96,4 +96,3 @@ private:
 }  // namespace storage
 }  // namespace nebula
 #endif  // STORAGE_COLLECTOR_H_
-

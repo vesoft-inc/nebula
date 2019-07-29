@@ -56,6 +56,8 @@ public:
 
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
 
+    StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) override;
+
     void init(MetaClient *client) override;
 
 private:
@@ -65,4 +67,3 @@ private:
 }  // namespace meta
 }  // namespace nebula
 #endif  // META_SERVERBASEDSCHEMAMANAGER_H_
-

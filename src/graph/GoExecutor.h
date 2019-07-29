@@ -71,14 +71,6 @@ private:
     }
 
     /**
-     * To check if `REVERSELY' is specified.
-     * If so, we step out in a reverse manner.
-     */
-    bool isReversely() const {
-        return reversely_;
-    }
-
-    /**
      * To obtain the source ids from various places,
      * such as the literal id list, inputs from the pipeline or results of variable.
      */
@@ -120,6 +112,10 @@ private:
      */
     std::vector<VertexID> getDstIdsFromResp(RpcResponse &rpcResp) const;
 
+    /**
+     * get the edgeName from response when over all edges
+     */
+    std::vector<std::string> getEdgeNamesFromResp(RpcResponse &rpcResp) const;
     /**
      * All required data have arrived, finish the execution.
      */
@@ -170,8 +166,7 @@ private:
     uint32_t                                    steps_{1};
     uint32_t                                    curStep_{1};
     bool                                        upto_{false};
-    bool                                        reversely_{false};
-    EdgeType                                    edgeType_;
+    std::vector<EdgeType>                       edgeTypes_;
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
     Expression                                 *filter_{nullptr};

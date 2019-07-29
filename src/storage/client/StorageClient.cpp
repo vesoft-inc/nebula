@@ -94,10 +94,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
 folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNeighbors(
         GraphSpaceID space,
         std::vector<VertexID> vertices,
-        EdgeType edgeType,
-        bool isOutBound,
+        std::vector<EdgeType> edgeTypes,
         std::string filter,
         std::vector<cpp2::PropDef> returnCols,
+        bool overAll,
         folly::EventBase* evb) {
     auto clusters = clusterIdsToHosts(
         space,
@@ -112,21 +112,16 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
         auto& req = requests[host];
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
-        // Make edge type a negative number when query in-bound
-        req.set_edge_type(isOutBound ? edgeType : -edgeType);
+        req.set_edge_types(edgeTypes);
         req.set_filter(filter);
         req.set_return_columns(returnCols);
+        req.set_over_all_edges(overAll);
     }
 
     return collectResponse(
         evb, std::move(requests),
-        [isOutBound](cpp2::StorageServiceAsyncClient* client,
-                     const cpp2::GetNeighborsRequest& r) {
-            if (isOutBound) {
-                return client->future_getOutBound(r);
-            } else {
-                return client->future_getInBound(r);
-            }
+        [](cpp2::StorageServiceAsyncClient* client, const cpp2::GetNeighborsRequest& r) {
+            return client->future_getBound(r);
         });
 }
 
@@ -134,7 +129,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
 folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::neighborStats(
         GraphSpaceID space,
         std::vector<VertexID> vertices,
-        EdgeType edgeType,
+        std::vector<EdgeType> edgeTypes,
         bool isOutBound,
         std::string filter,
         std::vector<cpp2::PropDef> returnCols,
@@ -153,20 +148,15 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::n
         req.set_space_id(space);
         req.set_parts(std::move(c.second));
         // Make edge type a negative number when query in-bound
-        req.set_edge_type(isOutBound ? edgeType : -edgeType);
+        req.set_edge_types(edgeTypes);
         req.set_filter(filter);
         req.set_return_columns(returnCols);
     }
 
     return collectResponse(
         evb, std::move(requests),
-        [isOutBound](cpp2::StorageServiceAsyncClient* client,
-                     const cpp2::GetNeighborsRequest& r) {
-            if (isOutBound) {
-                return client->future_outBoundStats(r);
-            } else {
-                return client->future_inBoundStats(r);
-            }
+        [isOutBound](cpp2::StorageServiceAsyncClient* client, const cpp2::GetNeighborsRequest& r) {
+            return client->future_boundStats(r);
         });
 }
 
@@ -218,8 +208,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         auto& host = c.first;
         auto& req = requests[host];
         req.set_space_id(space);
+        // TODO(simon.liu)
         for (auto& p : c.second) {
-            req.set_edge_type((p.second[0].edge_type));
+            std::vector<EdgeType> e = {p.second[0].edge_type};
+            req.set_edge_types(e);
             break;
         }
         req.set_parts(std::move(c.second));

@@ -50,6 +50,9 @@ using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, 
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 
+// get edgeName via spaceId and edgeType
+using SpaceEdgeTypeNameMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, std::string>;
+
 class MetaChangedListener {
 public:
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
@@ -181,6 +184,8 @@ public:
 
     StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                   const std::string& name);
+    StatusOr<std::string> getEdgeNameByTypeFromCache(const GraphSpaceID& space,
+                                                     const EdgeType edgeType);
 
     StatusOr<SchemaVer> getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
 
@@ -217,6 +222,7 @@ protected:
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
                      SpaceTagNameIdMap &tagNameIdMap,
                      SpaceEdgeNameTypeMap &edgeNameTypeMap,
+                     SpaceEdgeTypeNameMap &edgeTypeNamemap,
                      SpaceNewestTagVerMap &newestTagVerMap,
                      SpaceNewestEdgeVerMap &newestEdgeVerMap);
 
@@ -273,6 +279,7 @@ private:
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
+    SpaceEdgeTypeNameMap  spaceEdgeIndexByType_;
     SpaceNewestTagVerMap  spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     folly::RWSpinLock     localCacheLock_;

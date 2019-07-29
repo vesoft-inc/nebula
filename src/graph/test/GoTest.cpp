@@ -78,7 +78,7 @@ TEST_F(GoTest, OneStepOutBound) {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
         auto *fmt = "GO FROM %ld OVER like "
-                    "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve";
+                    "| GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -97,7 +97,7 @@ TEST_F(GoTest, OneStepOutBound) {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
         auto *fmt = "GO FROM %ld OVER like "
-                    "| ( GO FROM $-.id OVER like | GO FROM $-.id OVER serve )";
+                    "| ( GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve )";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -120,7 +120,7 @@ TEST_F(GoTest, AssignmentSimple) {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Tracy McGrady"];
         auto *fmt = "$var = GO FROM %ld OVER like; "
-                    "GO FROM $var.id OVER like";
+                    "GO FROM $var.like_id OVER like";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -137,8 +137,8 @@ TEST_F(GoTest, AssignmentPipe) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Tracy McGrady"];
-        auto *fmt = "$var = (GO FROM %ld OVER like | GO FROM $- OVER like);"
-                    "GO FROM $var OVER like";
+        auto *fmt = "$var = (GO FROM %ld OVER like | GO FROM $-.like_id OVER like);"
+                    "GO FROM $var.like_id OVER like";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -168,7 +168,7 @@ TEST_F(GoTest, AssignmentEmptyResult) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "$var = GO FROM -1 OVER like; "
-                     "GO FROM $var.id OVER like";
+                     "GO FROM $var.like_id OVER like";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<uint64_t>> expected = {
@@ -201,7 +201,7 @@ TEST_F(GoTest, DISABLED_OneStepInOutBound) {
     // Ever served in the same team
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER serve | GO FROM $-.id OVER serve REVERSELY";
+        auto *fmt = "GO FROM %ld OVER serve | GO FROM $-.serve_id OVER serve REVERSELY";
         auto &player = players_["Kobe Bryant"];
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -233,7 +233,7 @@ TEST_F(GoTest, Distinct) {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
         auto *fmt = "GO FROM %ld OVER like "
-                    "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve "
+                    "| GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve "
                     "YIELD DISTINCT serve._dst, $$.team.name";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -288,7 +288,7 @@ TEST_F(GoTest, VertexNotExist) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER serve | GO FROM $-.id OVER serve";
+        auto *fmt = "GO FROM %ld OVER serve | GO FROM $-.serve_id OVER serve";
         auto query = folly::stringPrintf(fmt, nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -297,7 +297,7 @@ TEST_F(GoTest, VertexNotExist) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER like "
-                    "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve";
+                    "| GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve";
         auto query = folly::stringPrintf(fmt, nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -306,11 +306,100 @@ TEST_F(GoTest, VertexNotExist) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER like "
-                    "| (GO FROM $-.id OVER like | GO FROM $-.id OVER serve)";
+                    "| (GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve)";
         auto query = folly::stringPrintf(fmt, nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());
+    }
+}
+
+TEST_F(GoTest, MULTI_EDGES) {
+    // Ever served in the same team
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve, like";
+        auto &player = players_["Russell Westbrook"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {teams_["Thunders"].vid(), teams_["Thunders"].vid()},
+            {players_["Paul George"].vid(), players_["Paul George"].vid()},
+            {players_["James Harden"].vid(), players_["James Harden"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER serve, like";
+        auto &player = players_["Shaquile O'Neal"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {teams_["Magic"].vid(), teams_["Magic"].vid()},
+            {teams_["Lakers"].vid(), teams_["Lakers"].vid()},
+            {teams_["Heat"].vid(), teams_["Heat"].vid()},
+            {teams_["Suns"].vid(), teams_["Suns"].vid()},
+            {teams_["Cavaliers"].vid(), teams_["Cavaliers"].vid()},
+            {teams_["Celtics"].vid(), teams_["Celtics"].vid()},
+            {players_["JaVale McGee"].vid(), players_["JaVale McGee"].vid()},
+            {players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER * YIELD serve._dst, like._dst";
+        auto &player = players_["Dirk Nowitzki"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {teams_["Mavericks"].vid(), teams_["Mavericks"].vid()},
+            {players_["Steve Nash"].vid(), players_["Steve Nash"].vid()},
+            {players_["Jason Kidd"].vid(), players_["Jason Kidd"].vid()},
+            {players_["Dwyane Wade"].vid(), players_["Dwyane Wade"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "GO FROM %ld OVER *";
+        auto &player = players_["Paul Gasol"];
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t, int64_t>> expected = {
+            {teams_["Grizzlies"].vid(), teams_["Grizzlies"].vid()},
+            {teams_["Lakers"].vid(), teams_["Lakers"].vid()},
+            {teams_["Bulls"].vid(), teams_["Bulls"].vid()},
+            {teams_["Spurs"].vid(), teams_["Spurs"].vid()},
+            {teams_["Bucks"].vid(), teams_["Bucks"].vid()},
+            {players_["Kobe Bryant"].vid(), players_["Kobe Bryant"].vid()},
+            {players_["Marc Gasol"].vid(), players_["Marc Gasol"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt    = "GO FROM %ld OVER * YIELD $$.team.name, $$.player.name";
+        auto &player = players_["LaMarcus Aldridge"];
+        auto query   = folly::stringPrintf(fmt, player.vid());
+        auto code    = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, std::string>> expected = {
+            {"Trail Blazers", "Trail Blazers"},
+            {"Spurs", "Spurs"},
+            {"Tony Parker", "Tony Parker"},
+            {"Tim Duncan", "Tim Duncan"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
     }
 }
 
