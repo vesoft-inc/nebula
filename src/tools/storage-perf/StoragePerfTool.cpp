@@ -13,14 +13,15 @@
 DEFINE_int32(threads, 2, "Total threads for perf");
 DEFINE_int32(qps, 1000, "Total qps for the perf tool");
 DEFINE_int32(totalReqs, 10000, "Total requests during this perf test");
-DEFINE_int32(io_threads, 3, "Client io threads");
-DEFINE_bool(mock_server, true, "Test server was started in mock server mode");
-DEFINE_int32(mock_server_port, 44500, "The mock server port");
+DEFINE_int32(io_threads, 10, "Client io threads");
 DEFINE_string(method, "getNeighbors", "method type being tested,"
                                       "such as getNeighbors, addVertices, addEdges, getVertices");
-
+DEFINE_string(meta_server_addrs, "", "meta server address");
 DEFINE_int32(min_vertex_id, 1, "The smallest vertex Id");
 DEFINE_int32(max_vertex_id, 10000, "The biggest vertex Id");
+DEFINE_int64(default_space_id, 1, "Default spaceid");
+DEFINE_int64(default_tag_id, 2, "Default tag id");
+DEFINE_int64(default_edge_type, 3, "Default edge type");
 
 namespace nebula {
 namespace storage {
@@ -34,13 +35,21 @@ public:
         LOG(INFO) << "Total threads " << FLAGS_threads
                   << ", qpsPerThread " << qpsPerThread
                   << ", task interval ms " << interval;
+        auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
+        if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
+            LOG(ERROR) << "Can't get metaServer address, status:" << metaAddrsRet.status()
+                       << ", FLAGS_meta_server_addrs:" << FLAGS_meta_server_addrs;
+            return -1;
+        }
         std::vector<std::unique_ptr<thread::GenericWorker>> threads;
         for (int32_t i = 0; i < FLAGS_threads; i++) {
             auto t = std::make_unique<thread::GenericWorker>();
             threads.emplace_back(std::move(t));
         }
         threadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_threads);
-        client_ = std::make_unique<StorageClient>(threadPool_, nullptr);
+        mClient_ = std::make_unique<meta::MetaClient>(threadPool_, metaAddrsRet.value());
+        CHECK(mClient_->waitForMetadReady());
+        client_ = std::make_unique<StorageClient>(threadPool_, mClient_.get());
         time::Duration duration;
         for (auto& t : threads) {
             CHECK(t->start("TaskThread"));
@@ -83,9 +92,9 @@ private:
         std::vector<storage::cpp2::PropDef> props;
         {
             storage::cpp2::PropDef prop;
-            prop.set_name(folly::stringPrintf("tag_%d_col_1", defaultTagId_));
+            prop.set_name(folly::stringPrintf("tag_%ld_col_1", FLAGS_default_tag_id));
             prop.set_owner(storage::cpp2::PropOwner::SOURCE);
-            prop.set_tag_id(defaultTagId_);
+            prop.set_tag_id(FLAGS_default_tag_id);
             props.emplace_back(std::move(prop));
         }
         {
@@ -104,7 +113,7 @@ private:
         v.set_id(vId++);
         decltype(v.tags) tags;
         storage::cpp2::Tag tag;
-        tag.set_tag_id(defaultTagId_);
+        tag.set_tag_id(FLAGS_default_tag_id);
         RowWriter writer;
         for (uint64_t numInt = 0; numInt < 3; numInt++) {
             writer << numInt;
@@ -125,7 +134,7 @@ private:
         storage::cpp2::Edge edge;
         storage::cpp2::EdgeKey eKey;
         eKey.set_src(vId);
-        eKey.set_edge_type(defaultEdgeType_);
+        eKey.set_edge_type(FLAGS_default_edge_type);
         eKey.set_dst(vId + 1);
         eKey.set_ranking(0);
         edge.set_key(std::move(eKey));
@@ -143,8 +152,8 @@ private:
 
     void getNeighborsTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->getNeighbors(defaultSpaceId_, randomVertices(),
-                                       defaultEdgeType_, true, "", randomCols())
+        auto f = client_->getNeighbors(FLAGS_default_space_id, randomVertices(),
+                                       FLAGS_default_edge_type, true, "", randomCols())
                             .via(evb).then([this]() {
                                 this->finishedRequests_++;
                                 VLOG(3) << "request successed!";
@@ -155,7 +164,7 @@ private:
 
     void addVerticesTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->addVertices(defaultSpaceId_, genVertices(), true)
+        auto f = client_->addVertices(FLAGS_default_space_id, genVertices(), true)
                     .via(evb).then([this]() {
                         this->finishedRequests_++;
                         VLOG(3) << "request successed!";
@@ -166,7 +175,7 @@ private:
 
     void addEdgesTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->addEdges(defaultSpaceId_, genEdges(), true)
+        auto f = client_->addEdges(FLAGS_default_space_id, genEdges(), true)
                     .via(evb).then([this]() {
                         this->finishedRequests_++;
                         VLOG(3) << "request successed!";
@@ -177,7 +186,7 @@ private:
 
     void getVerticesTask() {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->getVertexProps(defaultSpaceId_, randomVertices(), randomCols())
+        auto f = client_->getVertexProps(FLAGS_default_space_id, randomVertices(), randomCols())
                     .via(evb).then([this]() {
                         this->finishedRequests_++;
                         VLOG(3) << "request successed!";
@@ -189,10 +198,8 @@ private:
 private:
     std::atomic_long finishedRequests_{0};
     std::unique_ptr<StorageClient> client_;
+    std::unique_ptr<meta::MetaClient> mClient_;
     std::shared_ptr<folly::IOThreadPoolExecutor> threadPool_;
-    GraphSpaceID defaultSpaceId_ = 0;
-    EdgeType     defaultEdgeType_ = 101;
-    TagID        defaultTagId_    = 3001;
 };
 
 }  // namespace storage
