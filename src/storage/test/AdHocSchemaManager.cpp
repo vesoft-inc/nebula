@@ -181,6 +181,20 @@ StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::Str
     return -1;
 }
 
+StatusOr<std::string> AdHocSchemaManager::toTagName(GraphSpaceID spaceId, TagID tagId) {
+    UNUSED(spaceId);
+    UNUSED(tagId);
+    LOG(FATAL) << "Unimplement";
+    return "";
+}
+
+StatusOr<std::string> AdHocSchemaManager::toEdgeName(GraphSpaceID spaceId, EdgeType edgeType) {
+    UNUSED(spaceId);
+    UNUSED(edgeType);
+    LOG(FATAL) << "Unimplement";
+    return "";
+}
+
 }  // namespace storage
 }  // namespace nebula
 

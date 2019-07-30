@@ -72,8 +72,12 @@ public:
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;
 
+    StatusOr<std::string> toTagName(GraphSpaceID spaceId, TagID tagId) override;
+
     // This interface is disabled
     StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) override;
+
+    StatusOr<std::string> toEdgeName(GraphSpaceID spaceId, EdgeType edgeType) override;
 
     void init(nebula::meta::MetaClient *client = nullptr) override {
         UNUSED(client);

@@ -17,6 +17,7 @@ namespace nebula {
 
 using nebula::GraphSpaceID;
 using nebula::meta::SchemaManager;
+using nebula::meta::MetaClient;
 using nebula::kvstore::RocksEngine;
 
 class EngineDumper {
@@ -25,13 +26,14 @@ public:
     ~EngineDumper() = default;
 
     void init(GraphSpaceID &spaceId, std::string spaceName, SchemaManager *schemaMngPtr,
-        RocksEngine *engine);
+        MetaClient *metaPtr, RocksEngine *engine);
     void dump();
 
 private:
     GraphSpaceID spaceId_;
     std::string spaceName_;
     SchemaManager *schemaMngPtr_;
+    MetaClient *metaPtr_;
     RocksEngine *engine_;
 };
 

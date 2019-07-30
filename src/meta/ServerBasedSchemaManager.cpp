@@ -159,10 +159,21 @@ StatusOr<TagID> ServerBasedSchemaManager::toTagID(GraphSpaceID space,
     return metaClient_->getTagIDByNameFromCache(space, tagName.str());
 }
 
+StatusOr<std::string> ServerBasedSchemaManager::toTagName(GraphSpaceID spaceId, TagID tagId) {
+    CHECK(metaClient_);
+    return metaClient_->getTagNameByIDFromCache(spaceId, tagId);
+}
+
 StatusOr<EdgeType> ServerBasedSchemaManager::toEdgeType(GraphSpaceID space,
                                               folly::StringPiece typeName) {
     CHECK(metaClient_);
     return metaClient_->getEdgeTypeByNameFromCache(space, typeName.str());
+}
+
+StatusOr<std::string> ServerBasedSchemaManager::toEdgeName(GraphSpaceID spaceId,
+    EdgeType edgeType) {
+    CHECK(metaClient_);
+    return metaClient_->getEdgeNameByTypeFromCache(spaceId, edgeType);
 }
 
 }  // namespace meta

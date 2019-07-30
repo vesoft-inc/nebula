@@ -63,7 +63,7 @@ void DbDumper::dump() {
             kvstore::RocksEngine engine(spaceId, storagePath, nullptr, nullptr, false);
 
             EngineDumper dumper;
-            dumper.init(spaceId, ret.value(), schemaMngPtr_, &engine);
+            dumper.init(spaceId, ret.value(), schemaMngPtr_, metaPtr_, &engine);
             dumper.dump();
         }
     }

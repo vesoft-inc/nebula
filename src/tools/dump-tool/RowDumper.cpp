@@ -61,6 +61,7 @@ void RowDumper::reset() {
     row_ = nullptr;
     schema_.reset();
     reader_.reset();
+    schemaName_ = "";
 
     nameStream_.str("");
     valStream_.str("");
@@ -73,7 +74,7 @@ void RowDumper::dumpAllFields() {
         // format name
         auto name = schema_->getFieldName(i);
         nameStream_ << ",\t";
-        nameStream_ << name;
+        nameStream_ << schemaName_ << "." << name;
 
         // format value
         valStream_ << ",\t";
@@ -105,6 +106,14 @@ bool TagDumper::init(kvstore::KVIterator *iter, const GraphSpaceID &spaceId,
     auto val = iter->val();
 
     auto tagId = NebulaKeyUtils::getTagId(key);
+    auto ret = schemaMngPtr->toTagName(spaceId, tagId);
+    if (!ret.ok()) {
+        LOG(INFO) << "can not get tag name for " << tagId;
+        return false;
+    }
+    schemaName_ = ret.value();
+    schemaName_ += ("("+std::to_string(tagId)+")");
+
     reader_ = RowReader::getTagPropReader(schemaMngPtr, val, spaceId, tagId);
     if (!reader_) {
         return false;
@@ -123,8 +132,7 @@ void TagDumper::dumpPrefix() {
     auto key = row_->key();
 
     nameStream_ << "id";
-    auto srcId = NebulaKeyUtils::getVertexID(key);
-    valStream_ << srcId;
+    valStream_ << NebulaKeyUtils::getVertexID(key);
 }
 
 
@@ -135,11 +143,21 @@ bool EdgeDumper::init(kvstore::KVIterator *iter, const GraphSpaceID &spaceId,
     row_ = iter;
     auto key = iter->key();
     auto val = iter->val();
+
+    auto edgeType = NebulaKeyUtils::getEdgeType(key);
+    auto ret = schemaMngPtr->toEdgeName(spaceId, edgeType);
+    if (!ret.ok()) {
+        LOG(INFO) << "can not get edge name for " << edgeType;
+        return false;
+    }
+    schemaName_ = ret.value();
+    schemaName_ = ret.value();
+    schemaName_ += ("("+std::to_string(edgeType)+")");
+
     if (val.empty()) {
         return true;
     }
 
-    auto edgeType = NebulaKeyUtils::getEdgeType(key);
     edgeType = edgeType < 0 ? -edgeType : edgeType;
     reader_ = RowReader::getEdgePropReader(schemaMngPtr, val, spaceId, edgeType);
     if (!reader_) {
@@ -158,20 +176,11 @@ bool EdgeDumper::init(kvstore::KVIterator *iter, const GraphSpaceID &spaceId,
 void EdgeDumper::dumpPrefix() {
     auto key = row_->key();
 
-    nameStream_ << "id";
+    nameStream_ << "src_id,\tdst_id,\tranking";
 
-    auto srcId = NebulaKeyUtils::getSrcId(key);
-    valStream_ << srcId;
+    valStream_ << NebulaKeyUtils::getSrcId(key) << ",\t" << NebulaKeyUtils::getDstId(key) << ",\t";
 
-    valStream_ << "->";
-
-    auto dstId = NebulaKeyUtils::getDstId(key);
-    valStream_ << dstId;
-
-    valStream_ << ":";
-
-    auto edgeType = NebulaKeyUtils::getEdgeType(key);
-    valStream_ << edgeType;
+    valStream_ << NebulaKeyUtils::getRank(key);
 }
 
 

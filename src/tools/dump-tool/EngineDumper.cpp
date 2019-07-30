@@ -12,10 +12,11 @@
 namespace nebula {
 
 void EngineDumper::init(GraphSpaceID &spaceId, std::string spaceName, SchemaManager *schemaMngPtr,
-    RocksEngine *engine) {
+    MetaClient *metaPtr, RocksEngine *engine) {
     spaceId_ = spaceId;
     spaceName_ = spaceName;
     schemaMngPtr_ = schemaMngPtr;
+    metaPtr_ = metaPtr;
     engine_ = engine;
 }
 
@@ -45,10 +46,13 @@ void EngineDumper::dump() {
 
         if (rows.size() > 0) {
             std::cout << "dump space: " << spaceName_ << ", part: " << partId << std::endl;
+            std::cout << "------------------------------------------------------" << std::endl;
             for (auto &row : rows) {
                 std::cout << row.first << std::endl;
                 std::cout << row.second << std::endl;
+                std::cout << "------------------------------------------------------" << std::endl;
             }
+            std::cout << std::endl;
         }
     }
 }

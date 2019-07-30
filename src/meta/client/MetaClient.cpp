@@ -583,6 +583,23 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
 }
 
 
+StatusOr<std::string> MetaClient::getTagNameByIDFromCache(const GraphSpaceID& spaceId,
+                                                          const TagID& tagId) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    for (auto iter = spaceTagIndexByName_.begin(); iter != spaceTagIndexByName_.end(); ++iter) {
+        if (iter->first.first == spaceId && iter->second == tagId) {
+            return iter->first.second;
+        }
+    }
+
+    return Status::SpaceNotFound();
+}
+
+
 StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                           const std::string& name) {
     if (!ready_) {
@@ -594,6 +611,23 @@ StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& sp
         return Status::Error("Edge is no exist!");
     }
     return it->second;
+}
+
+
+StatusOr<std::string> MetaClient::getEdgeNameByTypeFromCache(const GraphSpaceID& spaceId,
+                                                             const EdgeType& edgeType) {
+    if (!ready_) {
+        return Status::Error("Not ready!");
+    }
+
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    for (auto iter = spaceEdgeIndexByName_.begin(); iter != spaceEdgeIndexByName_.end(); ++iter) {
+        if (iter->first.first == spaceId && iter->second == edgeType) {
+            return iter->first.second;
+        }
+    }
+
+    return Status::SpaceNotFound();
 }
 
 

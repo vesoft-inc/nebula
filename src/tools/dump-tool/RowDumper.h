@@ -39,6 +39,7 @@ protected:
 
 protected:
     kvstore::KVIterator *row_;
+    std::string schemaName_;
     std::shared_ptr<const meta::SchemaProviderIf> schema_;
     std::unique_ptr<RowReader> reader_;
 

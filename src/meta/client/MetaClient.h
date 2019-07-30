@@ -181,8 +181,14 @@ public:
 
     StatusOr<TagID> getTagIDByNameFromCache(const GraphSpaceID& space, const std::string& name);
 
+    StatusOr<std::string> getTagNameByIDFromCache(const GraphSpaceID& spaceId,
+                                                  const TagID& tagId);
+
     StatusOr<EdgeType> getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                   const std::string& name);
+
+    StatusOr<std::string> getEdgeNameByTypeFromCache(const GraphSpaceID& spaceId,
+                                                     const EdgeType& edgeType);
 
     StatusOr<SchemaVer> getNewestTagVerFromCache(const GraphSpaceID& space, const TagID& tagId);
 

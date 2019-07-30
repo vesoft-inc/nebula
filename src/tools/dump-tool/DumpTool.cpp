@@ -6,6 +6,7 @@
 #include "base/Base.h"
 #include "meta/SchemaManager.h"
 #include "DbDumper.h"
+#include <iostream>
 
 DEFINE_string(path_prefix, "", "when read data_path from config file, this is the prefix of the "
                                 "path");
@@ -16,7 +17,27 @@ DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
 
 using nebula::meta::SchemaManager;
 
+
+void print_help() {
+    std::cout << "./dump_tool\t--help (print help info)\n"
+        "\t\t--path_prefix (when read data_path from config file, this is the prefix of "
+        "the path) type: string\n"
+        "\t\t\tdefault: current path\n"
+        "\t\t--data_path (Root data path, multi paths should be split by comma. For rocksdb engine,"
+        " one path one instance.) type: string\n"
+        "\t\t\tdefault: current\n"
+        "\t\tmeta_server_addrs (list of meta server addresses, the format looks like ip1:port1, "
+        "ip2:port2, ip3:port3) type: string\n"
+        "\t\t\tdefault: empty string\n"
+        "\t\t--flagfile (the path of storage config file.) type: string\n"
+        "\t\t\tdefault: empty string\n";
+}
+
 int main(int argc, char *argv[]) {
+    if (argc == 1 || (argc == 2 && argv[1] == std::string("--help"))) {
+        print_help();
+        return 0;
+    }
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::FATAL);
 
@@ -25,13 +46,13 @@ int main(int argc, char *argv[]) {
     // Meta client
     auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
     if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
-        LOG(ERROR) << "meta server's ip and port is wrong";
+        std::cout << "meta server's ip and port is wrong";
         return 0;
     }
     auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
                                                                  std::move(metaAddrsRet.value()));
     if (!metaClient->waitForMetadReady()) {
-        LOG(ERROR) << "waitForMetadReady error!";
+        std::cout << "waitForMetadReady error!";
         return 0;
     }
 
@@ -46,7 +67,7 @@ int main(int argc, char *argv[]) {
         return FLAGS_path_prefix+"/"+folly::trimWhitespace(p).str();
     });
     if (paths.empty()) {
-        LOG(ERROR) << "Bad data_path format:" << FLAGS_data_path;
+        std::cout << "Bad data_path format:" << FLAGS_data_path;
         return 0;
     }
 

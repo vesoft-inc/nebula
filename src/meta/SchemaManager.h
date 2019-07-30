@@ -53,7 +53,11 @@ public:
 
     virtual StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) = 0;
 
+    virtual StatusOr<std::string> toTagName(GraphSpaceID spaceId, TagID tagId) = 0;
+
     virtual StatusOr<EdgeType> toEdgeType(GraphSpaceID space, folly::StringPiece typeName) = 0;
+
+    virtual StatusOr<std::string> toEdgeName(GraphSpaceID spaceId, EdgeType edgeType) = 0;
 
     virtual void init(MetaClient *client = nullptr) = 0;
 
