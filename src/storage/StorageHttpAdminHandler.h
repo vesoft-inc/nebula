@@ -1,11 +1,11 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef STORAGE_STORAGEHTTPSTATUSHANDLER_H_
-#define STORAGE_STORAGEHTTPSTATUSHANDLER_H_
+#ifndef STORAGE_STORAGEHTTPADMINHANDLER_H_
+#define STORAGE_STORAGEHTTPADMINHANDLER_H_
 
 #include "base/Base.h"
 #include "webservice/Common.h"
@@ -17,9 +17,11 @@ namespace storage {
 
 using nebula::HttpCode;
 
-class StorageHttpStatusHandler : public proxygen::RequestHandler {
+class StorageHttpAdminHandler : public proxygen::RequestHandler {
 public:
-    StorageHttpStatusHandler() = default;
+    StorageHttpAdminHandler(meta::SchemaManager* schemaMan, kvstore::KVStore* kv)
+        : schemaMan_(schemaMan)
+        , kv_(kv) {}
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -33,24 +35,15 @@ public:
 
     void onError(proxygen::ProxygenError error) noexcept override;
 
-private:
-    void addOneStatus(folly::dynamic& vals,
-                      const std::string& statusName,
-                      const std::string& statusValue) const;
-
-    std::string readValue(std::string& statusName);
-    void readAllValue(folly::dynamic& vals);
-    folly::dynamic getStatus();
-    std::string toStr(folly::dynamic& vals) const;
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    bool returnJson_{false};
-    std::vector<std::string> statusNames_;
-    std::vector<std::string> statusAllNames_{"status"};
+    std::string resp_;
+    meta::SchemaManager* schemaMan_ = nullptr;
+    kvstore::KVStore*    kv_ = nullptr;
 };
 
 }  // namespace storage
 }  // namespace nebula
 
-#endif  // STORAGE_STORAGEHTTPSTATUSHANDLER_H_
+#endif  // STORAGE_STORAGEHTTPADMINHANDLER_H_
