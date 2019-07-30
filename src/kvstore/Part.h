@@ -48,7 +48,7 @@ public:
     /**
      * Methods inherited from RaftPart
      */
-    LogID lastCommittedLogId() override;
+    std::pair<LogID, TermID> lastCommittedLogId() override;
 
     void onLostLeadership(TermID term) override;
 

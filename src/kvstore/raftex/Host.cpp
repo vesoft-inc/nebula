@@ -187,7 +187,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
             [eb, self = shared_from_this()] (folly::Try<cpp2::AppendLogResponse>&& t) {
         VLOG(3) << self->idStr_ << "appendLogs() call got response";
         if (t.hasException()) {
-            LOG(ERROR) << self->idStr_ << t.exception().what();
+            PLOG_EVERY_N(ERROR, 1000) << self->idStr_ << t.exception().what();
             cpp2::AppendLogResponse r;
             r.set_error_code(cpp2::ErrorCode::E_EXCEPTION);
             {
