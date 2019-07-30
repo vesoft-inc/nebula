@@ -92,11 +92,11 @@ case class Tag(
 
   def getColumn(name: String): Option[Column] = {
     columnMappings
-      .map(_.filter { col =>
+      .map(_.find { col =>
         {
           col.columnName.equalsIgnoreCase(name)
         }
-      }.headOption)
+      })
       .head
   }
 }

@@ -35,10 +35,9 @@ class PropertyValueAndTypeWritable(
 
   override def readFields(in: DataInput): Unit = {
     vertexOrEdgeEnum = in.readInt() match {
-      case 0 => VertexOrEdgeEnum.Vertex
-      case 1 => VertexOrEdgeEnum.Edge
-      case a @ _ =>
-        throw new IllegalStateException(s"Non supported value type:${a}")
+      case 0     => VertexOrEdgeEnum.Vertex
+      case 1     => VertexOrEdgeEnum.Edge
+      case a @ _ => throw new IllegalStateException(s"Not supported value type:${a}")
     }
 
     values.readFields(in)

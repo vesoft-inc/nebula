@@ -172,8 +172,7 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
 
       val localDir = s"${localSstFileOutput}${hdfsSubDirectory}"
       val sstFileName =
-        s"${value.vertexOrEdgeEnum}-${key.`type`}-${DatatypeConverter
-          .printHexBinary(key.valueEncoded.getBytes)}.sst".toLowerCase
+        s"${value.vertexOrEdgeEnum}-${key.`type`}-${DatatypeConverter.printHexBinary(key.keyEncoded.getBytes)}.sst".toLowerCase
 
       val localDirPath = new Path(localDir)
       if (!localFileSystem.exists(localDirPath)) {
@@ -198,7 +197,7 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
     }
 
     //TODO: could be batched?
-    sstFileWriter.put(key.valueEncoded.getBytes(), value.values.getBytes)
+    sstFileWriter.put(key.keyEncoded.getBytes(), value.values.getBytes)
   }
 
   override def close(context: TaskAttemptContext): Unit = {
