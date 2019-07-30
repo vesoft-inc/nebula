@@ -1,11 +1,19 @@
 | Name  | Description | 
 |:----|:----:|
-|   ==     |   Equal operator     | 
-|   >     |   Greater than operator     | 
-|   >=     |   Greater than or equal operator     | 
-|   <     |   Less than operator    | 
-|   <=     |   Less than or equal operator    | 
-|   !=    |   Not equal operator    | 
+| &&   | Logical AND   | 
+| =   | Assign a value   | 
+| \|\|   | Logical OR   | 
+| /   | Division operator   | 
+| ==   | Equal operator   | 
+| !=   | Not equal operator   | 
+| <   | Less than operator   | 
+| <=   | Less than or equal operator   | 
+| -   | Minus operator   | 
+| %   | Modulo operator   | 
+| +   | Addition operator   | 
+| !   | Logical NOT   | 
+| *   | Multiplication operator   | 
+| -   | Change the sign of the argument   | 
 
 
 Comparison operations result in a value of _true_ and _false_.
@@ -19,14 +27,14 @@ nebula> YIELD 'A' == 'a';
 ==============
 | ("A"=="a") |
 ==============
-|      false |
+| false |
 --------------
 
 nebula> YIELD '2' == 2;
 ============
 | ("2"==2) |
 ============
-|    false |
+|false |
 ------------
 ```
 
@@ -52,7 +60,7 @@ nebula> YIELD 2 >= 2;
 ==========
 | (2>=2) |
 ==========
-|   true |
+| true |
 ----------
 ```
 
@@ -65,7 +73,7 @@ nebula> YIELD 2.0 < 1.9;
 =======================
 | (2.000000<1.900000) |
 =======================
-|               false |
+|false |
 -----------------------
 ```
 
@@ -78,7 +86,7 @@ nebula> YIELD 0.11 <= 0.11;
 ========================
 | (0.110000<=0.110000) |
 ========================
-|                 true |
+|true |
 ------------------------
 ```
 
@@ -91,6 +99,6 @@ nebula> YIELD 1 != '1'
 ============
 | (1!="1") |
 ============
-|     true |
+| true |
 ------------
 ```

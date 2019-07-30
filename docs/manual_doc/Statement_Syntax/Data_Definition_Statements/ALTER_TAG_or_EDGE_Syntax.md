@@ -28,3 +28,4 @@ ALTER EDGE e1 ADD (prop1 int, prop2 string),    /* add prop1 */
 ALTER EDGE e1 TTL_DURATION = 2, TTL_COL = prop1  -- mark prop1's value to be removed in 2 seconds
 ```
 
+Notice that TTL_COL only support INT and TIMESTAMP types.

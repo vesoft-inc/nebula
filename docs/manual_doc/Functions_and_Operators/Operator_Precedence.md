@@ -16,7 +16,7 @@ For operators from the same precedence level within an expression, evaluation is
 Examples:
 
 ```
-YIELD 2+3*5;
-YIELD (2+3)*5;
+nebula> YIELD 2+3*5;
+nebula> YIELD (2+3)*5;
 ```
 

@@ -1,5 +1,6 @@
 ```
-INSERT VERTEX tag_name (prop_name_list) {VALUES | VALUE} vid: (prop_value_list)
+INSERT VERTEX tag_name[, tag_name] (prop_name_list[, prop_name_list])
+     {VALUES | VALUE} vid: (prop_value_list[, prop_value_list])
 
 prop_name_list:
   [prop_name [, prop_name] ...]
@@ -26,6 +27,12 @@ INSERT VERTEX t1 () VALUES 10:()    -- insert a vertex with vid 100 and empty pr
 # CREATE TAG t2 (name string, age int)                -- create tag t2 with two properties
 INSERT VERTEX t2 (name, age) VALUES 11:("n1", 12)     -- insert vertex 11 with the properties
 INSERT VERTEX t2 (name, age) VALUES 12:("n1", "a13")  -- WRONG. "a13" is not int
+```
+
+```
+# CREATE TAG t1(i1 int)
+# CREATE TAG t2(s2 string)
+INSERT VERTEX  t1 (i1), t2(s2) VALUES 21: (321, "hello")   -- insert vertex 21 with two tags.
 ```
 
 A vertex can be inserted/wrote multiple times. Only the last write values can be read.

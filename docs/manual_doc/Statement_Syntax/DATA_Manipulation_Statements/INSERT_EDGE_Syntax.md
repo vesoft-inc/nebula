@@ -1,5 +1,7 @@
 ```
-INSERT EDGE edge_name (prop_name_list) {VALUES | VALUE} src_vid -> dst_vid : (prop_value_list)
+INSERT EDGE edge_name (prop_name_list) {VALUES | VALUE} 
+src_vid -> dst_vid : (prop_value_list)
+[, src_vid -> dst_vid : (prop_value_list)]
 
 prop_name_list:
   [prop_name [, prop_name] ...]
@@ -23,10 +25,13 @@ INSERT EDGE e1 () VALUES 10->11:()    -- insert an edge from vertex 10 to vertex
 ```
 
 ```
-# CREATE EDGE e2 (name string, age int)                 -- create edge e2 with two properties
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12)     -- insert edge from 11to 13 with two properties
-INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")  -- WRONG. "a13" is not int
+# CREATE EDGE e2 (name string, age int)                     -- create edge e2 with two properties
+INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 1)          -- insert edge from 11 to 13 with two properties
+INSERT EDGE e2 (name, age) VALUES \ 
+12->13:("n1", 1), 13->14("n2", 2)                           -- insert two edges
+INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")      -- WRONG. "a13" is not int
 ```
+
 
 An edge can be inserted/wrote multiple times. Only the last write values can be read.
 
