@@ -445,6 +445,29 @@ public:
 private:
     std::unique_ptr<std::string>                name_;
 };
+
+
+class YieldSentence final : public Sentence {
+public:
+    explicit YieldSentence(YieldColumns *fields) {
+        yieldColumns_.reset(fields);
+        kind_ = Kind::kYield;
+    }
+
+    std::vector<YieldColumn*> columns() const {
+        return yieldColumns_->columns();
+    }
+
+    void setWhereClause(WhereClause *clause) {
+        whereClause_.reset(clause);
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<YieldColumns>              yieldColumns_;
+    std::unique_ptr<WhereClause>               whereClause_;
+};
 }   // namespace nebula
 
 #endif  // PARSER_MAINTAINSENTENCES_H_

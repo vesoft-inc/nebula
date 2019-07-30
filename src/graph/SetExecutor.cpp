@@ -9,6 +9,12 @@
 
 namespace nebula {
 namespace graph {
+namespace cpp2 {
+bool RowValue::operator<(const RowValue& rhs) const {
+    auto &lhs = *this;
+    return (lhs.columns < rhs.columns);
+}
+}
 
 SetExecutor::SetExecutor(Sentence *sentence, ExecutionContext *ectx)
     : TraverseExecutor(ectx) {
@@ -26,42 +32,8 @@ Status SetExecutor::prepare() {
     DCHECK(left_ != nullptr);
     DCHECK(right_ != nullptr);
 
-    auto onFinish = [] () {
-        return;
-    };
-
-    {
-        futures_.emplace_back(leftP_.getFuture());
-        auto onResult = [this] (std::unique_ptr<InterimResult> result) {
-            this->leftResult_ = std::move(result);
-            VLOG(3) << "Left result set.";
-            leftP_.setValue();
-        };
-        auto onError = [this] (Status s) {
-            VLOG(3) << "Left error:" << s.toString();
-            leftS_ = std::move(s);
-            leftP_.setValue();
-        };
-        left_->setOnResult(onResult);
-        left_->setOnFinish(onFinish);
-        left_->setOnError(onError);
-    }
-    {
-        futures_.emplace_back(rightP_.getFuture());
-        auto onResult = [this] (std::unique_ptr<InterimResult> result) {
-            this->rightResult_ = std::move(result);
-            VLOG(3) << "Right result set.";
-            rightP_.setValue();
-        };
-        auto onError = [this] (Status s) {
-            VLOG(3) << "Right error: " << s.toString();
-            rightS_ = std::move(s);
-            rightP_.setValue();
-        };
-        right_->setOnResult(onResult);
-        right_->setOnFinish(onFinish);
-        right_->setOnError(onError);
-    }
+    setLeft();
+    setRight();
 
     status = left_->prepare();
     if (!status.ok()) {
@@ -78,6 +50,52 @@ Status SetExecutor::prepare() {
     }
 
     return Status::OK();
+}
+
+void SetExecutor::setLeft() {
+    auto onFinish = [] () {
+        return;
+    };
+
+    futures_.emplace_back(leftP_.getFuture());
+    auto onResult = [this] (std::unique_ptr<InterimResult> result) {
+    this->leftResult_ = std::move(result);
+        VLOG(3) << "Left result set.";
+        leftP_.setValue();
+    };
+
+    auto onError = [this] (Status s) {
+        VLOG(3) << "Left error:" << s.toString();
+        leftS_ = std::move(s);
+        leftP_.setValue();
+    };
+
+    left_->setOnResult(onResult);
+    left_->setOnFinish(onFinish);
+    left_->setOnError(onError);
+}
+
+void SetExecutor::setRight() {
+    auto onFinish = [] () {
+        return;
+    };
+
+    futures_.emplace_back(rightP_.getFuture());
+    auto onResult = [this] (std::unique_ptr<InterimResult> result) {
+        this->rightResult_ = std::move(result);
+        VLOG(3) << "Right result set.";
+        rightP_.setValue();
+    };
+
+    auto onError = [this] (Status s) {
+        VLOG(3) << "Right error: " << s.toString();
+        rightS_ = std::move(s);
+        rightP_.setValue();
+    };
+
+    right_->setOnResult(onResult);
+    right_->setOnFinish(onFinish);
+    right_->setOnError(onError);
 }
 
 void SetExecutor::execute() {
@@ -151,15 +169,14 @@ void SetExecutor::doUnion() {
         }
     }
 
-    std::vector<cpp2::RowValue> rows;
+    leftRows.insert(leftRows.end(),
+                    std::make_move_iterator(rightRows.begin()),
+                    std::make_move_iterator(rightRows.end()));
     if (sentence_->distinct()) {
-        rows = doDistinct(leftRows, rightRows);
-    } else {
-        leftRows.insert(leftRows.end(), rightRows.begin(), rightRows.end());
-        rows = std::move(leftRows);
+        doDistinct(leftRows);
     }
 
-    finishExecution(std::move(rows));
+    finishExecution(std::move(leftRows));
     return;
 }
 
@@ -173,7 +190,7 @@ Status SetExecutor::checkSchema() {
     while (leftIter && rightIter) {
         auto *colName = rightIter->getName();
         if (leftIter->getType() != rightIter->getType()) {
-            castingMap_.emplace(index, leftIter->getType());
+            castingMap_.emplace_back(index, leftIter->getType());
         }
 
         colNames_.emplace_back(std::string(colName));
@@ -209,37 +226,10 @@ Status SetExecutor::doCasting(std::vector<cpp2::RowValue> &rows) const {
 }
 
 
-std::vector<cpp2::RowValue> SetExecutor::doDistinct(
-        std::vector<cpp2::RowValue> &leftRows,
-        std::vector<cpp2::RowValue> &rightRows) const {
-    std::vector<cpp2::RowValue> rows;
-    for (auto &lr : leftRows) {
-        auto iter = rows.begin();
-        while (iter != rows.end()) {
-            if (lr == *iter) {
-                break;
-            }
-            ++iter;
-        }
-        if (iter == rows.end()) {
-            rows.emplace_back(std::move(lr));
-        }
-    }
-
-    for (auto &rr : rightRows) {
-        auto iter = rows.begin();
-        while (iter != rows.end()) {
-            if (rr == *iter) {
-                break;
-            }
-            ++iter;
-        }
-        if (iter == rows.end()) {
-            rows.emplace_back(std::move(rr));
-        }
-    }
-
-    return rows;
+void SetExecutor::doDistinct(std::vector<cpp2::RowValue> &rows) const {
+    std::sort(rows.begin(), rows.end());
+    auto it = std::unique(rows.begin(), rows.end());
+    rows.erase(it, rows.end());
 }
 
 void SetExecutor::doIntersect() {

@@ -32,6 +32,10 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
+    void setLeft();
+
+    void setRight();
+
     void finishExecution(std::unique_ptr<InterimResult> result);
 
     void finishExecution(std::vector<cpp2::RowValue> leftRows);
@@ -46,27 +50,25 @@ private:
 
     Status doCasting(std::vector<cpp2::RowValue> &rows) const;
 
-    std::vector<cpp2::RowValue> doDistinct(
-            std::vector<cpp2::RowValue> &leftRows,
-            std::vector<cpp2::RowValue> &rightRows) const;
+    void doDistinct(std::vector<cpp2::RowValue> &rows) const;
 
     void onEmptyInputs();
 
 private:
-    SetSentence                                     *sentence_{nullptr};
-    std::unique_ptr<TraverseExecutor>               left_;
-    std::unique_ptr<TraverseExecutor>               right_;
-    std::unique_ptr<InterimResult>                  leftResult_;
-    std::unique_ptr<InterimResult>                  rightResult_;
-    folly::Promise<folly::Unit>                     leftP_;
-    folly::Promise<folly::Unit>                     rightP_;
-    std::vector<folly::Future<folly::Unit>>         futures_;
-    Status                                          leftS_;
-    Status                                          rightS_;
-    std::map<uint64_t, nebula::cpp2::ValueType>     castingMap_;
-    std::vector<std::string>                        colNames_;
-    std::shared_ptr<const meta::SchemaProviderIf>   resultSchema_;
-    std::unique_ptr<cpp2::ExecutionResponse>        resp_;
+    SetSentence                                                *sentence_{nullptr};
+    std::unique_ptr<TraverseExecutor>                           left_;
+    std::unique_ptr<TraverseExecutor>                           right_;
+    std::unique_ptr<InterimResult>                              leftResult_;
+    std::unique_ptr<InterimResult>                              rightResult_;
+    folly::Promise<folly::Unit>                                 leftP_;
+    folly::Promise<folly::Unit>                                 rightP_;
+    std::vector<folly::Future<folly::Unit>>                     futures_;
+    Status                                                      leftS_;
+    Status                                                      rightS_;
+    std::vector<std::pair<uint64_t, nebula::cpp2::ValueType>>   castingMap_;
+    std::vector<std::string>                                    colNames_;
+    std::shared_ptr<const meta::SchemaProviderIf>               resultSchema_;
+    std::unique_ptr<cpp2::ExecutionResponse>                    resp_;
 };
 
 }   // namespace graph

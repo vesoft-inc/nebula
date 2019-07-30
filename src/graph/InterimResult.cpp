@@ -11,7 +11,7 @@
 namespace nebula {
 namespace graph {
 
-static const char *NotSupported = "Type not supported yet";
+constexpr char NotSupported[] = "Type not supported yet";
 
 InterimResult::InterimResult(std::unique_ptr<RowSetWriter> rsWriter) {
     rsWriter_ = std::move(rsWriter);
