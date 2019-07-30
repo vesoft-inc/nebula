@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "common/base/SignalHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/MetaServiceHandler.h"
 #include "meta/MetaHttpStatusHandler.h"
@@ -39,7 +40,7 @@ DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
-static void setupSignalHandler();
+static Status setupSignalHandler();
 
 int main(int argc, char *argv[]) {
     google::SetVersionString(nebula::versionString());
@@ -105,10 +106,13 @@ int main(int argc, char *argv[]) {
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
-    std::unique_ptr<nebula::kvstore::KVStore> kvstore =
-        std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
-                                                       ioPool,
-                                                       localhost);
+    auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(std::move(options), 
+                                                                  ioPool, 
+                                                                  localhost);
+    if (!(kvstore->init())) {
+        LOG(ERROR) << "nebula store init failed";
+        return EXIT_FAILURE;
+    }
 
     auto *kvstore_ = kvstore.get();
 
@@ -132,7 +136,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Setup the signal handlers
-    setupSignalHandler();
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        nebula::WebService::stop();
+        return EXIT_FAILURE;
+    }
+
     auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore_);
     nebula::meta::ActiveHostsMan::instance(kvstore_);
 
@@ -146,18 +156,23 @@ int main(int argc, char *argv[]) {
         gServer->setIOThreadPool(ioPool);
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception &e) {
+        nebula::WebService::stop();
         LOG(ERROR) << "Exception thrown: " << e.what();
         return EXIT_FAILURE;
     }
 
+    nebula::WebService::stop();
     LOG(INFO) << "The meta Daemon stopped";
+    return EXIT_SUCCESS;
 }
 
 
-void setupSignalHandler() {
-    ::signal(SIGPIPE, SIG_IGN);
-    ::signal(SIGINT, signalHandler);
-    ::signal(SIGTERM, signalHandler);
+Status setupSignalHandler() {
+    return nebula::SignalHandler::install(
+        {SIGINT, SIGTERM}, 
+        [](nebula::SignalHandler::GeneralSignalInfo *info) {
+            signalHandler(info->sig());
+        });
 }
 
 
@@ -166,7 +181,6 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            nebula::WebService::stop();
             gServer->stop();
             break;
         default:
