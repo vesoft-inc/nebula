@@ -46,7 +46,6 @@ public:
             , raftAddr_(getRaftAddr(serviceAddr))
             , options_(std::move(options)) {
         partMan_ = std::move(options_.partMan_);
-        init();
     }
 
     ~NebulaStore();
@@ -68,7 +67,7 @@ public:
 
     // Pull meta information from the PartManager and initiate
     // the current store instance
-    void init();
+    bool init();
 
     uint32_t capability() const override {
         return 0;
