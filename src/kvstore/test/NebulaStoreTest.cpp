@@ -59,6 +59,7 @@ TEST(NebulaStoreTest, SimpleTest) {
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
                                                local);
+    store->init();
     sleep(1);
     EXPECT_EQ(2, store->spaces_.size());
 
@@ -157,7 +158,7 @@ TEST(NebulaStoreTest, PartsTest) {
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
                                                local);
-
+    store->init();
     auto check = [&](GraphSpaceID spaceId) {
         for (auto i = 0; i < 2; i++) {
             ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/%d",
@@ -272,6 +273,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
     std::vector<std::unique_ptr<NebulaStore>> stores;
     for (int i = 0; i < replicas; i++) {
         stores.emplace_back(initNebulaStore(peers, i, rootPath.path()));
+        stores.back()->init();
     }
     LOG(INFO) << "Waiting for all leaders elected!";
     int from = 0;

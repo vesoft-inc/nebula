@@ -9,6 +9,7 @@
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/wal/FileBasedWal.h"
 #include "kvstore/wal/BufferFlusher.h"
+#include "kvstore/raftex/Host.h"
 
 namespace nebula {
 namespace raftex {
@@ -28,7 +29,6 @@ HostAddr decodeLearner(const folly::StringPiece& log) {
     memcpy(&learner.second, log.begin() + 1 + sizeof(learner.first), sizeof(learner.second));
     return learner;
 }
-
 
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
@@ -56,20 +56,17 @@ TestShard::TestShard(size_t idx,
         , becomeLeaderCB_(becomeLeaderCB) {
 }
 
-
 void TestShard::onLostLeadership(TermID term) {
     if (leadershipLostCB_) {
         leadershipLostCB_(idx_, idStr(), term);
     }
 }
 
-
 void TestShard::onElected(TermID term) {
     if (becomeLeaderCB_) {
         becomeLeaderCB_(idx_, idStr(), term);
     }
 }
-
 
 std::string TestShard::compareAndSet(const std::string& log) {
     switch (log[0]) {
@@ -80,9 +77,7 @@ std::string TestShard::compareAndSet(const std::string& log) {
     }
 }
 
-
 bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
-    VLOG(2) << "TestShard: Committing logs";
     LogID firstId = -1;
     LogID lastId = -1;
     int32_t commitLogsNum = 0;
@@ -98,9 +93,11 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
                     break;
                 }
                 default: {
-                    VLOG(1) << idStr_ << "Write " << iter->logId() << ":" << log;
-                    data_.emplace(iter->logId(), log.toString());
+                    folly::RWSpinLock::WriteHolder wh(&lock_);
                     currLogId_ = iter->logId();
+                    data_.emplace_back(currLogId_, log.toString());
+                    VLOG(1) << idStr_ << "Write: " << log << ", LogId: " << currLogId_
+                            << " state machine log size: " << data_.size();
                     break;
                 }
             }
@@ -108,27 +105,26 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
         }
         ++(*iter);
     }
-    VLOG(2) << "TestShard: Committed log " << firstId << " to " << lastId;
+    VLOG(2) << "TestShard: " << idStr_ << "Committed log " << firstId << " to " << lastId;
+    if (lastId > -1) {
+        lastCommittedLogId_ = lastId;
+    }
     if (commitLogsNum > 0) {
         commitTimes_++;
     }
     return true;
 }
 
-
 size_t TestShard::getNumLogs() const {
     return data_.size();
 }
 
-
-bool TestShard::getLogMsg(LogID id, folly::StringPiece& msg) const {
-    auto it = data_.find(id);
-    if (it == data_.end()) {
-        // Not found
+bool TestShard::getLogMsg(size_t index, folly::StringPiece& msg) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
+    if (index > data_.size()) {
         return false;
     }
-
-    msg = it->second;
+    msg = data_[index].second;
     return true;
 }
 
