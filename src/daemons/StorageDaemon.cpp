@@ -12,6 +12,7 @@
 #include "storage/StorageServiceHandler.h"
 #include "storage/StorageHttpStatusHandler.h"
 #include "storage/StorageHttpDownloadHandler.h"
+#include "storage/StorageHttpAdminHandler.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "process/ProcessUtils.h"
@@ -176,26 +177,27 @@ int main(int argc, char *argv[]) {
                                                         ioThreadPool,
                                                         metaClient.get(),
                                                         schemaMan.get());
+
     if (nullptr == kvstore) {
         return EXIT_FAILURE;
     }
 
-    auto *kvstore_ = kvstore.get();
-
     std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
         std::make_unique<nebula::hdfs::HdfsCommandHelper>();
-    auto *helperPtr = helper.get();
+    auto* helperPtr = helper.get();
 
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::storage::StorageHttpStatusHandler();
     });
     nebula::WebService::registerHandler("/download", [helperPtr] {
-        auto handler = new nebula::storage::StorageHttpDownloadHandler();
+        auto* handler = new nebula::storage::StorageHttpDownloadHandler();
         handler->init(helperPtr);
         return handler;
     });
-
+    nebula::WebService::registerHandler("/admin", [&] {
+        return new nebula::storage::StorageHttpAdminHandler(schemaMan.get(), kvstore.get());
+    });
     status = nebula::WebService::start();
     if (!status.ok()) {
         return EXIT_FAILURE;
@@ -209,7 +211,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto handler = std::make_shared<StorageServiceHandler>(kvstore_, schemaMan.get());
+    auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());
     try {
         LOG(INFO) << "The storage deamon start on " << localhost;
         gServer = std::make_unique<apache::thrift::ThriftServer>();
