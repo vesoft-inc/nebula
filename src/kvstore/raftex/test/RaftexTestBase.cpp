@@ -174,7 +174,8 @@ void setupRaft(
     // Set up services
     for (int i = 0; i < numCopies; ++i) {
         services.emplace_back(RaftexService::createService(nullptr));
-        services.back()->waitUntilReady();
+        if (!services.back()->start())
+            return;
         uint16_t port = services.back()->getServerPort();
         allHosts.emplace_back(ipInt, port);
     }
