@@ -26,8 +26,8 @@ namespace meta {
 
 using nebula::ClusterID;
 ClusterID gClusterId;
-std::unique_ptr<std::string> gMetaClusterIdPath
-    = std::make_unique<std::string>("/tmp/meta.cluster.id.");
+std::unique_ptr<std::string> gMetaClusterKVPath
+    = std::make_unique<std::string>();
 std::unique_ptr<std::string> gClientClusterIdPath
     = std::make_unique<std::string>("/tmp/storage.cluster.id.");
 
@@ -38,8 +38,8 @@ TEST(ClusterManagerTest, ClusterIdTestIdEQ0) {
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
 
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
-    *gMetaClusterIdPath = sc->clusterIdPath_;
-    bool ret = sc->clusterMan_->loadOrCreateCluId();
+    *gMetaClusterKVPath = rootPath.path();
+    bool ret = sc->clusterMan_->loadOrCreateCluId(sc->kvStore_.get());
     ASSERT_TRUE(ret);
 
     gClusterId = sc->clusterMan_->getClusterId();
@@ -79,7 +79,7 @@ TEST(ClusterManagerTest, ClusterIdTestIdMatch) {
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
 
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
-    bool ret = sc->clusterMan_->loadOrCreateCluId();
+    bool ret = sc->clusterMan_->loadOrCreateCluId(sc->kvStore_.get());
     ASSERT_TRUE(ret);
 
     auto clusterId = sc->clusterMan_->getClusterId();
@@ -118,7 +118,7 @@ TEST(ClusterManagerTest, ClusterIdMismatchTest) {
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
 
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
-    bool ret = sc->clusterMan_->loadOrCreateCluId();
+    bool ret = sc->clusterMan_->loadOrCreateCluId(sc->kvStore_.get());
     ASSERT_TRUE(ret);
 
     auto clusterId = sc->clusterMan_->getClusterId();
@@ -151,15 +151,9 @@ TEST(ClusterManagerTest, ClusterIdMismatchTest) {
 
 
 TEST(ClusterManagerTest, ClusterIdLoadTest) {
-    auto metaClusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", *gMetaClusterIdPath);
-    bool ret = metaClusterMan->loadOrCreateCluId();
-    ASSERT_TRUE(ret);
-    ASSERT_EQ(gClusterId, metaClusterMan->getClusterId());
-
     auto clientClusterMan
         = std::make_unique<nebula::meta::ClusterManager>("", *gClientClusterIdPath);
-    ret = clientClusterMan->loadClusterId();
+    bool ret = clientClusterMan->loadClusterId();
     ASSERT_TRUE(ret);
     ASSERT_EQ(gClusterId, clientClusterMan->getClusterId());
 }

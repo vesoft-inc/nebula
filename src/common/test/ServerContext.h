@@ -56,7 +56,7 @@ struct ServerContext {
     std::unique_ptr<thread::NamedThread>               thread_{nullptr};
     // To keep meta and storage's KVStore
     std::unique_ptr<kvstore::KVStore>                  kvStore_{nullptr};
-    std::unique_ptr<meta::ClusterManager>                    clusterMan_{nullptr};
+    std::unique_ptr<meta::ClusterManager>              clusterMan_{nullptr};
     std::unique_ptr<meta::SchemaManager>               schemaMan_{nullptr};
     uint16_t                                           port_{0};
     std::string                                        curTime_;

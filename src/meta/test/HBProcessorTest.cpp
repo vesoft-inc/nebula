@@ -28,12 +28,9 @@ TEST(HBProcessorTest, HBTest) {
     FLAGS_expired_threshold_sec = 1;
 
     std::string clusterHosts = "127.0.0.1:45500";
-    std::string clusteridFile = "/tmp/meta.cluster.id.";
-    time_t curTime = ::time(nullptr);
-    clusteridFile += folly::stringPrintf("%ld", curTime);
     auto clusterMan
-        = std::make_unique<nebula::meta::ClusterManager>(clusterHosts, clusteridFile);
-    bool ret = clusterMan->loadOrCreateCluId();
+        = std::make_unique<nebula::meta::ClusterManager>(clusterHosts, "");
+    bool ret = clusterMan->loadOrCreateCluId(kv.get());
     ASSERT_TRUE(ret);
 
     {

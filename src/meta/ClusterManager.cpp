@@ -8,16 +8,46 @@
 #include "base/Base.h"
 #include "fs/FileUtils.h"
 #include "ClusterManager.h"
+#include "kvstore/KVStore.h"
+#include "folly/synchronization/Baton.h"
 
 namespace nebula {
 namespace meta {
 
-bool ClusterManager::loadOrCreateCluId() {
-    if (loadClusterId()) {
-        return true;
+using KVStore = nebula::kvstore::KVStore;
+using ResultCode = nebula::kvstore::ResultCode;
+const char* ClusterManager::kClusterIdKey = "metaClusterIdKey";
+
+bool ClusterManager::loadOrCreateCluId(KVStore* kvstore) {
+    std::string strClusterId;
+    ResultCode status = kvstore->get(0, 0, kClusterIdKey, &strClusterId);
+    LOG(INFO) << "status: " << status;
+    /*
+    if (status != ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "load clusterId from kvstore error!";
+        return false;
     }
-    createClusterId();
-    return dumpClusterId();
+    */
+
+    bool ret = false;
+    if (!strClusterId.empty()) {
+        clusterId_ = folly::to<ClusterID>(strClusterId);
+        clusterIsSet_ = true;
+        return true;
+    } else {
+        createClusterId();
+        strClusterId = folly::stringPrintf("%ld", clusterId_);
+        folly::Baton<true, std::atomic> baton;
+        kvstore->asyncMultiPut(0,
+                               0,
+                               {{kClusterIdKey, strClusterId}},
+                               [&](ResultCode code) {
+                                   ret = code == ResultCode::SUCCEEDED;
+                                   baton.post();
+                               });
+        baton.wait();
+    }
+    return ret;
 }
 
 
@@ -25,7 +55,6 @@ bool ClusterManager::loadClusterId() {
     int fd = ::open(clusterIdPath_.c_str(), O_RDONLY);
     if (fd < 0) {
         LOG(WARNING) << "loadClusterId failed!";
-        ::close(fd);
         return false;
     }
     char buff[32] = {};
@@ -48,7 +77,6 @@ bool ClusterManager::loadClusterId() {
         ::close(fd);
         return true;
     }
-    ::close(fd);
 }
 
 

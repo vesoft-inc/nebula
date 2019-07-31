@@ -11,6 +11,11 @@
 #include "base/ThriftTypes.h"
 
 namespace nebula {
+
+namespace kvstore {
+class KVStore;
+}  // namespace kvstore
+
 namespace meta {
 
 using nebula::ClusterID;
@@ -28,7 +33,7 @@ public:
 
     virtual ~ClusterManager() = default;
 
-    bool loadOrCreateCluId();
+    bool loadOrCreateCluId(nebula::kvstore::KVStore* kvstore);
 
     bool loadClusterId();
 
@@ -55,6 +60,7 @@ private:
     ClusterID clusterId_{0};
     std::string clusterHosts_;
     std::string clusterIdPath_;
+    static const char* kClusterIdKey;
 };
 
 }  // namespace meta
