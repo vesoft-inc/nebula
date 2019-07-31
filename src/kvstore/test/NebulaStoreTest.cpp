@@ -193,7 +193,7 @@ TEST(NebulaStoreTest, PartsTest) {
         ASSERT_EQ(9, parts[4]);
     }
 
-    auto* pm = dynamic_cast<MemPartManager*>(store->partMan_.get());
+    auto* pm = dynamic_cast<MemPartManager*>(store->options_.partMan_.get());
     // Let's create another space with 10 parts.
     for (auto partId = 0; partId < 10; partId++) {
         pm->addPart(1, partId);
