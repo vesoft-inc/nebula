@@ -27,7 +27,7 @@ using nebula::ClusterID;
 class ClusterManager {
 public:
     ClusterManager(const std::string& clusterHosts,
-                   const std::string& clusterIdPath = "data/meta.cluster.id")
+                   const std::string& clusterIdPath)
             : clusterHosts_(clusterHosts)
             , clusterIdPath_(clusterIdPath) {}
 

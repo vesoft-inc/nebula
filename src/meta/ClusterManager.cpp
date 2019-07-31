@@ -9,6 +9,7 @@
 #include "fs/FileUtils.h"
 #include "ClusterManager.h"
 #include "kvstore/KVStore.h"
+#include "meta/processors/Common.h"
 #include "folly/synchronization/Baton.h"
 
 namespace nebula {
@@ -20,14 +21,7 @@ const char* ClusterManager::kClusterIdKey = "metaClusterIdKey";
 
 bool ClusterManager::loadOrCreateCluId(KVStore* kvstore) {
     std::string strClusterId;
-    ResultCode status = kvstore->get(0, 0, kClusterIdKey, &strClusterId);
-    LOG(INFO) << "status: " << status;
-    /*
-    if (status != ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "load clusterId from kvstore error!";
-        return false;
-    }
-    */
+    kvstore->get(kDefaultSpaceId, kDefaultPartId, kClusterIdKey, &strClusterId);
 
     bool ret = false;
     if (!strClusterId.empty()) {
@@ -38,8 +32,8 @@ bool ClusterManager::loadOrCreateCluId(KVStore* kvstore) {
         createClusterId();
         strClusterId = folly::stringPrintf("%ld", clusterId_);
         folly::Baton<true, std::atomic> baton;
-        kvstore->asyncMultiPut(0,
-                               0,
+        kvstore->asyncMultiPut(kDefaultSpaceId,
+                               kDefaultPartId,
                                {{kClusterIdKey, strClusterId}},
                                [&](ResultCode code) {
                                    ret = code == ResultCode::SUCCEEDED;

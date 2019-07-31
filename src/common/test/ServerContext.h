@@ -59,8 +59,6 @@ struct ServerContext {
     std::unique_ptr<meta::ClusterManager>              clusterMan_{nullptr};
     std::unique_ptr<meta::SchemaManager>               schemaMan_{nullptr};
     uint16_t                                           port_{0};
-    std::string                                        curTime_;
-    std::string                                        clusterIdPath_{"/tmp/meta.cluster.id."};
 };
 
 

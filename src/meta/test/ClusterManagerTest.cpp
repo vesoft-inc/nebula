@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -25,11 +25,6 @@ namespace nebula {
 namespace meta {
 
 using nebula::ClusterID;
-ClusterID gClusterId;
-std::unique_ptr<std::string> gMetaClusterKVPath
-    = std::make_unique<std::string>();
-std::unique_ptr<std::string> gClientClusterIdPath
-    = std::make_unique<std::string>("/tmp/storage.cluster.id.");
 
 TEST(ClusterManagerTest, ClusterIdTestIdEQ0) {
     FLAGS_load_data_interval_secs = 5;
@@ -38,11 +33,10 @@ TEST(ClusterManagerTest, ClusterIdTestIdEQ0) {
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
 
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
-    *gMetaClusterKVPath = rootPath.path();
     bool ret = sc->clusterMan_->loadOrCreateCluId(sc->kvStore_.get());
     ASSERT_TRUE(ret);
 
-    gClusterId = sc->clusterMan_->getClusterId();
+    ClusterID clusterId = sc->clusterMan_->getClusterId();
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
@@ -50,9 +44,10 @@ TEST(ClusterManagerTest, ClusterIdTestIdEQ0) {
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
 
-    *gClientClusterIdPath += sc->curTime_;
+    std::string clientClusterIdPath = "/tmp/storage.cluster.id.";
+    clientClusterIdPath += folly::stringPrintf("%ld", ::time(nullptr));
     auto clientClusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", *gClientClusterIdPath);
+        = std::make_unique<nebula::meta::ClusterManager>("", clientClusterIdPath);
     if (!clientClusterMan->loadClusterId()) {
         LOG(ERROR) << "storaged clusterId load error!";
     }
@@ -68,7 +63,11 @@ TEST(ClusterManagerTest, ClusterIdTestIdEQ0) {
     sleep(FLAGS_heartbeat_interval_secs);
     ret = client->waitForMetadReady(3);
     ASSERT_TRUE(ret);
-    ASSERT_EQ(gClusterId, clientClusterMan->getClusterId());
+    ASSERT_EQ(clusterId, clientClusterMan->getClusterId());
+
+    ret = clientClusterMan->loadClusterId();
+    ASSERT_TRUE(ret);
+    ASSERT_EQ(clusterId, clientClusterMan->getClusterId());
 }
 
 
@@ -91,7 +90,7 @@ TEST(ClusterManagerTest, ClusterIdTestIdMatch) {
     HostAddr localHost{localIp, clientPort};
 
     std::string clientClusterIdPath = "/tmp/storage.cluster.id.";
-    clientClusterIdPath += sc->curTime_;
+    clientClusterIdPath += folly::stringPrintf("%ld", ::time(nullptr));
     auto clientClusterMan
         = std::make_unique<nebula::meta::ClusterManager>("", clientClusterIdPath);
     clientClusterMan->setClusterId(clusterId);
@@ -130,7 +129,7 @@ TEST(ClusterManagerTest, ClusterIdMismatchTest) {
     HostAddr localHost{localIp, clientPort};
 
     std::string clientClusterIdPath = "/tmp/storage.cluster.id.";
-    clientClusterIdPath += sc->curTime_;
+    clientClusterIdPath += folly::stringPrintf("%ld", ::time(nullptr));
     auto clientClusterMan
         = std::make_unique<nebula::meta::ClusterManager>("", clientClusterIdPath);
     clientClusterMan->setClusterId(clusterId + 1);
@@ -147,15 +146,6 @@ TEST(ClusterManagerTest, ClusterIdMismatchTest) {
     sleep(FLAGS_heartbeat_interval_secs);
     ret = client->waitForMetadReady(3);
     ASSERT_TRUE(!ret);
-}
-
-
-TEST(ClusterManagerTest, ClusterIdLoadTest) {
-    auto clientClusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", *gClientClusterIdPath);
-    bool ret = clientClusterMan->loadClusterId();
-    ASSERT_TRUE(ret);
-    ASSERT_EQ(gClusterId, clientClusterMan->getClusterId());
 }
 
 }  // namespace meta

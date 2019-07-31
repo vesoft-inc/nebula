@@ -194,11 +194,8 @@ public:
 
         std::string clusterHosts = "127.0.0.1:";
         clusterHosts += port;
-        time_t curTime = ::time(nullptr);
-        sc->curTime_ = folly::stringPrintf("%ld", curTime);
-        sc->clusterIdPath_ += sc->curTime_;
         sc->clusterMan_
-            = std::make_unique<nebula::meta::ClusterManager>(clusterHosts, sc->clusterIdPath_);
+            = std::make_unique<nebula::meta::ClusterManager>(clusterHosts, "");
 
 
         auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get(),
