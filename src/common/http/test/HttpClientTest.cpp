@@ -9,7 +9,6 @@
 #include <gtest/gtest.h>
 #include "webservice/Common.h"
 #include "webservice/WebService.h"
-#include "webservice/test/TestUtils.h"
 #include "proxygen/httpserver/RequestHandler.h"
 #include <proxygen/httpserver/ResponseBuilder.h>
 

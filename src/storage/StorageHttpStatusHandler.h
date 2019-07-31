@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef STORAGE_STORAGEHTTPHANDLER_H_
-#define STORAGE_STORAGEHTTPHANDLER_H_
+#ifndef STORAGE_STORAGEHTTPSTATUSHANDLER_H_
+#define STORAGE_STORAGEHTTPSTATUSHANDLER_H_
 
 #include "base/Base.h"
 #include "webservice/Common.h"
@@ -53,4 +53,4 @@ private:
 }  // namespace storage
 }  // namespace nebula
 
-#endif  // STORAGE_STORAGEHTTPHANDLER_H_
+#endif  // STORAGE_STORAGEHTTPSTATUSHANDLER_H_

@@ -6,8 +6,8 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
+#include "http/HttpClient.h"
 #include "webservice/WebService.h"
-#include "webservice/test/TestUtils.h"
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/test/MockHdfsHelper.h"
 #include "meta/test/TestUtils.h"
@@ -67,22 +67,29 @@ private:
 
 TEST(MetaHttpDownloadHandlerTest, MetaDownloadTest) {
     {
-        std::string resp;
-        ASSERT_TRUE(getUrl("/download-dispatch", resp));
-        ASSERT_TRUE(resp.empty());
+        auto url = "/download-dispatch";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_TRUE(resp.value().empty());
     }
     {
         auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&space=1";
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("SSTFile dispatch successfully", resp);
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile dispatch successfully", resp.value());
     }
     {
         helper = std::make_unique<nebula::meta::MockHdfsNotExistHelper>();
         auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&space=1";
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("SSTFile dispatch failed", resp);
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile dispatch failed", resp.value());
     }
 }
 

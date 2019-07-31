@@ -182,7 +182,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
 
         auto storageIP = network::NetworkUtils::intToIPv4(pair.first.first);
         auto dispatcher = [storageIP, hdfsHost, hdfsPort, hdfsPath, partsStr, this]() {
-            auto tmp = "http://%s:%d/download?host=%s\\&port=%d\\&path=%s\\&parts=%s\\&space=%d";
+            auto tmp = "http://%s:%d/download?host=%s&port=%d&path=%s&parts=%s&space=%d";
             std::string url = folly::stringPrintf(tmp, storageIP.c_str(),
                                                   FLAGS_ws_storage_http_port,
                                                   hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(),

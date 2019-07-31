@@ -381,12 +381,7 @@ void HBaseStore::asyncRemovePrefix(GraphSpaceID spaceId,
 
 ResultCode HBaseStore::ingest(GraphSpaceID spaceId) {
     UNUSED(spaceId);
-    return ResultCode::ERR_NOT_SUPPORTED;
-}
-
-ResultCode HBaseStore::compactAll(GraphSpaceID spaceId) {
-    UNUSED(spaceId);
-    return ResultCode::ERR_NOT_SUPPORTED;
+    return ResultCode::ERR_UNSUPPORTED;
 }
 
 }  // namespace kvstore

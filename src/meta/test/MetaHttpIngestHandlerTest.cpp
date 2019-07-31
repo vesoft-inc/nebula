@@ -6,11 +6,11 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
+#include "http/HttpClient.h"
 #include "meta/MetaHttpIngestHandler.h"
 #include "meta/test/TestUtils.h"
 #include "storage/StorageHttpIngestHandler.h"
 #include "webservice/WebService.h"
-#include "webservice/test/TestUtils.h"
 #include "fs/TempDir.h"
 #include <rocksdb/sst_file_writer.h>
 
@@ -58,7 +58,7 @@ private:
 TEST(MetaHttpIngestHandlerTest, MetaIngestTest) {
     auto path = "/tmp/MetaHttpIngestData.XXXXXX";
     std::unique_ptr<fs::TempDir> externalPath = std::make_unique<fs::TempDir>(path);
-    auto partPath = folly::stringPrintf("%s/1", externalPath->path());
+    auto partPath = folly::stringPrintf("%s/nebula/1/download/1", externalPath->path());
     ASSERT_TRUE(nebula::fs::FileUtils::makeDir(partPath));
 
     auto options = rocksdb::Options();
@@ -77,23 +77,20 @@ TEST(MetaHttpIngestHandlerTest, MetaIngestTest) {
     ASSERT_EQ(rocksdb::Status::OK(), status);
 
     {
-        std::string resp;
-        ASSERT_TRUE(getUrl("/ingest-dispatch", resp));
-        ASSERT_TRUE(resp.empty());
+        auto url = "/ingest-dispatch";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_TRUE(resp.value().empty());
     }
     {
-        auto url = folly::stringPrintf("/ingest-dispatch?path=%s&space=%d",
-                                       externalPath->path(), 0);
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("SSTFile ingest successfully", resp);
-    }
-    {
-        auto url = folly::stringPrintf("/ingest?path=%s&space=%d",
-                                       "/tmp/maybe-not-exist/", 0);
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("SSTFile ingest failed", resp);
+        auto url = "/ingest-dispatch?space=0";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile ingest successfully", resp.value());
     }
 }
 

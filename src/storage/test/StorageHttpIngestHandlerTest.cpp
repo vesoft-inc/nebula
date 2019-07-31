@@ -6,8 +6,8 @@
 
 #include "base/Base.h"
 #include "fs/TempDir.h"
+#include "http/HttpClient.h"
 #include "webservice/WebService.h"
-#include "webservice/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 #include "storage/StorageHttpIngestHandler.h"
 #include <gtest/gtest.h>
@@ -69,22 +69,20 @@ TEST(StorageHttpIngestHandlerTest, StorageIngestTest) {
     ASSERT_EQ(rocksdb::Status::OK(), status);
 
     {
-        auto url = "/ingest";
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("", resp);
+        auto url = "/ingest?space=0";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile ingest successfully", resp.value());
     }
     {
-        auto url = folly::stringPrintf("/ingest?path=%s&space=%d", externalPath_->path(), 0);
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("SSTFile ingest successfully", resp);
-    }
-    {
-        auto url = folly::stringPrintf("/ingest?path=%s&space=%d", "/tmp/maybe-not-exist", 0);
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("SSTFile ingest failed", resp);
+        auto url = "/ingest?space=1";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile ingest failed", resp.value());
     }
 }
 

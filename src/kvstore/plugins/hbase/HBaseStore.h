@@ -128,11 +128,17 @@ public:
 
     ResultCode ingest(GraphSpaceID spaceId) override;
 
-    ResultCode compactAll(GraphSpaceID spaceId) override;
-
     ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID,
                                                     PartitionID) override {
-        LOG(FATAL) << "Unsupported!";
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode compact(GraphSpaceID) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode flush(GraphSpaceID) override {
+        return ResultCode::ERR_UNSUPPORTED;
     }
 
     ErrorOr<ResultCode, std::string> getDataPath(GraphSpaceID,

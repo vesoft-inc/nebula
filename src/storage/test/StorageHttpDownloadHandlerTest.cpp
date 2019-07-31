@@ -6,8 +6,8 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
+#include "http/HttpClient.h"
 #include "webservice/WebService.h"
-#include "webservice/test/TestUtils.h"
 #include "storage/StorageHttpDownloadHandler.h"
 #include "storage/test/MockHdfsHelper.h"
 #include "storage/test/TestUtils.h"
@@ -59,28 +59,37 @@ private:
 
 TEST(StorageHttpDownloadHandlerTest, StorageDownloadTest) {
     {
-        std::string resp;
-        ASSERT_TRUE(getUrl("/download", resp));
-        ASSERT_TRUE(resp.empty());
+        auto url = "/download";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_TRUE(resp.value().empty());
     }
     {
         auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=0";
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("SSTFile download successfully", resp);
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile download successfully", resp.value());
     }
     {
         auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=illegal-part&space=0";
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("SSTFile download failed", resp);
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile download failed", resp.value());
     }
     {
         helper = std::make_unique<nebula::storage::MockHdfsExistHelper>();
         auto url = "/download?host=127.0.0.1&port=9000&path=/data&parts=1&space=0";
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("SSTFile download failed", resp);
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile download failed", resp.value());
     }
 }
 
