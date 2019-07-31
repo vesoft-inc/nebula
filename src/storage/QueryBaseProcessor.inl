@@ -367,6 +367,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
         this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
     } else {
         VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
+        return kvstore::ResultCode::ERR_KEY_NOT_FOUND;
     }
     return ret;
 }
@@ -406,7 +407,8 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 // TODO(heng): We could remove the lock with one filter one bucket.
                 std::lock_guard<std::mutex> lg(this->lock_);
                 auto& getters = expCtx_->getters();
-                getters.getEdgeProp = [&] (const std::string &prop) -> VariantType {
+                getters.getEdgeProp = [&](const std::string&,
+                                          const std::string& prop) -> VariantType {
                     auto res = RowReader::getProp(reader.get(), prop);
                     CHECK(ok(res));
                     return value(std::move(res));

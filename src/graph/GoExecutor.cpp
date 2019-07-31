@@ -414,9 +414,10 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     if (expCtx_->isOverAllEdge() && yields_.empty()) {
         auto edgeNames = getEdgeNamesFromResp(rpcResp);
         for (const auto &name : edgeNames) {
-            auto dummy     = new std::string(name + "_id");
-            auto dummy_exp = new EdgeDstIdExpression(dummy);
-            auto ptr       = std::make_unique<YieldColumn>(dummy_exp);
+            auto dummy       = new std::string(name);
+            auto dummy_alias = new std::string(name + "_id");
+            auto dummy_exp   = new EdgeDstIdExpression(dummy);
+            auto ptr         = std::make_unique<YieldColumn>(dummy_exp, dummy_alias);
             dummy_exp->setContext(expCtx_.get());
             yields_.emplace_back(ptr.get());
             yc.emplace_back(std::move(ptr));
@@ -614,6 +615,8 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
                 case 3:
                     writer << boost::get<std::string>(column);
                     break;
+                case 4:
+                    writer << "";
                 default:
                     LOG(FATAL) << "Unknown VariantType: " << column.which();
             }
@@ -649,6 +652,7 @@ void GoExecutor::onEmptyInputs() {
 
 void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
     auto all = rpcResp.responses();
+    auto spaceId = ectx()->rctx()->session()->space();
     for (auto &resp : all) {
         if (resp.get_vertices() == nullptr) {
             continue;
@@ -666,7 +670,6 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 vreader = RowReader::getRowReader(vdata.vertex_data, vschema);
             }
             DCHECK(vdata.__isset.edge_data);
-
             for (auto &edata : vdata.edge_data) {
                 std::shared_ptr<ResultSchemaProvider> eschema;
 
@@ -675,23 +678,41 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 DCHECK(eschema != nullptr);
                 RowSetReader rsReader(eschema, edata.data);
                 auto iter = rsReader.begin();
+                auto edgeType = edata.type;
                 while (iter) {
                     auto &getters = expCtx_->getters();
-                    // TODO(Simon.Liu) We must get prop according to the edge_type
-                    getters.getEdgeProp = [&](const std::string &prop) -> VariantType {
+
+                    getters.getEdgeProp = [&iter, &spaceId, &edgeType, this](
+                                              const std::string &edgeName,
+                                              const std::string &prop) -> VariantType {
+                        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, edgeName);
+                        CHECK(edgeStatus.ok());
+
+                        if (edgeType != edgeStatus.value()) {
+                            return RowReader::getDefaultProp(iter->getSchema(), prop);
+                        }
                         auto res = RowReader::getProp(&*iter, prop);
                         CHECK(ok(res));
                         return value(std::move(res));
                     };
-                    getters.getSrcTagProp = [&](const std::string &, const std::string &prop) {
+                    getters.getSrcTagProp = [&vreader](const std::string &,
+                                                       const std::string &prop) {
                         auto res = RowReader::getProp(vreader.get(), prop);
                         CHECK(ok(res));
                         return value(std::move(res));
                     };
-                    getters.getDstTagProp = [&](const std::string &, const std::string &prop) {
+                    getters.getDstTagProp = [&iter, &spaceId, this](const std::string &tag,
+                                                                    const std::string &prop) {
                         auto dst = RowReader::getProp(&*iter, "_dst");
                         CHECK(ok(dst));
-                        return vertexHolder_->get(boost::get<int64_t>(value(std::move(dst))), prop);
+                        auto vid    = boost::get<int64_t>(value(std::move(dst)));
+                        auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
+                        CHECK(status.ok());
+                        auto tagId = status.value();
+                        if (!vertexHolder_->exist(vid, tagId)) {
+                            return vertexHolder_->getDefaultProp(prop);
+                        }
+                        return vertexHolder_->get(vid, prop);
                     };
                     // Evaluate filter
                     if (filter_ != nullptr) {
@@ -718,6 +739,19 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
     }   // for `resp'
 }
 
+VariantType GoExecutor::VertexHolder::getDefaultProp(const std::string &prop) const {
+    DCHECK(schema_ != nullptr);
+
+    return RowReader::getDefaultProp(schema_.get(), prop);
+}
+
+bool GoExecutor::VertexHolder::exist(VertexID vid, TagID tid) const {
+    auto iter = data_.find(vid);
+    CHECK(iter != data_.end());
+    auto &v = std::get<0>(iter->second);
+    auto it = std::find(v.cbegin(), v.cend(), tid);
+    return it != v.cend();
+}
 
 VariantType GoExecutor::VertexHolder::get(VertexID id, const std::string &prop) const {
     DCHECK(schema_ != nullptr);
@@ -726,7 +760,7 @@ VariantType GoExecutor::VertexHolder::get(VertexID id, const std::string &prop) 
     // TODO(dutor) We need a type to represent NULL or non-existing prop
     CHECK(iter != data_.end());
 
-    auto reader = RowReader::getRowReader(iter->second, schema_);
+    auto reader = RowReader::getRowReader(std::get<1>(iter->second), schema_);
 
     auto res = RowReader::getProp(reader.get(), prop);
     CHECK(ok(res));
@@ -748,7 +782,7 @@ void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
 
     for (auto &vdata : *vertices) {
         DCHECK(vdata.__isset.vertex_data);
-        data_[vdata.vertex_id] = vdata.vertex_data;
+        data_[vdata.vertex_id] = std::make_tuple(vdata.tag_ids, vdata.vertex_data);
     }
 }
 

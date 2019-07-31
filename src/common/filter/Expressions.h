@@ -116,7 +116,7 @@ public:
 
     struct Getters {
         std::function<VariantType()> getEdgeRank;
-        std::function<VariantType(const std::string&)> getEdgeProp;
+        std::function<VariantType(const std::string&, const std::string&)> getEdgeProp;
         std::function<VariantType(const std::string&)> getInputProp;
         std::function<VariantType(const std::string&, const std::string&)> getSrcTagProp;
         std::function<VariantType(const std::string&, const std::string&)> getDstTagProp;

@@ -150,15 +150,17 @@ private:
      */
     class VertexHolder final {
     public:
+        VariantType getDefaultProp(const std::string &prop) const;
         VariantType get(VertexID id, const std::string &prop) const;
+        bool exist(VertexID vid, TagID tid) const;
         void add(const storage::cpp2::QueryResponse &resp);
         const auto* schema() const {
             return schema_.get();
         }
 
     private:
-        std::shared_ptr<ResultSchemaProvider>       schema_;
-        std::unordered_map<VertexID, std::string>   data_;
+        std::shared_ptr<ResultSchemaProvider>                                      schema_;
+        std::unordered_map<VertexID, std::tuple<std::vector<TagID>, std::string>>  data_;
     };
 
 private:

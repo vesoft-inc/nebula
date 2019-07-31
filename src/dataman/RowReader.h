@@ -89,6 +89,32 @@ public:
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema);
 
+    static VariantType getDefaultProp(const meta::SchemaProviderIf* schema,
+                                      const std::string& prop) {
+        auto& vType = schema->getFieldType(prop);
+        switch (vType.type) {
+            case nebula::cpp2::SupportedType::BOOL: {
+                return false;
+            }
+            case nebula::cpp2::SupportedType::INT: {
+                return static_cast<int64_t>(0);
+            }
+            case nebula::cpp2::SupportedType::VID: {
+                return static_cast<VertexID>(0);
+            }
+            case nebula::cpp2::SupportedType::FLOAT:
+            case nebula::cpp2::SupportedType::DOUBLE: {
+                return static_cast<double>(0.0);
+            }
+            case nebula::cpp2::SupportedType::STRING: {
+                return static_cast<std::string>("");
+            }
+            default:
+                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.type);
+                return "";
+        }
+    }
+
     static ErrorOr<ResultType, VariantType> getProp(const RowReader* reader,
                                                     const std::string& prop) {
         auto& vType = reader->getSchema()->getFieldType(prop);
@@ -307,5 +333,3 @@ private:
 #include "dataman/RowReader.inl"
 
 #endif  // DATAMAN_ROWREADER_H_
-
-

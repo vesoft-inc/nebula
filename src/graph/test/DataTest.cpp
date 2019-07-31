@@ -306,4 +306,3 @@ TEST_F(DataTest, InsertVertex) {
 
 }   // namespace graph
 }   // namespace nebula
-

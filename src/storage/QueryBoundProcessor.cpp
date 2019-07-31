@@ -125,6 +125,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
     FilterContext fcontext;
     cpp2::VertexData vResp;
     vResp.set_vertex_id(vId);
+    std::vector<TagID> v;
     if (!tagContexts_.empty()) {
         RowWriter writer;
         PropsCollector collector(&writer);
@@ -132,10 +133,15 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
             VLOG(3) << "partId " << partId << ", vId " << vId << ", tagId " << tc.tagId_
                     << ", prop size " << tc.props_.size();
             auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_, &fcontext, &collector);
+            if (ret == kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+                continue;
+            }
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
             }
+            v.push_back(tc.tagId_);
         }
+        vResp.set_tag_ids(std::move(v));
         vResp.set_vertex_data(writer.encode());
     }
 

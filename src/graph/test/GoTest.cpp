@@ -324,9 +324,9 @@ TEST_F(GoTest, MULTI_EDGES) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {teams_["Thunders"].vid(), teams_["Thunders"].vid()},
-            {players_["Paul George"].vid(), players_["Paul George"].vid()},
-            {players_["James Harden"].vid(), players_["James Harden"].vid()},
+            {teams_["Thunders"].vid(), 0},
+            {0, players_["Paul George"].vid()},
+            {0, players_["James Harden"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -339,14 +339,14 @@ TEST_F(GoTest, MULTI_EDGES) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {teams_["Magic"].vid(), teams_["Magic"].vid()},
-            {teams_["Lakers"].vid(), teams_["Lakers"].vid()},
-            {teams_["Heat"].vid(), teams_["Heat"].vid()},
-            {teams_["Suns"].vid(), teams_["Suns"].vid()},
-            {teams_["Cavaliers"].vid(), teams_["Cavaliers"].vid()},
-            {teams_["Celtics"].vid(), teams_["Celtics"].vid()},
-            {players_["JaVale McGee"].vid(), players_["JaVale McGee"].vid()},
-            {players_["Tim Duncan"].vid(), players_["Tim Duncan"].vid()},
+            {teams_["Magic"].vid(), 0},
+            {teams_["Lakers"].vid(), 0},
+            {teams_["Heat"].vid(), 0},
+            {teams_["Suns"].vid(), 0},
+            {teams_["Cavaliers"].vid(), 0},
+            {teams_["Celtics"].vid(), 0},
+            {0, players_["JaVale McGee"].vid()},
+            {0, players_["Tim Duncan"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -359,10 +359,10 @@ TEST_F(GoTest, MULTI_EDGES) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {teams_["Mavericks"].vid(), teams_["Mavericks"].vid()},
-            {players_["Steve Nash"].vid(), players_["Steve Nash"].vid()},
-            {players_["Jason Kidd"].vid(), players_["Jason Kidd"].vid()},
-            {players_["Dwyane Wade"].vid(), players_["Dwyane Wade"].vid()},
+            {teams_["Mavericks"].vid(), 0},
+            {0, players_["Steve Nash"].vid()},
+            {0, players_["Jason Kidd"].vid()},
+            {0, players_["Dwyane Wade"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -375,13 +375,13 @@ TEST_F(GoTest, MULTI_EDGES) {
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
-            {teams_["Grizzlies"].vid(), teams_["Grizzlies"].vid()},
-            {teams_["Lakers"].vid(), teams_["Lakers"].vid()},
-            {teams_["Bulls"].vid(), teams_["Bulls"].vid()},
-            {teams_["Spurs"].vid(), teams_["Spurs"].vid()},
-            {teams_["Bucks"].vid(), teams_["Bucks"].vid()},
-            {players_["Kobe Bryant"].vid(), players_["Kobe Bryant"].vid()},
-            {players_["Marc Gasol"].vid(), players_["Marc Gasol"].vid()},
+            {teams_["Grizzlies"].vid(), 0},
+            {teams_["Lakers"].vid(), 0},
+            {teams_["Bulls"].vid(), 0},
+            {teams_["Spurs"].vid(), 0},
+            {teams_["Bucks"].vid(), 0},
+            {0, players_["Kobe Bryant"].vid()},
+            {0, players_["Marc Gasol"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -394,10 +394,50 @@ TEST_F(GoTest, MULTI_EDGES) {
         auto code    = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, std::string>> expected = {
-            {"Trail Blazers", "Trail Blazers"},
-            {"Spurs", "Spurs"},
-            {"Tony Parker", "Tony Parker"},
-            {"Tim Duncan", "Tim Duncan"},
+            {"Trail Blazers", ""},
+            {"", "Tim Duncan"},
+            {"", "Tony Parker"},
+            {"Spurs", ""},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt    = "GO FROM %ld OVER like, serve "
+                    "| ( GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve )";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code  = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+            {teams_["Trail Blazers"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto *fmt    = "GO FROM %ld OVER * "
+                    "| ( GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve )";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code  = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected = {
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Spurs"].vid()},
+            {teams_["Hornets"].vid()},
+            {teams_["Trail Blazers"].vid()},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

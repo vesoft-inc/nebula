@@ -290,9 +290,8 @@ std::string EdgePropertyExpression::toString() const {
     return buf;
 }
 
-
 VariantType EdgePropertyExpression::eval() const {
-    return context_->getters().getEdgeProp(*prop_);
+    return context_->getters().getEdgeProp(*alias_, *prop_);
 }
 
 Status EdgePropertyExpression::prepare() {
@@ -386,9 +385,8 @@ std::string EdgeSrcIdExpression::toString() const {
     return buf;
 }
 
-
 VariantType EdgeSrcIdExpression::eval() const {
-    return context_->getters().getEdgeProp("_src");
+    return context_->getters().getEdgeProp(*alias_, "_src");
 }
 
 Status EdgeSrcIdExpression::prepare() {
@@ -427,9 +425,8 @@ std::string EdgeDstIdExpression::toString() const {
     return buf;
 }
 
-
 VariantType EdgeDstIdExpression::eval() const {
-    return context_->getters().getEdgeProp("_dst");
+    return context_->getters().getEdgeProp(*alias_, "_dst");
 }
 
 Status EdgeDstIdExpression::prepare() {
@@ -468,9 +465,8 @@ std::string EdgeRankExpression::toString() const {
     return buf;
 }
 
-
 VariantType EdgeRankExpression::eval() const {
-    return context_->getters().getEdgeProp("_rank");
+    return context_->getters().getEdgeProp(*alias_, "_rank");
 }
 
 Status EdgeRankExpression::prepare() {

@@ -68,14 +68,15 @@ struct ResultCode {
 
 struct EdgeData {
     1: common.EdgeType type,
-    2: common.Schema  schema,
-    4: binary         data,   // decode according to edge_schema.
+    2: common.Schema   schema,
+    3: binary          data,   // decode according to edge_schema.
 }
 
 struct VertexData {
-    1: common.VertexID vertex_id,
-    2: binary vertex_data, // decode according to vertex_schema.
-    3: list<EdgeData> edge_data,
+    1: list<common.TagID>    tag_ids,
+    2: common.VertexID       vertex_id,
+    3: binary                vertex_data, // decode according to vertex_schema.
+    4: list<EdgeData>        edge_data,
 }
 
 struct ResponseCommon {
