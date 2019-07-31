@@ -66,7 +66,7 @@ void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor
     server_->setPort(port);
     if (ioPool != nullptr && acceptPool != nullptr) {
         server_->setIOThreadPool(ioPool);
-        server_->setIOThreadPool(acceptPool);
+        server_->setAcceptExecutor(acceptPool);
         server_->setStopWorkersOnStopListening(false);
     }
 }
