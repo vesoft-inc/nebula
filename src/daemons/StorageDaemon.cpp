@@ -39,6 +39,7 @@ DEFINE_string(store_type, "nebula",
               "Which type of KVStore to be used by the storage daemon."
               " Options can be \"nebula\", \"hbase\", etc.");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
+DEFINE_int32(num_worker_threads, 32, "Number of workers");
 
 using nebula::operator<<;
 using nebula::Status;
@@ -219,6 +220,8 @@ int main(int argc, char *argv[]) {
         gServer->setReusePort(FLAGS_reuse_port);
         gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
         gServer->setIOThreadPool(ioThreadPool);
+        gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
+        gServer->setCPUWorkerThreadName("executor");
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception& e) {
         nebula::WebService::stop();
@@ -234,7 +237,7 @@ int main(int argc, char *argv[]) {
 
 Status setupSignalHandler() {
     return nebula::SignalHandler::install(
-        {SIGINT, SIGTERM}, 
+        {SIGINT, SIGTERM},
         [](nebula::SignalHandler::GeneralSignalInfo *info) {
             signalHandler(info->sig());
         });
