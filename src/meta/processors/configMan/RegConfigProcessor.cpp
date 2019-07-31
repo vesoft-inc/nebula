@@ -26,7 +26,7 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
                 continue;
             }
             std::string configValue = MetaServiceUtils::configValue(type, mode, value);
-            data.emplace_back(configKey, configValue);
+            data.emplace_back(std::move(configKey), std::move(configValue));
         }
 
         if (!data.empty()) {

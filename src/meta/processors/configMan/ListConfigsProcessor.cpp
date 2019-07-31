@@ -29,7 +29,7 @@ void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
         auto configName = MetaServiceUtils::parseConfigKey(key);
         item.set_module(configName.first);
         item.set_name(configName.second);
-        items.emplace_back(item);
+        items.emplace_back(std::move(item));
         iter->next();
     }
     resp_.set_code(cpp2::ErrorCode::SUCCEEDED);

@@ -1109,8 +1109,8 @@ void MetaClient::loadCfg() {
             folly::RWSpinLock::WriteHolder holder(configCacheLock_);
             for (const auto& entry : metaConfigMap) {
                 auto& key = entry.first;
-                if (metaConfigMap_.find(key) == metaConfigMap_.end() ||
-                        metaConfigMap[key].value_ != metaConfigMap_[key].value_) {
+                auto it = metaConfigMap_.find(key);
+                if (it == metaConfigMap_.end() || metaConfigMap[key].value_ != it->second.value_) {
                     updateGflagsValue(entry.second);
                     LOG(INFO) << "update config in cache " << key.second
                               << " to " << metaConfigMap[key].value_;

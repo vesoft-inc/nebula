@@ -99,7 +99,7 @@ Status KVBasedGflagsManager::registerGflags() {
                 continue;
             }
             configValue = MetaServiceUtils::configValue(type, mode, value);
-            data.emplace_back(configKey, configValue);
+            data.emplace_back(std::move(configKey), std::move(configValue));
         }
 
         if (!data.empty()) {

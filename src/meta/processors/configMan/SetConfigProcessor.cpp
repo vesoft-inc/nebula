@@ -21,12 +21,20 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
     if (module != cpp2::ConfigModule::ALL) {
         // When we set config of a specified module, check if it exists.
         // If it exists and is mutable, update it.
-        setOneConfig(module, name, type, mode, value, data);
+        if (!setOneConfig(module, name, type, mode, value, data)) {
+            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            onFinished();
+            return;
+        }
     } else {
         // When we set config of all module, then try to set it of every module.
-        setOneConfig(cpp2::ConfigModule::GRAPH, name, type, mode, value, data);
-        setOneConfig(cpp2::ConfigModule::META, name, type, mode, value, data);
-        setOneConfig(cpp2::ConfigModule::STORAGE, name, type, mode, value, data);
+        if (!setOneConfig(cpp2::ConfigModule::GRAPH, name, type, mode, value, data) ||
+            !setOneConfig(cpp2::ConfigModule::META, name, type, mode, value, data) ||
+            !setOneConfig(cpp2::ConfigModule::STORAGE, name, type, mode, value, data)) {
+            resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
+            onFinished();
+            return;
+        }
     }
 
     if (!data.empty()) {
@@ -34,25 +42,22 @@ void SetConfigProcessor::process(const cpp2::SetConfigReq& req) {
     }
 }
 
-void SetConfigProcessor::setOneConfig(const cpp2::ConfigModule& module, const std::string& name,
+bool SetConfigProcessor::setOneConfig(const cpp2::ConfigModule& module, const std::string& name,
                                       const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
                                       const std::string& value, std::vector<kvstore::KV>& data) {
     std::string configKey = MetaServiceUtils::configKey(module, name);
     auto ret = doGet(std::move(configKey));
     if (!ret.ok()) {
-        resp_.set_code(cpp2::ErrorCode::E_NOT_FOUND);
-        onFinished();
-        return;
+        return false;
     }
 
     cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(ret.value());
     if (item.get_mode() == cpp2::ConfigMode::IMMUTABLE) {
-        resp_.set_code(cpp2::ErrorCode::E_CONFIG_IMMUTABLE);
-        onFinished();
-        return;
+        return false;
     }
     std::string configValue = MetaServiceUtils::configValue(type, mode, value);
-    data.emplace_back(configKey, configValue);
+    data.emplace_back(std::move(configKey), std::move(configValue));
+    return true;
 }
 
 }  // namespace meta
