@@ -46,8 +46,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
     auto& localHost = hostRet.value();
-    auto mClient
-        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrs), localHost, true);
+    auto mClient = std::make_unique<meta::MetaClient>(std::move(addrs), localHost, true);
     LOG(INFO) << "Add hosts and create space....";
     auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
     ASSERT_TRUE(r.ok());

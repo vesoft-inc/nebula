@@ -23,7 +23,8 @@ class IOThreadPoolObserver;
 class RaftexService : public cpp2::RaftexServiceSvIf {
 public:
     static std::shared_ptr<RaftexService> createService(
-        std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+        std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
+        std::shared_ptr<folly::IOThreadPoolExecutor> acceptPool,
         uint16_t port = 0);
     virtual ~RaftexService();
 
@@ -47,7 +48,9 @@ public:
     void removePartition(std::shared_ptr<RaftPart> part);
 
 private:
-    void initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool, uint16_t port = 0);
+    void initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
+        std::shared_ptr<folly::IOThreadPoolExecutor> acceptPool,
+        uint16_t port = 0);
     bool setup();
     void serve();
 

@@ -20,6 +20,9 @@ public:
     explicit MetaServiceHandler(kvstore::KVStore* kv)
                 : kvstore_(kv) {}
 
+    ~MetaServiceHandler() {
+        LOG(INFO) << "~MetaServiceHandler";
+    }
     /**
      * Parts distribution related operations.
      * */

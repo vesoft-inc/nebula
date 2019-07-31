@@ -35,7 +35,6 @@ void TestEnv::SetUp() {
     FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", metaServerPort());
 
     // Create storageServer
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     auto addrsRet
         = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", metaServerPort()));
     CHECK(addrsRet.ok()) << addrsRet.status();
@@ -45,8 +44,7 @@ void TestEnv::SetUp() {
         LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();
     }
     auto& localhost = hostRet.value();
-    mClient_ = std::make_unique<meta::MetaClient>(threadPool,
-                                                  std::move(addrsRet.value()),
+    mClient_ = std::make_unique<meta::MetaClient>(std::move(addrsRet.value()),
                                                   localhost,
                                                   true);
     auto r = mClient_->addHosts({localhost}).get();

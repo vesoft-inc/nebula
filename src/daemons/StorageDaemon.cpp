@@ -61,6 +61,7 @@ std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
         HostAddr localhost,
         std::vector<std::string> paths,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
+        std::shared_ptr<folly::IOThreadPoolExecutor> acceptPool,
         nebula::meta::MetaClient* metaClient,
         nebula::meta::SchemaManager* schemaMan) {
     nebula::kvstore::KVOptions options;
@@ -73,6 +74,7 @@ std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
     if (FLAGS_store_type == "nebula") {
         auto nbStore = std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
                                                                       ioPool,
+                                                                      acceptPool,
                                                                       localhost);
         if (!(nbStore->init())) {
             LOG(ERROR) << "nebula store init failed";
@@ -156,11 +158,12 @@ int main(int argc, char *argv[]) {
          return EXIT_FAILURE;
     }
 
+    // notice: ioThreadPool and acceptThreadPool will stopped when NebulaStore free raftservice
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
+    auto acceptThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
 
     // Meta client
-    auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
-                                                                 std::move(metaAddrsRet.value()),
+    auto metaClient = std::make_unique<nebula::meta::MetaClient>(std::move(metaAddrsRet.value()),
                                                                  localhost,
                                                                  true);
     if (!metaClient->waitForMetadReady()) {
@@ -175,6 +178,7 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
                                                         std::move(paths),
                                                         ioThreadPool,
+                                                        acceptThreadPool,
                                                         metaClient.get(),
                                                         schemaMan.get());
 
@@ -220,9 +224,18 @@ int main(int argc, char *argv[]) {
         gServer->setReusePort(FLAGS_reuse_port);
         gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
         gServer->setIOThreadPool(ioThreadPool);
+        gServer->setAcceptExecutor(acceptThreadPool);
         gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
         gServer->setCPUWorkerThreadName("executor");
+
+        // set false to stop that gServer stop all io thread when call gServer->stop();
+        // because NebulaStore's raft part dependencies the io thread pool.
+        gServer->setStopWorkersOnStopListening(false);
+
         gServer->serve();  // Will wait until the server shuts down
+
+        // must stop the cpu worker first, because kvstore will free before gServer.
+        gServer->getThreadManager()->join();
     } catch (const std::exception& e) {
         nebula::WebService::stop();
         LOG(ERROR) << "Start thrift server failed, error:" << e.what();
@@ -249,7 +262,9 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            gServer->stop();
+            if (gServer) {
+                gServer->stop();
+            }
             break;
         default:
             FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));

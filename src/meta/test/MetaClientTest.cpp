@@ -36,13 +36,11 @@ TEST(MetaClientTest, InterfacesTest) {
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     GraphSpaceID spaceId = 0;
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
+    auto client = std::make_shared<MetaClient>(std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
                                                localHost);
     client->waitForMetadReady();
     {
@@ -301,11 +299,9 @@ TEST(MetaClientTest, TagTest) {
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
     GraphSpaceID spaceId = 0;
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    auto client = std::make_shared<MetaClient>(std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
     ASSERT_TRUE(r.ok());
@@ -410,12 +406,10 @@ TEST(MetaClientTest, DiffTest) {
     int32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
 
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    auto client = std::make_shared<MetaClient>(std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
@@ -462,14 +456,12 @@ TEST(MetaClientTest, HeartbeatTest) {
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
     auto sc = TestUtils::mockMetaServer(10001, rootPath.path());
 
-    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
-    auto client = std::make_shared<MetaClient>(threadPool,
-                                               std::vector<HostAddr>{HostAddr(localIp, 10001)},
+    auto client = std::make_shared<MetaClient>(std::vector<HostAddr>{HostAddr(localIp, 10001)},
                                                localHost,
                                                true);  // send heartbeat
     client->addHosts({localHost});

@@ -37,6 +37,7 @@ namespace nebula {
 namespace kvstore {
 
 NebulaStore::~NebulaStore() {
+    // we must stop worker before raft service, because raftservice will stop io thread pool
     workers_->stop();
     workers_->wait();
     LOG(INFO) << "Stop the raft service...";
@@ -50,7 +51,7 @@ bool NebulaStore::init() {
     LOG(INFO) << "Start the raft service...";
     workers_ = std::make_shared<thread::GenericThreadPool>();
     workers_->start(FLAGS_num_workers);
-    raftService_ = raftex::RaftexService::createService(ioPool_, raftAddr_.second);
+    raftService_ = raftex::RaftexService::createService(ioPool_, acceptPool_, raftAddr_.second);
     if (!raftService_->start()) {
         LOG(ERROR) << "Start the raft service failed";
         return false;

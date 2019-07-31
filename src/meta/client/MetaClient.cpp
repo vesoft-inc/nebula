@@ -11,18 +11,18 @@
 
 DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
+DEFINE_int32(meta_client_io_thread_num, 2, "meta client io thread number");
 
 namespace nebula {
 namespace meta {
 
-MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                       std::vector<HostAddr> addrs,
+MetaClient::MetaClient(std::vector<HostAddr> addrs,
                        HostAddr localHost,
                        bool sendHeartBeat)
-    : ioThreadPool_(ioThreadPool)
-    , addrs_(std::move(addrs))
+    : addrs_(std::move(addrs))
     , localHost_(localHost)
     , sendHeartBeat_(sendHeartBeat) {
+    ioThreadPool_ = std::make_unique<folly::IOThreadPoolExecutor>(FLAGS_meta_client_io_thread_num);
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
@@ -37,6 +37,8 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
 MetaClient::~MetaClient() {
     bgThread_.stop();
     bgThread_.wait();
+
+    ioThreadPool_->stop();
     VLOG(3) << "~MetaClient";
 }
 

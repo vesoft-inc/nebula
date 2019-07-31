@@ -28,7 +28,7 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
     if (!addrs.ok()) {
         return addrs.status();
     }
-    metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()));
+    metaClient_ = std::make_unique<meta::MetaClient>(std::move(addrs.value()));
     // load data try 3 time
     bool loadDataOk = metaClient_->waitForMetadReady(3);
     if (!loadDataOk) {

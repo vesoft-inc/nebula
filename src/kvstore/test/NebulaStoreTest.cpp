@@ -20,6 +20,7 @@ namespace nebula {
 namespace kvstore {
 
 auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+auto acceptThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
 
 template<typename T>
 void dump(const std::vector<T>& v) {
@@ -58,6 +59,7 @@ TEST(NebulaStoreTest, SimpleTest) {
     HostAddr local = {0, 0};
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
+                                               acceptThreadPool,
                                                local);
     store->init();
     sleep(1);
@@ -157,6 +159,7 @@ TEST(NebulaStoreTest, PartsTest) {
     HostAddr local = {0, 0};
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
+                                               acceptThreadPool,
                                                local);
     store->init();
     auto check = [&](GraphSpaceID spaceId) {
@@ -244,6 +247,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
                               const std::string& path) -> std::unique_ptr<NebulaStore> {
         LOG(INFO) << "Start nebula store on " << peers[index];
         auto sIoThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+        auto sAcceptThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
         auto partMan = std::make_unique<MemPartManager>();
         for (auto partId = 0; partId < 3; partId++) {
             PartMeta pm;
@@ -260,6 +264,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         HostAddr local = peers[index];
         return std::make_unique<NebulaStore>(std::move(options),
                                              sIoThreadPool,
+                                             sAcceptThreadPool,
                                              local);
     };
     int32_t replicas = 3;

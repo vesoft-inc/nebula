@@ -61,8 +61,7 @@ public:
 
 class MetaClient {
 public:
-    explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                        std::vector<HostAddr> addrs,
+    explicit MetaClient(std::vector<HostAddr> addrs,
                         HostAddr localHost = HostAddr(0, 0),
                         bool sendHeartBeat = false);
 
@@ -259,7 +258,7 @@ protected:
                            const LocalCache& localCache);
 
 private:
-    std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
+    std::unique_ptr<folly::IOThreadPoolExecutor> ioThreadPool_{nullptr};
     std::shared_ptr<thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>> clientsMan_;
 
     LocalCache localCache_;

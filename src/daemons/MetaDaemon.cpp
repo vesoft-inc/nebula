@@ -100,14 +100,16 @@ int main(int argc, char *argv[]) {
     // The meta server has only one space, one part.
     partMan->addPart(0, 0, std::move(peersRet.value()));
 
-    // folly IOThreadPoolExecutor
+    // notice: ioThreadPool and acceptThreadPool will stopped when NebulaStore free raftservice
     auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
+    auto acceptThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
 
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
-    auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(std::move(options), 
-                                                                  ioPool, 
+    auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
+                                                                  ioPool,
+                                                                  acceptThreadPool,
                                                                   localhost);
     if (!(kvstore->init())) {
         LOG(ERROR) << "nebula store init failed";
@@ -154,7 +156,15 @@ int main(int argc, char *argv[]) {
         gServer->setReusePort(FLAGS_reuse_port);
         gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
         gServer->setIOThreadPool(ioPool);
+        gServer->setAcceptExecutor(acceptThreadPool);
+
+        // set false to stop that gServer stop all io thread when call gServer->stop();
+        // because NebulaStore's raft part dependencies the io thread pool.
+        gServer->setStopWorkersOnStopListening(false);
         gServer->serve();  // Will wait until the server shuts down
+
+        // must stop the cpu worker first, because kvstore will free before gServer.
+        gServer->getThreadManager()->join();
     } catch (const std::exception &e) {
         nebula::WebService::stop();
         LOG(ERROR) << "Exception thrown: " << e.what();
@@ -169,7 +179,7 @@ int main(int argc, char *argv[]) {
 
 Status setupSignalHandler() {
     return nebula::SignalHandler::install(
-        {SIGINT, SIGTERM}, 
+        {SIGINT, SIGTERM},
         [](nebula::SignalHandler::GeneralSignalInfo *info) {
             signalHandler(info->sig());
         });
@@ -181,7 +191,9 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            gServer->stop();
+            if (gServer) {
+                gServer->stop();
+            }
             break;
         default:
             FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));

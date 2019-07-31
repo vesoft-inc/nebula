@@ -25,6 +25,9 @@ public:
         : kvstore_(kvstore)
         , schemaMan_(schemaMan) {}
 
+    ~StorageServiceHandler() {
+        LOG(INFO) << "~StorageServiceHandler";
+    }
     folly::Future<cpp2::QueryResponse>
     future_getOutBound(const cpp2::GetNeighborsRequest& req) override;
 

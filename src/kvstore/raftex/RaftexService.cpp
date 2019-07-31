@@ -18,7 +18,8 @@ namespace raftex {
  *
  ******************************************************/
 std::shared_ptr<RaftexService> RaftexService::createService(
-        std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+        std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
+        std::shared_ptr<folly::IOThreadPoolExecutor> acceptPool,
         uint16_t port) {
     auto svc = std::shared_ptr<RaftexService>(new RaftexService());
     CHECK(svc != nullptr) << "Failed to create a raft service";
@@ -27,7 +28,7 @@ std::shared_ptr<RaftexService> RaftexService::createService(
     CHECK(svc->server_ != nullptr) << "Failed to create a thrift server";
     svc->server_->setInterface(svc);
 
-    svc->initThriftServer(pool, port);
+    svc->initThriftServer(ioPool, acceptPool, port);
     return svc;
 }
 
@@ -58,12 +59,15 @@ void RaftexService::waitUntilReady() {
 }
 
 
-void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-                                     uint16_t port) {
+void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
+    std::shared_ptr<folly::IOThreadPoolExecutor> acceptPool,
+    uint16_t port) {
     LOG(INFO) << "Init thrift server for raft service.";
     server_->setPort(port);
-    if (pool != nullptr) {
-        server_->setIOThreadPool(pool);
+    if (ioPool != nullptr && acceptPool != nullptr) {
+        server_->setIOThreadPool(ioPool);
+        server_->setIOThreadPool(acceptPool);
+        server_->setStopWorkersOnStopListening(false);
     }
 }
 

@@ -40,8 +40,10 @@ class NebulaStore : public KVStore, public Handler {
 public:
     NebulaStore(KVOptions options,
                 std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
+                std::shared_ptr<folly::IOThreadPoolExecutor> acceptPool,
                 HostAddr serviceAddr)
             : ioPool_(ioPool)
+            , acceptPool_(acceptPool)
             , storeSvcAddr_(serviceAddr)
             , raftAddr_(getRaftAddr(serviceAddr))
             , options_(std::move(options)) {
@@ -187,6 +189,7 @@ private:
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpacePartInfo>> spaces_;
 
     std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;
+    std::shared_ptr<folly::IOThreadPoolExecutor> acceptPool_;
     std::shared_ptr<thread::GenericThreadPool> workers_;
     HostAddr storeSvcAddr_;
     HostAddr raftAddr_;

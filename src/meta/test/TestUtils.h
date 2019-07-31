@@ -33,6 +33,7 @@ class TestUtils {
 public:
     static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+        auto acceptThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
         auto partMan = std::make_unique<kvstore::MemPartManager>();
 
         // GraphSpaceID =>  {PartitionIDs}
@@ -50,6 +51,7 @@ public:
 
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
+                                                            acceptThreadPool,
                                                             localhost);
         store->init();
         sleep(1);
