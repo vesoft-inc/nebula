@@ -16,7 +16,6 @@
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 
-// DEFINE_int32(storage_ingest_http_port, 12000, "Storage daemon's http port");
 DEFINE_int32(meta_ingest_thread_num, 3, "Meta daemon's ingest thread number");
 
 namespace nebula {
@@ -28,9 +27,12 @@ using proxygen::ProxygenError;
 using proxygen::UpgradeProtocol;
 using proxygen::ResponseBuilder;
 
-void MetaHttpIngestHandler::init(nebula::kvstore::KVStore *kvstore) {
+void MetaHttpIngestHandler::init(nebula::kvstore::KVStore *kvstore,
+                                 nebula::thread::GenericThreadPool *pool) {
     kvstore_ = kvstore;
+    pool_ = pool;
     CHECK_NOTNULL(kvstore_);
+    CHECK_NOTNULL(pool_);
 }
 
 void MetaHttpIngestHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
@@ -124,12 +126,6 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
     }
 
     std::vector<folly::SemiFuture<bool>> futures;
-    static nebula::thread::GenericThreadPool pool;
-    static std::once_flag ingestPoolStartFlag;
-    std::call_once(ingestPoolStartFlag, []() {
-        LOG(INFO) << "Ingest Thread Pool start";
-        pool.start(FLAGS_meta_ingest_thread_num);
-    });
 
     for (auto &storageIP : storageIPs) {
         auto dispatcher = [storageIP, space]() {
@@ -139,7 +135,7 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
             auto ingestResult = nebula::http::HttpClient::get(url);
             return ingestResult.ok() && ingestResult.value() == "SSTFile ingest successfully";
         };
-        auto future = pool.addTask(dispatcher);
+        auto future = pool_->addTask(dispatcher);
         futures.push_back(std::move(future));
     }
 

@@ -138,9 +138,9 @@ int main(int argc, char *argv[]) {
         handler->init(kvstorePtr, helperPtr, poolPtr);
         return handler;
     });
-    nebula::WebService::registerHandler("/ingest-dispatch", [kvstorePtr] {
+    nebula::WebService::registerHandler("/ingest-dispatch", [kvstorePtr, poolPtr] {
         auto handler = new nebula::meta::MetaHttpIngestHandler();
-        handler->init(kvstorePtr);
+        handler->init(kvstorePtr, poolPtr);
         return handler;
     });
     status = nebula::WebService::start();

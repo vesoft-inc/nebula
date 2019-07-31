@@ -20,8 +20,6 @@
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 #include <proxygen/httpserver/ResponseBuilder.h>
 
-// DEFINE_int32(storage_http_port, 12000, "Storage daemon's http port");
-
 namespace nebula {
 namespace meta {
 

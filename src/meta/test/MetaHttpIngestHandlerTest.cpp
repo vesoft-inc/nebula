@@ -13,6 +13,7 @@
 #include "webservice/WebService.h"
 #include "fs/TempDir.h"
 #include <rocksdb/sst_file_writer.h>
+#include "thread/GenericThreadPool.h"
 
 namespace nebula {
 namespace meta {
@@ -28,10 +29,12 @@ public:
         kv_ = TestUtils::initKV(rootPath_->path());
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 1);
+        pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
+        pool_->start(1);
 
         WebService::registerHandler("/ingest-dispatch", [this] {
             auto handler = new meta::MetaHttpIngestHandler();
-            handler->init(kv_.get());
+            handler->init(kv_.get(), pool_.get());
             return handler;
         });
         WebService::registerHandler("/ingest", [this] {
@@ -46,6 +49,7 @@ public:
     void TearDown() override {
         kv_.reset();
         rootPath_.reset();
+        pool_->stop();
         WebService::stop();
         VLOG(1) << "Web service stopped";
     }
@@ -53,6 +57,7 @@ public:
 private:
     std::unique_ptr<fs::TempDir> rootPath_;
     std::unique_ptr<kvstore::KVStore> kv_;
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool_;
 };
 
 TEST(MetaHttpIngestHandlerTest, MetaIngestTest) {

@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include "webservice/Common.h"
 #include "kvstore/KVStore.h"
+#include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 
 namespace nebula {
@@ -21,7 +22,8 @@ class MetaHttpIngestHandler : public proxygen::RequestHandler {
 public:
     MetaHttpIngestHandler() = default;
 
-    void init(nebula::kvstore::KVStore *kvstore);
+    void init(nebula::kvstore::KVStore *kvstore,
+              nebula::thread::GenericThreadPool *pool);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -39,8 +41,9 @@ public:
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    nebula::kvstore::KVStore *kvstore_;
     GraphSpaceID space_;
+    nebula::kvstore::KVStore *kvstore_;
+    nebula::thread::GenericThreadPool *pool_;
 };
 
 }  // namespace meta

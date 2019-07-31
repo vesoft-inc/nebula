@@ -78,7 +78,7 @@ TEST(HttpClient, get) {
                                        FLAGS_ws_http_port, "/not_exist");
         auto result = HttpClient::get(url);
         ASSERT_TRUE(result.ok());
-        ASSERT_EQ("", result.value());
+        ASSERT_TRUE(result.value().empty());
     }
 }
 

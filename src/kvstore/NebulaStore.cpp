@@ -423,7 +423,7 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
             }
 
             auto path = value(ret)->getDataRoot();
-            LOG(INFO) << "Loading Part " << part;
+            LOG(INFO) << "Ingesting Part " << part;
             if (!fs::FileUtils::exist(path)) {
                 LOG(ERROR) << path << " not existed";
                 return ResultCode::ERR_IO_ERROR;
@@ -431,13 +431,15 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
 
             auto files = nebula::fs::FileUtils::listAllFilesInDir(path, true, "*.sst");
             for (auto file : files) {
-                VLOG(3) << "Loading extra file: " << file;
+                VLOG(3) << "Ingesting extra file: " << file;
                 extras.emplace_back(file);
             }
         }
         if (extras.size() != 0) {
             auto code = engine->ingest(std::move(extras));
-            return code;
+            if (code != ResultCode::SUCCEEDED) {
+                return code;
+            }
         }
     }
     return ResultCode::SUCCEEDED;
