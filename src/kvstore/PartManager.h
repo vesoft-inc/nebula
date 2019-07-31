@@ -156,7 +156,7 @@ public:
 
      void onPartUpdated(const PartMeta& partMeta) override;
 
-     HostAddr getLocalHost() override {
+     HostAddr getLocalHost() {
         return localHost_;
      }
 

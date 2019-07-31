@@ -42,7 +42,7 @@ public:
             becomeLeaderCB);
 
     LogID lastCommittedLogId() override {
-        return 0;
+        return lastCommittedLogId_;
     }
 
     std::shared_ptr<RaftexService> getService() const {
@@ -80,17 +80,20 @@ public:
     }
 
     size_t getNumLogs() const;
-    bool getLogMsg(LogID id, folly::StringPiece& msg) const;
+    bool getLogMsg(size_t index, folly::StringPiece& msg);
 
 public:
     int32_t commitTimes_ = 0;
     int32_t currLogId_ = -1;
+    bool isRunning_ = false;
 
 private:
     const size_t idx_;
     std::shared_ptr<RaftexService> service_;
 
-    std::unordered_map<LogID, std::string> data_;
+    std::vector<std::pair<LogID, std::string>> data_;
+    LogID lastCommittedLogId_ = 0L;
+    mutable folly::RWSpinLock lock_;
 
     std::function<void(size_t idx, const char*, TermID)>
         leadershipLostCB_;

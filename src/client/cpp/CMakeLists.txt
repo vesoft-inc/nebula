@@ -1,5 +1,4 @@
-add_library(client_cpp_obj OBJECT GraphClient.cpp)
-nebula_add_base_obj(client_cpp_obj)
+nebula_add_library(client_cpp_obj OBJECT GraphClient.cpp)
 
 #add_subdirectory(test)
 

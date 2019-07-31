@@ -1,23 +1,14 @@
-add_executable(
-    stats_manager_test
-    StatsManagerTest.cpp
-    $<TARGET_OBJECTS:stats_obj>
-    $<TARGET_OBJECTS:base_obj>
+nebula_add_test(
+    NAME stats_manager_test
+    SOURCES StatsManagerTest.cpp
+    OBJECTS $<TARGET_OBJECTS:stats_obj> $<TARGET_OBJECTS:base_obj>
+    LIBRARIES gtest
 )
-nebula_link_libraries(
-    stats_manager_test
-    gtest
-)
-nebula_add_test(stats_manager_test)
 
 
-add_executable(
-    stats_manager_bm
-    StatsManagerBenchmark.cpp
-    $<TARGET_OBJECTS:stats_obj>
-)
-nebula_link_libraries(
-    stats_manager_bm
-    follybenchmark
-    boost_regex
+nebula_add_executable(
+    NAME stats_manager_bm
+    SOURCES StatsManagerBenchmark.cpp
+    OBJECTS $<TARGET_OBJECTS:stats_obj>
+    LIBRARIES follybenchmark boost_regex
 )
