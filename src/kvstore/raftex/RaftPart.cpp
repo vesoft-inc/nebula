@@ -943,6 +943,7 @@ void RaftPart::statusPolling() {
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING) {
+            VLOG(2) << idStr_ << "Schedule next polling";
             workers_->addDelayTask(
                 delay,
                 [self = shared_from_this()] {
@@ -1054,6 +1055,7 @@ void RaftPart::processAppendLogRequest(
             << ": GraphSpaceId = " << req.get_space()
             << ", partition = " << req.get_part()
             << ", current_term = " << req.get_current_term()
+//            << ", lastLogId = " << req.get_last_log_id()
             << ", committedLogId = " << req.get_committed_log_id()
             << ", leaderIp = " << req.get_leader_ip()
             << ", leaderPort = " << req.get_leader_port()
@@ -1123,7 +1125,7 @@ void RaftPart::processAppendLogRequest(
 //      }
 
     // Check the last log
-    CHECK_GE(req.get_last_log_id_sent(), committedLogId_);
+    CHECK_GE(req.get_last_log_id_sent(), committedLogId_) << idStr_;
     if (lastLogTerm_ > 0 && req.get_last_log_term_sent() != lastLogTerm_) {
         VLOG(2) << idStr_ << "The local last log term is " << lastLogTerm_
                 << ", which is different from the leader's prevLogTerm "
@@ -1266,6 +1268,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
 
 
 folly::Future<AppendLogResult> RaftPart::sendHeartbeat() {
+    VLOG(2) << idStr_ << "Send heartbeat";
     std::string log = "";
     return appendLogAsync(clusterId_, LogType::NORMAL, std::move(log));
 }
