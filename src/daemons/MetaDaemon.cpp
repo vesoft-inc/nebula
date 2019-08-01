@@ -19,6 +19,7 @@
 #include "kvstore/PartManager.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
+#include "meta/KVBasedGflagsManager.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -145,6 +146,8 @@ int main(int argc, char *argv[]) {
 
     auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore_);
     nebula::meta::ActiveHostsMan::instance(kvstore_);
+    auto gflagsManager = std::make_unique<nebula::meta::KVBasedGflagsManager>(kvstore.get());
+    gflagsManager->init();
 
     LOG(INFO) << "The meta deamon start on " << localhost;
     try {

@@ -131,6 +131,22 @@ protected:
         return T();     // suppress the no-return warning
     }
 
+    template <typename T>
+    std::enable_if_t<std::is_floating_point<T>::value, T>
+    convert(const cpp2::ColumnValue &v) {
+        switch (v.getType()) {
+            case ColumnType::single_precision:
+                return v.get_single_precision();
+            case ColumnType::double_precision:
+                return v.get_double_precision();
+            default:
+                throw TestError() << "Cannot convert unknown dynamic column type to "
+                                  << "floating point type: "
+                                  << static_cast<int32_t>(v.getType());
+        }
+        return T();     // suppress the no-return warning
+    }
+
     /**
      * Transform rows of dynamic type to tuples of static type
      */
