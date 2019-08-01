@@ -50,12 +50,14 @@ bool MetaClient::isMetadReady() {
             return ready_;
         }
     }  // end if
-    loadDataThreadFunc();
+    loadData();
+    loadCfg();
     return ready_;
 }
 
 
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
+    setGflagsModule();
     int tryCount = count;
     while (!isMetadReady() && ((count == -1) || (tryCount > 0))) {
         --tryCount;
@@ -63,13 +65,6 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     }  // end while
 
     CHECK(bgThread_.start());
-    {
-        size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
-        LOG(INFO) << "Register timer task for load data!";
-        bgThread_.addTimerTask(delayMS,
-                               FLAGS_load_data_interval_secs * 1000,
-                               &MetaClient::loadDataThreadFunc, this);
-    }
     if (sendHeartBeat_) {
         LOG(INFO) << "Register time task for heartbeat!";
         size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
@@ -77,6 +72,8 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
                                FLAGS_heartbeat_interval_secs * 1000,
                                &MetaClient::heartBeatThreadFunc, this);
     }
+    addLoadDataTask();
+    addLoadCfgTask();
     return true;
 }
 
@@ -89,8 +86,12 @@ void MetaClient::heartBeatThreadFunc() {
     }
 }
 
-
 void MetaClient::loadDataThreadFunc() {
+    loadData();
+    addLoadDataTask();
+}
+
+void MetaClient::loadData() {
     if (ioThreadPool_->numThreads() <= 0) {
         LOG(ERROR) << "The threads number in ioThreadPool should be greater than 0";
         return;
@@ -151,6 +152,11 @@ void MetaClient::loadDataThreadFunc() {
     diff(oldCache, localCache_);
     ready_ = true;
     LOG(INFO) << "Load data completed!";
+}
+
+void MetaClient::addLoadDataTask() {
+    size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
+    bgThread_.addDelayTask(delayMS, &MetaClient::loadDataThreadFunc, this);
 }
 
 
@@ -326,6 +332,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("not existed!");
         case cpp2::ErrorCode::E_NO_HOSTS:
             return Status::Error("no hosts!");
+        case cpp2::ErrorCode::E_CONFIG_IMMUTABLE:
+            return Status::CfgImmutable();
         case cpp2::ErrorCode::E_LEADER_CHANGED: {
             HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
             {
@@ -995,5 +1003,181 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance() {
         return resp.id;
     }, true);
 }
+
+folly::Future<StatusOr<bool>>
+MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
+    cpp2::RegConfigReq req;
+    req.set_items(items);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_regConfig(request);
+            }, [this] (cpp2::ExecResp&& resp) -> decltype(auto) {
+                return resp.code == cpp2::ErrorCode::SUCCEEDED;
+            }, true);
+}
+
+folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
+MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name) {
+    cpp2::ConfigItem item;
+    item.set_module(module);
+    item.set_name(name);
+
+    cpp2::GetConfigReq req;
+    req.set_item(item);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_getConfig(request);
+            }, [this] (cpp2::GetConfigResp&& resp) -> decltype(auto) {
+                return std::move(resp).get_items();
+            });
+}
+
+folly::Future<StatusOr<bool>>
+MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
+                      const cpp2::ConfigType& type, const std::string& value) {
+    cpp2::ConfigItem item;
+    item.set_module(module);
+    item.set_name(name);
+    item.set_type(type);
+    item.set_mode(cpp2::ConfigMode::MUTABLE);
+    item.set_value(value);
+
+    cpp2::SetConfigReq req;
+    req.set_item(item);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_setConfig(request);
+            }, [this] (cpp2::ExecResp&& resp) -> decltype(auto) {
+                return resp.code == cpp2::ErrorCode::SUCCEEDED;
+            }, true);
+}
+
+folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
+MetaClient::listConfigs(const cpp2::ConfigModule& module) {
+    cpp2::ListConfigsReq req;
+    req.set_module(module);
+    return getResponse(std::move(req), [] (auto client, auto request) {
+                return client->future_listConfigs(request);
+            }, [this] (cpp2::ListConfigsResp&& resp) -> decltype(auto) {
+                return std::move(resp).get_items();
+            });
+}
+
+void MetaClient::setGflagsModule(const cpp2::ConfigModule& module) {
+    if (module != cpp2::ConfigModule::UNKNOWN) {
+        gflagsModule_ = module;
+        return;
+    }
+
+    // get current process according to gflags pid_file
+    gflags::CommandLineFlagInfo pid;
+    if (gflags::GetCommandLineFlagInfo("pid_file", &pid)) {
+        auto defaultPid = pid.default_value;
+        if (defaultPid.find("nebula-graphd") != std::string::npos) {
+            gflagsModule_ = cpp2::ConfigModule::GRAPH;
+        } else if (defaultPid.find("nebula-storaged") != std::string::npos) {
+            gflagsModule_ = cpp2::ConfigModule::STORAGE;
+        } else if (defaultPid.find("nebula-metad") != std::string::npos) {
+            gflagsModule_ = cpp2::ConfigModule::META;
+        } else {
+            LOG(ERROR) << "Should not reach here";
+        }
+    } else {
+        LOG(ERROR) << "Should not reach here";
+    }
+}
+
+void MetaClient::loadCfgThreadFunc() {
+    loadCfg();
+    addLoadCfgTask();
+}
+
+void MetaClient::loadCfg() {
+    // only load current module's config is enough
+    auto ret = listConfigs(gflagsModule_).get();
+    if (ret.ok()) {
+        // if we load config from meta server successfully, update gflags and set configReady_
+        auto tItems = ret.value();
+        std::vector<ConfigItem> items;
+        for (const auto& tItem : tItems) {
+            items.emplace_back(toConfigItem(tItem));
+        }
+        MetaConfigMap metaConfigMap;
+        for (auto& item : items) {
+            std::pair<cpp2::ConfigModule, std::string> key = {item.module_, item.name_};
+            metaConfigMap.emplace(std::move(key), std::move(item));
+        }
+        {
+            // For any configurations that is in meta, update in cache to replace previous value
+            folly::RWSpinLock::WriteHolder holder(configCacheLock_);
+            for (const auto& entry : metaConfigMap) {
+                auto& key = entry.first;
+                auto it = metaConfigMap_.find(key);
+                if (it == metaConfigMap_.end() || metaConfigMap[key].value_ != it->second.value_) {
+                    updateGflagsValue(entry.second);
+                    LOG(INFO) << "update config in cache " << key.second
+                              << " to " << metaConfigMap[key].value_;
+                    metaConfigMap_[key] = entry.second;
+                }
+            }
+        }
+    } else {
+        LOG(INFO) << "Load configs failed: " << ret.status();
+        return;
+    }
+}
+
+void MetaClient::addLoadCfgTask() {
+    size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
+    bgThread_.addDelayTask(delayMS, &MetaClient::loadCfgThreadFunc, this);
+    LOG(INFO) << "Load configs completed, call after " << delayMS << " ms";
+}
+
+void MetaClient::updateGflagsValue(const ConfigItem& item) {
+    if (item.mode_ != cpp2::ConfigMode::MUTABLE) {
+        return;
+    }
+
+    std::string metaValue;
+    switch (item.type_) {
+        case cpp2::ConfigType::INT64:
+            metaValue = folly::to<std::string>(boost::get<int64_t>(item.value_));
+            break;
+        case cpp2::ConfigType::DOUBLE:
+            metaValue = folly::to<std::string>(boost::get<double>(item.value_));
+            break;
+        case cpp2::ConfigType::BOOL:
+            metaValue = boost::get<bool>(item.value_) ? "true" : "false";
+            break;
+        case cpp2::ConfigType::STRING:
+            metaValue = boost::get<std::string>(item.value_);
+            break;
+    }
+
+    std::string curValue;
+    if (!gflags::GetCommandLineOption(item.name_.c_str(), &curValue)) {
+        return;
+    } else if (curValue != metaValue) {
+        LOG(INFO) << "update " << item.name_ << " from " << curValue << " to " << metaValue;
+        gflags::SetCommandLineOption(item.name_.c_str(), metaValue.c_str());
+    }
+}
+
+ConfigItem MetaClient::toConfigItem(const cpp2::ConfigItem& item) {
+    VariantType value;
+    switch (item.get_type()) {
+        case cpp2::ConfigType::INT64:
+            value = *reinterpret_cast<const int64_t*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::BOOL:
+            value = *reinterpret_cast<const bool*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::DOUBLE:
+            value = *reinterpret_cast<const double*>(item.get_value().data());
+            break;
+        case cpp2::ConfigType::STRING:
+            value = item.get_value();
+            break;
+    }
+    return ConfigItem(item.get_module(), item.get_name(), item.get_type(), item.get_mode(), value);
+}
+
 }  // namespace meta
 }  // namespace nebula
