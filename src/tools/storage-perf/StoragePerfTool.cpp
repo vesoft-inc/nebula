@@ -40,7 +40,7 @@ public:
             threads.emplace_back(std::move(t));
         }
         threadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_io_threads);
-        client_ = std::make_unique<StorageClient>(threadPool_);
+        client_ = std::make_unique<StorageClient>(threadPool_, nullptr);
         time::Duration duration;
         for (auto& t : threads) {
             CHECK(t->start("TaskThread"));

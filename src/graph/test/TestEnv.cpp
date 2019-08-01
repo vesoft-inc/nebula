@@ -70,6 +70,8 @@ void TestEnv::SetUp() {
 
 
 void TestEnv::TearDown() {
+    // TO make sure the drop space be invoked on storage server
+    sleep(FLAGS_load_data_interval_secs + 1);
     graphServer_.reset();
     storageServer_.reset();
     metaServer_.reset();
