@@ -14,10 +14,6 @@
 
 DECLARE_int32(ws_http_port);
 DECLARE_int32(ws_h2_port);
-DECLARE_int32(ws_meta_http_port);
-DECLARE_int32(ws_meta_h2_port);
-DECLARE_int32(ws_storage_http_port);
-DECLARE_int32(ws_storage_h2_port);
 DECLARE_string(ws_ip);
 DECLARE_int32(ws_threads);
 

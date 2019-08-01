@@ -108,7 +108,10 @@ void MetaHttpIngestHandler::onError(ProxygenError error) noexcept {
 bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto prefix = MetaServiceUtils::partPrefix(space);
-    auto ret = kvstore_->prefix(0, 0, prefix, &iter);
+
+    static const GraphSpaceID metaSpaceId = 0;
+    static const PartitionID  metaPartId = 0;
+    auto ret = kvstore_->prefix(metaSpaceId, metaPartId, prefix, &iter);
     if (ret != kvstore::ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Fetch Parts Failed";
         return false;
@@ -116,7 +119,7 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
 
     std::set<std::string> storageIPs;
     while (iter->valid()) {
-        for (auto host : MetaServiceUtils::parsePartVal(iter->val())) {
+        for (auto &host : MetaServiceUtils::parsePartVal(iter->val())) {
             auto storageIP = network::NetworkUtils::intToIPv4(host.get_ip());
             if (std::find(storageIPs.begin(), storageIPs.end(), storageIP) == storageIPs.end()) {
                 storageIPs.insert(std::move(storageIP));
@@ -129,7 +132,7 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
 
     for (auto &storageIP : storageIPs) {
         auto dispatcher = [storageIP, space]() {
-            auto tmp = "http://%s:%d/ingest?space=%d";
+            static const char *tmp = "http://%s:%d/ingest?space=%d";
             auto url = folly::stringPrintf(tmp, storageIP.c_str(),
                                            FLAGS_ws_storage_http_port, space);
             auto ingestResult = nebula::http::HttpClient::get(url);
@@ -140,7 +143,7 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
     }
 
     bool successfully{true};
-    folly::collectAll(futures).then([&](const std::vector<folly::Try<bool>>& tries) {
+    folly::collectAll(std::move(futures)).then([&](const std::vector<folly::Try<bool>>& tries) {
         for (const auto& t : tries) {
             if (t.hasException()) {
                 LOG(ERROR) << "Ingest Failed: " << t.exception();

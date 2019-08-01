@@ -28,6 +28,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:schema_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:dataman_obj>
     LIBRARIES
         proxygenhttpserver
@@ -67,6 +68,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
@@ -104,6 +106,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib

@@ -39,12 +39,9 @@ nebula_add_test(
         SessionManagerTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:http_client_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         wangle
@@ -60,15 +57,12 @@ nebula_add_test(
         SchemaTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         wangle
@@ -82,15 +76,12 @@ nebula_add_test(
         GoTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
-        $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         wangle
@@ -105,9 +96,10 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:graph_http_handler>
+        $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
-        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
@@ -129,14 +121,12 @@ nebula_add_test(
         OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         wangle
@@ -151,14 +141,12 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:stats_obj>
-        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
-        proxygenhttpserver
-        proxygenlib
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         wangle

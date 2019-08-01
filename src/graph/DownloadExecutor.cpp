@@ -9,7 +9,6 @@
 #include "graph/DownloadExecutor.h"
 #include "process/ProcessUtils.h"
 #include "webservice/Common.h"
-#include "webservice/WebService.h"
 
 #include <folly/executors/Async.h>
 #include <folly/futures/Future.h>
@@ -43,8 +42,8 @@ void DownloadExecutor::execute() {
     }
 
     auto func = [metaHost, hdfsHost, hdfsPort, hdfsPath, spaceId]() {
-        std::string tmp = "http://%s:%d/%s?host=%s&port=%d&path=%s&space=%d";
-        auto url = folly::stringPrintf(tmp.c_str(), metaHost.c_str(), FLAGS_ws_meta_http_port,
+        static const char *tmp = "http://%s:%d/%s?host=%s&port=%d&path=%s&space=%d";
+        auto url = folly::stringPrintf(tmp, metaHost.c_str(), FLAGS_ws_meta_http_port,
                                        "download-dispatch", hdfsHost->c_str(),
                                        hdfsPort, hdfsPath->c_str(), spaceId);
         auto result = http::HttpClient::get(url);

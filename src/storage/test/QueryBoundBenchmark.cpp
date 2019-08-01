@@ -31,7 +31,7 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (int32_t partId = 0; partId < 6; partId++) {
+    for (int32_t partId = 1; partId <= 6; partId++) {
         std::vector<kvstore::KV> data;
         for (int32_t vertexId = 1; vertexId < 1000; vertexId++) {
             for (int32_t tagId = 3001; tagId < 3010; tagId++) {
@@ -100,7 +100,7 @@ cpp2::GetNeighborsRequest buildRequest(bool outBound = true) {
     cpp2::GetNeighborsRequest req;
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
-    for (int32_t partId = 0; partId < FLAGS_req_parts; partId++) {
+    for (int32_t partId = 1; partId <= FLAGS_req_parts; partId++) {
         for (int32_t vertexId = 1; vertexId <= FLAGS_vrpp; vertexId++) {
             tmpIds[partId].push_back(vertexId);
         }

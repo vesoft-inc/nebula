@@ -180,9 +180,9 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
 
         auto storageIP = network::NetworkUtils::intToIPv4(pair.first.first);
         auto dispatcher = [storageIP, hdfsHost, hdfsPort, hdfsPath, partsStr, this]() {
-            auto tmp = "http://%s:%d/download?host=%s&port=%d&path=%s&parts=%s&space=%d";
+            static const char *tmp = "http://%s:%d/%s?host=%s&port=%d&path=%s&parts=%s&space=%d";
             std::string url = folly::stringPrintf(tmp, storageIP.c_str(),
-                                                  FLAGS_ws_storage_http_port,
+                                                  FLAGS_ws_storage_http_port, "download",
                                                   hdfsHost.c_str(), hdfsPort, hdfsPath.c_str(),
                                                   partsStr.c_str(), spaceID_);
             auto downloadResult = nebula::http::HttpClient::get(url);
@@ -193,7 +193,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
     }
 
     bool successfully{true};
-    folly::collectAll(futures).then([&](const std::vector<folly::Try<bool>>& tries) {
+    folly::collectAll(std::move(futures)).then([&](const std::vector<folly::Try<bool>>& tries) {
         for (const auto& t : tries) {
             if (t.hasException()) {
                 LOG(ERROR) << "Download Failed: " << t.exception();

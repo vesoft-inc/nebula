@@ -159,6 +159,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:wal_obj>
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:hdfs_helper_obj>
          $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:base_obj>
@@ -197,6 +198,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:wal_obj>
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:hdfs_helper_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:base_obj>
@@ -235,6 +237,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:wal_obj>
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:hdfs_helper_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:base_obj>

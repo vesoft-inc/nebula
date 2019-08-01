@@ -145,15 +145,16 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
     std::vector<folly::SemiFuture<bool>> futures;
 
     for (auto& part : parts) {
-        auto downloader = [hdfsHost, hdfsPort, hdfsPath, part, this]() {
-            PartitionID partId;
-            try {
-                partId = folly::to<PartitionID>(part);
-            } catch (const std::exception& ex) {
-                LOG(ERROR) << "Invalid part: \"" << part << "\"";
-                return false;
-            }
+        PartitionID partId;
+        try {
+            partId = folly::to<PartitionID>(part);
+        } catch (const std::exception& ex) {
+            isRunning.clear();
+            LOG(ERROR) << "Invalid part: \"" << part << "\"";
+            return false;
+        }
 
+        auto downloader = [hdfsHost, hdfsPort, hdfsPath, partId, this]() {
             auto hdfsPartPath = folly::stringPrintf("%s/%d", hdfsPath.c_str(), partId);
             auto dataPathResult = kvstore_->getDataPath(spaceID_, partId);
             if (!ok(dataPathResult)) {

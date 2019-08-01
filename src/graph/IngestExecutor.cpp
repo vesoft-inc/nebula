@@ -8,7 +8,6 @@
 #include "graph/IngestExecutor.h"
 #include "process/ProcessUtils.h"
 #include "webservice/Common.h"
-#include "webservice/WebService.h"
 
 #include <folly/executors/Async.h>
 #include <folly/futures/Future.h>
@@ -32,8 +31,8 @@ void IngestExecutor::execute() {
     auto  spaceId = ectx()->rctx()->session()->space();
 
     auto func = [metaHost, spaceId]() {
-        std::string tmp = "http://%s:%d/%s?space=%d";
-        auto url = folly::stringPrintf(tmp.c_str(), metaHost.c_str(),
+        static const char *tmp = "http://%s:%d/%s?space=%d";
+        auto url = folly::stringPrintf(tmp, metaHost.c_str(),
                                        FLAGS_ws_meta_http_port,
                                        "ingest-dispatch", spaceId);
         auto result = http::HttpClient::get(url);

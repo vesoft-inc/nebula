@@ -33,7 +33,7 @@ DEFINE_string(peers, "", "It is a list of IPs split by comma,"
                          "If empty, it means replica is 1");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
-DEFINE_int32(meta_download_thread_num, 3, "Number of meta daemon's download thread");
+DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
 DECLARE_string(part_man_type);
 
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
@@ -124,8 +124,8 @@ int main(int argc, char *argv[]) {
 
     std::unique_ptr<nebula::thread::GenericThreadPool> pool =
         std::make_unique<nebula::thread::GenericThreadPool>();
-    pool->start(FLAGS_meta_download_thread_num);
-    LOG(INFO) << "Download Thread Pool started";
+    pool->start(FLAGS_meta_http_thread_num, "http thread pool");
+    LOG(INFO) << "Http Thread Pool started";
     auto* poolPtr = pool.get();
 
 
