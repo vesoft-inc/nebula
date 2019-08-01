@@ -143,6 +143,18 @@ public:
     folly::Future<cpp2::BalanceResp>
     future_balance(const cpp2::BalanceReq& req) override;
 
+    folly::Future<cpp2::ExecResp>
+    future_regConfig(const cpp2::RegConfigReq &req) override;
+
+    folly::Future<cpp2::GetConfigResp>
+    future_getConfig(const cpp2::GetConfigReq &req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_setConfig(const cpp2::SetConfigReq &req) override;
+
+    folly::Future<cpp2::ListConfigsResp>
+    future_listConfigs(const cpp2::ListConfigsReq &req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
 };
