@@ -20,7 +20,7 @@ public:
 
     void process(const cpp2::SetConfigReq& req);
 
-    bool setOneConfig(const cpp2::ConfigModule& module, const std::string& name,
+    void setOneConfig(const cpp2::ConfigModule& module, const std::string& name,
                       const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
                       const std::string& value, std::vector<kvstore::KV>& data);
 
