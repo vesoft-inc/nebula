@@ -175,7 +175,8 @@ protected:
              const folly::StringPiece walRoot,
              wal::BufferFlusher* flusher,
              std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-             std::shared_ptr<thread::GenericThreadPool> workers);
+             std::shared_ptr<thread::GenericThreadPool> workers,
+             std::shared_ptr<folly::Executor> executor);
 
     const char* idStr() const {
         return idStr_.c_str();
@@ -321,6 +322,8 @@ private:
 
     std::vector<std::shared_ptr<Host>> followers() const;
 
+    bool checkAppendLogResult(AppendLogResult res);
+
 protected:
     template<class ValueType>
     class PromiseSet final {
@@ -411,6 +414,7 @@ protected:
     // The lock is used to protect logs_ and cachingPromise_
     mutable std::mutex logsLock_;
     std::atomic_bool replicatingLogs_{false};
+    std::atomic_bool bufferOverFlow_{false};
     PromiseSet<AppendLogResult> cachingPromise_;
     LogCache logs_;
 
@@ -454,7 +458,9 @@ protected:
     // IO Thread pool
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     // Shared worker thread pool
-    std::shared_ptr<thread::GenericThreadPool> workers_;
+    std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
+    // Workers pool
+    std::shared_ptr<folly::Executor> executor_;
 };
 
 }  // namespace raftex

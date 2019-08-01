@@ -24,7 +24,9 @@ public:
          KVEngine* engine,
          std::shared_ptr<folly::IOThreadPoolExecutor> pool,
          std::shared_ptr<thread::GenericThreadPool> workers,
-         wal::BufferFlusher* flusher);
+         wal::BufferFlusher* flusher,
+         std::shared_ptr<folly::Executor> handlers);
+
 
     virtual ~Part() {
         LOG(INFO) << idStr_ << "~Part()";

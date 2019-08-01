@@ -35,6 +35,7 @@ public:
             bool useMetaServer = false,
             std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory = nullptr) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+        auto workers = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
         kvstore::KVOptions options;
         if (useMetaServer) {
@@ -62,7 +63,8 @@ public:
         options.cfFactory_ = std::move(cfFactory);
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
-                                                            localhost);
+                                                            localhost,
+                                                            workers);
         store->init();
         sleep(1);
         return store;

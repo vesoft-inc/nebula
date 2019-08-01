@@ -39,7 +39,8 @@ Part::Part(GraphSpaceID spaceId,
            KVEngine* engine,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
            std::shared_ptr<thread::GenericThreadPool> workers,
-           wal::BufferFlusher* flusher)
+           wal::BufferFlusher* flusher,
+           std::shared_ptr<folly::Executor> handlers)
         : RaftPart(FLAGS_cluster_id,
                    spaceId,
                    partId,
@@ -47,7 +48,8 @@ Part::Part(GraphSpaceID spaceId,
                    walPath,
                    flusher,
                    ioPool,
-                   workers)
+                   workers,
+                   handlers)
         , spaceId_(spaceId)
         , partId_(partId)
         , walPath_(walPath)
@@ -258,8 +260,7 @@ bool Part::preProcessLog(LogID logId,
                          const std::string& log) {
     VLOG(3) << idStr_ << "logId " << logId
             << ", termId " << termId
-            << ", clusterId " << clusterId
-            << ", log " << log;
+            << ", clusterId " << clusterId;
     if (!log.empty()) {
         switch (log[sizeof(int64_t)]) {
             case OP_ADD_LEARNER: {

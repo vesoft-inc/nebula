@@ -222,7 +222,8 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                        engine,
                                        ioPool_,
                                        workers_,
-                                       flusher_.get());
+                                       flusher_.get(),
+                                       handlersPool_);
     auto partMeta = options_.partMan_->partMeta(spaceId, partId);
     std::vector<HostAddr> peers;
     for (auto& h : partMeta.peers_) {

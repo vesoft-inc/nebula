@@ -111,6 +111,9 @@ RaftexService::getIOThreadPool() const {
     return server_->getIOThreadPool();
 }
 
+std::shared_ptr<folly::Executor> RaftexService::getThreadManager() {
+    return server_->getThreadManager();
+}
 
 void RaftexService::stop() {
     if (status_.load() != STATUS_RUNNING) {

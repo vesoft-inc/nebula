@@ -20,6 +20,7 @@ namespace nebula {
 namespace kvstore {
 
 auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+auto handlersPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
 template<typename T>
 void dump(const std::vector<T>& v) {
@@ -58,7 +59,8 @@ TEST(NebulaStoreTest, SimpleTest) {
     HostAddr local = {0, 0};
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
-                                               local);
+                                               local,
+                                               handlersPool);
     store->init();
     sleep(1);
     EXPECT_EQ(2, store->spaces_.size());
@@ -157,7 +159,8 @@ TEST(NebulaStoreTest, PartsTest) {
     HostAddr local = {0, 0};
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
-                                               local);
+                                               local,
+                                               handlersPool);
     store->init();
     auto check = [&](GraphSpaceID spaceId) {
         for (auto i = 0; i < 2; i++) {
@@ -260,7 +263,8 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         HostAddr local = peers[index];
         return std::make_unique<NebulaStore>(std::move(options),
                                              sIoThreadPool,
-                                             local);
+                                             local,
+                                             handlersPool);
     };
     int32_t replicas = 3;
     IPv4 ip;

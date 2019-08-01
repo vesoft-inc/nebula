@@ -33,6 +33,8 @@ public:
 
     std::shared_ptr<folly::IOThreadPoolExecutor> getIOThreadPool() const;
 
+    std::shared_ptr<folly::Executor> getThreadManager();
+
     bool start();
     void stop();
     void waitUntilStop();

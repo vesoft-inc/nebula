@@ -62,6 +62,7 @@ std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
         HostAddr localhost,
         std::vector<std::string> paths,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
+        std::shared_ptr<folly::Executor> workers,
         nebula::meta::MetaClient* metaClient,
         nebula::meta::SchemaManager* schemaMan) {
     nebula::kvstore::KVOptions options;
@@ -74,7 +75,8 @@ std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
     if (FLAGS_store_type == "nebula") {
         auto nbStore = std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
                                                                       ioPool,
-                                                                      localhost);
+                                                                      localhost,
+                                                                      workers);
         if (!(nbStore->init())) {
             LOG(ERROR) << "nebula store init failed";
             return nullptr;
@@ -158,6 +160,13 @@ int main(int argc, char *argv[]) {
     }
 
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
+    gServer = std::make_unique<apache::thrift::ThriftServer>();
+    gServer->setPort(FLAGS_port);
+    gServer->setReusePort(FLAGS_reuse_port);
+    gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
+    gServer->setIOThreadPool(ioThreadPool);
+    gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
+    gServer->setCPUWorkerThreadName("executor");
 
     // Meta client
     auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
@@ -179,6 +188,7 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
                                                         std::move(paths),
                                                         ioThreadPool,
+                                                        gServer->getThreadManager(),
                                                         metaClient.get(),
                                                         schemaMan.get());
 
@@ -218,14 +228,7 @@ int main(int argc, char *argv[]) {
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());
     try {
         LOG(INFO) << "The storage deamon start on " << localhost;
-        gServer = std::make_unique<apache::thrift::ThriftServer>();
         gServer->setInterface(std::move(handler));
-        gServer->setPort(FLAGS_port);
-        gServer->setReusePort(FLAGS_reuse_port);
-        gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
-        gServer->setIOThreadPool(ioThreadPool);
-        gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
-        gServer->setCPUWorkerThreadName("executor");
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception& e) {
         nebula::WebService::stop();

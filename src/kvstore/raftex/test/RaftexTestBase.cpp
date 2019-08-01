@@ -194,6 +194,7 @@ void setupRaft(
             flusher.get(),
             services[i]->getIOThreadPool(),
             workers,
+            services[i]->getThreadManager(),
             std::bind(&onLeadershipLost,
                       std::ref(copies),
                       std::ref(leader),
