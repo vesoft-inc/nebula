@@ -152,7 +152,8 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore_, clusterMan.get());
+    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore_,
+                                                                      clusterMan->getClusterId());
     nebula::meta::ActiveHostsMan::instance(kvstore_);
     auto gflagsManager = std::make_unique<nebula::meta::KVBasedGflagsManager>(kvstore.get());
     gflagsManager->init();

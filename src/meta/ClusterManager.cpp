@@ -26,7 +26,7 @@ bool ClusterManager::loadOrCreateCluId(KVStore* kvstore) {
     bool ret = false;
     if (!strClusterId.empty()) {
         clusterId_ = folly::to<ClusterID>(strClusterId);
-        clusterIsSet_ = true;
+        clusterIdIsSet_ = true;
         return true;
     } else {
         createClusterId();
@@ -66,7 +66,8 @@ bool ClusterManager::loadClusterId() {
         return false;
     } else {
         clusterId_ = clusterId;
-        clusterIsSet_ = true;
+        clusterIdIsSet_ = true;
+        clusterIdDumped_ = true;
         LOG(INFO) << "loadClusterId succeed! clusterId_: " << clusterId_;
         ::close(fd);
         return true;
@@ -80,7 +81,7 @@ void ClusterManager::createClusterId() {
     uint64_t mask = 0x7FFFFFFFFFFFFFFF;
     clusterId_ &= mask;
     LOG(INFO) << "ClusterManager::createClusterId clusterId_: " << clusterId_;
-    clusterIsSet_ = true;
+    clusterIdIsSet_ = true;
 }
 
 
@@ -108,6 +109,7 @@ bool ClusterManager::dumpClusterId() {
     if (bytes < static_cast<int>(strClusterId.size())) {
         return false;
     } else {
+        clusterIdDumped_ = true;
         return true;
     }
 }

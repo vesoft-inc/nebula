@@ -26,13 +26,6 @@ TEST(HBProcessorTest, HBTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     FLAGS_expired_hosts_check_interval_sec = 1;
     FLAGS_expired_threshold_sec = 1;
-
-    std::string clusterHosts = "127.0.0.1:45500";
-    auto clusterMan
-        = std::make_unique<nebula::meta::ClusterManager>(clusterHosts, "");
-    bool ret = clusterMan->loadOrCreateCluId(kv.get());
-    ASSERT_TRUE(ret);
-
     {
         std::vector<nebula::cpp2::HostAddr> thriftHosts;
         for (auto i = 0; i < 10; i++) {
@@ -63,7 +56,7 @@ TEST(HBProcessorTest, HBTest) {
             cpp2::HBReq req;
             nebula::cpp2::HostAddr thriftHost(FRAGILE, i, i);
             req.set_host(std::move(thriftHost));
-            auto* processor = HBProcessor::instance(kv.get(), clusterMan.get());
+            auto* processor = HBProcessor::instance(kv.get());
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
@@ -78,7 +71,7 @@ TEST(HBProcessorTest, HBTest) {
         cpp2::HBReq req;
         nebula::cpp2::HostAddr thriftHost(FRAGILE, 11, 11);
         req.set_host(std::move(thriftHost));
-        auto* processor = HBProcessor::instance(kv.get(), clusterMan.get());
+        auto* processor = HBProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();

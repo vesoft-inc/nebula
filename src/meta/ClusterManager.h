@@ -45,18 +45,23 @@ public:
 
     void setClusterId(ClusterID clusterId) {
         clusterId_ = clusterId;
-        clusterIsSet_ = true;
+        clusterIdIsSet_ = true;
     }
 
     bool isClusterIdSet() {
-        return clusterIsSet_;
+        return clusterIdIsSet_;
+    }
+
+    bool clusterIdDumped() {
+        return clusterIdDumped_;
     }
 
 private:
     void createClusterId();
 
 private:
-    bool clusterIsSet_{false};
+    bool clusterIdIsSet_{false};
+    bool clusterIdDumped_{false};
     ClusterID clusterId_{0};
     std::string clusterHosts_;
     std::string clusterIdPath_;

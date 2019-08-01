@@ -21,7 +21,6 @@
 #include "interface/gen-cpp2/common_types.h"
 #include "time/WallClock.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/ClusterManager.h"
 
 DECLARE_string(part_man_type);
 
@@ -186,20 +185,15 @@ public:
     }
 
     static std::unique_ptr<test::ServerContext> mockMetaServer(uint16_t port,
-                                                               const char* dataPath) {
+                                                               const char* dataPath,
+                                                               ClusterID clusterId = 0) {
         LOG(INFO) << "Initializing KVStore at \"" << dataPath << "\"";
 
         auto sc = std::make_unique<test::ServerContext>();
         sc->kvStore_ = TestUtils::initKV(dataPath);
 
-        std::string clusterHosts = "127.0.0.1:";
-        clusterHosts += port;
-        sc->clusterMan_
-            = std::make_unique<nebula::meta::ClusterManager>(clusterHosts, "");
-
-
         auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get(),
-                                                                          sc->clusterMan_.get());
+                                                                          clusterId);
         sc->mockCommon("meta", port, handler);
         LOG(INFO) << "The Meta Daemon started on port " << sc->port_
                   << ", data path is at \"" << dataPath << "\"";

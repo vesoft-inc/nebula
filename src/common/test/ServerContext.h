@@ -10,7 +10,6 @@
 #include "thread/NamedThread.h"
 #include "kvstore/KVStore.h"
 #include "meta/client/MetaClient.h"
-#include "meta/ClusterManager.h"
 #include "meta/SchemaManager.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
@@ -56,7 +55,6 @@ struct ServerContext {
     std::unique_ptr<thread::NamedThread>               thread_{nullptr};
     // To keep meta and storage's KVStore
     std::unique_ptr<kvstore::KVStore>                  kvStore_{nullptr};
-    std::unique_ptr<meta::ClusterManager>              clusterMan_{nullptr};
     std::unique_ptr<meta::SchemaManager>               schemaMan_{nullptr};
     uint16_t                                           port_{0};
 };

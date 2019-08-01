@@ -29,18 +29,11 @@ void HBProcessor::process(const cpp2::HBReq& req) {
         return;
     }
 
-    if (!clusterMan_) {
-        LOG(ERROR) << "Meta server init error!";
-        resp_.set_code(cpp2::ErrorCode::E_WRONGCLUSTER);
-        onFinished();
-        return;
-    }
-
     ClusterID peerCluserId = req.get_clusterId();
     if (peerCluserId == 0) {
         LOG(INFO) << "Set clusterId for new host " << host << "!";
-        resp_.set_clusterId(clusterMan_->getClusterId());
-    } else if (peerCluserId != clusterMan_->getClusterId()) {
+        resp_.set_clusterId(clusterId_);
+    } else if (peerCluserId != clusterId_) {
         LOG(ERROR) << "Reject wrong cluster host " << host << "!";
         resp_.set_code(cpp2::ErrorCode::E_WRONGCLUSTER);
         onFinished();

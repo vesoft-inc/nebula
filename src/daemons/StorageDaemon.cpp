@@ -159,7 +159,8 @@ int main(int argc, char *argv[]) {
 
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
 
-    std::string clusteridFile = paths[0] + "/storage.cluster.id";
+    std::string clusteridFile =
+        folly::stringPrintf("%s/%s", paths[0].c_str(), "/storage.cluster.id");
     auto clusterMan
         = std::make_unique<nebula::meta::ClusterManager>("", clusteridFile);
     if (!clusterMan->loadClusterId()) {
@@ -178,7 +179,12 @@ int main(int argc, char *argv[]) {
     }
     auto gflagsManager = std::make_unique<nebula::meta::ClientBasedGflagsManager>(metaClient.get());
     gflagsManager->init();
-
+    if (!clusterMan->clusterIdDumped()) {
+        if (!clusterMan->dumpClusterId()) {
+            LOG(ERROR) << "StorageDaemon clusterId dump failed!";
+            return EXIT_FAILURE;
+        }
+    }
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();
     schemaMan->init(metaClient.get());

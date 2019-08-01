@@ -32,25 +32,16 @@ TEST(ClusterManagerTest, ClusterIdTestIdEQ0) {
     fs::TempDir rootPath("/tmp/ClusterManagerTest.XXXXXX");
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
 
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
-    bool ret = sc->clusterMan_->loadOrCreateCluId(sc->kvStore_.get());
-    ASSERT_TRUE(ret);
-
-    ClusterID clusterId = sc->clusterMan_->getClusterId();
-
+    const ClusterID kClusterId = 1;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path(), kClusterId);
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
 
-    std::string clientClusterIdPath = "/tmp/storage.cluster.id.";
-    clientClusterIdPath += folly::stringPrintf("%ld", ::time(nullptr));
     auto clientClusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", clientClusterIdPath);
-    if (!clientClusterMan->loadClusterId()) {
-        LOG(ERROR) << "storaged clusterId load error!";
-    }
+        = std::make_unique<nebula::meta::ClusterManager>("", "");
     ASSERT_EQ(0, clientClusterMan->getClusterId());
 
     auto hosts = std::vector<HostAddr>{HostAddr(localIp, localMetaPort)};
@@ -61,13 +52,9 @@ TEST(ClusterManagerTest, ClusterIdTestIdEQ0) {
                                                true);  // send heartbeat
     client->addHosts({localHost});
     sleep(FLAGS_heartbeat_interval_secs);
-    ret = client->waitForMetadReady(3);
+    bool ret = client->waitForMetadReady(3);
     ASSERT_TRUE(ret);
-    ASSERT_EQ(clusterId, clientClusterMan->getClusterId());
-
-    ret = clientClusterMan->loadClusterId();
-    ASSERT_TRUE(ret);
-    ASSERT_EQ(clusterId, clientClusterMan->getClusterId());
+    ASSERT_EQ(kClusterId, clientClusterMan->getClusterId());
 }
 
 
@@ -77,11 +64,8 @@ TEST(ClusterManagerTest, ClusterIdTestIdMatch) {
     fs::TempDir rootPath("/tmp/ClusterManagerTest.XXXXXX");
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
 
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
-    bool ret = sc->clusterMan_->loadOrCreateCluId(sc->kvStore_.get());
-    ASSERT_TRUE(ret);
-
-    auto clusterId = sc->clusterMan_->getClusterId();
+    const ClusterID kClusterId = 1;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path(), kClusterId);
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
@@ -89,13 +73,9 @@ TEST(ClusterManagerTest, ClusterIdTestIdMatch) {
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
 
-    std::string clientClusterIdPath = "/tmp/storage.cluster.id.";
-    clientClusterIdPath += folly::stringPrintf("%ld", ::time(nullptr));
     auto clientClusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", clientClusterIdPath);
-    clientClusterMan->setClusterId(clusterId);
-    ret = clientClusterMan->dumpClusterId();
-    ASSERT_TRUE(ret);
+        = std::make_unique<nebula::meta::ClusterManager>("", "");
+    clientClusterMan->setClusterId(kClusterId);
 
     auto hosts = std::vector<HostAddr>{HostAddr(localIp, localMetaPort)};
     auto client = std::make_shared<MetaClient>(threadPool,
@@ -105,7 +85,7 @@ TEST(ClusterManagerTest, ClusterIdTestIdMatch) {
                                                true);  // send heartbeat
     client->addHosts({localHost});
     sleep(FLAGS_heartbeat_interval_secs);
-    ret = client->waitForMetadReady(3);
+    bool ret = client->waitForMetadReady(3);
     ASSERT_TRUE(ret);
 }
 
@@ -116,25 +96,17 @@ TEST(ClusterManagerTest, ClusterIdMismatchTest) {
     fs::TempDir rootPath("/tmp/ClusterManagerTest.XXXXXX");
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
 
-    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
-    bool ret = sc->clusterMan_->loadOrCreateCluId(sc->kvStore_.get());
-    ASSERT_TRUE(ret);
-
-    auto clusterId = sc->clusterMan_->getClusterId();
-
+    const ClusterID kClusterId = 1;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path(), kClusterId);
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
 
-    std::string clientClusterIdPath = "/tmp/storage.cluster.id.";
-    clientClusterIdPath += folly::stringPrintf("%ld", ::time(nullptr));
     auto clientClusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", clientClusterIdPath);
-    clientClusterMan->setClusterId(clusterId + 1);
-    ret = clientClusterMan->dumpClusterId();
-    ASSERT_TRUE(ret);
+        = std::make_unique<nebula::meta::ClusterManager>("", "");
+    clientClusterMan->setClusterId(kClusterId + 1);
 
     auto hosts = std::vector<HostAddr>{HostAddr(localIp, localMetaPort)};
     auto client = std::make_shared<MetaClient>(threadPool,
@@ -144,7 +116,7 @@ TEST(ClusterManagerTest, ClusterIdMismatchTest) {
                                                true);  // send heartbeat
     client->addHosts({localHost});
     sleep(FLAGS_heartbeat_interval_secs);
-    ret = client->waitForMetadReady(3);
+    bool ret = client->waitForMetadReady(3);
     ASSERT_TRUE(!ret);
 }
 
