@@ -50,6 +50,29 @@ using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, 
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 
+struct ConfigItem {
+    ConfigItem() {}
+
+    ConfigItem(const cpp2::ConfigModule& module, const std::string& name,
+               const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
+               const VariantType& value)
+        : module_(module)
+        , name_(name)
+        , type_(type)
+        , mode_(mode)
+        , value_(value) {
+    }
+
+    cpp2::ConfigModule  module_;
+    std::string         name_;
+    cpp2::ConfigType    type_;
+    cpp2::ConfigMode    mode_;
+    VariantType         value_;
+};
+
+// config cahce, get config via module and name
+using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>;
+
 class MetaChangedListener {
 public:
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
@@ -174,6 +197,24 @@ public:
     folly::Future<StatusOr<int64_t>>
     balance();
 
+    // Operations for config
+    folly::Future<StatusOr<bool>>
+    regConfig(const std::vector<cpp2::ConfigItem>& items);
+
+    folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
+    getConfig(const cpp2::ConfigModule& module, const std::string& name);
+
+    folly::Future<StatusOr<bool>>
+    setConfig(const cpp2::ConfigModule& module, const std::string& name,
+              const cpp2::ConfigType& type, const std::string& value);
+
+    folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
+    listConfigs(const cpp2::ConfigModule& module);
+
+    cpp2::ConfigModule& getGflagsModule() {return gflagsModule_;}
+
+    void setGflagsModule(const cpp2::ConfigModule& module = cpp2::ConfigModule::UNKNOWN);
+
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
@@ -210,8 +251,15 @@ public:
 
 protected:
     void loadDataThreadFunc();
+    void loadData();
+    void addLoadDataTask();
 
     void heartBeatThreadFunc();
+
+    void loadCfgThreadFunc();
+    void loadCfg();
+    void addLoadCfgTask();
+    void updateGflagsValue(const ConfigItem& item);
 
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
@@ -255,6 +303,8 @@ protected:
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 
+    ConfigItem toConfigItem(const cpp2::ConfigItem& item);
+
     PartsMap doGetPartsMap(const HostAddr& host,
                            const LocalCache& localCache);
 
@@ -280,6 +330,9 @@ private:
     folly::RWSpinLock     listenerLock_;
     bool                  sendHeartBeat_ = false;
     std::atomic_bool      ready_{false};
+    MetaConfigMap         metaConfigMap_;
+    folly::RWSpinLock     configCacheLock_;
+    cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
 };
 
 }  // namespace meta

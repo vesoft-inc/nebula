@@ -28,6 +28,7 @@ enum ErrorCode {
     E_UNSUPPORTED    = -25,
     E_NOT_DROP       = -26,
     E_BALANCER_RUNNING = -27,
+    E_CONFIG_IMMUTABLE = -28,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -303,7 +304,7 @@ struct GetReq {
     2: string key,
 }
 
- struct GetResp {
+struct GetResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
     3: string    value,
@@ -431,6 +432,64 @@ struct BalanceResp {
     3: common.HostAddr  leader,
 }
 
+enum ConfigModule {
+    UNKNOWN = 0x00,
+    ALL     = 0x01,
+    GRAPH   = 0x02,
+    META    = 0x03,
+    STORAGE = 0x04,
+} (cpp.enum_strict)
+
+enum ConfigType {
+    INT64   = 0x00,
+    DOUBLE  = 0x01,
+    BOOL    = 0x02,
+    STRING  = 0x03,
+} (cpp.enum_strict)
+
+enum ConfigMode {
+    IMMUTABLE   = 0x00,
+    REBOOT      = 0x01,
+    MUTABLE     = 0x02,
+} (cpp.enum_strict)
+
+struct ConfigItem {
+    1: ConfigModule         module,
+    2: string               name,
+    3: ConfigType           type,
+    4: ConfigMode           mode,
+    5: binary               value,
+}
+
+struct RegConfigReq {
+    1: list<ConfigItem>     items,
+}
+
+struct GetConfigReq {
+    1: ConfigItem item,
+}
+
+struct GetConfigResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: list<ConfigItem>     items,
+}
+
+struct SetConfigReq {
+    1: ConfigItem           item,
+}
+
+struct ListConfigsReq {
+    1: string               space,
+    2: ConfigModule         module,
+}
+
+struct ListConfigsResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: list<ConfigItem>     items,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -475,5 +534,10 @@ service MetaService {
 
     HBResp           heartBeat(1: HBReq req);
     BalanceResp      balance(1: BalanceReq req);
+
+    ExecResp regConfig(1: RegConfigReq req);
+    GetConfigResp getConfig(1: GetConfigReq req);
+    ExecResp setConfig(1: SetConfigReq req);
+    ListConfigsResp listConfigs(1: ListConfigsReq req);
 }
 
