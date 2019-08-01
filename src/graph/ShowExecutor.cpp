@@ -49,6 +49,9 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowEdges:
             showEdges();
             break;
+        case ShowSentence::ShowType::kShowLeader:
+            showLeader();
+            break;
         case ShowSentence::ShowType::kShowUsers:
         case ShowSentence::ShowType::kShowUser:
         case ShowSentence::ShowType::kShowRoles:

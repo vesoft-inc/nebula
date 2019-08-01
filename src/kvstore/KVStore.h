@@ -146,6 +146,9 @@ public:
 
     virtual ResultCode ingest(GraphSpaceID spaceId) = 0;
 
+    virtual int32_t allLeader(std::unordered_map<GraphSpaceID,
+                              std::vector<PartitionID>>& leaderIds) = 0;
+
     virtual ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
                                                             PartitionID partId) = 0;
 

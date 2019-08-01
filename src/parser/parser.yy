@@ -104,6 +104,7 @@ class GraphScanner;
 %token KW_ORDER KW_ASC
 %token KW_FETCH KW_PROP
 %token KW_DISTINCT KW_ALL
+%token KW_BALANCE KW_LEADER
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -195,7 +196,7 @@ class GraphScanner;
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
 %type <sentence> grant_sentence revoke_sentence
 %type <sentence> download_sentence
-%type <sentence> set_config_sentence get_config_sentence
+%type <sentence> set_config_sentence get_config_sentence balance_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -1216,6 +1217,9 @@ show_sentence
     | KW_SHOW KW_ROLES KW_IN name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowRoles, $4);
     }
+    | KW_SHOW KW_LEADER {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowLeader);
+    }
     | KW_SHOW KW_VARIABLES show_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kShow, $3);
     }
@@ -1483,6 +1487,12 @@ set_config_sentence
     }
     ;
 
+balance_sentence
+    : KW_BALANCE KW_LEADER {
+        $$ = new BalanceSentence(BalanceSentence::SubType::kLeader);
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -1523,6 +1533,7 @@ maintain_sentence
     | revoke_sentence { $$ = $1; }
     | get_config_sentence { $$ = $1; }
     | set_config_sentence { $$ = $1; }
+    | balance_sentence { $$ = $1; }
     ;
 
 sentence

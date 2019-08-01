@@ -30,11 +30,11 @@ struct SpacePartInfo {
     std::vector<std::unique_ptr<KVEngine>> engines_;
 };
 
-
 class NebulaStore : public KVStore, public Handler {
     FRIEND_TEST(NebulaStoreTest, SimpleTest);
     FRIEND_TEST(NebulaStoreTest, PartsTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
+    FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
 
 public:
     NebulaStore(KVOptions options,
@@ -159,6 +159,9 @@ public:
     ResultCode compact(GraphSpaceID spaceId) override;
 
     ResultCode flush(GraphSpaceID spaceId) override;
+
+    int32_t allLeader(std::unordered_map<GraphSpaceID,
+                                         std::vector<PartitionID>>& leaderIds) override;
 
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 

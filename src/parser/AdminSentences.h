@@ -354,6 +354,28 @@ private:
     std::unique_ptr<ConfigRowItem>  configItem_;
 };
 
+class BalanceSentence final : public Sentence {
+public:
+    enum class SubType : uint32_t {
+        kUnknown,
+        kLeader,
+    };
+
+    explicit BalanceSentence(SubType subType) {
+        kind_ = Kind::kBalance;
+        subType_ = std::move(subType);
+    }
+
+    std::string toString() const override;
+
+    SubType subType() const {
+        return subType_;
+    }
+
+private:
+    SubType                         subType_{SubType::kUnknown};
+};
+
 }   // namespace nebula
 
 #endif  // PARSER_ADMINSENTENCES_H_

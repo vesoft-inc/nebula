@@ -10,6 +10,7 @@
 #include "meta/processors/Common.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/MetaServiceUtils.h"
+#include "network/NetworkUtils.h"
 
 namespace nebula {
 namespace meta {
@@ -76,24 +77,31 @@ bool Balancer::recovery() {
     return true;
 }
 
+bool Balancer::getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode) {
+    // Get all spaces
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+    auto prefix = MetaServiceUtils::spacePrefix();
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        running_ = false;
+        retCode = ret;
+        return false;
+    }
+    while (iter->valid()) {
+        auto spaceId = MetaServiceUtils::spaceId(iter->key());
+        spaces.push_back(spaceId);
+        iter->next();
+    }
+    return true;
+}
+
 Status Balancer::buildBalancePlan() {
     CHECK(!plan_) << "plan should be nullptr now";
     std::vector<GraphSpaceID> spaces;
-    {
-        // Get all spaces
-        folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-        auto prefix = MetaServiceUtils::spacePrefix();
-        std::unique_ptr<kvstore::KVIterator> iter;
-        auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-        if (ret != kvstore::ResultCode::SUCCEEDED) {
-            running_ = false;
-            return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(ret));
-        }
-        while (iter->valid()) {
-            auto spaceId = MetaServiceUtils::spaceId(iter->key());
-            spaces.push_back(spaceId);
-            iter->next();
-        }
+    kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
+    if (!getAllSpaces(spaces, ret)) {
+        return Status::Error("Can't access kvstore, ret = %d", static_cast<int32_t>(ret));
     }
     plan_ = std::make_unique<BalancePlan>(time::WallClock::fastNowInSec(), kv_, client_.get());
     for (auto spaceId : spaces) {
@@ -311,6 +319,102 @@ StatusOr<HostAddr> Balancer::hostWithMinimalParts(
         }
     }
     return Status::Error("No host is suitable for %d", partId);
+}
+
+cpp2::ErrorCode Balancer::leaderBalance() {
+    folly::Promise<Status> promise;
+    auto future = promise.getFuture();
+
+    std::vector<GraphSpaceID> spaces;
+    kvstore::ResultCode ret = kvstore::ResultCode::SUCCEEDED;
+    if (!getAllSpaces(spaces, ret)) {
+        LOG(ERROR) << "Can't access kvstore, ret = d"
+                   << static_cast<int32_t>(ret);
+        return cpp2::ErrorCode::E_STORE_FAILURE;
+    }
+
+    bool expected = false;
+    if (inLeaderBalance_.compare_exchange_strong(expected, true)) {
+        hostLeaderMap_.reset(new HostLeaderMap);
+        auto status = client_->getLeaderDist(hostLeaderMap_.get()).get();
+
+        if (!status.ok()) {
+            inLeaderBalance_ = false;
+            return cpp2::ErrorCode::E_RPC_FAILURE;
+        }
+
+        LeaderBalancePlan plan;
+        for (const auto& space : spaces) {
+            buildLeaderBalancePlan(hostLeaderMap_.get(), space, plan);
+        }
+        std::vector<folly::SemiFuture<Status>> futures;
+        for (const auto& task : plan) {
+            futures.emplace_back(client_->transLeader(std::get<0>(task), std::get<1>(task),
+                                                      std::get<2>(task), std::get<3>(task)));
+        }
+
+        int32_t failed = 0;
+        folly::collectAll(futures).then([&](const std::vector<folly::Try<Status>>& tries) {
+            for (const auto& t : tries) {
+                if (!t.value().ok()) {
+                    ++failed;
+                }
+            }
+        }).wait();
+        LOG(INFO) << failed << " partiton failed to transfer leader";
+        inLeaderBalance_ = false;
+        return cpp2::ErrorCode::SUCCEEDED;
+    }
+    return cpp2::ErrorCode::E_BALANCER_RUNNING;
+}
+
+StatusOr<HostLeaderMap> Balancer::leaderDist() {
+    folly::Promise<StatusOr<HostLeaderMap>> promise;
+    auto future = promise.getFuture();
+
+    hostLeaderMap_.reset(new HostLeaderMap);
+    client_->getLeaderDist(hostLeaderMap_.get())
+        .then([p = std::move(promise), this]
+              (folly::Try<Status>&& t) mutable {
+        if (!t.value().ok()) {
+            p.setValue(t.value());
+            return;
+        }
+
+        p.setValue(Status::OK());
+    }).get();
+
+    return *hostLeaderMap_;
+}
+
+void Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
+                                      LeaderBalancePlan& plan) {
+    std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
+    for (const auto& host : *hostLeaderMap) {
+        hostParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
+    }
+
+    auto hosts = sortedHostsByParts(hostParts);
+    auto minLeaderHost = hosts.front();
+    auto maxLeaderHost = hosts.back();
+
+    while (minLeaderHost.second + 1 < maxLeaderHost.second) {
+        auto partId = hostParts[maxLeaderHost.first].back();
+        hostParts[maxLeaderHost.first].pop_back();
+        hostParts[minLeaderHost.first].emplace_back(partId);
+
+        LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " from "
+                  << network::NetworkUtils::intToIPv4(maxLeaderHost.first.first) << ":"
+                  << maxLeaderHost.first.second << " to "
+                  << network::NetworkUtils::intToIPv4(minLeaderHost.first.first)
+                  << ":" << minLeaderHost.first.second;
+        plan.emplace_back(spaceId, partId, maxLeaderHost.first, minLeaderHost.first);
+
+        hosts = sortedHostsByParts(hostParts);
+        minLeaderHost = hosts.front();
+        maxLeaderHost = hosts.back();
+    }
+    LOG(INFO) << "create trans leader plan completed, task size: " << plan.size();
 }
 
 }  // namespace meta

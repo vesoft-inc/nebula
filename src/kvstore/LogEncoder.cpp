@@ -153,6 +153,10 @@ std::string encodeLearner(const HostAddr& learner) {
     // Log type
     auto type = LogType::OP_ADD_LEARNER;
     encoded.append(reinterpret_cast<char*>(&type), 1);
+    // Value length
+    uint32_t len = static_cast<uint32_t>(sizeof(HostAddr));
+    encoded.append(reinterpret_cast<char*>(&len), sizeof(len));
+    // Learner addr
     encoded.append(reinterpret_cast<const char*>(&learner), sizeof(HostAddr));
     return encoded;
 }
@@ -176,6 +180,10 @@ std::string encodeTransLeader(const HostAddr& learner) {
     // Log type
     auto type = LogType::OP_TRANS_LEADER;
     encoded.append(reinterpret_cast<char*>(&type), 1);
+    // Value length
+    uint32_t len = static_cast<uint32_t>(sizeof(HostAddr));
+    encoded.append(reinterpret_cast<char*>(&len), sizeof(len));
+    // Target addr
     encoded.append(reinterpret_cast<const char*>(&learner), sizeof(HostAddr));
     return encoded;
 }

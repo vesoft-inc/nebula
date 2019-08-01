@@ -54,6 +54,10 @@ using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, 
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 
+// leader distribution map
+using LeaderDistMap = std::unordered_map<std::string,
+      std::unordered_map<GraphSpaceID, std::vector<PartitionID>>>;
+
 struct ConfigItem {
     ConfigItem() {}
 
@@ -206,6 +210,10 @@ public:
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
     balance();
+
+    folly::Future<StatusOr<bool>> balanceLeader();
+
+    folly::Future<StatusOr<LeaderDistMap>> getLeaderDist();
 
     // Operations for config
     folly::Future<StatusOr<bool>>

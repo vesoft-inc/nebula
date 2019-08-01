@@ -254,7 +254,7 @@ TEST_F(SchemaTest, metaCommunication) {
     // Test existent tag
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG person(id int, balance double)";
+        std::string query = "CREATE TAG person(id int)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }

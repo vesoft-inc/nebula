@@ -144,6 +144,12 @@ public:
     future_balance(const cpp2::BalanceReq& req) override;
 
     folly::Future<cpp2::ExecResp>
+    future_leaderBalance(const cpp2::LeaderBalanceReq& req) override;
+
+    folly::Future<cpp2::LeaderDistResp>
+    future_leaderDist(const cpp2::LeaderDistReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
     future_regConfig(const cpp2::RegConfigReq &req) override;
 
     folly::Future<cpp2::GetConfigResp>

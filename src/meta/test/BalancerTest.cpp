@@ -65,6 +65,13 @@ public:
         return response(6);
     }
 
+    folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
+        (*hostLeaderMap)[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
+        (*hostLeaderMap)[HostAddr(1, 0)][1] = {6, 7, 8};
+        (*hostLeaderMap)[HostAddr(2, 0)][1] = {9};
+        return response(7);
+    }
+
     void reset(std::vector<Status> sts) {
         statusArray_ = std::move(sts);
     }
@@ -613,6 +620,91 @@ TEST(BalanceTest, RecoveryTest) {
         }
         ASSERT_EQ(6, num);
     }
+}
+
+TEST(BalanceTest, LeaderBalancePlanTest) {
+    using LeaderBalanceTask = std::tuple<GraphSpaceID, PartitionID, HostAddr, HostAddr>;
+    auto* balancer = Balancer::instance(nullptr);
+    {
+        HostLeaderMap hostLeaderMap;
+        // 9 partition in space 1
+        hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
+        hostLeaderMap[HostAddr(1, 0)][1] = {6, 7, 8};
+        hostLeaderMap[HostAddr(2, 0)][1] = {9};
+
+        LeaderBalancePlan plan;
+        balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+
+        EXPECT_EQ(plan.size(), 2);
+        EXPECT_EQ(plan.front(), LeaderBalanceTask(1, 5, HostAddr(0, 0), HostAddr(2, 0)));
+        EXPECT_EQ(plan.back(), LeaderBalanceTask(1, 4, HostAddr(0, 0), HostAddr(2, 0)));
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        // 9 partition in space 1
+        hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3, 4};
+        hostLeaderMap[HostAddr(1, 0)][1] = {5, 6, 7, 8};
+        hostLeaderMap[HostAddr(2, 0)][1] = {9};
+
+        LeaderBalancePlan plan;
+        balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+
+        EXPECT_EQ(plan.size(), 2);
+        EXPECT_EQ(plan.front(), LeaderBalanceTask(1, 8, HostAddr(1, 0), HostAddr(2, 0)));
+        EXPECT_EQ(plan.back(), LeaderBalanceTask(1, 4, HostAddr(0, 0), HostAddr(2, 0)));
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        // 9 partition in space 1
+        hostLeaderMap[HostAddr(0, 0)][1] = {};
+        hostLeaderMap[HostAddr(1, 0)][1] = {};
+        hostLeaderMap[HostAddr(2, 0)][1] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+        LeaderBalancePlan plan;
+        balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+
+        EXPECT_EQ(plan.size(), 6);
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        // 10 partition in space 1 which is already base
+        hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3};
+        hostLeaderMap[HostAddr(1, 0)][1] = {4, 5, 6, 7};
+        hostLeaderMap[HostAddr(2, 0)][1] = {8, 9, 10};
+
+        LeaderBalancePlan plan;
+        balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+
+        EXPECT_EQ(plan.size(), 0);
+    }
+}
+
+TEST(BalanceTest, LeaderBalanceTest) {
+    fs::TempDir rootPath("/tmp/LeaderBalanceTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    TestUtils::createSomeHosts(kv.get());
+    {
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("default_space");
+        properties.set_partition_num(9);
+        properties.set_replica_factor(3);
+        cpp2::CreateSpaceReq req;
+        req.set_properties(std::move(properties));
+        auto* processor = CreateSpaceProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
+        ASSERT_EQ(1, resp.get_id().get_space_id());
+    }
+
+    std::vector<Status> sts(8, Status::OK());
+    std::unique_ptr<FaultInjector> injector(new TestFaultInjector(std::move(sts)));
+    auto client = std::make_unique<AdminClient>(std::move(injector));
+
+    Balancer balancer(kv.get(), std::move(client));
+    auto ret = balancer.leaderBalance();
+    ASSERT_EQ(ret, cpp2::ErrorCode::SUCCEEDED);
 }
 
 }  // namespace meta

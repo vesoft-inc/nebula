@@ -7,6 +7,7 @@
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/processors/Common.h"
+#include "meta/ActiveHostsMan.h"
 
 DEFINE_int32(max_retry_times_admin_op, 3, "max retry times for admin request!");
 
@@ -198,7 +199,7 @@ folly::Future<Status> AdminClient::getResponse(
                     respGen] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
         // exception occurred during RPC
         if (t.hasException()) {
-            p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
+            p.setValue(Status::Error(folly::stringPrintf("RPC failure in AdminClient: %s",
                                                          t.exception().what().c_str())));
             return;
         }
@@ -245,7 +246,7 @@ void AdminClient::getResponse(
                             retryLimit);
                 return;
             }
-            p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
+            p.setValue(Status::Error(folly::stringPrintf("RPC failure in AdminClient: %s",
                                                          t.exception().what().c_str())));
             return;
         }
@@ -332,6 +333,60 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
             break;
     }
     return Status::Error("Get Failed");
+}
+
+folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
+    if (injector_) {
+        return injector_->getLeaderDist(result);
+    }
+    folly::Promise<Status> promise;
+    auto future = promise.getFuture();
+    auto allHosts = ActiveHostsMan::instance()->getActiveHosts();
+    for (const auto& host : allHosts) {
+        (*result)[host] = {};
+    }
+
+    auto getLeader = [result, this] (const HostAddr& host) {
+        storage::cpp2::GetLeaderReq req;
+        folly::Promise<Status> pro;
+        auto f = pro.getFuture();
+        auto* evb = ioThreadPool_->getEventBase();
+        auto client = clientsMan_->client(host, evb);
+        client->future_getLeaderPart(std::move(req))
+            .then(evb, [p = std::move(pro), host, result]
+                    (folly::Try<storage::cpp2::GetLeaderResp>&& t) mutable {
+            if (t.hasException()) {
+                LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
+                                                  t.exception().what().c_str());
+                p.setValue(Status::Error("RPC failure in AdminClient"));
+                return;
+            }
+            auto&& resp = std::move(t).value();
+            (*result)[host] = std::move(resp.get_leader_parts());
+            p.setValue(Status::OK());
+        });
+        return f;
+    };
+
+    std::vector<folly::SemiFuture<Status>> hostFutures;
+    for (const auto& h : allHosts) {
+        auto fut = getLeader(h);
+        hostFutures.emplace_back(std::move(fut));
+    }
+
+    folly::collectAll(hostFutures)
+        .then([p = std::move(promise)] (std::vector<folly::Try<Status>>&& tries) mutable {
+        for (const auto& t : tries) {
+            auto status = t.value();
+            if (!status.ok()) {
+                p.setValue(status);
+                return;
+            }
+        }
+        p.setValue(Status::OK());
+    });
+
+    return future;
 }
 
 }  // namespace meta

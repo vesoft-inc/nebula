@@ -1144,6 +1144,24 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance() {
     return future;
 }
 
+folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
+    cpp2::LeaderBalanceReq req;
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_leaderBalance(request);
+    }, [] (cpp2::ExecResp&& resp) -> bool {
+        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+    }, true);
+}
+
+folly::Future<StatusOr<LeaderDistMap>> MetaClient::getLeaderDist() {
+    cpp2::LeaderDistReq req;
+    return getResponse(std::move(req), [] (auto client, auto request) {
+        return client->future_leaderDist(request);
+    }, [] (cpp2::LeaderDistResp&& resp) -> decltype(auto) {
+        return resp.leader_dist;
+    }, true);
+}
+
 folly::Future<StatusOr<bool>>
 MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
     cpp2::RegConfigReq req;
