@@ -355,6 +355,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("INGEST", TokenType::KW_INGEST),
         CHECK_SEMANTIC_TYPE("Ingest", TokenType::KW_INGEST),
         CHECK_SEMANTIC_TYPE("ingest", TokenType::KW_INGEST),
+        CHECK_SEMANTIC_TYPE("VARIABLES", TokenType::KW_VARIABLES),
+        CHECK_SEMANTIC_TYPE("variables", TokenType::KW_VARIABLES),
+        CHECK_SEMANTIC_TYPE("Variables", TokenType::KW_VARIABLES),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

@@ -45,7 +45,6 @@ public:
             , storeSvcAddr_(serviceAddr)
             , raftAddr_(getRaftAddr(serviceAddr))
             , options_(std::move(options)) {
-        partMan_ = std::move(options_.partMan_);
     }
 
     ~NebulaStore();
@@ -85,7 +84,7 @@ public:
     ErrorOr<ResultCode, HostAddr> partLeader(GraphSpaceID spaceId, PartitionID partId) override;
 
     PartManager* partManager() const override {
-        return partMan_.get();
+        return options_.partMan_.get();
     }
 
     ResultCode get(GraphSpaceID spaceId,
@@ -192,8 +191,6 @@ private:
     HostAddr storeSvcAddr_;
     HostAddr raftAddr_;
     KVOptions options_;
-
-    std::unique_ptr<PartManager> partMan_{nullptr};
 
     std::shared_ptr<raftex::RaftexService> raftService_;
     std::unique_ptr<wal::BufferFlusher> flusher_;

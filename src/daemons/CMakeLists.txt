@@ -30,6 +30,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:dataman_obj>
+        $<TARGET_OBJECTS:meta_gflags_man_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
@@ -69,6 +71,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:meta_gflags_man_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
@@ -107,6 +111,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:kv_gflags_man_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
