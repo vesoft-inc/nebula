@@ -3,7 +3,6 @@ package com.vesoft.tools
 import java.nio.charset.{Charset, UnsupportedCharsetException}
 
 import com.vesoft.client.NativeClient
-import javax.xml.bind.DatatypeConverter
 import org.apache.commons.cli.{
   CommandLine,
   DefaultParser,
@@ -14,7 +13,6 @@ import org.apache.commons.cli.{
 }
 import org.apache.hadoop.io.BytesWritable
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.storage.StorageLevel
@@ -311,7 +309,9 @@ object SparkSstFileGenerator {
       }
     }
 
-    // handle vertex, encode all columns except PK column as a single Tag's properties
+    val partitionNumber = repartitionNumber.getOrElse(mappingConfiguration.partitions)
+
+    //1) handle vertex, encode all column except PK column as a single Tag's properties
     mappingConfiguration.tags.zipWithIndex.foreach {
       //tag index used as tagType
       case (tag: Tag, tagType: Int) => {
@@ -339,7 +339,6 @@ object SparkSstFileGenerator {
         //TODO:to handle multiple partition columns' Cartesian product
         val sql =
           s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${tag.tableName} WHERE ${whereClause} ${limit}"
-        log.debug(s"sql=s${sql}")
         val tagDF = sqlContext.sql(sql)
         //RDD[(businessKey->values)]
         val tagKeyAndValues = tagDF
@@ -350,7 +349,6 @@ object SparkSstFileGenerator {
                .map(valueExtractor(row, _, charset)))
           })
           .repartition(repartitionNumber.getOrElse(tagDF.rdd.partitions.length))
-          .persist(StorageLevel.DISK_ONLY)
 
         val tagKeyAndValuesPersisted = tagKeyAndValues
           .map {
@@ -358,25 +356,21 @@ object SparkSstFileGenerator {
               val vertexId: BigInt = idGeneratorFunction.apply(key)
               assert(vertexId > 0)
               // hash function generated sign long, but partition id should be unsigned
-              val graphPartitionId: Int = (vertexId % mappingConfiguration.partitions).toInt
+              val graphPartitionId: Int = (vertexId % partitionNumber).toInt
 
               // use NativeClient to generate key and encode values
               //log.debug(s"vertexId=${vertexId}, Tag(partition=${graphPartitionId}): " + DatatypeConverter.printHexBinary(keyEncoded) + " = " + DatatypeConverter.printHexBinary(valuesEncoded))
-              (GraphPartitionIdAndKeyValueEncoded(graphPartitionId,
-                                                  tagType,
-                                                  new BytesWritable(
-                                                    NativeClient.createVertexKey(graphPartitionId,
-                                                                                 vertexId.toLong,
-                                                                                 tagType,
-                                                                                 DefaultVersion))),
+              (GraphPartitionIdAndKeyValueEncoded(
+                 graphPartitionId,
+                 tagType,
+                 new BytesWritable(NativeClient
+                   .createVertexKey(graphPartitionId, vertexId.toLong, tagType, DefaultVersion))),
                new PropertyValueAndTypeWritable(
                  new BytesWritable(NativeClient.encode(values.toArray))))
             }
 
           }
-          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(
-            repartitionNumber.getOrElse(tagKeyAndValues.partitions.length)))
-          .persist(StorageLevel.DISK_ONLY)
+          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
 
         tagKeyAndValuesPersisted.saveAsNewAPIHadoopFile(localSstFileOutput,
                                                         classOf[GraphPartitionIdAndKeyValueEncoded],
@@ -422,7 +416,7 @@ object SparkSstFileGenerator {
           s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${edge.tableName} WHERE ${whereClause} ${limit}")
         assert(edgeDf.count() > 0)
         //RDD[Tuple3(from_vertex_businessKey,end_vertex_businessKey,values)]
-        val edgeKeyAndValues: RDD[(String, String, Seq[AnyRef])] = edgeDf
+        val edgeKeyAndValues = edgeDf
           .map(row => {
             (row.getAs[String](edge.fromForeignKeyColumn) + "_" + edge.fromReferenceTag, // consistent with vertexId generation logic, to make sure that vertex and its' outbound edges are in the same partition
              row.getAs[String](edge.toForeignKeyColumn),
@@ -440,7 +434,7 @@ object SparkSstFileGenerator {
             case (srcIDString, dstIdString, values) => {
               val id = idGeneratorFunction.apply(srcIDString)
               assert(id > 0)
-              val graphPartitionId: Int = (id % mappingConfiguration.partitions).toInt
+              val graphPartitionId: Int = (id % partitionNumber).toInt
 
               val srcId = idGeneratorFunction.apply(srcIDString)
               val dstId = idGeneratorFunction.apply(dstIdString)
@@ -466,9 +460,7 @@ object SparkSstFileGenerator {
                  VertexOrEdgeEnum.Edge))
             }
           }
-          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(
-            repartitionNumber.getOrElse(edgeKeyAndValues.partitions.length)))
-          .persist(StorageLevel.DISK_ONLY)
+          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
 
         edgeKeyAndValuesPersisted.saveAsNewAPIHadoopFile(
           localSstFileOutput,
