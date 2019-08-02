@@ -47,14 +47,8 @@ void TestEnv::SetUp() {
     }
     auto& localhost = hostRet.value();
 
-    std::string clusterIdPath = "/tmp/storage.cluster.id.";
-    time_t curTime = ::time(nullptr);
-    clusterIdPath += folly::stringPrintf("%ld", curTime);
     auto clusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", clusterIdPath);
-    if (!clusterMan->loadClusterId()) {
-        LOG(ERROR) << "storaged clusterId load error!";
-    }
+        = std::make_unique<nebula::meta::ClusterManager>("", "");
     mClient_ = std::make_unique<meta::MetaClient>(threadPool,
                                                   std::move(addrsRet.value()),
                                                   localhost,

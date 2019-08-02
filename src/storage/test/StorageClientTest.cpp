@@ -47,14 +47,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
     auto& localHost = hostRet.value();
-    std::string clusterIdPath = "/tmp/storage.cluster.id.";
-    time_t curTime = ::time(nullptr);
-    clusterIdPath += folly::stringPrintf("%ld", curTime);
     auto clusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", clusterIdPath);
-    if (!clusterMan->loadClusterId()) {
-        LOG(ERROR) << "storaged clusterId load error!";
-    }
+        = std::make_unique<nebula::meta::ClusterManager>("", "");
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
                                                       std::move(addrs),
                                                       localHost,
