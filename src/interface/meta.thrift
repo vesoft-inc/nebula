@@ -11,24 +11,25 @@ namespace go nebula.meta
 include "common.thrift"
 
 enum ErrorCode {
-    SUCCEEDED = 0,
+    SUCCEEDED          = 0,
 
     // RPC Failure
-    E_DISCONNECTED = -1,
-    E_FAIL_TO_CONNECT = -2,
-    E_RPC_FAILURE = -3,
+    E_DISCONNECTED     = -1,
+    E_FAIL_TO_CONNECT  = -2,
+    E_RPC_FAILURE      = -3,
 
-    E_LEADER_CHANGED = -11,
+    E_LEADER_CHANGED   = -11,
 
     // Operation Failure
-    E_NO_HOSTS       = -21,
-    E_EXISTED        = -22,
-    E_NOT_FOUND      = -23,
-    E_INVALID_HOST   = -24,
-    E_UNSUPPORTED    = -25,
-    E_NOT_DROP       = -26,
+    E_NO_HOSTS         = -21,
+    E_EXISTED          = -22,
+    E_NOT_FOUND        = -23,
+    E_INVALID_HOST     = -24,
+    E_UNSUPPORTED      = -25,
+    E_NOT_DROP         = -26,
     E_BALANCER_RUNNING = -27,
     E_CONFIG_IMMUTABLE = -28,
+    E_CONFLICT         = -29,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
