@@ -74,8 +74,7 @@ TEST(ClusterManagerTest, ClusterIdTestIdMatch) {
     HostAddr localHost{localIp, clientPort};
 
     auto clientClusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", "");
-    clientClusterMan->setClusterId(kClusterId);
+        = std::make_unique<nebula::meta::ClusterManager>("", "", kClusterId);
 
     auto hosts = std::vector<HostAddr>{HostAddr(localIp, localMetaPort)};
     auto client = std::make_shared<MetaClient>(threadPool,
@@ -105,8 +104,7 @@ TEST(ClusterManagerTest, ClusterIdMismatchTest) {
     HostAddr localHost{localIp, clientPort};
 
     auto clientClusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", "");
-    clientClusterMan->setClusterId(kClusterId + 1);
+        = std::make_unique<nebula::meta::ClusterManager>("", "", kClusterId + 1);
 
     auto hosts = std::vector<HostAddr>{HostAddr(localIp, localMetaPort)};
     auto client = std::make_shared<MetaClient>(threadPool,

@@ -29,10 +29,12 @@ TestEnv::~TestEnv() {
 
 void TestEnv::SetUp() {
     FLAGS_load_data_interval_secs = 1;
+    const nebula::ClusterID kClusterId = 10;
     // Create metaServer
     metaServer_ = nebula::meta::TestUtils::mockMetaServer(
                                                     network::NetworkUtils::getAvailablePort(),
-                                                    metaRootPath_.path());
+                                                    metaRootPath_.path(),
+                                                    kClusterId);
     FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", metaServerPort());
 
     // Create storageServer
@@ -48,7 +50,7 @@ void TestEnv::SetUp() {
     auto& localhost = hostRet.value();
 
     auto clusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", "");
+        = std::make_unique<nebula::meta::ClusterManager>("", "", kClusterId);
     mClient_ = std::make_unique<meta::MetaClient>(threadPool,
                                                   std::move(addrsRet.value()),
                                                   localhost,

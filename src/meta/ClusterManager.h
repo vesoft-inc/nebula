@@ -27,9 +27,11 @@ using nebula::ClusterID;
 class ClusterManager {
 public:
     ClusterManager(const std::string& clusterHosts,
-                   const std::string& clusterIdPath)
+                   const std::string& clusterIdPath,
+                   ClusterID clusterId = 0)
             : clusterHosts_(clusterHosts)
-            , clusterIdPath_(clusterIdPath) {}
+            , clusterIdPath_(clusterIdPath)
+            , clusterId_(clusterId) {}
 
     virtual ~ClusterManager() = default;
 
@@ -62,9 +64,9 @@ private:
 private:
     bool clusterIdIsSet_{false};
     bool clusterIdDumped_{false};
-    ClusterID clusterId_{0};
     std::string clusterHosts_;
     std::string clusterIdPath_;
+    ClusterID clusterId_{0};
     static const char* kClusterIdKey;
 };
 
