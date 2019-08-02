@@ -50,7 +50,7 @@ struct StoreCapability {
 };
 #define SUPPORT_FILTERING(store) (store.capability() & StoreCapability::SC_FILTERING)
 
-
+class Part;
 /**
  * Interface for all kv-stores
  **/
@@ -135,6 +135,13 @@ public:
                                    PartitionID partId,
                                    const std::string& prefix,
                                    KVCallback cb) = 0;
+
+    virtual ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
+                                                            PartitionID partId) = 0;
+
+    virtual ResultCode compact(GraphSpaceID spaceId) = 0;
+
+    virtual ResultCode flush(GraphSpaceID spaceId) = 0;
 
 protected:
     KVStore() = default;

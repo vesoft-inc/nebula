@@ -39,15 +39,29 @@ void TestEnv::SetUp() {
     auto addrsRet
         = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", metaServerPort()));
     CHECK(addrsRet.ok()) << addrsRet.status();
-    mClient_ = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
-    mClient_->init();
+    auto storagePort = network::NetworkUtils::getAvailablePort();
+    auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", storagePort);
+    if (!hostRet.ok()) {
+        LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();
+    }
+    auto& localhost = hostRet.value();
+    mClient_ = std::make_unique<meta::MetaClient>(threadPool,
+                                                  std::move(addrsRet.value()),
+                                                  localhost,
+                                                  true);
+    auto r = mClient_->addHosts({localhost}).get();
+    ASSERT_TRUE(r.ok());
+    mClient_->waitForMetadReady();
+    r = mClient_->removeHosts({localhost}).get();
+    ASSERT_TRUE(r.ok());
+    gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(mClient_.get());
     IPv4 localIp;
     nebula::network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     storageServer_ = nebula::storage::TestUtils::mockStorageServer(
                                                         mClient_.get(),
                                                         storageRootPath_.path(),
                                                         localIp,
-                                                        network::NetworkUtils::getAvailablePort(),
+                                                        storagePort,
                                                         true);
 
     // Create graphServer
@@ -56,12 +70,13 @@ void TestEnv::SetUp() {
 
 
 void TestEnv::TearDown() {
-    mClient_.reset();
+    // TO make sure the drop space be invoked on storage server
+    sleep(FLAGS_load_data_interval_secs + 1);
     graphServer_.reset();
     storageServer_.reset();
     metaServer_.reset();
+    mClient_.reset();
 }
-
 
 uint16_t TestEnv::graphServerPort() const {
     return graphServer_->port_;
@@ -81,6 +96,10 @@ std::unique_ptr<GraphClient> TestEnv::getClient() const {
         return nullptr;
     }
     return client;
+}
+
+meta::ClientBasedGflagsManager* TestEnv::gflagsManager() {
+    return gflagsManager_.get();
 }
 
 }   // namespace graph

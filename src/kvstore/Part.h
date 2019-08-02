@@ -44,6 +44,7 @@ public:
                           folly::StringPiece end,
                           KVCallback cb);
 
+    void asyncAddLearner(const HostAddr& learner, KVCallback cb);
     /**
      * Methods inherited from RaftPart
      */

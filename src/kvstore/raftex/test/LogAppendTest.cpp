@@ -36,34 +36,9 @@ TEST(LogAppend, SimpleAppendWithOneCopy) {
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
-    // Append 100 logs
-    LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    for (int i = 1; i <= 100; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader->appendAsync(0, msgs.back());
-        ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
-    }
-    LOG(INFO) << "<===== Finish appending logs";
-
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies) {
-        ASSERT_EQ(100, c->getNumLogs());
-    }
-
-    LogID id = leader->firstCommittedLogId_;
-    for (int i = 0; i < 100; ++i, ++id) {
-        for (auto& c : copies) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    appendLogs(0, 99, leader, msgs);
+    checkConsensus(copies, 0, 99, msgs);
 
     finishRaft(services, copies, workers, leader);
 }
@@ -83,34 +58,9 @@ TEST(LogAppend, SimpleAppendWithThreeCopies) {
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
-    // Append 100 logs
-    LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    for (int i = 1; i <= 100; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader->appendAsync(0, msgs.back());
-        ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
-    }
-    LOG(INFO) << "<===== Finish appending logs";
-
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies) {
-        ASSERT_EQ(100, c->getNumLogs());
-    }
-
-    LogID id = leader->firstCommittedLogId_;
-    for (int i = 0; i < 100; ++i, ++id) {
-        for (auto& c : copies) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    appendLogs(0, 99, leader, msgs);
+    checkConsensus(copies, 0, 99, msgs);
 
     finishRaft(services, copies, workers, leader);
 }
@@ -130,7 +80,7 @@ TEST(LogAppend, MultiThreadAppend) {
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
-    // Create 16 threads, each appends 100 logs
+    // Create 4 threads, each appends 100 logs
     LOG(INFO) << "=====> Start multi-thread appending logs";
     const int numThreads = 4;
     const int numLogs = 100;
@@ -172,14 +122,13 @@ TEST(LogAppend, MultiThreadAppend) {
         ASSERT_EQ(numThreads * numLogs, c->getNumLogs());
     }
 
-    LogID id = leader->firstCommittedLogId_;
-    for (int i = 0; i < numThreads * numLogs; ++i, ++id) {
+    for (int i = 0; i < numThreads * numLogs; ++i) {
         folly::StringPiece msg;
-        ASSERT_TRUE(leader->getLogMsg(id, msg));
+        ASSERT_TRUE(leader->getLogMsg(i, msg));
         for (auto& c : copies) {
             if (c != leader) {
                 folly::StringPiece log;
-                ASSERT_TRUE(c->getLogMsg(id, log));
+                ASSERT_TRUE(c->getLogMsg(i, log));
                 ASSERT_EQ(msg, log);
             }
         }

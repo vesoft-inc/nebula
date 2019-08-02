@@ -59,6 +59,7 @@ class AppendLogsIterator;
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
+    friend class Host;
 public:
     virtual ~RaftPart();
 
@@ -80,6 +81,11 @@ public:
     bool isFollower() const {
         std::lock_guard<std::mutex> g(raftLock_);
         return role_ == Role::FOLLOWER;
+    }
+
+    bool isLearner() const {
+        std::lock_guard<std::mutex> g(raftLock_);
+        return role_ == Role::LEARNER;
     }
 
     ClusterID clusterId() const {
@@ -107,9 +113,11 @@ public:
         return wal_;
     }
 
+    void addLearner(const HostAddr& learner);
+
     // Change the partition status to RUNNING. This is called
     // by the inherited class, when it's ready to serve
-    virtual void start(std::vector<HostAddr>&& peers);
+    virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
 
     // Change the partition status to STOPPED. This is called
     // by the inherited class, when it's about to stop
@@ -219,17 +227,19 @@ private:
     enum class Role {
         LEADER = 1,     // the leader
         FOLLOWER,       // following a leader
-        CANDIDATE       // Has sent AskForVote request
+        CANDIDATE,      // Has sent AskForVote request
+        LEARNER         // It is the same with FOLLOWER,
+                        // except it does not participate in leader election
     };
 
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AskForVoteResponse
-    using ElectionResponses = std::vector<cpp2::AskForVoteResponse>;
+    using ElectionResponses = std::vector<std::pair<size_t, cpp2::AskForVoteResponse>>;
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AppendLogResponse
-    using AppendLogResponses = std::vector<cpp2::AppendLogResponse>;
+    using AppendLogResponses = std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
 
     // <source, logType, log>
     using LogCache = std::vector<
@@ -274,7 +284,7 @@ private:
     // return FALSE
     bool prepareElectionRequest(
         cpp2::AskForVoteRequest& req,
-        std::shared_ptr<std::unordered_map<HostAddr, std::shared_ptr<Host>>>& hosts);
+        std::vector<std::shared_ptr<Host>>& hosts);
 
     // The method returns the partition's role after the election
     Role processElectionResponses(const ElectionResponses& results);
@@ -306,8 +316,10 @@ private:
         LogID lastLogId,
         LogID committedId,
         TermID prevLogTerm,
-        LogID prevLogId);
+        LogID prevLogId,
+        std::vector<std::shared_ptr<Host>> hosts);
 
+    std::vector<std::shared_ptr<Host>> followers() const;
 
 protected:
     template<class ValueType>
@@ -393,8 +405,7 @@ protected:
     const GraphSpaceID spaceId_;
     const PartitionID partId_;
     const HostAddr addr_;
-    std::shared_ptr<std::unordered_map<HostAddr, std::shared_ptr<Host>>>
-        peerHosts_;
+    std::vector<std::shared_ptr<Host>> hosts_;
     size_t quorum_{0};
 
     // The lock is used to protect logs_ and cachingPromise_
