@@ -341,6 +341,7 @@ object SparkSstFileGenerator {
           s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${tag.tableName} WHERE ${whereClause} ${limit}"
         val tagDF = sqlContext.sql(sql)
         //RDD[(businessKey->values)]
+
         val tagKeyAndValues = tagDF
           .map(row => {
             (row.getAs[String](tag.primaryKey) + "_" + tag.name, //businessId_tagName will be unique, and used as key before HASH
@@ -349,6 +350,7 @@ object SparkSstFileGenerator {
                .map(valueExtractor(row, _, charset)))
           })
           .repartition(repartitionNumber.getOrElse(tagDF.rdd.partitions.length))
+          .persist(StorageLevel.DISK_ONLY)
 
         val tagKeyAndValuesPersisted = tagKeyAndValues
           .map {
@@ -360,17 +362,20 @@ object SparkSstFileGenerator {
 
               // use NativeClient to generate key and encode values
               //log.debug(s"vertexId=${vertexId}, Tag(partition=${graphPartitionId}): " + DatatypeConverter.printHexBinary(keyEncoded) + " = " + DatatypeConverter.printHexBinary(valuesEncoded))
-              (GraphPartitionIdAndKeyValueEncoded(
-                 graphPartitionId,
-                 tagType,
-                 new BytesWritable(NativeClient
-                   .createVertexKey(graphPartitionId, vertexId.toLong, tagType, DefaultVersion))),
+              (GraphPartitionIdAndKeyValueEncoded(graphPartitionId,
+                                                  tagType,
+                                                  new BytesWritable(
+                                                    NativeClient.createVertexKey(graphPartitionId,
+                                                                                 vertexId.toLong,
+                                                                                 tagType,
+                                                                                 DefaultVersion))),
                new PropertyValueAndTypeWritable(
                  new BytesWritable(NativeClient.encode(values.toArray))))
             }
 
           }
           .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
+          .persist(StorageLevel.DISK_ONLY)
 
         tagKeyAndValuesPersisted.saveAsNewAPIHadoopFile(localSstFileOutput,
                                                         classOf[GraphPartitionIdAndKeyValueEncoded],
@@ -461,6 +466,7 @@ object SparkSstFileGenerator {
             }
           }
           .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
+          .persist(StorageLevel.DISK_ONLY)
 
         edgeKeyAndValuesPersisted.saveAsNewAPIHadoopFile(
           localSstFileOutput,
