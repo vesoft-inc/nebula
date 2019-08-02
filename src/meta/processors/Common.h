@@ -33,6 +33,7 @@ GENERATE_LOCK(edge);
 GENERATE_LOCK(tagIndex);
 GENERATE_LOCK(edgeIndex);
 GENERATE_LOCK(user);
+GENERATE_LOCK(config);
 
 #undef GENERATE_LOCK
 };

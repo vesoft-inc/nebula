@@ -88,6 +88,7 @@ protected:
         case Status::kHostNotFound:
         case Status::kTagNotFound:
         case Status::kUserNotFound:
+        case Status::kCfgNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -110,6 +111,7 @@ protected:
             break;
         case EntryType::USER:
             thriftID.set_user_id(static_cast<UserID>(id));
+        case EntryType::CONFIG:
             break;
         case EntryType::TAG_INDEX:
             thriftID.set_tag_index_id(static_cast<TagIndexID>(id));

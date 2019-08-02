@@ -54,6 +54,7 @@ void TestEnv::SetUp() {
     mClient_->waitForMetadReady();
     r = mClient_->removeHosts({localhost}).get();
     ASSERT_TRUE(r.ok());
+    gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(mClient_.get());
     IPv4 localIp;
     nebula::network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     storageServer_ = nebula::storage::TestUtils::mockStorageServer(
@@ -69,12 +70,13 @@ void TestEnv::SetUp() {
 
 
 void TestEnv::TearDown() {
+    // TO make sure the drop space be invoked on storage server
+    sleep(FLAGS_load_data_interval_secs + 1);
     graphServer_.reset();
     storageServer_.reset();
     metaServer_.reset();
     mClient_.reset();
 }
-
 
 uint16_t TestEnv::graphServerPort() const {
     return graphServer_->port_;
@@ -94,6 +96,10 @@ std::unique_ptr<GraphClient> TestEnv::getClient() const {
         return nullptr;
     }
     return client;
+}
+
+meta::ClientBasedGflagsManager* TestEnv::gflagsManager() {
+    return gflagsManager_.get();
 }
 
 }   // namespace graph

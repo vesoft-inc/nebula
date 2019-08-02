@@ -291,6 +291,8 @@ void RaftPart::stop() {
     {
         std::unique_lock<std::mutex> lck(raftLock_);
         status_ = Status::STOPPED;
+        leader_ = {0, 0};
+        role_ = Role::FOLLOWER;
 
         hosts = std::move(hosts_);
     }
@@ -671,7 +673,8 @@ void RaftPart::processAppendLogResponses(
             } else {
                 LOG(FATAL) << idStr_ << "Failed to commit logs";
             }
-            VLOG(2) << idStr_ << "Succeeded in committing the logs";
+            VLOG(2) << idStr_ << "Leader succeeded in committing the logs "
+                              << committedId + 1 << " to " << lastLogId;
         }
         // Step 4: Fulfill the promise
         if (iter.hasNonCASLogs()) {
@@ -940,6 +943,7 @@ void RaftPart::statusPolling() {
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING) {
+            VLOG(2) << idStr_ << "Schedule next polling";
             workers_->addDelayTask(
                 delay,
                 [self = shared_from_this()] {
@@ -1051,6 +1055,7 @@ void RaftPart::processAppendLogRequest(
             << ": GraphSpaceId = " << req.get_space()
             << ", partition = " << req.get_part()
             << ", current_term = " << req.get_current_term()
+//            << ", lastLogId = " << req.get_last_log_id()
             << ", committedLogId = " << req.get_committed_log_id()
             << ", leaderIp = " << req.get_leader_ip()
             << ", leaderPort = " << req.get_leader_port()
@@ -1120,12 +1125,12 @@ void RaftPart::processAppendLogRequest(
 //      }
 
     // Check the last log
-    CHECK_GE(req.get_last_log_id_sent(), committedLogId_);
+    CHECK_GE(req.get_last_log_id_sent(), committedLogId_) << idStr_;
     if (lastLogTerm_ > 0 && req.get_last_log_term_sent() != lastLogTerm_) {
-        VLOG(2) << idStr_ << "The local last log term is "
-                << lastLogTerm_
-                << ", which is different from the leader's"
-                   ". So need to rollback";
+        VLOG(2) << idStr_ << "The local last log term is " << lastLogTerm_
+                << ", which is different from the leader's prevLogTerm "
+                << req.get_last_log_term_sent()
+                << ". So need to rollback to last committedLogId_ " << committedLogId_;
         wal_->rollbackToLog(committedLogId_);
         lastLogId_ = wal_->lastLogId();
         lastLogTerm_ = wal_->lastLogTerm();
@@ -1170,13 +1175,16 @@ void RaftPart::processAppendLogRequest(
 
     if (req.get_committed_log_id() > committedLogId_) {
         // Commit some logs
-        if (commitLogs(wal_->iterator(committedLogId_ + 1,
-                                      req.get_committed_log_id()))) {
-            VLOG(2) << idStr_ << "Succeeded committing log "
+        // We can only commit logs from firstId to min(lastLogId_, leader's commit log id),
+        // follower can't always commit to leader's commit id because of lack of log
+        LogID lastLogIdCanCommit = std::min(lastLogId_, req.get_committed_log_id());
+        CHECK(committedLogId_ + 1 <= lastLogIdCanCommit);
+        if (commitLogs(wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit))) {
+            VLOG(2) << idStr_ << "Follower succeeded committing log "
                               << committedLogId_ + 1 << " to "
-                              << req.get_committed_log_id();
-            committedLogId_ = req.get_committed_log_id();
-            resp.set_committed_log_id(committedLogId_);
+                              << lastLogIdCanCommit;
+            committedLogId_ = lastLogIdCanCommit;
+            resp.set_committed_log_id(lastLogIdCanCommit);
         } else {
             LOG(ERROR) << idStr_ << "Failed to commit log "
                        << committedLogId_ + 1 << " to "
@@ -1228,10 +1236,17 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     }
 
     // Make sure the remote term is greater than local's
-    if (req.get_current_term() <= term_) {
+    if (req.get_current_term() < term_) {
         LOG(ERROR) << idStr_ << "The local term is " << term_
                    << ". The remote term is not newer";
         return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
+    }
+    if (role_ == Role::FOLLOWER || role_ == Role::LEARNER) {
+        if (req.get_current_term() == term_ && leader_ != std::make_pair(0, 0)) {
+            LOG(ERROR) << idStr_ << "The local term is same as remote term " << term_
+                       << ". But I believe leader exists.";
+            return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
+        }
     }
 
     // Ok, no reason to refuse, just follow the leader
@@ -1253,6 +1268,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(
 
 
 folly::Future<AppendLogResult> RaftPart::sendHeartbeat() {
+    VLOG(2) << idStr_ << "Send heartbeat";
     std::string log = "";
     return appendLogAsync(clusterId_, LogType::NORMAL, std::move(log));
 }

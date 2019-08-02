@@ -11,6 +11,8 @@
 #include "kvstore/raftex/test/TestShard.h"
 #include "thrift/ThriftClientManager.h"
 
+DECLARE_uint32(heartbeat_interval);
+
 namespace nebula {
 namespace raftex {
 
@@ -105,7 +107,8 @@ void waitUntilLeaderElected(
             bool sameLeader = true;
             int32_t index = 0;
             for (auto& c : copies) {
-                if (!isLearner[index] && c != nullptr && leader != c) {
+                // if a copy in abnormal state, its leader is (0, 0)
+                if (!isLearner[index] && c != nullptr && leader != c && c->isRunning_ == true) {
                     if (leader->address() != c->leader()) {
                         sameLeader = false;
                         break;
@@ -118,6 +121,25 @@ void waitUntilLeaderElected(
             }
         }
 
+        // Wait for one second
+        sleep(1);
+    }
+}
+
+void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& copies) {
+    while (true) {
+        bool allHaveLeader = true;
+        for (auto& c : copies) {
+            if (c != nullptr && c->isRunning_ == true) {
+                if (c->leader().first == 0 && c->leader().second == 0) {
+                    allHaveLeader = false;
+                    break;
+                }
+            }
+        }
+        if (allHaveLeader) {
+            return;
+        }
         // Wait for one second
         sleep(1);
     }
@@ -152,7 +174,8 @@ void setupRaft(
     // Set up services
     for (int i = 0; i < numCopies; ++i) {
         services.emplace_back(RaftexService::createService(nullptr));
-        services.back()->waitUntilReady();
+        if (!services.back()->start())
+            return;
         uint16_t port = services.back()->getServerPort();
         allHosts.emplace_back(ipInt, port);
     }
@@ -186,6 +209,7 @@ void setupRaft(
         services[i]->addPartition(copies.back());
         copies.back()->start(getPeers(allHosts, allHosts[i], isLearner),
                              isLearner[i]);
+        copies.back()->isRunning_ = true;
     }
 
     // Wait untill all copies agree on the same leader
@@ -213,14 +237,13 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
     }
 }
 
-
 void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      std::shared_ptr<test::TestShard>& leader) {
     std::lock_guard<std::mutex> lock(leaderMutex);
 
     ASSERT_FALSE(!leader);
     for (auto& c : copies) {
-        if (c != nullptr && leader != c && !c->isLearner()) {
+        if (c != nullptr && leader != c && !c->isLearner() && c->isRunning_ == true) {
             ASSERT_EQ(leader->address(), c->leader());
         }
     }
@@ -237,27 +260,77 @@ void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
     ASSERT_EQ(leader->address(), copies[index]->address());
 }
 
+void checkNoLeader(std::vector<std::shared_ptr<test::TestShard>>& copies) {
+    for (auto& c : copies) {
+        if (c != nullptr && c->isRunning_ == true) {
+            ASSERT_FALSE(c->isLeader());
+        }
+    }
+}
+
 void appendLogs(int start,
                 int end,
                 std::shared_ptr<test::TestShard> leader,
                 std::vector<std::string>& msgs,
-                LogID& firstLogId) {
+                bool waitLastLog) {
     // Append 100 logs
-    LOG(INFO) << "=====> Start appending logs";
-    firstLogId = -1;
+    LOG(INFO) << "=====> Start appending logs from index " << start << " to " << end;
     for (int i = start; i <= end; ++i) {
         msgs.emplace_back(
             folly::stringPrintf("Test Log Message %03d", i));
         auto fut = leader->appendAsync(0, msgs.back());
-        ASSERT_EQ(AppendLogResult::SUCCEEDED,
-                  std::move(fut).get());
-        if (firstLogId < 0) {
-            firstLogId = leader->currLogId_;
+        if (i == end && waitLastLog) {
+            fut.wait();
         }
     }
-    LOG(INFO) << "<===== Finish appending logs";
+    LOG(INFO) << "<===== Finish appending logs from index " << start << " to " << end;
 }
 
+void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                    size_t start, size_t end,
+                    std::vector<std::string>& msgs) {
+    // Sleep a while to make sure the last log has been committed on followers
+    sleep(FLAGS_heartbeat_interval);
+
+    // Check every copy
+    for (auto& c : copies) {
+        if (c != nullptr && c->isRunning_ == true) {
+            ASSERT_EQ(msgs.size(), c->getNumLogs());
+        }
+    }
+    for (size_t i = start; i <= end; i++) {
+        for (auto& c : copies) {
+            if (c != nullptr && c->isRunning_ == true) {
+                folly::StringPiece msg;
+                ASSERT_TRUE(c->getLogMsg(i, msg));
+                ASSERT_EQ(msgs[i], msg.toString());
+            }
+        }
+    }
+}
+
+void killOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
+                 std::vector<std::shared_ptr<test::TestShard>>& copies,
+                 std::shared_ptr<test::TestShard>& leader,
+                 size_t index) {
+    copies[index]->isRunning_ = false;
+    services[index]->removePartition(copies[index]);
+    if (leader != nullptr && index == leader->index()) {
+        std::lock_guard<std::mutex> lock(leaderMutex);
+        leader.reset();
+    }
+    LOG(INFO) << "copies " << index << " stop";
+}
+
+void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
+                   std::vector<std::shared_ptr<test::TestShard>>& copies,
+                   std::vector<HostAddr> allHosts,
+                   size_t index) {
+    services[index]->addPartition(copies[index]);
+    copies[index]->start(getPeers(allHosts, allHosts[index]));
+    copies[index]->isRunning_ = true;
+    LOG(INFO) << "copies " << index << " reboot";
+}
 
 }  // namespace raftex
 }  // namespace nebula

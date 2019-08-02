@@ -369,6 +369,18 @@ TEST(ProcessorTest, CreateTagTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(4, resp.get_id().get_tag_id());
     }
+    {
+        // Create same name edge in same spaces
+        cpp2::CreateEdgeReq req;
+        req.set_space_id(1);
+        req.set_edge_name("default_tag");
+        req.set_schema(schema);
+        auto* processor = CreateEdgeProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
+    }
 
     // Set schema ttl property
     nebula::cpp2::SchemaProp schemaProp;
@@ -493,6 +505,18 @@ TEST(ProcessorTest, CreateEdgeTest) {
         auto resp = std::move(f).get();
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         ASSERT_EQ(4, resp.get_id().get_edge_type());
+    }
+    {
+        // Create same name tag in same spaces
+        cpp2::CreateTagReq req;
+        req.set_space_id(1);
+        req.set_tag_name("default_edge");
+        req.set_schema(schema);
+        auto* processor = CreateTagProcessor::instance(kv.get());
+        auto f = processor->getFuture();
+        processor->process(req);
+        auto resp = std::move(f).get();
+        ASSERT_EQ(cpp2::ErrorCode::E_CONFLICT, resp.code);
     }
 
     // Set schema ttl property
