@@ -334,6 +334,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::Error("no hosts!");
         case cpp2::ErrorCode::E_CONFIG_IMMUTABLE:
             return Status::CfgImmutable();
+        case cpp2::ErrorCode::E_CONFLICT:
+            return Status::Error("conflict!");
         case cpp2::ErrorCode::E_LEADER_CHANGED: {
             HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
             {
