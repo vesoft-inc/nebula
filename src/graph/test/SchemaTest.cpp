@@ -264,6 +264,18 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "SHOW TAGS";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"tag1"},
+            {"person"},
+            {"upper"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
     // Test create edge without prop
     {
         cpp2::ExecutionResponse resp;
@@ -367,7 +379,6 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 1>> expected{
-            {"edge1"},
             {"edge1"},
             {"buy"},
             {"education"},
@@ -726,40 +737,28 @@ TEST_F(SchemaTest, TTLtest) {
     // Edge ttl test
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE person(name string, email string, "
-                            "age int, gender string, row_timestamp timestamp)";
+        std::string query = "CREATE EDGE work(number string, start_time timestamp)"
+                            "ttl_duration = 100, ttl_col = start_time";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // TODO(YT) Use show create edge test
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE EDGE person";
+        std::string query = "DESCRIBE EDGE work";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"name", "string"},
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
+            {"number", "string"},
+            {"start_time", "timestamp"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
     // TODO(YT) Use show create edge test
     {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE man(name string, email string, "
-                            "age int, gender string, row_timestamp timestamp)"
-                            "ttl_duration = 100, ttl_col = row_timestamp";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    // TODO(YT) Use show create edge test
-    {
         // Disable implicit ttl mode
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE woman(name string, email string, "
-                            "age int, gender string, row_timestamp timestamp)"
+        std::string query = "CREATE EDGE work1(number string, start_time timestamp)"
                             "ttl_duration = 100";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
@@ -767,24 +766,22 @@ TEST_F(SchemaTest, TTLtest) {
     {
         // Disable when ttl_col is not an integer column or a timestamp column
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE woman(name string, email string, "
-                            "age int, gender string, row_timestamp timestamp)"
+        std::string query = "CREATE EDGE work2(number string, start_time timestamp)"
                             "ttl_col = name";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE woman(name string, email string, "
-                            "age int, gender string, row_timestamp timestamp)"
-                            "ttl_duration = -100, ttl_col = row_timestamp";
+        std::string query = "CREATE EDGE work2(name string, number string, start_time timestamp)"
+                            "ttl_duration = -100, ttl_col = start_time";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // TODO(YT) Use show create edge
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE only_ttl_col(name string, email string, "
+        std::string query = "CREATE EDGE edge_only_ttl_col(name string, email string, "
                             "age int, gender string, row_timestamp timestamp)"
                             "ttl_col = row_timestamp";
         auto code = client->execute(query, resp);
@@ -793,15 +790,15 @@ TEST_F(SchemaTest, TTLtest) {
     // TODO(YT) Use show create edge
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER EDGE woman "
-                            "ttl_duration = 50, ttl_col = row_timestamp";
+        std::string query = "ALTER EDGE work2 "
+                            "ttl_duration = 50, ttl_col = start_time";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // TODO(YT) Use show create edge
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER EDGE woman "
+        std::string query = "ALTER EDGE work2 "
                             "Drop (name) ttl_duration = 200";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -810,8 +807,8 @@ TEST_F(SchemaTest, TTLtest) {
     {
         // Failed when alter tag to set ttl_col on not integer and timestamp column
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER EDGE woman "
-                            "ttl_col = email";
+        std::string query = "ALTER EDGE work2 "
+                            "ttl_col = number";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -819,8 +816,8 @@ TEST_F(SchemaTest, TTLtest) {
     {
         // When the column is as TTL column, droping column failed
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER EDGE woman "
-                            "Drop (row_timestamp)";
+        std::string query = "ALTER EDGE work2 "
+                            "Drop (start_time)";
         auto code = client->execute(query, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -828,21 +825,20 @@ TEST_F(SchemaTest, TTLtest) {
     {
         // First remove TTL property, then drop column
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER EDGE woman "
-                            "ttl_col = age";
+        std::string query = "ALTER EDGE work2 CHANGE(number int) "
+                            "ttl_col = number";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // TODO(YT) Use show create edge
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ALTER EDGE woman "
-                            "drop (row_timestamp)";
+        std::string query = "ALTER EDGE work2 "
+                            "Drop (start_time)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // TODO(YT) Use show create edge
-
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE default_space";
