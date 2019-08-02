@@ -21,6 +21,7 @@
 #include "interface/gen-cpp2/common_types.h"
 #include "time/WallClock.h"
 #include "meta/ActiveHostsMan.h"
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 DECLARE_string(part_man_type);
 
@@ -33,8 +34,11 @@ class TestUtils {
 public:
     static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
-        auto workers = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto partMan = std::make_unique<kvstore::MemPartManager>();
+        auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 1, true /*stats*/);
+        workers->setNamePrefix("executor");
+        workers->start();
 
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0}

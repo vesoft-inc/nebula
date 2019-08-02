@@ -225,6 +225,7 @@ RaftPart::RaftPart(ClusterID clusterId,
     lastLogId_ = wal_->lastLogId();
     lastLogTerm_ = wal_->lastLogTerm();
     logs_.reserve(FLAGS_max_batch_size);
+    CHECK(!!executor_) << idStr_ << "Should not be nullptr";
 }
 
 
@@ -613,7 +614,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
             return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED
                     && !hosts[index]->isLearner();
         })
-        .then(eb, [self = shared_from_this(),
+        .then(executor_.get(), [self = shared_from_this(),
                    eb,
                    it = std::move(iter),
                    currTerm,
@@ -744,9 +745,7 @@ void RaftPart::processAppendLogResponses(
             }
         }
         if (!iter.empty()) {
-            executor_->add([this, currTerm, iter = std::move(iter)] () mutable {
-                this->appendLogsInternal(std::move(iter), currTerm);
-            });
+           this->appendLogsInternal(std::move(iter), currTerm);
         }
     } else {
         // Not enough hosts accepted the log, re-try

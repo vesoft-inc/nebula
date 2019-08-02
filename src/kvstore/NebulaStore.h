@@ -79,7 +79,7 @@ public:
     }
 
     std::shared_ptr<thread::GenericThreadPool> getWorkers() const {
-        return workers_;
+        return bgWorkers_;
     }
 
     // Return the current leader
@@ -188,7 +188,7 @@ private:
     std::unordered_map<GraphSpaceID, std::shared_ptr<SpacePartInfo>> spaces_;
 
     std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;
-    std::shared_ptr<thread::GenericThreadPool> workers_;
+    std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
     HostAddr storeSvcAddr_;
     std::shared_ptr<folly::Executor> handlersPool_;
     HostAddr raftAddr_;

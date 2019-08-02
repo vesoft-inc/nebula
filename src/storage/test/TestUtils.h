@@ -21,6 +21,7 @@
 #include "meta/SchemaManager.h"
 #include <folly/executors/ThreadPoolExecutor.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 
 namespace nebula {
@@ -35,7 +36,11 @@ public:
             bool useMetaServer = false,
             std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory = nullptr) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
-        auto workers = std::make_shared<folly::IOThreadPoolExecutor>(4);
+        auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 1, true /*stats*/);
+        workers->setNamePrefix("executor");
+        workers->start();
+
 
         kvstore::KVOptions options;
         if (useMetaServer) {

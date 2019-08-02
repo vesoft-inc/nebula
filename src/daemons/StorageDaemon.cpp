@@ -24,6 +24,7 @@
 #include "storage/CompactionFilter.h"
 #include "hdfs/HdfsHelper.h"
 #include "hdfs/HdfsCommandHelper.h"
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
@@ -160,13 +161,11 @@ int main(int argc, char *argv[]) {
     }
 
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
-    gServer = std::make_unique<apache::thrift::ThriftServer>();
-    gServer->setPort(FLAGS_port);
-    gServer->setReusePort(FLAGS_reuse_port);
-    gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
-    gServer->setIOThreadPool(ioThreadPool);
-    gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
-    gServer->setCPUWorkerThreadName("executor");
+    std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
+        apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 FLAGS_num_worker_threads, true /*stats*/));
+    threadManager->setNamePrefix("executor");
+    threadManager->start();
 
     // Meta client
     auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
@@ -188,7 +187,7 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
                                                         std::move(paths),
                                                         ioThreadPool,
-                                                        gServer->getThreadManager(),
+                                                        threadManager,
                                                         metaClient.get(),
                                                         schemaMan.get());
 
@@ -228,6 +227,12 @@ int main(int argc, char *argv[]) {
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());
     try {
         LOG(INFO) << "The storage deamon start on " << localhost;
+        gServer = std::make_unique<apache::thrift::ThriftServer>();
+        gServer->setPort(FLAGS_port);
+        gServer->setReusePort(FLAGS_reuse_port);
+        gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
+        gServer->setIOThreadPool(ioThreadPool);
+        gServer->setThreadManager(threadManager);
         gServer->setInterface(std::move(handler));
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception& e) {

@@ -33,6 +33,7 @@ DEFINE_string(peers, "", "It is a list of IPs split by comma,"
                          "If empty, it means replica is 1");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
+DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DECLARE_string(part_man_type);
 
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
@@ -103,12 +104,11 @@ int main(int argc, char *argv[]) {
 
     // folly IOThreadPoolExecutor
     auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
-    gServer = std::make_unique<apache::thrift::ThriftServer>();
-    gServer->setPort(FLAGS_port);
-    gServer->setReusePort(FLAGS_reuse_port);
-    gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
-    gServer->setIOThreadPool(ioPool);
-
+    std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
+        apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 FLAGS_num_worker_threads, true /*stats*/));
+    threadManager->setNamePrefix("executor");
+    threadManager->start();
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
                                                         std::move(options),
                                                         ioPool,
                                                         localhost,
-                                                        gServer->getThreadManager());
+                                                        threadManager);
     if (!(kvstore->init())) {
         LOG(ERROR) << "nebula store init failed";
         return EXIT_FAILURE;
@@ -155,6 +155,12 @@ int main(int argc, char *argv[]) {
 
     LOG(INFO) << "The meta deamon start on " << localhost;
     try {
+        gServer = std::make_unique<apache::thrift::ThriftServer>();
+        gServer->setPort(FLAGS_port);
+        gServer->setReusePort(FLAGS_reuse_port);
+        gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
+        gServer->setIOThreadPool(ioPool);
+        gServer->setThreadManager(threadManager);
         gServer->setInterface(std::move(handler));
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception &e) {

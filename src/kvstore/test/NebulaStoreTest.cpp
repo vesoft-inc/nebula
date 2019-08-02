@@ -13,6 +13,7 @@
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
 #include "network/NetworkUtils.h"
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 DECLARE_uint32(heartbeat_interval);
 
@@ -20,7 +21,6 @@ namespace nebula {
 namespace kvstore {
 
 auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
-auto handlersPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
 template<typename T>
 void dump(const std::vector<T>& v) {
@@ -31,6 +31,15 @@ void dump(const std::vector<T>& v) {
     VLOG(1) << ss.str();
 }
 
+std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager>
+getHandlers() {
+    auto handlersPool
+        = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 1, true /*stats*/);
+    handlersPool->setNamePrefix("executor");
+    handlersPool->start();
+    return handlersPool;
+}
 
 TEST(NebulaStoreTest, SimpleTest) {
     auto partMan = std::make_unique<MemPartManager>();
@@ -60,7 +69,7 @@ TEST(NebulaStoreTest, SimpleTest) {
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
                                                local,
-                                               handlersPool);
+                                               getHandlers());
     store->init();
     sleep(1);
     EXPECT_EQ(2, store->spaces_.size());
@@ -160,7 +169,7 @@ TEST(NebulaStoreTest, PartsTest) {
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
                                                local,
-                                               handlersPool);
+                                               getHandlers());
     store->init();
     auto check = [&](GraphSpaceID spaceId) {
         for (auto i = 0; i < 2; i++) {
@@ -264,7 +273,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         return std::make_unique<NebulaStore>(std::move(options),
                                              sIoThreadPool,
                                              local,
-                                             handlersPool);
+                                             getHandlers());
     };
     int32_t replicas = 3;
     IPv4 ip;
@@ -385,7 +394,6 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
-
     return RUN_ALL_TESTS();
 }
 
