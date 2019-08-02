@@ -1005,6 +1005,12 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
         if (resp.code == cpp2::ErrorCode::SUCCEEDED
             && !clusterMan_->isClusterIdSet()) {
             clusterMan_->setClusterId(resp.get_clusterId());
+            if (!clusterMan_->clusterIdDumped()) {
+                if (!clusterMan_->dumpClusterId()) {
+                    LOG(ERROR) << "meta client clusterId dump failed!";
+                    return false;
+                }
+            }
         }
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);

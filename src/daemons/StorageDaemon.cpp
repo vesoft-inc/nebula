@@ -179,12 +179,6 @@ int main(int argc, char *argv[]) {
     }
     auto gflagsManager = std::make_unique<nebula::meta::ClientBasedGflagsManager>(metaClient.get());
     gflagsManager->init();
-    if (!clusterMan->clusterIdDumped()) {
-        if (!clusterMan->dumpClusterId()) {
-            LOG(ERROR) << "StorageDaemon clusterId dump failed!";
-            return EXIT_FAILURE;
-        }
-    }
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();
     schemaMan->init(metaClient.get());
