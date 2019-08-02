@@ -273,7 +273,7 @@ void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
         }
         if (reader != nullptr) {
             const auto& name = prop.prop_.get_name();
-            auto res = RowReader::getProp(reader, name);
+            auto res = RowReader::getPropByName(reader, name);
             if (!ok(res)) {
                 VLOG(1) << "Skip the bad value for prop " << name;
                 continue;
@@ -367,7 +367,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 std::lock_guard<std::mutex> lg(this->lock_);
                 auto& getters = expCtx_->getters();
                 getters.getEdgeProp = [&] (const std::string &prop) -> VariantType {
-                    auto res = RowReader::getProp(reader.get(), prop);
+                    auto res = RowReader::getPropByName(reader.get(), prop);
                     CHECK(ok(res));
                     return value(std::move(res));
                 };
