@@ -8,7 +8,7 @@
 #include "thread/GenericWorker.h"
 #include "time/Duration.h"
 #include "storage/client/StorageClient.h"
-#include "dataman/RowWriter.h"
+#include <string>
 
 DEFINE_int32(threads, 2, "Total threads for perf");
 DEFINE_int32(qps, 1000, "Total qps for the perf tool");
@@ -21,6 +21,7 @@ DEFINE_string(method, "getNeighbors", "method type being tested,"
 
 DEFINE_int32(min_vertex_id, 1, "The smallest vertex Id");
 DEFINE_int32(max_vertex_id, 10000, "The biggest vertex Id");
+DEFINE_int32(size, 1000, "The data's size per request");
 
 namespace nebula {
 namespace storage {
@@ -29,11 +30,16 @@ class Perf {
 public:
     int run() {
         uint32_t qpsPerThread = FLAGS_qps / FLAGS_threads;
-        uint32_t interval = 1000 / qpsPerThread;
-        CHECK_GT(interval, 0) << "qpsPerThread should not large than 1000, interval " << interval;
+        uint32_t interval = 1;
+        if (qpsPerThread < 1000) {
+            interval = 1000 / qpsPerThread;
+        }
+
+        auto dataPerRequest = qpsPerThread / 1000 + 1;
         LOG(INFO) << "Total threads " << FLAGS_threads
                   << ", qpsPerThread " << qpsPerThread
-                  << ", task interval ms " << interval;
+                  << ", task interval ms " << interval
+                  << ", send " << dataPerRequest << " per request";
         std::vector<std::unique_ptr<thread::GenericWorker>> threads;
         for (int32_t i = 0; i < FLAGS_threads; i++) {
             auto t = std::make_unique<thread::GenericWorker>();
@@ -47,9 +53,9 @@ public:
             if (FLAGS_method == "getNeighbors") {
                 t->addRepeatTask(interval, &Perf::getNeighborsTask, this);
             } else if (FLAGS_method == "addVertices") {
-                t->addRepeatTask(interval, &Perf::addVerticesTask, this);
+                t->addRepeatTask(interval, &Perf::addVerticesTask, this, dataPerRequest);
             } else if (FLAGS_method == "addEdges") {
-                t->addRepeatTask(interval, &Perf::addEdgesTask, this);
+                t->addRepeatTask(interval, &Perf::addEdgesTask, this, dataPerRequest);
             } else if (FLAGS_method == "getVertices") {
                 t->addRepeatTask(interval, &Perf::getVerticesTask, this);
             } else {
@@ -97,47 +103,43 @@ private:
         return props;
     }
 
-    std::vector<storage::cpp2::Vertex> genVertices() {
+    std::string genData(int32_t size) {
+        return std::string(size, ' ');
+    }
+
+    std::vector<storage::cpp2::Vertex> genVertices(uint32_t number) {
         std::vector<storage::cpp2::Vertex> vertices;
         static VertexID vId = FLAGS_min_vertex_id;
-        storage::cpp2::Vertex v;
-        v.set_id(vId++);
-        decltype(v.tags) tags;
-        storage::cpp2::Tag tag;
-        tag.set_tag_id(defaultTagId_);
-        RowWriter writer;
-        for (uint64_t numInt = 0; numInt < 3; numInt++) {
-            writer << numInt;
+        for (uint32_t i = 0; i < number; i++) {
+            storage::cpp2::Vertex v;
+            v.set_id(vId++);
+            decltype(v.tags) tags;
+            storage::cpp2::Tag tag;
+            tag.set_tag_id(defaultTagId_);
+            auto props = genData(FLAGS_size);
+            tag.set_props(std::move(props));
+            tags.emplace_back(std::move(tag));
+            v.set_tags(std::move(tags));
+            vertices.emplace_back(std::move(v));
         }
-        for (auto numString = 3; numString < 6; numString++) {
-            writer << folly::stringPrintf("tag_string_col_%d", numString);
-        }
-        tag.set_props(writer.encode());
-        tags.emplace_back(std::move(tag));
-        v.set_tags(std::move(tags));
-        vertices.emplace_back(std::move(v));
         return vertices;
     }
 
-    std::vector<storage::cpp2::Edge> genEdges() {
+    std::vector<storage::cpp2::Edge> genEdges(uint32_t number) {
         std::vector<storage::cpp2::Edge> edges;
         static VertexID vId = FLAGS_min_vertex_id;
-        storage::cpp2::Edge edge;
-        storage::cpp2::EdgeKey eKey;
-        eKey.set_src(vId);
-        eKey.set_edge_type(defaultEdgeType_);
-        eKey.set_dst(vId + 1);
-        eKey.set_ranking(0);
-        edge.set_key(std::move(eKey));
-        RowWriter writer(nullptr);
-        for (uint64_t numInt = 0; numInt < 10; numInt++) {
-            writer << numInt;
+        for (uint32_t i = 0; i< number; i++) {
+            storage::cpp2::Edge edge;
+            storage::cpp2::EdgeKey eKey;
+            eKey.set_src(vId);
+            eKey.set_edge_type(defaultEdgeType_);
+            eKey.set_dst(vId + 1);
+            eKey.set_ranking(0);
+            edge.set_key(std::move(eKey));
+            auto props = genData(FLAGS_size);
+            edge.set_props(std::move(props));
+            edges.emplace_back(std::move(edge));
         }
-        for (auto numString = 10; numString < 20; numString++) {
-            writer << folly::stringPrintf("string_col_%d", numString);
-        }
-        edge.set_props(writer.encode());
-        edges.emplace_back(std::move(edge));
         return edges;
     }
 
@@ -153,9 +155,9 @@ private:
                              });
     }
 
-    void addVerticesTask() {
+    void addVerticesTask(uint32_t number) {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->addVertices(defaultSpaceId_, genVertices(), true)
+        auto f = client_->addVertices(defaultSpaceId_, genVertices(number), true)
                     .via(evb).then([this]() {
                         this->finishedRequests_++;
                         VLOG(3) << "request successed!";
@@ -164,9 +166,9 @@ private:
                      });
     }
 
-    void addEdgesTask() {
+    void addEdgesTask(uint32_t number) {
         auto* evb = threadPool_->getEventBase();
-        auto f = client_->addEdges(defaultSpaceId_, genEdges(), true)
+        auto f = client_->addEdges(defaultSpaceId_, genEdges(number), true)
                     .via(evb).then([this]() {
                         this->finishedRequests_++;
                         VLOG(3) << "request successed!";
