@@ -3,7 +3,7 @@ Nebula use `gflags` for run-time configurations.
 
 ### Show variables
 ```
-SHOW VARIABLES [graph|meta|storage]
+SHOW VARIABLES graph|meta|storage
 ```
 
 For example
@@ -24,7 +24,7 @@ For example
 
 ### Get variables
 ```
-GET VARIABLES [graph|meta|storage : var]
+GET VARIABLES [graph|meta|storage :] var
 ```
 
 For example
@@ -37,9 +37,20 @@ For example
 -----------------------------------------------------------------
 ```
 
+```
+(user@127.0.0.1) [(none)]> GET VARIABLES load_config_interval_secs
+===================================================================
+| module  | name                      | type  | mode      | value |
+=================================================================== 
+| META    | load_config_interval_secs | INT64 | IMMUTABLE | 120   |
+-------------------------------------------------------------------
+| STORAGE | load_config_interval_secs | INT64 | MUTABLE   | 1     |
+------------------------------------------------------------------- 
+```
+
 ### Update variables
 ```
-UPDATE VARIABLES [graph|meta|storage : var = value]
+UPDATE VARIABLES [graph|meta|storage :] var = value
 ```
 > The updated variables will be stored into meta-service permanently.
 >  If the variable's mode is `MUTABLE`, the change will take affects immediately. Otherwise, if the mode is `REBOOT`, the change will not work until a reboot. 
@@ -54,5 +65,4 @@ Execution succeeded (Time spent: 1750/2484 us)
 =================================================================
 | STORAGE | load_config_interval_secs | INT64 | MUTABLE | 1     |
 -----------------------------------------------------------------
-Got 1 rows (Time spent: 1714/2663 us)    
 ```
