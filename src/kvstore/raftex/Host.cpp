@@ -92,7 +92,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
         LogID prevLogId) {
     VLOG(3) << idStr_ << "Entering Host::appendLogs()";
 
-    VLOG(3) << idStr_
+    VLOG(2) << idStr_
             << "Append logs to the host [term = " << term
             << ", logId = " << logId
             << ", committedLogId = " << committedLogId
@@ -119,7 +119,12 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
             }
         } else {
             // Otherwise, logId has to be greater
-            CHECK_GT(logId, logIdToSend_);
+            if (logId < logIdToSend_) {
+                LOG(INFO) << idStr_ << "The log has been sended";
+                cpp2::AppendLogResponse r;
+                r.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+                return r;
+            }
         }
 
         if (requestOnGoing_ && res == cpp2::ErrorCode::SUCCEEDED) {
