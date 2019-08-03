@@ -60,6 +60,7 @@ public:
         kFetchEdges,
         kBalance,
         kFindPath,
+        kLimit,
     };
 
     Kind kind() const {

@@ -327,9 +327,6 @@ public:
 
     void setYieldClause(YieldClause *clause) {
         yieldClause_.reset(clause);
-    }
-
-    std::string toString() const override;
 
 private:
     std::unique_ptr<std::string>    tag_;
@@ -544,6 +541,27 @@ private:
     std::unique_ptr<OverClause>     over_;
     std::unique_ptr<StepClause>     step_;
     std::unique_ptr<WhereClause>    where_;
+};
+
+class LimitSentence final : public Sentence {
+public:
+    explicit LimitSentence(int64_t skip, int64_t count) : skip_(skip), count_(count) {
+        kind_ = Kind::kLimit;
+    }
+
+     std::string toString() const override;
+
+     int64_t skip() {
+        return skip_;
+    }
+
+     int64_t count() {
+        return count_;
+    }
+
+ private:
+    int64_t skip_;
+    int64_t count_;
 };
 }   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_
