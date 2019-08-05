@@ -179,7 +179,7 @@ int32_t RowReader::getSchemaVer(folly::StringPiece row) {
     }
 
     // The first three bits indicate the number of bytes for the
-    // schena version. If the number is zero, no schema version
+    // schema version. If the number is zero, no schema version
     // presents
     size_t verBytes = *(it++) >> 5;
     int32_t ver = 0;

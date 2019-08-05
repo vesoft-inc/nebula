@@ -89,7 +89,7 @@ public:
         folly::StringPiece row,
         std::shared_ptr<const meta::SchemaProviderIf> schema);
 
-    static ErrorOr<ResultType, VariantType> getProp(const RowReader* reader,
+    static ErrorOr<ResultType, VariantType> getPropByName(const RowReader* reader,
                                                     const std::string& prop) {
         auto& vType = reader->getSchema()->getFieldType(prop);
         switch (vType.type) {
@@ -143,7 +143,66 @@ public:
             }
             default:
                 LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.type);
-                return "";
+                return ResultType::E_DATA_INVALID;
+        }
+    }
+
+
+    static ErrorOr<ResultType, VariantType> getPropByIndex(const RowReader *reader,
+                                                           int64_t index) {
+        auto& vType = reader->getSchema()->getFieldType(index);
+        switch (vType.get_type()) {
+            case nebula::cpp2::SupportedType::BOOL: {
+                bool v;
+                auto ret = reader->getBool(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::INT: {
+                int64_t v;
+                auto ret = reader->getInt(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::VID: {
+                VertexID v;
+                auto ret = reader->getVid(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::FLOAT: {
+                float v;
+                auto ret = reader->getFloat(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return static_cast<double>(v);
+            }
+            case nebula::cpp2::SupportedType::DOUBLE: {
+                double v;
+                auto ret = reader->getDouble(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v;
+            }
+            case nebula::cpp2::SupportedType::STRING: {
+                folly::StringPiece v;
+                auto ret = reader->getString(index, v);
+                if (ret != ResultType::SUCCEEDED) {
+                    return ret;
+                }
+                return v.toString();
+            }
+            default:
+                LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(vType.get_type());
+                return ResultType::E_DATA_INVALID;
         }
     }
 
