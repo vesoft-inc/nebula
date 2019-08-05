@@ -35,7 +35,7 @@ enum ErrorCode {
     E_EXCEPTION = -20;          // An thrift internal exception was thrown
 }
 
-typedef byte (cpp.type = "nebula::ClusterID") ClusterID
+typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
 typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
 typedef i64 (cpp.type = "nebula::TermID") TermID

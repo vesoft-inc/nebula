@@ -159,10 +159,19 @@ int main(int argc, char *argv[]) {
 
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
 
+    std::string clusteridFile =
+        folly::stringPrintf("%s/%s", paths[0].c_str(), "/storage.cluster.id");
+    auto clusterMan
+        = std::make_unique<nebula::meta::ClusterManager>("", clusteridFile);
+    if (!clusterMan->loadClusterId()) {
+        LOG(INFO) << "storaged misses clusterId";
+    }
+
     // Meta client
     auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
                                                                  std::move(metaAddrsRet.value()),
                                                                  localhost,
+                                                                 clusterMan.get(),
                                                                  true);
     if (!metaClient->waitForMetadReady()) {
         LOG(ERROR) << "waitForMetadReady error!";
@@ -170,7 +179,6 @@ int main(int argc, char *argv[]) {
     }
     auto gflagsManager = std::make_unique<nebula::meta::ClientBasedGflagsManager>(metaClient.get());
     gflagsManager->init();
-
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();
     schemaMan->init(metaClient.get());

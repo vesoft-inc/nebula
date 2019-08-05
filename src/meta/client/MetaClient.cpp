@@ -18,14 +18,19 @@ namespace meta {
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                        std::vector<HostAddr> addrs,
                        HostAddr localHost,
+                       ClusterManager* clusterMan,
                        bool sendHeartBeat)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
     , localHost_(localHost)
+    , clusterMan_(clusterMan)
     , sendHeartBeat_(sendHeartBeat) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
+    if (sendHeartBeat_) {
+        CHECK(clusterMan_ != nullptr) << "ClusterManager object is required when send heartbeat";
+    }
     clientsMan_ = std::make_shared<
         thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>
     >();
@@ -74,7 +79,7 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     }
     addLoadDataTask();
     addLoadCfgTask();
-    return true;
+    return ready_;
 }
 
 
@@ -336,6 +341,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::CfgImmutable();
         case cpp2::ErrorCode::E_CONFLICT:
             return Status::Error("conflict!");
+        case cpp2::ErrorCode::E_WRONGCLUSTER:
+            return Status::Error("wrong cluster!");
         case cpp2::ErrorCode::E_LEADER_CHANGED: {
             HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
             {
@@ -990,9 +997,21 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     thriftHost.set_ip(localHost_.first);
     thriftHost.set_port(localHost_.second);
     req.set_host(std::move(thriftHost));
+    req.set_clusterId(clusterMan_->getClusterId());
+
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_heartBeat(request);
-    }, [] (cpp2::HBResp&& resp) -> bool {
+    }, [this] (cpp2::HBResp&& resp) -> bool {
+        if (resp.code == cpp2::ErrorCode::SUCCEEDED
+            && !clusterMan_->isClusterIdSet()) {
+            clusterMan_->setClusterId(resp.get_clusterId());
+            if (!clusterMan_->clusterIdDumped()) {
+                if (!clusterMan_->dumpClusterId()) {
+                    LOG(ERROR) << "meta client clusterId dump failed!";
+                    return false;
+                }
+            }
+        }
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);
 }
