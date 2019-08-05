@@ -19,8 +19,6 @@ DECLARE_uint32(heartbeat_interval);
 namespace nebula {
 namespace kvstore {
 
-auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
-
 template<typename T>
 void dump(const std::vector<T>& v) {
     std::stringstream ss;
@@ -33,7 +31,7 @@ void dump(const std::vector<T>& v) {
 
 TEST(NebulaStoreTest, SimpleTest) {
     auto partMan = std::make_unique<MemPartManager>();
-
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     // GraphSpaceID =>  {PartitionIDs}
     // 1 => {0, 1, 2, 3, 4, 5}
     // 2 => {0, 1, 2, 3, 4, 5}
@@ -123,6 +121,7 @@ TEST(NebulaStoreTest, SimpleTest) {
 
 TEST(NebulaStoreTest, PartsTest) {
     fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     auto partMan = std::make_unique<MemPartManager>();
 
     // GraphSpaceID =>  {PartitionIDs}
@@ -384,5 +383,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-
-
