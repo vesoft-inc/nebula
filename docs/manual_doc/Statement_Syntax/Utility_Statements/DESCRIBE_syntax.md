@@ -14,7 +14,7 @@ Also notice that DESCRIBE is different from SHOW. check XXX for SHOW.
 Providing information about space. Please refer to XXX about CREATE SPACE.
 
 ```
-nebula> DESCRIBE SPACE laura_space;
+(user@127.0.0.1) [(none)]> DESCRIBE SPACE laura_space;
 ========================================================
 | ID |        Name | Partition number | Replica Factor |
 ========================================================
@@ -25,7 +25,7 @@ nebula> DESCRIBE SPACE laura_space;
 Providing information about tag. Please refer to XXX about CREATE TAG.
 
 ```
-nebula> DESCRIBE TAG player
+(user@127.0.0.1) [(none)]> DESCRIBE TAG player
 ==================
 | Field |   Type |
 ==================
@@ -38,7 +38,7 @@ nebula> DESCRIBE TAG player
 Providing information about edge. Please refer to XXX about CREATE EDGE.
 
 ```
-nebula> DESCRIBE EDGE serve
+(user@127.0.0.1) [(none)]> DESCRIBE EDGE serve
 =====================
 |      Field | Type |
 =====================

@@ -12,7 +12,7 @@ In nGQL, nonzero numbers are evaluated to _true_. The precedence of the operator
 Logical AND:
 
 ```
-nebula> YIELD -1 && true;
+(user@127.0.0.1) [(none)]> YIELD -1 && true;
 ================
 | (-(1)&&true) |
 ================
@@ -25,7 +25,7 @@ nebula> YIELD -1 && true;
 Logical NOT:
 
 ```
-nebula> YIELD !(-1);
+(user@127.0.0.1) [(none)]> YIELD !(-1);
 ===========
 | !(-(1)) |
 ===========
@@ -39,7 +39,7 @@ nebula> YIELD !(-1);
 Logical OR:
 
 ```
-nebula> YIELD 1 || !1;
+(user@127.0.0.1) [(none)]> YIELD 1 || !1;
 =============
 | (1||!(1)) |
 =============

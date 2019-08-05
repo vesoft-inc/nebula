@@ -20,14 +20,14 @@ Comparison operations result in a value of _true_ and _false_.
 Equal. String comparisons are case-sensitive. Values of different type are not equal.
 
 ```
-nebula> YIELD 'A' == 'a';
+(user@127.0.0.1) [(none)]> YIELD 'A' == 'a';
 ==============
 | ("A"=="a") |
 ==============
 | false |
 --------------
 
-nebula> YIELD '2' == 2;
+(user@127.0.0.1) [(none)]> YIELD '2' == 2;
 ============
 | ("2"==2) |
 ============
@@ -40,7 +40,7 @@ nebula> YIELD '2' == 2;
 Greater than： 
 
 ```
-nebula> YIELD 3 > 2;
+(user@127.0.0.1) [(none)]> YIELD 3 > 2;
 =========
 | (3>2) |
 =========
@@ -53,7 +53,7 @@ nebula> YIELD 3 > 2;
 Greater than or equal:
 
 ```
-nebula> YIELD 2 >= 2;
+(user@127.0.0.1) [(none)]> YIELD 2 >= 2;
 ==========
 | (2>=2) |
 ==========
@@ -66,7 +66,7 @@ nebula> YIELD 2 >= 2;
 Less than:
 
 ```
-nebula> YIELD 2.0 < 1.9;
+(user@127.0.0.1) [(none)]> YIELD 2.0 < 1.9;
 =======================
 | (2.000000<1.900000) |
 =======================
@@ -79,7 +79,7 @@ nebula> YIELD 2.0 < 1.9;
 Less than or equal:
 
 ```
-nebula> YIELD 0.11 <= 0.11;
+(user@127.0.0.1) [(none)]> YIELD 0.11 <= 0.11;
 ========================
 | (0.110000<=0.110000) |
 ========================
@@ -92,7 +92,7 @@ nebula> YIELD 0.11 <= 0.11;
 Not equal:
 
 ```
-nebula> YIELD 1 != '1'
+(user@127.0.0.1) [(none)]> YIELD 1 != '1'
 ============
 | (1!="1") |
 ============

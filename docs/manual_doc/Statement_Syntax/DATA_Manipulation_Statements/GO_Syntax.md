@@ -31,7 +31,7 @@ YIELD | YIELDS  [DISTINCT] <return_list>
 ### Examples
 
 ```
-nebula> GO FROM 101 OVER serve  \
+(user@127.0.0.1) [(none)]> GO FROM 101 OVER serve  \
    /* start from vertex 101 along with edge type serve, and get vertex 204, 215 */
 =======
 | id  |
@@ -44,7 +44,7 @@ nebula> GO FROM 101 OVER serve  \
 
 
 ```
-nebula> GO FROM 101 OVER serve  \
+(user@127.0.0.1) [(none)]> GO FROM 101 OVER serve  \
    WHERE serve.start_year > 1990       /* check edge (serve) property ( start_year) */ \ 
    YIELD $$.team.name AS team_name,    /* target vertex (team) property serve.start_year */
 ================================
@@ -57,7 +57,7 @@ nebula> GO FROM 101 OVER serve  \
 ```
 
 ```
-nebula> GO FROM 100,102 OVER serve           \
+(user@127.0.0.1) [(none)]> GO FROM 100,102 OVER serve           \
    WHERE serve.start_year > 1995             /* check edge property */ \
    YIELD DISTINCT $$.team.name AS team_name, /* DISTINCT as SQL */ \ 
    serve.start_year,                         /* edge property */ \
