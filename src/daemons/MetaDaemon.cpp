@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
     auto clusterMan
         = std::make_unique<nebula::meta::ClusterManager>(FLAGS_peers, "");
-    if (!clusterMan->loadOrCreateCluId(kvstore_)) {
+    if (!clusterMan->loadOrCreateCluId(kvstorePtr)) {
         LOG(ERROR) << "clusterId init error!";
         return EXIT_FAILURE;
     }
