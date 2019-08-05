@@ -17,6 +17,7 @@
 #include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
+#include "meta/ClusterManager.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/KVBasedGflagsManager.h"
@@ -112,6 +113,7 @@ int main(int argc, char *argv[]) {
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
+
     auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(
                                                         std::move(options),
                                                         ioPool,
@@ -121,7 +123,13 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "nebula store init failed";
         return EXIT_FAILURE;
     }
-
+  
+    auto clusterMan
+        = std::make_unique<nebula::meta::ClusterManager>(FLAGS_peers, "");
+    if (!clusterMan->loadOrCreateCluId(kvstore.get())) {
+        LOG(ERROR) << "clusterId init error!";
+        return EXIT_FAILURE;
+    }
     std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
         std::make_unique<nebula::hdfs::HdfsCommandHelper>();
 
@@ -148,8 +156,10 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
+    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get(),
+                                                                      clusterMan->getClusterId());
     nebula::meta::ActiveHostsMan::instance(kvstore.get());
+
     auto gflagsManager = std::make_unique<nebula::meta::KVBasedGflagsManager>(kvstore.get());
     gflagsManager->init();
 

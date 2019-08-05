@@ -191,13 +191,15 @@ public:
     }
 
     static std::unique_ptr<test::ServerContext> mockMetaServer(uint16_t port,
-                                                               const char* dataPath) {
+                                                               const char* dataPath,
+                                                               ClusterID clusterId = 0) {
         LOG(INFO) << "Initializing KVStore at \"" << dataPath << "\"";
 
         auto sc = std::make_unique<test::ServerContext>();
         sc->kvStore_ = TestUtils::initKV(dataPath);
 
-        auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get());
+        auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get(),
+                                                                          clusterId);
         sc->mockCommon("meta", port, handler);
         LOG(INFO) << "The Meta Daemon started on port " << sc->port_
                   << ", data path is at \"" << dataPath << "\"";
