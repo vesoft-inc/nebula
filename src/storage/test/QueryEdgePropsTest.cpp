@@ -18,18 +18,18 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (int32_t partId = 1; partId <= 3; partId++) {
+    for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
-        for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             // Generate 7 edges for each source vertex id
-            for (int32_t dstId = 10001; dstId <= 10007; dstId++) {
+            for (auto dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
                 RowWriter writer(nullptr);
                 for (int64_t numInt = 0; numInt < 10; numInt++) {
                     writer << numInt;
                 }
-                for (int32_t numString = 10; numString < 20; numString++) {
+                for (auto numString = 10; numString < 20; numString++) {
                     writer << folly::stringPrintf("string_col_%d", numString);
                 }
                 auto val = writer.encode();
@@ -51,9 +51,9 @@ void mockData(kvstore::KVStore* kv) {
 void buildRequest(cpp2::EdgePropRequest& req) {
     req.set_space_id(0);
     decltype(req.parts) tmpEdges;
-    for (int32_t partId = 1; partId <= 3; partId++) {
-        for (int32_t vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (int32_t dstId = 10001; dstId <= 10007; dstId++) {
+    for (auto partId = 0; partId < 3; partId++) {
+        for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            for (auto dstId = 10001; dstId <= 10007; dstId++) {
                 tmpEdges[partId].emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                               vertexId, 101, dstId, dstId - 10001);
             }
@@ -63,7 +63,7 @@ void buildRequest(cpp2::EdgePropRequest& req) {
     req.set_edge_type(101);
     // Return edge props col_0, col_2, col_4 ... col_18
     decltype(req.return_columns) tmpColumns;
-    for (int32_t i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
         tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
                                                    folly::stringPrintf("col_%d", i*2)));
     }
@@ -86,7 +86,7 @@ void checkResponse(cpp2::EdgePropResponse& resp) {
             // We can't ensure the order, so just check the srcId range.
             int64_t v;
             EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(0, v));
-            CHECK_GE(40, v);
+            CHECK_GE(30, v);
             CHECK_LE(0, v);
         }
         {
@@ -102,13 +102,13 @@ void checkResponse(cpp2::EdgePropResponse& resp) {
             CHECK_EQ(10001 + rowNum % 7, v);
         }
         // col_0, col_2 ... col_8
-        for (int32_t i = 3; i < 8; i++) {
+        for (auto i = 3; i < 8; i++) {
             int64_t v;
             EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
             CHECK_EQ((i - 3) * 2, v);
         }
         // col_10, col_12 ... col_18
-        for (int32_t i = 8; i < 13; i++) {
+        for (auto i = 8; i < 13; i++) {
             folly::StringPiece v;
             EXPECT_EQ(ResultType::SUCCEEDED, it->getString(i, v));
             CHECK_EQ(folly::stringPrintf("string_col_%d", (i - 8 + 5) * 2), v);

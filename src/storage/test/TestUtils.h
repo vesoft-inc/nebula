@@ -47,7 +47,7 @@ public:
             // GraphSpaceID =>  {PartitionIDs}
             // 0 => {0, 1, 2, 3, 4, 5}
             auto& partsMap = memPartMan->partsMap();
-            for (auto partId = 1; partId <= partitionNumber; partId++) {
+            for (auto partId = 0; partId < partitionNumber; partId++) {
                 partsMap[0][partId] = PartMeta();
             }
 

@@ -18,30 +18,30 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (int32_t partId = 1; partId <= 3; partId++) {
+    for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
-        for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (int32_t tagId = 3001; tagId < 3010; tagId++) {
+        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            for (auto tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
                 for (int64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;
                 }
-                for (int32_t numString = 3; numString < 6; numString++) {
+                for (auto numString = 3; numString < 6; numString++) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
                 data.emplace_back(std::move(key), std::move(val));
             }
             // Generate 7 edges for each edgeType.
-            for (int32_t dstId = 10001; dstId <= 10007; dstId++) {
+            for (auto dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101, dstId - 10001, dstId, 0);
                 RowWriter writer(nullptr);
                 for (int64_t numInt = 0; numInt < 10; numInt++) {
                     writer << numInt;
                 }
-                for (int32_t numString = 10; numString < 20; numString++) {
+                for (auto numString = 10; numString < 20; numString++) {
                     writer << folly::stringPrintf("string_col_%d", numString);
                 }
                 auto val = writer.encode();
@@ -61,8 +61,8 @@ void mockData(kvstore::KVStore* kv) {
 void buildRequest(cpp2::GetNeighborsRequest& req) {
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
-    for (int32_t partId = 1; partId <= 3; partId++) {
-        for (int32_t vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+    for (auto partId = 0; partId < 3; partId++) {
+        for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             tmpIds[partId].emplace_back(vertexId);
         }
     }
@@ -70,7 +70,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
     req.set_edge_type(101);
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
-    for (int32_t i = 0; i < 2; i++) {
+    for (int i = 0; i < 2; i++) {
         tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE,
                                                    folly::stringPrintf("tag_%d_col_%d",
                                                                        3001 + i*2, i*2),
@@ -78,7 +78,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
                                                    3001 + i*2));
     }
     // Return edge props col_0, col_2, col_4 ... col_18
-    for (int32_t i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
         tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE,
                                                    folly::stringPrintf("col_%d", i*2),
                                                    cpp2::StatType::SUM));

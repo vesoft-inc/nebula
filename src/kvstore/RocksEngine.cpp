@@ -103,10 +103,6 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
         FileUtils::makeDir(path);
     }
-    auto downloadPath = folly::stringPrintf("%s/download", dataPath_.c_str());
-    if (FileUtils::fileType(downloadPath.c_str()) == FileType::NOTEXIST) {
-        FileUtils::makeDir(downloadPath);
-    }
     LOG(INFO) << "open rocksdb on " << path;
 
     rocksdb::Options options;

@@ -26,9 +26,9 @@ TEST(AddEdgesTest, SimpleTest) {
     req.overwritable = true;
     // partId => List<Edge>
     // Edge => {EdgeKey, props}
-    for (int32_t partId = 1; partId <= 3; partId++) {
+    for (auto partId = 0; partId < 3; partId++) {
         std::vector<cpp2::Edge> edges;
-        for (int32_t srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
+        for (auto srcId = partId * 10; srcId < 10 * (partId + 1); srcId++) {
             edges.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
                                              srcId, srcId*100 + 1, srcId*100 + 2, srcId*100 + 3),
@@ -44,8 +44,8 @@ TEST(AddEdgesTest, SimpleTest) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
     LOG(INFO) << "Check data in kv store...";
-    for (int32_t partId = 1; partId <= 3; partId++) {
-        for (int32_t srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
+    for (auto partId = 0; partId < 3; partId++) {
+        for (auto srcId = 10 * partId; srcId < 10 * (partId + 1); srcId++) {
             auto prefix = NebulaKeyUtils::prefix(partId, srcId, srcId*100 + 1);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));

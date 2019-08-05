@@ -22,26 +22,26 @@ namespace nebula {
 namespace storage {
 
 void mockData(kvstore::KVStore* kv) {
-    for (int32_t partId = 1; partId <= 3; partId++) {
+    for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
-        for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (int32_t tagId = 3001; tagId < 3010; tagId++) {
+        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            for (auto tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
                 for (uint64_t numInt = 0; numInt < 3; numInt++) {
                     writer << (vertexId + tagId + numInt);
                 }
-                for (int32_t numString = 3; numString < 6; numString++) {
+                for (auto numString = 3; numString < 6; numString++) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
                 data.emplace_back(std::move(key), std::move(val));
             }
             // Generate 7 out-edges for each edgeType.
-            for (int32_t dstId = 10001; dstId <= 10007; dstId++) {
+            for (auto dstId = 10001; dstId <= 10007; dstId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 // Write multi versions,  we should get the latest version.
-                for (int32_t version = 0; version < 3; version++) {
+                for (auto version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101,
                                                        0, dstId,
                                                        std::numeric_limits<int>::max() - version);
@@ -49,7 +49,7 @@ void mockData(kvstore::KVStore* kv) {
                     for (uint64_t numInt = 0; numInt < 10; numInt++) {
                         writer << (dstId + numInt);
                     }
-                    for (int32_t numString = 10; numString < 20; numString++) {
+                    for (auto numString = 10; numString < 20; numString++) {
                         writer << folly::stringPrintf("string_col_%d_%d", numString, version);
                     }
                     auto val = writer.encode();
@@ -82,8 +82,8 @@ void mockData(kvstore::KVStore* kv) {
 void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
-    for (int32_t partId = 1; partId <= 3; partId++) {
-        for (int32_t vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+    for (auto partId = 0; partId < 3; partId++) {
+        for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             tmpIds[partId].emplace_back(vertexId);
         }
     }
@@ -91,7 +91,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     req.set_edge_type(outBound ? 101 : -101);
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
-    for (int32_t i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++) {
         tmpColumns.emplace_back(
             TestUtils::propDef(cpp2::PropOwner::SOURCE,
                                folly::stringPrintf("tag_%d_col_%d", 3001 + i*2, i*2),
@@ -100,7 +100,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
     tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "_dst"));
     tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "_rank"));
     // Return edge props col_0, col_2, col_4 ... col_18
-    for (int32_t i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
         tmpColumns.emplace_back(
             TestUtils::propDef(cpp2::PropOwner::EDGE,
                                folly::stringPrintf("col_%d", i*2)));
@@ -157,13 +157,13 @@ void checkResponse(cpp2::QueryResponse& resp,
             }
             if (outBound) {
                 // col_0, col_2 ... col_8
-                for (int32_t i = 2; i < 7; i++) {
+                for (auto i = 2; i < 7; i++) {
                     int64_t v;
                     EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
                     CHECK_EQ((i - 2) * 2 + dstId, v);
                 }
                 // col_10, col_12 ... col_18
-                for (int32_t i = 7; i < 12; i++) {
+                for (auto i = 7; i < 12; i++) {
                     folly::StringPiece v;
                     EXPECT_EQ(ResultType::SUCCEEDED, it->getString(i, v));
                     CHECK_EQ(folly::stringPrintf("string_col_%d_%d", (i - 7 + 5) * 2, 2), v);
@@ -268,7 +268,7 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
     auto* tag = new std::string("3001");
     auto* prop = new std::string("tag_3001_col_0");
     auto* srcExp = new SourcePropertyExpression(tag, prop);
-    auto* priExp = new PrimaryExpression(30 + 3001L);
+    auto* priExp = new PrimaryExpression(20 + 3001L);
     auto relExp = std::make_unique<RelationalExpression>(srcExp,
                                                          RelationalExpression::Operator::GE,
                                                          priExp);
@@ -309,10 +309,10 @@ TEST(QueryBoundTest,  GenBucketsTest) {
         QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(9, buckets.size());
-        for (int32_t i = 0; i < 3; i++) {
+        for (auto i = 0; i < 3; i++) {
             ASSERT_EQ(4, buckets[i].vertices_.size());
         }
-        for (int32_t i = 3; i < 9; i++) {
+        for (auto i = 3; i < 9; i++) {
             ASSERT_EQ(3, buckets[i].vertices_.size());
         }
     }
@@ -353,7 +353,7 @@ TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
     auto* tag = new std::string("3001");
     auto* prop = new std::string("tag_3001_col_0");
     auto* srcExp = new SourcePropertyExpression(tag, prop);
-    auto* priExp = new PrimaryExpression(30 + 3001L);
+    auto* priExp = new PrimaryExpression(20 + 3001L);
     auto* left = new RelationalExpression(srcExp,
                                           RelationalExpression::Operator::GE,
                                           priExp);

@@ -27,11 +27,11 @@ TEST(AddVerticesTest, SimpleTest) {
     // partId => List<Vertex>
     // Vertex => {Id, List<VertexProp>}
     // VertexProp => {tagId, tags}
-    for (int32_t partId = 1; partId <= 3; partId++) {
+    for (auto partId = 0; partId < 3; partId++) {
         std::vector<cpp2::Vertex> vertices;
-        for (int32_t vertexId = partId * 10; vertexId < 10 * (partId + 1); vertexId++) {
+        for (auto vertexId = partId * 10; vertexId < 10 * (partId + 1); vertexId++) {
             std::vector<cpp2::Tag> tags;
-            for (int32_t tagId = 0; tagId < 10; tagId++) {
+            for (auto tagId = 0; tagId < 10; tagId++) {
                 tags.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                    tagId,
                                    folly::stringPrintf("%d_%d_%d", partId, vertexId, tagId));
@@ -50,8 +50,8 @@ TEST(AddVerticesTest, SimpleTest) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
     LOG(INFO) << "Check data in kv store...";
-    for (int32_t partId = 1; partId <= 3; partId++) {
-        for (int32_t vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
+    for (auto partId = 0; partId < 3; partId++) {
+        for (auto vertexId = 10 * partId; vertexId < 10 * (partId + 1); vertexId++) {
             auto prefix = NebulaKeyUtils::prefix(partId, vertexId);
             std::unique_ptr<kvstore::KVIterator> iter;
             EXPECT_EQ(kvstore::ResultCode::SUCCEEDED, kv->prefix(0, partId, prefix, &iter));

@@ -25,16 +25,16 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     auto schemaMan = TestUtils::mockSchemaMan();
 
     LOG(INFO) << "Prepare data...";
-    for (int32_t partId = 1; partId <= 3; partId++) {
+    for (auto partId = 0; partId < 3; partId++) {
         std::vector<kvstore::KV> data;
-        for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            for (int32_t tagId = 3001; tagId < 3010; tagId++) {
+        for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
+            for (auto tagId = 3001; tagId < 3010; tagId++) {
                 auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
                 RowWriter writer;
                 for (int64_t numInt = 0; numInt < 3; numInt++) {
                     writer << numInt;
                 }
-                for (int32_t numString = 3; numString < 6; numString++) {
+                for (auto numString = 3; numString < 6; numString++) {
                     writer << folly::stringPrintf("tag_string_col_%d", numString);
                 }
                 auto val = writer.encode();
@@ -56,8 +56,8 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     cpp2::VertexPropRequest req;
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
-    for (int32_t partId = 1; partId <= 3; partId++) {
-        for (int32_t vertexId =  partId * 10;
+    for (auto partId = 0; partId < 3; partId++) {
+        for (auto vertexId =  partId * 10;
              vertexId < (partId + 1) * 10;
              vertexId++) {
             tmpIds[partId].emplace_back(vertexId);
@@ -66,7 +66,7 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     req.set_parts(std::move(tmpIds));
     // Return tag props col_0, col_2, col_4
     decltype(req.return_columns) tmpColumns;
-    for (int32_t i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++) {
         tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE,
                                                    folly::stringPrintf("tag_%d_col_%d",
                                                                        3001 + i*2, i*2),
