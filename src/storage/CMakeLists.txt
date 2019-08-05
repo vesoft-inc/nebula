@@ -14,6 +14,7 @@ nebula_add_library(
     storage_http_handler OBJECT
     StorageHttpStatusHandler.cpp
     StorageHttpDownloadHandler.cpp
+    StorageHttpAdminHandler.cpp
 )
 
 nebula_add_library(

@@ -59,6 +59,7 @@ TEST(NebulaStoreTest, SimpleTest) {
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
                                                local);
+    store->init();
     sleep(1);
     EXPECT_EQ(2, store->spaces_.size());
 
@@ -157,7 +158,7 @@ TEST(NebulaStoreTest, PartsTest) {
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
                                                local);
-
+    store->init();
     auto check = [&](GraphSpaceID spaceId) {
         for (auto i = 0; i < 2; i++) {
             ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/%d",
@@ -192,7 +193,7 @@ TEST(NebulaStoreTest, PartsTest) {
         ASSERT_EQ(9, parts[4]);
     }
 
-    auto* pm = dynamic_cast<MemPartManager*>(store->partMan_.get());
+    auto* pm = dynamic_cast<MemPartManager*>(store->options_.partMan_.get());
     // Let's create another space with 10 parts.
     for (auto partId = 0; partId < 10; partId++) {
         pm->addPart(1, partId);
@@ -272,6 +273,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
     std::vector<std::unique_ptr<NebulaStore>> stores;
     for (int i = 0; i < replicas; i++) {
         stores.emplace_back(initNebulaStore(peers, i, rootPath.path()));
+        stores.back()->init();
     }
     LOG(INFO) << "Waiting for all leaders elected!";
     int from = 0;
@@ -328,7 +330,6 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         }
         sleep(FLAGS_heartbeat_interval);
         {
-            LOG(INFO) << "Check the data on all peers...";
             int32_t start = 0;
             int32_t end = 100;
             std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
@@ -336,22 +337,23 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
             s = prefix + s;
             e = prefix + e;
             for (int i = 0; i < replicas; i++) {
+                LOG(INFO) << "Check the data on " << stores[i]->raftAddr_ << " for part " << part;
                 auto ret = stores[i]->engine(0, part);
                 ASSERT(ok(ret));
                 auto* engine = value(std::move(ret));
                 std::unique_ptr<KVIterator> iter;
-                EXPECT_EQ(ResultCode::SUCCEEDED, engine->range(s, e, &iter));
+                ASSERT_EQ(ResultCode::SUCCEEDED, engine->range(s, e, &iter));
                 int num = 0;
                 auto prefixLen = prefix.size();
                 while (iter->valid()) {
                     auto key = *reinterpret_cast<const int32_t*>(iter->key().data() + prefixLen);
                     auto val = iter->val();
-                    EXPECT_EQ(num, key);
-                    EXPECT_EQ(folly::stringPrintf("val_%d_%d", part, num), val);
+                    ASSERT_EQ(num, key);
+                    ASSERT_EQ(folly::stringPrintf("val_%d_%d", part, num), val);
                     iter->next();
                     num++;
                 }
-                EXPECT_EQ(100, num);
+                ASSERT_EQ(100, num);
             }
         }
         // Let's try to write data on follower;

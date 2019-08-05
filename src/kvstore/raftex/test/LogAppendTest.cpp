@@ -37,24 +37,8 @@ TEST(LogAppend, SimpleAppendWithOneCopy) {
     checkLeadership(copies, leader);
 
     std::vector<std::string> msgs;
-    LogID id = -1;
-    appendLogs(1, 100, leader, msgs, id);
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies) {
-        ASSERT_EQ(100, c->getNumLogs());
-    }
-
-    for (int i = 0; i < 100; ++i, ++id) {
-        for (auto& c : copies) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    appendLogs(0, 99, leader, msgs);
+    checkConsensus(copies, 0, 99, msgs);
 
     finishRaft(services, copies, workers, leader);
 }
@@ -75,24 +59,8 @@ TEST(LogAppend, SimpleAppendWithThreeCopies) {
     checkLeadership(copies, leader);
 
     std::vector<std::string> msgs;
-    LogID id = -1;
-    appendLogs(1, 100, leader, msgs, id);
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies) {
-        ASSERT_EQ(100, c->getNumLogs());
-    }
-
-    for (int i = 0; i < 100; ++i, ++id) {
-        for (auto& c : copies) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    appendLogs(0, 99, leader, msgs);
+    checkConsensus(copies, 0, 99, msgs);
 
     finishRaft(services, copies, workers, leader);
 }
@@ -112,7 +80,7 @@ TEST(LogAppend, MultiThreadAppend) {
     // Check all hosts agree on the same leader
     checkLeadership(copies, leader);
 
-    // Create 16 threads, each appends 100 logs
+    // Create 4 threads, each appends 100 logs
     LOG(INFO) << "=====> Start multi-thread appending logs";
     const int numThreads = 4;
     const int numLogs = 100;
@@ -154,15 +122,13 @@ TEST(LogAppend, MultiThreadAppend) {
         ASSERT_EQ(numThreads * numLogs, c->getNumLogs());
     }
 
-    // The first log should be heart beat
-    LogID id = 2;
-    for (int i = 0; i < numThreads * numLogs; ++i, ++id) {
+    for (int i = 0; i < numThreads * numLogs; ++i) {
         folly::StringPiece msg;
-        ASSERT_TRUE(leader->getLogMsg(id, msg));
+        ASSERT_TRUE(leader->getLogMsg(i, msg));
         for (auto& c : copies) {
             if (c != leader) {
                 folly::StringPiece log;
-                ASSERT_TRUE(c->getLogMsg(id, log));
+                ASSERT_TRUE(c->getLogMsg(i, log));
                 ASSERT_EQ(msg, log);
             }
         }
