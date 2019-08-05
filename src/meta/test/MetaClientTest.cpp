@@ -671,15 +671,25 @@ TEST(MetaClientTest, UserTest) {
     uint16_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-    uint32_t localIp;
+    IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto listener = std::make_unique<TestListener>();
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-    client->init();
-    std::vector<HostAddr> hosts = {{0, 0}};
-    auto hostRet = client->addHosts(hosts).get();
-    ASSERT_TRUE(hostRet.ok()) << hostRet.status();
-    TestUtils::registerHB(hosts);
+    client->waitForMetadReady();
+    client->registerListener(listener.get());
+    {
+        // Test addHost, listHosts interface.
+        std::vector<HostAddr> hosts = {{0, 0}};
+        auto r = client->addHosts(hosts).get();
+        ASSERT_TRUE(r.ok());
+        TestUtils::registerHB(hosts);
+        auto ret = client->listHosts().get();
+        ASSERT_TRUE(ret.ok());
+        for (auto i = 0u; i < hosts.size(); i++) {
+            ASSERT_EQ(hosts[i], ret.value()[i].first);
+        }
+    }
     auto spaceRet = client->createSpace("default_space", 1, 1).get();
     ASSERT_TRUE(spaceRet.ok()) << spaceRet.status();
     auto defaultSpaceId = spaceRet.value();

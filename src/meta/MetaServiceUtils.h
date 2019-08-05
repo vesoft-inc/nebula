@@ -15,11 +15,11 @@ namespace nebula {
 namespace meta {
 
 enum class EntryType : int8_t {
-SPACE = 0x01,
-TAG   = 0x02,
-EDGE  = 0x03,
-USER  = 0x04,
-CONFIG = 0x05,
+    SPACE  = 0x01,
+    TAG    = 0x02,
+    EDGE   = 0x03,
+    USER   = 0x04,
+    CONFIG = 0x05,
 };
 
 using ConfigName = std::pair<cpp2::ConfigModule, std::string>;

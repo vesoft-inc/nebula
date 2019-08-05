@@ -271,7 +271,7 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "CREATE TAG person(id int)";
         auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Test nonexistent tag
     {
@@ -334,7 +334,9 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<uniform_tuple_t<std::string, 1>> expected{
+            {"account"},
             {"tag1"},
+            {"unreserved_upper"},
             {"person"},
             {"upper"},
         };
