@@ -45,7 +45,6 @@ bool NebulaStore::init() {
         return false;
     }
 
-    flusher_ = std::make_unique<wal::BufferFlusher>();
     CHECK(!!options_.partMan_);
     LOG(INFO) << "Scan the local path, and init the spaces_";
     {
@@ -207,7 +206,6 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                        engine,
                                        ioPool_,
                                        bgWorkers_,
-                                       flusher_.get(),
                                        workers_);
     auto partMeta = options_.partMan_->partMeta(spaceId, partId);
     std::vector<HostAddr> peers;

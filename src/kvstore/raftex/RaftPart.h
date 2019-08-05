@@ -23,7 +23,6 @@ namespace nebula {
 
 namespace wal {
 class FileBasedWal;
-class BufferFlusher;
 }  // namespace wal
 
 
@@ -173,7 +172,6 @@ protected:
              PartitionID partId,
              HostAddr localAddr,
              const folly::StringPiece walRoot,
-             wal::BufferFlusher* flusher,
              std::shared_ptr<folly::IOThreadPoolExecutor> pool,
              std::shared_ptr<thread::GenericThreadPool> workers,
              std::shared_ptr<folly::Executor> executor);

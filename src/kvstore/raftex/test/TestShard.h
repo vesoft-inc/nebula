@@ -33,7 +33,6 @@ public:
         PartitionID partId,
         HostAddr addr,
         const folly::StringPiece walRoot,
-        wal::BufferFlusher* flusher,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
         std::shared_ptr<thread::GenericThreadPool> workers,
         std::shared_ptr<folly::Executor> handlersPool,

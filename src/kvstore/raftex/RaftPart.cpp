@@ -15,7 +15,6 @@
 #include "network/NetworkUtils.h"
 #include "thread/NamedThread.h"
 #include "kvstore/wal/FileBasedWal.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/raftex/LogStrListIterator.h"
 #include "kvstore/raftex/Host.h"
 
@@ -39,7 +38,6 @@ using nebula::network::NetworkUtils;
 using nebula::thrift::ThriftClientManager;
 using nebula::wal::FileBasedWal;
 using nebula::wal::FileBasedWalPolicy;
-using nebula::wal::BufferFlusher;
 
 class AppendLogsIterator final : public LogIterator {
 public:
@@ -198,7 +196,6 @@ RaftPart::RaftPart(ClusterID clusterId,
                    PartitionID partId,
                    HostAddr localAddr,
                    const folly::StringPiece walRoot,
-                   BufferFlusher* flusher,
                    std::shared_ptr<folly::IOThreadPoolExecutor> pool,
                    std::shared_ptr<thread::GenericThreadPool> workers,
                    std::shared_ptr<folly::Executor> executor)
@@ -221,7 +218,6 @@ RaftPart::RaftPart(ClusterID clusterId,
     policy.numBuffers = FLAGS_wal_buffer_num;
     wal_ = FileBasedWal::getWal(walRoot,
                                 policy,
-                                flusher,
                                 [this] (LogID logId,
                                         TermID logTermId,
                                         ClusterID logClusterId,

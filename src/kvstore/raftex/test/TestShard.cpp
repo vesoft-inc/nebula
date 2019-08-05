@@ -8,7 +8,6 @@
 #include "kvstore/raftex/test/TestShard.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/wal/FileBasedWal.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/raftex/Host.h"
 
 namespace nebula {
@@ -35,7 +34,6 @@ TestShard::TestShard(size_t idx,
                      PartitionID partId,
                      HostAddr addr,
                      const folly::StringPiece walRoot,
-                     wal::BufferFlusher* flusher,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,
                      std::shared_ptr<folly::Executor> handlersPool,
@@ -48,7 +46,6 @@ TestShard::TestShard(size_t idx,
                    partId,
                    addr,
                    walRoot,
-                   flusher,
                    ioPool,
                    workers,
                    handlersPool)

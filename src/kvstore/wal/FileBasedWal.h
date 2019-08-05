@@ -37,19 +37,17 @@ struct FileBasedWalPolicy {
 };
 
 
-class BufferFlusher;
-
 using PreProcessor = folly::Function<bool(LogID, TermID, ClusterID, const std::string& log)>;
-class FileBasedWal final
-        : public Wal
-        , public std::enable_shared_from_this<FileBasedWal> {
+
+
+class FileBasedWal final : public Wal
+                         , public std::enable_shared_from_this<FileBasedWal> {
     FRIEND_TEST(FileBasedWal, TTLTest);
 public:
     // A factory method to create a new WAL
     static std::shared_ptr<FileBasedWal> getWal(
         const folly::StringPiece dir,
         FileBasedWalPolicy policy,
-        BufferFlusher* flusher,
         PreProcessor preProcessor);
 
     virtual ~FileBasedWal();
@@ -134,30 +132,24 @@ private:
     // Callers should use static method getWal() instead
     FileBasedWal(const folly::StringPiece dir,
                  FileBasedWalPolicy policy,
-                 BufferFlusher* flusher,
                  PreProcessor preProcessor);
 
     // Scan all WAL files
     void scanAllWalFiles();
 
-    // Dump a Cord to the current file
-    void dumpCord(Cord& cord,
-                  LogID firstId,
-                  LogID lastId,
-                  TermID lastTerm);
-
     // Close down the current wal file
     void closeCurrFile();
     // Prepare a new wal file starting from the given log id
     void prepareNewFile(LogID startLogId);
+    // Retrieve the term id for the given log id in the given WAL file
+    TermID readTermId(const char* path, LogID logId);
 
-    // Create a new buffer at the end of the buffer list
-    BufferPtr createNewBuffer(LogID firstId,
-                              std::unique_lock<std::mutex>& guard);
+    // Return the last buffer.
+    // If the last buffer is big enough, create a new one
+    BufferPtr getLastBuffer(LogID id, size_t expectedToWrite);
 
     // Implementation of appendLog()
-    bool appendLogInternal(BufferPtr& buffer,
-                           LogID id,
+    bool appendLogInternal(LogID id,
                            TermID term,
                            ClusterID cluster,
                            std::string msg);
@@ -171,8 +163,6 @@ private:
      * FileBasedWal Member Fields
      *
      **************************************/
-    BufferFlusher* flusher_;
-
     std::atomic<bool> stopped_{false};
 
     const std::string dir_;
@@ -189,21 +179,16 @@ private:
     mutable std::mutex walFilesMutex_;
 
     // The current fd (which is the last file in walFiles_)
-    // for appending new log messages
-    // Accessing currFd_ **IS NOT** thread-safe, because only
-    // the buffer-flush thread is expected to access it
+    // for appending new log messages.
+    // Please be aware: accessing currFd_ is not thread-safe
     int32_t currFd_{-1};
     // The WalFileInfo corresponding to the currFd_
     WalFileInfoPtr currInfo_;
 
-    // All buffers except the last one are ready to be persisted
-    // The last entry is the one being appended
+    // The purpose of the memory buffer is to provide a read cache
     BufferList buffers_;
     mutable std::mutex buffersMutex_;
-    // There is a vacancy for a new buffer
-    std::condition_variable slotReadyCV_;
 
-    mutable std::mutex flushMutex_;
     PreProcessor preProcessor_;
     std::atomic_int onGoingBuffersNum_{0};
 };

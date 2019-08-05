@@ -11,7 +11,6 @@
 #include <gtest/gtest_prod.h>
 #include <folly/RWSpinLock.h>
 #include "kvstore/raftex/RaftexService.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/Part.h"
@@ -193,7 +192,6 @@ private:
     KVOptions options_;
 
     std::shared_ptr<raftex::RaftexService> raftService_;
-    std::unique_ptr<wal::BufferFlusher> flusher_;
 };
 
 }  // namespace kvstore
