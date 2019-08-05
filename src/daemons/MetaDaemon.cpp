@@ -18,6 +18,7 @@
 #include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
+#include "meta/ClusterManager.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/KVBasedGflagsManager.h"
@@ -119,6 +120,13 @@ int main(int argc, char *argv[]) {
 
     auto *kvstorePtr = kvstore.get();
 
+    auto clusterMan
+        = std::make_unique<nebula::meta::ClusterManager>(FLAGS_peers, "");
+    if (!clusterMan->loadOrCreateCluId(kvstore_)) {
+        LOG(ERROR) << "clusterId init error!";
+        return EXIT_FAILURE;
+    }
+
     std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
         std::make_unique<nebula::hdfs::HdfsCommandHelper>();
     auto *helperPtr = helper.get();
@@ -128,7 +136,6 @@ int main(int argc, char *argv[]) {
     pool->start(FLAGS_meta_http_thread_num, "http thread pool");
     LOG(INFO) << "Http Thread Pool started";
     auto* poolPtr = pool.get();
-
 
     LOG(INFO) << "Starting Meta HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
@@ -158,7 +165,8 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstorePtr);
+    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstorePtr,
+                                                                      clusterMan->getClusterId());
     nebula::meta::ActiveHostsMan::instance(kvstorePtr);
     auto gflagsManager = std::make_unique<nebula::meta::KVBasedGflagsManager>(kvstorePtr);
     gflagsManager->init();

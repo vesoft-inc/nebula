@@ -16,6 +16,7 @@
 #include "thread/GenericWorker.h"
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
+#include "meta/ClusterManager.h"
 
 namespace nebula {
 namespace meta {
@@ -87,6 +88,7 @@ public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                         std::vector<HostAddr> addrs,
                         HostAddr localHost = HostAddr(0, 0),
+                        ClusterManager* clusterMan = nullptr,
                         bool sendHeartBeat = false);
 
     virtual ~MetaClient();
@@ -319,6 +321,7 @@ private:
     HostAddr active_;
     HostAddr leader_;
     HostAddr localHost_;
+    ClusterManager* clusterMan_{nullptr};
     thread::GenericWorker bgThread_;
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
