@@ -7,6 +7,7 @@
 #include "storage/StorageHttpDownloadHandler.h"
 #include "webservice/Common.h"
 #include "process/ProcessUtils.h"
+#include "fs/FileUtils.h"
 #include "hdfs/HdfsHelper.h"
 #include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
@@ -27,13 +28,16 @@ using proxygen::ResponseBuilder;
 
 void StorageHttpDownloadHandler::init(nebula::hdfs::HdfsHelper *helper,
                                       nebula::thread::GenericThreadPool *pool,
-                                      nebula::kvstore::KVStore *kvstore) {
+                                      nebula::kvstore::KVStore *kvstore,
+                                      std::vector<std::string> paths) {
     helper_ = helper;
     pool_ = pool;
     kvstore_ = kvstore;
+    paths_ = paths;
     CHECK_NOTNULL(helper_);
     CHECK_NOTNULL(pool_);
     CHECK_NOTNULL(kvstore_);
+    CHECK(!paths_.empty());
 }
 
 void StorageHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
@@ -58,6 +62,13 @@ void StorageHttpDownloadHandler::onRequest(std::unique_ptr<HTTPMessage> headers)
      hdfsPath_ = headers->getQueryParam("path");
      partitions_ = headers->getQueryParam("parts");
      spaceID_ = headers->getIntQueryParam("space");
+
+     for (auto &path : paths_) {
+         auto downloadPath = folly::stringPrintf("%s/nebula/%d/download", path.c_str(), spaceID_);
+         if (fs::FileUtils::fileType(downloadPath.c_str()) == fs::FileType::NOTEXIST) {
+             fs::FileUtils::makeDir(downloadPath);
+         }
+     }
 }
 
 

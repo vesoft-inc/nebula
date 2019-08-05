@@ -32,12 +32,12 @@ public:
 
         pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
         pool_->start(1);
-        auto poolPtr = pool_.get();
 
         VLOG(1) << "Starting web service...";
-        WebService::registerHandler("/download", [poolPtr, this] {
+        WebService::registerHandler("/download", [this] {
             auto handler =  new storage::StorageHttpDownloadHandler();
-            handler->init(helper.get(), poolPtr, kv_.get());
+            std::vector<std::string> paths{rootPath_->path()};
+            handler->init(helper.get(), pool_.get(), kv_.get(), paths);
             return handler;
         });
         auto status = WebService::start();

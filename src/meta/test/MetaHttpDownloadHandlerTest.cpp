@@ -44,7 +44,8 @@ public:
         });
         WebService::registerHandler("/download", [this] {
             auto handler = new storage::StorageHttpDownloadHandler();
-            handler->init(helper.get(), pool_.get(), kv_.get());
+            std::vector<std::string> paths{rootPath_->path()};
+            handler->init(helper.get(), pool_.get(), kv_.get(), paths);
             return handler;
         });
         auto status = WebService::start();

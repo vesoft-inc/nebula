@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 
     LOG(INFO) << "Init kvstore";
     std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
-                                                        std::move(paths),
+                                                        paths,
                                                         ioThreadPool,
                                                         metaClient.get(),
                                                         schemaMan.get());
@@ -203,9 +203,9 @@ int main(int argc, char *argv[]) {
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::storage::StorageHttpStatusHandler();
     });
-    nebula::WebService::registerHandler("/download", [helperPtr, poolPtr, kvstorePtr] {
+    nebula::WebService::registerHandler("/download", [helperPtr, poolPtr, kvstorePtr, paths] {
         auto handler = new nebula::storage::StorageHttpDownloadHandler();
-        handler->init(helperPtr, poolPtr, kvstorePtr);
+        handler->init(helperPtr, poolPtr, kvstorePtr, paths);
         return handler;
     });
     nebula::WebService::registerHandler("/ingest", [kvstorePtr] {

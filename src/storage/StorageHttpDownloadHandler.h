@@ -25,7 +25,8 @@ public:
 
     void init(nebula::hdfs::HdfsHelper *helper,
               nebula::thread::GenericThreadPool *pool,
-              nebula::kvstore::KVStore *kvstore);
+              nebula::kvstore::KVStore *kvstore,
+              std::vector<std::string> paths);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
 
@@ -56,6 +57,7 @@ private:
     nebula::hdfs::HdfsHelper *helper_;
     nebula::thread::GenericThreadPool *pool_;
     nebula::kvstore::KVStore *kvstore_;
+    std::vector<std::string> paths_;
 };
 
 }  // namespace storage
