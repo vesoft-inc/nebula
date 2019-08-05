@@ -141,12 +141,14 @@ void SetExecutor::doUnion() {
     VLOG(3) << "Do Union.";
     if (leftResult_ == nullptr) {
         VLOG(3) << "Union has right result.";
+        getResultCols(rightResult_);
         finishExecution(std::move(rightResult_));
         return;
     }
 
     if (rightResult_ == nullptr) {
         VLOG(3) << "Union has left result.";
+        getResultCols(leftResult_);
         finishExecution(std::move(leftResult_));
         return;
     }
@@ -188,12 +190,12 @@ Status SetExecutor::checkSchema() {
 
     auto index = 0u;
     while (leftIter && rightIter) {
-        auto *colName = rightIter->getName();
+        auto *colName = leftIter->getName();
         if (leftIter->getType() != rightIter->getType()) {
             castingMap_.emplace_back(index, leftIter->getType());
         }
 
-        colNames_.emplace_back(std::string(colName));
+        colNames_.emplace_back(colName);
 
         ++index;
         ++leftIter;
@@ -282,6 +284,7 @@ void SetExecutor::doMinus() {
 
     if (rightResult_ == nullptr) {
         VLOG(3) << "Minus has left result.";
+        getResultCols(leftResult_);
         finishExecution(std::move(leftResult_));
         return;
     }
@@ -316,6 +319,16 @@ void SetExecutor::doMinus() {
 
     finishExecution(std::move(leftRows));
     return;
+}
+
+void SetExecutor::getResultCols(std::unique_ptr<InterimResult> &result) {
+    auto schema = result->schema();
+    auto iter = schema->begin();
+    while (iter) {
+        auto *colName = iter->getName();
+        colNames_.emplace_back(colName);
+        ++iter;
+    }
 }
 
 void SetExecutor::onEmptyInputs() {

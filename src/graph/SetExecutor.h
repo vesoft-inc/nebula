@@ -48,6 +48,8 @@ private:
 
     Status checkSchema();
 
+    void getResultCols(std::unique_ptr<InterimResult> &result);
+
     Status doCasting(std::vector<cpp2::RowValue> &rows) const;
 
     void doDistinct(std::vector<cpp2::RowValue> &rows) const;
