@@ -8,7 +8,7 @@
 SCRIPT_PATH=$(cd "$(dirname "$0")";pwd)
 
 if [ $# != 1 ] ; then
-  echo "USAGE: $0 <start|stop|restart|status|kill>"
+  echo "USAGE: $0 <start|stop|restart|kill>"
   exit 1;
 fi
 
