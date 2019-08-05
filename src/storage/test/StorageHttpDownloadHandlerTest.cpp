@@ -48,6 +48,7 @@ public:
         kv_.reset();
         rootPath_.reset();
         WebService::stop();
+        pool_->stop();
         VLOG(1) << "Web service stopped";
     }
 

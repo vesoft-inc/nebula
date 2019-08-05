@@ -134,7 +134,6 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string& hdfsHost,
         LOG(ERROR) << "Dispatch SSTFile Failed";
         return false;
     }
-    LOG(INFO) << "Result: Path " << hdfsPath << ", "  << result.value();
     std::vector<std::string> files;
     folly::split("\n", result.value(), files, true);
     int32_t  partNumber = files.size() - 1;

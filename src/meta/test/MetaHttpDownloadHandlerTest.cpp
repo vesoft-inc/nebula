@@ -54,8 +54,8 @@ public:
     void TearDown() override {
         kv_.reset();
         rootPath_.reset();
-        pool_->stop();
         WebService::stop();
+        pool_->stop();
         VLOG(1) << "Web service stopped";
     }
 
