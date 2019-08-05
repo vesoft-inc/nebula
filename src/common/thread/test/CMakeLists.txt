@@ -1,15 +1,15 @@
-add_executable(
+nebula_add_test(
+    NAME
         thread_test
+    SOURCES
         ThreadTest.cpp
         GenericWorkerTest.cpp
         GenericThreadPoolTest.cpp
+    OBJECTS
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:time_obj>
+    LIBRARIES
+        gtest
+        gtest_main
 )
-nebula_link_libraries(
-    thread_test
-    gtest
-    gtest_main
-)
-nebula_add_test(thread_test)

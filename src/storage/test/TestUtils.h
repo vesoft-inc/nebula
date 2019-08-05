@@ -17,6 +17,7 @@
 #include "dataman/ResultSchemaProvider.h"
 #include "storage/StorageServiceHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
+#include <folly/synchronization/Baton.h>
 #include "meta/SchemaManager.h"
 #include <folly/executors/ThreadPoolExecutor.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
@@ -62,6 +63,7 @@ public:
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
                                                             localhost);
+        store->init();
         sleep(1);
         return store;
     }

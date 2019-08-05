@@ -53,6 +53,7 @@ public:
         kDownload,
         kIngest,
         kOrderBy,
+        kConfig,
     };
 
     Kind kind() const {

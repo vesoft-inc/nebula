@@ -17,7 +17,6 @@ StorageClient::StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> thread
                              meta::MetaClient *client)
         : ioThreadPool_(threadPool)
         , client_(client) {
-    CHECK_NOTNULL(client_);
     clientsMan_
         = std::make_unique<thrift::ThriftClientManager<storage::cpp2::StorageServiceAsyncClient>>();
 }
@@ -237,8 +236,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
 
 
 PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
-    CHECK(client_);
-    auto parts = client_->partsNum(spaceId);
+    auto parts = partsNum(spaceId);
     auto s = ID_HASH(id, parts);
     CHECK_GE(s, 0U);
     return s;

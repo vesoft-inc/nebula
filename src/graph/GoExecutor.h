@@ -105,8 +105,8 @@ private:
      */
     void onVertexProps(RpcResponse &&rpcResp);
 
-    StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps() const;
-    StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps() const;
+    StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps();
+    StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps();
 
     void fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcResp);
 
@@ -154,13 +154,17 @@ private:
      */
     class VertexHolder final {
     public:
-        OptVariantType get(VertexID id, const std::string &prop) const;
+        OptVariantType get(VertexID id, int64_t index) const;
         void add(const storage::cpp2::QueryResponse &resp);
         const auto* schema() const {
             return schema_.get();
         }
 
     private:
+        // The schema include multi vertexes, and multi tags of one vertex
+        // eg: get 3 vertexex, vertex A has tag1.prop1, vertex B has tag2.prop2,
+        // vertex C has tag3.prop3,
+        // and the schema is {[tag1.prop1, type], [tag2.prop2, type], [tag3.prop3, type]}
         std::shared_ptr<ResultSchemaProvider>       schema_;
         std::unordered_map<VertexID, std::string>   data_;
     };
@@ -183,6 +187,10 @@ private:
     std::vector<VertexID>                       starts_;
     std::unique_ptr<VertexHolder>               vertexHolder_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
+    // The name of Tag or Edge, index of prop in data
+    using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
+    SchemaPropIndex                              srcTagProps_;
+    SchemaPropIndex                              dstTagProps_;
 };
 
 }   // namespace graph

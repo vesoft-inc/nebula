@@ -9,7 +9,6 @@
 #include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
-#include <boost/variant.hpp>
 
 namespace nebula {
 

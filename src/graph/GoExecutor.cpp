@@ -14,6 +14,9 @@
 namespace nebula {
 namespace graph {
 
+using SchemaProps = std::unordered_map<std::string, std::vector<std::string>>;
+using nebula::cpp2::SupportedType;
+
 GoExecutor::GoExecutor(Sentence *sentence, ExecutionContext *ectx) : TraverseExecutor(ectx) {
     // The RTTI is guaranteed by Sentence::Kind,
     // so we use `static_cast' instead of `dynamic_cast' for the sake of efficiency.
@@ -402,7 +405,7 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     onFinish_();
 }
 
-StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() const {
+StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
     std::vector<storage::cpp2::PropDef> props;
     {
         storage::cpp2::PropDef pd;
@@ -416,18 +419,29 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() cons
     }
 
     auto spaceId = ectx()->rctx()->session()->space();
+    SchemaProps tagProps;
     for (auto &tagProp : expCtx_->srcTagProps()) {
-        storage::cpp2::PropDef pd;
-        pd.owner = storage::cpp2::PropOwner::SOURCE;
-        pd.name = tagProp.second;
-        auto status = ectx()->schemaManager()->toTagID(spaceId, tagProp.first);
+        tagProps[tagProp.first].emplace_back(tagProp.second);
+    }
+
+    int64_t index = -1;
+    for (auto &tagIt : tagProps) {
+        auto status = ectx()->schemaManager()->toTagID(spaceId, tagIt.first);
         if (!status.ok()) {
-            return Status::Error("No schema found for '%s'", tagProp.first);
+            return Status::Error("No schema found for '%s'", tagIt.first);
         }
         auto tagId = status.value();
-        pd.set_tag_id(tagId);
-        props.emplace_back(std::move(pd));
+        for (auto &prop : tagIt.second) {
+            index++;
+            storage::cpp2::PropDef pd;
+            pd.owner = storage::cpp2::PropOwner::DEST;
+            pd.name = prop;
+            pd.set_tag_id(tagId);
+            props.emplace_back(std::move(pd));
+            srcTagProps_.emplace(std::make_pair(tagIt.first, prop), index);
+        }
     }
+
     for (auto &prop : expCtx_->edgeProps()) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
@@ -439,20 +453,30 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() cons
 }
 
 
-StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() const {
-    std::vector<storage::cpp2::PropDef> props;
+StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() {
     auto spaceId = ectx()->rctx()->session()->space();
+    SchemaProps tagProps;
     for (auto &tagProp : expCtx_->dstTagProps()) {
-        storage::cpp2::PropDef pd;
-        pd.owner = storage::cpp2::PropOwner::DEST;
-        pd.name = tagProp.second;
-        auto status = ectx()->schemaManager()->toTagID(spaceId, tagProp.first);
+        tagProps[tagProp.first].emplace_back(tagProp.second);
+    }
+
+    std::vector<storage::cpp2::PropDef> props;
+    int64_t index = -1;
+    for (auto &tagIt : tagProps) {
+        auto status = ectx()->schemaManager()->toTagID(spaceId, tagIt.first);
         if (!status.ok()) {
-            return Status::Error("No schema found for '%s'", tagProp.first);
+            return Status::Error("No schema found for '%s'", tagIt.first);
         }
         auto tagId = status.value();
-        pd.set_tag_id(tagId);
-        props.emplace_back(std::move(pd));
+        for (auto &prop : tagIt.second) {
+            index++;
+            storage::cpp2::PropDef pd;
+            pd.owner = storage::cpp2::PropOwner::DEST;
+            pd.name = prop;
+            pd.set_tag_id(tagId);
+            props.emplace_back(std::move(pd));
+            dstTagProps_.emplace(std::make_pair(tagIt.first, prop), index);
+        }
     }
     return props;
 }
@@ -517,8 +541,7 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
     std::shared_ptr<SchemaWriter> schema;
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
-    using nebula::cpp2::SupportedType;
-    auto cb = [&](std::vector<VariantType> record) {
+    auto cb = [&] (std::vector<VariantType> record) {
         if (schema == nullptr) {
             schema = std::make_shared<SchemaWriter>();
             auto colnames = getResultColumnNames();
@@ -586,6 +609,7 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
     return true;
 }
 
+
 void GoExecutor::onEmptyInputs() {
     if (onResult_) {
         onResult_(nullptr);
@@ -624,27 +648,47 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             while (iter) {
                 auto &getters = expCtx_->getters();
                 getters.getEdgeProp = [&](const std::string &prop) -> OptVariantType {
-                    auto res = RowReader::getProp(&*iter, prop);
+                    auto res = RowReader::getPropByName(&*iter, prop);
                     if (ok(res)) {
                         return value(res);
                     }
                     return Status::Error("get edge prop failed");
                 };
-                getters.getSrcTagProp = [&](const std::string &,
+                getters.getSrcTagProp = [&](const std::string &tagName,
                                             const std::string &prop) -> OptVariantType {
-                    auto res = RowReader::getProp(vreader.get(), prop);
-                    if (ok(res)) {
-                        return value(res);
+                    auto tagIter = this->srcTagProps_.find(std::make_pair(tagName, prop));
+                    if (tagIter == this->srcTagProps_.end()) {
+                        auto msg = folly::sformat(
+                            "Src tagName : {} , propName : {} is not exist", tagName, prop);
+                        LOG(ERROR) << msg;
+                        return Status::Error(msg);
                     }
-                    return Status::Error("get src prop failed");
+                    auto index = tagIter->second;
+                    const nebula::cpp2::ValueType &type = vschema->getFieldType(index);
+                    if (type == CommonConstants::kInvalidValueType()) {
+                        auto msg =
+                            folly::sformat("Tag: {} no schema for the index {}", tagName, index);
+                        LOG(ERROR) << msg;
+                        return Status::Error(msg);
+                    }
+                    auto res = RowReader::getPropByIndex(vreader.get(), index);
+                    CHECK(ok(res));
+                    return value(std::move(res));
                 };
-                getters.getDstTagProp = [&](const std::string &,
+                getters.getDstTagProp = [&](const std::string &tagName,
                                             const std::string &prop) -> OptVariantType {
-                    auto dst = RowReader::getProp(&*iter, "_dst");
-                    if (ok(dst)) {
-                        return vertexHolder_->get(boost::get<int64_t>(std::move(value(dst))), prop);
+                    auto res = RowReader::getPropByName(&*iter, "_dst");
+                    CHECK(ok(res));
+                    auto dst = value(std::move(res));
+                    auto tagIter = this->dstTagProps_.find(std::make_pair(tagName, prop));
+                    if (tagIter == this->dstTagProps_.end()) {
+                        auto msg = folly::sformat(
+                            "Src tagName : {} , propName : {} is not exist", tagName, prop);
+                        LOG(ERROR) << msg;
+                        return Status::Error(msg);
                     }
-                    return Status::Error("get dst prop failed");
+                    auto index = tagIter->second;
+                    return vertexHolder_->get(boost::get<int64_t>(dst), index);
                 };
                 // Evaluate filter
                 if (filter_ != nullptr) {
@@ -678,7 +722,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
 }
 
 
-OptVariantType GoExecutor::VertexHolder::get(VertexID id, const std::string &prop) const {
+OptVariantType GoExecutor::VertexHolder::get(VertexID id, int64_t index) const {
     DCHECK(schema_ != nullptr);
     auto iter = data_.find(id);
 
@@ -687,7 +731,7 @@ OptVariantType GoExecutor::VertexHolder::get(VertexID id, const std::string &pro
 
     auto reader = RowReader::getRowReader(iter->second, schema_);
 
-    auto res = RowReader::getProp(reader.get(), prop);
+    auto res = RowReader::getPropByIndex(reader.get(), index);
     CHECK(ok(res));
     return value(std::move(res));
 }

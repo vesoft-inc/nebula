@@ -86,6 +86,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
 
     for (auto& req : requests) {
         auto& host = req.first;
+        auto spaceId = req.second.get_space_id();
         auto client = clientsMan_->client(host, evb);
         // Result is a pair of <Request&, bool>
         auto res = context->insertRequest(host, std::move(req.second));
@@ -95,7 +96,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
             // Future process code will be executed on the IO thread
             // Since all requests are sent using the same eventbase, all then-callback
             // will be executed on the same IO thread
-            .then(evb, [context, host] (folly::Try<Response>&& val) {
+            .then(evb, [this, context, host, spaceId] (folly::Try<Response>&& val) {
                 auto& r = context->findRequest(host);
                 if (val.hasException()) {
                     LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
@@ -104,6 +105,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                         context->resp.failedParts().emplace(
                             part.first,
                             storage::cpp2::ErrorCode::E_RPC_FAILURE);
+                        invalidLeader(spaceId, part.first);
                     }
                     context->resp.markFailure();
                 } else {
@@ -115,8 +117,14 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                                 << ", failed code " << static_cast<int32_t>(code.get_code());
                         hasFailure = true;
                         if (code.get_code() == storage::cpp2::ErrorCode::E_LEADER_CHANGED) {
-                            // TODO Need to retry the new leader
-                            LOG(FATAL) << "Not implmented";
+                            auto* leader = code.get_leader();
+                            if (leader != nullptr
+                                    && leader->get_ip() != 0
+                                    && leader->get_port() != 0) {
+                                updateLeader(spaceId,
+                                             code.get_part_id(),
+                                             HostAddr(leader->get_ip(), leader->get_port()));
+                            }
                         } else {
                             // Simply keep the result
                             context->resp.failedParts().emplace(code.get_part_id(),
