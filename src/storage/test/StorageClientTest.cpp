@@ -276,8 +276,6 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     LOG(INFO) << "Stop data server...";
     sc.reset();
     LOG(INFO) << "Stop data client...";
-    threadPool->stop();
-    threadPool->join();
     client.reset();
     LOG(INFO) << "Stop meta server...";
     metaServerContext.reset();

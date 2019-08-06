@@ -43,6 +43,7 @@ NebulaStore::~NebulaStore() {
     bgWorkers_->wait();
     LOG(INFO) << "Stop the raft service...";
     raftService_->stop();
+    LOG(INFO) << "Waiting for the raft service stop...";
     raftService_->waitUntilStop();
     spaces_.clear();
     LOG(INFO) << "~NebulaStore()";
@@ -52,7 +53,9 @@ bool NebulaStore::init() {
     LOG(INFO) << "Start the raft service...";
     bgWorkers_ = std::make_shared<thread::GenericThreadPool>();
     bgWorkers_->start(FLAGS_num_workers);
-    raftService_ = raftex::RaftexService::createService(ioPool_, handlersPool_, raftAddr_.second);
+    raftService_ = raftex::RaftexService::createService(ioPool_,
+                                                        workers_,
+                                                        raftAddr_.second);
     if (!raftService_->start()) {
         LOG(ERROR) << "Start the raft service failed";
         return false;
@@ -223,7 +226,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                        ioPool_,
                                        bgWorkers_,
                                        flusher_.get(),
-                                       handlersPool_);
+                                       workers_);
     auto partMeta = options_.partMan_->partMeta(spaceId, partId);
     std::vector<HostAddr> peers;
     for (auto& h : partMeta.peers_) {
