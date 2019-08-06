@@ -144,6 +144,12 @@ std::string InputPropertyExpression::toString() const {
 }
 
 
+Status InputPropertyExpression::prepare() {
+    context_->addInputProp(*prop_);
+    return Status::OK();
+}
+
+
 VariantType InputPropertyExpression::eval() const {
     return context_->getters().getInputProp(*prop_);
 }
@@ -236,13 +242,12 @@ std::string VariablePropertyExpression::toString() const {
 
 
 VariantType VariablePropertyExpression::eval() const {
-    // TODO(dutor)
-    return toString();
+    return context_->getters().getVariableProp(*prop_);
 }
 
 
 Status VariablePropertyExpression::prepare() {
-    // TODO(dutor)
+    context_->addVariableProp(*var_, *prop_);
     return Status::OK();
 }
 
