@@ -9,7 +9,6 @@
 #include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
-#include <boost/variant.hpp>
 
 namespace nebula {
 
@@ -607,13 +606,6 @@ private:
 // literal constants: bool, integer, double, string
 class PrimaryExpression final : public Expression {
 public:
-    using Operand = boost::variant<bool, int64_t, double, std::string>;
-    enum Which {
-        kBool = 0,
-        kInt = 1,
-        kDouble = 2,
-        kString = 3,
-    };
     PrimaryExpression() {
         kind_ = kPrimary;
     }
@@ -650,7 +642,7 @@ private:
     const char* decode(const char *pos, const char *end) override;
 
 private:
-    Operand                                     operand_;
+    VariantType                                 operand_;
 };
 
 

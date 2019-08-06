@@ -27,118 +27,50 @@ public:
     LogCommandTest() : RaftexTestFixture("log_command_test") {}
 };
 
-
 TEST_F(LogCommandTest, StartWithCommandLog) {
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
     leader_->sendCommandAsync("Command Log Message");
     msgs.emplace_back("Command Log Message");
-    for (int i = 2; i <= 10; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader_->appendAsync(0, msgs.back());
-        if (i == 10) {
-            fut.wait();
-        }
-    }
-    LogID id = leader_->currLogId_ - 9;
+    appendLogs(1, 9, leader_, msgs, true);
     LOG(INFO) << "<===== Finish appending logs";
 
     ASSERT_EQ(2, leader_->commitTimes_);
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(10, c->getNumLogs());
-    }
-
-    for (int i = 0; i < 10; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    checkConsensus(copies_, 0, 9, msgs);
 }
 
 TEST_F(LogCommandTest, CommandInMiddle) {
+    FLAGS_heartbeat_interval = 1;
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    for (int i = 1; i <= 5; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader_->appendAsync(0, msgs.back());
-    }
+    appendLogs(0, 4, leader_, msgs);
 
     leader_->sendCommandAsync("Command Log Message");
     msgs.emplace_back("Command Log Message");
 
-    for (int i = 7; i <= 10; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader_->appendAsync(0, msgs.back());
-        if (i == 10) {
-            fut.wait();
-        }
-    }
-    LogID id = leader_->currLogId_ - 9;
+    appendLogs(6, 9, leader_, msgs, true);
     LOG(INFO) << "<===== Finish appending logs";
 
     ASSERT_EQ(3, leader_->commitTimes_);
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(10, c->getNumLogs());
-    }
-
-    for (int i = 0; i < 10; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    // need to sleep a bit more
+    sleep(1);
+    checkConsensus(copies_, 0, 9, msgs);
 }
 
 TEST_F(LogCommandTest, EndWithCommand) {
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    for (int i = 1; i <= 9; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        leader_->appendAsync(0, msgs.back());
-    }
+    appendLogs(0, 8, leader_, msgs);
     auto fut = leader_->sendCommandAsync("Command Log Message");
     msgs.emplace_back("Command Log Message");
     fut.wait();
-    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
     ASSERT_EQ(2, leader_->commitTimes_);
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(10, c->getNumLogs());
-    }
-
-    for (int i = 0; i < 10; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    checkConsensus(copies_, 0, 9, msgs);
 }
 
 TEST_F(LogCommandTest, AllCommandLogs) {
@@ -152,28 +84,11 @@ TEST_F(LogCommandTest, AllCommandLogs) {
             fut.wait();
         }
     }
-    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
-    // Sleep a while to make sure the last log has been committed on
-    // followers
     ASSERT_EQ(10, leader_->commitTimes_);
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(10, c->getNumLogs());
-    }
-
-    for (int i = 0; i < 10; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    checkConsensus(copies_, 0, 9, msgs);
 }
-
 
 TEST_F(LogCommandTest, MixedLogs) {
     // Append logs
@@ -216,28 +131,11 @@ TEST_F(LogCommandTest, MixedLogs) {
     leader_->casAsync("FCAS Log Message");
 
     f.wait();
-    LogID id = leader_->currLogId_ - 9;
     LOG(INFO) << "<===== Finish appending logs";
 
-    // Sleep a while to make sure the last log has been committed on
-    // followers
     ASSERT_EQ(8, leader_->commitTimes_);
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(10, c->getNumLogs());
-    }
-
-    for (int i = 0; i < 10; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    checkConsensus(copies_, 0, 9, msgs);
 }
-
 
 }  // namespace raftex
 }  // namespace nebula

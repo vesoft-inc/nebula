@@ -1,4 +1,4 @@
-nebula_add_library(
+add_library(
     graph_obj OBJECT
     GraphFlags.cpp
     GraphService.cpp
@@ -35,12 +35,29 @@ nebula_add_library(
     YieldExecutor.cpp
     DownloadExecutor.cpp
     OrderByExecutor.cpp
+    ConfigExecutor.cpp
     SchemaHelper.cpp
 )
+add_dependencies(
+    graph_obj
+    parser_obj
+    graph_thrift_obj
+    meta_thrift_obj
+    meta_client
+    schema_obj
+    stats_obj
+    process_obj
+    base_obj
+)
 
-nebula_add_library(
+add_library(
     graph_http_handler OBJECT
     GraphHttpHandler.cpp
 )
+add_dependencies(
+    graph_http_handler
+    base_obj
+)
 
 add_subdirectory(test)
+
