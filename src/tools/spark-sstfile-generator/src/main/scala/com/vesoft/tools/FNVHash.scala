@@ -6,7 +6,7 @@ package com.vesoft.tools
   * @link http://www.isthe.com/chongo/tech/comp/fnv/index.html
   */
 object FNVHash {
-  //some prime number
+  //some prime numbers
   private val FNV_64_INIT = 0xcbf29ce484222325L
   private val FNV_64_PRIME = 0x100000001b3L
   private val FNV_32_INIT = 0x811c9dc5

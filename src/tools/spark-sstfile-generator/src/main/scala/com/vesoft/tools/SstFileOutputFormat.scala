@@ -18,7 +18,7 @@ import scala.collection.mutable
 import scala.sys.process._
 
 /**
-  * Custom outputFormat, which generate a sub dir per partition per worker, the local dir structure of EACH worker node:
+  * Custom outputFormat, which generates a sub dir per partition per worker, the local dir structure of EACH worker node is:
   *
   * ${LOCAL_ROOT} (local dir will be stripped off when `hdfs -copyFromLocal`, specified by user through cmd line)
   *    |---1 (this is PARTITION number)
@@ -33,12 +33,12 @@ import scala.sys.process._
   *      ....
   *
   * Sst file name convention is {TYPE}-${FIRST_KEY_IN_THIS_FILE}.sst, where type=vertex OR edge, FIRST_KEY_IN_THIS_FILE is the first key the file sees.
-  * This combination will make the sst file name unique between all worker nodes.
+  * This combination will make the sst file name unique among all worker nodes.
   *
   * After hdfs -copyFromLocal ,the final hdfs dir layout is:
   *
   * ${HDFS_ROOT} (specified by user through cmd line)
-  *    |---1 (this is PARTITION number, will hold all sst file from every single worker node with the same PARTITION number)
+  *    |---1 (this is the PARTITION number, and it will hold all sst files from every single worker node with the same PARTITION number)
   *    |        | ----  vertex-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#1)
   *    |        | ---- vertex-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#2)
   *    |        | ---- edge-${FIRST_KEY_IN_THIS_FILE}.sst(may be from worker node#1)
@@ -57,7 +57,7 @@ class SstFileOutputFormat extends FileOutputFormat[GraphPartitionIdAndKeyValueEn
     new SstRecordWriter(sstFileOutput, job.getConfiguration)
   }
 
-  // not check output dir exist, for edge&vertex data are coexist in the same partition dir
+  // do not check output dir existence, for edge&vertex data coexist in the same partition dir
   override def checkOutputSpecs(job: JobContext): Unit = {
     val outDir = FileOutputFormat.getOutputPath(job)
     if (outDir == null) throw new InvalidJobConfException("Output directory not set.")
@@ -67,7 +67,7 @@ class SstFileOutputFormat extends FileOutputFormat[GraphPartitionIdAndKeyValueEn
 }
 
 /**
-  * custom outputFormat, which generate a sub dir per partition per worker
+  * custom outputFormat, which generates a sub dir per partition per worker
   *
   * @param localSstFileOutput spark conf item,which points to the local dir where rocksdb sst files will be put
   * @param configuration      hadoop configuration
@@ -86,7 +86,7 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
   private val localFileSystem = FileSystem.get(new Configuration(false))
 
   /**
-    * hdfs file system, for create destination sst file dir
+    * hdfs file system creates destination sst file dir
     */
   private val hdfsFileSystem = FileSystem.get(configuration)
 
@@ -95,7 +95,7 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
   }
 
   /**
-    * which dir in hdfs to put sst files
+    * dir hdfs puts sst files
     */
   private val hdfsParentDir = configuration.get(SparkSstFileGenerator.SSF_OUTPUT_HDFS_DIR_CONF_KEY)
 
@@ -114,13 +114,13 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
       /**
         * https://github.com/facebook/rocksdb/wiki/Creating-and-Ingesting-SST-files
         *
-        * Please note that:
+        * Please note:
         *
-        *1. Options passed to SstFileWriter will be used to figure out the table type, compression options, etc that will be used to create the SST file.
-        *2. The Comparator that is passed to the SstFileWriter must be exactly the same as the Comparator used in the DB that this file will be ingested into.
-        *3. Rows must be inserted in a strictly increasing order.
+        *1. Options passed to SstFileWriter will be used to figure out the table type, compression options, etc. that will be used to create the SST file.
+        *2. The Comparator passed to the SstFileWriter must be exactly the same as the Comparator used in the DB that this file will be ingested into.
+        *3. Rows must be inserted in a strict increasing order.
         */
-      //TODO: how to make sure the options used here to be consistent with the server's
+      //TODO: how to make sure the options used here is consistent with the server's
       // What's the fastest way to load data into RocksDB: https://rocksdb.org.cn/doc/RocksDB-FAQ.html
       env = new EnvOptions
       // TODO: prove setWritableFileMaxBufferSize is working?
@@ -128,8 +128,8 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
       sstFileWriter = new SstFileWriter(env, options)
 
       // TODO: rolling to another file when file size > some THRESHOLD, or some other criteria
-      // Each partition can generated multiple sst files, among which keys will be ordered, and keys could overlap between different sst files.
-      // All these sst files will be  `hdfs -copyFromLocal` to the same HDFS dir(and consumed by subsequent nebula `IMPORT` command), so we need different suffixes to distinguish between them.
+      // Each partition can generate multiple sst files, among which keys will be ordered, and keys could overlap among different sst files.
+      // All these sst files will be  `hdfs -copyFromLocal` to the same HDFS dir(and consumed by subsequent nebula `IMPORT` command), so we need different suffixes to distinguish them.
       val hdfsSubDirectory = s"${File.separator}${key.partitionId}${File.separator}"
 
       val localDir = s"${localSstFileOutput}${hdfsSubDirectory}"
@@ -185,8 +185,8 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
       }
 
       try {
-        // There could be multiple containers on a single host, parent dir are shared between multiple containers,
-        // so should not delete parent dir but delete individual file
+        // There could be multiple containers on a single host, parent dirs are shared among multiple containers,
+        // so do not delete the parent dir but delete the individual file.
         localFileSystem.delete(new Path(localSstFile), true)
       }
       catch {
@@ -198,7 +198,7 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration) 
   }
 
   /**
-    * assembly a hdfs dfs -copyFromLocal command line to put local sst file to hdfs, $HADOOP_HOME env need to be set
+    * assembly a hdfs dfs -copyFromLocal command line to put local sst file to hdfs, and $HADOOP_HOME env needs to be set
     */
   private def runHdfsCopyFromLocal(localSstFile: String, hdfsDirectory: String) = {
     var hadoopHome = System.getenv("HADOOP_HOME")
