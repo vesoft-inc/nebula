@@ -9,6 +9,7 @@
 #include "process/ProcessUtils.h"
 #include "fs/FileUtils.h"
 #include "hdfs/HdfsHelper.h"
+#include "kvstore/Part.h"
 #include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
@@ -167,15 +168,14 @@ bool StorageHttpDownloadHandler::downloadSSTFiles(const std::string& hdfsHost,
 
         auto downloader = [hdfsHost, hdfsPort, hdfsPath, partId, this]() {
             auto hdfsPartPath = folly::stringPrintf("%s/%d", hdfsPath.c_str(), partId);
-            auto dataPathResult = kvstore_->getDataPath(spaceID_, partId);
-            if (!ok(dataPathResult)) {
+            auto partResult = kvstore_->part(spaceID_, partId);
+            if (!ok(partResult)) {
                 LOG(ERROR) << "Can't found space: " << spaceID_ << ", part: " << partId;
                 return false;
             }
 
-            LOG(INFO) << "local path: " << nebula::value(dataPathResult);
             auto localPath = folly::stringPrintf("%s/download/",
-                                                 value(dataPathResult).c_str());
+                                                 value(partResult)->engine()->getDataRoot());
             auto result = this->helper_->copyToLocal(hdfsHost, hdfsPort,
                                                      hdfsPartPath, localPath);
             return result.ok() && result.value().empty();

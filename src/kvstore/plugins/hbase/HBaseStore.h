@@ -141,11 +141,6 @@ public:
         return ResultCode::ERR_UNSUPPORTED;
     }
 
-    ErrorOr<ResultCode, std::string> getDataPath(GraphSpaceID,
-                                                 PartitionID) override {
-        LOG(FATAL) << "Unsupported!";
-    }
-
 private:
     std::string getRowKey(const std::string& key) {
         return key.substr(sizeof(PartitionID), key.size() - sizeof(PartitionID));

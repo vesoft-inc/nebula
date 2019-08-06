@@ -550,25 +550,6 @@ ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> NebulaStore::space(GraphSpac
     return it->second;
 }
 
-ErrorOr<ResultCode, std::string> NebulaStore::getDataPath(GraphSpaceID spaceId,
-                                                          PartitionID partId) {
-    folly::RWSpinLock::ReadHolder rh(&lock_);
-    auto it = spaces_.find(spaceId);
-    if (UNLIKELY(it == spaces_.end())) {
-        return ResultCode::ERR_SPACE_NOT_FOUND;
-    }
-    auto& parts = it->second->parts_;
-    auto partIt = parts.find(partId);
-    if (UNLIKELY(partIt == parts.end())) {
-        return ResultCode::ERR_PART_NOT_FOUND;
-    }
-    auto ret = this->engine(spaceId, partId);
-    if (!ok(ret)) {
-        return error(ret);
-    }
-    return value(ret)->getDataRoot();
-}
-
 }  // namespace kvstore
 }  // namespace nebula
 

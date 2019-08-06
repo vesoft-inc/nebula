@@ -176,9 +176,6 @@ private:
 
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
 
-    ErrorOr<ResultCode, std::string> getDataPath(GraphSpaceID spaceId,
-                                                 PartitionID partId) override;
-
     ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
 
 private:

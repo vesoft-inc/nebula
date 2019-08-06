@@ -141,9 +141,6 @@ public:
     virtual ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
                                                             PartitionID partId) = 0;
 
-    virtual ErrorOr<ResultCode, std::string> getDataPath(GraphSpaceID spaceId,
-                                                         PartitionID partId) = 0;
-
     virtual ResultCode compact(GraphSpaceID spaceId) = 0;
 
     virtual ResultCode flush(GraphSpaceID spaceId) = 0;
