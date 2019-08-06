@@ -619,10 +619,10 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
         if (distinct_) {
             auto ret = uniqResult->emplace(encode);
             if (ret.second) {
-                rsWriter->addRow(writer);
+                rsWriter->addRow(std::move(encode));
             }
         } else {
-            rsWriter->addRow(writer);
+            rsWriter->addRow(std::move(encode));
         }
     };  // cb
     processFinalResult(rpcResp, cb);

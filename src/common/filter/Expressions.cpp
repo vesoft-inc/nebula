@@ -240,7 +240,7 @@ VariantType VariablePropertyExpression::eval() const {
 
 
 Status VariablePropertyExpression::prepare() {
-    context_->addVariableProp(*var_, *prop_);
+    context_->addVariableProp(*alias_, *prop_);
     return Status::OK();
 }
 

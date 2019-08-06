@@ -165,10 +165,10 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             if (distinct_) {
                 auto ret = uniqResult->emplace(encode);
                 if (ret.second) {
-                    rsWriter->addRow(*writer);
+                    rsWriter->addRow(std::move(encode));
                 }
             } else {
-                rsWriter->addRow(*writer);
+                rsWriter->addRow(std::move(encode));
             }
         }  // for `vdata'
     }  // for `resp'
