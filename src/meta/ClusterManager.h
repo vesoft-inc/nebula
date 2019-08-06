@@ -9,21 +9,23 @@
 
 #include "base/Base.h"
 #include "base/ThriftTypes.h"
+#include "kvstore/Common.h"
 
 namespace nebula {
 
 namespace kvstore {
 class KVStore;
-}  // namespace kvstore
+}
 
 namespace meta {
 
 using nebula::ClusterID;
+using nebula::kvstore::KVStore;
+using nebula::kvstore::ResultCode;
 
 /**
  * This class manages clusterId used for meta server and storage server.
  * */
-
 class ClusterManager {
 public:
     ClusterManager(const std::string& clusterHosts,
@@ -34,6 +36,8 @@ public:
             , clusterId_(clusterId) {}
 
     virtual ~ClusterManager() = default;
+
+    ResultCode kvPut(KVStore* kvstore, std::string& strClusterId);
 
     bool loadOrCreateCluId(nebula::kvstore::KVStore* kvstore);
 
