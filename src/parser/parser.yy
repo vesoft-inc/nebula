@@ -87,6 +87,9 @@ class GraphScanner;
     nebula::EdgeKey                        *edge_key;
     nebula::EdgeKeys                       *edge_keys;
     nebula::EdgeKeyRef                     *edge_key_ref;
+    nebula::GroupClause                    *group_clause;
+    nebula::GroupColumns                   *group_columns;
+    nebula::GroupColumn                    *group_column;
 }
 
 /* destructors */
@@ -106,7 +109,7 @@ class GraphScanner;
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_CONFIGS KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
-%token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET
+%token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET KW_GROUP KW_COUNT KW_COUNT_DISTINCT KW_SUM KW_AVG KW_MAX KW_MIN
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_DATA
@@ -180,6 +183,9 @@ class GraphScanner;
 %type <edge_key_ref> edge_key_ref
 %type <to_clause> to_clause
 %type <find_path_upto_clause> find_path_upto_clause
+%type <group_clause> group_clause
+%type <group_columns> group_columns
+%type <group_column> group_column
 
 %type <intval> port unary_integer rank
 
@@ -193,7 +199,7 @@ class GraphScanner;
 %type <acl_item_clause> acl_item_clause
 
 %type <sentence> go_sentence match_sentence use_sentence find_sentence find_path_sentence
-%type <sentence> order_by_sentence limit_sentence
+%type <sentence> order_by_sentence limit_sentence group_by_sentence
 %type <sentence> fetch_vertices_sentence fetch_edges_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
@@ -239,6 +245,12 @@ unreserved_keyword
      | KW_GOD                { $$ = new std::string("god"); }
      | KW_ADMIN              { $$ = new std::string("admin"); }
      | KW_GUEST              { $$ = new std::string("guest"); }
+     | KW_GROUP              { $$ = new std::string("group"); }
+     | KW_COUNT              { $$ = new std::string("count"); }
+     | KW_SUM                { $$ = new std::string("sum"); }
+     | KW_AVG                { $$ = new std::string("avg"); }
+     | KW_MAX                { $$ = new std::string("max"); }
+     | KW_MIN                { $$ = new std::string("min"); }
      ;
 
 primary_expression
@@ -647,8 +659,95 @@ yield_column
     : expression {
         $$ = new YieldColumn($1);
     }
+    | KW_SUM L_PAREN expression R_PAREN{
+        auto yield = new YieldColumn($3);
+        yield->setFunction(F_SUM);
+        $$ = yield;
+    }
+    | KW_COUNT L_PAREN expression R_PAREN{
+        auto yield = new YieldColumn($3);
+        yield->setFunction(F_COUNT);
+        $$ = yield;
+    }
+    | KW_COUNT_DISTINCT L_PAREN expression R_PAREN{
+        auto yield = new YieldColumn($3);
+        yield->setFunction(F_COUNT_DISTINCT);
+        $$ = yield;
+    }
+    | KW_AVG L_PAREN expression R_PAREN{
+        auto yield = new YieldColumn($3);
+        yield->setFunction(F_AVG);
+        $$ = yield;
+    }
+    | KW_MAX L_PAREN expression R_PAREN{
+        auto yield = new YieldColumn($3);
+        yield->setFunction(F_MAX);
+        $$ = yield;
+    }
+    | KW_MIN L_PAREN expression R_PAREN{
+        auto yield = new YieldColumn($3);
+        yield->setFunction(F_MIN);
+        $$ = yield;
+    }
     | expression KW_AS name_label {
         $$ = new YieldColumn($1, $3);
+    }
+    | KW_SUM L_PAREN expression R_PAREN KW_AS name_label {
+        auto yield = new YieldColumn($3, $6);
+        yield->setFunction(F_SUM);
+        $$ = yield;
+    }
+    | KW_COUNT L_PAREN expression R_PAREN KW_AS name_label {
+        auto yield = new YieldColumn($3, $6);
+        yield->setFunction(F_COUNT);
+        $$ = yield;
+    }
+    | KW_COUNT_DISTINCT L_PAREN expression R_PAREN KW_AS name_label {
+        auto yield = new YieldColumn($3, $6);
+        yield->setFunction(F_COUNT_DISTINCT);
+        $$ = yield;
+    }
+    | KW_AVG L_PAREN expression R_PAREN KW_AS name_label {
+        auto yield = new YieldColumn($3, $6);
+        yield->setFunction(F_AVG);
+        $$ = yield;
+    }
+    | KW_MAX L_PAREN expression R_PAREN KW_AS name_label {
+        auto yield = new YieldColumn($3, $6);
+        yield->setFunction(F_MAX);
+        $$ = yield;
+    }
+    | KW_MIN L_PAREN expression R_PAREN KW_AS name_label {
+        auto yield = new YieldColumn($3, $6);
+        yield->setFunction(F_MIN);
+        $$ = yield;
+    }
+    ;
+
+group_clause
+    : group_columns { $$ = new GroupClause($1); }
+    ;
+
+group_columns
+    : group_column {
+        auto fields = new GroupColumns();
+        fields->addColumn($1);
+        $$ = fields;
+    }
+    | group_columns COMMA group_column{
+        $1->addColumn($3);
+        $$ = $1;
+    }
+    ;
+
+group_column
+    : name_label {
+        auto expr = new PrimaryExpression(*$1);
+        delete $1;
+        $$ = new GroupColumn(expr);
+    }
+    | input_ref_expression {
+        $$ = new GroupColumn($1);
     }
     ;
 
@@ -823,6 +922,15 @@ limit_sentence
     | KW_LIMIT INTEGER KW_OFFSET INTEGER { $$ = new LimitSentence($2, $4); }
     ;
 
+group_by_sentence
+    : KW_GROUP KW_BY group_clause yield_clause {
+        auto group = new GroupBySentence();
+        group->setGroupClause($3);
+        group->setYieldClause($4);
+        $$ = group;
+    }
+    ;
+
 use_sentence
     : KW_USE name_label { $$ = new UseSentence($2); }
     ;
@@ -847,7 +955,7 @@ create_schema_prop_list
     }
     ;
 
- create_schema_prop_item
+create_schema_prop_item
     : KW_TTL_DURATION ASSIGN unary_integer {
         // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
         if ($3 < 0) {
@@ -1037,6 +1145,7 @@ traverse_sentence
     | go_sentence { $$ = $1; }
     | match_sentence { $$ = $1; }
     | find_sentence { $$ = $1; }
+    | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
     | find_path_sentence { $$ = $1; }
@@ -1506,7 +1615,7 @@ space_opt_list
     }
     ;
 
- space_opt_item
+space_opt_item
     : KW_PARTITION_NUM ASSIGN INTEGER {
         $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3);
     }

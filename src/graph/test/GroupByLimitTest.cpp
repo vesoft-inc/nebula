@@ -138,5 +138,114 @@ TEST_F(GroupByLimitTest, LimitTest) {
     }
 }
 
+TEST_F(GroupByLimitTest, GroupByTest) {
+    // group one col
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Marco Belinelli"];
+        auto *fmt = "GO FROM %ld OVER serve "
+                    "YIELD $$.team.name as name, serve._dst as id, "
+                    "serve.start_year as start_year, serve.end_year as end_year"
+                    "| GROUP BY $-.start_year "
+                    "YIELD COUNT($-.id), $-.start_year as start_year, AVG($-.end_year)";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<uint64_t, uint64_t, uint64_t >> expected = {
+                {2, 2018, 2018},
+                {1, 2017, 2018},
+                {1, 2016, 2017},
+                {1, 2009, 2010},
+                {1, 2007, 2009},
+                {1, 2012, 2013},
+                {1, 2015, 2016},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // group multi col, on alisa col
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player1 = players_["Aron Baynes"];
+        auto &player2 = players_["Tracy McGrady"];
+        auto *fmt = "GO FROM %ld,%ld OVER serve "
+                    "YIELD $$.team.name as name, serve._dst as id, "
+                    "serve.start_year as start_year, serve.end_year as end_year"
+                    "| GROUP BY $-.name, start_year "
+                    "YIELD $-.name as teamName, $-.start_year as start_year, "
+                    "MAX($-.start_year), MIN($-.end_year), COUNT($-.id)";
+        auto query = folly::stringPrintf(fmt, player1.vid(), player2.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, uint64_t, uint64_t, uint64_t , uint64_t>> expected = {
+                {"Celtics", 2017, 2017, 2019, 1},
+                {"Magic", 2000, 2000, 2004, 1},
+                {"Pistons", 2015, 2015, 2017, 1},
+                {"Raptors", 1997, 1997, 2000, 1},
+                {"Rockets", 2004, 2004, 2010, 1},
+                {"Spurs", 2013, 2013, 2013, 2},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // group has all cal fun
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player1 = players_["Carmelo Anthony"];
+        auto &player2 = players_["Dwyane Wade"];
+        auto *fmt = "GO FROM %ld,%ld OVER like "
+                    "YIELD $$.player.name as name, $$.player.age as dst_age, "
+                    "$$.player.age as src_age, like.likeness as likeness"
+                    "| GROUP BY $-.name YIELD $-.name as name, "
+                    "SUM($-.dst_age) as sum_dst_age, AVG($-.dst_age) as avg_dst_age,"
+                    "MAX($-.src_age) as max_src_age, MIN($-.src_age) as min_src_age,"
+                    "COUNT($-.likeness), COUNT_DISTINCT($-.likeness)";
+        auto query = folly::stringPrintf(fmt, player1.vid(), player2.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string,  // name
+                               int64_t,      // sum_dst_age
+                               uint64_t,     // avg_dst_age
+                               uint64_t ,    // max_src_age
+                               uint64_t,     // min_src_age
+                               uint64_t,     // COUNT
+                               uint64_t>     // COUNT_DISTINCT
+                                   > expected = {
+                {"LeBron James", 68, 34, 34, 34, 2, 1},
+                {"Chris Paul", 66, 33, 33, 33, 2, 1},
+                {"Dwyane Wade", 37, 37, 37, 37, 1, 1},
+                {"Carmelo Anthony", 34, 34, 34, 34, 1, 1},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+
+    // COUNT(*) nonsupport
+
+    // group nonexistent
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Marco Belinelli"];
+        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name as name, serve._dst as id"
+                    " | GROUP BY $-.start_year YIELD COUNT($-.id)";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+
+    // field nonexistent
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Marco Belinelli"];
+        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name as name, serve._dst as id"
+                    " | GROUP BY $-.name YIELD COUNT($-.start_year)";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
+TEST_F(GroupByLimitTest, GroupByLimitTest) {
+}
+
+TEST_F(GroupByLimitTest, GroupByOrderByLimitTest) {
+}
 }   // namespace graph
 }   // namespace nebula

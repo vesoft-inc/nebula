@@ -272,9 +272,26 @@ public:
         return alias_.get();
     }
 
+    void setFunction(std::string* fun = nullptr) {
+        if (fun == nullptr) {
+            return;
+        }
+        funName_.reset(fun);
+    }
+
+    std::string getFunName() {
+        if (funName_ == nullptr) {
+            return "";
+        }
+        return *funName_;
+    }
+
+    std::string toString() const;
+
 private:
     std::unique_ptr<Expression>                 expr_;
     std::unique_ptr<std::string>                alias_;
+    std::unique_ptr<std::string>                funName_{nullptr};
 };
 
 
@@ -325,3 +342,4 @@ private:
 };
 }   // namespace nebula
 #endif  // PARSER_CLAUSES_H_
+

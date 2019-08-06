@@ -47,6 +47,7 @@
 #include "graph/UpdateEdgeExecutor.h"
 #include "graph/FindPathExecutor.h"
 #include "graph/LimitExecutor.h"
+#include "graph/GroupByExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -129,6 +130,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kConfig:
             executor = std::make_unique<ConfigExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::KGroupBy:
+            executor = std::make_unique<GroupByExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kFetchVertices:
             executor = std::make_unique<FetchVerticesExecutor>(sentence, ectx());

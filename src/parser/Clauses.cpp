@@ -169,12 +169,47 @@ std::string WhereClause::toString() const {
     return buf;
 }
 
+std::string YieldColumn::toString() const {
+    LOG(INFO) << "YieldColumn::toString()";
+    std::string buf;
+    buf.reserve(256);
+    if (func_ != F_NONE) {
+        switch (func_) {
+            case F_COUNT:
+                 buf += "COUNT(";
+                 break;
+            case F_COUNT_DISTINCT:
+                buf += "COUNT_DISTINCT(";
+                break;
+            case F_SUM:
+                buf += "SUM(";
+                break;
+            case F_AVG:
+                buf += "AVG(";
+                break;
+            case F_MAX:
+                buf += "MAX(";
+                break;
+            case F_MIN:
+                buf += "MIN(";
+                break;
+            default:
+                break;
+        }
+        buf += expr_->toString();
+        buf += ")";
+    } else {
+        buf += expr_->toString();
+    }
+
+    return buf;
+}
+
 std::string YieldColumns::toString() const {
     std::string buf;
     buf.reserve(256);
     for (auto &col : columns_) {
-        auto *expr = col->expr();
-        buf += expr->toString();
+        buf += col->toString();
         if (col->alias() != nullptr) {
             buf += " AS ";
             buf += *col->alias();
@@ -197,4 +232,23 @@ std::string YieldClause::toString() const {
     buf += yieldColumns_->toString();
     return buf;
 }
+
+std::string GroupColumns::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &col : columns_) {
+        auto *expr = col->expr();
+        buf += expr->toString();
+        buf += ",";
+    }
+    if (!buf.empty()) {
+        buf.resize(buf.size() - 1);
+    }
+    return buf;
+}
+
+std::string GroupClause::toString() const {
+    return groupColumns_->toString();
+}
+
 }   // namespace nebula
