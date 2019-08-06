@@ -22,8 +22,8 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     req.overwritable = true;
 
     LOG(INFO) << "Build FutureAddVerticesTest...";
-    req.parts.emplace(1, TestUtils::setupVertices(1, 10, 10));
-    req.parts.emplace(2, TestUtils::setupVertices(2, 20, 30));
+    req.parts.emplace(0, TestUtils::setupVertices(0, 10, 10));
+    req.parts.emplace(1, TestUtils::setupVertices(1, 20, 30));
     LOG(INFO) << "Test FutureAddVerticesTest...";
     std::unique_ptr<kvstore::KVStore> kvstore = TestUtils::initKV(rootPath.path());
 
@@ -35,12 +35,12 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     ASSERT_EQ(0, resp.result.failed_codes.size());
 
     LOG(INFO) << "Verify the vertices data...";
-    auto prefix = NebulaKeyUtils::prefix(2, 19);
+    auto prefix = NebulaKeyUtils::prefix(1, 19);
     std::unique_ptr<kvstore::KVIterator> iter;
-    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kvstore->prefix(0, 2, prefix, &iter));
+    ASSERT_EQ(kvstore::ResultCode::SUCCEEDED, kvstore->prefix(0, 1, prefix, &iter));
     TagID tagId = 0;
     while (iter->valid()) {
-        ASSERT_EQ(folly::stringPrintf("%d_%d_%d", 2, 19, tagId), iter->val());
+        ASSERT_EQ(folly::stringPrintf("%d_%d_%d", 1, 19, tagId), iter->val());
         tagId++;
         iter->next();
     }

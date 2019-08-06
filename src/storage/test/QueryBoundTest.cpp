@@ -57,9 +57,9 @@ void mockData(kvstore::KVStore* kv) {
                 }
             }
             // Generate 5 in-edges for each edgeType, the edgeType is negative
-            for (int32_t srcId = 20001; srcId <= 20005; srcId++) {
+            for (auto srcId = 20001; srcId <= 20005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
-                for (int32_t version = 0; version < 3; version++) {
+                for (auto version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101,
                                                        0, srcId,
                                                        std::numeric_limits<int>::max() - version);
@@ -324,10 +324,10 @@ TEST(QueryBoundTest,  GenBucketsTest) {
         QueryBoundProcessor pro(nullptr, nullptr, nullptr, BoundType::OUT_BOUND);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(7, buckets.size());
-        for (int32_t i = 0; i < 2; i++) {
+        for (auto i = 0; i < 2; i++) {
             ASSERT_EQ(5, buckets[i].vertices_.size());
         }
-        for (int32_t i = 2; i < 7; i++) {
+        for (auto i = 2; i < 7; i++) {
             ASSERT_EQ(4, buckets[i].vertices_.size());
         }
     }

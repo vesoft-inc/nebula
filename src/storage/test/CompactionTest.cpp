@@ -44,7 +44,7 @@ void mockData(kvstore::KVStore* kv) {
                     for (uint64_t numInt = 0; numInt < 10; numInt++) {
                         writer << numInt;
                     }
-                    for (int32_t numString = 10; numString < 20; numString++) {
+                    for (auto numString = 10; numString < 20; numString++) {
                         writer << folly::stringPrintf("string_col_%d_%d", numString, version);
                     }
                     auto val = writer.encode();
@@ -52,9 +52,9 @@ void mockData(kvstore::KVStore* kv) {
                 }
             }
             // Generate 5 in-edges for each edgeType, the edgeType is negative
-            for (int32_t srcId = 20001; srcId <= 20005; srcId++) {
+            for (auto srcId = 20001; srcId <= 20005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
-                for (int32_t version = 0; version < 3; version++) {
+                for (auto version = 0; version < 3; version++) {
                     auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101,
                                                        0, srcId,
                                                        std::numeric_limits<int>::max() - version);
