@@ -87,12 +87,13 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
     for (auto& req : requests) {
         auto& host = req.first;
         auto spaceId = req.second.get_space_id();
-        auto client = clientsMan_->client(host, evb);
-        // Result is a pair of <Request&, bool>
         auto res = context->insertRequest(host, std::move(req.second));
         DCHECK(res.second);
         // Invoke the remote method
-        context->serverMethod(client.get(), *res.first)
+        folly::via(evb, [this, evb, context, host, spaceId, res] () mutable {
+            auto client = clientsMan_->client(host, evb);
+            // Result is a pair of <Request&, bool>
+            context->serverMethod(client.get(), *res.first)
             // Future process code will be executed on the IO thread
             // Since all requests are sent using the same eventbase, all then-callback
             // will be executed on the same IO thread
@@ -147,7 +148,8 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
                     context->promise.setValue(std::move(context->resp));
                 }
             });
-    }
+        });  // via
+    }  // for
     if (context->finishSending()) {
         // Received all responses, most likely, all rpc failed
         context->promise.setValue(std::move(context->resp));
