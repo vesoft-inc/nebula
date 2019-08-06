@@ -352,6 +352,9 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("ASC", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("Asc", TokenType::KW_ASC),
         CHECK_SEMANTIC_TYPE("asc", TokenType::KW_ASC),
+        CHECK_SEMANTIC_TYPE("VARIABLES", TokenType::KW_VARIABLES),
+        CHECK_SEMANTIC_TYPE("variables", TokenType::KW_VARIABLES),
+        CHECK_SEMANTIC_TYPE("Variables", TokenType::KW_VARIABLES),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

@@ -78,6 +78,9 @@ private:
     // The handler we use to register to the operating system.
     static void handlerHook(int sig, siginfo_t *info, void *uctx);
 
+    // init SIGPIPE and SIGHUB
+    Status init();
+
     // Invoked by handlerHook, and dispatch signals to handleGeneralSignal or handleFatalSignal
     void doHandle(int sig, siginfo_t *info, void *uctx);
 

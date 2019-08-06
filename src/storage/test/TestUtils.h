@@ -63,6 +63,7 @@ public:
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
                                                             localhost);
+        store->init();
         sleep(1);
         return store;
     }

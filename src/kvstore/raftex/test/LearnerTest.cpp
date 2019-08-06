@@ -41,23 +41,8 @@ TEST(LearnerTest, OneLeaderOneFollowerOneLearnerTest) {
     f.wait();
 
     std::vector<std::string> msgs;
-    LogID id = -1;
-    appendLogs(1, 100, leader, msgs, id);
-
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies) {
-        ASSERT_EQ(100, c->getNumLogs());
-    }
-
-    for (int i = 0; i < 100; ++i, ++id) {
-        for (auto& c : copies) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg)) << "id :" << id << ", i:" << i;
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    appendLogs(0, 99, leader, msgs);
+    checkConsensus(copies, 0, 99, msgs);
 
     finishRaft(services, copies, workers, leader);
 }
@@ -83,43 +68,18 @@ TEST(LearnerTest, OneLeaderTwoLearnerTest) {
     f.wait();
 
     std::vector<std::string> msgs;
-    LogID id = -1;
-    appendLogs(1, 100, leader, msgs, id);
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies) {
-        ASSERT_EQ(100, c->getNumLogs());
-    }
-
-    for (int i = 0; i < 100; ++i, ++id) {
-        for (auto& c : copies) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg)) << "id :" << id << ", i:" << i;
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    appendLogs(0, 99, leader, msgs);
+    checkConsensus(copies, 0, 99, msgs);
 
     LOG(INFO) << "Let's kill the two learners, the leader should still work";
-    for (auto i = 1; i < 3; i++) {
-        services[i]->removePartition(copies[i]);
-    }
+    killOneCopy(services, copies, leader, 1);
+    killOneCopy(services, copies, leader, 2);
 
     checkLeadership(copies, 0, leader);
 
-    appendLogs(101, 200, leader, msgs, id);
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval/2);
+    appendLogs(100, 199, leader, msgs);
+    checkConsensus(copies, 100, 199, msgs);
 
-    // Check the leader
-    ASSERT_EQ(200, leader->getNumLogs());
-
-    for (int i = 101; i < 200; ++i, ++id) {
-        folly::StringPiece msg;
-        ASSERT_TRUE(leader->getLogMsg(id, msg)) << "id :" << id << ", i:" << i;
-        ASSERT_EQ(msgs[i - 1], msg.toString());
-    }
     finishRaft(services, copies, workers, leader);
 }
 
@@ -139,10 +99,8 @@ TEST(LearnerTest, CatchUpDataTest) {
     checkLeadership(copies, leader);
 
     std::vector<std::string> msgs;
-    LogID id = -1;
-    appendLogs(1, 100, leader, msgs, id);
-    // Sleep a while to make sure the last log has been committed on
-    // followers
+    appendLogs(0, 99, leader, msgs);
+    // Sleep a while to make sure the last log has been committed on followers
     sleep(FLAGS_heartbeat_interval);
 
     // Check every copy
@@ -150,10 +108,10 @@ TEST(LearnerTest, CatchUpDataTest) {
         ASSERT_EQ(100, copies[i]->getNumLogs());
     }
 
-    for (int i = 0; i < 100; ++i, ++id) {
+    for (int i = 0; i < 100; ++i) {
         for (int j = 0; j < 3; j++) {
             folly::StringPiece msg;
-            ASSERT_TRUE(copies[j]->getLogMsg(id, msg));
+            ASSERT_TRUE(copies[j]->getLogMsg(i, msg));
             ASSERT_EQ(msgs[i], msg.toString());
         }
     }
@@ -165,15 +123,15 @@ TEST(LearnerTest, CatchUpDataTest) {
     sleep(1);
     auto& learner = copies[3];
     ASSERT_EQ(100, learner->getNumLogs());
-    id = learner->currLogId_ - 99;
-    for (int i = 0; i < 100; ++i, ++id) {
+    for (int i = 0; i < 100; ++i) {
         folly::StringPiece msg;
-        ASSERT_TRUE(learner->getLogMsg(id, msg));
-        ASSERT_EQ(msgs[i], msg.toString())  << "id " << id << ", i " << i;
+        ASSERT_TRUE(learner->getLogMsg(i, msg));
+        ASSERT_EQ(msgs[i], msg.toString());
     }
 
     finishRaft(services, copies, workers, leader);
 }
+
 }  // namespace raftex
 }  // namespace nebula
 

@@ -75,17 +75,21 @@ public:
     }
 
 private:
-    cpp2::ErrorCode checkStatus(std::lock_guard<std::mutex>& lck) const;
+    cpp2::ErrorCode checkStatus() const;
 
     folly::Future<cpp2::AppendLogResponse> sendAppendLogRequest(
-        std::shared_ptr<cpp2::AppendLogRequest> req);
-
-    folly::Future<cpp2::AppendLogResponse> appendLogsInternal(
         folly::EventBase* eb,
         std::shared_ptr<cpp2::AppendLogRequest> req);
 
-    std::shared_ptr<cpp2::AppendLogRequest> prepareAppendLogRequest(
-        std::lock_guard<std::mutex>& lck) const;
+    void appendLogsInternal(
+        folly::EventBase* eb,
+        std::shared_ptr<cpp2::AppendLogRequest> req);
+
+    std::shared_ptr<cpp2::AppendLogRequest> prepareAppendLogRequest() const;
+
+    bool noRequest() const;
+
+    void setResponse(const cpp2::AppendLogResponse& r);
 
     thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>& tcManager() {
         static thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient> manager;
@@ -93,6 +97,9 @@ private:
     }
 
 private:
+    // <term, logId, committedLogId, lastLogTermSent, lastLogIdSent>
+    using Request = std::tuple<TermID, LogID, LogID, TermID, LogID>;
+
     std::shared_ptr<RaftPart> part_;
     const HostAddr addr_;
     bool isLearner_ = false;
@@ -105,13 +112,10 @@ private:
 
     bool requestOnGoing_{false};
     std::condition_variable noMoreRequestCV_;
-    folly::Promise<cpp2::AppendLogResponse> promise_;
-    std::queue<
-        std::pair<folly::Promise<cpp2::AppendLogResponse>,
-                  // <term, logId, committedLogId,
-                  //  lastLogTermSent, lastLogIdSent>
-                  std::tuple<TermID, LogID, LogID, TermID, LogID>>
-    > requests_;
+    folly::SharedPromise<cpp2::AppendLogResponse> promise_;
+    folly::SharedPromise<cpp2::AppendLogResponse> cachingPromise_;
+
+    Request pendingReq_{0, 0, 0, 0, 0};
 
     // These logId and term pointing to the latest log we need to send
     LogID logIdToSend_{0};
