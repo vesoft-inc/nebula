@@ -173,7 +173,7 @@ void setupRaft(
 
     // Set up services
     for (int i = 0; i < numCopies; ++i) {
-        services.emplace_back(RaftexService::createService(nullptr));
+        services.emplace_back(RaftexService::createService(nullptr, nullptr));
         if (!services.back()->start())
             return;
         uint16_t port = services.back()->getServerPort();
@@ -194,6 +194,7 @@ void setupRaft(
             flusher.get(),
             services[i]->getIOThreadPool(),
             workers,
+            services[i]->getThreadManager(),
             std::bind(&onLeadershipLost,
                       std::ref(copies),
                       std::ref(leader),
