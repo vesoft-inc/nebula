@@ -142,9 +142,7 @@ public:
     ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
                                                     PartitionID partId) override;
 
-    ResultCode ingest(GraphSpaceID spaceId,
-                      const std::string& extra,
-                      const std::vector<std::string>& files);
+    ResultCode ingest(GraphSpaceID spaceId) override;
 
     ResultCode setOption(GraphSpaceID spaceId,
                          const std::string& configKey,

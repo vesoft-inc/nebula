@@ -4,6 +4,7 @@ nebula_add_test(
     SOURCES
         FlagsAccessTest.cpp
     OBJECTS
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:process_obj>
@@ -23,6 +24,7 @@ nebula_add_test(
     SOURCES
         StatsReaderTest.cpp
     OBJECTS
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:process_obj>
