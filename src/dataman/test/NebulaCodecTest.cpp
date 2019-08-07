@@ -86,7 +86,6 @@ TEST(NebulaCodec, encode) {
     std::vector<boost::any> emptyV;
     std::string emptyEncoded = codec.encode(emptyV);
 
-
     SchemaWriter emptyWriter;
     auto emptySchema = std::make_shared<ResultSchemaProvider>(emptyWriter.moveSchema());
     auto emptyReader = RowReader::getRowReader(emptyEncoded, emptySchema);

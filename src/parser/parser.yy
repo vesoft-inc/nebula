@@ -700,7 +700,6 @@ create_schema_prop_list
     : KW_TTL_DURATION ASSIGN unary_integer {
         // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
         if ($3 < 0) {
-
             $3 = 0;
         }
         $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);

@@ -32,7 +32,8 @@ Status FetchEdgesExecutor::prepare() {
         labelSchema_ = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
         if (labelSchema_ == nullptr) {
             LOG(ERROR) << *labelName_ << " edge schema not exist.";
-            return Status::Error("%s edge schema not exist.", labelName_->c_str());
+            status = Status::Error("%s edge schema not exist.", labelName_->c_str());
+            break;
         }
 
         status = prepareEdgeKeys();
@@ -80,6 +81,7 @@ void FetchEdgesExecutor::execute() {
 
     if (edgeKeys_.empty()) {
         onEmptyInputs();
+        return;
     }
 
     fetchEdges();
@@ -209,14 +211,13 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
 }
 
 void FetchEdgesExecutor::fetchEdges() {
-    auto status = getPropNames();
-    if (!status.ok()) {
+    auto props = getPropNames();
+    if (props.empty()) {
         DCHECK(onError_);
-        onError_(status.status());
+        onError_(Status::Error("No props declared."));
         return;
     }
 
-    auto props = status.value();
     auto future = ectx()->storage()->getEdgeProps(spaceId_, edgeKeys_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (RpcResponse &&result) mutable {
@@ -242,7 +243,7 @@ void FetchEdgesExecutor::fetchEdges() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-StatusOr<std::vector<storage::cpp2::PropDef>> FetchEdgesExecutor::getPropNames() {
+std::vector<storage::cpp2::PropDef> FetchEdgesExecutor::getPropNames() {
     std::vector<storage::cpp2::PropDef> props;
     for (auto &prop : expCtx_->aliasProps()) {
         storage::cpp2::PropDef pd;

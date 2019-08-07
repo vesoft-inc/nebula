@@ -36,7 +36,7 @@ private:
 
     Status setupEdgeKeysFromRef();
 
-    StatusOr<std::vector<storage::cpp2::PropDef>> getPropNames();
+    std::vector<storage::cpp2::PropDef> getPropNames();
 
     void fetchEdges();
 
@@ -49,14 +49,14 @@ private:
             std::function<size_t(const storage::cpp2::EdgeKey& key)>>;
 
 private:
-    FetchEdgesSentence                         *sentence_{nullptr};
-    std::vector<storage::cpp2::EdgeKey>         edgeKeys_;
-    EdgeType                                    edgeType_;
-    std::string                                *srcid_{nullptr};
-    std::string                                *dstid_{nullptr};
-    std::string                                *rank_{nullptr};
-    std::string                                 varname_;
-    std::function<size_t(const storage::cpp2::EdgeKey)> hash_;
+    FetchEdgesSentence                                     *sentence_{nullptr};
+    std::vector<storage::cpp2::EdgeKey>                     edgeKeys_;
+    EdgeType                                                edgeType_{INT_MIN};
+    std::string                                            *srcid_{nullptr};
+    std::string                                            *dstid_{nullptr};
+    std::string                                            *rank_{nullptr};
+    std::string                                             varname_;
+    std::function<size_t(const storage::cpp2::EdgeKey)>     hash_;
 };
 }  // namespace graph
 }  // namespace nebula

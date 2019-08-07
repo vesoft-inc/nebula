@@ -20,9 +20,6 @@ enum ColumnType {
 
 std::string columnTypeToString(ColumnType type);
 
-using VariantType = boost::variant<int64_t, double, bool, std::string>;
-
-
 class ExpressionContext final {
 public:
     void addSrcTagProp(const std::string &tag, const std::string &prop) {

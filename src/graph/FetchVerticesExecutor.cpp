@@ -34,7 +34,8 @@ Status FetchVerticesExecutor::prepare() {
         labelSchema_ = ectx()->schemaManager()->getTagSchema(spaceId_, tagID_);
         if (labelSchema_ == nullptr) {
             LOG(ERROR) << *labelName_ << " tag schema not exist.";
-            return Status::Error("%s tag schema not exist.", labelName_->c_str());
+            status = Status::Error("%s tag schema not exist.", labelName_->c_str());
+            break;
         }
 
         prepareVids();
@@ -74,20 +75,20 @@ void FetchVerticesExecutor::execute() {
     }
     if (vids_.empty()) {
         onEmptyInputs();
+        return;
     }
 
     fetchVertices();
 }
 
 void FetchVerticesExecutor::fetchVertices() {
-    auto status = getPropNames();
-    if (!status.ok()) {
+    auto props = getPropNames();
+    if (props.empty()) {
         DCHECK(onError_);
-        onError_(status.status());
+        onError_(Status::Error("No props declared."));
         return;
     }
 
-    auto props = status.value();
     auto future = ectx()->storage()->getVertexProps(spaceId_, vids_, std::move(props));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (RpcResponse &&result) mutable {
@@ -113,7 +114,7 @@ void FetchVerticesExecutor::fetchVertices() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
-StatusOr<std::vector<storage::cpp2::PropDef>> FetchVerticesExecutor::getPropNames() {
+std::vector<storage::cpp2::PropDef> FetchVerticesExecutor::getPropNames() {
     std::vector<storage::cpp2::PropDef> props;
     for (auto &prop : expCtx_->aliasProps()) {
         storage::cpp2::PropDef pd;

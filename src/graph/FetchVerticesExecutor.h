@@ -36,7 +36,7 @@ private:
 
     Status setupVidsFromExpr();
 
-    StatusOr<std::vector<storage::cpp2::PropDef>> getPropNames();
+    std::vector<storage::cpp2::PropDef> getPropNames();
 
     void fetchVertices();
 
@@ -46,7 +46,7 @@ private:
 private:
     FetchVerticesSentence                      *sentence_{nullptr};
     std::vector<VertexID>                       vids_;
-    TagID                                       tagID_;
+    TagID                                       tagID_{INT_MIN};
     std::string                                *varname_{nullptr};
     std::string                                *colname_{nullptr};
 };

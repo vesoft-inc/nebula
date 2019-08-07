@@ -38,7 +38,7 @@ protected:
     void finishExecution(std::unique_ptr<RowSetWriter> rsWriter);
 
 protected:
-    GraphSpaceID                                    spaceId_;
+    GraphSpaceID                                    spaceId_{INT_MIN};
     std::unique_ptr<ExpressionContext>              expCtx_;
     std::string                                    *labelName_{nullptr};
     std::shared_ptr<const meta::SchemaProviderIf>   labelSchema_;
