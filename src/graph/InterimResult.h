@@ -14,15 +14,11 @@
 #include "dataman/RowSetWriter.h"
 #include "dataman/SchemaWriter.h"
 
+namespace nebula {
+namespace graph {
 /**
  * The intermediate form of execution result, used in pipeline and variable.
  */
-
-
-namespace nebula {
-namespace graph {
-
-
 class InterimResult final {
 public:
     InterimResult() = default;
