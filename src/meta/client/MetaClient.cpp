@@ -1081,17 +1081,13 @@ MetaClient::getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, Sche
 }
 
 StatusOr<const cpp2::IndexProperties>
-MetaClient::getTagIndexFromCache(GraphSpaceID spaceID, TagIndexID tagIndexID) {
-    UNUSED(spaceID); UNUSED(tagIndexID);
-    cpp2::IndexProperties properties;
-    return properties;
+MetaClient::getTagIndexFromCache(TagIndexID tagIndexID) {
+    LOG(FATAL) << "Not implemented";
 }
 
 StatusOr<const cpp2::IndexProperties>
-MetaClient::getEdgeIndexFromCache(GraphSpaceID spaceID, EdgeIndexID edgeIndexID) {
-    UNUSED(spaceID); UNUSED(edgeIndexID);
-    cpp2::IndexProperties properties;
-    return properties;
+MetaClient::getEdgeIndexFromCache(EdgeIndexID edgeIndexID) {
+    LOG(FATAL) << "Not implemented";
 }
 
 const std::vector<HostAddr>& MetaClient::getAddresses() {

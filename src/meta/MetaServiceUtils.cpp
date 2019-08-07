@@ -388,7 +388,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
                         cols.erase(it);
                         return cpp2::ErrorCode::SUCCEEDED;
                     } else {
-                        LOG(ERROR) << "Column can't be dropped, a TTL attribute on it : "
+                        LOG(ERROR) << "Column can't be dropped, a TTL attribute on it: "
                                    << col.get_name();
                         return cpp2::ErrorCode::E_NOT_DROP;
                     }
@@ -427,7 +427,7 @@ cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::Colu
         }
 
         if (!existed) {
-            LOG(WARNING) << "TTL column not found : " << ttlCol;
+            LOG(WARNING) << "TTL column not found: " << ttlCol;
             return cpp2::ErrorCode::E_NOT_FOUND;
         }
     }

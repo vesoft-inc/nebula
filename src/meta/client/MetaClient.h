@@ -183,6 +183,7 @@ public:
     createTagIndex(GraphSpaceID spaceID, std::string name,
                    std::map<std::string, std::vector<std::string>>&& fields);
 
+    // Remove the define of tag index
     folly::Future<StatusOr<bool>>
     dropTagIndex(GraphSpaceID spaceId, std::string name);
 
@@ -196,6 +197,7 @@ public:
     createEdgeIndex(GraphSpaceID spaceID, std::string name,
                     std::map<std::string, std::vector<std::string>>&& fields);
 
+    // Remove the define of edge index
     folly::Future<StatusOr<bool>>
     dropEdgeIndex(GraphSpaceID spaceId, std::string name);
 
@@ -280,10 +282,10 @@ public:
     getEdgeSchemaFromCache(GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver = -1);
 
     StatusOr<const cpp2::IndexProperties>
-    getTagIndexFromCache(GraphSpaceID spaceId, TagIndexID tagIndexID);
+    getTagIndexFromCache(TagIndexID tagIndexID);
 
     StatusOr<const cpp2::IndexProperties>
-    getEdgeIndexFromCache(GraphSpaceID spaceId, EdgeIndexID edgeIndexID);
+    getEdgeIndexFromCache(EdgeIndexID edgeIndexID);
 
     bool checkTagFieldsIndexed(GraphSpaceID space, TagID tagID,
                                const std::vector<std::string> &fields);
