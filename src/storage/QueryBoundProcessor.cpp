@@ -122,14 +122,14 @@ kvstore::ResultCode QueryBoundProcessor::processEdge(PartitionID partId, VertexI
 }
 
 kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, VertexID vId) {
-    FilterContext fcontext;
     cpp2::VertexData vResp;
     vResp.set_vertex_id(vId);
-    std::vector<TagID> v;
+    FilterContext fcontext;
     if (!tagContexts_.empty()) {
-        RowWriter writer;
-        PropsCollector collector(&writer);
+        std::vector<cpp2::TagData> td;
         for (auto& tc : tagContexts_) {
+            RowWriter writer;
+            PropsCollector collector(&writer);
             VLOG(3) << "partId " << partId << ", vId " << vId << ", tagId " << tc.tagId_
                     << ", prop size " << tc.props_.size();
             auto ret = collectVertexProps(partId, vId, tc.tagId_, tc.props_, &fcontext, &collector);
@@ -139,10 +139,20 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
             }
-            v.push_back(tc.tagId_);
+            nebula::cpp2::Schema respTag;
+            for (auto& prop : tc.props_) {
+                if (prop.returned_) {
+                    respTag.columns.emplace_back(columnDef(prop.prop_.name, prop.type_.type));
+                }
+            }
+            if (!respTag.get_columns().empty()) {
+                td.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
+                                tc.tagId_,
+                                std::move(respTag),
+                                writer.encode());
+            }
         }
-        vResp.set_tag_ids(std::move(v));
-        vResp.set_vertex_data(writer.encode());
+        vResp.set_tag_data(std::move(td));
     }
 
     if (onlyVertexProps_) {
@@ -172,24 +182,8 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
 }
 
 void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
+    (void)retNum;
     resp_.set_vertices(std::move(vertices_));
-    auto edgePropsSize = std::accumulate(edgeContext_.cbegin(), edgeContext_.cend(), 0,
-                                         [](int ac, auto& ec) { return ac + ec.second.size(); });
-    if (!this->tagContexts_.empty()) {
-        nebula::cpp2::Schema respTag;
-        respTag.columns.reserve(retNum - edgePropsSize);
-        for (auto& tc : this->tagContexts_) {
-            for (auto& prop : tc.props_) {
-                if (prop.returned_) {
-                    respTag.columns.emplace_back(columnDef(std::move(prop.prop_.name),
-                                                            prop.type_.type));
-                }
-            }
-        }
-        if (!respTag.get_columns().empty()) {
-            resp_.set_vertex_schema(std::move(respTag));
-        }
-    }
 }
 
 }  // namespace storage

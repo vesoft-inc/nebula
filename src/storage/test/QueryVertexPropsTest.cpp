@@ -84,23 +84,19 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
-    EXPECT_EQ(3, resp.vertex_schema.columns.size());
-    auto tagProvider = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
     EXPECT_EQ(30, resp.vertices.size());
     for (auto& vp : resp.vertices) {
-        auto tagReader = RowReader::getRowReader(vp.vertex_data, tagProvider);
-        EXPECT_EQ(3, tagReader->numFields());
-        int64_t col1;
-        EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getInt("tag_3001_col_0", col1));
-        EXPECT_EQ(col1, 0);
+        auto size =
+            std::accumulate(vp.tag_data.cbegin(), vp.tag_data.cend(), 0, [](int acc, auto& td) {
+                return acc + td.schema.columns.size();
+            });
 
-        int64_t col2;
-        EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getInt("tag_3003_col_2", col2));
-        EXPECT_EQ(col2, 2);
+        EXPECT_EQ(3, size);
 
-        folly::StringPiece col3;
-        EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getString("tag_3005_col_4", col3));
-        EXPECT_EQ(folly::stringPrintf("tag_string_col_4"), col3);
+        checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", 0);
+        checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", 2);
+        checkTagData<std::string>(
+            vp.tag_data, 3005, "tag_3005_col_4", folly::stringPrintf("tag_string_col_4"));
     }
 }
 

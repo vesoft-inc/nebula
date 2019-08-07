@@ -15,6 +15,10 @@ ExecutionContext::~ExecutionContext() {
         sm_ = nullptr;
     }
 
+    if (nullptr != gflagsManager_) {
+        gflagsManager_ = nullptr;
+    }
+
     if (nullptr != storage_) {
         storage_ = nullptr;
     }

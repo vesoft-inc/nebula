@@ -67,7 +67,6 @@ public:
     SchemaVer getNewestEdgeSchemaVer(folly::StringPiece spaceName,
                                      folly::StringPiece typeName) override;
 
-    // This interface is disabled
     StatusOr<GraphSpaceID> toGraphSpaceID(folly::StringPiece spaceName) override;
 
     StatusOr<TagID> toTagID(GraphSpaceID space, folly::StringPiece tagName) override;

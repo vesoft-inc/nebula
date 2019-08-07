@@ -97,8 +97,8 @@ private:
      */
     void onVertexProps(RpcResponse &&rpcResp);
 
-    StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps() const;
-    StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps() const;
+    StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps();
+    StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps();
 
     void fetchVertexProps(std::vector<VertexID> ids, RpcResponse &&rpcResp);
 
@@ -150,17 +150,13 @@ private:
      */
     class VertexHolder final {
     public:
-        VariantType getDefaultProp(const std::string &prop) const;
-        VariantType get(VertexID id, const std::string &prop) const;
-        bool exist(VertexID vid, TagID tid) const;
+        VariantType getDefaultProp(TagID tid, const std::string &prop) const;
+        VariantType get(VertexID id, TagID tid, const std::string &prop) const;
         void add(const storage::cpp2::QueryResponse &resp);
-        const auto* schema() const {
-            return schema_.get();
-        }
 
     private:
-        std::shared_ptr<ResultSchemaProvider>                                      schema_;
-        std::unordered_map<VertexID, std::tuple<std::vector<TagID>, std::string>>  data_;
+        using VData = std::tuple<std::shared_ptr<ResultSchemaProvider>, std::string>;
+        std::unordered_map<VertexID, std::unordered_map<TagID, VData>> data_;
     };
 
 private:
@@ -180,6 +176,8 @@ private:
     std::vector<VertexID>                       starts_;
     std::unique_ptr<VertexHolder>               vertexHolder_;
     std::unique_ptr<cpp2::ExecutionResponse>    resp_;
+    // The name of Tag or Edge, index of prop in data
+    using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
 };
 
 }   // namespace graph

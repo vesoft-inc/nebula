@@ -59,6 +59,7 @@ class AppendLogsIterator;
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
+    friend class Host;
 public:
     virtual ~RaftPart();
 

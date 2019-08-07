@@ -14,6 +14,7 @@
 #include "dataman/RowWriter.h"
 #include "dataman/RowSetReader.h"
 #include "network/NetworkUtils.h"
+#include "meta/ClusterManager.h"
 
 DECLARE_string(meta_server_addrs);
 DECLARE_int32(load_data_interval_secs);
@@ -25,6 +26,7 @@ namespace storage {
 TEST(StorageClientTest, VerticesInterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
+    const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     GraphSpaceID spaceId = 0;
     IPv4 localIp;
@@ -34,7 +36,9 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
-    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str());
+    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort,
+                                                             metaPath.c_str(),
+                                                             kClusterId);
     localMetaPort =  metaServerContext->port_;
 
     LOG(INFO) << "Create meta client...";
@@ -46,8 +50,13 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
     auto& localHost = hostRet.value();
-    auto mClient
-        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrs), localHost, true);
+    auto clusterMan
+        = std::make_unique<nebula::meta::ClusterManager>("", "");
+    auto mClient = std::make_unique<meta::MetaClient>(threadPool,
+                                                      std::move(addrs),
+                                                      localHost,
+                                                      clusterMan.get(),
+                                                      true);
     LOG(INFO) << "Add hosts and create space....";
     auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
     ASSERT_TRUE(r.ok());
@@ -139,15 +148,13 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             retCols.emplace_back(TestUtils::vetexPropDef(
                 folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
         }
-        auto f = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
+        auto f    = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
         if (VLOG_IS_ON(2)) {
             if (!resp.succeeded()) {
                 std::stringstream ss;
                 for (auto& p : resp.failedParts()) {
-                    ss << "Part " << p.first
-                       << ": " << static_cast<int32_t>(p.second)
-                       << "; ";
+                    ss << "Part " << p.first << ": " << static_cast<int32_t>(p.second) << "; ";
                 }
                 VLOG(2) << "Failed partitions:: " << ss.str();
             }
@@ -158,23 +165,19 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         ASSERT_EQ(1, results.size());
         EXPECT_EQ(0, results[0].result.failed_codes.size());
 
-        EXPECT_EQ(3, results[0].vertex_schema.columns.size());
-        auto tagProvider = std::make_shared<ResultSchemaProvider>(results[0].vertex_schema);
         EXPECT_EQ(10, results[0].vertices.size());
         for (auto& vp : results[0].vertices) {
-            auto tagReader = RowReader::getRowReader(vp.vertex_data, tagProvider);
-            EXPECT_EQ(3, tagReader->numFields());
-            int64_t col1;
-            EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getInt("tag_3001_col_0", col1));
-            EXPECT_EQ(col1, 0);
+            auto size =
+                std::accumulate(vp.tag_data.cbegin(), vp.tag_data.cend(), 0, [](int acc, auto& td) {
+                    return acc + td.schema.columns.size();
+                });
 
-            int64_t col2;
-            EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getInt("tag_3003_col_2", col2));
-            EXPECT_EQ(col2, 2);
+            EXPECT_EQ(3, size);
 
-            folly::StringPiece col3;
-            EXPECT_EQ(ResultType::SUCCEEDED, tagReader->getString("tag_3005_col_4", col3));
-            EXPECT_EQ(folly::stringPrintf("tag_string_col_4"), col3);
+            checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", 0);
+            checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", 2);
+            checkTagData<std::string>(
+                vp.tag_data, 3005, "tag_3005_col_4", folly::stringPrintf("tag_string_col_4"));
         }
     }
 

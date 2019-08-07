@@ -13,6 +13,9 @@
 namespace nebula {
 namespace graph {
 
+using SchemaProps = std::unordered_map<std::string, std::vector<std::string>>;
+using nebula::cpp2::SupportedType;
+
 GoExecutor::GoExecutor(Sentence *sentence, ExecutionContext *ectx) : TraverseExecutor(ectx) {
     // The RTTI is guaranteed by Sentence::Kind,
     // so we use `static_cast' instead of `dynamic_cast' for the sake of efficiency.
@@ -439,7 +442,7 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     onFinish_();
 }
 
-StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() const {
+StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
     std::vector<storage::cpp2::PropDef> props;
     for (auto &e : edgeTypes_) {
         storage::cpp2::PropDef pd;
@@ -492,8 +495,8 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() cons
 }
 
 
-StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() const {
-    std::vector<storage::cpp2::PropDef> props;
+StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() {
+std::vector<storage::cpp2::PropDef> props;
     auto spaceId = ectx()->rctx()->session()->space();
     for (auto &tagProp : expCtx_->dstTagProps()) {
         storage::cpp2::PropDef pd;
@@ -571,7 +574,6 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
     std::shared_ptr<SchemaWriter> schema;
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
-    using nebula::cpp2::SupportedType;
     auto cb = [&] (std::vector<VariantType> record) {
         if (schema == nullptr) {
             schema = std::make_shared<SchemaWriter>();
@@ -640,6 +642,7 @@ std::unique_ptr<InterimResult> GoExecutor::setupInterimResult(RpcResponse &&rpcR
     return std::make_unique<InterimResult>(std::move(rsWriter));
 }
 
+
 void GoExecutor::onEmptyInputs() {
     if (onResult_) {
         onResult_(nullptr);
@@ -657,17 +660,12 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
         if (resp.get_vertices() == nullptr) {
             continue;
         }
-        std::shared_ptr<ResultSchemaProvider> vschema;
-
-        if (resp.get_vertex_schema() != nullptr) {
-            vschema = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
-        }
 
         for (auto &vdata : resp.vertices) {
-            std::unique_ptr<RowReader> vreader;
-            if (vschema != nullptr) {
-                DCHECK(vdata.__isset.vertex_data);
-                vreader = RowReader::getRowReader(vdata.vertex_data, vschema);
+            std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> schemas;
+            auto tagData = vdata.tag_data;
+            for (auto &td : tagData) {
+                schemas[td.tag_id] = std::make_shared<ResultSchemaProvider>(td.schema);
             }
             DCHECK(vdata.__isset.edge_data);
             for (auto &edata : vdata.edge_data) {
@@ -691,28 +689,40 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         if (edgeType != edgeStatus.value()) {
                             return RowReader::getDefaultProp(iter->getSchema(), prop);
                         }
-                        auto res = RowReader::getProp(&*iter, prop);
+                        auto res = RowReader::getPropByName(&*iter, prop);
                         CHECK(ok(res));
                         return value(std::move(res));
                     };
-                    getters.getSrcTagProp = [&vreader](const std::string &,
-                                                       const std::string &prop) {
-                        auto res = RowReader::getProp(vreader.get(), prop);
-                        CHECK(ok(res));
-                        return value(std::move(res));
-                    };
-                    getters.getDstTagProp = [&iter, &spaceId, this](const std::string &tag,
-                                                                    const std::string &prop) {
-                        auto dst = RowReader::getProp(&*iter, "_dst");
-                        CHECK(ok(dst));
-                        auto vid    = boost::get<int64_t>(value(std::move(dst)));
+                    getters.getSrcTagProp = [&iter, &spaceId, &tagData, &schemas, this](
+                                                const std::string &tag, const std::string &prop) {
                         auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
                         CHECK(status.ok());
                         auto tagId = status.value();
-                        if (!vertexHolder_->exist(vid, tagId)) {
-                            return vertexHolder_->getDefaultProp(prop);
+                        auto it =
+                            std::find_if(tagData.cbegin(), tagData.cend(), [&tagId](auto &td) {
+                                if (td.tag_id == tagId) {
+                                    return true;
+                                }
+
+                                return false;
+                            });
+                        if (it == tagData.cend()) {
+                            return RowReader::getDefaultProp(iter->getSchema(), prop);
                         }
-                        return vertexHolder_->get(vid, prop);
+                        DCHECK(it->__isset.vertex_data);
+                        auto vreader  = RowReader::getRowReader(it->vertex_data, schemas[tagId]);
+                        auto res = RowReader::getPropByName(vreader.get(), prop);
+                        return value(res);
+                    };
+                    getters.getDstTagProp = [&iter, &spaceId, this](const std::string &tag,
+                                                                    const std::string &prop) {
+                        auto dst = RowReader::getPropByName(&*iter, "_dst");
+                        CHECK(ok(dst));
+                        auto vid = boost::get<int64_t>(value(std::move(dst)));
+                        auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
+                        CHECK(status.ok());
+                        auto tagId = status.value();
+                        return vertexHolder_->get(vid, tagId, prop);
                     };
                     // Evaluate filter
                     if (filter_ != nullptr) {
@@ -739,50 +749,49 @@ void GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
     }   // for `resp'
 }
 
-VariantType GoExecutor::VertexHolder::getDefaultProp(const std::string &prop) const {
-    DCHECK(schema_ != nullptr);
+VariantType GoExecutor::VertexHolder::getDefaultProp(TagID tid, const std::string &prop) const {
+    for (auto it = data_.cbegin(); it != data_.cend(); ++it) {
+        auto it2 = it->second.find(tid);
+        if (it2 != it->second.cend()) {
+            return RowReader::getDefaultProp(std::get<0>(it2->second).get(), prop);
+        }
+    }
 
-    return RowReader::getDefaultProp(schema_.get(), prop);
+    DCHECK(false);
+    return "";
 }
 
-bool GoExecutor::VertexHolder::exist(VertexID vid, TagID tid) const {
-    auto iter = data_.find(vid);
-    CHECK(iter != data_.end());
-    auto &v = std::get<0>(iter->second);
-    auto it = std::find(v.cbegin(), v.cend(), tid);
-    return it != v.cend();
-}
-
-VariantType GoExecutor::VertexHolder::get(VertexID id, const std::string &prop) const {
-    DCHECK(schema_ != nullptr);
+VariantType GoExecutor::VertexHolder::get(VertexID id, TagID tid, const std::string &prop) const {
     auto iter = data_.find(id);
+    if (iter == data_.end()) {
+        return getDefaultProp(tid, prop);
+    }
 
-    // TODO(dutor) We need a type to represent NULL or non-existing prop
-    CHECK(iter != data_.end());
+    auto iter2 = iter->second.find(tid);
+    if (iter2 == iter->second.end()) {
+        return getDefaultProp(tid, prop);
+    }
 
-    auto reader = RowReader::getRowReader(std::get<1>(iter->second), schema_);
+    auto reader = RowReader::getRowReader(std::get<1>(iter2->second), std::get<0>(iter2->second));
 
-    auto res = RowReader::getProp(reader.get(), prop);
+    auto res = RowReader::getPropByName(reader.get(), prop);
     CHECK(ok(res));
     return value(std::move(res));
 }
-
 
 void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
     auto *vertices = resp.get_vertices();
     if (vertices == nullptr) {
         return;
     }
-    if (resp.get_vertex_schema() == nullptr) {
-        return;
-    }
-    if (schema_ == nullptr) {
-        schema_ = std::make_shared<ResultSchemaProvider>(resp.vertex_schema);
-    }
 
     for (auto &vdata : *vertices) {
-        DCHECK(vdata.__isset.vertex_data);
-        data_[vdata.vertex_id] = std::make_tuple(vdata.tag_ids, vdata.vertex_data);
+        std::unordered_map<TagID, VData> m;
+        for (auto &td : vdata.tag_data) {
+            DCHECK(td.__isset.vertex_data);
+            m[td.tag_id] = {std::make_shared<ResultSchemaProvider>(td.schema), td.vertex_data};
+        }
+        data_[vdata.vertex_id] = std::move(m);
     }
 }
 

@@ -602,7 +602,9 @@ bool FileBasedWal::rollbackToLog(LogID id) {
         }
 
         auto it = walFiles_.upper_bound(id);
-        CHECK(it != walFiles_.end());
+        // TODO: If we roll back to a log in last wal, and crash before any new log is appended.
+        // The lastLogId in wal would be wrong when reboot, because we don't actually delete the
+        // outdated log in a wal.
 
         // We need to remove wal files whose entire log range
         // are rolled back

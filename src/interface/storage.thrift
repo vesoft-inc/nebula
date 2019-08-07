@@ -72,11 +72,16 @@ struct EdgeData {
     3: binary          data,   // decode according to edge_schema.
 }
 
+struct TagData {
+    1: common.TagID          tag_id,
+    2: common.Schema         schema,
+    3: binary                vertex_data,
+}
+
 struct VertexData {
-    1: list<common.TagID>    tag_ids,
-    2: common.VertexID       vertex_id,
-    3: binary                vertex_data, // decode according to vertex_schema.
-    4: list<EdgeData>        edge_data,
+    1: common.VertexID       vertex_id,
+    2: list<TagData>         tag_data,
+    3: list<EdgeData>        edge_data,
 }
 
 struct ResponseCommon {
@@ -88,8 +93,7 @@ struct ResponseCommon {
 
 struct QueryResponse {
     1: required ResponseCommon result,
-    2: optional common.Schema vertex_schema,   // vertex related props
-    4: optional list<VertexData> vertices,
+    2: optional list<VertexData> vertices,
 }
 
 struct ExecResponse {

@@ -21,6 +21,7 @@
 #include "meta/SchemaManager.h"
 #include <folly/executors/ThreadPoolExecutor.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
+#include "dataman/RowReader.h"
 
 
 namespace nebula {
@@ -63,6 +64,7 @@ public:
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
                                                             localhost);
+        store->init();
         sleep(1);
         return store;
     }
@@ -218,6 +220,26 @@ public:
         return sc;
     }
 };
+
+template <typename T>
+void checkTagData(const std::vector<cpp2::TagData>& data,
+                  TagID tid,
+                  const std::string col_name,
+                  T expected) {
+    auto it = std::find_if(data.cbegin(), data.cend(), [tid](auto& td) {
+        if (td.tag_id == tid) {
+            return true;
+        }
+        return false;
+    });
+    DCHECK(it != data.cend());
+    auto tagProvider = std::make_shared<ResultSchemaProvider>(it->schema);
+    auto tagReader   = RowReader::getRowReader(it->vertex_data, tagProvider);
+    auto r = RowReader::getPropByName(tagReader.get(), col_name);
+    CHECK(ok(r));
+    auto col = boost::get<T>(value(r));
+    EXPECT_EQ(col, expected);
+}
 
 }  // namespace storage
 }  // namespace nebula
