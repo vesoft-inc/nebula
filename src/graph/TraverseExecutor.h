@@ -56,9 +56,7 @@ class Collector final {
 public:
     explicit Collector(meta::SchemaProviderIf* schema) : schema_(schema) {}
 
-    VariantType collect(const std::string &prop,
-                   const RowReader *reader,
-                   RowWriter *writer) const;
+    void collect(VariantType &var, RowWriter *writer) const;
 
     VariantType getProp(const std::string &prop,
                         const RowReader *reader) const;

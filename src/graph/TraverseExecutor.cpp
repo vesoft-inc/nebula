@@ -54,12 +54,7 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
     return executor;
 }
 
-VariantType Collector::collect(
-        const std::string &prop,
-        const RowReader *reader,
-        RowWriter *writer) const {
-    DCHECK_NOTNULL(reader);
-    VariantType var = getProp(prop, reader);
+void Collector::collect(VariantType &var, RowWriter *writer) const {
     switch (var.which()) {
         case VAR_INT64:
             (*writer) << boost::get<int64_t>(var);
@@ -76,8 +71,6 @@ VariantType Collector::collect(
         default:
             LOG(FATAL) << "Unknown VariantType: " << var.which();
     }
-
-    return var;
 }
 
 VariantType Collector::getProp(const std::string &prop,

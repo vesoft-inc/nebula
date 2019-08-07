@@ -281,11 +281,12 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
 
             auto &getters = expCtx_->getters();
             getters.getAliasProp = [&] (const std::string&, const std::string &prop) {
-                return collector->collect(prop, &*iter, writer.get());
+                return collector->getProp(prop, &*iter);
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
                 auto value = expr->eval();
+                collector->collect(value, writer.get());
             }
 
             // TODO Consider float/double, and need to reduce mem copy.

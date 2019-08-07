@@ -41,6 +41,19 @@ TEST_F(FetchVerticesTest, base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
+        auto *fmt = "FETCH PROP ON player %ld "
+                    "YIELD player.name, player.age, player.age > 30";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, bool>> expected = {
+            {player.name(), player.age(), player.age() > 30},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
         auto *fmt = "GO FROM %ld over like "
                     "| FETCH PROP ON player $- YIELD player.name, player.age";
         auto query = folly::stringPrintf(fmt, player.vid());
