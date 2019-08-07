@@ -12,36 +12,80 @@
 #include "meta/processors/Common.h"
 #include "folly/synchronization/Baton.h"
 
+
+DEFINE_int32(putTryNum, 10, "try num of store clusterId to kvstore");
+
 namespace nebula {
 namespace meta {
 
-using KVStore = nebula::kvstore::KVStore;
-using ResultCode = nebula::kvstore::ResultCode;
-const char* ClusterManager::kClusterIdKey = "metaClusterIdKey";
+const char* ClusterManager::kClusterIdKey = "__meta_cluster_id_key__";
+
+ResultCode ClusterManager::kvPut(KVStore* kvstore, std::string& strClusterId) {
+    ResultCode code;
+    folly::Baton<true, std::atomic> baton;
+    kvstore->asyncMultiPut(kDefaultSpaceId,
+                           kDefaultPartId,
+                           {{kClusterIdKey, strClusterId}},
+                           [&](ResultCode innerCode) {
+                               code = innerCode;
+                               baton.post();
+                           });
+    baton.wait();
+    return code;
+}
 
 bool ClusterManager::loadOrCreateCluId(KVStore* kvstore) {
     std::string strClusterId;
-    kvstore->get(kDefaultSpaceId, kDefaultPartId, kClusterIdKey, &strClusterId);
 
-    bool ret = false;
+    ResultCode getCode = kvstore->get(kDefaultSpaceId,
+                                      kDefaultPartId,
+                                      kClusterIdKey,
+                                      &strClusterId);
+    // TODO: check if leader election success
+    if ((getCode != ResultCode::SUCCEEDED) && (getCode != ResultCode::ERR_KEY_NOT_FOUND)) {
+        LOG(ERROR) << "ClusterManager::loadOrCreateCluId get error!";
+        return false;
+    }
+
     if (!strClusterId.empty()) {
         clusterId_ = folly::to<ClusterID>(strClusterId);
+        LOG(INFO) << "ClusterManager::loadOrCreateCluId load from kvstore, clusterId: "
+                  << clusterId_;
         clusterIdIsSet_ = true;
         return true;
     } else {
         createClusterId();
         strClusterId = folly::stringPrintf("%ld", clusterId_);
-        folly::Baton<true, std::atomic> baton;
-        kvstore->asyncMultiPut(kDefaultSpaceId,
-                               kDefaultPartId,
-                               {{kClusterIdKey, strClusterId}},
-                               [&](ResultCode code) {
-                                   ret = code == ResultCode::SUCCEEDED;
-                                   baton.post();
-                               });
-        baton.wait();
-    }
-    return ret;
+        while (FLAGS_putTryNum > 0) {
+            ResultCode code = kvPut(kvstore, strClusterId);
+            if (code == ResultCode::SUCCEEDED) {
+                LOG(INFO) << "ClusterManager::loadOrCreateCluId kvPut success, clusterId: "
+                          << clusterId_;
+                return true;
+            } else if (code != ResultCode::ERR_LEADER_CHANGED) {
+                LOG(ERROR) << "ClusterManager::loadOrCreateCluId put error!";
+                return false;
+            }
+            auto leaderAddrRet = kvstore->partLeader(kDefaultSpaceId, kDefaultPartId);
+            if (!ok(leaderAddrRet)) {
+                LOG(ERROR) << "ClusterManager::loadOrCreateCluId partLeader() error!";
+                return false;
+            }
+            auto leaderAddr = value(leaderAddrRet);
+            bool elecCompleted = (leaderAddr != HostAddr(0, 0));
+            if (elecCompleted) {
+                LOG(INFO) << "ClusterManager::loadOrCreateCluId elecCompleted";
+                return true;
+            } else {
+                LOG(INFO) << "ClusterManager::loadOrCreateCluId not elecCompleted";
+                sleep(1);
+            }
+            --FLAGS_putTryNum;
+        }  // end while
+    }  // end else
+    LOG(INFO) << "ClusterManager::loadOrCreateCluId after load, clusterId: " << clusterId_;
+
+    return true;
 }
 
 
