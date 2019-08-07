@@ -144,6 +144,12 @@ std::string InputPropertyExpression::toString() const {
 }
 
 
+Status InputPropertyExpression::prepare() {
+    context_->addInputProp(*prop_);
+    return Status::OK();
+}
+
+
 VariantType InputPropertyExpression::eval() const {
     return context_->getters().getInputProp(*prop_);
 }
@@ -172,9 +178,9 @@ const char* InputPropertyExpression::decode(const char *pos, const char *end) {
 std::string DestPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += "$$[";
+    buf += "$$.";
     buf += *tag_;
-    buf += "].";
+    buf += ".";
     buf += *prop_;
     return buf;
 }
@@ -236,13 +242,12 @@ std::string VariablePropertyExpression::toString() const {
 
 
 VariantType VariablePropertyExpression::eval() const {
-    // TODO(dutor)
-    return toString();
+    return context_->getters().getVariableProp(*prop_);
 }
 
 
 Status VariablePropertyExpression::prepare() {
-    // TODO(dutor)
+    context_->addVariableProp(*var_, *prop_);
     return Status::OK();
 }
 
@@ -493,9 +498,9 @@ const char* EdgeRankExpression::decode(const char *pos, const char *end) {
 std::string SourcePropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += "$^[";
+    buf += "$^.";
     buf += *tag_;
-    buf += "].";
+    buf += ".";
     buf += *prop_;
     return buf;
 }
@@ -548,15 +553,15 @@ const char* SourcePropertyExpression::decode(const char *pos, const char *end) {
 std::string PrimaryExpression::toString() const {
     char buf[1024];
     switch (operand_.which()) {
-        case kBool:
-            snprintf(buf, sizeof(buf), "%s", boost::get<bool>(operand_) ? "true" : "false");
-            break;
-        case kInt:
+        case VAR_INT64:
             snprintf(buf, sizeof(buf), "%ld", boost::get<int64_t>(operand_));
             break;
-        case kDouble:
+        case VAR_DOUBLE:
             return std::to_string(boost::get<double>(operand_));
-        case kString:
+        case VAR_BOOL:
+            snprintf(buf, sizeof(buf), "%s", boost::get<bool>(operand_) ? "true" : "false");
+            break;
+        case VAR_STR:
             return "\"" + boost::get<std::string>(operand_) + "\"";
     }
     return buf;
@@ -565,16 +570,16 @@ std::string PrimaryExpression::toString() const {
 
 VariantType PrimaryExpression::eval() const {
     switch (operand_.which()) {
-        case kBool:
-            return boost::get<bool>(operand_);
-            break;
-        case kInt:
+        case VAR_INT64:
             return boost::get<int64_t>(operand_);
             break;
-        case kDouble:
+        case VAR_DOUBLE:
             return boost::get<double>(operand_);
             break;
-        case kString:
+        case VAR_BOOL:
+            return boost::get<bool>(operand_);
+            break;
+        case VAR_STR:
             return boost::get<std::string>(operand_);
     }
     return std::string("Unknown");
@@ -591,16 +596,16 @@ void PrimaryExpression::encode(Cord &cord) const {
     uint8_t which = operand_.which();
     cord << which;
     switch (which) {
-        case kBool:
-            cord << static_cast<uint8_t>(boost::get<bool>(operand_));
-            break;
-        case kInt:
+        case VAR_INT64:
             cord << boost::get<int64_t>(operand_);
             break;
-        case kDouble:
+        case VAR_DOUBLE:
             cord << boost::get<double>(operand_);
             break;
-        case kString: {
+        case VAR_BOOL:
+            cord << static_cast<uint8_t>(boost::get<bool>(operand_));
+            break;
+        case VAR_STR: {
             auto &str = boost::get<std::string>(operand_);
             cord << static_cast<uint16_t>(str.size());
             cord << str;
@@ -615,22 +620,22 @@ void PrimaryExpression::encode(Cord &cord) const {
 const char* PrimaryExpression::decode(const char *pos, const char *end) {
     THROW_IF_NO_SPACE(pos, end, 1);
     auto which = *reinterpret_cast<const uint8_t*>(pos++);
-    switch (static_cast<Which>(which)) {
-        case kBool:
-            THROW_IF_NO_SPACE(pos, end, 1UL);
-            operand_ = *reinterpret_cast<const bool*>(pos++);
-            break;
-        case kInt:
+    switch (which) {
+        case VAR_INT64:
             THROW_IF_NO_SPACE(pos, end, 8UL);
             operand_ = *reinterpret_cast<const int64_t*>(pos);
             pos += 8;
             break;
-        case kDouble:
+        case VAR_DOUBLE:
             THROW_IF_NO_SPACE(pos, end, 8UL);
             operand_ = *reinterpret_cast<const double*>(pos);
             pos += 8;
             break;
-        case kString: {
+        case VAR_BOOL:
+            THROW_IF_NO_SPACE(pos, end, 1UL);
+            operand_ = *reinterpret_cast<const bool*>(pos++);
+            break;
+        case VAR_STR: {
             THROW_IF_NO_SPACE(pos, end, 2UL);
             auto size = *reinterpret_cast<const uint16_t*>(pos);
             pos += 2;

@@ -19,6 +19,8 @@ const std::string kEdgesTable  = "__edges__";   // NOLINT
 const std::string kIndexTable  = "__index__";   // NOLINT
 const std::string kUsersTable  = "__users__";    // NOLINT
 const std::string kRolesTable  = "__roles__";    // NOLINT
+const std::string kConfigsTable = "__configs__"; // NOLINT
+
 
 const std::string kHostOnline = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";     // NOLINT
@@ -270,10 +272,11 @@ std::string MetaServiceUtils::assembleSegmentKey(const std::string& segment,
 }
 
 cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                                  nebula::cpp2::SchemaProp&  prop,
                                                   const nebula::cpp2::ColumnDef col,
                                                   const cpp2::AlterSchemaOp op) {
     switch (op) {
-        case cpp2::AlterSchemaOp::ADD :
+        case cpp2::AlterSchemaOp::ADD:
         {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (it->get_name() == col.get_name()) {
@@ -284,7 +287,7 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             cols.emplace_back(std::move(col));
             return cpp2::ErrorCode::SUCCEEDED;
         }
-        case cpp2::AlterSchemaOp::CHANGE :
+        case cpp2::AlterSchemaOp::CHANGE:
         {
             for (auto it = cols.begin(); it != cols.end(); ++it) {
                 if (col.get_name() == it->get_name()) {
@@ -294,12 +297,21 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
             }
             break;
         }
-        case cpp2::AlterSchemaOp::DROP :
+        case cpp2::AlterSchemaOp::DROP:
         {
+            auto colName = col.get_name();
             for (auto it = cols.begin(); it != cols.end(); ++it) {
-                if (col.get_name() == it->get_name()) {
-                    cols.erase(it);
-                    return cpp2::ErrorCode::SUCCEEDED;
+                if (colName == it->get_name()) {
+                    // Check if there is a TTL on the column to be deleted
+                    if (!prop.get_ttl_col() ||
+                        (prop.get_ttl_col() && (*prop.get_ttl_col() != colName))) {
+                        cols.erase(it);
+                        return cpp2::ErrorCode::SUCCEEDED;
+                    } else {
+                        LOG(WARNING) << "Column can't be dropped, a TTL attribute on it : "
+                                     << colName;
+                        return cpp2::ErrorCode::E_NOT_DROP;
+                    }
                 }
             }
             break;
@@ -309,6 +321,47 @@ cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<nebula::cpp2::Colu
     }
     LOG(WARNING) << "Column not found : " << col.get_name();
     return cpp2::ErrorCode::E_NOT_FOUND;
+}
+
+cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                                  nebula::cpp2::SchemaProp& schemaProp,
+                                                  nebula::cpp2::SchemaProp alterSchemaProp) {
+    if (alterSchemaProp.__isset.ttl_duration) {
+        // Graph check  <=0 to = 0
+        schemaProp.set_ttl_duration(*alterSchemaProp.get_ttl_duration());
+    }
+    if (alterSchemaProp.__isset.ttl_col) {
+        auto ttlCol = *alterSchemaProp.get_ttl_col();
+        auto existed = false;
+        for (auto& col : cols) {
+            if (col.get_name() == ttlCol) {
+                // Only integer and timestamp columns can be used as ttl_col
+                if (col.type.type != nebula::cpp2::SupportedType::INT &&
+                    col.type.type != nebula::cpp2::SupportedType::TIMESTAMP) {
+                    LOG(WARNING) << "TTL column type illegal";
+                    return cpp2::ErrorCode::E_UNSUPPORTED;
+                }
+                existed = true;
+                schemaProp.set_ttl_col(ttlCol);
+                break;
+            }
+        }
+
+        if (!existed) {
+            LOG(WARNING) << "TTL column not found : " << ttlCol;
+            return cpp2::ErrorCode::E_NOT_FOUND;
+        }
+    }
+
+    // Disable implicit TTL mode
+    if ((schemaProp.get_ttl_duration() && (*schemaProp.get_ttl_duration() != 0)) &&
+        (!schemaProp.get_ttl_col() || (schemaProp.get_ttl_col() &&
+         schemaProp.get_ttl_col()->empty()))) {
+        LOG(WARNING) << "Implicit ttl_col not support";
+        return cpp2::ErrorCode::E_UNSUPPORTED;
+    }
+
+    return cpp2::ErrorCode::SUCCEEDED;
 }
 
 std::string MetaServiceUtils::indexUserKey(const std::string& account) {
@@ -429,6 +482,67 @@ UserID MetaServiceUtils::parseRoleUserId(folly::StringPiece val) {
 UserID MetaServiceUtils::parseUserId(folly::StringPiece val) {
     return *reinterpret_cast<const UserID *>(val.begin() +
                                              kUsersTable.size());
+}
+
+std::string MetaServiceUtils::configKey(const cpp2::ConfigModule& module,
+                                        const std::string& name) {
+    std::string key;
+    key.reserve(128);
+    key.append(kConfigsTable.data(), kConfigsTable.size());
+
+    key.append(reinterpret_cast<const char*>(&module), sizeof(cpp2::ConfigModule));
+
+    int32_t nSize = name.size();
+    key.append(reinterpret_cast<const char*>(&nSize), sizeof(int32_t));
+    key.append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::configKeyPrefix(const cpp2::ConfigModule& module) {
+    std::string key;
+    key.reserve(128);
+    key.append(kConfigsTable.data(), kConfigsTable.size());
+    if (module != cpp2::ConfigModule::ALL) {
+        key.append(reinterpret_cast<const char*>(&module), sizeof(cpp2::ConfigModule));
+    }
+    return key;
+}
+
+std::string MetaServiceUtils::configValue(const cpp2::ConfigType& valueType,
+                                          const cpp2::ConfigMode& valueMode,
+                                          const std::string& config) {
+    std::string val;
+    val.reserve(sizeof(cpp2::ConfigType) + sizeof(cpp2::ConfigMode) + config.size());
+    val.append(reinterpret_cast<const char*>(&valueType), sizeof(cpp2::ConfigType));
+    val.append(reinterpret_cast<const char*>(&valueMode), sizeof(cpp2::ConfigMode));
+    val.append(config);
+    return val;
+}
+
+ConfigName MetaServiceUtils::parseConfigKey(folly::StringPiece rawKey) {
+    std::string key;
+    auto offset = kConfigsTable.size();
+    auto module = *reinterpret_cast<const cpp2::ConfigModule*>(rawKey.data() + offset);
+    offset += sizeof(cpp2::ConfigModule);
+    int32_t nSize = *reinterpret_cast<const int32_t*>(rawKey.data() + offset);
+    offset += sizeof(int32_t);
+    auto name = rawKey.subpiece(offset, nSize);
+    return {module, name.str()};
+}
+
+cpp2::ConfigItem MetaServiceUtils::parseConfigValue(folly::StringPiece rawData) {
+    int32_t offset = 0;
+    cpp2::ConfigType type = *reinterpret_cast<const cpp2::ConfigType*>(rawData.data() + offset);
+    offset += sizeof(cpp2::ConfigType);
+    cpp2::ConfigMode mode = *reinterpret_cast<const cpp2::ConfigMode*>(rawData.data() + offset);
+    offset += sizeof(cpp2::ConfigMode);
+    auto value = rawData.subpiece(offset, rawData.size() - offset);
+
+    cpp2::ConfigItem item;
+    item.set_type(type);
+    item.set_mode(mode);
+    item.set_value(value.str());
+    return item;
 }
 
 }  // namespace meta

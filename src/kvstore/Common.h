@@ -23,6 +23,7 @@ enum ResultCode {
     ERR_LEADER_CHANGED      = -5,
     ERR_INVALID_ARGUMENT    = -6,
     ERR_IO_ERROR            = -7,
+    ERR_UNSUPPORTED         = -8,
     ERR_UNKNOWN             = -100,
 };
 
@@ -45,6 +46,9 @@ using KVCallback = folly::Function<void(ResultCode code)>;
 inline rocksdb::Slice toSlice(const folly::StringPiece& str) {
     return rocksdb::Slice(str.begin(), str.size());
 }
+
+using KVMap = std::unordered_map<std::string, std::string>;
+using KVArrayIterator = std::vector<KV>::const_iterator;
 
 }  // namespace kvstore
 }  // namespace nebula

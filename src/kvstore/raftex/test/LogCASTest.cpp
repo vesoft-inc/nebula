@@ -27,40 +27,16 @@ public:
     LogCASTest() : RaftexTestFixture("log_cas_test") {}
 };
 
-
 TEST_F(LogCASTest, StartWithValidCAS) {
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
     leader_->casAsync("TCAS Log Message");
     msgs.emplace_back("CAS Log Message");
-    for (int i = 2; i <= 10; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader_->appendAsync(0, msgs.back());
-        if (i == 10) {
-            fut.wait();
-        }
-    }
+    appendLogs(1, 9, leader_, msgs);
     LOG(INFO) << "<===== Finish appending logs";
 
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(10, c->getNumLogs());
-    }
-
-    LogID id = 1;
-    for (int i = 0; i < 10; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    checkConsensus(copies_, 0, 9, msgs);
 }
 
 
@@ -69,33 +45,10 @@ TEST_F(LogCASTest, StartWithInvalidCAS) {
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
     leader_->casAsync("FCAS Log Message");
-    for (int i = 1; i <= 10; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader_->appendAsync(0, msgs.back());
-        if (i == 10) {
-            fut.wait();
-        }
-    }
+    appendLogs(0, 9, leader_, msgs);
     LOG(INFO) << "<===== Finish appending logs";
 
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(10, c->getNumLogs());
-    }
-
-    LogID id = 1;
-    for (int i = 0; i < 10; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    checkConsensus(copies_, 0, 9, msgs);
 }
 
 
@@ -103,42 +56,15 @@ TEST_F(LogCASTest, ValidCASInMiddle) {
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    for (int i = 1; i <= 5; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader_->appendAsync(0, msgs.back());
-    }
+    appendLogs(0, 4, leader_, msgs);
 
     leader_->casAsync("TCAS Log Message");
     msgs.emplace_back("CAS Log Message");
 
-    for (int i = 7; i <= 10; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader_->appendAsync(0, msgs.back());
-        if (i == 10) {
-            fut.wait();
-        }
-    }
+    appendLogs(6, 9, leader_, msgs);
     LOG(INFO) << "<===== Finish appending logs";
 
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(10, c->getNumLogs());
-    }
-
-    LogID id = 1;
-    for (int i = 0; i < 10; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    checkConsensus(copies_, 0, 9, msgs);
 }
 
 
@@ -146,41 +72,14 @@ TEST_F(LogCASTest, InvalidCASInMiddle) {
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    for (int i = 1; i <= 5; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader_->appendAsync(0, msgs.back());
-    }
+    appendLogs(0, 4, leader_, msgs);
 
     leader_->casAsync("FCAS Log Message");
 
-    for (int i = 6; i <= 10; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        auto fut = leader_->appendAsync(0, msgs.back());
-        if (i == 10) {
-            fut.wait();
-        }
-    }
+    appendLogs(5, 9, leader_, msgs);
     LOG(INFO) << "<===== Finish appending logs";
 
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(10, c->getNumLogs());
-    }
-
-    LogID id = 1;
-    for (int i = 0; i < 10; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    checkConsensus(copies_, 0, 9, msgs);
 }
 
 
@@ -188,35 +87,17 @@ TEST_F(LogCASTest, EndWithValidCAS) {
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    for (int i = 1; i <= 8; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        leader_->appendAsync(0, msgs.back());
-    }
+    appendLogs(0, 7, leader_, msgs);
+
     leader_->casAsync("TCAS Log Message");
     msgs.emplace_back("CAS Log Message");
+
     auto fut = leader_->casAsync("TCAS Log Message");
     msgs.emplace_back("CAS Log Message");
     fut.wait();
     LOG(INFO) << "<===== Finish appending logs";
 
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(10, c->getNumLogs());
-    }
-
-    LogID id = 1;
-    for (int i = 0; i < 10; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    checkConsensus(copies_, 0, 9, msgs);
 }
 
 
@@ -224,33 +105,14 @@ TEST_F(LogCASTest, EndWithInvalidCAS) {
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    for (int i = 1; i <= 8; ++i) {
-        msgs.emplace_back(
-            folly::stringPrintf("Test Log Message %03d", i));
-        leader_->appendAsync(0, msgs.back());
-    }
+    appendLogs(0, 7, leader_, msgs);
+
     leader_->casAsync("FCAS Log Message");
     auto fut = leader_->casAsync("FCAS Log Message");
     fut.wait();
     LOG(INFO) << "<===== Finish appending logs";
 
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(8, c->getNumLogs());
-    }
-
-    LogID id = 1;
-    for (int i = 0; i < 8; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    checkConsensus(copies_, 0, 7, msgs);
 }
 
 
@@ -267,23 +129,7 @@ TEST_F(LogCASTest, AllValidCAS) {
     }
     LOG(INFO) << "<===== Finish appending logs";
 
-    // Sleep a while to make sure the last log has been committed on
-    // followers
-    sleep(FLAGS_heartbeat_interval);
-
-    // Check every copy
-    for (auto& c : copies_) {
-        ASSERT_EQ(10, c->getNumLogs());
-    }
-
-    LogID id = 1;
-    for (int i = 0; i < 10; ++i, ++id) {
-        for (auto& c : copies_) {
-            folly::StringPiece msg;
-            ASSERT_TRUE(c->getLogMsg(id, msg));
-            ASSERT_EQ(msgs[i], msg.toString());
-        }
-    }
+    checkConsensus(copies_, 0, 9, msgs);
 }
 
 
@@ -299,8 +145,7 @@ TEST_F(LogCASTest, AllInvalidCAS) {
     }
     LOG(INFO) << "<===== Finish appending logs";
 
-    // Sleep a while to make sure the last log has been committed on
-    // followers
+    // Sleep a while to make sure the last log has been committed on followers
     sleep(FLAGS_heartbeat_interval);
 
     // Check every copy

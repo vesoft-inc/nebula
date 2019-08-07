@@ -24,6 +24,7 @@ typedef i32 (cpp.type = "nebula::Port") Port
 typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
 
 typedef i32 (cpp.type = "nebula::UserID") UserID
+typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 
 // These are all data types supported in the graph properties
 enum SupportedType {
@@ -68,8 +69,14 @@ struct ColumnDef {
     2: required ValueType type,
 }
 
+struct SchemaProp {
+    1: optional i64      ttl_duration,
+    2: optional string   ttl_col,
+}
+
 struct Schema {
     1: list<ColumnDef> columns,
+    2: SchemaProp schema_prop,
 }
 
 struct HostAddr {

@@ -5,7 +5,7 @@
  */
 
 #include "base/Base.h"
-#include "time/TimeUtils.h"
+#include "time/WallClock.h"
 #include "kvstore/LogEncoder.h"
 
 namespace nebula {
@@ -18,7 +18,7 @@ std::string encodeSingleValue(LogType type, folly::StringPiece val) {
     std::string encoded;
     encoded.reserve(val.size() + kHeadLen);
     // Timestamp (8 bytes)
-    int64_t ts = time::TimeUtils::nowInMSeconds();
+    int64_t ts = time::WallClock::fastNowInMilliSec();
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
     // Log type
     encoded.append(reinterpret_cast<char*>(&type), 1);
@@ -51,7 +51,7 @@ std::string encodeMultiValues(LogType type, const std::vector<std::string>& valu
     encoded.reserve(totalLen + kHeadLen);
 
     // Timestamp (8 bytes)
-    int64_t ts = time::TimeUtils::nowInMSeconds();
+    int64_t ts = time::WallClock::fastNowInMilliSec();
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
     // Log type
     encoded.append(reinterpret_cast<char*>(&type), 1);
@@ -79,7 +79,7 @@ std::string encodeMultiValues(LogType type, const std::vector<KV>& kvs) {
     encoded.reserve(totalLen + kHeadLen);
 
     // Timestamp (8 bytes)
-    int64_t ts = time::TimeUtils::nowInMSeconds();
+    int64_t ts = time::WallClock::fastNowInMilliSec();
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
     // Log type
     encoded.append(reinterpret_cast<char*>(&type), 1);
@@ -107,7 +107,7 @@ std::string encodeMultiValues(LogType type,
     encoded.reserve(kHeadLen + 2 * sizeof(uint32_t) + v1.size() + v2.size());
 
     // Timestamp (8 bytes)
-    int64_t ts = time::TimeUtils::nowInMSeconds();
+    int64_t ts = time::WallClock::fastNowInMilliSec();
     encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
     // Log type
     encoded.append(reinterpret_cast<char*>(&type), 1);
@@ -142,6 +142,29 @@ std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded) {
     DCHECK_EQ(p, encoded.begin() + encoded.size());
 
     return values;
+}
+
+std::string encodeLearner(const HostAddr& learner) {
+    std::string encoded;
+    encoded.reserve(kHeadLen + sizeof(HostAddr));
+    // Timestamp (8 bytes)
+    int64_t ts = time::WallClock::fastNowInMilliSec();
+    encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t));
+    // Log type
+    auto type = LogType::OP_ADD_LEARNER;
+    encoded.append(reinterpret_cast<char*>(&type), 1);
+    encoded.append(reinterpret_cast<const char*>(&learner), sizeof(HostAddr));
+    return encoded;
+}
+
+HostAddr decodeLearner(const std::string& encoded) {
+    HostAddr addr;
+    CHECK_EQ(kHeadLen + sizeof(HostAddr), encoded.size());
+    memcpy(&addr.first, encoded.data() + kHeadLen, sizeof(addr.first));
+    memcpy(&addr.second,
+           encoded.data() + kHeadLen + sizeof(addr.first),
+           sizeof(addr.second));
+    return addr;
 }
 
 }  // namespace kvstore

@@ -11,21 +11,26 @@ namespace go nebula.meta
 include "common.thrift"
 
 enum ErrorCode {
-    SUCCEEDED = 0,
+    SUCCEEDED          = 0,
 
     // RPC Failure
-    E_DISCONNECTED = -1,
-    E_FAIL_TO_CONNECT = -2,
-    E_RPC_FAILURE = -3,
+    E_DISCONNECTED     = -1,
+    E_FAIL_TO_CONNECT  = -2,
+    E_RPC_FAILURE      = -3,
 
-    E_LEADER_CHANGED = -11,
+    E_LEADER_CHANGED   = -11,
 
     // Operation Failure
-    E_NO_HOSTS       = -21,
-    E_EXISTED        = -22,
-    E_NOT_FOUND      = -23,
-    E_INVALID_HOST   = -24,
-    E_UNSUPPORTED    = -25,
+    E_NO_HOSTS         = -21,
+    E_EXISTED          = -22,
+    E_NOT_FOUND        = -23,
+    E_INVALID_HOST     = -24,
+    E_UNSUPPORTED      = -25,
+    E_NOT_DROP         = -26,
+    E_BALANCER_RUNNING = -27,
+    E_CONFIG_IMMUTABLE = -28,
+    E_CONFLICT         = -29,
+    E_WRONGCLUSTER     = -30,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -36,7 +41,6 @@ enum ErrorCode {
 
     E_UNKNOWN        = -99,
 } (cpp.enum_strict)
-
 
 enum AlterSchemaOp {
     ADD    = 0x01,
@@ -60,12 +64,12 @@ enum RoleType {
     GUEST  = 0x04,
 } (cpp.enum_strict)
 
-
 union ID {
     1: common.GraphSpaceID  space_id,
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
     4: common.UserID        user_id,
+    5: common.ClusterID     cluster_id,
 }
 
 struct IdName {
@@ -184,9 +188,10 @@ struct CreateTagReq {
 }
 
 struct AlterTagReq {
-    1: common.GraphSpaceID    space_id,
-    2: string                 tag_name,
-    3: list<AlterSchemaItem>  tag_items,
+    1: common.GraphSpaceID      space_id,
+    2: string                   tag_name,
+    3: list<AlterSchemaItem>    tag_items,
+    4: common.SchemaProp        schema_prop,
 }
 
 struct DropTagReq {
@@ -225,9 +230,10 @@ struct CreateEdgeReq {
 }
 
 struct AlterEdgeReq {
-    1: common.GraphSpaceID     space_id,
-    2: string                  edge_name,
-    3: list<AlterSchemaItem>   edge_items,
+    1: common.GraphSpaceID      space_id,
+    2: string                   edge_name,
+    3: list<AlterSchemaItem>    edge_items,
+    4: common.SchemaProp        schema_prop,
 }
 
 struct GetEdgeReq {
@@ -301,7 +307,7 @@ struct GetReq {
     2: string key,
 }
 
- struct GetResp {
+struct GetResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
     3: string    value,
@@ -344,10 +350,12 @@ struct ScanResp {
 struct HBResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
+    3: common.ClusterID clusterId,
 }
 
 struct HBReq {
     1: common.HostAddr host,
+    2: common.ClusterID clusterId,
 }
 
 struct CreateUserReq {
@@ -380,7 +388,7 @@ struct GetUserReq {
 struct GetUserResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,    
+    2: common.HostAddr  leader,
     3: UserItem user_item,
 }
 
@@ -390,7 +398,7 @@ struct ListUsersReq {
 struct ListUsersResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,    
+    2: common.HostAddr  leader,
     3: map<common.UserID, UserItem>(cpp.template = "std::unordered_map") users,
 }
 
@@ -401,7 +409,7 @@ struct ListRolesReq {
 struct ListRolesResp {
     1: ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr  leader,    
+    2: common.HostAddr  leader,
     3: list<RoleItem> roles,
 }
 
@@ -414,6 +422,77 @@ struct ChangePasswordReq {
 struct CheckPasswordReq {
     1: string account,
     2: string encoded_pwd,
+}
+
+struct BalanceReq {
+    1: optional common.GraphSpaceID space_id,
+    // Specify the balance id to check the status of the related balance plan
+    2: optional i64 id,
+}
+
+struct BalanceResp {
+    1: ErrorCode        code,
+    2: i64              id,
+    // Valid if code equals E_LEADER_CHANGED.
+    3: common.HostAddr  leader,
+}
+
+enum ConfigModule {
+    UNKNOWN = 0x00,
+    ALL     = 0x01,
+    GRAPH   = 0x02,
+    META    = 0x03,
+    STORAGE = 0x04,
+} (cpp.enum_strict)
+
+enum ConfigType {
+    INT64   = 0x00,
+    DOUBLE  = 0x01,
+    BOOL    = 0x02,
+    STRING  = 0x03,
+} (cpp.enum_strict)
+
+enum ConfigMode {
+    IMMUTABLE   = 0x00,
+    REBOOT      = 0x01,
+    MUTABLE     = 0x02,
+} (cpp.enum_strict)
+
+struct ConfigItem {
+    1: ConfigModule         module,
+    2: string               name,
+    3: ConfigType           type,
+    4: ConfigMode           mode,
+    5: binary               value,
+}
+
+struct RegConfigReq {
+    1: list<ConfigItem>     items,
+}
+
+struct GetConfigReq {
+    1: ConfigItem item,
+}
+
+struct GetConfigResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: list<ConfigItem>     items,
+}
+
+struct SetConfigReq {
+    1: ConfigItem           item,
+}
+
+struct ListConfigsReq {
+    1: string               space,
+    2: ConfigModule         module,
+}
+
+struct ListConfigsResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: list<ConfigItem>     items,
 }
 
 service MetaService {
@@ -447,8 +526,6 @@ service MetaService {
     ExecResp removeRange(1: RemoveRangeReq req);
     ScanResp scan(1: ScanReq req);
 
-    HBResp           heartBeat(1: HBReq req);
-
     ExecResp createUser(1: CreateUserReq req);
     ExecResp dropUser(1: DropUserReq req);
     ExecResp alterUser(1: AlterUserReq req);
@@ -460,5 +537,12 @@ service MetaService {
     ExecResp changePassword(1: ChangePasswordReq req);
     ExecResp checkPassword(1: CheckPasswordReq req);
 
+    HBResp           heartBeat(1: HBReq req);
+    BalanceResp      balance(1: BalanceReq req);
+
+    ExecResp regConfig(1: RegConfigReq req);
+    GetConfigResp getConfig(1: GetConfigReq req);
+    ExecResp setConfig(1: SetConfigReq req);
+    ListConfigsResp listConfigs(1: ListConfigsReq req);
 }
 

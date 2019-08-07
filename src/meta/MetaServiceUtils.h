@@ -8,6 +8,7 @@
 #define META_METAUTILS_H_
 
 #include "base/Base.h"
+#include "base/Status.h"
 #include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
@@ -18,7 +19,10 @@ enum class EntryType : int8_t {
     TAG   = 0x02,
     EDGE  = 0x03,
     USER  = 0x04,
+    CONFIG = 0x05,
 };
+
+using ConfigName = std::pair<cpp2::ConfigModule, std::string>;
 
 class MetaServiceUtils final {
 public:
@@ -87,8 +91,13 @@ public:
     static std::string assembleSegmentKey(const std::string& segment, const std::string& key);
 
     static cpp2::ErrorCode alterColumnDefs(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                           nebula::cpp2::SchemaProp&  prop,
                                            const nebula::cpp2::ColumnDef col,
                                            const cpp2::AlterSchemaOp op);
+
+    static cpp2::ErrorCode alterSchemaProp(std::vector<nebula::cpp2::ColumnDef>& cols,
+                                           nebula::cpp2::SchemaProp&  schemaProp,
+                                           nebula::cpp2::SchemaProp alterSchemaProp);
 
     static std::string indexUserKey(const std::string& account);
 
@@ -116,6 +125,19 @@ public:
     static UserID parseRoleUserId(folly::StringPiece val);
 
     static UserID parseUserId(folly::StringPiece val);
+
+    static std::string configKey(const cpp2::ConfigModule& module,
+                                 const std::string& name);
+
+    static std::string configKeyPrefix(const cpp2::ConfigModule& module);
+
+    static std::string configValue(const cpp2::ConfigType& valueType,
+                                   const cpp2::ConfigMode& valueMode,
+                                   const std::string& config);
+
+    static ConfigName parseConfigKey(folly::StringPiece rawData);
+
+    static cpp2::ConfigItem parseConfigValue(folly::StringPiece rawData);
 };
 
 }  // namespace meta

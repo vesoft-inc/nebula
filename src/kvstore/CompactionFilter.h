@@ -10,7 +10,7 @@
 #include "base/Base.h"
 #include <rocksdb/compaction_filter.h>
 #include "base/NebulaKeyUtils.h"
-#include "time/TimeUtils.h"
+#include "time/WallClock.h"
 #include "kvstore/Common.h"
 
 namespace nebula {
@@ -58,7 +58,7 @@ public:
 
     std::unique_ptr<rocksdb::CompactionFilter>
     CreateCompactionFilter(const rocksdb::CompactionFilter::Context& context) override {
-        auto now = time::TimeUtils::nowInSeconds();
+        auto now = time::WallClock::fastNowInSec();
         if (context.is_full_compaction) {
             LOG(INFO) << "Do full compaction!";
             lastRunCustomFilterTimeSec_ = now;

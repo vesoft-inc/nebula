@@ -276,8 +276,6 @@ void FileUtils::dividePath(const folly::StringPiece path,
     } else {
         parent = folly::StringPiece(pathToLook.begin(), pos);
     }
-
-    return;
 }
 
 
@@ -342,14 +340,17 @@ bool FileUtils::makeDir(const std::string& dir) {
 
     int err = mkdir(dir.c_str(), S_IRWXU);
     if (err != 0) {
-        if (fileType(dir.c_str()) == FileType::DIRECTORY) {
-            return true;
-        }
-        return false;
+        return fileType(dir.c_str()) == FileType::DIRECTORY;
     }
     return true;
 }
 
+bool FileUtils::exist(const std::string& path) {
+    if (path.empty()) {
+        return false;
+    }
+    return access(path.c_str(), F_OK) == 0;
+}
 
 std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
         const char* dirpath,
@@ -359,13 +360,13 @@ std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
     std::vector<std::string> entities;
     struct dirent *dirInfo;
     DIR *dir = opendir(dirpath);
-    if (dir == NULL) {
+    if (dir == nullptr) {
         LOG(ERROR)<< "Failed to read the directory \"" << dirpath
                   << "\" (" << errno << "): " << strerror(errno);
         return entities;
     }
 
-    while ((dirInfo = readdir(dir)) != NULL) {
+    while ((dirInfo = readdir(dir)) != nullptr) {
         if ((type == FileType::REGULAR && dirInfo->d_type == DT_REG) ||
             (type == FileType::DIRECTORY && dirInfo->d_type == DT_DIR) ||
             (type == FileType::SYM_LINK && dirInfo->d_type == DT_LNK) ||
@@ -384,7 +385,7 @@ std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
             }
 
             // We found one entity
-            entities.push_back(
+            entities.emplace_back(
                 returnFullPath ? joinPath(dirpath, std::string(dirInfo->d_name))
                                : std::string(dirInfo->d_name));
         }
@@ -464,7 +465,7 @@ void FileUtils::Iterator::dirNext() {
     CHECK(type_ == FileType::DIRECTORY);
     CHECK(dir_ != nullptr);
     struct dirent *dent;
-    while ((dent = ::readdir(dir_)) != NULL) {
+    while ((dent = ::readdir(dir_)) != nullptr) {
         if (dent->d_name[0] == '.') {
             continue;
         }

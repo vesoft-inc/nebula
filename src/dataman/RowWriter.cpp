@@ -42,7 +42,7 @@ std::string RowWriter::encode() noexcept {
     encoded.reserve(sizeof(int64_t) * blockOffsets_.size() + cord_.size() + 11);
     encodeTo(encoded);
 
-    return std::move(encoded);
+    return encoded;
 }
 
 
@@ -254,7 +254,7 @@ RowWriter& RowWriter::operator<<(Skip&& skip) noexcept {
         // Update block offsets
         if (i != 0 && (i >> 4 << 4) == i) {
             // We need to record block offset for every 16 fields
-            blockOffsets_.push_back(cord_.size());
+            blockOffsets_.emplace_back(cord_.size());
         }
     }
     colNum_ = skipTo;

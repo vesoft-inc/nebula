@@ -33,16 +33,22 @@ add_library(
     DescribeSpaceExecutor.cpp
     ShowExecutor.cpp
     YieldExecutor.cpp
+    DownloadExecutor.cpp
+    OrderByExecutor.cpp
+    IngestExecutor.cpp
+    ConfigExecutor.cpp
+    SchemaHelper.cpp
 )
 add_dependencies(
     graph_obj
-    base_obj
     parser_obj
     graph_thrift_obj
     meta_thrift_obj
     meta_client
     schema_obj
     stats_obj
+    process_obj
+    base_obj
 )
 
 add_library(
@@ -55,3 +61,4 @@ add_dependencies(
 )
 
 add_subdirectory(test)
+

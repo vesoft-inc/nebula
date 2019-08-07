@@ -40,7 +40,7 @@ TEST_F(YieldTest, Basic) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "YIELD 1 + 1";
+        std::string query = "YIELD 1+1";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t>> expected{
@@ -55,6 +55,61 @@ TEST_F(YieldTest, Basic) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<std::string, int64_t>> expected{
             {"Hello", std::hash<std::string>()("Hello")}
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(YieldTest, hashCall) {
+    auto client = gEnv->getClient();
+    ASSERT_NE(nullptr, client);
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD hash(\"Boris\")";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected{
+            std::hash<std::string>{}("Boris")
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD hash(123)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected{
+            std::hash<int64_t>{}(123)
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD hash(123 + 456)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected{
+            std::hash<int64_t>{}(123 + 456)
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD hash(123.0)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected{
+            std::hash<double>{}(123.0)
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "YIELD hash(!0)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<int64_t>> expected{
+            std::hash<bool>{}(!0)
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

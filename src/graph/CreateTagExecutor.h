@@ -27,6 +27,7 @@ public:
 
 private:
     CreateTagSentence                          *sentence_{nullptr};
+    nebula::cpp2::Schema                        schema_;
 };
 
 }   // namespace graph

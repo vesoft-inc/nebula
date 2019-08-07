@@ -10,7 +10,7 @@
 namespace nebula {
 
 // Raft related types
-using ClusterID = int8_t;
+using ClusterID = int64_t;
 using GraphSpaceID = int32_t;
 using PartitionID = int32_t;
 using TermID = int64_t;

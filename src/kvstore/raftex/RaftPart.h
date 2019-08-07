@@ -37,14 +37,29 @@ enum class AppendLogResult {
     E_NOT_READY = -4,
     E_BUFFER_OVERFLOW = -5,
     E_WAL_FAILURE = -6,
+    E_TERM_OUT_OF_DATE = -7,
+};
+
+enum class LogType {
+    NORMAL      = 0x00,
+    CAS         = 0x01,
+    /**
+      COMMAND is similar to CAS, but not the same. There are two differences:
+      1. Normal logs after CAS could be committed together. In opposite, Normal logs
+         after COMMAND should be hold until the COMMAND committed, but the logs before
+         COMMAND could be committed together.
+      2. CAS maybe failed. So we use SinglePromise for it. But COMMAND not, so it could
+         share one promise with the normal logs before it.
+     * */
+    COMMAND     = 0x02,
 };
 
 class Host;
 class AppendLogsIterator;
 
-
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
+    friend class Host;
 public:
     virtual ~RaftPart();
 
@@ -66,6 +81,11 @@ public:
     bool isFollower() const {
         std::lock_guard<std::mutex> g(raftLock_);
         return role_ == Role::FOLLOWER;
+    }
+
+    bool isLearner() const {
+        std::lock_guard<std::mutex> g(raftLock_);
+        return role_ == Role::LEARNER;
     }
 
     ClusterID clusterId() const {
@@ -93,9 +113,11 @@ public:
         return wal_;
     }
 
+    void addLearner(const HostAddr& learner);
+
     // Change the partition status to RUNNING. This is called
     // by the inherited class, when it's ready to serve
-    virtual void start(std::vector<HostAddr>&& peers);
+    virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
 
     // Change the partition status to STOPPED. This is called
     // by the inherited class, when it's about to stop
@@ -123,6 +145,11 @@ public:
      ***************************************************************/
     folly::Future<AppendLogResult> casAsync(std::string log);
 
+    /**
+     * Asynchronously send one command.
+     * */
+    folly::Future<AppendLogResult> sendCommandAsync(std::string log);
+
     /*****************************************************
      *
      * Methods to process incoming raft requests
@@ -148,7 +175,8 @@ protected:
              const folly::StringPiece walRoot,
              wal::BufferFlusher* flusher,
              std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-             std::shared_ptr<thread::GenericThreadPool> workers);
+             std::shared_ptr<thread::GenericThreadPool> workers,
+             std::shared_ptr<folly::Executor> executor);
 
     const char* idStr() const {
         return idStr_.c_str();
@@ -158,7 +186,7 @@ protected:
     //
     // Inherited classes should implement this method to provide the last
     // committed log id
-    virtual LogID lastCommittedLogId() = 0;
+    virtual std::pair<LogID, TermID> lastCommittedLogId() = 0;
 
     // This method is called when this partition's leader term
     // is finished, either by receiving a new leader election
@@ -185,6 +213,10 @@ protected:
     // a batch of log messages
     virtual bool commitLogs(std::unique_ptr<LogIterator> iter) = 0;
 
+    virtual bool preProcessLog(LogID logId,
+                               TermID termId,
+                               ClusterID clusterId,
+                               const std::string& log) = 0;
 
 private:
     enum class Status {
@@ -196,23 +228,24 @@ private:
     enum class Role {
         LEADER = 1,     // the leader
         FOLLOWER,       // following a leader
-        CANDIDATE       // Has sent AskForVote request
+        CANDIDATE,      // Has sent AskForVote request
+        LEARNER         // It is the same with FOLLOWER,
+                        // except it does not participate in leader election
     };
 
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AskForVoteResponse
-    using ElectionResponses = std::vector<cpp2::AskForVoteResponse>;
+    using ElectionResponses = std::vector<std::pair<size_t, cpp2::AskForVoteResponse>>;
     // A list of <idx, resp>
     // idx  -- the index of the peer
     // resp -- AppendLogResponse
-    using AppendLogResponses = std::vector<cpp2::AppendLogResponse>;
+    using AppendLogResponses = std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
 
-    // <source, term, isCAS, log>
+    // <source, logType, log>
     using LogCache = std::vector<
         std::tuple<ClusterID,
-                   TermID,
-                   bool,
+                   LogType,
                    std::string>>;
 
 
@@ -229,11 +262,8 @@ private:
     /*****************************************************************
      * Asynchronously send a heartbeat (An empty log entry)
      *
-     * The code path is similar to appendLog() and the heartbeat will
-     * be put into the log batch, but will not be added to WAL
      ****************************************************************/
     folly::Future<AppendLogResult> sendHeartbeat();
-    void doneHeartbeat();
 
     /****************************************************
      *
@@ -255,20 +285,20 @@ private:
     // return FALSE
     bool prepareElectionRequest(
         cpp2::AskForVoteRequest& req,
-        std::shared_ptr<std::unordered_map<HostAddr, std::shared_ptr<Host>>>& hosts);
+        std::vector<std::shared_ptr<Host>>& hosts);
 
     // The method returns the partition's role after the election
     Role processElectionResponses(const ElectionResponses& results);
 
     // Check whether new logs can be appended
     // Pre-condition: The caller needs to hold the raftLock_
-    AppendLogResult canAppendLogs(std::lock_guard<std::mutex>& lck);
+    AppendLogResult canAppendLogs();
 
     folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
-                                                  bool isCAS,
+                                                  LogType logType,
                                                   std::string log);
 
-    void appendLogsInternal(AppendLogsIterator iter);
+    void appendLogsInternal(AppendLogsIterator iter, TermID termId);
 
     void replicateLogs(
         folly::EventBase* eb,
@@ -287,10 +317,14 @@ private:
         LogID lastLogId,
         LogID committedId,
         TermID prevLogTerm,
-        LogID prevLogId);
+        LogID prevLogId,
+        std::vector<std::shared_ptr<Host>> hosts);
 
+    std::vector<std::shared_ptr<Host>> followers() const;
 
-private:
+    bool checkAppendLogResult(AppendLogResult res);
+
+protected:
     template<class ValueType>
     class PromiseSet final {
     public:
@@ -323,6 +357,14 @@ private:
             rollSharedPromise_ = true;
 
             return singlePromises_.back().getFuture();
+        }
+
+        folly::Future<ValueType> getAndRollSharedFuture() {
+            if (rollSharedPromise_) {
+                sharedPromises_.emplace_back();
+            }
+            rollSharedPromise_ = true;
+            return sharedPromises_.back().getFuture();
         }
 
         template<class VT>
@@ -366,17 +408,20 @@ private:
     const GraphSpaceID spaceId_;
     const PartitionID partId_;
     const HostAddr addr_;
-    std::shared_ptr<std::unordered_map<HostAddr, std::shared_ptr<Host>>>
-        peerHosts_;
+    std::vector<std::shared_ptr<Host>> hosts_;
     size_t quorum_{0};
+
+    // The lock is used to protect logs_ and cachingPromise_
+    mutable std::mutex logsLock_;
+    std::atomic_bool replicatingLogs_{false};
+    std::atomic_bool bufferOverFlow_{false};
+    PromiseSet<AppendLogResult> cachingPromise_;
+    LogCache logs_;
 
     // Partition level lock to synchronize the access of the partition
     mutable std::mutex raftLock_;
 
-    bool replicatingLogs_{false};
-    PromiseSet<AppendLogResult> cachingPromise_;
     PromiseSet<AppendLogResult> sendingPromise_;
-    LogCache logs_;
 
     Status status_;
     Role role_;
@@ -413,7 +458,9 @@ private:
     // IO Thread pool
     std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
     // Shared worker thread pool
-    std::shared_ptr<thread::GenericThreadPool> workers_;
+    std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
+    // Workers pool
+    std::shared_ptr<folly::Executor> executor_;
 };
 
 }  // namespace raftex

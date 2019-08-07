@@ -14,11 +14,19 @@
 #include "kvstore/KVIterator.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/CompactionFilter.h"
+#include "meta/SchemaManager.h"
+#include "base/ErrorOr.h"
 
 namespace nebula {
 namespace kvstore {
 
 struct KVOptions {
+    // HBase thrift server address.
+    HostAddr hbaseServer_;
+
+    // SchemaManager instance, help the hbasestore to encode/decode data.
+    std::unique_ptr<meta::SchemaManager> schemaMan_{nullptr};
+
     // Paths for data. It would be used by rocksdb engine.
     // Be careful! We should ensure each "paths" has only one instance,
     // otherwise it would mix up the data on disk.
@@ -42,7 +50,7 @@ struct StoreCapability {
 };
 #define SUPPORT_FILTERING(store) (store.capability() & StoreCapability::SC_FILTERING)
 
-
+class Part;
 /**
  * Interface for all kv-stores
  **/
@@ -56,7 +64,7 @@ public:
     // Retrieve the current leader for the given partition. This
     // is usually called when ERR_LEADER_CHANGED result code is
     // returned
-    virtual HostAddr partLeader(GraphSpaceID spaceId, PartitionID partID) = 0;
+    virtual ErrorOr<ResultCode, HostAddr> partLeader(GraphSpaceID spaceId, PartitionID partID) = 0;
 
     virtual PartManager* partManager() const {
         return nullptr;
@@ -127,6 +135,15 @@ public:
                                    PartitionID partId,
                                    const std::string& prefix,
                                    KVCallback cb) = 0;
+
+    virtual ResultCode ingest(GraphSpaceID spaceId) = 0;
+
+    virtual ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
+                                                            PartitionID partId) = 0;
+
+    virtual ResultCode compact(GraphSpaceID spaceId) = 0;
+
+    virtual ResultCode flush(GraphSpaceID spaceId) = 0;
 
 protected:
     KVStore() = default;

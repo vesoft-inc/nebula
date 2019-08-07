@@ -16,10 +16,6 @@ namespace nebula {
 
 class ColumnSpecification final {
 public:
-    explicit ColumnSpecification(std::string *name) {
-        name_.reset(name);
-    }
-
     ColumnSpecification(ColumnType type, std::string *name) {
         type_ = type;
         name_.reset(name);
@@ -58,6 +54,26 @@ private:
     std::vector<std::unique_ptr<ColumnSpecification>> columns_;
 };
 
+class ColumnNameList final {
+public:
+    ColumnNameList() = default;
+
+    void addColumn(std::string *column) {
+        columns_.emplace_back(column);
+    }
+
+    std::vector<std::string*> columnNames() const {
+        std::vector<std::string*> result;
+        result.resize(columns_.size());
+        auto get = [] (auto &ptr) { return ptr.get(); };
+        std::transform(columns_.begin(), columns_.end(), result.begin(), get);
+        return result;
+    }
+
+private:
+    std::vector<std::unique_ptr<std::string>> columns_;
+};
+
 
 class SchemaPropItem final {
 public:
@@ -65,7 +81,7 @@ public:
 
     enum PropType : uint8_t {
         TTL_DURATION,
-        TTL_COL,
+        TTL_COL
     };
 
     SchemaPropItem(PropType op, int64_t val) {
@@ -246,8 +262,17 @@ public:
         columns_.reset(columns);
     }
 
+    AlterSchemaOptItem(OptionType op, ColumnNameList *colNames) {
+        optType_ = op;
+        colNames_.reset(colNames);
+    }
+
     std::vector<ColumnSpecification*> columnSpecs() const {
         return columns_->columnSpecs();
+    }
+
+    std::vector<std::string*> columnNames() const {
+        return colNames_->columnNames();
     }
 
     OptionType getOptType() {
@@ -261,6 +286,7 @@ public:
 private:
     OptionType                                  optType_;
     std::unique_ptr<ColumnSpecificationList>    columns_;
+    std::unique_ptr<ColumnNameList>             colNames_;
 };
 
 
@@ -303,7 +329,7 @@ public:
         return name_.get();
     }
 
-    std::vector<AlterSchemaOptItem*> schemaOptList() const {
+    std::vector<AlterSchemaOptItem*> getSchemaOpts() const {
         return opts_->alterSchemaItems();
     }
 
@@ -335,7 +361,7 @@ public:
         return name_.get();
     }
 
-    std::vector<AlterSchemaOptItem*> schemaOptList() const {
+    std::vector<AlterSchemaOptItem*> getSchemaOpts() const {
         return opts_->alterSchemaItems();
     }
 
@@ -437,7 +463,6 @@ class YieldSentence final : public Sentence {
  private:
      std::unique_ptr<YieldColumns>              yieldColumns_;
 };
-
 }   // namespace nebula
 
 #endif  // PARSER_MAINTAINSENTENCES_H_

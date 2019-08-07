@@ -50,6 +50,10 @@ public:
         kGrant,
         kRevoke,
         kChangePassword,
+        kDownload,
+        kIngest,
+        kOrderBy,
+        kConfig,
     };
 
     Kind kind() const {

@@ -155,10 +155,10 @@ ResultCode RocksEngine::get(const std::string& key, std::string* value) {
 
 
 ResultCode RocksEngine::multiGet(const std::vector<std::string>& keys,
-                                   std::vector<std::string>* values) {
+                                 std::vector<std::string>* values) {
     rocksdb::ReadOptions options;
     std::vector<rocksdb::Slice> slices;
-    for (unsigned int index = 0 ; index < keys.size() ; index++) {
+    for (size_t index = 0; index < keys.size(); index++) {
         slices.emplace_back(keys[index]);
     }
 
@@ -402,13 +402,24 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey,
 }
 
 
-ResultCode RocksEngine::compactAll() {
+ResultCode RocksEngine::compact() {
     rocksdb::CompactRangeOptions options;
     rocksdb::Status status = db_->CompactRange(options, nullptr, nullptr);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
         LOG(ERROR) << "CompactAll Failed: " << status.ToString();
+        return ResultCode::ERR_UNKNOWN;
+    }
+}
+
+ResultCode RocksEngine::flush() {
+    rocksdb::FlushOptions options;
+    rocksdb::Status status = db_->Flush(options);
+    if (status.ok()) {
+        return ResultCode::SUCCEEDED;
+    } else {
+        LOG(ERROR) << "Flush Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }

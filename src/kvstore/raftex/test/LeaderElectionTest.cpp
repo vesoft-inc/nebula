@@ -98,6 +98,7 @@ TEST(LeaderElection, LeaderCrash) {
         flusher.get(),
         services[idx]->getIOThreadPool(),
         workers,
+        services[idx]->getThreadManager(),
         std::bind(&onLeadershipLost,
                   std::ref(copies),
                   std::ref(leader),

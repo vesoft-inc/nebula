@@ -9,6 +9,8 @@
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
 
+DECLARE_int32(max_handlers_per_req);
+DECLARE_int32(min_vertices_per_bucket);
 
 namespace nebula {
 namespace storage {
@@ -32,102 +34,13 @@ bool QueryBaseProcessor<REQ, RESP>::validOperation(nebula::cpp2::SupportedType v
     return true;
 }
 
-
 template<typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
-                                                 folly::StringPiece key,
-                                                 std::vector<PropContext>& props,
-                                                 Collector* collector) {
-    for (auto& prop : props) {
-        switch (prop.pikType_) {
-            case PropContext::PropInKeyType::NONE:
-                break;
-            case PropContext::PropInKeyType::SRC:
-                VLOG(3) << "collect _src, value = " << NebulaKeyUtils::getSrcId(key);
-                collector->collectInt64(ResultType::SUCCEEDED,
-                                        NebulaKeyUtils::getSrcId(key), prop);
-                continue;
-            case PropContext::PropInKeyType::DST:
-                VLOG(3) << "collect _dst, value = " << NebulaKeyUtils::getDstId(key);
-                collector->collectInt64(ResultType::SUCCEEDED,
-                                        NebulaKeyUtils::getDstId(key), prop);
-                continue;
-            case PropContext::PropInKeyType::TYPE:
-                VLOG(3) << "collect _type, value = " << NebulaKeyUtils::getEdgeType(key);
-                collector->collectInt32(ResultType::SUCCEEDED,
-                                        NebulaKeyUtils::getEdgeType(key), prop);
-                continue;
-            case PropContext::PropInKeyType::RANK:
-                VLOG(3) << "collect _rank, value = " << NebulaKeyUtils::getRank(key);
-                collector->collectInt64(ResultType::SUCCEEDED,
-                                        NebulaKeyUtils::getRank(key), prop);
-                continue;
-        }
-        if (reader != nullptr) {
-            const auto& name = prop.prop_.get_name();
-            switch (prop.type_.type) {
-                case nebula::cpp2::SupportedType::INT: {
-                    int64_t v;
-                    auto ret = reader->getInt<int64_t>(name, v);
-                    VLOG(3) << "collect " << name << ", value = " << v;
-                    collector->collectInt64(ret, v, prop);
-                    break;
-                }
-                case nebula::cpp2::SupportedType::VID: {
-                    int64_t v;
-                    auto ret = reader->getVid(name, v);
-                    collector->collectInt64(ret, v, prop);
-                    VLOG(3) << "collect " << name << ", value = " << v;
-                    break;
-                }
-                case nebula::cpp2::SupportedType::TIMESTAMP: {
-                    int64_t v;
-                    auto ret = reader->getTimestamp(name, v);
-                    collector->collectInt64(ret, v, prop);
-                    VLOG(3) << "collect " << name << ", value = " << v;
-                    break;
-                }
-                case nebula::cpp2::SupportedType::FLOAT: {
-                    float v;
-                    auto ret = reader->getFloat(name, v);
-                    collector->collectFloat(ret, v, prop);
-                    VLOG(3) << "collect " << name << ", value = " << v;
-                    break;
-                }
-                case nebula::cpp2::SupportedType::DOUBLE: {
-                    double v;
-                    auto ret = reader->getDouble(name, v);
-                    collector->collectDouble(ret, v, prop);
-                    VLOG(3) << "collect " << name << ", value = " << v;
-                    break;
-                }
-                case nebula::cpp2::SupportedType::STRING: {
-                    folly::StringPiece v;
-                    auto ret = reader->getString(name, v);
-                    collector->collectString(ret, v, prop);
-                    VLOG(3) << "collect " << name << ", value = " << v;
-                    break;
-                }
-                default: {
-                    VLOG(1) << "Unsupport stats!";
-                    break;
-                }
-            }  // switch
-        }  // if
-    }  // for
-}
-
-
-template<typename REQ, typename RESP>
-cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
-        const REQ& req,
-        std::vector<TagContext>& tagContexts,
-        EdgeContext& edgeContext) {
+cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& req) {
     if (req.__isset.edge_type) {
-        edgeContext.edgeType_ = req.edge_type;
+        edgeContext_.edgeType_ = req.edge_type;
     }
     // Handle the case for query edges which should return some columns by default.
-    int32_t index = edgeContext.props_.size();
+    int32_t index = edgeContext_.props_.size();
     std::unordered_map<TagID, int32_t> tagIndex;
     for (auto& col : req.get_return_columns()) {
         PropContext prop;
@@ -141,6 +54,9 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                     return cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
                 }
                 const auto& ftype = schema->getFieldType(col.name);
+                if (UNLIKELY(ftype == CommonConstants::kInvalidValueType())) {
+                    return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
+                }
                 prop.type_ = ftype;
                 prop.retIndex_ = index++;
                 if (col.__isset.stat && !validOperation(ftype.type, col.stat)) {
@@ -148,15 +64,16 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 }
                 VLOG(3) << "tagId " << tagId << ", prop " << col.name;
                 prop.prop_ = std::move(col);
+                prop.returned_ = true;
                 auto it = tagIndex.find(tagId);
                 if (it == tagIndex.end()) {
                     TagContext tc;
                     tc.tagId_ = tagId;
                     tc.props_.emplace_back(std::move(prop));
-                    tagContexts.emplace_back(std::move(tc));
-                    tagIndex.emplace(tagId, tagContexts.size() - 1);
+                    tagContexts_.emplace_back(std::move(tc));
+                    tagIndex.emplace(tagId, tagContexts_.size() - 1);
                 } else {
-                    tagContexts[it->second].props_.emplace_back(std::move(prop));
+                    tagContexts_[it->second].props_.emplace_back(std::move(prop));
                 }
                 break;
             }
@@ -168,11 +85,14 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 } else if (type_ == BoundType::OUT_BOUND) {
                     // Only outBound have properties on edge.
                     auto schema = this->schemaMan_->getEdgeSchema(spaceId_,
-                                                            edgeContext.edgeType_);
+                                                                  edgeContext_.edgeType_);
                     if (!schema) {
                         return cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
                     }
                     const auto& ftype = schema->getFieldType(col.name);
+                    if (UNLIKELY(ftype == CommonConstants::kInvalidValueType())) {
+                        return cpp2::ErrorCode::E_IMPROPER_DATA_TYPE;
+                    }
                     prop.type_ = ftype;
                 } else {
                     VLOG(3) << "InBound has none props, skip it!";
@@ -183,20 +103,215 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(
                 }
                 prop.retIndex_ = index++;
                 prop.prop_ = std::move(col);
-                edgeContext.props_.emplace_back(std::move(prop));
+                prop.returned_ = true;
+                edgeContext_.props_.emplace_back(std::move(prop));
                 break;
             }
         }
     }
+    const auto& filterStr = req.get_filter();
+    if (!filterStr.empty()) {
+        StatusOr<std::unique_ptr<Expression>> expRet = Expression::decode(filterStr);
+        if (!expRet.ok()) {
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
+        exp_ = std::move(expRet).value();
+        if (!checkExp(exp_.get())) {
+            return cpp2::ErrorCode::E_INVALID_FILTER;
+        }
+        expCtx_ = std::make_unique<ExpressionContext>();
+        exp_->setContext(expCtx_.get());
+        auto& getters = expCtx_->getters();
+        getters.getDstTagProp = [] (const std::string& alias,
+                                    const std::string& prop) -> VariantType {
+            LOG(FATAL) << "Unsupport get dst tag " << alias << " prop " << prop;
+            return false;
+        };
+        getters.getInputProp = [] (const std::string& prop) -> VariantType {
+            LOG(FATAL) << "Unsupport get input prop " << prop;
+            return false;
+        };
+    }
     return cpp2::ErrorCode::SUCCEEDED;
 }
+
+template<typename REQ, typename RESP>
+bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
+    switch (exp->kind()) {
+        case Expression::kPrimary:
+            return true;
+        case Expression::kFunctionCall:
+            // TODO(heng): we should support it in the future.
+            return false;
+        case Expression::kUnary: {
+            auto* unaExp = static_cast<const UnaryExpression*>(exp);
+            return checkExp(unaExp->operand());
+        }
+        case Expression::kTypeCasting: {
+            auto* typExp = static_cast<const TypeCastingExpression*>(exp);
+            return checkExp(typExp->operand());
+        }
+        case Expression::kArithmetic: {
+            auto* ariExp = static_cast<const ArithmeticExpression*>(exp);
+            return checkExp(ariExp->left()) && checkExp(ariExp->right());
+        }
+        case Expression::kRelational: {
+            auto* relExp = static_cast<const RelationalExpression*>(exp);
+            return checkExp(relExp->left()) && checkExp(relExp->right());
+        }
+        case Expression::kLogical: {
+            auto* logExp = static_cast<const LogicalExpression*>(exp);
+            return checkExp(logExp->left()) && checkExp(logExp->right());
+        }
+        case Expression::kSourceProp: {
+            auto* sourceExp = static_cast<const SourcePropertyExpression*>(exp);
+            const auto& tagName = sourceExp->tag();
+            const auto& propName = sourceExp->prop();
+            auto tagRet = this->schemaMan_->toTagID(spaceId_, tagName);
+            if (!tagRet.ok()) {
+                VLOG(1) << "Can't find tag " << tagName << ", in space " << spaceId_;
+                return false;
+            }
+            auto tagId = tagRet.value();
+            // TODO(heng): Now we use the latest version.
+            auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
+            CHECK(!!schema);
+            auto field = schema->field(propName);
+            if (field == nullptr) {
+                VLOG(1) << "Can't find related prop " << propName << " on tag " << tagName;
+                return false;
+            }
+            // TODO(heng): Now we have to scan the whole array to find related tagId,
+            // maybe we could find a better way to solve it.
+            for (auto& tc : tagContexts_) {
+                if (tc.tagId_ == tagId) {
+                    auto* prop = tc.findProp(propName);
+                    if (prop == nullptr) {
+                        tc.pushFilterProp(tagName, propName, field->getType());
+                    } else if (!prop->filtered()) {
+                        prop->setTagOrEdgeName(tagName);
+                    }
+                    return true;
+                }
+            }
+            VLOG(1) << "There is no related tag existed in tagContexts!";
+            TagContext tc;
+            tc.tagId_ = tagId;
+            tc.pushFilterProp(tagName, propName, field->getType());
+            tagContexts_.emplace_back(std::move(tc));
+            return true;
+        }
+        case Expression::kEdgeRank:
+        case Expression::kEdgeDstId:
+        case Expression::kEdgeSrcId:
+        case Expression::kEdgeType: {
+            return true;
+        }
+        case Expression::kEdgeProp: {
+            if (type_ != BoundType::OUT_BOUND) {
+                VLOG(1) << "Only support filter on out bound props";
+                return false;
+            }
+            if (edgeContext_.edgeType_ == -1) {
+                VLOG(1) << "No edge requested!";
+                return false;
+            }
+            auto* edgeExp = static_cast<const EdgePropertyExpression*>(exp);
+            const auto& propName = edgeExp->prop();
+            auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeContext_.edgeType_);
+            if (!schema) {
+                VLOG(1) << "Cant find edgeType " << edgeContext_.edgeType_;
+                return false;
+            }
+            auto field = schema->field(propName);
+            if (field == nullptr) {
+                VLOG(1) << "Can't find related prop "
+                        << propName << " on edge " << edgeExp->alias();
+                return false;
+            }
+            return true;
+        }
+        case Expression::kVariableProp:
+        case Expression::kDestProp:
+        case Expression::kInputProp:
+            return false;
+        default: {
+            VLOG(1) << "Unsupport expression type! kind = "
+                    << std::to_string(static_cast<uint8_t>(exp->kind()));
+            return false;
+        }
+    }
+}
+
+template<typename REQ, typename RESP>
+void QueryBaseProcessor<REQ, RESP>::collectProps(RowReader* reader,
+                                                 folly::StringPiece key,
+                                                 const std::vector<PropContext>& props,
+                                                 FilterContext* fcontext,
+                                                 Collector* collector) {
+    for (auto& prop : props) {
+        switch (prop.pikType_) {
+            case PropContext::PropInKeyType::NONE:
+                break;
+            case PropContext::PropInKeyType::SRC:
+                VLOG(3) << "collect _src, value = " << NebulaKeyUtils::getSrcId(key);
+                collector->collectInt64(NebulaKeyUtils::getSrcId(key), prop);
+                continue;
+            case PropContext::PropInKeyType::DST:
+                VLOG(3) << "collect _dst, value = " << NebulaKeyUtils::getDstId(key);
+                collector->collectInt64(NebulaKeyUtils::getDstId(key), prop);
+                continue;
+            case PropContext::PropInKeyType::TYPE:
+                VLOG(3) << "collect _type, value = " << NebulaKeyUtils::getEdgeType(key);
+                collector->collectInt64(static_cast<int64_t>(NebulaKeyUtils::getEdgeType(key)),
+                                        prop);
+                continue;
+            case PropContext::PropInKeyType::RANK:
+                VLOG(3) << "collect _rank, value = " << NebulaKeyUtils::getRank(key);
+                collector->collectInt64(NebulaKeyUtils::getRank(key), prop);
+                continue;
+        }
+        if (reader != nullptr) {
+            const auto& name = prop.prop_.get_name();
+            auto res = RowReader::getPropByName(reader, name);
+            if (!ok(res)) {
+                VLOG(1) << "Skip the bad value for prop " << name;
+                continue;
+            }
+            auto&& v = value(std::move(res));
+            if (prop.fromTagFilter()) {
+                fcontext->tagFilters_.emplace(std::make_pair(prop.tagOrEdgeName(), name), v);
+            }
+            if (prop.returned_) {
+                switch (v.which()) {
+                    case VAR_INT64:
+                        collector->collectInt64(boost::get<int64_t>(v), prop);
+                        break;
+                    case VAR_DOUBLE:
+                        collector->collectDouble(boost::get<double>(v), prop);
+                        break;
+                    case VAR_BOOL:
+                        collector->collectBool(boost::get<bool>(v), prop);
+                        break;
+                    case VAR_STR:
+                        collector->collectString(boost::get<std::string>(v), prop);
+                        break;
+                    default:
+                        LOG(FATAL) << "Unknown VariantType: " << v.which();
+                }  // switch
+            }  // if returned
+        }  // if reader != nullptr
+    }  // for
+}
+
 
 template<typename REQ, typename RESP>
 kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
                             PartitionID partId,
                             VertexID vId,
                             TagID tagId,
-                            std::vector<PropContext>& props,
+                            const std::vector<PropContext>& props,
+                            FilterContext* fcontext,
                             Collector* collector) {
     auto prefix = NebulaKeyUtils::prefix(partId, vId, tagId);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -209,7 +324,7 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectVertexProps(
     // stored along with the properties
     if (iter && iter->valid()) {
         auto reader = RowReader::getTagPropReader(this->schemaMan_, iter->val(), spaceId_, tagId);
-        this->collectProps(reader.get(), iter->key(), props, collector);
+        this->collectProps(reader.get(), iter->key(), props, fcontext, collector);
     } else {
         VLOG(3) << "Missed partId " << partId << ", vId " << vId << ", tagId " << tagId;
     }
@@ -221,7 +336,8 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                                                PartitionID partId,
                                                VertexID vId,
                                                EdgeType edgeType,
-                                               std::vector<PropContext>& props,
+                                               const std::vector<PropContext>& props,
+                                               FilterContext* fcontext,
                                                EdgeProcessor proc) {
     auto prefix = NebulaKeyUtils::prefix(partId, vId, edgeType);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -246,6 +362,33 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
         std::unique_ptr<RowReader> reader;
         if (type_ == BoundType::OUT_BOUND && !val.empty()) {
             reader = RowReader::getEdgePropReader(this->schemaMan_, val, spaceId_, edgeType);
+            if (exp_ != nullptr) {
+                // TODO(heng): We could remove the lock with one filter one bucket.
+                std::lock_guard<std::mutex> lg(this->lock_);
+                auto& getters = expCtx_->getters();
+                getters.getEdgeProp = [&] (const std::string &prop) -> VariantType {
+                    auto res = RowReader::getPropByName(reader.get(), prop);
+                    CHECK(ok(res));
+                    return value(std::move(res));
+                };
+                getters.getEdgeRank = [&] () -> VariantType {
+                    return rank;
+                };
+                getters.getSrcTagProp = [&, this] (const std::string& tag,
+                                                   const std::string& prop) -> VariantType {
+                    auto it = fcontext->tagFilters_.find(std::make_pair(tag, prop));
+                    CHECK(it != fcontext->tagFilters_.end());
+                    VLOG(1) << "Hit srcProp filter for tag " << tag << ", prop "
+                            << prop << ", value " << it->second;
+                    return it->second;
+                };
+                auto value = exp_->eval();
+                if (!Expression::asBool(value)) {
+                    VLOG(1) << "Filter the edge "
+                            << vId << "-> " << dstId << "@" << rank << ":" << edgeType;
+                    continue;
+                }
+            }
         }
         proc(reader.get(), key, props);
         if (firstLoop) {
@@ -256,15 +399,69 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
 }
 
 template<typename REQ, typename RESP>
+folly::Future<std::vector<OneVertexResp>>
+QueryBaseProcessor<REQ, RESP>::asyncProcessBucket(Bucket bucket) {
+    folly::Promise<std::vector<OneVertexResp>> pro;
+    auto f = pro.getFuture();
+    executor_->add([this, p = std::move(pro), b = std::move(bucket)] () mutable {
+        std::vector<OneVertexResp> codes;
+        codes.reserve(b.vertices_.size());
+        for (auto& pv : b.vertices_) {
+            codes.emplace_back(pv.first,
+                               pv.second,
+                               processVertex(pv.first, pv.second));
+        }
+        p.setValue(std::move(codes));
+    });
+    return f;
+}
+
+template<typename REQ, typename RESP>
+int32_t QueryBaseProcessor<REQ, RESP>::getBucketsNum(int32_t verticesNum,
+                                                     int32_t minVerticesPerBucket,
+                                                     int32_t handlerNum) {
+    return std::min(std::max(1, verticesNum/minVerticesPerBucket), handlerNum);
+}
+
+template<typename REQ, typename RESP>
+std::vector<Bucket> QueryBaseProcessor<REQ, RESP>::genBuckets(
+                                                    const cpp2::GetNeighborsRequest& req) {
+    std::vector<Bucket> buckets;
+    int32_t verticesNum = 0;
+    for (auto& pv : req.get_parts()) {
+        verticesNum += pv.second.size();
+    }
+    auto bucketsNum = getBucketsNum(verticesNum,
+                                    FLAGS_min_vertices_per_bucket,
+                                    FLAGS_max_handlers_per_req);
+    buckets.resize(bucketsNum);
+    auto vNumPerBucket = verticesNum / bucketsNum;
+    auto leftVertices = verticesNum % bucketsNum;
+    int32_t bucketIndex = -1;
+    size_t thresHold = vNumPerBucket;
+    for (auto& pv : req.get_parts()) {
+        for (auto& vId : pv.second) {
+            if (bucketIndex < 0 || buckets[bucketIndex].vertices_.size() >= thresHold) {
+                ++bucketIndex;
+                thresHold = bucketIndex < leftVertices ? vNumPerBucket + 1 : vNumPerBucket;
+                buckets[bucketIndex].vertices_.reserve(thresHold);
+            }
+            CHECK_LT(bucketIndex, bucketsNum);
+            buckets[bucketIndex].vertices_.emplace_back(pv.first, vId);
+        }
+    }
+    return buckets;
+}
+
+template<typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req) {
+    CHECK_NOTNULL(executor_);
     spaceId_ = req.get_space_id();
     int32_t returnColumnsNum = req.get_return_columns().size();
     VLOG(3) << "Receive request, spaceId " << spaceId_ << ", return cols " << returnColumnsNum;
-    std::vector<TagContext> tagContexts;
-    tagContexts.reserve(returnColumnsNum);
-    EdgeContext edgeContext;
+    tagContexts_.reserve(returnColumnsNum);
 
-    auto retCode = checkAndBuildContexts(req, tagContexts, edgeContext);
+    auto retCode = checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {
             this->pushResultCode(retCode, p.first);
@@ -274,21 +471,31 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     }
 
     // const auto& filter = req.get_filter();
-    std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partV) {
-        auto partId = partV.first;
-        kvstore::ResultCode ret;
-        for (auto& vId : partV.second) {
-            VLOG(3) << "Process part " << partId << ", vertex " << vId;
-            ret = processVertex(partId, vId, tagContexts, edgeContext);
-            if (ret != kvstore::ResultCode::SUCCEEDED) {
-                break;
+    auto buckets = genBuckets(req);
+    std::vector<folly::Future<std::vector<OneVertexResp>>> results;
+    for (auto& bucket : buckets) {
+        results.emplace_back(asyncProcessBucket(std::move(bucket)));
+    }
+    folly::collectAll(results).via(executor_).thenTry([
+                     this,
+                     returnColumnsNum] (auto&& t) mutable {
+        CHECK(!t.hasException());
+        std::unordered_set<PartitionID> failedParts;
+        for (auto& bucketTry : t.value()) {
+            CHECK(!bucketTry.hasException());
+            for (auto& r : bucketTry.value()) {
+                auto& partId = std::get<0>(r);
+                auto& ret = std::get<2>(r);
+                if (ret != kvstore::ResultCode::SUCCEEDED
+                      && failedParts.find(partId) == failedParts.end()) {
+                    failedParts.emplace(partId);
+                    this->pushResultCode(this->to(ret), partId);
+                }
             }
         }
-        this->pushResultCode(this->to(ret), partId);
+        this->onProcessFinished(returnColumnsNum);
+        this->onFinished();
     });
-
-    onProcessed(tagContexts, edgeContext, returnColumnsNum);
-    this->onFinished();
 }
 
 }  // namespace storage

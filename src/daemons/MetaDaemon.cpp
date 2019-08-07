@@ -5,17 +5,25 @@
  */
 
 #include "base/Base.h"
+#include "common/base/SignalHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/MetaServiceHandler.h"
-#include "meta/MetaHttpHandler.h"
+#include "meta/MetaHttpIngestHandler.h"
+#include "meta/MetaHttpStatusHandler.h"
+#include "meta/MetaHttpDownloadHandler.h"
 #include "webservice/WebService.h"
 #include "network/NetworkUtils.h"
 #include "process/ProcessUtils.h"
+#include "hdfs/HdfsHelper.h"
+#include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
+#include "meta/ClusterManager.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
+#include "meta/KVBasedGflagsManager.h"
 
+using nebula::operator<<;
 using nebula::ProcessUtils;
 using nebula::Status;
 
@@ -26,8 +34,9 @@ DEFINE_string(peers, "", "It is a list of IPs split by comma,"
                          "the ips number equals replica number."
                          "If empty, it means replica is 1");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
-DEFINE_int32(num_workers, 4, "Number of worker threads");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
+DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
+DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DECLARE_string(part_man_type);
 
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
@@ -74,16 +83,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    LOG(INFO) << "Starting Meta HTTP Service";
-    nebula::WebService::registerHandler("/status", [] {
-        return new nebula::meta::MetaHttpHandler();
-    });
-    status = nebula::WebService::start();
-    if (!status.ok()) {
-        LOG(ERROR) << "Failed to start web service: " << status;
-        return EXIT_FAILURE;
-    }
-
     auto result = nebula::network::NetworkUtils::getLocalIP(FLAGS_local_ip);
     if (!result.ok()) {
         LOG(ERROR) << "Get local ip failed! status:" << result.status();
@@ -95,16 +94,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     auto& localhost = hostAddrRet.value();
-
     auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_peers);
     if (!peersRet.ok()) {
         LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
-        return EXIT_FAILURE;
-    }
-    // Setup the signal handlers
-    status = setupSignalHandler();
-    if (!status.ok()) {
-        LOG(ERROR) << status;
         return EXIT_FAILURE;
     }
 
@@ -113,48 +105,104 @@ int main(int argc, char *argv[]) {
     // The meta server has only one space, one part.
     partMan->addPart(0, 0, std::move(peersRet.value()));
 
-    // Generic thread pool
-    auto workers = std::make_shared<nebula::thread::GenericThreadPool>();
-    workers->start(FLAGS_num_workers);
-
     // folly IOThreadPoolExecutor
     auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
-
+    std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
+        apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 FLAGS_num_worker_threads, true /*stats*/));
+    threadManager->setNamePrefix("executor");
+    threadManager->start();
     nebula::kvstore::KVOptions options;
     options.dataPaths_ = {FLAGS_data_path};
     options.partMan_ = std::move(partMan);
-    std::unique_ptr<nebula::kvstore::KVStore> kvstore =
-        std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
-                                                       ioPool,
-                                                       workers,
-                                                       localhost);
 
-    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
+    auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(
+                                                        std::move(options),
+                                                        ioPool,
+                                                        localhost,
+                                                        threadManager);
+    if (!(kvstore->init())) {
+        LOG(ERROR) << "nebula store init failed";
+        return EXIT_FAILURE;
+    }
+
+    auto clusterMan
+        = std::make_unique<nebula::meta::ClusterManager>(FLAGS_peers, "");
+    if (!clusterMan->loadOrCreateCluId(kvstore.get())) {
+        LOG(ERROR) << "clusterId init error!";
+        return EXIT_FAILURE;
+    }
+    std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
+        std::make_unique<nebula::hdfs::HdfsCommandHelper>();
+
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool =
+        std::make_unique<nebula::thread::GenericThreadPool>();
+    pool->start(FLAGS_meta_http_thread_num, "http thread pool");
+    LOG(INFO) << "Http Thread Pool started";
+
+    LOG(INFO) << "Starting Meta HTTP Service";
+    nebula::WebService::registerHandler("/status", [] {
+        return new nebula::meta::MetaHttpStatusHandler();
+    });
+    nebula::WebService::registerHandler("/download-dispatch", [&] {
+        auto handler = new nebula::meta::MetaHttpDownloadHandler();
+        handler->init(kvstore.get(), helper.get(), pool.get());
+        return handler;
+    });
+    nebula::WebService::registerHandler("/ingest-dispatch", [&] {
+        auto handler = new nebula::meta::MetaHttpIngestHandler();
+        handler->init(kvstore.get(), pool.get());
+        return handler;
+    });
+    status = nebula::WebService::start();
+    if (!status.ok()) {
+        LOG(ERROR) << "Failed to start web service: " << status;
+        return EXIT_FAILURE;
+    }
+
+    // Setup the signal handlers
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        nebula::WebService::stop();
+        return EXIT_FAILURE;
+    }
+
+    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get(),
+                                                                      clusterMan->getClusterId());
     nebula::meta::ActiveHostsMan::instance(kvstore.get());
 
-    nebula::operator<<(operator<<(LOG(INFO), "The meta deamon start on "), localhost);
+    auto gflagsManager = std::make_unique<nebula::meta::KVBasedGflagsManager>(kvstore.get());
+    gflagsManager->init();
+
+    LOG(INFO) << "The meta deamon start on " << localhost;
     try {
         gServer = std::make_unique<apache::thrift::ThriftServer>();
-        gServer->setInterface(std::move(handler));
         gServer->setPort(FLAGS_port);
         gServer->setReusePort(FLAGS_reuse_port);
         gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
         gServer->setIOThreadPool(ioPool);
+        gServer->setThreadManager(threadManager);
+        gServer->setInterface(std::move(handler));
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception &e) {
+        nebula::WebService::stop();
         LOG(ERROR) << "Exception thrown: " << e.what();
         return EXIT_FAILURE;
     }
 
+    nebula::WebService::stop();
     LOG(INFO) << "The meta Daemon stopped";
+    return EXIT_SUCCESS;
 }
 
 
 Status setupSignalHandler() {
-    ::signal(SIGPIPE, SIG_IGN);
-    ::signal(SIGINT, signalHandler);
-    ::signal(SIGTERM, signalHandler);
-    return Status::OK();
+    return nebula::SignalHandler::install(
+        {SIGINT, SIGTERM},
+        [](nebula::SignalHandler::GeneralSignalInfo *info) {
+            signalHandler(info->sig());
+        });
 }
 
 
@@ -163,7 +211,6 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            nebula::WebService::stop();
             gServer->stop();
             break;
         default:

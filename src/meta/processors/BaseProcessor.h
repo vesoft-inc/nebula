@@ -17,32 +17,12 @@
 #include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "network/NetworkUtils.h"
+#include "meta/processors/Common.h"
 
 namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
-
-const PartitionID kDefaultPartId = 0;
-const GraphSpaceID kDefaultSpaceId = 0;
-
-class LockUtils {
-public:
-    LockUtils() = delete;
-#define GENERATE_LOCK(Entry) \
-    static folly::SharedMutex& Entry##Lock() { \
-        static folly::SharedMutex l; \
-        return l; \
-    }
-
-GENERATE_LOCK(space);
-GENERATE_LOCK(id);
-GENERATE_LOCK(tag);
-GENERATE_LOCK(edge);
-GENERATE_LOCK(user);
-
-#undef GENERATE_LOCK
-};
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID) \
     if (spaceExist(spaceID) == Status::SpaceNotFound()) { \
@@ -59,7 +39,7 @@ GENERATE_LOCK(user);
     }
 
 /**
- * Check segemnt is consist of numbers and letters and should not empty.
+ * Check segment is consist of numbers and letters and should not empty.
  * */
 #define CHECK_SEGMENT(segment) \
     if (!MetaCommon::checkSegment(segment)) { \
@@ -108,6 +88,7 @@ protected:
         case Status::kHostNotFound:
         case Status::kTagNotFound:
         case Status::kUserNotFound:
+        case Status::kCfgNotFound:
             return cpp2::ErrorCode::E_NOT_FOUND;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
@@ -130,6 +111,7 @@ protected:
             break;
         case EntryType::USER:
             thriftID.set_user_id(static_cast<UserID>(id));
+        case EntryType::CONFIG:
             break;
         }
         return thriftID;

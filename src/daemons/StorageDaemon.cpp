@@ -5,11 +5,15 @@
  */
 
 #include "base/Base.h"
+#include "common/base/SignalHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "network/NetworkUtils.h"
 #include "thread/GenericThreadPool.h"
 #include "storage/StorageServiceHandler.h"
-#include "storage/StorageHttpHandler.h"
+#include "storage/StorageHttpIngestHandler.h"
+#include "storage/StorageHttpStatusHandler.h"
+#include "storage/StorageHttpDownloadHandler.h"
+#include "storage/StorageHttpAdminHandler.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "process/ProcessUtils.h"
@@ -17,7 +21,11 @@
 #include "webservice/WebService.h"
 #include "meta/SchemaManager.h"
 #include "meta/client/MetaClient.h"
+#include "meta/ClientBasedGflagsManager.h"
 #include "storage/CompactionFilter.h"
+#include "hdfs/HdfsHelper.h"
+#include "hdfs/HdfsCommandHelper.h"
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
@@ -33,9 +41,11 @@ DEFINE_string(meta_server_addrs, "", "list of meta server addresses,"
 DEFINE_string(store_type, "nebula",
               "Which type of KVStore to be used by the storage daemon."
               " Options can be \"nebula\", \"hbase\", etc.");
-DEFINE_int32(num_workers, 4, "Number of worker threads");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
+DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
+DEFINE_int32(num_worker_threads, 32, "Number of workers");
 
+using nebula::operator<<;
 using nebula::Status;
 using nebula::HostAddr;
 using nebula::storage::StorageServiceHandler;
@@ -55,7 +65,7 @@ std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
         HostAddr localhost,
         std::vector<std::string> paths,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
-        std::shared_ptr<nebula::thread::GenericThreadPool> workers,
+        std::shared_ptr<folly::Executor> workers,
         nebula::meta::MetaClient* metaClient,
         nebula::meta::SchemaManager* schemaMan) {
     nebula::kvstore::KVOptions options;
@@ -66,10 +76,16 @@ std::unique_ptr<nebula::kvstore::KVStore> getStoreInstance(
     options.cfFactory_ = std::shared_ptr<nebula::kvstore::KVCompactionFilterFactory>(
             new nebula::storage::NebulaCompactionFilterFactory(schemaMan));
     if (FLAGS_store_type == "nebula") {
-        return std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
-                                                              ioPool,
-                                                              workers,
-                                                              localhost);
+        auto nbStore = std::make_unique<nebula::kvstore::NebulaStore>(std::move(options),
+                                                                      ioPool,
+                                                                      localhost,
+                                                                      workers);
+        if (!(nbStore->init())) {
+            LOG(ERROR) << "nebula store init failed";
+            return nullptr;
+        }
+
+        return nbStore;
     } else if (FLAGS_store_type == "hbase") {
         LOG(FATAL) << "HBase store has not been implemented";
     } else {
@@ -146,39 +162,76 @@ int main(int argc, char *argv[]) {
          return EXIT_FAILURE;
     }
 
-    // Generic thread pool
-    auto workers = std::make_shared<nebula::thread::GenericThreadPool>();
-    workers->start(FLAGS_num_workers);
-
-    // folly IOThreadPoolExecutor
     auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
+    std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
+        apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 FLAGS_num_worker_threads, true /*stats*/));
+    threadManager->setNamePrefix("executor");
+    threadManager->start();
+
+    std::string clusteridFile =
+        folly::stringPrintf("%s/%s", paths[0].c_str(), "/storage.cluster.id");
+    auto clusterMan
+        = std::make_unique<nebula::meta::ClusterManager>("", clusteridFile);
+    if (!clusterMan->loadClusterId()) {
+        LOG(INFO) << "storaged misses clusterId";
+    }
 
     // Meta client
     auto metaClient = std::make_unique<nebula::meta::MetaClient>(ioThreadPool,
                                                                  std::move(metaAddrsRet.value()),
+                                                                 localhost,
+                                                                 clusterMan.get(),
                                                                  true);
-    metaClient->init();
-
+    if (!metaClient->waitForMetadReady()) {
+        LOG(ERROR) << "waitForMetadReady error!";
+        return EXIT_FAILURE;
+    }
+    auto gflagsManager = std::make_unique<nebula::meta::ClientBasedGflagsManager>(metaClient.get());
+    gflagsManager->init();
     LOG(INFO) << "Init schema manager";
     auto schemaMan = nebula::meta::SchemaManager::create();
     schemaMan->init(metaClient.get());
 
     LOG(INFO) << "Init kvstore";
     std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
-                                                        std::move(paths),
+                                                        paths,
                                                         ioThreadPool,
-                                                        workers,
+                                                        threadManager,
                                                         metaClient.get(),
                                                         schemaMan.get());
 
+    if (nullptr == kvstore) {
+        return EXIT_FAILURE;
+    }
+
+    std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
+        std::make_unique<nebula::hdfs::HdfsCommandHelper>();
+
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool =
+        std::make_unique<nebula::thread::GenericThreadPool>();
+    pool->start(FLAGS_storage_http_thread_num, "http thread pool");
+    LOG(INFO) << "Http Thread Pool started";
+
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
-        return new nebula::storage::StorageHttpHandler();
+        return new nebula::storage::StorageHttpStatusHandler();
     });
-
+    nebula::WebService::registerHandler("/download", [&] {
+        auto handler = new nebula::storage::StorageHttpDownloadHandler();
+        handler->init(helper.get(), pool.get(), kvstore.get(), paths);
+        return handler;
+    });
+    nebula::WebService::registerHandler("/ingest", [&] {
+        auto handler = new nebula::storage::StorageHttpIngestHandler();
+        handler->init(kvstore.get());
+        return handler;
+    });
+    nebula::WebService::registerHandler("/admin", [&] {
+        return new nebula::storage::StorageHttpAdminHandler(schemaMan.get(), kvstore.get());
+    });
     status = nebula::WebService::start();
     if (!status.ok()) {
-        LOG(ERROR) << "Failed to start web service: " << status;
         return EXIT_FAILURE;
     }
 
@@ -186,33 +239,39 @@ int main(int argc, char *argv[]) {
     status = setupSignalHandler();
     if (!status.ok()) {
         LOG(ERROR) << status;
+        nebula::WebService::stop();
         return EXIT_FAILURE;
     }
 
     auto handler = std::make_shared<StorageServiceHandler>(kvstore.get(), schemaMan.get());
     try {
-        nebula::operator<<(operator<<(LOG(INFO), "The storage deamon start on "), localhost);
+        LOG(INFO) << "The storage deamon start on " << localhost;
         gServer = std::make_unique<apache::thrift::ThriftServer>();
-        gServer->setInterface(std::move(handler));
         gServer->setPort(FLAGS_port);
         gServer->setReusePort(FLAGS_reuse_port);
         gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
         gServer->setIOThreadPool(ioThreadPool);
+        gServer->setThreadManager(threadManager);
+        gServer->setInterface(std::move(handler));
         gServer->serve();  // Will wait until the server shuts down
     } catch (const std::exception& e) {
+        nebula::WebService::stop();
         LOG(ERROR) << "Start thrift server failed, error:" << e.what();
         return EXIT_FAILURE;
     }
 
+    nebula::WebService::stop();
     LOG(INFO) << "The storage Daemon stopped";
+    return EXIT_SUCCESS;
 }
 
 
 Status setupSignalHandler() {
-    ::signal(SIGPIPE, SIG_IGN);
-    ::signal(SIGINT, signalHandler);
-    ::signal(SIGTERM, signalHandler);
-    return Status::OK();
+    return nebula::SignalHandler::install(
+        {SIGINT, SIGTERM},
+        [](nebula::SignalHandler::GeneralSignalInfo *info) {
+            signalHandler(info->sig());
+        });
 }
 
 
@@ -221,7 +280,6 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            nebula::WebService::stop();
             gServer->stop();
             break;
         default:

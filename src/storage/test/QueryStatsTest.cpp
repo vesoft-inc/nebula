@@ -48,9 +48,12 @@ void mockData(kvstore::KVStore* kv) {
                 data.emplace_back(std::move(key), std::move(val));
             }
         }
+        folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(0, partId, std::move(data), [&](kvstore::ResultCode code) {
             EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+            baton.post();
         });
+        baton.wait();
     }
 }
 
@@ -60,7 +63,7 @@ void buildRequest(cpp2::GetNeighborsRequest& req) {
     decltype(req.parts) tmpIds;
     for (auto partId = 0; partId < 3; partId++) {
         for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-            tmpIds[partId].push_back(vertexId);
+            tmpIds[partId].emplace_back(vertexId);
         }
     }
     req.set_parts(std::move(tmpIds));
@@ -143,7 +146,8 @@ TEST(QueryStatsTest, StatsSimpleTest) {
     cpp2::GetNeighborsRequest req;
     buildRequest(req);
 
-    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get());
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryStatsProcessor::instance(kv.get(), schemaMan.get(), executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

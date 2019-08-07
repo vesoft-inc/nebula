@@ -156,18 +156,21 @@ StatusOr<SchemaVer> AdHocSchemaManager::getNewestEdgeSchemaVer(GraphSpaceID spac
     }
 }
 
-// This interface is disabled
 StatusOr<GraphSpaceID> AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spaceName) {
-    UNUSED(spaceName);
-    LOG(FATAL) << "Unimplement";
-    return -1;
+    try {
+        return folly::to<GraphSpaceID>(spaceName);
+    } catch (const std::exception& e) {
+        return Status::SpaceNotFound();
+    }
 }
 
-// This interface is disabled
 StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {
     UNUSED(space);
-    UNUSED(tagName);
-    LOG(FATAL) << "Unimplement";
+    try {
+        return folly::to<TagID>(tagName);
+    } catch (const std::exception& e) {
+        LOG(FATAL) << e.what();
+    }
     return -1;
 }
 

@@ -36,6 +36,10 @@ FileBasedWalIterator::FileBasedWalIterator(
     } else {
         // Pick all buffers that match the range [currId_, lastId_]
         wal_->accessAllBuffers([this] (BufferPtr buffer) {
+            if (buffer->empty()) {
+                // Skip th empty one.
+                return true;
+            }
             if (lastId_ >= buffer->firstLogId()) {
                 buffers_.push_front(buffer);
                 firstIdInBuffer_ = buffer->firstLogId();

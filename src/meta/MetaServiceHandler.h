@@ -11,14 +11,15 @@
 #include <mutex>
 #include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/KVStore.h"
+#include "meta/ClusterManager.h"
 
 namespace nebula {
 namespace meta {
 
 class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 public:
-    explicit MetaServiceHandler(kvstore::KVStore* kv)
-                : kvstore_(kv) {}
+    explicit MetaServiceHandler(kvstore::KVStore* kv, ClusterID clusterId = 0)
+                : kvstore_(kv), clusterId_(clusterId) {}
 
     /**
      * Parts distribution related operations.
@@ -102,12 +103,6 @@ public:
     future_listEdges(const cpp2::ListEdgesReq& req) override;
 
     /**
-     * HeartBeat
-     * */
-    folly::Future<cpp2::HBResp>
-    future_heartBeat(const cpp2::HBReq& req) override;
-
-    /**
      * User manager
      **/
     folly::Future<cpp2::ExecResp>
@@ -140,8 +135,30 @@ public:
     folly::Future<cpp2::ExecResp>
     future_checkPassword(const cpp2::CheckPasswordReq& req) override;
 
+    /**
+     * HeartBeat
+     * */
+    folly::Future<cpp2::HBResp>
+    future_heartBeat(const cpp2::HBReq& req) override;
+
+    folly::Future<cpp2::BalanceResp>
+    future_balance(const cpp2::BalanceReq& req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_regConfig(const cpp2::RegConfigReq &req) override;
+
+    folly::Future<cpp2::GetConfigResp>
+    future_getConfig(const cpp2::GetConfigReq &req) override;
+
+    folly::Future<cpp2::ExecResp>
+    future_setConfig(const cpp2::SetConfigReq &req) override;
+
+    folly::Future<cpp2::ListConfigsResp>
+    future_listConfigs(const cpp2::ListConfigsReq &req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
+    ClusterID clusterId_{0};
 };
 
 }  // namespace meta

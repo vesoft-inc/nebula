@@ -96,6 +96,8 @@ public:
 
     // Graph engine errors
     STATUS_GENERATOR(SyntaxError);
+    // Nothing is executed When command is comment
+    STATUS_GENERATOR(StatementEmpty);
 
     // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
     STATUS_GENERATOR(SpaceNotFound);
@@ -103,6 +105,10 @@ public:
     STATUS_GENERATOR(TagNotFound);
     STATUS_GENERATOR(EdgeNotFound);
     STATUS_GENERATOR(UserNotFound);
+    STATUS_GENERATOR(CfgNotFound);
+    STATUS_GENERATOR(CfgRegistered);
+    STATUS_GENERATOR(CfgErrorType);
+    STATUS_GENERATOR(CfgImmutable);
 
 #undef STATUS_GENERATOR
 
@@ -121,7 +127,8 @@ public:
         kNoSuchFile             = 102,
         kNotSupported           = 103,
         // 2xx, for graph engine errors
-        kSyntaxError            = 301,
+        kSyntaxError            = 201,
+        kStatementEmpty         = 202,
         // 3xx, for storage engine errors
         // ...
         // 4xx, for meta service errors
@@ -130,6 +137,10 @@ public:
         kTagNotFound            = 406,
         kEdgeNotFound           = 407,
         kUserNotFound           = 408,
+        kCfgNotFound            = 409,
+        kCfgRegistered          = 410,
+        kCfgErrorType           = 411,
+        kCfgImmutable           = 412,
     };
 
     Code code() const {

@@ -9,7 +9,6 @@
 #include "base/Base.h"
 #include "base/StatusOr.h"
 #include "base/Status.h"
-#include <boost/variant.hpp>
 
 namespace nebula {
 
@@ -35,10 +34,6 @@ struct AliasInfo {
     std::string                             data_;
 };
 
-
-using VariantType = boost::variant<int64_t, double, bool, std::string>;
-
-
 class ExpressionContext final {
 public:
     void addSrcTagProp(const std::string &tag, const std::string &prop) {
@@ -51,6 +46,15 @@ public:
 
     void addEdgeProp(const std::string &prop) {
         edgeProps_.emplace(prop);
+    }
+
+    void addVariableProp(const std::string &var, const std::string &prop) {
+        variableProps_.emplace(var, prop);
+        variables_.emplace(var);
+    }
+
+    void addInputProp(const std::string &prop) {
+        inputProps_.emplace(prop);
     }
 
     Status addAliasProp(const std::string &alias, const std::string &prop);
@@ -88,14 +92,41 @@ public:
         return std::vector<std::string>(edgeProps_.begin(), edgeProps_.end());
     }
 
+    using VariableProp = std::pair<std::string, std::string>;
+
+    std::vector<VariableProp> variableProps() const {
+        return std::vector<VariableProp>(variableProps_.begin(), variableProps_.end());
+    }
+
+    const std::unordered_set<std::string>& variables() const {
+        return variables_;
+    }
+
+    bool hasSrcTagProp() const {
+        return !srcTagProps_.empty();
+    }
+
     bool hasDstTagProp() const {
         return !dstTagProps_.empty();
+    }
+
+    bool hasEdgeProp() const {
+        return !edgeProps_.empty();
+    }
+
+    bool hasVariableProp() const {
+        return !variableProps_.empty();
+    }
+
+    bool hasInputProp() const {
+        return !inputProps_.empty();
     }
 
     struct Getters {
         std::function<VariantType()> getEdgeRank;
         std::function<VariantType(const std::string&)> getEdgeProp;
         std::function<VariantType(const std::string&)> getInputProp;
+        std::function<VariantType(const std::string&)> getVariableProp;
         std::function<VariantType(const std::string&, const std::string&)> getSrcTagProp;
         std::function<VariantType(const std::string&, const std::string&)> getDstTagProp;
     };
@@ -112,6 +143,9 @@ private:
     std::unordered_set<TagProp>                 srcTagProps_;
     std::unordered_set<TagProp>                 dstTagProps_;
     std::unordered_set<std::string>             edgeProps_;
+    std::unordered_set<VariableProp>            variableProps_;
+    std::unordered_set<std::string>             variables_;
+    std::unordered_set<std::string>             inputProps_;
 };
 
 
@@ -207,7 +241,6 @@ public:
 
     static void print(const VariantType &value);
 
-protected:
     enum Kind : uint8_t {
         kUnknown = 0,
 
@@ -237,6 +270,7 @@ protected:
         return kind_;
     }
 
+protected:
     static uint8_t kindToInt(Kind kind) {
         return static_cast<uint8_t>(kind);
     }
@@ -281,7 +315,7 @@ protected:
 };
 
 
-// $_.any_prop_name
+// $-.any_prop_name or $-
 class InputPropertyExpression final : public Expression {
 public:
     InputPropertyExpression() {
@@ -297,9 +331,7 @@ public:
 
     VariantType eval() const override;
 
-    Status MUST_USE_RESULT prepare() override {
-        return Status::OK();
-    }
+    Status MUST_USE_RESULT prepare() override;
 
     std::string* prop() const {
         return prop_.get();
@@ -401,6 +433,14 @@ public:
     VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
+
+    const std::string& alias() const {
+        return *alias_;
+    }
+
+    const std::string& prop() const {
+        return *prop_;
+    }
 
 private:
     void encode(Cord &cord) const override;
@@ -544,6 +584,14 @@ public:
 
     Status MUST_USE_RESULT prepare() override;
 
+    const std::string& tag() const {
+        return *tag_;
+    }
+
+    const std::string& prop() const {
+        return *prop_;
+    }
+
 private:
     void encode(Cord &cord) const override;
 
@@ -558,13 +606,6 @@ private:
 // literal constants: bool, integer, double, string
 class PrimaryExpression final : public Expression {
 public:
-    using Operand = boost::variant<bool, int64_t, double, std::string>;
-    enum Which {
-        kBool = 0,
-        kInt = 1,
-        kDouble = 2,
-        kString = 3,
-    };
     PrimaryExpression() {
         kind_ = kPrimary;
     }
@@ -601,7 +642,7 @@ private:
     const char* decode(const char *pos, const char *end) override;
 
 private:
-    Operand                                     operand_;
+    VariantType                                 operand_;
 };
 
 
@@ -689,6 +730,10 @@ public:
         operand_->setContext(context);
     }
 
+    const Expression* operand() const {
+        return operand_.get();
+    }
+
 private:
     void encode(Cord &cord) const override;
 
@@ -722,6 +767,10 @@ public:
     void setContext(ExpressionContext *context) override {
         Expression::setContext(context);
         operand_->setContext(context);
+    }
+
+    const Expression* operand() const {
+        return operand_.get();
     }
 
 private:
@@ -770,6 +819,14 @@ public:
         right_->setContext(context);
     }
 
+    const Expression* left() const {
+        return left_.get();
+    }
+
+    const Expression* right() const {
+        return right_.get();
+    }
+
 private:
     void encode(Cord &cord) const override;
 
@@ -811,6 +868,14 @@ public:
         Expression::setContext(context);
         left_->setContext(context);
         right_->setContext(context);
+    }
+
+    const Expression* left() const {
+        return left_.get();
+    }
+
+    const Expression* right() const {
+        return right_.get();
     }
 
 private:
@@ -855,6 +920,14 @@ public:
         Expression::setContext(context);
         left_->setContext(context);
         right_->setContext(context);
+    }
+
+    const Expression* left() const {
+        return left_.get();
+    }
+
+    const Expression* right() const {
+        return right_.get();
     }
 
 private:
