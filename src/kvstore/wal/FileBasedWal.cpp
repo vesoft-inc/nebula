@@ -47,7 +47,7 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
     if (!walFiles_.empty()) {
         firstLogId_ = walFiles_.begin()->second->firstId();
         auto& info = walFiles_.rbegin()->second;
-        if (info->lastId() <= 0 && walFiles_.rbegin()++ != walFiles_.rend()) {
+        if (info->lastId() <= 0 && ++walFiles_.rbegin() != walFiles_.rend()) {
             auto it = walFiles_.rbegin();
             it++;
             lastLogId_ = info->firstId() - 1;
@@ -341,6 +341,7 @@ TermID FileBasedWal::readTermId(const char* path, LogID logId) {
 
         if (id == logId) {
             // Found
+            close(fd);
             return term;
         }
 
@@ -452,6 +453,7 @@ bool FileBasedWal::appendLogInternal(LogID id,
     return true;
 }
 
+
 bool FileBasedWal::appendLog(LogID id,
                              TermID term,
                              ClusterID cluster,
@@ -462,6 +464,7 @@ bool FileBasedWal::appendLog(LogID id,
     }
     return true;
 }
+
 
 bool FileBasedWal::appendLogs(LogIterator& iter) {
     for (; iter.valid(); ++iter) {
@@ -564,8 +567,8 @@ bool FileBasedWal::rollbackToLog(LogID id) {
     return true;
 }
 
+
 bool FileBasedWal::reset() {
-    std::lock_guard<std::mutex> flushGuard(flushMutex_);
     closeCurrFile();
     {
         std::lock_guard<std::mutex> g(buffersMutex_);
@@ -585,6 +588,7 @@ bool FileBasedWal::reset() {
     lastLogId_ = firstLogId_ = 0;
     return true;
 }
+
 
 void FileBasedWal::cleanWAL() {
     std::lock_guard<std::mutex> g(walFilesMutex_);
@@ -607,6 +611,7 @@ void FileBasedWal::cleanWAL() {
     }
     firstLogId_ = walFiles_.begin()->second->firstId();
 }
+
 
 size_t FileBasedWal::accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> fn) const {
     std::lock_guard<std::mutex> g(walFilesMutex_);

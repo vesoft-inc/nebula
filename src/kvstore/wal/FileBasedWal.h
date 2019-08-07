@@ -95,6 +95,8 @@ public:
     // appending logs
     bool rollbackToLog(LogID id) override;
 
+    // Reset the WAL
+    // This method is *NOT* thread safe
     bool reset() override;
 
     void cleanWAL() override;
