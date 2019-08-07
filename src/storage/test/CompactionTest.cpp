@@ -79,6 +79,7 @@ TEST(NebulaCompactionFilterTest, InvalidSchemaAndMutliVersionsFilterTest) {
     std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory(
                                     new NebulaCompactionFilterFactory(schemaMan.get()));
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path(),
+                                                           6,
                                                            {0, 0},
                                                            nullptr,
                                                            false,

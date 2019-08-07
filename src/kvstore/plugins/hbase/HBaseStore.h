@@ -126,6 +126,8 @@ public:
                            const std::string& prefix,
                            KVCallback cb) override;
 
+    ResultCode ingest(GraphSpaceID spaceId) override;
+
     ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID,
                                                     PartitionID) override {
         return ResultCode::ERR_UNSUPPORTED;

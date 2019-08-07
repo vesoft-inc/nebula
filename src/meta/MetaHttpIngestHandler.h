@@ -4,13 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_METAHTTPDOWNLOADHANDLER_H_
-#define META_METAHTTPDOWNLOADHANDLER_H_
+#ifndef META_METAHTTPINGESTHANDLER_H
+#define META_METAHTTPINGESTHANDLER_H
 
 #include "base/Base.h"
 #include "webservice/Common.h"
 #include "kvstore/KVStore.h"
-#include "hdfs/HdfsHelper.h"
 #include "thread/GenericThreadPool.h"
 #include <proxygen/httpserver/RequestHandler.h>
 
@@ -19,12 +18,11 @@ namespace meta {
 
 using nebula::HttpCode;
 
-class MetaHttpDownloadHandler : public proxygen::RequestHandler {
+class MetaHttpIngestHandler : public proxygen::RequestHandler {
 public:
-    MetaHttpDownloadHandler() = default;
+    MetaHttpIngestHandler() = default;
 
     void init(nebula::kvstore::KVStore *kvstore,
-              nebula::hdfs::HdfsHelper *helper,
               nebula::thread::GenericThreadPool *pool);
 
     void onRequest(std::unique_ptr<proxygen::HTTPMessage> headers) noexcept override;
@@ -39,23 +37,17 @@ public:
 
     void onError(proxygen::ProxygenError error) noexcept override;
 
-private:
-    bool dispatchSSTFiles(const std::string& host,
-                          int32_t port,
-                          const std::string& path);
+    bool ingestSSTFiles(GraphSpaceID space);
 
 private:
     HttpCode err_{HttpCode::SUCCEEDED};
-    std::string hdfsHost_;
-    int32_t hdfsPort_;
-    std::string hdfsPath_;
-    GraphSpaceID spaceID_;
+    GraphSpaceID space_;
     nebula::kvstore::KVStore *kvstore_;
-    nebula::hdfs::HdfsHelper *helper_;
     nebula::thread::GenericThreadPool *pool_;
 };
 
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_METAHTTPDOWNLOADHANDLER_H_
+#endif  // META_METAHTTPINGESTHANDLER_H
+

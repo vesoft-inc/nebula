@@ -5,6 +5,7 @@
  */
 
 #include "base/Base.h"
+#include "webservice/Common.h"
 #include "webservice/NotFoundHandler.h"
 #include <proxygen/httpserver/ResponseBuilder.h>
 
@@ -27,7 +28,8 @@ void NotFoundHandler::onBody(std::unique_ptr<folly::IOBuf>) noexcept {
 
 void NotFoundHandler::onEOM() noexcept {
     ResponseBuilder(downstream_)
-        .status(404, "Not Found")
+        .status(WebServiceUtils::to(HttpStatusCode::NOT_FOUND),
+                WebServiceUtils::toString(HttpStatusCode::NOT_FOUND))
         .sendWithEOM();
     return;
 }

@@ -104,7 +104,7 @@ TEST(NebulaStoreTest, SimpleTest) {
                           folly::stringPrintf("val_%d", i));
     }
     folly::Baton<true, std::atomic> baton;
-    store->asyncMultiPut(1, 1, std::move(data), [&] (ResultCode code){
+    store->asyncMultiPut(1, 1, std::move(data), [&] (ResultCode code) {
         EXPECT_EQ(ResultCode::SUCCEEDED, code);
         baton.post();
     });
@@ -334,7 +334,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         auto index = findStoreIndex(leader);
         {
             folly::Baton<true, std::atomic> baton;
-            stores[index]->asyncMultiPut(0, part, std::move(data), [&baton](ResultCode code){
+            stores[index]->asyncMultiPut(0, part, std::move(data), [&baton](ResultCode code) {
                 EXPECT_EQ(ResultCode::SUCCEEDED, code);
                 baton.post();
             });

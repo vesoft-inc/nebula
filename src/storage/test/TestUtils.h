@@ -31,6 +31,7 @@ class TestUtils {
 public:
     static std::unique_ptr<kvstore::KVStore> initKV(
             const char* rootPath,
+            int32_t partitionNumber = 6,
             HostAddr localhost = {0, 0},
             meta::MetaClient* mClient = nullptr,
             bool useMetaServer = false,
@@ -52,7 +53,7 @@ public:
             // GraphSpaceID =>  {PartitionIDs}
             // 0 => {0, 1, 2, 3, 4, 5}
             auto& partsMap = memPartMan->partsMap();
-            for (auto partId = 0; partId < 6; partId++) {
+            for (auto partId = 0; partId < partitionNumber; partId++) {
                 partsMap[0][partId] = PartMeta();
             }
 
@@ -192,7 +193,7 @@ public:
                                                                   bool useMetaServer = false) {
         auto sc = std::make_unique<test::ServerContext>();
         // Always use the Meta Service in this case
-        sc->kvStore_ = TestUtils::initKV(dataPath, {ip, port}, mClient, true);
+        sc->kvStore_ = TestUtils::initKV(dataPath, 6, {ip, port}, mClient, true);
 
         if (!useMetaServer) {
             sc->schemaMan_ = TestUtils::mockSchemaMan(1);

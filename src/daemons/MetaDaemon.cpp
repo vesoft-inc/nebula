@@ -8,6 +8,7 @@
 #include "common/base/SignalHandler.h"
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 #include "meta/MetaServiceHandler.h"
+#include "meta/MetaHttpIngestHandler.h"
 #include "meta/MetaHttpStatusHandler.h"
 #include "meta/MetaHttpDownloadHandler.h"
 #include "webservice/WebService.h"
@@ -34,6 +35,7 @@ DEFINE_string(peers, "", "It is a list of IPs split by comma,"
                          "If empty, it means replica is 1");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
+DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DECLARE_string(part_man_type);
 
@@ -123,7 +125,7 @@ int main(int argc, char *argv[]) {
         LOG(ERROR) << "nebula store init failed";
         return EXIT_FAILURE;
     }
-  
+
     auto clusterMan
         = std::make_unique<nebula::meta::ClusterManager>(FLAGS_peers, "");
     if (!clusterMan->loadOrCreateCluId(kvstore.get())) {
@@ -133,13 +135,23 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
         std::make_unique<nebula::hdfs::HdfsCommandHelper>();
 
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool =
+        std::make_unique<nebula::thread::GenericThreadPool>();
+    pool->start(FLAGS_meta_http_thread_num, "http thread pool");
+    LOG(INFO) << "Http Thread Pool started";
+
     LOG(INFO) << "Starting Meta HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::meta::MetaHttpStatusHandler();
     });
     nebula::WebService::registerHandler("/download-dispatch", [&] {
         auto handler = new nebula::meta::MetaHttpDownloadHandler();
-        handler->init(kvstore.get(), helper.get());
+        handler->init(kvstore.get(), helper.get(), pool.get());
+        return handler;
+    });
+    nebula::WebService::registerHandler("/ingest-dispatch", [&] {
+        auto handler = new nebula::meta::MetaHttpIngestHandler();
+        handler->init(kvstore.get(), pool.get());
         return handler;
     });
     status = nebula::WebService::start();
