@@ -8,6 +8,7 @@
 #include "graph/test/TestEnv.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
+#include "meta/ClusterManager.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_string(meta_server_addrs);
@@ -28,10 +29,12 @@ TestEnv::~TestEnv() {
 
 void TestEnv::SetUp() {
     FLAGS_load_data_interval_secs = 1;
+    const nebula::ClusterID kClusterId = 10;
     // Create metaServer
     metaServer_ = nebula::meta::TestUtils::mockMetaServer(
                                                     network::NetworkUtils::getAvailablePort(),
-                                                    metaRootPath_.path());
+                                                    metaRootPath_.path(),
+                                                    kClusterId);
     FLAGS_meta_server_addrs = folly::stringPrintf("127.0.0.1:%d", metaServerPort());
 
     // Create storageServer
@@ -45,9 +48,13 @@ void TestEnv::SetUp() {
         LOG(ERROR) << "Bad local host addr, status:" << hostRet.status();
     }
     auto& localhost = hostRet.value();
+
+    auto clusterMan
+        = std::make_unique<nebula::meta::ClusterManager>("", "", kClusterId);
     mClient_ = std::make_unique<meta::MetaClient>(threadPool,
                                                   std::move(addrsRet.value()),
                                                   localhost,
+                                                  clusterMan.get(),
                                                   true);
     auto r = mClient_->addHosts({localhost}).get();
     ASSERT_TRUE(r.ok());

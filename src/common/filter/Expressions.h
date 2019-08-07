@@ -49,6 +49,15 @@ public:
         edgeProps_.emplace(prop);
     }
 
+    void addVariableProp(const std::string &var, const std::string &prop) {
+        variableProps_.emplace(var, prop);
+        variables_.emplace(var);
+    }
+
+    void addInputProp(const std::string &prop) {
+        inputProps_.emplace(prop);
+    }
+
     Status addAliasProp(const std::string &alias, const std::string &prop);
 
     // TODO(dutor) check duplications on aliases
@@ -84,6 +93,16 @@ public:
         return std::vector<std::string>(edgeProps_.begin(), edgeProps_.end());
     }
 
+    using VariableProp = std::pair<std::string, std::string>;
+
+    std::vector<VariableProp> variableProps() const {
+        return std::vector<VariableProp>(variableProps_.begin(), variableProps_.end());
+    }
+
+    const std::unordered_set<std::string>& variables() const {
+        return variables_;
+    }
+
     bool hasSrcTagProp() const {
         return !srcTagProps_.empty();
     }
@@ -96,10 +115,19 @@ public:
         return !edgeProps_.empty();
     }
 
+    bool hasVariableProp() const {
+        return !variableProps_.empty();
+    }
+
+    bool hasInputProp() const {
+        return !inputProps_.empty();
+    }
+
     struct Getters {
         std::function<OptVariantType()> getEdgeRank;
         std::function<OptVariantType(const std::string&)> getEdgeProp;
         std::function<OptVariantType(const std::string&)> getInputProp;
+        std::function<OptVariantType(const std::string&)> getVariableProp;
         std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
         std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
     };
@@ -116,6 +144,9 @@ private:
     std::unordered_set<TagProp>                 srcTagProps_;
     std::unordered_set<TagProp>                 dstTagProps_;
     std::unordered_set<std::string>             edgeProps_;
+    std::unordered_set<VariableProp>            variableProps_;
+    std::unordered_set<std::string>             variables_;
+    std::unordered_set<std::string>             inputProps_;
 };
 
 
@@ -301,9 +332,7 @@ public:
 
     OptVariantType eval() const override;
 
-    Status MUST_USE_RESULT prepare() override {
-        return Status::OK();
-    }
+    Status MUST_USE_RESULT prepare() override;
 
     std::string* prop() const {
         return prop_.get();
@@ -578,13 +607,6 @@ private:
 // literal constants: bool, integer, double, string
 class PrimaryExpression final : public Expression {
 public:
-    using Operand = boost::variant<bool, int64_t, double, std::string>;
-    enum Which {
-        kBool = 0,
-        kInt = 1,
-        kDouble = 2,
-        kString = 3,
-    };
     PrimaryExpression() {
         kind_ = kPrimary;
     }
@@ -621,7 +643,7 @@ private:
     const char* decode(const char *pos, const char *end) override;
 
 private:
-    Operand                                     operand_;
+    VariantType                                 operand_;
 };
 
 

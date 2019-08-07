@@ -95,6 +95,8 @@ public:
     // appending logs
     bool rollbackToLog(LogID id) override;
 
+    bool reset() override;
+
     // Scan [firstLogId, lastLogId]
     // This method IS thread-safe
     std::unique_ptr<LogIterator> iterator(LogID firstLogId,
@@ -173,7 +175,7 @@ private:
     const FileBasedWalPolicy policy_;
     const size_t maxFileSize_;
     const size_t maxBufferSize_;
-    const LogID firstLogId_{0};
+    LogID firstLogId_{0};
     LogID lastLogId_{0};
     TermID lastLogTerm_{0};
 

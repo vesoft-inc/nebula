@@ -110,6 +110,10 @@ Status GoExecutor::prepareStep() {
         return Status::Error("`UPTO' not supported yet");
     }
 
+    if (steps_ != 1) {
+        backTracker_ = std::make_unique<VertexBackTracker>();
+    }
+
     return Status::OK();
 }
 
@@ -121,12 +125,15 @@ Status GoExecutor::prepareFrom() {
         if (clause == nullptr) {
             LOG(FATAL) << "From clause shall never be null";
         }
+
         if (clause->isRef()) {
             auto *expr = clause->ref();
             if (expr->isInputExpression()) {
+                fromType_ = kPipe;
                 auto *iexpr = static_cast<InputPropertyExpression*>(expr);
                 colname_ = iexpr->prop();
             } else if (expr->isVariableExpression()) {
+                fromType_ = kVariable;
                 auto *vexpr = static_cast<VariablePropertyExpression*>(expr);
                 varname_ = vexpr->var();
                 colname_ = vexpr->prop();
@@ -155,6 +162,7 @@ Status GoExecutor::prepareFrom() {
             }
             starts_.push_back(Expression::asInt(v));
         }
+        fromType_ = kInstantExpr;
         if (!status.ok()) {
             break;
         }
@@ -221,9 +229,7 @@ Status GoExecutor::prepareNeededProps() {
                 break;
             }
         }
-        if (yields_.empty()) {
-            break;
-        }
+
         for (auto *col : yields_) {
             col->expr()->setContext(expCtx_.get());
             status = col->expr()->prepare();
@@ -234,10 +240,38 @@ Status GoExecutor::prepareNeededProps() {
         if (!status.ok()) {
             break;
         }
+
+        if (expCtx_->hasVariableProp()) {
+            if (fromType_ != kVariable) {
+                status = Status::Error("A variable must be referred in FROM "
+                                       "before used in WHERE or YIELD");
+                break;
+            }
+            auto &variables = expCtx_->variables();
+            if (variables.size() > 1) {
+                status = Status::Error("Only one variable allowed to use");
+                break;
+            }
+            auto &var = *variables.begin();
+            if (var != *varname_) {
+                status = Status::Error("Variable name not match: `%s' vs. `%s'",
+                                       var.c_str(), varname_->c_str());
+                break;
+            }
+        }
+
+        if (expCtx_->hasInputProp()) {
+            if (fromType_ != kPipe) {
+                status = Status::Error("`$-' must be referred in FROM "
+                                       "before used in WHERE or YIELD");
+                break;
+            }
+        }
     } while (false);
 
     return status;
 }
+
 
 Status GoExecutor::prepareDistinct() {
     auto *clause = sentence_->yieldClause();
@@ -249,6 +283,7 @@ Status GoExecutor::prepareDistinct() {
     }
     return Status::OK();
 }
+
 
 Status GoExecutor::setupStarts() {
     // Literal vertex ids
@@ -276,6 +311,7 @@ Status GoExecutor::setupStarts() {
         return std::move(result).status();
     }
     starts_ = std::move(result).value();
+    index_ = inputs->buildIndex(*colname_);
     return Status::OK();
 }
 
@@ -345,12 +381,12 @@ void GoExecutor::onStepOutResponse(RpcResponse &&rpcResp) {
         finishExecution(std::move(rpcResp));
         return;
     } else {
-        curStep_++;
         starts_ = getDstIdsFromResp(rpcResp);
         if (starts_.empty()) {
             onEmptyInputs();
             return;
         }
+        curStep_++;
         stepOut();
     }
 }
@@ -376,6 +412,9 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
                 VertexID dst;
                 auto rc = iter->getVid("_dst", dst);
                 CHECK(rc == ResultType::SUCCEEDED);
+                if (!isFinalStep() && backTracker_ != nullptr) {
+                    backTracker_->add(vdata.get_vertex_id(), dst);
+                }
                 set.emplace(dst);
                 ++iter;
             }
@@ -690,6 +729,12 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     auto index = tagIter->second;
                     return vertexHolder_->get(boost::get<int64_t>(dst), index);
                 };
+                getters.getVariableProp = [&] (const std::string &prop) {
+                    return getPropFromInterim(vdata.get_vertex_id(), prop);
+                };
+                getters.getInputProp = [&] (const std::string &prop) {
+                    return getPropFromInterim(vdata.get_vertex_id(), prop);
+                };
                 // Evaluate filter
                 if (filter_ != nullptr) {
                     auto value = filter_->eval();
@@ -761,6 +806,16 @@ void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
             data_[vdata.vertex_id] = vdata.vertex_data;
         }
     }
+}
+
+
+VariantType GoExecutor::getPropFromInterim(VertexID id, const std::string &prop) const {
+    auto rootId = id;
+    if (backTracker_ != nullptr) {
+        DCHECK_NE(steps_ , 1u);
+        rootId = backTracker_->get(id);
+    }
+    return index_->getColumnWithVID(rootId, prop);
 }
 
 }   // namespace graph
