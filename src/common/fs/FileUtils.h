@@ -106,6 +106,8 @@ public:
     // It will make the parent directories as needed
     // (much like commandline "mkdir -p")
     static bool makeDir(const std::string& dir);
+    // Check the path is exist
+    static bool exist(const std::string& path);
 
     /**
      * List all entities in the given directory, whose type matches

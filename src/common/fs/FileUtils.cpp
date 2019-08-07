@@ -347,6 +347,12 @@ bool FileUtils::makeDir(const std::string& dir) {
     return true;
 }
 
+bool FileUtils::exist(const std::string& path) {
+    if (path.empty()) {
+        return false;
+    }
+    return access(path.c_str(), F_OK) == 0;
+}
 
 std::vector<std::string> FileUtils::listAllTypedEntitiesInDir(
         const char* dirpath,
