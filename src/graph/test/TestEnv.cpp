@@ -8,7 +8,6 @@
 #include "graph/test/TestEnv.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
-#include "meta/ClusterManager.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_string(meta_server_addrs);
@@ -49,19 +48,14 @@ void TestEnv::SetUp() {
     }
     auto& localhost = hostRet.value();
 
-    auto clusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", "", kClusterId);
     mClient_ = std::make_unique<meta::MetaClient>(threadPool,
                                                   std::move(addrsRet.value()),
                                                   localhost,
-                                                  clusterMan.get(),
+                                                  kClusterId,
                                                   true);
-    auto r = mClient_->addHosts({localhost}).get();
-    ASSERT_TRUE(r.ok());
     mClient_->waitForMetadReady();
-    r = mClient_->removeHosts({localhost}).get();
-    ASSERT_TRUE(r.ok());
     gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(mClient_.get());
+
     IPv4 localIp;
     nebula::network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     storageServer_ = nebula::storage::TestUtils::mockStorageServer(
