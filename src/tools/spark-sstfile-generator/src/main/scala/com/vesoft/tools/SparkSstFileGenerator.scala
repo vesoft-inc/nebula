@@ -341,7 +341,6 @@ object SparkSstFileGenerator {
           s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${tag.tableName} WHERE ${whereClause} ${limit}"
         val tagDF = sqlContext.sql(sql)
         //RDD[(businessKey->values)]
-
         val tagKeyAndValues = tagDF
           .map(row => {
             (row.getAs[String](tag.primaryKey) + "_" + tag.name, //businessId_tagName will be unique, and used as key before HASH
@@ -349,7 +348,6 @@ object SparkSstFileGenerator {
                .filter(!_.columnName.equalsIgnoreCase(tag.primaryKey))
                .map(valueExtractor(row, _, charset)))
           })
-          .repartition(repartitionNumber.getOrElse(tagDF.rdd.partitions.length))
           .persist(StorageLevel.DISK_ONLY)
 
         val tagKeyAndValuesPersisted = tagKeyAndValues
@@ -419,7 +417,7 @@ object SparkSstFileGenerator {
         //TODO: join FROM_COLUMN and join TO_COLUMN from the table where this columns referencing, to make sure that the claimed id really exists in the reference table.BUT with HUGE Perf penalty
         val edgeDf = sqlContext.sql(
           s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${edge.tableName} WHERE ${whereClause} ${limit}")
-        assert(edgeDf.count() > 0)
+        //assert(edgeDf.count() > 0)
         //RDD[Tuple3(from_vertex_businessKey,end_vertex_businessKey,values)]
         val edgeKeyAndValues = edgeDf
           .map(row => {
@@ -431,7 +429,6 @@ object SparkSstFileGenerator {
                    .equalsIgnoreCase(edge.toForeignKeyColumn)))
                .map(valueExtractor(row, _, charset)))
           })
-          .repartition(repartitionNumber.getOrElse(edgeDf.rdd.partitions.length))
           .persist(StorageLevel.DISK_ONLY)
 
         val edgeKeyAndValuesPersisted = edgeKeyAndValues
@@ -441,7 +438,6 @@ object SparkSstFileGenerator {
               assert(id > 0)
               val graphPartitionId: Int = (id % partitionNumber).toInt
 
-              val srcId = idGeneratorFunction.apply(srcIDString)
               val dstId = idGeneratorFunction.apply(dstIdString)
 
               // TODO: support edge ranking,like create_time desc
@@ -454,7 +450,7 @@ object SparkSstFileGenerator {
                                                   1,
                                                   new BytesWritable(
                                                     NativeClient.createEdgeKey(graphPartitionId,
-                                                                               srcId.toLong,
+                                                                               id.toLong,
                                                                                1,
                                                                                -1L,
                                                                                dstId.toLong,
