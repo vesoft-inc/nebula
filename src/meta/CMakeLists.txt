@@ -55,6 +55,7 @@ nebula_add_library(
 
 nebula_add_library(
     meta_client OBJECT
+    ClusterManager.cpp
     client/MetaClient.cpp
 )
 

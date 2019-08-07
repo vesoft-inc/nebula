@@ -8,13 +8,15 @@
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/RaftPart.h"
 #include "kvstore/wal/FileBasedWal.h"
-#include <folly/io/async/EventBase.h>
 #include "network/NetworkUtils.h"
+#include <folly/io/async/EventBase.h>
+#include <folly/executors/IOThreadPoolExecutor.h>
 
 DEFINE_uint32(max_appendlog_batch_size, 128,
               "The max number of logs in each appendLog request batch");
 DEFINE_uint32(max_outstanding_requests, 1024,
               "The max number of outstanding appendLog requests");
+DEFINE_int32(raft_rpc_timeout_ms, 500, "rpc timeout for raft client");
 
 
 namespace nebula {
@@ -90,7 +92,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
         LogID prevLogId) {
     VLOG(3) << idStr_ << "Entering Host::appendLogs()";
 
-    VLOG(3) << idStr_
+    VLOG(2) << idStr_
             << "Append logs to the host [term = " << term
             << ", logId = " << logId
             << ", committedLogId = " << committedLogId
@@ -109,15 +111,20 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
             // This is a re-send or a heartbeat. If there is an
             // ongoing request, we will just return SUCCEEDED
             if (requestOnGoing_) {
-                VLOG(2) << idStr_ << "Another request is onging,"
-                                     "ignore the re-send request";
+                LOG(INFO) << idStr_ << "Another request is onging,"
+                                       "ignore the re-send request";
                 cpp2::AppendLogResponse r;
                 r.set_error_code(cpp2::ErrorCode::SUCCEEDED);
                 return r;
             }
         } else {
             // Otherwise, logId has to be greater
-            CHECK_GT(logId, logIdToSend_);
+            if (logId < logIdToSend_) {
+                LOG(INFO) << idStr_ << "The log has been sended";
+                cpp2::AppendLogResponse r;
+                r.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+                return r;
+            }
         }
 
         if (requestOnGoing_ && res == cpp2::ErrorCode::SUCCEEDED) {
@@ -129,8 +136,8 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(
                                               prevLogId);
                 return cachingPromise_.getFuture();
             } else {
-                VLOG(2) << idStr_
-                        << "Too many requests are waiting, return error";
+                LOG(INFO) << idStr_
+                          << "Too many requests are waiting, return error";
                 cpp2::AppendLogResponse r;
                 r.set_error_code(cpp2::ErrorCode::E_TOO_MANY_REQUESTS);
                 return r;
@@ -180,10 +187,9 @@ void Host::setResponse(const cpp2::AppendLogResponse& r) {
     requestOnGoing_ = false;
 }
 
-
 void Host::appendLogsInternal(folly::EventBase* eb,
                               std::shared_ptr<cpp2::AppendLogRequest> req) {
-    sendAppendLogRequest(eb, std::move(req)).then(
+    sendAppendLogRequest(eb, std::move(req)).via(eb).then(
             [eb, self = shared_from_this()] (folly::Try<cpp2::AppendLogResponse>&& t) {
         VLOG(3) << self->idStr_ << "appendLogs() call got response";
         if (t.hasException()) {
@@ -239,12 +245,14 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                                 VLOG(2) << self->idStr_ << "No request any more!";
                                 self->requestOnGoing_ = false;
                             } else {
-                                VLOG(2) << self->idStr_
-                                        << "Sending the pending request in the queue";
                                 auto& tup = self->pendingReq_;
                                 self->logTermToSend_ = std::get<0>(tup);
                                 self->logIdToSend_ = std::get<1>(tup);
                                 self->committedLogId_ = std::get<2>(tup);
+                                VLOG(2) << self->idStr_
+                                        << "Sending the pending request in the queue"
+                                        << ", from " << self->lastLogIdSent_ + 1
+                                        << " to " << self->logIdToSend_;
                                 newReq = self->prepareAppendLogRequest();
                                 self->promise_ = std::move(self->cachingPromise_);
                                 self->cachingPromise_
@@ -293,7 +301,8 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                 return r;
             }
             default: {
-                LOG(ERROR) << self->idStr_
+                PLOG_EVERY_N(ERROR, 100)
+                           << self->idStr_
                            << "Failed to append logs to the host (Err: "
                            << static_cast<int32_t>(resp.get_error_code())
                            << ")";
@@ -316,7 +325,7 @@ Host::prepareAppendLogRequest() const {
     req->set_space(part_->spaceId());
     req->set_part(part_->partitionId());
     req->set_current_term(logTermToSend_);
-    // req->set_last_log_id(logIdToSend_);
+    req->set_last_log_id(logIdToSend_);
     req->set_leader_ip(part_->address().first);
     req->set_leader_port(part_->address().second);
     req->set_committed_log_id(committedLogId_);
@@ -324,7 +333,7 @@ Host::prepareAppendLogRequest() const {
     req->set_last_log_id_sent(lastLogIdSent_);
 
     VLOG(2) << idStr_ << "Prepare AppendLogs request from Log "
-            << lastLogIdSent_ + 1 << " to " << logIdToSend_;
+                      << lastLogIdSent_ + 1 << " to " << logIdToSend_;
     auto it = part_->wal()->iterator(lastLogIdSent_ + 1, logIdToSend_);
     if (it->valid()) {
         VLOG(2) << idStr_ << "Prepare the list of log entries to send";
@@ -345,7 +354,7 @@ Host::prepareAppendLogRequest() const {
         }
         req->set_log_str_list(std::move(logs));
     } else {
-        req->set_log_term(0);
+        LOG(FATAL) << idStr_ << "We have not support snapshot yet";
     }
 
     return req;
@@ -361,8 +370,8 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
         std::lock_guard<std::mutex> g(lock_);
         auto res = checkStatus();
         if (res != cpp2::ErrorCode::SUCCEEDED) {
-            VLOG(2) << idStr_
-                    << "The Host is not in a proper status, do not send";
+            LOG(WARNING) << idStr_
+                         << "The Host is not in a proper status, do not send";
             cpp2::AppendLogResponse resp;
             resp.set_error_code(res);
             return resp;
@@ -377,7 +386,7 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
               << ", last_log_term_sent" << req->get_last_log_term_sent()
               << ", last_log_id_sent " << req->get_last_log_id_sent();
     // Get client connection
-    auto client = tcManager().client(addr_, eb);
+    auto client = tcManager().client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
     return client->future_appendLog(*req);
 }
 

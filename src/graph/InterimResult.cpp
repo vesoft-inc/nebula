@@ -98,5 +98,98 @@ std::vector<cpp2::RowValue> InterimResult::getRows() const {
     return rows;
 }
 
+
+std::unique_ptr<InterimResult::InterimResultIndex>
+InterimResult::buildIndex(const std::string &vidColumn) const {
+    using nebula::cpp2::SupportedType;
+    std::unique_ptr<InterimResultIndex> index;
+
+    DCHECK(rsReader_ != nullptr);
+    auto schema = rsReader_->schema();
+    auto columnCnt = schema->getNumFields();
+    uint32_t vidIndex = 0u;
+
+    index = std::make_unique<InterimResultIndex>();
+    for (auto i = 0u; i < columnCnt; i++) {
+        auto name = schema->getFieldName(i);
+        if (vidColumn == name) {
+            if (schema->getFieldType(i).type != SupportedType::VID) {
+                return nullptr;
+            }
+            vidIndex = i;
+        }
+        index->columnToIndex_[name] = i;
+    }
+
+    auto rowIter = rsReader_->begin();
+    auto rowIndex = 0u;
+    while (rowIter) {
+        Row row;
+        row.reserve(columnCnt);
+        for (auto i = 0u; i < columnCnt; i++) {
+            auto type = schema->getFieldType(i).type;
+            switch (type) {
+                case SupportedType::VID: {
+                    int64_t v;
+                    auto rc = rowIter->getVid(i, v);
+                    CHECK(rc == ResultType::SUCCEEDED);
+                    if (i == vidIndex) {
+                        index->vidToRowIndex_[v] = rowIndex++;
+                    }
+                    row.emplace_back(v);
+                    break;
+                }
+                case SupportedType::DOUBLE: {
+                    double v;
+                    auto rc = rowIter->getDouble(i, v);
+                    CHECK(rc == ResultType::SUCCEEDED);
+                    row.emplace_back(v);
+                    break;
+                }
+                case SupportedType::BOOL: {
+                    bool v;
+                    auto rc = rowIter->getBool(i, v);
+                    CHECK(rc == ResultType::SUCCEEDED);
+                    row.emplace_back(v);
+                    break;
+                }
+                case SupportedType::STRING: {
+                    folly::StringPiece piece;
+                    auto rc = rowIter->getString(i, piece);
+                    CHECK(rc == ResultType::SUCCEEDED);
+                    row.emplace_back(piece.toString());
+                    break;
+                }
+                default:
+                    LOG(FATAL) << "Unknown Type: " << static_cast<int32_t>(type);
+            }
+        }
+        index->rows_.emplace_back(std::move(row));
+        ++rowIter;
+    }
+
+    return index;
+}
+
+
+VariantType InterimResult::InterimResultIndex::getColumnWithVID(VertexID id,
+                                                                const std::string &col) const {
+    uint32_t rowIndex = 0;
+    {
+        auto iter = vidToRowIndex_.find(id);
+        DCHECK(iter != vidToRowIndex_.end());
+        rowIndex = iter->second;
+    }
+    uint32_t columnIndex = 0;
+    {
+        auto iter = columnToIndex_.find(col);
+        // TODO(dutor) should report error
+        DCHECK(iter != columnToIndex_.end());
+        columnIndex = iter->second;
+    }
+    return rows_[rowIndex][columnIndex];
+}
+
+
 }   // namespace graph
 }   // namespace nebula
