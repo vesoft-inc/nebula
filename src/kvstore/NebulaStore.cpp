@@ -39,8 +39,8 @@ namespace kvstore {
 NebulaStore::~NebulaStore() {
     LOG(INFO) << "Cut off the relationship with meta client";
     options_.partMan_.reset();
-    workers_->stop();
-    workers_->wait();
+    bgWorkers_->stop();
+    bgWorkers_->wait();
     LOG(INFO) << "Stop the raft service...";
     raftService_->stop();
     raftService_->waitUntilStop();
@@ -50,9 +50,9 @@ NebulaStore::~NebulaStore() {
 
 bool NebulaStore::init() {
     LOG(INFO) << "Start the raft service...";
-    workers_ = std::make_shared<thread::GenericThreadPool>();
-    workers_->start(FLAGS_num_workers);
-    raftService_ = raftex::RaftexService::createService(ioPool_, raftAddr_.second);
+    bgWorkers_ = std::make_shared<thread::GenericThreadPool>();
+    bgWorkers_->start(FLAGS_num_workers);
+    raftService_ = raftex::RaftexService::createService(ioPool_, handlersPool_, raftAddr_.second);
     if (!raftService_->start()) {
         LOG(ERROR) << "Start the raft service failed";
         return false;
@@ -221,8 +221,9 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                                partId),
                                        engine,
                                        ioPool_,
-                                       workers_,
-                                       flusher_.get());
+                                       bgWorkers_,
+                                       flusher_.get(),
+                                       handlersPool_);
     auto partMeta = options_.partMan_->partMeta(spaceId, partId);
     std::vector<HostAddr> peers;
     for (auto& h : partMeta.peers_) {
