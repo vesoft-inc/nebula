@@ -35,6 +35,7 @@ add_library(
     YieldExecutor.cpp
     DownloadExecutor.cpp
     OrderByExecutor.cpp
+    IngestExecutor.cpp
     ConfigExecutor.cpp
     SchemaHelper.cpp
 )

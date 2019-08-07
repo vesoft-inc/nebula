@@ -253,6 +253,7 @@ public:
     InsertEdgeSentence() {
         kind_ = Kind::kInsertEdge;
     }
+
     void setOverwrite(bool overwritable) {
         overwritable_ = overwritable;
     }
@@ -473,6 +474,7 @@ private:
     std::unique_ptr<WhereClause>                whereClause_;
 };
 
+
 class DownloadSentence final : public Sentence {
 public:
     DownloadSentence() {
@@ -501,14 +503,6 @@ public:
 
     void setPath(std::string *path) {
         path_.reset(path);
-    }
-
-    const std::string* localPath() const {
-        return localPath_.get();
-    }
-
-    void setLocalPath(std::string *localPath) {
-        localPath_.reset(localPath);
     }
 
     void setUrl(std::string *url) {
@@ -548,8 +542,18 @@ private:
     std::unique_ptr<std::string>                host_;
     int32_t                                     port_;
     std::unique_ptr<std::string>                path_;
-    std::unique_ptr<std::string>                localPath_;
 };
+
+
+class IngestSentence final : public Sentence {
+public:
+    IngestSentence() {
+        kind_ = Kind::kIngest;
+    }
+
+    std::string toString() const override;
+};
+
 
 }  // namespace nebula
 

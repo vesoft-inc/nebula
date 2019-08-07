@@ -76,7 +76,11 @@ nebula_add_test(
 nebula_add_test(
     NAME query_stats_test
     SOURCES QueryStatsTest.cpp
-    OBJECTS $<TARGET_OBJECTS:adHocSchema_obj> ${storage_test_deps}
+    OBJECTS
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:process_obj>
+        ${storage_test_deps}
     LIBRARIES ${ROCKSDB_LIBRARIES} ${THRIFT_LIBRARIES} wangle gtest
 )
 
@@ -106,6 +110,7 @@ nebula_add_test(
         StorageHttpStatusHandlerTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:storage_http_handler>
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>
@@ -128,6 +133,7 @@ nebula_add_test(
         StorageHttpAdminHandlerTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:storage_http_handler>
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>
@@ -150,6 +156,30 @@ nebula_add_test(
         StorageHttpDownloadHandlerTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:storage_http_handler>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:meta_service_handler>
+        ${storage_test_deps}
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        storage_http_ingest_test
+    SOURCES
+        StorageHttpIngestHandlerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_http_handler>
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>

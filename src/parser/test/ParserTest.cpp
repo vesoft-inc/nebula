@@ -936,10 +936,16 @@ TEST(Parser, Annotation) {
     }
 }
 
-TEST(Parser, DownloadLoad) {
+TEST(Parser, DownloadAndIngest) {
     {
         GQLParser parser;
-        std::string query = "DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\" TO \"/tmp\"";
+        std::string query = "DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INGEST";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
