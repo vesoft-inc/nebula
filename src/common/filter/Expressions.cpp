@@ -22,34 +22,6 @@
 namespace nebula {
 
 
-Status ExpressionContext::addAliasProp(const std::string &alias, const std::string &prop) {
-    auto kind = aliasKind(alias);
-    if (kind == AliasKind::Unknown) {
-        return Status::Error("Alias `%s' not defined", alias.c_str());
-    }
-    if (kind == AliasKind::Edge) {
-        addEdgeProp(prop);
-        return Status::OK();
-    }
-    return Status::Error("Illegal alias `%s'", alias.c_str());
-}
-
-
-std::string aliasKindToString(AliasKind kind) {
-    switch (kind) {
-        case AliasKind::Unknown:
-            return "Unknown";
-        case AliasKind::SourceNode:
-            return "SourceNode";
-        case AliasKind::Edge:
-            return "Edge";
-        default:
-            FLOG_FATAL("Illegal AliasKind");
-    }
-    return "Unknown";
-}
-
-
 void Expression::print(const VariantType &value) {
     switch (value.which()) {
         case 0:
@@ -94,8 +66,8 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
             return std::make_unique<EdgeSrcIdExpression>();
         case kEdgeType:
             return std::make_unique<EdgeTypeExpression>();
-        case kEdgeProp:
-            return std::make_unique<EdgePropertyExpression>();
+        case kAliasProp:
+            return std::make_unique<AliasPropertyExpression>();
         case kVariableProp:
             return std::make_unique<VariablePropertyExpression>();
         case kDestProp:
@@ -134,13 +106,56 @@ Expression::decode(folly::StringPiece buffer) noexcept {
     }
 }
 
-
-std::string InputPropertyExpression::toString() const {
+std::string AliasPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += "$-.";
+    buf += *ref_;
+    buf += *alias_;
+    if (*alias_ != "") {
+        buf += ".";
+    }
     buf += *prop_;
     return buf;
+}
+
+VariantType AliasPropertyExpression::eval() const {
+    return context_->getters().getAliasProp(*alias_, *prop_);
+}
+
+Status AliasPropertyExpression::prepare() {
+    context_->addAliasProp(*alias_, *prop_);
+    return Status::OK();
+}
+
+void AliasPropertyExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(alias_->size());
+    cord << *alias_;
+    cord << static_cast<uint16_t>(prop_->size());
+    cord << *prop_;
+}
+
+const char* AliasPropertyExpression::decode(const char *pos, const char *end) {
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        alias_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        prop_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+
+    return pos;
 }
 
 
@@ -175,138 +190,18 @@ const char* InputPropertyExpression::decode(const char *pos, const char *end) {
 }
 
 
-std::string DestPropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$$.";
-    buf += *tag_;
-    buf += ".";
-    buf += *prop_;
-    return buf;
-}
-
-
 VariantType DestPropertyExpression::eval() const {
-    return context_->getters().getDstTagProp(*tag_, *prop_);
+    return context_->getters().getDstTagProp(*alias_, *prop_);
 }
 
 
 Status DestPropertyExpression::prepare() {
-    context_->addDstTagProp(*tag_, *prop_);
+    context_->addDstTagProp(*alias_, *prop_);
     return Status::OK();
 }
 
 
 void DestPropertyExpression::encode(Cord &cord) const {
-    cord << kindToInt(kind());
-    cord << static_cast<uint16_t>(tag_->size());
-    cord << *tag_;
-    cord << static_cast<uint16_t>(prop_->size());
-    cord << *prop_;
-}
-
-
-const char* DestPropertyExpression::decode(const char *pos, const char *end) {
-    {
-        THROW_IF_NO_SPACE(pos, end, 2UL);
-        auto size = *reinterpret_cast<const uint16_t*>(pos);
-        pos += 2;
-
-        THROW_IF_NO_SPACE(pos, end, size);
-        tag_ = std::make_unique<std::string>(pos, size);
-        pos += size;
-    }
-    {
-        THROW_IF_NO_SPACE(pos, end, 2UL);
-        auto size = *reinterpret_cast<const uint16_t*>(pos);
-        pos += 2;
-
-        THROW_IF_NO_SPACE(pos, end, size);
-        prop_ = std::make_unique<std::string>(pos, size);
-        pos += size;
-    }
-
-    return pos;
-}
-
-
-std::string VariablePropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$";
-    buf += *var_;
-    buf += ".";
-    buf += *prop_;
-    return buf;
-}
-
-
-VariantType VariablePropertyExpression::eval() const {
-    return context_->getters().getVariableProp(*prop_);
-}
-
-
-Status VariablePropertyExpression::prepare() {
-    context_->addVariableProp(*var_, *prop_);
-    return Status::OK();
-}
-
-
-void VariablePropertyExpression::encode(Cord &cord) const {
-    cord << kindToInt(kind());
-    cord << static_cast<uint16_t>(var_->size());
-    cord << *var_;
-    cord << static_cast<uint16_t>(prop_->size());
-    cord << *prop_;
-}
-
-
-const char* VariablePropertyExpression::decode(const char *pos, const char *end) {
-    {
-        THROW_IF_NO_SPACE(pos, end, 2UL);
-        auto size = *reinterpret_cast<const uint16_t*>(pos);
-        pos += 2;
-
-        THROW_IF_NO_SPACE(pos, end, size);
-        var_ = std::make_unique<std::string>(pos, size);
-        pos += size;
-    }
-    {
-        THROW_IF_NO_SPACE(pos, end, 2UL);
-        auto size = *reinterpret_cast<const uint16_t*>(pos);
-        pos += 2;
-
-        THROW_IF_NO_SPACE(pos, end, size);
-        prop_ = std::make_unique<std::string>(pos, size);
-        pos += size;
-    }
-
-    return pos;
-}
-
-
-std::string EdgePropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += ".";
-    buf += *prop_;
-    return buf;
-}
-
-
-VariantType EdgePropertyExpression::eval() const {
-    return context_->getters().getEdgeProp(*prop_);
-}
-
-
-Status EdgePropertyExpression::prepare() {
-    return context_->addAliasProp(*alias_, *prop_);
-}
-
-
-void EdgePropertyExpression::encode(Cord &cord) const {
-    // TODO(dutor) We better replace `alias_' with integral edge type
     cord << kindToInt(kind());
     cord << static_cast<uint16_t>(alias_->size());
     cord << *alias_;
@@ -315,7 +210,7 @@ void EdgePropertyExpression::encode(Cord &cord) const {
 }
 
 
-const char* EdgePropertyExpression::decode(const char *pos, const char *end) {
+const char* DestPropertyExpression::decode(const char *pos, const char *end) {
     {
         THROW_IF_NO_SPACE(pos, end, 2UL);
         auto size = *reinterpret_cast<const uint16_t*>(pos);
@@ -339,12 +234,47 @@ const char* EdgePropertyExpression::decode(const char *pos, const char *end) {
 }
 
 
-std::string EdgeTypeExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "._type";
-    return buf;
+VariantType VariablePropertyExpression::eval() const {
+    return context_->getters().getVariableProp(*prop_);
+}
+
+
+Status VariablePropertyExpression::prepare() {
+    context_->addVariableProp(*alias_, *prop_);
+    return Status::OK();
+}
+
+
+void VariablePropertyExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(alias_->size());
+    cord << *alias_;
+    cord << static_cast<uint16_t>(prop_->size());
+    cord << *prop_;
+}
+
+
+const char* VariablePropertyExpression::decode(const char *pos, const char *end) {
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        alias_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        prop_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+
+    return pos;
 }
 
 
@@ -354,7 +284,8 @@ VariantType EdgeTypeExpression::eval() const {
 
 
 Status EdgeTypeExpression::prepare() {
-    return context_->addAliasProp(*alias_, "_type");
+    context_->addAliasProp(*alias_, *prop_);
+    return Status::OK();
 }
 
 
@@ -378,22 +309,14 @@ const char* EdgeTypeExpression::decode(const char *pos, const char *end) {
 }
 
 
-std::string EdgeSrcIdExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "._src";
-    return buf;
-}
-
-
 VariantType EdgeSrcIdExpression::eval() const {
-    return context_->getters().getEdgeProp("_src");
+    return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
 
 Status EdgeSrcIdExpression::prepare() {
-    return context_->addAliasProp(*alias_, "_src");
+    context_->addAliasProp(*alias_, *prop_);
+    return Status::OK();
 }
 
 
@@ -417,22 +340,14 @@ const char* EdgeSrcIdExpression::decode(const char *pos, const char *end) {
 }
 
 
-std::string EdgeDstIdExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "._dst";
-    return buf;
-}
-
-
 VariantType EdgeDstIdExpression::eval() const {
-    return context_->getters().getEdgeProp("_dst");
+    return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
 
 Status EdgeDstIdExpression::prepare() {
-    return context_->addAliasProp(*alias_, "_dst");
+    context_->addAliasProp(*alias_, *prop_);
+    return Status::OK();
 }
 
 
@@ -456,22 +371,14 @@ const char* EdgeDstIdExpression::decode(const char *pos, const char *end) {
 }
 
 
-std::string EdgeRankExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "._rank";
-    return buf;
-}
-
-
 VariantType EdgeRankExpression::eval() const {
-    return context_->getters().getEdgeProp("_rank");
+    return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
 
 Status EdgeRankExpression::prepare() {
-    return context_->addAliasProp(*alias_, "_rank");
+    context_->addAliasProp(*alias_, *prop_);
+    return Status::OK();
 }
 
 
@@ -495,32 +402,21 @@ const char* EdgeRankExpression::decode(const char *pos, const char *end) {
 }
 
 
-std::string SourcePropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$^.";
-    buf += *tag_;
-    buf += ".";
-    buf += *prop_;
-    return buf;
-}
-
-
 VariantType SourcePropertyExpression::eval() const {
-    return context_->getters().getSrcTagProp(*tag_, *prop_);
+    return context_->getters().getSrcTagProp(*alias_, *prop_);
 }
 
 
 Status SourcePropertyExpression::prepare() {
-    context_->addSrcTagProp(*tag_, *prop_);
+    context_->addSrcTagProp(*alias_, *prop_);
     return Status::OK();
 }
 
 
 void SourcePropertyExpression::encode(Cord &cord) const {
     cord << kindToInt(kind());
-    cord << static_cast<uint16_t>(tag_->size());
-    cord << *tag_;
+    cord << static_cast<uint16_t>(alias_->size());
+    cord << *alias_;
     cord << static_cast<uint16_t>(prop_->size());
     cord << *prop_;
 }
@@ -533,7 +429,7 @@ const char* SourcePropertyExpression::decode(const char *pos, const char *end) {
         pos += 2;
 
         THROW_IF_NO_SPACE(pos, end, size);
-        tag_ = std::make_unique<std::string>(pos, size);
+        alias_ = std::make_unique<std::string>(pos, size);
         pos += size;
     }
     {
