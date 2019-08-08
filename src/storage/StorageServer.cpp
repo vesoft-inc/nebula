@@ -157,6 +157,7 @@ void StorageServer::stop() {
         LOG(INFO) << "All services has been stopped";
         return;
     }
+    stopped_ = true;
     if (webStatus_ == Status::RUNNING) {
         nebula::WebService::stop();
         webStatus_ = Status::STOPPED;
@@ -170,7 +171,6 @@ void StorageServer::stop() {
     if (tfServer_) {
         tfServer_->stop();
     }
-    stopped_ = true;
 }
 
 }  // namespace storage
