@@ -46,6 +46,7 @@ nebula_add_executable(
     SOURCES
         StorageDaemon.cpp
     OBJECTS
+        $<TARGET_OBJECTS:storage_server>
         $<TARGET_OBJECTS:storage_service_handler>
         $<TARGET_OBJECTS:storage_http_handler>
         $<TARGET_OBJECTS:storage_thrift_obj>

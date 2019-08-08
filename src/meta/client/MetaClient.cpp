@@ -35,13 +35,13 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
         thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>
     >();
     updateHost();
+    bgThread_ = std::make_unique<thread::GenericWorker>();
     LOG(INFO) << "Create meta client to " << active_;
 }
 
 
 MetaClient::~MetaClient() {
-    bgThread_.stop();
-    bgThread_.wait();
+    stop();
     VLOG(3) << "~MetaClient";
 }
 
@@ -69,19 +69,26 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
         ::sleep(retryIntervalSecs);
     }  // end while
 
-    CHECK(bgThread_.start());
+    CHECK(bgThread_->start());
     if (sendHeartBeat_) {
         LOG(INFO) << "Register time task for heartbeat!";
         size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
-        bgThread_.addTimerTask(delayMS,
-                               FLAGS_heartbeat_interval_secs * 1000,
-                               &MetaClient::heartBeatThreadFunc, this);
+        bgThread_->addTimerTask(delayMS,
+                                FLAGS_heartbeat_interval_secs * 1000,
+                                &MetaClient::heartBeatThreadFunc, this);
     }
     addLoadDataTask();
     addLoadCfgTask();
     return ready_;
 }
 
+void MetaClient::stop() {
+    if (bgThread_ != nullptr) {
+        bgThread_->stop();
+        bgThread_->wait();
+        bgThread_.reset();
+    }
+}
 
 void MetaClient::heartBeatThreadFunc() {
     auto ret = heartbeat().get();
@@ -161,7 +168,7 @@ void MetaClient::loadData() {
 
 void MetaClient::addLoadDataTask() {
     size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
-    bgThread_.addDelayTask(delayMS, &MetaClient::loadDataThreadFunc, this);
+    bgThread_->addDelayTask(delayMS, &MetaClient::loadDataThreadFunc, this);
 }
 
 
@@ -1147,7 +1154,7 @@ void MetaClient::loadCfg() {
 
 void MetaClient::addLoadCfgTask() {
     size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
-    bgThread_.addDelayTask(delayMS, &MetaClient::loadCfgThreadFunc, this);
+    bgThread_->addDelayTask(delayMS, &MetaClient::loadCfgThreadFunc, this);
     LOG(INFO) << "Load configs completed, call after " << delayMS << " ms";
 }
 

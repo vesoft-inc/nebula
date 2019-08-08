@@ -23,4 +23,9 @@ nebula_add_library(
     client/StorageClient.cpp
 )
 
+nebula_add_library(
+    storage_server OBJECT
+    StorageServer.cpp
+)
+
 add_subdirectory(test)
