@@ -517,7 +517,7 @@ TEST_F(ExpressionTest, EdgeReference) {
         auto *expr = getFilterExpr(parsed.value().get());
         ASSERT_NE(nullptr, expr);
         auto ctx = std::make_unique<ExpressionContext>();
-        ctx->getters().getEdgeProp = [] (auto &prop) -> VariantType {
+        ctx->getters().getAliasProp = [] (auto &, auto &prop) -> VariantType {
             if (prop == "cur_time") {
                 return static_cast<int64_t>(::time(NULL));
             }

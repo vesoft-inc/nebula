@@ -10,6 +10,10 @@
 #include "graph/GoExecutor.h"
 #include "graph/PipeExecutor.h"
 #include "graph/OrderByExecutor.h"
+#include "graph/FetchVerticesExecutor.h"
+#include "graph/FetchEdgesExecutor.h"
+#include "dataman/RowReader.h"
+#include "dataman/RowWriter.h"
 
 namespace nebula {
 namespace graph {
@@ -34,6 +38,12 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
         case Sentence::Kind::kOrderBy:
             executor = std::make_unique<OrderByExecutor>(sentence, ectx);
             break;
+        case Sentence::Kind::kFetchVertices:
+            executor = std::make_unique<FetchVerticesExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::kFetchEdges:
+            executor = std::make_unique<FetchEdgesExecutor>(sentence, ectx);
+            break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
             break;
@@ -42,6 +52,74 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
     }
     return executor;
+}
+
+void Collector::collect(VariantType &var, RowWriter *writer) const {
+    switch (var.which()) {
+        case VAR_INT64:
+            (*writer) << boost::get<int64_t>(var);
+            break;
+        case VAR_DOUBLE:
+            (*writer) << boost::get<double>(var);
+            break;
+        case VAR_BOOL:
+            (*writer) << boost::get<bool>(var);
+            break;
+        case VAR_STR:
+            (*writer) << boost::get<std::string>(var);
+            break;
+        default:
+            LOG(FATAL) << "Unknown VariantType: " << var.which();
+    }
+}
+
+VariantType Collector::getProp(const std::string &prop,
+                               const RowReader *reader) const {
+    DCHECK_NOTNULL(reader);
+    DCHECK_NOTNULL(schema_);
+    using nebula::cpp2::SupportedType;
+    auto type = schema_->getFieldType(prop).type;
+    switch (type) {
+        case SupportedType::BOOL: {
+            bool v;
+            reader->getBool(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
+            return v;
+        }
+        case SupportedType::INT: {
+            int64_t v;
+            reader->getInt(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
+            return v;
+        }
+        case SupportedType::VID: {
+            VertexID v;
+            reader->getVid(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
+            return v;
+        }
+        case SupportedType::FLOAT: {
+            float v;
+            reader->getFloat(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
+            return static_cast<double>(v);
+        }
+        case SupportedType::DOUBLE: {
+            double v;
+            reader->getDouble(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
+            return v;
+        }
+        case SupportedType::STRING: {
+            folly::StringPiece v;
+            reader->getString(prop, v);
+            VLOG(3) << "get prop: " << prop << ", value: " << v;
+            return v.toString();
+        }
+        default:
+            LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(type);
+            return "";
+    }
 }
 
 }   // namespace graph

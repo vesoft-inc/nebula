@@ -135,7 +135,7 @@ Status GoExecutor::prepareFrom() {
             } else if (expr->isVariableExpression()) {
                 fromType_ = kVariable;
                 auto *vexpr = static_cast<VariablePropertyExpression*>(expr);
-                varname_ = vexpr->var();
+                varname_ = vexpr->alias();
                 colname_ = vexpr->prop();
             } else {
                 // No way to happen except memory corruption
@@ -186,11 +186,6 @@ Status GoExecutor::prepareOver() {
         }
         edgeType_ = edgeStatus.value();
         reversely_ = clause->isReversely();
-        if (clause->alias() != nullptr) {
-            expCtx_->addAlias(*clause->alias(), AliasKind::Edge, *clause->edge());
-        } else {
-            expCtx_->addAlias(*clause->edge(), AliasKind::Edge, *clause->edge());
-        }
     } while (false);
 
     if (isReversely()) {
@@ -481,10 +476,10 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
         }
     }
 
-    for (auto &prop : expCtx_->edgeProps()) {
+    for (auto &prop : expCtx_->aliasProps()) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
-        pd.name = prop;
+        pd.name = prop.second;
         props.emplace_back(std::move(pd));
     }
 
@@ -628,14 +623,14 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
             }
         }
         // TODO Consider float/double, and need to reduce mem copy.
+        std::string encode = writer.encode();
         if (distinct_) {
-            std::string encode = writer.encode();
             auto ret = uniqResult->emplace(encode);
             if (ret.second) {
-                rsWriter->addRow(writer);
+                rsWriter->addRow(std::move(encode));
             }
         } else {
-            rsWriter->addRow(writer);
+            rsWriter->addRow(std::move(encode));
         }
     };  // cb
     if (!processFinalResult(rpcResp, cb)) {
@@ -686,7 +681,8 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             auto iter = rsReader.begin();
             while (iter) {
                 auto &getters = expCtx_->getters();
-                getters.getEdgeProp = [&](const std::string &prop) -> OptVariantType {
+                getters.getAliasProp = [&](const std::string &,
+                                           const std::string &prop) -> OptVariantType {
                     auto res = RowReader::getPropByName(&*iter, prop);
                     if (ok(res)) {
                         return value(res);

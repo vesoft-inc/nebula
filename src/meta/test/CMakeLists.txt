@@ -222,7 +222,9 @@ nebula_add_test(
         $<TARGET_OBJECTS:wal_obj>
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:hdfs_helper_obj>
+         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:time_obj>
@@ -239,7 +241,6 @@ nebula_add_test(
         wangle
         gtest
 )
-
 
 nebula_add_test(
     NAME
@@ -260,7 +261,9 @@ nebula_add_test(
         $<TARGET_OBJECTS:wal_obj>
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:hdfs_helper_obj>
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:time_obj>
@@ -278,6 +281,44 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        meta_http_ingest_test
+    SOURCES
+        MetaHttpIngestHandlerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_http_handler>
+        $<TARGET_OBJECTS:meta_http_handler>
+        $<TARGET_OBJECTS:meta_client>
+        $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:kvstore_obj>
+        $<TARGET_OBJECTS:meta_thrift_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:raftex_obj>
+        $<TARGET_OBJECTS:raftex_thrift_obj>
+        $<TARGET_OBJECTS:wal_obj>
+        $<TARGET_OBJECTS:thrift_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:hdfs_helper_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:schema_obj>
+    LIBRARIES
+        proxygenhttpserver
+        proxygenlib
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+        gtest
+)
 nebula_add_test(
     NAME
         balancer_test

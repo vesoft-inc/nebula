@@ -40,6 +40,8 @@ public:
 
     StatusOr<std::vector<VertexID>> getVIDs(const std::string &col) const;
 
+    StatusOr<std::vector<VertexID>> getDistinctVIDs(const std::string &col) const;
+
     std::vector<cpp2::RowValue> getRows() const;
 
     class InterimResultIndex;
