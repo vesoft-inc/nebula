@@ -17,61 +17,59 @@ static const int32_t kMaxPathLen = 1024;
 namespace detail {
 
 bool removeDir(const char* path, bool recursively) {
-    if (recursively) {
-        // Assuming the path is a directory
-        DIR* dh = opendir(path);
-        if (!dh) {
-            LOG(ERROR) << "Failed to read the directory \"" << path
-                       << "\" (" << errno << "): " << strerror(errno);
-            return false;
-        }
+    // Assuming the path is a directory
+    DIR *dh = opendir(path);
+    if (!dh) {
+        LOG(ERROR) << "Failed to read the directory \"" << path
+                   << "\" (" << errno << "): " << strerror(errno);
+        return false;
+    }
 
-        bool succeeded = true;
-        struct dirent* dEnt;
-        errno = 0;
-        while (succeeded && !!(dEnt = readdir(dh))) {
-            if (!strcmp(dEnt->d_name, ".") || !strcmp(dEnt->d_name, "..")) {
-                // Skip "." and ".."
-                continue;
-            }
-            if (dEnt->d_type == DT_DIR && !recursively) {
-                LOG(ERROR) << "Cannot remove the directory \"" << path
-                           << "\" because it contains sub-directory \""
-                           << dEnt->d_name << "\"";
-                succeeded = false;
-            } else {
-                // Remove the directory entry
-                succeeded = FileUtils::remove(
-                    FileUtils::joinPath(path, dEnt->d_name).c_str(), recursively);
-                if (!succeeded) {
-                    LOG(ERROR) << "Failed to remove \"" << dEnt->d_name
-                               << "\" in \"" << path
-                               << "\"";
-                } else {
-                    VLOG(2) << "Succeeded removing \"" << dEnt->d_name << "\"";
-                }
-            }
+    bool succeeded = true;
+    struct dirent *dEnt;
+    errno = 0;
+    while (succeeded && !!(dEnt = readdir(dh))) {
+        if (!strcmp(dEnt->d_name, ".") || !strcmp(dEnt->d_name, "..")) {
+            // Skip "." and ".."
+            continue;
         }
-
-        if (succeeded && errno) {
-            // There is an error
-            LOG(ERROR) << "Failed to read the directory \"" << path
-                       << "\" (" << errno << "): " << strerror(errno);
+        if (dEnt->d_type == DT_DIR && !recursively) {
+            LOG(ERROR) << "Cannot remove the directory \"" << path
+                       << "\" because it contains sub-directory \""
+                       << dEnt->d_name << "\"";
             succeeded = false;
+        } else {
+            // Remove the directory entry, recursive call
+            succeeded = FileUtils::remove(
+                FileUtils::joinPath(path, dEnt->d_name).c_str(), recursively);
+            if (!succeeded) {
+                LOG(ERROR) << "Failed to remove \"" << dEnt->d_name
+                           << "\" in \"" << path
+                           << "\"";
+            } else {
+                VLOG(2) << "Succeeded removing \"" << dEnt->d_name << "\"";
+            }
         }
+    }
 
-        if (closedir(dh)) {
-            // Failed to close the directory stream
-            LOG(ERROR) << "Failed to close the directory stream (" << errno
-                       << "): " << strerror(errno);
-            return false;
-        }
+    if (succeeded && errno) {
+        // There is an error
+        LOG(ERROR) << "Failed to read the directory \"" << path
+                   << "\" (" << errno << "): " << strerror(errno);
+        succeeded = false;
+    }
 
-        if (!succeeded) {
-            LOG(ERROR) << "Failed to remove the content of the directory \""
-                       << path << "\"";
-            return false;
-        }
+    if (closedir(dh)) {
+        // Failed to close the directory stream
+        LOG(ERROR) << "Failed to close the directory stream (" << errno
+                   << "): " << strerror(errno);
+        return false;
+    }
+
+    if (!succeeded) {
+        LOG(ERROR) << "Failed to remove the content of the directory \""
+                   << path << "\"";
+        return false;
     }
 
     // All content has been removed, now remove the directory itself
@@ -146,7 +144,7 @@ size_t FileUtils::fileSize(const char* path) {
     struct stat st;
     if (lstat(path, &st)) {
         // Failed o get file stat
-        VLOG(3) << "Failed to get infomation about \"" << path
+        VLOG(3) << "Failed to get information about \"" << path
                 << "\" (" << errno << "): " << strerror(errno);
         return 0;
     }
@@ -163,7 +161,7 @@ FileType FileUtils::fileType(const char* path) {
             return FileType::NOTEXIST;
         } else {
             // Failed o get file stat
-            VLOG(3) << "Failed to get infomation about \"" << path
+            VLOG(3) << "Failed to get information about \"" << path
                     << "\" (" << errno << "): " << strerror(errno);
             return FileType::UNKNOWN;
         }
@@ -193,7 +191,7 @@ int64_t FileUtils::fileLastUpdateTime(const char* path) {
     struct stat st;
     if (lstat(path, &st)) {
         // Failed to get file stat
-        LOG(ERROR) << "Failed to get file infomation for \"" << path
+        LOG(ERROR) << "Failed to get file information for \"" << path
                    << "\" (" << errno << "): " << strerror(errno);
         return -1;
     }
