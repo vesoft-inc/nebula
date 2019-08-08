@@ -10,6 +10,7 @@
 #include "network/NetworkUtils.h"
 #include "thread/GenericThreadPool.h"
 #include "storage/StorageServiceHandler.h"
+#include "storage/StorageHttpIngestHandler.h"
 #include "storage/StorageHttpStatusHandler.h"
 #include "storage/StorageHttpDownloadHandler.h"
 #include "storage/StorageHttpAdminHandler.h"
@@ -41,6 +42,7 @@ DEFINE_string(store_type, "nebula",
               "Which type of KVStore to be used by the storage daemon."
               " Options can be \"nebula\", \"hbase\", etc.");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
+DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
 
 using nebula::operator<<;
@@ -193,7 +195,7 @@ int main(int argc, char *argv[]) {
 
     LOG(INFO) << "Init kvstore";
     std::unique_ptr<KVStore> kvstore = getStoreInstance(localhost,
-                                                        std::move(paths),
+                                                        paths,
                                                         ioThreadPool,
                                                         threadManager,
                                                         metaClient.get(),
@@ -205,15 +207,24 @@ int main(int argc, char *argv[]) {
 
     std::unique_ptr<nebula::hdfs::HdfsHelper> helper =
         std::make_unique<nebula::hdfs::HdfsCommandHelper>();
-    auto* helperPtr = helper.get();
+
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool =
+        std::make_unique<nebula::thread::GenericThreadPool>();
+    pool->start(FLAGS_storage_http_thread_num, "http thread pool");
+    LOG(INFO) << "Http Thread Pool started";
 
     LOG(INFO) << "Starting Storage HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::storage::StorageHttpStatusHandler();
     });
-    nebula::WebService::registerHandler("/download", [helperPtr] {
-        auto* handler = new nebula::storage::StorageHttpDownloadHandler();
-        handler->init(helperPtr);
+    nebula::WebService::registerHandler("/download", [&] {
+        auto handler = new nebula::storage::StorageHttpDownloadHandler();
+        handler->init(helper.get(), pool.get(), kvstore.get(), paths);
+        return handler;
+    });
+    nebula::WebService::registerHandler("/ingest", [&] {
+        auto handler = new nebula::storage::StorageHttpIngestHandler();
+        handler->init(kvstore.get());
         return handler;
     });
     nebula::WebService::registerHandler("/admin", [&] {

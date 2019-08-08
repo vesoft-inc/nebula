@@ -6,8 +6,8 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
+#include "http/HttpClient.h"
 #include "webservice/WebService.h"
-#include "webservice/test/TestUtils.h"
 #include "meta/MetaHttpDownloadHandler.h"
 #include "meta/test/MockHdfsHelper.h"
 #include "meta/test/TestUtils.h"
@@ -34,14 +34,18 @@ public:
         TestUtils::createSomeHosts(kv_.get());
         TestUtils::assembleSpace(kv_.get(), 1, 2);
 
+        pool_ = std::make_unique<nebula::thread::GenericThreadPool>();
+        pool_->start(3);
+
         WebService::registerHandler("/download-dispatch", [this] {
             auto handler = new meta::MetaHttpDownloadHandler();
-            handler->init(kv_.get(), helper.get());
+            handler->init(kv_.get(), helper.get(), pool_.get());
             return handler;
         });
         WebService::registerHandler("/download", [this] {
             auto handler = new storage::StorageHttpDownloadHandler();
-            handler->init(helper.get());
+            std::vector<std::string> paths{rootPath_->path()};
+            handler->init(helper.get(), pool_.get(), kv_.get(), paths);
             return handler;
         });
         auto status = WebService::start();
@@ -52,32 +56,41 @@ public:
         kv_.reset();
         rootPath_.reset();
         WebService::stop();
+        pool_->stop();
         VLOG(1) << "Web service stopped";
     }
 
 private:
     std::unique_ptr<fs::TempDir> rootPath_;
     std::unique_ptr<kvstore::KVStore> kv_;
+    std::unique_ptr<nebula::thread::GenericThreadPool> pool_;
 };
 
 TEST(MetaHttpDownloadHandlerTest, MetaDownloadTest) {
     {
-        std::string resp;
-        ASSERT_TRUE(getUrl("/download-dispatch", resp));
-        ASSERT_TRUE(resp.empty());
+        auto url = "/download-dispatch";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_TRUE(resp.value().empty());
     }
     {
-        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("SSTFile dispatch successfully", resp);
+        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&space=1";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile dispatch successfully", resp.value());
     }
     {
         helper = std::make_unique<nebula::meta::MockHdfsNotExistHelper>();
-        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&local=/tmp&space=1";
-        std::string resp;
-        ASSERT_TRUE(getUrl(url, resp));
-        ASSERT_EQ("SSTFile dispatch failed", resp);
+        auto url = "/download-dispatch?host=127.0.0.1&port=9000&path=/data&space=1";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("SSTFile dispatch failed", resp.value());
     }
 }
 

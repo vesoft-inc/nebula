@@ -7,6 +7,13 @@
 #ifndef WEBSERVICE_COMMON_H_
 #define WEBSERVICE_COMMON_H_
 
+#include "base/Base.h"
+
+DECLARE_int32(ws_meta_http_port);
+DECLARE_int32(ws_meta_h2_port);
+DECLARE_int32(ws_storage_http_port);
+DECLARE_int32(ws_storage_h2_port);
+
 namespace nebula {
 
 enum class HttpCode {
@@ -14,6 +21,33 @@ enum class HttpCode {
     E_UNSUPPORTED_METHOD = -1,
     E_UNPROCESSABLE      = -2,
     E_ILLEGAL_ARGUMENT   = -3,
+};
+
+enum class HttpStatusCode {
+    OK                   = 200,
+    BAD_REQUEST          = 400,
+    FORBIDDEN            = 403,
+    NOT_FOUND            = 404,
+    METHOD_NOT_ALLOWED   = 405,
+};
+
+static std::map<HttpStatusCode, std::string> statusStringMap {
+    {HttpStatusCode::OK,                     "OK"},
+    {HttpStatusCode::BAD_REQUEST,            "Bad Request"},
+    {HttpStatusCode::FORBIDDEN,              "Forbidden"},
+    {HttpStatusCode::NOT_FOUND,              "Not Found"},
+    {HttpStatusCode::METHOD_NOT_ALLOWED,     "Method Not Allowed"}
+};
+
+class WebServiceUtils final {
+public:
+    static int32_t to(HttpStatusCode code) {
+        return static_cast<int32_t>(code);
+    }
+
+    static std::string toString(HttpStatusCode code) {
+        return statusStringMap[code];
+    }
 };
 
 }  // namespace nebula
