@@ -72,7 +72,7 @@ bool StorageServer::initWebService() {
         handler->init(hdfsHelper_.get(), webWorkers_.get(), kvstore_.get(), dataPaths_);
         return handler;
     });
-    nebula::WebService::registerHandler("/ingest", [&] {
+    nebula::WebService::registerHandler("/ingest", [this] {
         auto handler = new nebula::storage::StorageHttpIngestHandler();
         handler->init(kvstore_.get());
         return handler;

@@ -78,7 +78,6 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
 bool initWebService(nebula::kvstore::KVStore* kvstore,
                     nebula::hdfs::HdfsCommandHelper* helper,
                     nebula::thread::GenericThreadPool* pool) {
-
     LOG(INFO) << "Starting Meta HTTP Service";
     nebula::WebService::registerHandler("/status", [] {
         return new nebula::meta::MetaHttpStatusHandler();
@@ -178,7 +177,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    LOG(INFO) << "Start http service";;
+    LOG(INFO) << "Start http service";
     auto helper = std::make_unique<nebula::hdfs::HdfsCommandHelper>();
     auto pool = std::make_unique<nebula::thread::GenericThreadPool>();
     pool->start(FLAGS_meta_http_thread_num, "http thread pool");
