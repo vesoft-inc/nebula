@@ -372,13 +372,17 @@ object SparkSstFileGenerator {
             }
 
           }
-          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
+          .repartition(partitionNumber)
           .persist(StorageLevel.DISK_ONLY)
+        // TODO: can't afford repartitionAndSortWithinPartitions's huge memory consumption in one-shot
+        //.repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber)).persist(StorageLevel.DISK_ONLY)
 
-        tagKeyAndValuesPersisted.saveAsNewAPIHadoopFile(localSstFileOutput,
-                                                        classOf[GraphPartitionIdAndKeyValueEncoded],
-                                                        classOf[PropertyValueAndTypeWritable],
-                                                        classOf[SstFileOutputFormat])
+        tagKeyAndValuesPersisted
+          .sortByKey()
+          .saveAsNewAPIHadoopFile(localSstFileOutput,
+                                  classOf[GraphPartitionIdAndKeyValueEncoded],
+                                  classOf[PropertyValueAndTypeWritable],
+                                  classOf[SstFileOutputFormat])
 
         tagKeyAndValuesPersisted.unpersist(true)
         tagKeyAndValues.unpersist(true)
@@ -461,14 +465,15 @@ object SparkSstFileGenerator {
                  VertexOrEdgeEnum.Edge))
             }
           }
-          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
+          .repartition(partitionNumber)
           .persist(StorageLevel.DISK_ONLY)
 
-        edgeKeyAndValuesPersisted.saveAsNewAPIHadoopFile(
-          localSstFileOutput,
-          classOf[GraphPartitionIdAndKeyValueEncoded],
-          classOf[PropertyValueAndTypeWritable],
-          classOf[SstFileOutputFormat])
+        edgeKeyAndValuesPersisted
+          .sortByKey()
+          .saveAsNewAPIHadoopFile(localSstFileOutput,
+                                  classOf[GraphPartitionIdAndKeyValueEncoded],
+                                  classOf[PropertyValueAndTypeWritable],
+                                  classOf[SstFileOutputFormat])
 
         edgeKeyAndValuesPersisted.unpersist(true)
         edgeKeyAndValues.unpersist(true)
