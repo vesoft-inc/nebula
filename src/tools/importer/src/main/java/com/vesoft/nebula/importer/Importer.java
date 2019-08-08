@@ -79,7 +79,7 @@ public class Importer {
     private static final String USE_TEMPLATE = "USE %s";
     private static final String INSERT_VERTEX_VALUE_TEMPLATE = "%d: (%s)";
     private static final String INSERT_EDGE_VALUE_WITHOUT_RANKING_TEMPLATE = "%d->%d: (%s)";
-    private static final String INSERT_EDGE_VALUE_TEMPLATE = "%d->%d:%d (%s)";
+    private static final String INSERT_EDGE_VALUE_TEMPLATE = "%d->%d@%d: (%s)";
     private static final String BATCH_INSERT_TEMPLATE = "INSERT %s %s(%s) values %s";
 
     private Options buildOptions() {
@@ -149,10 +149,8 @@ public class Importer {
     }
 
     private boolean fetchOptionValue(CommandLine cmd, Character opt, String longOpt, boolean defaultValue) {
-        if (cmd.hasOption(opt)) {
-            return Boolean.valueOf(cmd.getOptionValue(opt));
-        } else if (cmd.hasOption(longOpt)) {
-            return Boolean.valueOf(cmd.getOptionValue(longOpt));
+        if (cmd.hasOption(opt) || cmd.hasOption(longOpt)) {
+            return true;
         } else {
             return defaultValue;
         }
@@ -230,12 +228,11 @@ public class Importer {
                               long source = Long.parseLong(tokenList.get(0));
                               long target = Long.parseLong(tokenList.get(1));
                               if (hasRanking) {
-                                  double ranking = Double.parseDouble(tokenList.get(2));
+                                  long ranking = Long.parseLong(tokenList.get(2));
                                   String edgeValue = Joiner.on(", ").join(tokenList.subList(3, tokenList.size()));
                                   LOGGER.trace(String.format("edge source: %d, target: %d, ranking: %d, value: %s", source, target,
                                                              ranking, edgeValue));
-                                  values.add(String.format(INSERT_EDGE_VALUE_WITHOUT_RANKING_TEMPLATE, source,
-                                                           target, edgeValue));
+                                  values.add(String.format(INSERT_EDGE_VALUE_TEMPLATE, source, target,ranking, edgeValue));
                               } else {
                                   String edgeValue = Joiner.on(", ").join(tokenList.subList(2, tokenList.size()));
                                   LOGGER.trace(String.format("edge source: %d, target: %d, value: %s", source, target, edgeValue));
