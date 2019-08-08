@@ -256,18 +256,6 @@ std::string FetchEdgesSentence::toString() const {
     if (yieldClause_ != nullptr) {
         buf += " ";
         buf += yieldClause_->toString();
-	}
-	return buf;
-}
-
-std::string YieldSentence::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    buf += "YIELD ";
-    buf += yieldColumns_->toString();
-    if (whereClause_ != nullptr) {
-        buf += " ";
-        buf += whereClause_->toString();
     }
     return buf;
 }

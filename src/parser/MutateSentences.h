@@ -553,5 +553,4 @@ public:
     std::string toString() const override;
 };
 }  // namespace nebula
-
 #endif  // PARSER_MUTATESENTENCES_H_

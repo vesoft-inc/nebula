@@ -102,7 +102,6 @@ class GraphScanner;
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC
-%token KW_DISTINCT
 %token KW_FETCH KW_PROP
 %token KW_DISTINCT KW_ALL
 /* symbols */
@@ -887,7 +886,6 @@ traverse_sentence
     | find_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
-    | yield_sentence { $$ = $1; }
     | L_PAREN piped_sentence R_PAREN { $$ = $2; }
     | L_PAREN set_sentence R_PAREN { $$ = $2; }
     ;

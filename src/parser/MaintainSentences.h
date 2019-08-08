@@ -458,15 +458,10 @@ public:
         return yieldColumns_->columns();
     }
 
-    void setWhereClause(WhereClause *clause) {
-        whereClause_.reset(clause);
-    }
-
     std::string toString() const override;
 
 private:
     std::unique_ptr<YieldColumns>              yieldColumns_;
-    std::unique_ptr<WhereClause>               whereClause_;
 };
 }   // namespace nebula
 

@@ -208,10 +208,6 @@ std::string YieldSentence::toString() const {
     buf.reserve(256);
     buf += "YIELD ";
     buf += yieldColumns_->toString();
-    if (whereClause_ != nullptr) {
-        buf += " ";
-        buf += whereClause_->toString();
-    }
     return buf;
 }
 }   // namespace nebula
