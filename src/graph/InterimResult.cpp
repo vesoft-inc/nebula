@@ -42,6 +42,27 @@ StatusOr<std::vector<VertexID>> InterimResult::getVIDs(const std::string &col) c
     return result;
 }
 
+StatusOr<std::vector<VertexID>> InterimResult::getDistinctVIDs(const std::string &col) const {
+    if (!vids_.empty()) {
+        DCHECK(rsReader_ == nullptr);
+        return vids_;
+    }
+    DCHECK(rsReader_ != nullptr);
+    std::unordered_set<VertexID> uniq;
+    auto iter = rsReader_->begin();
+    while (iter) {
+        VertexID vid;
+        auto rc = iter->getVid(col, vid);
+        if (rc != ResultType::SUCCEEDED) {
+            return Status::Error("Column `%s' not found", col.c_str());
+        }
+        uniq.emplace(vid);
+        ++iter;
+    }
+    std::vector<VertexID> result(uniq.begin(), uniq.end());
+    return result;
+}
+
 std::vector<cpp2::RowValue> InterimResult::getRows() const {
     DCHECK(rsReader_ != nullptr);
     auto schema = rsReader_->schema();
