@@ -11,16 +11,16 @@
 namespace nebula {
 namespace meta {
 
-const std::string kSpacesTable   = "__spaces__";    // NOLINT
-const std::string kPartsTable    = "__parts__";     // NOLINT
-const std::string kHostsTable    = "__hosts__";     // NOLINT
-const std::string kTagsTable     = "__tags__";      // NOLINT
-const std::string kEdgesTable    = "__edges__";     // NOLINT
-const std::string kIndexTable    = "__index__";     // NOLINT
-const std::string kUsersTable    = "__users__";     // NOLINT
-const std::string kRolesTable    = "__roles__";     // NOLINT
-const std::string kDefaultTable  = "__default__";   // NOLINT
-
+const std::string kSpacesTable = "__spaces__";  // NOLINT
+const std::string kPartsTable  = "__parts__";   // NOLINT
+const std::string kHostsTable  = "__hosts__";   // NOLINT
+const std::string kTagsTable   = "__tags__";    // NOLINT
+const std::string kEdgesTable  = "__edges__";   // NOLINT
+const std::string kIndexTable  = "__index__";   // NOLINT
+const std::string kUsersTable  = "__users__";    // NOLINT
+const std::string kRolesTable  = "__roles__";    // NOLINT
+const std::string kConfigsTable = "__configs__"; // NOLINT
+const std::string kDefaultTable = "__default__";   // NOLINT
 
 const std::string kHostOnline = "Online";       // NOLINT
 const std::string kHostOffline = "Offline";     // NOLINT
@@ -510,6 +510,67 @@ std::string MetaServiceUtils::edgeDefaultKey(GraphSpaceID spaceId,
     key.append(reinterpret_cast<const char*>(&edge), sizeof(EdgeType));
     key.append(field);
     return key;
+}
+
+std::string MetaServiceUtils::configKey(const cpp2::ConfigModule& module,
+                                        const std::string& name) {
+    std::string key;
+    key.reserve(128);
+    key.append(kConfigsTable.data(), kConfigsTable.size());
+
+    key.append(reinterpret_cast<const char*>(&module), sizeof(cpp2::ConfigModule));
+
+    int32_t nSize = name.size();
+    key.append(reinterpret_cast<const char*>(&nSize), sizeof(int32_t));
+    key.append(name);
+    return key;
+}
+
+std::string MetaServiceUtils::configKeyPrefix(const cpp2::ConfigModule& module) {
+    std::string key;
+    key.reserve(128);
+    key.append(kConfigsTable.data(), kConfigsTable.size());
+    if (module != cpp2::ConfigModule::ALL) {
+        key.append(reinterpret_cast<const char*>(&module), sizeof(cpp2::ConfigModule));
+    }
+    return key;
+}
+
+std::string MetaServiceUtils::configValue(const cpp2::ConfigType& valueType,
+                                          const cpp2::ConfigMode& valueMode,
+                                          const std::string& config) {
+    std::string val;
+    val.reserve(sizeof(cpp2::ConfigType) + sizeof(cpp2::ConfigMode) + config.size());
+    val.append(reinterpret_cast<const char*>(&valueType), sizeof(cpp2::ConfigType));
+    val.append(reinterpret_cast<const char*>(&valueMode), sizeof(cpp2::ConfigMode));
+    val.append(config);
+    return val;
+}
+
+ConfigName MetaServiceUtils::parseConfigKey(folly::StringPiece rawKey) {
+    std::string key;
+    auto offset = kConfigsTable.size();
+    auto module = *reinterpret_cast<const cpp2::ConfigModule*>(rawKey.data() + offset);
+    offset += sizeof(cpp2::ConfigModule);
+    int32_t nSize = *reinterpret_cast<const int32_t*>(rawKey.data() + offset);
+    offset += sizeof(int32_t);
+    auto name = rawKey.subpiece(offset, nSize);
+    return {module, name.str()};
+}
+
+cpp2::ConfigItem MetaServiceUtils::parseConfigValue(folly::StringPiece rawData) {
+    int32_t offset = 0;
+    cpp2::ConfigType type = *reinterpret_cast<const cpp2::ConfigType*>(rawData.data() + offset);
+    offset += sizeof(cpp2::ConfigType);
+    cpp2::ConfigMode mode = *reinterpret_cast<const cpp2::ConfigMode*>(rawData.data() + offset);
+    offset += sizeof(cpp2::ConfigMode);
+    auto value = rawData.subpiece(offset, rawData.size() - offset);
+
+    cpp2::ConfigItem item;
+    item.set_type(type);
+    item.set_mode(mode);
+    item.set_value(value.str());
+    return item;
 }
 
 }  // namespace meta

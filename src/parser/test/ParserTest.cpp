@@ -953,10 +953,16 @@ TEST(Parser, Annotation) {
     }
 }
 
-TEST(Parser, DownloadLoad) {
+TEST(Parser, DownloadAndIngest) {
     {
         GQLParser parser;
-        std::string query = "DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\" TO \"/tmp\"";
+        std::string query = "DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INGEST";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1032,7 +1038,6 @@ TEST(Parser, ReentrantRecoveryFromFailure) {
     }
 }
 
-
 TEST(Parser, IllegalCharacter) {
     GQLParser parser;
     {
@@ -1066,6 +1071,45 @@ TEST(Parser, Distinct) {
         std::string query = "GO FROM 1 OVER like "
                             "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve "
                             "YIELD DISTINCT serve._dst, $$.team.name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, ConfigOperation) {
+    {
+        GQLParser parser;
+        std::string query = "SHOW VARIABLES";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW VARIABLES GRAPH";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES storage:name=value";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET VARIABLES Meta:name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES load_config_interval_secs=120";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET VARIABLES load_config_interval_secs";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

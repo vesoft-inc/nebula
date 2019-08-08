@@ -14,6 +14,7 @@
 #include "dataman/RowWriter.h"
 #include "dataman/RowSetReader.h"
 #include "network/NetworkUtils.h"
+#include "meta/ClusterManager.h"
 
 DECLARE_string(meta_server_addrs);
 DECLARE_int32(load_data_interval_secs);
@@ -25,6 +26,7 @@ namespace storage {
 TEST(StorageClientTest, VerticesInterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
+    const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/StorageClientTest.XXXXXX");
     GraphSpaceID spaceId = 0;
     IPv4 localIp;
@@ -34,7 +36,9 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
-    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str());
+    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort,
+                                                             metaPath.c_str(),
+                                                             kClusterId);
     localMetaPort =  metaServerContext->port_;
 
     LOG(INFO) << "Create meta client...";
@@ -42,14 +46,26 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     auto addrsRet
         = network::NetworkUtils::toHosts(folly::stringPrintf("127.0.0.1:%d", localMetaPort));
     CHECK(addrsRet.ok()) << addrsRet.status();
-    auto mClient
-        = std::make_unique<meta::MetaClient>(threadPool, std::move(addrsRet.value()), true);
-    mClient->init();
+    auto& addrs = addrsRet.value();
+    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
+    auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
+    auto& localHost = hostRet.value();
+    auto clusterMan
+        = std::make_unique<nebula::meta::ClusterManager>("", "");
+    auto mClient = std::make_unique<meta::MetaClient>(threadPool,
+                                                      std::move(addrs),
+                                                      localHost,
+                                                      clusterMan.get(),
+                                                      true);
+    LOG(INFO) << "Add hosts and create space....";
+    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
+    ASSERT_TRUE(r.ok());
+    mClient->waitForMetadReady();
+    VLOG(1) << "The storage server has been added to the meta service";
 
     LOG(INFO) << "Start data server....";
 
     // for mockStorageServer MetaServerBasedPartManager, use ephemeral port
-    uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     std::string dataPath = folly::stringPrintf("%s/data", rootPath.path());
     auto sc = TestUtils::mockStorageServer(mClient.get(),
                                            dataPath.c_str(),
@@ -60,20 +76,29 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                                            // based version
                                            false);
 
-    LOG(INFO) << "Add hosts and create space....";
-    auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
-    ASSERT_TRUE(r.ok());
-    while (meta::ActiveHostsMan::instance()->getActiveHosts().size() == 0) {
-        usleep(1000);
-    }
-    VLOG(1) << "The storage server has been added to the meta service";
-
     auto ret = mClient->createSpace("default", 10, 1).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
     LOG(INFO) << "Created space \"default\", its id is " << spaceId;
-    sleep(2 * FLAGS_load_data_interval_secs + 1);
-
+    sleep(FLAGS_load_data_interval_secs + 1);
+    auto* nKV = static_cast<kvstore::NebulaStore*>(sc->kvStore_.get());
+    while (true) {
+        int readyNum = 0;
+        for (auto partId = 1; partId <= 10; partId++) {
+            auto retLeader = nKV->partLeader(spaceId, partId);
+            if (ok(retLeader)) {
+                auto leader = value(std::move(retLeader));
+                if (leader != HostAddr(0, 0)) {
+                    readyNum++;
+                }
+            }
+        }
+        if (readyNum == 10) {
+            LOG(INFO) << "All leaders have been elected!";
+            break;
+        }
+        usleep(100000);
+    }
     auto client = std::make_unique<StorageClient>(threadPool, mClient.get());
 
     // VerticesInterfacesTest(addVertices and getVertexProps)
@@ -251,10 +276,89 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     LOG(INFO) << "Stop data server...";
     sc.reset();
     LOG(INFO) << "Stop data client...";
+    threadPool->stop();
+    threadPool->join();
     client.reset();
     LOG(INFO) << "Stop meta server...";
     metaServerContext.reset();
     threadPool.reset();
+}
+
+#define RETURN_LEADER_CHANGED(req, leader) \
+    UNUSED(req); \
+    do { \
+        folly::Promise<storage::cpp2::QueryResponse> pro; \
+        auto f = pro.getFuture(); \
+        storage::cpp2::QueryResponse resp; \
+        storage::cpp2::ResponseCommon rc; \
+        rc.failed_codes.emplace_back(); \
+        auto& code = rc.failed_codes.back(); \
+        code.set_part_id(1); \
+        code.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED); \
+        code.set_leader(leader); \
+        resp.set_result(std::move(rc)); \
+        pro.setValue(std::move(resp)); \
+        return f; \
+    } while (false)
+
+class TestStorageServiceRetry : public storage::cpp2::StorageServiceSvIf {
+public:
+    TestStorageServiceRetry(IPv4 ip, Port port) {
+        leader_.set_ip(ip);
+        leader_.set_port(port);
+    }
+
+    folly::Future<cpp2::QueryResponse>
+    future_getOutBound(const cpp2::GetNeighborsRequest& req) override {
+        RETURN_LEADER_CHANGED(req, leader_);
+    }
+
+private:
+    nebula::cpp2::HostAddr leader_;
+};
+
+class TestStorageClient : public StorageClient {
+public:
+    explicit TestStorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool)
+        : StorageClient(ioThreadPool, nullptr) {}
+
+    int32_t partsNum(GraphSpaceID) const override {
+        return parts_.size();
+    }
+
+    PartMeta getPartMeta(GraphSpaceID, PartitionID partId) const override {
+        auto it = parts_.find(partId);
+        CHECK(it != parts_.end());
+        return it->second;
+    }
+
+    std::unordered_map<PartitionID, PartMeta> parts_;
+};
+
+TEST(StorageClientTest, LeaderChangeTest) {
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    auto sc = std::make_unique<test::ServerContext>();
+    auto handler = std::make_shared<TestStorageServiceRetry>(localIp, 10010);
+    sc->mockCommon("storage", 0, handler);
+    LOG(INFO) << "Start storage server on " << sc->port_;
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    TestStorageClient tsc(threadPool);
+    PartMeta pm;
+    pm.spaceId_ = 1;
+    pm.partId_ = 1;
+    pm.peers_.emplace_back(HostAddr(localIp, sc->port_));
+    tsc.parts_.emplace(1, std::move(pm));
+
+    folly::Baton<true, std::atomic> baton;
+    tsc.getNeighbors(0, {1, 2, 3}, 0, true, "", {}).via(threadPool.get()).then([&] {
+        baton.post();
+    });
+    baton.wait();
+    ASSERT_EQ(1, tsc.leaders_.size());
+    ASSERT_EQ(HostAddr(localIp, 10010), tsc.leaders_[std::make_pair(0, 1)]);
 }
 
 }  // namespace storage

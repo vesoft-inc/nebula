@@ -9,10 +9,26 @@
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/wal/FileBasedWal.h"
 #include "kvstore/wal/BufferFlusher.h"
+#include "kvstore/raftex/Host.h"
 
 namespace nebula {
 namespace raftex {
 namespace test {
+
+std::string encodeLearner(const HostAddr& addr) {
+    std::string str;
+    CommandType type = CommandType::ADD_LEARNER;
+    str.append(reinterpret_cast<const char*>(&type), 1);
+    str.append(reinterpret_cast<const char*>(&addr), sizeof(HostAddr));
+    return str;
+}
+
+HostAddr decodeLearner(const folly::StringPiece& log) {
+    HostAddr learner;
+    memcpy(&learner.first, log.begin() + 1, sizeof(learner.first));
+    memcpy(&learner.second, log.begin() + 1 + sizeof(learner.first), sizeof(learner.second));
+    return learner;
+}
 
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
@@ -22,6 +38,7 @@ TestShard::TestShard(size_t idx,
                      wal::BufferFlusher* flusher,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,
+                     std::shared_ptr<folly::Executor> handlersPool,
                      std::function<void(size_t idx, const char*, TermID)>
                         leadershipLostCB,
                      std::function<void(size_t idx, const char*, TermID)>
@@ -33,13 +50,13 @@ TestShard::TestShard(size_t idx,
                    walRoot,
                    flusher,
                    ioPool,
-                   workers)
+                   workers,
+                   handlersPool)
         , idx_(idx)
         , service_(svc)
         , leadershipLostCB_(leadershipLostCB)
         , becomeLeaderCB_(becomeLeaderCB) {
 }
-
 
 void TestShard::onLostLeadership(TermID term) {
     if (leadershipLostCB_) {
@@ -47,13 +64,11 @@ void TestShard::onLostLeadership(TermID term) {
     }
 }
 
-
 void TestShard::onElected(TermID term) {
     if (becomeLeaderCB_) {
         becomeLeaderCB_(idx_, idStr(), term);
     }
 }
-
 
 std::string TestShard::compareAndSet(const std::string& log) {
     switch (log[0]) {
@@ -64,9 +79,7 @@ std::string TestShard::compareAndSet(const std::string& log) {
     }
 }
 
-
 bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
-    VLOG(2) << "TestShard: Committing logs";
     LogID firstId = -1;
     LogID lastId = -1;
     int32_t commitLogsNum = 0;
@@ -75,36 +88,45 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
             firstId = iter->logId();
         }
         lastId = iter->logId();
-        if (!iter->logMsg().empty()) {
-            if (firstCommittedLogId_ < 0) {
-                firstCommittedLogId_ = iter->logId();
+        auto log = iter->logMsg();
+        if (!log.empty()) {
+            switch (static_cast<CommandType>(log[0])) {
+                case CommandType::ADD_LEARNER: {
+                    break;
+                }
+                default: {
+                    folly::RWSpinLock::WriteHolder wh(&lock_);
+                    currLogId_ = iter->logId();
+                    data_.emplace_back(currLogId_, log.toString());
+                    VLOG(1) << idStr_ << "Write: " << log << ", LogId: " << currLogId_
+                            << " state machine log size: " << data_.size();
+                    break;
+                }
             }
-            data_.emplace(iter->logId(), iter->logMsg().toString());
             commitLogsNum++;
         }
         ++(*iter);
     }
-    VLOG(2) << "TestShard: Committed log " << firstId << " to " << lastId;
+    VLOG(2) << "TestShard: " << idStr_ << "Committed log " << firstId << " to " << lastId;
+    if (lastId > -1) {
+        lastCommittedLogId_ = lastId;
+    }
     if (commitLogsNum > 0) {
         commitTimes_++;
     }
     return true;
 }
 
-
 size_t TestShard::getNumLogs() const {
     return data_.size();
 }
 
-
-bool TestShard::getLogMsg(LogID id, folly::StringPiece& msg) const {
-    auto it = data_.find(id);
-    if (it == data_.end()) {
-        // Not found
+bool TestShard::getLogMsg(size_t index, folly::StringPiece& msg) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
+    if (index > data_.size()) {
         return false;
     }
-
-    msg = it->second;
+    msg = data_[index].second;
     return true;
 }
 

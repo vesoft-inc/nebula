@@ -92,7 +92,7 @@ Status InsertVertexExecutor::prepare() {
                 for (auto ele : diff) {
                     LOG(INFO) << "Ele: " << ele;
                     auto type = schema->getFieldType(ele).type;
-                    if (mc->hasDefaultValue(ele)) {
+                    if (mc->hasTagDefaultValue(spaceId_, tagId, ele)) {
                         switch (type) {
                             case nebula::cpp2::SupportedType::BOOL:
                                 LOG(INFO) << "Ele: " << ele << " bool default value "

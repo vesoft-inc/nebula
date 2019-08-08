@@ -1,13 +1,11 @@
-add_library(
+nebula_add_library(
     schema_obj OBJECT
     SchemaManager.cpp
     ServerBasedSchemaManager.cpp
     NebulaSchemaProvider.cpp
 )
-add_dependencies(schema_obj base_obj common_thrift_obj meta_thrift_obj)
 
-
-add_library(
+nebula_add_library(
     meta_service_handler OBJECT
     MetaServiceHandler.cpp
     MetaServiceUtils.cpp
@@ -43,39 +41,57 @@ add_library(
     processors/admin/BalancePlan.cpp
     processors/admin/BalanceTask.cpp
     processors/admin/AdminClient.cpp
+    processors/configMan/RegConfigProcessor.cpp
+    processors/configMan/GetConfigProcessor.cpp
+    processors/configMan/ListConfigsProcessor.cpp
+    processors/configMan/SetConfigProcessor.cpp
 )
 
-add_dependencies(
-    meta_service_handler
-    base_obj
-    meta_thrift_obj
-    storage_thrift_obj
-    common_thrift_obj
-    kvstore_obj
-    thread_obj
-    stats_obj
-)
-
-add_library(
+nebula_add_library(
     meta_http_handler OBJECT
+    MetaHttpIngestHandler.cpp
     MetaHttpDownloadHandler.cpp
     MetaHttpStatusHandler.cpp
 )
+
+nebula_add_library(
+    meta_client OBJECT
+    ClusterManager.cpp
+    client/MetaClient.cpp
+)
+
+add_library(
+    gflags_man_obj OBJECT
+    GflagsManager.cpp
+)
 add_dependencies(
-    meta_http_handler
-    hdfs_helper_obj
+    gflags_man_obj
     base_obj
 )
 
 add_library(
-    meta_client OBJECT
-    client/MetaClient.cpp
+    meta_gflags_man_obj OBJECT
+    ClientBasedGflagsManager.cpp
 )
 add_dependencies(
-    meta_client
+    meta_gflags_man_obj
+    gflags_man_obj
+    meta_service_handler
     base_obj
+    meta_client
     meta_thrift_obj
-    common_thrift_obj
-    schema_obj)
+)
+
+add_library(
+    kv_gflags_man_obj OBJECT
+    KVBasedGflagsManager.cpp
+)
+add_dependencies(
+    kv_gflags_man_obj
+    gflags_man_obj
+    meta_service_handler
+    base_obj
+    kvstore_obj
+)
 
 add_subdirectory(test)

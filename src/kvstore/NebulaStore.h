@@ -40,13 +40,13 @@ class NebulaStore : public KVStore, public Handler {
 public:
     NebulaStore(KVOptions options,
                 std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
-                HostAddr serviceAddr)
+                HostAddr serviceAddr,
+                std::shared_ptr<folly::Executor> handlersPool)
             : ioPool_(ioPool)
             , storeSvcAddr_(serviceAddr)
+            , handlersPool_(handlersPool)
             , raftAddr_(getRaftAddr(serviceAddr))
             , options_(std::move(options)) {
-        partMan_ = std::move(options_.partMan_);
-        init();
     }
 
     ~NebulaStore();
@@ -68,7 +68,7 @@ public:
 
     // Pull meta information from the PartManager and initiate
     // the current store instance
-    void init();
+    bool init();
 
     uint32_t capability() const override {
         return 0;
@@ -79,14 +79,14 @@ public:
     }
 
     std::shared_ptr<thread::GenericThreadPool> getWorkers() const {
-        return workers_;
+        return bgWorkers_;
     }
 
     // Return the current leader
     ErrorOr<ResultCode, HostAddr> partLeader(GraphSpaceID spaceId, PartitionID partId) override;
 
     PartManager* partManager() const override {
-        return partMan_.get();
+        return options_.partMan_.get();
     }
 
     ResultCode get(GraphSpaceID spaceId,
@@ -139,9 +139,10 @@ public:
                            const std::string& prefix,
                            KVCallback cb) override;
 
-    ResultCode ingest(GraphSpaceID spaceId,
-                      const std::string& extra,
-                      const std::vector<std::string>& files);
+    ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
+                                                    PartitionID partId) override;
+
+    ResultCode ingest(GraphSpaceID spaceId) override;
 
     ResultCode setOption(GraphSpaceID spaceId,
                          const std::string& configKey,
@@ -151,7 +152,9 @@ public:
                            const std::string& configKey,
                            const std::string& configValue);
 
-    ResultCode compactAll(GraphSpaceID spaceId);
+    ResultCode compact(GraphSpaceID spaceId) override;
+
+    ResultCode flush(GraphSpaceID spaceId) override;
 
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 
@@ -175,18 +178,19 @@ private:
 
     ErrorOr<ResultCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
 
+    ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
+
 private:
     // The lock used to protect spaces_
     folly::RWSpinLock lock_;
-    std::unordered_map<GraphSpaceID, std::unique_ptr<SpacePartInfo>> spaces_;
+    std::unordered_map<GraphSpaceID, std::shared_ptr<SpacePartInfo>> spaces_;
 
     std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;
-    std::shared_ptr<thread::GenericThreadPool> workers_;
+    std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
     HostAddr storeSvcAddr_;
+    std::shared_ptr<folly::Executor> handlersPool_;
     HostAddr raftAddr_;
     KVOptions options_;
-
-    std::unique_ptr<PartManager> partMan_{nullptr};
 
     std::shared_ptr<raftex::RaftexService> raftService_;
     std::unique_ptr<wal::BufferFlusher> flusher_;

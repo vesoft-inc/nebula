@@ -4,17 +4,15 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "base/StatusOr.h"
+#include "http/HttpClient.h"
 #include "graph/DownloadExecutor.h"
 #include "process/ProcessUtils.h"
-#include "base/StatusOr.h"
-#include <folly/executors/IOThreadPoolExecutor.h>
-#include <folly/executors/CPUThreadPoolExecutor.h>
+#include "webservice/Common.h"
 
 #include <folly/executors/Async.h>
 #include <folly/futures/Future.h>
 #include <folly/executors/ThreadedExecutor.h>
-
-DEFINE_int32(meta_http_port, 11000, "Default meta daemon's http port");
 
 namespace nebula {
 namespace graph {
@@ -36,22 +34,19 @@ void DownloadExecutor::execute() {
     auto *hdfsHost  = sentence_->host();
     auto  hdfsPort  = sentence_->port();
     auto *hdfsPath  = sentence_->path();
-    auto *hdfsLocal = sentence_->localPath();
-    if (hdfsHost == nullptr || hdfsPort == 0 || hdfsPath == nullptr || hdfsLocal == nullptr) {
+    if (hdfsHost == nullptr || hdfsPort == 0 || hdfsPath == nullptr) {
         LOG(ERROR) << "URL Parse Failed";
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         onError_(Status::Error("URL Parse Failed"));
         return;
     }
 
-    auto func = [metaHost, hdfsHost, hdfsPort, hdfsPath, hdfsLocal, spaceId]() {
-        auto tmp = "%s \"http://%s:%d/%s?host=%s&port=%d&path=%s&local=%s&space=%d\"";
-        auto command = folly::stringPrintf(tmp, "/usr/bin/curl -G", metaHost.c_str(),
-                                           FLAGS_meta_http_port, "download-dispatch",
-                                           hdfsHost->c_str(), hdfsPort, hdfsPath->c_str(),
-                                           hdfsLocal->c_str(), spaceId);
-        LOG(INFO) << "Download Command: " << command;
-        auto result = nebula::ProcessUtils::runCommand(command.c_str());
+    auto func = [metaHost, hdfsHost, hdfsPort, hdfsPath, spaceId]() {
+        static const char *tmp = "http://%s:%d/%s?host=%s&port=%d&path=%s&space=%d";
+        auto url = folly::stringPrintf(tmp, metaHost.c_str(), FLAGS_ws_meta_http_port,
+                                       "download-dispatch", hdfsHost->c_str(),
+                                       hdfsPort, hdfsPath->c_str(), spaceId);
+        auto result = http::HttpClient::get(url);
         if (result.ok() && result.value() == "SSTFile dispatch successfully") {
             LOG(INFO) << "Download Successfully";
             return true;
