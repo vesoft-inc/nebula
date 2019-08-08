@@ -273,6 +273,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         }
         EXPECT_EQ(it, rsReader.end());
     }
+    LOG(INFO) << "Stop meta client";
+    mClient->stop();
     LOG(INFO) << "Stop data server...";
     sc.reset();
     LOG(INFO) << "Stop data client...";
