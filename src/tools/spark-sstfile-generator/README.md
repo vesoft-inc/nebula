@@ -1,4 +1,4 @@
-Guided by a mapping file, sst files are generated from hive tables datasource. A mapping file maps hive tables to vertexes and edges.
+Guided by a mapping file, `sst` files are generated from hive tables datasource. A mapping file maps hive tables to vertexes and edges.
 Multiple vertexes or edges can map to a single hive table, where a partition column will be used to distinguish different
 vertexes and edges.  
 
@@ -70,7 +70,7 @@ DEBUG_LEVEL=0 make rocksdbjava
 [0x7f7c689c1747]
 ```
 
-# TO DO
+# TODO
 1. Add database_name property to graph space level and tag/edge level,with the latter will override the former when provided in both levels.
 2. Schema column definitions' order is important, keep it when parsing mapping file and encoding.
 3. Integrated build with maven or cmake, where this spark assembly should be build after nebula native client  

@@ -6,11 +6,11 @@ import scala.io.{Codec, Source}
 import scala.language.implicitConversions
 
 /**
-  * column mapping
-  *
-  * @param columnName   hive column name
-  * @param propertyName the property name this column maps to
-  * @param `type`       map to certain data type of nebula graph
+* column mapping
+*
+* @param columnName   hive column name
+* @param propertyName the property name this column maps to
+* @param `type`       map to certain data type of nebula graph
   */
 case class Column(columnName: String, propertyName: String, `type`: String = "string")
 
@@ -45,8 +45,8 @@ object Column {
 }
 
 /**
-  * a trait that both Tag and Edge should extends
-  */
+* a trait that both Tag and Edge should extends
+*/
 trait WithColumnMapping {
 
   def tableName: String
@@ -57,14 +57,14 @@ trait WithColumnMapping {
 }
 
 /**
-  * tag section of configuration file
-  *
-  * @param tableName        hive table name
-  * @param name             tag name
-  * @param primaryKey       show the PK column
-  * @param datePartitionKey date partition column,Hive table in production is usually Date partitioned
-  * @param typePartitionKey type partition columns, when different vertex/edge's properties are identical,they are stored in one hive table, and partitioned by a `type` column
-  * @param columnMappings   map of hive table column to properties
+* tag section of configuration file
+*
+* @param tableName        hive table name
+* @param name             tag name
+* @param primaryKey       show the PK column
+* @param datePartitionKey date partition column,Hive table in production is usually Date partitioned
+* @param typePartitionKey type partition columns, when different vertex/edge's properties are identical,they are stored in one hive table, and partitioned by a `type` column
+* @param columnMappings   map of hive table column to properties
   */
 case class Tag(override val tableName: String, override val name: String, primaryKey: String, datePartitionKey: Option[String] = None, typePartitionKey: Option[String] = None, override val columnMappings: Option[Seq[Column]] = None) extends WithColumnMapping {
   def allColumnNames(): Option[Seq[String]] = columnMappings.map(_.map(_.columnName))
@@ -116,15 +116,15 @@ object Tag {
 
 
 /**
-  * edge section of configuration file
-  *
-  * @param tableName            hive table name
-  * @param name                 edge type name
-  * @param fromForeignKeyColumn  srcID column
-  * @param fromReferenceTag      Tag srcID column referenced
-  * @param toForeignKeyColumn   dstID column
-  * @param toReferenceTag        Tag dstID column referenced
-  * @param columnMappings       map of hive table column to properties
+* edge section of configuration file
+*
+* @param tableName            hive table name
+* @param name                 edge type name
+* @param fromForeignKeyColumn  srcID column
+* @param fromReferenceTag      Tag srcID column referenced
+* @param toForeignKeyColumn   dstID column
+* @param toReferenceTag        Tag dstID column referenced
+* @param columnMappings       map of hive table column to properties
   */
 case class Edge(override val tableName: String, override val name: String, fromForeignKeyColumn: String, fromReferenceTag: String, toForeignKeyColumn: String, toReferenceTag: String, datePartitionKey: Option[String] = None, typePartitionKey: Option[String] = None, override val columnMappings: Option[Seq[Column]] = None) extends WithColumnMapping {
   def allColumnNames(): Option[Seq[String]] = columnMappings.map(columns => columns.map(_.columnName))
@@ -179,13 +179,13 @@ object Edge {
 }
 
 /**
-  * a mapping file in-memory representation
-  *
-  * @param databaseName hive database name for this mapping configuration
-  * @param partitions   partition number of the target graphspace
-  * @param tags         tag's mapping
-  * @param edges        edge's mapping
-  * @param keyPolicy    policy used to generate unique id, default=hash_primary_key
+* a mapping file in-memory representation
+*
+* @param databaseName hive database name for this mapping configuration
+* @param partitions   partition number of the target graphspace
+* @param tags         tag's mapping
+* @param edges        edge's mapping
+* @param keyPolicy    policy used to generate unique id, default=hash_primary_key
   */
 case class MappingConfiguration(databaseName: String, partitions: Int, tags: Seq[Tag], edges: Seq[Edge], keyPolicy: Option[String] = Some("hash_primary_key"))
 
@@ -238,11 +238,11 @@ object MappingConfiguration {
   }
 
   /**
-    * construct from a mapping file
-    *
-    * @param mappingFile mapping file should be provided through "--files" option, and specified the application arg "---mapping_file_input"(--mi for short) at the same time,
-    *                    it will be consumed as a classpath resource
-    * @return MappingConfiguration instance
+* construct from a mapping file
+*
+* @param mappingFile mapping file should be provided through "--files" option, and specified the application arg "---mapping_file_input"(--mi for short) at the same time,
+*                    it will be consumed as a classpath resource
+* @return MappingConfiguration instance
     */
   def apply(mappingFile: String): MappingConfiguration = {
     val bufferedSource = Source.fromFile(mappingFile)(Codec("UTF-8"))
