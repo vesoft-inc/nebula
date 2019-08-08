@@ -73,6 +73,7 @@ void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor
                 std::dynamic_pointer_cast<
                         apache::thrift::concurrency::ThreadManager>(workers));
     }
+    server_->setStopWorkersOnStopListening(false);
 }
 
 
@@ -145,11 +146,10 @@ void RaftexService::stop() {
 void RaftexService::waitUntilStop() {
     if (serverThread_) {
         serverThread_->join();
-
         serverThread_.reset();
         server_.reset();
         LOG(INFO) << "Server thread has stopped. Service on port "
-                << serverPort_ << " is ready to be destroyed";
+                  << serverPort_ << " is ready to be destroyed";
     }
 }
 
