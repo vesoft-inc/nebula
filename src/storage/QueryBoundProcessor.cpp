@@ -29,7 +29,9 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId,
                 return ret;
             }
         }
-        vResp.set_vertex_data(writer.encode());
+        if (writer.size() > 1) {
+            vResp.set_vertex_data(writer.encode());
+        }
     }
     if (onlyVertexProps_) {
         std::lock_guard<std::mutex> lg(this->lock_);
