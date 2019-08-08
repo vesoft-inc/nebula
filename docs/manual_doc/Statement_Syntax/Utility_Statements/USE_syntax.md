@@ -8,12 +8,12 @@ The named space remains the default until the end of the session or another USE 
 
 ```
 USE space1
-GO FROM 1 OVER edge1   # Traverse in graph space1
+GO FROM 1 OVER edge1   -- Traverse in graph space1
 USE space2
-GO FROM 1 OVER edge1   # Traverse in graph space2
-USE space1;            # switch to space1
+GO FROM 1 OVER edge1   -- Traverse in graph space2. These nodes and edges have no relevant with space1.
+USE space1;            -- Not you are back to space1. Hereafter, you can not operate (CRUD) any data in space2.
 ```
 
 Different from SQL, making a space as the working space prevent you to access the other space. The only way to traverse in a new graph space is to switch by the USE statement.
 
-> SPACES are FULLY ISOLATED from each other. 
+> SPACES are FULLY ISOLATED from each other. Unlike SQL, which allows you to select two tables from different databases in one statement, in Nebula, you can only touch one space at a time. 
