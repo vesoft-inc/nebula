@@ -75,6 +75,9 @@ public:
     StatusOr<std::unique_ptr<InterimResultIndex>>
     buildIndex(const std::string &vidColumn) const;
 
+    Status applyTo(std::function<Status(const RowReader *reader)> visitor,
+                   int64_t limit = INT64_MAX) const;
+
     class InterimResultIndex final {
     public:
         OptVariantType getColumnWithVID(VertexID id, const std::string &col) const;

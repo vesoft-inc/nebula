@@ -91,6 +91,10 @@ public:
         return variables_;
     }
 
+    std::vector<std::string> inputProps() const {
+        return std::vector<std::string>(inputProps_.begin(), inputProps_.end());
+    }
+
     bool hasSrcTagProp() const {
         return !srcTagProps_.empty();
     }

@@ -7,6 +7,8 @@
 #include "base/Base.h"
 #include "graph/TraverseExecutor.h"
 #include "parser/TraverseSentences.h"
+#include "dataman/RowReader.h"
+#include "dataman/RowWriter.h"
 #include "graph/GoExecutor.h"
 #include "graph/PipeExecutor.h"
 #include "graph/OrderByExecutor.h"
@@ -74,7 +76,7 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
     return executor;
 }
 
-void Collector::collect(VariantType &var, RowWriter *writer) const {
+void Collector::collect(VariantType &var, RowWriter *writer) {
     switch (var.which()) {
         case VAR_INT64:
             (*writer) << boost::get<int64_t>(var);
@@ -93,12 +95,13 @@ void Collector::collect(VariantType &var, RowWriter *writer) const {
     }
 }
 
-VariantType Collector::getProp(const std::string &prop,
-                               const RowReader *reader) const {
+VariantType Collector::getProp(const meta::SchemaProviderIf *schema,
+                               const std::string &prop,
+                               const RowReader *reader) {
     DCHECK(reader != nullptr);
-    DCHECK(schema_ != nullptr);
+    DCHECK(schema != nullptr);
     using nebula::cpp2::SupportedType;
-    auto type = schema_->getFieldType(prop).type;
+    auto type = schema->getFieldType(prop).type;
     switch (type) {
         case SupportedType::BOOL: {
             bool v;
@@ -140,6 +143,44 @@ VariantType Collector::getProp(const std::string &prop,
         default:
             LOG(FATAL) << "Unknown type: " << static_cast<int32_t>(type);
             return "";
+    }
+}
+
+void Collector::getSchema(const std::vector<VariantType> &vals,
+                          const std::vector<std::string> &colNames,
+						  const std::vector<nebula::cpp2::SupportedType> &colTypes,
+                          SchemaWriter *outputSchema) {
+    DCHECK(outputSchema != nullptr);
+    DCHECK_EQ(vals.size(), colNames.size());
+    DCHECK_EQ(vals.size(), colTypes.size());
+    using nebula::cpp2::SupportedType;
+    auto index = 0u;
+    for (auto &it : colTypes_) {
+        SupportedType type;
+        if (it == SupportedType::UNKNOWN) {
+            switch (vals[index].which()) {
+                case VAR_INT64:
+                    // all integers in InterimResult are regarded as type of INT
+                    type = SupportedType::INT;
+                    break;
+                case VAR_DOUBLE:
+                    type = SupportedType::DOUBLE;
+                    break;
+                case VAR_BOOL:
+                    type = SupportedType::BOOL;
+                    break;
+                case VAR_STR:
+                    type = SupportedType::STRING;
+                    break;
+                default:
+                    LOG(FATAL) << "Unknown VariantType: " << vals[index].which();
+            }
+        } else {
+            type = it;
+        }
+
+        outputSchema->appendCol(colNames_[index], type);
+        index++;
     }
 }
 

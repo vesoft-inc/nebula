@@ -54,15 +54,16 @@ private:
 
 class Collector final {
 public:
-    explicit Collector(meta::SchemaProviderIf* schema) : schema_(schema) {}
+    static void collect(VariantType &var, RowWriter *writer);
 
-    void collect(VariantType &var, RowWriter *writer) const;
+    static VariantType getProp(const meta::SchemaProviderIf *schema,
+                               const std::string &prop,
+                               const RowReader *reader);
 
-    VariantType getProp(const std::string &prop,
-                        const RowReader *reader) const;
-
-private:
-    meta::SchemaProviderIf   *schema_;
+    static void getSchema(const std::vector<VariantType> &vals,
+                          const std::vector<std::string> &colNames,
+						  const std::vector<nebula::cpp2::SupportedType> &colTypes,
+                          SchemaWriter *outputSchema);
 };
 
 class TraverseExecutor : public Executor {

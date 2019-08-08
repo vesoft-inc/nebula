@@ -201,13 +201,4 @@ std::string DropTagSentence::toString() const {
 std::string DropEdgeSentence::toString() const {
     return folly::stringPrintf("DROP EDGE %s", name_.get()->c_str());
 }
-
-
-std::string YieldSentence::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    buf += "YIELD ";
-    buf += yieldColumns_->toString();
-    return buf;
-}
 }   // namespace nebula

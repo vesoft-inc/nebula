@@ -199,13 +199,11 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 rsWriter = std::make_unique<RowSetWriter>(outputSchema);
             }
 
-            auto collector = std::make_unique<Collector>(vschema.get());
             auto writer = std::make_unique<RowWriter>(outputSchema);
-
             auto &getters = expCtx_->getters();
-            getters.getAliasProp = [&](const std::string &,
-                                       const std::string &prop) -> OptVariantType {
-                return collector->getProp(prop, vreader.get());
+            getters.getAliasProp = [&] (const std::string&,
+										const std::string &prop) -> OptVariantType {
+                return Collector::getProp(vschema.get(), prop, vreader.get());
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
@@ -214,7 +212,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                     onError_(value.status());
                     return;
                 }
-                collector->collect(value.value(), writer.get());
+                Collector::collect(value, writer.get());
             }
             // TODO Consider float/double, and need to reduce mem copy.
             std::string encode = writer->encode();
@@ -308,6 +306,5 @@ Status FetchVerticesExecutor::setupVidsFromRef() {
     vids_ = std::move(result).value();
     return Status::OK();
 }
-
 }  // namespace graph
 }  // namespace nebula

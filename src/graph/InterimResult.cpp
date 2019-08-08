@@ -582,5 +582,20 @@ InterimResult::getInterim(
     result->setInterim(std::move(rsWriter));
     return std::move(result);
 }
+
+Status InterimResult::applyTo(std::function<Status(const RowReader *reader)> visitor,
+                              int64_t limit) const {
+    auto status = Status::OK();
+    auto iter = rsReader_->begin();
+    while (iter && (limit > 0)) {
+        status = visitor(&*iter);
+        if (!status.ok()) {
+            break;
+        }
+        --limit;
+        ++iter;
+    }
+    return status;
+}
 }   // namespace graph
 }   // namespace nebula

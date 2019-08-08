@@ -566,6 +566,32 @@ public:
     int64_t    offset_{-1};
     int64_t    count_{-1};
 };
+
+class YieldSentence final : public Sentence {
+public:
+    explicit YieldSentence(YieldColumns *fields) {
+        yieldColumns_.reset(fields);
+        kind_ = Kind::kYield;
+    }
+
+    std::vector<YieldColumn*> columns() const {
+        return yieldColumns_->columns();
+    }
+
+    void setWhereCalsue(WhereClause *clause) {
+        whereClause_.reset(clause);
+    }
+
+    WhereClause* whereClause() {
+        return whereClause_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    std::unique_ptr<YieldColumns>              yieldColumns_;
+    std::unique_ptr<WhereClause>               whereClause_;
+};
 }   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_
 

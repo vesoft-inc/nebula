@@ -105,10 +105,9 @@ Status FetchExecutor::getOutputSchema(
     if (expCtx_ == nullptr || resultColNames_.empty()) {
         return Status::Error("Input is empty.");
     }
-    auto collector = std::make_unique<Collector>(schema);
     auto &getters = expCtx_->getters();
     getters.getAliasProp = [&] (const std::string&, const std::string &prop) {
-        return collector->getProp(prop, reader);
+        return Collector::getProp(schema, prop, reader);
     };
     std::vector<VariantType> record;
     for (auto *column : yields_) {
@@ -120,42 +119,8 @@ Status FetchExecutor::getOutputSchema(
         record.emplace_back(std::move(value.value()));
     }
 
-    if (colTypes_.size() != record.size()) {
-        return Status::Error("Input size is not equal to output");
-    }
-    using nebula::cpp2::SupportedType;
-    auto index = 0u;
-    for (auto &it : colTypes_) {
-        SupportedType type;
-        if (it == SupportedType::UNKNOWN) {
-            switch (record[index].which()) {
-                case VAR_INT64:
-                    // all integers in InterimResult are regarded as type of INT
-                    type = SupportedType::INT;
-                    break;
-                case VAR_DOUBLE:
-                    type = SupportedType::DOUBLE;
-                    break;
-                case VAR_BOOL:
-                    type = SupportedType::BOOL;
-                    break;
-                case VAR_STR:
-                    type = SupportedType::STRING;
-                    break;
-                default:
-                    std::string msg = folly::stringPrintf(
-                            "Unknown VariantType: %d", record[index].which());
-                    LOG(ERROR) << msg;
-                    return Status::Error(msg);
-            }
-        } else {
-            type = it;
-        }
-
-        outputSchema->appendCol(resultColNames_[index], type);
-        index++;
-    }
-    return Status::OK();
+    Collector::getSchema(record, resultColNames_, colTypes_, outputSchema);
+	return Status::OK();
 }
 
 void FetchExecutor::finishExecution(std::unique_ptr<RowSetWriter> rsWriter) {

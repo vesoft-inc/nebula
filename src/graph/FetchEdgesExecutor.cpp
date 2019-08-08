@@ -334,13 +334,12 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
         while (iter) {
-            auto collector = std::make_unique<Collector>(eschema.get());
             auto writer = std::make_unique<RowWriter>(outputSchema);
 
             auto &getters = expCtx_->getters();
-            getters.getAliasProp = [&](const std::string &,
-                                       const std::string &prop) -> OptVariantType {
-                return collector->getProp(prop, &*iter);
+            getters.getAliasProp = [&] (const std::string&,
+										const std::string &prop) -> OptVariantType {
+                return Collector::getProp(eschema.get(), prop, &*iter);
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
@@ -349,7 +348,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                     onError_(value.status());
                     return;
                 }
-                collector->collect(value.value(), writer.get());
+                Collector::collect(value, writer.get());
             }
 
             // TODO Consider float/double, and need to reduce mem copy.
