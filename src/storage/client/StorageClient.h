@@ -144,6 +144,7 @@ protected:
     }
 
     void updateLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader) {
+        LOG(INFO) << "Update leader for " << spaceId << ", " << partId << " to " << leader;
         folly::RWSpinLock::WriteHolder wh(leadersLock_);
         leaders_[std::make_pair(spaceId, partId)] = leader;
     }

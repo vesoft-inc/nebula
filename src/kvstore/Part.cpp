@@ -14,7 +14,7 @@ namespace kvstore {
 
 using raftex::AppendLogResult;
 
-const char kLastCommittedIdKey[] = "_last_committed_log_id";
+const char* kCommitKeyPrefix = "__system_commit_msg_";
 
 namespace {
 
@@ -39,7 +39,8 @@ Part::Part(GraphSpaceID spaceId,
            KVEngine* engine,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
            std::shared_ptr<thread::GenericThreadPool> workers,
-           wal::BufferFlusher* flusher)
+           wal::BufferFlusher* flusher,
+           std::shared_ptr<folly::Executor> handlers)
         : RaftPart(FLAGS_cluster_id,
                    spaceId,
                    partId,
@@ -47,7 +48,8 @@ Part::Part(GraphSpaceID spaceId,
                    walPath,
                    flusher,
                    ioPool,
-                   workers)
+                   workers,
+                   handlers)
         , spaceId_(spaceId)
         , partId_(partId)
         , walPath_(walPath)
@@ -55,19 +57,21 @@ Part::Part(GraphSpaceID spaceId,
 }
 
 
-LogID Part::lastCommittedLogId() {
+std::pair<LogID, TermID> Part::lastCommittedLogId() {
     std::string val;
-    ResultCode res = engine_->get(kLastCommittedIdKey, &val);
+    ResultCode res = engine_->get(folly::stringPrintf("%s%d", kCommitKeyPrefix, partId_), &val);
     if (res != ResultCode::SUCCEEDED) {
         LOG(ERROR) << "Cannot fetch the last committed log id from the storage engine";
-        return 0;
+        return std::make_pair(0, 0);
     }
-    CHECK_EQ(val.size(), sizeof(LogID));
+    CHECK_EQ(val.size(), sizeof(LogID) + sizeof(TermID));
 
     LogID lastId;
     memcpy(reinterpret_cast<void*>(&lastId), val.data(), sizeof(LogID));
+    TermID termId;
+    memcpy(reinterpret_cast<void*>(&termId), val.data() + sizeof(LogID), sizeof(TermID));
 
-    return lastId;
+    return std::make_pair(lastId, termId);
 }
 
 
@@ -159,8 +163,10 @@ std::string Part::compareAndSet(const std::string& log) {
 bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     auto batch = engine_->startBatchWrite();
     LogID lastId = -1;
+    TermID lastTerm = -1;
     while (iter->valid()) {
         lastId = iter->logId();
+        lastTerm = iter->logTerm();
         auto log = iter->logMsg();
         if (log.empty()) {
             VLOG(3) << idStr_ << "Skip the heartbeat!";
@@ -238,8 +244,11 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     }
 
     if (lastId >= 0) {
-        batch->put(kLastCommittedIdKey,
-                   folly::StringPiece(reinterpret_cast<char*>(&lastId), sizeof(LogID)));
+        std::string commitMsg;
+        commitMsg.reserve(sizeof(LogID) + sizeof(TermID));
+        commitMsg.append(reinterpret_cast<char*>(&lastId), sizeof(LogID));
+        commitMsg.append(reinterpret_cast<char*>(&lastTerm), sizeof(TermID));
+        batch->put(folly::stringPrintf("%s%d", kCommitKeyPrefix, partId_), commitMsg);
     }
 
     return engine_->commitBatchWrite(std::move(batch)) == ResultCode::SUCCEEDED;
@@ -251,8 +260,7 @@ bool Part::preProcessLog(LogID logId,
                          const std::string& log) {
     VLOG(3) << idStr_ << "logId " << logId
             << ", termId " << termId
-            << ", clusterId " << clusterId
-            << ", log " << log;
+            << ", clusterId " << clusterId;
     if (!log.empty()) {
         switch (log[sizeof(int64_t)]) {
             case OP_ADD_LEARNER: {

@@ -17,7 +17,7 @@
 #include "kvstore/raftex/test/TestShard.h"
 
 DECLARE_uint32(heartbeat_interval);
-
+DECLARE_uint32(max_batch_size);
 
 namespace nebula {
 namespace raftex {
@@ -84,6 +84,7 @@ TEST(LogAppend, MultiThreadAppend) {
     LOG(INFO) << "=====> Start multi-thread appending logs";
     const int numThreads = 4;
     const int numLogs = 100;
+    FLAGS_max_batch_size = numThreads * numLogs + 1;
     std::vector<std::thread> threads;
     for (int i = 0; i < numThreads; ++i) {
         threads.emplace_back(std::thread([i, leader] {
@@ -93,9 +94,7 @@ TEST(LogAppend, MultiThreadAppend) {
                         0, folly::stringPrintf("Log %03d for t%d", j, i));
                     if (fut.isReady() &&
                         fut.value() == AppendLogResult::E_BUFFER_OVERFLOW) {
-                        // Buffer overflow, while a little
-                        usleep(5000);
-                        continue;
+                        LOG(FATAL) << "Should not reach here";
                     } else if (j == numLogs) {
                         // Only wait on the last log messaage
                         ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());

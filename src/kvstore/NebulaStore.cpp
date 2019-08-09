@@ -39,10 +39,11 @@ namespace kvstore {
 NebulaStore::~NebulaStore() {
     LOG(INFO) << "Cut off the relationship with meta client";
     options_.partMan_.reset();
-    workers_->stop();
-    workers_->wait();
+    bgWorkers_->stop();
+    bgWorkers_->wait();
     LOG(INFO) << "Stop the raft service...";
     raftService_->stop();
+    LOG(INFO) << "Waiting for the raft service stop...";
     raftService_->waitUntilStop();
     spaces_.clear();
     LOG(INFO) << "~NebulaStore()";
@@ -50,9 +51,11 @@ NebulaStore::~NebulaStore() {
 
 bool NebulaStore::init() {
     LOG(INFO) << "Start the raft service...";
-    workers_ = std::make_shared<thread::GenericThreadPool>();
-    workers_->start(FLAGS_num_workers);
-    raftService_ = raftex::RaftexService::createService(ioPool_, raftAddr_.second);
+    bgWorkers_ = std::make_shared<thread::GenericThreadPool>();
+    bgWorkers_->start(FLAGS_num_workers);
+    raftService_ = raftex::RaftexService::createService(ioPool_,
+                                                        workers_,
+                                                        raftAddr_.second);
     if (!raftService_->start()) {
         LOG(ERROR) << "Start the raft service failed";
         return false;
@@ -221,8 +224,9 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                                partId),
                                        engine,
                                        ioPool_,
-                                       workers_,
-                                       flusher_.get());
+                                       bgWorkers_,
+                                       flusher_.get(),
+                                       workers_);
     auto partMeta = options_.partMan_->partMeta(spaceId, partId);
     std::vector<HostAddr> peers;
     for (auto& h : partMeta.peers_) {
@@ -408,9 +412,7 @@ ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceI
 }
 
 
-ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
-                               const std::string& extra,
-                               const std::vector<std::string>& files) {
+ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
     auto spaceRet = space(spaceId);
     if (!ok(spaceRet)) {
         return error(spaceRet);
@@ -420,19 +422,29 @@ ResultCode NebulaStore::ingest(GraphSpaceID spaceId,
         auto parts = engine->allParts();
         std::vector<std::string> extras;
         for (auto part : parts) {
+            auto ret = this->engine(spaceId, part);
+            if (!ok(ret)) {
+                return error(ret);
+            }
+
+            auto path = value(ret)->getDataRoot();
+            LOG(INFO) << "Ingesting Part " << part;
+            if (!fs::FileUtils::exist(path)) {
+                LOG(ERROR) << path << " not existed";
+                return ResultCode::ERR_IO_ERROR;
+            }
+
+            auto files = nebula::fs::FileUtils::listAllFilesInDir(path, true, "*.sst");
             for (auto file : files) {
-                auto extraPath = folly::stringPrintf("%s/nebula/%d/%d/%s",
-                                                     extra.c_str(),
-                                                     spaceId,
-                                                     part,
-                                                     file.c_str());
-                LOG(INFO) << "Loading extra path : " << extraPath;
-                extras.emplace_back(std::move(extraPath));
+                VLOG(3) << "Ingesting extra file: " << file;
+                extras.emplace_back(file);
             }
         }
-        auto code = engine->ingest(std::move(extras));
-        if (code != ResultCode::SUCCEEDED) {
-            return code;
+        if (extras.size() != 0) {
+            auto code = engine->ingest(std::move(extras));
+            if (code != ResultCode::SUCCEEDED) {
+                return code;
+            }
         }
     }
     return ResultCode::SUCCEEDED;

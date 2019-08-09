@@ -18,25 +18,30 @@ namespace meta {
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                        std::vector<HostAddr> addrs,
                        HostAddr localHost,
+                       ClusterManager* clusterMan,
                        bool sendHeartBeat)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
     , localHost_(localHost)
+    , clusterMan_(clusterMan)
     , sendHeartBeat_(sendHeartBeat) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
+    if (sendHeartBeat_) {
+        CHECK(clusterMan_ != nullptr) << "ClusterManager object is required when send heartbeat";
+    }
     clientsMan_ = std::make_shared<
         thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>
     >();
     updateHost();
+    bgThread_ = std::make_unique<thread::GenericWorker>();
     LOG(INFO) << "Create meta client to " << active_;
 }
 
 
 MetaClient::~MetaClient() {
-    bgThread_.stop();
-    bgThread_.wait();
+    stop();
     VLOG(3) << "~MetaClient";
 }
 
@@ -64,19 +69,26 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
         ::sleep(retryIntervalSecs);
     }  // end while
 
-    CHECK(bgThread_.start());
+    CHECK(bgThread_->start());
     if (sendHeartBeat_) {
         LOG(INFO) << "Register time task for heartbeat!";
         size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
-        bgThread_.addTimerTask(delayMS,
-                               FLAGS_heartbeat_interval_secs * 1000,
-                               &MetaClient::heartBeatThreadFunc, this);
+        bgThread_->addTimerTask(delayMS,
+                                FLAGS_heartbeat_interval_secs * 1000,
+                                &MetaClient::heartBeatThreadFunc, this);
     }
     addLoadDataTask();
     addLoadCfgTask();
-    return true;
+    return ready_;
 }
 
+void MetaClient::stop() {
+    if (bgThread_ != nullptr) {
+        bgThread_->stop();
+        bgThread_->wait();
+        bgThread_.reset();
+    }
+}
 
 void MetaClient::heartBeatThreadFunc() {
     auto ret = heartbeat().get();
@@ -156,7 +168,7 @@ void MetaClient::loadData() {
 
 void MetaClient::addLoadDataTask() {
     size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
-    bgThread_.addDelayTask(delayMS, &MetaClient::loadDataThreadFunc, this);
+    bgThread_->addDelayTask(delayMS, &MetaClient::loadDataThreadFunc, this);
 }
 
 
@@ -336,6 +348,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
             return Status::CfgImmutable();
         case cpp2::ErrorCode::E_CONFLICT:
             return Status::Error("conflict!");
+        case cpp2::ErrorCode::E_WRONGCLUSTER:
+            return Status::Error("wrong cluster!");
         case cpp2::ErrorCode::E_LEADER_CHANGED: {
             HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
             {
@@ -990,9 +1004,21 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     thriftHost.set_ip(localHost_.first);
     thriftHost.set_port(localHost_.second);
     req.set_host(std::move(thriftHost));
+    req.set_clusterId(clusterMan_->getClusterId());
+
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_heartBeat(request);
-    }, [] (cpp2::HBResp&& resp) -> bool {
+    }, [this] (cpp2::HBResp&& resp) -> bool {
+        if (resp.code == cpp2::ErrorCode::SUCCEEDED
+            && !clusterMan_->isClusterIdSet()) {
+            clusterMan_->setClusterId(resp.get_clusterId());
+            if (!clusterMan_->clusterIdDumped()) {
+                if (!clusterMan_->dumpClusterId()) {
+                    LOG(ERROR) << "meta client clusterId dump failed!";
+                    return false;
+                }
+            }
+        }
         return resp.code == cpp2::ErrorCode::SUCCEEDED;
     }, true);
 }
@@ -1128,7 +1154,7 @@ void MetaClient::loadCfg() {
 
 void MetaClient::addLoadCfgTask() {
     size_t delayMS = FLAGS_load_data_interval_secs * 1000 + folly::Random::rand32(900);
-    bgThread_.addDelayTask(delayMS, &MetaClient::loadCfgThreadFunc, this);
+    bgThread_->addDelayTask(delayMS, &MetaClient::loadCfgThreadFunc, this);
     LOG(INFO) << "Load configs completed, call after " << delayMS << " ms";
 }
 

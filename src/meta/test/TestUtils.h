@@ -21,6 +21,7 @@
 #include "interface/gen-cpp2/common_types.h"
 #include "time/WallClock.h"
 #include "meta/ActiveHostsMan.h"
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 DECLARE_string(part_man_type);
 
@@ -34,11 +35,18 @@ public:
     static std::unique_ptr<kvstore::KVStore> initKV(const char* rootPath) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
         auto partMan = std::make_unique<kvstore::MemPartManager>();
+        auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 1, true /*stats*/);
+        workers->setNamePrefix("executor");
+        workers->start();
 
         // GraphSpaceID =>  {PartitionIDs}
         // 0 => {0}
         auto& partsMap = partMan->partsMap();
         partsMap[0][0] = PartMeta();
+        // 1 => {1,2}
+        partsMap[1][1] = PartMeta();
+        partsMap[1][2] = PartMeta();
 
         std::vector<std::string> paths;
         paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath));
@@ -50,7 +58,8 @@ public:
 
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
-                                                            localhost);
+                                                            localhost,
+                                                            workers);
         store->init();
         sleep(1);
         return std::move(store);
@@ -185,13 +194,15 @@ public:
     }
 
     static std::unique_ptr<test::ServerContext> mockMetaServer(uint16_t port,
-                                                               const char* dataPath) {
+                                                               const char* dataPath,
+                                                               ClusterID clusterId = 0) {
         LOG(INFO) << "Initializing KVStore at \"" << dataPath << "\"";
 
         auto sc = std::make_unique<test::ServerContext>();
         sc->kvStore_ = TestUtils::initKV(dataPath);
 
-        auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get());
+        auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(sc->kvStore_.get(),
+                                                                          clusterId);
         sc->mockCommon("meta", port, handler);
         LOG(INFO) << "The Meta Daemon started on port " << sc->port_
                   << ", data path is at \"" << dataPath << "\"";

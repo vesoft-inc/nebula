@@ -30,6 +30,7 @@ enum ErrorCode {
     E_BALANCER_RUNNING = -27,
     E_CONFIG_IMMUTABLE = -28,
     E_CONFLICT         = -29,
+    E_WRONGCLUSTER     = -30,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -68,6 +69,7 @@ union ID {
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
     4: common.UserID        user_id,
+    5: common.ClusterID     cluster_id,
 }
 
 struct IdName {
@@ -348,10 +350,12 @@ struct ScanResp {
 struct HBResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
+    3: common.ClusterID clusterId,
 }
 
 struct HBReq {
     1: common.HostAddr host,
+    2: common.ClusterID clusterId,
 }
 
 struct CreateUserReq {

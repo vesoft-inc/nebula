@@ -6,12 +6,12 @@
 
 #include "base/Base.h"
 #include <gtest/gtest.h>
+#include "http/HttpClient.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
 #include <folly/json.h>
 #include "graph/GraphHttpHandler.h"
 #include "webservice/WebService.h"
-#include "webservice/test/TestUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -45,24 +45,37 @@ protected:
 
 TEST_F(GraphHttpHandlerTest, GraphStatusTest) {
     {
-        std::string resp;
-        ASSERT_TRUE(getUrl("/status", resp));
-        ASSERT_EQ(std::string("status=running\n"), resp);
+        auto url = "/status";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("status=running\n", resp.value());
     }
     {
-        std::string resp;
-        ASSERT_TRUE(getUrl("", resp));
-        ASSERT_EQ(std::string("status=running\n"), resp);
+        auto url = "";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("status=running\n", resp.value());
     }
     {
-        std::string resp;
-        ASSERT_TRUE(getUrl("/status?daemon=status", resp));
-        ASSERT_EQ(std::string("status=running\n"), resp);
+        auto url = "/status?daemon=status";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_EQ("status=running\n", resp.value());
     }
     {
-        std::string resp;
-        ASSERT_TRUE(getUrl("/status?daemon=status&returnjson", resp));
-        auto json = folly::parseJson(resp);
+        auto url = "/status?daemon=status&returnjson";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+
+        auto json = folly::parseJson(resp.value());
         ASSERT_TRUE(json.isArray());
         ASSERT_EQ(1UL, json.size());
         ASSERT_TRUE(json[0].isObject());
@@ -78,11 +91,13 @@ TEST_F(GraphHttpHandlerTest, GraphStatusTest) {
         ASSERT_TRUE(it->second.isString());
         ASSERT_EQ("running", it->second.getString());
     }
-
     {
-        std::string resp;
-        ASSERT_TRUE(getUrl("/status123?daemon=status", resp));
-        ASSERT_TRUE(resp.empty());
+        auto url = "/status123?daemon=status";
+        auto request = folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(),
+                                           FLAGS_ws_http_port, url);
+        auto resp = http::HttpClient::get(request);
+        ASSERT_TRUE(resp.ok());
+        ASSERT_TRUE(resp.value().empty());
     }
 }
 

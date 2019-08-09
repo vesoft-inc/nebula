@@ -24,7 +24,9 @@ public:
          KVEngine* engine,
          std::shared_ptr<folly::IOThreadPoolExecutor> pool,
          std::shared_ptr<thread::GenericThreadPool> workers,
-         wal::BufferFlusher* flusher);
+         wal::BufferFlusher* flusher,
+         std::shared_ptr<folly::Executor> handlers);
+
 
     virtual ~Part() {
         LOG(INFO) << idStr_ << "~Part()";
@@ -48,7 +50,7 @@ public:
     /**
      * Methods inherited from RaftPart
      */
-    LogID lastCommittedLogId() override;
+    std::pair<LogID, TermID> lastCommittedLogId() override;
 
     void onLostLeadership(TermID term) override;
 

@@ -16,6 +16,7 @@
 #include "thread/GenericWorker.h"
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
+#include "meta/ClusterManager.h"
 
 namespace nebula {
 namespace meta {
@@ -87,6 +88,7 @@ public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                         std::vector<HostAddr> addrs,
                         HostAddr localHost = HostAddr(0, 0),
+                        ClusterManager* clusterMan = nullptr,
                         bool sendHeartBeat = false);
 
     virtual ~MetaClient();
@@ -94,6 +96,8 @@ public:
     bool isMetadReady();
 
     bool waitForMetadReady(int count = -1, int retryIntervalSecs = 2);
+
+    void stop();
 
     void registerListener(MetaChangedListener* listener) {
         folly::RWSpinLock::WriteHolder holder(listenerLock_);
@@ -319,7 +323,9 @@ private:
     HostAddr active_;
     HostAddr leader_;
     HostAddr localHost_;
-    thread::GenericWorker bgThread_;
+
+    ClusterManager* clusterMan_{nullptr};
+    std::unique_ptr<thread::GenericWorker> bgThread_;
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
