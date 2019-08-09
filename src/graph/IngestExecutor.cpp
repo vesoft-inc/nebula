@@ -21,10 +21,16 @@ IngestExecutor::IngestExecutor(Sentence *sentence,
 }
 
 Status IngestExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    return Status::OK();
 }
 
 void IngestExecutor::execute() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
     auto *mc = ectx()->getMetaClient();
     auto  addresses = mc->getAddresses();
     auto  metaHost = network::NetworkUtils::intToIPv4(addresses[0].first);
