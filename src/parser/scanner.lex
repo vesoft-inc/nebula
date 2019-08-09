@@ -134,6 +134,10 @@ SUM                         ([Ss][Uu][Mm])
 AVG                         ([Aa][Vv][Gg])
 MIN                         ([Mm][Ii][Nn])
 MAX                         ([Mm][Aa][Xx])
+STD                         ([Ss][Tt][Dd])
+BIT_AND                     ([Bb][It][Tt][_][Aa][Nn][Dd])
+BIT_OR                      ([Bb][It][Tt][_][Oo][Rr])
+BIT_XOR                     ([Bb][It][Tt][_][Xx][Oo][Rr])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -256,6 +260,10 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {AVG}                       { return TokenType::KW_AVG; }
 {MAX}                       { return TokenType::KW_MAX; }
 {MIN}                       { return TokenType::KW_MIN; }
+{STD}                       { return TokenType::KW_STD; }
+{BIT_AND}                   { return TokenType::KW_BIT_AND; }
+{BIT_OR}                    { return TokenType::KW_BIT_OR; }
+{BIT_XOR}                   { return TokenType::KW_BIT_XOR; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

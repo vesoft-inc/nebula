@@ -170,7 +170,6 @@ std::string WhereClause::toString() const {
 }
 
 std::string YieldColumn::toString() const {
-    LOG(INFO) << "YieldColumn::toString()";
     std::string buf;
     buf.reserve(256);
     if (func_ != F_NONE) {
@@ -192,6 +191,18 @@ std::string YieldColumn::toString() const {
                 break;
             case F_MIN:
                 buf += "MIN(";
+                break;
+            case F_STD:
+                buf += "MIN(";
+                break;
+            case F_BIT_AND:
+                buf += "BIT_AND(";
+                break;
+            case F_BIT_OR:
+                buf += "BIT_OR(";
+                break;
+            case F_BIT_XOR:
+                buf += "BIT_XOR(";
                 break;
             default:
                 break;
@@ -230,20 +241,6 @@ std::string YieldClause::toString() const {
         buf += "DISTINCT ";
     }
     buf += yieldColumns_->toString();
-    return buf;
-}
-
-std::string GroupColumns::toString() const {
-    std::string buf;
-    buf.reserve(256);
-    for (auto &col : columns_) {
-        auto *expr = col->expr();
-        buf += expr->toString();
-        buf += ",";
-    }
-    if (!buf.empty()) {
-        buf.resize(buf.size() - 1);
-    }
     return buf;
 }
 

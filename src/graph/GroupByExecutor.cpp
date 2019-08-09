@@ -6,6 +6,7 @@
 
 #include "base/Base.h"
 #include "graph/GroupByExecutor.h"
+#include "AggregateFunction.h"
 
 namespace nebula {
 namespace graph {
@@ -17,13 +18,9 @@ GroupByExecutor::GroupByExecutor(Sentence *sentence, ExecutionContext *ectx)
 
 
 Status GroupByExecutor::prepare() {
+    expCtx_ = std::make_unique<ExpressionContext>();
     Status status;
     do {
-        status = checkIfGraphSpaceChosen();
-        if (!status.ok()) {
-            break;
-        }
-
         status = prepareYield();
         if (!status.ok()) {
             break;
@@ -45,132 +42,126 @@ Status GroupByExecutor::prepare() {
 
 
 Status GroupByExecutor::prepareYield() {
-    auto *clause = sentence_->yieldClause();
-    if (clause != nullptr) {
-        yields_ = clause->columns();
-    }
+    auto status = Status::OK();
+    do {
+        auto *clause = sentence_->yieldClause();
+        std::vector<YieldColumn*> yields;
+        if (clause != nullptr) {
+            yields = clause->columns();
+        }
 
-    if (yields_.empty()) {
-        return Status::Error("Yield cols is empty");
-    }
+        if (yields.empty()) {
+            status = Status::Error("Yield cols is empty");
+            break;
+        }
+        for (auto *col : yields) {
+            col->expr()->setContext(expCtx_.get());
+            status = col->expr()->prepare();
+            if (!status.ok()) {
+                break;
+            }
+            yieldCols_.emplace_back(std::make_pair(col, -1));
 
-    return Status::OK();
+            if (col->alias() != nullptr) {
+                if (col->expr()->isInputExpression()) {
+                    auto inputName = static_cast<InputPropertyExpression*>(col->expr())->prop();
+                    LOG(INFO) << "Add alias name " << *col->alias();
+                    aliases_.emplace(*col->alias(), *inputName);
+                }
+            }
+        }
+        if (!status.ok()) {
+            break;
+        }
+    } while (false);
+
+    return status;
 }
 
 
 Status GroupByExecutor::prepareGroup() {
-    auto *clause = sentence_->groupClause();
-    std::vector<GroupColumn*>  groups;
-    if (clause != nullptr) {
-        groups = clause->columns();
-    }
+    auto status = Status::OK();
+    do {
+        auto *clause = sentence_->groupClause();
+        std::vector<YieldColumn*> groups;
+        if (clause != nullptr) {
+            groups = clause->columns();
+        }
 
-    if (groups.empty()) {
-        return Status::Error("Group columns is empty");
-    }
-
-    // Conversion alias name to fieldName
-    for (auto& it : groups) {
-        auto find = false;
-        auto groupCol = it->expr()->toString();
-        groupCol.erase(std::remove(groupCol.begin(), groupCol.end(), '"'), groupCol.end());
-        std::string fieldCol;
-        for (auto *col : yields_) {
-            fieldCol = col->expr()->toString();
-            if (col->alias() == nullptr) {
-                if (groupCol == col->expr()->toString()) {
-                    find = true;
-                    break;
-                }
-            } else {
-                if (groupCol == fieldCol) {
-                    find = true;
-                    break;
-                }
-                if (groupCol == *col->alias()) {
-                    find = true;
-                    break;
-                }
+        if (groups.empty()) {
+            status = Status::Error("Group cols is empty");
+            break;
+        }
+        for (auto *col : groups) {
+            col->expr()->setContext(expCtx_.get());
+            status = col->expr()->prepare();
+            if (!status.ok()) {
+                break;
             }
+            groupCols_.emplace_back(std::make_pair(col, -1));
         }
-        if (find) {
-            groupCols_.emplace(fieldCol, -1);
-        } else {
-            groupCols_.emplace(groupCol, -1);
+        if (!status.ok()) {
+            break;
         }
-    }
-    return Status::OK();
+    } while (false);
+
+    return status;
 }
 
 
 Status GroupByExecutor::buildIndex() {
     // Build index of input data for group cols
+    std::unordered_map<std::string, std::pair<int64_t, nebula::cpp2::ValueType>> schemaMap;
+    for (auto i = 0u; i < inputs_->schema()->getNumFields(); i++) {
+        auto fieldName = inputs_->schema()->getFieldName(i);
+        schemaMap[fieldName] = std::make_pair(i, inputs_->schema()->getFieldType(i));
+    }
+
     for (auto &it : groupCols_) {
-        auto find = false;
-        auto groupName = it.first;
-        for (auto i = 0u; i < schema_->getNumFields(); i++) {
-            auto fieldName = schema_->getFieldName(i);
-            if (groupName.size() > 3 && groupName.substr(3) == fieldName) {
-                it.second = i;
-                find = true;
-                break;
+        // get input index
+        if (it.first->expr()->isInputExpression()) {
+            auto groupName = static_cast<InputPropertyExpression*>(it.first->expr())->prop();
+            auto findIt = schemaMap.find(*groupName);
+            if (findIt == schemaMap.end()) {
+                LOG(ERROR) << "Group `" << *groupName << "' isn't in output fields";
+                return Status::Error("Group `%s' isn't in output fields", *groupName);
             }
+            it.second = findIt->second.first;
+            continue;
         }
-        if (!find) {
-            LOG(ERROR) << "Group `" << groupName << "' isn't in output fields";
-            return Status::Error("Group `%s' isn't in output fields", groupName);
+
+        if (it.first->getFunction() != F_NONE) {
+            continue;
         }
+
+        // get alias index
+        auto groupName = it.first->expr()->toString();
+        auto alisaIt = aliases_.find(groupName);
+        if (alisaIt != aliases_.end()) {
+            auto inputName = alisaIt->second;
+            auto findIt = schemaMap.find(inputName);
+            if (findIt == schemaMap.end()) {
+                LOG(ERROR) << "Group `" << groupName << "' isn't in output fields";
+                return Status::Error("Group `%s' isn't in output fields", groupName);
+            }
+            it.second = findIt->second.first;
+            continue;
+        }
+        return Status::Error("Group `%s' isn't in output fields", groupName);
     }
 
     // Build index of input data for yield cols
-    for (auto &it : yields_) {
-        auto find = false;
-        auto yieldName = it->expr()->toString();
-        for (auto i = 0u; i < schema_->getNumFields(); i++) {
-            auto fieldName = schema_->getFieldName(i);
-            // col name is *
-            if (yieldName == "*" && it->getFunction() == F_COUNT) {
-                ColType yCol;
-                yCol.fieldName_ = yieldName;
-                yCol.fun_ = it->getFunction();
-                yCol.index_ = -i;
-                yieldCols_.emplace_back(std::move(yCol));
-                find = true;
-                break;
+    for (auto &it : yieldCols_) {
+        if (it.first->expr()->isInputExpression()) {
+            auto yieldName = static_cast<InputPropertyExpression*>(it.first->expr())->prop();
+            auto findIt = schemaMap.find(*yieldName);
+            if (findIt == schemaMap.end()) {
+                LOG(ERROR) << "Yield `" << *yieldName << "' isn't in output fields";
+                return Status::Error("Yield `%s' isn't in output fields", *yieldName);
             }
-            // yield col has not calfun, but not in group cols
-            if (it->getFunction() == F_NONE) {
-                if (groupCols_.find(yieldName) == groupCols_.end()) {
-                    LOG(ERROR) << "Yield `" << yieldName << "' isn't in group fields";
-                    return Status::Error("Yield `%s' isn't in group fields", yieldName);
-                }
-            }
-            if (yieldName.size() > 3 && yieldName.substr(3) == fieldName) {
-                auto type = schema_->getFieldType(i);
-                ColType yCol;
-                yCol.fieldName_ = fieldName;
-                yCol.fun_ = it->getFunction();
-                yCol.index_ = i;
-                // When COUNT type should be INT, or type of SUM and AVG is nonsupport
-                if (yCol.fun_ == F_COUNT_DISTINCT || yCol.fun_ == F_COUNT ||
-                    (yCol.fun_ == F_SUM && (yCol.type_ != nebula::cpp2::SupportedType::INT
-                        || yCol.type_ != nebula::cpp2::SupportedType::DOUBLE)) ||
-                    (yCol.fun_ == F_AVG && (yCol.type_ != nebula::cpp2::SupportedType::INT
-                        || yCol.type_ != nebula::cpp2::SupportedType::DOUBLE))) {
-                    yCol.type_ = nebula::cpp2::SupportedType::INT;
-                } else {
-                    yCol.type_ = type.type;
-                }
-
-                yieldCols_.emplace_back(std::move(yCol));
-                find = true;
-                break;
-            }
+            it.second = findIt->second.first;
         }
-        if (!find) {
-            LOG(ERROR) << "Yield `" << yieldName << "' isn't in output fields";
-            return Status::Error("Yield `%s' isn't in output fields", yieldName);
-        }
+        // TODO(laura): to check other expr
     }
     return Status::OK();
 }
@@ -206,113 +197,126 @@ void GroupByExecutor::execute() {
 }
 
 
+cpp2::ColumnValue GroupByExecutor::toColumnValue(const VariantType& value) {
+    cpp2::ColumnValue colVal;
+    try {
+        switch (value.which()) {
+            case VAR_INT64:
+                colVal.set_integer(boost::get<int64_t>(value));
+                break;
+            case VAR_DOUBLE:
+                colVal.set_double_precision(boost::get<double>(value));
+                break;
+            case VAR_BOOL:
+                colVal.set_bool_val(boost::get<bool>(value));
+                break;
+            case VAR_STR:
+                colVal.set_str(boost::get<std::string>(value));
+                break;
+            default:
+                LOG(ERROR) << "Wrong Type: " << value.which();
+                colVal.set_str("");
+                break;
+        }
+    } catch (const std::exception& e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+    }
+    return colVal;
+}
+
+
+VariantType GroupByExecutor::toVariantType(const cpp2::ColumnValue& value) {
+    switch (value.getType()) {
+        case cpp2::ColumnValue::Type::integer:
+            return value.get_integer();
+        case cpp2::ColumnValue::Type::bool_val:
+            return value.get_bool_val();
+        case cpp2::ColumnValue::Type::double_precision:
+            return value.get_double_precision();
+        case cpp2::ColumnValue::Type::str:
+            return value.get_str();
+        default:
+            break;
+    }
+    // TODO(laura): handle ERROR
+    return "";
+}
+
+
 void GroupByExecutor::GroupingData() {
-    // key : group col vals, val: cal ptr
+    // key : group col vals, val: cal funptr
     using FunCols = std::vector<std::shared_ptr<AggFun>>;
     using GroupData = std::unordered_map<ColVals, FunCols, ColsHasher>;
+    std::unordered_map<FunKind, std::function<std::shared_ptr<AggFun>()>> funVec = {
+            { F_NONE, []() -> auto {return std::make_shared<Group>();} },
+            { F_COUNT, []() -> auto {return std::make_shared<Count>();} },
+            { F_COUNT_DISTINCT, []() -> auto {return std::make_shared<CountDistinct>();} },
+            { F_SUM, []() -> auto {return std::make_shared<Sum>();} },
+            { F_AVG, []() -> auto {return std::make_shared<Avg>();} },
+            { F_MAX, []() -> auto {return std::make_shared<Max>();} },
+            { F_MIN, []() -> auto {return std::make_shared<Min>();} },
+            { F_STD, []() -> auto {return std::make_shared<Stdev>();} },
+            { F_BIT_AND, []() -> auto {return std::make_shared<BitAnd>();} },
+            { F_BIT_OR, []() -> auto {return std::make_shared<BitOr>();} },
+            { F_BIT_XOR, []() -> auto {return std::make_shared<BitXor>();} }
+    };
+
     GroupData data;
-
     for (auto& it : rows_) {
-        ColVals groupCols;
-        FunCols calCols;
-        // firstly:  group the cols
-        for (auto &col : groupCols_) {
-            groupCols.vec.emplace_back(it.columns[col.second]);
-        }
-        auto findIt = data.find(groupCols);
+        ColVals groupVals;
+        FunCols calVals;
 
-        // secondly: get the cal cols
-        auto i = 0u;
-        for (auto &col : yieldCols_) {
-            switch (col.fun_) {
-                case F_NONE: {
-                    std::shared_ptr<AggFun> basePtr;
-                    if (findIt == data.end()) {
-                        auto groupPtr = std::make_shared<Group>();
-                        groupPtr->apply(it.columns[col.index_]);
-                        calCols.emplace_back(std::move(groupPtr));
-                    } else {
-                        findIt->second[i]->apply(it.columns[col.index_]);
-                    }
-                    break;
-                }
-                case F_COUNT: {
-                    std::shared_ptr<AggFun> basePtr;
-                    if (findIt == data.end()) {
-                        auto countPtr = std::make_shared<Count>();
-                        countPtr->apply();
-                        calCols.emplace_back(std::move(countPtr));
-                    } else {
-                        findIt->second[i]->apply();
-                    }
-                    break;
-                }
-                case F_COUNT_DISTINCT: {
-                    std::shared_ptr<AggFun> basePtr;
-                    if (findIt == data.end()) {
-                        auto countDisPtr = std::make_shared<CountDistinct>();
-                        countDisPtr->apply(it.columns[col.index_]);
-                        calCols.emplace_back(std::move(countDisPtr));
-                    } else {
-                        basePtr = findIt->second[i];
-                        findIt->second[i]->apply(it.columns[col.index_]);
-                    }
-                    break;
-                }
-                case F_SUM: {
-                    std::shared_ptr<AggFun> basePtr;
-                    if (findIt == data.end()) {
-                        auto sumPtr = std::make_shared<Sum>();
-                        sumPtr->apply(it.columns[col.index_]);
-                        calCols.emplace_back(std::move(sumPtr));
-                    } else {
-                        findIt->second[i]->apply(it.columns[col.index_]);
-                    }
-                    break;
-                }
-                case F_AVG: {
-                    std::shared_ptr<AggFun> basePtr;
-                    if (findIt == data.end()) {
-                        auto avgPtr = std::make_shared<Avg>();
-                        avgPtr->apply(it.columns[col.index_]);
-                        calCols.emplace_back(std::move(avgPtr));
-                    } else {
-                        findIt->second[i]->apply(it.columns[col.index_]);
-                    }
-                    break;
-                }
-                case F_MAX : {
-                    std::shared_ptr<AggFun> basePtr;
-                    if (findIt == data.end()) {
-                        auto maxPtr = std::make_shared<Max>();
-                        maxPtr->apply(it.columns[col.index_]);
-                        calCols.emplace_back(std::move(maxPtr));
-                    } else {
-                        findIt->second[i]->apply(it.columns[col.index_]);
-                    }
-                    break;
-                }
-                case F_MIN : {
-                    if (findIt == data.end()) {
-                        auto minPtr = std::make_shared<Min>();
-                        minPtr->apply(it.columns[col.index_]);
-                        calCols.emplace_back(std::move(minPtr));
-                    } else {
-                        findIt->second[i]->apply(it.columns[col.index_]);
-                    }
-                    break;
-                }
-                default:
-                    break;
+        // Firstly: group the cols
+        for (auto &col : groupCols_) {
+            auto index = col.second;
+            auto &getters = expCtx_->getters();
+            getters.getInputProp = [&] (const std::string &) -> VariantType {
+                CHECK_GE(index, 0);
+                auto val = it.columns[index];
+                return toVariantType(val);
+            };
+            // TODO(Laura): `eval' may fail
+            auto eval = col.first->expr()->eval();
+            auto value = toColumnValue(eval);
+            groupVals.vec.emplace_back(value);
+        }
+
+        auto findIt = data.find(groupVals);
+
+        // Secondly: get the cal col
+
+        // Init fun handler
+        if (findIt == data.end()) {
+            for (auto &col : yieldCols_) {
+                auto funPtr = funVec[col.first->getFunction()]();
+                calVals.emplace_back(funPtr);
             }
+        } else {
+            calVals = findIt->second;
+        }
+
+        // Apply value
+        auto i = 0u;
+        for (auto &col : calVals) {
+            auto index = yieldCols_[i].second;
+            auto &getters = expCtx_->getters();
+            getters.getInputProp = [&] (const std::string &) -> VariantType {
+                auto val = it.columns[index];
+                return toVariantType(val);
+            };
+            auto *expr = yieldCols_[i].first->expr();
+            // TODO(laura): `eval' may fail;
+            auto value = toColumnValue(expr->eval());
+            col->apply(value);
             i++;
         }
+
         if (findIt == data.end()) {
-            data.emplace(groupCols, calCols);
+            data.emplace(groupVals, calVals);
         }
     }
 
-    // generate result data
+    // Generate result data
     rows_.clear();
     for (auto& item : data) {
         std::vector<cpp2::ColumnValue> row;
@@ -327,12 +331,12 @@ void GroupByExecutor::GroupingData() {
 
 std::vector<std::string> GroupByExecutor::getResultColumnNames() const {
     std::vector<std::string> result;
-    result.reserve(yields_.size());
-    for (auto *col : yields_) {
-        if (col->alias() == nullptr) {
-            result.emplace_back(col->toString());
+    result.reserve(yieldCols_.size());
+    for (auto col : yieldCols_) {
+        if (col.first->alias() == nullptr) {
+            result.emplace_back(col.first->toString());
         } else {
-            result.emplace_back(*col->alias());
+            result.emplace_back(*col.first->alias());
         }
     }
     return result;
@@ -344,18 +348,37 @@ void GroupByExecutor::feedResult(std::unique_ptr<InterimResult> result) {
         LOG(INFO) << "result is nullptr";
         return;
     }
-    rows_ = result->getRows();
-    schema_ = std::move(result->schema());
+    inputs_ = std::move(result);
+    rows_ = inputs_->getRows();
 }
 
 
 void GroupByExecutor::generateOutputSchema() {
+    using nebula::cpp2::SupportedType;
     if (resultSchema_ == nullptr) {
         resultSchema_ = std::make_shared<SchemaWriter>();
         auto colnames = getResultColumnNames();
-        CHECK(colnames.size() == yieldCols_.size());
-        for (auto i = 0u; i < colnames.size(); i++) {
-            resultSchema_->appendCol(colnames[i], yieldCols_[i].type_);
+        CHECK(!rows_.empty());
+        for (auto i = 0u; i < rows_[0].columns.size(); i++) {
+            SupportedType type;
+            switch (rows_[0].columns[i].getType()) {
+                case cpp2::ColumnValue::Type::bool_val:
+                    type = SupportedType::BOOL;
+                    break;
+                case cpp2::ColumnValue::Type::integer:
+                    type = SupportedType::INT;
+                    break;
+                case cpp2::ColumnValue::Type::str:
+                    type = SupportedType::STRING;
+                    break;
+                case cpp2::ColumnValue::Type::double_precision:
+                    type = SupportedType::DOUBLE;
+                    break;
+                default:
+                    LOG(FATAL) << "Unknown VariantType: " << rows_[0].columns[i].getType();
+            }
+            // TODO(laura) : should handle exist colname
+            resultSchema_->appendCol(colnames[i], type);
         }
     }
 }
@@ -390,9 +413,14 @@ std::unique_ptr<InterimResult> GroupByExecutor::setupInterimResult() {
                     LOG(FATAL) << "Not Support: " << column.getType();
             }
         }
-        rsWriter->addRow(writer);
+        if (rsWriter != nullptr) {
+            rsWriter->addRow(writer);
+        }
     }
 
+    if (rsWriter == nullptr) {
+        return nullptr;
+    }
     return std::make_unique<InterimResult>(std::move(rsWriter));
 }
 
@@ -413,5 +441,5 @@ void GroupByExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     resp.set_column_names(std::move(columnNames));
     resp.set_rows(std::move(rows_));
 }
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

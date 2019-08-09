@@ -11,6 +11,7 @@
 
 namespace nebula {
 
+<<<<<<< HEAD
 class OverEdge;
 class Clause {
 public:
@@ -51,6 +52,20 @@ protected:
 
 protected:
     Kind    kind_{kUnknown};
+=======
+enum FunKind{
+    F_NONE           = 0,
+    F_SUM            = 1,
+    F_COUNT          = 2,
+    F_COUNT_DISTINCT = 3,
+    F_AVG            = 4,
+    F_MAX            = 5,
+    F_MIN            = 6,
+    F_STD            = 7,
+    F_BIT_AND        = 8,
+    F_BIT_OR         = 9,
+    F_BIT_XOR        = 10,
+>>>>>>> Add stdev, bit_and, bit_or, bit_xor
 };
 
 class StepClause final : public Clause {
@@ -339,6 +354,22 @@ private:
     // this member will hold the reference
     // which is expand by *
     std::unique_ptr<YieldColumns>               yieldColHolder_;
+};
+
+class GroupClause final {
+public:
+    explicit GroupClause(YieldColumns *fields) {
+        groupColumns_.reset(fields);
+    }
+
+    std::vector<YieldColumn*> columns() const {
+        return groupColumns_->columns();
+    }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<YieldColumns>               groupColumns_;
 };
 }   // namespace nebula
 #endif  // PARSER_CLAUSES_H_

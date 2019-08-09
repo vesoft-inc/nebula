@@ -252,9 +252,9 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        group_by_limit_test
+        yield_test
     SOURCES
-        GroupByLimitTest.cpp
+        YieldTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
@@ -269,9 +269,9 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        yield_test
+        group_by_limit_test
     SOURCES
-        YieldTest.cpp
+        GroupByLimitTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
