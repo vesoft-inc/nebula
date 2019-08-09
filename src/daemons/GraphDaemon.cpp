@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 
 Status setupSignalHandler() {
     return nebula::SignalHandler::install(
-        {SIGINT, SIGTERM}, 
+        {SIGINT, SIGTERM},
         [](nebula::SignalHandler::GeneralSignalInfo *info) {
             signalHandler(info->sig());
         });

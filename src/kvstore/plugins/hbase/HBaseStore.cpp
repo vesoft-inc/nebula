@@ -379,6 +379,10 @@ void HBaseStore::asyncRemovePrefix(GraphSpaceID spaceId,
     return cb(removePrefix());
 }
 
+ResultCode HBaseStore::ingest(GraphSpaceID spaceId) {
+    UNUSED(spaceId);
+    return ResultCode::ERR_UNSUPPORTED;
+}
 
 }  // namespace kvstore
 }  // namespace nebula

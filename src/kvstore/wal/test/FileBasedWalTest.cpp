@@ -387,6 +387,45 @@ TEST(FileBasedWal, RollbackToZero) {
     ASSERT_EQ(0, wal->lastLogId());
 }
 
+TEST(FileBasedWal, BackAndForth) {
+    // Force to make each file 1MB, each buffer is 1MB, and there are two
+    // buffers at most
+    FileBasedWalPolicy policy;
+    policy.fileSize = 1;
+    policy.bufferSize = 1;
+    policy.numBuffers = 2;
+
+    TempDir walDir("/tmp/testWal.XXXXXX");
+    // Create a new WAL, add one log and close it
+    auto wal = FileBasedWal::getWal(walDir.path(),
+                                    policy,
+                                    flusher.get(),
+                                    [](LogID, TermID, ClusterID, const std::string&) {
+                                        return true;
+                                    });
+    ASSERT_EQ(0, wal->lastLogId());
+
+    // Go back and forth several times, each time append 200 and rollback 100 wal
+    for (int count = 0; count < 10; count++) {
+        for (int i = count * 100 + 1; i <= (count + 1) * 200; i++) {
+            ASSERT_TRUE(wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
+                folly::stringPrintf(kLongMsg, i)));
+        }
+        ASSERT_TRUE(wal->rollbackToLog(100 * (count + 1)));
+        ASSERT_EQ(100 * (count + 1), wal->lastLogId());
+    }
+
+    // We don't delete the overlaping wals, there must be 10 wal files
+    ASSERT_EQ(10, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
+
+    // Rollback
+    for (int i = 999; i >= 0; i--) {
+        ASSERT_TRUE(wal->rollbackToLog(i));
+        ASSERT_EQ(i, wal->lastLogId());
+    }
+    ASSERT_EQ(0, FileUtils::listAllFilesInDir(walDir.path(), false, "*.wal").size());
+}
+
 }  // namespace wal
 }  // namespace nebula
 
