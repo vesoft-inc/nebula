@@ -190,7 +190,7 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
             return value.status();
         }
         auto srcid = value.value();
-        value      = dstExpr->eval();
+        value = dstExpr->eval();
         if (!value.ok()) {
             return value.status();
         }

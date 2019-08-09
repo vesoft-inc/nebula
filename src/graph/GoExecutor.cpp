@@ -707,8 +707,10 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         return Status::Error(msg);
                     }
                     auto res = RowReader::getPropByIndex(vreader.get(), index);
-                    CHECK(ok(res));
-                    return value(std::move(res));
+                    if (ok(res)) {
+                        return value(std::move(res));
+                    }
+                    return Status::Error(folly::sformat("{}.{} was not exist", tagName, prop));
                 };
                 getters.getDstTagProp = [&](const std::string &tagName,
                                             const std::string &prop) -> OptVariantType {
