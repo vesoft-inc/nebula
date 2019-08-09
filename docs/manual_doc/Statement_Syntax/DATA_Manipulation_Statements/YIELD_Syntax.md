@@ -39,7 +39,7 @@ e.g., $$.student.name is to get the target ($$) vertex (student)'s property (nam
 
 * DISTINCT
 
-`YIELD DISTINCT` must be used in the `GO` statement.
+`YIELD DISTINCT` must be used with the `GO` statement.
 ```
 nebula> YIELD DISTINCT 1     --- syntax error!
 ```

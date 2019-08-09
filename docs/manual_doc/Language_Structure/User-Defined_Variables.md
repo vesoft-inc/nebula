@@ -5,7 +5,7 @@ You can temporally store a value in a user-defined variable in the previous stat
 
 User variables are written as `$*var_name*`, where the variable name `*var_name*` consists of alphanumeric character, ., _,. Currently, any other characters are not recommend.
 
-Be aware that user-defined variables are session and execution specific. A user variable define in one statement can NOT be used in neither other clients nor other executions. Which means that the definition statement and the statements that use it should be submitted together. Variables are automatically freed when client have send the executions.
+Be aware that user-defined variables are session and execution specific. A user variable defined in one statement can NOT be used in neither other clients nor other executions, which means that the definition statement and the statements that use it should be submitted together. Variables are automatically freed when client has send the executions.
 
 User variable names are case-sensitive. Names are recommended to have a maximum length of 256 characters.
 

@@ -11,7 +11,7 @@ Also notice that DESCRIBE is different from SHOW. check XXX for SHOW.
 
 ### Examples
 
-Providing information about space. Please refer to XXX about CREATE SPACE.
+Providing information about space. As regards information about CREATE SPACE.
 
 ```
 nebula> DESCRIBE SPACE laura_space;
@@ -22,7 +22,7 @@ nebula> DESCRIBE SPACE laura_space;
 --------------------------------------------------------  
 ```
 
-Providing information about tag. Please refer to XXX about CREATE TAG.
+Providing information about tag. As regards information about CREATE TAG.
 
 ```
 nebula> DESCRIBE TAG player
@@ -35,7 +35,7 @@ nebula> DESCRIBE TAG player
 ------------------  
 ```
 
-Providing information about edge. Please refer to XXX about CREATE EDGE.
+Providing information about edge. As regards information about CREATE EDGE.
 
 ```
 nebula> DESCRIBE EDGE serve

@@ -4,8 +4,8 @@
 |Name | Description |
 |:----|:----:|
 | AVG() | Return the average value of the argument |
-| COUNT() | Return a count of the number returned |
-| COUNT(DISTINCT) | Return the count of a number of different values |
+| COUNT() | Return the number of records |
+| COUNT(DISTINCT) | Return the number of different values |
 | MAX() | Return the maximum value |
 | MIN() | Return the minimum value |
 | STD() | Return the population standard deviation | 

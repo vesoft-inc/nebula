@@ -53,7 +53,7 @@ nebula> GET VARIABLES load_config_interval_secs
 UPDATE VARIABLES [graph|meta|storage :] var = value
 ```
 > The updated variables will be stored into meta-service permanently.
-> If the variable's mode is `MUTABLE`, the change will take affects immediately. Otherwise, if the mode is `REBOOT`, the change will not work until a reboot. 
+> If the variable's mode is `MUTABLE`, the change will take effects immediately. Otherwise, if the mode is `REBOOT`, the change will not work until server restart.
 
 For example
 ```
