@@ -647,8 +647,10 @@ yield_column
     ;
 
 yield_sentence
-    : KW_YIELD yield_columns {
-        $$ = new YieldSentence($2);
+    : KW_YIELD yield_columns where_clause {
+        auto *s = new YieldSentence($2);
+		s->setWhereClause($3);
+		$$ = s;
     }
     ;
 

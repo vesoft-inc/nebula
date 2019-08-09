@@ -21,6 +21,7 @@
 #include "graph/MatchExecutor.h"
 #include "graph/FindPathExecutor.h"
 #include "graph/LimitExecutor.h"
+#include "graph/YieldExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -59,6 +60,9 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
         case Sentence::Kind::kFind:
             executor = std::make_unique<FindExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::kYield:
+            executor = std::make_unique<YieldExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kFindPath:
             executor = std::make_unique<FindPathExecutor>(sentence, ectx);

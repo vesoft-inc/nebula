@@ -7,20 +7,21 @@
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
+#include "graph/test/TraverseTestBase.h"
 
 namespace nebula {
 namespace graph {
 
-class YieldTest : public TestBase {
+class YieldTest : public TraverseTestBase {
 protected:
     void SetUp() override {
-        TestBase::SetUp();
+        TraverseTestBase::SetUp();
         // ...
     }
 
     void TearDown() override {
         // ...
-        TestBase::TearDown();
+        TraverseTestBase::TearDown();
     }
 };
 
@@ -204,6 +205,7 @@ TEST_F(YieldTest, Logic) {
     }
 }
 
+<<<<<<< HEAD
 TEST_F(YieldTest, inCall) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
@@ -219,6 +221,56 @@ TEST_F(YieldTest, inCall) {
         std::vector<std::tuple<bool, uint64_t>> expected{
             {true, 123}
         };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(YieldTest, sentenceBase) {
+    std::string go = "GO FROM %ld OVER serve YIELD "
+                     "$^.player.name as name, serve.start_year as start, $$.team.name as team";
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| YIELD $-.team";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<std::string>> expected;
+        for (auto &serve : player.serves()) {
+            std::tuple<std::string> result(std::get<0>(serve));
+            expected.emplace_back(std::move(result));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| YIELD $-.team WHERE 1 == 1";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<std::string>> expected;
+        for (auto &serve : player.serves()) {
+            std::tuple<std::string> result(std::get<0>(serve));
+            expected.emplace_back(std::move(result));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+	{
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| YIELD $-.team WHERE $-.start > 2005";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<std::string>> expected;
+        for (auto &serve : player.serves()) {
+            if (std::get<1>(serve) <= 2005) {
+                continue;
+            }
+            std::tuple<std::string> result(std::get<0>(serve));
+            expected.emplace_back(std::move(result));
+        }
         ASSERT_TRUE(verifyResult(resp, expected));
     }
 }

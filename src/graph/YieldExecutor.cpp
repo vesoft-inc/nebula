@@ -16,16 +16,18 @@ YieldExecutor::YieldExecutor(Sentence *sentence, ExecutionContext *ectx)
     sentence_ = static_cast<YieldSentence*>(sentence);
 }
 
-
 Status YieldExecutor::prepare() {
     Status status = Status::OK();
+    expCtx_ = std::make_unique<ExpressionContext>();
     do {
         status = prepareYield();
         if (!status.ok()) {
+            LOG(INFO) << status.toString();
             break;
         }
         status = prepareWhere();
         if (!status.ok()) {
+            LOG(INFO) << status.toString();
             break;
         }
     } while (false);
@@ -62,7 +64,7 @@ Status YieldExecutor::prepareYield() {
     if (expCtx_->hasVariableProp()) {
         auto &variables = expCtx_->variables();
         if (variables.size() > 1) {
-            return Status::Error("Only one variable allowed to use");
+            return Status::Error("Only one variable allowed to use.");
         }
 
         varname_ = *variables.begin();
@@ -71,11 +73,16 @@ Status YieldExecutor::prepareYield() {
 }
 
 Status YieldExecutor::prepareWhere() {
+    Status status;
     auto *clause = sentence_->whereClause();
     if (clause != nullptr) {
         filter_ = clause->filter();
     }
-    return Status::OK();
+    if (filter_ != nullptr) {
+        filter_->setContext(expCtx_.get());
+        status = filter_->prepare();
+    }
+    return status;
 }
 
 void YieldExecutor::execute() {
@@ -86,6 +93,7 @@ void YieldExecutor::execute() {
         status = executeConstant();
     }
     if (!status.ok()) {
+        LOG(INFO) << status.toString();
         DCHECK(onError_);
         onError_(std::move(status));
         return;
@@ -99,11 +107,12 @@ Status YieldExecutor::executeInputs() {
         bool existing = false;
         inputs = ectx()->variableHolder()->get(varname_, &existing);
         if (inputs == nullptr && !existing) {
-            return Status::Error("Variable `%s' not defined", varname_.c_str());
+            return Status::Error("Variable `%s' not defined.", varname_.c_str());
         }
     }
     // No error happened, but we are having empty inputs
     if (inputs == nullptr) {
+        finishExecution(nullptr);
         return Status::OK();
     }
 
@@ -122,6 +131,7 @@ Status YieldExecutor::executeInputs() {
         getters.getInputProp = [&] (const std::string &prop) {
             return Collector::getProp(inputs->schema().get(), prop, reader);
         };
+        VLOG(3) << "stub 1";
         if (filter_ != nullptr) {
             auto val = filter_->eval();
             if (!Expression::asBool(val)) {
@@ -207,7 +217,7 @@ Status YieldExecutor::executeConstant() {
     auto outputSchema = std::make_shared<SchemaWriter>();
     Collector::getSchema(values, resultColNames_, outputSchema.get());
 
-    RowWriter writer(std::move(outputSchema));
+    RowWriter writer(outputSchema);
     auto rsWriter = std::make_unique<RowSetWriter>(outputSchema);
     for (auto col : values) {
         Collector::collect(col, &writer);

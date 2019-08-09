@@ -578,7 +578,7 @@ public:
         return yieldColumns_->columns();
     }
 
-    void setWhereCalsue(WhereClause *clause) {
+    void setWhereClause(WhereClause *clause) {
         whereClause_.reset(clause);
     }
 
