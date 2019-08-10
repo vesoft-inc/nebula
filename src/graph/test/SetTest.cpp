@@ -323,7 +323,7 @@ TEST_F(SetTest, Minus) {
     }
 }
 
-TEST_F(SetTest, Intersectt) {
+TEST_F(SetTest, Intersect) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "(GO FROM %ld OVER like | "
@@ -345,14 +345,46 @@ TEST_F(SetTest, Intersectt) {
     }
 }
 
+TEST_F(SetTest, Mix) {
+    {
+        cpp2::ExecutionResponse resp;
+        auto *fmt = "(GO FROM %ld OVER like | "
+                    "GO FROM $- OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+                    " MINUS "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
+                    " UNION "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
+                    " INTERSECT "
+                    "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
+        auto &tim = players_["Tim Duncan"];
+        auto &tony = players_["Tony Parker"];
+        auto &manu = players_["Manu Ginobili"];
+        auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid(), tim.vid(), manu.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &serve : manu.serves()) {
+            std::tuple<std::string, int64_t, std::string> record(
+                manu.name(), std::get<1>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(record));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 TEST_F(SetTest, NoInput) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt = "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name"
                     " UNION "
+                    "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name"
+                    " MINUS "
+                    "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name"
+                    " INTERSECT "
                     "GO FROM %ld OVER serve YIELD serve.start_year, $$.team.name";
         auto &nobody = players_["Nobody"];
-        auto query = folly::stringPrintf(fmt, nobody.vid(), nobody.vid());
+        auto query = folly::stringPrintf(
+                fmt, nobody.vid(), nobody.vid(), nobody.vid(), nobody.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         ASSERT_EQ(nullptr, resp.get_rows());

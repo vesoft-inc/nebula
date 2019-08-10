@@ -120,6 +120,8 @@ void SetExecutor::execute() {
             onEmptyInputs();
             return;
         }
+
+        // Set op share the same priority, they would execute sequentially.
         switch (sentence_->op()) {
             case SetSentence::Operator::UNION:
                 doUnion();
@@ -192,6 +194,8 @@ Status SetExecutor::checkSchema() {
     while (leftIter && rightIter) {
         auto *colName = leftIter->getName();
         if (leftIter->getType() != rightIter->getType()) {
+            // Implicit type casting would happen if the type do no match.
+            // If type casting failed. the whole statement would fail.
             castingMap_.emplace_back(index, leftIter->getType());
         }
 
@@ -203,6 +207,7 @@ Status SetExecutor::checkSchema() {
     }
 
     if (leftIter || rightIter) {
+        // If the column count not match, we will not do set op.
         return Status::Error("Field count not match.");
     }
 

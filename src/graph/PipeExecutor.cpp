@@ -93,6 +93,9 @@ Status PipeExecutor::prepare() {
 }
 
 Status PipeExecutor::syntaxPreCheck() {
+    // Set op not support input,
+    // because '$-' would be ambiguous in such a situation:
+    // Go | (Go | Go $- UNION GO)
     if (sentence_->right()->kind() == Sentence::Kind::kSet) {
         return Status::SyntaxError("Set op not support input.");
     }
