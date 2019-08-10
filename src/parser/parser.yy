@@ -126,7 +126,7 @@ class GraphScanner;
 %token <doubleval> DOUBLE
 %token <strval> STRING VARIABLE LABEL
 
-%type <strval> name_label unreserved_keyword
+%type <strval> name_label unreserved_keyword agg_function
 %type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
 %type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
 %type <expr> unary_expression primary_expression equality_expression
@@ -252,7 +252,19 @@ unreserved_keyword
      | KW_BIT_AND            { $$ = new std::string("bit_and"); }
      | KW_BIT_OR             { $$ = new std::string("bit_or"); }
      | KW_BIT_XOR            { $$ = new std::string("bit_xor"); }
+     ;
 
+agg_function
+     : KW_COUNT              { $$ = new std::string("COUNT"); }
+     | KW_COUNT_DISTINCT     { $$ = new std::string("COUNT_DISTINCT"); }
+     | KW_SUM                { $$ = new std::string("SUM"); }
+     | KW_AVG                { $$ = new std::string("AVG"); }
+     | KW_MAX                { $$ = new std::string("MAX"); }
+     | KW_MIN                { $$ = new std::string("MIN"); }
+     | KW_STD                { $$ = new std::string("STD"); }
+     | KW_BIT_AND            { $$ = new std::string("BIT_AND"); }
+     | KW_BIT_OR             { $$ = new std::string("BIT_OR"); }
+     | KW_BIT_XOR            { $$ = new std::string("BIT_XOR"); }
      ;
 
 primary_expression
@@ -661,107 +673,29 @@ yield_column
     : expression {
         $$ = new YieldColumn($1);
     }
-    | KW_SUM L_PAREN expression R_PAREN {
+    | agg_function L_PAREN expression R_PAREN {
         auto yield = new YieldColumn($3);
-        yield->setFunction(F_SUM);
-        $$ = yield;
-    }
-    | KW_COUNT L_PAREN expression R_PAREN {
-        auto yield = new YieldColumn($3);
-        yield->setFunction(F_COUNT);
-        $$ = yield;
-    }
-    | KW_COUNT_DISTINCT L_PAREN expression R_PAREN {
-        auto yield = new YieldColumn($3);
-        yield->setFunction(F_COUNT_DISTINCT);
-        $$ = yield;
-    }
-    | KW_AVG L_PAREN expression R_PAREN {
-        auto yield = new YieldColumn($3);
-        yield->setFunction(F_AVG);
-        $$ = yield;
-    }
-    | KW_MAX L_PAREN expression R_PAREN {
-        auto yield = new YieldColumn($3);
-        yield->setFunction(F_MAX);
-        $$ = yield;
-    }
-    | KW_MIN L_PAREN expression R_PAREN {
-        auto yield = new YieldColumn($3);
-        yield->setFunction(F_MIN);
-        $$ = yield;
-    }
-    | KW_STD L_PAREN expression R_PAREN {
-        auto yield = new YieldColumn($3);
-        yield->setFunction(F_STD);
-        $$ = yield;
-    }
-    | KW_BIT_AND L_PAREN expression R_PAREN {
-        auto yield = new YieldColumn($3);
-        yield->setFunction(F_BIT_AND);
-        $$ = yield;
-    }
-    | KW_BIT_OR L_PAREN expression R_PAREN {
-        auto yield = new YieldColumn($3);
-        yield->setFunction(F_BIT_OR);
-        $$ = yield;
-    }
-    | KW_BIT_XOR L_PAREN expression R_PAREN {
-        auto yield = new YieldColumn($3);
-        yield->setFunction(F_BIT_XOR);
+        yield->setFunction($1);
         $$ = yield;
     }
     | expression KW_AS name_label {
         $$ = new YieldColumn($1, $3);
     }
-    | KW_SUM L_PAREN expression R_PAREN KW_AS name_label {
+    | agg_function L_PAREN expression R_PAREN KW_AS name_label {
         auto yield = new YieldColumn($3, $6);
-        yield->setFunction(F_SUM);
+        yield->setFunction($1);
         $$ = yield;
     }
-    | KW_COUNT L_PAREN expression R_PAREN KW_AS name_label {
-        auto yield = new YieldColumn($3, $6);
-        yield->setFunction(F_COUNT);
+    | agg_function L_PAREN MUL R_PAREN {
+        auto expr = new PrimaryExpression("*");
+        auto yield = new YieldColumn(expr);
+        yield->setFunction($1);
         $$ = yield;
     }
-    | KW_COUNT_DISTINCT L_PAREN expression R_PAREN KW_AS name_label {
-        auto yield = new YieldColumn($3, $6);
-        yield->setFunction(F_COUNT_DISTINCT);
-        $$ = yield;
-    }
-    | KW_AVG L_PAREN expression R_PAREN KW_AS name_label {
-        auto yield = new YieldColumn($3, $6);
-        yield->setFunction(F_AVG);
-        $$ = yield;
-    }
-    | KW_MAX L_PAREN expression R_PAREN KW_AS name_label {
-        auto yield = new YieldColumn($3, $6);
-        yield->setFunction(F_MAX);
-        $$ = yield;
-    }
-    | KW_MIN L_PAREN expression R_PAREN KW_AS name_label {
-        auto yield = new YieldColumn($3, $6);
-        yield->setFunction(F_MIN);
-        $$ = yield;
-    }
-    | KW_STD L_PAREN expression R_PAREN KW_AS name_label {
-        auto yield = new YieldColumn($3, $6);
-        yield->setFunction(F_STD);
-        $$ = yield;
-    }
-    | KW_BIT_AND L_PAREN expression R_PAREN KW_AS name_label {
-        auto yield = new YieldColumn($3, $6);
-        yield->setFunction(F_BIT_AND);
-        $$ = yield;
-    }
-    | KW_BIT_OR L_PAREN expression R_PAREN KW_AS name_label {
-        auto yield = new YieldColumn($3, $6);
-        yield->setFunction(F_BIT_OR);
-        $$ = yield;
-    }
-    | KW_BIT_XOR L_PAREN expression R_PAREN KW_AS name_label {
-        auto yield = new YieldColumn($3, $6);
-        yield->setFunction(F_BIT_XOR);
+    | agg_function L_PAREN MUL R_PAREN KW_AS name_label {
+        auto expr = new PrimaryExpression("*");
+        auto yield = new YieldColumn(expr, $6);
+        yield->setFunction($1);
         $$ = yield;
     }
     ;
@@ -975,18 +909,18 @@ create_schema_prop_list
     ;
 
 create_schema_prop_item
-: KW_TTL_DURATION ASSIGN unary_integer {
-    // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
-    if ($3 < 0) {
-        $3 = 0;
+    : KW_TTL_DURATION ASSIGN unary_integer {
+        // Less than or equal to 0 means infinity, so less than 0 is equivalent to 0
+        if ($3 < 0) {
+            $3 = 0;
+        }
+        $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
     }
-    $$ = new SchemaPropItem(SchemaPropItem::TTL_DURATION, $3);
-}
-| KW_TTL_COL ASSIGN name_label {
-    $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
-    delete $3;
-}
-;
+    | KW_TTL_COL ASSIGN name_label {
+        $$ = new SchemaPropItem(SchemaPropItem::TTL_COL, *$3);
+        delete $3;
+    }
+    ;
 
 create_tag_sentence
     : KW_CREATE KW_TAG name_label L_PAREN R_PAREN opt_create_schema_prop_list {
@@ -1876,3 +1810,4 @@ static int yylex(nebula::GraphParser::semantic_type* yylval,
                  nebula::GraphScanner& scanner) {
     return scanner.yylex(yylval, yylloc);
 }
+

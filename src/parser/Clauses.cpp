@@ -172,41 +172,9 @@ std::string WhereClause::toString() const {
 std::string YieldColumn::toString() const {
     std::string buf;
     buf.reserve(256);
-    if (func_ != F_NONE) {
-        switch (func_) {
-            case F_COUNT:
-                 buf += "COUNT(";
-                 break;
-            case F_COUNT_DISTINCT:
-                buf += "COUNT_DISTINCT(";
-                break;
-            case F_SUM:
-                buf += "SUM(";
-                break;
-            case F_AVG:
-                buf += "AVG(";
-                break;
-            case F_MAX:
-                buf += "MAX(";
-                break;
-            case F_MIN:
-                buf += "MIN(";
-                break;
-            case F_STD:
-                buf += "MIN(";
-                break;
-            case F_BIT_AND:
-                buf += "BIT_AND(";
-                break;
-            case F_BIT_OR:
-                buf += "BIT_OR(";
-                break;
-            case F_BIT_XOR:
-                buf += "BIT_XOR(";
-                break;
-            default:
-                break;
-        }
+    if (funName_ != nullptr) {
+        buf += *funName_;
+        buf += "(";
         buf += expr_->toString();
         buf += ")";
     } else {

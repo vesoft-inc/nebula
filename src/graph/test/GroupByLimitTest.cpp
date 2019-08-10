@@ -157,12 +157,12 @@ TEST_F(GroupByLimitTest, GroupByTest) {
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<uint64_t, uint64_t, double >> expected = {
                 {2, 2018, 2018.5},
-                {1, 2017, 2018},
-                {1, 2016, 2017},
-                {1, 2009, 2010},
-                {1, 2007, 2009},
-                {1, 2012, 2013},
-                {1, 2015, 2016},
+                {1, 2017, 2018.0},
+                {1, 2016, 2017.0},
+                {1, 2009, 2010.0},
+                {1, 2007, 2009.0},
+                {1, 2012, 2013.0},
+                {1, 2015, 2016.0},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -195,12 +195,12 @@ TEST_F(GroupByLimitTest, GroupByTest) {
                     double ,                 // std_end_year
                     uint64_t>                // COUNT($-.id)
                     > expected = {
-                {"Celtics", 2017, 2017, 2019, 2019, 0, 1},
-                {"Magic", 2000, 2000, 2004, 2004, 0, 1},
-                {"Pistons", 2015, 2015, 2017, 2017, 0, 1},
-                {"Raptors", 1997, 1997, 2000, 2000, 0, 1},
-                {"Rockets", 2004, 2004, 2010, 2010, 0, 1},
-                {"Spurs", 2013, 2013, 2013, 2014, 1, 2},
+                {"Celtics", 2017, 2017, 2019, 2019.0, 0, 1},
+                {"Magic", 2000, 2000, 2004, 2004.0, 0, 1},
+                {"Pistons", 2015, 2015, 2017, 2017.0, 0, 1},
+                {"Raptors", 1997, 1997, 2000, 2000.0, 0, 1},
+                {"Rockets", 2004, 2004, 2010, 2010.0, 0, 1},
+                {"Spurs", 2013, 2013, 2013, 2014.0, 1, 2},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -239,10 +239,10 @@ TEST_F(GroupByLimitTest, GroupByTest) {
                                uint64_t,      // COUNT($-.likeness)
                                uint64_t>      // COUNT_DISTINCT($-.likeness)
                                > expected = {
-                {"LeBron James", 68, 34, 34, 34, 1, 2, 0, 2, 1},
-                {"Chris Paul", 66, 33, 33, 33, 1, 2, 0, 2, 1},
-                {"Dwyane Wade", 37, 37, 37, 37, 1, 2, 3, 1, 1},
-                {"Carmelo Anthony", 34, 34, 34, 34, 1, 2, 3, 1, 1},
+                {"LeBron James", 68, 34.0, 34, 34, 1, 2, 0, 2, 1},
+                {"Chris Paul", 66, 33.0, 33, 33, 1, 2, 0, 2, 1},
+                {"Dwyane Wade", 37, 37.0, 37, 37, 1, 2, 3, 1, 1},
+                {"Carmelo Anthony", 34, 34.0, 34, 34, 1, 2, 3, 1, 1},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -254,18 +254,18 @@ TEST_F(GroupByLimitTest, GroupByTest) {
         auto &player2 = players_["Dwyane Wade"];
         auto *fmt = "GO FROM %ld,%ld OVER like "
                     "YIELD $$.player.name as name"
-                    "| GROUP BY $-.name, SUM(1) "
+                    "| GROUP BY $-.name, abs(5) "
                     "YIELD $-.name as name, "
-                    "SUM(2) as sum, "
-                    "COUNT(1) as count";
+                    "SUM(1.5) as sum, "
+                    "COUNT(*) as count";
         auto query = folly::stringPrintf(fmt, player1.vid(), player2.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, uint64_t>> expected = {
-                {"LeBron James", 4, 2},
-                {"Chris Paul", 4, 2},
-                {"Dwyane Wade", 2, 1},
-                {"Carmelo Anthony", 2, 1},
+        std::vector<std::tuple<std::string, double, uint64_t>> expected = {
+                {"LeBron James", 3.0, 2},
+                {"Chris Paul", 3.0, 2},
+                {"Dwyane Wade", 1.5, 1},
+                {"Carmelo Anthony", 1.5, 1},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -293,8 +293,6 @@ TEST_F(GroupByLimitTest, GroupByTest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-
-    // COUNT(*) nonsupport
 
     // group input nonexistent
     {

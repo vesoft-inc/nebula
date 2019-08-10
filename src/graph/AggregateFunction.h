@@ -171,7 +171,8 @@ public:
             if (val.getType() == ColumnType::int_type) {
                 sum_.set_integer(sum_.get_integer() + val.get_integer());
             } else if (val.getType() == ColumnType::double_type) {
-                sum_.set_integer(sum_.get_integer() + val.get_double_precision());
+                sum_.set_double_precision(sum_.get_double_precision() +
+                                              val.get_double_precision());
             }
         }
     }
@@ -204,7 +205,7 @@ public:
         }
         double dSum = 0.0;
         if (sum.getType() == ColumnType::int_type) {
-            dSum = static_cast<double >(sum.get_integer());
+            dSum = static_cast<double>(sum.get_integer());
         } else {
             dSum = sum.get_double_precision();
         }

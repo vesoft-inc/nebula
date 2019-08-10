@@ -65,7 +65,6 @@ Status GroupByExecutor::prepareYield() {
             if (col->alias() != nullptr) {
                 if (col->expr()->isInputExpression()) {
                     auto inputName = static_cast<InputPropertyExpression*>(col->expr())->prop();
-                    LOG(INFO) << "Add alias name " << *col->alias();
                     aliases_.emplace(*col->alias(), *inputName);
                 }
             }
@@ -93,6 +92,11 @@ Status GroupByExecutor::prepareGroup() {
             break;
         }
         for (auto *col : groups) {
+            if (col->getFunName() != "") {
+                status = Status::Error("Use invalid group function `%s'",
+                                            col->getFunName().c_str());
+                break;
+            }
             col->expr()->setContext(expCtx_.get());
             status = col->expr()->prepare();
             if (!status.ok()) {
@@ -130,7 +134,8 @@ Status GroupByExecutor::buildIndex() {
             continue;
         }
 
-        if (it.first->getFunction() != F_NONE) {
+        // function call
+        if (it.first->expr()->isFunCallExpression()) {
             continue;
         }
 
@@ -183,7 +188,7 @@ void GroupByExecutor::execute() {
         return;
     }
 
-    GroupingData();
+    groupingData();
 
     generateOutputSchema();
 
@@ -243,22 +248,22 @@ VariantType GroupByExecutor::toVariantType(const cpp2::ColumnValue& value) {
 }
 
 
-void GroupByExecutor::GroupingData() {
+void GroupByExecutor::groupingData() {
     // key : group col vals, val: cal funptr
     using FunCols = std::vector<std::shared_ptr<AggFun>>;
     using GroupData = std::unordered_map<ColVals, FunCols, ColsHasher>;
-    std::unordered_map<FunKind, std::function<std::shared_ptr<AggFun>()>> funVec = {
-            { F_NONE, []() -> auto {return std::make_shared<Group>();} },
-            { F_COUNT, []() -> auto {return std::make_shared<Count>();} },
-            { F_COUNT_DISTINCT, []() -> auto {return std::make_shared<CountDistinct>();} },
-            { F_SUM, []() -> auto {return std::make_shared<Sum>();} },
-            { F_AVG, []() -> auto {return std::make_shared<Avg>();} },
-            { F_MAX, []() -> auto {return std::make_shared<Max>();} },
-            { F_MIN, []() -> auto {return std::make_shared<Min>();} },
-            { F_STD, []() -> auto {return std::make_shared<Stdev>();} },
-            { F_BIT_AND, []() -> auto {return std::make_shared<BitAnd>();} },
-            { F_BIT_OR, []() -> auto {return std::make_shared<BitOr>();} },
-            { F_BIT_XOR, []() -> auto {return std::make_shared<BitXor>();} }
+    std::unordered_map<std::string, std::function<std::shared_ptr<AggFun>()>> funVec = {
+            { "", []() -> auto {return std::make_shared<Group>();} },
+            { "COUNT", []() -> auto {return std::make_shared<Count>();} },
+            { "COUNT_DISTINCT", []() -> auto {return std::make_shared<CountDistinct>();} },
+            { "SUM", []() -> auto {return std::make_shared<Sum>();} },
+            { "AVG", []() -> auto {return std::make_shared<Avg>();} },
+            { "MAX", []() -> auto {return std::make_shared<Max>();} },
+            { "MIN", []() -> auto {return std::make_shared<Min>();} },
+            { "STD", []() -> auto {return std::make_shared<Stdev>();} },
+            { "BIT_AND", []() -> auto {return std::make_shared<BitAnd>();} },
+            { "BIT_OR", []() -> auto {return std::make_shared<BitOr>();} },
+            { "BIT_XOR", []() -> auto {return std::make_shared<BitXor>();} }
     };
 
     GroupData data;
@@ -288,7 +293,7 @@ void GroupByExecutor::GroupingData() {
         // Init fun handler
         if (findIt == data.end()) {
             for (auto &col : yieldCols_) {
-                auto funPtr = funVec[col.first->getFunction()]();
+                auto funPtr = funVec[col.first->getFunName()]();
                 calVals.emplace_back(funPtr);
             }
         } else {

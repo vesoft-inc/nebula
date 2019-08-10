@@ -34,7 +34,7 @@ private:
     Status prepareYield();
     Status buildIndex();
 
-    void GroupingData();
+    void groupingData();
     void generateOutputSchema();
 
     std::vector<std::string> getResultColumnNames() const;
