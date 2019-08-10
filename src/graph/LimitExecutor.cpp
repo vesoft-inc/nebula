@@ -16,28 +16,6 @@ LimitExecutor::LimitExecutor(Sentence *sentence, ExecutionContext *ectx) : Trave
 
 
 Status LimitExecutor::prepare() {
-    Status status;
-    do {
-        status = checkIfGraphSpaceChosen();
-        if (!status.ok()) {
-            break;
-        }
-        status = prepareLimit();
-        if (!status.ok()) {
-            break;
-        }
-    } while (false);
-
-    if (!status.ok()) {
-        LOG(ERROR) << "Preparing failed: " << status;
-        return status;
-    }
-
-    return status;
-}
-
-
-Status LimitExecutor::prepareLimit() {
     skip_ = sentence_->skip();
     if (skip_ < 0) {
         return Status::Error("skip `%ld' is illegal", skip_);
@@ -53,15 +31,21 @@ Status LimitExecutor::prepareLimit() {
 
 void LimitExecutor::execute() {
     FLOG_INFO("Executing Limit: %s", sentence_->toString().c_str());
-    if (rows_.empty() || rows_.size() <= skip_ || count_ == 0) {
-        rows_.clear();
+    if (inputs_ == nullptr) {
+        DCHECK(onFinish_);
+        onFinish_();
+        return;
+    }
 
-    } else if (rows_.size() > (skip_ + count_)) {
-        rows_.erase(rows_.begin(), rows_.begin() + skip_);
-        rows_.erase(rows_.begin() + count_, rows_.end());
-
-    } else if (rows_.size() > skip_ && rows_.size() <= (skip_ + count_)) {
-        rows_.erase(rows_.begin(), rows_.begin() + skip_);
+    auto inRows = inputs_->getRows();
+    if (inRows.size() > (skip_ + count_)) {
+        rows_.resize(count_);
+        rows_.assign(inRows.begin() + skip_, inRows.begin() + skip_ + count_);
+    } else if (inRows.size() > skip_ && inRows.size() <= (skip_ + count_)) {
+        rows_.resize(inRows.size() - skip_);
+        rows_.assign(inRows.begin() + skip_, inRows.end());
+    } else {
+        rows_.resize(0);
     }
 
     if (onResult_) {
@@ -78,8 +62,7 @@ void LimitExecutor::feedResult(std::unique_ptr<InterimResult> result) {
     if (result == nullptr) {
         return;
     }
-    schema_ = std::move(result->schema());
-    rows_ = result->getRows();
+    inputs_ = std::move(result);
 }
 
 
@@ -88,10 +71,10 @@ std::unique_ptr<InterimResult> LimitExecutor::setupInterimResult() {
         return nullptr;
     }
 
-    auto rsWriter = std::make_unique<RowSetWriter>(schema_);
+    auto rsWriter = std::make_unique<RowSetWriter>(inputs_->schema());
     using Type = cpp2::ColumnValue::Type;
     for (auto &row : rows_) {
-        RowWriter writer(schema_);
+        RowWriter writer(inputs_->schema());
         auto columns = row.get_columns();
         for (auto &column : columns) {
             switch (column.getType()) {
@@ -124,8 +107,8 @@ void LimitExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     }
 
     std::vector<std::string> columnNames;
-    columnNames.reserve(schema_->getNumFields());
-    auto field = schema_->begin();
+    columnNames.reserve(inputs_->schema()->getNumFields());
+    auto field = inputs_->schema()->begin();
     while (field) {
         columnNames.emplace_back(field->getName());
         ++field;

@@ -327,6 +327,9 @@ public:
 
     void setYieldClause(YieldClause *clause) {
         yieldClause_.reset(clause);
+    }
+
+    std::string toString() const override;
 
 private:
     std::unique_ptr<std::string>    tag_;
@@ -560,8 +563,9 @@ public:
     }
 
  private:
-    int64_t skip_;
-    int64_t count_;
+    int64_t    skip_{-1};
+    int64_t    count_{-1};
 };
 }   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_
+

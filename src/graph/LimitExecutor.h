@@ -31,11 +31,10 @@ public:
 
 private:
     std::unique_ptr<InterimResult> setupInterimResult();
-    Status prepareLimit();
 
 private:
     LimitSentence                                            *sentence_{nullptr};
-    std::shared_ptr<const meta::SchemaProviderIf>             schema_;
+    std::unique_ptr<InterimResult>                            inputs_{nullptr};
     std::vector<cpp2::RowValue>                               rows_;
     uint64_t                                                  skip_{0};
     uint64_t                                                  count_{0};
