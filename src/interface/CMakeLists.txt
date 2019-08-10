@@ -1,9 +1,6 @@
-if (CMAKE_GUN_COMPILER_ID)
-  add_compile_options(-Wno-maybe-uninitialized)
-endif()
 
-if (CMAKE_CLANG_COMPILER_ID)
-  add_compile_options(-Wno-uninitialized)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    add_compile_options(-Wno-maybe-uninitialized)
 endif()
 
 set(THRIFT1 ${Fbthrift_BIN})
