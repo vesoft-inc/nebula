@@ -67,8 +67,8 @@ public:
 
     folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) override {
         (*hostLeaderMap)[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
-        (*hostLeaderMap)[HostAddr(1, 0)][1] = {6, 7, 8};
-        (*hostLeaderMap)[HostAddr(2, 0)][1] = {9};
+        (*hostLeaderMap)[HostAddr(1, 1)][1] = {6, 7, 8};
+        (*hostLeaderMap)[HostAddr(2, 2)][1] = {9};
         return response(7);
     }
 
@@ -622,67 +622,213 @@ TEST(BalanceTest, RecoveryTest) {
     }
 }
 
-TEST(BalanceTest, LeaderBalancePlanTest) {
-    using LeaderBalanceTask = std::tuple<GraphSpaceID, PartitionID, HostAddr, HostAddr>;
-    auto* balancer = Balancer::instance(nullptr);
+void verifyLeaderBalancePlan(LeaderBalancePlan& plan, const std::vector<int32_t>& expected) {
+    // expected is the expected indegree/outdegree of each hosts,
+    // indegree > 0, outdegree < 0
+    // all hosts's ip must be {0, 0}, {1, 1}, {2, 2} ... , so we can use the port to index
+    std::vector<int32_t> actual(expected.size(), 0);
+    for (const auto& task : plan) {
+        auto from = std::get<2>(task);
+        auto to = std::get<3>(task);
+        actual[from.second]--;
+        actual[to.second]++;
+    }
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_EQ(actual[i], expected[i]) << "!!! " << i << "" << actual[i] << " " << expected[i];
+    }
+}
+
+TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
+    fs::TempDir rootPath("/tmp/SimpleLeaderBalancePlanTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}};
+    TestUtils::createSomeHosts(kv.get(), hosts);
+    // 9 partition in space 1, 3 replica, 3 hosts
+    TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);
+
+    std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
     {
         HostLeaderMap hostLeaderMap;
-        // 9 partition in space 1
         hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3, 4, 5};
-        hostLeaderMap[HostAddr(1, 0)][1] = {6, 7, 8};
-        hostLeaderMap[HostAddr(2, 0)][1] = {9};
+        hostLeaderMap[HostAddr(1, 1)][1] = {6, 7, 8};
+        hostLeaderMap[HostAddr(2, 2)][1] = {9};
+        auto tempMap = hostLeaderMap;
 
         LeaderBalancePlan plan;
         balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        verifyLeaderBalancePlan(plan, {-2, 0, 2});
 
-        EXPECT_EQ(plan.size(), 2);
-        EXPECT_EQ(plan.front(), LeaderBalanceTask(1, 5, HostAddr(0, 0), HostAddr(2, 0)));
-        EXPECT_EQ(plan.back(), LeaderBalanceTask(1, 4, HostAddr(0, 0), HostAddr(2, 0)));
+        // check two plan build are same
+        LeaderBalancePlan temp;
+        balancer->buildLeaderBalancePlan(&tempMap, 1, temp);
+        verifyLeaderBalancePlan(temp, {-2, 0, 2});
+        EXPECT_EQ(plan.size(), temp.size());
+        for (size_t i = 0; i < plan.size(); i++) {
+            EXPECT_EQ(plan[i], temp[i]);
+        }
     }
     {
         HostLeaderMap hostLeaderMap;
-        // 9 partition in space 1
         hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3, 4};
-        hostLeaderMap[HostAddr(1, 0)][1] = {5, 6, 7, 8};
-        hostLeaderMap[HostAddr(2, 0)][1] = {9};
+        hostLeaderMap[HostAddr(1, 1)][1] = {5, 6, 7, 8};
+        hostLeaderMap[HostAddr(2, 2)][1] = {9};
 
         LeaderBalancePlan plan;
         balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
-
-        EXPECT_EQ(plan.size(), 2);
-        EXPECT_EQ(plan.front(), LeaderBalanceTask(1, 8, HostAddr(1, 0), HostAddr(2, 0)));
-        EXPECT_EQ(plan.back(), LeaderBalanceTask(1, 4, HostAddr(0, 0), HostAddr(2, 0)));
+        verifyLeaderBalancePlan(plan, {-1, -1, 2});
     }
     {
         HostLeaderMap hostLeaderMap;
-        // 9 partition in space 1
         hostLeaderMap[HostAddr(0, 0)][1] = {};
-        hostLeaderMap[HostAddr(1, 0)][1] = {};
-        hostLeaderMap[HostAddr(2, 0)][1] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+        hostLeaderMap[HostAddr(1, 1)][1] = {};
+        hostLeaderMap[HostAddr(2, 2)][1] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 
         LeaderBalancePlan plan;
         balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
-
-        EXPECT_EQ(plan.size(), 6);
+        verifyLeaderBalancePlan(plan, {3, 3, -6});
     }
     {
         HostLeaderMap hostLeaderMap;
-        // 10 partition in space 1 which is already base
         hostLeaderMap[HostAddr(0, 0)][1] = {1, 2, 3};
-        hostLeaderMap[HostAddr(1, 0)][1] = {4, 5, 6, 7};
-        hostLeaderMap[HostAddr(2, 0)][1] = {8, 9, 10};
+        hostLeaderMap[HostAddr(1, 1)][1] = {4, 5, 6};
+        hostLeaderMap[HostAddr(2, 2)][1] = {7, 8, 9};
 
         LeaderBalancePlan plan;
         balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        verifyLeaderBalancePlan(plan, {0, 0, 0});
+    }
+}
 
-        EXPECT_EQ(plan.size(), 0);
+TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
+    fs::TempDir rootPath("/tmp/SimpleLeaderBalancePlanTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
+    TestUtils::createSomeHosts(kv.get(), hosts);
+    // 7 partition in space 1, 3 replica, 6 hosts, so not all hosts have intersection parts
+    TestUtils::assembleSpace(kv.get(), 1, 7, 3, 6);
+
+    std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {4, 5, 6};
+        hostLeaderMap[HostAddr(1, 1)][1] = {};
+        hostLeaderMap[HostAddr(2, 2)][1] = {};
+        hostLeaderMap[HostAddr(3, 3)][1] = {1, 2, 3, 7};
+        hostLeaderMap[HostAddr(4, 4)][1] = {};
+        hostLeaderMap[HostAddr(5, 5)][1] = {};
+
+        LeaderBalancePlan plan;
+        balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        verifyLeaderBalancePlan(plan, {-2, 2, 1, -3, 1, 1});
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {};
+        hostLeaderMap[HostAddr(1, 1)][1] = {5, 6, 7};
+        hostLeaderMap[HostAddr(2, 2)][1] = {};
+        hostLeaderMap[HostAddr(3, 3)][1] = {1, 2};
+        hostLeaderMap[HostAddr(4, 4)][1] = {};
+        hostLeaderMap[HostAddr(5, 5)][1] = {3, 4};
+
+        LeaderBalancePlan plan;
+        balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        verifyLeaderBalancePlan(plan, {1, -1, 1, -1, 1, -1});
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {};
+        hostLeaderMap[HostAddr(1, 1)][1] = {1, 5};
+        hostLeaderMap[HostAddr(2, 2)][1] = {2, 6};
+        hostLeaderMap[HostAddr(3, 3)][1] = {3, 7};
+        hostLeaderMap[HostAddr(4, 4)][1] = {4};
+        hostLeaderMap[HostAddr(5, 5)][1] = {};
+
+        LeaderBalancePlan plan;
+        balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        verifyLeaderBalancePlan(plan, {1, 0, -1, -1, 0, 1});
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {5, 6};
+        hostLeaderMap[HostAddr(1, 1)][1] = {1, 7};
+        hostLeaderMap[HostAddr(2, 2)][1] = {};
+        hostLeaderMap[HostAddr(3, 3)][1] = {};
+        hostLeaderMap[HostAddr(4, 4)][1] = {2, 3, 4};
+        hostLeaderMap[HostAddr(5, 5)][1] = {};
+
+        LeaderBalancePlan plan;
+        balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        verifyLeaderBalancePlan(plan, {-1, 0, 1, 1, -2, 1});
+    }
+    {
+        HostLeaderMap hostLeaderMap;
+        hostLeaderMap[HostAddr(0, 0)][1] = {6};
+        hostLeaderMap[HostAddr(1, 1)][1] = {1, 7};
+        hostLeaderMap[HostAddr(2, 2)][1] = {2};
+        hostLeaderMap[HostAddr(3, 3)][1] = {3};
+        hostLeaderMap[HostAddr(4, 4)][1] = {4};
+        hostLeaderMap[HostAddr(5, 5)][1] = {5};
+
+        LeaderBalancePlan plan;
+        balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        verifyLeaderBalancePlan(plan, {0, 0, 0, 0, 0, 0});
+    }
+}
+
+TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
+    fs::TempDir rootPath("/tmp/SimpleLeaderBalancePlanTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
+    FLAGS_expired_hosts_check_interval_sec = 20;
+    FLAGS_expired_threshold_sec = 600;
+
+    int partCount = 99999;
+    int replica = 3;
+    int hostCount = 100;
+    std::vector<HostAddr> hosts;
+    for (int i = 0; i < hostCount; i++) {
+        hosts.emplace_back(i, i);
+    }
+    TestUtils::createSomeHosts(kv.get(), hosts);
+    TestUtils::assembleSpace(kv.get(), 1, partCount, replica, hostCount);
+
+    std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
+    std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
+    {
+        HostLeaderMap hostLeaderMap;
+        // all part will random choose a leader
+        for (int partId = 1; partId <= partCount; partId++) {
+            std::vector<HostAddr> peers;
+            size_t idx = partId;
+            for (int32_t i = 0; i < replica; i++, idx++) {
+                peers.emplace_back(hosts[idx % hostCount]);
+            }
+            ASSERT_EQ(peers.size(), replica);
+            auto leader = peers[folly::Random::rand32(peers.size())];
+            hostLeaderMap[leader][1].emplace_back(partId);
+        }
+
+        std::vector<int32_t> expected;
+        // each host will have 10 leader, except the first one have 9 leader
+        expected.emplace_back(999 - hostLeaderMap[HostAddr(0, 0)][1].size());
+        for (int i = 1; i < hostCount; i++) {
+            expected.emplace_back(1000 - hostLeaderMap[HostAddr(i, i)][1].size());
+        }
+
+        LeaderBalancePlan plan;
+        balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        verifyLeaderBalancePlan(plan, expected);
     }
 }
 
 TEST(BalanceTest, LeaderBalanceTest) {
     fs::TempDir rootPath("/tmp/LeaderBalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    TestUtils::createSomeHosts(kv.get());
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}};
+    TestUtils::createSomeHosts(kv.get(), hosts);
+    TestUtils::assembleSpace(kv.get(), 1, 9, 3, 3);
     {
         cpp2::SpaceProperties properties;
         properties.set_space_name("default_space");

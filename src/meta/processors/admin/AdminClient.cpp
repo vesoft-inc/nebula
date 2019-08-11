@@ -342,9 +342,6 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     folly::Promise<Status> promise;
     auto future = promise.getFuture();
     auto allHosts = ActiveHostsMan::instance()->getActiveHosts();
-    for (const auto& host : allHosts) {
-        (*result)[host] = {};
-    }
 
     auto getLeader = [result, this] (const HostAddr& host) {
         storage::cpp2::GetLeaderReq req;
@@ -376,13 +373,7 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
 
     folly::collectAll(hostFutures)
         .then([p = std::move(promise)] (std::vector<folly::Try<Status>>&& tries) mutable {
-        for (const auto& t : tries) {
-            auto status = t.value();
-            if (!status.ok()) {
-                p.setValue(status);
-                return;
-            }
-        }
+        UNUSED(tries);
         p.setValue(Status::OK());
     });
 

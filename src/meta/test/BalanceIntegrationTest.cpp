@@ -14,7 +14,7 @@
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
-DECLARE_uint32(heartbeat_interval);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace meta {
@@ -29,7 +29,7 @@ TEST(BalanceIntegrationTest, SimpleTest) {
 TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
-    FLAGS_heartbeat_interval = 1;
+    FLAGS_raft_heartbeat_interval_secs = 1;
     fs::TempDir rootPath("/tmp/balance_integration_test.XXXXXX");
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
@@ -43,10 +43,10 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     auto adminClient = std::make_unique<AdminClient>(metaServerContext->kvStore_.get());
     Balancer balancer(metaServerContext->kvStore_.get(), std::move(adminClient));
 
-    LOG(INFO) << "Create meta client...";
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(10);
     std::vector<HostAddr> metaAddr = {HostAddr(localIp, localMetaPort)};
 
+    LOG(INFO) << "Create meta client...";
     uint32_t tempDataPort = network::NetworkUtils::getAvailablePort();
     HostAddr tempDataAddr(localIp, tempDataPort);
     auto clusterMan = std::make_unique<nebula::meta::ClusterManager>("", "");
@@ -65,7 +65,6 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     std::vector<uint32_t> storagePorts;
     std::vector<std::shared_ptr<meta::MetaClient>> metaClients;
 
-    // create 3 storage replica
     std::vector<std::unique_ptr<test::ServerContext>> serverContexts;
     for (int i = 0; i < replica; i++) {
         uint32_t storagePort = network::NetworkUtils::getAvailablePort();
@@ -125,7 +124,7 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     auto code = balancer.leaderBalance();
     ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
 
-    sleep(FLAGS_heartbeat_interval);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     waitLeaderElected();
 
     for (int i = 0; i < replica; i++) {

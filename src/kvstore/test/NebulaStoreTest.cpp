@@ -456,11 +456,11 @@ TEST(NebulaStoreTest, TransLeaderTest) {
         return 0UL;
     };
 
-    sleep(FLAGS_heartbeat_interval);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     LOG(INFO) << "Transfer leader to first copy";
     // all parttition tranfer leaders to first replica
+    GraphSpaceID spaceId = 0;
     for (int i = 0; i < 3; i++) {
-        GraphSpaceID spaceId = 0;
         PartitionID partId = i;
         auto targetAddr = NebulaStore::getRaftAddr(peers[0]);
         folly::Baton<true, std::atomic> baton;
@@ -479,7 +479,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
         });
         baton.wait();
     }
-    sleep(FLAGS_heartbeat_interval);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     {
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         ASSERT_EQ(3, stores[0]->allLeader(leaderIds));
@@ -489,7 +489,6 @@ TEST(NebulaStoreTest, TransLeaderTest) {
     // stores[0] transfer leader to other replica, each one have a leader
     // leader of parts would be {0: peers[0], 1: peers[1], 2: peers[2]}
     for (int i = 0; i < 3; i++) {
-        GraphSpaceID spaceId = 0;
         PartitionID partId = i;
         auto targetAddr = NebulaStore::getRaftAddr(peers[i]);
         folly::Baton<true, std::atomic> baton;
@@ -502,7 +501,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
         });
         baton.wait();
     }
-    sleep(FLAGS_heartbeat_interval);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     for (int i = 0; i < replicas; i++) {
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         ASSERT_EQ(1UL, stores[i]->allLeader(leaderIds));

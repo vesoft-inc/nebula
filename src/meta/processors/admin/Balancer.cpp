@@ -350,7 +350,8 @@ cpp2::ErrorCode Balancer::leaderBalance() {
         std::vector<folly::SemiFuture<Status>> futures;
         for (const auto& task : plan) {
             futures.emplace_back(client_->transLeader(std::get<0>(task), std::get<1>(task),
-                                                      std::get<2>(task), std::get<3>(task)));
+                                                      std::move(std::get<2>(task)),
+                                                      std::move(std::get<3>(task))));
         }
 
         int32_t failed = 0;
@@ -389,32 +390,87 @@ StatusOr<HostLeaderMap> Balancer::leaderDist() {
 
 void Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
                                       LeaderBalancePlan& plan) {
-    std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
+    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+    auto prefix = MetaServiceUtils::partPrefix(spaceId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
+        return;
+    }
+
+    std::unordered_map<PartitionID, std::vector<HostAddr>> peersMap;
+    size_t partCount = 0;
+    while (iter->valid()) {
+        auto key = iter->key();
+        PartitionID partId;
+        memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
+        auto thriftPeers = MetaServiceUtils::parsePartVal(iter->val());
+        std::vector<HostAddr> peers;
+        peers.resize(thriftPeers.size());
+        std::transform(thriftPeers.begin(), thriftPeers.end(), peers.begin(), [](const auto& h) {
+            return HostAddr(h.get_ip(), h.get_port());
+        });
+        peersMap[partId] = std::move(peers);
+        ++partCount;
+        iter->next();
+    }
+
+    std::unordered_map<HostAddr, std::vector<PartitionID>> leaderParts;
+    std::unordered_map<HostAddr, size_t> leaderCount;
     for (const auto& host : *hostLeaderMap) {
-        hostParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
+        leaderCount[host.first] = (*hostLeaderMap)[host.first][spaceId].size();
+        leaderParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
     }
 
-    auto hosts = sortedHostsByParts(hostParts);
-    auto minLeaderHost = hosts.front();
-    auto maxLeaderHost = hosts.back();
-
-    while (minLeaderHost.second + 1 < maxLeaderHost.second) {
-        auto partId = hostParts[maxLeaderHost.first].back();
-        hostParts[maxLeaderHost.first].pop_back();
-        hostParts[minLeaderHost.first].emplace_back(partId);
-
-        LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " from "
-                  << network::NetworkUtils::intToIPv4(maxLeaderHost.first.first) << ":"
-                  << maxLeaderHost.first.second << " to "
-                  << network::NetworkUtils::intToIPv4(minLeaderHost.first.first)
-                  << ":" << minLeaderHost.first.second;
-        plan.emplace_back(spaceId, partId, maxLeaderHost.first, minLeaderHost.first);
-
-        hosts = sortedHostsByParts(hostParts);
-        minLeaderHost = hosts.front();
-        maxLeaderHost = hosts.back();
+    std::vector<HostAddr> activeHosts;
+    for (const auto& leaderEntry : leaderParts) {
+        activeHosts.emplace_back(leaderEntry.first);
     }
-    LOG(INFO) << "create trans leader plan completed, task size: " << plan.size();
+
+    for (const auto& leaderEntry : leaderParts) {
+        auto curLeader = leaderEntry.first;
+        for (const auto& partId : leaderEntry.second) {
+            CHECK(peersMap.find(partId) != peersMap.end());
+            const auto& peers = peersMap[partId];
+            CHECK(!peers.empty());
+            // Check if all peers are online
+            std::vector<HostAddr> available;
+            for (const auto& peer : peers) {
+                auto it = std::find(activeHosts.begin(), activeHosts.end(), peer);
+                if (it != activeHosts.end()) {
+                    available.emplace_back(peer);
+                }
+            }
+
+            auto newLeader = curLeader;
+            if (peers.size() == available.size()) {
+                // If all peers are online, always try to transfer leader to first peer
+                newLeader = peers[0];
+            } else {
+                // If some copy is offline, then current leader will transfer leadership to
+                // active peer with minimum leader
+                size_t minCount = leaderCount[curLeader];
+                for (const auto peer : available) {
+                    if (leaderCount[peer] + 1 < minCount) {
+                        minCount = leaderCount[peer];
+                        newLeader = peer;
+                    }
+                }
+            }
+
+            if (newLeader != curLeader) {
+                leaderCount[curLeader]--;
+                leaderCount[newLeader]++;
+                LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " from "
+                          << network::NetworkUtils::intToIPv4(curLeader.first) << ":"
+                          << curLeader.second << " to "
+                          << network::NetworkUtils::intToIPv4(newLeader.first)
+                          << ":" << newLeader.second;
+                plan.emplace_back(spaceId, partId, curLeader, newLeader);
+            }
+        }
+    }
 }
 
 }  // namespace meta

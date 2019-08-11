@@ -45,7 +45,10 @@ class Balancer {
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
     FRIEND_TEST(BalanceTest, LeaderBalancePlanTest);
+    FRIEND_TEST(BalanceTest, SimpleLeaderBalancePlanTest);
+    FRIEND_TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, LeaderBalanceTest);
+    FRIEND_TEST(BalanceTest, ManyHostsLeaderBalancePlanTest);
     FRIEND_TEST(BalanceIntegrationTest, LeaderBalanceTest);
 
 public:
