@@ -13,7 +13,7 @@
 #include "folly/synchronization/Baton.h"
 
 
-DEFINE_int32(putTryNum, 10, "try num of store clusterId to kvstore");
+DEFINE_int32(putTryNum, 10, "Number of attempts to generate cluster ID.");
 
 namespace nebula {
 namespace meta {

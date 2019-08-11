@@ -6,21 +6,23 @@ This tutorial provides an introduction to deploy `Nebula` cluster.
 
 #### Download and install package
 
-First at all, you can download rpm or deb from [Here]().
+First at all, you can download rpm or deb from [Here](https://github.com/vesoft-inc/nebula/releases).
+
+Currently, we have offered `CentOS 7.5`, `CentOS 6.5`, `Ubuntu 1604` and `Ubuntu 1804`'s installation package.
 
 For `CentOS`:
 
 ```
-rpm -ivh nebula-{VERSION}-0.el7.centos.x86_64.rpm
+rpm -ivh nebula-{VERSION}.{SYSTEM_VERSION}.x86_64.rpm
 ```
 
 For `Ubuntu`:
 
 ```
-dpkg -i nebula-{VERSION}-0.el7.centos.x86_64.deb
+dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 ```
 
-By default, the config files are under `/usr/local/etc`, you should modify the `meta_server_addrs` to set the Meta Server's address. 
+By default, the config files are under `/usr/local/nebula/etc`, you should modify the `meta_server_addrs` to set the Meta Server's address. 
 
 In order to enable multi copy Meta service, you should set the meta addresses split by comma into `meta_server_addrs`.
 
@@ -62,7 +64,7 @@ Property Name               | Default Value            | Description
 `pid_file`                  | "pids/nebula-metad.pid"  | File to hold the process id.
 `daemonize`                 | true                     | Whether run as a daemon process.
 `cluster_id`                | 0                        | A unique id for each cluster.
-`putTryNum`                 | 10                       | Try num of store clusterId to kvstore.
+`putTryNum`                 | 10                       | Number of attempts to generate cluster ID.
 `load_config_interval_secs` | 2 * 60                   | Load config interval.
 `meta_ingest_thread_num`    | 3.                       | Meta daemon's ingest thread number.
 
@@ -74,7 +76,6 @@ Property Name                       | Default Value              | Description
 `reuse_port`                        | true                       | Whether to turn on the SO_REUSEPORT option.
 `data_path`                         | ""                         | Root data path, multi paths should be split by comma. For rocksdb engine, one path one instance.
 `local_ip`                          | ""                         | IP address which is used to identify this server, combined with the listen port.
-`mock_server`                       | true                       | Start mock server.
 `daemonize`                         | true                       | Whether to run the process as a daemon.
 `pid_file`                          | "pids/nebula-storaged.pid" | File to hold the process id.
 `meta_server_addrs`                 | ""                         | List of meta server addresses, the format looks like ip1:port1, ip2:port2, ip3:port3.
@@ -89,7 +90,7 @@ Property Name                       | Default Value              | Description
 `rocksdb_db_options`                | ""                         | DBOptions, each option will be given as <option_name>:<option_value> separated by.
 `rocksdb_column_family_options`     | ""                         | ColumnFamilyOptions, each option will be given as <option_name>:<option_value> separated by.
 `rocksdb_block_based_table_options` | ""                         | BlockBasedTableOptions, each option will be given as <option_name>:<option_value> separated by.
-`batch_reserved_bytes`              | 4 * 1024                   | Default reserved bytes for one batch operation
+`batch_size`                        | 4 * 1024                   | Default reserved bytes for one batch operation
 `block_cache`                       | 4                          | BlockBasedTable:block_cache : MB
 `download_thread_num`               | 3                          | Download thread number.
 `min_vertices_per_bucket`           | 3                          | The min vertices number in one bucket.
@@ -97,7 +98,7 @@ Property Name                       | Default Value              | Description
 `max_outstanding_requests`          | 1024                       | The max number of outstanding appendLog requests.
 `raft_rpc_timeout_ms`               | 500                        | RPC timeout for raft client.
 `accept_log_append_during_pulling`  | false                      | Whether to accept new logs during pulling the snapshot.
-`heartbeat_interval`                | 5                          | Seconds between each heartbeat.
+`raft_heartbeat_interval_secs`      | 5                          | Seconds between each heartbeat.
 `max_batch_size`                    | 256                        | The max number of logs in a batch.
 
 **Graph Service** support the following config properties.
