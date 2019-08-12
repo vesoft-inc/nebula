@@ -14,6 +14,7 @@
 #include "graph/FetchEdgesExecutor.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
+#include "graph/SetExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -43,6 +44,9 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
         case Sentence::Kind::kFetchEdges:
             executor = std::make_unique<FetchEdgesExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::kSet:
+            executor = std::make_unique<SetExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

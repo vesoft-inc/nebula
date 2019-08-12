@@ -41,6 +41,8 @@ private:
     /**
      * To do some preparing works on the clauses
      */
+    Status prepareClauses();
+
     Status prepareStep();
 
     Status prepareFrom();
@@ -129,7 +131,7 @@ private:
      * To setup an intermediate representation of the execution result,
      * which is about to be piped to the next executor.
      */
-    std::unique_ptr<InterimResult> setupInterimResult(RpcResponse &&rpcResp);
+    bool setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<InterimResult> &result);
 
     /**
      * To setup the header of the execution result, i.e. the column names.
@@ -139,14 +141,14 @@ private:
     /**
      * To setup the body of the execution result.
      */
-    void setupResponseBody(RpcResponse &rpcResp, cpp2::ExecutionResponse &resp) const;
+    bool setupResponseBody(RpcResponse &rpcResp, cpp2::ExecutionResponse &resp) const;
 
     /**
      * To iterate on the final data collection, and evaluate the filter and yield columns.
      * For each row that matches the filter, `cb' would be invoked.
      */
     using Callback = std::function<void(std::vector<VariantType>)>;
-    void processFinalResult(RpcResponse &rpcResp, Callback cb) const;
+    bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
 
     /**
      * A container to hold the mapping from vertex id to its properties, used for lookups
@@ -154,7 +156,7 @@ private:
      */
     class VertexHolder final {
     public:
-        VariantType get(VertexID id, int64_t index) const;
+        OptVariantType get(VertexID id, int64_t index) const;
         void add(const storage::cpp2::QueryResponse &resp);
         const auto* schema() const {
             return schema_.get();

@@ -448,20 +448,20 @@ private:
 
 
 class YieldSentence final : public Sentence {
- public:
-     explicit YieldSentence(YieldColumns *fields) {
-         yieldColumns_.reset(fields);
-         kind_ = Kind::kYield;
-     }
+public:
+    explicit YieldSentence(YieldColumns *fields) {
+        yieldColumns_.reset(fields);
+        kind_ = Kind::kYield;
+    }
 
-     std::vector<YieldColumn*> columns() const {
-         return yieldColumns_->columns();
-     }
+    std::vector<YieldColumn*> columns() const {
+        return yieldColumns_->columns();
+    }
 
-     std::string toString() const override;
+    std::string toString() const override;
 
- private:
-     std::unique_ptr<YieldColumns>              yieldColumns_;
+private:
+    std::unique_ptr<YieldColumns>              yieldColumns_;
 };
 }   // namespace nebula
 
