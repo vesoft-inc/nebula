@@ -496,6 +496,34 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Test multi sentence
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE test_multi";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE test_multi; CREATE Tag test_tag(); SHOW TAGS;";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected1{
+            {"test_tag"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected1));
+
+        query = "USE test_multi; CREATE TAG test_tag1(); USE my_space; SHOW TAGS;";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected2{
+            {"animal"},
+            {"person"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected2));
+
+        query = "DROP SPACE test_multi";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     // Test drop space
     {
         cpp2::ExecutionResponse resp;
