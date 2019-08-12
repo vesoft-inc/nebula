@@ -189,7 +189,6 @@ std::string* EdgeKeyRef::dstid() {
     }
 }
 
-
 std::string* EdgeKeyRef::rank() {
     if (rank_ == nullptr) {
         return nullptr;
