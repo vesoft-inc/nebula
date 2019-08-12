@@ -105,7 +105,7 @@ Property Name                       | Default Value              | Description
 
 Property Name                   | Default Value            | Description
 ------------------------------- | ------------------------ | -----------
-`port`                          | 34500                    | Nebula Graph daemon's listen port.
+`port`                          | 3699                     | Nebula Graph daemon's listen port.
 `client_idle_timeout_secs`      | 0                        | Seconds before we close the idle connections, 0 for infinite.
 `session_idle_timeout_secs`     | 600                      | Seconds before we expire the idle sessions, 0 for infinite.
 `session_reclaim_interval_secs` | 10                       | Period we try to reclaim expired sessions.
