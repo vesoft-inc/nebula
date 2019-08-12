@@ -18,61 +18,61 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 
 
 Status InsertVertexExecutor::prepare() {
-    Status status;
-    do {
-        status = checkIfGraphSpaceChosen();
-        if (!status.ok()) {
-            break;
+    return Status::OK();
+}
+
+
+Status InsertVertexExecutor::check() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+
+    rows_ = sentence_->rows();
+    if (rows_.empty()) {
+        return Status::Error("VALUES cannot be empty");
+    }
+
+    auto tagItems = sentence_->tagItems();
+    overwritable_ = sentence_->overwritable();
+    spaceId_ = ectx()->rctx()->session()->space();
+
+    tagIds_.reserve(tagItems.size());
+    schemas_.reserve(tagItems.size());
+    tagProps_.reserve(tagItems.size());
+
+    for (auto& item : tagItems) {
+        auto *tagName = item->tagName();
+        auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
+        if (!tagStatus.ok()) {
+            return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
-        rows_ = sentence_->rows();
-        if (rows_.empty()) {
-            status = Status::Error("VALUES cannot be empty");
-            break;
+        auto tagId = tagStatus.value();
+        auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
+        if (schema == nullptr) {
+            return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
-        auto tagItems = sentence_->tagItems();
-        overwritable_ = sentence_->overwritable();
-        spaceId_ = ectx()->rctx()->session()->space();
-
-        tagIds_.reserve(tagItems.size());
-        schemas_.reserve(tagItems.size());
-        tagProps_.reserve(tagItems.size());
-
-        for (auto& item : tagItems) {
-            auto *tagName = item->tagName();
-            auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
-            if (!tagStatus.ok()) {
-                return Status::Error("No schema found for `%s'", tagName->c_str());
-            }
-
-            auto tagId = tagStatus.value();
-            auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
-            if (schema == nullptr) {
-                return Status::Error("No schema found for `%s'", tagName->c_str());
-            }
-
-            auto props = item->properties();
-            // Now default value is unsupported, props should equal to schema's fields
-            if (schema->getNumFields() != props.size()) {
-                LOG(ERROR) << "props number " << props.size()
-                           << ", schema field number " << schema->getNumFields();
-                return Status::Error("Wrong number of props");
-            }
-
-            tagIds_.emplace_back(tagId);
-            schemas_.emplace_back(schema);
-            tagProps_.emplace_back(props);
-
-            // Check field name
-            auto checkStatus = checkFieldName(schema, props);
-            if (!checkStatus.ok()) {
-                return checkStatus;
-            }
+        auto props = item->properties();
+        // Now default value is unsupported, props should equal to schema's fields
+        if (schema->getNumFields() != props.size()) {
+            LOG(ERROR) << "props number " << props.size()
+                        << ", schema field number " << schema->getNumFields();
+            return Status::Error("Wrong number of props");
         }
-    } while (false);
 
-    return status;
+        tagIds_.emplace_back(tagId);
+        schemas_.emplace_back(schema);
+        tagProps_.emplace_back(props);
+
+        // Check field name
+        auto checkStatus = checkFieldName(schema, props);
+        if (!checkStatus.ok()) {
+            return checkStatus;
+        }
+    }
+    return Status::OK();
 }
 
 
@@ -146,6 +146,13 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 
 
 void InsertVertexExecutor::execute() {
+    auto status = check();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
     auto result = prepareVertices();
     if (!result.ok()) {
         DCHECK(onError_);

@@ -18,6 +18,11 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 
 
 Status InsertEdgeExecutor::prepare() {
+    return Status::OK();
+}
+
+
+Status InsertEdgeExecutor::check() {
     Status status;
     do {
         status = checkIfGraphSpaceChosen();
@@ -145,6 +150,13 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 
 
 void InsertEdgeExecutor::execute() {
+    auto status = check();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
     auto result = prepareEdges();
     if (!result.ok()) {
         DCHECK(onError_);
