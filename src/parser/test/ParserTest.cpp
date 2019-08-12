@@ -405,7 +405,33 @@ TEST(Parser, Set) {
         GQLParser parser;
         std::string query = "GO FROM 1 OVER friend MINUS "
                             "GO FROM 2 OVER friend UNION "
+                            "GO FROM 2 OVER friend INTERSECT "
                             "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "(GO FROM 1 OVER friend | "
+                            "GO FROM 2 OVER friend) UNION "
+                            "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        // pipe have priority over set
+        std::string query = "GO FROM 1 OVER friend | "
+                            "GO FROM 2 OVER friend UNION "
+                            "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "(GO FROM 1 OVER friend UNION "
+                            "GO FROM 2 OVER friend) | "
+                            "GO FROM $- OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
