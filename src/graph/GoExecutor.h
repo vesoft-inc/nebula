@@ -41,6 +41,8 @@ private:
     /**
      * To do some preparing works on the clauses
      */
+    Status prepareClauses();
+
     Status prepareStep();
 
     Status prepareFrom();

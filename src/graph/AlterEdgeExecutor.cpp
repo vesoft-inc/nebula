@@ -18,6 +18,11 @@ AlterEdgeExecutor::AlterEdgeExecutor(Sentence *sentence,
 
 
 Status AlterEdgeExecutor::prepare() {
+    return Status::OK();
+}
+
+
+Status AlterEdgeExecutor::getSchema() {
     auto status = checkIfGraphSpaceChosen();
 
     if (!status.ok()) {
@@ -32,6 +37,12 @@ Status AlterEdgeExecutor::prepare() {
 
 
 void AlterEdgeExecutor::execute() {
+    auto status = getSchema();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
     auto *mc = ectx()->getMetaClient();
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
