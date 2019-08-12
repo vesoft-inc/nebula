@@ -17,6 +17,11 @@ PipeExecutor::PipeExecutor(Sentence *sentence,
 
 
 Status PipeExecutor::prepare() {
+    auto status = syntaxPreCheck();
+    if (!status.ok()) {
+        return status;
+    }
+
     left_ = makeTraverseExecutor(sentence_->left());
     right_ = makeTraverseExecutor(sentence_->right());
     DCHECK(left_ != nullptr);
@@ -69,7 +74,7 @@ Status PipeExecutor::prepare() {
         right_->setOnError(onError);
     }
 
-    auto status = left_->prepare();
+    status = left_->prepare();
     if (!status.ok()) {
         FLOG_ERROR("Prepare executor `%s' failed: %s",
                     left_->name(), status.toString().c_str());
@@ -87,6 +92,16 @@ Status PipeExecutor::prepare() {
     return Status::OK();
 }
 
+Status PipeExecutor::syntaxPreCheck() {
+    // Set op not support input,
+    // because '$-' would be ambiguous in such a situation:
+    // Go | (Go | Go $- UNION GO)
+    if (sentence_->right()->kind() == Sentence::Kind::kSet) {
+        return Status::SyntaxError("Set op not support input.");
+    }
+
+    return Status::OK();
+}
 
 void PipeExecutor::execute() {
     left_->execute();

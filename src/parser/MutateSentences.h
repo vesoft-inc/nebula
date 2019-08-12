@@ -544,7 +544,6 @@ private:
     std::unique_ptr<std::string>                path_;
 };
 
-
 class IngestSentence final : public Sentence {
 public:
     IngestSentence() {
@@ -553,8 +552,5 @@ public:
 
     std::string toString() const override;
 };
-
-
 }  // namespace nebula
-
 #endif  // PARSER_MUTATESENTENCES_H_
