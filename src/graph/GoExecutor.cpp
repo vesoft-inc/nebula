@@ -24,6 +24,11 @@ GoExecutor::GoExecutor(Sentence *sentence, ExecutionContext *ectx) : TraverseExe
 
 
 Status GoExecutor::prepare() {
+    return Status::OK();
+}
+
+
+Status GoExecutor::prepareClauses() {
     DCHECK(sentence_ != nullptr);
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
@@ -73,7 +78,14 @@ Status GoExecutor::prepare() {
 
 void GoExecutor::execute() {
     FLOG_INFO("Executing Go: %s", sentence_->toString().c_str());
-    auto status = setupStarts();
+    auto status = prepareClauses();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
+    status = setupStarts();
     if (!status.ok()) {
         onError_(std::move(status));
         return;
