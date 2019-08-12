@@ -16,7 +16,7 @@
 #include "kvstore/raftex/test/RaftexTestBase.h"
 #include "kvstore/raftex/test/TestShard.h"
 
-DECLARE_uint32(heartbeat_interval);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 DECLARE_uint32(max_batch_size);
 
 namespace nebula {
@@ -114,7 +114,7 @@ TEST(LogAppend, MultiThreadAppend) {
 
     // Sleep a while to make sure the lat log has been committed on
     // followers
-    sleep(FLAGS_heartbeat_interval);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
 
     // Check every copy
     for (auto& c : copies) {
