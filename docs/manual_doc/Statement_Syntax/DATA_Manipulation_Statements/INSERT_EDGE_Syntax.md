@@ -1,20 +1,20 @@
 ```
-INSERT EDGE edge_name (prop_name_list) {VALUES | VALUE} 
-src_vid -> dst_vid : (prop_value_list)
-[, src_vid -> dst_vid : (prop_value_list)]
+INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE} 
+<src_vid> -> <dst_vid> : ( <prop_value_list> )
+[, <src_vid> -> <dst_vid> : ( <prop_value_list> )]
 
-prop_name_list:
-  [prop_name [, prop_name] ...]
+<prop_name_list>:
+  [ <prop_name> [, <prop_name> ] ...]
 
-prop_value_list:
-  [prop_value [, prop_value] ...]
+<prop_value_list>:
+  [ <prop_value> [, <prop_value> ] ...]
 ```
 
 INSERT EDGE statements inserts an (directed) edge from a starting vertex (given by src_vid) to an ending vertex (given by dst_vid).
 
-* `edge_name` denotes the edge type, which must be created before `INSERT EDGE`.
-* `prop_name_list` is the property name list as the given `edge_name`.
-* `prop_value_list` must provide the value list according to `prop_name_list`. If no value matches the type, an error will be returned.
+* `<edge_name>` denotes the edge type, which must be created before `INSERT EDGE`.
+* `<prop_name_list>` is the property name list as the given `<edge_name>`.
+* `<prop_value_list>` must provide the value list according to `<prop_name_list>`. If no value matches the type, an error will be returned.
 
 >No default value is given in this release.
 
