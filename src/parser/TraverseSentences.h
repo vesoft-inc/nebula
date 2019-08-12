@@ -146,10 +146,31 @@ public:
 
     std::string toString() const override;
 
+    auto left() {
+        return left_.get();
+    }
+
+    auto right() {
+        return right_.get();
+    }
+
+    auto op() {
+        return op_;
+    }
+
+    void setDistinct() {
+        distinct_ = true;
+    }
+
+    auto distinct() {
+        return distinct_;
+    }
+
 private:
     Operator                                    op_;
     std::unique_ptr<Sentence>                   left_;
     std::unique_ptr<Sentence>                   right_;
+    bool                                        distinct_{false};
 };
 
 
@@ -463,5 +484,4 @@ private:
     std::unique_ptr<YieldClause>    yieldClause_;
 };
 }   // namespace nebula
-
 #endif  // PARSER_TRAVERSESENTENCES_H_
