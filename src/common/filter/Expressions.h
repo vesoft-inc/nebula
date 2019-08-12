@@ -250,7 +250,8 @@ public:
             case 2:
                 return boost::get<bool>(value) ? 1.0 : 0.0;
             case 3:
-                return boost::get<int64_t>(value);
+                // TODO(dutor) error handling
+                return folly::to<int64_t>(boost::get<std::string>(value));
         }
         LOG(FATAL) << "unknown type: " << value.which();
     }
