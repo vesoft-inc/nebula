@@ -22,11 +22,6 @@ SetExecutor::SetExecutor(Sentence *sentence, ExecutionContext *ectx)
 }
 
 Status SetExecutor::prepare() {
-    auto status = checkIfGraphSpaceChosen();
-    if (!status.ok()) {
-        return status;
-    }
-
     left_ = makeTraverseExecutor(sentence_->left());
     right_ = makeTraverseExecutor(sentence_->right());
     DCHECK(left_ != nullptr);
@@ -35,7 +30,7 @@ Status SetExecutor::prepare() {
     setLeft();
     setRight();
 
-    status = left_->prepare();
+    auto status = left_->prepare();
     if (!status.ok()) {
         FLOG_ERROR("Prepare executor `%s' failed: %s",
                     left_->name(), status.toString().c_str());
@@ -59,7 +54,7 @@ void SetExecutor::setLeft() {
 
     futures_.emplace_back(leftP_.getFuture());
     auto onResult = [this] (std::unique_ptr<InterimResult> result) {
-    this->leftResult_ = std::move(result);
+        this->leftResult_ = std::move(result);
         VLOG(3) << "Left result set.";
         leftP_.setValue();
     };
@@ -99,6 +94,12 @@ void SetExecutor::setRight() {
 }
 
 void SetExecutor::execute() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        onError_(std::move(status));
+        return;
+    }
+
     auto *runner = ectx()->rctx()->runner();
     runner->add([this] () mutable { left_->execute(); });
     runner->add([this] () mutable { right_->execute(); });
@@ -133,7 +134,7 @@ void SetExecutor::execute() {
                 doMinus();
                 break;
             default:
-                LOG(ERROR) << "Unknown operator: " << sentence_->op();
+                LOG(FATAL) << "Unknown operator: " << sentence_->op();
         }
     };
     folly::collectAll(futures_).via(runner).thenValue(cb);
@@ -218,15 +219,15 @@ Status SetExecutor::checkSchema() {
 
 Status SetExecutor::doCasting(std::vector<cpp2::RowValue> &rows) const {
     for (auto &row : rows) {
-       auto cols = row.get_columns();
-       for (auto &pair : castingMap_) {
-           auto stat =
-               InterimResult::castTo(&cols[pair.first], pair.second.get_type());
+        auto cols = row.get_columns();
+        for (auto &pair : castingMap_) {
+            auto stat =
+                InterimResult::castTo(&cols[pair.first], pair.second.get_type());
             if (!stat.ok()) {
                 return stat;
             }
-       }
-       row.set_columns(std::move(cols));
+        }
+        row.set_columns(std::move(cols));
     }
 
     return Status::OK();

@@ -44,7 +44,7 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
         case Sentence::Kind::kFetchEdges:
             executor = std::make_unique<FetchEdgesExecutor>(sentence, ectx);
-			break;
+            break;
         case Sentence::Kind::kSet:
             executor = std::make_unique<SetExecutor>(sentence, ectx);
             break;

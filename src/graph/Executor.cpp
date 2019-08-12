@@ -127,7 +127,7 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kFetchEdges:
             executor = std::make_unique<FetchEdgesExecutor>(sentence, ectx());
-			break;
+            break;
         case Sentence::Kind::kSet:
             executor = std::make_unique<SetExecutor>(sentence, ectx());
             break;
