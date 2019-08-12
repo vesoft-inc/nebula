@@ -6,9 +6,6 @@
 
 #include "base/Base.h"
 #include "graph/SequentialExecutor.h"
-#include "graph/GoExecutor.h"
-#include "graph/PipeExecutor.h"
-#include "graph/UseExecutor.h"
 
 namespace nebula {
 namespace graph {

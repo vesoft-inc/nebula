@@ -9,11 +9,11 @@
 
 #include "base/Base.h"
 #include "cpp/helpers.h"
-#include "graph/RequestContext.h"
+#include "graph/session/RequestContext.h"
 #include "parser/SequentialSentences.h"
 #include "meta/SchemaManager.h"
 #include "meta/ClientBasedGflagsManager.h"
-#include "graph/VariableHolder.h"
+#include "graph/query/VariableHolder.h"
 #include "meta/client/MetaClient.h"
 
 /**

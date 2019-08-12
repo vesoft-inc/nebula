@@ -1,50 +1,51 @@
 add_library(
     graph_obj OBJECT
     GraphFlags.cpp
-    GraphService.cpp
-    ClientSession.cpp
-    SessionManager.cpp
+    service/GraphService.cpp
+    session/ClientSession.cpp
+    session/SessionManager.cpp
     ExecutionEngine.cpp
     ExecutionContext.cpp
     ExecutionPlan.cpp
     Executor.cpp
-    TraverseExecutor.cpp
     SequentialExecutor.cpp
-    UseExecutor.cpp
-    GoExecutor.cpp
-    PipeExecutor.cpp
-    CreateEdgeExecutor.cpp
-    CreateTagExecutor.cpp
-    AlterEdgeExecutor.cpp
-    AlterTagExecutor.cpp
-    DropTagExecutor.cpp
-    DropEdgeExecutor.cpp
-    DescribeTagExecutor.cpp
-    DescribeEdgeExecutor.cpp
-    InsertVertexExecutor.cpp
-    InsertEdgeExecutor.cpp
-    AssignmentExecutor.cpp
-    InterimResult.cpp
-    VariableHolder.cpp
-    AddHostsExecutor.cpp
-    RemoveHostsExecutor.cpp
-    CreateSpaceExecutor.cpp
-    DropSpaceExecutor.cpp
-    DescribeSpaceExecutor.cpp
-    ShowExecutor.cpp
-    YieldExecutor.cpp
-    DownloadExecutor.cpp
-    OrderByExecutor.cpp
-    IngestExecutor.cpp
-    ConfigExecutor.cpp
-    BalanceExecutor.cpp
-    SchemaHelper.cpp
-    FetchVerticesExecutor.cpp
-    FetchEdgesExecutor.cpp
-    FetchExecutor.cpp
-    SetExecutor.cpp
-    FindExecutor.cpp
-    MatchExecutor.cpp
+    admin/AddHostsExecutor.cpp
+    admin/RemoveHostsExecutor.cpp
+    admin/CreateSpaceExecutor.cpp
+    admin/DropSpaceExecutor.cpp
+    admin/DescribeSpaceExecutor.cpp
+    admin/ShowExecutor.cpp
+    admin/ConfigExecutor.cpp
+    admin/BalanceExecutor.cpp
+    schema/CreateEdgeExecutor.cpp
+    schema/CreateTagExecutor.cpp
+    schema/AlterEdgeExecutor.cpp
+    schema/AlterTagExecutor.cpp
+    schema/DropTagExecutor.cpp
+    schema/DropEdgeExecutor.cpp
+    schema/DescribeTagExecutor.cpp
+    schema/DescribeEdgeExecutor.cpp
+    schema/SchemaHelper.cpp
+    update/InsertVertexExecutor.cpp
+    update/InsertEdgeExecutor.cpp
+    update/IngestExecutor.cpp
+    query/TraverseExecutor.cpp
+    query/AssignmentExecutor.cpp
+    query/UseExecutor.cpp
+    query/UseExecutor.cpp
+    query/GoExecutor.cpp
+    query/PipeExecutor.cpp
+    query/InterimResult.cpp
+    query/VariableHolder.cpp
+    query/OrderByExecutor.cpp
+    query/FetchVerticesExecutor.cpp
+    query/FetchEdgesExecutor.cpp
+    query/FetchExecutor.cpp
+    query/YieldExecutor.cpp
+    query/DownloadExecutor.cpp
+    query/SetExecutor.cpp
+    query/FindExecutor.cpp
+    query/MatchExecutor.cpp
 )
 add_dependencies(
     graph_obj
@@ -61,12 +62,10 @@ add_dependencies(
 
 add_library(
     graph_http_handler OBJECT
-    GraphHttpHandler.cpp
+    service/GraphHttpHandler.cpp
 )
 add_dependencies(
     graph_http_handler
     base_obj
 )
-
-add_subdirectory(test)
 

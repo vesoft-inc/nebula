@@ -9,7 +9,7 @@
 
 #include "base/Base.h"
 #include "cpp/helpers.h"
-#include "graph/RequestContext.h"
+#include "graph/session/RequestContext.h"
 #include "gen-cpp2/GraphService.h"
 #include "meta/SchemaManager.h"
 #include "meta/ClientBasedGflagsManager.h"
