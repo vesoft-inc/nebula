@@ -1,4 +1,4 @@
-|  Name    |  Description    | 
+|  ***Name***    |  ***Description***    | 
 |:----|:----:|
 |   &&     |   Logical AND     | 
 |   !    |   Logical NOT     | 
@@ -12,7 +12,7 @@ In nGQL, nonzero numbers are evaluated to _true_. The precedence of the operator
 Logical AND:
 
 ```
-(user@127.0.0.1) [(none)]> YIELD -1 && true;
+nebula> YIELD -1 && true;
 ================
 | (-(1)&&true) |
 ================
@@ -25,7 +25,7 @@ Logical AND:
 Logical NOT:
 
 ```
-(user@127.0.0.1) [(none)]> YIELD !(-1);
+nebula> YIELD !(-1);
 ===========
 | !(-(1)) |
 ===========
@@ -39,7 +39,7 @@ Logical NOT:
 Logical OR:
 
 ```
-(user@127.0.0.1) [(none)]> YIELD 1 || !1;
+nebula> YIELD 1 || !1;
 =============
 | (1||!(1)) |
 =============
