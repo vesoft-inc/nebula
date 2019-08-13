@@ -23,10 +23,17 @@ DownloadExecutor::DownloadExecutor(Sentence *sentence,
 }
 
 Status DownloadExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    return Status::OK();
 }
 
 void DownloadExecutor::execute() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
     auto *mc = ectx()->getMetaClient();
     auto  addresses = mc->getAddresses();
     auto  metaHost = network::NetworkUtils::intToIPv4(addresses[0].first);

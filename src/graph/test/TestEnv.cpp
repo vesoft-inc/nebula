@@ -81,6 +81,7 @@ void TestEnv::TearDown() {
     sleep(FLAGS_load_data_interval_secs + 1);
     graphServer_.reset();
     storageServer_.reset();
+    mClient_.reset();
     metaServer_.reset();
     mClient_.reset();
 }

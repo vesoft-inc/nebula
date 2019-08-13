@@ -37,6 +37,8 @@
 #include "graph/ConfigExecutor.h"
 #include "graph/FetchVerticesExecutor.h"
 #include "graph/FetchEdgesExecutor.h"
+#include "graph/ConfigExecutor.h"
+#include "graph/SetExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -125,6 +127,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kFetchEdges:
             executor = std::make_unique<FetchEdgesExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kSet:
+            executor = std::make_unique<SetExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

@@ -15,7 +15,7 @@
 #include "network/NetworkUtils.h"
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
-DECLARE_uint32(heartbeat_interval);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace kvstore {
@@ -340,7 +340,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
             });
             baton.wait();
         }
-        sleep(FLAGS_heartbeat_interval);
+        sleep(FLAGS_raft_heartbeat_interval_secs);
         {
             int32_t start = 0;
             int32_t end = 100;
