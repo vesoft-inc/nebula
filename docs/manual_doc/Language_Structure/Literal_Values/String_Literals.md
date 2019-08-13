@@ -1,8 +1,8 @@
 A string is a sequence of bytes or characters, enclosed within either single quote (') or double quote (") characters. Examples:
 
 ```
-(user@127.0.0.1) [(none)]> YIELD 'a string'
-(user@127.0.0.1) [(none)]> YIELD "another string"
+nebula> YIELD 'a string'
+nebula> YIELD "another string"
 ```
 
 Certain backslash escapes (\) have been supported (also known as the *escape character*). They are shown in the following table:
@@ -18,7 +18,7 @@ Certain backslash escapes (\) have been supported (also known as the *escape cha
 Here are some examples:
 
 ```
-(user@127.0.0.1) [(none)]> YIELD 'This\nIs\nFour\nLines'
+nebula> YIELD 'This\nIs\nFour\nLines'
 --------------------
 | This
 Is
@@ -26,7 +26,7 @@ Four
 Lines |
 --------------------
 
-(user@127.0.0.1) [(none)]> YIELD 'disappearing\ backslash'  
+nebula> YIELD 'disappearing\ backslash'  
 --------------------
 |   disappearing backslash | 
 --------------------
