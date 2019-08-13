@@ -358,6 +358,8 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("VARIABLES", TokenType::KW_VARIABLES),
         CHECK_SEMANTIC_TYPE("variables", TokenType::KW_VARIABLES),
         CHECK_SEMANTIC_TYPE("Variables", TokenType::KW_VARIABLES),
+        CHECK_SEMANTIC_TYPE("ALL", TokenType::KW_ALL),
+        CHECK_SEMANTIC_TYPE("all", TokenType::KW_ALL),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

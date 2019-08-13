@@ -11,6 +11,8 @@
 namespace nebula {
 namespace graph {
 
+constexpr char NotSupported[] = "Type not supported yet";
+
 InterimResult::InterimResult(std::unique_ptr<RowSetWriter> rsWriter) {
     rsWriter_ = std::move(rsWriter);
     rsReader_ = std::make_unique<RowSetReader>(rsWriter_->schema(), rsWriter_->data());
@@ -119,7 +121,6 @@ std::vector<cpp2::RowValue> InterimResult::getRows() const {
     return rows;
 }
 
-
 std::unique_ptr<InterimResult::InterimResultIndex>
 InterimResult::buildIndex(const std::string &vidColumn) const {
     using nebula::cpp2::SupportedType;
@@ -211,6 +212,170 @@ VariantType InterimResult::InterimResultIndex::getColumnWithVID(VertexID id,
     return rows_[rowIndex][columnIndex];
 }
 
+Status InterimResult::castTo(cpp2::ColumnValue *col,
+                             const nebula::cpp2::SupportedType &type) {
+    using nebula::cpp2::SupportedType;
+    switch (type) {
+        case SupportedType::VID:
+            return castToInt(col);
+        case SupportedType::DOUBLE:
+            return castToDouble(col);
+        case SupportedType::BOOL:
+            return castToBool(col);
+        case SupportedType::STRING:
+            return castToStr(col);
+        default:
+            // Notice: if we implement some other type,
+            // we should update here.
+            LOG(ERROR) << NotSupported << static_cast<int32_t>(type);
+            return Status::Error(NotSupported);
+    }
+}
 
+Status InterimResult::castToInt(cpp2::ColumnValue *col) {
+    switch (col->getType()) {
+        case cpp2::ColumnValue::Type::integer:
+            break;
+        case cpp2::ColumnValue::Type::double_precision: {
+            auto d2i = static_cast<int64_t>(col->get_double_precision());
+            col->set_integer(d2i);
+            break;
+        }
+        case cpp2::ColumnValue::Type::bool_val: {
+            auto b2i = static_cast<int64_t>(col->get_bool_val());
+            col->set_integer(b2i);
+            break;
+        }
+        case cpp2::ColumnValue::Type::str: {
+            auto r = folly::tryTo<int64_t>(col->get_str());
+            if (r.hasValue()) {
+                col->set_integer(r.value());
+                break;
+            } else {
+                return Status::Error(
+                    "Casting from string %s to double failed.", col->get_str().c_str());
+            }
+        }
+        default:
+            LOG(ERROR) << NotSupported << static_cast<int32_t>(col->getType());
+            return Status::Error(NotSupported);
+    }
+    return Status::OK();
+}
+
+Status InterimResult::castToDouble(cpp2::ColumnValue *col) {
+    switch (col->getType()) {
+        case cpp2::ColumnValue::Type::integer: {
+            auto i2d = static_cast<double>(col->get_integer());
+            col->set_double_precision(i2d);
+            break;
+        }
+        case cpp2::ColumnValue::Type::double_precision:
+            break;
+        case cpp2::ColumnValue::Type::bool_val: {
+            auto b2d = static_cast<double>(col->get_bool_val());
+            col->set_double_precision(b2d);
+            break;
+        }
+        case cpp2::ColumnValue::Type::str: {
+            auto r = folly::tryTo<double>(col->get_str());
+            if (r.hasValue()) {
+                col->set_double_precision(r.value());
+                break;
+            } else {
+                return Status::Error(
+                    "Casting from string %s to double failed.", col->get_str().c_str());
+            }
+        }
+        default:
+            LOG(ERROR) << NotSupported << static_cast<int32_t>(col->getType());
+            return Status::Error(NotSupported);
+    }
+    return Status::OK();
+}
+
+Status InterimResult::castToBool(cpp2::ColumnValue *col) {
+    switch (col->getType()) {
+        case cpp2::ColumnValue::Type::integer: {
+            auto i2b = col->get_integer() != 0;
+            col->set_bool_val(i2b);
+            break;
+        }
+        case cpp2::ColumnValue::Type::double_precision: {
+            auto d2b = col->get_double_precision() != 0.0;
+            col->set_bool_val(d2b);
+            break;
+        }
+        case cpp2::ColumnValue::Type::bool_val:
+            break;
+        case cpp2::ColumnValue::Type::str: {
+            auto s2b = col->get_str().empty();
+            col->set_bool_val(s2b);
+            break;
+        }
+        default:
+            LOG(ERROR) << NotSupported << static_cast<int32_t>(col->getType());
+            return Status::Error(NotSupported);
+    }
+    return Status::OK();
+}
+
+Status InterimResult::castToStr(cpp2::ColumnValue *col) {
+    switch (col->getType()) {
+        case cpp2::ColumnValue::Type::integer: {
+            auto i2s = folly::to<std::string>(col->get_integer());
+            col->set_str(std::move(i2s));
+            break;
+        }
+        case cpp2::ColumnValue::Type::double_precision: {
+            auto d2s = folly::to<std::string>(col->get_double_precision());
+            col->set_str(std::move(d2s));
+            break;
+        }
+        case cpp2::ColumnValue::Type::bool_val: {
+            auto b2s = folly::to<std::string>(col->get_bool_val());
+            col->set_str(std::move(b2s));
+            break;
+        }
+        case cpp2::ColumnValue::Type::str:
+            break;
+        default:
+            LOG(ERROR) << NotSupported << static_cast<int32_t>(col->getType());
+            return Status::Error(NotSupported);
+    }
+    return Status::OK();
+}
+
+std::unique_ptr<InterimResult> InterimResult::getInterim(
+            std::shared_ptr<const meta::SchemaProviderIf> resultSchema,
+            std::vector<cpp2::RowValue> &rows) {
+    auto rsWriter = std::make_unique<RowSetWriter>(resultSchema);
+    for (auto &r : rows) {
+        RowWriter writer(resultSchema);
+        auto &cols = r.get_columns();
+        for (auto &col : cols) {
+            switch (col.getType()) {
+                case cpp2::ColumnValue::Type::integer:
+                    writer << col.get_integer();
+                    break;
+                case cpp2::ColumnValue::Type::double_precision:
+                    writer << col.get_double_precision();
+                    break;
+                case cpp2::ColumnValue::Type::bool_val:
+                    writer << col.get_bool_val();
+                    break;
+                case cpp2::ColumnValue::Type::str:
+                    writer << col.get_str();
+                    break;
+                default:
+                    LOG(ERROR) << NotSupported << static_cast<int32_t>(col.getType());
+                    return nullptr;
+            }
+        }
+        rsWriter->addRow(writer);
+    }
+
+    return std::make_unique<InterimResult>(std::move(rsWriter));
+}
 }   // namespace graph
 }   // namespace nebula

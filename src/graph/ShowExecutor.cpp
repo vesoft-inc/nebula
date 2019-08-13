@@ -19,16 +19,20 @@ ShowExecutor::ShowExecutor(Sentence *sentence,
 
 
 Status ShowExecutor::prepare() {
-    if (sentence_->showType() == ShowSentence::ShowType::kShowTags ||
-        sentence_->showType() == ShowSentence::ShowType::kShowEdges) {
-        return checkIfGraphSpaceChosen();
-    } else {
-        return Status::OK();
-    }
+    return Status::OK();
 }
 
 
 void ShowExecutor::execute() {
+    if (sentence_->showType() == ShowSentence::ShowType::kShowTags ||
+        sentence_->showType() == ShowSentence::ShowType::kShowEdges) {
+        auto status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(status));
+            return;
+        }
+    }
     auto showType = sentence_->showType();
     switch (showType) {
         case ShowSentence::ShowType::kShowHosts:

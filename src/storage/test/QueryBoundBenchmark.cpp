@@ -21,7 +21,7 @@
 
 DEFINE_int32(req_parts, 3, "parts requested");
 DEFINE_int32(vrpp, 100, "vertices requested per part");
-DEFINE_int32(handler_num, 10, "vertices requested per part");
+DEFINE_int32(handler_num, 10, "The Executor's handler number");
 DECLARE_int32(max_handlers_per_req);
 
 std::unique_ptr<nebula::kvstore::KVStore> gKV;

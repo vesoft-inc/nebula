@@ -100,7 +100,11 @@ void FetchExecutor::getOutputSchema(
     for (auto *column : yields_) {
         auto *expr = column->expr();
         auto value = expr->eval();
-        record.emplace_back(std::move(value));
+        if (!value.ok()) {
+            onError_(value.status());
+            return;
+        }
+        record.emplace_back(std::move(value.value()));
     }
 
     using nebula::cpp2::SupportedType;
