@@ -175,18 +175,17 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "CREATE TAG woman(name string, age int, "
-                            "married bool, salary double, create_time timestamp)"
-                            "ttl_duration = 100, ttl_col = create_time, "
-                            "ttl_duration = 200, ttl_col = salary";
+        std::string query = "CREATE TAG woman(name string, age int default 22, "
+                            "married bool default false, salary double default 1000.0, "
+                            "create_time timestamp)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "CREATE TAG woman(name string, age int default 22, "
+        std::string query = "CREATE TAG woman(name string default \"\", age int default 22, "
                             "married bool default false, salary double default 1000.0, "
-                            "create_time timestamp)";
+                            "create_time timestamp default 1566541858)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -262,6 +261,13 @@ TEST(Parser, EdgeOperation) {
         std::string query = "CREATE EDGE man(name string, age int, "
                             "married bool, salary double, create_time timestamp)"
                             "ttl_duration = 100";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "CREATE EDGE man(name string default \"\", age int default 18, "
+                            "married bool default false, salary double default 1000.0)";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

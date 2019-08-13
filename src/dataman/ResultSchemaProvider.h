@@ -24,6 +24,8 @@ public:
         const char* getName() const override;
         const cpp2::ValueType& getType() const override;
         bool isValid() const override;
+        bool hasDefault() const override;
+        std::string getDefaultValue() const override;
 
     private:
         const cpp2::ColumnDef* column_;
@@ -49,8 +51,6 @@ public:
     std::shared_ptr<const meta::SchemaProviderIf::Field> field(int64_t index) const override;
     std::shared_ptr<const meta::SchemaProviderIf::Field> field(
         const folly::StringPiece name) const override;
-
-    std::vector<std::string> getFieldNames() const override;
 
 protected:
     SchemaVer schemaVer_{0};

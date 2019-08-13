@@ -10,12 +10,11 @@ namespace nebula {
 namespace meta {
 
 void ScanProcessor::process(const cpp2::ScanReq& req) {
-    CHECK_SEGMENT(req.get_segment());
     auto start = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_start());
     auto end   = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_end());
     auto result = doScan(start, end);
     if (!result.ok()) {
-        LOG(ERROR) << "Scan Failed " << result.status();
+        LOG(ERROR) << "Scan Failed: " << result.status();
         resp_.set_code(cpp2::ErrorCode::E_STORE_FAILURE);
         onFinished();
         return;

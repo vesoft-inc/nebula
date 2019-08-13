@@ -12,8 +12,6 @@
 namespace nebula {
 namespace graph {
 
-using nebula::meta::NebulaSchemaProvider;
-
 InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
                                            ExecutionContext *ectx) : Executor(ectx) {
     sentence_ = static_cast<InsertVertexSentence*>(sentence);
@@ -46,94 +44,55 @@ Status InsertVertexExecutor::prepare() {
             auto *tagName = item->tagName();
             auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
             if (!tagStatus.ok()) {
+                LOG(ERROR) << "No schema found for " << tagName;
                 return Status::Error("No schema found for `%s'", tagName->c_str());
             }
 
             auto tagId = tagStatus.value();
             auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
             if (schema == nullptr) {
+                LOG(ERROR) << "No schema found for " << tagName;
                 return Status::Error("No schema found for `%s'", tagName->c_str());
             }
 
             auto props = item->properties();
-            auto fields = schema->getFieldNames();
-            // Now default value is unsupported, props should equal to schema's fields
+            if (props.size() > schema->getNumFields()) {
+                LOG(ERROR) << "Input props number " << props.size()
+                    << ", schema fields number " << schema->getNumFields();
+                return Status::Error("Wrong number of props");
+            }
+
             if (schema->getNumFields() != props.size()) {
                 auto *mc = ectx()->getMetaClient();
 
-                std::vector<std::string> properties;
-                for (auto& prop : props) {
-                    properties.emplace_back(*prop);
-                }
-
                 for (size_t i = 0; i < schema->getNumFields(); i++) {
-                    auto name = folly::stringPrintf("%s", schema->getFieldName(i));
-                    auto it = std::find(properties.begin(), properties.end(), name);
-                    if (it != properties.end()) {
-                        LOG(INFO) << "Unfind Name: " << name;
-                    }
-                }
+                    std::string name = schema->getFieldName(i);
+                    auto it = std::find_if(props.begin(), props.end(),
+                                           [name](std::string *prop) { return *prop == name;});
 
-                for (auto& name : fields) {
-                    LOG(INFO) << "Name: " << name;
-                }
-                for (auto& prop : props) {
-                    LOG(INFO) << "Prop: " << *prop;
-                }
-
-                std::sort(begin(fields), end(fields));
-                std::sort(begin(properties), end(properties));
-
-                std::vector<std::string> diff(fields.size());
-                auto iter = std::set_difference(begin(fields), end(fields), begin(properties),
-                                                end(properties), diff.begin());
-                diff.resize(iter - diff.begin());
-                LOG(INFO) << "---------";
-                for (auto ele : diff) {
-                    LOG(INFO) << "Ele: " << ele;
-                    auto type = schema->getFieldType(ele).type;
-                    if (mc->hasTagDefaultValue(spaceId_, tagId, ele)) {
-                        switch (type) {
-                            case nebula::cpp2::SupportedType::BOOL:
-                                LOG(INFO) << "Ele: " << ele << " bool default value "
-                                          << mc->getTagBoolDefaultValue(spaceId_, tagId).value();
-                                break;
-                            case nebula::cpp2::SupportedType::INT:
-                                LOG(INFO) << "Ele: " << ele << " int default value "
-                                          << mc->getTagIntDefultValue(spaceId_, tagId).value();
-                                break;
-                            case nebula::cpp2::SupportedType::DOUBLE:
-                                LOG(INFO) << "Ele: " << ele << " double default value "
-                                          << mc->getTagDoublelDefaultValue(spaceId_, tagId).value();
-                                break;
-                            case nebula::cpp2::SupportedType::STRING:
-                                LOG(INFO) << "Ele: " << ele << " string default value "
-                                          << mc->getTagStringDefaultValue(spaceId_, tagId).value();
-                                break;
-                            default:
-                                break;
+                    if (it == props.end() && defaultValues_.find(name) == defaultValues_.end()) {
+                        auto valueResult = mc->getTagDefaultValue(spaceId_, tagId, name).get();
+                        if (!valueResult.ok()) {
+                            LOG(ERROR) << "Not exist default value: " << name;
+                            return Status::Error("Not exist default value");
+                        } else {
+                            VLOG(3) << "Default Value: " << name << ":" << valueResult.value();
+                            defaultValues_.emplace(name, valueResult.value());
                         }
-                    } else {
-                        LOG(ERROR) << "No default value";
-                        return Status::Error("No default value");
                     }
                 }
-
-
-                LOG(ERROR) << "props number " << props.size()
-                           << ", schema field number " << schema->getNumFields();
-                return Status::Error("Wrong number of props");
+            } else {
+                // Check field name
+                auto checkStatus = checkFieldName(schema, props);
+                if (!checkStatus.ok()) {
+                    LOG(ERROR) << "Check Status Failed: " << checkStatus;
+                    return checkStatus;
+                }
             }
 
             tagIds_.emplace_back(tagId);
             schemas_.emplace_back(schema);
             tagProps_.emplace_back(props);
-
-            // Check field name
-            auto checkStatus = checkFieldName(schema, props);
-            if (!checkStatus.ok()) {
-                return checkStatus;
-            }
         }
     } while (false);
 
@@ -166,22 +125,83 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
         std::vector<storage::cpp2::Tag> tags(tagIds_.size());
 
         auto valuePos = 0u;
+        int32_t insertPosition = 0;
         for (auto index = 0u; index < tagIds_.size(); index++) {
             auto &tag = tags[index];
             auto tagId = tagIds_[index];
-            auto propSize = tagProps_[index].size();
+            auto props = tagProps_[index];
             auto schema = schemas_[index];
 
-            // props's number should equal to value's number
-            if ((valuePos + propSize) > values.size()) {
-                LOG(ERROR) << "Input values number " << values.size()
-                           << ", props number " << propSize;
-                return Status::Error("Wrong number of value");
+            auto schemaNumFields = schema->getNumFields();
+            size_t propsIndex = 0;
+            for (size_t schemaIndex = 0; schemaIndex < schemaNumFields; schemaIndex++) {
+                auto fieldName = schema->getFieldName(schemaIndex);
+
+                if ((propsIndex < props.size() && *props[propsIndex] != fieldName) ||
+                    (propsIndex >= props.size())) {
+                    // fetch default value from cache
+                    auto type = schema->getFieldType(schemaIndex).type;
+                    VariantType variantType;
+                    switch (type) {
+                        case nebula::cpp2::SupportedType::BOOL:
+                            try {
+                                variantType = folly::to<bool>(defaultValues_[fieldName]);
+                            } catch (const std::exception& ex) {
+                                LOG(ERROR) << "Conversion to bool failed: "
+                                           << defaultValues_[fieldName];
+                                return Status::Error("Type Conversion Failed");
+                            }
+
+                            VLOG(3) << "Insert " << fieldName << ":" << variantType
+                                    << " at " << insertPosition;
+                            values.insert(values.begin() + insertPosition, std::move(variantType));
+                            break;
+                        case nebula::cpp2::SupportedType::INT:
+                            try {
+                                variantType = folly::to<int64_t>(defaultValues_[fieldName]);
+                            } catch (const std::exception& ex) {
+                                LOG(ERROR) << "Conversion to int64_t failed: "
+                                           << defaultValues_[fieldName];
+                                return Status::Error("Type Conversion Failed");
+                            }
+
+                            VLOG(3) << "Insert " << fieldName << ":" << variantType
+                                    << " at " << insertPosition;
+                            values.insert(values.begin() + insertPosition, std::move(variantType));
+                            break;
+                        case nebula::cpp2::SupportedType::DOUBLE:
+                            try {
+                                variantType = folly::to<double>(defaultValues_[fieldName]);
+                            } catch (const std::exception& ex) {
+                                LOG(ERROR) << "Conversion to double failed: "
+                                           << defaultValues_[fieldName];
+                                return Status::Error("Type Conversion Failed");
+                            }
+
+                            VLOG(3) << "Insert " << fieldName << ":" << variantType
+                                    << " at " << insertPosition;
+                            values.insert(values.begin() + insertPosition, std::move(variantType));
+                            break;
+                        case nebula::cpp2::SupportedType::STRING:
+                            variantType = defaultValues_[fieldName];
+                            values.insert(values.begin() + insertPosition, std::move(variantType));
+                            break;
+                        default:
+                            LOG(ERROR) << "Unknow type";
+                            return Status::Error("Unknow type");
+                    }
+                    insertPosition++;
+                } else if (*props[propsIndex] == fieldName) {
+                    propsIndex++;
+                    insertPosition++;
+                } else {
+                    insertPosition++;
+                }
             }
 
             RowWriter writer(schema);
             auto valueIndex = valuePos;
-            for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
+            for (auto fieldIndex = 0u; fieldIndex < schemaNumFields; fieldIndex++) {
                 auto& value = values[valueIndex];
 
                 // Check value type
@@ -198,7 +218,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 
             tag.set_tag_id(tagId);
             tag.set_props(writer.encode());
-            valuePos += propSize;
+            valuePos += schemaNumFields;
         }
 
         vertex.set_id(id);

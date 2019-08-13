@@ -1025,59 +1025,42 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance() {
     }, true);
 }
 
-bool MetaClient::hasTagDefaultValue(GraphSpaceID spaceId,
-                                    TagID tagId,
-                                    const std::string& field) {
-    UNUSED(spaceId); UNUSED(tagId); UNUSED(field);
-    return true;
+folly::Future<StatusOr<std::string>> MetaClient::getTagDefaultValue(GraphSpaceID spaceId,
+                                                                    TagID tagId,
+                                                                    const std::string& field) {
+    cpp2::GetReq req;
+    static std::string defaultKey = "__default__";
+    req.set_segment(defaultKey);
+    std::string key;
+    key.reserve(64);
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
+    key.append(field);
+    req.set_key(std::move(key));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+               return client->future_get(request);
+           }, [] (cpp2::GetResp&& resp) -> std::string {
+               return resp.get_value();
+           });
 }
 
-bool MetaClient::hasEdgeDefaultValue(GraphSpaceID spaceId,
-                                     EdgeType edgeType,
-                                     const std::string& field) {
-    UNUSED(spaceId); UNUSED(edgeType); UNUSED(field);
-    return true;
-}
-
-StatusOr<bool> MetaClient::getTagBoolDefaultValue(GraphSpaceID spaceId, TagID tagID) {
-    UNUSED(spaceId); UNUSED(tagID);
-    return true;
-}
-
-StatusOr<double> MetaClient::getTagDoublelDefaultValue(GraphSpaceID spaceId, TagID tagID) {
-    UNUSED(spaceId); UNUSED(tagID);
-    return 3.14;
-}
-
-StatusOr<int64_t> MetaClient::getTagIntDefultValue(GraphSpaceID spaceId, TagID tagID) {
-    UNUSED(spaceId); UNUSED(tagID);
-    return 0;
-}
-
-StatusOr<std::string> MetaClient::getTagStringDefaultValue(GraphSpaceID spaceId, TagID tagID) {
-    UNUSED(spaceId); UNUSED(tagID);
-    return "";
-}
-
-StatusOr<bool> MetaClient::getEdgeBoolDefaultValue(GraphSpaceID spaceId, EdgeType edgeType) {
-    UNUSED(spaceId); UNUSED(edgeType);
-    return true;
-}
-
-StatusOr<double> MetaClient::getEdgeDoublelDefaultValue(GraphSpaceID spaceId, EdgeType edgeType) {
-    UNUSED(spaceId); UNUSED(edgeType);
-    return 3.14;
-}
-
-StatusOr<int64_t> MetaClient::getEdgeIntDefultValue(GraphSpaceID spaceId, EdgeType edgeType) {
-    UNUSED(spaceId); UNUSED(edgeType);
-    return 0;
-}
-
-StatusOr<std::string> MetaClient::getEdgeStringDefaultValue(GraphSpaceID spaceId,
-                                                            EdgeType edgeType) {
-    UNUSED(spaceId); UNUSED(edgeType);
-    return "";
+folly::Future<StatusOr<std::string>> MetaClient::getEdgeDefaultValue(GraphSpaceID spaceId,
+                                                                     EdgeType edgeType,
+                                                                     const std::string& field) {
+    cpp2::GetReq req;
+    static std::string defaultKey = "__default__";
+    req.set_segment(defaultKey);
+    std::string key;
+    key.reserve(64);
+    key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+    key.append(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType));
+    key.append(field);
+    req.set_key(std::move(key));
+    return getResponse(std::move(req), [] (auto client, auto request) {
+               return client->future_get(request);
+           }, [] (cpp2::GetResp&& resp) -> std::string {
+               return resp.get_value();
+           });
 }
 
 folly::Future<StatusOr<bool>>

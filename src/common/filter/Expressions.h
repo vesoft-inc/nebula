@@ -279,30 +279,6 @@ protected:
     Kind                                        kind_{kUnknown};
 };
 
-/*
-class ValueExpression final : public Expression {
-public:
-    explicit ValueExpression(bool value) {
-        value_ = value;
-    }
-
-    explicit ValueExpression(int64_t value) {
-        value_ = value;
-    }
-
-    explicit ValueExpression(double value) {
-        value_ = value;
-    }
-
-    explicit ValueExpression(std::string value) {
-        value_ = value;
-    }
-
-private:
-    VariantType value_;
-};
-*/
-
 // Alias.any_prop_name, i.e. EdgeName.any_prop_name
 class AliasPropertyExpression: public Expression {
 public:

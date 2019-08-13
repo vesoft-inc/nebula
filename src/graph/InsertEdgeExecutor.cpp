@@ -22,39 +22,64 @@ Status InsertEdgeExecutor::prepare() {
     do {
         status = checkIfGraphSpaceChosen();
         if (!status.ok()) {
+            LOG(ERROR) << "Please choose the space before insert edge";
             break;
         }
 
-        auto spaceId = ectx()->rctx()->session()->space();
+        spaceId_ = ectx()->rctx()->session()->space();
         overwritable_ = sentence_->overwritable();
-        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *sentence_->edge());
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *sentence_->edge());
         if (!edgeStatus.ok()) {
             status = edgeStatus.status();
             break;
         }
         edgeType_ = edgeStatus.value();
-        auto props = sentence_->properties();
+        props_ = sentence_->properties();
         rows_ = sentence_->rows();
 
-        schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId, edgeType_);
+        schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
         if (schema_ == nullptr) {
+            LOG(ERROR) << "No schema found for " << sentence_->edge();
             status = Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
             break;
         }
 
-        // Now default value is unsupported
-        if (props.size() != schema_->getNumFields()) {
-            LOG(ERROR) << "Input props number " << props.size()
+        if (props_.size() > schema_->getNumFields()) {
+            LOG(ERROR) << "Input props number " << props_.size()
                        << ", schema fields number " << schema_->getNumFields();
             status = Status::Error("Wrong number of props");
             break;
         }
 
-        // Check field name
-        auto checkStatus = checkFieldName(schema_, props);
-        if (!checkStatus.ok()) {
-            status = checkStatus;
-            break;
+        if (props_.size() != schema_->getNumFields()) {
+            auto *mc = ectx()->getMetaClient();
+
+            for (size_t i = 0; i < schema_->getNumFields(); i++) {
+                std::string name = schema_->getFieldName(i);
+                auto it = std::find_if(props_.begin(), props_.end(),
+                                       [name](std::string *prop) { return *prop == name;});
+
+                if (it == props_.end() && defaultValues_.find(name) == defaultValues_.end()) {
+                    auto valueResult = mc->getEdgeDefaultValue(spaceId_, edgeType_, name).get();
+
+                    if (!valueResult.ok()) {
+                        LOG(ERROR) << "Not exist default value: " << name;
+                        return Status::Error("Not exist default value");
+                    } else {
+                        VLOG(3) << "Default Value: " << name
+                                << ":" << valueResult.value();
+                        defaultValues_.emplace(name, valueResult.value());
+                    }
+                }
+            }
+        } else {
+            // Check field name
+            auto checkStatus = checkFieldName(schema_, props_);
+            if (!checkStatus.ok()) {
+                LOG(ERROR) << "Check Status Failed: " << checkStatus;
+                status = checkStatus;
+                break;
+            }
         }
     } while (false);
 
@@ -90,17 +115,82 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 
         auto expressions = row->values();
 
-        // Now default value is unsupported
-        if (expressions.size() != schema_->getNumFields()) {
-            LOG(ERROR) << "Input values number " << expressions.size()
-                       << ", schema field number " << schema_->getNumFields();
-            return Status::Error("Wrong number of values");
-        }
-
         std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
             values.emplace_back(expr->eval());
+        }
+
+        if (expressions.size() != schema_->getNumFields()) {
+            size_t propsIndex = 0;
+            int32_t insertPosition = 0;
+            for (size_t schemaIndex = 0; schemaIndex < schema_->getNumFields(); schemaIndex++) {
+                auto fieldName = schema_->getFieldName(schemaIndex);
+
+                // fetch default value from cache
+                if ((propsIndex < props_.size() && *props_[propsIndex] != fieldName) ||
+                    (propsIndex >= props_.size())) {
+                    auto type = schema_->getFieldType(schemaIndex).type;
+                    VariantType variantType;
+                    switch (type) {
+                        case nebula::cpp2::SupportedType::BOOL:
+                            try {
+                                variantType = folly::to<bool>(defaultValues_[fieldName]);
+                            } catch (const std::exception& ex) {
+                                LOG(ERROR) << "Conversion to bool failed: "
+                                           << defaultValues_[fieldName];
+                                return Status::Error("Type Conversion Failed");
+                            }
+
+                            VLOG(3) << "Insert " << fieldName << ":" << variantType
+                                    << " at " << insertPosition;
+                            values.insert(values.begin() + insertPosition, std::move(variantType));
+                            break;
+                        case nebula::cpp2::SupportedType::INT:
+                            try {
+                                variantType = folly::to<int64_t>(defaultValues_[fieldName]);
+                            } catch (const std::exception& ex) {
+                                LOG(ERROR) << "Conversion to int64_t failed: "
+                                           << defaultValues_[fieldName];
+                                return Status::Error("Type Conversion Failed");
+                            }
+
+                            VLOG(3) << "Insert " << fieldName << ":" << variantType
+                                    << " at " << insertPosition;
+                            values.insert(values.begin() + insertPosition, std::move(variantType));
+                            break;
+                        case nebula::cpp2::SupportedType::DOUBLE:
+                            try {
+                                variantType = folly::to<double>(defaultValues_[fieldName]);
+                            } catch (const std::exception& ex) {
+                                LOG(ERROR) << "Conversion to double failed: "
+                                           << defaultValues_[fieldName];
+                                return Status::Error("Type Conversion Failed");
+                            }
+
+                            VLOG(3) << "Insert " << fieldName << ":" << variantType
+                                    << " at " << insertPosition;
+                            values.insert(values.begin() + insertPosition, std::move(variantType));
+                            break;
+                        case nebula::cpp2::SupportedType::STRING:
+                            variantType = defaultValues_[fieldName];
+
+                            VLOG(3) << "Insert " << fieldName << ":" << variantType
+                                    << " at " << insertPosition;
+                            values.insert(values.begin() + insertPosition, std::move(variantType));
+                            break;
+                        default:
+                            LOG(ERROR) << "Unknow type";
+                            return Status::Error("Unknow type");
+                    }
+                    insertPosition++;
+                } else if (*props_[propsIndex] == fieldName) {
+                    propsIndex++;
+                    insertPosition++;
+                } else {
+                    insertPosition++;
+                }
+            }
         }
 
         RowWriter writer(schema_);
@@ -118,6 +208,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
             writeVariantType(writer, value);
             fieldIndex++;
         }
+
         {
             auto &out = edges[index++];
             out.key.set_src(src);
@@ -151,8 +242,7 @@ void InsertEdgeExecutor::execute() {
         onError_(std::move(result).status());
         return;
     }
-    auto space = ectx()->rctx()->session()->space();
-    auto future = ectx()->storage()->addEdges(space, std::move(result).value(), overwritable_);
+    auto future = ectx()->storage()->addEdges(spaceId_, std::move(result).value(), overwritable_);
     auto *runner = ectx()->rctx()->runner();
 
     auto cb = [this] (auto &&resp) {

@@ -168,6 +168,20 @@ TEST_F(SchemaTest, metaCommunication) {
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
+    // Create Tag with default value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG person_with_default(name string, age int default 18)";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE TAG person_type_miamatch"
+                            "(name string, age int default \"hello\")";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DESCRIBE TAG person";
@@ -272,6 +286,7 @@ TEST_F(SchemaTest, metaCommunication) {
         std::vector<uniform_tuple_t<std::string, 1>> expected{
             {"tag1"},
             {"person"},
+            {"person_with_default"},
             {"upper"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
@@ -311,6 +326,18 @@ TEST_F(SchemaTest, metaCommunication) {
         std::string query = "CREATE EDGE buy(id int, time string)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE buy_with_default(id int, time string default \"\")";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE EDGE buy_type_mismatch(id int, time string default 0)";
+        auto code = client->execute(query, resp);
+        ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // Test existent edge
     {
@@ -381,6 +408,7 @@ TEST_F(SchemaTest, metaCommunication) {
         std::vector<uniform_tuple_t<std::string, 1>> expected{
             {"edge1"},
             {"buy"},
+            {"buy_with_default"},
             {"education"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));

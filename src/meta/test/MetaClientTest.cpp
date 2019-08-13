@@ -26,7 +26,6 @@ namespace meta {
 
 using nebula::cpp2::SupportedType;
 using nebula::cpp2::ValueType;
-using nebula::cpp2::Value;
 using apache::thrift::FragileConstructor::FRAGILE;
 
 TEST(MetaClientTest, InterfacesTest) {
@@ -82,7 +81,7 @@ TEST(MetaClientTest, InterfacesTest) {
             }
         }
         {
-            // createTagSchema
+            // Create tag schema
             nebula::cpp2::Schema schema;
             for (auto i = 0 ; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
@@ -94,7 +93,22 @@ TEST(MetaClientTest, InterfacesTest) {
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
         {
-            // createEdgeSchema
+            // Create tag schema with default value
+            nebula::cpp2::Schema schema;
+            for (auto i = 0 ; i < 5; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = "tagItem" + std::to_string(i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                nebula::cpp2::Value defaultValue;
+                defaultValue.set_string_value(std::to_string(i));
+                column.default_value = defaultValue;
+                schema.columns.emplace_back(std::move(column));
+            }
+            auto ret = client->createTagSchema(spaceId, "tagWithDefault", schema).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
+        }
+        {
+            // Create edge schema
             nebula::cpp2::Schema schema;
             for (auto i = 0 ; i < 5; i++) {
                 nebula::cpp2::ColumnDef column;
@@ -105,6 +119,21 @@ TEST(MetaClientTest, InterfacesTest) {
             auto ret = client->createEdgeSchema(spaceId, "edgeName", schema).get();
             ASSERT_TRUE(ret.ok()) << ret.status();
         }
+        {
+            // Create edge schema with default value
+            nebula::cpp2::Schema schema;
+            for (auto i = 0 ; i < 5; i++) {
+                nebula::cpp2::ColumnDef column;
+                column.name = "edgeItem" + std::to_string(i);
+                column.type.type = nebula::cpp2::SupportedType::STRING;
+                nebula::cpp2::Value defaultValue;
+                defaultValue.set_string_value(std::to_string(i));
+                column.default_value = defaultValue;
+                schema.columns.emplace_back(std::move(column));
+            }
+            auto ret = client->createEdgeSchema(spaceId, "edgeWithDefault", schema).get();
+            ASSERT_TRUE(ret.ok()) << ret.status();
+        }
 
         auto schemaMan = std::make_unique<ServerBasedSchemaManager>();
         schemaMan->init(client.get());
@@ -112,7 +141,7 @@ TEST(MetaClientTest, InterfacesTest) {
             // listTagSchemas
             auto ret1 = client->listTagSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
-            ASSERT_EQ(ret1.value().size(), 1);
+            ASSERT_EQ(ret1.value().size(), 2);
             ASSERT_NE(ret1.value().begin()->tag_id, 0);
             ASSERT_EQ(ret1.value().begin()->schema.columns.size(), 5);
 
@@ -154,7 +183,7 @@ TEST(MetaClientTest, InterfacesTest) {
             // listEdgeSchemas
             auto ret1 = client->listEdgeSchemas(spaceId).get();
             ASSERT_TRUE(ret1.ok()) << ret1.status();
-            ASSERT_EQ(ret1.value().size(), 1);
+            ASSERT_EQ(ret1.value().size(), 2);
             ASSERT_NE(ret1.value().begin()->edge_type, 0);
 
             // getEdgeSchemaFromCache
@@ -321,25 +350,49 @@ TEST(MetaClientTest, TagTest) {
 
     {
         std::vector<nebula::cpp2::ColumnDef> columns;
-        auto intValue = Value();
+        nebula::cpp2::Value intValue;
         intValue.set_int_value(0);
         columns.emplace_back(FRAGILE, "column_i",
                              ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr),
-                             intValue);
-        auto doubleValue = Value();
+                             std::move(intValue));
+
+        nebula::cpp2::Value doubleValue;
         doubleValue.set_double_value(3.14);
         columns.emplace_back(FRAGILE, "column_d",
                              ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr),
-                             doubleValue);
-        auto stringValue = Value();
+                             std::move(doubleValue));
+
+        nebula::cpp2::Value stringValue;
         stringValue.set_string_value("test");
         columns.emplace_back(FRAGILE, "column_s",
                              ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr),
-                             stringValue);
+                             std::move(stringValue));
+
         nebula::cpp2::Schema schema;
+        schema.set_columns(columns);
         auto result = client->createTagSchema(spaceId, "test_tag", schema).get();
         ASSERT_TRUE(result.ok());
         id = result.value();
+    }
+    {
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        nebula::cpp2::Value intValue;
+        intValue.set_int_value(0);
+        columns.emplace_back(FRAGILE, "column_i",
+                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr),
+                             std::move(intValue));
+
+        nebula::cpp2::Value stringValue;
+        stringValue.set_string_value("default value");
+        columns.emplace_back(FRAGILE, "column_d",
+                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr),
+                             std::move(stringValue));
+
+        nebula::cpp2::Schema schema;
+        schema.set_columns(columns);
+
+        auto result = client->createTagSchema(spaceId, "test_tag_type_mismatch", schema).get();
+        ASSERT_FALSE(result.ok());
     }
     {
         auto result = client->listTagSchemas(spaceId).get();
@@ -372,6 +425,76 @@ TEST(MetaClientTest, TagTest) {
     }
     {
         auto result = client->getTagSchema(spaceId, "test_tag", version).get();
+        ASSERT_FALSE(result.ok());
+    }
+}
+
+TEST(MetaClientTest, EdgeTest) {
+    FLAGS_load_data_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/MetaClientEdgeTest.XXXXXX");
+
+    // Let the system choose an available port for us
+    int32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+
+    GraphSpaceID spaceId = 0;
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
+    std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
+    auto r = client->addHosts(hosts).get();
+    ASSERT_TRUE(r.ok());
+    client->waitForMetadReady();
+    TestUtils::registerHB(hosts);
+    auto ret = client->createSpace("default_space", 9, 3).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    spaceId = ret.value();
+
+    {
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        nebula::cpp2::Value intValue;
+        intValue.set_int_value(0);
+        columns.emplace_back(FRAGILE, "column_i",
+                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr),
+                             std::move(intValue));
+
+        nebula::cpp2::Value doubleValue;
+        doubleValue.set_double_value(3.14);
+        columns.emplace_back(FRAGILE, "column_d",
+                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr),
+                             std::move(doubleValue));
+
+        nebula::cpp2::Value stringValue;
+        stringValue.set_string_value("test");
+        columns.emplace_back(FRAGILE, "column_s",
+                             ValueType(FRAGILE, SupportedType::STRING, nullptr, nullptr),
+                             std::move(stringValue));
+
+        nebula::cpp2::Schema schema;
+        schema.set_columns(std::move(columns));
+        auto result = client->createEdgeSchema(spaceId, "test_edge", schema).get();
+        ASSERT_TRUE(result.ok());
+    }
+    {
+        std::vector<nebula::cpp2::ColumnDef> columns;
+        nebula::cpp2::Value intValue;
+        intValue.set_int_value(0);
+        columns.emplace_back(FRAGILE, "column_i",
+                             ValueType(FRAGILE, SupportedType::INT, nullptr, nullptr),
+                             std::move(intValue));
+
+        nebula::cpp2::Value stringValue;
+        stringValue.set_string_value("default value");
+        columns.emplace_back(FRAGILE, "column_d",
+                             ValueType(FRAGILE, SupportedType::DOUBLE, nullptr, nullptr),
+                             std::move(stringValue));
+
+        nebula::cpp2::Schema schema;
+        schema.set_columns(columns);
+
+        auto result = client->createEdgeSchema(spaceId, "test_edge_type_mismatch", schema).get();
         ASSERT_FALSE(result.ok());
     }
 }

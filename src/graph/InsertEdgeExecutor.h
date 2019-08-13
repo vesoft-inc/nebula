@@ -30,11 +30,14 @@ private:
 
 private:
     using EdgeSchema = std::shared_ptr<const meta::SchemaProviderIf>;
-    InsertEdgeSentence                         *sentence_{nullptr};
-    bool                                        overwritable_{true};
-    EdgeType                                    edgeType_{0};
-    EdgeSchema                                  schema_;
-    std::vector<EdgeRowItem*>                   rows_;
+    InsertEdgeSentence                               *sentence_{nullptr};
+    bool                                              overwritable_{true};
+    EdgeType                                          edgeType_{0};
+    EdgeSchema                                        schema_;
+    std::vector<std::string*>                         props_;
+    std::vector<EdgeRowItem*>                         rows_;
+    GraphSpaceID                                      spaceId_{-1};
+    std::unordered_map<std::string, std::string>      defaultValues_;
 };
 
 }   // namespace graph

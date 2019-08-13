@@ -20,10 +20,10 @@ const std::string kIndexTable  = "__index__";   // NOLINT
 const std::string kUsersTable  = "__users__";    // NOLINT
 const std::string kRolesTable  = "__roles__";    // NOLINT
 const std::string kConfigsTable = "__configs__"; // NOLINT
-const std::string kDefaultTable = "__default__";   // NOLINT
+const std::string kDefaultTable = "__default__"; // NOLINT
 
-const std::string kHostOnline = "Online";       // NOLINT
-const std::string kHostOffline = "Offline";     // NOLINT
+const std::string kHostOnline  = "Online";       // NOLINT
+const std::string kHostOffline = "Offline";      // NOLINT
 
 std::string MetaServiceUtils::spaceKey(GraphSpaceID spaceId) {
     std::string key;
@@ -484,10 +484,6 @@ UserID MetaServiceUtils::parseUserId(folly::StringPiece val) {
                                              kUsersTable.size());
 }
 
-std::string MetaServiceUtils::defaultPrefix() {
-    return kDefaultTable;
-}
-
 std::string MetaServiceUtils::tagDefaultKey(GraphSpaceID spaceId,
                                             TagID tag,
                                             const std::string& field) {
@@ -510,6 +506,10 @@ std::string MetaServiceUtils::edgeDefaultKey(GraphSpaceID spaceId,
     key.append(reinterpret_cast<const char*>(&edge), sizeof(EdgeType));
     key.append(field);
     return key;
+}
+
+const std::string& MetaServiceUtils::defaultPrefix() {
+    return kDefaultTable;
 }
 
 std::string MetaServiceUtils::configKey(const cpp2::ConfigModule& module,

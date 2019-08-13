@@ -88,6 +88,20 @@ AssertionResult DataTest::prepareSchema() {
                                << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
+    // create tag with default value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG personWithDefault(name string default \"\", "
+                                                       "age int default 18, "
+                                                       "isMarried bool default false, "
+                                                       "BMI double default 18.5, "
+                                                       "department string default \"engineering\")";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
+        }
+    }
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE TAG student(grade string, number int)";
@@ -99,7 +113,27 @@ AssertionResult DataTest::prepareSchema() {
     }
     {
         cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG studentWithDefault"
+                          "(grade string default \"one\", number int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE EDGE schoolmate(likeness int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
+        }
+    }
+    // create edge with default value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE EDGE schoolmateWithDefault(likeness int default 80)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
             return TestError() << "Do cmd:" << cmd
@@ -152,7 +186,7 @@ AssertionResult DataTest::removeData() {
     return TestOK();
 }
 
-TEST_F(DataTest, InsertVertex) {
+TEST_F(DataTest, InsertTest) {
     // Insert wrong type value
     {
         cpp2::ExecutionResponse resp;
@@ -185,15 +219,8 @@ TEST_F(DataTest, InsertVertex) {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT VERTEX person(name, age),student(grade, number) "
-                          "VALUES hash(\"Lucy\"):(\"Lucy\", 8, \"three\", 20190901001)";
-        auto code = client_->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    // Multi vertices multi tags
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX person(name, age),student(grade, number) "
-                          "VALUES hash(\"Laura\"):(\"Laura\", 8, \"three\", 20190901008),"
+                          "VALUES hash(\"Lucy\"):(\"Lucy\", 8, \"three\", 20190901001),"
+                          "hash(\"Laura\"):(\"Laura\", 8, \"three\", 20190901008),"
                           "hash(\"Amber\"):(\"Amber\", 9, \"four\", 20180901003)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -380,6 +407,117 @@ TEST_F(DataTest, InsertVertex) {
     // TODO: Test insert multi tags, and delete one of them then check other existent
 }
 
+TEST_F(DataTest, InsertWithDefaultValueTest) {
+    // Insert vertex using default value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX personWithDefault() "
+                          "VALUES hash(\"\"):()";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX personWithDefault"
+                          "(name, age, isMarried, BMI, department, redundant)"
+                          "VALUES hash(\"Tom\"):(\"Tom\", 18, false, 18.5, \"dev\", 0)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX personWithDefault(name) "
+                          "VALUES hash(\"Tom\"):(\"Tom\")";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX personWithDefault(name, age) "
+                          "VALUES hash(\"Tom\"):(\"Tom\", 20)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX personWithDefault(name, BMI) "
+                          "VALUES hash(\"Tom\"):(\"Tom\", 20.5)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Insert vertices multi tags
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX personWithDefault(name, BMI),"
+                          "studentWithDefault(number) VALUES "
+                          "hash(\"Laura\"):(\"Laura\", 21.5, 20190901008),"
+                          "hash(\"Amber\"):(\"Amber\", 22.5, 20180901003)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Multi vertices one tag
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX personWithDefault(name) VALUES "
+                          "hash(\"Kitty\"):(\"Kitty\"), "
+                          "hash(\"Peter\"):(\"Peter\")";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmateWithDefault() VALUES "
+                          "hash(\"Tom\")->hash(\"Lucy\"):()";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmateWithDefault(likeness, redundant) VALUES "
+                          "hash(\"Tom\")->hash(\"Lucy\"):(90, 0)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Insert multi edges with default value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmateWithDefault() VALUES "
+                          "hash(\"Tom\")->hash(\"Kitty\"):(),"
+                          "hash(\"Tom\")->hash(\"Peter\"):(),"
+                          "hash(\"Lucy\")->hash(\"Laura\"):(),"
+                          "hash(\"Lucy\")->hash(\"Amber\"):()";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Get result
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM hash(\"Tom\") OVER schoolmateWithDefault YIELD $^.person.name,"
+                          "schoolmateWithDefault.likeness, $$.person.name";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected = {
+            {"Tom", 80, "Lucy"},
+            {"Tom", 80, "Kitty"},
+            {"Tom", 80, "Peter"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM hash(\"Lucy\") OVER schoolmateWithDefault YIELD "
+                          "schoolmateWithDefault.likeness, $$.personWithDefault.name,"
+                          "$$.studentWithDefault.grade, $$.studentWithDefault.number";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        using valueType = std::tuple<int64_t, std::string, std::string, int64_t>;
+        std::vector<valueType> expected = {
+            {80, "Laura", "one", 20190901008},
+            {80, "Amber", "one", 20180901003},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 }   // namespace graph
 }   // namespace nebula
 

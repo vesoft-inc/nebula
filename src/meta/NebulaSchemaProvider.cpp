@@ -97,14 +97,6 @@ const nebula::cpp2::SchemaProp NebulaSchemaProvider::getProp() const {
     return schemaProp_;
 }
 
-std::vector<std::string> NebulaSchemaProvider::getFieldNames() const {
-    std::vector<std::string> result;
-    for (auto it = fields_.begin(); it != fields_.end(); ++it) {
-        result.emplace_back(it->get()->getName());
-    }
-    return result;
-}
-
 }  // namespace meta
 }  // namespace nebula
 
