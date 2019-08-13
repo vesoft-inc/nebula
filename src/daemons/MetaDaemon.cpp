@@ -32,7 +32,7 @@ DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path");
 DEFINE_string(meta_server_addrs, "", "It is a list of IPs split by comma,"
                                      "the ips number equals replica number."
-                                     "If empty, it means replica is 1");
+                                     "If empty, it means replica is 0");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
@@ -58,8 +58,10 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
                                                  nebula::HostAddr localhost) {
     auto partMan
         = std::make_unique<nebula::kvstore::MemPartManager>();
-    // The meta server has only one space, one part.
-    partMan->addPart(0, 0, std::move(peers));
+    // The meta server has only one space (0), one part (0)
+    partMan->addPart(nebula::meta::kDefaultSpaceId,
+                     nebula::meta::kDefaultPartId,
+                     std::move(peers));
     // folly IOThreadPoolExecutor
     auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
     std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
@@ -83,7 +85,8 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     LOG(INFO) << "Waiting for the leader elected...";
     nebula::HostAddr leader;
     while (true) {
-        auto ret = kvstore->partLeader(0, 0);
+        auto ret = kvstore->partLeader(nebula::meta::kDefaultSpaceId,
+                                       nebula::meta::kDefaultPartId);
         if (!nebula::ok(ret)) {
             LOG(ERROR) << "Nebula store init failed";
             return nullptr;
