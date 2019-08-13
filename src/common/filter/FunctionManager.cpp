@@ -294,8 +294,15 @@ FunctionManager::getInternal(const std::string &func, size_t arity) const {
     auto minArity = iter->second.minArity_;
     auto maxArity = iter->second.maxArity_;
     if (arity < minArity || arity > maxArity) {
-        return Status::Error("Arity not match for function `%s': %lu vs. [%lu-%lu]",
-                              func.c_str(), arity, minArity, maxArity);
+        if (minArity == maxArity) {
+            return Status::Error("Arity not match for function `%s': "
+                                 "provided %lu but %lu expected.",
+                                 func.c_str(), arity, minArity);
+        } else {
+            return Status::Error("Arity not match for function `%s': "
+                                 "provided %lu but %lu-%lu expected.",
+                                 func.c_str(), arity, minArity, maxArity);
+        }
     }
     return iter->second.body_;
 }

@@ -11,10 +11,10 @@ Also notice that DESCRIBE is different from SHOW. check XXX for SHOW.
 
 ### Examples
 
-Providing information about space. Please refer to XXX about CREATE SPACE.
+Providing information about space. As regards information about CREATE SPACE.
 
 ```
-(user@127.0.0.1) [(none)]> DESCRIBE SPACE laura_space;
+nebula> DESCRIBE SPACE laura_space;
 ========================================================
 | ID |        Name | Partition number | Replica Factor |
 ========================================================
@@ -22,10 +22,10 @@ Providing information about space. Please refer to XXX about CREATE SPACE.
 --------------------------------------------------------  
 ```
 
-Providing information about tag. Please refer to XXX about CREATE TAG.
+Providing information about tag. As regards information about CREATE TAG.
 
 ```
-(user@127.0.0.1) [(none)]> DESCRIBE TAG player
+nebula> DESCRIBE TAG player
 ==================
 | Field |   Type |
 ==================
@@ -35,10 +35,10 @@ Providing information about tag. Please refer to XXX about CREATE TAG.
 ------------------  
 ```
 
-Providing information about edge. Please refer to XXX about CREATE EDGE.
+Providing information about edge. As regards information about CREATE EDGE.
 
 ```
-(user@127.0.0.1) [(none)]> DESCRIBE EDGE serve
+nebula> DESCRIBE EDGE serve
 =====================
 |      Field | Type |
 =====================
