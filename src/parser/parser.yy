@@ -1218,6 +1218,7 @@ show_sentence
     }
     | KW_SHOW KW_VARIABLES show_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kShow, $3);
+    }
     | KW_SHOW KW_CREATE KW_SPACE name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateSpace, $4);
     }

@@ -237,29 +237,6 @@ TEST_F(SchemaTest, metaCommunication) {
         ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 
-    // Unreserved keyword as filed name
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "CREATE TAG man(name string, email string, "
-                            "age int, gender string, row_timestamp timestamp)";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "DESCRIBE TAG man";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-
-        std::vector<uniform_tuple_t<std::string, 2>> expected{
-            {"name", "string"},
-            {"email", "string"},
-            {"age", "int"},
-            {"gender", "string"},
-            {"row_timestamp", "timestamp"},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
     // Test unreserved keyword
     {
         cpp2::ExecutionResponse resp;
@@ -963,8 +940,7 @@ TEST_F(SchemaTest, TTLtest) {
     // Edge with TTL test
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "CREATE EDGE work(number string, start_time timestamp)"
-                            "ttl_duration = 100, ttl_col = start_time";
+        std::string query = "CREATE EDGE work(number string, start_time timestamp)";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -1154,7 +1130,7 @@ TEST_F(SchemaTest, TTLtest) {
         // First remove TTL property, then drop column
         cpp2::ExecutionResponse resp;
         std::string query = "ALTER EDGE work2 "
-                            "ttl_col = age;
+                            "ttl_col = age";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

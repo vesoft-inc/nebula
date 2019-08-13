@@ -19,20 +19,15 @@ ShowExecutor::ShowExecutor(Sentence *sentence,
 
 
 Status ShowExecutor::prepare() {
-    if (sentence_->showType() == ShowSentence::ShowType::kShowTags ||
-        sentence_->showType() == ShowSentence::ShowType::kShowEdges ||
-        sentence_->showType() == ShowSentence::ShowType::kShowCreateTag ||
-        sentence_->showType() == ShowSentence::ShowType::kShowCreateEdge) {
-        return checkIfGraphSpaceChosen();
-    } else {
-        return Status::OK();
-    }
+    return Status::OK();
 }
 
 
 void ShowExecutor::execute() {
     if (sentence_->showType() == ShowSentence::ShowType::kShowTags ||
-        sentence_->showType() == ShowSentence::ShowType::kShowEdges) {
+        sentence_->showType() == ShowSentence::ShowType::kShowEdges ||
+        sentence_->showType() == ShowSentence::ShowType::kShowCreateTag ||
+        sentence_->showType() == ShowSentence::ShowType::kShowCreateEdge) {
         auto status = checkIfGraphSpaceChosen();
         if (!status.ok()) {
             DCHECK(onError_);
