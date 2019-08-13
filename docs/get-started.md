@@ -112,7 +112,7 @@ To connect to the graph server, run
 
 Welcome to Nebula Graph (Version 0.1)
 
-(user@127.0.0.1) [(none)]>
+nebula>
 ```
 
 If you have any questions or concerns about the deployment procedures, please do not hesitate to open an issue on [GitHub](https://github.com/vesoft-inc/nebula/issues).
@@ -291,15 +291,15 @@ There are three kinds of tags (_course_, _building_ and _student_) and two edge 
 
 To list all existing spaces:
 ```
-(user@127.0.0.1) [(none)]> SHOW SPACES;
+nebula> SHOW SPACES;
 ```
 
 To create a new space named myspace_test2 :
 ```
-(user@127.0.0.1) [(none)]> CREATE SPACE myspace_test2(partition_num=1, replica_factor=1);
+nebula> CREATE SPACE myspace_test2(partition_num=1, replica_factor=1);
 
 -- Use this space
-(user@127.0.0.1) [(none)]> USE myspace_test2;
+nebula> USE myspace_test2;
 ```
 `replica_factor` specifies the number of replicas in the cluster.
 
@@ -309,32 +309,32 @@ To create a new space named myspace_test2 :
 
 The `CREATE TAG` statement defines a tag, with a type name and an attribute list.
 ```
-(user@127.0.0.1) [(none)]> CREATE TAG course(name string, credits int);
-(user@127.0.0.1) [(none)]> CREATE TAG building(name string);
-(user@127.0.0.1) [(none)]> CREATE TAG student(name string, age int, gender string);
+nebula> CREATE TAG course(name string, credits int);
+nebula> CREATE TAG building(name string);
+nebula> CREATE TAG student(name string, age int, gender string);
 ```
 The `CREATE EDGE` statement defines an edge type.
 ```
-(user@127.0.0.1) [(none)]> CREATE EDGE like(likeness double);
-(user@127.0.0.1) [(none)]> CREATE EDGE select(grade int);
+nebula> CREATE EDGE like(likeness double);
+nebula> CREATE EDGE select(grade int);
 ```
 
 To list the tags and edge types that we just created：
 ```
 -- Show tag list
-(user@127.0.0.1) [(none)]> SHOW TAGS;
+nebula> SHOW TAGS;
 
 -- Show edge type list
-(user@127.0.0.1) [(none)]> SHOW EDGES;
+nebula> SHOW EDGES;
 ```
 
 To show the attributes of a tag or an edge type:
 ```
 -- Show attributes of a tag
-(user@127.0.0.1) [(none)]> DESCRIBE TAG student;
+nebula> DESCRIBE TAG student;
 
 -- Show attributes of an edge type
-(user@127.0.0.1) [(none)]> DESCRIBE EDGE like;
+nebula> DESCRIBE EDGE like;
 ```
 
 
@@ -345,23 +345,23 @@ Insert the vertices and edges based on the graph above.
 ```
 
 -- Insert vertices
-(user@127.0.0.1) [(none)]> INSERT VERTEX student(name, age, gender) VALUES 200:("Monica", 16, "female");
-(user@127.0.0.1) [(none)]> INSERT VERTEX student(name, age, gender) VALUES 201:("Mike", 18, "male");
-(user@127.0.0.1) [(none)]> INSERT VERTEX student(name, age, gender) VALUES 202:("Jane", 17, "female");
-(user@127.0.0.1) [(none)]> INSERT VERTEX course(name, credits),building(name) VALUES 101:("Math", 3, "No5");
-(user@127.0.0.1) [(none)]> INSERT VERTEX course(name, credits),building(name) VALUES 102:("English", 6, "No11");
+nebula> INSERT VERTEX student(name, age, gender) VALUES 200:("Monica", 16, "female");
+nebula> INSERT VERTEX student(name, age, gender) VALUES 201:("Mike", 18, "male");
+nebula> INSERT VERTEX student(name, age, gender) VALUES 202:("Jane", 17, "female");
+nebula> INSERT VERTEX course(name, credits),building(name) VALUES 101:("Math", 3, "No5");
+nebula> INSERT VERTEX course(name, credits),building(name) VALUES 102:("English", 6, "No11");
 
 ```
 
 ```
 -- Insert edges
-(user@127.0.0.1) [(none)]> INSERT EDGE select(grade) VALUES 200 -> 101:(5);
-(user@127.0.0.1) [(none)]> INSERT EDGE select(grade) VALUES 200 -> 102:(3);
-(user@127.0.0.1) [(none)]> INSERT EDGE select(grade) VALUES 201 -> 102:(3);
-(user@127.0.0.1) [(none)]> INSERT EDGE select(grade) VALUES 202 -> 102:(3);
-(user@127.0.0.1) [(none)]> INSERT EDGE like(likeness) VALUES 200 -> 201:(92.5);
-(user@127.0.0.1) [(none)]> INSERT EDGE like(likeness) VALUES 201 -> 200:(85.6);
-(user@127.0.0.1) [(none)]> INSERT EDGE like(likeness) VALUES 201 -> 202:(93.2);
+nebula> INSERT EDGE select(grade) VALUES 200 -> 101:(5);
+nebula> INSERT EDGE select(grade) VALUES 200 -> 102:(3);
+nebula> INSERT EDGE select(grade) VALUES 201 -> 102:(3);
+nebula> INSERT EDGE select(grade) VALUES 202 -> 102:(3);
+nebula> INSERT EDGE like(likeness) VALUES 200 -> 201:(92.5);
+nebula> INSERT EDGE like(likeness) VALUES 201 -> 200:(85.6);
+nebula> INSERT EDGE like(likeness) VALUES 201 -> 202:(93.2);
 ```
 
 ## Sample Queries
@@ -369,7 +369,7 @@ Insert the vertices and edges based on the graph above.
 Q1. Find the vertexes that 201 likes:
 
 ```
-(user@127.0.0.1) [(none)]> GO FROM 201 OVER like;
+nebula> GO FROM 201 OVER like;
 
 =======
 |  id |
@@ -383,7 +383,7 @@ Q1. Find the vertexes that 201 likes:
 Q2. Find the vertexes that 201 likes, whose age are greater than 17. Return their name, age and gender, and alias the columns as Friend, Age and Gender, respectively.
 
 ```
-(user@127.0.0.1) [(none)]> GO FROM 201 OVER like WHERE $$.student.age >= 17 YIELD $$.student.name AS Friend, $$.student.age AS Age, $$.student.gender AS Gender;
+nebula> GO FROM 201 OVER like WHERE $$.student.age >= 17 YIELD $$.student.name AS Friend, $$.student.age AS Age, $$.student.gender AS Gender;
 
 =========================
 | Friend | Age | Gender |
@@ -402,7 +402,7 @@ Q3. Find the selected courses and corresponding grades of students liked by 201.
 ```
 
 -- By pipe
-(user@127.0.0.1) [(none)]> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
+nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
 
 =============================
 | Student |  Course | Grade |
@@ -415,7 +415,7 @@ Q3. Find the selected courses and corresponding grades of students liked by 201.
 -----------------------------
 
 -- By temporary variable
-(user@127.0.0.1) [(none)]> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
+nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
 
 =============================
 | Student |  Course | Grade |

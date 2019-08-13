@@ -8,8 +8,6 @@
 #include "meta/processors/Common.h"
 #include "meta/MetaServiceUtils.h"
 
-DECLARE_int32(load_config_interval_secs);
-
 namespace nebula {
 namespace meta {
 
