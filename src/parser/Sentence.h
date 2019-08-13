@@ -54,6 +54,8 @@ public:
         kIngest,
         kOrderBy,
         kConfig,
+        kFetchVertices,
+        kFetchEdges,
     };
 
     Kind kind() const {

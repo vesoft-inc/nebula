@@ -145,7 +145,7 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
                     respTag.columns.emplace_back(columnDef(prop.prop_.name, prop.type_.type));
                 }
             }
-            if (!respTag.get_columns().empty()) {
+            if (!respTag.get_columns().empty() && writer.size() > 1) {
                 td.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                 tc.tagId_,
                                 std::move(respTag),

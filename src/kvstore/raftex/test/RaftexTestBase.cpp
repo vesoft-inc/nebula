@@ -11,7 +11,7 @@
 #include "kvstore/raftex/test/TestShard.h"
 #include "thrift/ThriftClientManager.h"
 
-DECLARE_uint32(heartbeat_interval);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace raftex {
@@ -173,7 +173,7 @@ void setupRaft(
 
     // Set up services
     for (int i = 0; i < numCopies; ++i) {
-        services.emplace_back(RaftexService::createService(nullptr));
+        services.emplace_back(RaftexService::createService(nullptr, nullptr));
         if (!services.back()->start())
             return;
         uint16_t port = services.back()->getServerPort();
@@ -194,6 +194,7 @@ void setupRaft(
             flusher.get(),
             services[i]->getIOThreadPool(),
             workers,
+            services[i]->getThreadManager(),
             std::bind(&onLeadershipLost,
                       std::ref(copies),
                       std::ref(leader),
@@ -290,7 +291,7 @@ void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
                     size_t start, size_t end,
                     std::vector<std::string>& msgs) {
     // Sleep a while to make sure the last log has been committed on followers
-    sleep(FLAGS_heartbeat_interval);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
 
     // Check every copy
     for (auto& c : copies) {

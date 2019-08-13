@@ -22,6 +22,7 @@
 #include <folly/executors/ThreadPoolExecutor.h>
 #include <folly/executors/CPUThreadPoolExecutor.h>
 #include "dataman/RowReader.h"
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 
 namespace nebula {
@@ -31,11 +32,17 @@ class TestUtils {
 public:
     static std::unique_ptr<kvstore::KVStore> initKV(
             const char* rootPath,
+            int32_t partitionNumber = 6,
             HostAddr localhost = {0, 0},
             meta::MetaClient* mClient = nullptr,
             bool useMetaServer = false,
             std::shared_ptr<kvstore::KVCompactionFilterFactory> cfFactory = nullptr) {
         auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+        auto workers = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 1, true /*stats*/);
+        workers->setNamePrefix("executor");
+        workers->start();
+
 
         kvstore::KVOptions options;
         if (useMetaServer) {
@@ -47,7 +54,7 @@ public:
             // GraphSpaceID =>  {PartitionIDs}
             // 0 => {0, 1, 2, 3, 4, 5}
             auto& partsMap = memPartMan->partsMap();
-            for (auto partId = 0; partId < 6; partId++) {
+            for (auto partId = 0; partId < partitionNumber; partId++) {
                 partsMap[0][partId] = PartMeta();
             }
 
@@ -63,7 +70,8 @@ public:
         options.cfFactory_ = std::move(cfFactory);
         auto store = std::make_unique<kvstore::NebulaStore>(std::move(options),
                                                             ioPool,
-                                                            localhost);
+                                                            localhost,
+                                                            workers);
         store->init();
         sleep(1);
         return store;
@@ -191,7 +199,7 @@ public:
                                                                   bool useMetaServer = false) {
         auto sc = std::make_unique<test::ServerContext>();
         // Always use the Meta Service in this case
-        sc->kvStore_ = TestUtils::initKV(dataPath, {ip, port}, mClient, true);
+        sc->kvStore_ = TestUtils::initKV(dataPath, 6, {ip, port}, mClient, true);
 
         if (!useMetaServer) {
             sc->schemaMan_ = TestUtils::mockSchemaMan(1);

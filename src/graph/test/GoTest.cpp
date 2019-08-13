@@ -10,7 +10,6 @@
 #include "graph/test/TraverseTestBase.h"
 #include "meta/test/TestUtils.h"
 
-DECLARE_int32(load_data_interval_secs);
 
 namespace nebula {
 namespace graph {
@@ -438,6 +437,99 @@ TEST_F(GoTest, MULTI_EDGES) {
             {teams_["Spurs"].vid()},
             {teams_["Hornets"].vid()},
             {teams_["Trail Blazers"].vid()},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(GoTest, ReferencePipeInYieldAndWhere) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
+                            "YIELD $^.player.name AS name, like._dst AS id "
+                            "| GO FROM $-.id OVER like "
+                            "YIELD $-.name, $^.player.name, $$.player.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 3>> expected = {
+            {"Tim Duncan", "Manu Ginobili", "Tim Duncan"},
+            {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
+            {"Tim Duncan", "Tony Parker", "Manu Ginobili"},
+            {"Tim Duncan", "Tony Parker", "Tim Duncan"},
+            {"Chris Paul", "LeBron James", "Ray Allen"},
+            {"Chris Paul", "Carmelo Anthony", "Chris Paul"},
+            {"Chris Paul", "Carmelo Anthony", "LeBron James"},
+            {"Chris Paul", "Carmelo Anthony", "Dwyane Wade"},
+            {"Chris Paul", "Dwyane Wade", "Chris Paul"},
+            {"Chris Paul", "Dwyane Wade", "LeBron James"},
+            {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
+                            "YIELD $^.player.name AS name, like._dst AS id "
+                            "| GO FROM $-.id OVER like "
+                            "WHERE $-.name != $$.player.name "
+                            "YIELD $-.name, $^.player.name, $$.player.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 3>> expected = {
+            {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
+            {"Tim Duncan", "Tony Parker", "Manu Ginobili"},
+            {"Chris Paul", "LeBron James", "Ray Allen"},
+            {"Chris Paul", "Carmelo Anthony", "LeBron James"},
+            {"Chris Paul", "Carmelo Anthony", "Dwyane Wade"},
+            {"Chris Paul", "Dwyane Wade", "LeBron James"},
+            {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+
+TEST_F(GoTest, ReferenceVariableInYieldAndWhere) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "$var = GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
+                            "YIELD $^.player.name AS name, like._dst AS id; "
+                            "GO FROM $var.id OVER like "
+                            "YIELD $var.name, $^.player.name, $$.player.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 3>> expected = {
+            {"Tim Duncan", "Manu Ginobili", "Tim Duncan"},
+            {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
+            {"Tim Duncan", "Tony Parker", "Manu Ginobili"},
+            {"Tim Duncan", "Tony Parker", "Tim Duncan"},
+            {"Chris Paul", "LeBron James", "Ray Allen"},
+            {"Chris Paul", "Carmelo Anthony", "Chris Paul"},
+            {"Chris Paul", "Carmelo Anthony", "LeBron James"},
+            {"Chris Paul", "Carmelo Anthony", "Dwyane Wade"},
+            {"Chris Paul", "Dwyane Wade", "Chris Paul"},
+            {"Chris Paul", "Dwyane Wade", "LeBron James"},
+            {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "$var = GO FROM hash('Tim Duncan'),hash('Chris Paul') OVER like "
+                            "YIELD $^.player.name AS name, like._dst AS id; "
+                            "GO FROM $var.id OVER like "
+                            "WHERE $var.name != $$.player.name "
+                            "YIELD $var.name, $^.player.name, $$.player.name";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 3>> expected = {
+            {"Tim Duncan", "Tony Parker", "LaMarcus Aldridge"},
+            {"Tim Duncan", "Tony Parker", "Manu Ginobili"},
+            {"Chris Paul", "LeBron James", "Ray Allen"},
+            {"Chris Paul", "Carmelo Anthony", "LeBron James"},
+            {"Chris Paul", "Carmelo Anthony", "Dwyane Wade"},
+            {"Chris Paul", "Dwyane Wade", "LeBron James"},
+            {"Chris Paul", "Dwyane Wade", "Carmelo Anthony"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

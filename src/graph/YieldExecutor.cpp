@@ -37,7 +37,13 @@ void YieldExecutor::execute() {
     values.reserve(size);
 
     for (auto *col : yields_) {
-        values.emplace_back(col->expr()->eval());
+        auto expr = col->expr();
+        auto v = expr->eval();
+        if (!v.ok()) {
+            onError_(v.status());
+            return;
+        }
+        values.emplace_back(v.value());
     }
 
     std::vector<cpp2::RowValue> rows;

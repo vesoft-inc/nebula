@@ -99,6 +99,8 @@ public:
 
     bool waitForMetadReady(int count = -1, int retryIntervalSecs = 2);
 
+    void stop();
+
     void registerListener(MetaChangedListener* listener) {
         folly::RWSpinLock::WriteHolder holder(listenerLock_);
         CHECK(listener_ == nullptr);
@@ -326,8 +328,9 @@ private:
     HostAddr active_;
     HostAddr leader_;
     HostAddr localHost_;
+
     ClusterManager* clusterMan_{nullptr};
-    thread::GenericWorker bgThread_;
+    std::unique_ptr<thread::GenericWorker> bgThread_;
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;

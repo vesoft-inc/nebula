@@ -21,36 +21,6 @@
 
 namespace nebula {
 
-
-Status ExpressionContext::addAliasProp(const std::string &alias, const std::string &prop) {
-    auto iter = aliasInfo_.find(alias);
-    if (iter == aliasInfo_.end()) {
-        return Status::Error("Alias `%s' not defined", alias.c_str());
-    }
-
-    if (iter->second.kind_ == AliasKind::Edge) {
-        addEdgeProp(prop, iter->second.id_);
-        return Status::OK();
-    }
-    return Status::Error("Illegal alias `%s'", alias.c_str());
-}
-
-
-std::string aliasKindToString(AliasKind kind) {
-    switch (kind) {
-        case AliasKind::Unknown:
-            return "Unknown";
-        case AliasKind::SourceNode:
-            return "SourceNode";
-        case AliasKind::Edge:
-            return "Edge";
-        default:
-            FLOG_FATAL("Illegal AliasKind");
-    }
-    return "Unknown";
-}
-
-
 void Expression::print(const VariantType &value) {
     switch (value.which()) {
         case 0:
@@ -95,8 +65,8 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
             return std::make_unique<EdgeSrcIdExpression>();
         case kEdgeType:
             return std::make_unique<EdgeTypeExpression>();
-        case kEdgeProp:
-            return std::make_unique<EdgePropertyExpression>();
+        case kAliasProp:
+            return std::make_unique<AliasPropertyExpression>();
         case kVariableProp:
             return std::make_unique<VariablePropertyExpression>();
         case kDestProp:
@@ -135,17 +105,66 @@ Expression::decode(folly::StringPiece buffer) noexcept {
     }
 }
 
-
-std::string InputPropertyExpression::toString() const {
+std::string AliasPropertyExpression::toString() const {
     std::string buf;
     buf.reserve(64);
-    buf += "$-.";
+    buf += *ref_;
+    buf += *alias_;
+    if (*alias_ != "") {
+        buf += ".";
+    }
     buf += *prop_;
     return buf;
 }
 
+OptVariantType AliasPropertyExpression::eval() const {
+    return context_->getters().getAliasProp(*alias_, *prop_);
+}
 
-VariantType InputPropertyExpression::eval() const {
+Status AliasPropertyExpression::prepare() {
+    context_->addAliasProp(*alias_, *prop_);
+    return Status::OK();
+}
+
+void AliasPropertyExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(alias_->size());
+    cord << *alias_;
+    cord << static_cast<uint16_t>(prop_->size());
+    cord << *prop_;
+}
+
+const char* AliasPropertyExpression::decode(const char *pos, const char *end) {
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        alias_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        prop_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+
+    return pos;
+}
+
+
+Status InputPropertyExpression::prepare() {
+    context_->addInputProp(*prop_);
+    return Status::OK();
+}
+
+
+OptVariantType InputPropertyExpression::eval() const {
     return context_->getters().getInputProp(*prop_);
 }
 
@@ -170,140 +189,18 @@ const char* InputPropertyExpression::decode(const char *pos, const char *end) {
 }
 
 
-std::string DestPropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$$.";
-    buf += *tag_;
-    buf += ".";
-    buf += *prop_;
-    return buf;
-}
-
-
-VariantType DestPropertyExpression::eval() const {
-    return context_->getters().getDstTagProp(*tag_, *prop_);
+OptVariantType DestPropertyExpression::eval() const {
+    return context_->getters().getDstTagProp(*alias_, *prop_);
 }
 
 
 Status DestPropertyExpression::prepare() {
-    context_->addDstTagProp(*tag_, *prop_);
+    context_->addDstTagProp(*alias_, *prop_);
     return Status::OK();
 }
 
 
 void DestPropertyExpression::encode(Cord &cord) const {
-    cord << kindToInt(kind());
-    cord << static_cast<uint16_t>(tag_->size());
-    cord << *tag_;
-    cord << static_cast<uint16_t>(prop_->size());
-    cord << *prop_;
-}
-
-
-const char* DestPropertyExpression::decode(const char *pos, const char *end) {
-    {
-        THROW_IF_NO_SPACE(pos, end, 2UL);
-        auto size = *reinterpret_cast<const uint16_t*>(pos);
-        pos += 2;
-
-        THROW_IF_NO_SPACE(pos, end, size);
-        tag_ = std::make_unique<std::string>(pos, size);
-        pos += size;
-    }
-    {
-        THROW_IF_NO_SPACE(pos, end, 2UL);
-        auto size = *reinterpret_cast<const uint16_t*>(pos);
-        pos += 2;
-
-        THROW_IF_NO_SPACE(pos, end, size);
-        prop_ = std::make_unique<std::string>(pos, size);
-        pos += size;
-    }
-
-    return pos;
-}
-
-
-std::string VariablePropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$";
-    buf += *var_;
-    buf += ".";
-    buf += *prop_;
-    return buf;
-}
-
-
-VariantType VariablePropertyExpression::eval() const {
-    // TODO(dutor)
-    return toString();
-}
-
-
-Status VariablePropertyExpression::prepare() {
-    // TODO(dutor)
-    return Status::OK();
-}
-
-
-void VariablePropertyExpression::encode(Cord &cord) const {
-    cord << kindToInt(kind());
-    cord << static_cast<uint16_t>(var_->size());
-    cord << *var_;
-    cord << static_cast<uint16_t>(prop_->size());
-    cord << *prop_;
-}
-
-
-const char* VariablePropertyExpression::decode(const char *pos, const char *end) {
-    {
-        THROW_IF_NO_SPACE(pos, end, 2UL);
-        auto size = *reinterpret_cast<const uint16_t*>(pos);
-        pos += 2;
-
-        THROW_IF_NO_SPACE(pos, end, size);
-        var_ = std::make_unique<std::string>(pos, size);
-        pos += size;
-    }
-    {
-        THROW_IF_NO_SPACE(pos, end, 2UL);
-        auto size = *reinterpret_cast<const uint16_t*>(pos);
-        pos += 2;
-
-        THROW_IF_NO_SPACE(pos, end, size);
-        prop_ = std::make_unique<std::string>(pos, size);
-        pos += size;
-    }
-
-    return pos;
-}
-
-
-std::string EdgePropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += ".";
-    buf += *prop_;
-    return buf;
-}
-
-VariantType EdgePropertyExpression::eval() const {
-    return context_->getters().getEdgeProp(*alias_, *prop_);
-}
-
-Status EdgePropertyExpression::prepare() {
-    if (context_->isOverAllEdge()) {
-        context_->addEdgeProp(*prop_, *alias_);
-        return Status::OK();
-    }
-    return context_->addAliasProp(*alias_, *prop_);
-}
-
-void EdgePropertyExpression::encode(Cord &cord) const {
-    // TODO(dutor) We better replace `alias_' with integral edge type
     cord << kindToInt(kind());
     cord << static_cast<uint16_t>(alias_->size());
     cord << *alias_;
@@ -312,7 +209,7 @@ void EdgePropertyExpression::encode(Cord &cord) const {
 }
 
 
-const char* EdgePropertyExpression::decode(const char *pos, const char *end) {
+const char* DestPropertyExpression::decode(const char *pos, const char *end) {
     {
         THROW_IF_NO_SPACE(pos, end, 2UL);
         auto size = *reinterpret_cast<const uint16_t*>(pos);
@@ -336,25 +233,56 @@ const char* EdgePropertyExpression::decode(const char *pos, const char *end) {
 }
 
 
-std::string EdgeTypeExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "._type";
-    return buf;
+OptVariantType VariablePropertyExpression::eval() const {
+    return context_->getters().getVariableProp(*prop_);
+}
+
+Status VariablePropertyExpression::prepare() {
+    context_->addVariableProp(*alias_, *prop_);
+    return Status::OK();
 }
 
 
-VariantType EdgeTypeExpression::eval() const {
+void VariablePropertyExpression::encode(Cord &cord) const {
+    cord << kindToInt(kind());
+    cord << static_cast<uint16_t>(alias_->size());
+    cord << *alias_;
+    cord << static_cast<uint16_t>(prop_->size());
+    cord << *prop_;
+}
+
+
+const char* VariablePropertyExpression::decode(const char *pos, const char *end) {
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        alias_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+    {
+        THROW_IF_NO_SPACE(pos, end, 2UL);
+        auto size = *reinterpret_cast<const uint16_t*>(pos);
+        pos += 2;
+
+        THROW_IF_NO_SPACE(pos, end, size);
+        prop_ = std::make_unique<std::string>(pos, size);
+        pos += size;
+    }
+
+    return pos;
+}
+
+
+OptVariantType EdgeTypeExpression::eval() const {
     return *alias_;
 }
 
 Status EdgeTypeExpression::prepare() {
-    if (context_->isOverAllEdge()) {
-        context_->addEdgeProp("_type", *alias_);
-        return Status::OK();
-    }
-    return context_->addAliasProp(*alias_, "_type");
+    context_->addAliasProp(*alias_, *prop_);
+    return Status::OK();
 }
 
 void EdgeTypeExpression::encode(Cord &cord) const {
@@ -376,25 +304,13 @@ const char* EdgeTypeExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
-
-std::string EdgeSrcIdExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "._src";
-    return buf;
-}
-
-VariantType EdgeSrcIdExpression::eval() const {
-    return context_->getters().getEdgeProp(*alias_, "_src");
+OptVariantType EdgeSrcIdExpression::eval() const {
+    return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
 Status EdgeSrcIdExpression::prepare() {
-    if (context_->isOverAllEdge()) {
-        context_->addEdgeProp("_src", *alias_);
-        return Status::OK();
-    }
-    return context_->addAliasProp(*alias_, "_src");
+    context_->addAliasProp(*alias_, *prop_);
+    return Status::OK();
 }
 
 void EdgeSrcIdExpression::encode(Cord &cord) const {
@@ -416,25 +332,13 @@ const char* EdgeSrcIdExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
-
-std::string EdgeDstIdExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "._dst";
-    return buf;
-}
-
-VariantType EdgeDstIdExpression::eval() const {
-    return context_->getters().getEdgeProp(*alias_, "_dst");
+OptVariantType EdgeDstIdExpression::eval() const {
+    return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
 Status EdgeDstIdExpression::prepare() {
-    if (context_->isOverAllEdge()) {
-        context_->addEdgeProp("_dst", *alias_);
-        return Status::OK();
-    }
-    return context_->addAliasProp(*alias_, "_dst");
+    context_->addAliasProp(*alias_, *prop_);
+    return Status::OK();
 }
 
 void EdgeDstIdExpression::encode(Cord &cord) const {
@@ -456,25 +360,13 @@ const char* EdgeDstIdExpression::decode(const char *pos, const char *end) {
     return pos;
 }
 
-
-std::string EdgeRankExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += *alias_;
-    buf += "._rank";
-    return buf;
-}
-
-VariantType EdgeRankExpression::eval() const {
-    return context_->getters().getEdgeProp(*alias_, "_rank");
+OptVariantType EdgeRankExpression::eval() const {
+    return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
 Status EdgeRankExpression::prepare() {
-    if (context_->isOverAllEdge()) {
-        context_->addEdgeProp("_rank", *alias_);
-        return Status::OK();
-    }
-    return context_->addAliasProp(*alias_, "_rank");
+    context_->addAliasProp(*alias_, *prop_);
+    return Status::OK();
 }
 
 void EdgeRankExpression::encode(Cord &cord) const {
@@ -497,32 +389,21 @@ const char* EdgeRankExpression::decode(const char *pos, const char *end) {
 }
 
 
-std::string SourcePropertyExpression::toString() const {
-    std::string buf;
-    buf.reserve(64);
-    buf += "$^.";
-    buf += *tag_;
-    buf += ".";
-    buf += *prop_;
-    return buf;
-}
-
-
-VariantType SourcePropertyExpression::eval() const {
-    return context_->getters().getSrcTagProp(*tag_, *prop_);
+OptVariantType SourcePropertyExpression::eval() const {
+    return context_->getters().getSrcTagProp(*alias_, *prop_);
 }
 
 
 Status SourcePropertyExpression::prepare() {
-    context_->addSrcTagProp(*tag_, *prop_);
+    context_->addSrcTagProp(*alias_, *prop_);
     return Status::OK();
 }
 
 
 void SourcePropertyExpression::encode(Cord &cord) const {
     cord << kindToInt(kind());
-    cord << static_cast<uint16_t>(tag_->size());
-    cord << *tag_;
+    cord << static_cast<uint16_t>(alias_->size());
+    cord << *alias_;
     cord << static_cast<uint16_t>(prop_->size());
     cord << *prop_;
 }
@@ -535,7 +416,7 @@ const char* SourcePropertyExpression::decode(const char *pos, const char *end) {
         pos += 2;
 
         THROW_IF_NO_SPACE(pos, end, size);
-        tag_ = std::make_unique<std::string>(pos, size);
+        alias_ = std::make_unique<std::string>(pos, size);
         pos += size;
     }
     {
@@ -569,8 +450,7 @@ std::string PrimaryExpression::toString() const {
     return buf;
 }
 
-
-VariantType PrimaryExpression::eval() const {
+OptVariantType PrimaryExpression::eval() const {
     switch (operand_.which()) {
         case VAR_INT64:
             return boost::get<int64_t>(operand_);
@@ -584,9 +464,9 @@ VariantType PrimaryExpression::eval() const {
         case VAR_STR:
             return boost::get<std::string>(operand_);
     }
-    return std::string("Unknown");
-}
 
+    return OptVariantType(Status::Error("Unknown type"));
+}
 
 Status PrimaryExpression::prepare() {
     return Status::OK();
@@ -669,17 +549,21 @@ std::string FunctionCallExpression::toString() const {
     return buf;
 }
 
-
-VariantType FunctionCallExpression::eval() const {
+OptVariantType FunctionCallExpression::eval() const {
     std::vector<VariantType> args;
-    args.resize(args_.size());
-    auto eval = [] (auto &expr) {
-        return expr->eval();
-    };
-    std::transform(args_.begin(), args_.end(), args.begin(), eval);
-    return function_(args);
-}
 
+    for (auto it = args_.cbegin(); it != args_.cend(); ++it) {
+        auto result = (*it)->eval();
+        if (!result.ok()) {
+            return result;
+        }
+        args.push_back(std::move(result.value()));
+    }
+
+    // TODO(simon.liu)
+    auto r = function_(args);
+    return OptVariantType(r);
+}
 
 Status FunctionCallExpression::prepare() {
     auto result = FunctionManager::get(*name_, args_.size());
@@ -756,23 +640,25 @@ std::string UnaryExpression::toString() const {
     return buf;
 }
 
-
-VariantType UnaryExpression::eval() const {
+OptVariantType UnaryExpression::eval() const {
     auto value = operand_->eval();
-    if (op_ == PLUS) {
-        return value;
-    } else if (op_ == NEGATE) {
-        if (isInt(value)) {
-            return -asInt(value);
-        } else if (isDouble(value)) {
-            return -asDouble(value);
+    if (value.ok()) {
+        if (op_ == PLUS) {
+            return value;
+        } else if (op_ == NEGATE) {
+            if (isInt(value.value())) {
+                return OptVariantType(-asInt(value.value()));
+            } else if (isDouble(value.value())) {
+                return OptVariantType(-asDouble(value.value()));
+            }
+        } else {
+            return OptVariantType(!asBool(value.value()));
         }
-    } else {
-        return !asBool(value);
     }
-    return value;
-}
 
+    return OptVariantType(Status::Error(folly::sformat(
+        "attempt to perform unary arithmetic on a {}", value.value().type().name())));
+}
 
 Status UnaryExpression::prepare() {
     return operand_->prepare();
@@ -820,11 +706,9 @@ std::string TypeCastingExpression::toString() const {
     return "";
 }
 
-
-VariantType TypeCastingExpression::eval() const {
-    return toString();
+OptVariantType TypeCastingExpression::eval() const {
+    return OptVariantType(toString());
 }
-
 
 Status TypeCastingExpression::prepare() {
     return operand_->prepare();
@@ -863,48 +747,69 @@ std::string ArithmeticExpression::toString() const {
     return buf;
 }
 
-
-VariantType ArithmeticExpression::eval() const {
+OptVariantType ArithmeticExpression::eval() const {
     auto left = left_->eval();
     auto right = right_->eval();
-    switch (op_) {
-    case ADD:
-        assert((isArithmetic(left) && isArithmetic(right))
-                || (isString(left) && isString(right)));
-        if (isArithmetic(left) && isArithmetic(right)) {
-            if (isDouble(left) || isDouble(right)) {
-                return asDouble(left) + asDouble(right);
-            }
-            return asInt(left) + asInt(right);
-        }
-        return asString(left) + asString(right);
-    case SUB:
-        assert(isArithmetic(left) && isArithmetic(right));
-        if (isDouble(left) || isDouble(right)) {
-            return asDouble(left) - asDouble(right);
-        }
-        return asInt(left) - asInt(right);
-    case MUL:
-        assert(isArithmetic(left) && isArithmetic(right));
-        if (isDouble(left) || isDouble(right)) {
-            return asDouble(left) * asDouble(right);
-        }
-        return asInt(left) * asInt(right);
-    case DIV:
-        assert(isArithmetic(left) && isArithmetic(right));
-        if (isDouble(left) || isDouble(right)) {
-            return asDouble(left) / asDouble(right);
-        }
-        return asInt(left) / asInt(right);
-    case MOD:
-        assert(isInt(left) && isInt(right));
-        return asInt(left) % asInt(right);
-    default:
-        DCHECK(false);
+    if (!left.ok()) {
+        return left;
     }
-    return false;
-}
 
+    if (!right.ok()) {
+        return right;
+    }
+
+    auto l = left.value();
+    auto r = right.value();
+
+    switch (op_) {
+        case ADD:
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(asDouble(l) + asDouble(r));
+                }
+                return OptVariantType(asInt(l) + asInt(r));
+            }
+
+            if (isString(l) && isString(r)) {
+                return OptVariantType(asString(l) + asString(r));
+            }
+            break;
+        case SUB:
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(asDouble(l) - asDouble(r));
+                }
+                return OptVariantType(asInt(l) - asInt(r));
+            }
+            break;
+        case MUL:
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(asDouble(l) * asDouble(r));
+                }
+                return OptVariantType(asInt(l) * asInt(r));
+            }
+            break;
+        case DIV:
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(asDouble(l) / asDouble(r));
+                }
+                return OptVariantType(asInt(l) / asInt(r));
+            }
+            break;
+        case MOD:
+            if (isInt(l) && isInt(r)) {
+                return OptVariantType(asInt(l) % asInt(r));
+            }
+            break;
+        default:
+            DCHECK(false);
+    }
+
+    return OptVariantType(Status::Error(folly::sformat(
+        "attempt to perform arithmetic on {} with {}", l.type().name(), r.type().name())));
+}
 
 Status ArithmeticExpression::prepare() {
     auto status = left_->prepare();
@@ -971,33 +876,49 @@ std::string RelationalExpression::toString() const {
     return buf;
 }
 
-
-VariantType RelationalExpression::eval() const {
+OptVariantType RelationalExpression::eval() const {
     auto left = left_->eval();
     auto right = right_->eval();
+
+    if (!left.ok()) {
+        return left;
+    }
+
+    if (!right.ok()) {
+        return right;
+    }
+
+    auto l = left.value();
+    auto r = right.value();
     switch (op_) {
         case LT:
-            return left < right;
+            return OptVariantType(l < r);
         case LE:
-            return left <= right;
+            return OptVariantType(l <= r);
         case GT:
-            return left > right;
+            return OptVariantType(l > r);
         case GE:
-            return left >= right;
+            return OptVariantType(l >= r);
         case EQ:
-            if (isDouble(left) || isDouble(right)) {
-                return almostEqual(asDouble(left), asDouble(right));
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(
+                        almostEqual(asDouble(l), asDouble(r)));
+                }
             }
-            return left == right;
+            return OptVariantType(l == r);
         case NE:
-            if (isDouble(left) || isDouble(right)) {
-                return !almostEqual(asDouble(left), asDouble(right));
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(
+                        !almostEqual(asDouble(l), asDouble(r)));
+                }
             }
-            return left != right;
+            return OptVariantType(l != r);
     }
-    return false;
-}
 
+    return OptVariantType(Status::Error("Wrong operator"));
+}
 
 Status RelationalExpression::prepare() {
     auto status = left_->prepare();
@@ -1052,21 +973,30 @@ std::string LogicalExpression::toString() const {
     return buf;
 }
 
+OptVariantType LogicalExpression::eval() const {
+    auto left = left_->eval();
+    auto right = right_->eval();
 
-VariantType LogicalExpression::eval() const {
+    if (!left.ok()) {
+        return left;
+    }
+
+    if (!right.ok()) {
+        return right;
+    }
+
     if (op_ == AND) {
-        if (!asBool(left_->eval())) {
-            return false;
+        if (!asBool(left.value())) {
+            return OptVariantType(false);
         }
-        return asBool(right_->eval());
+        return OptVariantType(asBool(right.value()));
     } else {
-        if (asBool(left_->eval())) {
-            return true;
+        if (asBool(left.value())) {
+            return OptVariantType(true);
         }
-        return asBool(right_->eval());
+        return OptVariantType(asBool(right.value()));
     }
 }
-
 
 Status LogicalExpression::prepare() {
     auto status = left_->prepare();

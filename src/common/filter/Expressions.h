@@ -15,27 +15,13 @@
 namespace nebula {
 
 class Cord;
+using OptVariantType = StatusOr<VariantType>;
 
 enum ColumnType {
     INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
 };
 
 std::string columnTypeToString(ColumnType type);
-
-
-enum AliasKind {
-    Unknown,
-    SourceNode,
-    Edge,
-};
-
-std::string aliasKindToString(AliasKind kind);
-
-struct AliasInfo {
-    AliasKind kind_;
-    std::string data_;
-    EdgeType id_;
-};
 
 class ExpressionContext final {
 public:
@@ -48,58 +34,60 @@ public:
         dstTagProps_.emplace(tag, prop);
     }
 
-    void addEdgeProp(const std::string &prop, const EdgeInfo &edgeInfo) {
-        edgeProps_.emplace(prop, edgeInfo);
+    void addVariableProp(const std::string &var, const std::string &prop) {
+        variableProps_.emplace(var, prop);
+        variables_.emplace(var);
     }
 
-    Status addAliasProp(const std::string &alias, const std::string &prop);
-
-    Status addAliasProp(const std::string &prop);
-
-    // TODO(dutor) check duplications on aliases
-    void addAlias(const std::string &alias, AliasKind kind) {
-        aliasInfo_[alias].kind_ = kind;
+    void addInputProp(const std::string &prop) {
+        inputProps_.emplace(prop);
     }
 
-    void addAlias(const std::string &alias, AliasKind kind, const std::string &data,
-                  const EdgeType id) {
-        auto it = aliasInfo_.find(alias);
-        if (it == aliasInfo_.end()) {
-            auto &entry = aliasInfo_[alias];
-            entry.kind_ = kind;
-            entry.data_ = data;
-            entry.id_   = id;
+    void addAliasProp(const std::string &alias, const std::string &prop) {
+        aliasProps_.emplace(alias, prop);
+    }
+
+    bool addEdge(const std::string &alias, EdgeType edgeType) {
+        auto it = edgeMaps_.find(alias);
+        if (it != edgeMaps_.end()) {
+            return false;
         }
+        edgeMaps_.emplace(alias, edgeType);
+        return true;
     }
 
-    EdgeType getEdgeType(const std::string &alias) const {
-        auto it = aliasInfo_.find(alias);
-        DCHECK(it != aliasInfo_.end());
-        return it->second.id_;
-    }
-
-    AliasKind aliasKind(const std::string &alias) {
-        auto iter = aliasInfo_.find(alias);
-        if (iter == aliasInfo_.end()) {
-            return AliasKind::Unknown;
+    bool getEdgeType(const std::string &alias, EdgeType &edgeType) {
+        auto it = edgeMaps_.find(alias);
+        if (it == edgeMaps_.end()) {
+            return false;
         }
-        return iter->second.kind_;
+
+        edgeType = it->second;
+        return true;
     }
 
-    using TagProp = std::pair<std::string, std::string>;
-    // (prop, (edge_name, edge_type))
-    using EdgeProp = std::pair<std::string, EdgeInfo>;
+    using PropPair = std::pair<std::string, std::string>;
 
-    std::vector<TagProp> srcTagProps() const {
-        return std::vector<TagProp>(srcTagProps_.begin(), srcTagProps_.end());
+    std::vector<PropPair> srcTagProps() const {
+        return std::vector<PropPair>(srcTagProps_.begin(), srcTagProps_.end());
     }
 
-    std::vector<TagProp> dstTagProps() const {
-        return std::vector<TagProp>(dstTagProps_.begin(), dstTagProps_.end());
+    std::vector<PropPair> dstTagProps() const {
+        return std::vector<PropPair>(dstTagProps_.begin(), dstTagProps_.end());
     }
 
-    std::vector<EdgeProp> edgeProps() const {
-        return std::vector<EdgeProp>(edgeProps_.begin(), edgeProps_.end());
+    std::vector<PropPair> aliasProps() const {
+        return std::vector<PropPair>(aliasProps_.begin(), aliasProps_.end());
+    }
+
+    using VariableProp = std::pair<std::string, std::string>;
+
+    std::vector<VariableProp> variableProps() const {
+        return std::vector<VariableProp>(variableProps_.begin(), variableProps_.end());
+    }
+
+    const std::unordered_set<std::string>& variables() const {
+        return variables_;
     }
 
     bool hasSrcTagProp() const {
@@ -111,15 +99,24 @@ public:
     }
 
     bool hasEdgeProp() const {
-        return !edgeProps_.empty();
+        return !aliasProps_.empty();
+    }
+
+    bool hasVariableProp() const {
+        return !variableProps_.empty();
+    }
+
+    bool hasInputProp() const {
+        return !inputProps_.empty();
     }
 
     struct Getters {
-        std::function<VariantType()> getEdgeRank;
-        std::function<VariantType(const std::string&, const std::string&)> getEdgeProp;
-        std::function<VariantType(const std::string&)> getInputProp;
-        std::function<VariantType(const std::string&, const std::string&)> getSrcTagProp;
-        std::function<VariantType(const std::string&, const std::string&)> getDstTagProp;
+        std::function<OptVariantType()> getEdgeRank;
+        std::function<OptVariantType(const std::string&)> getInputProp;
+        std::function<OptVariantType(const std::string&)> getVariableProp;
+        std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
+        std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
+        std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
     };
 
     Getters& getters() {
@@ -133,12 +130,16 @@ public:
     void setOverAllEdge() { overAll_ = true; }
 
 private:
-    Getters                                     getters_;
-    std::unordered_map<std::string, AliasInfo>  aliasInfo_;
-    std::unordered_set<TagProp>                 srcTagProps_;
-    std::unordered_set<TagProp>                 dstTagProps_;
-    boost::unordered_set<EdgeProp>              edgeProps_;
-    bool                                        overAll_{false};
+    Getters                                   getters_;
+    std::unordered_set<PropPair>              srcTagProps_;
+    std::unordered_set<PropPair>              dstTagProps_;
+    std::unordered_set<PropPair>              aliasProps_;
+    std::unordered_set<VariableProp>          variableProps_;
+    std::unordered_set<std::string>           variables_;
+    std::unordered_set<std::string>           inputProps_;
+    // alias => edgeType
+    std::unordered_map<std::string, EdgeType> edgeMaps_;
+    bool                                      overAll_{false};
 };
 
 
@@ -154,7 +155,7 @@ public:
 
     virtual Status MUST_USE_RESULT prepare() = 0;
 
-    virtual VariantType eval() const = 0;
+    virtual OptVariantType eval() const = 0;
 
     virtual bool isInputExpression() const {
         return kind_ == kInputProp;
@@ -254,6 +255,7 @@ public:
         kEdgeDstId,
         kEdgeSrcId,
         kEdgeType,
+        kAliasProp,
         kEdgeProp,
         kVariableProp,
         kDestProp,
@@ -312,9 +314,48 @@ protected:
     Kind                                        kind_{kUnknown};
 };
 
+// Alias.any_prop_name, i.e. EdgeName.any_prop_name
+class AliasPropertyExpression: public Expression {
+public:
+    AliasPropertyExpression() {
+        kind_ = kAliasProp;
+    }
+
+    AliasPropertyExpression(std::string *ref,
+                            std::string *alias,
+                            std::string *prop) {
+        kind_ = kAliasProp;
+        ref_.reset(ref);
+        alias_.reset(alias);
+        prop_.reset(prop);
+    }
+
+    std::string toString() const override;
+
+    OptVariantType eval() const override;
+
+    Status MUST_USE_RESULT prepare() override;
+
+    std::string* alias() const {
+        return alias_.get();
+    }
+
+    std::string* prop() const {
+        return prop_.get();
+    }
+
+private:
+    void encode(Cord &cord) const override;
+    const char* decode(const char *pos, const char *end) override;
+
+protected:
+    std::unique_ptr<std::string>    ref_;
+    std::unique_ptr<std::string>    alias_;
+    std::unique_ptr<std::string>    prop_;
+};
 
 // $-.any_prop_name or $-
-class InputPropertyExpression final : public Expression {
+class InputPropertyExpression final : public AliasPropertyExpression {
 public:
     InputPropertyExpression() {
         kind_ = kInputProp;
@@ -322,33 +363,24 @@ public:
 
     explicit InputPropertyExpression(std::string *prop) {
         kind_ = kInputProp;
+        ref_.reset(new std::string("$-."));
+        alias_.reset(new std::string(""));
         prop_.reset(prop);
     }
 
-    std::string toString() const override;
+    OptVariantType eval() const override;
 
-    VariantType eval() const override;
-
-    Status MUST_USE_RESULT prepare() override {
-        return Status::OK();
-    }
-
-    std::string* prop() const {
-        return prop_.get();
-    }
+    Status MUST_USE_RESULT prepare() override;
 
 private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                prop_;
 };
 
 
 // $$[TagName].any_prop_name
-class DestPropertyExpression final : public Expression {
+class DestPropertyExpression final : public AliasPropertyExpression {
 public:
     DestPropertyExpression() {
         kind_ = kDestProp;
@@ -356,13 +388,12 @@ public:
 
     DestPropertyExpression(std::string *tag, std::string *prop) {
         kind_ = kDestProp;
-        tag_.reset(tag);
+        ref_.reset(new std::string("$$."));
+        alias_.reset(tag);
         prop_.reset(prop);
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -370,15 +401,11 @@ private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                tag_;
-    std::unique_ptr<std::string>                prop_;
 };
 
 
 // $VarName.any_prop_name
-class VariablePropertyExpression final : public Expression {
+class VariablePropertyExpression final : public AliasPropertyExpression {
 public:
     VariablePropertyExpression() {
         kind_ = kVariableProp;
@@ -386,75 +413,24 @@ public:
 
     VariablePropertyExpression(std::string *var, std::string *prop) {
         kind_ = kVariableProp;
-        var_.reset(var);
+        ref_.reset(new std::string("$"));
+        alias_.reset(var);
         prop_.reset(prop);
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-    std::string* var() const {
-        return var_.get();
-    }
-
-    std::string* prop() const {
-        return prop_.get();
-    }
 
 private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                var_;
-    std::unique_ptr<std::string>                prop_;
-};
-
-
-// Alias.any_prop_name, i.e. EdgeName.any_prop_name
-class EdgePropertyExpression final : public Expression {
-public:
-    EdgePropertyExpression() {
-        kind_ = kEdgeProp;
-    }
-
-    EdgePropertyExpression(std::string *alias, std::string *prop) {
-        kind_ = kEdgeProp;
-        alias_.reset(alias);
-        prop_.reset(prop);
-    }
-
-    std::string toString() const override;
-
-    VariantType eval() const override;
-
-    Status MUST_USE_RESULT prepare() override;
-
-    const std::string& alias() const {
-        return *alias_;
-    }
-
-    const std::string& prop() const {
-        return *prop_;
-    }
-
-private:
-    void encode(Cord &cord) const override;
-
-    const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                alias_;
-    std::unique_ptr<std::string>                prop_;
 };
 
 
 // Alias._type, i.e. EdgeName._type
-class EdgeTypeExpression final : public Expression {
+class EdgeTypeExpression final : public AliasPropertyExpression {
 public:
     EdgeTypeExpression() {
         kind_ = kEdgeType;
@@ -462,12 +438,12 @@ public:
 
     explicit EdgeTypeExpression(std::string *alias) {
         kind_ = kEdgeType;
+        ref_.reset(new std::string(""));
         alias_.reset(alias);
+        prop_.reset(new std::string("_type"));
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -475,14 +451,11 @@ private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                alias_;
 };
 
 
 // Alias._src, i.e. EdgeName._src
-class EdgeSrcIdExpression final : public Expression {
+class EdgeSrcIdExpression final : public AliasPropertyExpression {
 public:
     EdgeSrcIdExpression() {
         kind_ = kEdgeSrcId;
@@ -490,12 +463,12 @@ public:
 
     explicit EdgeSrcIdExpression(std::string *alias) {
         kind_ = kEdgeSrcId;
+        ref_.reset(new std::string(""));
         alias_.reset(alias);
+        prop_.reset(new std::string("_src"));
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -503,14 +476,11 @@ private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                alias_;
 };
 
 
 // Alias._dst, i.e. EdgeName._dst
-class EdgeDstIdExpression final : public Expression {
+class EdgeDstIdExpression final : public AliasPropertyExpression {
 public:
     EdgeDstIdExpression() {
         kind_ = kEdgeDstId;
@@ -518,12 +488,12 @@ public:
 
     explicit EdgeDstIdExpression(std::string *alias) {
         kind_ = kEdgeDstId;
+        ref_.reset(new std::string(""));
         alias_.reset(alias);
+        prop_.reset(new std::string("_dst"));
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -531,14 +501,11 @@ private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                alias_;
 };
 
 
 // Alias._rank, i.e. EdgeName._rank
-class EdgeRankExpression final : public Expression {
+class EdgeRankExpression final : public AliasPropertyExpression {
 public:
     EdgeRankExpression() {
         kind_ = kEdgeRank;
@@ -546,12 +513,12 @@ public:
 
     explicit EdgeRankExpression(std::string *alias) {
         kind_ = kEdgeRank;
+        ref_.reset(new std::string(""));
         alias_.reset(alias);
+        prop_.reset(new std::string("_rank"));
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -559,14 +526,11 @@ private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                alias_;
 };
 
 
 // $^[TagName].any_prop_name
-class SourcePropertyExpression final : public Expression {
+class SourcePropertyExpression final : public AliasPropertyExpression {
 public:
     SourcePropertyExpression() {
         kind_ = kSourceProp;
@@ -574,32 +538,19 @@ public:
 
     SourcePropertyExpression(std::string *tag, std::string *prop) {
         kind_ = kSourceProp;
-        tag_.reset(tag);
+        ref_.reset(new std::string("$^"));
+        alias_.reset(tag);
         prop_.reset(prop);
     }
 
-    std::string toString() const override;
-
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
-
-    const std::string& tag() const {
-        return *tag_;
-    }
-
-    const std::string& prop() const {
-        return *prop_;
-    }
 
 private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    std::unique_ptr<std::string>                tag_;
-    std::unique_ptr<std::string>                prop_;
 };
 
 
@@ -632,7 +583,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -678,7 +629,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -721,7 +672,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -760,7 +711,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -809,7 +760,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -860,7 +811,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -912,7 +863,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
