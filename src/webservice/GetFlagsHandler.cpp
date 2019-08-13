@@ -51,7 +51,8 @@ void GetFlagsHandler::onEOM() noexcept {
     switch (err_) {
         case HttpCode::E_UNSUPPORTED_METHOD:
             ResponseBuilder(downstream_)
-                .status(405, "Method Not Allowed")
+                .status(WebServiceUtils::to(HttpStatusCode::METHOD_NOT_ALLOWED),
+                        WebServiceUtils::toString(HttpStatusCode::METHOD_NOT_ALLOWED))
                 .sendWithEOM();
             return;
         default:
@@ -61,12 +62,14 @@ void GetFlagsHandler::onEOM() noexcept {
     folly::dynamic vals = getFlags();
     if (returnJson_) {
         ResponseBuilder(downstream_)
-            .status(200, "OK")
+            .status(WebServiceUtils::to(HttpStatusCode::OK),
+                    WebServiceUtils::toString(HttpStatusCode::OK))
             .body(folly::toJson(vals))
             .sendWithEOM();
     } else {
         ResponseBuilder(downstream_)
-            .status(200, "OK")
+            .status(WebServiceUtils::to(HttpStatusCode::OK),
+                    WebServiceUtils::toString(HttpStatusCode::OK))
             .body(toStr(vals))
             .sendWithEOM();
     }

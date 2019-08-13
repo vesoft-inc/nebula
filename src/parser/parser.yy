@@ -79,6 +79,9 @@ class GraphScanner;
     nebula::OrderFactors                   *order_factors;
     nebula::ConfigModule                    config_module;
     nebula::ConfigRowItem                  *config_row_item;
+    nebula::EdgeKey                        *edge_key;
+    nebula::EdgeKeys                       *edge_keys;
+    nebula::EdgeKeyRef                     *edge_key_ref;
 }
 
 /* destructors */
@@ -92,14 +95,15 @@ class GraphScanner;
 %token KW_EDGE KW_EDGES KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOSTS KW_TIMESTAMP KW_ADD
-%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES
+%token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_DROP KW_REMOVE KW_SPACES KW_INGEST
 %token KW_IF KW_NOT KW_EXISTS KW_WITH KW_FIRSTNAME KW_LASTNAME KW_EMAIL KW_PHONE KW_USER KW_USERS
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_GOD KW_ADMIN KW_GUEST KW_GRANT KW_REVOKE KW_ON
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
 %token KW_ORDER KW_ASC
-%token KW_DISTINCT
+%token KW_FETCH KW_PROP
+%token KW_DISTINCT KW_ALL
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -159,6 +163,9 @@ class GraphScanner;
 %type <order_factors> order_factors
 %type <config_module> config_module_enum
 %type <config_row_item> show_config_item get_config_item set_config_item
+%type <edge_key> edge_key
+%type <edge_keys> edge_keys
+%type <edge_key_ref> edge_key_ref
 
 %type <intval> port unary_integer rank
 
@@ -172,17 +179,19 @@ class GraphScanner;
 %type <acl_item_clause> acl_item_clause
 
 %type <sentence> go_sentence match_sentence use_sentence find_sentence
+%type <sentence> order_by_sentence
+%type <sentence> fetch_vertices_sentence fetch_edges_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
 %type <sentence> drop_tag_sentence drop_edge_sentence
-%type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence
+%type <sentence> traverse_sentence set_sentence piped_sentence assignment_sentence fetch_sentence
 %type <sentence> maintain_sentence insert_vertex_sentence insert_edge_sentence
 %type <sentence> mutate_sentence update_vertex_sentence update_edge_sentence delete_vertex_sentence delete_edge_sentence
+%type <sentence> ingest_sentence
 %type <sentence> show_sentence add_hosts_sentence remove_hosts_sentence create_space_sentence describe_space_sentence
 %type <sentence> drop_space_sentence
 %type <sentence> yield_sentence
-%type <sentence> order_by_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
 %type <sentence> grant_sentence revoke_sentence
 %type <sentence> download_sentence
@@ -291,7 +300,7 @@ var_ref_expression
 
 alias_ref_expression
     : name_label DOT name_label {
-        $$ = new EdgePropertyExpression($1, $3);
+        $$ = new AliasPropertyExpression(new std::string(""), $1, $3);
     }
     | name_label DOT TYPE_PROP {
         $$ = new EdgeTypeExpression($1);
@@ -561,6 +570,114 @@ find_sentence
     }
     ;
 
+order_factor
+    : input_ref_expression {
+        $$ = new OrderFactor($1, OrderFactor::ASCEND);
+    }
+    | input_ref_expression KW_ASC {
+        $$ = new OrderFactor($1, OrderFactor::ASCEND);
+    }
+    | input_ref_expression KW_DESC {
+        $$ = new OrderFactor($1, OrderFactor::DESCEND);
+    }
+    | LABEL {
+        auto inputRef = new InputPropertyExpression($1);
+        $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
+    }
+    | LABEL KW_ASC {
+        auto inputRef = new InputPropertyExpression($1);
+        $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
+    }
+    | LABEL KW_DESC {
+        auto inputRef = new InputPropertyExpression($1);
+        $$ = new OrderFactor(inputRef, OrderFactor::DESCEND);
+    }
+    ;
+
+order_factors
+    : order_factor {
+        auto factors = new OrderFactors();
+        factors->addFactor($1);
+        $$ = factors;
+    }
+    | order_factors COMMA order_factor {
+        $1->addFactor($3);
+        $$ = $1;
+    }
+    ;
+
+order_by_sentence
+    : KW_ORDER KW_BY order_factors {
+        $$ = new OrderBySentence($3);
+    }
+    ;
+
+fetch_vertices_sentence
+    : KW_FETCH KW_PROP KW_ON name_label vid_list yield_clause {
+        auto fetch = new FetchVerticesSentence($4, $5, $6);
+        $$ = fetch;
+    }
+    | KW_FETCH KW_PROP KW_ON name_label vid_ref_expression yield_clause {
+        auto fetch = new FetchVerticesSentence($4, $5, $6);
+        $$ = fetch;
+    }
+    ;
+
+edge_key
+    : vid R_ARROW vid AT rank {
+        $$ = new EdgeKey($1, $3, $5);
+    }
+	| vid R_ARROW vid {
+        $$ = new EdgeKey($1, $3, 0);
+	}
+    ;
+
+edge_keys
+    : edge_key {
+        auto edgeKeys = new EdgeKeys();
+        edgeKeys->addEdgeKey($1);
+        $$ = edgeKeys;
+    }
+    | edge_keys COMMA edge_key {
+        $1->addEdgeKey($3);
+        $$ = $1;
+    }
+    ;
+
+edge_key_ref:
+    input_ref_expression R_ARROW input_ref_expression AT input_ref_expression {
+        $$ = new EdgeKeyRef($1, $3, $5);
+    }
+    |
+    var_ref_expression R_ARROW var_ref_expression AT var_ref_expression {
+        $$ = new EdgeKeyRef($1, $3, $5, false);
+    }
+	|
+    input_ref_expression R_ARROW input_ref_expression {
+        $$ = new EdgeKeyRef($1, $3, nullptr);
+    }
+	|
+    var_ref_expression R_ARROW var_ref_expression {
+        $$ = new EdgeKeyRef($1, $3, nullptr, false);
+    }
+    ;
+
+fetch_edges_sentence
+    : KW_FETCH KW_PROP KW_ON name_label edge_keys yield_clause {
+        auto fetch = new FetchEdgesSentence($4, $5, $6);
+        $$ = fetch;
+    }
+    | KW_FETCH KW_PROP KW_ON name_label edge_key_ref yield_clause {
+        auto fetch = new FetchEdgesSentence($4, $5, $6);
+        $$ = fetch;
+    }
+    ;
+
+fetch_sentence
+    : fetch_vertices_sentence { $$ = $1; }
+    | fetch_edges_sentence { $$ = $1; }
+    ;
+
 use_sentence
     : KW_USE name_label { $$ = new UseSentence($2); }
     ;
@@ -763,66 +880,48 @@ drop_edge_sentence
     }
     ;
 
-order_factor
-    : input_ref_expression {
-        $$ = new OrderFactor($1, OrderFactor::ASCEND);
-    }
-    | input_ref_expression KW_ASC {
-        $$ = new OrderFactor($1, OrderFactor::ASCEND);
-    }
-    | input_ref_expression KW_DESC {
-        $$ = new OrderFactor($1, OrderFactor::DESCEND);
-    }
-    | name_label {
-        auto inputRef = new InputPropertyExpression($1);
-        $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
-    }
-    | name_label KW_ASC {
-        auto inputRef = new InputPropertyExpression($1);
-        $$ = new OrderFactor(inputRef, OrderFactor::ASCEND);
-    }
-    | name_label KW_DESC {
-        auto inputRef = new InputPropertyExpression($1);
-        $$ = new OrderFactor(inputRef, OrderFactor::DESCEND);
-    }
-    ;
-
-order_factors
-    : order_factor {
-        auto factors = new OrderFactors();
-        factors->addFactor($1);
-        $$ = factors;
-    }
-    | order_factors COMMA order_factor {
-        $1->addFactor($3);
-        $$ = $1;
-    }
-    ;
-
-order_by_sentence
-    : KW_ORDER KW_BY order_factors {
-        $$ = new OrderBySentence($3);
-    }
-    ;
-
 traverse_sentence
     : go_sentence { $$ = $1; }
     | match_sentence { $$ = $1; }
     | find_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
+    | fetch_sentence { $$ = $1; }
+    | L_PAREN piped_sentence R_PAREN { $$ = $2; }
+    | L_PAREN set_sentence R_PAREN { $$ = $2; }
     ;
 
 set_sentence
-    : traverse_sentence { $$ = $1; }
-    | set_sentence KW_UNION traverse_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
-    | set_sentence KW_INTERSECT traverse_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
-    | set_sentence KW_MINUS traverse_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
-    | L_PAREN piped_sentence R_PAREN { $$ = $2; }
+    : piped_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
+    | piped_sentence KW_UNION piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $3);
+        s->setDistinct();
+        $$ = s;
+    }
+    | piped_sentence KW_UNION KW_DISTINCT piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $4);
+        s->setDistinct();
+        $$ = s;
+    }
+    | piped_sentence KW_INTERSECT piped_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | piped_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
+    | set_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
+    | set_sentence KW_UNION piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $3);
+        s->setDistinct();
+        $$ = s;
+    }
+    | set_sentence KW_UNION KW_DISTINCT piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $4);
+        s->setDistinct();
+        $$ = s;
+    }
+    | set_sentence KW_INTERSECT piped_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | set_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
     ;
 
 piped_sentence
-    : set_sentence { $$ = $1; }
-    | piped_sentence PIPE set_sentence { $$ = new PipedSentence($1, $3); }
+    : traverse_sentence { $$ = $1; }
+    | piped_sentence PIPE traverse_sentence { $$ = new PipedSentence($1, $3); }
     ;
 
 assignment_sentence
@@ -1062,10 +1161,9 @@ delete_vertex_sentence
     ;
 
 download_sentence
-    : KW_DOWNLOAD KW_HDFS STRING KW_TO STRING {
+    : KW_DOWNLOAD KW_HDFS STRING {
         auto sentence = new DownloadSentence();
         sentence->setUrl($3);
-        sentence->setLocalPath($5);
         $$ = sentence;
     }
     ;
@@ -1085,6 +1183,13 @@ delete_edge_sentence
     : KW_DELETE KW_EDGE edge_list where_clause {
         auto sentence = new DeleteEdgeSentence($3);
         sentence->setWhereClause($4);
+        $$ = sentence;
+    }
+    ;
+
+ingest_sentence
+    : KW_INGEST {
+        auto sentence = new IngestSentence();
         $$ = sentence;
     }
     ;
@@ -1377,6 +1482,7 @@ mutate_sentence
     | delete_vertex_sentence { $$ = $1; }
     | delete_edge_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
+    | ingest_sentence { $$ = $1; }
     ;
 
 maintain_sentence
@@ -1413,6 +1519,7 @@ maintain_sentence
 sentence
     : maintain_sentence { $$ = $1; }
     | use_sentence { $$ = $1; }
+    | set_sentence { $$ = $1; }
     | piped_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }

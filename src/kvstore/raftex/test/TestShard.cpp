@@ -38,6 +38,7 @@ TestShard::TestShard(size_t idx,
                      wal::BufferFlusher* flusher,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,
+                     std::shared_ptr<folly::Executor> handlersPool,
                      std::function<void(size_t idx, const char*, TermID)>
                         leadershipLostCB,
                      std::function<void(size_t idx, const char*, TermID)>
@@ -49,7 +50,8 @@ TestShard::TestShard(size_t idx,
                    walRoot,
                    flusher,
                    ioPool,
-                   workers)
+                   workers,
+                   handlersPool)
         , idx_(idx)
         , service_(svc)
         , leadershipLostCB_(leadershipLostCB)

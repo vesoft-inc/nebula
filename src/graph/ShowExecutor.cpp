@@ -19,16 +19,20 @@ ShowExecutor::ShowExecutor(Sentence *sentence,
 
 
 Status ShowExecutor::prepare() {
-    if (sentence_->showType() == ShowSentence::ShowType::kShowTags ||
-        sentence_->showType() == ShowSentence::ShowType::kShowEdges) {
-        return checkIfGraphSpaceChosen();
-    } else {
-        return Status::OK();
-    }
+    return Status::OK();
 }
 
 
 void ShowExecutor::execute() {
+    if (sentence_->showType() == ShowSentence::ShowType::kShowTags ||
+        sentence_->showType() == ShowSentence::ShowType::kShowEdges) {
+        auto status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            DCHECK(onError_);
+            onError_(std::move(status));
+            return;
+        }
+    }
     auto showType = sentence_->showType();
     switch (showType) {
         case ShowSentence::ShowType::kShowHosts:
@@ -164,13 +168,19 @@ void ShowExecutor::showTags() {
         std::vector<std::string> header{"Name"};
         resp_->set_column_names(std::move(header));
 
+        std::set<std::string> uniqueTags;
         for (auto &tag : value) {
+            uniqueTags.emplace(tag.get_tag_name());
+        }
+
+        for (auto &item : uniqueTags) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(1);
-            row[0].set_str(tag.get_tag_name());
+            row[0].set_str(item);
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }
+
         resp_->set_rows(std::move(rows));
         DCHECK(onFinish_);
         onFinish_();
@@ -204,10 +214,15 @@ void ShowExecutor::showEdges() {
         std::vector<std::string> header{"Name"};
         resp_->set_column_names(std::move(header));
 
+        std::set<std::string> uniqueEdges;
         for (auto &edge : value) {
+            uniqueEdges.emplace(edge.get_edge_name());
+        }
+
+        for (auto &item : uniqueEdges) {
             std::vector<cpp2::ColumnValue> row;
             row.resize(1);
-            row[0].set_str(edge.get_edge_name());
+            row[0].set_str(item);
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }

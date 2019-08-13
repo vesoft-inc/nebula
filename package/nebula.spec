@@ -19,7 +19,6 @@ BuildRequires:   make
 BuildRequires:   autoconf
 BuildRequires:   automake
 BuildRequires:   libtool
-BuildRequires:   bison
 BuildRequires:   unzip
 BuildRequires:   readline
 BuildRequires:   ncurses
@@ -40,16 +39,6 @@ make -j2
 %install
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot}
-
-# After install, if config file is non-existent, copy default config file
-%post
-daemons=(metad graphd storaged)
-for daemon in ${daemons[@]}
-do
-    if [[ ! -f %{_install_dir}/etc/nebula-${daemon}.conf ]]; then
-        cp %{_install_dir}/etc/nebula-${daemon}.conf.default %{_install_dir}/etc/nebula-${daemon}.conf
-    fi
-done
 
 %package metad
 Summary: nebula meta server daemon
@@ -92,17 +81,36 @@ Group: Applications/Databases
 %attr(0644,root,root) %{_sysconfdir}/nebula-metad.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-metad.service
 
+# After install, if config file is non-existent, copy default config file
+%post metad
+if [[ ! -f %{_install_dir}/etc/nebula-metad.conf ]]; then
+    cp %{_install_dir}/etc/nebula-metad.conf.default %{_install_dir}/etc/nebula-metad.conf
+fi
+
+
 # graphd rpm include files
 %files graphd
 %attr(0755,root,root) %{_bindir}/nebula-graphd
 %attr(0644,root,root) %config%{_sysconfdir}/nebula-graphd.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-graphd.service
 
+%post graphd
+if [[ ! -f %{_install_dir}/etc/nebula-graphd.conf ]]; then
+    cp %{_install_dir}/etc/nebula-graphd.conf.default %{_install_dir}/etc/nebula-graphd.conf
+fi
+
+
 # storaged rpm include files
 %files storaged
 %attr(0755,root,root) %{_bindir}/nebula-storaged
 %attr(0644,root,root) %config%{_sysconfdir}/nebula-storaged.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-storaged.service
+
+%post storaged
+if [[ ! -f %{_install_dir}/etc/nebula-storaged.conf ]]; then
+    cp %{_install_dir}/etc/nebula-storaged.conf.default %{_install_dir}/etc/nebula-storaged.conf
+fi
+
 
 %files nebula
 %attr(0755,root,root) %{_bindir}/nebula
@@ -116,7 +124,7 @@ Group: Applications/Databases
 
 %debug_package
 
-# missing third-part ids
+# missing not found ids
 %undefine _missing_build_ids_terminate_build
 
 %changelog

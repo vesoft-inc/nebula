@@ -13,13 +13,12 @@
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
 #include "network/NetworkUtils.h"
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
-DECLARE_uint32(heartbeat_interval);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace kvstore {
-
-auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
 template<typename T>
 void dump(const std::vector<T>& v) {
@@ -30,10 +29,19 @@ void dump(const std::vector<T>& v) {
     VLOG(1) << ss.str();
 }
 
+std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager>
+getHandlers() {
+    auto handlersPool
+        = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 1, true /*stats*/);
+    handlersPool->setNamePrefix("executor");
+    handlersPool->start();
+    return handlersPool;
+}
 
 TEST(NebulaStoreTest, SimpleTest) {
     auto partMan = std::make_unique<MemPartManager>();
-
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     // GraphSpaceID =>  {PartitionIDs}
     // 1 => {0, 1, 2, 3, 4, 5}
     // 2 => {0, 1, 2, 3, 4, 5}
@@ -58,7 +66,8 @@ TEST(NebulaStoreTest, SimpleTest) {
     HostAddr local = {0, 0};
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
-                                               local);
+                                               local,
+                                               getHandlers());
     store->init();
     sleep(1);
     EXPECT_EQ(2, store->spaces_.size());
@@ -95,7 +104,7 @@ TEST(NebulaStoreTest, SimpleTest) {
                           folly::stringPrintf("val_%d", i));
     }
     folly::Baton<true, std::atomic> baton;
-    store->asyncMultiPut(1, 1, std::move(data), [&] (ResultCode code){
+    store->asyncMultiPut(1, 1, std::move(data), [&] (ResultCode code) {
         EXPECT_EQ(ResultCode::SUCCEEDED, code);
         baton.post();
     });
@@ -123,6 +132,7 @@ TEST(NebulaStoreTest, SimpleTest) {
 
 TEST(NebulaStoreTest, PartsTest) {
     fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     auto partMan = std::make_unique<MemPartManager>();
 
     // GraphSpaceID =>  {PartitionIDs}
@@ -157,7 +167,8 @@ TEST(NebulaStoreTest, PartsTest) {
     HostAddr local = {0, 0};
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
-                                               local);
+                                               local,
+                                               getHandlers());
     store->init();
     auto check = [&](GraphSpaceID spaceId) {
         for (auto i = 0; i < 2; i++) {
@@ -260,7 +271,8 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         HostAddr local = peers[index];
         return std::make_unique<NebulaStore>(std::move(options),
                                              sIoThreadPool,
-                                             local);
+                                             local,
+                                             getHandlers());
     };
     int32_t replicas = 3;
     IPv4 ip;
@@ -322,13 +334,13 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         auto index = findStoreIndex(leader);
         {
             folly::Baton<true, std::atomic> baton;
-            stores[index]->asyncMultiPut(0, part, std::move(data), [&baton](ResultCode code){
+            stores[index]->asyncMultiPut(0, part, std::move(data), [&baton](ResultCode code) {
                 EXPECT_EQ(ResultCode::SUCCEEDED, code);
                 baton.post();
             });
             baton.wait();
         }
-        sleep(FLAGS_heartbeat_interval);
+        sleep(FLAGS_raft_heartbeat_interval_secs);
         {
             int32_t start = 0;
             int32_t end = 100;
@@ -381,8 +393,5 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
-
     return RUN_ALL_TESTS();
 }
-
-

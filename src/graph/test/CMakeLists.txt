@@ -25,6 +25,7 @@ set(GRAPH_TEST_LIBS
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:meta_gflags_man_obj>
     $<TARGET_OBJECTS:gflags_man_obj>
+    $<TARGET_OBJECTS:ws_common_obj>
 )
 
 nebula_add_library(
@@ -40,6 +41,7 @@ nebula_add_test(
     SOURCES
         SessionManagerTest.cpp
     OBJECTS
+        $<TARGET_OBJECTS:http_client_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}
@@ -58,6 +60,7 @@ nebula_add_test(
         ConfigTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
@@ -75,6 +78,7 @@ nebula_add_test(
         GoTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
@@ -93,8 +97,9 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
         $<TARGET_OBJECTS:graph_http_handler>
-        $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:ws_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
@@ -115,6 +120,8 @@ nebula_add_test(
         DataTest.cpp
         OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
         ${GRAPH_TEST_LIBS}
@@ -132,8 +139,64 @@ nebula_add_test(
         OrderByTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:client_cpp_obj>
         $<TARGET_OBJECTS:adHocSchema_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        fetch_vertices_test
+    SOURCES
+        FetchVerticesTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        fetch_edges_test
+    SOURCES
+        FetchEdgesTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:http_client_obj>
+        ${GRAPH_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        set_test
+    SOURCES
+        SetTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:graph_test_common_obj>
+        $<TARGET_OBJECTS:client_cpp_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
+        $<TARGET_OBJECTS:http_client_obj>
         ${GRAPH_TEST_LIBS}
     LIBRARIES
         ${THRIFT_LIBRARIES}

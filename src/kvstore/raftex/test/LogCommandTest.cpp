@@ -16,7 +16,7 @@
 #include "kvstore/raftex/test/RaftexTestBase.h"
 #include "kvstore/raftex/test/TestShard.h"
 
-DECLARE_uint32(heartbeat_interval);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 
 namespace nebula {
@@ -41,7 +41,7 @@ TEST_F(LogCommandTest, StartWithCommandLog) {
 }
 
 TEST_F(LogCommandTest, CommandInMiddle) {
-    FLAGS_heartbeat_interval = 1;
+    FLAGS_raft_heartbeat_interval_secs = 1;
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
