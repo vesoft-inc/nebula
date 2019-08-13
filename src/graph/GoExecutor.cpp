@@ -683,6 +683,11 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
 
         for (auto &vdata : resp.vertices) {
             std::unique_ptr<RowReader> vreader;
+            // TODO(simon.liu) In issue #192, I will solve this problem for better.
+            if (!resp.__isset.vertices || resp.get_vertices() == nullptr) {
+                continue;
+            }
+
             if (vschema != nullptr) {
                 DCHECK(vdata.__isset.vertex_data);
                 vreader = RowReader::getRowReader(vdata.vertex_data, vschema);
@@ -781,13 +786,17 @@ OptVariantType GoExecutor::VertexHolder::get(VertexID id, int64_t index) const {
     DCHECK(schema_ != nullptr);
     auto iter = data_.find(id);
 
-    // TODO(dutor) We need a type to represent NULL
-    CHECK(iter != data_.end());
+    if (iter == data_.end()) {
+        return Status::Error("vertex was not found %ld", id);
+    }
 
     auto reader = RowReader::getRowReader(iter->second, schema_);
 
     auto res = RowReader::getPropByIndex(reader.get(), index);
-    CHECK(ok(res));
+    if (!ok(res)) {
+        return Status::Error("get prop failed");
+    }
+
     return value(std::move(res));
 }
 
