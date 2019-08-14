@@ -16,7 +16,7 @@ void LeaderDistProcessor::process(const cpp2::LeaderDistReq& req) {
     UNUSED(req);
     auto ret = Balancer::instance(kvstore_)->leaderDist();
     if (!ret.ok()) {
-        LOG(INFO) << "Error occurs when get leader";
+        LOG(ERROR) << "Error occurs when get leader";
         resp_.set_code(cpp2::ErrorCode::E_RPC_FAILURE);
         onFinished();
         return;

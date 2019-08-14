@@ -121,6 +121,8 @@ enum HostStatus {
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
+    3: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
+    4: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
 }
 
 struct UserItem {

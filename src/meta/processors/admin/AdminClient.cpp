@@ -341,7 +341,7 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
     }
     folly::Promise<Status> promise;
     auto future = promise.getFuture();
-    auto allHosts = ActiveHostsMan::instance()->getActiveHosts();
+    auto allHosts = ActiveHostsMan::getActiveHosts(kv_);
 
     auto getLeader = [result, this] (const HostAddr& host) {
         storage::cpp2::GetLeaderReq req;

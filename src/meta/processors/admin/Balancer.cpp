@@ -12,6 +12,9 @@
 #include "meta/MetaServiceUtils.h"
 #include "network/NetworkUtils.h"
 
+DEFINE_double(leader_balance_deviation, 0.05, "after leader balance, leader count should in range "
+                                              "[avg * (1 - deviation), avg * (1 + deviation)]");
+
 namespace nebula {
 namespace meta {
 
@@ -131,7 +134,8 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
     CHECK(!!plan_) << "plan should not be nullptr";
     std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
     int32_t totalParts = 0;
-    getHostParts(spaceId, hostParts, totalParts);
+    int32_t leaderParts = 0;
+    getHostParts(spaceId, hostParts, totalParts, leaderParts);
     if (totalParts == 0 || hostParts.empty()) {
         LOG(ERROR) << "Invalid space " << spaceId;
         return std::vector<BalanceTask>();
@@ -244,7 +248,8 @@ void Balancer::balanceParts(BalanceID balanceId,
 
 void Balancer::getHostParts(GraphSpaceID spaceId,
                             std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
-                            int32_t& totalParts) {
+                            int32_t& totalParts,
+                            int32_t& leaderParts) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -273,6 +278,7 @@ void Balancer::getHostParts(GraphSpaceID spaceId,
     }
     auto properties = MetaServiceUtils::parseSpace(value);
     CHECK_EQ(totalParts, properties.get_partition_num());
+    leaderParts = totalParts;
     totalParts *= properties.get_replica_factor();
 }
 
@@ -388,89 +394,86 @@ StatusOr<HostLeaderMap> Balancer::leaderDist() {
     return *hostLeaderMap_;
 }
 
-void Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
-                                      LeaderBalancePlan& plan) {
-    folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-    auto prefix = MetaServiceUtils::partPrefix(spaceId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
-        return;
-    }
-
+std::unordered_map<HostAddr, int32_t>
+Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
+                                 LeaderBalancePlan& plan) {
+    std::unordered_map<HostAddr, int32_t> leaderCount;
     std::unordered_map<PartitionID, std::vector<HostAddr>> peersMap;
     size_t partCount = 0;
-    while (iter->valid()) {
-        auto key = iter->key();
-        PartitionID partId;
-        memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-        auto thriftPeers = MetaServiceUtils::parsePartVal(iter->val());
-        std::vector<HostAddr> peers;
-        peers.resize(thriftPeers.size());
-        std::transform(thriftPeers.begin(), thriftPeers.end(), peers.begin(), [](const auto& h) {
-            return HostAddr(h.get_ip(), h.get_port());
-        });
-        peersMap[partId] = std::move(peers);
-        ++partCount;
-        iter->next();
+    {
+        // store peers of all paritions in peerMap
+        folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+        auto prefix = MetaServiceUtils::partPrefix(spaceId);
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
+            return leaderCount;
+        }
+        while (iter->valid()) {
+            auto key = iter->key();
+            PartitionID partId;
+            memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
+            auto thriftPeers = MetaServiceUtils::parsePartVal(iter->val());
+            std::vector<HostAddr> peers;
+            peers.resize(thriftPeers.size());
+            std::transform(thriftPeers.begin(), thriftPeers.end(), peers.begin(),
+                           [] (const auto& h) { return HostAddr(h.get_ip(), h.get_port()); });
+            peersMap[partId] = std::move(peers);
+            ++partCount;
+            iter->next();
+        }
     }
 
+    int32_t avgLoad = partCount / hostLeaderMap->size();
     std::unordered_map<HostAddr, std::vector<PartitionID>> leaderParts;
-    std::unordered_map<HostAddr, size_t> leaderCount;
     for (const auto& host : *hostLeaderMap) {
         leaderCount[host.first] = (*hostLeaderMap)[host.first][spaceId].size();
         leaderParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
     }
-
+    // sort all hosts by leader count
+    auto sortedHosts = sortedHostsByParts(leaderParts);
     std::vector<HostAddr> activeHosts;
     for (const auto& leaderEntry : leaderParts) {
         activeHosts.emplace_back(leaderEntry.first);
     }
 
-    for (const auto& leaderEntry : leaderParts) {
-        auto curLeader = leaderEntry.first;
-        for (const auto& partId : leaderEntry.second) {
+    for (auto hostIt = sortedHosts.rbegin(); hostIt != sortedHosts.rend(); hostIt++) {
+        const auto& curLeaderAddr = hostIt->first;
+        auto leaderPartIds = leaderParts[curLeaderAddr];
+        size_t index = 0;
+
+        while (leaderCount[curLeaderAddr] > avgLoad && index < leaderPartIds.size()) {
+            auto partId = leaderPartIds[index++];
             CHECK(peersMap.find(partId) != peersMap.end());
             const auto& peers = peersMap[partId];
             CHECK(!peers.empty());
-            // Check if all peers are online
-            std::vector<HostAddr> available;
+
+            // If currrent leader has more leader count than avgLoad, try to tansfer leadership
+            // to the peer with mininum leader count
+            HostAddr newLeaderAddr = curLeaderAddr;
+            int32_t minCount = leaderCount[curLeaderAddr];
             for (const auto& peer : peers) {
                 auto it = std::find(activeHosts.begin(), activeHosts.end(), peer);
-                if (it != activeHosts.end()) {
-                    available.emplace_back(peer);
+                if (it != activeHosts.end() && leaderCount[peer] < minCount) {
+                    minCount = leaderCount[peer];
+                    newLeaderAddr = peer;
                 }
             }
-
-            auto newLeader = curLeader;
-            if (peers.size() == available.size()) {
-                // If all peers are online, always try to transfer leader to first peer
-                newLeader = peers[0];
-            } else {
-                // If some copy is offline, then current leader will transfer leadership to
-                // active peer with minimum leader
-                size_t minCount = leaderCount[curLeader];
-                for (const auto peer : available) {
-                    if (leaderCount[peer] + 1 < minCount) {
-                        minCount = leaderCount[peer];
-                        newLeader = peer;
-                    }
-                }
-            }
-
-            if (newLeader != curLeader) {
-                leaderCount[curLeader]--;
-                leaderCount[newLeader]++;
+            if (newLeaderAddr != curLeaderAddr &&
+                leaderCount[newLeaderAddr] + 1 < leaderCount[curLeaderAddr]) {
+                leaderCount[curLeaderAddr]--;
+                leaderCount[newLeaderAddr]++;
+                plan.emplace_back(spaceId, partId, curLeaderAddr, newLeaderAddr);
                 LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " from "
-                          << network::NetworkUtils::intToIPv4(curLeader.first) << ":"
-                          << curLeader.second << " to "
-                          << network::NetworkUtils::intToIPv4(newLeader.first)
-                          << ":" << newLeader.second;
-                plan.emplace_back(spaceId, partId, curLeader, newLeader);
+                          << network::NetworkUtils::intToIPv4(curLeaderAddr.first) << ":"
+                          << curLeaderAddr.second << " to "
+                          << network::NetworkUtils::intToIPv4(newLeaderAddr.first)
+                          << ":" << newLeaderAddr.second;
             }
         }
     }
+    return leaderCount;
 }
 
 }  // namespace meta

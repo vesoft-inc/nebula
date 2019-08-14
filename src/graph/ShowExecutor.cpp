@@ -49,9 +49,6 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowEdges:
             showEdges();
             break;
-        case ShowSentence::ShowType::kShowLeader:
-            showLeader();
-            break;
         case ShowSentence::ShowType::kShowUsers:
         case ShowSentence::ShowType::kShowUser:
         case ShowSentence::ShowType::kShowRoles:
@@ -85,18 +82,54 @@ void ShowExecutor::showHosts() {
             return;
         }
 
-        auto retShowHosts = std::move(resp).value();
+        auto hostItems = std::move(resp).value();
         std::vector<cpp2::RowValue> rows;
         std::vector<std::string> header{"Ip", "Port", "Status"};
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
+
+        header.emplace_back("Ip");
+        header.emplace_back("Port");
+        header.emplace_back("Status");
+        header.emplace_back("Leader count");
+        header.emplace_back("Leader distribution");
+        header.emplace_back("Partition distribution");
         resp_->set_column_names(std::move(header));
 
-        for (auto &status : retShowHosts) {
+        for (auto& item : hostItems) {
             std::vector<cpp2::ColumnValue> row;
-            row.resize(3);
-            row[0].set_str(NetworkUtils::ipFromHostAddr(status.first));
-            row[1].set_str(folly::to<std::string>(NetworkUtils::portFromHostAddr(status.first)));
-            row[2].set_str(status.second);
+            row.resize(6);
+            auto hostAddr = HostAddr(item.hostAddr.ip, item.hostAddr.port);
+            row[0].set_str(NetworkUtils::ipFromHostAddr(hostAddr));
+            row[1].set_str(folly::to<std::string>(NetworkUtils::portFromHostAddr(hostAddr)));
+            switch (item.get_status()) {
+                case meta::cpp2::HostStatus::ONLINE:
+                    row[2].set_str("online");
+                    break;
+                case meta::cpp2::HostStatus::OFFLINE:
+                    row[2].set_str("offline");
+                    break;
+                default:
+                    LOG(FATAL) << "Should not reach here";
+                    break;
+            }
+
+            int32_t count = 0;
+            std::string leaders;
+            for (auto& spaceEntry : item.get_leader_parts()) {
+                count += spaceEntry.second.size();
+                leaders += "space " + folly::to<std::string>(spaceEntry.first) + ": " +
+                           folly::to<std::string>(spaceEntry.second.size()) + ", ";
+            }
+            row[3].set_integer(count);
+            row[4].set_str(leaders);
+
+            std::string parts;
+            for (auto& spaceEntry : item.get_all_parts()) {
+                parts += "space " + folly::to<std::string>(spaceEntry.first) + ": " +
+                           folly::to<std::string>(spaceEntry.second.size()) + ", ";
+            }
+            row[5].set_str(parts);
+
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }

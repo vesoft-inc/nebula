@@ -1217,9 +1217,6 @@ show_sentence
     | KW_SHOW KW_ROLES KW_IN name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowRoles, $4);
     }
-    | KW_SHOW KW_LEADER {
-        $$ = new ShowSentence(ShowSentence::ShowType::kShowLeader);
-    }
     | KW_SHOW KW_VARIABLES show_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kShow, $3);
     }

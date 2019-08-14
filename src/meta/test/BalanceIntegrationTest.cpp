@@ -33,11 +33,13 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     fs::TempDir rootPath("/tmp/balance_integration_test.XXXXXX");
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    const nebula::ClusterID kClusterId = 10;
 
     uint32_t localMetaPort = network::NetworkUtils::getAvailablePort();
     LOG(INFO) << "Start meta server....";
     std::string metaPath = folly::stringPrintf("%s/meta", rootPath.path());
-    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str());
+    auto metaServerContext = meta::TestUtils::mockMetaServer(localMetaPort, metaPath.c_str(),
+                                                             kClusterId);
     localMetaPort = metaServerContext->port_;
 
     auto adminClient = std::make_unique<AdminClient>(metaServerContext->kvStore_.get());
@@ -49,9 +51,8 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     LOG(INFO) << "Create meta client...";
     uint32_t tempDataPort = network::NetworkUtils::getAvailablePort();
     HostAddr tempDataAddr(localIp, tempDataPort);
-    auto clusterMan = std::make_unique<nebula::meta::ClusterManager>("", "");
     auto mClient = std::make_unique<meta::MetaClient>(threadPool, metaAddr, tempDataAddr,
-                                                      clusterMan.get(), false);
+                                                      kClusterId, false);
 
     auto ret = mClient->addHosts({tempDataAddr}).get();
     ASSERT_TRUE(ret.ok());
@@ -77,7 +78,7 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
         VLOG(1) << "The storage server has been added to the meta service";
 
         auto metaClient = std::make_shared<meta::MetaClient>(threadPool, metaAddr, storageAddr,
-                                                             clusterMan.get(), true);
+                                                             kClusterId, true);
         metaClient->waitForMetadReady();
         metaClients.emplace_back(metaClient);
     }
@@ -94,39 +95,13 @@ TEST(BalanceIntegrationTest, LeaderBalanceTest) {
 
     ret = mClient->createSpace("storage", partition, replica).get();
     ASSERT_TRUE(ret.ok());
-    GraphSpaceID spaceId = ret.value();
-    sleep(3);
+    sleep(FLAGS_load_data_interval_secs + 1);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
 
-    LOG(INFO) << "Waiting for all leaders elected!";
-    auto waitLeaderElected = [&] {
-        int from = 1;
-        while (true) {
-            bool allLeaderElected = true;
-            for (int part = from; part <= partition; part++) {
-                auto res = serverContexts[0]->kvStore_->partLeader(spaceId, part);
-                CHECK(ok(res));
-                auto leader = value(std::move(res));
-                if (leader == HostAddr(0, 0)) {
-                    allLeaderElected = false;
-                    from = part;
-                    break;
-                }
-                LOG(INFO) << "Leader for part " << part << " is " << leader;
-            }
-            if (allLeaderElected) {
-                break;
-            }
-            usleep(100000);
-        }
-    };
-
-    waitLeaderElected();
     auto code = balancer.leaderBalance();
     ASSERT_EQ(code, cpp2::ErrorCode::SUCCEEDED);
 
     sleep(FLAGS_raft_heartbeat_interval_secs);
-    waitLeaderElected();
-
     for (int i = 0; i < replica; i++) {
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         EXPECT_EQ(3, serverContexts[i]->kvStore_->allLeader(leaderIds));

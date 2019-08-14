@@ -425,6 +425,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
         stores.emplace_back(initNebulaStore(peers, i, rootPath.path()));
         stores.back()->init();
     }
+    sleep(FLAGS_raft_heartbeat_interval_secs);
     LOG(INFO) << "Waiting for all leaders elected!";
     int from = 0;
     while (true) {
@@ -456,7 +457,6 @@ TEST(NebulaStoreTest, TransLeaderTest) {
         return 0UL;
     };
 
-    sleep(FLAGS_raft_heartbeat_interval_secs);
     LOG(INFO) << "Transfer leader to first copy";
     // all parttition tranfer leaders to first replica
     GraphSpaceID spaceId = 0;

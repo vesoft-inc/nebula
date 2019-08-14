@@ -119,7 +119,8 @@ private:
 
     void getHostParts(GraphSpaceID spaceId,
                       std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
-                      int32_t& totalParts);
+                      int32_t& totalParts,
+                      int32_t& leaderParts);
 
     void calDiff(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
                  const std::vector<HostAddr>& activeHosts,
@@ -142,8 +143,9 @@ private:
 
     bool getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode);
 
-    void buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
-                                LeaderBalancePlan& plan);
+    std::unordered_map<HostAddr, int32_t>
+    buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
+                           LeaderBalancePlan& plan);
 
 private:
     std::atomic_bool  running_{false};

@@ -52,8 +52,9 @@ TEST_F(SchemaTest, metaCommunication) {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 3>> expected{
-            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online"},
+        std::vector<std::tuple<std::string, std::string, std::string,
+                               int, std::string, std::string>> expected {
+            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0, "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -640,6 +641,7 @@ TEST_F(SchemaTest, metaCommunication) {
         client->execute(query, resp);
         ASSERT_EQ(1, (*(resp.get_rows())).size());
     }
+    sleep(FLAGS_load_data_interval_secs + 1);
 }
 
 
@@ -650,8 +652,9 @@ TEST_F(SchemaTest, TTLtest) {
         cpp2::ExecutionResponse resp;
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
-        std::vector<uniform_tuple_t<std::string, 3>> expected{
-            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online"},
+        std::vector<std::tuple<std::string, std::string, std::string,
+                               int, std::string, std::string>> expected {
+            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online", 0, "", ""},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
