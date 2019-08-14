@@ -16,7 +16,6 @@
 #include "thread/GenericWorker.h"
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
-#include "meta/ClusterManager.h"
 
 namespace nebula {
 namespace meta {
@@ -88,7 +87,7 @@ public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                         std::vector<HostAddr> addrs,
                         HostAddr localHost = HostAddr(0, 0),
-                        ClusterManager* clusterMan = nullptr,
+                        ClusterID clusterId = 0,
                         bool sendHeartBeat = false);
 
     virtual ~MetaClient();
@@ -276,9 +275,14 @@ protected:
 
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
-    void updateHost() {
+    void updateActive() {
         folly::RWSpinLock::WriteHolder holder(hostLock_);
-        leader_ = active_ = addrs_[folly::Random::rand64(addrs_.size())];
+        active_ = addrs_[folly::Random::rand64(addrs_.size())];
+    }
+
+    void updateLeader() {
+        folly::RWSpinLock::WriteHolder holder(hostLock_);
+        leader_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
     void diff(const LocalCache& oldCache, const LocalCache& newCache);
@@ -324,7 +328,6 @@ private:
     HostAddr leader_;
     HostAddr localHost_;
 
-    ClusterManager* clusterMan_{nullptr};
     std::unique_ptr<thread::GenericWorker> bgThread_;
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
@@ -334,6 +337,7 @@ private:
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     folly::RWSpinLock     listenerLock_;
+    std::atomic<ClusterID> clusterId_{0};
     bool                  sendHeartBeat_ = false;
     std::atomic_bool      ready_{false};
     MetaConfigMap         metaConfigMap_;

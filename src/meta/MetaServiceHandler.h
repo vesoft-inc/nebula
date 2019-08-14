@@ -11,7 +11,6 @@
 #include <mutex>
 #include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/KVStore.h"
-#include "meta/ClusterManager.h"
 
 namespace nebula {
 namespace meta {
