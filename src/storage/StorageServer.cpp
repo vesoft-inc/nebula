@@ -95,18 +95,11 @@ bool StorageServer::start() {
     workers_->setNamePrefix("executor");
     workers_->start();
 
-    std::string clusteridFile =
-        folly::stringPrintf("%s/%s", dataPaths_[0].c_str(), "/storage.cluster.id");
-    clusterMan_
-        = std::make_unique<nebula::meta::ClusterManager>("", clusteridFile);
-    if (!clusterMan_->loadClusterId()) {
-        LOG(INFO) << "storaged misses clusterId";
-    }
     // Meta client
     metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_,
                                                      metaAddrs_,
                                                      localHost_,
-                                                     clusterMan_.get(),
+                                                     0,
                                                      true);
     if (!metaClient_->waitForMetadReady()) {
         LOG(ERROR) << "waitForMetadReady error!";

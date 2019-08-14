@@ -971,7 +971,6 @@ void RaftPart::statusPolling() {
         sendHeartbeat();
     }
 
-    PLOG_EVERY_N(INFO, 30) << idStr_ << "statusPolling";
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING) {
