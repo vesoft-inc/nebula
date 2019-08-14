@@ -4,7 +4,7 @@ It indicates to travel in a graph with specific filter conditions (the `WHERE` c
 
 >The syntax of `GO` statement (and `FIND` statement) is very similar to `SELECT` in SQL. Notice that the major difference is that `GO` must start traversing from a (set of) node(s)
 
->You can refer to `FIND/MATCH` statement (in progress), which is the counterpart of `SELECT` in SQL.
+>You can refer to `FIND` statement (in progress), which is the counterpart of `SELECT` in SQL.
 
 ```
 GO FROM <node_list> 
@@ -31,7 +31,7 @@ YIELD | YIELDS  [DISTINCT] <return_list>
 ### Examples
 
 ```
-(user@127.0.0.1) [(none)]> GO FROM 101 OVER serve  \
+nebula> GO FROM 101 OVER serve  \
    /* start from vertex 101 along with edge type serve, and get vertex 204, 215 */
 =======
 | id  |
@@ -44,7 +44,7 @@ YIELD | YIELDS  [DISTINCT] <return_list>
 
 
 ```
-(user@127.0.0.1) [(none)]> GO FROM 101 OVER serve  \
+nebula> GO FROM 101 OVER serve  \
    WHERE serve.start_year > 1990       /* check edge (serve) property ( start_year) */ \ 
    YIELD $$.team.name AS team_name,    /* target vertex (team) property serve.start_year */
 ================================
@@ -57,7 +57,7 @@ YIELD | YIELDS  [DISTINCT] <return_list>
 ```
 
 ```
-(user@127.0.0.1) [(none)]> GO FROM 100,102 OVER serve           \
+nebula> GO FROM 100,102 OVER serve           \
    WHERE serve.start_year > 1995             /* check edge property */ \
    YIELD DISTINCT $$.team.name AS team_name, /* DISTINCT as SQL */ \ 
    serve.start_year,                         /* edge property */ \

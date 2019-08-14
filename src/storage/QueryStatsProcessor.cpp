@@ -81,7 +81,7 @@ kvstore::ResultCode QueryStatsProcessor::processVertex(PartitionID partId,
         }
     }
 
-    for (auto& ec : this->edgeContext_) {
+    for (auto& ec : this->edgeContexts_) {
         auto edgeType = ec.first;
         auto& props = ec.second;
         if (!props.empty()) {
@@ -112,7 +112,7 @@ void QueryStatsProcessor::onProcessFinished(int32_t retNum) {
         }
     }
 
-    for (auto& ec : this->edgeContext_) {
+    for (auto& ec : this->edgeContexts_) {
         auto p = ec.second;
         for (auto& prop : p) {
             props.emplace_back(std::move(prop));

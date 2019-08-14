@@ -41,15 +41,7 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
 
 void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     spaceId_ = req.get_space_id();
-    // By default, _src, _rank, _dst will be returned as the first 3 fields
-
-    if (req.__isset.edge_types) {
-        initContext(req.edge_types, true);
-    }
-    int32_t edgeSize = std::accumulate(edgeContext_.cbegin(), edgeContext_.cend(), 0,
-                                       [](int ac, auto& ec) { return ac + ec.second.size(); });
-
-    int32_t returnColumnsNum = req.get_return_columns().size() + edgeSize;
+    //    initContext(req.edge_types, true);
     auto retCode = this->checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {
@@ -59,12 +51,16 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
         return;
     }
 
+    int32_t edgeSize = std::accumulate(edgeContexts_.cbegin(), edgeContexts_.cend(), 0,
+                                       [](int ac, auto& ec) { return ac + ec.second.size(); });
+
+    int32_t returnColumnsNum = req.get_return_columns().size() + edgeSize;
     RowSetWriter rsWriter;
     std::for_each(req.get_parts().begin(), req.get_parts().end(), [&](auto& partE) {
         auto partId = partE.first;
         kvstore::ResultCode ret;
         for (auto& edgeKey : partE.second) {
-            for (auto& ec : edgeContext_) {
+            for (auto& ec : edgeContexts_) {
                 ret = this->collectEdgesProps(partId, edgeKey, ec.second, rsWriter);
                 if (ret != kvstore::ResultCode::SUCCEEDED) {
                     break;
@@ -78,7 +74,7 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
 
     std::vector<PropContext> props;
     props.reserve(returnColumnsNum);
-     for (auto& ec : this->edgeContext_) {
+     for (auto& ec : this->edgeContexts_) {
         auto p = ec.second;
         for (auto& prop : p) {
             props.emplace_back(std::move(prop));

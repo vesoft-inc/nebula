@@ -208,12 +208,6 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         auto& host = c.first;
         auto& req = requests[host];
         req.set_space_id(space);
-        // TODO(simon.liu)
-        for (auto& p : c.second) {
-            std::vector<EdgeType> e = {p.second[0].edge_type};
-            req.set_edge_types(e);
-            break;
-        }
         req.set_parts(std::move(c.second));
         req.set_return_columns(returnCols);
     }

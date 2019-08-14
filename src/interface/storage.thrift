@@ -41,14 +41,14 @@ enum PropOwner {
     EDGE = 3,
 } (cpp.enum_strict)
 
-union PropId {
+union EntryId {
     1: common.TagID tag_id,
     2: common.EdgeType edge_type,
 }
 
 struct PropDef {
     1: PropOwner owner,
-    2: PropId    id,
+    2: EntryId   id,
     3: string name,      // Property name
     4: StatType stat,    // calc stats when setted.
 }
@@ -158,10 +158,9 @@ struct EdgePropRequest {
     1: common.GraphSpaceID space_id,
     // partId => edges
     2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
-    3: list<common.EdgeType> edge_types,
-    4: binary filter,
-    5: list<PropDef> return_columns,
-    6: bool over_all_edges,
+    3: binary filter,
+    4: list<PropDef> return_columns,
+    5: bool over_all_edges,
 }
 
 struct AddVerticesRequest {

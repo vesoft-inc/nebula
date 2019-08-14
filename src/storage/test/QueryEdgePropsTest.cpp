@@ -60,8 +60,6 @@ void buildRequest(cpp2::EdgePropRequest& req) {
         }
     }
     req.set_parts(std::move(tmpEdges));
-    std::vector<EdgeType> et = {101};
-    req.set_edge_types(et);
     // Return edge props col_0, col_2, col_4 ... col_18
     decltype(req.return_columns) tmpColumns;
     for (int i = 0; i < 10; i++) {
@@ -73,45 +71,25 @@ void buildRequest(cpp2::EdgePropRequest& req) {
 
 void checkResponse(cpp2::EdgePropResponse& resp) {
     EXPECT_EQ(0, resp.result.failed_codes.size());
-    EXPECT_EQ(13, resp.schema.columns.size());
+    EXPECT_EQ(10, resp.schema.columns.size());
     auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
     LOG(INFO) << "Check edge props...";
     RowSetReader rsReader(provider, resp.data);
     auto it = rsReader.begin();
     int32_t rowNum = 0;
     while (static_cast<bool>(it)) {
-        EXPECT_EQ(13, it->numFields());
-        {
-            // _src
-            // We can't ensure the order, so just check the srcId range.
-            int64_t v;
-            EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(0, v));
-            CHECK_GE(30, v);
-            CHECK_LE(0, v);
-        }
-        {
-            // _rank
-            int64_t v;
-            EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(1, v));
-            CHECK_EQ(rowNum % 7, v);
-        }
-        {
-            // _dst
-            int64_t v;
-            EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(2, v));
-            CHECK_EQ(10001 + rowNum % 7, v);
-        }
+        EXPECT_EQ(10, it->numFields());
         // col_0, col_2 ... col_8
-        for (auto i = 3; i < 8; i++) {
+        for (auto i = 0; i < 5; i++) {
             int64_t v;
             EXPECT_EQ(ResultType::SUCCEEDED, it->getInt<int64_t>(i, v));
-            CHECK_EQ((i - 3) * 2, v);
+            CHECK_EQ(i * 2, v);
         }
         // col_10, col_12 ... col_18
-        for (auto i = 8; i < 13; i++) {
+        for (auto i = 5; i < 10; i++) {
             folly::StringPiece v;
             EXPECT_EQ(ResultType::SUCCEEDED, it->getString(i, v));
-            CHECK_EQ(folly::stringPrintf("string_col_%d", (i - 8 + 5) * 2), v);
+            CHECK_EQ(folly::stringPrintf("string_col_%d", i * 2), v);
         }
         ++it;
         rowNum++;

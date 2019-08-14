@@ -76,8 +76,8 @@ kvstore::ResultCode QueryBoundProcessor::processAllEdge(PartitionID partId, Vert
             }
 
             edgeTypes.emplace(edgeType);
-            auto it = edgeContext_.find(edgeType);
-            if (it != edgeContext_.end()) {
+            auto it = edgeContexts_.find(edgeType);
+            if (it != edgeContexts_.end()) {
                 props = std::move(it->second);
             } else {
                 PropContext pc;
@@ -103,7 +103,7 @@ kvstore::ResultCode QueryBoundProcessor::processAllEdge(PartitionID partId, Vert
 kvstore::ResultCode QueryBoundProcessor::processEdge(PartitionID partId, VertexID vId,
                                                      FilterContext& fcontext,
                                                      cpp2::VertexData& vdata) {
-    for (const auto& ec : edgeContext_) {
+    for (const auto& ec : edgeContexts_) {
         RowSetWriter rsWriter;
         auto edgeType = ec.first;
         auto& props   = ec.second;

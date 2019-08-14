@@ -44,7 +44,8 @@ void QueryBaseProcessor<REQ, RESP>::addDefaultProps(std::vector<PropContext>& p,
 template <typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::initContext(const std::vector<EdgeType>& eTypes,
                                                 bool need_default_props) {
-    std::transform(eTypes.cbegin(), eTypes.cend(), std::inserter(edgeContext_, edgeContext_.end()),
+    std::transform(eTypes.cbegin(), eTypes.cend(),
+                   std::inserter(edgeContexts_, edgeContexts_.end()),
                    [this, need_default_props](const auto& ec) {
                        std::vector<PropContext> prop;
                        if (need_default_props) {
@@ -58,7 +59,7 @@ template<typename REQ, typename RESP>
 cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& req) {
     // Handle the case for query edges which should return some columns by default.
     overAllEdge_ = req.over_all_edges;
-    int32_t index = std::accumulate(edgeContext_.cbegin(), edgeContext_.cend(), 0,
+    int32_t index = std::accumulate(edgeContexts_.cbegin(), edgeContexts_.cend(), 0,
                                     [](int ac, auto& ec) { return ac + ec.second.size(); });
     std::unordered_map<TagID, int32_t> tagIndex;
     for (auto& col : req.get_return_columns()) {
@@ -124,15 +125,11 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                 prop.retIndex_ = index++;
                 prop.prop_ = std::move(col);
                 prop.returned_ = true;
-                auto it2 = edgeContext_.find(edgeType);
-                if (it2 == edgeContext_.end()) {
-                    if (overAllEdge_) {
-                        std::vector<PropContext> v{std::move(prop)};
-                        edgeContext_.emplace(edgeType, std::move(v));
-                        break;
-                    } else {
-                        CHECK(it2 != edgeContext_.end());
-                    }
+                auto it2 = edgeContexts_.find(edgeType);
+                if (it2 == edgeContexts_.end()) {
+                    std::vector<PropContext> v{std::move(prop)};
+                    edgeContexts_.emplace(edgeType, std::move(v));
+                    break;
                 }
 
                 it2->second.emplace_back(std::move(prop));
@@ -240,13 +237,13 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
         }
         case Expression::kAliasProp:
         case Expression::kEdgeProp: {
-            if (edgeContext_.empty()) {
+            if (edgeContexts_.empty()) {
                 VLOG(1) << "No edge requested!";
                 return false;
             }
 
             bool processed = false;
-            for (auto& ec : edgeContext_) {
+            for (auto& ec : edgeContexts_) {
                 auto edgeType = ec.first;
 
                 if (edgeType < 0) {
