@@ -74,11 +74,10 @@ public:
         return column;
     }
 
-    static void registerHB(const std::vector<HostAddr>& hosts) {
-         ActiveHostsMan::instance()->reset();
+    static void registerHB(kvstore::KVStore* kv, const std::vector<HostAddr>& hosts) {
          auto now = time::WallClock::fastNowInSec();
          for (auto& h : hosts) {
-             ActiveHostsMan::instance()->updateHostInfo(h, HostInfo(now));
+             ActiveHostsMan::updateHostInfo(kv, h, HostInfo(now));
          }
      }
 
@@ -102,7 +101,7 @@ public:
             auto resp = std::move(f).get();
             EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         }
-        registerHB(hosts);
+        registerHB(kv, hosts);
         {
             cpp2::ListHostsReq req;
             auto* processor = ListHostsProcessor::instance(kv);

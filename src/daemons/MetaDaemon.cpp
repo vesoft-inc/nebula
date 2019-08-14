@@ -18,7 +18,7 @@
 #include "hdfs/HdfsCommandHelper.h"
 #include "thread/GenericThreadPool.h"
 #include "kvstore/PartManager.h"
-#include "meta/ClusterManager.h"
+#include "meta/ClusterIdMan.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/KVBasedGflagsManager.h"
@@ -30,9 +30,9 @@ using nebula::Status;
 DEFINE_int32(port, 45500, "Meta daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path");
-DEFINE_string(peers, "", "It is a list of IPs split by comma,"
-                         "the ips number equals replica number."
-                         "If empty, it means replica is 1");
+DEFINE_string(meta_server_addrs, "", "It is a list of IPs split by comma,"
+                                     "the ips number equals replica number."
+                                     "If empty, it means replica is 0");
 DEFINE_string(local_ip, "", "Local ip speicified for NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
@@ -43,16 +43,25 @@ DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
-
 static void signalHandler(int sig);
 static Status setupSignalHandler();
+
+namespace nebula {
+namespace meta {
+const std::string kClusterIdKey = "__meta_cluster_id_key__";  // NOLINT
+}  // namespace meta
+}  // namespace nebula
+
+nebula::ClusterID gClusterId = 0;
 
 std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> peers,
                                                  nebula::HostAddr localhost) {
     auto partMan
         = std::make_unique<nebula::kvstore::MemPartManager>();
-    // The meta server has only one space, one part.
-    partMan->addPart(0, 0, std::move(peers));
+    // The meta server has only one space (0), one part (0)
+    partMan->addPart(nebula::meta::kDefaultSpaceId,
+                     nebula::meta::kDefaultPartId,
+                     std::move(peers));
     // folly IOThreadPoolExecutor
     auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
     std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
@@ -69,9 +78,51 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
                                                         localhost,
                                                         threadManager);
     if (!(kvstore->init())) {
-        LOG(ERROR) << "nebula store init failed";
+        LOG(ERROR) << "Nebula store init failed";
         return nullptr;
     }
+
+    LOG(INFO) << "Waiting for the leader elected...";
+    nebula::HostAddr leader;
+    while (true) {
+        auto ret = kvstore->partLeader(nebula::meta::kDefaultSpaceId,
+                                       nebula::meta::kDefaultPartId);
+        if (!nebula::ok(ret)) {
+            LOG(ERROR) << "Nebula store init failed";
+            return nullptr;
+        }
+        leader = nebula::value(ret);
+        if (leader != nebula::HostAddr(0, 0)) {
+            break;
+        }
+        LOG(INFO) << "Leader has not been elected, sleep 1s";
+        sleep(1);
+    }
+
+    gClusterId = nebula::meta::ClusterIdMan::getClusterIdFromKV(kvstore.get(),
+                                                                nebula::meta::kClusterIdKey);
+    if (gClusterId == 0) {
+        if (leader == localhost) {
+            LOG(INFO) << "I am leader, create cluster Id";
+            gClusterId = nebula::meta::ClusterIdMan::create(FLAGS_meta_server_addrs);
+            if (!nebula::meta::ClusterIdMan::persistInKV(kvstore.get(),
+                                                         nebula::meta::kClusterIdKey,
+                                                         gClusterId)) {
+                LOG(ERROR) << "Persist cluster failed!";
+                return nullptr;
+            }
+        } else {
+            LOG(INFO) << "I am follower, wait for the leader's clusterId";
+            while (gClusterId == 0) {
+                LOG(INFO) << "Waiting for the leader's clusterId";
+                sleep(1);
+                gClusterId = nebula::meta::ClusterIdMan::getClusterIdFromKV(
+                                                kvstore.get(),
+                                                nebula::meta::kClusterIdKey);
+            }
+        }
+    }
+    LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;
     return kvstore;
 }
 
@@ -101,13 +152,6 @@ bool initWebService(nebula::kvstore::KVStore* kvstore,
 }
 
 bool initComponents(nebula::kvstore::KVStore* kvstore) {
-    auto clusterMan
-        = std::make_unique<nebula::meta::ClusterManager>(FLAGS_peers, "");
-    if (!clusterMan->loadOrCreateCluId(kvstore)) {
-        LOG(ERROR) << "clusterId init error!";
-        return false;
-    }
-    nebula::meta::ActiveHostsMan::instance(kvstore);
     auto gflagsManager = std::make_unique<nebula::meta::KVBasedGflagsManager>(kvstore);
     gflagsManager->init();
     return true;
@@ -160,7 +204,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     auto& localhost = hostAddrRet.value();
-    auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_peers);
+    auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
     if (!peersRet.ok()) {
         LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
         return EXIT_FAILURE;
@@ -194,7 +238,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get());
+    auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(kvstore.get(), gClusterId);
     LOG(INFO) << "The meta deamon start on " << localhost;
     try {
         gServer = std::make_unique<apache::thrift::ThriftServer>();
