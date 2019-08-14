@@ -422,14 +422,14 @@ TEST(FileBasedWal, BackAndForth) {
 TEST(FileBasedWal, TTLTest) {
     FileBasedWalPolicy policy;
     TempDir walDir("/tmp/testWal.XXXXXX");
-
+    auto flu = std::make_unique<nebula::wal::BufferFlusher>();
     policy.ttl = 3;
     policy.bufferSize = 128;
     policy.fileSize = 1024;
     policy.numBuffers = 300;
     auto wal = FileBasedWal::getWal(walDir.path(),
                                     policy,
-                                    flusher.get(),
+                                    flu.get(),
                                     [](LogID, TermID, ClusterID, const std::string&) {
                                         return true;
                                     });
@@ -461,7 +461,7 @@ TEST(FileBasedWal, TTLTest) {
         // Now let's open it to read
         wal = FileBasedWal::getWal(walDir.path(),
                                    policy,
-                                   flusher.get(),
+                                   flu.get(),
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;
                                    });
@@ -492,7 +492,7 @@ TEST(FileBasedWal, TTLTest) {
         // Now let's open it to read
         wal = FileBasedWal::getWal(walDir.path(),
                                    policy,
-                                   flusher.get(),
+                                   flu.get(),
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;
                                    });
