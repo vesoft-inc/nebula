@@ -12,8 +12,7 @@
 #include "meta/test/TestUtils.h"
 #include "meta/processors/admin/HBProcessor.h"
 
-DECLARE_int32(expired_hosts_check_interval_sec);
-DECLARE_int32(expired_threshold_sec);
+DECLARE_bool(hosts_whitelist_enabled);
 
 namespace nebula {
 namespace meta {
@@ -24,58 +23,34 @@ using apache::thrift::FragileConstructor::FRAGILE;
 TEST(HBProcessorTest, HBTest) {
     fs::TempDir rootPath("/tmp/HBTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    FLAGS_expired_hosts_check_interval_sec = 1;
-    FLAGS_expired_threshold_sec = 1;
-    {
-        std::vector<nebula::cpp2::HostAddr> thriftHosts;
-        for (auto i = 0; i < 10; i++) {
-            thriftHosts.emplace_back(FRAGILE, i, i);
-        }
-        cpp2::AddHostsReq req;
-        req.set_hosts(std::move(thriftHosts));
-        auto* processor = AddHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
-    }
-    {
-        cpp2::ListHostsReq req;
-        auto* processor = ListHostsProcessor::instance(kv.get());
-        auto f = processor->getFuture();
-        processor->process(req);
-        auto resp = std::move(f).get();
-        ASSERT_EQ(10, resp.hosts.size());
-        for (auto i = 0; i < 10; i++) {
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.ip);
-            ASSERT_EQ(i, resp.hosts[i].hostAddr.port);
-        }
-    }
+    const ClusterID kClusterId = 10;
     {
         for (auto i = 0; i < 5; i++) {
             cpp2::HBReq req;
             nebula::cpp2::HostAddr thriftHost(FRAGILE, i, i);
             req.set_host(std::move(thriftHost));
-            auto* processor = HBProcessor::instance(kv.get());
+            req.set_cluster_id(kClusterId);
+            auto* processor = HBProcessor::instance(kv.get(), kClusterId);
             auto f = processor->getFuture();
             processor->process(req);
             auto resp = std::move(f).get();
             ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         }
-        auto hosts = ActiveHostsMan::instance()->getActiveHosts();
+        auto hosts = ActiveHostsMan::getActiveHosts(kv.get(), 1);
         ASSERT_EQ(5, hosts.size());
         sleep(3);
-        ASSERT_EQ(0, ActiveHostsMan::instance()->getActiveHosts().size());
+        ASSERT_EQ(0, ActiveHostsMan::getActiveHosts(kv.get(), 1).size());
 
         LOG(INFO) << "Test for invalid host!";
         cpp2::HBReq req;
         nebula::cpp2::HostAddr thriftHost(FRAGILE, 11, 11);
         req.set_host(std::move(thriftHost));
+        req.set_cluster_id(1);
         auto* processor = HBProcessor::instance(kv.get());
         auto f = processor->getFuture();
         processor->process(req);
         auto resp = std::move(f).get();
-        ASSERT_EQ(cpp2::ErrorCode::E_INVALID_HOST, resp.code);
+        ASSERT_EQ(cpp2::ErrorCode::E_WRONGCLUSTER, resp.code);
     }
 }
 
