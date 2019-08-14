@@ -17,11 +17,17 @@ DescribeEdgeExecutor::DescribeEdgeExecutor(Sentence *sentence,
 
 
 Status DescribeEdgeExecutor::prepare() {
-    return checkIfGraphSpaceChosen();
+    return Status::OK();
 }
 
 
 void DescribeEdgeExecutor::execute() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
 

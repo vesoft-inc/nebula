@@ -29,9 +29,9 @@ DECLARE_string(memtable_factory);
 DECLARE_bool(rocksdb_disable_wal);
 
 // BlockBasedTable block_cache
-DECLARE_int64(block_cache);
+DECLARE_int64(rocksdb_block_cache);
 
-DECLARE_int32(batch_reserved_bytes);
+DECLARE_int32(rocksdb_batch_size);
 
 DECLARE_string(part_man_type);
 

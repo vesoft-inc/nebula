@@ -24,7 +24,7 @@ void BalanceProcessor::process(const cpp2::BalanceReq& req) {
         onFinished();
         return;
     }
-    auto hosts = ActiveHostsMan::instance()->getActiveHosts();
+    auto hosts = ActiveHostsMan::getActiveHosts(kvstore_);
     if (hosts.empty()) {
         LOG(ERROR) << "There is no active hosts";
         resp_.set_code(cpp2::ErrorCode::E_NO_HOSTS);

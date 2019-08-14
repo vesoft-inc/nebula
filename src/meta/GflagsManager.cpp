@@ -6,8 +6,6 @@
 
 #include "meta/GflagsManager.h"
 
-DEFINE_int32(load_config_interval_secs, 2 * 60, "Load config interval");
-
 namespace nebula {
 namespace meta {
 
@@ -67,7 +65,6 @@ void GflagsManager::declareGflags() {
             mode = cpp2::ConfigMode::IMMUTABLE;
         }
 
-        LOG(INFO) << name << " " << value;
         gflagsDeclared_.emplace_back(toThriftConfigItem(module_, name, cType, mode, valueStr));
     }
 }

@@ -22,7 +22,7 @@
 
 DEFINE_bool(accept_log_append_during_pulling, false,
             "Whether to accept new logs during pulling the snapshot");
-DEFINE_uint32(heartbeat_interval, 5,
+DEFINE_uint32(raft_heartbeat_interval_secs, 5,
              "Seconds between each heartbeat");
 DEFINE_uint32(max_batch_size, 256, "The max number of logs in a batch");
 
@@ -766,7 +766,7 @@ bool RaftPart::needToSendHeartbeat() {
     std::lock_guard<std::mutex> g(raftLock_);
     return status_ == Status::RUNNING &&
            role_ == Role::LEADER &&
-           lastMsgSentDur_.elapsedInSec() >= FLAGS_heartbeat_interval * 2 / 5;
+           lastMsgSentDur_.elapsedInSec() >= FLAGS_raft_heartbeat_interval_secs * 2 / 5;
 }
 
 
@@ -774,7 +774,7 @@ bool RaftPart::needToStartElection() {
     std::lock_guard<std::mutex> g(raftLock_);
     if (status_ == Status::RUNNING &&
         role_ == Role::FOLLOWER &&
-        (lastMsgRecvDur_.elapsedInSec() >= FLAGS_heartbeat_interval ||
+        (lastMsgRecvDur_.elapsedInSec() >= FLAGS_raft_heartbeat_interval_secs ||
          term_ == 0)) {
         role_ = Role::CANDIDATE;
     }
@@ -955,7 +955,7 @@ bool RaftPart::leaderElection() {
 
 
 void RaftPart::statusPolling() {
-    size_t delay = FLAGS_heartbeat_interval * 1000 / 3;
+    size_t delay = FLAGS_raft_heartbeat_interval_secs * 1000 / 3;
     if (needToStartElection()) {
         LOG(INFO) << idStr_ << "Need to start leader election";
         if (leaderElection()) {
@@ -971,7 +971,6 @@ void RaftPart::statusPolling() {
         sendHeartbeat();
     }
 
-    PLOG_EVERY_N(INFO, 30) << idStr_ << "statusPolling";
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING) {

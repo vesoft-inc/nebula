@@ -11,7 +11,7 @@
 #include "kvstore/raftex/test/TestShard.h"
 #include "thrift/ThriftClientManager.h"
 
-DECLARE_uint32(heartbeat_interval);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace raftex {
@@ -291,7 +291,7 @@ void checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
                     size_t start, size_t end,
                     std::vector<std::string>& msgs) {
     // Sleep a while to make sure the last log has been committed on followers
-    sleep(FLAGS_heartbeat_interval);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
 
     // Check every copy
     for (auto& c : copies) {

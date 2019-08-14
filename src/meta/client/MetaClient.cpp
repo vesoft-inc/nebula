@@ -8,9 +8,11 @@
 #include "meta/client/MetaClient.h"
 #include "network/NetworkUtils.h"
 #include "meta/NebulaSchemaProvider.h"
+#include "meta/ClusterIdMan.h"
 
 DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
+DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
 
 namespace nebula {
 namespace meta {
@@ -18,23 +20,21 @@ namespace meta {
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                        std::vector<HostAddr> addrs,
                        HostAddr localHost,
-                       ClusterManager* clusterMan,
+                       ClusterID clusterId,
                        bool sendHeartBeat)
     : ioThreadPool_(ioThreadPool)
     , addrs_(std::move(addrs))
     , localHost_(localHost)
-    , clusterMan_(clusterMan)
+    , clusterId_(clusterId)
     , sendHeartBeat_(sendHeartBeat) {
     CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
     CHECK(!addrs_.empty())
         << "No meta server address is specified. Meta server is required";
-    if (sendHeartBeat_) {
-        CHECK(clusterMan_ != nullptr) << "ClusterManager object is required when send heartbeat";
-    }
     clientsMan_ = std::make_shared<
         thrift::ThriftClientManager<meta::cpp2::MetaServiceAsyncClient>
     >();
-    updateHost();
+    updateActive();
+    updateLeader();
     bgThread_ = std::make_unique<thread::GenericWorker>();
     LOG(INFO) << "Create meta client to " << active_;
 }
@@ -49,7 +49,7 @@ MetaClient::~MetaClient() {
 bool MetaClient::isMetadReady() {
     if (sendHeartBeat_) {
         auto ret = heartbeat().get();
-        if (!ret.ok()) {
+        if (!ret.ok() && ret.status() != Status::LeaderChanged()) {
             LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
             ready_ = false;
             return ready_;
@@ -60,11 +60,11 @@ bool MetaClient::isMetadReady() {
     return ready_;
 }
 
-
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     setGflagsModule();
     int tryCount = count;
     while (!isMetadReady() && ((count == -1) || (tryCount > 0))) {
+        LOG(INFO) << "Waiting for the metad to be ready!";
         --tryCount;
         ::sleep(retryIntervalSecs);
     }  // end while
@@ -275,14 +275,23 @@ folly::Future<StatusOr<Response>> MetaClient::getResponse(
         folly::RWSpinLock::ReadHolder holder(&hostLock_);
         host = toLeader ? leader_ : active_;
     }
+    LOG(INFO) << "Send request to meta " << host;
     auto client = clientsMan_->client(host, evb);
     remoteFunc(client, std::move(req))
-         .then(evb, [p = std::move(pro), respGen, this] (folly::Try<RpcResponse>&& t) mutable {
+         .then(evb,
+               [p = std::move(pro),
+                respGen,
+                toLeader,
+                this] (folly::Try<RpcResponse>&& t) mutable {
         // exception occurred during RPC
         if (t.hasException()) {
             p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
                                                          t.exception().what().c_str())));
-            updateHost();
+            if (toLeader) {
+                updateLeader();
+            } else {
+                updateActive();
+            }
             return;
         }
         // errored
@@ -356,7 +365,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
                 folly::RWSpinLock::WriteHolder holder(hostLock_);
                 leader_ = leader;
             }
-            return Status::Error("Leader changed!");
+            return Status::LeaderChanged();
         }
         default:
             return Status::Error("Unknown code %d", static_cast<int32_t>(resp.get_code()));
@@ -999,27 +1008,28 @@ StatusOr<SchemaVer> MetaClient::getNewestEdgeVerFromCache(const GraphSpaceID& sp
 
 
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
+    if (clusterId_.load() == 0) {
+        clusterId_ = ClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
+    }
     cpp2::HBReq req;
     nebula::cpp2::HostAddr thriftHost;
     thriftHost.set_ip(localHost_.first);
     thriftHost.set_port(localHost_.second);
     req.set_host(std::move(thriftHost));
-    req.set_clusterId(clusterMan_->getClusterId());
-
+    req.set_cluster_id(clusterId_.load());
+    LOG(INFO) << "Send heartbeat to " << leader_ << ", clusterId " << req.get_cluster_id();
     return getResponse(std::move(req), [] (auto client, auto request) {
         return client->future_heartBeat(request);
     }, [this] (cpp2::HBResp&& resp) -> bool {
-        if (resp.code == cpp2::ErrorCode::SUCCEEDED
-            && !clusterMan_->isClusterIdSet()) {
-            clusterMan_->setClusterId(resp.get_clusterId());
-            if (!clusterMan_->clusterIdDumped()) {
-                if (!clusterMan_->dumpClusterId()) {
-                    LOG(ERROR) << "meta client clusterId dump failed!";
-                    return false;
-                }
+        if (clusterId_.load() == 0) {
+            LOG(INFO) << "Persisit the cluster Id from metad " << resp.get_cluster_id();
+            if (ClusterIdMan::persistInFile(resp.get_cluster_id(), FLAGS_cluster_id_path)) {
+                clusterId_.store(resp.get_cluster_id());
+            } else {
+                LOG(FATAL) << "Can't persist the clusterId in file " << FLAGS_cluster_id_path;
             }
         }
-        return resp.code == cpp2::ErrorCode::SUCCEEDED;
+        return true;
     }, true);
 }
 

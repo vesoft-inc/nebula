@@ -14,6 +14,7 @@
 #include "graph/FetchEdgesExecutor.h"
 #include "dataman/RowReader.h"
 #include "dataman/RowWriter.h"
+#include "graph/SetExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -43,6 +44,9 @@ TraverseExecutor::makeTraverseExecutor(Sentence *sentence, ExecutionContext *ect
             break;
         case Sentence::Kind::kFetchEdges:
             executor = std::make_unique<FetchEdgesExecutor>(sentence, ectx);
+            break;
+        case Sentence::Kind::kSet:
+            executor = std::make_unique<SetExecutor>(sentence, ectx);
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
@@ -75,8 +79,8 @@ void Collector::collect(VariantType &var, RowWriter *writer) const {
 
 VariantType Collector::getProp(const std::string &prop,
                                const RowReader *reader) const {
-    DCHECK_NOTNULL(reader);
-    DCHECK_NOTNULL(schema_);
+    DCHECK(reader != nullptr);
+    DCHECK(schema_ != nullptr);
     using nebula::cpp2::SupportedType;
     auto type = schema_->getFieldType(prop).type;
     switch (type) {

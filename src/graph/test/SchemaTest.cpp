@@ -50,19 +50,10 @@ TEST_F(SchemaTest, metaCommunication) {
     ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ADD HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        meta::TestUtils::registerHB(
-                network::NetworkUtils::toHosts("127.0.0.1:1000, 127.0.0.1:1100").value());
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
         std::vector<uniform_tuple_t<std::string, 3>> expected{
-            {"127.0.0.1", "1000", "offline"},
-            {"127.0.0.1", "1100", "offline"},
+            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -496,6 +487,34 @@ TEST_F(SchemaTest, metaCommunication) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    // Test multi sentence
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "CREATE SPACE test_multi";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+
+        query = "USE test_multi; CREATE Tag test_tag(); SHOW TAGS;";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected1{
+            {"test_tag"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected1));
+
+        query = "USE test_multi; CREATE TAG test_tag1(); USE my_space; SHOW TAGS;";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<uniform_tuple_t<std::string, 1>> expected2{
+            {"animal"},
+            {"person"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected2));
+
+        query = "DROP SPACE test_multi";
+        code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
     // Test drop space
     {
         cpp2::ExecutionResponse resp;
@@ -526,15 +545,9 @@ TEST_F(SchemaTest, metaCommunication) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "REMOVE HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
-        ASSERT_EQ(0, (*(resp.get_rows())).size());
+        ASSERT_EQ(1, (*(resp.get_rows())).size());
     }
 }
 
@@ -544,19 +557,10 @@ TEST_F(SchemaTest, TTLtest) {
     ASSERT_NE(nullptr, client);
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "ADD HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        meta::TestUtils::registerHB(
-                network::NetworkUtils::toHosts("127.0.0.1:1000, 127.0.0.1:1100").value());
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string query = "SHOW HOSTS";
         client->execute(query, resp);
         std::vector<uniform_tuple_t<std::string, 3>> expected{
-            {"127.0.0.1", "1000", "offline"},
-            {"127.0.0.1", "1100", "offline"},
+            {"127.0.0.1", std::to_string(gEnv->storageServerPort()), "online"},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
@@ -842,12 +846,6 @@ TEST_F(SchemaTest, TTLtest) {
     {
         cpp2::ExecutionResponse resp;
         std::string query = "DROP SPACE default_space";
-        auto code = client->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string query = "REMOVE HOSTS 127.0.0.1:1000, 127.0.0.1:1100";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
