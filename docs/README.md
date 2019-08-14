@@ -13,9 +13,7 @@
  * SQL-like query language
 
 ## How can I get Nebula ##
-**Nebula Graph** source code is available here on [GitHub](https://github.com/vesoft-inc/nebula). The currently release is version R1910_alpha.
-You can also download [Docker ](https://www.docker.com/get-started)image to try it.
-More details on how to get Nebula image click [Get Started](get-started/).
+Apart from installing **Nebula Graph** from source, you can use the [official Nebula Graph image](https://hub.docker.com/r/vesoft/nebula-graph/tags). For more details on how to install Nebula Graph, see [Get Started](get-started/).
 
 ## How can I contribute ##
 As the team behind **Nebula Graph**, we fully commit to the community and all-in to the open source project. All the core features are and will be implemented in the open source repository.
