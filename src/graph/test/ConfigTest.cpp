@@ -36,41 +36,41 @@ void mockRegisterGflags(meta::ClientBasedGflagsManager* cfgMan) {
         auto type = meta::cpp2::ConfigType::INT64;
         int64_t value = 0L;
         cfgMan->registerConfig(module, "k0", type, meta::cpp2::ConfigMode::IMMUTABLE,
-                               meta::toThriftValueStr(type, value));
+                               meta::toThriftValueStr(type, value)).get();
         cfgMan->registerConfig(module, "k1", type, meta::cpp2::ConfigMode::MUTABLE,
-                               meta::toThriftValueStr(type, value));
+                               meta::toThriftValueStr(type, value)).get();
     }
     {
         auto module = meta::cpp2::ConfigModule::STORAGE;
         auto type = meta::cpp2::ConfigType::BOOL;
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
         bool value = false;
-        cfgMan->registerConfig(module, "k2", type, mode, meta::toThriftValueStr(type, value));
+        cfgMan->registerConfig(module, "k2", type, mode, meta::toThriftValueStr(type, value)).get();
     }
     {
         auto module = meta::cpp2::ConfigModule::META;
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
         auto type = meta::cpp2::ConfigType::DOUBLE;
         double value = 1.0;
-        cfgMan->registerConfig(module, "k1", type, mode, meta::toThriftValueStr(type, value));
+        cfgMan->registerConfig(module, "k1", type, mode, meta::toThriftValueStr(type, value)).get();
     }
     {
         auto module = meta::cpp2::ConfigModule::META;
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
         auto type = meta::cpp2::ConfigType::STRING;
         std::string value = "nebula";
-        cfgMan->registerConfig(module, "k2", type, mode, meta::toThriftValueStr(type, value));
+        cfgMan->registerConfig(module, "k2", type, mode, meta::toThriftValueStr(type, value)).get();
     }
     {
         auto type = meta::cpp2::ConfigType::STRING;
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
         std::string value = "nebula";
         cfgMan->registerConfig(meta::cpp2::ConfigModule::GRAPH, "k3",
-                               type, mode, meta::toThriftValueStr(type, value));
+                               type, mode, meta::toThriftValueStr(type, value)).get();
         cfgMan->registerConfig(meta::cpp2::ConfigModule::META, "k3",
-                               type, mode, meta::toThriftValueStr(type, value));
+                               type, mode, meta::toThriftValueStr(type, value)).get();
         cfgMan->registerConfig(meta::cpp2::ConfigModule::STORAGE, "k3",
-                               type, mode, meta::toThriftValueStr(type, value));
+                               type, mode, meta::toThriftValueStr(type, value)).get();
     }
 }
 
