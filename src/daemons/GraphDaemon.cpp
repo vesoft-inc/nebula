@@ -117,8 +117,8 @@ int main(int argc, char *argv[]) {
 
     gServer = std::make_unique<apache::thrift::ThriftServer>();
     gServer->getIOThreadPool()->setNumThreads(FLAGS_num_netio_threads);
-    auto interface = std::make_shared<GraphService>();
 
+    auto interface = std::make_shared<GraphService>();
     status = interface->init(gServer->getIOThreadPool());
     if (!status.ok()) {
         LOG(ERROR) << status;
