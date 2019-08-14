@@ -10,7 +10,7 @@ INSERT EDGE edge_name ( <prop_name_list> ) {VALUES | VALUE}
   [ <prop_value> [, <prop_value> ] ...]
 ```
 
-INSERT EDGE statements inserts an (directed) edge from a starting vertex (given by src_vid) to an ending vertex (given by dst_vid).
+`INSERT EDGE` statements inserts an (directed) edge from a starting vertex (given by src_vid) to an ending vertex (given by dst_vid).
 
 * `<edge_name>` denotes the edge type, which must be created before `INSERT EDGE`.
 * `<prop_name_list>` is the property name list as the given `<edge_name>`.

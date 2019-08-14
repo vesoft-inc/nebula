@@ -42,13 +42,13 @@ edge_type.edge_prop
 
 where `edge_type` is the edge's type, meanwhile `edge_prop` is the property.
 
-for example,
+For example,
 
 ```
 GO FROM 1 OVER e1 YIELD e1.prop1
 ```
 
-### for build-in property
+### For build-in property
 
 There are four build-in properties in the edge:
 
@@ -59,10 +59,10 @@ There are four build-in properties in the edge:
 
 You can use `_src` and `_dst` to get the starting and ending vertices' id, so they are very commonly used to show a graph path.
 
-for example,
+For example,
 
 ```
 GO FROM 1 OVER e1 YIELD e1._src as startVID /* which is, 1 */, e1._dst as endVID
 ```
 
-This statement returns all the neighborhoods of `1` over edge type `e1`, by referencing `e1._src` as the starting vertex id (which, of course, this `1`) and `e1._dst` as the ending vertex id.
+This statement returns all the neighborhoods of `1` over edge type `e1`, by referencing `e1._src` as the starting vertex id (which, of course, is `1`) and `e1._dst` as the ending vertex id.

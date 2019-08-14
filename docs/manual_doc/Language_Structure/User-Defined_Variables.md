@@ -1,6 +1,6 @@
 <!---
 
->User-Defined Variable can only be used in one execution ( compound statements separated by semicolon (;) or pipe (|) and be submitted to server to execute together)
+>User-defined variables can only be used in one execution ( compound statements separated by semicolon (;) or pipe (|) and be submitted to server to execute together)
 You can temporally store a value in a user-defined variable in the previous statement and use it later in another statement. This enables you to pass values from one statement to another.
 
 User variables are written as `$*var_name*`, where the variable name `*var_name*` consists of alphanumeric character, ., _,. Currently, any other characters are not recommend.
