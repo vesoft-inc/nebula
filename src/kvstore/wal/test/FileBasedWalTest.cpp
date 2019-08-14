@@ -426,7 +426,7 @@ TEST(FileBasedWal, TTLTest) {
     policy.ttl = 3;
     policy.bufferSize = 128;
     policy.fileSize = 1024;
-    policy.numBuffers = 300;
+    policy.numBuffers = 30;
     auto wal = FileBasedWal::getWal(walDir.path(),
                                     policy,
                                     flu.get(),
@@ -435,7 +435,7 @@ TEST(FileBasedWal, TTLTest) {
                                     });
     EXPECT_EQ(0, wal->lastLogId());
 
-    for (int i = 1; i <= 1000; i++) {
+    for (int i = 1; i <= 100; i++) {
         EXPECT_TRUE(
             wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
                            folly::stringPrintf("Test string %02d", i)));
@@ -446,12 +446,12 @@ TEST(FileBasedWal, TTLTest) {
         = static_cast<FileBasedWal*>(wal.get())->walFiles_.rbegin()->second->firstId();
     auto expiredFilesNum = static_cast<FileBasedWal*>(wal.get())->walFiles_.size() - 1;
     sleep(policy.ttl);
-    for (int i = 1001; i <= 2000; i++) {
+    for (int i = 101; i <= 200; i++) {
         EXPECT_TRUE(
             wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
                            folly::stringPrintf("Test string %02d", i)));
     }
-    EXPECT_EQ(2000, wal->lastLogId());
+    EXPECT_EQ(200, wal->lastLogId());
     // Wait for the flusher finished!
     sleep(1);
     // Close the wal
@@ -465,9 +465,9 @@ TEST(FileBasedWal, TTLTest) {
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;
                                    });
-        EXPECT_EQ(2000, wal->lastLogId());
+        EXPECT_EQ(200, wal->lastLogId());
 
-        auto it = wal->iterator(1, 2000);
+        auto it = wal->iterator(1, 200);
         LogID id = 1;
         while (it->valid()) {
             EXPECT_EQ(id, it->logId());
@@ -476,7 +476,7 @@ TEST(FileBasedWal, TTLTest) {
             ++(*it);
             ++id;
         }
-        EXPECT_EQ(2001, id);
+        EXPECT_EQ(201, id);
     }
     auto totalFilesNum = static_cast<FileBasedWal*>(wal.get())->walFiles_.size();
     wal->cleanWAL();
@@ -496,9 +496,9 @@ TEST(FileBasedWal, TTLTest) {
                                    [](LogID, TermID, ClusterID, const std::string&) {
                                        return true;
                                    });
-        EXPECT_EQ(2000, wal->lastLogId());
+        EXPECT_EQ(200, wal->lastLogId());
         EXPECT_EQ(startIdAfterGC, wal->firstLogId());
-        auto it = wal->iterator(startIdAfterGC, 2000);
+        auto it = wal->iterator(startIdAfterGC, 200);
         LogID id = startIdAfterGC;
         while (it->valid()) {
             EXPECT_EQ(id, it->logId());
@@ -507,7 +507,7 @@ TEST(FileBasedWal, TTLTest) {
             ++(*it);
             ++id;
         }
-        EXPECT_EQ(2001, id);
+        EXPECT_EQ(201, id);
     }
 }
 
