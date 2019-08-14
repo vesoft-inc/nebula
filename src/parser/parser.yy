@@ -532,32 +532,32 @@ over_edge
 over_edges
     : over_edge {
         auto edge = new OverEdges();
-	edge->addEdge($1);
-	$$ = edge;
+        edge->addEdge($1);
+        $$ = edge;
     }
     | over_edges COMMA over_edge {
         $1->addEdge($3);
-	$$ = $1;
+        $$ = $1;
     }
     ;
 
 over_clause
     : KW_OVER MUL {
         auto edges = new OverEdges();
-	auto s = new std::string("*");
-	auto edge = new OverEdge(s, nullptr, false);
-	edges->addEdge(edge);
+        auto s = new std::string("*");
+        auto edge = new OverEdge(s, nullptr, false);
+        edges->addEdge(edge);
         $$ = new OverClause(edges);
     }
     | KW_OVER MUL KW_REVERSELY {
         auto edges = new OverEdges();
-	auto s = new std::string("*");
-	auto edge = new OverEdge(s, nullptr, false);
-	edges->addEdge(edge);
+        auto s = new std::string("*");
+        auto edge = new OverEdge(s, nullptr, false);
+        edges->addEdge(edge);
         $$ = new OverClause(edges);
     }
     | KW_OVER over_edges {
-	$$ = new OverClause($2);
+        $$ = new OverClause($2);
     }
     ;
 
@@ -693,11 +693,11 @@ edge_key_ref:
     var_ref_expression R_ARROW var_ref_expression AT var_ref_expression {
         $$ = new EdgeKeyRef($1, $3, $5, false);
     }
-	|
+    |
     input_ref_expression R_ARROW input_ref_expression {
         $$ = new EdgeKeyRef($1, $3, nullptr);
     }
-	|
+    |
     var_ref_expression R_ARROW var_ref_expression {
         $$ = new EdgeKeyRef($1, $3, nullptr, false);
     }
