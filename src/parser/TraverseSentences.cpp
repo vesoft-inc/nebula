@@ -261,4 +261,9 @@ std::string FetchEdgesSentence::toString() const {
     }
     return buf;
 }
+
+std::string FindPathSentence::toString() const {
+    // TODO
+    return "";
+}
 }   // namespace nebula

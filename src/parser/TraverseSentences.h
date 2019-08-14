@@ -483,5 +483,54 @@ private:
     std::unique_ptr<EdgeKeyRef>     keyRef_;
     std::unique_ptr<YieldClause>    yieldClause_;
 };
+
+class FindPathSentence final : public Sentence {
+public:
+    explicit FindPathSentence(bool isShortest) {
+        kind_ = Kind::kFindPath;
+        isShortest_ = isShortest;
+    }
+
+    void setFrom(FromClause *clause) {
+        from_.reset(clause);
+    }
+
+    void setTo(ToClause *clause) {
+        to_.reset(clause);
+    }
+
+    void setStep(StepClause *clause) {
+        step_.reset(clause);
+    }
+
+    void setWhere(WhereClause *clause) {
+        where_.reset(clause);
+    }
+
+    FromClause* from() const {
+        return from_.get();
+    }
+
+    ToClause* to() const {
+        return to_.get();
+    }
+
+    StepClause* step() const {
+        return step_.get();
+    }
+
+    WhereClause* where() const {
+        return where_.get();
+    }
+
+    std::string toString() const override;
+
+private:
+    bool                            isShortest_;
+    std::unique_ptr<FromClause>     from_;
+    std::unique_ptr<ToClause>       to_;
+    std::unique_ptr<StepClause>     step_;
+    std::unique_ptr<WhereClause>    where_;
+};
 }   // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_

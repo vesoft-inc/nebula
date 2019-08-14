@@ -132,4 +132,15 @@ std::string YieldClause::toString() const {
     return buf;
 }
 
+std::string ToClause::toString() const {
+    std::string buf;
+    buf.reserve(256);
+    buf += "FROM ";
+    if (isRef()) {
+        buf += ref_->toString();
+    } else {
+        buf += vidList_->toString();
+    }
+    return buf;
+}
 }   // namespace nebula

@@ -240,6 +240,34 @@ private:
     bool                                        distinct_;
 };
 
-}  // namespace nebula
 
+class ToClause final {
+public:
+    explicit ToClause(VertexIDList *vidList) {
+        vidList_.reset(vidList);
+    }
+
+    explicit ToClause(Expression *ref) {
+        ref_.reset(ref);
+    }
+
+    auto vidList() const {
+        return vidList_->vidList();
+    }
+
+    auto isRef() const {
+        return ref_ != nullptr;
+    }
+
+    auto ref() const {
+        return ref_.get();
+    }
+
+    std::string toString() const;
+
+private:
+    std::unique_ptr<VertexIDList>               vidList_;
+    std::unique_ptr<Expression>                 ref_;
+};
+}   // namespace nebula
 #endif  // PARSER_CLAUSES_H_
