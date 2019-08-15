@@ -36,8 +36,8 @@ private:
     LimitSentence                                            *sentence_{nullptr};
     std::unique_ptr<InterimResult>                            inputs_{nullptr};
     std::vector<cpp2::RowValue>                               rows_;
-    uint64_t                                                  skip_{0};
-    uint64_t                                                  count_{0};
+    int64_t                                                   skip_{-1};
+    int64_t                                                   count_{-1};
 };
 }  // namespace graph
 }  // namespace nebula

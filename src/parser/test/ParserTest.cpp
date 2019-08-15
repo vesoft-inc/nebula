@@ -1390,6 +1390,12 @@ TEST(Parser, Limit) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "GO FROM 1 OVER work | LIMIT 1 OFFSET 2";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
     // ERROR
     {
         GQLParser parser;

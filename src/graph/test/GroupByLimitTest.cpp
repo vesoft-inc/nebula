@@ -31,9 +31,15 @@ protected:
 TEST_F(GroupByLimitTest, SyntaxError) {
     {
         cpp2::ExecutionResponse resp;
-        auto query = "LIMIT 5";
+        auto query = "GO FROM 1 OVER server | LIMIT -1, 2";
         auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto query = "GO FROM 1 OVER server | LIMIT 1, -2";
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
     }
 }
 
@@ -41,7 +47,7 @@ TEST_F(GroupByLimitTest, LimitTest) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Marco Belinelli"];
-        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name as name"
+        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name AS name"
                     " | ORDER BY $-.name | LIMIT 5";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -59,7 +65,7 @@ TEST_F(GroupByLimitTest, LimitTest) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Marco Belinelli"];
-        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name as name | "
+        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name AS name | "
                     "ORDER BY $-.name | LIMIT 2,2";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -69,14 +75,22 @@ TEST_F(GroupByLimitTest, LimitTest) {
                 {"Hornets"},
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
+
+        // use OFFSET
+        auto *fmt1 = "GO FROM %ld OVER serve YIELD $$.team.name AS name | "
+                     "ORDER BY $-.name | LIMIT 2 OFFSET 2";
+        query = folly::stringPrintf(fmt1, player.vid());
+        code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_TRUE(verifyResult(resp, expected, false));
     }
     // test pipe output
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Marco Belinelli"];
-        auto *fmt = "GO FROM %ld OVER like YIELD $$.player.name as name, like._dst as id "
+        auto *fmt = "GO FROM %ld OVER like YIELD $$.player.name AS name, like._dst AS id "
                     "| ORDER BY $-.name | LIMIT 1 "
-                    "| GO FROM $-.id OVER like YIELD $$.player.name as name "
+                    "| GO FROM $-.id OVER like YIELD $$.player.name AS name "
                     "| ORDER BY $-.name | LIMIT 2";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -87,11 +101,21 @@ TEST_F(GroupByLimitTest, LimitTest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected, false));
     }
+    // Test count is 0
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Danny Green"];
+        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name AS name | LIMIT 1 OFFSET 0";
+        auto query = folly::stringPrintf(fmt, player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        ASSERT_EQ(nullptr, resp.get_rows());
+    }
     // Test less limit
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Danny Green"];
-        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name as name | LIMIT 5";
+        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name AS name | LIMIT 5";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -101,7 +125,7 @@ TEST_F(GroupByLimitTest, LimitTest) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Danny Green"];
-        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name as name | LIMIT 3, 2";
+        auto *fmt = "GO FROM %ld OVER serve YIELD $$.team.name AS name | LIMIT 3, 2";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

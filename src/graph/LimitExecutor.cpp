@@ -18,11 +18,11 @@ LimitExecutor::LimitExecutor(Sentence *sentence, ExecutionContext *ectx) : Trave
 Status LimitExecutor::prepare() {
     skip_ = sentence_->skip();
     if (skip_ < 0) {
-        return Status::Error("skip `%ld' is illegal", skip_);
+        return Status::SyntaxError("skip `%ld' is illegal", skip_);
     }
     count_ = sentence_->count();
     if (count_ < 0) {
-        return Status::Error("count `%ld' is illegal", count_);
+        return Status::SyntaxError("count `%ld' is illegal", count_);
     }
 
     return Status::OK();
@@ -31,21 +31,20 @@ Status LimitExecutor::prepare() {
 
 void LimitExecutor::execute() {
     FLOG_INFO("Executing Limit: %s", sentence_->toString().c_str());
-    if (inputs_ == nullptr) {
+    if (inputs_ == nullptr || count_ == 0) {
         DCHECK(onFinish_);
         onFinish_();
         return;
     }
 
     auto inRows = inputs_->getRows();
-    if (inRows.size() > (skip_ + count_)) {
+    if (inRows.size() > static_cast<uint64_t>(skip_ + count_)) {
         rows_.resize(count_);
         rows_.assign(inRows.begin() + skip_, inRows.begin() + skip_ + count_);
-    } else if (inRows.size() > skip_ && inRows.size() <= (skip_ + count_)) {
+    } else if (inRows.size() > static_cast<uint64_t>(skip_) &&
+                   inRows.size() <= static_cast<uint64_t>(skip_ + count_)) {
         rows_.resize(inRows.size() - skip_);
         rows_.assign(inRows.begin() + skip_, inRows.end());
-    } else {
-        rows_.resize(0);
     }
 
     if (onResult_) {

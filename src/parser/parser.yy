@@ -106,7 +106,7 @@ class GraphScanner;
 %token KW_ROLES KW_BY KW_DOWNLOAD KW_HDFS
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL_DURATION KW_TTL_COL
-%token KW_ORDER KW_ASC KW_LIMIT
+%token KW_ORDER KW_ASC KW_LIMIT KW_OFFSET
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_DATA
@@ -812,6 +812,7 @@ to_clause
 limit_sentence
     : KW_LIMIT INTEGER { $$ = new LimitSentence(0, $2); }
     | KW_LIMIT INTEGER COMMA INTEGER { $$ = new LimitSentence($2, $4); }
+    | KW_LIMIT INTEGER KW_OFFSET INTEGER { $$ = new LimitSentence($2, $4); }
     ;
 
 use_sentence
