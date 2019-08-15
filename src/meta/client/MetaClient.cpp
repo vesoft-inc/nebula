@@ -9,6 +9,7 @@
 #include "network/NetworkUtils.h"
 #include "meta/NebulaSchemaProvider.h"
 #include "meta/ClusterIdMan.h"
+#include "meta/GflagsManager.h"
 
 DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
@@ -1226,9 +1227,8 @@ void MetaClient::setGflagsModule(const cpp2::ConfigModule& module) {
         } else {
             LOG(ERROR) << "Should not reach here";
         }
-    } else {
-        LOG(ERROR) << "Should not reach here";
     }
+    gflagsDeclared_ = GflagsManager::declareGflags(gflagsModule_);
 }
 
 void MetaClient::loadCfgThreadFunc() {
@@ -1237,6 +1237,13 @@ void MetaClient::loadCfgThreadFunc() {
 }
 
 void MetaClient::loadCfg() {
+    if (!configReady_) {
+        auto ret = regConfig(gflagsDeclared_).get();
+        if (ret.ok()) {
+            LOG(INFO) << "Register gflags ok " << gflagsDeclared_.size();
+            configReady_ = true;
+        }
+    }
     // only load current module's config is enough
     auto ret = listConfigs(gflagsModule_).get();
     if (ret.ok()) {

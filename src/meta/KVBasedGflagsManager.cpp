@@ -22,8 +22,8 @@ KVBasedGflagsManager::~KVBasedGflagsManager() {
 
 Status KVBasedGflagsManager::init() {
     getGflagsModule();
-    declareGflags();
-    return registerGflags();
+    auto gflagsDeclared = declareGflags(module_);
+    return registerGflags(std::move(gflagsDeclared));
 }
 
 folly::Future<StatusOr<bool>>
@@ -48,15 +48,6 @@ KVBasedGflagsManager::listConfigs(const cpp2::ConfigModule& module) {
     return Status::NotSupported();
 }
 
-folly::Future<StatusOr<bool>>
-KVBasedGflagsManager::registerConfig(const cpp2::ConfigModule& module, const std::string& name,
-                                     const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
-                                     const std::string& value) {
-    UNUSED(module); UNUSED(name); UNUSED(type); UNUSED(mode); UNUSED(value);
-    LOG(FATAL) << "Unimplement!";
-    return Status::NotSupported();
-}
-
 void KVBasedGflagsManager::getGflagsModule() {
     // get current process according to gflags pid_file
     gflags::CommandLineFlagInfo pid;
@@ -71,18 +62,16 @@ void KVBasedGflagsManager::getGflagsModule() {
         } else {
             LOG(ERROR) << "Should not reach here";
         }
-    } else {
-        LOG(ERROR) << "Should not reach here";
     }
 }
 
-Status KVBasedGflagsManager::registerGflags() {
+Status KVBasedGflagsManager::registerGflags(const std::vector<cpp2::ConfigItem>& gflagsDeclared) {
     // based on kv, so we will retry until register config successfully
     bool succeeded = false;
     while (!succeeded) {
         std::vector<kvstore::KV> data;
         folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
-        for (const auto& item : gflagsDeclared_) {
+        for (const auto& item : gflagsDeclared) {
             auto module = item.get_module();
             auto name = item.get_name();
             auto type = item.get_type();

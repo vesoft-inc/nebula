@@ -23,16 +23,17 @@ std::string GflagsManager::gflagsValueToThriftValue<std::string>(
     return flag.current_value;
 }
 
-void GflagsManager::declareGflags() {
+std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigModule& module) {
     // declare all gflags in ClientBasedGflagsManager
     std::vector<gflags::CommandLineFlagInfo> flags;
+    std::vector<cpp2::ConfigItem> configItems;
     gflags::GetAllFlags(&flags);
     for (auto& flag : flags) {
         auto& name = flag.name;
         auto& type = flag.type;
         cpp2::ConfigType cType;
         // default config type will take effect after reboot
-        cpp2::ConfigMode mode = cpp2::ConfigMode::REBOOT;
+        cpp2::ConfigMode mode = cpp2::ConfigMode::IMMUTABLE;
         VariantType value;
         std::string valueStr;
 
@@ -60,13 +61,14 @@ void GflagsManager::declareGflags() {
         if (name == "load_data_interval_secs") {
             mode = cpp2::ConfigMode::MUTABLE;
         }
-        if (module_ == cpp2::ConfigModule::META) {
+        if (module == cpp2::ConfigModule::META) {
             // all config of meta is immutable for now
             mode = cpp2::ConfigMode::IMMUTABLE;
         }
 
-        gflagsDeclared_.emplace_back(toThriftConfigItem(module_, name, cType, mode, valueStr));
+        configItems.emplace_back(toThriftConfigItem(module, name, cType, mode, valueStr));
     }
+    return configItems;
 }
 
 std::string toThriftValueStr(const cpp2::ConfigType& type, const VariantType& value) {

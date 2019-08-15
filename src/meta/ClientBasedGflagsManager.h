@@ -35,17 +35,9 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module) override;
 
-    folly::Future<StatusOr<bool>> registerConfig(const cpp2::ConfigModule& module,
-                                                 const std::string& name,
-                                                 const cpp2::ConfigType& type,
-                                                 const cpp2::ConfigMode& mode,
-                                                 const std::string& defaultValue) override;
-
-    Status init() override;
+    Status registerGflags(const std::vector<cpp2::ConfigItem>& items);
 
 private:
-    Status registerGflags();
-
     template<typename ValueType>
     folly::Future<StatusOr<bool>> set(const cpp2::ConfigModule& module, const std::string& name,
                                       const cpp2::ConfigType& type, const ValueType& value);

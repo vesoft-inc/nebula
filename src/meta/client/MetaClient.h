@@ -349,6 +349,8 @@ private:
     MetaConfigMap         metaConfigMap_;
     folly::RWSpinLock     configCacheLock_;
     cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
+    std::atomic_bool      configReady_{false};
+    std::vector<cpp2::ConfigItem> gflagsDeclared_;
 };
 
 }  // namespace meta

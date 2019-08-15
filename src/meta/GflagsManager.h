@@ -29,27 +29,18 @@ public:
     virtual folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module) = 0;
 
-    virtual folly::Future<StatusOr<bool>> registerConfig(const cpp2::ConfigModule& module,
-                                                         const std::string& name,
-                                                         const cpp2::ConfigType& type,
-                                                         const cpp2::ConfigMode& mode,
-                                                         const std::string& defaultValue) = 0;
-
-    virtual Status init() = 0;
+    static std::vector<cpp2::ConfigItem> declareGflags(const cpp2::ConfigModule& module);
 
 protected:
     virtual ~GflagsManager() = default;
 
-    void declareGflags();
-
     template<typename ValueType>
-    std::string gflagsValueToThriftValue(const gflags::CommandLineFlagInfo& flag);
-
-    cpp2::ConfigModule                  module_{cpp2::ConfigModule::UNKNOWN};
-    std::vector<cpp2::ConfigItem>       gflagsDeclared_;
+    static std::string gflagsValueToThriftValue(const gflags::CommandLineFlagInfo& flag);
 };
 
 std::string toThriftValueStr(const cpp2::ConfigType& type, const VariantType& value);
+
+cpp2::ConfigMode toThriftConfigMode(const std::string& key);
 
 cpp2::ConfigItem toThriftConfigItem(const cpp2::ConfigModule& module, const std::string& name,
                                     const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
