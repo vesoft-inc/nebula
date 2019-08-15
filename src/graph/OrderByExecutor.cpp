@@ -150,8 +150,9 @@ Status OrderByExecutor::beforeExecute() {
 }
 
 std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
+    auto result = std::make_unique<InterimResult>(std::move(colNames_));
     if (rows_.empty()) {
-        return nullptr;
+        return std::move(result);
     }
 
     auto schema = inputs_->schema();
@@ -187,7 +188,8 @@ std::unique_ptr<InterimResult> OrderByExecutor::setupInterimResult() {
         rsWriter->addRow(writer);
     }
 
-    return std::make_unique<InterimResult>(std::move(rsWriter));
+    result->setInterim(std::move(rsWriter));
+    return std::move(result);
 }
 
 void OrderByExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
@@ -195,15 +197,7 @@ void OrderByExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
         return;
     }
 
-    auto schema = inputs_->schema();
-    std::vector<std::string> columnNames;
-    columnNames.reserve(schema->getNumFields());
-    auto field = schema->begin();
-    while (field) {
-        columnNames.emplace_back(field->getName());
-        ++field;
-    }
-    resp.set_column_names(std::move(columnNames));
+    resp.set_column_names(std::move(colNames_));
     resp.set_rows(std::move(rows_));
 }
 

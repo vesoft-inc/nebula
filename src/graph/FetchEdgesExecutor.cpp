@@ -327,7 +327,6 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
         while (iter) {
-            VLOG(3) << "collect.";
             auto collector = std::make_unique<Collector>(eschema.get());
             auto writer = std::make_unique<RowWriter>(outputSchema);
 

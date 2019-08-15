@@ -352,7 +352,8 @@ Status GoExecutor::setupStarts() {
         inputs = varInputs;
     }
     // No error happened, but we are having empty inputs
-    if (inputs == nullptr) {
+    if (inputs == nullptr
+            || (inputs != nullptr && !inputs->hasData())) {
         return Status::OK();
     }
 
@@ -361,8 +362,12 @@ Status GoExecutor::setupStarts() {
         return std::move(result).status();
     }
     starts_ = std::move(result).value();
-    index_ = inputs->buildIndex(*colname_);
-    DCHECK(index_ != nullptr);
+
+    auto indexResult = inputs->buildIndex(*colname_);
+    if (!indexResult.ok()) {
+        return std::move(indexResult).status();
+    }
+    index_ = std::move(indexResult).value();
     return Status::OK();
 }
 
@@ -538,10 +543,14 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
     } else {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(getResultColumnNames());
-
-        if (outputs != nullptr) {
-            auto rows = outputs->getRows();
-            resp_->set_rows(std::move(rows));
+        if (outputs != nullptr && outputs->hasData()) {
+            auto ret = outputs->getRows();
+            if (!ret.ok()) {
+                LOG(ERROR) << "Get rows failed: " << ret.status();
+                onError_(std::move(ret).status());
+                return;
+            }
+            resp_->set_rows(std::move(ret).value());
         }
     }
     DCHECK(onFinish_);
@@ -670,6 +679,7 @@ std::vector<std::string> GoExecutor::getResultColumnNames() const {
 
 bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<InterimResult> &result) {
     // Generic results
+    result = std::make_unique<InterimResult>(getResultColumnNames());
     std::shared_ptr<SchemaWriter> schema;
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
@@ -743,17 +753,19 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
     if (!processFinalResult(rpcResp, cb)) {
         return false;
     }
-    // No results populated
+
     if (rsWriter != nullptr) {
-        result = std::make_unique<InterimResult>(std::move(rsWriter));
+        result->setInterim(std::move(rsWriter));
     }
     return true;
 }
 
 
 void GoExecutor::onEmptyInputs() {
+    auto resultColNames = getResultColumnNames();
+    auto outputs = std::make_unique<InterimResult>(std::move(resultColNames));
     if (onResult_) {
-        onResult_(nullptr);
+        onResult_(std::move(outputs));
     } else if (resp_ == nullptr) {
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
     }
