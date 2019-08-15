@@ -26,29 +26,29 @@ By default, the config files are under `/usr/local/nebula/etc`, you should modif
 
 In order to enable multi copy Meta service, you should set the meta addresses split by comma into `meta_server_addrs`.
 
-Using `data_path` to set `Meta` and `Storage`'s underlying storage directory.
+Use `data_path` to set `Meta` and `Storage`'s underlying storage directory.
 
 ***
 
 #### StartUp Nebula Cluster
 
-Currently, we have support `scripts/services.sh` to management the nebula cluster.
+Currently, we support `scripts/services.sh` to manage the nebula cluster.
 
 You can `start`, `stop` and `restart` the cluster using this script.
 
-It's looks like the following command:
+It looks like the following command:
 
 ```
 scripts/services.sh <start|stop|restart|status|kill>
 ```
 
-The metas, storages and graphs contain the host of them.
+The metas, storages and graphs contain the host of themselves.
 
 ***
 
 #### Config reference
 
-**Meta Service** support the following config properties.
+**Meta Service** supports the following config properties.
 
 Property Name               | Default Value            | Description
 --------------------------- | ------------------------ | -----------
@@ -68,7 +68,7 @@ Property Name               | Default Value            | Description
 `load_config_interval_secs` | 2 * 60                   | Load config interval.
 `meta_ingest_thread_num`    | 3.                       | Meta daemon's ingest thread number.
 
-**Storage Service** support the following config properties.
+**Storage Service** supports the following config properties.
 
 Property Name                       | Default Value              | Description
 ----------------------------------- | -------------------------- | -----------
@@ -84,7 +84,7 @@ Property Name                       | Default Value              | Description
 `storage_http_thread_num`           | 3                          | Number of storage daemon's http thread.
 `num_worker_threads`                | 32                         | Number of workers.
 `engine_type`                       | rocksdb                    | rocksdb, memory...
-`custom_filter_interval_secs`       | 24 * 3600                  | interval to trigger custom compaction.
+`custom_filter_interval_secs`       | 24 * 3600                  | Interval to trigger custom compaction.
 `num_workers`                       | 4                          | Number of worker threads.
 `rocksdb_disable_wal`               | false                      | Whether to disable the WAL in rocksdb.
 `rocksdb_db_options`                | ""                         | DBOptions, each option will be given as <option_name>:<option_value> separated by.
@@ -101,7 +101,7 @@ Property Name                       | Default Value              | Description
 `raft_heartbeat_interval_secs`      | 5                          | Seconds between each heartbeat.
 `max_batch_size`                    | 256                        | The max number of logs in a batch.
 
-**Graph Service** support the following config properties.
+**Graph Service** supports the following config properties.
 
 Property Name                   | Default Value            | Description
 ------------------------------- | ------------------------ | -----------
@@ -124,7 +124,7 @@ Property Name                   | Default Value            | Description
 
 
 
-**Web Service** support the following config properties.
+**Web Service** supports the following config properties.
 
 Property Name          | Default Value | Description
 ---------------------- | ------------- | -----------
@@ -137,7 +137,7 @@ Property Name          | Default Value | Description
 `ws_storage_http_port` | 12000         | Port to listen on Storage with HTTP protocol.
 `ws_storage_h2_port`   | 12002         | Port to listen on Storage with HTTP/2 protocol.
 
-**Console** support the following config properties.
+**Console** supports the following config properties.
 
 Property Name            | Default Value | Description
 ------------------------ | ------------- | -----------
