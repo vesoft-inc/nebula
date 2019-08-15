@@ -18,7 +18,9 @@ public:
     static std::unique_ptr<test::ServerContext> mockGraphServer(uint32_t port) {
         auto sc = std::make_unique<test::ServerContext>();
         auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-        auto interface = std::make_shared<GraphService>(threadPool);
+        auto interface = std::make_shared<GraphService>();
+        auto status = interface->init(threadPool);
+        CHECK(status.ok()) << status;
         sc->mockCommon("graph", port, interface);
         LOG(INFO) << "Starting the graph Daemon on port " << sc->port_;
         return sc;
