@@ -15,7 +15,6 @@
 #include "meta/ServerBasedSchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "meta/test/TestUtils.h"
-#include "meta/ClusterManager.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
@@ -49,9 +48,7 @@ TEST(MetaClientTest, InterfacesTest) {
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-        auto r = client->addHosts(hosts).get();
-        ASSERT_TRUE(r.ok());
-        TestUtils::registerHB(hosts);
+        TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
@@ -308,10 +305,8 @@ TEST(MetaClientTest, TagTest) {
     auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
     auto client = std::make_shared<MetaClient>(threadPool, localhosts);
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-    auto r = client->addHosts(hosts).get();
-    ASSERT_TRUE(r.ok());
     client->waitForMetadReady();
-    TestUtils::registerHB(hosts);
+    TestUtils::registerHB(sc->kvStore_.get(), hosts);
     auto ret = client->createSpace("default_space", 9, 3).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
@@ -422,9 +417,7 @@ TEST(MetaClientTest, DiffTest) {
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}};
-        auto r = client->addHosts(hosts).get();
-        ASSERT_TRUE(r.ok());
-        TestUtils::registerHB(hosts);
+        TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
@@ -457,7 +450,6 @@ TEST(MetaClientTest, DiffTest) {
 }
 
 TEST(MetaClientTest, HeartbeatTest) {
-    ActiveHostsMan::instance()->reset();
     FLAGS_load_data_interval_secs = 5;
     FLAGS_heartbeat_interval_secs = 1;
     const nebula::ClusterID kClusterId = 10;
@@ -470,21 +462,17 @@ TEST(MetaClientTest, HeartbeatTest) {
     auto listener = std::make_unique<TestListener>();
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
-    auto clusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", "", kClusterId);
+
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(localIp, 10001)},
                                                localHost,
-                                               clusterMan.get(),
+                                               kClusterId,
                                                true);  // send heartbeat
-    client->addHosts({localHost});
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {localHost};
-        auto r = client->addHosts(hosts).get();
-        ASSERT_TRUE(r.ok());
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
@@ -492,7 +480,7 @@ TEST(MetaClientTest, HeartbeatTest) {
         }
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
-    ASSERT_EQ(1, ActiveHostsMan::instance()->getActiveHosts().size());
+    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(sc->kvStore_.get()).size());
 }
 
 }  // namespace meta
