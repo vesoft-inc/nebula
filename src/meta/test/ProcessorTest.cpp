@@ -1286,7 +1286,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
 
     // Alter edge with ttl
     {
-        // only set ttl_duration, failed
+        // Only set ttl_duration, failed
         cpp2::AlterEdgeReq req;
         nebula::cpp2::SchemaProp schemaProp;
         schemaProp.set_ttl_duration(100);
@@ -1405,6 +1405,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
                                              cpp2::AlterSchemaOp::ADD,
                                              std::move(addSch));
         items.emplace_back(std::move(addItem));
+
         req.set_space_id(1);
         req.set_edge_name("edge_0");
         req.set_edge_items(items);
