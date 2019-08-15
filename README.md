@@ -1,6 +1,8 @@
-![](docs/logo_1.jpg)
+![](docs/logo.png)
 
-[![LICENSE](https://img.shields.io/badge/release-v1.0.0--beta-green)](https://github.com/vesoft-inc/nebula/releases)
+[![LICENSE](https://img.shields.io/badge/license-Apache--2.0-green)](#licensing)
+
+[![GitHub release](https://img.shields.io/badge/release-v1.0.0--beta-blue)](https://github.com/vesoft-inc/nebula/releases)
 
 ## Nebula
 
