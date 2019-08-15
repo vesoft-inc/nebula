@@ -1,4 +1,4 @@
-![](docs/logo.jpg)
+![](docs/logo.png)
 
 [![LICENSE](https://img.shields.io/badge/release-v1.0.0--beta-green)](https://github.com/vesoft-inc/nebula/releases)
 
