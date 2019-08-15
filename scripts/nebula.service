@@ -119,7 +119,8 @@ function start_daemon {
     pid_file=$(get_pid_file_from_config ${config})
     if [[ -f ${pid_file} ]]; then
         if is_process_running ${pid_file}; then
-            ERROR_AND_EXIT "Process already running: $(cat ${pid_file})"
+            ERROR "${daemon_name} already running: $(cat ${pid_file})"
+            return 1
         fi
     fi
 
