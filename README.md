@@ -12,7 +12,7 @@ As a graph database, **Nebula** has these features
 * SQL-like query language
 
 ## How can I get Nebula ##
-**Nebula** source code is available here on [`GitHub`](https://github.com/vesoft-inc/nebula). The currently release is version 0.1. Please refer the `Release Notes` here for details. You can also download [`docker` ](https://www.docker.com/get-started)image to try it.
+**Nebula** source code is available here on [`GitHub`](https://github.com/vesoft-inc/nebula). The currently release is version 0.1. Please refer the `Release Notes` here for details. You can also download [`docker` ](https://hub.docker.com/r/vesoft/nebula-graph) image to try it.
 More details on how to get Nebula image click [`Get Started`](https://github.com/vesoft-inc/nebula/blob/master/docs/get-started.md).
 
 ## How can I contribute ##
