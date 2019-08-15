@@ -19,6 +19,7 @@
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
 
+
 namespace nebula {
 namespace meta {
 
@@ -38,16 +39,16 @@ TEST(MetaClientTest, InterfacesTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+    auto clientPort = network::NetworkUtils::getAvailablePort();
+    HostAddr localHost{localIp, clientPort};
     auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-
-    client->init();
+                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
+                                               localHost);
+    client->waitForMetadReady();
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-        auto r = client->addHosts(hosts).get();
-        ASSERT_TRUE(r.ok());
-        TestUtils::registerHB(hosts);
+        TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
@@ -301,14 +302,11 @@ TEST(MetaClientTest, TagTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-
-    client->init();
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-    auto r = client->addHosts(hosts).get();
-    ASSERT_TRUE(r.ok());
-    TestUtils::registerHB(hosts);
+    client->waitForMetadReady();
+    TestUtils::registerHB(sc->kvStore_.get(), hosts);
     auto ret = client->createSpace("default_space", 9, 3).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     spaceId = ret.value();
@@ -391,7 +389,7 @@ public:
         partChanged++;
     }
 
-    HostAddr getLocalHost() override {
+    HostAddr getLocalHost() {
         return HostAddr(0, 0);
     }
 
@@ -413,16 +411,13 @@ TEST(MetaClientTest, DiffTest) {
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
     auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
-
+                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    client->waitForMetadReady();
     client->registerListener(listener.get());
-    client->init();
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}};
-        auto r = client->addHosts(hosts).get();
-        ASSERT_TRUE(r.ok());
-        TestUtils::registerHB(hosts);
+        TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
@@ -457,23 +452,27 @@ TEST(MetaClientTest, DiffTest) {
 TEST(MetaClientTest, HeartbeatTest) {
     FLAGS_load_data_interval_secs = 5;
     FLAGS_heartbeat_interval_secs = 1;
+    const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockMetaServer(10001, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(10001, rootPath.path(), kClusterId);
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
     auto listener = std::make_unique<TestListener>();
+    auto clientPort = network::NetworkUtils::getAvailablePort();
+    HostAddr localHost{localIp, clientPort};
+
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(localIp, 10001)},
+                                               localHost,
+                                               kClusterId,
                                                true);  // send heartbeat
+    client->waitForMetadReady();
     client->registerListener(listener.get());
-    client->init();
     {
         // Test addHost, listHosts interface.
-        std::vector<HostAddr> hosts = {{0, 0}};
-        auto r = client->addHosts(hosts).get();
-        ASSERT_TRUE(r.ok());
+        std::vector<HostAddr> hosts = {localHost};
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
@@ -481,7 +480,7 @@ TEST(MetaClientTest, HeartbeatTest) {
         }
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
-    ASSERT_EQ(1, ActiveHostsMan::instance()->getActiveHosts().size());
+    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(sc->kvStore_.get()).size());
 }
 
 }  // namespace meta

@@ -126,6 +126,21 @@ public:
                            const std::string& prefix,
                            KVCallback cb) override;
 
+    ResultCode ingest(GraphSpaceID spaceId) override;
+
+    ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID,
+                                                    PartitionID) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode compact(GraphSpaceID) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode flush(GraphSpaceID) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
 private:
     std::string getRowKey(const std::string& key) {
         return key.substr(sizeof(PartitionID), key.size() - sizeof(PartitionID));

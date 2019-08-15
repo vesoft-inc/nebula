@@ -1,4 +1,4 @@
-add_library(
+nebula_add_library(
     storage_service_handler OBJECT
     StorageServiceHandler.cpp
     QueryBaseProcessor.cpp
@@ -9,35 +9,23 @@ add_library(
     QueryEdgePropsProcessor.cpp
     QueryStatsProcessor.cpp
 )
-add_dependencies(
-    storage_service_handler
-    base_obj
-    storage_thrift_obj
-    kvstore_obj
-    dataman_obj
-    thread_obj
-    stats_obj
-)
 
-add_library(
+nebula_add_library(
     storage_http_handler OBJECT
+    StorageHttpIngestHandler.cpp
     StorageHttpStatusHandler.cpp
     StorageHttpDownloadHandler.cpp
-)
-add_dependencies(
-    storage_http_handler
-    base_obj
+    StorageHttpAdminHandler.cpp
 )
 
-add_library(
+nebula_add_library(
     storage_client OBJECT
     client/StorageClient.cpp
 )
-add_dependencies(
-    storage_client
-    base_obj
-    storage_thrift_obj
-    dataman_obj
+
+nebula_add_library(
+    storage_server OBJECT
+    StorageServer.cpp
 )
 
 add_subdirectory(test)

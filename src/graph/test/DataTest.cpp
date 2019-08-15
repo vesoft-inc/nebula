@@ -52,17 +52,6 @@ std::unique_ptr<GraphClient>         DataTest::client_{nullptr};
 AssertionResult DataTest::prepareSchema() {
     {
         cpp2::ExecutionResponse resp;
-        std::string host = folly::stringPrintf("127.0.0.1:%u", gEnv->storageServerPort());
-        std::string cmd = "ADD HOSTS " + host;
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd
-                               << " failed, error code "<< static_cast<int32_t>(code);
-        }
-        meta::TestUtils::registerHB(network::NetworkUtils::toHosts(host).value());
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE SPACE mySpace(partition_num=1, replica_factor=1)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
@@ -106,6 +95,26 @@ AssertionResult DataTest::prepareSchema() {
                                << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
+    // Test same propName diff tyep in diff tags
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG employee(name int)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
+        }
+    }
+    // Test same propName same type in diff tags
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG interest(name string)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
+        }
+    }
     sleep(FLAGS_load_data_interval_secs + 3);
     return TestOK();
 }
@@ -119,16 +128,6 @@ AssertionResult DataTest::removeData() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = folly::stringPrintf("REMOVE HOSTS 127.0.0.1:%u",
-                                              gEnv->storageServerPort());
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
-        }
-    }
-
     return TestOK();
 }
 
@@ -266,6 +265,62 @@ TEST_F(DataTest, InsertVertex) {
         using valueType = std::tuple<int64_t, std::string>;
         std::vector<valueType> expected{
             {20190901003, "Aero"},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Test same prop name diff type in diff tags
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age),employee(name) "
+                          "VALUES hash(\"Joy\"):(\"Joy\", 18, 123),"
+                          "hash(\"Petter\"):(\"Petter\", 19, 456)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "hash(\"Joy\")->hash(\"Petter\"):(90)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM hash(\"Joy\") OVER schoolmate YIELD $^.person.name,"
+                          "schoolmate.likeness, $$.person.name, $$.person.age,$$.employee.name";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, std::string, int64_t, int64_t>> expected = {
+            {"Joy", 90, "Petter", 19, 456},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    // Test same prop name same type in diff tags
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age),interest(name) "
+                          "VALUES hash(\"Bob\"):(\"Bob\", 19, \"basketball\")";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "hash(\"Petter\")->hash(\"Bob\"):(90)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM hash(\"Petter\") OVER schoolmate "
+                          "YIELD $^.person.name, $^.employee.name, "
+                          "schoolmate.likeness, $$.person.name,"
+                          "$$.interest.name, $$.person.age";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        using type = std::tuple<std::string, int64_t, int64_t, std::string, std::string, int64_t>;
+        std::vector<type> expected = {
+            {"Petter", 456, 90, "Bob", "basketball", 19},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

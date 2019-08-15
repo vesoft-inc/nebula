@@ -136,6 +136,12 @@ TEST(Parser, SpaceOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "SHOW CREATE SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "DROP SPACE default_space";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -213,7 +219,7 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "DESCRIBE TAG person";
+        std::string query = "SHOW CREATE TAG person";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -296,7 +302,7 @@ TEST(Parser, EdgeOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "DESCRIBE EDGE e1";
+        std::string query = "SHOW CREATE EDGE e1";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -405,7 +411,33 @@ TEST(Parser, Set) {
         GQLParser parser;
         std::string query = "GO FROM 1 OVER friend MINUS "
                             "GO FROM 2 OVER friend UNION "
+                            "GO FROM 2 OVER friend INTERSECT "
                             "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "(GO FROM 1 OVER friend | "
+                            "GO FROM 2 OVER friend) UNION "
+                            "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        // pipe have priority over set
+        std::string query = "GO FROM 1 OVER friend | "
+                            "GO FROM 2 OVER friend UNION "
+                            "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "(GO FROM 1 OVER friend UNION "
+                            "GO FROM 2 OVER friend) | "
+                            "GO FROM $- OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -739,6 +771,24 @@ TEST(Parser, AdminOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE TAG person";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE EDGE e1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, UserOperation) {
@@ -936,10 +986,16 @@ TEST(Parser, Annotation) {
     }
 }
 
-TEST(Parser, DownloadLoad) {
+TEST(Parser, DownloadAndIngest) {
     {
         GQLParser parser;
-        std::string query = "DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\" TO \"/tmp\"";
+        std::string query = "DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\"";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "INGEST";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -1015,7 +1071,6 @@ TEST(Parser, ReentrantRecoveryFromFailure) {
     }
 }
 
-
 TEST(Parser, IllegalCharacter) {
     GQLParser parser;
     {
@@ -1049,6 +1104,45 @@ TEST(Parser, Distinct) {
         std::string query = "GO FROM 1 OVER like "
                             "| GO FROM $-.id OVER like | GO FROM $-.id OVER serve "
                             "YIELD DISTINCT serve._dst, $$.team.name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, ConfigOperation) {
+    {
+        GQLParser parser;
+        std::string query = "SHOW VARIABLES";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW VARIABLES GRAPH";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES storage:name=value";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET VARIABLES Meta:name";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES load_config_interval_secs=120";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "GET VARIABLES load_config_interval_secs";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

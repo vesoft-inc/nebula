@@ -5,8 +5,11 @@
  */
 
 #include "base/Base.h"
+#include "common/base/SignalHandler.h"
 #include "network/NetworkUtils.h"
 #include <signal.h>
+#include <errno.h>
+#include <string.h>
 #include "base/Status.h"
 #include "fs/FileUtils.h"
 #include "process/ProcessUtils.h"
@@ -24,7 +27,7 @@ using nebula::network::NetworkUtils;
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
-static void setupSignalHandler();
+static Status setupSignalHandler();
 static Status setupLogging();
 static void printHelp(const char *prog);
 
@@ -114,7 +117,13 @@ int main(int argc, char *argv[]) {
 
     gServer = std::make_unique<apache::thrift::ThriftServer>();
     gServer->getIOThreadPool()->setNumThreads(FLAGS_num_netio_threads);
-    auto interface = std::make_shared<GraphService>(gServer->getIOThreadPool());
+
+    auto interface = std::make_shared<GraphService>();
+    status = interface->init(gServer->getIOThreadPool());
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
 
     gServer->setInterface(std::move(interface));
     gServer->setAddress(localIP, FLAGS_port);
@@ -130,26 +139,35 @@ int main(int argc, char *argv[]) {
     gServer->setThreadStackSizeMB(5);
 
     // Setup the signal handlers
-    setupSignalHandler();
+    status = setupSignalHandler();
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        nebula::WebService::stop();
+        return EXIT_FAILURE;
+    }
 
     FLOG_INFO("Starting nebula-graphd on %s:%d\n", localIP.c_str(), FLAGS_port);
     try {
         gServer->serve();  // Blocking wait until shut down via gServer->stop()
     } catch (const std::exception &e) {
+        nebula::WebService::stop();
         FLOG_ERROR("Exception thrown while starting the RPC server: %s", e.what());
         return EXIT_FAILURE;
     }
 
+    nebula::WebService::stop();
     FLOG_INFO("nebula-graphd on %s:%d has been stopped", localIP.c_str(), FLAGS_port);
 
     return EXIT_SUCCESS;
 }
 
 
-void setupSignalHandler() {
-    ::signal(SIGPIPE, SIG_IGN);
-    ::signal(SIGINT, signalHandler);
-    ::signal(SIGTERM, signalHandler);
+Status setupSignalHandler() {
+    return nebula::SignalHandler::install(
+        {SIGINT, SIGTERM},
+        [](nebula::SignalHandler::GeneralSignalInfo *info) {
+            signalHandler(info->sig());
+        });
 }
 
 
@@ -158,7 +176,6 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            nebula::WebService::stop();
             gServer->stop();
             break;
         default:

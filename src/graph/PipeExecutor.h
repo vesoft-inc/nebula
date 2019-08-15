@@ -30,6 +30,9 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
+    Status syntaxPreCheck();
+
+private:
     PipedSentence                              *sentence_{nullptr};
     std::unique_ptr<TraverseExecutor>           left_;
     std::unique_ptr<TraverseExecutor>           right_;

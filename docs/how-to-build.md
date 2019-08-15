@@ -21,7 +21,31 @@ The project itself includes the source code of several 3rd-party libraries, whic
   - libunwind
   - ncurses
   - readline
+  - bzip2
+  - doubleconversion
+  - fatal
+  - fbthrift
+  - folly
+  - gflags
+  - glog
+  - googletest
+  - jemalloc
+  - libevent
+  - mstch
+  - proxygen
+  - rocksdb
+  - snappy
+  - wangle
+  - zlib
+  - zstd
 
-Currently, we using `git-lfs` to manage the 3rd-party libraries. So make sure `git-lfs` have been installed before building the source code.
+### How to get 3rd-party Libraries
+[Install guide](https://github.com/vesoft-inc/nebula-3rdparty/blob/master/README.md)
 
-Please see [INSTALLING.md](https://github.com/git-lfs/git-lfs/blob/master/INSTALLING.md) for more details.
+
+### How to build
+  - 1. create build dir : `cd nebula && mkdir build && cd build`
+  - 2. generate makefile : `cmake -DNEBULA_THIRDPARTY_ROOT=${3rd-party_install_root} ..`
+  - 3. make : `make or make -j${threadnum}`
+  - 4. install: `make install`
+  - notes : the default installation dir is **/usr/local/**, if you want to change the dir, on step 2, your command can be `cmake -DCMAKE_INSTALL_PREFIX=$your_nebula_install_dir ..`
