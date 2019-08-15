@@ -44,6 +44,8 @@ public:
     // Clean all wal files
     virtual bool reset() = 0;
 
+    virtual void cleanWAL() = 0;
+
     // Scan [firstLogId, lastLogId]
     virtual std::unique_ptr<LogIterator> iterator(LogID firstLogId,
                                                   LogID lastLogId) = 0;
