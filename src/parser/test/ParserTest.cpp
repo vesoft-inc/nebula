@@ -136,6 +136,12 @@ TEST(Parser, SpaceOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "SHOW CREATE SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "DROP SPACE default_space";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -213,7 +219,7 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "DESCRIBE TAG person";
+        std::string query = "SHOW CREATE TAG person";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -296,7 +302,7 @@ TEST(Parser, EdgeOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "DESCRIBE EDGE e1";
+        std::string query = "SHOW CREATE EDGE e1";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -762,6 +768,24 @@ TEST(Parser, AdminOperation) {
     {
         GQLParser parser;
         std::string query = "SHOW EDGES";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE TAG person";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE EDGE e1";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
