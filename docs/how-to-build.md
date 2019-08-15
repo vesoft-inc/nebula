@@ -1,73 +1,66 @@
-## General
+---
+This tutorial provides an introduction to build `Nebula` code.
+---
 
 ### Compiler
 
 The project Nebula is developed using C++14, so it requires a compiler supporting C++14 features.
 
 ### How to build in Fedora29 or Fedora30
-#### dependence
+#### dependency
 
 The project itself includes the source code of several 3rd-party libraries, which usually does not exist in the OS's public application repositories. In addition to the included libraries, Nebula requires these 3rd-party utilities and libraries to be installed on the system
 
-  - autoconf
-  - automake
-  - libtool
-  - cmake
-  - bison
-  - unzip
-  - boost
-  - gperf
-  - krb5
-  - openssl
-  - libunwind
-  - ncurses
-  - readline
+```
+bash> sudo yum -y install autoconf automake libtool cmake bison unzip boost gperf krb5 openssl libunwind ncurses readline
+bash> sudo yum -y install git git-lfs
+```
 
 #### Build and install 3rd-party Libraries
-[Install guide](https://github.com/vesoft-inc/nebula-3rdparty/blob/master/README.md)
+The third-party was installed to **/opt/nebula/third-party**
 
+```
+bash> git clone git@github.com:vesoft-inc/nebula-3rdparty.git OR git clone https://github.com/vesoft-inc/nebula-3rdparty.git
+bash> cd nebula-3rdparty
+bash> cmake ./
+bash> cmake -DSKIP_JAVE_JAR=OFF  ./  # if not need to build jave client
+bash> make
+bash> sudo make install
+```
 
 #### Build nebula
-  - 1. create build dir : `cd nebula && mkdir build && cd build`
-  - 2. generate makefile : `cmake -DNEBULA_THIRDPARTY_ROOT=${3rd-party_install_root} ..`
-  - 3. make : `make or make -j${threadnum}`
-  - 4. install: `make install`
-  - notes : the default installation dir is **/usr/local/**, if you want to change the dir, on step 2, your command can be `cmake -DCMAKE_INSTALL_PREFIX=$your_nebula_install_dir ..`
+The default installation dir is **/usr/local/nebula**
 
+```
+bash> git clone git@github.com:vesoft-inc/nebula.git OR git clone https://github.com/vesoft-inc/nebula.git
+bash> cd nebula && mkdir build && cd build
+bash> cmake ..
+bash> cmake -DSKIP_JAVE_CLENT=ON ..  # if not need to build jave client
+bash> make OR make -j${threadnum}
+bash> sudo make install
+```
 
-### How to build in Centos7.5, Centos6.5, Ubuntu18.04, Ubuntu16.04
-
-**code url**
-
-- [third-party](https://github.com/vesoft-inc/nebula-3rdparty)
-- [nebula](hhttps://github.com/vesoft-inc/nebula)
-
-**dependence package url**
-
-- [centos7.5]()
-- [cemtos6.5]()
-- [ubuntu16.04/ubuntu18.04]()
+### How to build in Centos7.5
 
 #### prepare
-Step1: install tool
+**Step1**: install tools
 
-- **git-lfs**
-- **git**
+```
+bash> sudo yum -y install git git-lfs
+```
+**Step2**: install dependency
 
-Step2: install deps
+through yum install
 
-**censtos 7.5**
+```
+bash> sudo yum install -y libtool autoconf autoconf-archive automake perl-WWW-Curl libstdc++-static maven
+```
 
-- through yum install deps
-	- libtool
-	- autoconf
-	- autoconf-archive
-	- automake
-	- perl-WWW-Curl
-	- libstdc++-static
-	- maven
+through vesoft offer
 
-- download other deps from [centos7.5]()
+```
+bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
+```
 
 1) Create a system user, which home directory will be used as a shared file location
 
@@ -80,7 +73,8 @@ Please make sure the user's home directory /home/engshare is readable to all use
 2) Install all necessary rpm packages in this folder
 
 ```
-bash > rpm -ivh <rpm file name>
+bash> tar xf centos-7.5-1804.tar.gz && cd centos-7.5-1804/
+bash> rpm -ivh *.rpm
 ```
 
 3) Modify **~/.bashrc** by appending following lines to the end
@@ -96,26 +90,57 @@ alias ctest='/home/engshare/cmake/bin/ctest'
 bash> source ~/.bashrc
 ```
 
-**censtos 6.5**
+#### Build and install 3rd-party Libraries
+The third-party was installed to **/opt/nebula/third-party**
 
-- through yum install deps
-	- libtool
-	- autoconf
-	- autoconf-archive
-	- automake
-	- perl-WWW-Curl
-	- perl-YAML
-	- perl-CGI
-	- glibc-devel
-	- libstdc++-static
-	- maven
+```
+bash> git clone git@github.com:vesoft-inc/nebula-3rdparty.git OR git clone https://github.com/vesoft-inc/nebula-3rdparty.git
+bash> cd nebula-3rdparty
+bash> cmake ./
+bash> cmake -DSKIP_JAVE_JAR=OFF  ./  # if not need to build jave client
+bash> make
+bash> sudo make install
+```
 
-- download other deps from [centos6.5]()
+#### Build nebula
+The default installation dir is **/usr/local/nebula**
+
+```
+bash> git clone git@github.com:vesoft-inc/nebula.git OR git clone https://github.com/vesoft-inc/nebula.git
+bash> cd nebula && mkdir build && cd build
+bash> cmake ..
+bash> cmake -DSKIP_JAVE_CLENT=ON ..  # if not need to build jave client
+bash> make OR make -j${threadnum}
+bash> sudo make install
+```
+
+
+### How to build in Centos6.5
+
+**Step1**: install tools
+
+```
+bash> sudo yum -y install git git-lfs
+```
+**Step2**: install dependency
+
+through yum install deps
+
+```
+bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static maven
+```
+
+through vesoft offer
+
+```
+bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-6.5.tar.gz
+```
 
 1) Install all necessary rpm packages in this folder
 
 ```
-bash > sudo rpm -ivh <rpm file name>
+bash> tar xf centos-6.5.tar.gz && cd centos-6.5/
+bash> sudo rpm -ivh *.rpm
 ```
 
 2) Modify **~/.bashrc** by appending following lines to the end
@@ -133,19 +158,50 @@ alias ctest='/opt/nebula/cmake/bin/ctest'
 bash> source ~/.bashrc
 ```
 
-**ubuntu16.04 and ubuntu18.04**
+#### Build and install 3rd-party Libraries
+The third-party was installed to **/opt/nebula/third-party**
 
-- through yum install deps
-	- gcc-multilib
-	- libtool
-	- autoconf
-	- autoconf-archive
-	- automake
-	- python
-	- perl-WWW-Curl
-	- maven
+```
+bash> git clone git@github.com:vesoft-inc/nebula-3rdparty.git OR git clone https://github.com/vesoft-inc/nebula-3rdparty.git
+bash> cd nebula-3rdparty
+bash> cmake ./
+bash> cmake -DSKIP_JAVE_JAR=OFF  ./  # if not need to build jave client
+bash> make
+bash> sudo make install
+```
 
-- download other deps from [ubuntu]()
+#### Build nebula
+The default installation dir is **/usr/local/nebula**
+
+```
+bash> git clone git@github.com:vesoft-inc/nebula.git OR git clone https://github.com/vesoft-inc/nebula.git
+bash> cd nebula && mkdir build && cd build
+bash> cmake ..
+bash> cmake -DSKIP_JAVE_CLENT=ON ..  # if not need to build jave client
+bash> make OR make -j${threadnum}
+bash> sudo make install
+```
+
+### How to build in Ubuntu18.04 or Ubuntu16.04
+
+**Step1**: install tools
+
+```
+bash> sudo yum -y install git git-lfs
+```
+**Step2**: install dependency
+
+through apt-get install deps
+
+```
+bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake python perl-WWW-Curl maven
+```
+
+through vesoft offer
+
+```
+bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
+```
 
 1) Create a system user, which home directory will be used as a shared file location
 
@@ -158,7 +214,8 @@ Please make sure the user's home directory /home/engshare is readable to all use
 2) Install all necessary deb packages in this folder
 
 ```
-bash > dpkg -i <deb file name>
+bash> tar xf ubuntu1804.tar.gz && cd ubuntu1804/
+bash> dpkg -i *.deb
 ```
 
 3) Modify **~/.bashrc** by appending following lines to the end
@@ -168,64 +225,35 @@ alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gc
 
 alias ctest='/home/engshare/cmake/bin/ctest'
 ```
-3) Update **~/.bashrc**
+4) Update **~/.bashrc**
 
 ```
 bash> source ~/.bashrc
 ```
 
-#### build third-party code
-
-Step1: **clone nebula-3rdparty**
-
-```
-bash> git clone git@github.com:vesoft-inc/nebula-3rdparty.git
-```
-or
+#### Build and install 3rd-party Libraries
+The third-party was installed to **/opt/nebula/third-party**
 
 ```
-bash> git clone https://github.com/vesoft-inc/nebula-3rdparty.git
+bash> git clone git@github.com:vesoft-inc/nebula-3rdparty.git OR git clone https://github.com/vesoft-inc/nebula-3rdparty.git
+bash> cd nebula-3rdparty
+bash> cmake
+bash> cmake -DSKIP_JAVE_JAR=OFF  ./  # if not need to build jave client
+bash> make
+bash> sudo make install
 ```
 
-Step2: **build code**
-
-1) `bash> cd nebula-3rdparty/`
-
-2) `bash> cmake ./`
-
-**if not need to build jave client**
-
-`bash> cmake -DSKIP_JAVE_JAR=OFF ./`
-
-3) `bash> make install`
-
-
-#### build nebula code
-
-step1: **clone nebula**
+#### Build nebula
+The default installation dir is **/usr/local/nebula**
 
 ```
-bash> git clone git@github.com:vesoft-inc/nebula.git
+bash> git clone git@github.com:vesoft-inc/nebula.git OR git clone https://github.com/vesoft-inc/nebula.git
+bash> cd nebula && mkdir build && cd build
+bash> cmake ..
+bash> cmake -DSKIP_JAVE_CLENT=ON ..  # if not need to build jave client
+bash> make OR make -j${threadnum}
+bash> sudo make install
 ```
-or
-
-```
-bash> git clone https://github.com/vesoft-inc/nebula.git
-```
-
-Step2: **build code**
-
-1) `bash> cd nebula/`
-
-2) `bash> mkdir build && cd build`
-
-3) `bash> cmake ..`
-
-**if not need to build jave client**
-
-`bash> cmake -DSKIP_JAVE_CLENT=ON ..`
-
-4) `bash> make && make install`
 
 #### **Now build finish**
 
@@ -243,7 +271,11 @@ error info: **bison verson less than 3.0.5**
 
 **resolve**:
 
-1) download [bison-3.0.5.tar.gz](http://ftp.gnu.org/gnu/bison/bison-3.0.5.tar.gz)
+1) download bison-3.0.5.tar.gz
+
+```
+bash> wget http://ftp.gnu.org/gnu/bison/bison-3.0.5.tar.gz
+```
 
 2) build and install
 
@@ -257,6 +289,7 @@ error info: **build third-party failed, and _build.log show `No such file or dir
 
 **resolve**:
 
-`bash> cd nebula-3rdparty/ && git-lfs pull`
-
-
+```
+bash> cd nebula-3rdparty/ 
+bash> git-lfs pull
+```
