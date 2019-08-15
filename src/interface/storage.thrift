@@ -113,8 +113,8 @@ struct EdgeKey {
     // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
     // When query edge props, the field could be unset.
     2: common.EdgeType edge_type,
-    3: common.VertexID dst,
-    4: common.EdgeRanking ranking,
+    3: common.EdgeRanking ranking,
+    4: common.VertexID dst,
 }
 
 struct Edge {
