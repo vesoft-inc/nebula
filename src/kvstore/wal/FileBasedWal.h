@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include <folly/Function.h>
+#include <gtest/gtest_prod.h>
 #include "base/Cord.h"
 #include "kvstore/wal/Wal.h"
 #include "kvstore/wal/InMemoryLogBuffer.h"
@@ -23,12 +24,12 @@ struct FileBasedWalPolicy {
     // newer than ttl, but not guarantee to remove old messages right away
     int32_t ttl = 86400;
 
-    // The maximum size of each log message file (in MB). When the existing
+    // The maximum size of each log message file (in byte). When the existing
     // log file reaches this size, a new file will be created
-    size_t fileSize = 128;
+    size_t fileSize = 128 * 1024L * 1024L;
 
-    // Size of each buffer (in MB)
-    size_t bufferSize = 8;
+    // Size of each buffer (in byte)
+    size_t bufferSize = 8 * 1024L * 1024L;
 
     // Number of buffers allowed. When the number of buffers reach this
     // number, appendLogs() will be blocked until some buffers are flushed
@@ -42,6 +43,7 @@ using PreProcessor = folly::Function<bool(LogID, TermID, ClusterID, const std::s
 class FileBasedWal final
         : public Wal
         , public std::enable_shared_from_this<FileBasedWal> {
+    FRIEND_TEST(FileBasedWal, TTLTest);
 public:
     // A factory method to create a new WAL
     static std::shared_ptr<FileBasedWal> getWal(
@@ -96,6 +98,8 @@ public:
     bool rollbackToLog(LogID id) override;
 
     bool reset() override;
+
+    void cleanWAL() override;
 
     // Scan [firstLogId, lastLogId]
     // This method IS thread-safe
@@ -201,6 +205,7 @@ private:
 
     mutable std::mutex flushMutex_;
     PreProcessor preProcessor_;
+    std::atomic_int onGoingBuffersNum_{0};
 };
 
 }  // namespace wal
