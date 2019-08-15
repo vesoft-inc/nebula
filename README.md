@@ -1,4 +1,4 @@
-![横版](https://user-images.githubusercontent.com/51590253/63086502-93edce00-bf82-11e9-8a92-3ab4b92f5bc6.jpg)
+![](docs/logo.png)
 
 [![LICENSE](https://img.shields.io/badge/release-v1.0.0--beta-green)](https://github.com/vesoft-inc/nebula/releases)
 
