@@ -76,8 +76,8 @@ TEST_F(GoTest, OneStepOutBound) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "GO FROM %ld OVER like "
-                    "| GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve";
+        auto *fmt = "GO FROM %ld OVER like YIELD like._dst as id"
+                    "| GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -95,8 +95,9 @@ TEST_F(GoTest, OneStepOutBound) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "GO FROM %ld OVER like "
-                    "| ( GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve )";
+        auto *fmt =
+            "GO FROM %ld OVER like YIELD like._dst as id"
+            "| ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -118,8 +119,8 @@ TEST_F(GoTest, AssignmentSimple) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Tracy McGrady"];
-        auto *fmt = "$var = GO FROM %ld OVER like; "
-                    "GO FROM $var.like_id OVER like";
+        auto *fmt = "$var = GO FROM %ld OVER like YIELD like._dst as id; "
+                    "GO FROM $var.id OVER like";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -136,8 +137,10 @@ TEST_F(GoTest, AssignmentPipe) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Tracy McGrady"];
-        auto *fmt = "$var = (GO FROM %ld OVER like | GO FROM $-.like_id OVER like);"
-                    "GO FROM $var.like_id OVER like";
+        auto *fmt =
+            "$var = (GO FROM %ld OVER like YIELD like._dst as id | GO FROM $-.id OVER like YIELD "
+            "like._dst as id);"
+            "GO FROM $var.id OVER like";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -166,8 +169,8 @@ TEST_F(GoTest, VariableUndefined) {
 TEST_F(GoTest, AssignmentEmptyResult) {
     {
         cpp2::ExecutionResponse resp;
-        auto query = "$var = GO FROM -1 OVER like; "
-                     "GO FROM $var.like_id OVER like";
+        auto query = "$var = GO FROM -1 OVER like YIELD like._dst as id; "
+                     "GO FROM $var.id OVER like";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<uint64_t>> expected = {
@@ -231,8 +234,8 @@ TEST_F(GoTest, Distinct) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "GO FROM %ld OVER like "
-                    "| GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve "
+        auto *fmt = "GO FROM %ld OVER like YIELD like._dst as id"
+                    "| GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve "
                     "YIELD DISTINCT serve._dst, $$.team.name";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
@@ -295,8 +298,8 @@ TEST_F(GoTest, VertexNotExist) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER like "
-                    "| GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve";
+        auto *fmt = "GO FROM %ld OVER like YIELD like._dst as id"
+                    "| GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve";
         auto query = folly::stringPrintf(fmt, nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -304,8 +307,8 @@ TEST_F(GoTest, VertexNotExist) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "GO FROM %ld OVER like "
-                    "| (GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve)";
+        auto *fmt = "GO FROM %ld OVER like YIELD like._dst as id"
+                    "| (GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)";
         auto query = folly::stringPrintf(fmt, nonExistPlayerID);
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -404,8 +407,9 @@ TEST_F(GoTest, MULTI_EDGES) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt    = "GO FROM %ld OVER like, serve "
-                    "| ( GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve )";
+        auto *fmt =
+            "GO FROM %ld OVER like, serve YIELD like._dst as id"
+            "| ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code  = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -424,8 +428,9 @@ TEST_F(GoTest, MULTI_EDGES) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt    = "GO FROM %ld OVER * "
-                    "| ( GO FROM $-.like_id OVER like | GO FROM $-.like_id OVER serve )";
+        auto *fmt =
+            "GO FROM %ld OVER * YIELD like._dst as id"
+            "| ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code  = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

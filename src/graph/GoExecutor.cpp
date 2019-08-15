@@ -480,9 +480,8 @@ void GoExecutor::finishExecution(RpcResponse &&rpcResp) {
         auto edgeNames = getEdgeNamesFromResp(rpcResp);
         for (const auto &name : edgeNames) {
             auto dummy       = new std::string(name);
-            auto dummy_alias = new std::string(name + "_id");
             auto dummy_exp   = new EdgeDstIdExpression(dummy);
-            auto ptr         = std::make_unique<YieldColumn>(dummy_exp, dummy_alias);
+            auto ptr         = std::make_unique<YieldColumn>(dummy_exp);
             dummy_exp->setContext(expCtx_.get());
             yields_.emplace_back(ptr.get());
             yc.emplace_back(std::move(ptr));

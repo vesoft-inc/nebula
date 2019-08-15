@@ -442,15 +442,15 @@ go_sentence
         if ($6 == nullptr) {
             auto *cols = new YieldColumns();
             for (auto e : $4->edges()) {
-	        if (e->isOverAll()) {
-		    continue;
-		}
-                auto *edge = new std::string(*e->edge());
-                auto *expr = new EdgeDstIdExpression(edge);
-                auto *alias = new std::string(*edge + "_id");
-                auto *col = new YieldColumn(expr, alias);
+                if (e->isOverAll()) {
+                    continue;
+                }
+                auto *edge  = new std::string(*e->edge());
+                auto *expr  = new EdgeDstIdExpression(edge);
+//                auto *alias = new std::string(*edge + "_id");
+                auto *col   = new YieldColumn(expr);
                 cols->addColumn(col);
-	    }
+            }
             $6 = new YieldClause(cols);
         }
         go->setYieldClause($6);

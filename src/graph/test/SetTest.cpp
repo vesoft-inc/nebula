@@ -84,8 +84,8 @@ TEST_F(SetTest, UnionAllTest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt =
-            "(GO FROM %ld OVER like | "
-            "GO FROM $-.like_id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+            "(GO FROM %ld OVER like YIELD like._dst as id| "
+            "GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
             " UNION ALL "
             "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
@@ -112,8 +112,8 @@ TEST_F(SetTest, UnionAllTest) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt =
-            "GO FROM %ld OVER like | "
-            "GO FROM $-.like_id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
+            "GO FROM %ld OVER like YIELD like._dst as id | "
+            "GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
             " UNION ALL "
             "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
@@ -142,8 +142,8 @@ TEST_F(SetTest, UnionAllTest) {
         auto *fmt =
             "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
             " UNION ALL "
-            "(GO FROM %ld OVER like | "
-            "GO FROM $-.like_id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)";
+            "(GO FROM %ld OVER like YIELD like._dst as id | "
+            "GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
         auto query = folly::stringPrintf(fmt, tony.vid(), tim.vid());
@@ -170,8 +170,8 @@ TEST_F(SetTest, UnionAllTest) {
         auto *fmt =
             "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
             " UNION ALL "
-            "GO FROM %ld OVER like | "
-            "GO FROM $-.like_id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
+            "GO FROM %ld OVER like YIELD like._dst as id | "
+            "GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
         auto query = folly::stringPrintf(fmt, tony.vid(), tim.vid());
@@ -195,9 +195,11 @@ TEST_F(SetTest, UnionAllTest) {
     }
     {
         cpp2::ExecutionResponse resp;
-        auto *fmt = "(GO FROM %ld OVER like UNION ALL GO FROM %ld OVER like)"
-                    " | GO FROM $-.like_id OVER serve"
-                    " YIELD $^.player.name, serve.start_year, $$.team.name";
+        auto *fmt =
+            "(GO FROM %ld OVER like YIELD like._dst as id UNION ALL GO FROM %ld OVER like YIELD "
+            "like._dst as id)"
+            " | GO FROM $-.id OVER serve"
+            " YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
         auto &tony = players_["Tony Parker"];
         auto query = folly::stringPrintf(fmt, tony.vid(), tim.vid());
@@ -253,8 +255,8 @@ TEST_F(SetTest, UnionDistinct) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt =
-            "(GO FROM %ld OVER like | "
-            "GO FROM $-.like_id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+            "(GO FROM %ld OVER like YIELD like._dst as id | "
+            "GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
             " UNION "
             "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
             " UNION "
@@ -279,8 +281,8 @@ TEST_F(SetTest, UnionDistinct) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt =
-            "(GO FROM %ld OVER like | "
-            "GO FROM $-.like_id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+            "(GO FROM %ld OVER like YIELD like._dst as id | "
+            "GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
             " UNION DISTINCT "
             "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
@@ -305,8 +307,8 @@ TEST_F(SetTest, Minus) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt =
-            "(GO FROM %ld OVER like | "
-            "GO FROM $-.like_id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+            "(GO FROM %ld OVER like YIELD like._dst as id | "
+            "GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
             " MINUS "
             "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
@@ -334,8 +336,8 @@ TEST_F(SetTest, Intersect) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt =
-            "(GO FROM %ld OVER like | "
-            "GO FROM $-.like_id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+            "(GO FROM %ld OVER like YIELD like._dst as id | "
+            "GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
             " INTERSECT "
             "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name";
         auto &tim = players_["Tim Duncan"];
@@ -357,8 +359,8 @@ TEST_F(SetTest, Mix) {
     {
         cpp2::ExecutionResponse resp;
         auto *fmt =
-            "(GO FROM %ld OVER like | "
-            "GO FROM $-.like_id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
+            "(GO FROM %ld OVER like YIELD like._dst as id | "
+            "GO FROM $-.id OVER serve YIELD $^.player.name, serve.start_year, $$.team.name)"
             " MINUS "
             "GO FROM %ld OVER serve YIELD $^.player.name, serve.start_year, $$.team.name"
             " UNION "

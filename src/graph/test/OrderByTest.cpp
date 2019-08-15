@@ -244,7 +244,9 @@ TEST_F(OrderByTest, InterimResult) {
     {
         cpp2::ExecutionResponse resp;
         auto &boris = players_["Boris Diaw"];
-        auto *fmt = "GO FROM %ld OVER like | ORDER BY $-.like_id | GO FROM $-.like_id over serve";
+        auto *fmt =
+            "GO FROM %ld OVER like YIELD like._dst as id | ORDER BY $-.id | GO FROM $-.id over "
+            "serve";
         auto query = folly::stringPrintf(fmt, boris.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);

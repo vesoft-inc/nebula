@@ -54,8 +54,8 @@ TEST_F(FetchVerticesTest, base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "GO FROM %ld over like "
-                    "| FETCH PROP ON player $-.like_id YIELD player.name, player.age";
+        auto *fmt = "GO FROM %ld over like YIELD like._dst as id"
+                    "| FETCH PROP ON player $-.id YIELD player.name, player.age";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -68,8 +68,8 @@ TEST_F(FetchVerticesTest, base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "$var = GO FROM %ld over like;"
-                    "FETCH PROP ON player $var.like_id YIELD player.name, player.age";
+        auto *fmt = "$var = GO FROM %ld over like YIELD like._dst as id;"
+                    "FETCH PROP ON player $var.id YIELD player.name, player.age";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -82,8 +82,8 @@ TEST_F(FetchVerticesTest, base) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto *fmt = "$var = GO FROM %ld over like;"
-                    "FETCH PROP ON player $var.like_id YIELD player.name as name, player.age"
+        auto *fmt = "$var = GO FROM %ld over like YIELD like._dst as id;"
+                    "FETCH PROP ON player $var.id YIELD player.name as name, player.age"
                     " | ORDER BY name";
         auto query = folly::stringPrintf(fmt, player.vid());
         auto code = client_->execute(query, resp);
