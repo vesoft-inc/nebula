@@ -26,6 +26,11 @@ DEFINE_uint32(raft_heartbeat_interval_secs, 5,
              "Seconds between each heartbeat");
 DEFINE_uint32(max_batch_size, 256, "The max number of logs in a batch");
 
+DEFINE_int32(wal_ttl, 86400, "Default wal ttl");
+DEFINE_int64(wal_file_size, 128 * 1024 * 1024, "Default wal file size");
+DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
+DEFINE_int32(wal_buffer_num, 4, "Default wal buffer number");
+
 
 namespace nebula {
 namespace raftex {
@@ -209,9 +214,13 @@ RaftPart::RaftPart(ClusterID clusterId,
         , ioThreadPool_{pool}
         , bgWorkers_{workers}
         , executor_(executor) {
-    // TODO Configure the wal policy
+    FileBasedWalPolicy policy;
+    policy.ttl = FLAGS_wal_ttl;
+    policy.fileSize = FLAGS_wal_file_size;
+    policy.bufferSize = FLAGS_wal_buffer_size;
+    policy.numBuffers = FLAGS_wal_buffer_num;
     wal_ = FileBasedWal::getWal(walRoot,
-                                FileBasedWalPolicy(),
+                                policy,
                                 flusher,
                                 [this] (LogID logId,
                                         TermID logTermId,
