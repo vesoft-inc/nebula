@@ -177,7 +177,6 @@ void NebulaStore::addSpace(GraphSpaceID spaceId) {
     for (auto& path : options_.dataPaths_) {
         this->spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path));
     }
-    return;
 }
 
 
@@ -210,7 +209,6 @@ void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId) {
         partId,
         newPart(spaceId, partId, targetEngine.get()));
     LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been added!";
-    return;
 }
 
 std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
@@ -336,7 +334,7 @@ void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
         return;
     }
     auto part = nebula::value(ret);
-    return part->asyncMultiPut(std::move(keyValues), std::move(cb));
+    part->asyncMultiPut(std::move(keyValues), std::move(cb));
 }
 
 
@@ -350,7 +348,7 @@ void NebulaStore::asyncRemove(GraphSpaceID spaceId,
         return;
     }
     auto part = nebula::value(ret);
-    return part->asyncRemove(key, std::move(cb));
+    part->asyncRemove(key, std::move(cb));
 }
 
 
@@ -364,7 +362,7 @@ void NebulaStore::asyncMultiRemove(GraphSpaceID spaceId,
         return;
     }
     auto part = nebula::value(ret);
-    return part->asyncMultiRemove(std::move(keys), std::move(cb));
+    part->asyncMultiRemove(std::move(keys), std::move(cb));
 }
 
 
@@ -379,7 +377,7 @@ void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,
         return;
     }
     auto part = nebula::value(ret);
-    return part->asyncRemoveRange(start, end, std::move(cb));
+    part->asyncRemoveRange(start, end, std::move(cb));
 }
 
 
@@ -393,7 +391,7 @@ void NebulaStore::asyncRemovePrefix(GraphSpaceID spaceId,
         return;
     }
     auto part = nebula::value(ret);
-    return part->asyncRemovePrefix(prefix, std::move(cb));
+    part->asyncRemovePrefix(prefix, std::move(cb));
 }
 
 ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceId,
