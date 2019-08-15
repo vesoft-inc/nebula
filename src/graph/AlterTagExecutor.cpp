@@ -48,7 +48,6 @@ void AlterTagExecutor::execute() {
     auto *name = sentence_->name();
     auto spaceId = ectx()->rctx()->session()->space();
 
-
     auto future = mc->alterTagSchema(spaceId, *name, std::move(options_), std::move(schemaProp_));
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
