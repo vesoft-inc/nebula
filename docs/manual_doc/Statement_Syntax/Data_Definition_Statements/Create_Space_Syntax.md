@@ -31,9 +31,9 @@ However, if no option is given, Nebula Graph will create the space with default 
 ### Example
 
 ```
-CREATE SPACE my_space_1; --create space with default partion number and replica factor
-CREATE SPACE my_space_2(partition_num=10); --create space with default replica factor
-CREATE SPACE my_space_3(replica_factor=1); --create space with default partion number
+CREATE SPACE my_space_1; -- create space with default partion number and replica factor
+CREATE SPACE my_space_2(partition_num=10); -- create space with default replica factor
+CREATE SPACE my_space_3(replica_factor=1); -- create space with default partion number
 CREATE SPACE my_space_4(partition_num=10, replica_factor=1);
 ```
 
