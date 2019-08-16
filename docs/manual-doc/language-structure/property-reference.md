@@ -48,7 +48,7 @@ For example,
 GO FROM 1 OVER e1 YIELD e1.prop1
 ```
 
-### For build-in property
+### For build-in properties
 
 There are four build-in properties in the edge:
 

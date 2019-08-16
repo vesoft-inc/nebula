@@ -2,31 +2,36 @@
 
 ## `UNION`, `UNION DISTINCT`, and `UNION ALL`
 
-Operation `UNION DISTINCT` (or by short `UNION`) returns the union of two sets A and B (denoted by `A ⋃ B` in mathematics), with the distinct element belongs to set A or set B, or both.
+Operator `UNION DISTINCT` (or by short `UNION`) returns the union of two sets A and B (denoted by `A ⋃ B` in mathematics), with the distinct element belongs to set A or set B, or both.
 
-Meanwhile, operation `UNION ALL` returns the union set with duplicated elements.
+Meanwhile, operation `UNION ALL` returns the union set with duplicated elements. The `UNION`-syntax is
 
 ```
 <left> UNION [DISTINCT | ALL] <right>
 ```
+
 where `<left>` and `<right>` must have the same number of columns and pair-wise data types.
 
 ### Example
 
 The following statement
+
 ```
 GO FROM 1 OVER e1 \
 UNION \
 GO FROM 2 OVER e1
 ```
+
 return the neighbors' id of vertex `1` and `2` (along with edge `e1`) without duplication.
 
 While
+
 ```
 GO FROM 1 OVER e1 \
 UNION ALL\
 GO FROM 2 OVER e1
 ```
+
 returns all the neighbors of vertex `1` and `2`, with all possible duplications.
 
 `UNION` can also work with the `YIELD`-syntax-returned properties. For example, let's suppose the results of the following two queries 
@@ -75,6 +80,7 @@ will return as follows:
 Notice that line 1 and line 2 return the same id (104) with different column values. The `DISTINCT` check duplication by all the columns for every line. So line 1 and line 2 are different.
 
 You can expect for the `UNION ALL` result
+
 ```
 GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
 UNION ALL
@@ -95,7 +101,7 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS ri
 
 ## INTERSECT
 
-Operation `INTERSECT` returns the intersection of two sets A and B (denoted by A ⋂ B), if the elements belongs both to set A and set B.
+Operator `INTERSECT` returns the intersection of two sets A and B (denoted by A ⋂ B), if the elements belong both to set A and set B.
 
 ```
 <left> INTERSECT <right>
@@ -146,7 +152,7 @@ comes out
 --------------------------
 ```
 
-And if we reserve the `MINUS` order
+And if we reverse the `MINUS` order
 
 ```
 GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
@@ -154,11 +160,11 @@ MINUS
 GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
 ```
 
-will come out
+results in
 
 ```
 ===========================
-| id  | right.1 | right.2 |    -- colunm named from query 2
+| id  | right.1 | right.2 |    -- column named from query 2
 ===========================
 | 104 |    2    |    2    |    -- line 2
 ---------------------------
