@@ -1,14 +1,14 @@
 # DESCRIBE
 
 ```
-{DESCRIBE | DESC } SPACE space_name
-{DESCRIBE | DESC } TAG tag_name
-{DESCRIBE | DESC } EDGE edge_name
+DESCRIBE SPACE space_name
+DESCRIBE TAG tag_name
+DESCRIBE EDGE edge_name
 ```
 
-在 Nebula 中 DESCRIBE/DESC 和 EXPLAIN 是`不同`的关键词。 DESCRIBE/DESC 关键词的作用是获取关于 space, tag, edge 结构的信息。 然而 EXPLAIN 的作用是获取一个请求执行计划。 参见文档来获取更多有关 [EXPLAIN]() 的信息。
+在 Nebula 中 DESCRIBE 和 EXPLAIN 是`不同`的关键词。 DESCRIBE/DESC 关键词的作用是获取关于 space, tag, edge 结构的信息。 然而 EXPLAIN 的作用是获取一个请求执行计划。 参见文档来获取更多有关 [EXPLAIN]() 的信息。
 
-同时需要注意的是，DESCRIBE 和 SHOW 也是不同的。 详细参见 [SHOW]() 文档。
+同时需要注意的是，DESCRIBE 和 SHOW 也是不同的。 详细参见 SHOW 文档。
 
 ### 示例
 
