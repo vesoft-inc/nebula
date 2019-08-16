@@ -65,4 +65,4 @@ For example,
 GO FROM 1 OVER e1 YIELD e1._src as startVID /* which is, 1 */, e1._dst as endVID
 ```
 
-This statement returns all the neighborhoods of `1` over edge type `e1`, by referencing `e1._src` as the starting vertex id (which, of course, is `1`) and `e1._dst` as the ending vertex id.
+This statement returns all the neighbors of vertex `1` over edge type `e1`, by referencing `e1._src` as the starting vertex id (which, of course, is `1`) and `e1._dst` as the ending vertex id.
