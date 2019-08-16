@@ -2,7 +2,7 @@
 
 ## `UNION`, `UNION DISTINCT`, and `UNION ALL`
 
-Operation `UNION DISTINCT` (or by short `UNION`) returns the union of two sets A and B (denoted by $A \bigcup B$ in mathematics), with the distinct element belongs to set A or set B, or both.
+Operation `UNION DISTINCT` (or by short `UNION`) returns the union of two sets A and B (denoted by `A ⋃ B` in mathematics), with the distinct element belongs to set A or set B, or both.
 
 Meanwhile, operation `UNION ALL` returns the union set with duplicated elements.
 
@@ -95,7 +95,7 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS ri
 
 ## INTERSECT
 
-Operation `INTERSECT` returns the intersection of two sets A and B (denoted by $A \bigcap B$), if the elements belongs both to set A and set B.
+Operation `INTERSECT` returns the intersection of two sets A and B (denoted by A ⋂ B), if the elements belongs both to set A and set B.
 
 ```
 <left> INTERSECT <right>
@@ -125,7 +125,7 @@ will return
 
 ## MINUS
 
-The set subtraction (or difference), $A - B$, consists of elements that are in A but not in B. So the operation order matters.
+The set subtraction (or difference), A - B, consists of elements that are in A but not in B. So the operation order matters.
 
 ### Example
 
