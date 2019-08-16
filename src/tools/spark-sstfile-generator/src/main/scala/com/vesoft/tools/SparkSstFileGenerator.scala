@@ -385,7 +385,8 @@ object SparkSstFileGenerator {
             }
 
           }
-          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
+          .repartition(partitionNumber)
+          .sortByKey()
           .persist(StorageLevel.DISK_ONLY)
 
         tagKeyAndValuesPersisted.saveAsNewAPIHadoopFile(localSstFileOutput,
@@ -473,7 +474,8 @@ object SparkSstFileGenerator {
                  VertexOrEdgeEnum.Edge))
             }
           }
-          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
+          .repartition(partitionNumber)
+          .sortByKey()
           .persist(StorageLevel.DISK_ONLY)
 
         edgeKeyAndValuesPersisted.saveAsNewAPIHadoopFile(
