@@ -244,7 +244,7 @@ InterimResult::buildIndex(const std::string &vidColumn) const {
         ++rowIter;
     }
     index->schema_ = schema;
-    return index;
+    return std::move(index);
 }
 
 
