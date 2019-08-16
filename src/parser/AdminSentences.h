@@ -361,6 +361,7 @@ public:
         kLeader,
     };
 
+    // TODO: add more subtype for balance
     explicit BalanceSentence(SubType subType) {
         kind_ = Kind::kBalance;
         subType_ = std::move(subType);

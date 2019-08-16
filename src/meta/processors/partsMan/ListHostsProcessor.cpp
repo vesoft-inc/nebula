@@ -54,23 +54,6 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
         iter->next();
     }
 
-    std::unique_ptr<AdminClient> client(new AdminClient(kvstore_));
-    HostLeaderMap hostLeaderMap;
-    auto ret = client->getLeaderDist(&hostLeaderMap).get();
-    if (!ret.ok()) {
-        LOG(ERROR) << "Get leader distribution failed";
-        return hostItems;
-    }
-    for (auto& hostEntry : hostLeaderMap) {
-        auto hostAddr = toThriftHost(hostEntry.first);
-        auto it = std::find_if(hostItems.begin(), hostItems.end(), [&](const auto& item) {
-            return item.get_hostAddr() == hostAddr;
-        });
-        if (it != hostItems.end()) {
-            it->set_leader_parts(std::move(hostEntry.second));
-        }
-    }
-
     // Get all spaces
     std::vector<GraphSpaceID> spaces;
     const auto& spacePrefix = MetaServiceUtils::spacePrefix();
@@ -120,6 +103,26 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
             it->set_all_parts(std::move(hostEntry.second));
         }
     }
+
+    if (adminClient_  == nullptr) {
+        return hostItems;
+    }
+    HostLeaderMap hostLeaderMap;
+    auto ret = adminClient_->getLeaderDist(&hostLeaderMap).get();
+    if (!ret.ok()) {
+        LOG(ERROR) << "Get leader distribution failed";
+        return hostItems;
+    }
+    for (auto& hostEntry : hostLeaderMap) {
+        auto hostAddr = toThriftHost(hostEntry.first);
+        auto it = std::find_if(hostItems.begin(), hostItems.end(), [&](const auto& item) {
+            return item.get_hostAddr() == hostAddr;
+        });
+        if (it != hostItems.end()) {
+            it->set_leader_parts(std::move(hostEntry.second));
+        }
+    }
+
     return hostItems;
 }
 

@@ -97,8 +97,6 @@ public:
 
     cpp2::ErrorCode leaderBalance();
 
-    StatusOr<HostLeaderMap> leaderDist();
-
 private:
     Balancer(kvstore::KVStore* kv, std::unique_ptr<AdminClient> client)
         : kv_(kv)
@@ -119,8 +117,7 @@ private:
 
     void getHostParts(GraphSpaceID spaceId,
                       std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
-                      int32_t& totalParts,
-                      int32_t& leaderParts);
+                      int32_t& totalParts);
 
     void calDiff(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
                  const std::vector<HostAddr>& activeHosts,
@@ -143,9 +140,28 @@ private:
 
     bool getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode);
 
-    std::unordered_map<HostAddr, int32_t>
+    std::unordered_map<HostAddr, std::vector<PartitionID>>
     buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
-                           LeaderBalancePlan& plan);
+                           LeaderBalancePlan& plan, bool useDeviation = true);
+
+    void simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
+
+    int32_t acquireLeaders(std::unordered_map<HostAddr, std::vector<PartitionID>>& allHostParts,
+                           std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
+                           std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
+                           std::unordered_set<HostAddr>& activeHosts,
+                           HostAddr to,
+                           size_t maxLoad,
+                           LeaderBalancePlan& plan,
+                           GraphSpaceID spaceId);
+
+    int32_t giveupLeaders(std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
+                          std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
+                          std::unordered_set<HostAddr>& activeHosts,
+                          HostAddr from,
+                          size_t maxLoad,
+                          LeaderBalancePlan& plan,
+                          GraphSpaceID spaceId);
 
 private:
     std::atomic_bool  running_{false};

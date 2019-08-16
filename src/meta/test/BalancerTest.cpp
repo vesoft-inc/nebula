@@ -131,7 +131,7 @@ TEST(BalanceTaskTest, SimpleTest) {
 }
 
 TEST(BalanceTest, BalancePartsTest) {
-    auto* balancer = Balancer::instance(nullptr);
+    std::unique_ptr<Balancer> balancer(new Balancer(nullptr, nullptr));
     auto dump = [](const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
                    const std::vector<BalanceTask>& tasks) {
         for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
@@ -623,11 +623,11 @@ TEST(BalanceTest, RecoveryTest) {
     }
 }
 
-void verifyLeaderBalancePlan(std::unordered_map<HostAddr, int32_t> leaderCount,
-        int32_t minLoad, int32_t maxLoad) {
+void verifyLeaderBalancePlan(std::unordered_map<HostAddr, std::vector<PartitionID>> leaderCount,
+        size_t minLoad, size_t maxLoad) {
     for (const auto& hostEntry : leaderCount) {
-        EXPECT_GE(hostEntry.second, minLoad);
-        EXPECT_LE(hostEntry.second, maxLoad);
+        EXPECT_GE(hostEntry.second.size(), minLoad);
+        EXPECT_LE(hostEntry.second.size(), maxLoad);
     }
 }
 
@@ -649,12 +649,12 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
         auto tempMap = hostLeaderMap;
 
         LeaderBalancePlan plan;
-        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
         verifyLeaderBalancePlan(leaderParts, 3, 3);
 
         // check two plan build are same
         LeaderBalancePlan tempPlan;
-        auto tempLeaderParts = balancer->buildLeaderBalancePlan(&tempMap, 1, tempPlan);
+        auto tempLeaderParts = balancer->buildLeaderBalancePlan(&tempMap, 1, tempPlan, false);
         verifyLeaderBalancePlan(tempLeaderParts, 3, 3);
         EXPECT_EQ(plan.size(), tempPlan.size());
         for (size_t i = 0; i < plan.size(); i++) {
@@ -668,7 +668,7 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
         hostLeaderMap[HostAddr(2, 2)][1] = {9};
 
         LeaderBalancePlan plan;
-        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
         verifyLeaderBalancePlan(leaderParts, 3, 3);
     }
     {
@@ -678,7 +678,7 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
         hostLeaderMap[HostAddr(2, 2)][1] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 
         LeaderBalancePlan plan;
-        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
         verifyLeaderBalancePlan(leaderParts, 3, 3);
     }
     {
@@ -688,7 +688,7 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
         hostLeaderMap[HostAddr(2, 2)][1] = {7, 8, 9};
 
         LeaderBalancePlan plan;
-        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
         verifyLeaderBalancePlan(leaderParts, 3, 3);
     }
 }
@@ -713,7 +713,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
         hostLeaderMap[HostAddr(5, 5)][1] = {};
 
         LeaderBalancePlan plan;
-        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
         verifyLeaderBalancePlan(leaderParts, 1, 2);
     }
     {
@@ -726,7 +726,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
         hostLeaderMap[HostAddr(5, 5)][1] = {3, 4};
 
         LeaderBalancePlan plan;
-        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
         verifyLeaderBalancePlan(leaderParts, 1, 2);
     }
     {
@@ -739,7 +739,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
         hostLeaderMap[HostAddr(5, 5)][1] = {};
 
         LeaderBalancePlan plan;
-        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
         verifyLeaderBalancePlan(leaderParts, 1, 2);
     }
     {
@@ -752,7 +752,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
         hostLeaderMap[HostAddr(5, 5)][1] = {};
 
         LeaderBalancePlan plan;
-        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
         verifyLeaderBalancePlan(leaderParts, 1, 2);
     }
     {
@@ -765,7 +765,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
         hostLeaderMap[HostAddr(5, 5)][1] = {5};
 
         LeaderBalancePlan plan;
-        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan);
+        auto leaderParts = balancer->buildLeaderBalancePlan(&hostLeaderMap, 1, plan, false);
         verifyLeaderBalancePlan(leaderParts, 1, 2);
     }
 }
@@ -792,7 +792,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
     std::unique_ptr<AdminClient> client(new AdminClient(kv.get()));
     std::unique_ptr<Balancer> balancer(new Balancer(kv.get(), std::move(client)));
     // chcek several times if they are balanced
-    for (int count = 0; count < 10; count++) {
+    for (int count = 0; count < 1; count++) {
         HostLeaderMap hostLeaderMap;
         // all part will random choose a leader
         for (int partId = 1; partId <= partCount; partId++) {

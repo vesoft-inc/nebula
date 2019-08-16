@@ -84,15 +84,9 @@ void ShowExecutor::showHosts() {
 
         auto hostItems = std::move(resp).value();
         std::vector<cpp2::RowValue> rows;
-        std::vector<std::string> header{"Ip", "Port", "Status"};
+        std::vector<std::string> header{"Ip", "Port", "Status", "Leader count",
+                                        "Leader distribution", "Partition distribution"};
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
-
-        header.emplace_back("Ip");
-        header.emplace_back("Port");
-        header.emplace_back("Status");
-        header.emplace_back("Leader count");
-        header.emplace_back("Leader distribution");
-        header.emplace_back("Partition distribution");
         resp_->set_column_names(std::move(header));
 
         for (auto& item : hostItems) {
@@ -106,21 +100,19 @@ void ShowExecutor::showHosts() {
                     row[2].set_str("online");
                     break;
                 case meta::cpp2::HostStatus::OFFLINE:
+                case meta::cpp2::HostStatus::UNKNOWN:
                     row[2].set_str("offline");
-                    break;
-                default:
-                    LOG(FATAL) << "Should not reach here";
                     break;
             }
 
-            int32_t count = 0;
+            int32_t leaderCount = 0;
             std::string leaders;
             for (auto& spaceEntry : item.get_leader_parts()) {
-                count += spaceEntry.second.size();
+                leaderCount += spaceEntry.second.size();
                 leaders += "space " + folly::to<std::string>(spaceEntry.first) + ": " +
                            folly::to<std::string>(spaceEntry.second.size()) + ", ";
             }
-            row[3].set_integer(count);
+            row[3].set_integer(leaderCount);
             row[4].set_str(leaders);
 
             std::string parts;

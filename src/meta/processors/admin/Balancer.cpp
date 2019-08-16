@@ -134,8 +134,7 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
     CHECK(!!plan_) << "plan should not be nullptr";
     std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
     int32_t totalParts = 0;
-    int32_t leaderParts = 0;
-    getHostParts(spaceId, hostParts, totalParts, leaderParts);
+    getHostParts(spaceId, hostParts, totalParts);
     if (totalParts == 0 || hostParts.empty()) {
         LOG(ERROR) << "Invalid space " << spaceId;
         return std::vector<BalanceTask>();
@@ -248,8 +247,7 @@ void Balancer::balanceParts(BalanceID balanceId,
 
 void Balancer::getHostParts(GraphSpaceID spaceId,
                             std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts,
-                            int32_t& totalParts,
-                            int32_t& leaderParts) {
+                            int32_t& totalParts) {
     folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
     auto prefix = MetaServiceUtils::partPrefix(spaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -269,6 +267,7 @@ void Balancer::getHostParts(GraphSpaceID spaceId,
         iter->next();
         totalParts++;
     }
+
     auto key = MetaServiceUtils::spaceKey(spaceId);
     std::string value;
     auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
@@ -278,7 +277,6 @@ void Balancer::getHostParts(GraphSpaceID spaceId,
     }
     auto properties = MetaServiceUtils::parseSpace(value);
     CHECK_EQ(totalParts, properties.get_partition_num());
-    leaderParts = totalParts;
     totalParts *= properties.get_replica_factor();
 }
 
@@ -352,6 +350,7 @@ cpp2::ErrorCode Balancer::leaderBalance() {
         LeaderBalancePlan plan;
         for (const auto& space : spaces) {
             buildLeaderBalancePlan(hostLeaderMap_.get(), space, plan);
+            simplifyLeaderBalnacePlan(space, plan);
         }
         std::vector<folly::SemiFuture<Status>> futures;
         for (const auto& task : plan) {
@@ -375,31 +374,12 @@ cpp2::ErrorCode Balancer::leaderBalance() {
     return cpp2::ErrorCode::E_BALANCER_RUNNING;
 }
 
-StatusOr<HostLeaderMap> Balancer::leaderDist() {
-    folly::Promise<StatusOr<HostLeaderMap>> promise;
-    auto future = promise.getFuture();
-
-    hostLeaderMap_.reset(new HostLeaderMap);
-    client_->getLeaderDist(hostLeaderMap_.get())
-        .then([p = std::move(promise), this]
-              (folly::Try<Status>&& t) mutable {
-        if (!t.value().ok()) {
-            p.setValue(t.value());
-            return;
-        }
-
-        p.setValue(Status::OK());
-    }).get();
-
-    return *hostLeaderMap_;
-}
-
-std::unordered_map<HostAddr, int32_t>
+std::unordered_map<HostAddr, std::vector<PartitionID>>
 Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
-                                 LeaderBalancePlan& plan) {
-    std::unordered_map<HostAddr, int32_t> leaderCount;
+                                 LeaderBalancePlan& plan, bool useDeviation) {
     std::unordered_map<PartitionID, std::vector<HostAddr>> peersMap;
-    size_t partCount = 0;
+    std::unordered_map<HostAddr, std::vector<PartitionID>> leaderHostParts;
+    size_t leaderParts = 0;
     {
         // store peers of all paritions in peerMap
         folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
@@ -408,7 +388,7 @@ Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spac
         auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
         if (ret != kvstore::ResultCode::SUCCEEDED) {
             LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId;
-            return leaderCount;
+            return leaderHostParts;
         }
         while (iter->valid()) {
             auto key = iter->key();
@@ -420,60 +400,171 @@ Balancer::buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spac
             std::transform(thriftPeers.begin(), thriftPeers.end(), peers.begin(),
                            [] (const auto& h) { return HostAddr(h.get_ip(), h.get_port()); });
             peersMap[partId] = std::move(peers);
-            ++partCount;
+            ++leaderParts;
             iter->next();
         }
     }
 
-    int32_t avgLoad = partCount / hostLeaderMap->size();
-    std::unordered_map<HostAddr, std::vector<PartitionID>> leaderParts;
+    int32_t totalParts = 0;
+    std::unordered_map<HostAddr, std::vector<PartitionID>> allHostParts;
+    getHostParts(spaceId, allHostParts, totalParts);
+
+    size_t avgLoad = leaderParts / hostLeaderMap->size();
+    size_t minLoad = avgLoad;
+    size_t maxLoad = avgLoad + 1;
+    if (useDeviation) {
+        minLoad = std::ceil(static_cast<double> (leaderParts) / hostLeaderMap->size() *
+                            (1 - FLAGS_leader_balance_deviation));
+        maxLoad = std::floor(static_cast<double> (leaderParts) / hostLeaderMap->size() *
+                            (1 + FLAGS_leader_balance_deviation));
+    }
+    LOG(INFO) << "Build leader balance plan, expeceted min load: " << minLoad
+              << ", max load: " << maxLoad;
+
+    std::unordered_set<HostAddr> activeHosts;
     for (const auto& host : *hostLeaderMap) {
-        leaderCount[host.first] = (*hostLeaderMap)[host.first][spaceId].size();
-        leaderParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
-    }
-    // sort all hosts by leader count
-    auto sortedHosts = sortedHostsByParts(leaderParts);
-    std::vector<HostAddr> activeHosts;
-    for (const auto& leaderEntry : leaderParts) {
-        activeHosts.emplace_back(leaderEntry.first);
+        activeHosts.emplace(host.first);
+        leaderHostParts[host.first] = std::move((*hostLeaderMap)[host.first][spaceId]);
     }
 
-    for (auto hostIt = sortedHosts.rbegin(); hostIt != sortedHosts.rend(); hostIt++) {
-        const auto& curLeaderAddr = hostIt->first;
-        auto leaderPartIds = leaderParts[curLeaderAddr];
-        size_t index = 0;
+    while (true) {
+        bool hasUnbalancedHost = false;
+        int32_t taskCount = 0;
 
-        while (leaderCount[curLeaderAddr] > avgLoad && index < leaderPartIds.size()) {
-            auto partId = leaderPartIds[index++];
-            CHECK(peersMap.find(partId) != peersMap.end());
-            const auto& peers = peersMap[partId];
-            CHECK(!peers.empty());
-
-            // If currrent leader has more leader count than avgLoad, try to tansfer leadership
-            // to the peer with mininum leader count
-            HostAddr newLeaderAddr = curLeaderAddr;
-            int32_t minCount = leaderCount[curLeaderAddr];
-            for (const auto& peer : peers) {
-                auto it = std::find(activeHosts.begin(), activeHosts.end(), peer);
-                if (it != activeHosts.end() && leaderCount[peer] < minCount) {
-                    minCount = leaderCount[peer];
-                    newLeaderAddr = peer;
-                }
+        for (auto& hostEntry : leaderHostParts) {
+            if (minLoad <= hostEntry.second.size() && hostEntry.second.size() <= maxLoad) {
+                continue;
             }
-            if (newLeaderAddr != curLeaderAddr &&
-                leaderCount[newLeaderAddr] + 1 < leaderCount[curLeaderAddr]) {
-                leaderCount[curLeaderAddr]--;
-                leaderCount[newLeaderAddr]++;
-                plan.emplace_back(spaceId, partId, curLeaderAddr, newLeaderAddr);
-                LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " from "
-                          << network::NetworkUtils::intToIPv4(curLeaderAddr.first) << ":"
-                          << curLeaderAddr.second << " to "
-                          << network::NetworkUtils::intToIPv4(newLeaderAddr.first)
-                          << ":" << newLeaderAddr.second;
+            hasUnbalancedHost = true;
+            if (hostEntry.second.size() < minLoad) {
+                // need to acquire leader from other hosts
+                taskCount += acquireLeaders(allHostParts, leaderHostParts, peersMap, activeHosts,
+                                            hostEntry.first, minLoad, plan, spaceId);
+            } else {
+                // need to transfer leader to other hosts
+                taskCount += giveupLeaders(leaderHostParts, peersMap, activeHosts,
+                                           hostEntry.first, maxLoad, plan, spaceId);
             }
         }
+
+        // If every host is balanced or no more task during this loop, then the plan is done
+        if (!hasUnbalancedHost || taskCount == 0) {
+            break;
+        }
     }
-    return leaderCount;
+    return leaderHostParts;
+}
+
+int32_t Balancer::acquireLeaders(
+        std::unordered_map<HostAddr, std::vector<PartitionID>>& allHostParts,
+        std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
+        std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
+        std::unordered_set<HostAddr>& activeHosts,
+        HostAddr host,
+        size_t minLoad,
+        LeaderBalancePlan& plan,
+        GraphSpaceID spaceId) {
+    // host will loop for the partition which is not leader, and try to acuire the leader
+    int32_t taskCount = 0;
+    std::vector<PartitionID> diff;
+    std::set_difference(allHostParts[host].begin(), allHostParts[host].end(),
+                        leaderHostParts[host].begin(), leaderHostParts[host].end(),
+                        std::back_inserter(diff));
+    auto& hostLeaders = leaderHostParts[host];
+    for (const auto& partId : diff) {
+        // find the leader of partId
+        auto peers = peersMap[partId];
+        for (const auto& peer : peers) {
+            if (peer == host || !activeHosts.count(peer)) {
+                continue;
+            }
+            // if peer is the leader of partId and can transfer, then transfer it to host
+            auto& peerLeaders = leaderHostParts[peer];
+            auto it = std::find(peerLeaders.begin(), peerLeaders.end(), partId);
+            if (it != peerLeaders.end()) {
+                if (minLoad < peerLeaders.size()) {
+                    peerLeaders.erase(it);
+                    hostLeaders.emplace_back(partId);
+                    plan.emplace_back(spaceId, partId, peer, host);
+                    LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " from "
+                              << network::NetworkUtils::intToIPv4(peer.first) << ":"
+                              << peer.second << " to "
+                              << network::NetworkUtils::intToIPv4(host.first)
+                              << ":" << host.second;
+                    ++taskCount;
+                    break;
+                }
+            }
+        }
+        // if host has enough leader, just return
+        if (minLoad <= hostLeaders.size()) {
+            break;
+        }
+    }
+    return taskCount;
+}
+
+int32_t Balancer::giveupLeaders(
+        std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
+        std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
+        std::unordered_set<HostAddr>& activeHosts,
+        HostAddr host,
+        size_t maxLoad,
+        LeaderBalancePlan& plan,
+        GraphSpaceID spaceId) {
+    int taskCount = 0;
+    auto& hostLeaders = leaderHostParts[host];
+    // host will try to transfer the extra leaders to other peers
+    for (auto it = hostLeaders.begin(); it != hostLeaders.end(); ) {
+        // find the leader of partId
+        auto partId = *it;
+        auto peers = peersMap[partId];
+        bool transfered = false;
+        for (const auto& peer : peers) {
+            if (host == peer || !activeHosts.count(peer)) {
+                continue;
+            }
+            // If peer can accept this partition leader, than host will transfer to the peer
+            auto& peerLeaders = leaderHostParts[peer];
+            if (peerLeaders.size() < maxLoad) {
+                it = hostLeaders.erase(it);
+                peerLeaders.emplace_back(partId);
+                plan.emplace_back(spaceId, partId, host, peer);
+                LOG(INFO) << "plan trans leader: " << spaceId << " " << partId << " host "
+                    << network::NetworkUtils::intToIPv4(host.first) << ":"
+                    << host.second << " peer "
+                    << network::NetworkUtils::intToIPv4(peer.first)
+                    << ":" << peer.second;
+                ++taskCount;
+                transfered = true;
+                break;
+            }
+        }
+        if (!transfered) {
+            ++it;
+        }
+        // if host has enough leader, just return
+        if (hostLeaders.size() <= maxLoad) {
+            break;
+        }
+    }
+    return taskCount;
+}
+
+void Balancer::simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan) {
+    // Within a leader balance plan, a partition may be moved several times, but actually
+    // we only need to transfer the leadership of a partition from the first host to the
+    // last host, and ignore the intermediate ones
+    std::unordered_map<PartitionID, LeaderBalancePlan> buckets;
+    for (auto& task : plan) {
+        buckets[std::get<1>(task)].emplace_back(task);
+    }
+    plan.clear();
+    for (const auto& partEntry : buckets) {
+        plan.emplace_back(spaceId, partEntry.first,
+                          std::get<2>(partEntry.second.front()),
+                          std::get<3>(partEntry.second.back()));
+    }
 }
 
 }  // namespace meta

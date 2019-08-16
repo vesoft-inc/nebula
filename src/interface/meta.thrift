@@ -442,16 +442,6 @@ struct BalanceResp {
 struct LeaderBalanceReq {
 }
 
-struct LeaderDistReq {
-}
-
-struct LeaderDistResp {
-    1: ErrorCode        code,
-    2: map<string, map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map")> (cpp.template = "std::unordered_map") leader_dist,
-    // leader field is not used in this resp
-    3: common.HostAddr  leader,
-}
-
 enum ConfigModule {
     UNKNOWN = 0x00,
     ALL     = 0x01,
@@ -556,7 +546,6 @@ service MetaService {
     HBResp           heartBeat(1: HBReq req);
     BalanceResp      balance(1: BalanceReq req);
     ExecResp         leaderBalance(1: LeaderBalanceReq req);
-    LeaderDistResp   leaderDist(1: LeaderDistReq req);
 
     ExecResp regConfig(1: RegConfigReq req);
     GetConfigResp getConfig(1: GetConfigReq req);

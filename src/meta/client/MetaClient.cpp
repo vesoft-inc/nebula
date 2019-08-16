@@ -1137,15 +1137,6 @@ folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
     }, true);
 }
 
-folly::Future<StatusOr<LeaderDistMap>> MetaClient::getLeaderDist() {
-    cpp2::LeaderDistReq req;
-    return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_leaderDist(request);
-    }, [] (cpp2::LeaderDistResp&& resp) -> decltype(auto) {
-        return resp.leader_dist;
-    }, true);
-}
-
 folly::Future<StatusOr<bool>>
 MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
     cpp2::RegConfigReq req;
