@@ -14,8 +14,8 @@
 
 ## Nebula获取 ##
 
-**Nebula Graph** 源码参见[GitHub](https://github.com/vesoft-inc/nebula)。目前的版本号为R1910_alpha。
-也可下载Nebula[Docker ](https://www.docker.com/get-started)镜像进行试用。
+**Nebula Graph** 源码参见[GitHub](https://github.com/vesoft-inc/nebula)。
+也可下载Nebula[Docker](https://hub.docker.com/r/vesoft/nebula-graph/tags)镜像进行试用。
 更多详情参见[Get Started](get-started/).
 
 ## 为Nebula做贡献 ##
