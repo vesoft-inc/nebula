@@ -1,3 +1,8 @@
+![](docs/logo.png)
+
+[![LICENSE](https://img.shields.io/badge/license-Apache--2.0-green)](#licensing)
+[![GitHub release](https://img.shields.io/badge/release-v1.0.0--beta-blue)](https://github.com/vesoft-inc/nebula/releases)
+
 ## Nebula
 
 **Nebula** is a distributed, scalable, lighting-fast graph database. It is the only solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
@@ -12,8 +17,7 @@ As a graph database, **Nebula** has these features
 * SQL-like query language
 
 ## How can I get Nebula ##
-**Nebula** source code is available here on [`GitHub`](https://github.com/vesoft-inc/nebula). The currently release is version 0.1. Please refer the `Release Notes` here for details. You can also download [`docker` ](https://www.docker.com/get-started)image to try it.
-More details on how to get Nebula image click [`Get Started`](https://github.com/vesoft-inc/nebula/blob/master/docs/get-started.md).
+Apart from installing **Nebula Graph** from source code, you can use the [official Nebula Graph image](https://hub.docker.com/r/vesoft/nebula-graph/tags). For more details on how to install Nebula Graph, see [Get Started](docs/get-started.md).
 
 ## How can I contribute ##
 As the team behind **Nebula**, we fully commit to the community and all-in to the open source project. All the core features are and will be implemented in the open source repository.
