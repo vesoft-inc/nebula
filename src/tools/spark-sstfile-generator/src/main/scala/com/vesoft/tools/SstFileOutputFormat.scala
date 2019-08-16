@@ -8,7 +8,10 @@ package com.vesoft.tools
 
 import java.io.{File, IOException}
 
-import com.vesoft.tools.SparkSstFileGenerator.GraphPartitionIdAndKeyValueEncoded
+import com.vesoft.tools.SparkSstFileGenerator.{
+  GraphPartitionIdAndKeyValueEncoded,
+  NEBULA_PARTITION_NUMBER_KEY
+}
 import com.vesoft.tools.VertexOrEdgeEnum.VertexOrEdgeEnum
 import javax.xml.bind.DatatypeConverter
 import org.apache.hadoop.conf.Configuration
@@ -125,6 +128,12 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
   private val hdfsParentDir =
     configuration.get(SparkSstFileGenerator.SSF_OUTPUT_HDFS_DIR_CONF_KEY)
 
+  /**
+    * how many partition this graph space has
+    */
+  private val nebulaGraphSpacePartitions =
+    configuration.getInt(SparkSstFileGenerator.NEBULA_PARTITION_NUMBER_KEY, 3)
+
   log.debug(s"SstRecordWriter read hdfs dir:${hdfsParentDir}")
 
   // all RocksObject should be closed
@@ -137,9 +146,9 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
   ): Unit = {
     var sstFileWriter: SstFileWriter = null
 
+    val partitionId = (key.id % nebulaGraphSpacePartitions).toInt
     //cache per partition per vertex/edge type's sstfile writer
-    val sstWriterOptional =
-      sstFilesMap.get((value.vertexOrEdgeEnum, key.partitionId))
+    val sstWriterOptional = sstFilesMap.get((value.vertexOrEdgeEnum, partitionId))
     if (sstWriterOptional.isEmpty) {
 
       /**
@@ -167,7 +176,7 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
 
       // Each partition can generated multiple sst files, among which keys will be ordered, and keys could overlap between different sst files.
       // All these sst files will be  `hdfs -copyFromLocal` to the same HDFS dir(and consumed by subsequent nebula `DOWNLOAD & INGEST` command), so we need different suffixes to distinguish between them.
-      val hdfsSubDirectory = s"${File.separator}${key.partitionId}${File.separator}"
+      val hdfsSubDirectory = s"${File.separator}${partitionId}${File.separator}"
 
 
       val localDir = s"${localSstFileOutput}${hdfsSubDirectory}"
@@ -191,7 +200,7 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
       }
 
       sstFileWriter.open(localSstFile)
-      sstFilesMap += (value.vertexOrEdgeEnum, key.partitionId) -> (sstFileWriter, localSstFile, hdfsSubDirectory)
+      sstFilesMap += (value.vertexOrEdgeEnum, partitionId) -> (sstFileWriter, localSstFile, hdfsSubDirectory)
     } else {
       sstFileWriter = sstWriterOptional.get._1
     }
