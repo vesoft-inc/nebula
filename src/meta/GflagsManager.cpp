@@ -31,6 +31,7 @@ std::unordered_map<std::string, cpp2::ConfigMode> GflagsManager::parseConfigJson
     std::unordered_map<std::string, cpp2::ConfigMode> configModeMap;
     Configuration conf;
     if (!conf.parseFromFile(json).ok()) {
+        LOG(ERROR) << "Load gflags json failed";
         return configModeMap;
     }
     std::vector<std::string> keys = {"IMMUTABLE", "REBOOT", "MUTABLE", "IGNORED"};
