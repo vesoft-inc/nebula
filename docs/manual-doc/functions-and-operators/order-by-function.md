@@ -6,7 +6,7 @@ And it can only be used in the `PIEP`-syntax ("|")
 ```
 | ORDER BY <prop> ASC | DESC [, <prop> ASC | DESC ...] 
 ```
-By default, `ORDER BY` sorts in ascending order if no `ASC` or `DESC` is given.
+By default, `ORDER BY` sorts the records in ascending order if no `ASC` or `DESC` is given.
 
 ### Example
 

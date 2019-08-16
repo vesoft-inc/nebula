@@ -19,7 +19,7 @@ GO FROM 1 OVER e1 \
 UNION \
 GO FROM 2 OVER e1
 ```
-return the distinct neighbors vertex id of `1` and `2` (along with edge `e1`).
+return the neighbors' id of vertex `1` and `2` (along with edge `e1`) without duplication.
 
 While
 ```
@@ -27,7 +27,7 @@ GO FROM 1 OVER e1 \
 UNION ALL\
 GO FROM 2 OVER e1
 ```
-returns all the neighbors vertex id of `1` and `2`, with all duplications.
+returns all the neighbors of vertex `1` and `2`, with all possible duplications.
 
 `UNION` can also work with the `YIELD`-syntax-returned properties. For example, let's suppose the results of the following two queries 
 
