@@ -17,22 +17,6 @@ DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom compaction");
 DEFINE_int32(num_workers, 4, "Number of worker threads");
 
-/**
- * Check spaceId, partId exists or not.
- * */
-#define CHECK_FOR_WRITE(spaceId, partId, cb) \
-    auto it = spaces_.find(spaceId); \
-    if (UNLIKELY(it == spaces_.end())) { \
-        cb(ResultCode::ERR_SPACE_NOT_FOUND); \
-        return; \
-    } \
-    auto& parts = it->second->parts_; \
-    auto partIt = parts.find(partId); \
-    if (UNLIKELY(partIt == parts.end())) { \
-        cb(ResultCode::ERR_PART_NOT_FOUND); \
-        return; \
-    }
-
 namespace nebula {
 namespace kvstore {
 
