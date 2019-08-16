@@ -10,6 +10,6 @@ Nebula文档完全开源，我们欢迎更多贡献者帮助改进文档。Nebul
 
  - 使用每页右侧的铅笔标记直接在网站编辑或提交问题。
 
- - 在[GitHub]上提issue(https://github.com/vesoft-inc/nebula/issues)。
+ - 在GitHub上提[issue](https://github.com/vesoft-inc/nebula/issues)。
 
  - Fork仓库，在本地分支上做更改，然后提交PR。
