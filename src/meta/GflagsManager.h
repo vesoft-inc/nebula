@@ -34,6 +34,8 @@ public:
 protected:
     virtual ~GflagsManager() = default;
 
+    static std::unordered_map<std::string, cpp2::ConfigMode> parseConfigJson();
+
     template<typename ValueType>
     static std::string gflagsValueToThriftValue(const gflags::CommandLineFlagInfo& flag);
 };

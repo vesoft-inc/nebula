@@ -1242,6 +1242,8 @@ void MetaClient::loadCfg() {
         if (ret.ok()) {
             LOG(INFO) << "Register gflags ok " << gflagsDeclared_.size();
             configReady_ = true;
+        } else {
+            LOG(INFO) << "Register gflags failed: " << ret.status();
         }
     }
     // only load current module's config is enough

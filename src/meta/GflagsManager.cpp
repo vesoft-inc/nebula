@@ -5,6 +5,8 @@
  */
 
 #include "meta/GflagsManager.h"
+#include "base/Configuration.h"
+#include "fs/FileUtils.h"
 
 namespace nebula {
 namespace meta {
@@ -23,7 +25,34 @@ std::string GflagsManager::gflagsValueToThriftValue<std::string>(
     return flag.current_value;
 }
 
+std::unordered_map<std::string, cpp2::ConfigMode>
+GflagsManager::parseConfigJson() {
+    auto path = fs::FileUtils::readLink("/proc/self/exe").value();
+    auto json = fs::FileUtils::dirname(path.c_str()) + "/../share/resources/gflags.json";
+    std::unordered_map<std::string, cpp2::ConfigMode> configModeMap;
+    Configuration conf;
+    if (!conf.parseFromFile(json).ok()) {
+        return configModeMap;
+    }
+    std::vector<std::string> keys = {"IMMUTABLE", "REBOOT", "MUTABLE", "IGNORED"};
+    std::vector<cpp2::ConfigMode> modes = {cpp2::ConfigMode::IMMUTABLE, cpp2::ConfigMode::REBOOT,
+                                           cpp2::ConfigMode::MUTABLE, cpp2::ConfigMode::IGNORED};
+    for (size_t i = 0; i < keys.size(); i++) {
+        std::vector<std::string> values;
+        if (!conf.fetchAsStringArray(keys[i].c_str(), values).ok()) {
+            continue;
+        }
+        cpp2::ConfigMode mode = modes[i];
+        for (const auto& name : values) {
+            configModeMap[name] = mode;
+            LOG(INFO) << "!!!" << keys[i] << " " << name;
+        }
+    }
+    return configModeMap;
+}
+
 std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigModule& module) {
+    auto configModeMap = parseConfigJson();
     // declare all gflags in ClientBasedGflagsManager
     std::vector<gflags::CommandLineFlagInfo> flags;
     std::vector<cpp2::ConfigItem> configItems;
@@ -32,10 +61,21 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
         auto& name = flag.name;
         auto& type = flag.type;
         cpp2::ConfigType cType;
-        // default config type will take effect after reboot
-        cpp2::ConfigMode mode = cpp2::ConfigMode::IMMUTABLE;
         VariantType value;
         std::string valueStr;
+
+        // default config type would be immutable
+        cpp2::ConfigMode mode = cpp2::ConfigMode::IMMUTABLE;
+        if (configModeMap.find(name) != configModeMap.end()) {
+            mode = configModeMap[name];
+        }
+        if (mode == cpp2::ConfigMode::IGNORED) {
+            continue;
+        }
+        if (module == cpp2::ConfigModule::META) {
+            // all config of meta is immutable for now
+            mode = cpp2::ConfigMode::IMMUTABLE;
+        }
 
         // TODO: all int32 and uint32 are converted to int64
         if (type == "uint32" || type == "int32" || type == "int64") {
@@ -58,16 +98,9 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
             continue;
         }
 
-        if (name == "load_data_interval_secs") {
-            mode = cpp2::ConfigMode::MUTABLE;
-        }
-        if (module == cpp2::ConfigModule::META) {
-            // all config of meta is immutable for now
-            mode = cpp2::ConfigMode::IMMUTABLE;
-        }
-
         configItems.emplace_back(toThriftConfigItem(module, name, cType, mode, valueStr));
     }
+    LOG(INFO) << "Prepare to register " << configItems.size() << " gflags to meta";
     return configItems;
 }
 
