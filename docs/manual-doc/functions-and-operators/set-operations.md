@@ -42,13 +42,13 @@ nebula> GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 
 --------------------------
 
 nebula> GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2  -- query 2
-==========================
+===========================
 | id  | right.1 | right.2 |
-==========================
+===========================
 | 104 |    1    |    2    |    -- line 1
---------------------------
+---------------------------
 | 104 |    2    |    2    |    -- line 2
---------------------------
+---------------------------
 ```
 
 And the following statement 
@@ -61,15 +61,15 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS ri
 
 will return as follows:
 ```
-==========================
+=========================
 | id  | left.1 | left.2 |    -- UNION or UNION DISTINCT. The column names come from query 1
-==========================
+=========================
 | 104 |    1   |    2   |    -- line 1
---------------------------
+-------------------------
 | 104 |    2   |    2   |    -- line 2
---------------------------
+-------------------------
 | 215 |    4   |    3   |    -- line 3
---------------------------
+-------------------------
 ```
 
 Notice that line 1 and line 2 return the same id (104) with different column values. The `DISTINCT` check duplication by all the columns for every line. So line 1 and line 2 are different.
@@ -80,17 +80,17 @@ GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.
 UNION ALL
 GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS right.2
 
-==========================
+=========================
 | id  | left.1 | left.2 |    -- UNION ALL
-==========================
+=========================
 | 104 |    1   |    2   |    -- line 1
---------------------------
+-------------------------
 | 104 |    1   |    2   |    -- line 1
---------------------------
+-------------------------
 | 104 |    2   |    2   |    -- line 2
---------------------------
+-------------------------
 | 215 |    4   |    3   |    -- line 3
---------------------------
+-------------------------
 ```
 
 ## INTERSECT
@@ -116,11 +116,11 @@ GO FROM 2,3 OVER e1 YIELD e1._dst AS id, e1.prop1 AS right.1, $$.tag.prop2 AS ri
 will return
 
 ```
-==========================
+=========================
 | id  | left.1 | left.2 |
-==========================
+=========================
 | 104 |    1   |    2   |    -- line 1
---------------------------
+-------------------------
 ```
 
 ## MINUS
@@ -157,10 +157,10 @@ GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.
 will come out
 
 ```
-==========================
+===========================
 | id  | right.1 | right.2 |    -- colunm named from query 2
-==========================
+===========================
 | 104 |    2    |    2    |    -- line 2
---------------------------
+---------------------------
 ```
 
