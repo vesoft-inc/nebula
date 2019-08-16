@@ -25,8 +25,7 @@ std::string GflagsManager::gflagsValueToThriftValue<std::string>(
     return flag.current_value;
 }
 
-std::unordered_map<std::string, cpp2::ConfigMode>
-GflagsManager::parseConfigJson() {
+std::unordered_map<std::string, cpp2::ConfigMode> GflagsManager::parseConfigJson() {
     auto path = fs::FileUtils::readLink("/proc/self/exe").value();
     auto json = fs::FileUtils::dirname(path.c_str()) + "/../share/resources/gflags.json";
     std::unordered_map<std::string, cpp2::ConfigMode> configModeMap;
@@ -45,17 +44,18 @@ GflagsManager::parseConfigJson() {
         cpp2::ConfigMode mode = modes[i];
         for (const auto& name : values) {
             configModeMap[name] = mode;
-            LOG(INFO) << "!!!" << keys[i] << " " << name;
         }
     }
     return configModeMap;
 }
 
 std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigModule& module) {
-    auto configModeMap = parseConfigJson();
-    // declare all gflags in ClientBasedGflagsManager
-    std::vector<gflags::CommandLineFlagInfo> flags;
     std::vector<cpp2::ConfigItem> configItems;
+    if (module == cpp2::ConfigModule::UNKNOWN) {
+        return configItems;
+    }
+    auto configModeMap = parseConfigJson();
+    std::vector<gflags::CommandLineFlagInfo> flags;
     gflags::GetAllFlags(&flags);
     for (auto& flag : flags) {
         auto& name = flag.name;
@@ -69,6 +69,7 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
         if (configModeMap.find(name) != configModeMap.end()) {
             mode = configModeMap[name];
         }
+        // ignore some useless gflags
         if (mode == cpp2::ConfigMode::IGNORED) {
             continue;
         }

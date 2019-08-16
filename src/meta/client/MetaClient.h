@@ -263,6 +263,7 @@ protected:
 
     void loadCfgThreadFunc();
     void loadCfg();
+    bool registerCfg();
     void addLoadCfgTask();
     void updateGflagsValue(const ConfigItem& item);
 

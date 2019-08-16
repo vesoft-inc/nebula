@@ -29,8 +29,7 @@ protected:
     }
 };
 
-std::vector<meta::cpp2::ConfigItem>
-mockRegisterGflags() {
+std::vector<meta::cpp2::ConfigItem> mockRegisterGflags() {
     std::vector<meta::cpp2::ConfigItem> configItems;
     {
         auto module = meta::cpp2::ConfigModule::STORAGE;
@@ -86,7 +85,7 @@ TEST_F(ConfigTest, ConfigTest) {
     ASSERT_NE(nullptr, client);
 
     auto configItems = mockRegisterGflags();
-    auto ret = gEnv->gflagsManager()->registerGflags(configItems);
+    auto ret = gEnv->gflagsManager()->registerGflags(std::move(configItems));
     ASSERT_TRUE(ret.ok());
 
     // set/get without declaration
