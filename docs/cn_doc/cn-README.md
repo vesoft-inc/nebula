@@ -12,13 +12,13 @@
  * 高容错
  * 类似SQL的查询语言
 
-## Nebula获取 ##
+## 获取 `Nebula` ##
 
 **Nebula Graph** 源码参见[GitHub](https://github.com/vesoft-inc/nebula)。
 也可下载Nebula [Docker](https://hub.docker.com/r/vesoft/nebula-graph/tags)镜像进行试用。
 更多详情参见[Get Started](cn-get-started.md).
 
-## 为Nebula做贡献 ##
+## 参与 `Nebula` ##
 
 **Nebula Graph** 是一个完全开源的项目，其所有核心功能都将在开源repository中实现。Nebula鼓励社区参与该项目，目前有以下贡献方式：
 
