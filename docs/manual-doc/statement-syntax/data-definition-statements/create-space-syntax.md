@@ -1,3 +1,4 @@
+# Create Space Syntax
 
 ```
 CREATE SPACE space_name
