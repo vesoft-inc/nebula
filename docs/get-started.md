@@ -236,6 +236,7 @@ Make sure all the services are working
 - -p is to set password, `password` is the default password for account `user`
 
 `Add HOSTS` is to register the storage hosts:
+
 ```
 > ADD HOSTS $storage_ip:$storage_port
 ```
