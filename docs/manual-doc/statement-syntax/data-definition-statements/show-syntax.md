@@ -20,7 +20,10 @@ nebula> SHOW SPACES;
 ========
 | test |
 --------
+
 nebula> USE test;
+
 nebula> SHOW TAGS;
+
 nebula> SHOW EDGES;
 ```
