@@ -20,10 +20,15 @@ nebula> SHOW SPACES;
 ========
 | test |
 --------
+<<<<<<< HEAD
 
 nebula> USE test;
 
 nebula> SHOW TAGS;
 
+=======
+nebula> USE test;
+nebula> SHOW TAGS;
+>>>>>>> add create-tag-edge, show and update get-started
 nebula> SHOW EDGES;
 ```
