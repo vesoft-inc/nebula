@@ -83,7 +83,7 @@ For macOS users, click the Docker Desktop icon -> Preferences -> Daemon -> Regis
 
 启动docker容器。
 
-进入容器后，默认在`root`目录下，使用`cd ~ / nebula-graph /`切换到`neula`主目录。
+进入容器后，默认在`root`目录下，使用`cd /usr/local/nebula切换`切换到`neula`主目录。
 
 运行
 
