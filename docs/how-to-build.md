@@ -6,14 +6,28 @@ This tutorial provides an introduction to build `Nebula` code.
 
 The project Nebula is developed using C++14, so it requires a compiler supporting C++14 features.
 
+### Support system version
+- Fedora29
+- Fedora30
+- Centos7.5
+- Centos6.5
+- Ubuntu16.04
+- Ubuntu18.04
+
+
 ### How to build in Fedora29 or Fedora30
-#### dependency
+#### Install tools
+
+```
+bash> sudo yum -y install git git-lfs
+```
+
+#### Install dependencies
 
 The project itself includes the source code of several 3rd-party libraries, which usually does not exist in the OS's public application repositories. In addition to the included libraries, Nebula requires these 3rd-party utilities and libraries to be installed on the system
 
 ```
 bash> sudo yum -y install autoconf automake libtool cmake bison unzip boost gperf krb5 openssl libunwind ncurses readline
-bash> sudo yum -y install git git-lfs
 ```
 
 #### Build and install 3rd-party Libraries
@@ -42,13 +56,13 @@ bash> sudo make install
 
 ### How to build in Centos7.5
 
-#### prepare
+#### Prepare
 **Step1**: install tools
 
 ```
 bash> sudo yum -y install git git-lfs
 ```
-**Step2**: install dependency
+**Step2**: install dependencies
 
 through yum install
 
@@ -68,7 +82,7 @@ bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-7.
 bash> sudo adduser --system --group --home /home/engshare engshare
 ```
 
-Please make sure the user's home directory /home/engshare is readable to all users
+Please make sure the user's home directory **/home/engshare** is readable to all users
 
 2) Install all necessary rpm packages in this folder
 
@@ -84,7 +98,7 @@ alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gc
 
 alias ctest='/home/engshare/cmake/bin/ctest'
 ```
-3) Update **~/.bashrc**
+4) Update **~/.bashrc**
 
 ```
 bash> source ~/.bashrc
@@ -114,7 +128,6 @@ bash> make OR make -j${threadnum}
 bash> sudo make install
 ```
 
-
 ### How to build in Centos6.5
 
 **Step1**: install tools
@@ -122,9 +135,9 @@ bash> sudo make install
 ```
 bash> sudo yum -y install git git-lfs
 ```
-**Step2**: install dependency
+**Step2**: install dependencies
 
-through yum install deps
+through yum install
 
 ```
 bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static maven
@@ -187,14 +200,15 @@ bash> sudo make install
 **Step1**: install tools
 
 ```
-bash> sudo yum -y install git git-lfs
+bash> sudo apt-get -y install git git-lfs
 ```
-**Step2**: install dependency
 
-through apt-get install deps
+**Step2**: install dependencies
+
+through apt-get install
 
 ```
-bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake python perl-WWW-Curl maven
+bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake python maven
 ```
 
 through vesoft offer
@@ -209,7 +223,7 @@ bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu180
 bash> sudo adduser --system --group --home /home/engshare engshare
 ```
 
-Please make sure the user's home directory /home/engshare is readable to all users
+Please make sure the user's home directory **/home/engshare** is readable to all users
 
 2) Install all necessary deb packages in this folder
 
@@ -258,13 +272,21 @@ bash> sudo make install
 #### **Now build finish**
 
 
-#### notice
+### Notice
 error info: **/usr/bin/ld: cannot find Scrt1.o: `No such file or directory`**
 
 **resolve**:
 
+1)Modify **~/.bashrc** by appending following line to the end
+
 ```
-bash> export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LIBRARY_PATH
+export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LIBRARY_PATH
+```
+
+2) Update **~/.bashrc**
+
+```
+bash> source ~/.bashrc
 ```
 
 error info: **bison verson less than 3.0.5**
