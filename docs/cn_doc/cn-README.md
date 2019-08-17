@@ -33,4 +33,4 @@
 ## 联系方式
 - 使用[GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) 提交错误报告和功能要求。
 - 加入 [![](https://img.shields.io/badge/slack-nebula-519dd9.svg)](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200).
-- **Nebula Graph** 更多特点请访问[home page](http://nebula-graph.io/)。
+- **Nebula Graph** 详情访问[home page](http://nebula-graph.io/)。

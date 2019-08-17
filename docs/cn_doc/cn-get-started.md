@@ -47,7 +47,7 @@ linux用户请在/etc/docker/daemon.json 中写入如下内容（如果文件不
 
 macOS 用户请点击任务栏中Docker Desktop图标 -> Preferences -> Daemon -> Registry mirrors。 在列表中添加 https://dockerhub.azk8s.cn 和 https://reg-mirror.qiniu.com。修改完成后，点击 Apply & Restart 按钮， 重启Docker。
 
-镜像下载完成后，键入命令`docker images`检查镜像状态。
+镜像下载完成后，键入命令`docker images`查看下载完成的镜像。
 
 ```
 > docker images
@@ -441,6 +441,6 @@ nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.nam
 
 `$-` 表示输入流。
 
-第二种方法使用了用户定义变量`$ a`，此变量仅适用于复合语句。
+第二种方法使用了用户定义变量`$a`，此变量仅适用于复合语句。
 
 <!-- 有关查询语言的更多详细信息，请查看check [nGQL Query Language](nGQL-tutorial.md)。 -->
