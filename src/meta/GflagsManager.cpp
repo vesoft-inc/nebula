@@ -34,9 +34,11 @@ std::unordered_map<std::string, cpp2::ConfigMode> GflagsManager::parseConfigJson
         LOG(ERROR) << "Load gflags json failed";
         return configModeMap;
     }
-    std::vector<std::string> keys = {"IMMUTABLE", "REBOOT", "MUTABLE", "IGNORED"};
-    std::vector<cpp2::ConfigMode> modes = {cpp2::ConfigMode::IMMUTABLE, cpp2::ConfigMode::REBOOT,
-                                           cpp2::ConfigMode::MUTABLE, cpp2::ConfigMode::IGNORED};
+    static std::vector<std::string> keys = {"IMMUTABLE", "REBOOT", "MUTABLE", "IGNORED"};
+    static std::vector<cpp2::ConfigMode> modes = {cpp2::ConfigMode::IMMUTABLE,
+                                                  cpp2::ConfigMode::REBOOT,
+                                                  cpp2::ConfigMode::MUTABLE,
+                                                  cpp2::ConfigMode::IGNORED};
     for (size_t i = 0; i < keys.size(); i++) {
         std::vector<std::string> values;
         if (!conf.fetchAsStringArray(keys[i].c_str(), values).ok()) {
@@ -67,8 +69,9 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
 
         // default config type would be immutable
         cpp2::ConfigMode mode = cpp2::ConfigMode::IMMUTABLE;
-        if (configModeMap.find(name) != configModeMap.end()) {
-            mode = configModeMap[name];
+        auto iter = configModeMap.find(name);
+        if (iter != configModeMap.end()) {
+            mode = iter->second;
         }
         // ignore some useless gflags
         if (mode == cpp2::ConfigMode::IGNORED) {

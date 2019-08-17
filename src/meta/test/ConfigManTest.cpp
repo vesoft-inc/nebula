@@ -395,6 +395,7 @@ TEST(ConfigManTest, MockConfigTest) {
 
     auto consoleClient = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    consoleClient->waitForMetadReady();
     ClientBasedGflagsManager console(consoleClient.get());
     // update in console
     for (int i = 0; i < 5; i++) {
