@@ -47,7 +47,7 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
     if (!walFiles_.empty()) {
         firstLogId_ = walFiles_.begin()->second->firstId();
         auto& info = walFiles_.rbegin()->second;
-        if (info->lastId() <= 0 && ++walFiles_.rbegin() != walFiles_.rend()) {
+        if (info->lastId() <= 0 && walFiles_.size() > 1) {
             auto it = walFiles_.rbegin();
             it++;
             lastLogId_ = info->firstId() - 1;
@@ -312,7 +312,7 @@ void FileBasedWal::prepareNewFile(LogID startLogId) {
 
 
 TermID FileBasedWal::readTermId(const char* path, LogID logId) {
-    int32_t fd = open(path, O_EXCL | O_RDONLY | O_CLOEXEC | O_LARGEFILE, 0644);
+    int32_t fd = open(path, O_RDONLY);
     if (fd < 0) {
         LOG(FATAL) << "Failed to open file \"" << path
                    << "\" (errno: " << errno << "): "
