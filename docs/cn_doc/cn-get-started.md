@@ -82,9 +82,8 @@ For macOS users, click the Docker Desktop icon -> Preferences -> Daemon -> Regis
 ```
 
 启动docker容器。
-After login, you're in the `root` directory and you should use `cd ~/nebula-graph/` to switch to the nebula home directory.
 
-进入容器后，默认在`root`目录下，使用`cd~ / nebula-graph /`切换到`neula`主目录。
+进入容器后，默认在`root`目录下，使用`cd ~ / nebula-graph /`切换到`neula`主目录。
 
 运行
 
@@ -444,4 +443,4 @@ nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.nam
 
 第二种方法使用了用户定义变量`$ a`，此变量仅适用于复合语句。
 
-有关查询语言的更多详细信息，请查看check [nGQL Query Language](nGQL-tutorial.md)。
+<!-- 有关查询语言的更多详细信息，请查看check [nGQL Query Language](nGQL-tutorial.md)。 -->
