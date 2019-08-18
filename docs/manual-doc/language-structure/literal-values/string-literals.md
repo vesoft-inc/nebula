@@ -5,7 +5,7 @@ nebula> YIELD 'a string'
 nebula> YIELD "another string"
 ```
 
-Certain backslash escapes (\) have been supported (also known as the *escape character*). They are shown in the following table:
+Certain backslash escapes (\\) have been supported (also known as the *escape character*). They are shown in the following table:
 | **Escape Sequence**   | **Character Represented by Sequence**   | 
 |:----|:----|
 | \'   | A single quote (') character   | 
@@ -13,7 +13,7 @@ Certain backslash escapes (\) have been supported (also known as the *escape cha
 | \t   | A tab character   | 
 | \n   | A newline character   | 
 | \b   | A backspace character   | 
-| \\   | A backslash (\) character   | 
+| \\   | A backslash (\\) character   | 
 
 Here are some examples:
 
