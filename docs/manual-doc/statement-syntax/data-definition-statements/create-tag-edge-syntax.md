@@ -9,7 +9,7 @@ create_definition:
     prop_name data_type
     
 tag_edge_options:
-    option [[,] option] ...
+    option [, option ...]
 
 option:
     TTL_DURATION [=] ttl_duration
