@@ -7,7 +7,7 @@
 |   \|\|   |   逻辑或 OR   | 
 
 
-在 nGQL 中, 非 0 数字将被视为 _true_. 逻辑运算符的优先度参见 [Operator Precedence](./Operator_Precedence.md)。
+在 nGQL 中, 非 0 数字将被视为 _true_. 逻辑运算符的优先级参见 [Operator Precedence](./Operator_Precedence.md)。
 
 * &&
 
