@@ -29,7 +29,7 @@ public:
     InterimResult& operator=(InterimResult &&) = default;
 
     explicit InterimResult(std::vector<VertexID> vids);
-    explicit InterimResult(std::vector<std::string> colNames);
+    explicit InterimResult(std::vector<std::string> &&colNames);
 
     static StatusOr<std::unique_ptr<InterimResult>> getInterim(
             std::shared_ptr<const meta::SchemaProviderIf> resultSchema,
@@ -43,14 +43,14 @@ public:
     static Status castToBool(cpp2::ColumnValue *col);
     static Status castToStr(cpp2::ColumnValue *col);
 
-    void setColNames(std::vector<std::string> colNames) {
+    void setColNames(std::vector<std::string> &&colNames) {
         colNames_ = std::move(colNames);
     }
 
     void setInterim(std::unique_ptr<RowSetWriter> rsWriter);
 
     bool hasData() const {
-        return (rsWriter_ != nullptr) || (rsReader_ != nullptr);
+        return (rsWriter_ != nullptr) && (rsReader_ != nullptr);
     }
 
     std::shared_ptr<const meta::SchemaProviderIf> schema() const {

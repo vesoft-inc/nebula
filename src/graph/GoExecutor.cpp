@@ -352,8 +352,7 @@ Status GoExecutor::setupStarts() {
         inputs = varInputs;
     }
     // No error happened, but we are having empty inputs
-    if (inputs == nullptr
-            || (inputs != nullptr && !inputs->hasData())) {
+    if (inputs == nullptr || !inputs->hasData()) {
         return Status::OK();
     }
 

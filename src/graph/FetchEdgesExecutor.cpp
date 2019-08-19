@@ -135,15 +135,13 @@ Status FetchEdgesExecutor::setupEdgeKeysFromRef() {
     const InterimResult *inputs;
     if (sentence_->ref()->isInputExpr()) {
         inputs = inputs_.get();
-        if (inputs == nullptr
-                || (inputs != nullptr && !inputs->hasData())) {
+        if (inputs == nullptr || !inputs->hasData()) {
             // we have empty imputs from pipe.
             return Status::OK();
         }
     } else {
         inputs = ectx()->variableHolder()->get(varname_);
-        if (inputs == nullptr
-                || (inputs != nullptr && !inputs->hasData())) {
+        if (inputs == nullptr || !inputs->hasData()) {
             return Status::Error("Variable `%s' not defined", varname_.c_str());
         }
     }

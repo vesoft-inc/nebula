@@ -17,7 +17,7 @@ InterimResult::InterimResult(std::vector<VertexID> vids) {
     vids_ = std::move(vids);
 }
 
-InterimResult::InterimResult(std::vector<std::string> colNames) {
+InterimResult::InterimResult(std::vector<std::string> &&colNames) {
     colNames_ = std::move(colNames);
 }
 
