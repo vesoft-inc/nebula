@@ -8,7 +8,7 @@ The project Nebula is developed using C++14, so it requires a compiler supportin
 
 ### Support system version
 - Fedora29, 30
-- Centos7.5, 6.5
+- Centos6.5, 7.5
 - Ubuntu16.04, 18.04
 
 
@@ -39,7 +39,7 @@ bash> sudo make install
 ```
 
 #### Step3: Build nebula
-The default installation dir is **/usr/local/nebula**
+The default installation directory is **/usr/local/nebula**
 
 ```
 bash> git clone https://github.com/vesoft-inc/nebula.git
@@ -53,12 +53,12 @@ bash> sudo make install
 ### How to build in Centos7.5
 
 #### Step1: Prepare
-- install tools
+- Install tools
 
     ```
     bash> sudo yum -y install git git-lfs
     ```
-- install dependencies
+- Install dependencies
 
     through yum install
 
@@ -66,7 +66,7 @@ bash> sudo make install
     bash> sudo yum install -y libtool autoconf autoconf-archive automake perl-WWW-Curl libstdc++-static maven java-1.8.0-openjdk
     ```
 
-    through vesoft offer
+    and through vesoft offer
 
     ```
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
@@ -117,26 +117,26 @@ bash> sudo make install
 ```
 
 #### Step3: Build nebula
-The default installation dir is **/usr/local/nebula**
+The default installation directory is **/usr/local/nebula**
 
 ```
 bash> git clone https://github.com/vesoft-inc/nebula.git
 bash> cd nebula && mkdir build && cd build
 bash> cmake ..
 bash> cmake -DSKIP_JAVA_CLENT=OFF ..  # if you need to build java client
-bash> make OR make -j${threadnum}
+bash> make
 bash> sudo make install
 ```
 
 ### How to build in Centos6.5
 
 #### Step1: Prepare
-- install tools
+- Install tools
 
     ```
     bash> sudo yum -y install git git-lfs
     ```
-- install dependencies
+- Install dependencies
 
     through yum install
 
@@ -144,7 +144,7 @@ bash> sudo make install
     bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static maven java-1.8.0-openjdk
     ```
 
-    through vesoft offer
+    and through vesoft offer
 
     ```
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-6.5.tar.gz
@@ -185,7 +185,7 @@ bash> sudo make install
 ```
 
 #### Step3: Build nebula
-The default installation dir is **/usr/local/nebula**
+The default installation directory is **/usr/local/nebula**
 
 ```
 bash> git clone https://github.com/vesoft-inc/nebula.git
@@ -199,12 +199,12 @@ bash> sudo make install
 ### How to build in Ubuntu18.04 or Ubuntu16.04
 
 #### Step1: Prepare
-- install tools
+- Install tools
 
     ```
     bash> sudo yum -y install git git-lfs
     ```
-- install dependencies
+- Install dependencies
 
     through apt-get install
 
@@ -212,7 +212,7 @@ bash> sudo make install
     bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake python maven openjdk-8-jdk
     ```
 
-    through vesoft offer
+    and through vesoft offer
 
     ```
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
@@ -263,7 +263,7 @@ bash> sudo make install
 ```
 
 #### Step3: Build nebula
-The default installation dir is **/usr/local/nebula**
+The default installation directory is **/usr/local/nebula**
 
 ```
 bash> git clone https://github.com/vesoft-inc/nebula.git
