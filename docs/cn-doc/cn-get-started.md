@@ -84,7 +84,7 @@ For macOS users, click the Docker Desktop icon -> Preferences -> Daemon -> Regis
 
 启动docker容器。
 
-进入容器后，默认在`root`目录下，使用`/usr/local/nebula/script/`切换到`neula`主目录。
+进入容器后，默认在根目录下`/`，使用`/usr/local/nebula/script/`切换到`neula`主目录。
 
 运行
 
