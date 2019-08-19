@@ -239,8 +239,7 @@ nebula遵循c++14标准，依赖第三方库：
 - -u为用户名，默认值为`user`
 - -p为密码，用户`user`的默认密码为`password`
 
-`ADD HOSTS`注册存储主机
-
+`ADD HOSTS`将存储节点注册到元数据服务中
 
 ```
 > ADD HOSTS $storage_ip:$storage_port
