@@ -5,7 +5,7 @@
 
 ### From Docker
 
-You can quickly test Nebula Graph with Docker, Before you start, make sure that you have:
+The easiest way to get Nebula Graph up and running is using Docker. Before you start, make sure that you have:
 
 * Installed the latest version of [Docker](https://docs.docker.com/)
 
@@ -30,8 +30,6 @@ You can add the source at `/etc/docker/daemon.json`, for Linux users:
 
 For macOS users, click the Docker Desktop icon -> Preferences -> Daemon -> Registry mirrors. Add https://dockerhub.azk8s.cn and https://reg-mirror.qiniu.com to the list. Once the modification is complete, click the Apply & Restart button to restart Docker. -->
 
-
----
 
 **Startup Nebula Graph**
 
@@ -217,8 +215,6 @@ and `port` in nebula-storaged.conf
 
 Then you’re now ready to start using Nebula Graph.
 
----
-
 ## Build Your Own Graph
 
 This section describes how to build a graph and run queries. The example is built on the graph below:
@@ -252,7 +248,6 @@ There are three kinds of tags (_course_, _building_ and _student_) and two edge 
    }
 }
 ```
-
 
 ### Create a Graph Space
 
@@ -331,7 +326,7 @@ nebula> INSERT EDGE like(likeness) VALUES 201 -> 200:(85.6);
 nebula> INSERT EDGE like(likeness) VALUES 201 -> 202:(93.2);
 ```
 
-## Sample Queries
+### Sample Queries
 
 Q1. Find the vertexes that 201 likes:
 
