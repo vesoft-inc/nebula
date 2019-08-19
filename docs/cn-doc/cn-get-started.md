@@ -2,13 +2,11 @@
 
 ##  安装Nebula Graph
 
-### 通过Docker
+### Docker 方式
 
-**安装 Docker**
+Docker 安装方法请参考 [Docker 官方文档](https://docs.docker.com/)。
 
-安装方法请参考 [Docker 官方文档](https://docs.docker.com/)。
-
-获取最新 [Nebula Graph镜像](https://hub.docker.com/r/vesoft/nebula-graph)：
+从 Docker 镜像仓库获取最新 [Nebula Graph镜像](https://hub.docker.com/r/vesoft/nebula-graph)：
 
 ```
 > docker pull vesoft/nebula-graph:latest
@@ -107,7 +105,7 @@ to connect to the graph server. -->
 
 如果对部署过程有任何问题，欢迎在[GitHub](https://github.com/vesoft-inc/nebula/issues)上提issue。
 
-### 编译源码(Linux)
+### 编译源码方式(Linux)
 
 **依赖**
 
