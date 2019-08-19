@@ -10,10 +10,10 @@ Certain backslash escapes (\\) have been supported (also known as the *escape ch
 |:----|:----|
 | \'   | A single quote (') character   | 
 | \"   | A double quote (") character   | 
-| \t   | A tab character   | 
-| \n   | A newline character   | 
-| \b   | A backspace character   | 
-| \\   | A backslash (\\) character   | 
+| \t   | A tab character                | 
+| \n   | A newline character            | 
+| \b   | A backspace character          | 
+| \\|  | A backslash (\\) character     | 
 
 Here are some examples:
 

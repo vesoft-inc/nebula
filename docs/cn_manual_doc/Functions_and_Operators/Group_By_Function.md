@@ -1,7 +1,7 @@
 
 # 聚合函数 (Group by)
 
- `GROUP BY` 函数类似于SQL。 它们只能在 `YIELD` 语句中使用.
+ `GROUP BY` 函数类似于SQL。 只能在 `YIELD` 语句中使用.
 
 |名称 | 描述 |
 |:----|:----:|
@@ -19,8 +19,8 @@
 
 ```
 nebula> GO FROM 1 OVER e1 | YIELD $-.id AS fid, COUNT(*) AS cnt GROUP BY fid
--- 统计与节点”1“ 有e1关系的点的id出现的次数
+-- 统计与节点"1" 有e1关系的点的id出现的次数
 
 nebula> GO FROM 1 YIELD e1._dst AS fid, e1.prop1 AS prop1 | YIELD fid, SUM(prop1) GROUP BY fid
--- 统计与节点”1“ 有e1关系的点的prop1的总合。
+-- 统计与节点"1" 有e1关系的点的prop1的总合。
 ```

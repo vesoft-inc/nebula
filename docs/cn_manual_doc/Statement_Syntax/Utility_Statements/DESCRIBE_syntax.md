@@ -6,7 +6,7 @@ DESCRIBE TAG tag_name
 DESCRIBE EDGE edge_name
 ```
 
-在 Nebula 中 DESCRIBE 和 EXPLAIN 是`不同`的关键词。 DESCRIBE 关键词的作用是获取关于 space, tag, edge 结构的信息。 然而 EXPLAIN 的作用是查看nGQL语句的执行计划。 参见文档来获取更多有关 [EXPLAIN]() 的信息。
+在 Nebula 中 DESCRIBE 和 EXPLAIN 是`不同`的关键词。 DESCRIBE 关键词的作用是获取关于 space, tag, edge 结构的信息。 然而 EXPLAIN 的作用是查看nGQL语句的执行计划。（ EXPLAIN 将在下个版本中发布）。
 
 同时需要注意的是，DESCRIBE 和 SHOW 也是不同的。 详细参见 SHOW 文档。
 
