@@ -29,7 +29,7 @@ nebula> GO FROM 1 over e1 | FETCH PROP ON player $- YIELD player.name, player.ag
 
 nebula> $var = GO FROM 1 over e1; FETCH PROP ON player $var.id YIELD player.name, player.age  -- 与上述语句相同
 
-nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age    -- 获取1，2，3三个节点，返回姓名和年龄的唯一不同值
+nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age    -- 获取1，2，3三个节点，返回姓名和年龄都不相同的记录
 ```
 
 ## 获取边属性

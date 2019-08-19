@@ -14,7 +14,7 @@ INSERT EDGE用于插入从起点（src_vid）到终点（dst_vid）的一条边�
 
 * `<edge_name>`表示边类型，在进行`INSERT EDGE`操作前需创建好。
 * `<prop_name_list>`为指定边的属性列表。
-* `<prop_value_list>`须根据<prop_name_list>列出属性性，如无匹配类型，则返回错误。
+* `<prop_value_list>`须根据<prop_name_list>列出属性，如无匹配类型，则返回错误。
 
 >目前版本尚不支持默认属性值。
 
