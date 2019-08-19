@@ -17,7 +17,7 @@ Docker 安装方法请参考 [Docker 官方文档](https://docs.docker.com/)。
 * Azure 中国镜像 https://dockerhub.azk8s.cn
 * 七牛云 https://reg-mirror.qiniu.com
 
-linux用户请在/etc/docker/daemon.json 中加入如下内容（如果文件不存在请新建该文件)
+Linux 用户请在 `/etc/docker/daemon.json` 中加入如下内容（如果文件不存在请新建该文件)
 
 ```
 {
@@ -28,7 +28,7 @@ linux用户请在/etc/docker/daemon.json 中加入如下内容（如果文件不
 }
 ```
 
-macOS 用户请点击任务栏中Docker Desktop图标 -> Preferences -> Daemon -> Registry mirrors。 在列表中添加 https://dockerhub.azk8s.cn 和 https://reg-mirror.qiniu.com。修改完成后，点击 `Apply & Restart` 按钮， 重启Docker。
+macOS 用户请点击任务栏中Docker Desktop图标 -> Preferences -> Daemon -> Registry mirrors。 在列表中添加 https://dockerhub.azk8s.cn 和 https://reg-mirror.qiniu.com 。修改完成后，点击 `Apply & Restart` 按钮， 重启Docker。
 
 镜像下载完成后，键入命令`docker images`查看下载完成的镜像。
 
@@ -54,19 +54,16 @@ You can add the source at `/etc/docker/daemon.json`, for Linux users:
 For macOS users, click the Docker Desktop icon -> Preferences -> Daemon -> Registry mirrors. Add https://dockerhub.azk8s.cn and https://reg-mirror.qiniu.com to the list. Once the modification is complete, click the Apply & Restart button to restart Docker. -->
 
 
----
-
 **运行 Nebula Graph**
 
-`nebula` 镜像下载完成后，运行
+`nebula` 镜像下载完成后，运行容器：
 
 ```
 > docker run -it vesoft/nebula-graph:latest /bin/bash
 ```
 
-启动docker容器。
+进入容器后，默认在根目录下 `/` ，切换到 `neula` 主目录:
 
-进入容器后，默认在根目录下`/`，切换到`neula`主目录:
 ```
 > cd /usr/local/nebula/
 ```
@@ -77,7 +74,7 @@ For macOS users, click the Docker Desktop icon -> Preferences -> Daemon -> Regis
 > scripts/nebula.service start all
 ```
 
-查看metad，storaged 和 graphd运行状态:
+查看 metad，storaged 和 graphd 运行状态:
 
 ```
 > scripts/nebula.service status all
@@ -97,19 +94,19 @@ Run
 
 to connect to the graph server. -->
 
-连接Nebula Graph：
+连接 Nebula Graph：
 
 ```
 > bin/nebula -u=user -p=password
 ```
 
-如果对部署过程有任何问题，欢迎在[GitHub](https://github.com/vesoft-inc/nebula/issues)上提issue。
+如果对部署过程有任何问题，欢迎在 [GitHub](https://github.com/vesoft-inc/nebula/issues) 上提 issue。
 
-### 编译源码方式(Linux)
+### 编译源码方式 (Linux)
 
 **依赖**
 
-nebula遵循c++14标准，依赖第三方库：
+nebula 遵循 c++14 标准，依赖第三方库：
 
 -	autoconf
 -	automake
@@ -125,7 +122,7 @@ nebula遵循c++14标准，依赖第三方库：
 -	ncurses
 -	readline
 
-建议安装g++ 5以上linux系统, 比如Fedora 29。目前，nebula使用`git-lfs`存储第三方库，请确保获取源代码之前您已安装`git-lfs`。
+建议安装 g++ 5 以上 Linux 系统, 比如 Fedora 29。目前，nebula 使用 `git-lfs` 存储第三方库，请确保获取源代码之前您已安装 `git-lfs` 。
 
 **从GitHub获取源码**
 
@@ -139,7 +136,7 @@ nebula遵循c++14标准，依赖第三方库：
 > cmake ./
 ```
 
-默认安装到 /usr/local路径，如需指定安装路径，请使用:
+默认安装到 /usr/local 路径，如需指定安装路径，请使用:
 
 ```
 > cmake -DCMAKE_INSTALL_PREFIX=$your_nebula_install_dir
@@ -155,15 +152,15 @@ nebula遵循c++14标准，依赖第三方库：
 
 #### 运行nebula（单机)
 
-* 配置nebula-metad.conf
+* 配置 nebula-metad.conf
 
-   在nebula安装目录下，运行以下命令：
+   在 nebula 安装目录下，运行以下命令：
 
    ```
    > cp etc/nebula-metad.conf.default etc/nebula-metad.conf
    ```
 
-   根据实际修改nebula-metad.conf中的配置：
+   根据实际修改 nebula-metad.conf 中的配置：
 
    - local_ip ip地址
    - port 端口号
@@ -184,7 +181,7 @@ nebula遵循c++14标准，依赖第三方库：
    - ws_h2_port storageservice HTTP2服务端口号
 
 * 配置 nebula-graphd.conf
-   
+
    ```
    > cp etc/nebula-graphd.conf.default etc/nebula-graphd.conf
    ```
@@ -234,26 +231,26 @@ nebula遵循c++14标准，依赖第三方库：
 示例数据有三种类型的标签（_course_， _building_，_student_），两种类型的边（_select_ 和 _like_），其schema为：
 
 ```json
-{  
-   "tags":{  
-      "course":[  
+{
+   "tags":{
+      "course":[
          "name: string",
          "credits: integer"
       ],
-      "building":[  
+      "building":[
          "name: string"
       ],
-      "student":[  
+      "student":[
          "name: string",
          "age: integer",
          "gender: string"
       ]
    },
-   "edges":{  
-      "select":[  
+   "edges":{
+      "select":[
          "grade: integer"
       ],
-      "like":[  
+      "like":[
          "likeness: double"
       ]
    }
@@ -360,7 +357,7 @@ nebula> GO FROM 201 OVER like;
 -------
 ```
 
-Q2. 查询点201喜欢的点，并筛选出年龄大于17岁的点，并返回其姓名，年龄，性别，将其重全名为Friend，Age，Gender。
+Q2. 查询点201喜欢的点，并筛选出年龄大于 17 岁的点，并返回其姓名，年龄，性别，将其重全名为 Friend，Age，Gender。
 
 ```
 nebula> GO FROM 201 OVER like WHERE $$.student.age >= 17 YIELD $$.student.name AS Friend, $$.student.age AS Age, $$.student.gender AS Gender;
@@ -430,15 +427,15 @@ nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.nam
    [INFO] Starting nebula-metad...
    [INFO] Done
    ```
-   
+
    再启动 storaged 和 graphd：
 
    ```
    nebula> scripts/nebula.service start storaged
    [INFO] Starting nebula-storaged...
    [INFO] Done
-   
-   nebula> scripts/nebula.service start graphd  
+
+   nebula> scripts/nebula.service start graphd
    [INFO] Starting nebula-graphd...
    [INFO] Done
    ```
