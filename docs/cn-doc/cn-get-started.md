@@ -1,41 +1,25 @@
-
----
-本教程旨在对 **Nebula Graph** 的使用做简要介绍。
+# Quick Start
 
 ##  安装Nebula Graph
 
 ### 通过Docker
 
-启动 **Nebula Graph** 最快捷的方式是使用`docker`。首先，查看电脑是否已安装Docker：
+**安装 Docker**
 
-```
-> docker --version
-Docker version 18.09.2, build 6247962
-```
+安装方法请参考 [Docker 官方文档](https://docs.docker.com/)。
 
-如果未安装，参看[这里](https://docs.docker.com/install/)。
-安装之后，运行：
+获取最新 [Nebula Graph镜像](https://hub.docker.com/r/vesoft/nebula-graph)：
 
 ```
 > docker pull vesoft/nebula-graph:latest
-ac9208207ada: Pulling fs layer
-cdcb67189ff7: Pulling fs layer
-80407c3cb6b4: Pulling fs layer
-latest: Pulling from vesoft/nebula-graph
-ac9208207ada: Pull complete
-cdcb67189ff7: Pull complete
-80407c3cb6b4: Pull complete
-Digest: sha256:72a73c801685595776779291969b57ab758f53ebd9bda8bab56421e50bfee161
-Status: Downloaded newer image for vesoft/nebula-graph:latest
 ```
-下载Nebula镜像。
 
 国内从 Docker Hub 拉取镜像有时会遇到困难，此时可以配置国内地址。例如:
 
 * Azure 中国镜像 https://dockerhub.azk8s.cn
 * 七牛云 https://reg-mirror.qiniu.com
 
-linux用户请在/etc/docker/daemon.json 中写入如下内容（如果文件不存在请新建该文件
+linux用户请在/etc/docker/daemon.json 中加入如下内容（如果文件不存在请新建该文件)
 
 ```
 {
@@ -46,7 +30,7 @@ linux用户请在/etc/docker/daemon.json 中写入如下内容（如果文件不
 }
 ```
 
-macOS 用户请点击任务栏中Docker Desktop图标 -> Preferences -> Daemon -> Registry mirrors。 在列表中添加 https://dockerhub.azk8s.cn 和 https://reg-mirror.qiniu.com。修改完成后，点击 Apply & Restart 按钮， 重启Docker。
+macOS 用户请点击任务栏中Docker Desktop图标 -> Preferences -> Daemon -> Registry mirrors。 在列表中添加 https://dockerhub.azk8s.cn 和 https://reg-mirror.qiniu.com。修改完成后，点击 `Apply & Restart` 按钮， 重启Docker。
 
 镜像下载完成后，键入命令`docker images`查看下载完成的镜像。
 
@@ -84,24 +68,22 @@ For macOS users, click the Docker Desktop icon -> Preferences -> Daemon -> Regis
 
 启动docker容器。
 
-进入容器后，默认在根目录下`/`，使用`/usr/local/nebula/script/`切换到`neula`主目录。
+进入容器后，默认在根目录下`/`，切换到`neula`主目录:
+```
+> cd /usr/local/nebula/
+```
 
 运行
 
 ```
-> ./start-all.sh
-Starting MetaService StorageService and GraphService ...
+> scripts/nebula.service start all
 ```
 
-启动测试服务，存储服务和图服务。
-
-运行
+查看metad，storaged 和 graphd运行状态:
 
 ```
-> ps -ef | grep nebula
+> scripts/nebula.service status all
 ```
-
-查看服务进程，，如果看到nebula-metad, nebula-storaged,  nebula-graphd ，则表明服务已成功连接。
 
 <!-- `bin/nebula` is a `console` which can be used to insert and query data.
 
@@ -117,14 +99,10 @@ Run
 
 to connect to the graph server. -->
 
-运行以下命令连接nebula
+连接Nebula Graph：
 
 ```
-> ./start-console.sh
-
-Welcome to Nebula Graph (Version 0.1)
-
-nebula>
+> bin/nebula -u=user -p=password
 ```
 
 如果对部署过程有任何问题，欢迎在[GitHub](https://github.com/vesoft-inc/nebula/issues)上提issue。
@@ -177,47 +155,46 @@ nebula遵循c++14标准，依赖第三方库：
 > make && make install
 ```
 
-**运行nebula（单机）**
+#### 运行nebula（单机)
 
-配置nebula-metad.conf
+* 配置nebula-metad.conf
 
-在nebula安装目录下，运行以下命令：
+   在nebula安装目录下，运行以下命令：
 
-```
-> cp etc/nebula-metad.conf.default etc/nebula-metad.conf
-```
+   ```
+   > cp etc/nebula-metad.conf.default etc/nebula-metad.conf
+   ```
 
-根据实际修改nebula-metad.conf中的配置：
+   根据实际修改nebula-metad.conf中的配置：
 
-- local_ip ip地址
-- port 端口号
-- ws_http_port metaservice HTTP HTTP服务端口号
-- ws_h2_port metaservice HTTP2服务端口号
+   - local_ip ip地址
+   - port 端口号
+   - ws_http_port metaservice HTTP HTTP服务端口号
+   - ws_h2_port metaservice HTTP2服务端口号
 
+* 配置 nebula-storaged.conf
 
-配置nebula-storaged.conf
+   ```
+   > cp etc/nebula-storaged.conf.default etc/nebula-storaged.conf
+   ```
 
-```
-> cp etc/nebula-storaged.conf.default etc/nebula-storaged.conf
-```
+   根据实际修改 nebula-storaged.conf 中的配置：
 
-根据实际修改nebula-storaged.conf中的配置：
+   - local_ip ip地址
+   - port 端口号
+   - ws_http_port storageservice HTTP服务端口号
+   - ws_h2_port storageservice HTTP2服务端口号
 
-- local_ip ip地址
-- port 端口号
-- ws_http_port storageservice HTTP服务端口号
-- ws_h2_port storageservice HTTP2服务端口号
-
-根据实际修改nebula-graphd.conf中的配置：
-
-```
-> cp etc/nebula-graphd.conf.default etc/nebula-graphd.conf
-```
-
-- local_ip ip地址
-- port 端口号
-- ws_http_port graphservice HTTP服务端口号
-- ws_h2_port graphservice HTTP2服务端口号
+* 配置 nebula-graphd.conf
+   
+   ```
+   > cp etc/nebula-graphd.conf.default etc/nebula-graphd.conf
+   ```
+   根据实际修改 nebula-graphd.conf 中的配置：
+   - local_ip ip地址
+   - port 端口号
+   - ws_http_port graphservice HTTP服务端口号
+   - ws_h2_port graphservice HTTP2服务端口号
 
 **启动服务**
 
@@ -231,29 +208,28 @@ nebula遵循c++14标准，依赖第三方库：
 > scripts/nebula.service status all
 ```
 
-**连接nebula**
+**连接 Nebula Graph**
 
 ```
 > bin/nebula -u=user -p=password
 ```
 
-- -u为用户名，默认值为`user`
-- -p为密码，用户`user`的默认密码为`password`
+* -u 为用户名，默认值为 `user`
+* -p 为密码，用户 `user` 的默认密码为 `password`
 
-`ADD HOSTS`将存储节点注册到元数据服务中
+`ADD HOSTS` 将存储节点注册到元数据服务中
 
 ```
 > ADD HOSTS $storage_ip:$storage_port
 ```
 
-根据nebula-storaged.conf中的`local_ip`， `port` 替换此处的`$storage_ip`，`$storage_port`。
+根据nebula-storaged.conf中的 `local_ip` 和 `port` 替换此处的 `$storage_ip` 和 `$storage_port`。
 
 ---
 
 ## 创建图数据
 
 本节介绍如何构建图数据并进行查询。本示例基于下图构建：
-
 
 ![Untitled Diagram (1)](https://user-images.githubusercontent.com/51590253/60649144-0774c980-9e74-11e9-86d6-bad1653e70ba.png)
 
@@ -306,12 +282,13 @@ nebula> CREATE SPACE myspace_test2(partition_num=1, replica_factor=1);
 nebula> USE myspace_test2;
 ```
 
-`replica_factor` 用来指定集群复本数。
+* `replica_factor` 用来指定集群复本数。
 
-`partition_num` 用来指定一个复本中的分区数量。
+* `partition_num` 用来指定一个复本中的分区数量。
+
 ### 定义图数据Schema
 
-使用`CREATE TAG`语句定义带有标签类型和属性列表的标签。
+使用 `CREATE TAG` 语句定义带有标签类型和属性列表的标签：
 
 ```
 nebula> CREATE TAG course(name string, credits int);
@@ -319,40 +296,39 @@ nebula> CREATE TAG building(name string);
 nebula> CREATE TAG student(name string, age int, gender string);
 ```
 
-使用`CREATE EDGE`语句定义边类型。
+使用`CREATE EDGE`语句定义边类型：
 
 ```
 nebula> CREATE EDGE like(likeness double);
 nebula> CREATE EDGE select(grade int);
 ```
 
-查看上述创建的标签和边：
+查看上述创建的标签和边类型：
 
 ```
 -- 查看标签列表
 nebula> SHOW TAGS;
 
--- 查看边列表
+-- 查看边类型列表
 nebula> SHOW EDGES;
 ```
 
-查看标签或边的属性
+查看标签或边类型的属性：
 
 ```
--- 查看标签属性
+-- 查看标签的属性
 nebula> DESCRIBE TAG student;
 
--- 查看边属性
+-- 查看边类型的属性
 nebula> DESCRIBE EDGE like;
 ```
 
 
 ### 插入数据
 
-为上述图数据插入点和边。
+根据上图，插入相应的点和边：
 
 ```
-
 -- 插入点
 nebula> INSERT VERTEX student(name, age, gender) VALUES 200:("Monica", 16, "female");
 nebula> INSERT VERTEX student(name, age, gender) VALUES 201:("Mike", 18, "male");
@@ -360,9 +336,6 @@ nebula> INSERT VERTEX student(name, age, gender) VALUES 202:("Jane", 17, "female
 nebula> INSERT VERTEX course(name, credits),building(name) VALUES 101:("Math", 3, "No5");
 nebula> INSERT VERTEX course(name, credits),building(name) VALUES 102:("English", 6, "No11");
 
-```
-
-```
 -- 插入边
 nebula> INSERT EDGE select(grade) VALUES 200 -> 101:(5);
 nebula> INSERT EDGE select(grade) VALUES 200 -> 102:(3);
@@ -401,15 +374,15 @@ nebula> GO FROM 201 OVER like WHERE $$.student.age >= 17 YIELD $$.student.name A
 -------------------------
 ```
 
-`YIELD`用来指定目标返回值。
+`YIELD` 用来指定返回信息。
 
-`$^`为起始点。
+`$^` 为起始点。
 
 `$$` 为目标点。
 
 Q3. 查询点201喜欢的点选择了哪些课程和其对应年级。
-```
 
+```
 -- 使用管道
 nebula> GO FROM 201 OVER like | GO FROM $-.id OVER select YIELD $^.student.name AS Student, $$.course.name AS Course, select.grade AS Grade;
 
@@ -435,13 +408,55 @@ nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.nam
 -----------------------------
 |    Jane | English |     3 |
 -----------------------------
-
 ```
 
-`|` 表示管道，上一个查询的输出可作为下一个管道的输入。
+`|` 表示管道操作，前一个子查询的结果传递给后一个子查询。
 
 `$-` 表示输入流。
 
-第二种方法使用了用户定义变量`$a`，此变量仅适用于复合语句。
+第二种方法使用了用户定义变量 `$a`，此变量可以在整个复合语句内使用。
 
 <!-- 有关查询语言的更多详细信息，请查看check [nGQL Query Language](nGQL-tutorial.md)。 -->
+
+## 常见问题
+
+> graphd 的配置没有注册到 meta server
+
+   用 `nebula.service` 脚本启动服务时，`graphd`、 `metad` 和 `storaged` 进程启动速度太快，可能会导致graphd 的配置没有注册到 meta server。restart 的时候也有此问题。
+   beta版本用户可以先启动 metad，再启动 storaged 和 graphd 来避免此问题。我们将在下一个版本解决此问题。
+
+   先启动 metad：
+
+   ```
+   nebula> scripts/nebula.service start metad
+   [INFO] Starting nebula-metad...
+   [INFO] Done
+   ```
+   
+   再启动 storaged 和 graphd：
+
+   ```
+   nebula> scripts/nebula.service start storaged
+   [INFO] Starting nebula-storaged...
+   [INFO] Done
+   
+   nebula> scripts/nebula.service start graphd  
+   [INFO] Starting nebula-graphd...
+   [INFO] Done
+   ```
+
+> 当创建 tag 或者 edge 类型后，插入数据时报错
+
+可能原因, `load_data_interval_secs` 设置了从 meta server 获取元数据时间间隔，默认的是120s，建议用户改为1s。更改方式:
+
+* 启动前在nebula-metad.conf 和 nebula-graphd.conf 中加入
+
+   ```
+   --load_data_interval_secs=1
+   ```
+
+* console启动后，运行：
+
+   ```
+   nebula> UPDATE VARIABLES graph:load_data_interval_secs=1
+   ```
