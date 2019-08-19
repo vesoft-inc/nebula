@@ -235,7 +235,7 @@ Make sure all the services are working
 - -u is to set user name, `user` is the default Nebula user account
 - -p is to set password, `password` is the default password for account `user`
 
-Add host to make console connect to the Nebula service:
+`Add HOSTS` to register the storage hosts:
 
 ```
 > ADD HOSTS $storage_ip:$storage_port
