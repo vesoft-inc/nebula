@@ -33,13 +33,11 @@ For macOS users, click the Docker Desktop icon -> Preferences -> Daemon -> Regis
 
 **Startup Nebula Graph**
 
-When `nebula` image is ready, run
+When `nebula` image is ready, runs a container:
 
 ```
 > docker run -it vesoft/nebula-graph:latest /bin/bash
 ```
-
-to start and login to the docker container.
 
 After login, you're in the `root` directory and you should switch to the nebula directory
 
@@ -107,6 +105,7 @@ Nebula Graph is written in C++14, so it requires a compiler supporting C++14 fea
 -	libunwind
 -	ncurses
 -	readline
+-  flex
 
 It is recommended to install g++ 5 or higher Linux system, such as Fedora 29.
 Currently, we are using `git-lfs` to store the 3rd-party libraries so make sure
