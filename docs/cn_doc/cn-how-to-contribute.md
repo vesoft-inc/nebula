@@ -79,7 +79,8 @@ git rebase upstream/master
 ```sh
 git checkout -b myfeature
 ```
-**注意**: 由于一个PR通常包含多个commit，在合并至主分支时容易被挤压，因此建议您创建独立的分支进行更改。合并后的分支已无用处，因此可以使用上述rebase命令将本地主分支与上游同步。此外，如果直接将commit提交至主分支，则需要hard reset主分支。
+!!! 注意
+    由于一个PR通常包含多个commit，在合并至主分支时容易被挤压，因此建议您创建独立的分支进行更改。合并后的分支已无用处，因此可以使用上述rebase命令将本地主分支与上游同步。此外，如果直接将commit提交至主分支，则需要hard reset主分支。
 
 ```sh
 git fetch upstream

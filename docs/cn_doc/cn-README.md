@@ -32,5 +32,5 @@
 为防止云供应商从项目赢利而不回馈，Nebula在项目中添加了[Common Clause 1.0](https://commonsclause.com/)条款。如上所述，Nebula是一个完全开源的项目，欢迎您就许可模式提议，帮助Nebula更适合社区发展。
 ## 联系方式
 - 使用[GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) 提交错误报告和功能要求。
-- 加入 [![](https://img.shields.io/badge/slack-nebula-519dd9.svg)](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200).
+- 加入 [![](https://img.shields.io/badge/slack-nebula-519dd9.svg)](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200)。
 - **Nebula Graph** 详情访问[Home Page](http://nebula-graph.io/)。
