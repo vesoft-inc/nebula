@@ -346,7 +346,7 @@ nebula> INSERT EDGE like(likeness) VALUES 201 -> 200:(85.6);
 nebula> INSERT EDGE like(likeness) VALUES 201 -> 202:(93.2);
 ```
 
-## 示例查询
+### 查询示例
 
 Q1. 查询点201喜欢的点：
 
