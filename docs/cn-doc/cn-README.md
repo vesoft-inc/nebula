@@ -7,7 +7,8 @@
 
 **Nebula Graph** 的主要特点：
 
- * 无共享分布式（shared-nothing distributed）
+ * shared-nothing distributed
+ * 对称分布
  * 可扩展
  * 高容错
  * 类似SQL的查询语言
