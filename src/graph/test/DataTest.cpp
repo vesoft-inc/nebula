@@ -359,6 +359,23 @@ TEST_F(DataTest, InsertVertex) {
     // TODO: Test insert multi tags, and delete one of them then check other existent
 }
 
+TEST_F(DataTest, FindTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "FIND name FROM person";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
+TEST_F(DataTest, MatchTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "MATCH";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
-
