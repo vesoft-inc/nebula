@@ -1,13 +1,13 @@
 # 欢迎使用Nebula Graph官方文档
 ---
 
-**Nebula Graph** 是世界上唯一能够容纳百亿个顶点（节点）和万亿条边, 并提供毫秒级查询的图数据库解决方案。
+**Nebula Graph** 是世界上唯一能够容纳千亿个顶点（节点）和万亿条边，并提供毫秒级查询延时的图数据库解决方案。
 
 **Nebula Graph** 的目标是为超大规模图数据提供高并发，低延时的读、写及计算。Nebula是一个开源项目，我们期待与社区合作共同推广图数据库。
 
 **Nebula Graph** 的主要特点：
 
- * 对称分布
+ * 无共享分布式（shared-nothing distributed）
  * 可扩展
  * 高容错
  * 类似SQL的查询语言
@@ -33,4 +33,4 @@
 ## 联系方式
 - 使用[GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) 提交错误报告和功能要求。
 - 加入 [![](https://img.shields.io/badge/slack-nebula-519dd9.svg)](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200).
-- **Nebula Graph** 详情访问[home page](http://nebula-graph.io/)。
+- **Nebula Graph** 详情访问[Home Page](http://nebula-graph.io/)。
