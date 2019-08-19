@@ -876,6 +876,13 @@ int32_t MetaClient::partsNum(GraphSpaceID spaceId) {
     return it->second->partsAlloc_.size();
 }
 
+std::unordered_map<HostAddr, std::vector<PartitionID>>
+MetaClient::partsBySpace(GraphSpaceID spaceId) {
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    auto it = localCache_.find(spaceId);
+    CHECK(it != localCache_.end());
+    return it->second->partsOnHost_;
+}
 
 folly::Future<StatusOr<TagID>>
 MetaClient::createTagSchema(GraphSpaceID spaceId, std::string name, nebula::cpp2::Schema schema) {

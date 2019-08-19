@@ -89,13 +89,15 @@ public:
         GraphSpaceID space,
         std::vector<storage::cpp2::Vertex> vertices,
         bool overwritable,
-        folly::EventBase* evb = nullptr);
+        folly::EventBase* evb = nullptr,
+        storage::cpp2::IndexItem* indexItem = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addEdges(
         GraphSpaceID space,
         std::vector<storage::cpp2::Edge> edges,
         bool overwritable,
-        folly::EventBase* evb = nullptr);
+        folly::EventBase* evb = nullptr,
+        storage::cpp2::IndexItem* indexItem = nullptr);
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryResponse>> getNeighbors(
         GraphSpaceID space,
@@ -156,6 +158,18 @@ public:
         std::vector<storage::cpp2::UpdateItem> updateItems,
         std::vector<std::string> returnCols,
         bool insertable,
+        folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> buildIndex(
+        GraphSpaceID space,
+        nebula::cpp2::IndexType type,
+        nebula::cpp2::IndexID id,
+        std::map<int32_t, std::vector<std::string>> props,
+        folly::EventBase* evb = nullptr);
+
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> cleanIndexLog(
+        GraphSpaceID space,
+        nebula::cpp2::IndexID id,
         folly::EventBase* evb = nullptr);
 
 protected:
@@ -246,6 +260,12 @@ protected:
     virtual PartMeta getPartMeta(GraphSpaceID spaceId, PartitionID partId) const {
         CHECK(client_ != nullptr);
         return client_->getPartMetaFromCache(spaceId, partId);
+    }
+
+    virtual std::unordered_map<HostAddr, std::vector<PartitionID>>
+        allParts(GraphSpaceID spaceId) const {
+        CHECK(client_ != nullptr);
+        return client_->partsBySpace(spaceId);
     }
 
 private:

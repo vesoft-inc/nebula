@@ -110,6 +110,11 @@ public:
                               std::string&& prefix,
                               std::unique_ptr<KVIterator>* iter) = delete;
 
+    virtual ResultCode prefixSnapshot(GraphSpaceID spaceId,
+                                      PartitionID  partId,
+                                      const std::string& prefix,
+                                      std::unique_ptr<KVIterator>* iter) = 0;
+
     virtual void asyncMultiPut(GraphSpaceID spaceId,
                                PartitionID  partId,
                                std::vector<KV> keyValues,
@@ -153,6 +158,10 @@ public:
     virtual ResultCode compact(GraphSpaceID spaceId) = 0;
 
     virtual ResultCode flush(GraphSpaceID spaceId) = 0;
+
+    virtual ResultCode createSnapshot(GraphSpaceID spaceId) = 0;
+
+    virtual ResultCode deleteSnapshot(GraphSpaceID spaceId) = 0;
 
 protected:
     KVStore() = default;

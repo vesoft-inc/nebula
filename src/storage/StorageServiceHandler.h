@@ -80,6 +80,12 @@ public:
     folly::Future<cpp2::GetLeaderResp>
     future_getLeaderPart(const cpp2::GetLeaderReq& req) override;
 
+    folly::Future<cpp2::ExecResponse>
+    future_buildIndex(const cpp2::BuildIndexReq& req) override;
+
+    folly::Future<cpp2::ExecResponse>
+    future_cleanIndexLog(const cpp2::CleanIndexLogReq& req) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
     meta::SchemaManager* schemaMan_;

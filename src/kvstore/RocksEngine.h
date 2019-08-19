@@ -126,6 +126,9 @@ public:
     ResultCode prefix(const std::string& prefix,
                       std::unique_ptr<KVIterator>* iter) override;
 
+    ResultCode prefixSnapshot(const std::string& prefix,
+                              std::unique_ptr<KVIterator>* iter) override;
+
     /*********************
      * Data modification
      ********************/
@@ -165,6 +168,10 @@ public:
 
     ResultCode flush() override;
 
+    ResultCode createSnapshot() override;
+
+    ResultCode deleteSnapshot() override;
+
 private:
     std::string partKey(PartitionID partId);
 
@@ -172,6 +179,7 @@ private:
     std::string  dataPath_;
     std::unique_ptr<rocksdb::DB> db_{nullptr};
     int32_t partsNum_ = -1;
+    const rocksdb::Snapshot *snapshot_{nullptr};
 };
 
 }  // namespace kvstore

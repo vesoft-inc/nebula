@@ -309,6 +309,18 @@ ResultCode NebulaStore::prefix(GraphSpaceID spaceId,
     return e->prefix(prefix, iter);
 }
 
+ResultCode NebulaStore::prefixSnapshot(GraphSpaceID spaceId,
+                                       PartitionID  partId,
+                                       const std::string& prefix,
+                                       std::unique_ptr<KVIterator>* iter) {
+    auto ret = engine(spaceId, partId);
+    if (!ok(ret)) {
+        return error(ret);
+    }
+    auto* e = nebula::value(ret);
+    return e->prefixSnapshot(prefix, iter);
+}
+
 void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 std::vector<KV> keyValues,
@@ -504,6 +516,36 @@ ResultCode NebulaStore::flush(GraphSpaceID spaceId) {
     auto space = nebula::value(spaceRet);
     for (auto& engine : space->engines_) {
         auto code = engine->flush();
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
+    }
+    return ResultCode::SUCCEEDED;
+}
+
+ResultCode NebulaStore::createSnapshot(GraphSpaceID spaceId) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
+    }
+    auto space = nebula::value(spaceRet);
+    for (auto& engine : space->engines_) {
+        auto code = engine->createSnapshot();
+        if (code != ResultCode::SUCCEEDED) {
+            return code;
+        }
+    }
+    return ResultCode::SUCCEEDED;
+}
+
+ResultCode NebulaStore::deleteSnapshot(GraphSpaceID spaceId) {
+    auto spaceRet = space(spaceId);
+    if (!ok(spaceRet)) {
+        return error(spaceRet);
+    }
+    auto space = nebula::value(spaceRet);
+    for (auto& engine : space->engines_) {
+        auto code = engine->deleteSnapshot();
         if (code != ResultCode::SUCCEEDED) {
             return code;
         }

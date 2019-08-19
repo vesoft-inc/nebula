@@ -26,6 +26,8 @@ typedef i64 (cpp.type = "nebula::SchemaVer") SchemaVer
 typedef i32 (cpp.type = "nebula::UserID") UserID
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 
+typedef i32 (cpp.type = "nebula::IndexID") IndexID
+
 // These are all data types supported in the graph properties
 enum SupportedType {
     UNKNOWN = 0,
@@ -55,6 +57,28 @@ enum SupportedType {
     // STRUCT = 104,
 } (cpp.enum_strict)
 
+enum IndexType {
+    UNKNOWN = 0,
+    TAG = 1,
+    EDGE = 2,
+}
+
+enum IndexOpType {
+    INSERT = 1,
+    DELETE = 2,
+    UPDATE = 3,
+}
+
+enum IndexStatus {
+    // The index state is valid
+    NORMAL = 0,
+    // The first step in index creation is to construct the old data
+    BUILDING = 1,
+    // The second step of index creation is to construct new data during "BUILDING"
+    CONSTRUCTING = 2,
+    // Index construction failed, invalid index
+    INVALID = 3,
+}
 
 struct ValueType {
     1: SupportedType type;

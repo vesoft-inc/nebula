@@ -99,6 +99,13 @@ public:
                       const std::string& prefix,
                       std::unique_ptr<KVIterator>* iter) override;
 
+    ResultCode prefixSnapshot(GraphSpaceID,
+                              PartitionID,
+                              const std::string&,
+                              std::unique_ptr<KVIterator>*) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
     // async batch put.
     void asyncMultiPut(GraphSpaceID spaceId,
                        PartitionID  partId,
@@ -150,6 +157,15 @@ public:
     ResultCode flush(GraphSpaceID) override {
         return ResultCode::ERR_UNSUPPORTED;
     }
+
+    ResultCode createSnapshot(GraphSpaceID) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
+    ResultCode deleteSnapshot(GraphSpaceID) override {
+        return ResultCode::ERR_UNSUPPORTED;
+    }
+
 
 private:
     std::string getRowKey(const std::string& key) {

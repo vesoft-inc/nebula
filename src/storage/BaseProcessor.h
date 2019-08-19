@@ -54,6 +54,17 @@ protected:
 
     void doRemoveRange(GraphSpaceID spaceId, PartitionID partId, std::string start,
                        std::string end);
+    StatusOr<std::pair<std::string, std::string>> assembleIndex(GraphSpaceID spaceId,
+            PartitionID partId, nebula::cpp2::IndexStatus status, nebula::cpp2::IndexType type,
+            const cpp2::IndexItem* indexItem, int32_t id, std::string key, std::string props);
+
+    StatusOr<std::string> assembleEdgeIndex(GraphSpaceID spaceId,
+            const std::vector<std::string> cols, EdgeType type, std::string val);
+
+    StatusOr<std::string> assembleTagIndex(GraphSpaceID spaceId,
+            const std::vector<std::string> cols, TagID id, std::string val);
+
+    StatusOr<std::string> collectColsVal(RowReader* reader, std::vector<std::string> cols);
 
     nebula::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::SupportedType type) {
         nebula::cpp2::ColumnDef column;

@@ -34,6 +34,15 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
                         << ", TagID: " << tag.get_tag_id() << ", TagVersion: " << version;
                 auto key = NebulaKeyUtils::vertexKey(partId, v.get_id(),
                                                      tag.get_tag_id(), version);
+                if (req.__isset.index_item) {
+                    const auto& indexItem = req.get_index_item();
+                    auto ret = assembleIndex(spaceId, partId, indexItem->get_status(),
+                                             nebula::cpp2::IndexType::TAG, indexItem,
+                                             tag.get_tag_id(), key, tag.get_props());
+                    if (ret.ok()) {
+                        data.emplace_back(std::move(ret.value()));
+                    }
+                }
                 data.emplace_back(std::move(key), std::move(tag.get_props()));
             });
         });

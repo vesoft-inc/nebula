@@ -199,6 +199,21 @@ ResultCode RocksEngine::prefix(const std::string& prefix,
     return ResultCode::SUCCEEDED;
 }
 
+ResultCode RocksEngine::prefixSnapshot(const std::string& prefix,
+                                       std::unique_ptr<KVIterator>* storageIter) {
+    if (snapshot_ == nullptr) {
+        VLOG(3) << "Get snapshot Failed";
+        return ResultCode::ERR_UNKNOWN;
+    }
+    rocksdb::ReadOptions options;
+    options.snapshot = snapshot_;
+    rocksdb::Iterator* iter = db_->NewIterator(options);
+    if (iter) {
+        iter->Seek(rocksdb::Slice(prefix));
+    }
+    storageIter->reset(new RocksPrefixIter(iter, prefix));
+    return ResultCode::SUCCEEDED;
+}
 
 ResultCode RocksEngine::put(std::string key, std::string value) {
     rocksdb::WriteOptions options;
@@ -422,6 +437,20 @@ ResultCode RocksEngine::flush() {
         LOG(ERROR) << "Flush Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
+}
+
+ResultCode RocksEngine::createSnapshot() {
+    snapshot_ = db_->GetSnapshot();
+    if (snapshot_ == nullptr) {
+        LOG(ERROR) << "Get snapshot Failed: ";
+        return ResultCode::ERR_UNKNOWN;
+    }
+    return ResultCode::SUCCEEDED;
+}
+
+ResultCode RocksEngine::deleteSnapshot() {
+    db_->ReleaseSnapshot(snapshot_);
+    return ResultCode::SUCCEEDED;
 }
 
 }  // namespace kvstore

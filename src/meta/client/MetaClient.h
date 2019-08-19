@@ -257,6 +257,8 @@ public:
 
     int32_t partsNum(GraphSpaceID spaceId);
 
+    std::unordered_map<HostAddr, std::vector<PartitionID>> partsBySpace(GraphSpaceID spaceId);
+
     StatusOr<std::shared_ptr<const SchemaProviderIf>>
     getTagSchemaFromCache(GraphSpaceID spaceId, TagID tagID, SchemaVer ver = -1);
 

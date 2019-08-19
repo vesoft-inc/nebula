@@ -112,6 +112,11 @@ public:
                       const std::string& prefix,
                       std::unique_ptr<KVIterator>* iter) override;
 
+    ResultCode prefixSnapshot(GraphSpaceID spaceId,
+                              PartitionID  partId,
+                              const std::string& prefix,
+                              std::unique_ptr<KVIterator>* iter) override;
+
     // async batch put.
     void asyncMultiPut(GraphSpaceID spaceId,
                        PartitionID  partId,
@@ -163,6 +168,10 @@ public:
 
     int32_t allLeader(std::unordered_map<GraphSpaceID,
                                          std::vector<PartitionID>>& leaderIds) override;
+    
+    ResultCode createSnapshot(GraphSpaceID spaceId) override;
+
+    ResultCode deleteSnapshot(GraphSpaceID spaceId) override;
 
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 

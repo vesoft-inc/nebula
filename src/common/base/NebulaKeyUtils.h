@@ -8,6 +8,7 @@
 #define COMMON_BASE_NEBULAKEYUTILS_H_
 
 #include "base/Base.h"
+#include <interface/gen-cpp2/common_types.h>
 
 namespace nebula {
 
@@ -116,12 +117,48 @@ public:
         return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
     }
 
+    static std::string tagIndexkey(PartitionID partId, IndexID indexId, VertexID vId, TagVersion ts,
+                                   const folly::StringPiece &values);
+
+    static std::string edgeIndexkey(PartitionID partId, IndexID indexId, EdgeType type,
+                                    EdgeVersion ts, const folly::StringPiece &values);
+
+    static std::string preIndexKey(PartitionID partId, IndexID indexId, int64_t version);
+
+    static std::string preIndexPrefix(PartitionID partId, IndexID indexId);
+
+    static std::string preIndexValue(nebula::cpp2::IndexType type, nebula::cpp2::IndexOpType op,
+                                     std::pair<std::string, std::string> original,
+                                     std::pair<std::string, std::string> newly);
+
+    static std::string partPrefix(PartitionID partId);
+
+    static std::string indexValue(const folly::StringPiece &row);
+
+    static std::string indexPrefix(PartitionID partId, IndexID indexId);
+
+    static TagID parseTagId(const folly::StringPiece &key);
+
+    static VertexID parseVertexId(const folly::StringPiece &key);
+
+    static TagVersion parseTagVersion(const folly::StringPiece &key);
+
+    static EdgeType parseEdgeType(const folly::StringPiece &key);
+
+    static EdgeVersion parseEdgeVersion(const folly::StringPiece &key);
+
+    static int32_t getVertexLen() { return kVertexLen; }
+
+    static int32_t getEdgeLen() { return kEdgeLen; }
+
+
 private:
     NebulaKeyUtils() = delete;
 
 private:
     static constexpr int32_t kVertexLen = sizeof(PartitionID) + sizeof(VertexID)
                                         + sizeof(TagID) + sizeof(TagVersion);
+
     static constexpr int32_t kEdgeLen = sizeof(PartitionID) + sizeof(VertexID)
                                       + sizeof(EdgeType) + sizeof(VertexID)
                                       + sizeof(EdgeRanking) + sizeof(EdgeVersion);

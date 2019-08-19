@@ -142,6 +142,12 @@ struct Edge {
     2: binary props,
 }
 
+struct IndexItem {
+    1: required common.IndexStatus  status,
+    2: required common.IndexID      index_id,
+    3: required map<i32, list<string>>(cpp.template = "std::map") props,
+}
+
 struct GetNeighborsRequest {
     1: common.GraphSpaceID space_id,
     // partId => ids
@@ -173,6 +179,8 @@ struct AddVerticesRequest {
     2: map<common.PartitionID, list<Vertex>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
     3: bool overwritable,
+    // index need
+    4: optional IndexItem index_item,
 }
 
 struct AddEdgesRequest {
@@ -181,6 +189,8 @@ struct AddEdgesRequest {
     2: map<common.PartitionID, list<Edge>>(cpp.template = "std::unordered_map") parts,
     // If true, it equals an upsert operation.
     3: bool overwritable,
+    // index need
+    4: optional IndexItem index_item,
 }
 
 struct EdgeKeyRequest {
@@ -282,6 +292,19 @@ struct UpdateEdgeRequest {
     7: bool insertable,
 }
 
+struct BuildIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: common.IndexType    index_type,
+    3: IndexItem           index_item,
+    4: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
+}
+
+struct CleanIndexLogReq {
+    1: common.GraphSpaceID space_id,
+    2: common.IndexID      index_id,
+    3: map<common.PartitionID, list<common.HostAddr>>(cpp.template = "std::unordered_map") parts,
+}
+
 service StorageService {
     QueryResponse getBound(1: GetNeighborsRequest req)
 
@@ -297,6 +320,8 @@ service StorageService {
     EdgeKeyResponse getEdgeKeys(1: EdgeKeyRequest req);
     ExecResponse deleteEdges(1: DeleteEdgesRequest req);
     ExecResponse deleteVertex(1: DeleteVertexRequest req);
+    ExecResponse buildIndex(1: BuildIndexReq req);
+    ExecResponse cleanIndexLog(1: CleanIndexLogReq req);
 
     UpdateResponse updateVertex(1: UpdateVertexRequest req)
     UpdateResponse updateEdge(1: UpdateEdgeRequest req)

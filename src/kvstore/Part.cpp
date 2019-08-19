@@ -1,3 +1,5 @@
+#include <utility>
+
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
@@ -46,10 +48,10 @@ Part::Part(GraphSpaceID spaceId,
                    partId,
                    localAddr,
                    walPath,
-                   ioPool,
-                   workers,
-                   handlers,
-                   snapshotMan)
+                   std::move(ioPool),
+                   std::move(workers),
+                   std::move(handlers),
+                   std::move(snapshotMan))
         , spaceId_(spaceId)
         , partId_(partId)
         , walPath_(walPath)

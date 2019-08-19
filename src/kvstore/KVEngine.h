@@ -61,6 +61,9 @@ public:
     virtual ResultCode prefix(const std::string& prefix,
                               std::unique_ptr<KVIterator>* iter) = 0;
 
+    virtual ResultCode prefixSnapshot(const std::string& prefix,
+                                      std::unique_ptr<KVIterator>* iter) = 0;
+
     // Get all results in range [start, end)
     virtual ResultCode put(std::string key, std::string value) = 0;
 
@@ -107,6 +110,10 @@ public:
     virtual ResultCode compact() = 0;
 
     virtual ResultCode flush() = 0;
+
+    virtual ResultCode createSnapshot() = 0;
+
+    virtual ResultCode deleteSnapshot() = 0;
 
 protected:
     GraphSpaceID spaceId_;

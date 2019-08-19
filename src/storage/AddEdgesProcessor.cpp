@@ -30,6 +30,16 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
                     << ", VertexID: " << edge.key.dst << ", EdgeVersion: " << version;
             auto key = NebulaKeyUtils::edgeKey(partId, edge.key.src, edge.key.edge_type,
                                                edge.key.ranking, edge.key.dst, version);
+
+            if (req.__isset.index_item) {
+                const auto& indexItem = req.get_index_item();
+                auto ret = assembleIndex(spaceId, partId, indexItem->get_status(),
+                                         nebula::cpp2::IndexType::EDGE, indexItem,
+                                         edge.key.edge_type, key, edge.get_props());
+                if (ret.ok()) {
+                    data.emplace_back(std::move(ret.value()));
+                }
+            }
             data.emplace_back(std::move(key), std::move(edge.get_props()));
         });
         doPut(spaceId, partId, std::move(data));

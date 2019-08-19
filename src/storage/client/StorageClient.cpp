@@ -34,10 +34,11 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVert
         GraphSpaceID space,
         std::vector<cpp2::Vertex> vertices,
         bool overwritable,
-        folly::EventBase* evb) {
+        folly::EventBase* evb,
+        storage::cpp2::IndexItem* indexItem) {
     auto clusters = clusterIdsToHosts(
         space,
-        vertices,
+        std::move(vertices),
         [] (const cpp2::Vertex& v) {
             return v.get_id();
         });
@@ -49,6 +50,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addVert
         req.set_space_id(space);
         req.set_overwritable(overwritable);
         req.set_parts(std::move(c.second));
+        if (indexItem) {
+            req.__isset.index_item = true;
+            req.set_index_item(*indexItem);
+        }
     }
 
     VLOG(3) << "requests size " << requests.size();
@@ -65,10 +70,11 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
         GraphSpaceID space,
         std::vector<storage::cpp2::Edge> edges,
         bool overwritable,
-        folly::EventBase* evb) {
+        folly::EventBase* evb,
+        storage::cpp2::IndexItem* indexItem) {
     auto clusters = clusterIdsToHosts(
         space,
-        edges,
+        std::move(edges),
         [] (const cpp2::Edge& e) {
             return e.get_key().get_src();
         });
@@ -80,6 +86,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::addEdge
         req.set_space_id(space);
         req.set_overwritable(overwritable);
         req.set_parts(std::move(c.second));
+        if (indexItem) {
+            req.__isset.index_item = true;
+            req.set_index_item(*indexItem);
+        }
     }
 
     return collectResponse(
@@ -100,7 +110,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getNei
         folly::EventBase* evb) {
     auto clusters = clusterIdsToHosts(
         space,
-        vertices,
+        std::move(vertices),
         [] (const VertexID& v) {
             return v;
         });
@@ -133,7 +143,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryStatsResponse>> StorageClient::n
         folly::EventBase* evb) {
     auto clusters = clusterIdsToHosts(
         space,
-        vertices,
+        std::move(vertices),
         [] (const VertexID& v) {
             return v;
         });
@@ -165,7 +175,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::QueryResponse>> StorageClient::getVer
         folly::EventBase* evb) {
     auto clusters = clusterIdsToHosts(
         space,
-        vertices,
+        std::move(vertices),
         [] (const VertexID& v) {
             return v;
         });
@@ -195,7 +205,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         folly::EventBase* evb) {
     auto clusters = clusterIdsToHosts(
         space,
-        edges,
+        std::move(edges),
         [] (const cpp2::EdgeKey& v) {
             return v.get_src();
         });
@@ -219,6 +229,72 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
            const cpp2::EdgePropRequest& r) {
             return client->future_getEdgeProps(r);
         });
+}
+
+folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::buildIndex(
+        GraphSpaceID space,
+        nebula::cpp2::IndexType type,
+        nebula::cpp2::IndexID id,
+        std::map<int32_t, std::vector<std::string>> props,
+        folly::EventBase* evb) {
+    auto hosts = client_->partsBySpace(space);
+
+    std::unordered_map<HostAddr, cpp2::BuildIndexReq> requests;
+    std::unordered_map<PartitionID, std::vector<nebula::cpp2::HostAddr>> parts;
+
+    for (auto& host : hosts) {
+        auto& addr = host.first;
+        auto& hostParts = host.second;
+        for (auto& part : hostParts) {
+            parts.emplace(part, std::vector<nebula::cpp2::HostAddr>(0));
+        }
+        auto& req = requests[addr];
+        req.set_space_id(space);
+        req.set_index_type(type);
+        req.set_index_item(cpp2::IndexItem(apache::thrift::FragileConstructor::FRAGILE,
+                                           nebula::cpp2::IndexStatus::INVALID, id, props));
+        req.set_parts(std::move(parts));
+    }
+
+    VLOG(3) << "requests size " << requests.size();
+
+    return collectResponse(
+            evb, std::move(requests),
+            [](cpp2::StorageServiceAsyncClient* client,
+               const cpp2::BuildIndexReq& r) {
+                return client->future_buildIndex(r);
+            });
+}
+
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> StorageClient::cleanIndexLog(
+        GraphSpaceID space,
+        nebula::cpp2::IndexID id,
+        folly::EventBase* evb) {
+    auto hosts = client_->partsBySpace(space);
+
+    std::unordered_map<HostAddr, cpp2::CleanIndexLogReq> requests;
+    std::unordered_map<PartitionID, std::vector<nebula::cpp2::HostAddr>> parts;
+
+    for (auto& host : hosts) {
+        auto& addr = host.first;
+        auto& hostParts = host.second;
+        for (auto& part : hostParts) {
+            parts.emplace(part, std::vector<nebula::cpp2::HostAddr>(0));
+        }
+        auto& req = requests[addr];
+        req.set_space_id(space);
+        req.set_index_id(id);
+        req.set_parts(std::move(parts));
+    }
+
+    VLOG(3) << "requests size " << requests.size();
+
+    return collectResponse(
+            evb, std::move(requests),
+            [](cpp2::StorageServiceAsyncClient* client,
+               const cpp2::CleanIndexLogReq& r) {
+                return client->future_cleanIndexLog(r);
+            });
 }
 
 
@@ -374,7 +450,7 @@ PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     auto parts = partsNum(spaceId);
     auto s = ID_HASH(id, parts);
     CHECK_GE(s, 0U);
-    return s;
+    return static_cast<PartitionID>(s);
 }
 
 }   // namespace storage
