@@ -15,7 +15,7 @@ The `GROUP BY` functions  are similar with SQL. It can only be applied in the `Y
 
 All the functions above can only applies for int64 and double.
 
-### example
+### Example
 
 ```
 nebula> GO FROM 1 OVER e1 | YIELD $-.id AS fid, COUNT(*) AS cnt GROUP BY fid

@@ -3,7 +3,7 @@ Nebula use `gflags` for run-time configurations.
 
 ### Show variables
 ```
-SHOW VARIABLES graph|meta|storage
+SHOW VARIABLES [graph|meta|storage]
 ```
 
 For example
