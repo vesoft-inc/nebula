@@ -6,8 +6,8 @@
 
 <p align="center">
   <a href="https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzU2NDkxNjI0NQ==&scene=124#wechat_redirect"><img src="https://img.shields.io/badge/%E5%85%AC%E4%BC%97%E5%8F%B7-wechat-brightgreen" alt="WeiXin"></a>
-  <a href="https://www.zhihu.com/org/nebulagraph/activities"><img src="https://img.shields.io/badge/%E7%9F%A5%E4%B9%8E-zhihu-red alt="Zhihu"></a>
-    <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/%E5%BE%AE%E5%8D%9A-weibo-blue" alt="Sina Weibo"></a>
+  <a href="https://www.zhihu.com/org/nebulagraph/activities"><img src="https://img.shields.io/badge/%E7%9F%A5%E4%B9%8E-zhihu-blue" alt="Zhihu"></a>
+    <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/%E5%BE%AE%E5%8D%9A-weibo-red" alt="Sina Weibo"></a>
 </p>
 
 **Nebula Graph** 的目标是为超大规模图数据提供高并发，低延时的读、写及计算。Nebula是一个开源项目，我们期待与社区合作共同推广图数据库。
