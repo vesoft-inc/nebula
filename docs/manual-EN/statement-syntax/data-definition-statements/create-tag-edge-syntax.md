@@ -56,7 +56,7 @@ There are several aspects to this syntax, described under the following topics i
 
 * multiple TTL definition
 
-    If TTL_COL is a list of prop_name, and there are multiple ttl_duration, **Nebula Graph** uses the lowest(i.e. earliest) the expiration threshold to expire data.
+    If TTL_COL is a list of prop_name, and there are multiple ttl_duration, **Nebula Graph** uses the lowest(i.e. earliest) expiration threshold to expire data.
 
 ### Examples
 

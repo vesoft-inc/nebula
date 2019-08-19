@@ -125,31 +125,9 @@ nebula 遵循 c++14 标准，依赖第三方库：
 
 建议安装 g++ 5 以上 Linux 系统, 比如 Fedora 29。目前，nebula 使用 `git-lfs` 存储第三方库，请确保获取源代码之前您已安装 `git-lfs` 。
 
-**从 GitHub 获取源码**
-
-```
-> git clone https://github.com/vesoft-inc/nebula.git
-```
-
 **编译**
 
-```
-> cmake ./
-```
-
-默认安装到 /usr/local 路径，如需指定安装路径，请使用:
-
-```
-> cmake -DCMAKE_INSTALL_PREFIX=$your_nebula_install_dir
-```
-
-替换此处的 `$your_nebula_install_dir`。
-
-然后运行以下命令：
-
-```
-> make && make install
-```
+请参见 [how-to-build.md](./how-to-build.md)
 
 #### 运行 nebula（单机)
 
@@ -213,13 +191,13 @@ nebula 遵循 c++14 标准，依赖第三方库：
 * -u 为用户名，默认值为 `user`
 * -p 为密码，用户 `user` 的默认密码为 `password`
 
-`ADD HOSTS` 将存储节点注册到元数据服务中
+<!-- `ADD HOSTS` 将存储节点注册到元数据服务中
 
 ```
 > ADD HOSTS $storage_ip:$storage_port
 ```
 
-根据nebula-storaged.conf中的 `local_ip` 和 `port` 替换此处的 `$storage_ip` 和 `$storage_port`。
+根据nebula-storaged.conf中的 `local_ip` 和 `port` 替换此处的 `$storage_ip` 和 `$storage_port`。 -->
 
 ---
 
@@ -278,9 +256,9 @@ nebula> CREATE SPACE myspace_test2(partition_num=1, replica_factor=1);
 nebula> USE myspace_test2;
 ```
 
-* `replica_factor` 用来指定集群复本数。
+* `replica_factor` 用来指定集群副本数。
 
-* `partition_num` 用来指定一个复本中的分区数量。
+* `partition_num` 用来指定一个副本中的分区数量。
 
 ### 定义图数据 Schema
 
