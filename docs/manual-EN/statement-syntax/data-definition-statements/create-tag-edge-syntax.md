@@ -29,7 +29,7 @@ There are several aspects to this syntax, described under the following topics i
 * **tag_name and edge_name**
 
     The name of tags and edgeTypes should be **unique** within the space. Once the name is defined, it can not be altered. The rules of tag and edgeType names are the same as those for names of spaces. See [Schema Object Name](../../language-structure/schema-object-names.md)
-    
+
 ### Property Name and Data Type
 
 * **prop_name**
@@ -55,12 +55,8 @@ There are several aspects to this syntax, described under the following topics i
     The data type of prop_name must be either int64 or timestamp.
 
 * multiple TTL definition
-<<<<<<< HEAD
 
-    If TTL_COL is a list of prop_name, and there are multiple ttl_duration, **Nebula Graph** uses the lowest(i.e. earliest) expiration threshold to expire data.
-=======
     If TTL_COL is a list of prop_name, and there are multiple ttl_duration, **Nebula Graph** uses the lowest(i.e. earliest) the expiration threshold to expire data.
->>>>>>> add create-tag-edge, show and update get-started
 
 ### Examples
 
@@ -76,11 +72,7 @@ CREATE TAG woman(name string, age int,
    TTL_DRUATION = 100, TTL_COL = create_time -- expired when now is later than create_time + 100
    
 CREATE EDGE marriage(location string, since timestamp)
-<<<<<<< HEAD
     TTL_DURATION = 0, TTL_COL = since -- negative or zero, not expire
-=======
-    TTL_DURATION = 0, TTL_COL = since -- negative or zero, no expire
->>>>>>> add create-tag-edge, show and update get-started
    
 CREATE TAG icecream(made timestamp, temprature int)
    TTL_DURATION = 100, TTL_COL = made,

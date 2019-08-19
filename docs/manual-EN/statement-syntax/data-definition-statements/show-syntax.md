@@ -22,6 +22,8 @@ nebula> SHOW SPACES;
 --------
 
 nebula> USE test;
+
 nebula> SHOW TAGS;
+
 nebula> SHOW EDGES;
 ```
