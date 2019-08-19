@@ -33,7 +33,7 @@ For macOS users, click the Docker Desktop icon -> Preferences -> Daemon -> Regis
 
 **Startup Nebula Graph**
 
-When `nebula` image is ready, runs a container:
+When `nebula` image is ready, run a container:
 
 ```
 > docker run -it vesoft/nebula-graph:latest /bin/bash
