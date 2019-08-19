@@ -202,7 +202,7 @@ Make sure all the services are working
 
 * -u is to set the user name, `user` is the default Nebula user account
 * -p is to set password, `password` is the default password for account `user`
-
+<!-- 
 `Add HOSTS` is to register the storage hosts:
 
 ```
@@ -210,7 +210,7 @@ Make sure all the services are working
 ```
 
 Replace the `$storage_ip` and `$storage_port` here according to the `local_ip`
-and `port` in nebula-storaged.conf
+and `port` in nebula-storaged.conf -->
 
 Then you’re now ready to start using Nebula Graph.
 
