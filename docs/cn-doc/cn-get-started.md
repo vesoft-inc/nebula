@@ -68,13 +68,13 @@ For macOS users, click the Docker Desktop icon -> Preferences -> Daemon -> Regis
 > cd /usr/local/nebula/
 ```
 
-运行
+启动 metad，storaged 和 graphd 服务:
 
 ```
 > scripts/nebula.service start all
 ```
 
-查看 metad，storaged 和 graphd 运行状态:
+查看服务状态:
 
 ```
 > scripts/nebula.service status all
@@ -104,7 +104,7 @@ to connect to the graph server. -->
 
 ### 编译源码方式 (Linux)
 
-**依赖**
+**第三方库**
 
 nebula 遵循 c++14 标准，依赖第三方库：
 
@@ -121,10 +121,11 @@ nebula 遵循 c++14 标准，依赖第三方库：
 -	libunwind
 -	ncurses
 -	readline
+-  flex
 
 建议安装 g++ 5 以上 Linux 系统, 比如 Fedora 29。目前，nebula 使用 `git-lfs` 存储第三方库，请确保获取源代码之前您已安装 `git-lfs` 。
 
-**从GitHub获取源码**
+**从 GitHub 获取源码**
 
 ```
 > git clone https://github.com/vesoft-inc/nebula.git
@@ -150,7 +151,7 @@ nebula 遵循 c++14 标准，依赖第三方库：
 > make && make install
 ```
 
-#### 运行nebula（单机)
+#### 运行 nebula（单机)
 
 * 配置 nebula-metad.conf
 
@@ -262,18 +263,18 @@ nebula 遵循 c++14 标准，依赖第三方库：
 
 nebula中的图存储于 **SPACE** 中，每个space是一个物理隔离的空间。首先，需要创建一个space，然后指定使用该space以完成之后的操作。
 
-列出已有的space：
+列出已有的 space：
 
 ```
 nebula> SHOW SPACES;
 ```
 
-创建一个名为myspace_test2的新space：
+创建一个名为 myspace_test2 的新 space：
 
 ```
 nebula> CREATE SPACE myspace_test2(partition_num=1, replica_factor=1);
 
--- 使用这个space
+-- 使用这个 space
 nebula> USE myspace_test2;
 ```
 
@@ -281,7 +282,7 @@ nebula> USE myspace_test2;
 
 * `partition_num` 用来指定一个复本中的分区数量。
 
-### 定义图数据Schema
+### 定义图数据 Schema
 
 使用 `CREATE TAG` 语句定义带有标签类型和属性列表的标签：
 
