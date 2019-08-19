@@ -269,7 +269,7 @@ The default installation directory is **/usr/local/nebula**
 bash> git clone https://github.com/vesoft-inc/nebula.git
 bash> cd nebula && mkdir build && cd build
 bash> cmake ..
-bash> cmake -DSKIP_JAVA_CLENT=OFF ..  # if you need to build java client
+bash> cmake -DSKIP_JAVA_CLIENT=OFF ..  # if you need to build java client
 bash> make
 bash> sudo make install
 ```
@@ -354,22 +354,10 @@ bash> sudo make install
     ```
     sudo yum -y install java-1.8.0-openjdk
     ```
-    3) Modify **~/.bashrc** by appending following line to the end
-
-    **ubuntu**
+    3) switch java
 
     ```
-    export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
-    export JRE_HOME=$JAVA_HOME/jre
-    export CLASSPATH=$JAVA_HOME/lib:$JRE_HOME/lib:$CLASSPATH
-    export PATH=$JAVA_HOME/bin:$JRE_HOME/bin:$PATH
+    sudo update-alternatives --config java
     ```
+    and select the java-1.8.0-openjdk/java-8-openjdk
 
-    **centos**
-
-    ```
-    export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
-    export JRE_HOME=$JAVA_HOME/jre
-    export CLASSPATH=$JAVA_HOME/lib:$JRE_HOME/lib:$CLASSPATH
-    export PATH=$JAVA_HOME/bin:$JRE_HOME/bin:$PATH
-    ```
