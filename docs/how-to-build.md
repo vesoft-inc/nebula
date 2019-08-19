@@ -33,7 +33,7 @@ The third-party was installed to **/opt/nebula/third-party**
 bash> git clone https://github.com/vesoft-inc/nebula-3rdparty.git
 bash> cd nebula-3rdparty
 bash> cmake ./
-bash> cmake -DSKIP_JAVE_JAR=OFF  ./  # if not need to build jave client
+bash> cmake -DSKIP_JAVA_JAR=OFF  ./  # if you need to build java client
 bash> make
 bash> sudo make install
 ```
@@ -45,8 +45,8 @@ The default installation dir is **/usr/local/nebula**
 bash> git clone https://github.com/vesoft-inc/nebula.git
 bash> cd nebula && mkdir build && cd build
 bash> cmake ..
-bash> cmake -DSKIP_JAVE_CLENT=ON ..  # if not need to build jave client
-bash> make OR make -j${threadnum}
+bash> cmake -DSKIP_JAVA_CLIENT=OFF ..  # if you need to build java client
+bash> make
 bash> sudo make install
 ```
 
@@ -111,7 +111,7 @@ The third-party was installed to **/opt/nebula/third-party**
 bash> git clone https://github.com/vesoft-inc/nebula-3rdparty.git
 bash> cd nebula-3rdparty
 bash> cmake ./
-bash> cmake -DSKIP_JAVE_JAR=OFF  ./  # if not need to build jave client
+bash> cmake -DSKIP_JAVA_JAR=OFF  ./  # if you need to build java client
 bash> make
 bash> sudo make install
 ```
@@ -123,7 +123,7 @@ The default installation dir is **/usr/local/nebula**
 bash> git clone https://github.com/vesoft-inc/nebula.git
 bash> cd nebula && mkdir build && cd build
 bash> cmake ..
-bash> cmake -DSKIP_JAVE_CLENT=ON ..  # if not need to build jave client
+bash> cmake -DSKIP_JAVA_CLENT=OFF ..  # if you need to build java client
 bash> make OR make -j${threadnum}
 bash> sudo make install
 ```
@@ -179,7 +179,7 @@ The third-party was installed to **/opt/nebula/third-party**
 bash> git clone https://github.com/vesoft-inc/nebula-3rdparty.git
 bash> cd nebula-3rdparty
 bash> cmake ./
-bash> cmake -DSKIP_JAVE_JAR=OFF  ./  # if not need to build jave client
+bash> cmake -DSKIP_JAVA_JAR=OFF  ./  # if you need to build java client
 bash> make
 bash> sudo make install
 ```
@@ -191,7 +191,7 @@ The default installation dir is **/usr/local/nebula**
 bash> git clone https://github.com/vesoft-inc/nebula.git
 bash> cd nebula && mkdir build && cd build
 bash> cmake ..
-bash> cmake -DSKIP_JAVE_CLENT=ON ..  # if not need to build jave client
+bash> cmake -DSKIP_JAVA_CLENT=OFF ..  # if you need to build java client
 bash> make
 bash> sudo make install
 ```
@@ -234,7 +234,7 @@ bash> sudo make install
 	
 	```
 	bash> tar xf ubuntu1804.tar.gz && cd ubuntu1804/
-	bash> dpkg -i *.deb
+	bash> sudo dpkg -i *.deb
 	```
 	
 	4) Modify **~/.bashrc** by appending following lines to the end
@@ -257,7 +257,7 @@ The third-party was installed to **/opt/nebula/third-party**
 bash> git clone https://github.com/vesoft-inc/nebula-3rdparty.git
 bash> cd nebula-3rdparty
 bash> cmake
-bash> cmake -DSKIP_JAVE_JAR=OFF  ./  # if not need to build jave client
+bash> cmake -DSKIP_JAVA_JAR=OFF  ./  # if you need to build java client
 bash> make
 bash> sudo make install
 ```
@@ -269,7 +269,7 @@ The default installation dir is **/usr/local/nebula**
 bash> git clone https://github.com/vesoft-inc/nebula.git
 bash> cd nebula && mkdir build && cd build
 bash> cmake ..
-bash> cmake -DSKIP_JAVE_CLENT=ON ..  # if not need to build jave client
+bash> cmake -DSKIP_JAVA_CLENT=OFF ..  # if you need to build java client
 bash> make
 bash> sudo make install
 ```
@@ -335,3 +335,4 @@ bash> sudo make install
 	bash> cd nebula-3rdparty/
 	bash> git-lfs pull
 	```
+
