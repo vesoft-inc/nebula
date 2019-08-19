@@ -1,5 +1,5 @@
 ---
-This tutorial provides an introduction to build `Nebula` code.
+This tutorial provides an introduction to building `Nebula` code.
 ---
 
 ### Compiler
@@ -16,15 +16,15 @@ The project Nebula is developed using C++14, so it requires a compiler supportin
 #### Step1: Prepare
 - Install tools
 
-	```
-	bash> sudo yum -y install git git-lfs
-	```
+    ```
+    bash> sudo yum -y install git git-lfs
+    ```
 
 - Install dependencies
 
-	```
-	bash> sudo yum -y install autoconf automake libtool cmake bison unzip boost gperf krb5 openssl libunwind ncurses readline
-	```
+    ```
+    bash> sudo yum -y install autoconf automake libtool cmake bison unzip boost gperf krb5 openssl libunwind ncurses readline maven java-1.8.0-openjdk
+    ```
 
 #### Step2: Build and install 3rd-party Libraries
 The third-party was installed to **/opt/nebula/third-party**
@@ -55,54 +55,54 @@ bash> sudo make install
 #### Step1: Prepare
 - install tools
 
-	```
-	bash> sudo yum -y install git git-lfs
-	```
+    ```
+    bash> sudo yum -y install git git-lfs
+    ```
 - install dependencies
 
-	through yum install
-	
-	```
-	bash> sudo yum install -y libtool autoconf autoconf-archive automake perl-WWW-Curl libstdc++-static maven
-	```
+    through yum install
 
-	through vesoft offer
-	
-	```
-	bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
-	```
+    ```
+    bash> sudo yum install -y libtool autoconf autoconf-archive automake perl-WWW-Curl libstdc++-static maven java-1.8.0-openjdk
+    ```
 
-	1) Create a system user, which home directory will be used as a shared file location
-	
-	```
-	bash> sudo adduser --system --group --home /home/engshare engshare
-	```
-	
-	2) Please make sure the user's home directory **/home/engshare** is readable to all users
-	
-	```
-	bash> chmod -R 755 /home/engshare
-	```
-	
-	3) Install all necessary rpm packages in this folder
-	
-	```
-	bash> tar xf centos-7.5-1804.tar.gz && cd centos-7.5-1804/
-	bash> rpm -ivh *.rpm
-	```
+    through vesoft offer
 
-	4) Modify **~/.bashrc** by appending following lines to the end
-	
-	```
-	alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind'
-	
-	alias ctest='/home/engshare/cmake/bin/ctest'
-	```
-	5) Update **~/.bashrc**
-	
-	```
-	bash> source ~/.bashrc
-	```
+    ```
+    bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
+    ```
+
+    1) Create a system user, which home directory will be used as a shared file location
+
+    ```
+    bash> sudo adduser --system --group --home /home/engshare engshare
+    ```
+
+    2) Please make sure the user's home directory **/home/engshare** is readable to all users
+
+    ```
+    bash> chmod -R 755 /home/engshare
+    ```
+
+    3) Install all necessary rpm packages in this folder
+
+    ```
+    bash> tar xf centos-7.5-1804.tar.gz && cd centos-7.5-1804/
+    bash> rpm -ivh *.rpm
+    ```
+
+    4) Modify **~/.bashrc** by appending following lines to the end
+
+    ```
+    alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind'
+
+    alias ctest='/home/engshare/cmake/bin/ctest'
+    ```
+    5) Update **~/.bashrc**
+
+    ```
+    bash> source ~/.bashrc
+    ```
 
 #### Step2: Build and install 3rd-party Libraries
 The third-party was installed to **/opt/nebula/third-party**
@@ -133,44 +133,44 @@ bash> sudo make install
 #### Step1: Prepare
 - install tools
 
-	```
-	bash> sudo yum -y install git git-lfs
-	```
+    ```
+    bash> sudo yum -y install git git-lfs
+    ```
 - install dependencies
 
-	through yum install
-	
-	```
-	bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static maven
-	```
-	
-	through vesoft offer
-	
-	```
-	bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-6.5.tar.gz
-	```
+    through yum install
 
-	1) Install all necessary rpm packages in this folder
-	
-	```
-	bash> tar xf centos-6.5.tar.gz && cd centos-6.5/
-	bash> sudo rpm -ivh *.rpm
-	```
-	
-	2) Modify **~/.bashrc** by appending following lines to the end
-	
-	```
-	export PATH=/opt/nebula/autoconf/bin:/opt/nebula/automake/bin:/opt/nebula/libtool/bin:/opt/nebula/git/bin:/opt/nebula/gettext/bin:/opt/nebula/flex/bin:/opt/nebula/bison/bin:/opt/nebula/binutils/bin:$PATH
-	export ACLOCAL_PATH=/opt/nebula/automake/share/aclocal-1.15:/opt/nebula/libtool/share/aclocal:/opt/nebula/autoconf-archive/share/aclocal
-	
-	alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BISON_ROOT=/opt/nebula/bison -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_READLINE_ROOT=/opt/nebula/readline -DNEBULA_NCURSES_ROOT=/opt/nebula/ncurses'
-	alias ctest='/opt/nebula/cmake/bin/ctest'
-	```
-	3) Update **~/.bashrc**
-	
-	```
-	bash> source ~/.bashrc
-	```
+    ```
+    bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static maven java-1.8.0-openjdk
+    ```
+
+    through vesoft offer
+
+    ```
+    bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-6.5.tar.gz
+    ```
+
+    1) Install all necessary rpm packages in this folder
+
+    ```
+    bash> tar xf centos-6.5.tar.gz && cd centos-6.5/
+    bash> sudo rpm -ivh *.rpm
+    ```
+
+    2) Modify **~/.bashrc** by appending following lines to the end
+
+    ```
+    export PATH=/opt/nebula/autoconf/bin:/opt/nebula/automake/bin:/opt/nebula/libtool/bin:/opt/nebula/git/bin:/opt/nebula/gettext/bin:/opt/nebula/flex/bin:/opt/nebula/bison/bin:/opt/nebula/binutils/bin:$PATH
+    export ACLOCAL_PATH=/opt/nebula/automake/share/aclocal-1.15:/opt/nebula/libtool/share/aclocal:/opt/nebula/autoconf-archive/share/aclocal
+
+    alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BISON_ROOT=/opt/nebula/bison -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_READLINE_ROOT=/opt/nebula/readline -DNEBULA_NCURSES_ROOT=/opt/nebula/ncurses'
+    alias ctest='/opt/nebula/cmake/bin/ctest'
+    ```
+    3) Update **~/.bashrc**
+
+    ```
+    bash> source ~/.bashrc
+    ```
 
 #### Step2: Build and install 3rd-party Libraries
 The third-party was installed to **/opt/nebula/third-party**
@@ -201,54 +201,54 @@ bash> sudo make install
 #### Step1: Prepare
 - install tools
 
-	```
-	bash> sudo yum -y install git git-lfs
-	```
+    ```
+    bash> sudo yum -y install git git-lfs
+    ```
 - install dependencies
 
-	through apt-get install
-	
-	```
-	bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake python maven
-	```
-	
-	through vesoft offer
-	
-	```
-	bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
-	```
-	
-	1) Create a system user, which home directory will be used as a shared file location
-	
-	```
-	bash> sudo adduser --system --group --home /home/engshare engshare
-	```
-	
-	2) Please make sure the user's home directory **/home/engshare** is readable to all users
-	
-	```
-	bash> chmod -R 755 /home/engshare
-	```
-	
-	3) Install all necessary deb packages in this folder
-	
-	```
-	bash> tar xf ubuntu1804.tar.gz && cd ubuntu1804/
-	bash> sudo dpkg -i *.deb
-	```
-	
-	4) Modify **~/.bashrc** by appending following lines to the end
-	
-	```
-	alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind -DNEBULA_READLINE_ROOT=/home/engshare/readline -DNEBULA_NCURSES_ROOT=/home/engshare/ncurses'
-	
-	alias ctest='/home/engshare/cmake/bin/ctest'
-	```
-	5) Update **~/.bashrc**
-	
-	```
-	bash> source ~/.bashrc
-	```
+    through apt-get install
+
+    ```
+    bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake python maven openjdk-8-jdk
+    ```
+
+    through vesoft offer
+
+    ```
+    bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
+    ```
+
+    1) Create a system user, which home directory will be used as a shared file location
+
+    ```
+    bash> sudo adduser --system --group --home /home/engshare engshare
+    ```
+
+    2) Please make sure the user's home directory **/home/engshare** is readable to all users
+
+    ```
+    bash> chmod -R 755 /home/engshare
+    ```
+
+    3) Install all necessary deb packages in this folder
+
+    ```
+    bash> tar xf ubuntu1804.tar.gz && cd ubuntu1804/
+    bash> sudo dpkg -i *.deb
+    ```
+
+    4) Modify **~/.bashrc** by appending following lines to the end
+
+    ```
+    alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind -DNEBULA_READLINE_ROOT=/home/engshare/readline -DNEBULA_NCURSES_ROOT=/home/engshare/ncurses'
+
+    alias ctest='/home/engshare/cmake/bin/ctest'
+    ```
+    5) Update **~/.bashrc**
+
+    ```
+    bash> source ~/.bashrc
+    ```
 
 #### Step2: Build and install 3rd-party Libraries
 The third-party was installed to **/opt/nebula/third-party**
@@ -275,19 +275,19 @@ bash> sudo make install
 ```
 
 #### **Now build finish**
-- If you don't see any error messages，and the end has 
+- If you don't see any error messages，and the end has
 
-	```
-	[100%] Built target ....
-	``` 
-	**Congratulations! Compile successfully...**
-- You can see the installation directory **/usr/local/nebula** with four folders **etc/**, **bin/**, **scripts/** **share/** below 
+    ```
+    [100%] Built target ....
+    ```
+    **Congratulations! Compile successfully...**
+- You can see the installation directory **/usr/local/nebula** with four folders **etc/**, **bin/**, **scripts/** **share/** below
 
-	```
-	[root@centos7.5 nebula]# ls /usr/local/nebula/
-	bin  etc  scripts  share
-	```
-	**Now, you can start nebula!** [get_start](https://github.com/vesoft-inc/nebula/blob/master/docs/get-started.md)
+    ```
+    [root@centos7.5 nebula]# ls /usr/local/nebula/
+    bin  etc  scripts  share
+    ```
+    **Now, you can start nebula!** [get_start](https://github.com/vesoft-inc/nebula/blob/master/docs/get-started.md)
 
 
 
@@ -297,42 +297,79 @@ bash> sudo make install
 
   **resolve**:
 
-	**Step1**: Modify **~/.bashrc** by appending following line to the end
-	
-	```
-	export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LIBRARY_PATH
-	```
-	
-	**Step2**: Update **~/.bashrc**
-	
-	```
-	bash> source ~/.bashrc
-	```
+    **Step1**: Modify **~/.bashrc** by appending following line to the end
+
+    ```
+    export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LIBRARY_PATH
+    ```
+
+    **Step2**: Update **~/.bashrc**
+
+    ```
+    bash> source ~/.bashrc
+    ```
 
 - **Error info**: `bison verson less than 3.0.5`
 
-	**resolve**:
-	
-	1) download bison-3.0.5.tar.gz
-	
-	```
-	bash> wget http://ftp.gnu.org/gnu/bison/bison-3.0.5.tar.gz
-	```
-	
-	2) build and install
-	
-	```
-	bash> ./configure
-	bash> make && make install
-	
-	```
+    **resolve**:
+
+    1) download bison-3.0.5.tar.gz
+
+    ```
+    bash> wget http://ftp.gnu.org/gnu/bison/bison-3.0.5.tar.gz
+    ```
+
+    2) build and install
+
+    ```
+    bash> ./configure
+    bash> make && make install
+
+    ```
 
 - **Error info**: build third-party failed, and _build.log show `No such file or directory`
 
-	**resolve**:
-	
-	```
-	bash> cd nebula-3rdparty/
-	bash> git-lfs pull
-	```
+    **resolve**:
 
+    ```
+    bash> cd nebula-3rdparty/
+    bash> git-lfs pull
+    ```
+
+- **Error info**: `[ERROR] No compiler is provided in this environment. Perhaps you are running on a JRE rather than a JDK?`
+
+    **resolve**:
+
+    1) do `java -version` get your java jdk version
+
+    2) if your java version is not `1.8.0_xxx`, please install it
+
+    **ubuntu**
+
+    ```
+    sudo apt-get -y install openjdk-8-jdk
+    ```
+    **centos**
+
+    ```
+    sudo yum -y install java-1.8.0-openjdk
+    ```
+    3) Modify **~/.bashrc** by appending following line to the end
+
+    **ubuntu**
+
+    ```
+    export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
+    export JRE_HOME=$JAVA_HOME/jre
+    export CLASSPATH=$JAVA_HOME/lib:$JRE_HOME/lib:$CLASSPATH
+    export PATH=$JAVA_HOME/bin:$JRE_HOME/bin:$PATH
+    ```
+
+    **centos**
+
+    ```
+    export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk
+    export JRE_HOME=$JAVA_HOME/jre
+    export CLASSPATH=$JAVA_HOME/lib:$JRE_HOME/lib:$CLASSPATH
+    export PATH=$JAVA_HOME/bin:$JRE_HOME/bin:$PATH
+    ```
