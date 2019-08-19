@@ -30,7 +30,7 @@ Status: Downloaded newer image for vesoft/nebula-graph:latest
 ```
 下载Nebula镜像。
 
-国内从 Docker Hub 拉取镜像有时会遇到困难，此时可以配置镜像。例如:
+国内从 Docker Hub 拉取镜像有时会遇到困难，此时可以配置国内地址。例如:
 * Azure 中国镜像 https://dockerhub.azk8s.cn
 * 七牛云 https://reg-mirror.qiniu.com
 
@@ -83,7 +83,7 @@ For macOS users, click the Docker Desktop icon -> Preferences -> Daemon -> Regis
 
 启动docker容器。
 
-进入容器后，默认在`root`目录下，使用`cd /usr/local/nebula切换`切换到`neula`主目录。
+进入容器后，默认在`root`目录下，使用`cd /usr/local/nebula`切换到`neula`主目录。
 
 运行
 
