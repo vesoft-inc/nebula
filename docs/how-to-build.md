@@ -11,6 +11,10 @@ The project Nebula is developed using C++14, so it requires a compiler supportin
 - Centos6.5, 7.5
 - Ubuntu16.04, 18.04
 
+### The amount of disk space required
+
+When build type is **DEBUG**, **Nebula-3rdparty** and **nebula** build require approximately **13G** of disk space to compile.
+Please allow for adequate disk space. Better reserve more than **16G** of space.
 
 ### How to build in Fedora29 or Fedora30
 #### Step1: Prepare
