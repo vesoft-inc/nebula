@@ -1,6 +1,6 @@
 <p align="center">
   <img src="docs/logo.png"/>
-  <br>中文 | <a href="README_en.md">English</a>
+  <br>中文 | <a href="README_EN.md">English</a>
   <br>世界上唯一能够容纳千亿个顶点和万亿条边，并提供毫秒级查询延时的图数据库解决方案<br>
 </p>
 
