@@ -27,7 +27,6 @@ using nebula::cpp2::SupportedType;
 using nebula::cpp2::ValueType;
 using apache::thrift::FragileConstructor::FRAGILE;
 
-/*
 TEST(MetaClientTest, InterfacesTest) {
     FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
@@ -483,30 +482,6 @@ TEST(MetaClientTest, HeartbeatTest) {
     sleep(FLAGS_heartbeat_interval_secs + 1);
     ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(sc->kvStore_.get()).size());
 }
-*/
-
-#define RETURN_OK(req) \
-    UNUSED(req); \
-    do { \
-        folly::Promise<cpp2::ExecResp> pro; \
-        auto f = pro.getFuture(); \
-        cpp2::ExecResp resp; \
-        resp.set_code(cpp2::ErrorCode::SUCCEEDED); \
-        pro.setValue(std::move(resp)); \
-        return f; \
-    } while (false)
-
-#define RETURN_LEADER_CHANGED(req, leader) \
-    UNUSED(req); \
-    do { \
-        folly::Promise<cpp2::ExecResp> pro; \
-        auto f = pro.getFuture(); \
-        cpp2::ExecResp resp; \
-        resp.set_code(cpp2::ErrorCode::E_LEADER_CHANGED); \
-        resp.set_leader(leader); \
-        pro.setValue(std::move(resp)); \
-        return f; \
-    } while (false)
 
 class TestMetaService : public cpp2::MetaServiceSvIf {
 public:

@@ -17,6 +17,8 @@
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
 
+DECLARE_int32(meta_client_retry_times);
+
 namespace nebula {
 namespace meta {
 
@@ -300,28 +302,13 @@ protected:
              class Response =
                 typename std::result_of<RespGenerator(RpcResponse)>::type
     >
-    folly::Future<StatusOr<Response>> getResponse(Request req,
-                                                  RemoteFunc remoteFunc,
-                                                  RespGenerator respGen,
-                                                  bool toLeader = false);
-
-    template<class Request,
-             class RemoteFunc,
-             class RespGenerator,
-             class RpcResponse =
-                typename std::result_of<
-                    RemoteFunc(std::shared_ptr<meta::cpp2::MetaServiceAsyncClient>, Request)
-                >::type::value_type,
-             class Response =
-                typename std::result_of<RespGenerator(RpcResponse)>::type
-    >
     void getResponse(Request req,
                      RemoteFunc remoteFunc,
                      RespGenerator respGen,
                      folly::Promise<StatusOr<Response>> pro,
                      bool toLeader = false,
                      int32_t retry = 0,
-                     int32_t retryLimit = 3);
+                     int32_t retryLimit = FLAGS_meta_client_retry_times);
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
