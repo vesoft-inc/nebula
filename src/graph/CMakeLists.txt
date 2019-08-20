@@ -42,6 +42,8 @@ add_library(
     FetchEdgesExecutor.cpp
     FetchExecutor.cpp
     SetExecutor.cpp
+    FindExecutor.cpp
+    MatchExecutor.cpp
 )
 add_dependencies(
     graph_obj

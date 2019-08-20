@@ -17,22 +17,6 @@ DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs, 24 * 3600, "interval to trigger custom compaction");
 DEFINE_int32(num_workers, 4, "Number of worker threads");
 
-/**
- * Check spaceId, partId exists or not.
- * */
-#define CHECK_FOR_WRITE(spaceId, partId, cb) \
-    auto it = spaces_.find(spaceId); \
-    if (UNLIKELY(it == spaces_.end())) { \
-        cb(ResultCode::ERR_SPACE_NOT_FOUND); \
-        return; \
-    } \
-    auto& parts = it->second->parts_; \
-    auto partIt = parts.find(partId); \
-    if (UNLIKELY(partIt == parts.end())) { \
-        cb(ResultCode::ERR_PART_NOT_FOUND); \
-        return; \
-    }
-
 namespace nebula {
 namespace kvstore {
 
@@ -177,7 +161,6 @@ void NebulaStore::addSpace(GraphSpaceID spaceId) {
     for (auto& path : options_.dataPaths_) {
         this->spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path));
     }
-    return;
 }
 
 
@@ -210,7 +193,6 @@ void NebulaStore::addPart(GraphSpaceID spaceId, PartitionID partId) {
         partId,
         newPart(spaceId, partId, targetEngine.get()));
     LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been added!";
-    return;
 }
 
 std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
@@ -336,7 +318,7 @@ void NebulaStore::asyncMultiPut(GraphSpaceID spaceId,
         return;
     }
     auto part = nebula::value(ret);
-    return part->asyncMultiPut(std::move(keyValues), std::move(cb));
+    part->asyncMultiPut(std::move(keyValues), std::move(cb));
 }
 
 
@@ -350,7 +332,7 @@ void NebulaStore::asyncRemove(GraphSpaceID spaceId,
         return;
     }
     auto part = nebula::value(ret);
-    return part->asyncRemove(key, std::move(cb));
+    part->asyncRemove(key, std::move(cb));
 }
 
 
@@ -364,7 +346,7 @@ void NebulaStore::asyncMultiRemove(GraphSpaceID spaceId,
         return;
     }
     auto part = nebula::value(ret);
-    return part->asyncMultiRemove(std::move(keys), std::move(cb));
+    part->asyncMultiRemove(std::move(keys), std::move(cb));
 }
 
 
@@ -379,7 +361,7 @@ void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,
         return;
     }
     auto part = nebula::value(ret);
-    return part->asyncRemoveRange(start, end, std::move(cb));
+    part->asyncRemoveRange(start, end, std::move(cb));
 }
 
 
@@ -393,7 +375,7 @@ void NebulaStore::asyncRemovePrefix(GraphSpaceID spaceId,
         return;
     }
     auto part = nebula::value(ret);
-    return part->asyncRemovePrefix(prefix, std::move(cb));
+    part->asyncRemovePrefix(prefix, std::move(cb));
 }
 
 ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceId,

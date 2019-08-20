@@ -112,7 +112,7 @@ TEST(LogAppend, MultiThreadAppend) {
 
     LOG(INFO) << "<===== Finish multi-thread appending logs";
 
-    // Sleep a while to make sure the lat log has been committed on
+    // Sleep a while to make sure the last log has been committed on
     // followers
     sleep(FLAGS_raft_heartbeat_interval_secs);
 
