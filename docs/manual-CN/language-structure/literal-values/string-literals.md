@@ -8,6 +8,7 @@ nebula> YIELD "another string"
 ```
 
 一些转义字符 (\\) 已被支持，如下表所示:
+
 | **转移字符**   | **对应的字符**   | 
 |:----|:----|
 | \'   | 单引号 (')  | 
@@ -15,7 +16,7 @@ nebula> YIELD "another string"
 | \t   | 制表符      | 
 | \n   | 换行符      | 
 | \b   | 退格符      | 
-| \\\  | 反斜杠 (\\) | 
+| \\  | 反斜杠 (\\) | 
 
 示例:
 
@@ -32,7 +33,5 @@ nebula> YIELD 'disappearing\ backslash'  
 --------------------
 |   disappearing backslash | 
 --------------------
-
-
 ```
 

@@ -1,5 +1,4 @@
-In Nebula Graph, Identifiers are case-sensitive.
-Nebula Graph标识符为大小写敏感，因此下方示例语句无效，“my_space”和“MY_SPACE”为两个不同的space。
+Nebula Graph 标识符为大小写敏感，因此下方示例语句无效，`my_space` 和`MY_SPACE` 为两个不同的space。
 
 ```
 nebula> CREATE SPACE my_space;
