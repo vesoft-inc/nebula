@@ -41,7 +41,7 @@ The project itself includes the source code of several 3rd-party libraries, whic
 
 ### How to get 3rd-party Libraries
 
-Please refer to [Install guide](https://github.com/vesoft-inc/nebula-3rdparty/blob/master/README.md)
+Please refer to [Installation Guide](https://github.com/vesoft-inc/nebula-3rdparty/blob/master/README.md)
 
 ### How to build
   - create build dir: `cd nebula && mkdir build && cd build`

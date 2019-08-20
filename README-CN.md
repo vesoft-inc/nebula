@@ -1,13 +1,14 @@
 <p align="center">
   <img src="docs/logo.png"/>
-  <br>中文 | <a href="README-EN.md">English</a>
+  <br>中文 | <a href="README.md">English</a>
   <br>世界上唯一能够容纳千亿个顶点和万亿条边，并提供毫秒级查询延时的图数据库解决方案<br>
 </p>
 
 <p align="center">
   <a href="https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzU2NDkxNjI0NQ==&scene=124#wechat_redirect"><img src="https://img.shields.io/badge/%E5%85%AC%E4%BC%97%E5%8F%B7-wechat-brightgreen" alt="WeiXin"></a>
   <a href="https://www.zhihu.com/org/nebulagraph/activities"><img src="https://img.shields.io/badge/%E7%9F%A5%E4%B9%8E-zhihu-blue" alt="Zhihu"></a>
-    <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/%E5%BE%AE%E5%8D%9A-weibo-red" alt="Sina Weibo"></a>
+  <a href="https://segmentfault.com/t/nebula"><img src="https://img.shields.io/badge/SegmentFault-%E6%80%9D%E5%90%A6-green" alt="SegmentFault"></a>
+  <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/%E5%BE%AE%E5%8D%9A-weibo-red" alt="Sina Weibo"></a>
 </p>
 
 **Nebula Graph** 的目标是为超大规模图数据提供高并发，低延时的读、写及计算。Nebula是一个开源项目，我们期待与社区合作共同推广图数据库。
@@ -30,7 +31,7 @@
 **Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者参与 Nebula 社区，目前有以下贡献方式：
 
 * 试用 **Nebula Graph** 并给出反馈
-* 提交功能需求或者issue
+* 提交功能需求或者 issue
 * 贡献代码，详情请参见 [How to Contribute](docs/manual-CN/how-to-contribute.md)
 * 帮助我们完善文档，详情参见 [Contribute to Nebula Graph Docs](docs/manual-CN/contribute-to-documentation.md)
 
