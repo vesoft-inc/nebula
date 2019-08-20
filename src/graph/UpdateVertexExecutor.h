@@ -40,31 +40,23 @@ private:
     // To do some preparing works on the clauses
     Status prepareSet();
 
-    Status prepareWhere();
+    Status prepareWhen();
 
     Status prepareYield();
 
-    Status prepareNeededProps();
-
-    StatusOr<std::vector<storage::cpp2::PropDef>> getReturnProps();
-
-    using RpcResponse = storage::StorageRpcResponse<storage::cpp2::UpdateResponse>;
+    std::vector<std::string> getReturnColumns();
 
     // All required data have arrived, finish the execution.
-    void finishExecution(RpcResponse &&rpcResp);
+    void finishExecution(storage::cpp2::UpdateResponse &&rpcResp);
 
 private:
-    using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     UpdateVertexSentence                       *sentence_{nullptr};
+    std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     bool                                        insertable_{false};
     VertexID                                    vertex_;
     std::vector<storage::cpp2::UpdateItem>      updateItems_;
     Expression                                 *filter_{nullptr};
     std::vector<YieldColumn*>                   yields_;
-    std::unique_ptr<ExpressionContext>          expCtx_;
-    std::unique_ptr<ExpressionContext>          yieldExpCtx_;
-    std::unique_ptr<cpp2::ExecutionResponse>    resp_;
-    SchemaPropIndex                             schemaPropIndex_;
 };
 
 }   // namespace graph

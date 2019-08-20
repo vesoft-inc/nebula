@@ -201,37 +201,6 @@ Status DestPropertyExpression::prepare() {
 
 
 void DestPropertyExpression::encode(Cord &cord) const {
-    if (preEval_) {
-        do {
-            cord << kindToInt(kPrimary);
-            auto value = this->eval();
-            if (!value.ok()) {
-                break;
-            }
-            auto val = value.value();
-            cord << static_cast<uint8_t>(val.which());
-            switch (val.which()) {
-                case VAR_INT64:
-                    cord << boost::get<int64_t>(val);
-                    break;
-                case VAR_DOUBLE:
-                    cord << boost::get<double>(val);
-                    break;
-                case VAR_BOOL:
-                    cord << static_cast<uint8_t>(boost::get<bool>(val));
-                    break;
-                case VAR_STR: {
-                    auto &str = boost::get<std::string>(val);
-                    cord << static_cast<uint16_t>(str.size());
-                    cord << str;
-                    break;
-                }
-                default:
-                    DCHECK(false);
-            }
-            return;
-        } while (false);
-    }
     cord << kindToInt(kind());
     cord << static_cast<uint16_t>(alias_->size());
     cord << *alias_;

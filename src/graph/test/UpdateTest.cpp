@@ -29,47 +29,6 @@ protected:
 };
 
 
-TEST_F(UpdateTest, InvalidError) {
-    // INSERT VERTEX course(name, credits),building(name) VALUES 102:("English", 6, "No11");
-    {   // BaseLine: VALID Set, Where and Yield syntax
-        cpp2::ExecutionResponse resp;
-        auto query = "UPDATE VERTEX 102 "
-                     "SET course.credits = $^.course.credits + 1, building.name = \"No12\" "
-                     "WHERE $^.course.name == \"English\" && $^.course.credits > 2 "
-                     "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
-        auto code = client_->execute(query, resp);
-        EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-    }
-    {   // Vertex INVALID YIELD(Yield)
-        cpp2::ExecutionResponse resp;
-        auto query = "UPDATE OR INSERT VERTEX 102 "
-                     "SET course.credits = $^.course.credits + 1, building.name = \"No12\" "
-                     "WHERE $^.course.name == \"English\" && $^.course.credits > 2 "
-                     "YIELD $$.course.name AS Name, $$.course.credits AS Credits, $$.building.name";
-        auto code = client_->execute(query, resp);
-        EXPECT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
-    }
-    {   // Vertex E_INVALID_UPDATER(Set)
-        cpp2::ExecutionResponse resp;
-        auto query = "UPDATE VERTEX 102 "
-                     "SET course.credits = $$.course.credits + 1, $^.building.name = \"No12\" "
-                     "WHERE $^.course.name == \"English\" && $^.course.credits > 2 "
-                     "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
-        auto code = client_->execute(query, resp);
-        EXPECT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
-    }
-    {   // Vertex E_INVALID_FILTER(Where)
-        cpp2::ExecutionResponse resp;
-        auto query = "UPDATE OR INSERT VERTEX 102 "
-                     "SET course.credits = $^.course.credits + 1, building.name = \"No12\" "
-                     "WHERE $$.course.name == \"English\" && select.grade >= 3 "
-                     "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
-        auto code = client_->execute(query, resp);
-        EXPECT_EQ(cpp2::ErrorCode::E_SYNTAX_ERROR, code);
-    }
-}
-
-
 TEST_F(UpdateTest, UpdateVertex) {
     // INSERT VERTEX course(name, credits), building(name) VALUES 101:("Math", 3, "No5");
     {   // OnlySet
@@ -83,7 +42,7 @@ TEST_F(UpdateTest, UpdateVertex) {
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE VERTEX 101 "
                      "SET course.credits = $^.course.credits + 1, building.name = \"No7\" "
-                     "WHERE $^.course.name == \"Math\" && $^.course.credits > 2";
+                     "WHEN $^.course.name == \"Math\" && $^.course.credits > 2";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
@@ -103,7 +62,7 @@ TEST_F(UpdateTest, UpdateVertex) {
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE VERTEX 101 "
                      "SET course.credits = $^.course.credits + 1, building.name = \"No9\" "
-                     "WHERE $^.course.name == \"Math\" && $^.course.credits > 2 "
+                     "WHEN $^.course.name == \"Math\" && $^.course.credits > 2 "
                      "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -114,9 +73,9 @@ TEST_F(UpdateTest, UpdateVertex) {
     }
     {   // Insertable: vertex 103 ("CS", 5) --> ("CS", 6, "No10")
         cpp2::ExecutionResponse resp;
-        auto query = "UPDATE OR INSERT VERTEX 103 "
+        auto query = "UPSERT VERTEX 103 "
                      "SET course.credits = $^.course.credits + 1, building.name = \"No10\" "
-                     "WHERE $^.course.name == \"CS\" && $^.course.credits > 2 "
+                     "WHEN $^.course.name == \"CS\" && $^.course.credits > 2 "
                      "YIELD $^.course.name AS Name, $^.course.credits AS Credits, $^.building.name";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -141,11 +100,11 @@ TEST_F(UpdateTest, UpdateEdge) {
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE EDGE 200 -> 101@0 OF select "
                      "SET grade = select.grade + 1, year = 2000 "
-                     "WHERE select.grade > 4 && $^.student.age > 15";
+                     "WHEN select.grade > 4 && $^.student.age > 15";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    {   // SetFilterYield
+    {   // SetYield
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE EDGE 200 -> 101@0 OF select "
                      "SET grade = select.grade + 1, year = 2018 "
@@ -161,7 +120,7 @@ TEST_F(UpdateTest, UpdateEdge) {
         cpp2::ExecutionResponse resp;
         auto query = "UPDATE EDGE 200 -> 101@0 OF select "
                      "SET grade = select.grade + 1, year = 2019 "
-                     "WHERE select.grade > 4 && $^.student.age > 15 "
+                     "WHEN select.grade > 4 && $^.student.age > 15 "
                      "YIELD $^.student.name AS Name, select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
@@ -170,64 +129,16 @@ TEST_F(UpdateTest, UpdateEdge) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
-}
-
-
-TEST_F(UpdateTest, AdvancedUpdateEdge) {
     {  // Insertable
         cpp2::ExecutionResponse resp;
-        auto query = "UPDATE OR INSERT EDGE 201 -> 101@0 OF select "
+        auto query = "UPSERT EDGE 201 -> 101@0 OF select "
                      "SET grade = 3, year = 2019 "
-                     "WHERE $^.student.age > 15 && $^.student.gender == \"male\" "
+                     "WHEN $^.student.age > 15 && $^.student.gender == \"male\" "
                      "YIELD select.grade AS Grade, select.year AS Year";
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
         std::vector<std::tuple<int64_t, int64_t>> expected = {
             {3, 2019},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {   // DestPropertyExpression
-        cpp2::ExecutionResponse resp;
-        auto query = "UPDATE EDGE 200 -> 101@0 OF select "
-                     "SET grade = select.grade + $$.course.credits, year = 2020 "
-                     "WHERE select.grade > 4 && $^.student.age > 15 "
-                           "&& $$.building.name == \"No9\" "
-                     "YIELD $^.student.name AS Name, $$.course.credits AS Credits, "
-                           "select.grade AS Grade, select.year AS Year";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, int64_t, int64_t>> expected = {
-            {"Monica", 7, 9 + 7, 2020},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {   // DestPropertyExpression + SamePropName
-        cpp2::ExecutionResponse resp;
-        auto query = "UPDATE EDGE 200 -> 101@0 OF select "
-                     "SET grade = select.grade + $$.course.credits, year = 2019 "
-                     "WHERE select.grade > 4 && $^.student.age > 15 "
-                           "&& $$.building.name == \"No9\" "
-                     "YIELD $^.student.name AS Name, $$.course.name AS Course, "
-                           "select.grade AS Grade, select.year AS Year";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, std::string, int64_t, int64_t>> expected = {
-            {"Monica", "Math", 23, 2019},
-        };
-        ASSERT_TRUE(verifyResult(resp, expected));
-    }
-    {  // Insertable + DestPropertyExpression
-        cpp2::ExecutionResponse resp;
-        auto query = "UPDATE OR INSERT EDGE 202 -> 101@0 OF select "
-                     "SET grade = $$.course.credits + 1, year = 2020 "
-                     "WHERE $^.student.gender == \"female\" && $$.course.name == \"Math\" "
-                     "YIELD $^.student.name AS Name, $$.course.credits AS Credits, "
-                           "select.grade AS Grade, select.year AS Year";
-        auto code = client_->execute(query, resp);
-        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, int64_t, int64_t>> expected = {
-            {"Jane", 7, 7 + 1, 2020},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }

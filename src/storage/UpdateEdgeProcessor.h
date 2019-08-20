@@ -30,41 +30,36 @@ private:
         : QueryBaseProcessor<cpp2::UpdateEdgeRequest,
                              cpp2::UpdateResponse>(kvstore, schemaMan) {}
 
-    kvstore::ResultCode processVertex(PartitionID partId, VertexID vId) override {
-        UNUSED(partId);
-        UNUSED(vId);
+    kvstore::ResultCode processVertex(PartitionID, VertexID) override {
         LOG(FATAL) << "Unimplement!";
         return kvstore::ResultCode::SUCCEEDED;
     }
 
-    cpp2::ErrorCode checkAndBuildContexts(const cpp2::UpdateEdgeRequest& req);
-
-    kvstore::ResultCode processEdge(PartitionID partId,
-                                    const cpp2::EdgeKey& edgeKey);
-
-    kvstore::ResultCode collectEdgesProps(PartitionID partId,
-                                          const cpp2::EdgeKey& edgeKey,
-                                          const std::vector<PropContext>& props,
-                                          FilterContext* fcontext,
-                                          Collector* collector);
-
-    std::vector<kvstore::KV> processData();
-
     void onProcessFinished(int32_t retNum) override;
 
-private:
-    bool                                                    insertEdge_{false};
-    int32_t                                                 returnColumnsNum_{0};
-    std::vector<VariantType>                                record_;
-    storage::cpp2::UpdateRespData                           rowRespData_;
-    std::vector<storage::cpp2::UpdateRespData>              respData_;
+    cpp2::ErrorCode checkAndBuildContexts(const cpp2::UpdateEdgeRequest& req);
 
-    bool                                                    insertable_{false};
-    std::vector<storage::cpp2::UpdateItem>                  updateItems_;
-    std::string                                             key_;
-    std::unique_ptr<RowReader>                              filterReader_;
-    std::unique_ptr<RowReader>                              edgeReader_;
-    std::unique_ptr<RowUpdater>                             updater_;
+    kvstore::ResultCode collectVertexProps(
+                            const PartitionID partId,
+                            const VertexID vId,
+                            const TagID tagId,
+                            const std::vector<PropContext>& props);
+
+    kvstore::ResultCode collectEdgesProps(const PartitionID partId,
+                                          const cpp2::EdgeKey& edgeKey);
+
+    bool checkFilter(const PartitionID partId, const cpp2::EdgeKey& edgeKey);
+
+    std::string updateAndWriteBack();
+
+private:
+    bool                                                            insertable_{false};
+    std::vector<storage::cpp2::UpdateItem>                          updateItems_;
+    std::vector<std::unique_ptr<Expression>>                        returnColumnsExp_;
+    std::unordered_map<std::pair<TagID, std::string>, VariantType>  tagFilters_;
+    std::unordered_map<std::string, VariantType>                    edgeFilters_;
+    std::string                                                     key_;
+    std::unique_ptr<RowUpdater>                                     updater_;
 };
 
 }  // namespace storage

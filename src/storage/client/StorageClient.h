@@ -8,6 +8,7 @@
 #define STORAGE_CLIENT_STORAGECLIENT_H_
 
 #include "base/Base.h"
+#include "base/StatusOr.h"
 #include <gtest/gtest_prod.h>
 #include <folly/futures/Future.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
@@ -139,22 +140,21 @@ public:
         VertexID vid,
         folly::EventBase* evb = nullptr);
 
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::UpdateResponse>> updateVertex(
+    folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(
         GraphSpaceID space,
-        std::vector<VertexID> vertices,
+        VertexID vertexId,
         std::string filter,
         std::vector<storage::cpp2::UpdateItem> updateItems,
-        std::vector<storage::cpp2::PropDef> returnCols,
+        std::vector<std::string> returnCols,
         bool insertable,
         folly::EventBase* evb = nullptr);
 
-    folly::SemiFuture<StorageRpcResponse<storage::cpp2::UpdateResponse>> updateEdge(
+    folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateEdge(
         GraphSpaceID space,
-        std::vector<storage::cpp2::EdgeKey> edges,
-        EdgeType edge_type,
+        storage::cpp2::EdgeKey edgeKey,
         std::string filter,
         std::vector<storage::cpp2::UpdateItem> updateItems,
-        std::vector<storage::cpp2::PropDef> returnCols,
+        std::vector<std::string> returnCols,
         bool insertable,
         folly::EventBase* evb = nullptr);
 

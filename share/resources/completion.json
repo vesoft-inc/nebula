@@ -43,7 +43,12 @@
         },
         "UPDATE": {
             "sub_keywords": [
-                "VERTEX", "EDGE", "SET", "WHERE", "YIELD", "OF"
+                "VERTEX", "EDGE", "OF", "SET", "WHEN", "YIELD"
+            ]
+        },
+        "UPSERT": {
+            "sub_keywords": [
+                "VERTEX", "EDGE", "OF", "SET", "WHEN", "YIELD"
             ]
         },
         "DELETE": {

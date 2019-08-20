@@ -42,63 +42,26 @@ private:
     // To do some preparing works on the clauses
     Status prepareSet();
 
-    Status prepareWhere();
+    Status prepareWhen();
 
     Status prepareYield();
 
-    Status prepareNeededProps();
+    std::vector<std::string> getReturnColumns();
 
-    StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps();
-
-    StatusOr<std::vector<storage::cpp2::PropDef>> getReturnProps();
-
-    using RpcUpdateResponse = storage::StorageRpcResponse<storage::cpp2::UpdateResponse>;
-
-    bool fetchDstVertexProps();
-
-    // Replace all DestPropertyExpression($$.TagName.PropName) with its value in exp
-    bool applyDestPropExp(const Expression* exp);
-
-    bool insertReverselyEdge();
+    void insertReverselyEdge(storage::cpp2::UpdateResponse &&rpcResp);
 
     // All required data have arrived, finish the execution.
-    void finishExecution(RpcUpdateResponse &&rpcResp);
-
-    /**
-     * A container to hold the mapping from vertex id to its properties, used for lookups
-     * during the final evaluation process.
-     */
-    class VertexHolder final {
-    public:
-        OptVariantType get(const VertexID id, const int64_t index) const;
-        void add(const storage::cpp2::QueryResponse &resp);
-        const auto* schema() const {
-            return schema_.get();
-        }
-
-    private:
-        std::shared_ptr<ResultSchemaProvider>       schema_;
-        std::unordered_map<VertexID, std::string>   data_;
-    };
+    void finishExecution(storage::cpp2::UpdateResponse &&rpcResp);
 
 private:
-    using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
-    using EdgeSchema = std::shared_ptr<const meta::SchemaProviderIf>;
     UpdateEdgeSentence                         *sentence_{nullptr};
+    std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     bool                                        insertable_{false};
     storage::cpp2::EdgeKey                      edge_;
-    EdgeSchema                                  schema_;
-    EdgeType                                    edgeType_{0};
     const std::string                          *edgeTypeName_{nullptr};
     std::vector<storage::cpp2::UpdateItem>      updateItems_;
     Expression                                 *filter_{nullptr};
     std::vector<YieldColumn*>                   yields_;
-    std::unique_ptr<ExpressionContext>          expCtx_;
-    std::unique_ptr<ExpressionContext>          yieldExpCtx_;
-    std::unique_ptr<cpp2::ExecutionResponse>    resp_;
-    std::unique_ptr<VertexHolder>               vertexHolder_;
-    SchemaPropIndex                             schemaPropIndex_;
-    SchemaPropIndex                             dstTagProps_;
 };
 
 }   // namespace graph

@@ -450,17 +450,10 @@ public:
 
     Status MUST_USE_RESULT prepare() override;
 
-    void setPreEval() const {
-        preEval_ = true;
-    }
-
 private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
-
-private:
-    mutable bool                                preEval_{false};
 };
 
 

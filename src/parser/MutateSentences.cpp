@@ -180,17 +180,18 @@ std::string UpdateList::toString() const {
 std::string UpdateVertexSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "UPDATE ";
     if (insertable_) {
-        buf += "OR INSERT ";
+        buf += "UPSERT ";
+    } else {
+        buf += "UPDATE ";
     }
     buf += "VERTEX ";
     buf += vid_->toString();
     buf += " SET ";
     buf += updateList_->toString();
-    if (whereClause_ != nullptr) {
+    if (whenClause_ != nullptr) {
         buf += " ";
-        buf += whereClause_->toString();
+        buf += whenClause_->toString();
     }
     if (yieldClause_ != nullptr) {
         buf += " ";
@@ -204,9 +205,10 @@ std::string UpdateVertexSentence::toString() const {
 std::string UpdateEdgeSentence::toString() const {
     std::string buf;
     buf.reserve(256);
-    buf += "UPDATE ";
     if (insertable_) {
-        buf += "OR INSERT ";
+        buf += "UPSERT ";
+    } else {
+        buf += "UPDATE ";
     }
     buf += "EDGE ";
     buf += srcid_->toString();
@@ -218,9 +220,9 @@ std::string UpdateEdgeSentence::toString() const {
     buf += " OF " + *edgeType_;
     buf += " SET ";
     buf += updateList_->toString();
-    if (whereClause_ != nullptr) {
+    if (whenClause_ != nullptr) {
         buf += " ";
-        buf += whereClause_->toString();
+        buf += whenClause_->toString();
     }
     if (yieldClause_ != nullptr) {
         buf += " ";

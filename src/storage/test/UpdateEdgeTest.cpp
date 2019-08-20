@@ -87,18 +87,20 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateEdgeRequest...";
-    cpp2::UpdateEdgeRequest req;
     GraphSpaceID spaceId = 0;
-    req.set_space_id(spaceId);
-    decltype(req.parts) tmpEdges;
     PartitionID partId = 0;
     VertexID srcId = 1;
     VertexID dstId = 10001;
-    // src = 1, edge_type = 101, dst = 10001, ranking = 0
-    tmpEdges[partId].emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                  srcId, 101, 0, dstId);
-    req.set_parts(std::move(tmpEdges));
-    req.set_edge_type(101);
+    // src = 1, edge_type = 101, ranking = 0, dst = 10001
+    storage::cpp2::EdgeKey edgeKey;
+    edgeKey.set_src(srcId);
+    edgeKey.set_edge_type(101);
+    edgeKey.set_ranking(0);
+    edgeKey.set_dst(dstId);
+    cpp2::UpdateEdgeRequest req;
+    req.set_space_id(spaceId);
+    req.set_edge_key(edgeKey);
+    req.set_part_id(partId);
     LOG(INFO) << "Build filter...";
     // left int: $^.3001.tag_3001_col_0 >= 0
     auto* tag1 = new std::string("3001");
@@ -125,7 +127,7 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     // int: 101.col_0 = 101.col_2 = 10001 + 2 = 10003
     cpp2::UpdateItem item1;
     item1.set_name("101");
-    item1.set_field("col_0");
+    item1.set_prop("col_0");
     auto* edge101 = new std::string("101");
     auto* propCol2 = new std::string("col_2");
     auto* val1 = new AliasPropertyExpression(new std::string(""), edge101, propCol2);
@@ -134,19 +136,22 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
     // string: 101.col_10 = string_col_10_2_new
     cpp2::UpdateItem item2;
     item2.set_name("101");
-    item2.set_field("col_10");
+    item2.set_prop("col_10");
     std::string col10new("string_col_10_2_new");
     auto* val2 = new PrimaryExpression(col10new);
     item2.set_value(Expression::encode(val2));
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
     decltype(req.return_columns) tmpColumns;
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "col_0"));
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "col_10"));
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE, "tag_3002_col_2", 3002));
+    tmpColumns.emplace_back(Expression::encode(val1));
+    tmpColumns.emplace_back(Expression::encode(val2));
+    std::string name = folly::to<std::string>(3002);
+    std::string prop = "tag_3002_col_2";
+    auto* sourcePropExp = new SourcePropertyExpression(&name, &prop);
+    tmpColumns.emplace_back(Expression::encode(sourcePropExp));
+
     req.set_return_columns(std::move(tmpColumns));
     req.set_insertable(false);
-
     LOG(INFO) << "Test UpdateEdgeRequest...";
     auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get());
     auto f = processor->getFuture();
@@ -155,26 +160,41 @@ TEST(UpdateEdgeTest, Set_Filter_Yield_Test) {
 
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(0, resp.result.failed_codes.size());
-    EXPECT_TRUE(resp.__isset.schema);
-    EXPECT_EQ(1, resp.return_data.size());
+    EXPECT_FALSE(resp.get_upsert());
+    ASSERT_TRUE(resp.__isset.schema);
     auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
-    auto reader = RowReader::getRowReader(resp.return_data[0].data, provider);
+    auto reader = RowReader::getRowReader(resp.data, provider);
     EXPECT_EQ(3, reader->numFields());
-    int64_t col0;
-    EXPECT_EQ(ResultType::SUCCEEDED, reader->getInt<int64_t>("col_0", col0));
-    EXPECT_EQ(10003, col0);
-    folly::StringPiece col1;
-    EXPECT_EQ(ResultType::SUCCEEDED, reader->getString("col_10", col1));
-    EXPECT_STREQ("string_col_10_2_new", col1.toString().c_str());
-    int64_t col2;
-    EXPECT_EQ(ResultType::SUCCEEDED, reader->getInt<int64_t>("tag_3002_col_2", col2));
-    EXPECT_EQ(3006, col2);
+    for (int i = 0; i < 3; i++) {
+        auto res = RowReader::getPropByIndex(reader.get(), i);
+        if (ok(res)) {
+            switch (i) {
+                case 0: {
+                    auto&& v0 = value(std::move(res));
+                    EXPECT_EQ(10003, boost::get<int64_t>(v0));
+                    break;
+                }
+                case 1: {
+                    auto&& v1 = value(std::move(res));
+                    EXPECT_STREQ("string_col_10_2_new", boost::get<std::string>(v1).c_str());
+                    break;
+                }
+                case 2: {
+                    auto&& v2 = value(std::move(res));
+                    EXPECT_EQ(3006, boost::get<int64_t>(v2));
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
     // check the kvstore
     std::vector<std::string> keys;
     std::vector<std::string> values;
     auto lastVersion = std::numeric_limits<int32_t>::max() - 2;
-    auto edgeKey = NebulaKeyUtils::edgeKey(partId, srcId, 101, 0, dstId, lastVersion);
-    keys.emplace_back(edgeKey);
+    auto kvstoreEdgeKey = NebulaKeyUtils::edgeKey(partId, srcId, 101, 0, dstId, lastVersion);
+    keys.emplace_back(kvstoreEdgeKey);
     kvstore::ResultCode code = kv->multiGet(spaceId, partId, std::move(keys), &values);
     CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
     EXPECT_EQ(1, values.size());
@@ -200,25 +220,27 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     mockData(kv.get());
 
     LOG(INFO) << "Build UpdateEdgeRequest...";
-    cpp2::UpdateEdgeRequest req;
     GraphSpaceID spaceId = 0;
-    req.set_space_id(spaceId);
-    decltype(req.parts) tmpEdges;
     PartitionID partId = 0;
     VertexID srcId = 1;
     VertexID dstId = 10008;
-    // src = 1, edge_type = 101, dst = 10008, ranking = 0
-    tmpEdges[partId].emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                  srcId, 101, 0, dstId);
-    req.set_parts(std::move(tmpEdges));
-    req.set_edge_type(101);
+    // src = 1, edge_type = 101, ranking = 0, dst = 10008
+    storage::cpp2::EdgeKey edgeKey;
+    edgeKey.set_src(srcId);
+    edgeKey.set_edge_type(101);
+    edgeKey.set_ranking(0);
+    edgeKey.set_dst(dstId);
+    cpp2::UpdateEdgeRequest req;
+    req.set_space_id(spaceId);
+    req.set_edge_key(edgeKey);
+    req.set_part_id(partId);
     req.set_filter("");
     LOG(INFO) << "Build update items...";
     std::vector<cpp2::UpdateItem> items;
     // int: 101.col_0 = $^.3002.tag_3002_col_2
     cpp2::UpdateItem item1;
     item1.set_name("101");
-    item1.set_field("col_0");
+    item1.set_prop("col_0");
     auto* tag3002 = new std::string("3002");
     auto* propCol2 = new std::string("tag_3002_col_2");
     auto* val1 = new SourcePropertyExpression(tag3002, propCol2);
@@ -227,18 +249,24 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     // string: 101.col_10 = string_col_10_2_new
     cpp2::UpdateItem item2;
     item2.set_name("101");
-    item2.set_field("col_10");
+    item2.set_prop("col_10");
     std::string col10new("string_col_10_2_new");
     auto* val2 = new PrimaryExpression(col10new);
     item2.set_value(Expression::encode(val2));
     items.emplace_back(item2);
     req.set_update_items(std::move(items));
     decltype(req.return_columns) tmpColumns;
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "col_0"));
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "col_1"));
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "col_10"));
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "col_11"));
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE, "tag_3002_col_2", 3002));
+    auto* noRef = new std::string("");
+    auto* edge101 = new std::string("101");
+    auto* edgePropExp = new AliasPropertyExpression(noRef, edge101, new std::string("col_0"));
+    tmpColumns.emplace_back(Expression::encode(edgePropExp));
+    edgePropExp = new AliasPropertyExpression(noRef, edge101, new std::string("col_1"));
+    tmpColumns.emplace_back(Expression::encode(edgePropExp));
+    edgePropExp = new AliasPropertyExpression(noRef, edge101, new std::string("col_10"));
+    tmpColumns.emplace_back(Expression::encode(edgePropExp));
+    edgePropExp = new AliasPropertyExpression(noRef, edge101, new std::string("col_11"));
+    tmpColumns.emplace_back(Expression::encode(edgePropExp));
+    tmpColumns.emplace_back(Expression::encode(val1));
     req.set_return_columns(std::move(tmpColumns));
     req.set_insertable(true);
 
@@ -250,27 +278,45 @@ TEST(UpdateEdgeTest, Insertable_Test) {
 
     LOG(INFO) << "Check the results...";
     EXPECT_EQ(0, resp.result.failed_codes.size());
-    EXPECT_TRUE(resp.__isset.schema);
-    EXPECT_EQ(1, resp.return_data.size());
-    EXPECT_TRUE(resp.return_data[0].get_upsert());
+    EXPECT_TRUE(resp.get_upsert());
+    ASSERT_TRUE(resp.__isset.schema);
     auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
-    auto reader = RowReader::getRowReader(resp.return_data[0].data, provider);
+    auto reader = RowReader::getRowReader(resp.data, provider);
     EXPECT_EQ(5, reader->numFields());
-    int64_t col0;
-    EXPECT_EQ(ResultType::SUCCEEDED, reader->getInt<int64_t>("col_0", col0));
-    EXPECT_EQ(3006, col0);
-    int64_t col1;
-    EXPECT_EQ(ResultType::SUCCEEDED, reader->getInt<int64_t>("col_1", col1));
-    EXPECT_EQ(0, col1);
-    folly::StringPiece col2;
-    EXPECT_EQ(ResultType::SUCCEEDED, reader->getString("col_10", col2));
-    EXPECT_STREQ("string_col_10_2_new", col2.toString().c_str());
-    folly::StringPiece col3;
-    EXPECT_EQ(ResultType::SUCCEEDED, reader->getString("col_11", col3));
-    EXPECT_STREQ("", col3.toString().c_str());
-    int64_t col4;
-    EXPECT_EQ(ResultType::SUCCEEDED, reader->getInt<int64_t>("tag_3002_col_2", col4));
-    EXPECT_EQ(3006, col4);
+    for (int i = 0; i < 5; i++) {
+        auto res = RowReader::getPropByIndex(reader.get(), i);
+        if (ok(res)) {
+            switch (i) {
+                case 0: {
+                    auto&& v0 = value(std::move(res));
+                    EXPECT_EQ(3006, boost::get<int64_t>(v0));
+                    break;
+                }
+                case 1: {
+                    auto&& v1 = value(std::move(res));
+                    EXPECT_EQ(0, boost::get<int64_t>(v1));
+                    break;
+                }
+                case 2: {
+                    auto&& v2 = value(std::move(res));
+                    EXPECT_STREQ("string_col_10_2_new", boost::get<std::string>(v2).c_str());
+                    break;
+                }
+                case 3: {
+                    auto&& v3 = value(std::move(res));
+                    EXPECT_STREQ("", boost::get<std::string>(v3).c_str());
+                    break;
+                }
+                case 4: {
+                    auto&& v4 = value(std::move(res));
+                    EXPECT_EQ(3006, boost::get<int64_t>(v4));
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
     // get inserted edge from kvstore directly
     auto prefix = NebulaKeyUtils::prefix(partId, srcId, 101, 0, dstId);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -294,89 +340,6 @@ TEST(UpdateEdgeTest, Insertable_Test) {
     EXPECT_TRUE(ok(res));
     auto&& v3 = value(std::move(res));
     EXPECT_STREQ("", boost::get<std::string>(v3).c_str());
-}
-
-
-TEST(UpdateEdgeTest, Multi_Edges_Test) {
-    fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
-    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-
-    LOG(INFO) << "Prepare meta...";
-    auto schemaMan = TestUtils::mockSchemaMan();
-    mockData(kv.get());
-
-    LOG(INFO) << "Build UpdateEdgeRequest...";
-    cpp2::UpdateEdgeRequest req;
-    GraphSpaceID spaceId = 0;
-    req.set_space_id(spaceId);
-    decltype(req.parts) tmpEdges;
-    PartitionID totalParts = 3;
-    // src = 1,  edge_type = 101, dst = 10006, ranking = 0
-    // src = 11, edge_type = 101, dst = 10007, ranking = 0
-    // src = 21, edge_type = 101, dst = 10008, ranking = 0 (will be insert)
-    for (auto partId = 0; partId < totalParts; partId++) {
-        tmpEdges[partId].emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                      partId * 10 + 1, 101, 0, 10006 + partId);
-    }
-    req.set_parts(std::move(tmpEdges));
-    req.set_edge_type(101);
-    req.set_filter("");
-    LOG(INFO) << "Build update items...";
-    std::vector<cpp2::UpdateItem> items;
-    // int: 101.col_0 = $^.3002.tag_3002_col_2
-    cpp2::UpdateItem item1;
-    item1.set_name("101");
-    item1.set_field("col_0");
-    auto* tag3002 = new std::string("3002");
-    auto* propCol2 = new std::string("tag_3002_col_2");
-    auto* val1 = new SourcePropertyExpression(tag3002, propCol2);
-    item1.set_value(Expression::encode(val1));
-    items.emplace_back(item1);
-    // string: 101.col_10 = string_col_10_2_new
-    cpp2::UpdateItem item2;
-    item2.set_name("101");
-    item2.set_field("col_10");
-    std::string col10new("string_col_10_2_new");
-    auto* val2 = new PrimaryExpression(col10new);
-    item2.set_value(Expression::encode(val2));
-    items.emplace_back(item2);
-    req.set_update_items(std::move(items));
-    decltype(req.return_columns) tmpColumns;
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "col_0"));
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::EDGE, "col_10"));
-    tmpColumns.emplace_back(TestUtils::propDef(cpp2::PropOwner::SOURCE, "tag_3002_col_2", 3002));
-    req.set_return_columns(std::move(tmpColumns));
-    req.set_insertable(true);
-
-    LOG(INFO) << "Test UpdateEdgeRequest...";
-    auto* processor = UpdateEdgeProcessor::instance(kv.get(), schemaMan.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-
-    LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_codes.size());
-    EXPECT_TRUE(resp.__isset.schema);
-    EXPECT_EQ(totalParts, resp.return_data.size());
-    auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
-    for (auto& ep : resp.return_data) {
-        if (ep.edge_key.dst == 10008) {
-            EXPECT_TRUE(ep.get_upsert());
-        } else {
-            EXPECT_FALSE(ep.get_upsert());
-        }
-        auto reader = RowReader::getRowReader(ep.data, provider);
-        EXPECT_EQ(3, reader->numFields());
-        int64_t col0;
-        EXPECT_EQ(ResultType::SUCCEEDED, reader->getInt<int64_t>("col_0", col0));
-        EXPECT_EQ(ep.edge_key.src / 10 + 3002 + 2 + 2, col0);
-        folly::StringPiece col1;
-        EXPECT_EQ(ResultType::SUCCEEDED, reader->getString("col_10", col1));
-        EXPECT_STREQ("string_col_10_2_new", col1.toString().c_str());
-        int64_t col2;
-        EXPECT_EQ(ResultType::SUCCEEDED, reader->getInt<int64_t>("tag_3002_col_2", col2));
-        EXPECT_EQ(ep.edge_key.src / 10 + 3002 + 2 + 2, col2);
-    }
 }
 
 }  // namespace storage

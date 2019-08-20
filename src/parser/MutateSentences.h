@@ -359,7 +359,7 @@ public:
         insertable_ = insertable;
     }
 
-    const bool getInsertable() const {
+    bool getInsertable() const {
         return insertable_;
     }
 
@@ -379,12 +379,12 @@ public:
         return updateList_.get();
     }
 
-    void setWhereClause(WhereClause *clause) {
-        whereClause_.reset(clause);
+    void setWhenClause(WhenClause *clause) {
+        whenClause_.reset(clause);
     }
 
-    const WhereClause* whereClause() const {
-        return whereClause_.get();
+    const WhenClause* whenClause() const {
+        return whenClause_.get();
     }
 
     void setYieldClause(YieldClause *clause) {
@@ -401,7 +401,7 @@ private:
     bool                                        insertable_{false};
     std::unique_ptr<Expression>                 vid_;
     std::unique_ptr<UpdateList>                 updateList_;
-    std::unique_ptr<WhereClause>                whereClause_;
+    std::unique_ptr<WhenClause>                 whenClause_;
     std::unique_ptr<YieldClause>                yieldClause_;
 };
 
@@ -416,7 +416,7 @@ public:
         insertable_ = insertable;
     }
 
-    const bool getInsertable() const {
+    bool getInsertable() const {
         return insertable_;
     }
 
@@ -442,7 +442,7 @@ public:
     }
 
     const int64_t getRank() const {
-        return hasRank_ ? rank_ : 0L;
+        return rank_;
     }
 
     void setEdgeType(std::string* edgeType) {
@@ -461,12 +461,12 @@ public:
         return updateList_.get();
     }
 
-    void setWhereClause(WhereClause *clause) {
-        whereClause_.reset(clause);
+    void setWhenClause(WhenClause *clause) {
+        whenClause_.reset(clause);
     }
 
-    const WhereClause* whereClause() const {
-        return whereClause_.get();
+    const WhenClause* whenClause() const {
+        return whenClause_.get();
     }
 
     void setYieldClause(YieldClause *clause) {
@@ -484,10 +484,10 @@ private:
     bool                                        hasRank_{false};
     std::unique_ptr<Expression>                 srcid_;
     std::unique_ptr<Expression>                 dstid_;
-    int64_t                                     rank_{0};
+    int64_t                                     rank_{0L};
     std::unique_ptr<std::string>                edgeType_;
     std::unique_ptr<UpdateList>                 updateList_;
-    std::unique_ptr<WhereClause>                whereClause_;
+    std::unique_ptr<WhenClause>                 whenClause_;
     std::unique_ptr<YieldClause>                yieldClause_;
 };
 

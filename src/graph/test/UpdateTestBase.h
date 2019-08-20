@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_TEST_TRAVERSETESTBASE_H
-#define GRAPH_TEST_TRAVERSETESTBASE_H
+#ifndef GRAPH_TEST_UPDATETESTBASE_H
+#define GRAPH_TEST_UPDATETESTBASE_H
 
 #include "base/Base.h"
 #include "graph/test/TestEnv.h"
@@ -225,4 +225,4 @@ AssertionResult UpdateTestBase::removeData() {
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // GRAPH_TEST_TRAVERSETESTBASE_H
+#endif  // GRAPH_TEST_UPDATETESTBASE_H

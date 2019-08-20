@@ -89,13 +89,10 @@ cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkAndBuildContexts(const REQ& 
                     TagContext tc;
                     tc.tagId_ = tagId;
                     tc.props_.emplace_back(std::move(prop));
-                    tc.propNameIndex_.emplace(col.name, tc.props_.size() - 1);
                     tagContexts_.emplace_back(std::move(tc));
                     tagIndex.emplace(tagId, tagContexts_.size() - 1);
                 } else {
                     tagContexts_[it->second].props_.emplace_back(std::move(prop));
-                    tagContexts_[it->second].propNameIndex_.emplace(col.name,
-                            tagContexts_[it->second].props_.size() - 1);
                 }
                 break;
             }
@@ -242,7 +239,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
         case Expression::kEdgeType: {
             return true;
         }
-        case Expression::kAliasProp:
+        case Expression::kAliasProp: {
             if (edgeContexts_.empty()) {
                 VLOG(1) << "No edge requested!";
                 return false;
@@ -270,7 +267,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
             }
 
             const auto* propName = edgeExp->prop();
-            auto field           = schema->field(*propName);
+            auto field = schema->field(*propName);
             if (field == nullptr) {
                 VLOG(1) << "Can't find related prop " << *propName << " on edge "
                         << *(edgeExp->alias());
@@ -280,8 +277,9 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
         }
         case Expression::kVariableProp:
         case Expression::kDestProp:
-        case Expression::kInputProp:
+        case Expression::kInputProp: {
             return false;
+        }
         default: {
             VLOG(1) << "Unsupport expression type! kind = "
                     << std::to_string(static_cast<uint8_t>(exp->kind()));
