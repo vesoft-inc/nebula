@@ -1,6 +1,3 @@
----
-This tutorial provides an introduction to build `Nebula` code.
----
 
 ### 编译器
 
@@ -287,7 +284,7 @@ bash> sudo make install
     [root@centos7.5 nebula]# ls /usr/local/nebula/
     bin  etc  scripts  share
     ```
-    **现在可以开始运行 Nebula** [get_start](https://github.com/vesoft-inc/nebula/blob/master/docs/get-started.md)
+    **现在可以开始运行 Nebula** 。
 
 
 

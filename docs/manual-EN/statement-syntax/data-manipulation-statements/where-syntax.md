@@ -1,10 +1,10 @@
-Currently, `WHERE` statement only applies with the `GO` statement.
+Currently, the `WHERE` statement only applies to the `GO` statement.
 
 ```
 WHERE (expression [ AND | OR expression ...])  
 ```
 
-Usually, the expression is comparison between vertex or edge properties.
+Usually, the expression is for vertex or edge properties.
 
 >As syntax sugar, you can freely choose to use both `AND` and `&&`. They are both boolean logical and. So do `OR` and `||`.
 
