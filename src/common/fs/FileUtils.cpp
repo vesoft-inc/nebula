@@ -313,7 +313,7 @@ bool FileUtils::remove(const char* path, bool recursively) {
 }
 
 
-bool FileUtils::makeDir(const std::string& dir) {
+bool FileUtils::makeDir(const std::string& dir, uint32_t mode) {
     if (dir.empty()) {
         return false;
     }
@@ -332,13 +332,13 @@ bool FileUtils::makeDir(const std::string& dir) {
 
     // create parent if it is not empty
     if (!parent.empty()) {
-        bool ret = makeDir(parent.toString());
+        bool ret = makeDir(parent.toString(), mode);
         if (!ret) {
             return false;
         }
     }
 
-    int err = mkdir(dir.c_str(), S_IRWXU);
+    int err = mkdir(dir.c_str(), mode);
     if (err != 0) {
         return fileType(dir.c_str()) == FileType::DIRECTORY;
     }
