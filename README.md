@@ -14,31 +14,32 @@
 
 **Nebula Graph** 的主要特点：
 
- * shared-nothing distributed
- * 对称分布
- * 可扩展
- * 高容错
+ * 全对称分布式架构
+ * 高可扩展性
+ * 高可用性
+ * 数据强一致性
  * 类似SQL的查询语言
 
 ## 获取 `Nebula` ##
 
-**Nebula Graph** 源码参见[GitHub](https://github.com/vesoft-inc/nebula)。
-也可下载Nebula [Docker](https://hub.docker.com/r/vesoft/nebula-graph/tags)镜像进行试用。
-更多详情参见[Get Started](get-started.md).
+除了编译源代码外，也可使用 [Nebula Graph 镜像](https://hub.docker.com/r/vesoft/nebula-graph/tags) 进行试用。
+更多详情参见 [Get Started](docs/manual-CN/get-started.md).
 
 ## 参与 `Nebula` ##
 
-**Nebula Graph** 是一个完全开源的项目，其所有核心功能都将在开源repository中实现。Nebula鼓励社区参与该项目，目前有以下贡献方式：
+**Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者参与 Nebula 社区，目前有以下贡献方式：
 
-* 直接下载试用 **Nebula Graph** 并给出反馈
-* 提交功能要求和错误报告
-* 帮助我们完善文档，详情参见[Contribute to Nebula Graph Docs](cn-contribute-to-documentation.md)
+* 试用 **Nebula Graph** 并给出反馈
+* 提交功能需求或者issue
+* 贡献代码，详情请参见 [How to Contribute](docs/manual-CN/how-to-contribute.md)
+* 帮助我们完善文档，详情参见 [Contribute to Nebula Graph Docs](docs/manual-CN/contribute-to-documentation.md)
 
 ## 许可 ###
-**Nebula Graph** 使用[Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0)许可，您可以免费下载，修改，部署源代码以满足您的需求。您还可以将 **Nebula Graph** 作为后端服务部署以支持您的SAAS部署。
+**Nebula Graph** 使用 [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可，您可以免费下载，修改以及部署源代码。您还可以将 **Nebula Graph** 作为后端服务部署以支持您的SAAS部署。
 
-为防止云供应商从项目赢利而不回馈，Nebula在项目中添加了[Common Clause 1.0](https://commonsclause.com/)条款。如上所述，Nebula是一个完全开源的项目，欢迎您就许可模式提议，帮助Nebula更适合社区发展。
+为防止云供应商从项目赢利而不回馈，Nebula在项目中添加了 [Commons Clause 1.0](https://commonsclause.com/) 条款。如上所述，Nebula是一个完全开源的项目，欢迎您就许可模式提出建议，帮助 Nebula 社区更好的发展。
+
 ## 联系方式
-- 使用[GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) 提交错误报告和功能要求。
+- 使用 [GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) 提交 issue 或功能需求。
 - 加入 [![](https://img.shields.io/badge/slack-nebula-519dd9.svg)](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200)。
-- **Nebula Graph** 详情访问[Home Page](http://nebula-graph.io/)。
+- 访问官网 [Home Page](http://nebula-graph.io/)。
