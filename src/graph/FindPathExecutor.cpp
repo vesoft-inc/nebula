@@ -231,9 +231,12 @@ void FindPathExecutor::findPath(
 
         auto &pair = t.value();
         auto &frontiers = pair.second;
+        std::unordered_set<VertexID> visited;
+
         if (pair.first == VisitedBy::FROM) {
             for (auto &f : frontiers) {
-                // Notice: we treat different rankings between two vertices as different path
+                // Notice: we treat edges with different ranking
+                // between two vertices as different path
                 for (auto &v : f.second) {
                     auto dstId = std::get<2>(v);
                     // if frontiers of F are neighbors of visitedByT, we found a path
@@ -263,9 +266,12 @@ void FindPathExecutor::findPath(
                             pathFrom_.emplace(dstId, std::move(path));
                         }  // for `i'
                     }
+                    visited.emplace(dstId);
                 }  // for `v'
             }  // for `f'
         }  // if `FROM'
+        visitedFrom_.insert(std::make_move_iterator(visited.begin()),
+                            std::make_move_iterator(visited.end()));
 
         if (pair.first == VisitedBy::TO) {
             for (auto &f : frontiers) {
@@ -283,9 +289,12 @@ void FindPathExecutor::findPath(
                         std::string path = "";
                         pathTo_.emplace(dstId, std::move(path));
                     }  // for `i'
+                    visited.emplace(dstId);
                 }  // for `v'
             }  // for `f'
         }  // if `TO'
+        visitedTo_.insert(std::make_move_iterator(visited.begin()),
+                            std::make_move_iterator(visited.end()));
     }  // for `t'
 }
 
