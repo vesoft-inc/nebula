@@ -8,13 +8,13 @@ Use `FETCH PROP ON` to return a (list of) vertex's properties. Currently, you ca
 
 ```
 FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
-
-<tag_name> is the tag name. It should be the same tag within return_list
-
-<vertex_id_list>::=[vertex_id [, vertex_id]] is a list of vertex id separated by comma(,)
-
-[YIELD [DISTINCT] <return_list>] is the property list returned. Please refer here [(Yield_Syntax.md)] for `YIELD` syntax
 ```
+
+`<tag_name>` is the tag name. It should be the same tag within return_list
+
+`<vertex_id_list>::=[vertex_id [, vertex_id]]` is a list of vertex id separated by comma(,)
+
+`[YIELD [DISTINCT] <return_list>]` is the property list returned. Please refer here [YIELD Syntax](yield-syntax.md).
 
 ### Examples
 
@@ -25,7 +25,7 @@ nebula> FETCH PROP ON player 1 YIELD player.name, player.age    -- return proper
 
 nebula> FETCH PROP ON player hash(\"nebula\")  YIELD player.name, player.age    -- hash string to int64 as vertex id, fetch name and player
 
-nebula> GO FROM 1 over e1 | FETCH PROP ON player $- YIELD player.name, player.age    -- find the all neighbors of vertex 1 through edge e1. Then Get the neighbors' name and age.
+nebula> GO FROM 1 over e1 | FETCH PROP ON player $- YIELD player.name, player.age    -- find all neighbors of vertex 1 through edge e1. Then Get the neighbors' name and age.
 
 nebula> $var = GO FROM 1 over e1; FETCH PROP ON player $var.id YIELD player.name, player.age  -- the same as above sentence.
 
@@ -34,18 +34,19 @@ nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age    -- 
 
 ## Fetch Edge Property
 
-The `FETCH` usage of edge is almost the same as for vertex.
+The `FETCH` usage of an edge is almost the same as for vertex.
 You can get properties from multiple edges with the same type.
 
 ```
 FETCH PROP ON <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...] [YIELD [DISTINCT] <return_list>]
-
-<edge_type> specifies the edge's type. It must be the same as those in <return_list>
-
-<vid> -> <vid> denotes a starting vertex to (->) an ending vertex. Multiple edges are separated by comma(,).
-
-[YIELD [DISTINCT] <return_list>] is the property list returned. 
 ```
+
+`<edge_type>` specifies the edge's type. It must be the same as those in `<return_list>`
+
+`<vid> -> <vid>` denotes a starting vertex to (->) an ending vertex. Multiple edges are separated by comma(,).
+
+`[YIELD [DISTINCT] <return_list>]` is the property list returned. 
+
 
 ### Example
 

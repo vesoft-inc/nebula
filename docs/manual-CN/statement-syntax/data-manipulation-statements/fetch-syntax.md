@@ -8,13 +8,13 @@
 
 ```
 FETCH PROP ON <tag_name> <vertex_id_list> [YIELD [DISTINCT] <return_list>]
-
-<tag_name>为标签名称，与return_list中的标签相同。
-
-<vertex_id_list>::=[vertex_id [, vertex_id]] is a list of vertex id separated by comma(,)
-
-[YIELD [DISTINCT] <return_list>]为返回的属性列表，`YIELD`语法参看[此处](Yield_Syntax.md)。
 ```
+
+`<tag_name>` 为标签名称，与return_list中的标签相同。
+
+`<vertex_id_list>::=[vertex_id [, vertex_id]]` is a list of vertex id separated by comma(,)
+
+`[YIELD [DISTINCT] <return_list>]` 为返回的属性列表，`YIELD` 语法参看 [YIELD Syntax](yield-syntax.md) 。
 
 ### 示例
 
@@ -38,13 +38,13 @@ nebula> FETCH PROP ON player 1,2,3 YIELD DISTINCT player.name, player.age    -- 
 
 ```
 FETCH PROP ON <edge_type> <vid> -> <vid> [, <vid> -> <vid> ...] [YIELD [DISTINCT] <return_list>]
-
-<edge_type>指定边的类型，需与<return_list>相同。
-
-<vid> -> <vid> 从起始节点到终止节点。多条边需使用逗号隔开。
-
-[YIELD [DISTINCT] <return_list>]为返回的属性列表。
 ```
+
+`<edge_type>` 指定边的类型，需与 `<return_list>` 相同。
+
+`<vid> -> <vid>` 从起始节点到终止节点。多条边需使用逗号隔开。
+
+`[YIELD [DISTINCT] <return_list>]` 为返回的属性列表。
 
 ### 示例
 
