@@ -73,7 +73,7 @@ git checkout master
 git rebase upstream/master
 ```
 
-Checkout a branch from master:
+Checkout a new branch from master:
 
 ```sh
 git checkout -b myfeature
@@ -157,4 +157,4 @@ git push -f origin myfeature
 ### Step 9: Get a code review
 
 Once your pull request has been opened, it will be assigned to at least two
-reviewers. Those reviewers will do a thorough code review to ensure that the changes meet the repository's contributing guidelines and other quality standards.
+reviewers. Those reviewers will do a thorough code review to ensure the changes meet the repository's contributing guidelines and other quality standards.

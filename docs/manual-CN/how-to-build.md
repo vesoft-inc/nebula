@@ -1,6 +1,3 @@
----
-This tutorial provides an introduction to build `Nebula` code.
----
 
 ### 编译器
 

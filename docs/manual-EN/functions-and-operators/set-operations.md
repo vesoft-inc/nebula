@@ -79,7 +79,7 @@ will return as follows:
 
 Notice that line 1 and line 2 return the same id (104) with different column values. The `DISTINCT` check duplication by all the columns for every line. So line 1 and line 2 are different.
 
-You can expect for the `UNION ALL` result
+You can expect the `UNION ALL` result
 
 ```
 GO FROM 1 OVER e1 YIELD e1._dst AS id, e1.prop1 AS left.1, $$.tag.prop2 AS left.2
