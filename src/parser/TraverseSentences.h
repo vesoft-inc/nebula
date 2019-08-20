@@ -499,6 +499,10 @@ public:
         to_.reset(clause);
     }
 
+    void setOver(OverClause *clause) {
+        over_.reset(clause);
+    }
+
     void setStep(StepClause *clause) {
         step_.reset(clause);
     }
@@ -515,6 +519,10 @@ public:
         return to_.get();
     }
 
+    OverClause* over() const {
+        return over_.get();
+    }
+
     StepClause* step() const {
         return step_.get();
     }
@@ -529,6 +537,7 @@ private:
     bool                            isShortest_;
     std::unique_ptr<FromClause>     from_;
     std::unique_ptr<ToClause>       to_;
+    std::unique_ptr<OverClause>     over_;
     std::unique_ptr<StepClause>     step_;
     std::unique_ptr<WhereClause>    where_;
 };
