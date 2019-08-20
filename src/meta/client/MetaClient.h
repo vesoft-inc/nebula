@@ -305,6 +305,24 @@ protected:
                                                   RespGenerator respGen,
                                                   bool toLeader = false);
 
+    template<class Request,
+             class RemoteFunc,
+             class RespGenerator,
+             class RpcResponse =
+                typename std::result_of<
+                    RemoteFunc(std::shared_ptr<meta::cpp2::MetaServiceAsyncClient>, Request)
+                >::type::value_type,
+             class Response =
+                typename std::result_of<RespGenerator(RpcResponse)>::type
+    >
+    void getResponse(Request req,
+                     RemoteFunc remoteFunc,
+                     RespGenerator respGen,
+                     folly::Promise<StatusOr<Response>> pro,
+                     bool toLeader = false,
+                     int32_t retry = 0,
+                     int32_t retryLimit = 3);
+
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
     std::vector<HostStatus> toHostStatus(const std::vector<cpp2::HostItem>& thosts);

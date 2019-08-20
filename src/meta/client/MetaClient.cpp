@@ -256,7 +256,6 @@ MetaClient::reverse(const PartsAlloc& parts) {
     return hosts;
 }
 
-
 template<typename Request,
          typename RemoteFunc,
          typename RespGenerator,
@@ -304,6 +303,81 @@ folly::Future<StatusOr<Response>> MetaClient::getResponse(
         p.setValue(respGen(std::move(resp)));
     });
     return f;
+}
+
+template<typename Request,
+         typename RemoteFunc,
+         typename RespGenerator,
+         typename RpcResponse,
+         typename Response>
+void MetaClient::getResponse(
+                             Request req,
+                             RemoteFunc remoteFunc,
+                             RespGenerator respGen,
+                             folly::Promise<StatusOr<Response>> pro,
+                             bool toLeader,
+                             int32_t retry,
+                             int32_t retryLimit) {
+    // qwer
+    LOG(INFO) << "!!! retry " << retry << " times";
+    auto* evb = ioThreadPool_->getEventBase();
+    HostAddr host;
+    {
+        folly::RWSpinLock::ReadHolder holder(&hostLock_);
+        host = toLeader ? leader_ : active_;
+    }
+    LOG(INFO) << "Send request to meta " << host;
+    auto client = clientsMan_->client(host, evb);
+    remoteFunc(client, std::move(req))
+         .then(evb,
+               [p = std::move(pro),
+                req = std::move(req),
+                remoteFunc = std::move(remoteFunc),
+                respGen,                        // qwer why not move
+                toLeader,
+                retry,
+                retryLimit,
+                this] (folly::Try<RpcResponse>&& t) mutable {
+        // exception occurred during RPC
+        if (t.hasException()) {
+            // qwer
+            LOG(ERROR) << "!!! " << t.exception().what();
+            if (toLeader) {
+                updateLeader();
+            } else {
+                updateActive();
+            }
+            if (retry < retryLimit) {
+                getResponse(std::move(req), remoteFunc, respGen, std::move(p), toLeader,
+                            retry + 1, retryLimit);
+            } else {
+                p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
+                                                         t.exception().what().c_str())));
+            }
+            return;
+        }
+        auto&& resp = t.value();
+        if (resp.code == cpp2::ErrorCode::SUCCEEDED) {
+            // succeeded
+            LOG(INFO) << "@@@";
+            p.setValue(respGen(std::move(resp)));
+            return;
+        } else if (resp.code == cpp2::ErrorCode::E_LEADER_CHANGED) {
+            LOG(INFO) << "###";
+            HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
+            {
+                folly::RWSpinLock::WriteHolder holder(hostLock_);
+                leader_ = leader;
+            }
+        }
+        // errored
+        if (retry < retryLimit) {
+            getResponse(std::move(req), remoteFunc, respGen, std::move(p), toLeader,
+                        retry + 1, retryLimit);
+        } else {
+            p.setValue(this->handleResponse(resp));
+        }
+    });
 }
 
 
@@ -360,6 +434,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
         case cpp2::ErrorCode::E_WRONGCLUSTER:
             return Status::Error("wrong cluster!");
         case cpp2::ErrorCode::E_LEADER_CHANGED: {
+            // qwer: to delete
             HostAddr leader(resp.get_leader().get_ip(), resp.get_leader().get_port());
             {
                 folly::RWSpinLock::WriteHolder holder(hostLock_);
@@ -510,6 +585,8 @@ folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name) {
 
 
 folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& hosts) {
+    // qwer
+    /*
     std::vector<nebula::cpp2::HostAddr> thriftHosts;
     thriftHosts.resize(hosts.size());
     std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
@@ -525,6 +602,25 @@ folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& 
                 }, [] (cpp2::ExecResp&& resp) -> bool {
                     return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 }, true);
+    */
+    std::vector<nebula::cpp2::HostAddr> thriftHosts;
+    thriftHosts.resize(hosts.size());
+    std::transform(hosts.begin(), hosts.end(), thriftHosts.begin(), [](const auto& h) {
+        nebula::cpp2::HostAddr th;
+        th.set_ip(h.first);
+        th.set_port(h.second);
+        return th;
+    });
+    cpp2::AddHostsReq req;
+    req.set_hosts(std::move(thriftHosts));
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_addHosts(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
+                }, std::move(promise), true, 0, 3);
+    return future;
 }
 
 folly::Future<StatusOr<std::vector<HostStatus>>> MetaClient::listHosts() {
