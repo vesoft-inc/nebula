@@ -422,7 +422,7 @@ nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.nam
 
 ### 当创建 tag 或者 edge 类型后，插入数据时报错
 
-可能原因, `load_data_interval_secs` 设置了从 meta server 获取元数据时间间隔，生产场景 (默认值) 是120s，建议用户改为1s。更改方式:
+可能原因, `load_data_interval_secs` 设置了从 meta server 获取元数据时间间隔，生产场景 (默认值) 是120s，s试用时可改为1s。更改方式:
 
 - 启动前在nebula-metad.conf 和 nebula-graphd.conf 中加入
 
