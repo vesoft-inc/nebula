@@ -15,14 +15,14 @@
 **Nebula Graph** 的主要特点：
 
  * 全对称分布式架构
- * 高可扩展性
- * 高可用性
- * 数据强一致性
- * 类似SQL的查询语言
+ * 可扩展
+ * 高可用
+ * 数据强一致
+ * 类 SQL 查询语言
 
 ## 获取 `Nebula` ##
 
-除了编译源代码外，也可使用 [Nebula Graph 镜像](https://hub.docker.com/r/vesoft/nebula-graph/tags) 进行试用。
+除编译源代码外，也可使用 [Nebula Graph 镜像](https://hub.docker.com/r/vesoft/nebula-graph/tags) 进行试用。
 更多详情参见 [Get Started](docs/manual-CN/get-started.md).
 
 ## 参与 `Nebula` ##
@@ -34,10 +34,11 @@
 * 贡献代码，详情请参见 [How to Contribute](docs/manual-CN/how-to-contribute.md)
 * 帮助我们完善文档，详情参见 [Contribute to Nebula Graph Docs](docs/manual-CN/contribute-to-documentation.md)
 
-## 许可 ###
-**Nebula Graph** 使用 [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可，您可以免费下载，修改以及部署源代码。您还可以将 **Nebula Graph** 作为后端服务部署以支持您的SAAS部署。
+## 许可证 ###
 
-为防止云供应商从项目赢利而不回馈，Nebula在项目中添加了 [Commons Clause 1.0](https://commonsclause.com/) 条款。如上所述，Nebula是一个完全开源的项目，欢迎您就许可模式提出建议，帮助 Nebula 社区更好的发展。
+**Nebula Graph** 使用 [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证，您可以免费下载，修改以及部署源代码。您还可以将 **Nebula Graph** 作为后端服务部署以支持您的 SaaS 部署。
+
+为防止云供应商从项目赢利而不回馈，Nebula 在项目中添加了 [Commons Clause 1.0](https://commonsclause.com/) 条款。如上所述，Nebula 是一个完全开源的项目，欢迎您就许可模式提出建议，帮助 Nebula 社区更好地发展。
 
 ## 联系方式
 - 使用 [GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) 提交 issue 或功能需求。

@@ -93,7 +93,7 @@ git push --force origin master
 
 #### 编辑代码
 
-此时可在 `myfeature` 分支编辑代码， 编辑时请遵循 [编码风格指南](/cpp-coding-style/)。
+此时可在 `myfeature` 分支编辑代码， 编辑时请遵循 [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)。
 
 #### 运行独立模式
 

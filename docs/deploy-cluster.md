@@ -8,15 +8,15 @@ This tutorial provides an introduction to deploy `Nebula` cluster.
 
 First at all, you can download rpm or deb from [Here](https://github.com/vesoft-inc/nebula/releases).
 
-Currently, we have offered `CentOS 7.5`, `CentOS 6.5`, `Ubuntu 1604` and `Ubuntu 1804`'s installation package.
+Currently, we have offered installation package for `CentOS 7.5`, `CentOS 6.5`, `Ubuntu 1604` and `Ubuntu 1804` .
 
-For `CentOS`:
+For `CentOS` :
 
 ```
 rpm -ivh nebula-{VERSION}.{SYSTEM_VERSION}.x86_64.rpm
 ```
 
-For `Ubuntu`:
+For `Ubuntu` :
 
 ```
 dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
