@@ -37,7 +37,6 @@ public:
 private:
     ShowSentence                             *sentence_{nullptr};
     std::unique_ptr<cpp2::ExecutionResponse>  resp_;
-    ConfigRowItem                            *configItem_{nullptr};
 };
 
 }   // namespace graph

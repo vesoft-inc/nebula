@@ -83,7 +83,7 @@ class StorageClient {
 public:
     StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                   meta::MetaClient *client);
-    ~StorageClient();
+    virtual ~StorageClient();
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::ExecResponse>> addVertices(
         GraphSpaceID space,
@@ -220,4 +220,3 @@ private:
 #include "storage/client/StorageClient.inl"
 
 #endif  // STORAGE_CLIENT_STORAGECLIENT_H_
-

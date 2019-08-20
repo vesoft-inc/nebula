@@ -1048,7 +1048,7 @@ MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
     req.set_items(items);
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_regConfig(request);
-            }, [this] (cpp2::ExecResp&& resp) -> decltype(auto) {
+            }, [] (cpp2::ExecResp&& resp) -> decltype(auto) {
                 return resp.code == cpp2::ErrorCode::SUCCEEDED;
             }, true);
 }
@@ -1063,7 +1063,7 @@ MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name)
     req.set_item(item);
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_getConfig(request);
-            }, [this] (cpp2::GetConfigResp&& resp) -> decltype(auto) {
+            }, [] (cpp2::GetConfigResp&& resp) -> decltype(auto) {
                 return std::move(resp).get_items();
             });
 }
@@ -1082,7 +1082,7 @@ MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
     req.set_item(item);
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_setConfig(request);
-            }, [this] (cpp2::ExecResp&& resp) -> decltype(auto) {
+            }, [] (cpp2::ExecResp&& resp) -> decltype(auto) {
                 return resp.code == cpp2::ErrorCode::SUCCEEDED;
             }, true);
 }
@@ -1093,7 +1093,7 @@ MetaClient::listConfigs(const cpp2::ConfigModule& module) {
     req.set_module(module);
     return getResponse(std::move(req), [] (auto client, auto request) {
                 return client->future_listConfigs(request);
-            }, [this] (cpp2::ListConfigsResp&& resp) -> decltype(auto) {
+            }, [] (cpp2::ListConfigsResp&& resp) -> decltype(auto) {
                 return std::move(resp).get_items();
             });
 }

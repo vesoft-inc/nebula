@@ -24,7 +24,6 @@ namespace graph {
 const int32_t kMaxAuthInfoRetries = 3;
 const int32_t kMaxUsernameLen = 16;
 const int32_t kMaxPasswordLen = 24;
-const int32_t kMaxCommandLineLen = 1024;
 
 CliManager::CliManager() {
     curSpaceName_ = std::string("(none)");

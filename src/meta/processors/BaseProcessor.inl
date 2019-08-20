@@ -158,7 +158,7 @@ int32_t BaseProcessor<RESP>::autoIncrementId() {
     kvstore_->asyncMultiPut(kDefaultSpaceId,
                             kDefaultPartId,
                             std::move(data),
-                            [this] (kvstore::ResultCode code) {
+                            [] (kvstore::ResultCode code) {
         CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
     });
     return id;
