@@ -38,7 +38,7 @@ INSERT VERTEX  t1 (i1), t2(s2) VALUES 21: (321, "hello")   -- insert vertex 21 w
 A vertex can be inserted/wrote multiple times. Only the last write values can be read.
 
 ```
--- insert vertex 11 with new version of values.
+-- insert vertex 11 with the new version of values.
 INSERT VERTEX t2 (name, age) VALUES 11:("n2", 13)
 INSERT VERTEX t2 (name, age) VALUES 11:("n3", 14)
 INSERT VERTEX t2 (name, age) VALUES 11:("n4", 15)  -- the last version can be read

@@ -1,6 +1,7 @@
 # 属性引用
 
-`WHERE`和`YIELD`可引用节点或边的属性。
+`WHERE` 和 `YIELD` 可引用节点或边的属性。
+
 ## 引用点属性
 
 ### 引用起点属性
@@ -59,5 +60,4 @@ GO FROM 1 OVER e1 YIELD e1.prop1
 GO FROM 1 OVER e1 YIELD e1._src as startVID /* which is, 1 */, e1._dst as endVID
 ```
 
-该语句通过引用`e1._src`作为起始顶点id（当然，这是`1`）和`e1._dst`作为结束顶点，返回`1`在边缘类型`e1`上的所有邻域。 ID。
-上述语句返回点`1`沿边`e1`的所有近邻，其中`e1._src`返回起点ID，此处为1，`e1._dst`返回终点ID。
+该语句通过引用 `e1._src` 作为起始顶点id（当然，这是 `1` ）和` e1._dst` 作为结束顶点，返回 `1` 边类型为 `e1` 的所有邻居节点。其中 `e1._src` 返回起点ID，此处为1，`e1._dst` 返回终点ID。

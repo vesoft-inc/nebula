@@ -152,8 +152,8 @@ Then run the following command:
 
    - local_ip
    - port
-   - ws_http_port metaservice HTTP
-   - ws_h2_port metaservice HTTP2
+   - ws_http_port: metaservice HTTP port
+   - ws_h2_port: metaservice HTTP2 port
 
 
 * Configure nebula-storaged.conf
@@ -166,8 +166,8 @@ Then run the following command:
 
    - local_ip
    - port
-   - ws_http_port storageservice HTTP
-   - ws_h2_port storageservice HTTP2
+   - ws_http_port: storageservice HTTP port
+   - ws_h2_port: storageservice HTTP2 port
 
 * Configure nebula-graphd.conf
 
@@ -179,8 +179,8 @@ Then run the following command:
 
    - local_ip
    - port
-   - ws_http_port graphservice HTTP
-   - ws_h2_port graphservice HTTP2
+   - ws_http_port: graphservice HTTP port
+   - ws_h2_port: graphservice HTTP2 port
 
 **Start Service**
 

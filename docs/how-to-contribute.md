@@ -14,10 +14,10 @@ Define a local working directory:
 working_dir=$HOME/Workspace
 ```
 
-Set `user` to match your github profile name:
+Set `user` to match your Github profile name:
 
 ```sh
-user={your github profile name}
+user={your Github profile name}
 ```
 
 Create your clone:
@@ -73,7 +73,7 @@ git checkout master
 git rebase upstream/master
 ```
 
-Branch from master:
+Checkout a new branch from master:
 
 ```sh
 git checkout -b myfeature
@@ -95,7 +95,7 @@ git push --force origin master
 
 #### Edit the code
 
-You can now edit the code on the `myfeature` branch. Please follow the coding style guidance [here](/cpp-coding-style/).
+You can now edit the code on the `myfeature` branch. We are following [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
 
 #### Run stand-alone mode
 
@@ -118,7 +118,7 @@ nebula
 #### Run Test
 
 ```sh
-# Run unit test to make sure all test passed.
+# Run unit test to make sure all tests passed.
 ```
 
 ### Step 5: Keep your branch in sync
@@ -156,13 +156,5 @@ git push -f origin myfeature
 
 ### Step 9: Get a code review
 
-Once your pull request has been opened, it will be assigned to at least one
-reviewers. Those reviewers will do a thorough code review, looking for
-correctness, bugs, opportunities for improvement, documentation and comments,
-and style.
-
-Commit changes made in response to review comments to the same branch on your
-fork.
-
-Very small PRs are easy to review. Very large PRs are very difficult to
-review.
+Once your pull request has been opened, it will be assigned to at least two
+reviewers. Those reviewers will do a thorough code review to ensure the changes meet the repository's contributing guidelines and other quality standards.

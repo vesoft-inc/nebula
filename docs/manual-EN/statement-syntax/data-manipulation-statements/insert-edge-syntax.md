@@ -37,7 +37,7 @@ INSERT EDGE e2 (name, age) VALUES 11->13:("n1", "a13")      -- WRONG. "a13" is n
 An edge can be inserted/wrote multiple times. Only the last write values can be read.
 
 ```
--- insert edge with new version of values. 
+-- insert edge with the new version of values. 
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 12) 
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 13) 
 INSERT EDGE e2 (name, age) VALUES 11->13:("n1", 14) -- the last version can be read
