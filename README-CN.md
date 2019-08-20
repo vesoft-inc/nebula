@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzU2NDkxNjI0NQ==&scene=124#wechat_redirect"><img src="https://img.shields.io/badge/WeChat-%E5%85%AC%E4%BC%97%E5%8F%B7-brightgreen" alt="WeiXin"></a>
+  <a href="https://cdn.nlark.com/yuque/0/2019/png/208152/1566289806040-08cc1c7b-7762-476b-a397-f1bbe46da5bc.png"><img src="https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen" alt="WeiXin"></a>
   <a href="https://www.zhihu.com/org/nebulagraph/activities"><img src="https://img.shields.io/badge/Zhihu-%E7%9F%A5%E4%B9%8E-blue" alt="Zhihu"></a>
   <a href="https://segmentfault.com/t/nebula"><img src="https://img.shields.io/badge/SegmentFault-%E6%80%9D%E5%90%A6-green" alt="SegmentFault"></a>
   <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red" alt="Sina Weibo"></a>
@@ -24,7 +24,7 @@
 ## 获取 `Nebula` ##
 
 除编译源代码外，也可使用 [Nebula Graph 镜像](https://hub.docker.com/r/vesoft/nebula-graph/tags) 进行试用。
-更多详情参见 [Get Started](docs/manual-CN/get-started.md).
+更多详情参见 [Get Started](docs/manual-CN/get-started.md). 您也可以在这里访问 [详细文档](https://docs.nebula-graph.io/manual-CN/data-types/numeric-types/)
 
 ## 参与 `Nebula` ##
 
@@ -42,6 +42,12 @@
 为防止云供应商从项目赢利而不回馈，Nebula 在项目中添加了 [Commons Clause 1.0](https://commonsclause.com/) 条款。如上所述，Nebula 是一个完全开源的项目，欢迎您就许可模式提出建议，帮助 Nebula 社区更好地发展。
 
 ## 联系方式
+
 - 使用 [GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) 提交 issue 或功能需求。
-- 加入 [![](https://img.shields.io/badge/slack-nebula-519dd9.svg)](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200)。
+
 - 访问官网 [Home Page](http://nebula-graph.io/)。
+
+-  [![WeiXin](https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen)](https://cdn.nlark.com/yuque/0/2019/png/208152/1566289806040-08cc1c7b-7762-476b-a397-f1bbe46da5bc.png)
+[![Zhihu](https://img.shields.io/badge/Zhihu-%E7%9F%A5%E4%B9%8E-blue)](https://www.zhihu.com/org/nebulagraph/activities)
+[![SegmentFault](https://img.shields.io/badge/SegmentFault-%E6%80%9D%E5%90%A6-green)](https://segmentfault.com/t/nebula)
+[![Sina Weibo](https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red)](https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place)
