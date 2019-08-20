@@ -1,4 +1,4 @@
-# 查询语言nGQL
+<!-- # 查询语言nGQL
 
 nGQL是Nebula Graph的查询语言，可供用户存储和检索图数据。nGQL为类SQL式语言，易学易用，且可满足复杂业务需求。
 
@@ -260,4 +260,4 @@ you to follow these syntax norms:
   |Key words | Upper case   | SHOW SPACES     |
   |Vertex tags | Upper camel case, beginning with an upper-case character   | ManageTeam   |
   |Edges | Upper snake case, beginning with an upper-case character   | Play_for   |
-  |Property names | Lower camel case, beginning with a lower-case character   | inService   | -->
+  |Property names | Lower camel case, beginning with a lower-case character   | inService   | --> -->
