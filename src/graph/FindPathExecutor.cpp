@@ -140,60 +140,86 @@ void FindPathExecutor::execute() {
     std::vector<VertexID> fromVids = from_.vids_;
     std::vector<VertexID> toVids = to_.vids_;
     while (step && !stop_) {
-        folly::Promise<std::vector<VertexID>> proF;
+        folly::Promise<std::pair<VisitedBy, Frontiers>> proF;
         addGoFromFTask(std::move(fromVids), proF);
 
-        folly::Promise<std::vector<VertexID>> proT;
+        folly::Promise<std::pair<VisitedBy, Frontiers>> proT;
         addGoFromTTask(std::move(toVids), proT);
 
-        std::vector<folly::Future<std::vector<VertexID>>> results;
+        std::vector<folly::Future<std::pair<VisitedBy, Frontiers>>> results;
         results.reserve(2);
         results.emplace_back(proF.getFuture());
         results.emplace_back(proT.getFuture());
-
         auto cb = [this] (auto &&result) { findPath(std::move(result)); };
         folly::collectAll(results).via(runner).thenValue(cb);
+
         --step;
     }
 }
 
-void FindPathExecutor::addGoFromFTask(std::vector<VertexID> &&fromVids,
-                                      folly::Promise<std::vector<VertexID>> &proF) {
+void FindPathExecutor::addGoFromFTask(
+        std::vector<VertexID> &&fromVids,
+        folly::Promise<std::pair<VisitedBy, Frontiers>> &proF) {
     auto *runner = ectx()->rctx()->runner();
     runner->add([this, vids = std::move(fromVids), &proF] () mutable {
-        std::vector<VertexID> frontierF;
+        Frontiers frontiersF;
         auto props = getStepOutProps("_dst");
         if (!props.ok()) {
             folly::FutureException e(std::move(props).status().toString());
             proF.setException(e);
             return;
         }
-        auto s = goFromF(std::move(vids), std::move(props).value(), frontierF);
+        auto s = getFrontiers(std::move(vids), std::move(props).value(), false, frontiersF);
         if (!s.ok()) {
             folly::FutureException e(std::move(s).toString());
             proF.setException(e);
             return;
         }
-        proF.setValue(std::move(frontierF));
+        auto result = std::make_pair(VisitedBy::FROM, std::move(frontiersF));
+        proF.setValue(std::move(result));
     });
 }
 
-void FindPathExecutor::addGoFromTTask(std::vector<VertexID> &&toVids,
-                                      folly::Promise<std::vector<VertexID>> &proT) {
+void FindPathExecutor::addGoFromTTask(
+        std::vector<VertexID> &&toVids,
+        folly::Promise<std::pair<VisitedBy, Frontiers>> &proT) {
     auto *runner = ectx()->rctx()->runner();
     runner->add([this, vids = std::move(toVids), &proT] () mutable {
-        std::vector<VertexID> frontierT;
-        auto s = goFromT(std::move(vids), frontierT);
+        Frontiers frontiersT;
+
+        std::vector<storage::cpp2::PropDef> props;
+        {
+            storage::cpp2::PropDef pd;
+            pd.owner = storage::cpp2::PropOwner::EDGE;
+            pd.name = "_dst";
+            props.emplace_back(std::move(pd));
+        }
+        {
+            storage::cpp2::PropDef pd;
+            pd.owner = storage::cpp2::PropOwner::EDGE;
+            pd.name = "_type";
+            props.emplace_back(std::move(pd));
+        }
+        {
+            storage::cpp2::PropDef pd;
+            pd.owner = storage::cpp2::PropOwner::EDGE;
+            pd.name = "_rank";
+            props.emplace_back(std::move(pd));
+        }
+
+        auto s = getFrontiers(std::move(vids), std::move(props), true, frontiersT);
         if (!s.ok()) {
             folly::FutureException e(std::move(s).toString());
             proT.setException(e);
             return;
         }
-        proT.setValue(std::move(frontierT));
+        auto result = std::make_pair(VisitedBy::TO, std::move(frontiersT));
+        proT.setValue(std::move(result));
     });
 }
 
-void FindPathExecutor::findPath(std::vector<folly::Try<std::vector<VertexID>>> &&result) {
+void FindPathExecutor::findPath(
+        std::vector<folly::Try<std::pair<VisitedBy, Frontiers>>> &&result) {
     for (auto &t : result) {
         if (t.hasException()) {
             auto &e = t.exception();
@@ -202,7 +228,65 @@ void FindPathExecutor::findPath(std::vector<folly::Try<std::vector<VertexID>>> &
             stop_ = true;
             return;
         }
-    }
+
+        auto &pair = t.value();
+        auto &frontiers = pair.second;
+        if (pair.first == VisitedBy::FROM) {
+            for (auto &f : frontiers) {
+                // Notice: we treat different rankings between two vertices as different path
+                for (auto &v : f.second) {
+                    auto dstId = std::get<2>(v);
+                    // if frontiers of F are neighbors of visitedByT, we found a path
+                    if (visitedTo_.count(std::get<2>(v)) == 1) {
+                        stop_ = true;
+                        auto rangeF = pathFrom_.equal_range(f.first);
+                        for (auto i = rangeF.first; i != rangeF.second; ++i) {
+                            auto rangeT = pathTo_.equal_range(dstId);
+                            for (auto j = rangeT.first; j != rangeT.second; ++j) {
+                                // TODO build path:
+                                // i->second + edge(type + ranking + dst) + j->second
+                                std::string path = "";
+                                finalPath_.emplace_back(std::move(path));
+                            }  // for `j'
+                        }  // for `i'
+                    } else {
+                        // if we found dst have been visited,
+                        // that means we have already found a shorter path
+                        if ((visitedFrom_.count(dstId) == 1) && shortest_) {
+                            continue;
+                        }
+                        // update the path to frontiers
+                        auto rangeF = pathFrom_.equal_range(f.first);
+                        for (auto i = rangeF.first; i != rangeF.second; ++i) {
+                            // TODO build path i->second + edge
+                            std::string path = "";
+                            pathFrom_.emplace(dstId, std::move(path));
+                        }  // for `i'
+                    }
+                }  // for `v'
+            }  // for `f'
+        }  // if `FROM'
+
+        if (pair.first == VisitedBy::TO) {
+            for (auto &f : frontiers) {
+                for (auto &v : f.second) {
+                    auto dstId = std::get<2>(v);
+                    // if we found dst have been visited,
+                    // that means we have already found a shorter path
+                    if ((visitedTo_.count(dstId) == 1) && shortest_) {
+                        continue;
+                    }
+                    // update the path to frontiers
+                    auto rangeT = pathTo_.equal_range(f.first);
+                    for (auto i = rangeT.first; i != rangeT.second; ++i) {
+                        // TODO build path edge + i->second
+                        std::string path = "";
+                        pathTo_.emplace(dstId, std::move(path));
+                    }  // for `i'
+                }  // for `v'
+            }  // for `f'
+        }  // if `TO'
+    }  // for `t'
 }
 
 Status FindPathExecutor::setupVids() {
@@ -287,18 +371,19 @@ Status FindPathExecutor::setupVidsFromRef(Vertices &vertices) {
     return Status::OK();
 }
 
-Status FindPathExecutor::goFromF(std::vector<VertexID> vids,
-                                                std::vector<storage::cpp2::PropDef> props,
-                                                std::vector<VertexID> &frontiers) {
+Status FindPathExecutor::getFrontiers(std::vector<VertexID> vids,
+                                      std::vector<storage::cpp2::PropDef> props,
+                                      bool reversely,
+                                      Frontiers &frontiers) {
     Status status;
     auto future = ectx()->storage()->getNeighbors(spaceId_,
                                                   vids,
                                                   over_.edgeType_,
-                                                  false,
+                                                  reversely,
                                                   "",
                                                   std::move(props));
     auto *runner = ectx()->rctx()->runner();
-    auto cb = [this, &status, &frontiers] (auto &&result) {
+    auto cb = [this, &status, reversely, &frontiers] (auto &&result) {
         auto completeness = result.completeness();
         if (completeness == 0) {
             status = Status::Error("Get neighbors failed.");
@@ -310,13 +395,9 @@ Status FindPathExecutor::goFromF(std::vector<VertexID> vids,
                            << "error code: " << static_cast<int>(error.second);
             }
         }
-        if (where_.filter_ != nullptr) {
-            auto ret = doFilter(std::move(result), where_.filter_);
-            if (!ret.ok()) {
-                status = Status::Error("Do filter failed.");
-                return;
-            }
-            frontiers = std::move(ret).value();
+        status = doFilter(std::move(result), where_.filter_, reversely, frontiers);
+        if (!status.ok()) {
+            return;
         }
     };
     auto error = [this, &status] (auto &&e) {
@@ -327,70 +408,16 @@ Status FindPathExecutor::goFromF(std::vector<VertexID> vids,
     return status;
 }
 
-StatusOr<std::vector<VertexID>>
-FindPathExecutor::doFilter(storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
-         Expression *filter) {
+Status FindPathExecutor::doFilter(
+        storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
+        Expression *filter,
+        bool reversely,
+        Frontiers &frontiers) {
     UNUSED(result);
     UNUSED(filter);
+    UNUSED(reversely);
+    UNUSED(frontiers);
     return Status::OK();
-}
-
-Status FindPathExecutor::goFromT(std::vector<VertexID> vids, std::vector<VertexID> &frontiers) {
-    Status status;
-    std::vector<VertexID> frontiersT;
-
-    std::vector<storage::cpp2::PropDef> props;
-    storage::cpp2::PropDef pd;
-    pd.owner = storage::cpp2::PropOwner::EDGE;
-    pd.name = "_dst";
-    props.emplace_back(std::move(pd));
-    auto clientFuture = ectx()->storage()->getNeighbors(spaceId_,
-                                                  vids,
-                                                  over_.edgeType_,
-                                                  true,
-                                                  "",
-                                                  std::move(props));
-    auto *runner = ectx()->rctx()->runner();
-    auto cb = [this, &frontiersT, &status] (auto &&result) {
-        auto completeness = result.completeness();
-        if (completeness == 0) {
-            status = Status::Error("Get neighbors failed.");
-            return;
-        } else if (completeness != 100) {
-            LOG(INFO) << "Get neighbors partially failed: "  << completeness << "%";
-            for (auto &error : result.failedParts()) {
-                LOG(ERROR) << "part: " << error.first
-                           << "error code: " << static_cast<int>(error.second);
-            }
-        }
-        auto ret = doFilter(std::move(result), nullptr);
-        if (!ret.ok()) {
-            status = Status::Error("Do filter failed.");
-            return;
-        }
-        frontiersT = std::move(ret).value();
-    };
-    auto error = [this, &status] (auto &&e) {
-        LOG(ERROR) << "Exception caught: " << e.what();
-        status = Status::Error("Internal error");
-    };
-    std::move(clientFuture).via(runner).thenValue(cb).thenError(error);
-
-    if (!status.ok()) {
-        return status;
-    }
-
-    if (where_.filter_ != nullptr) {
-        auto ret = getStepOutProps("_src");
-        if (!ret.ok()) {
-            status = std::move(status);
-            return status;
-        }
-        status = goFromF(std::move(frontiersT), std::move(ret).value(), frontiers);
-    } else {
-        frontiers = std::move(frontiersT);
-    }
-    return status;
 }
 
 StatusOr<std::vector<storage::cpp2::PropDef>>
@@ -436,7 +463,6 @@ FindPathExecutor::getStepOutProps(std::string reserve) {
 
     return props;
 }
-
 
 StatusOr<std::vector<storage::cpp2::PropDef>> FindPathExecutor::getDstProps() {
     auto spaceId = ectx()->rctx()->session()->space();

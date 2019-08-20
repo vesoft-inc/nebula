@@ -51,6 +51,11 @@ private:
         Expression *filter_{nullptr};
     };
 
+    enum class VisitedBy : char {
+        FROM,
+        TO,
+    };
+
     Status prepareFrom();
 
     Status prepareTo();
@@ -63,13 +68,19 @@ private:
 
     Status prepareWhere();
 
+    using Frontiers =
+        std::vector<
+            std::pair<VertexID, /* start */
+                      std::vector<std::tuple<EdgeType, EdgeRanking, VertexID>> /* neighbors */
+                     >
+                   >;
     void addGoFromFTask(std::vector<VertexID> &&fromVids,
-                        folly::Promise<std::vector<VertexID>> &proF);
+                        folly::Promise<std::pair<VisitedBy, Frontiers>> &proF);
 
     void addGoFromTTask(std::vector<VertexID> &&toVids,
-                        folly::Promise<std::vector<VertexID>> &proT);
+                        folly::Promise<std::pair<VisitedBy, Frontiers>> &proT);
 
-    void findPath(std::vector<folly::Try<std::vector<VertexID>>> &&result);
+    void findPath(std::vector<folly::Try<std::pair<VisitedBy, Frontiers>>> &&result);
 
     Status setupVids();
 
@@ -77,15 +88,16 @@ private:
 
     Status setupVidsFromExpr(std::vector<Expression*> &&vidList, Vertices &vertices);
 
-    Status goFromF(std::vector<VertexID> vids,
-                                  std::vector<storage::cpp2::PropDef> props,
-                                  std::vector<VertexID> &frontiers);
+    Status getFrontiers(std::vector<VertexID> vids,
+                        std::vector<storage::cpp2::PropDef> props,
+                        bool reversely,
+                        Frontiers &frontiers);
 
-    StatusOr<std::vector<VertexID>>
-    doFilter(storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
-         Expression *filter);
-
-    Status goFromT(std::vector<VertexID> vids, std::vector<VertexID> &frontiers);
+    Status doFilter(
+            storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
+            Expression *filter,
+            bool reversely,
+            Frontiers &frontiers);
 
     StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps(std::string reserve);
 
@@ -100,16 +112,17 @@ private:
     Over                                        over_;
     Step                                        step_;
     Where                                       where_;
+    bool                                        shortest_{false};
     std::unique_ptr<InterimResult>              inputs_;
-    std::unordered_set<VertexID>                visitedFrom_;
-    std::unordered_set<VertexID>                visitedTo_;
-    std::map<VertexID, std::string>             pathFrom_;
-    std::map<VertexID, std::string>             pathTo_;
-    std::vector<std::string>                    finalPath_;
-    bool                                        stop_{false};
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     SchemaPropIndex                             srcTagProps_;
     SchemaPropIndex                             dstTagProps_;
+    std::unordered_set<VertexID>                visitedFrom_;
+    std::unordered_set<VertexID>                visitedTo_;
+    std::multimap<VertexID, std::string>        pathFrom_;
+    std::multimap<VertexID, std::string>        pathTo_;
+    std::vector<std::string>                    finalPath_;
+    bool                                        stop_{false};
 };
 }  // namespace graph
 }  // namespace nebula
