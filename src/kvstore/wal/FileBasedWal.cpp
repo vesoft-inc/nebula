@@ -279,6 +279,7 @@ void FileBasedWal::closeCurrFile() {
         return;
     }
 
+    CHECK_EQ(fsync(currFd_), 0);
     // Close the file
     CHECK_EQ(close(currFd_), 0);
     currFd_ = -1;
