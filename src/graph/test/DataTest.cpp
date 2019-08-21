@@ -377,5 +377,51 @@ TEST_F(DataTest, MatchTest) {
     }
 }
 
+TEST_F(DataTest, InsertSameEdges) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age) "
+                          "VALUES hash(\"Tony\"):(\"Tony\", 18), hash(\"Mack\"):(\"Mack\", 19)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Insert the same edges with different property value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "hash(\"Tony\")->hash(\"Mack\")@1:(1)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "hash(\"Tony\")->hash(\"Mack\")@1:(2)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "hash(\"Tony\")->hash(\"Mack\")@1:(3)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Get result
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM hash(\"Tony\") OVER schoolmate "
+                          "YIELD $$.person.name, schoolmate.likeness";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        using valueType = std::tuple<std::string, int64_t>;
+        // get the latest result
+        std::vector<valueType> expected{
+            {"Mack", 3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
