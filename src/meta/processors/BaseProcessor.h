@@ -172,7 +172,7 @@ protected:
     /**
      * Get one auto-increment Id.
      * */
-    int32_t autoIncrementId();
+    ErrorOr<cpp2::ErrorCode, int32_t> autoIncrementId();
 
     /**
      * Check spaceId exist or not.
