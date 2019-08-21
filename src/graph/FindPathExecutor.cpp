@@ -9,7 +9,6 @@
 
 namespace nebula {
 namespace graph {
-using SchemaProps = std::unordered_map<std::string, std::vector<std::string>>;
 
 FindPathExecutor::FindPathExecutor(Sentence *sentence, ExecutionContext *exct)
         : TraverseExecutor(exct) {
@@ -163,7 +162,7 @@ void FindPathExecutor::addGoFromFTask(
     auto *runner = ectx()->rctx()->runner();
     runner->add([this, vids = std::move(fromVids), &proF] () mutable {
         Frontiers frontiersF;
-        auto props = getStepOutProps("_dst");
+        auto props = getStepOutProps(false);
         if (!props.ok()) {
             folly::FutureException e(std::move(props).status().toString());
             proF.setException(e);
@@ -180,34 +179,20 @@ void FindPathExecutor::addGoFromFTask(
     });
 }
 
+
 void FindPathExecutor::addGoFromTTask(
         std::vector<VertexID> &&toVids,
         folly::Promise<std::pair<VisitedBy, Frontiers>> &proT) {
     auto *runner = ectx()->rctx()->runner();
     runner->add([this, vids = std::move(toVids), &proT] () mutable {
         Frontiers frontiersT;
-
-        std::vector<storage::cpp2::PropDef> props;
-        {
-            storage::cpp2::PropDef pd;
-            pd.owner = storage::cpp2::PropOwner::EDGE;
-            pd.name = "_dst";
-            props.emplace_back(std::move(pd));
+        auto props = getStepOutProps(true);
+        if (!props.ok()) {
+            folly::FutureException e(std::move(props).status().toString());
+            proT.setException(e);
+            return;
         }
-        {
-            storage::cpp2::PropDef pd;
-            pd.owner = storage::cpp2::PropOwner::EDGE;
-            pd.name = "_type";
-            props.emplace_back(std::move(pd));
-        }
-        {
-            storage::cpp2::PropDef pd;
-            pd.owner = storage::cpp2::PropOwner::EDGE;
-            pd.name = "_rank";
-            props.emplace_back(std::move(pd));
-        }
-
-        auto s = getFrontiers(std::move(vids), std::move(props), true, frontiersT);
+        auto s = getFrontiers(std::move(vids), std::move(props).value(), true, frontiersT);
         if (!s.ok()) {
             folly::FutureException e(std::move(s).toString());
             proT.setException(e);
@@ -220,6 +205,11 @@ void FindPathExecutor::addGoFromTTask(
 
 void FindPathExecutor::findPath(
         std::vector<folly::Try<std::pair<VisitedBy, Frontiers>>> &&result) {
+    Frontiers *frontiersF;
+    Frontiers *frontiersT;
+    std::unordered_set<VertexID> visited;
+    std::vector<VertexID> frontierFVids;
+    std::vector<VertexID> frontierTVids;
     for (auto &t : result) {
         if (t.hasException()) {
             auto &e = t.exception();
@@ -230,72 +220,106 @@ void FindPathExecutor::findPath(
         }
 
         auto &pair = t.value();
-        auto &frontiers = pair.second;
-        std::unordered_set<VertexID> visited;
-
         if (pair.first == VisitedBy::FROM) {
-            for (auto &f : frontiers) {
-                // Notice: we treat edges with different ranking
-                // between two vertices as different path
-                for (auto &v : f.second) {
-                    auto dstId = std::get<2>(v);
-                    // if frontiers of F are neighbors of visitedByT, we found a path
-                    if (visitedTo_.count(std::get<2>(v)) == 1) {
-                        stop_ = true;
-                        auto rangeF = pathFrom_.equal_range(f.first);
-                        for (auto i = rangeF.first; i != rangeF.second; ++i) {
-                            auto rangeT = pathTo_.equal_range(dstId);
-                            for (auto j = rangeT.first; j != rangeT.second; ++j) {
-                                // TODO build path:
-                                // i->second + edge(type + ranking + dst) + j->second
-                                std::string path = "";
-                                finalPath_.emplace_back(std::move(path));
-                            }  // for `j'
-                        }  // for `i'
-                    } else {
-                        // if we found dst have been visited,
-                        // that means we have already found a shorter path
-                        if ((visitedFrom_.count(dstId) == 1) && shortest_) {
-                            continue;
-                        }
-                        // update the path to frontiers
-                        auto rangeF = pathFrom_.equal_range(f.first);
-                        for (auto i = rangeF.first; i != rangeF.second; ++i) {
-                            // TODO build path i->second + edge
-                            std::string path = "";
-                            pathFrom_.emplace(dstId, std::move(path));
-                        }  // for `i'
-                    }
-                    visited.emplace(dstId);
-                }  // for `v'
-            }  // for `f'
-        }  // if `FROM'
-        visitedFrom_.insert(std::make_move_iterator(visited.begin()),
-                            std::make_move_iterator(visited.end()));
-
+            frontiersF = &pair.second;
+        }
         if (pair.first == VisitedBy::TO) {
-            for (auto &f : frontiers) {
-                for (auto &v : f.second) {
-                    auto dstId = std::get<2>(v);
-                    // if we found dst have been visited,
-                    // that means we have already found a shorter path
-                    if ((visitedTo_.count(dstId) == 1) && shortest_) {
-                        continue;
-                    }
-                    // update the path to frontiers
-                    auto rangeT = pathTo_.equal_range(f.first);
-                    for (auto i = rangeT.first; i != rangeT.second; ++i) {
-                        // TODO build path edge + i->second
-                        std::string path = "";
-                        pathTo_.emplace(dstId, std::move(path));
-                    }  // for `i'
-                    visited.emplace(dstId);
-                }  // for `v'
-            }  // for `f'
-        }  // if `TO'
-        visitedTo_.insert(std::make_move_iterator(visited.begin()),
-                            std::make_move_iterator(visited.end()));
+            frontiersT = &pair.second;
+        }
     }  // for `t'
+
+    for (auto &f : *frontiersF) {
+        // Notice: we treat edges with different ranking
+        // between two vertices as different path
+        for (auto &v : f.second) {
+            auto dstId = std::get<2>(v);
+            frontierFVids.emplace_back(dstId);
+            // if frontiers of F are neighbors of visitedByT,
+            // we found an odd path
+            if (visitedTo_.count(std::get<2>(v)) == 1) {
+                if (shortest_ && foundAllDest()) {
+                    stop_ = true;
+                }
+                auto rangeF = pathFrom_.equal_range(f.first);
+                for (auto i = rangeF.first; i != rangeF.second; ++i) {
+                    auto rangeT = pathTo_.equal_range(dstId);
+                    for (auto j = rangeT.first; j != rangeT.second; ++j) {
+                        // TODO build path:
+                        // i->second + edge(type + ranking + dst) + j->second
+                        std::string path = "";
+                        finalPath_.emplace_back(std::move(path));
+                    }  // for `j'
+                }  // for `i'
+            }
+
+            // if we found dst have been visited,
+            // that means we have already found a shorter path
+            if ((visitedFrom_.count(dstId) == 1) && shortest_) {
+                continue;
+            }
+            // update the path to frontiers
+            auto rangeF = pathFrom_.equal_range(f.first);
+            for (auto i = rangeF.first; i != rangeF.second; ++i) {
+                // TODO build path i->second + edge
+                std::string path = "";
+                pathFrom_.emplace(dstId, std::move(path));
+            }  // for `i'
+            visited.emplace(dstId);
+        }  // for `v'
+    }  // for `f'
+    visitedFrom_.insert(std::make_move_iterator(visited.begin()),
+                        std::make_move_iterator(visited.end()));
+
+    for (auto &f : *frontiersT) {
+        for (auto &v : f.second) {
+            auto dstId = std::get<2>(v);
+            frontierTVids.emplace_back(dstId);
+            // if we found dst have been visited,
+            // that means we have already found a shorter path
+            if ((visitedTo_.count(dstId) == 1) && shortest_) {
+                continue;
+            }
+            // update the path to frontiers
+            auto rangeT = pathTo_.equal_range(f.first);
+            for (auto i = rangeT.first; i != rangeT.second; ++i) {
+                // TODO build path edge + i->second
+                std::string path = "";
+                pathTo_.emplace(dstId, std::move(path));
+            }  // for `i'
+            visited.emplace(dstId);
+        }  // for `v'
+    }  // for `f'
+    visitedTo_.insert(std::make_move_iterator(visited.begin()),
+                      std::make_move_iterator(visited.end()));
+
+    std::sort(frontierFVids.begin(), frontierFVids.end());
+    std::sort(frontierTVids.begin(), frontierTVids.end());
+    std::set<VertexID> intersect;
+    std::set_intersection(frontierFVids.begin(), frontierFVids.end(),
+                          frontierTVids.begin(), frontierTVids.end(),
+                          std::inserter(intersect, intersect.end()));
+    // if frontiersF meets frontiersT, we found an even path
+    if (!intersect.empty() && !stop_) {
+        if (shortest_ && foundAllDest()) {
+            stop_ = true;
+        }
+        for (auto &v : intersect) {
+            auto rangeF = pathFrom_.equal_range(v);
+            auto rangeT = pathTo_.equal_range(v);
+            for (auto i = rangeF.first; i != rangeF.second; ++i) {
+                for (auto j = rangeT.first; j != rangeF.second; ++j) {
+                    // TODO build path
+                    std::string path = "";
+                    finalPath_.emplace_back(std::move(path));
+                }
+            }
+        }
+    }
+}
+
+bool FindPathExecutor::foundAllDest() {
+    // TODO
+    return true;
 }
 
 Status FindPathExecutor::setupVids() {
@@ -422,21 +446,61 @@ Status FindPathExecutor::doFilter(
         Expression *filter,
         bool reversely,
         Frontiers &frontiers) {
-    UNUSED(result);
     UNUSED(filter);
     UNUSED(reversely);
-    UNUSED(frontiers);
+
+    auto &resps = result.responses();
+    for (auto &resp : resps) {
+        if (resp.get_vertices() == nullptr) {
+            continue;
+        }
+        std::shared_ptr<ResultSchemaProvider> eschema;
+        if (resp.get_edge_schema() != nullptr) {
+            eschema = std::make_shared<ResultSchemaProvider>(resp.edge_schema);
+        }
+
+        for (auto &vdata : resp.vertices) {
+            std::unique_ptr<RowReader> vreader;
+            DCHECK(vdata.__isset.edge_data);
+            DCHECK(eschema != nullptr);
+            RowSetReader rsReader(eschema, vdata.edge_data);
+            auto iter = rsReader.begin();
+            std::vector<std::tuple<EdgeType, EdgeRanking, VertexID>> neighbors;
+            while (iter) {
+                std::vector<VariantType> temps;
+                for (auto &prop : kReserveProps_) {
+                    auto res = RowReader::getPropByName(&*iter, prop);
+                    if (ok(res)) {
+                        temps.emplace_back(std::move(value(res)));
+                    }
+                    return Status::Error("get edge prop failed %s", prop.c_str());
+                }
+                std::tuple<EdgeType, EdgeRanking, VertexID> neighbor(
+                        boost::get<int64_t>(temps[0]),
+                        boost::get<int64_t>(temps[1]),
+                        boost::get<int64_t>(temps[2]));
+                neighbors.emplace_back(std::move(neighbor));
+                ++iter;
+            }   // while `iter'
+            auto frontier = std::make_pair(vdata.get_vertex_id(), std::move(neighbors));
+            frontiers.emplace_back(std::move(frontier));
+        }   // for `vdata'
+    }   // for `resp'
     return Status::OK();
 }
 
 StatusOr<std::vector<storage::cpp2::PropDef>>
-FindPathExecutor::getStepOutProps(std::string reserve) {
+FindPathExecutor::getStepOutProps(bool reversely) {
     std::vector<storage::cpp2::PropDef> props;
-    {
+    for (auto &prop : kReserveProps_) {
         storage::cpp2::PropDef pd;
         pd.owner = storage::cpp2::PropOwner::EDGE;
-        pd.name = reserve;
+        pd.name = prop;
         props.emplace_back(std::move(pd));
+    }
+
+    if (reversely) {
+        return props;
     }
 
     auto spaceId = ectx()->rctx()->session()->space();

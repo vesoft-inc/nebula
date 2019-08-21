@@ -13,6 +13,10 @@
 
 namespace nebula {
 namespace graph {
+
+const std::vector<std::string> kReserveProps_ = {"_type", "_rank", "_dst"};
+using SchemaProps = std::unordered_map<std::string, std::vector<std::string>>;
+
 class FindPathExecutor final : public TraverseExecutor {
 public:
     FindPathExecutor(Sentence *sentence, ExecutionContext *ectx);
@@ -26,28 +30,24 @@ public:
     void execute() override;
 
 private:
-    class Vertices {
-    public:
+    struct Vertices {
         std::string             *colname_{nullptr};
         std::string             *varname_{nullptr};
         std::vector<VertexID>    vids_;
     };
 
-    class Over {
-    public:
+    struct Over {
         std::string *edge_{nullptr};
         EdgeType     edgeType_{INT_MIN};
         bool         reversely_{false};
     };
 
-    class Step {
-    public:
+    struct Step {
         uint32_t steps_{0};
         bool     upto_{false};
     };
 
-    class Where {
-    public:
+    struct Where {
         Expression *filter_{nullptr};
     };
 
@@ -93,13 +93,15 @@ private:
                         bool reversely,
                         Frontiers &frontiers);
 
+    bool foundAllDest();
+
     Status doFilter(
             storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
             Expression *filter,
             bool reversely,
             Frontiers &frontiers);
 
-    StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps(std::string reserve);
+    StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps(bool reversely);
 
     StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps();
 
