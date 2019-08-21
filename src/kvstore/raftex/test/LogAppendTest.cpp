@@ -87,7 +87,7 @@ TEST(LogAppend, MultiThreadAppend) {
     FLAGS_max_batch_size = numThreads * numLogs + 1;
     std::vector<std::thread> threads;
     for (int i = 0; i < numThreads; ++i) {
-        threads.emplace_back(std::thread([i, numLogs, leader] {
+        threads.emplace_back(std::thread([i, leader] {
             for (int j = 1; j <= numLogs; ++j) {
                 do {
                     auto fut = leader->appendAsync(
@@ -151,5 +151,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-
-

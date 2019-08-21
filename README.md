@@ -1,11 +1,18 @@
-![](docs/logo.png)
+<p align="center">
+  <img src="docs/logo.png"/>
+  <br> English | <a href="README-CN.md">中文</a>
+  <br>A distributed, scalable, lighting-fast graph database<br>
+</p>
 
-[![LICENSE](https://img.shields.io/badge/license-Apache--2.0-green)](#licensing)
-[![GitHub release](https://img.shields.io/badge/release-v1.0.0--beta-blue)](https://github.com/vesoft-inc/nebula/releases)
+<!-- <p align="center">
+  <a href="https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzU2NDkxNjI0NQ==&scene=124#wechat_redirect"><img src="https://img.shields.io/badge/%E5%85%AC%E4%BC%97%E5%8F%B7-wechat-brightgreen" alt="WeiXin"></a>
+  <a href="https://www.zhihu.com/org/nebulagraph/activities"><img src="https://img.shields.io/badge/%E7%9F%A5%E4%B9%8E-zhihu-blue" alt="Zhihu"></a>
+    <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place"><img src="https://img.shields.io/badge/%E5%BE%AE%E5%8D%9A-weibo-red" alt="Sina Weibo"></a>
+</p> -->
 
 ## Nebula
 
-**Nebula** is a distributed, scalable, lighting-fast graph database. It is the only solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
+**Nebula** is the only solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
 
 **Nebula's** goal is to provide reading, writing, and computing with high concurrency, low latency for super large scale graphs. Nebula is an open source project and we are looking forward to working with the community to popularize and promote the graph database.
 
@@ -30,9 +37,9 @@ We also encourage the community to involve the project. There are a few ways you
 * You can fix bugs or implement features. More details on how to build the project and submit the Pull Requests click [`how-to-contribute`](https://github.com/vesoft-inc/nebula/blob/master/docs/how-to-contribute.md).
 
 ## Licensing ###
-**Nebula** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, deploy the source code to meet your needs. You can also freely deploy **Nebula** as a back-end service to support your SAAS deployment.
+**Nebula** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, deploy the source code to meet your needs. You can also freely deploy **Nebula** as a back-end service to support your SaaS deployment.
 
-In order to prevent cloud providers monetizing from the project without contributing back, we added [Common Clause 1.0](https://commonsclause.com/) to the project. As mentioned above, we fully commit to the open source community. We would love to hear your thoughts on the licensing model and are willing to make it more suitable for the community.
+In order to prevent cloud providers monetizing from the project without contributing back, we added [Commons Clause 1.0](https://commonsclause.com/) to the project. As mentioned above, we fully commit to the open source community. We would love to hear your thoughts on the licensing model and are willing to make it more suitable for the community.
 
 ## Contact
 - Please use [`GitHub issue tracker`](https://github.com/vesoft-inc/nebula/issues) for filling bugs or feature requests.

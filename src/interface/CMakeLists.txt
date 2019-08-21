@@ -1,4 +1,7 @@
-add_compile_options(-Wno-maybe-uninitialized)
+
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    add_compile_options(-Wno-maybe-uninitialized)
+endif()
 
 set(THRIFT1 ${Fbthrift_BIN})
 set(THRIFT_TEMPLATES ${Fbthrift_INCLUDE_DIR}/thrift/templates)
