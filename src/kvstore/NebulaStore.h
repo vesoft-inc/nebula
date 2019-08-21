@@ -139,6 +139,11 @@ public:
                            const std::string& prefix,
                            KVCallback cb) override;
 
+    void asyncAtomicOp(GraphSpaceID spaceId,
+                       PartitionID partId,
+                       raftex::AtomicOp op,
+                       KVCallback cb) override;
+
     ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
                                                     PartitionID partId) override;
 
