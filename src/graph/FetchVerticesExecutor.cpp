@@ -154,13 +154,18 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             auto writer = std::make_unique<RowWriter>(outputSchema);
 
             auto &getters = expCtx_->getters();
-            getters.getAliasProp = [&] (const std::string&, const std::string &prop) {
+            getters.getAliasProp = [&](const std::string &,
+                                       const std::string &prop) -> OptVariantType {
                 return collector->getProp(prop, vreader.get());
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
                 auto value = expr->eval();
-                collector->collect(value, writer.get());
+                if (!value.ok()) {
+                    onError_(value.status());
+                    return;
+                }
+                collector->collect(value.value(), writer.get());
             }
             // TODO Consider float/double, and need to reduce mem copy.
             std::string encode = writer->encode();
@@ -202,12 +207,16 @@ Status FetchVerticesExecutor::setupVidsFromExpr() {
             break;
         }
         auto value = expr->eval();
-        if (!Expression::isInt(value)) {
+        if (!value.ok()) {
+            return value.status();
+        }
+        auto v = value.value();
+        if (!Expression::isInt(v)) {
             status = Status::Error("Vertex ID should be of type integer");
             break;
         }
 
-        auto valInt = Expression::asInt(value);
+        auto valInt = Expression::asInt(v);
         if (distinct_) {
             auto result = uniqID->emplace(valInt);
             if (result.second) {

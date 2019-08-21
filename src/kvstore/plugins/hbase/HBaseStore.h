@@ -126,6 +126,13 @@ public:
                            const std::string& prefix,
                            KVCallback cb) override;
 
+    void asyncAtomicOp(GraphSpaceID,
+                       PartitionID,
+                       raftex::AtomicOp,
+                       KVCallback) override {
+        LOG(FATAL) << "Not supportted yet!";
+    }
+
     ResultCode ingest(GraphSpaceID spaceId) override;
 
     ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID,

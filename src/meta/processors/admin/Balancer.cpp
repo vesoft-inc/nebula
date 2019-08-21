@@ -128,7 +128,7 @@ std::vector<BalanceTask> Balancer::genTasks(GraphSpaceID spaceId) {
         LOG(ERROR) << "Invalid space " << spaceId;
         return std::vector<BalanceTask>();
     }
-    auto activeHosts = ActiveHostsMan::instance()->getActiveHosts();
+    auto activeHosts = ActiveHostsMan::getActiveHosts(kv_);
     std::vector<HostAddr> newlyAdded;
     std::vector<HostAddr> lost;
     calDiff(hostParts, activeHosts, newlyAdded, lost);

@@ -18,7 +18,6 @@
 #include "meta/processors/configMan/RegConfigProcessor.h"
 
 DECLARE_int32(load_data_interval_secs);
-DECLARE_int32(load_config_interval_secs);
 
 // some gflags to register
 DEFINE_int64(int64_key_immutable, 100, "test");
@@ -206,7 +205,6 @@ ConfigItem toConfigItem(const cpp2::ConfigItem& item) {
 
 TEST(ConfigManTest, MetaConfigManTest) {
     FLAGS_load_data_interval_secs = 1;
-    FLAGS_load_config_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaConfigManTest.XXXXXX");
     uint32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
@@ -251,7 +249,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         std::string name = "not_existed";
         auto type = cpp2::ConfigType::INT64;
 
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         // get/set without register
         auto setRet = cfgMan.setConfig(module, name, type, 101l).get();
         ASSERT_FALSE(setRet.ok());
@@ -274,7 +272,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         auto value = boost::get<int64_t>(item.value_);
         ASSERT_EQ(value, 100);
 
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_int64_key_immutable, 100);
     }
     // mutable config
@@ -295,7 +293,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, 102);
 
         // get from cache
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_int64_key, 102);
     }
     {
@@ -315,7 +313,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, true);
 
         // get from cache
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_bool_key, true);
     }
     {
@@ -335,7 +333,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, 3.14);
 
         // get from cache
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_double_key, 3.14);
     }
     {
@@ -356,7 +354,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, "abc");
 
         // get from cache
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_string_key, "abc");
     }
     {
@@ -367,7 +365,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
 }
 
 TEST(ConfigManTest, MockConfigTest) {
-    FLAGS_load_config_interval_secs = 1;
+    FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MockConfigTest.XXXXXX");
     uint32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
@@ -417,7 +415,7 @@ TEST(ConfigManTest, MockConfigTest) {
     }
 
     // check values in ClientBaseGflagsManager
-    sleep(FLAGS_load_config_interval_secs + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     ASSERT_EQ(FLAGS_test0, "updated0");
     ASSERT_EQ(FLAGS_test1, "updated1");
     ASSERT_EQ(FLAGS_test2, "updated2");

@@ -350,12 +350,12 @@ struct ScanResp {
 struct HBResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
-    3: common.ClusterID clusterId,
+    3: common.ClusterID cluster_id,
 }
 
 struct HBReq {
     1: common.HostAddr host,
-    2: common.ClusterID clusterId,
+    2: common.ClusterID cluster_id,
 }
 
 struct CreateUserReq {

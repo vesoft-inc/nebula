@@ -13,6 +13,7 @@
 namespace nebula {
 
 class Cord;
+using OptVariantType = StatusOr<VariantType>;
 
 enum ColumnType {
     INT, STRING, DOUBLE, BIGINT, BOOL, TIMESTAMP,
@@ -88,12 +89,12 @@ public:
     }
 
     struct Getters {
-        std::function<VariantType()> getEdgeRank;
-        std::function<VariantType(const std::string&)> getInputProp;
-        std::function<VariantType(const std::string&)> getVariableProp;
-        std::function<VariantType(const std::string&, const std::string&)> getSrcTagProp;
-        std::function<VariantType(const std::string&, const std::string&)> getDstTagProp;
-        std::function<VariantType(const std::string&, const std::string&)> getAliasProp;
+        std::function<OptVariantType()> getEdgeRank;
+        std::function<OptVariantType(const std::string&)> getInputProp;
+        std::function<OptVariantType(const std::string&)> getVariableProp;
+        std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
+        std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
+        std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
     };
 
     Getters& getters() {
@@ -125,7 +126,7 @@ public:
 
     virtual Status MUST_USE_RESULT prepare() = 0;
 
-    virtual VariantType eval() const = 0;
+    virtual OptVariantType eval() const = 0;
 
     virtual bool isInputExpression() const {
         return kind_ == kInputProp;
@@ -297,7 +298,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -333,7 +334,7 @@ public:
         prop_.reset(prop);
     }
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -358,7 +359,7 @@ public:
         prop_.reset(prop);
     }
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -383,7 +384,7 @@ public:
         prop_.reset(prop);
     }
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -408,7 +409,7 @@ public:
         prop_.reset(new std::string("_type"));
     }
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -433,7 +434,7 @@ public:
         prop_.reset(new std::string("_src"));
     }
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -458,7 +459,7 @@ public:
         prop_.reset(new std::string("_dst"));
     }
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -483,7 +484,7 @@ public:
         prop_.reset(new std::string("_rank"));
     }
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -508,7 +509,7 @@ public:
         prop_.reset(prop);
     }
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -548,7 +549,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -594,7 +595,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -637,7 +638,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -676,7 +677,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -725,7 +726,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -776,7 +777,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -828,7 +829,7 @@ public:
 
     std::string toString() const override;
 
-    VariantType eval() const override;
+    OptVariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
