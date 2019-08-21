@@ -12,13 +12,17 @@
 
 namespace nebula {
 
-Status ProcessUtils::isPidAvailable(uint32_t pid) {
+Status ProcessUtils::isPidAvailable(pid_t pid) {
+    if (pid == ::getpid()) {
+        return Status::OK();
+    }
+
     constexpr auto SIG_OK = 0;
     if (::kill(pid, SIG_OK) == 0) {
-        return Status::Error("Process `%u' already existed", pid);
+        return Status::Error("Process `%d' already existed", pid);
     }
     if (errno == EPERM) {
-        return Status::Error("Process `%u' already existed but denied to access", pid);
+        return Status::Error("Process `%d' already existed but denied to access", pid);
     }
     if (errno != ESRCH) {
         return Status::Error("Uknown error: `%s'", ::strerror(errno));
@@ -48,7 +52,7 @@ Status ProcessUtils::isPidAvailable(const std::string &pidFile) {
 }
 
 
-Status ProcessUtils::makePidFile(const std::string &pidFile, uint32_t pid) {
+Status ProcessUtils::makePidFile(const std::string &pidFile, pid_t pid) {
     if (pidFile.empty()) {
         return Status::Error("Path to the pid file is empty");
     }
@@ -67,7 +71,7 @@ Status ProcessUtils::makePidFile(const std::string &pidFile, uint32_t pid) {
         pid = ::getpid();
     }
 
-    ::fprintf(file, "%u\n", pid);
+    ::fprintf(file, "%d\n", pid);
     ::fflush(file);
     ::fclose(file);
 
@@ -95,17 +99,17 @@ Status ProcessUtils::daemonize(const std::string &pidFile) {
 }
 
 
-StatusOr<std::string> ProcessUtils::getExePath(uint32_t pid) {
+StatusOr<std::string> ProcessUtils::getExePath(pid_t pid) {
     if (pid == 0) {
         pid = ::getpid();
     }
     char path[PATH_MAX];
-    snprintf(path, sizeof(path), "/proc/%u/exe", pid);
+    snprintf(path, sizeof(path), "/proc/%d/exe", pid);
     return fs::FileUtils::readLink(path);
 }
 
 
-StatusOr<std::string> ProcessUtils::getExeCWD(uint32_t pid) {
+StatusOr<std::string> ProcessUtils::getExeCWD(pid_t pid) {
     if (pid == 0) {
         pid = ::getpid();
     }
@@ -115,12 +119,12 @@ StatusOr<std::string> ProcessUtils::getExeCWD(uint32_t pid) {
 }
 
 
-StatusOr<std::string> ProcessUtils::getProcessName(uint32_t pid) {
+StatusOr<std::string> ProcessUtils::getProcessName(pid_t pid) {
     if (pid == 0) {
         pid = ::getpid();
     }
     char path[PATH_MAX];
-    snprintf(path, sizeof(path), "/proc/%u/comm", pid);
+    snprintf(path, sizeof(path), "/proc/%d/comm", pid);
     fs::FileUtils::FileLineIterator iter(path);
     if (!iter.valid()) {
         return iter.status();
@@ -129,7 +133,7 @@ StatusOr<std::string> ProcessUtils::getProcessName(uint32_t pid) {
 }
 
 
-uint32_t ProcessUtils::maxPid() {
+pid_t ProcessUtils::maxPid() {
     static const std::regex pattern("([0-9]+)");
     fs::FileUtils::FileLineIterator iter("/proc/sys/kernel/pid_max", &pattern);
     CHECK(iter.valid());
