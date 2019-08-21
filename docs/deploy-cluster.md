@@ -53,7 +53,7 @@ Property Name               | Default Value            | Description
 `port`                      | 45500                    | Meta daemon listening port.
 `reuse_port`                | true                     | Whether to turn on the SO_REUSEPORT option.
 `data_path`                 | ""                       | Root data path.
-`peers`                     | ""                       | It is a list of IPs split by comma, the ips number equals replica number. If empty, it means replica is 1.
+`meta_server_addrs`                     | ""                       | It is a list of IPs split by comma, the ips number equals replica number. If empty, it means replica is 1.
 `local_ip`                  | ""                       | Local ip speicified for NetworkUtils::getLocalIP.
 `num_io_threads`            | 16                       | Number of IO threads.
 `meta_http_thread_num`      | 3                        | Number of meta daemon's http thread.
@@ -145,3 +145,5 @@ Property Name            | Default Value | Description
 `p`                      | ""            | Password used to authenticate.
 `enable_history`         | false         | Whether to force saving the command history.
 `server_conn_timeout_ms` | 1000          | Connection timeout in milliseconds.
+
+**Note:** Please make sure the ports are not blocked by the firewall during configuration.
