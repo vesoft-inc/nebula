@@ -85,8 +85,6 @@
             <groupId>com.facebook</groupId>
             <artifactId>thrift</artifactId>
             <version>1.0.0-SNAPSHORT</version>
-            <scope>system</scope>
-            <systemPath>${JAVA_FBTHRIFT_JAR}</systemPath>
         </dependency>
         <dependency>
             <groupId>nebula-graph</groupId>
