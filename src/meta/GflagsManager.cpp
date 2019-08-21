@@ -82,8 +82,8 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
             mode = cpp2::ConfigMode::IMMUTABLE;
         }
 
-        // TODO: all int32 and uint32 are converted to int64
-        if (type == "uint32" || type == "int32" || type == "int64") {
+        // TODO: all int32/uint32/uint64 gflags are converted to int64 for now
+        if (type == "uint32" || type == "int32" || type == "int64" || type == "uint64") {
             cType = cpp2::ConfigType::INT64;
             value = folly::to<int64_t>(flag.current_value);
             valueStr = gflagsValueToThriftValue<int64_t>(flag);
