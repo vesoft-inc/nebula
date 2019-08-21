@@ -16,7 +16,7 @@
 #include "kvstore/raftex/test/RaftexTestBase.h"
 #include "kvstore/raftex/test/TestShard.h"
 
-DECLARE_uint32(heartbeat_interval);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 DECLARE_uint32(max_batch_size);
 
 namespace nebula {
@@ -87,7 +87,7 @@ TEST(LogAppend, MultiThreadAppend) {
     FLAGS_max_batch_size = numThreads * numLogs + 1;
     std::vector<std::thread> threads;
     for (int i = 0; i < numThreads; ++i) {
-        threads.emplace_back(std::thread([i, numLogs, leader] {
+        threads.emplace_back(std::thread([i, leader] {
             for (int j = 1; j <= numLogs; ++j) {
                 do {
                     auto fut = leader->appendAsync(
@@ -112,9 +112,9 @@ TEST(LogAppend, MultiThreadAppend) {
 
     LOG(INFO) << "<===== Finish multi-thread appending logs";
 
-    // Sleep a while to make sure the lat log has been committed on
+    // Sleep a while to make sure the last log has been committed on
     // followers
-    sleep(FLAGS_heartbeat_interval);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
 
     // Check every copy
     for (auto& c : copies) {
@@ -151,5 +151,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-
-

@@ -52,17 +52,6 @@ std::unique_ptr<GraphClient>         DataTest::client_{nullptr};
 AssertionResult DataTest::prepareSchema() {
     {
         cpp2::ExecutionResponse resp;
-        std::string host = folly::stringPrintf("127.0.0.1:%u", gEnv->storageServerPort());
-        std::string cmd = "ADD HOSTS " + host;
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd
-                               << " failed, error code "<< static_cast<int32_t>(code);
-        }
-        meta::TestUtils::registerHB(network::NetworkUtils::toHosts(host).value());
-    }
-    {
-        cpp2::ExecutionResponse resp;
         std::string cmd = "CREATE SPACE mySpace(partition_num=1, replica_factor=1)";
         auto code = client_->execute(cmd, resp);
         if (cpp2::ErrorCode::SUCCEEDED != code) {
@@ -139,16 +128,6 @@ AssertionResult DataTest::removeData() {
             return TestError() << "Do cmd:" << cmd << " failed";
         }
     }
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = folly::stringPrintf("REMOVE HOSTS 127.0.0.1:%u",
-                                              gEnv->storageServerPort());
-        auto code = client_->execute(cmd, resp);
-        if (cpp2::ErrorCode::SUCCEEDED != code) {
-            return TestError() << "Do cmd:" << cmd << " failed";
-        }
-    }
-
     return TestOK();
 }
 
@@ -380,6 +359,23 @@ TEST_F(DataTest, InsertVertex) {
     // TODO: Test insert multi tags, and delete one of them then check other existent
 }
 
+TEST_F(DataTest, FindTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "FIND name FROM person";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
+TEST_F(DataTest, MatchTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "MATCH";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
 }   // namespace graph
 }   // namespace nebula
-

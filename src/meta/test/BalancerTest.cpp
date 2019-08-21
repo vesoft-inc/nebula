@@ -13,6 +13,7 @@
 #include "meta/processors/partsMan/CreateSpaceProcessor.h"
 
 DECLARE_uint32(task_concurrency);
+DECLARE_int32(expired_threshold_sec);
 
 namespace nebula {
 namespace meta {
@@ -386,7 +387,6 @@ TEST(BalanceTest, BalancePlanTest) {
 TEST(BalanceTest, NormalTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    FLAGS_expired_hosts_check_interval_sec = 1;
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get());
     {
@@ -412,7 +412,7 @@ TEST(BalanceTest, NormalTest) {
 
     sleep(1);
     LOG(INFO) << "Now, we lost host " << HostAddr(3, 3);
-    TestUtils::registerHB({{0, 0}, {1, 1}, {2, 2}});
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
     ret = balancer.balance();
     CHECK(ret.ok());
     auto balanceId = ret.value();
@@ -472,7 +472,6 @@ TEST(BalanceTest, NormalTest) {
 TEST(BalanceTest, RecoveryTest) {
     fs::TempDir rootPath("/tmp/BalanceTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
-    FLAGS_expired_hosts_check_interval_sec = 1;
     FLAGS_expired_threshold_sec = 1;
     TestUtils::createSomeHosts(kv.get());
     {
@@ -492,7 +491,7 @@ TEST(BalanceTest, RecoveryTest) {
 
     sleep(1);
     LOG(INFO) << "Now, we lost host " << HostAddr(3, 3);
-    TestUtils::registerHB({{0, 0}, {1, 1}, {2, 2}});
+    TestUtils::registerHB(kv.get(), {{0, 0}, {1, 1}, {2, 2}});
     std::vector<Status> sts {
                                 Status::OK(),
                                 Status::OK(),
