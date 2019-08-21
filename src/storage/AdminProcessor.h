@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include "storage/BaseProcessor.h"
+#include "kvstore/NebulaStore.h"
 #include "kvstore/Part.h"
 
 namespace nebula {
@@ -21,6 +22,7 @@ public:
     }
 
     void process(const cpp2::TransLeaderReq& req) {
+        CHECK_NOTNULL(kvstore_);
         auto spaceId = req.get_space_id();
         auto partId = req.get_part_id();
         auto ret = kvstore_->part(spaceId, partId);
@@ -28,20 +30,26 @@ public:
             resp_.set_code(to(error(ret)));
             promise_.setValue(std::move(resp_));
             delete this;
+            return;
         }
         auto part = nebula::value(ret);
-        // need to trans from storage addr to raft addr
-        auto host = HostAddr(req.get_new_leader().get_ip(), req.get_new_leader().get_port() + 1);
+        auto host = kvstore::NebulaStore::getRaftAddr(HostAddr(req.get_new_leader().get_ip(),
+                                                               req.get_new_leader().get_port()));
         part->asyncTransferLeader(std::move(host),
                                   [this, spaceId, partId] (kvstore::ResultCode code) {
+            auto leaderRet = kvstore_->partLeader(spaceId, partId);
+            CHECK(ok(leaderRet));
             if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
-                auto addrRet = kvstore_->partLeader(spaceId, partId);
-                CHECK(ok(addrRet));
-                auto addr = value(std::move(addrRet));
-                nebula::cpp2::HostAddr leader;
-                leader.set_ip(addr.first);
-                leader.set_port(addr.second);
-                resp_.set_leader(std::move(leader));
+                auto addr = value(std::move(leaderRet));
+                if (addr == HostAddr(0, 0)) {
+                    // No leader is elected, just return ok
+                    code = kvstore::ResultCode::SUCCEEDED;
+                } else {
+                    nebula::cpp2::HostAddr leader;
+                    leader.set_ip(addr.first);
+                    leader.set_port(addr.second);
+                    resp_.set_leader(std::move(leader));
+                }
             }
             resp_.set_code(to(code));
             promise_.setValue(std::move(resp_));
@@ -137,6 +145,7 @@ public:
 
     void process(const cpp2::GetLeaderReq& req) {
         UNUSED(req);
+        CHECK_NOTNULL(kvstore_);
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         kvstore_->allLeader(leaderIds);
         resp_.set_code(to(kvstore::ResultCode::SUCCEEDED));

@@ -1130,11 +1130,14 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance() {
 
 folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
     cpp2::LeaderBalanceReq req;
-    return getResponse(std::move(req), [] (auto client, auto request) {
-        return client->future_leaderBalance(request);
-    }, [] (cpp2::ExecResp&& resp) -> bool {
-        return resp.code == cpp2::ErrorCode::SUCCEEDED;
-    }, true);
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_leaderBalance(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
+                }, std::move(promise), true);
+    return future;
 }
 
 folly::Future<StatusOr<bool>>
