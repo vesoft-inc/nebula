@@ -20,9 +20,9 @@ For `Ubuntu` :
 dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 ```
 
-By default, the config files are under `/usr/local/nebula/etc`, you should modify the `meta_server_addrs` to set the Meta Server's address. 
+By default, the config files are under `/usr/local/nebula/etc`, you should modify the `meta_server_addrs` to set the Meta Server's address.
 
-In order to enable multi copy Meta service, you should set the meta addresses split by comma into `meta_server_addrs`.
+In order to enable multi copy Meta services, you should set the meta addresses split by comma into `meta_server_addrs`.
 
 Use `data_path` to set `Meta` and `Storage`'s underlying storage directory.
 
@@ -73,7 +73,7 @@ Property Name                       | Default Value              | Description
 `port`                              | 44500                      | Storage daemon listening port.
 `reuse_port`                        | true                       | Whether to turn on the SO_REUSEPORT option.
 `data_path`                         | ""                         | Root data path, multi paths should be split by comma. For rocksdb engine, one path one instance.
-`local_ip`                          | ""                         | IP address which is used to identify this server, combined with the listen port.
+`local_ip`                          | ""                         | IP address is used to identify this server, combined with the listen port.
 `daemonize`                         | true                       | Whether to run the process as a daemon.
 `pid_file`                          | "pids/nebula-storaged.pid" | File to hold the process id.
 `meta_server_addrs`                 | ""                         | List of meta server addresses, the format looks like ip1:port1, ip2:port2, ip3:port3.
@@ -145,5 +145,3 @@ Property Name            | Default Value | Description
 `p`                      | ""            | Password used to authenticate.
 `enable_history`         | false         | Whether to force saving the command history.
 `server_conn_timeout_ms` | 1000          | Connection timeout in milliseconds.
-
-
