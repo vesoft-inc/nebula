@@ -364,4 +364,3 @@ bash> sudo make install
     sudo update-alternatives --config java
     ```
     and select the java-1.8.0-openjdk/java-8-openjdk
-
