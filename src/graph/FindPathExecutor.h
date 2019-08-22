@@ -29,6 +29,10 @@ public:
 
     void execute() override;
 
+    void feedResult(std::unique_ptr<InterimResult> result) override {
+        inputs_ = std::move(result);
+    }
+
 private:
     struct Vertices {
         std::string             *colname_{nullptr};
@@ -74,11 +78,9 @@ private:
                       std::vector<std::tuple<EdgeType, EdgeRanking, VertexID>> /* neighbors */
                      >
                    >;
-    void addGoFromFTask(std::vector<VertexID> &&fromVids,
-                        folly::Promise<std::pair<VisitedBy, Frontiers>> &proF);
+    void addGoFromFTask(folly::Promise<std::pair<VisitedBy, Frontiers>> &&proF);
 
-    void addGoFromTTask(std::vector<VertexID> &&toVids,
-                        folly::Promise<std::pair<VisitedBy, Frontiers>> &proT);
+    void addGoFromTTask(folly::Promise<std::pair<VisitedBy, Frontiers>> &&proT);
 
     void findPath(std::vector<folly::Try<std::pair<VisitedBy, Frontiers>>> &&result);
 
@@ -121,6 +123,8 @@ private:
     SchemaPropIndex                             dstTagProps_;
     std::unordered_set<VertexID>                visitedFrom_;
     std::unordered_set<VertexID>                visitedTo_;
+    std::vector<VertexID>                       frontierFVids_;
+    std::vector<VertexID>                       frontierTVids_;
     std::multimap<VertexID, std::string>        pathFrom_;
     std::multimap<VertexID, std::string>        pathTo_;
     std::vector<std::string>                    finalPath_;

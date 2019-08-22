@@ -235,6 +235,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {LEADER}                    { return TokenType::KW_LEADER; }
 {UUID}                      { return TokenType::KW_UUID; }
 {DATA}                      { return TokenType::KW_DATA; }
+{SHORTEST}                  { return TokenType::KW_SHORTEST; }
+{PATH}                      { return TokenType::KW_PATH; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }

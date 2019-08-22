@@ -773,20 +773,22 @@ fetch_sentence
     ;
 
 find_path_sentence
-	: KW_FIND KW_ALL KW_PATH from_clause to_clause find_path_upto_clause where_clause {
+	: KW_FIND KW_ALL KW_PATH from_clause to_clause over_clause find_path_upto_clause where_clause {
 		auto *s = new FindPathSentence(false);
 		s->setFrom($4);
 		s->setTo($5);
-		s->setStep($6);
-		s->setWhere($7);
+        s->setOver($6);
+		s->setStep($7);
+		s->setWhere($8);
 		$$ = s;
 	}
-	| KW_FIND KW_SHORTEST KW_PATH from_clause to_clause find_path_upto_clause where_clause {
+	| KW_FIND KW_SHORTEST KW_PATH from_clause to_clause over_clause find_path_upto_clause where_clause {
 		auto *s = new FindPathSentence(true);
 		s->setFrom($4);
 		s->setTo($5);
-		s->setStep($6);
-		s->setWhere($7);
+        s->setOver($6);
+		s->setStep($7);
+		s->setWhere($8);
 		$$ = s;
 	}
 	;
