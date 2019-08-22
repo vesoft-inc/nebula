@@ -12,10 +12,9 @@ object DataTypeCompatibility {
     * nebula data type --> Hive data type mapping
     */
   val compatibilityMatrix: Map[String, Set[String]] = Map(
-    "INTEGER" -> Set("TINYINT", "SMALLINT", "INT", "BIGINT"),
-    "DOUBLE"  -> Set("DOUBLE", "DECIMAL"),
-    "FLOAT"   -> Set("FLOAT", "DECIMAL"),
-    //TODO: varchar/char?
+    "INTEGER"   -> Set("TINYINT", "SMALLINT", "INT", "BIGINT"),
+    "DOUBLE"    -> Set("DOUBLE", "DECIMAL"),
+    "FLOAT"     -> Set("FLOAT", "DECIMAL"),
     "STRING"    -> Set("VARCHAR", "CHAR", "STRING"),
     "BOOL"      -> Set("BOOLEAN"),
     "DATE"      -> Set("DATE", "TIMESTAMP"),
