@@ -474,7 +474,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getStepOutProps() {
     for (auto &tagIt : tagProps) {
         auto status = ectx()->schemaManager()->toTagID(spaceId, tagIt.first);
         if (!status.ok()) {
-            return Status::Error("No schema found for '%s'", tagIt.first);
+            return Status::Error("No schema found for '%s'", tagIt.first.c_str());
         }
         auto tagId = status.value();
         for (auto &prop : tagIt.second) {
@@ -511,7 +511,7 @@ StatusOr<std::vector<storage::cpp2::PropDef>> GoExecutor::getDstProps() {
     for (auto &tagIt : tagProps) {
         auto status = ectx()->schemaManager()->toTagID(spaceId, tagIt.first);
         if (!status.ok()) {
-            return Status::Error("No schema found for '%s'", tagIt.first);
+            return Status::Error("No schema found for '%s'", tagIt.first.c_str());
         }
         auto tagId = status.value();
         for (auto &prop : tagIt.second) {

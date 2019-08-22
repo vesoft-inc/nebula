@@ -114,7 +114,7 @@ bool BalancePlan::saveInStore(bool onlyPlan) {
         kv_->asyncMultiPut(kDefaultSpaceId,
                            kDefaultPartId,
                            std::move(data),
-                           [this, &baton, &ret] (kvstore::ResultCode code) {
+                           [&baton, &ret] (kvstore::ResultCode code) {
             if (kvstore::ResultCode::SUCCEEDED == code) {
                 ret = true;
             } else {
@@ -195,4 +195,3 @@ BalancePlan::Status BalancePlan::status(const folly::StringPiece& rawVal) {
 
 }  // namespace meta
 }  // namespace nebula
-
