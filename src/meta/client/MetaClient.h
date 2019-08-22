@@ -338,7 +338,8 @@ private:
     MetaChangedListener*  listener_{nullptr};
     folly::RWSpinLock     listenerLock_;
     std::atomic<ClusterID> clusterId_{0};
-    bool                  sendHeartBeat_ = false;
+    bool                  isRunning_{false};
+    bool                  sendHeartBeat_{false};
     std::atomic_bool      ready_{false};
     MetaConfigMap         metaConfigMap_;
     folly::RWSpinLock     configCacheLock_;
