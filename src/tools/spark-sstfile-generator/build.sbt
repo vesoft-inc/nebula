@@ -1,8 +1,8 @@
 import Commons._
 
 organization := "com.vesoft"
-// compatible with spark 1.6.0
-scalaVersion := "2.10.5"
+// compatible with spark 2.4.3
+scalaVersion := "2.12.8"
 
 // compatible with spark 1.6.2
 // scalaVersion := "2.11.8"
@@ -26,20 +26,21 @@ libraryDependencies ++= Seq(
   //  "com.databricks" %% "spark-csv" % "1.5.0" % "provided",
   //  "org.apache.spark" %% "spark-hive" % "1.6.2" % "provided",
 
-  // compatible with spark 1.6.0 & hadoop 2.6.0
-  "org.apache.spark" %% "spark-core" % "1.6.0" % "provided"
+  // compatible with spark 2.4.3 & hadoop 2.6.0
+  "org.apache.spark" %% "spark-core" % "2.4.3" % "provided"
     exclude ("org.apache.hadoop", "hadoop-client"),
-  "org.apache.spark" %% "spark-sql"  % "1.6.0" % "provided",
-  "org.apache.spark" %% "spark-yarn" % "1.6.0" % "provided"
+  "org.apache.spark" %% "spark-sql"  % "2.4.3" % "provided",
+  "org.apache.spark" %% "spark-yarn" % "2.4.3" % "provided"
     exclude ("org.apache.hadoop", "hadoop-yarn-api")
     exclude ("org.apache.hadoop", "hadoop-yarn-common")
     exclude ("org.apache.hadoop", "hadoop-client"),
-  "com.databricks"    %% "spark-csv"         % "1.5.0" % "provided",
-  "org.apache.spark"  %% "spark-hive"        % "1.6.0" % "provided",
-  "org.apache.hadoop" % "hadoop-common"      % "2.6.0" % "provided",
-  "org.apache.hadoop" % "hadoop-client"      % "2.6.0" % "provided",
-  "org.apache.hadoop" % "hadoop-yarn-api"    % "2.6.0" % "provided",
-  "org.apache.hadoop" % "hadoop-yarn-common" % "2.6.0" % "provided",
+//  "com.databricks"    %% "spark-csv"         % "1.5.0" % "provided",
+  "org.apache.spark"  %% "spark-hive"          % "2.4.3"  % "provided",
+  "org.apache.hadoop" % "hadoop-common"        % "2.6.0"  % "provided",
+  "org.apache.hadoop" % "hadoop-client"        % "2.6.0"  % "provided",
+  "org.apache.hadoop" % "hadoop-yarn-api"      % "2.6.0"  % "provided",
+  "org.apache.hadoop" % "hadoop-yarn-common"   % "2.6.0"  % "provided",
+  "mysql"             % "mysql-connector-java" % "5.1.38" % Runtime,
   //cmd line parsing
   "commons-cli"   % "commons-cli" % "1.4",
   "org.scalatest" %% "scalatest"  % "3.0.4" % Test,

@@ -15,8 +15,8 @@ import org.apache.commons.cli.{
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.io.BytesWritable
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{Partitioner, SparkConf, SparkContext}
 import org.slf4j.LoggerFactory
@@ -270,15 +270,13 @@ object SparkSstFileGenerator {
         DefaultCharset
       } else {
         try {
-          try {
-            Charset.forName(charsetOpt)
-            charsetOpt
-          } catch {
-            case _: UnsupportedCharsetException => {
-              log.error(
-                s"Argument: -hi --string_value_charset_input is a not supported charset:${charsetOpt}")
-              DefaultCharset
-            }
+          Charset.forName(charsetOpt)
+          charsetOpt
+        } catch {
+          case _: UnsupportedCharsetException => {
+            log.error(
+              s"Argument: -hi --string_value_charset_input is a not supported charset:${charsetOpt}")
+            DefaultCharset
           }
         }
       }
@@ -286,7 +284,8 @@ object SparkSstFileGenerator {
     // parse mapping file
     val mappingConfiguration: MappingConfiguration = MappingConfiguration(mappingFileInput)
 
-    val sparkConf  = new SparkConf().setAppName("nebula-graph-sstFileGenerator")
+    val sparkConf = new SparkConf().setAppName("nebula-graph-sstFileGenerator")
+    sparkConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     val sc         = new SparkContext(sparkConf)
     val sqlContext = new HiveContext(sc)
 
@@ -351,9 +350,9 @@ object SparkSstFileGenerator {
         //TODO:to handle multiple partition columns' Cartesian product
         val sql =
           s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${tag.tableName} WHERE ${whereClause} ${limit}"
-        val tagDF = sqlContext.sql(sql)
+        val tagDF: DataFrame = sqlContext.sql(sql)
         //RDD[(businessKey->values)]
-        val tagKeyAndValues = tagDF.map(row => {
+        val tagKeyAndValues = tagDF.rdd.map(row => {
           (row.getAs[String](tag.primaryKey) + "_" + tag.name, //businessId_tagName will be unique, and used as key before HASH
            allColumns
              .filter(!_.columnName.equalsIgnoreCase(tag.primaryKey))
@@ -385,8 +384,7 @@ object SparkSstFileGenerator {
             }
 
           }
-          .repartition(partitionNumber)
-          .sortByKey()
+          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
           .persist(StorageLevel.DISK_ONLY)
 
         tagKeyAndValuesPersisted.saveAsNewAPIHadoopFile(localSstFileOutput,
@@ -431,7 +429,7 @@ object SparkSstFileGenerator {
         val edgeDf = sqlContext.sql(
           s"SELECT ${columnExpression} FROM ${mappingConfiguration.databaseName}.${edge.tableName} WHERE ${whereClause} ${limit}")
         //assert(edgeDf.count() > 0)
-        val edgeKeyAndValues = edgeDf.map(row => {
+        val edgeKeyAndValues = edgeDf.rdd.map(row => {
           (row.getAs[String](edge.fromForeignKeyColumn) + "_" + edge.fromReferenceTag, // consistent with vertexId generation logic, to make sure that vertex and its' outbound edges are in the same partition
            row.getAs[String](edge.toForeignKeyColumn),
            allColumns
@@ -474,8 +472,7 @@ object SparkSstFileGenerator {
                  VertexOrEdgeEnum.Edge))
             }
           }
-          .repartition(partitionNumber)
-          .sortByKey()
+          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
           .persist(StorageLevel.DISK_ONLY)
 
         edgeKeyAndValuesPersisted.saveAsNewAPIHadoopFile(
@@ -517,7 +514,7 @@ object SparkSstFileGenerator {
                               databaseName: String): (Seq[Column], Seq[String]) = {
     val descriptionDF = sqlContext.sql(s"DESC ${databaseName}.${edge.tableName}")
     // all columns' name ---> type mapping in db
-    val allColumnsMapInDB: Seq[(String, String)] = descriptionDF
+    val allColumnsMapInDB: Seq[(String, String)] = descriptionDF.rdd
       .map {
         case Row(colName: String, colType: String, _) => {
           (colName.toUpperCase, colType.toUpperCase)
