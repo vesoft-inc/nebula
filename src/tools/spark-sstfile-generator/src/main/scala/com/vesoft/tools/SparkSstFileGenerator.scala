@@ -170,7 +170,7 @@ object SparkSstFileGenerator {
   /**
     * Partition by the partitionId part of key
     */
-  class SortByKeyPartitioner(num: Int) extends Partitioner {
+  class PartitionIdPartitioner(num: Int) extends Partitioner {
     override def numPartitions: Int = num
 
     override def getPartition(key: Any): Int = {
@@ -321,7 +321,7 @@ object SparkSstFileGenerator {
     }
 
     val partitionNumber   = repartitionNumber.getOrElse(mappingConfiguration.partitions)
-    val partIdPartitioner = new SortByKeyPartitioner(partitionNumber)
+    val partIdPartitioner = new PartitionIdPartitioner(partitionNumber)
 
     //1) handle vertex, encode all column except PK column as a single Tag's properties
     mappingConfiguration.tags.zipWithIndex.foreach {
@@ -383,9 +383,8 @@ object SparkSstFileGenerator {
             }
 
           }
-          .partitionBy(partIdPartitioner)
-          .sortByKey()
-          .persist(StorageLevel.MEMORY_AND_DISK_SER)
+          .persist(StorageLevel.DISK_ONLY) // Try to reduce memory consumption
+          .repartitionAndSortWithinPartitions(partIdPartitioner)
 
         tagKeyAndValuesPersisted.saveAsNewAPIHadoopFile(localSstFileOutput,
                                                         classOf[GraphPartitionIdAndKeyValueEncoded],
@@ -472,9 +471,8 @@ object SparkSstFileGenerator {
                  VertexOrEdgeEnum.Edge))
             }
           }
-          .partitionBy(partIdPartitioner)
-          .sortByKey()
-          .persist(StorageLevel.MEMORY_AND_DISK_SER)
+          .persist(StorageLevel.DISK_ONLY)
+          .repartitionAndSortWithinPartitions(partIdPartitioner)
 
         edgeKeyAndValuesPersisted.saveAsNewAPIHadoopFile(
           localSstFileOutput,
