@@ -1,0 +1,57 @@
+# Copyright (c) 2019 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License,
+# attached with Common Clause Condition 1.0, found in the LICENSES directory
+
+version: '3.2'
+services:
+  metad:
+    image: vesoft/nebula-graph:latest
+    expose:
+      - 45500
+    entrypoint:
+      - /usr/local/nebula/bin/nebula-metad
+      - --flagfile=/usr/local/nebula/etc/nebula-metad.conf
+      - --daemonize=false
+      - --meta_server_addrs=172.28.1.1:45500
+      - --local_ip=172.28.1.1
+      - --port=45500
+    networks:
+      nebula-net:
+        ipv4_address: 172.28.1.1
+
+  graphd:
+    image: vesoft/nebula-graph:latest
+    ports:
+      - 6699:3699
+    entrypoint:
+      - /usr/local/nebula/bin/nebula-graphd
+      - --flagfile=/usr/local/nebula/etc/nebula-graphd.conf
+      - --daemonize=false
+      - --meta_server_addrs=172.28.1.1:45500
+      - --port=3699
+    networks:
+      nebula-net:
+        ipv4_address: 172.28.1.2
+
+  storaged:
+    image: vesoft/nebula-graph:latest
+    expose:
+      - 44500
+    entrypoint:
+      - /usr/local/nebula/bin/nebula-storaged
+      - --flagfile=/usr/local/nebula/etc/nebula-storaged.conf
+      - --daemonize=false
+      - --meta_server_addrs=172.28.1.1:45500
+      - --local_ip=172.28.1.3
+      - --port=44500
+    networks:
+      nebula-net:
+        ipv4_address: 172.28.1.3
+
+networks:
+  nebula-net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
