@@ -536,6 +536,16 @@ ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> NebulaStore::space(GraphSpac
     return it->second;
 }
 
+std::vector<std::tuple<GraphSpaceID, std::string, std::string>> NebulaStore::statistics() {
+    std::vector<std::tuple<GraphSpaceID, std::string, std::string>> v;
+    v.reserve(spaces_.size());
+    for (auto& space : spaces_) {
+        for (auto& p : space.second->engines_) {
+            v.emplace_back(space.first, p->getDataRoot(), p->statistics());
+        }
+    }
+    return v;
+}
+
 }  // namespace kvstore
 }  // namespace nebula
-

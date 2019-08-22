@@ -6,6 +6,7 @@
 
 #include "graph/ShowExecutor.h"
 #include "network/NetworkUtils.h"
+#include "storage/client/StorageClient.h"
 
 namespace nebula {
 namespace graph {
@@ -63,6 +64,9 @@ void ShowExecutor::execute() {
         case ShowSentence::ShowType::kShowCreateEdge:
             showCreateEdge();
             break;
+        case ShowSentence::ShowType::kShowEngineStatus:
+            showEngineStatus();
+            break;
         case ShowSentence::ShowType::kUnknown:
             onError_(Status::Error("Type unknown"));
             break;
@@ -112,7 +116,6 @@ void ShowExecutor::showHosts() {
     };
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
-
 
 void ShowExecutor::showSpaces() {
     auto future = ectx()->getMetaClient()->listSpaces();
@@ -456,6 +459,63 @@ void ShowExecutor::showCreateEdge() {
     std::move(future).via(runner).thenValue(cb).thenError(error);
 }
 
+void ShowExecutor::showEngineStatus() {
+    auto future  = ectx()->getMetaClient()->listHosts();
+    auto *runner = ectx()->rctx()->runner();
+
+    auto cb = [this](auto &&resp)
+        -> folly::SemiFuture<
+            nebula::storage::StorageRpcResponse<nebula::storage::cpp2::StatisticsResp>> {
+        if (!resp.ok()) {
+            throw std::runtime_error(std::move(resp).status().toString());
+        }
+
+        auto retShowHosts = std::move(resp).value();
+        std::vector<HostAddr> v;
+        v.reserve(retShowHosts.size());
+
+        std::transform(retShowHosts.cbegin(), retShowHosts.cend(), std::back_inserter(v),
+                       [](auto &h) { return h.first; });
+
+        return ectx()->storage()->getStatistics(v);
+    };
+
+    auto statusHandle = [this](auto &&resp) {
+        std::vector<cpp2::RowValue> rows;
+        std::vector<std::string> header{"Ip", "Port" , "SpaceId", "Path", "EngineStatus"};
+        resp_ = std::make_unique<cpp2::ExecutionResponse>();
+        resp_->set_column_names(std::move(header));
+
+        for (auto &status : resp.responses()) {
+            HostAddr h = std::make_pair(status.host.ip, status.host.port);
+            auto ip    = NetworkUtils::ipFromHostAddr(h);
+            auto port  = NetworkUtils::portFromHostAddr(h);
+            for (auto &d : status.data) {
+                std::vector<cpp2::ColumnValue> row;
+                row.resize(5);
+                row[0].set_str(ip);
+                row[1].set_integer(port);
+                row[2].set_integer(d.space_id);
+                row[3].set_str(d.path);
+                row[4].set_str(d.status);
+                rows.emplace_back();
+                rows.back().set_columns(std::move(row));
+            }
+        }
+
+        resp_->set_rows(std::move(rows));
+        DCHECK(onFinish_);
+        onFinish_();
+    };
+
+    auto error = [this](auto &&e) {
+        LOG(ERROR) << "Exception caught: " << e.what();
+        DCHECK(onError_);
+        onError_(Status::Error(folly::stringPrintf("Internal error : %s", e.what().c_str())));
+    };
+
+    std::move(future).via(runner).thenValue(cb).thenValue(statusHandle).thenError(error);
+}
 
 void ShowExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     resp = std::move(*resp_);

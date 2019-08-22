@@ -127,6 +127,9 @@ public:
         std::vector<storage::cpp2::PropDef> returnCols,
         folly::EventBase* evb = nullptr);
 
+    folly::SemiFuture<StorageRpcResponse<storage::cpp2::StatisticsResp>> getStatistics(
+        const std::vector<HostAddr> hosts, folly::EventBase* evb = nullptr);
+
 protected:
     // Calculate the partition id for the given vertex id
     PartitionID partId(GraphSpaceID spaceId, int64_t id) const;
@@ -169,6 +172,11 @@ protected:
         std::unordered_map<HostAddr, Request> requests,
         RemoteFunc&& remoteFunc);
 
+    template <class RemoteFunc,
+              class Response = typename std::result_of<RemoteFunc(
+                  storage::cpp2::StorageServiceAsyncClient*, const HostAddr&)>::type::value_type>
+    folly::SemiFuture<StorageRpcResponse<Response>> collectStatusResponse(
+        folly::EventBase* evb, std::vector<HostAddr> hosts, RemoteFunc&& remoteFunc);
     // Cluster given ids into the host they belong to
     // The method returns a map
     //  host_addr (A host, but in most case, the leader will be chosen)
@@ -220,4 +228,3 @@ private:
 #include "storage/client/StorageClient.inl"
 
 #endif  // STORAGE_CLIENT_STORAGECLIENT_H_
-

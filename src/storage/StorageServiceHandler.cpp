@@ -114,6 +114,13 @@ StorageServiceHandler::future_memberChange(const cpp2::MemberChangeReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::StatisticsResp> StorageServiceHandler::future_statistics(
+    const nebula::cpp2::HostAddr &h) {
+    auto* processor = StatisticsProcessor::instance(kvstore_);
+    auto f = processor->getFuture();
+    processor->process(h);
+    return f;
+}
+
 }  // namespace storage
 }  // namespace nebula
-

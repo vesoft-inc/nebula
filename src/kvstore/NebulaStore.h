@@ -158,6 +158,8 @@ public:
 
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 
+    std::vector<std::tuple<GraphSpaceID, std::string, std::string>> statistics() override;
+
 private:
     /**
      * Implement four interfaces in Handler.
@@ -199,4 +201,3 @@ private:
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_NEBULASTORE_H_
-

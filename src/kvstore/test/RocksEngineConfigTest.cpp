@@ -84,6 +84,19 @@ TEST(RocksEngineConfigTest, createOptionsTest) {
     FLAGS_rocksdb_db_options = "";
 }
 
+TEST(RocksEngineConfigTest, statisticsOptionsTest) {
+    rocksdb::Options options;
+
+    FLAGS_rocksdb_stats_level = 2;
+    FLAGS_rocksdb_stats_dump_period_sec = 100;
+    auto s = initRocksdbOptions(options);
+    ASSERT_EQ(true, s.ok());
+
+
+    // Clean up
+    FLAGS_rocksdb_db_options = "";
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

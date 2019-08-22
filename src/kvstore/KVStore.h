@@ -145,6 +145,8 @@ public:
 
     virtual ResultCode flush(GraphSpaceID spaceId) = 0;
 
+    virtual std::vector<std::tuple<GraphSpaceID, std::string, std::string>> statistics() = 0;
+
 protected:
     KVStore() = default;
 };
@@ -152,4 +154,3 @@ protected:
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_KVSTORE_H_
-

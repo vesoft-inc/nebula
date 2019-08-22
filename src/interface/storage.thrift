@@ -169,6 +169,19 @@ struct AdminExecResp {
     2: common.HostAddr  leader,
 }
 
+
+struct StatisticsData {
+     1: common.GraphSpaceID  space_id,
+     2: string               path,
+     3: string               status,
+}
+
+struct StatisticsResp {
+    1: required ResponseCommon result,
+    2: common.HostAddr         host,
+    3: list<StatisticsData>    data,
+}
+
 struct AddPartReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
@@ -203,7 +216,6 @@ struct CatchUpDataReq {
     3: common.HostAddr     target,
 }
 
-
 service StorageService {
     QueryResponse getOutBound(1: GetNeighborsRequest req)
     QueryResponse getInBound(1: GetNeighborsRequest req)
@@ -225,5 +237,7 @@ service StorageService {
     AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
-}
 
+    //storage status
+    StatisticsResp statistics(1: common.HostAddr h);
+}

@@ -67,7 +67,6 @@ private:
     bool finishSending_{false};
     bool fulfilled_{false};
 };
-
 }  // Anonymous namespace
 
 
@@ -158,6 +157,62 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectResponse(
     return context->promise.getSemiFuture();
 }
 
+template <class RemoteFunc, class Response>
+folly::SemiFuture<StorageRpcResponse<Response>> StorageClient::collectStatusResponse(
+    folly::EventBase* evb, std::vector<HostAddr> hosts, RemoteFunc&& remoteFunc) {
+
+  auto context = std::make_shared<ResponseContext<bool, RemoteFunc, Response>>(
+        hosts.size(), std::move(remoteFunc));
+
+    if (evb == nullptr) {
+        DCHECK(!!ioThreadPool_);
+        evb = ioThreadPool_->getEventBase();
+    }
+
+    for (auto& host : hosts) {
+        auto res = context->insertRequest(host, true);
+
+        // Invoke the remote method
+        folly::via(evb, [this, evb, context, host, res]() mutable {
+            auto client = clientsMan_->client(host, evb);
+            // Result is a pair of <Request&, bool>
+            context
+                ->serverMethod(client.get(), host)
+                // Future process code will be executed on the IO thread
+                // Since all requests are sent using the same eventbase, all then-callback
+                // will be executed on the same IO thread
+                .then(evb, [this, context, host](folly::Try<Response>&& val) {
+                    if (val.hasException()) {
+                        LOG(ERROR)
+                            << "Request to " << host << " failed: " << val.exception().what();
+                        context->resp.markFailure();
+                    } else {
+                        auto resp    = std::move(val.value());
+                        auto& result = resp.get_result();
+                        if (!result.get_failed_codes().empty()) {
+                            context->resp.markFailure();
+                        }
+
+                        // Adjust the latency
+                        context->resp.setLatency(result.get_latency_in_us());
+
+                        // Keep the response
+                        context->resp.responses().emplace_back(std::move(resp));
+                    }
+
+                    if (context->removeRequest(host)) {
+                        // Received all responses
+                        context->promise.setValue(std::move(context->resp));
+                    }
+                });
+        });  // via
+    }        // for
+    if (context->finishSending()) {
+        // Received all responses, most likely, all rpc failed
+        context->promise.setValue(std::move(context->resp));
+    }
+
+    return context->promise.getSemiFuture();
+}
 }   // namespace storage
 }   // namespace nebula
-

@@ -107,6 +107,8 @@ public:
 
     virtual ResultCode flush() = 0;
 
+    virtual std::string statistics() = 0;
+
 protected:
     GraphSpaceID spaceId_;
 };
@@ -114,4 +116,3 @@ protected:
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_KVENGINE_H_
-

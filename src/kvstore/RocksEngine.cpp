@@ -107,6 +107,8 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
 
     rocksdb::Options options;
     rocksdb::DB* db = nullptr;
+    stats_ = rocksdb::CreateDBStatistics();
+    options.statistics = stats_;
     rocksdb::Status status = initRocksdbOptions(options);
     CHECK(status.ok());
     if (mergeOp != nullptr) {
@@ -423,6 +425,8 @@ ResultCode RocksEngine::flush() {
         return ResultCode::ERR_UNKNOWN;
     }
 }
+
+std::string RocksEngine::statistics() { return stats_->ToString(); }
 
 }  // namespace kvstore
 }  // namespace nebula

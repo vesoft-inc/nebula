@@ -165,11 +165,14 @@ public:
 
     ResultCode flush() override;
 
+    std::string statistics() override;
+
 private:
     std::string partKey(PartitionID partId);
 
 private:
     std::string  dataPath_;
+    std::shared_ptr<rocksdb::Statistics> stats_{nullptr};
     std::unique_ptr<rocksdb::DB> db_{nullptr};
     int32_t partsNum_ = -1;
 };
@@ -177,4 +180,3 @@ private:
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_ROCKSENGINE_H_
-

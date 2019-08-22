@@ -198,6 +198,22 @@ TEST(RocksEngineTest, CompactTest) {
     EXPECT_EQ(ResultCode::SUCCEEDED, engine->compact());
 }
 
+TEST(RocksEngineTest, StatisticTest) {
+    fs::TempDir rootPath("/tmp/rocksdb_engine_CompactTest.XXXXXX");
+    auto engine = std::make_unique<RocksEngine>(0, rootPath.path());
+    std::vector<KV> data;
+    for (int32_t i = 2; i < 100;  i++) {
+        data.emplace_back(folly::stringPrintf("key_%d", i),
+                          folly::stringPrintf("value_%d", i));
+    }
+    EXPECT_EQ(ResultCode::SUCCEEDED, engine->multiPut(std::move(data)));
+    auto s = engine->statistics();
+
+    std::regex regex("(.*) : (.*)", std::regex::extended);
+    std::smatch m;
+    EXPECT_EQ(std::regex_search(s, m, regex), true);
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 
@@ -209,4 +225,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-

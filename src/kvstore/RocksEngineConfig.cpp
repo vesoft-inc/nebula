@@ -42,6 +42,22 @@ DEFINE_int32(rocksdb_batch_size,
 DEFINE_string(part_man_type,
               "memory",
               "memory, meta");
+
+static bool validateRocksdbStatsLevel(const char* flagname, int value) {
+    if (value < rocksdb::StatsLevel::kAll && value >= 0) {
+        return true;
+    }
+
+    VLOG(3) << "Invalid value for --" << flagname << ": " << value;
+    return false;
+}
+
+DEFINE_int32(rocksdb_stats_level, 0,
+             "Statistics Level for RocksDB. Default is 0 (kExceptHistogramOrTimers)");
+DEFINE_validator(rocksdb_stats_level, &validateRocksdbStatsLevel);
+
+DEFINE_int32(rocksdb_stats_dump_period_sec, 0, "DBOptions::stats_dump_period_sec for RocksDB");
+
 /*
  * For these un-supported string options as below, will need to specify them with gflag.
  */
@@ -84,6 +100,14 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts) {
     bbtOpts.block_cache = rocksdb::NewLRUCache(FLAGS_rocksdb_block_cache * 1024 * 1024);
     baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
     baseOpts.create_if_missing = true;
+
+    if (baseOpts.statistics != nullptr) {
+        baseOpts.statistics->stats_level_ =
+            static_cast<rocksdb::StatsLevel>(FLAGS_rocksdb_stats_level);
+        if (FLAGS_rocksdb_stats_dump_period_sec != 0) {
+            baseOpts.stats_dump_period_sec = FLAGS_rocksdb_stats_dump_period_sec;
+        }
+    }
     return s;
 }
 

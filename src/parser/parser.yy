@@ -104,6 +104,7 @@ class GraphScanner;
 %token KW_ORDER KW_ASC
 %token KW_FETCH KW_PROP
 %token KW_DISTINCT KW_ALL
+%token KW_ENGINE KW_STATUS
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -1227,6 +1228,9 @@ show_sentence
     }
     | KW_SHOW KW_CREATE KW_EDGE name_label {
         $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdge, $4);
+    }
+    | KW_SHOW KW_ENGINE KW_STATUS {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowEngineStatus);
     }
     ;
 

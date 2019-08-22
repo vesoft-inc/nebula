@@ -141,6 +141,11 @@ public:
         return ResultCode::ERR_UNSUPPORTED;
     }
 
+    std::vector<std::tuple<GraphSpaceID, std::string, std::string>> statistics() override {
+        std::vector<std::tuple<GraphSpaceID, std::string, std::string>> v;
+        return v;
+    }
+
 private:
     std::string getRowKey(const std::string& key) {
         return key.substr(sizeof(PartitionID), key.size() - sizeof(PartitionID));
@@ -183,4 +188,3 @@ private:
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_PLUGINS_HBASE_HBASESTORE_H_
-

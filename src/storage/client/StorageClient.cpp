@@ -234,6 +234,16 @@ folly::SemiFuture<StorageRpcResponse<cpp2::EdgePropResponse>> StorageClient::get
         });
 }
 
+folly::SemiFuture<StorageRpcResponse<storage::cpp2::StatisticsResp>> StorageClient::getStatistics(
+    const std::vector<HostAddr> hosts, folly::EventBase* evb) {
+    return collectStatusResponse(evb, hosts,
+                           [](cpp2::StorageServiceAsyncClient* client, const HostAddr& h) {
+                               nebula::cpp2::HostAddr host;
+                               host.set_ip(h.first);
+                               host.set_port(h.second);
+                               return client->future_statistics(host);
+                           });
+}
 
 PartitionID StorageClient::partId(GraphSpaceID spaceId, int64_t id) const {
     auto parts = partsNum(spaceId);

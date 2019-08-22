@@ -68,6 +68,8 @@ public:
     folly::Future<cpp2::AdminExecResp>
     future_memberChange(const cpp2::MemberChangeReq& req) override;
 
+    folly::Future<cpp2::StatisticsResp> future_statistics(const nebula::cpp2::HostAddr& h) override;
+
 private:
     kvstore::KVStore* kvstore_ = nullptr;
     meta::SchemaManager* schemaMan_;

@@ -102,6 +102,30 @@ private:
     explicit WaitingForCatchUpDataProcessor(kvstore::KVStore* kvstore)
             : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr) {}
 };
+
+class StatisticsProcessor : public BaseProcessor<cpp2::StatisticsResp> {
+public:
+    static StatisticsProcessor* instance(kvstore::KVStore* kvstore) {
+        return new StatisticsProcessor(kvstore);
+    }
+
+    void process(const nebula::cpp2::HostAddr& h) {
+        auto status = kvstore_->statistics();
+        std::vector<cpp2::StatisticsData> v;
+        for (auto& s : status) {
+            v.emplace_back(apache::thrift::FragileConstructor::FRAGILE, std::get<0>(s),
+                           std::get<1>(s), std::get<2>(s));
+        }
+        resp_.set_data(std::move(v));
+        resp_.set_host(h);
+        this->onFinished();
+    }
+
+private:
+    explicit StatisticsProcessor(kvstore::KVStore* kvstore)
+        : BaseProcessor<cpp2::StatisticsResp>(kvstore, nullptr) {}
+};
+
 }  // namespace storage
 }  // namespace nebula
 

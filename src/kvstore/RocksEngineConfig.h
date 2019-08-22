@@ -35,6 +35,8 @@ DECLARE_int32(rocksdb_batch_size);
 
 DECLARE_string(part_man_type);
 
+DECLARE_int32(rocksdb_stats_level);
+DECLARE_int32(rocksdb_stats_dump_period_sec);
 
 namespace nebula {
 namespace kvstore {
@@ -44,4 +46,3 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts);
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_ROCKSENGINECONFIG_H_
-

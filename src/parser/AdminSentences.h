@@ -29,7 +29,8 @@ public:
         kShowRoles,
         kShowCreateSpace,
         kShowCreateTag,
-        kShowCreateEdge
+        kShowCreateEdge,
+        kShowEngineStatus
     };
 
     explicit ShowSentence(ShowType sType) {
