@@ -46,6 +46,8 @@ public:
                           folly::StringPiece end,
                           KVCallback cb);
 
+    void asyncAtomicOp(raftex::AtomicOp op, KVCallback cb);
+
     void asyncAddLearner(const HostAddr& learner, KVCallback cb);
     /**
      * Methods inherited from RaftPart
@@ -55,8 +57,6 @@ public:
     void onLostLeadership(TermID term) override;
 
     void onElected(TermID term) override;
-
-    std::string compareAndSet(const std::string& log) override;
 
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 

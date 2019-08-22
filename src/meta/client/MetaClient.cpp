@@ -62,12 +62,18 @@ bool MetaClient::isMetadReady() {
 
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     setGflagsModule();
+    isRunning_ = true;
     int tryCount = count;
-    while (!isMetadReady() && ((count == -1) || (tryCount > 0))) {
+    while (!isMetadReady() && ((count == -1) || (tryCount > 0)) && isRunning_) {
         LOG(INFO) << "Waiting for the metad to be ready!";
         --tryCount;
         ::sleep(retryIntervalSecs);
     }  // end while
+
+    if (!isRunning_) {
+        LOG(ERROR) << "Connect to the MetaServer Failed";
+        return false;
+    }
 
     CHECK(bgThread_->start());
     if (sendHeartBeat_) {
@@ -88,6 +94,7 @@ void MetaClient::stop() {
         bgThread_->wait();
         bgThread_.reset();
     }
+    isRunning_ = false;
 }
 
 void MetaClient::heartBeatThreadFunc() {
