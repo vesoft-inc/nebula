@@ -180,7 +180,7 @@ object SparkSstFileGenerator {
 
   val DefaultVersion = 1
 
-  val random = scala.util.Random
+  val random = new scala.util.Random
 
   // default charset when encoding String type
   val DefaultCharset = "UTF-8"
@@ -320,7 +320,8 @@ object SparkSstFileGenerator {
       }
     }
 
-    val partitionNumber = repartitionNumber.getOrElse(mappingConfiguration.partitions)
+    val partitionNumber   = repartitionNumber.getOrElse(mappingConfiguration.partitions)
+    val partIdPartitioner = new SortByKeyPartitioner(partitionNumber)
 
     //1) handle vertex, encode all column except PK column as a single Tag's properties
     mappingConfiguration.tags.zipWithIndex.foreach {
@@ -365,7 +366,7 @@ object SparkSstFileGenerator {
               val vertexId: BigInt = idGeneratorFunction.apply(key)
               // assert(vertexId > 0)
               // random id, used to evenly distribute data
-              val randomId: Int = random.nextInt(partitionNumber)
+              val randomId: Int = random.nextInt(partitionNumber) + 1
               // actual graph partition
               val graphPartitionId = (vertexId % partitionNumber).toInt
 
@@ -382,7 +383,9 @@ object SparkSstFileGenerator {
             }
 
           }
-          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
+          .partitionBy(partIdPartitioner)
+          .sortByKey()
+          .persist(StorageLevel.MEMORY_AND_DISK_SER)
 
         tagKeyAndValuesPersisted.saveAsNewAPIHadoopFile(localSstFileOutput,
                                                         classOf[GraphPartitionIdAndKeyValueEncoded],
@@ -443,7 +446,7 @@ object SparkSstFileGenerator {
               assert(id > 0)
               val graphPartitionId: Int = (id % partitionNumber).toInt
 
-              val randomId: Int = random.nextInt(partitionNumber)
+              val randomId: Int = random.nextInt(partitionNumber) + 1
 
               val dstId = idGeneratorFunction.apply(dstIdString)
 
@@ -469,7 +472,9 @@ object SparkSstFileGenerator {
                  VertexOrEdgeEnum.Edge))
             }
           }
-          .repartitionAndSortWithinPartitions(new SortByKeyPartitioner(partitionNumber))
+          .partitionBy(partIdPartitioner)
+          .sortByKey()
+          .persist(StorageLevel.MEMORY_AND_DISK_SER)
 
         edgeKeyAndValuesPersisted.saveAsNewAPIHadoopFile(
           localSstFileOutput,
