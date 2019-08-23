@@ -8,6 +8,7 @@
 
 #include "parser/Clauses.h"
 #include "parser/Sentence.h"
+#include "parser/MutateSentences.h"
 #include "network/NetworkUtils.h"
 
 namespace nebula {
@@ -299,6 +300,12 @@ public:
         name_.reset(name);
     }
 
+    ConfigRowItem(ConfigModule module, std::string* name, UpdateList *items) {
+        module_ = std::make_unique<ConfigModule>(module);
+        name_.reset(name);
+        updateItems_.reset(items);
+    }
+
     const ConfigModule* getModule() {
         return module_.get();
     }
@@ -311,12 +318,17 @@ public:
         return value_.get();
     }
 
+    const UpdateList* getUpdateItems() {
+        return updateItems_.get();
+    }
+
     std::string toString() const;
 
 private:
     std::unique_ptr<ConfigModule>   module_;
     std::unique_ptr<std::string>    name_;
     std::unique_ptr<Expression>     value_;
+    std::unique_ptr<UpdateList>     updateItems_;
 };
 
 class ConfigSentence final : public Sentence {

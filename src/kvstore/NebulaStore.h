@@ -180,6 +180,10 @@ public:
     ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
 
 private:
+    void updateSpaceOption(GraphSpaceID spaceId,
+                           const std::unordered_map<std::string, std::string>& options,
+                           bool isDbOption) override;
+
     std::unique_ptr<KVEngine> newEngine(GraphSpaceID spaceId, const std::string& path);
 
     std::shared_ptr<Part> newPart(GraphSpaceID spaceId,

@@ -1341,6 +1341,32 @@ TEST(Parser, ConfigOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES storage:rocksdb_db_options = "
+                            "{ stats_dump_period_sec = 200 }";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES rocksdb_db_options={disable_auto_compaction=false}";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES storage:rocksdb_db_options = "
+                            "{stats_dump_period_sec = 200, disable_auto_compaction = false}";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "UPDATE VARIABLES storage:rocksdb_db_options = {}";
+        auto result = parser.parse(query);
+        ASSERT_FALSE(result.ok());
+    }
 }
 
 TEST(Parser, BalanceOperation) {

@@ -10,6 +10,7 @@
 #include "graph/test/TestEnv.h"
 #include "meta/ClientBasedGflagsManager.h"
 #include "meta/test/TestUtils.h"
+#include "storage/test/TestUtils.h"
 
 DECLARE_int32(load_data_interval_secs);
 
@@ -76,6 +77,17 @@ std::vector<meta::cpp2::ConfigItem> mockRegisterGflags() {
                                  type, mode, meta::toThriftValueStr(type, value)));
         configItems.emplace_back(meta::toThriftConfigItem(meta::cpp2::ConfigModule::STORAGE, "k3",
                                  type, mode, meta::toThriftValueStr(type, value)));
+    }
+    {
+        auto module = meta::cpp2::ConfigModule::STORAGE;
+        auto type = meta::cpp2::ConfigType::NESTED;
+        auto mode = meta::cpp2::ConfigMode::MUTABLE;
+        std::string value = R"({
+            "disable_auto_compactions":"false",
+            "write_buffer_size":"1048576"
+        })";
+        configItems.emplace_back(meta::toThriftConfigItem(module, "k4", type, mode,
+                                 meta::toThriftValueStr(type, value)));
     }
     return configItems;
 }
@@ -184,7 +196,7 @@ TEST_F(ConfigTest, ConfigTest) {
         std::string query = "SHOW VARIABLES storage";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        ASSERT_EQ(4, resp.get_rows()->size());
+        ASSERT_EQ(5, resp.get_rows()->size());
     }
     {
         cpp2::ExecutionResponse resp;
@@ -238,8 +250,17 @@ TEST_F(ConfigTest, ConfigTest) {
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string query = "UPDATE VARIABLES storage:k4 = {"
+                                "write_buffer_size = 2097152,"
+                                "disable_auto_compaction = true,"
+                                "level0_file_num_compaction_trigger=4"
+                            "}";
+        auto code = client->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
 }
-
 
 }  // namespace graph
 }  // namespace nebula

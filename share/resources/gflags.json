@@ -42,5 +42,10 @@
         "alsologtoemail",
         "version",
         "gflags_mode_json"
+    ],
+    "NESTED": [
+        "rocksdb_db_options",
+        "rocksdb_column_family_options",
+        "rocksdb_block_based_table_options"
     ]
 }

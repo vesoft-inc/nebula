@@ -1445,6 +1445,12 @@ set_config_item
     | name_label ASSIGN expression {
         $$ = new ConfigRowItem(ConfigModule::ALL, $1, $3);
     }
+    | config_module_enum COLON name_label ASSIGN L_BRACE update_list R_BRACE {
+        $$ = new ConfigRowItem($1, $3, $6);
+    }
+    | name_label ASSIGN L_BRACE update_list R_BRACE {
+        $$ = new ConfigRowItem(ConfigModule::ALL, $1, $4);
+    }
     ;
 
 show_config_item

@@ -15,9 +15,11 @@
 #include "meta/ServerBasedSchemaManager.h"
 #include "dataman/ResultSchemaProvider.h"
 #include "meta/test/TestUtils.h"
+#include "meta/ClientBasedGflagsManager.h"
 
 DECLARE_int32(load_data_interval_secs);
 DECLARE_int32(heartbeat_interval_secs);
+DECLARE_string(rocksdb_db_options);
 
 
 namespace nebula {
@@ -383,6 +385,15 @@ public:
         partNum++;
     }
 
+    void onSpaceOptionUpdated(GraphSpaceID spaceId,
+                              const std::unordered_map<std::string, std::string>& update)
+                              override {
+        UNUSED(spaceId);
+        for (const auto& kv : update) {
+            options[kv.first] = kv.second;
+        }
+    }
+
     void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override {
         LOG(INFO) << "[" << spaceId << ", " << partId << "] removed!";
         partNum--;
@@ -400,6 +411,7 @@ public:
     int32_t spaceNum = 0;
     int32_t partNum = 0;
     int32_t partChanged = 0;
+    std::unordered_map<std::string, std::string> options;
 };
 
 TEST(MetaClientTest, DiffTest) {
@@ -662,6 +674,69 @@ TEST(MetaClientTest, RetryUntilLimitTest) {
         baton.wait();
     }
 }
+
+TEST(MetaClientTest, RocksdbOptionsTest) {
+    FLAGS_load_data_interval_secs = 1;
+    fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
+    uint32_t localMetaPort = 0;
+    auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    auto listener = std::make_unique<TestListener>();
+    auto module = cpp2::ConfigModule::STORAGE;
+    auto type = cpp2::ConfigType::NESTED;
+    auto mode = meta::cpp2::ConfigMode::MUTABLE;
+
+    auto client = std::make_shared<MetaClient>(threadPool,
+        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    client->waitForMetadReady();
+    client->registerListener(listener.get());
+    client->gflagsModule_ = module;
+
+    ClientBasedGflagsManager cfgMan(client.get());
+    // mock some rocksdb gflags to meta
+    {
+        std::vector<cpp2::ConfigItem> configItems;
+        FLAGS_rocksdb_db_options = R"({
+            "disable_auto_compactions":"false",
+            "write_buffer_size":"1048576"
+        })";
+        configItems.emplace_back(toThriftConfigItem(
+            module, "rocksdb_db_options", type,
+            mode, toThriftValueStr(type, FLAGS_rocksdb_db_options)));
+        cfgMan.registerGflags(configItems);
+    }
+    {
+        std::vector<HostAddr> hosts = {{0, 0}};
+        TestUtils::registerHB(sc->kvStore_.get(), hosts);
+        client->createSpace("default_space", 9, 1).get();
+        sleep(FLAGS_load_data_interval_secs + 1);
+    }
+    {
+        std::string name = "rocksdb_db_options";
+        std::string updateValue = "write_buffer_size=2097152,"
+                                  "disable_auto_compactions=true,"
+                                  "level0_file_num_compaction_trigger=4";
+        // update config
+        auto setRet = cfgMan.setConfig(module, name, type, updateValue).get();
+        ASSERT_TRUE(setRet.ok());
+
+        // get from meta server
+        auto getRet = cfgMan.getConfig(module, name).get();
+        ASSERT_TRUE(getRet.ok());
+        auto item = getRet.value().front();
+        auto value = boost::get<std::string>(item.get_value());
+
+        sleep(FLAGS_load_data_interval_secs + 1);
+        ASSERT_EQ(FLAGS_rocksdb_db_options, value);
+        ASSERT_EQ(listener->options["write_buffer_size"], "2097152");
+        ASSERT_EQ(listener->options["disable_auto_compactions"], "true");
+        ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "4");
+    }
+}
+
 
 }  // namespace meta
 }  // namespace nebula

@@ -465,6 +465,7 @@ enum ConfigType {
     DOUBLE  = 0x01,
     BOOL    = 0x02,
     STRING  = 0x03,
+    NESTED  = 0x04,
 } (cpp.enum_strict)
 
 enum ConfigMode {
