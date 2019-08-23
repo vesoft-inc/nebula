@@ -209,7 +209,7 @@ bash> sudo make install
     bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake python maven java-1.8.0-openjdk
     ```
 
-    通过 vesoft offer
+    通过 vesoft 提供的包
 
     ```
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz

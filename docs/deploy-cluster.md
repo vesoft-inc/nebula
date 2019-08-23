@@ -52,7 +52,7 @@ Property Name               | Default Value            | Description
 --------------------------- | ------------------------ | -----------
 `port`                      | 45500                    | Meta daemon listening port.
 `reuse_port`                | true                     | Whether to turn on the SO_REUSEPORT option.
-`data_path`                 | ""                       | Root data path.
+`data_path`                 | ""                       | Root data path. Multi-path is not supported
 `meta_server_addrs`                     | ""                       | It is a list of IPs split by comma, the ips number equals replica number. If empty, it means replica is 1.
 `local_ip`                  | ""                       | Local ip speicified for NetworkUtils::getLocalIP.
 `num_io_threads`            | 16                       | Number of IO threads.
@@ -62,7 +62,6 @@ Property Name               | Default Value            | Description
 `pid_file`                  | "pids/nebula-metad.pid"  | File to hold the process id.
 `daemonize`                 | true                     | Whether run as a daemon process.
 `cluster_id`                | 0                        | A unique id for each cluster.
-`putTryNum`                 | 10                       | Number of attempts to generate cluster ID.
 `load_config_interval_secs` | 2 * 60                   | Load config interval.
 `meta_ingest_thread_num`    | 3.                       | Meta daemon's ingest thread number.
 

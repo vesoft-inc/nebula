@@ -49,7 +49,7 @@ metas， storages 和 graphs 包含其自身的 hosts。
 --------------------------- | ------------------------ | -----------
 `port`                      | 45500                    | Meta daemon 监听端口
 `reuse_port`                | true                     | 开启 SO_REUSEPORT 选项
-`data_path`                 | ""                       | 根数据目录
+`data_path`                 | ""                       | 根数据目录，不支持多目录
 `meta_server_addrs`                     | ""                       | 一系列由逗号分隔的IP地址，IP数与副本数相等，如果为空，则表明副本数为1
 `local_ip`                  | ""                       | 指定本地IP  NetworkUtils::getLocalIP.
 `num_io_threads`            | 16                       | IO 线程数
@@ -59,7 +59,6 @@ metas， storages 和 graphs 包含其自身的 hosts。
 `pid_file`                  | "pids/nebula-metad.pid"  | 存储进程 ID 的文件
 `daemonize`                 | true                     | 作为 daemon 进程运行
 `cluster_id`                | 0                        | 每个集群都惟一的 ID
-`putTryNum`                 | 10                       | 尝试生成集群 ID 的次数
 `load_config_interval_secs` | 2 * 60                   | 加载配置间隔
 `meta_ingest_thread_num`    | 3.                       | Meta daemon的 ingest 线程数
 
