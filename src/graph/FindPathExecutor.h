@@ -10,13 +10,27 @@
 #include "base/Base.h"
 #include "graph/TraverseExecutor.h"
 #include "storage/client/StorageClient.h"
+#include "common/concurrent/Barrier.h"
 
 namespace nebula {
 namespace graph {
 
-const std::vector<std::string> kReserveProps_ = {"_type", "_rank", "_dst"};
 using SchemaProps = std::unordered_map<std::string, std::vector<std::string>>;
+const std::vector<std::string> kReserveProps_ = {"_dst", "_type", "_rank"};
+using Neighbor = std::tuple<VertexID, EdgeType, EdgeRanking>;
+using Neighbors = std::vector<Neighbor>;
+using Frontiers =
+        std::vector<
+                    std::pair<
+                              VertexID, /* start */
+                              Neighbors /* frontiers of vertex*/
+                             >
+                   >;
 
+enum class VisitedBy : char {
+    FROM,
+    TO,
+};
 class FindPathExecutor final : public TraverseExecutor {
 public:
     FindPathExecutor(Sentence *sentence, ExecutionContext *ectx);
@@ -55,10 +69,6 @@ private:
         Expression *filter_{nullptr};
     };
 
-    enum class VisitedBy : char {
-        FROM,
-        TO,
-    };
 
     Status prepareFrom();
 
@@ -72,17 +82,11 @@ private:
 
     Status prepareWhere();
 
-    using Frontiers =
-        std::vector<
-            std::pair<VertexID, /* start */
-                      std::vector<std::tuple<EdgeType, EdgeRanking, VertexID>> /* neighbors */
-                     >
-                   >;
-    void addGoFromFTask(folly::Promise<std::pair<VisitedBy, Frontiers>> &&proF);
+    void getFromFrontiers(std::vector<storage::cpp2::PropDef> props);
 
-    void addGoFromTTask(folly::Promise<std::pair<VisitedBy, Frontiers>> &&proT);
+    void getToFrontiers(std::vector<storage::cpp2::PropDef> props);
 
-    void findPath(std::vector<folly::Try<std::pair<VisitedBy, Frontiers>>> &&result);
+    void findPath();
 
     Status setupVids();
 
@@ -90,17 +94,12 @@ private:
 
     Status setupVidsFromExpr(std::vector<Expression*> &&vidList, Vertices &vertices);
 
-    Status getFrontiers(std::vector<VertexID> vids,
-                        std::vector<storage::cpp2::PropDef> props,
-                        bool reversely,
-                        Frontiers &frontiers);
-
     bool foundAllDest();
 
     Status doFilter(
             storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
             Expression *filter,
-            bool reversely,
+            bool isOutBound,
             Frontiers &frontiers);
 
     StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps(bool reversely);
@@ -121,13 +120,25 @@ private:
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     SchemaPropIndex                             srcTagProps_;
     SchemaPropIndex                             dstTagProps_;
+    concurrent::Barrier                         barrier_;
+    Status                                      fStatus_;
+    Status                                      tStatus_;
+    // visited vertices
     std::unordered_set<VertexID>                visitedFrom_;
     std::unordered_set<VertexID>                visitedTo_;
-    std::vector<VertexID>                       frontierFVids_;
-    std::vector<VertexID>                       frontierTVids_;
-    std::multimap<VertexID, std::string>        pathFrom_;
-    std::multimap<VertexID, std::string>        pathTo_;
-    std::vector<std::string>                    finalPath_;
+    // next step starting vertices
+    std::vector<VertexID>                       fromVids_;
+    std::vector<VertexID>                       toVids_;
+    // frontiers of vertices
+    std::pair<VisitedBy, Frontiers>             fromFrontiers_;
+    std::pair<VisitedBy, Frontiers>             toFrontiers_;
+    using StepOut = std::tuple<VertexID, EdgeType, EdgeRanking>;
+    using Path = std::vector<StepOut>;
+    // interim path
+    std::multimap<VertexID, Path>        pathFrom_;
+    std::multimap<VertexID, Path>        pathTo_;
+    // final path(shortest or all)
+    std::vector<Path>                    finalPath_;
     bool                                        stop_{false};
 };
 }  // namespace graph

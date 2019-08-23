@@ -531,6 +531,10 @@ public:
         return where_.get();
     }
 
+    bool isShortest() const {
+        return isShortest_;
+    }
+
     std::string toString() const override;
 
 private:
