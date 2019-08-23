@@ -65,7 +65,7 @@ public:
         if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
             LOG(ERROR) << "Can't get metaServer address, status:" << metaAddrsRet.status()
                        << ", FLAGS_meta_server_addrs:" << FLAGS_meta_server_addrs;
-            return -1;
+            return EXIT_FAILURE;
         }
 
         std::vector<std::unique_ptr<thread::GenericWorker>> threads;
@@ -80,27 +80,23 @@ public:
         auto spaceResult = mClient_->getSpaceIdByNameFromCache(FLAGS_space_name);
         if (!spaceResult.ok()) {
             LOG(ERROR) << "Get SpaceID Failed: " << spaceResult.status();
-            return -1;
+            return EXIT_FAILURE;
         }
-
         spaceId_ = spaceResult.value();
-        if (FLAGS_method == "getVertices" || FLAGS_method == "addVertices") {
-            auto tagResult = mClient_->getTagIDByNameFromCache(spaceId_, FLAGS_tag_name);
-            if (!tagResult.ok()) {
-                LOG(ERROR) << "Get TagID Failed: " << tagResult.status();
-                return -1;
-            }
-            tagId_ = tagResult.value();
-        } else if (FLAGS_method == "getNeighbors" || FLAGS_method == "addEdges") {
-            auto edgeResult = mClient_->getEdgeTypeByNameFromCache(spaceId_, FLAGS_edge_name);
-            if (!edgeResult.ok()) {
-                LOG(ERROR) << "Get EdgeType Failed: " << edgeResult.status();
-                return -1;
-            }
-            edgeType_ = edgeResult.value();
-        } else {
-            LOG(FATAL) << "Unknown method name " << FLAGS_method;
+
+        auto tagResult = mClient_->getTagIDByNameFromCache(spaceId_, FLAGS_tag_name);
+        if (!tagResult.ok()) {
+            LOG(ERROR) << "TagID not exist: " << tagResult.status();
+            return EXIT_FAILURE;
         }
+        tagId_ = tagResult.value();
+
+        auto edgeResult = mClient_->getEdgeTypeByNameFromCache(spaceId_, FLAGS_edge_name);
+        if (!edgeResult.ok()) {
+            LOG(ERROR) << "EdgeType not exist: " << edgeResult.status();
+            return EXIT_FAILURE;
+        }
+        edgeType_ = edgeResult.value();
 
         client_ = std::make_unique<StorageClient>(threadPool_, mClient_.get());
         time::Duration duration;
