@@ -602,8 +602,8 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
                 if (colTypes[i] == SupportedType::UNKNOWN) {
                     switch (record[i].which()) {
                         case 0:
-                            // all integers in InterimResult are regarded as type of VID
-                            type = SupportedType::VID;
+                            // all integers in InterimResult are regarded as type of INT
+                            type = SupportedType::INT;
                             break;
                         case 1:
                             type = SupportedType::DOUBLE;
@@ -676,7 +676,7 @@ void GoExecutor::onEmptyInputs() {
 }
 
 
-bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) {
+bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
     auto all = rpcResp.responses();
     for (auto &resp : all) {
         if (resp.get_vertices() == nullptr) {
@@ -713,7 +713,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) {
                 getters.getAliasProp = [&](const std::string &,
                                            const std::string &prop) -> OptVariantType {
                     auto res = RowReader::getPropByName(&*iter, prop);
-                    if (pushFlag && prop != "_dst" && prop != "_src") {
+                    if (pushFlag) {
                         colTypes.back() = iter->getSchema()->getFieldType(prop).type;
                     }
                     if (ok(res)) {

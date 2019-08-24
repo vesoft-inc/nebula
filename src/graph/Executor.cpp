@@ -229,6 +229,7 @@ StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
         return Status::Error("Invalid value type");
     }
 
+    int64_t timestamp;
     if (value.which() == VAR_STR) {
         std::string timeStr = boost::get<std::string>(value);
         static const std::regex reg("^[1-9]\\d{3}-"
@@ -249,17 +250,16 @@ StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
 
         time.tm_year -= 1900;
         time.tm_mon--;
-        auto timestamp = mktime(&time);
-        if (timestamp < 0) {
-            return Status::Error("Invalid timestamp type");
-        }
-        return timestamp;
+        timestamp = mktime(&time);
+    } else {
+        timestamp = boost::get<int64_t>(value);
     }
-    auto result = boost::get<int64_t>(value);
-    if (result < 0) {
-        return Status::Error("Invalid timestamp value");
+
+    static const int64_t maxTimestamp = std::numeric_limits<int64_t>::max() / 1000000000;
+    if (timestamp < 0 || (timestamp > maxTimestamp)) {
+        return Status::Error("Invalid timestamp type");
     }
-    return result;
+    return timestamp;
 }
 
 }   // namespace graph

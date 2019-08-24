@@ -86,7 +86,7 @@ std::vector<cpp2::RowValue> InterimResult::getRows() const {
                     int64_t v;
                     auto rc = rowIter->getVid(field, v);
                     CHECK(rc == ResultType::SUCCEEDED);
-                    row.back().set_integer(v);
+                    row.back().set_id(v);
                     break;
                 }
                 case SupportedType::DOUBLE: {

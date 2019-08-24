@@ -149,7 +149,7 @@ private:
      */
     using Callback = std::function<void(std::vector<VariantType>,
                                    std::vector<nebula::cpp2::SupportedType>)>;
-    bool processFinalResult(RpcResponse &rpcResp, Callback cb);
+    bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
 
     /**
      * A container to hold the mapping from vertex id to its properties, used for lookups

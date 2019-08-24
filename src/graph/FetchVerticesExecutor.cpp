@@ -57,7 +57,7 @@ Status FetchVerticesExecutor::prepareClauses() {
         for (auto i = 0u; i < colNames_.size(); i++) {
             auto type = labelSchema_->getFieldType(colNames_[i]);
             if (type == CommonConstants::kInvalidValueType()) {
-                LOG(INFO) << "ERROR type for " << colNames_[i];
+                LOG(ERROR) << "ERROR type for " << colNames_[i];
                 colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
                 continue;
             }

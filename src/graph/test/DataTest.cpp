@@ -375,7 +375,16 @@ TEST_F(DataTest, InsertVertex) {
         auto code = client_->execute(cmd, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
     }
-        // Insert timestamp
+    // Insert invalid timestamp
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE study(start_time, end_time) "
+                          "VALUES hash(\"Laura\")->hash(\"sun_school\"):"
+                          "(\"2300-01-01 10:00:00\", now()+3600*24*365*3)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+    // Insert timestamp succeeded
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT VERTEX school(name, create_time) VALUES "
