@@ -582,33 +582,43 @@ std::vector<std::string> GoExecutor::getResultColumnNames() const {
     return result;
 }
 
+
 bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<InterimResult> &result) {
     // Generic results
     std::shared_ptr<SchemaWriter> schema;
     std::unique_ptr<RowSetWriter> rsWriter;
     auto uniqResult = std::make_unique<std::unordered_set<std::string>>();
-    auto cb = [&] (std::vector<VariantType> record) {
+    auto cb = [&] (std::vector<VariantType> record,
+                       std::vector<nebula::cpp2::SupportedType> colTypes) {
         if (schema == nullptr) {
             schema = std::make_shared<SchemaWriter>();
             auto colnames = getResultColumnNames();
+            if (record.size() != colTypes.size()) {
+                LOG(FATAL) << "data nums: " << record.size()
+                           << " != type nums: " << colTypes.size();
+            }
             for (auto i = 0u; i < record.size(); i++) {
                 SupportedType type;
-                switch (record[i].which()) {
-                    case 0:
-                        // all integers in InterimResult are regarded as type of VID
-                        type = SupportedType::VID;
-                        break;
-                    case 1:
-                        type = SupportedType::DOUBLE;
-                        break;
-                    case 2:
-                        type = SupportedType::BOOL;
-                        break;
-                    case 3:
-                        type = SupportedType::STRING;
-                        break;
-                    default:
-                        LOG(FATAL) << "Unknown VariantType: " << record[i].which();
+                if (colTypes[i] == SupportedType::UNKNOWN) {
+                    switch (record[i].which()) {
+                        case 0:
+                            // all integers in InterimResult are regarded as type of VID
+                            type = SupportedType::VID;
+                            break;
+                        case 1:
+                            type = SupportedType::DOUBLE;
+                            break;
+                        case 2:
+                            type = SupportedType::BOOL;
+                            break;
+                        case 3:
+                            type = SupportedType::STRING;
+                            break;
+                        default:
+                            LOG(FATAL) << "Unknown VariantType: " << record[i].which();
+                    }
+                } else {
+                    type = colTypes[i];
                 }
                 schema->appendCol(colnames[i], type);
             }  // for
@@ -666,7 +676,7 @@ void GoExecutor::onEmptyInputs() {
 }
 
 
-bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
+bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) {
     auto all = rpcResp.responses();
     for (auto &resp : all) {
         if (resp.get_vertices() == nullptr) {
@@ -697,10 +707,15 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             RowSetReader rsReader(eschema, vdata.edge_data);
             auto iter = rsReader.begin();
             while (iter) {
+                std::vector<SupportedType> colTypes;
+                bool pushFlag = false;
                 auto &getters = expCtx_->getters();
                 getters.getAliasProp = [&](const std::string &,
                                            const std::string &prop) -> OptVariantType {
                     auto res = RowReader::getPropByName(&*iter, prop);
+                    if (pushFlag && prop != "_dst" && prop != "_src") {
+                        colTypes.back() = iter->getSchema()->getFieldType(prop).type;
+                    }
                     if (ok(res)) {
                         return value(res);
                     }
@@ -723,6 +738,10 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         LOG(ERROR) << msg;
                         return Status::Error(msg);
                     }
+                    if (pushFlag) {
+                        colTypes.back() = type.type;
+                    }
+
                     auto res = RowReader::getPropByIndex(vreader.get(), index);
                     if (ok(res)) {
                         return value(std::move(res));
@@ -742,12 +761,22 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         return Status::Error(msg);
                     }
                     auto index = tagIter->second;
+                    if (pushFlag) {
+                        SupportedType type = vertexHolder_->getType(index);
+                        colTypes.back() = type;
+                    }
                     return vertexHolder_->get(boost::get<int64_t>(dst), index);
                 };
                 getters.getVariableProp = [&] (const std::string &prop) {
+                    if (pushFlag) {
+                        colTypes.back() = getPropTypeFromInterim(prop);
+                    }
                     return getPropFromInterim(vdata.get_vertex_id(), prop);
                 };
                 getters.getInputProp = [&] (const std::string &prop) {
+                    if (pushFlag) {
+                        colTypes.back() = getPropTypeFromInterim(prop);
+                    }
                     return getPropFromInterim(vdata.get_vertex_id(), prop);
                 };
                 // Evaluate filter
@@ -764,7 +793,9 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 }
                 std::vector<VariantType> record;
                 record.reserve(yields_.size());
+                pushFlag = true;
                 for (auto *column : yields_) {
+                    colTypes.emplace_back(SupportedType::UNKNOWN);
                     auto *expr = column->expr();
                     auto value = expr->eval();
                     if (!value.ok()) {
@@ -773,7 +804,8 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                     }
                     record.emplace_back(std::move(value.value()));
                 }
-                cb(std::move(record));
+
+                cb(std::move(record), std::move(colTypes));
                 ++iter;
             }   // while `iter'
         }   // for `vdata'
@@ -791,13 +823,20 @@ OptVariantType GoExecutor::VertexHolder::get(VertexID id, int64_t index) const {
     }
 
     auto reader = RowReader::getRowReader(iter->second, schema_);
-
     auto res = RowReader::getPropByIndex(reader.get(), index);
     if (!ok(res)) {
         return Status::Error("get prop failed");
     }
 
     return value(std::move(res));
+}
+
+
+SupportedType GoExecutor::VertexHolder::getType(int64_t index) {
+    if (schema_ == nullptr) {
+        return nebula::cpp2::SupportedType::UNKNOWN;
+    }
+    return schema_->getFieldType(index).type;
 }
 
 
@@ -828,7 +867,7 @@ void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
 }
 
 
-VariantType GoExecutor::getPropFromInterim(VertexID id, const std::string &prop) const {
+OptVariantType GoExecutor::getPropFromInterim(VertexID id, const std::string &prop) const {
     auto rootId = id;
     if (backTracker_ != nullptr) {
         DCHECK_NE(steps_ , 1u);
@@ -836,6 +875,12 @@ VariantType GoExecutor::getPropFromInterim(VertexID id, const std::string &prop)
     }
     return index_->getColumnWithVID(rootId, prop);
 }
+
+
+SupportedType GoExecutor::getPropTypeFromInterim(const std::string &prop) const {
+    return index_->getColumnType(prop);
+}
+
 
 }   // namespace graph
 }   // namespace nebula

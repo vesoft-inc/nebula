@@ -118,6 +118,11 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
+            status = expr->prepare();
+            if (!status.ok()) {
+                return ovalue.status();
+            }
+
             ovalue = expr->eval();
             if (!ovalue.ok()) {
                 return ovalue.status();
@@ -137,7 +142,16 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
                            << ", input type " <<  value.which();
                 return Status::Error("ValueType is wrong");
             }
-            writeVariantType(writer, value);
+
+            if (schemaType.type == nebula::cpp2::SupportedType::TIMESTAMP) {
+                auto timestamp = toTimestamp(value);
+                if (!timestamp.ok()) {
+                    return timestamp.status();
+                }
+                writeVariantType(writer, timestamp.value());
+            } else {
+                writeVariantType(writer, value);
+            }
             fieldIndex++;
         }
         {

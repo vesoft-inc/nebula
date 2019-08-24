@@ -172,16 +172,16 @@ std::string Executor::valueTypeToString(nebula::cpp2::ValueType type) {
 
 void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
     switch (value.which()) {
-        case 0:
+        case VAR_INT64:
             writer << boost::get<int64_t>(value);
             break;
-        case 1:
+        case VAR_DOUBLE:
             writer << boost::get<double>(value);
             break;
-        case 2:
+        case VAR_BOOL:
             writer << boost::get<bool>(value);
             break;
-        case 3:
+        case VAR_STR:
             writer << boost::get<std::string>(value);
             break;
         default:
@@ -191,14 +191,16 @@ void Executor::writeVariantType(RowWriter &writer, const VariantType &value) {
 
 bool Executor::checkValueType(const nebula::cpp2::ValueType &type, const VariantType &value) {
     switch (value.which()) {
-        case 0:
-            return nebula::cpp2::SupportedType::INT == type.type;
-        case 1:
+        case VAR_INT64:
+            return nebula::cpp2::SupportedType::INT == type.type ||
+                   nebula::cpp2::SupportedType::TIMESTAMP == type.type;
+        case VAR_DOUBLE:
             return nebula::cpp2::SupportedType::DOUBLE == type.type;
-        case 2:
+        case VAR_BOOL:
             return nebula::cpp2::SupportedType::BOOL == type.type;
-        case 3:
-            return nebula::cpp2::SupportedType::STRING == type.type;
+        case VAR_STR:
+            return nebula::cpp2::SupportedType::STRING == type.type ||
+                   nebula::cpp2::SupportedType::TIMESTAMP == type.type;
         // TODO: Other type
     }
 
@@ -210,7 +212,7 @@ Status Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> sc
     for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
         auto schemaFieldName = schema->getFieldName(fieldIndex);
         if (UNLIKELY(nullptr == schemaFieldName)) {
-            return Status::Error("invalid field index");
+            return Status::Error("Invalid field index");
         }
         if (schemaFieldName != *props[fieldIndex]) {
             LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
@@ -220,6 +222,44 @@ Status Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> sc
         }
     }
     return Status::OK();
+}
+
+StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
+    if (value.which() != VAR_INT64 && value.which() != VAR_STR) {
+        return Status::Error("Invalid value type");
+    }
+
+    if (value.which() == VAR_STR) {
+        std::string timeStr = boost::get<std::string>(value);
+        static const std::regex reg("^[1-9]\\d{3}-"
+                                    "(0[1-9]|1[0-2]|\\d)-"
+                                    "(0[1-9]|[1-2][0-9]|3[0-1]|\\d)\\s+"
+                                    "(20|21|22|23|[0-1]\\d|\\d):"
+                                    "([0-5]\\d|\\d):"
+                                    "([0-5]\\d|\\d)$");
+        std::smatch result;
+        if (!std::regex_search(timeStr, result, reg)) {
+            return Status::Error("Invalid timestamp type");
+        }
+        struct tm time;
+        memset(&time, 0, sizeof(time));
+        sscanf(timeStr.c_str(), "%d-%d-%d %d:%d:%d",
+               &time.tm_year, &time.tm_mon, &time.tm_mday,
+               &time.tm_hour, &time.tm_min, &time.tm_sec);
+
+        time.tm_year -= 1900;
+        time.tm_mon--;
+        auto timestamp = mktime(&time);
+        if (timestamp < 0) {
+            return Status::Error("Invalid timestamp type");
+        }
+        return timestamp;
+    }
+    auto result = boost::get<int64_t>(value);
+    if (result < 0) {
+        return Status::Error("Invalid timestamp value");
+    }
+    return result;
 }
 
 }   // namespace graph

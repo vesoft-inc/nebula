@@ -15,10 +15,18 @@ FetchEdgesExecutor::FetchEdgesExecutor(Sentence *sentence, ExecutionContext *ect
 }
 
 Status FetchEdgesExecutor::prepare() {
+    return Status::OK();
+}
+
+Status FetchEdgesExecutor::prepareClauses() {
     DCHECK_NOTNULL(sentence_);
     Status status = Status::OK();
 
     do {
+        status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            break;
+        }
         expCtx_ = std::make_unique<ExpressionContext>();
         spaceId_ = ectx()->rctx()->session()->space();
         yieldClause_ = sentence_->yieldClause();
@@ -43,6 +51,16 @@ Status FetchEdgesExecutor::prepare() {
         status = prepareYield();
         if (!status.ok()) {
             break;
+        }
+
+        for (auto i = 0u; i < colNames_.size(); i++) {
+            auto type = labelSchema_->getFieldType(colNames_[i]);
+            if (type == CommonConstants::kInvalidValueType()) {
+                LOG(INFO) << "ERROR type for " << colNames_[i];
+                colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
+                continue;
+            }
+            colTypes_.emplace_back(type.type);
         }
     } while (false);
     return status;
@@ -72,7 +90,13 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
 
 void FetchEdgesExecutor::execute() {
     FLOG_INFO("Executing FetchEdges: %s", sentence_->toString().c_str());
-    auto status = setupEdgeKeys();
+    auto status = prepareClauses();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+    status = setupEdgeKeys();
     if (!status.ok()) {
         DCHECK(onError_);
         onError_(std::move(status));
@@ -280,7 +304,13 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
         auto iter = rsReader.begin();
         if (outputSchema == nullptr) {
             outputSchema = std::make_shared<SchemaWriter>();
-            getOutputSchema(eschema.get(), &*iter, outputSchema.get());
+            auto status = getOutputSchema(eschema.get(), &*iter, outputSchema.get());
+            if (!status.ok()) {
+                LOG(ERROR) << "Get getOutputSchema failed";
+                DCHECK(onError_);
+                onError_(std::move(status));
+                return;
+            }
             rsWriter = std::make_unique<RowSetWriter>(outputSchema);
         }
         while (iter) {

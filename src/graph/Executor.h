@@ -86,6 +86,8 @@ protected:
     Status checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> schema,
                           std::vector<std::string*> props);
 
+    StatusOr<int64_t> toTimestamp(const VariantType &value);
+
     Status checkIfGraphSpaceChosen() const {
         if (ectx()->rctx()->session()->space() == -1) {
             return Status::Error("Please choose a graph space with `USE spaceName' firstly");

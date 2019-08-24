@@ -136,6 +136,10 @@ public:
         return kind_ == kVariableProp;
     }
 
+    virtual bool isAliasExpression() const {
+        return kind_ == kAliasProp;
+    }
+
     /**
      * To encode an expression into a byte buffer.
      *

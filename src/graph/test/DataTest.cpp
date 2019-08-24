@@ -115,6 +115,25 @@ AssertionResult DataTest::prepareSchema() {
                                << " failed, error code "<< static_cast<int32_t>(code);
         }
     }
+    // Insert timestamp
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE TAG school(name string, create_time timestamp)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
+        }
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "CREATE EDGE study(start_time timestamp, end_time timestamp)";
+        auto code = client_->execute(cmd, resp);
+        if (cpp2::ErrorCode::SUCCEEDED != code) {
+            return TestError() << "Do cmd:" << cmd
+                               << " failed, error code "<< static_cast<int32_t>(code);
+        }
+    }
     sleep(FLAGS_load_data_interval_secs + 3);
     return TestOK();
 }
@@ -355,6 +374,44 @@ TEST_F(DataTest, InsertVertex) {
                           "hash(\"Laura\")->hash(\"Amber\"):(88)";
         auto code = client_->execute(cmd, resp);
         ASSERT_NE(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+        // Insert timestamp
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX school(name, create_time) VALUES "
+                          "hash(\"sun_school\"):(\"sun_school\", \"2010-01-01 10:00:00\")";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE study(start_time, end_time) "
+                          "VALUES hash(\"Laura\")->hash(\"sun_school\"):"
+                          "(\"2019-01-01 10:00:00\", now()+3600*24*365*3)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM hash(\"Laura\") OVER study "
+                          "YIELD $$.school.name, study._dst, "
+                          "$$.school.create_time, study.start_time";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t, int64_t, int64_t>> expected = {
+            {"sun_school", std::hash<std::string>()("sun_school"),  1262311200, 1535760000},
+        };
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "FETCH PROP ON school hash(\"sun_school\") ";;
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        std::vector<std::tuple<std::string, int64_t>> expected = {
+                {"sun_school", 1262311200},
+        };
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
     // TODO: Test insert multi tags, and delete one of them then check other existent
 }

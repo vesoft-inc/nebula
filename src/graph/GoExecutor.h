@@ -147,8 +147,9 @@ private:
      * To iterate on the final data collection, and evaluate the filter and yield columns.
      * For each row that matches the filter, `cb' would be invoked.
      */
-    using Callback = std::function<void(std::vector<VariantType>)>;
-    bool processFinalResult(RpcResponse &rpcResp, Callback cb) const;
+    using Callback = std::function<void(std::vector<VariantType>,
+                                   std::vector<nebula::cpp2::SupportedType>)>;
+    bool processFinalResult(RpcResponse &rpcResp, Callback cb);
 
     /**
      * A container to hold the mapping from vertex id to its properties, used for lookups
@@ -157,7 +158,11 @@ private:
     class VertexHolder final {
     public:
         OptVariantType get(VertexID id, int64_t index) const;
+
         void add(const storage::cpp2::QueryResponse &resp);
+
+        nebula::cpp2::SupportedType getType(int64_t index);
+
         const auto* schema() const {
             return schema_.get();
         }
@@ -167,7 +172,7 @@ private:
         // eg: get 3 vertexex, vertex A has tag1.prop1, vertex B has tag2.prop2,
         // vertex C has tag3.prop3,
         // and the schema is {[tag1.prop1, type], [tag2.prop2, type], [tag3.prop3, type]}
-        std::shared_ptr<ResultSchemaProvider>       schema_;
+        std::shared_ptr<ResultSchemaProvider>       schema_{nullptr};
         std::unordered_map<VertexID, std::string>   data_;
     };
 
@@ -192,7 +197,9 @@ private:
          std::unordered_map<VertexID, VertexID>     mapping_;
     };
 
-    VariantType getPropFromInterim(VertexID id, const std::string &prop) const;
+    OptVariantType getPropFromInterim(VertexID id, const std::string &prop) const;
+
+    nebula::cpp2::SupportedType getPropTypeFromInterim(const std::string &prop) const;
 
     enum FromType {
         kInstantExpr,
@@ -214,14 +221,14 @@ private:
     std::vector<YieldColumn*>                   yields_;
     bool                                        distinct_{false};
     bool                                        distinctPushDown_{false};
-    std::unique_ptr<InterimResult>              inputs_;
+    std::unique_ptr<InterimResult>              inputs_{nullptr};
     using InterimIndex = InterimResult::InterimResultIndex;
-    std::unique_ptr<InterimIndex>               index_;
-    std::unique_ptr<ExpressionContext>          expCtx_;
+    std::unique_ptr<InterimIndex>               index_{nullptr};
+    std::unique_ptr<ExpressionContext>          expCtx_{nullptr};
     std::vector<VertexID>                       starts_;
-    std::unique_ptr<VertexHolder>               vertexHolder_;
-    std::unique_ptr<VertexBackTracker>          backTracker_;
-    std::unique_ptr<cpp2::ExecutionResponse>    resp_;
+    std::unique_ptr<VertexHolder>               vertexHolder_{nullptr};
+    std::unique_ptr<VertexBackTracker>          backTracker_{nullptr};
+    std::unique_ptr<cpp2::ExecutionResponse>    resp_{nullptr};
     // The name of Tag or Edge, index of prop in data
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     SchemaPropIndex                              srcTagProps_;

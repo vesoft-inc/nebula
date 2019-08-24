@@ -98,6 +98,7 @@ VariantType Collector::getProp(const std::string &prop,
             VLOG(3) << "get prop: " << prop << ", value: " << v;
             return v;
         }
+        case SupportedType::TIMESTAMP:
         case SupportedType::INT: {
             int64_t v;
             reader->getInt(prop, v);

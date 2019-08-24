@@ -60,12 +60,15 @@ public:
 
     class InterimResultIndex final {
     public:
-        VariantType getColumnWithVID(VertexID id, const std::string &col) const;
+        OptVariantType getColumnWithVID(VertexID id, const std::string &col) const;
+        nebula::cpp2::SupportedType getColumnType(const std::string &col) const;
 
     private:
         friend class InterimResult;
         using Row = std::vector<VariantType>;
         std::vector<Row>                            rows_;
+        using SchemaPtr = std::shared_ptr<const meta::SchemaProviderIf>;
+        SchemaPtr                                   schema_{nullptr};
         std::unordered_map<std::string, uint32_t>   columnToIndex_;
         std::unordered_map<VertexID, uint32_t>      vidToRowIndex_;
     };
