@@ -17,7 +17,7 @@ namespace graph {
 
 using SchemaProps = std::unordered_map<std::string, std::vector<std::string>>;
 const std::vector<std::string> kReserveProps_ = {"_dst", "_type", "_rank"};
-using Neighbor = std::tuple<VertexID, EdgeType, EdgeRanking>;
+using Neighbor = std::tuple<VertexID, EdgeType, EdgeRanking>; /* dst, type, rank*/
 using Neighbors = std::vector<Neighbor>;
 using Frontiers =
         std::vector<
@@ -27,10 +27,13 @@ using Frontiers =
                              >
                    >;
 
+using StepOut = std::tuple<VertexID, EdgeType, EdgeRanking>; /* src, type, rank*/
+using Path = std::list<StepOut>;
 enum class VisitedBy : char {
     FROM,
     TO,
 };
+
 class FindPathExecutor final : public TraverseExecutor {
 public:
     FindPathExecutor(Sentence *sentence, ExecutionContext *ectx);
@@ -46,6 +49,8 @@ public:
     void feedResult(std::unique_ptr<InterimResult> result) override {
         inputs_ = std::move(result);
     }
+
+    void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
     struct Vertices {
@@ -88,13 +93,22 @@ private:
 
     void findPath();
 
+    inline void meetOddPath(VertexID src, VertexID dst, Neighbor &neighbor);
+
+    inline void meetEvenPath(VertexID intersectId);
+
+    inline void updatePath(
+            VertexID &src,
+            std::multimap<VertexID, Path> &pathToSrc,
+            Neighbor &neighbor,
+            std::multimap<VertexID, Path> &pathToNeighbor,
+            VisitedBy visitedBy);
+
     Status setupVids();
 
     Status setupVidsFromRef(Vertices &vertices);
 
     Status setupVidsFromExpr(std::vector<Expression*> &&vidList, Vertices &vertices);
-
-    bool foundAllDest();
 
     Status doFilter(
             storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
@@ -105,6 +119,8 @@ private:
     StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps(bool reversely);
 
     StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps();
+
+    static std::string buildPathString(Path &path);
 
 private:
     FindPathSentence                           *sentence_{nullptr};
@@ -123,6 +139,7 @@ private:
     concurrent::Barrier                         barrier_;
     Status                                      fStatus_;
     Status                                      tStatus_;
+    std::unordered_set<VertexID>                targetNotFound_;
     // visited vertices
     std::unordered_set<VertexID>                visitedFrom_;
     std::unordered_set<VertexID>                visitedTo_;
@@ -132,14 +149,12 @@ private:
     // frontiers of vertices
     std::pair<VisitedBy, Frontiers>             fromFrontiers_;
     std::pair<VisitedBy, Frontiers>             toFrontiers_;
-    using StepOut = std::tuple<VertexID, EdgeType, EdgeRanking>;
-    using Path = std::vector<StepOut>;
     // interim path
-    std::multimap<VertexID, Path>        pathFrom_;
-    std::multimap<VertexID, Path>        pathTo_;
+    std::multimap<VertexID, Path>               pathFrom_;
+    std::multimap<VertexID, Path>               pathTo_;
     // final path(shortest or all)
-    std::vector<Path>                    finalPath_;
-    bool                                        stop_{false};
+    std::vector<Path>                           finalPath_;
+    uint64_t                                    currentStep_{0};
 };
 }  // namespace graph
 }  // namespace nebula

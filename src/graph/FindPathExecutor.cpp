@@ -6,7 +6,6 @@
 
 #include "base/Base.h"
 #include "FindPathExecutor.h"
-#include "common/concurrent/Latch.h"
 
 namespace nebula {
 namespace graph {
@@ -136,11 +135,12 @@ void FindPathExecutor::execute() {
         return;
     }
 
-    auto step = step_.steps_ / 2 + step_.steps_ % 2;
+    auto steps = step_.steps_ / 2 + step_.steps_ % 2;
     fromVids_ = from_.vids_;
     toVids_ = to_.vids_;
     visitedFrom_.insert(fromVids_.begin(), fromVids_.end());
     visitedTo_.insert(toVids_.begin(), toVids_.end());
+    targetNotFound_.insert(toVids_.begin(), toVids_.end());
     for (auto &v : fromVids_) {
         Path path;
         pathFrom_.emplace(v, std::move(path));
@@ -150,7 +150,10 @@ void FindPathExecutor::execute() {
         pathTo_.emplace(v, path);
     }
 
-    while (step && !stop_) {
+    while (currentStep_ < steps) {
+        if (shortest_ && targetNotFound_.empty()) {
+            break;
+        }
         auto props = getStepOutProps(false);
         if (!props.ok()) {
             onError_(std::move(props).status());
@@ -168,8 +171,8 @@ void FindPathExecutor::execute() {
 
         findPath();
 
-        VLOG(3) << "Current step:" <<step;
-        --step;
+        VLOG(1) << "Current step:" << currentStep_;
+        ++currentStep_;;
     }
     onFinish_();
 }
@@ -177,35 +180,19 @@ void FindPathExecutor::execute() {
 void FindPathExecutor::findPath() {
     VLOG(3) << "find path.";
     std::unordered_set<VertexID> visited;
+    std::multimap<VertexID, Path> paths;
 
-    for (auto &f : fromFrontiers_.second) {
+    for (auto &frontier : fromFrontiers_.second) {
         // Notice: we treat edges with different ranking
         // between two vertices as different path
-        for (auto &v : f.second) {
-            auto dstId = std::get<0>(v);
+        for (auto &neighbor : frontier.second) {
+            auto dstId = std::get<0>(neighbor);
+            VLOG(1) << "src vertex:" << frontier.first;
+            VLOG(1) << "dst vertex:" << dstId;
             // if frontiers of F are neighbors of visitedByT,
             // we found an odd path
-            if (visitedTo_.count(std::get<0>(v)) == 1) {
-                if (shortest_ && foundAllDest()) {
-                    stop_ = true;
-                }
-                auto rangeF = pathFrom_.equal_range(f.first);
-                for (auto i = rangeF.first; i != rangeF.second; ++i) {
-                    auto rangeT = pathTo_.equal_range(dstId);
-                    for (auto j = rangeT.first; j != rangeT.second; ++j) {
-                        // Build path:
-                        // i->second + (src,type,ranking) + (dst, -type, ranking) + j->second
-                        Path path = i->second;
-                        StepOut s0(v);
-                        std::get<0>(s0) = f.first;
-                        path.emplace_back(s0);
-                        StepOut s1(v);
-                        std::get<1>(s1) = - std::get<1>(v);
-                        path.emplace_back(s1);
-                        path.insert(path.end(), j->second.begin(), j->second.end());
-                        finalPath_.emplace_back(std::move(path));
-                    }  // for `j'
-                }  // for `i'
+            if (visitedTo_.count(dstId) == 1) {
+                meetOddPath(frontier.first, dstId, neighbor);
             }
 
             // if we found dst have been visited,
@@ -214,53 +201,34 @@ void FindPathExecutor::findPath() {
                 continue;
             }
             // update the path to frontiers
-            auto rangeF = pathFrom_.equal_range(f.first);
-            std::multimap<VertexID, Path> paths;
-            for (auto i = rangeF.first; i != rangeF.second; ++i) {
-                // Build path:
-                // i->second + (src,type,ranking)
-                Path path = i->second;
-                StepOut s0(v);
-                std::get<0>(s0) = f.first;
-                path.emplace_back(s0);
-                paths.emplace(dstId, std::move(path));
-            }  // for `i'
-            pathFrom_.insert(std::make_move_iterator(paths.begin()),
-                             std::make_move_iterator(paths.end()));
+            updatePath(frontier.first, pathFrom_, neighbor, paths, VisitedBy::FROM);
             visited.emplace(dstId);
-        }  // for `v'
-    }  // for `f'
+        }  // for `frontier'
+    }  // for `neighbor'
+    pathFrom_.insert(std::make_move_iterator(paths.begin()),
+                     std::make_move_iterator(paths.end()));
     fromVids_.reserve(visited.size());
     std::copy(visited.begin(), visited.end(), std::back_inserter(fromVids_));
     visitedFrom_.insert(std::make_move_iterator(visited.begin()),
                         std::make_move_iterator(visited.end()));
 
     visited.clear();
-    for (auto &f : toFrontiers_.second) {
-        for (auto &v : f.second) {
-            auto dstId = std::get<0>(v);
+    paths.clear();
+    for (auto &frontier : toFrontiers_.second) {
+        for (auto &neighbor : frontier.second) {
+            auto dstId = std::get<0>(neighbor);
             // if we found dst have been visited,
             // that means we have already found a shorter path
             if ((visitedTo_.count(dstId) == 1) && shortest_) {
                 continue;
             }
             // update the path to frontiers
-            auto rangeT = pathTo_.equal_range(f.first);
-            std::multimap<VertexID, Path> paths;
-            for (auto i = rangeT.first; i != rangeT.second; ++i) {
-                // Build path:
-                // i->second + (src,type,ranking)
-                Path path = i->second;
-                StepOut s0(v);
-                std::get<0>(s0) = f.first;
-                path.emplace(path.begin(), s0);
-                paths.emplace(dstId, std::move(path));
-            }  // for `i'
-            pathTo_.insert(std::make_move_iterator(paths.begin()),
-                           std::make_move_iterator(paths.end()));
+            updatePath(frontier.first, pathTo_, neighbor, paths, VisitedBy::TO);
             visited.emplace(dstId);
-        }  // for `v'
-    }  // for `f'
+        }  // for `frontier'
+    }  // for `neighbor'
+    pathTo_.insert(std::make_move_iterator(paths.begin()),
+                   std::make_move_iterator(paths.end()));
     toVids_.reserve(visited.size());
     std::copy(visited.begin(), visited.end(), std::back_inserter(toVids_));
     visitedTo_.insert(std::make_move_iterator(visited.begin()),
@@ -273,33 +241,123 @@ void FindPathExecutor::findPath() {
                           toVids_.begin(), toVids_.end(),
                           std::inserter(intersect, intersect.end()));
     // if frontiersF meets frontiersT, we found an even path
-    if (!intersect.empty() && !stop_) {
-        if (shortest_ && foundAllDest()) {
-            stop_ = true;
+    if (!intersect.empty()) {
+        if (shortest_ && targetNotFound_.empty()) {
+            return;
         }
-        for (auto &v : intersect) {
-            auto rangeF = pathFrom_.equal_range(v);
-            auto rangeT = pathTo_.equal_range(v);
-            for (auto i = rangeF.first; i != rangeF.second; ++i) {
-                for (auto j = rangeT.first; j != rangeT.second; ++j) {
-                    // Build path:
-                    // i->second + (src,type,ranking) + j->second
-                    Path path = i->second;
-                    StepOut s0 = *(j->second.begin());
-                    std::get<0>(s0) = v;
-                    std::get<1>(s0) = - std::get<1>(s0);
-                    path.emplace_back(s0);
-                    path.insert(path.end(), j->second.begin(), j->second.end());
-                    finalPath_.emplace_back(std::move(path));
-                }
+        for (auto intersectId : intersect) {
+            meetEvenPath(intersectId);
+        }  // 'intersectId`
+    }
+}
+
+inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &neighbor) {
+    auto rangeF = pathFrom_.equal_range(src);
+    for (auto i = rangeF.first; i != rangeF.second; ++i) {
+        if (i->second.size() != currentStep_) {
+            continue;
+        }
+        auto rangeT = pathTo_.equal_range(dst);
+        for (auto j = rangeT.first; j != rangeT.second; ++j) {
+            if (j->second.size() != currentStep_) {
+                continue;
             }
+            if (j->second.size() + i->second.size() > step_.steps_) {
+                continue;
+            }
+            // Build path:
+            // i->second + (src,type,ranking) + (dst, -type, ranking) + j->second
+            Path path = i->second;
+            StepOut s0(neighbor);
+            std::get<0>(s0) = src;
+            path.emplace_back(s0);
+            VLOG(1) << "PathF: " << buildPathString(path);
+            StepOut s1(neighbor);
+            std::get<1>(s1) = - std::get<1>(neighbor);
+            path.emplace_back(s1);
+            path.insert(path.end(), j->second.begin(), j->second.end());
+            VLOG(1) << "PathT: " << buildPathString(j->second);
+            // if we erase targetNotFound_ fail,
+            // that means the target had found by another path
+            auto target = std::get<0>(path.back());
+            if (targetNotFound_.erase(target) == 0 && shortest_) {
+                continue;
+            }
+            VLOG(1) << "Found path: " << buildPathString(path);
+            finalPath_.emplace_back(std::move(path));
+        }  // for `j'
+    }  // for `i'
+}
+
+inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
+            auto rangeF = pathFrom_.equal_range(intersectId);
+            auto rangeT = pathTo_.equal_range(intersectId);
+    for (auto i = rangeF.first; i != rangeF.second; ++i) {
+        if (i->second.size() != (currentStep_ + 1)) {
+            continue;
+        }
+        for (auto j = rangeT.first; j != rangeT.second; ++j) {
+            if (j->second.size() != (currentStep_ + 1)) {
+                continue;
+            }
+            if (j->second.size() + i->second.size() > step_.steps_) {
+                continue;
+            }
+            // Build path:
+            // i->second + (src,type,ranking) + j->second
+            Path path = i->second;
+            VLOG(1) << "PathF: " << buildPathString(path);
+            if (j->second.size() > 0) {
+                StepOut s0 = j->second.front();
+                std::get<0>(s0) = intersectId;
+                std::get<1>(s0) = - std::get<1>(s0);
+                path.emplace_back(s0);
+                VLOG(1) << "Joiner: " << buildPathString(path);
+            } else if (i->second.size() > 0) {
+                StepOut s0 = i->second.back();
+                std::get<0>(s0) = intersectId;
+                path.emplace_back(s0);
+                VLOG(1) << "Joiner: " << buildPathString(path);
+            }
+            VLOG(1) << "PathT: " << buildPathString(j->second);
+            path.insert(path.end(), j->second.begin(), j->second.end());
+            auto target = std::get<0>(path.back());
+            if (targetNotFound_.erase(target) == 0 && shortest_) {
+                continue;
+            }
+            VLOG(1) << "Found path: " << buildPathString(path);
+            finalPath_.emplace_back(std::move(path));
         }
     }
 }
 
-bool FindPathExecutor::foundAllDest() {
-    // TODO
-    return true;
+inline void FindPathExecutor::updatePath(
+            VertexID &src,
+            std::multimap<VertexID, Path> &pathToSrc,
+            Neighbor &neighbor,
+            std::multimap<VertexID, Path> &pathToNeighbor,
+            VisitedBy visitedBy) {
+    auto range = pathToSrc.equal_range(src);
+    for (auto i = range.first; i != range.second; ++i) {
+        if (i->second.size() != currentStep_) {
+            continue;
+        }
+        // Build path:
+        // i->second + (src,type,ranking)
+        Path path = i->second;
+        VLOG(1) << "Interim pathF before :" << buildPathString(path);
+        VLOG(1) << "Interim pathF length before:" << path.size();
+        StepOut s0(neighbor);
+        std::get<0>(s0) = src;
+        if (visitedBy == VisitedBy::FROM) {
+            path.emplace_back(s0);
+        } else {
+            path.emplace(path.begin(), s0);
+        }
+        VLOG(1) << "Interim pathF:" << buildPathString(path);
+        VLOG(1) << "Interim pathF length:" << path.size();
+        pathToNeighbor.emplace(std::get<0>(neighbor), std::move(path));
+    }  // for `i'
 }
 
 Status FindPathExecutor::setupVids() {
@@ -577,6 +635,42 @@ StatusOr<std::vector<storage::cpp2::PropDef>> FindPathExecutor::getDstProps() {
         }
     }
     return props;
+}
+
+std::string FindPathExecutor::buildPathString(Path &path) {
+    std::string pathStr;
+    auto iter = path.begin();
+    for (; iter != path.end(); ++iter) {
+        auto step = *iter;
+        auto id = std::get<0>(step);
+        auto type = std::get<1>(step);
+        auto ranking = std::get<2>(step);
+        if (type < 0) {
+            pathStr += folly::to<std::string>(id);
+            ++iter;
+            break;
+        }
+
+        pathStr += folly::stringPrintf("%ld<%d,%ld>", id, type, ranking);
+    }
+
+    for (; iter != path.end(); ++iter) {
+        auto step = *iter;
+        auto id = std::get<0>(step);
+        auto type = std::get<1>(step);
+        auto ranking = std::get<2>(step);
+
+        pathStr += folly::stringPrintf("<%d,%ld>%ld", -type, ranking, id);
+    }
+
+    return pathStr;
+}
+
+void FindPathExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
+    UNUSED(resp);
+    for (auto &path : finalPath_) {
+        VLOG(0) << buildPathString(path);
+    }
 }
 }  // namespace graph
 }  // namespace nebula
