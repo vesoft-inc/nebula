@@ -18,11 +18,6 @@
 
 namespace nebula {
 
-namespace wal {
-class BufferFlusher;
-}  // namespace wal
-
-
 namespace raftex {
 
 class RaftexService;
@@ -30,8 +25,6 @@ class RaftexService;
 namespace test {
 class TestShard;
 }  // namespace test
-
-extern std::unique_ptr<wal::BufferFlusher> flusher;
 
 extern std::mutex leaderMutex;
 extern std::condition_variable leaderCV;
