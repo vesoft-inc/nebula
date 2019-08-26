@@ -30,7 +30,9 @@ TEST_F(LogCASTest, StartWithValidCAS) {
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    leader_->casAsync("TCAS Log Message");
+    leader_->atomicOpAsync([] () {
+        return test::compareAndSet("TCAS Log Message");
+    });
     msgs.emplace_back("CAS Log Message");
     appendLogs(1, 9, leader_, msgs);
     LOG(INFO) << "<===== Finish appending logs";
@@ -43,7 +45,7 @@ TEST_F(LogCASTest, StartWithInvalidCAS) {
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
-    leader_->casAsync("FCAS Log Message");
+    leader_->atomicOpAsync([] () { return test::compareAndSet("FCAS Log Message");});
     appendLogs(0, 9, leader_, msgs);
     LOG(INFO) << "<===== Finish appending logs";
 
@@ -57,7 +59,7 @@ TEST_F(LogCASTest, ValidCASInMiddle) {
     std::vector<std::string> msgs;
     appendLogs(0, 4, leader_, msgs);
 
-    leader_->casAsync("TCAS Log Message");
+    leader_->atomicOpAsync([] () { return test::compareAndSet("TCAS Log Message");});
     msgs.emplace_back("CAS Log Message");
 
     appendLogs(6, 9, leader_, msgs);
@@ -73,7 +75,7 @@ TEST_F(LogCASTest, InvalidCASInMiddle) {
     std::vector<std::string> msgs;
     appendLogs(0, 4, leader_, msgs);
 
-    leader_->casAsync("FCAS Log Message");
+    leader_->atomicOpAsync([] () { return test::compareAndSet("FCAS Log Message");});
 
     appendLogs(5, 9, leader_, msgs);
     LOG(INFO) << "<===== Finish appending logs";
@@ -88,10 +90,10 @@ TEST_F(LogCASTest, EndWithValidCAS) {
     std::vector<std::string> msgs;
     appendLogs(0, 7, leader_, msgs);
 
-    leader_->casAsync("TCAS Log Message");
+    leader_->atomicOpAsync([] () { return test::compareAndSet("TCAS Log Message");});
     msgs.emplace_back("CAS Log Message");
 
-    auto fut = leader_->casAsync("TCAS Log Message");
+    auto fut = leader_->atomicOpAsync([] () { return test::compareAndSet("TCAS Log Message");});
     msgs.emplace_back("CAS Log Message");
     fut.wait();
     LOG(INFO) << "<===== Finish appending logs";
@@ -106,8 +108,8 @@ TEST_F(LogCASTest, EndWithInvalidCAS) {
     std::vector<std::string> msgs;
     appendLogs(0, 7, leader_, msgs);
 
-    leader_->casAsync("FCAS Log Message");
-    auto fut = leader_->casAsync("FCAS Log Message");
+    leader_->atomicOpAsync([] () { return test::compareAndSet("FCAS Log Message");});
+    auto fut = leader_->atomicOpAsync([] () { return test::compareAndSet("FCAS Log Message");});
     fut.wait();
     LOG(INFO) << "<===== Finish appending logs";
 
@@ -120,7 +122,7 @@ TEST_F(LogCASTest, AllValidCAS) {
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
     for (int i = 1; i <= 10; ++i) {
-        auto fut = leader_->casAsync("TTest CAS Log");
+        auto fut = leader_->atomicOpAsync([] () { return test::compareAndSet("TTest CAS Log");});
         msgs.emplace_back("Test CAS Log");
         if (i == 10) {
             fut.wait();
@@ -137,7 +139,7 @@ TEST_F(LogCASTest, AllInvalidCAS) {
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
     for (int i = 1; i <= 10; ++i) {
-        auto fut = leader_->casAsync("FCAS Log");
+        auto fut = leader_->atomicOpAsync([] () { return test::compareAndSet("FCAS Log");});
         if (i == 10) {
             fut.wait();
         }

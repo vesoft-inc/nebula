@@ -74,6 +74,7 @@ Group: Applications/Databases
 %files
 %attr(0755,root,root) %{_datadir}/nebula.service
 %attr(0755,root,root) %{_datadir}/utils.sh
+%attr(0755,root,root) %{_datadir}/services.sh
 
 # metad rpm include files
 %files metad
@@ -118,9 +119,8 @@ fi
 
 
 # storage_perf rpm
-#%%files storage_perf
-#%%defattr(-,root,root,-)
-#%%{_bindir}/storage_perf
+%files storage_perf
+%attr(0755,root,root) %{_bindir}/storage_perf
 
 %debug_package
 

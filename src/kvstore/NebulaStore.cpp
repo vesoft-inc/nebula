@@ -376,6 +376,19 @@ void NebulaStore::asyncRemovePrefix(GraphSpaceID spaceId,
     part->asyncRemovePrefix(prefix, std::move(cb));
 }
 
+void NebulaStore::asyncAtomicOp(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                raftex::AtomicOp op,
+                                KVCallback cb) {
+    auto ret = part(spaceId, partId);
+    if (!ok(ret)) {
+        cb(error(ret));
+        return;
+    }
+    auto part = nebula::value(ret);
+    part->asyncAtomicOp(std::move(op), std::move(cb));
+}
+
 ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceId,
                                                              PartitionID partId) {
     folly::RWSpinLock::ReadHolder rh(&lock_);

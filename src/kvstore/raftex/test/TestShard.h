@@ -25,6 +25,8 @@ std::string encodeLearner(const HostAddr& addr);
 
 HostAddr decodeLearner(const folly::StringPiece& log);
 
+std::string compareAndSet(const std::string& log);
+
 class TestShard : public RaftPart {
 public:
     TestShard(
@@ -56,7 +58,6 @@ public:
     void onLostLeadership(TermID term) override;
     void onElected(TermID term) override;
 
-    std::string compareAndSet(const std::string& log) override;
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
     bool preProcessLog(LogID,

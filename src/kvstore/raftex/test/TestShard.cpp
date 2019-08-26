@@ -29,6 +29,15 @@ HostAddr decodeLearner(const folly::StringPiece& log) {
     return learner;
 }
 
+std::string compareAndSet(const std::string& log) {
+    switch (log[0]) {
+        case 'T':
+            return log.substr(1);
+        default:
+            return std::string();
+    }
+}
+
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
@@ -67,14 +76,6 @@ void TestShard::onElected(TermID term) {
     }
 }
 
-std::string TestShard::compareAndSet(const std::string& log) {
-    switch (log[0]) {
-        case 'T':
-            return log.substr(1);
-        default:
-            return std::string();
-    }
-}
 
 bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
     LogID firstId = -1;
