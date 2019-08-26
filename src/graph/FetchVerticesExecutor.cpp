@@ -54,10 +54,11 @@ Status FetchVerticesExecutor::prepareClauses() {
             break;
         }
 
+        // Save the type
         for (auto i = 0u; i < colNames_.size(); i++) {
             auto type = labelSchema_->getFieldType(colNames_[i]);
             if (type == CommonConstants::kInvalidValueType()) {
-                LOG(ERROR) << "ERROR type for " << colNames_[i];
+                // such as YIELD 1+1, it has not type in schema
                 colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
                 continue;
             }
@@ -174,7 +175,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                 outputSchema = std::make_shared<SchemaWriter>();
                 auto status = getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
                 if (!status.ok()) {
-                    LOG(ERROR) << "Get getOutputSchema failed";
+                    LOG(ERROR) << "Get getOutputSchema failed" << status;
                     DCHECK(onError_);
                     onError_(std::move(status));
                     return;

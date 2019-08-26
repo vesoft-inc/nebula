@@ -231,30 +231,30 @@ StatusOr<int64_t> Executor::toTimestamp(const VariantType &value) {
 
     int64_t timestamp;
     if (value.which() == VAR_STR) {
-        std::string timeStr = boost::get<std::string>(value);
-        static const std::regex reg("^[1-9]\\d{3}-"
+        static const std::regex reg("^([1-9]\\d{3})-"
                                     "(0[1-9]|1[0-2]|\\d)-"
                                     "(0[1-9]|[1-2][0-9]|3[0-1]|\\d)\\s+"
                                     "(20|21|22|23|[0-1]\\d|\\d):"
                                     "([0-5]\\d|\\d):"
                                     "([0-5]\\d|\\d)$");
         std::smatch result;
-        if (!std::regex_search(timeStr, result, reg)) {
+        if (!std::regex_match(boost::get<std::string>(value), result, reg)) {
             return Status::Error("Invalid timestamp type");
         }
         struct tm time;
         memset(&time, 0, sizeof(time));
-        sscanf(timeStr.c_str(), "%d-%d-%d %d:%d:%d",
-               &time.tm_year, &time.tm_mon, &time.tm_mday,
-               &time.tm_hour, &time.tm_min, &time.tm_sec);
-
-        time.tm_year -= 1900;
-        time.tm_mon--;
+        time.tm_year = atoi(result[1].str().c_str()) - 1900;
+        time.tm_mon = atoi(result[2].str().c_str()) - 1;
+        time.tm_mday = atoi(result[3].str().c_str());
+        time.tm_hour = atoi(result[4].str().c_str());
+        time.tm_min = atoi(result[5].str().c_str());
+        time.tm_sec = atoi(result[6].str().c_str());
         timestamp = mktime(&time);
     } else {
         timestamp = boost::get<int64_t>(value);
     }
 
+    // The mainstream Linux kernel's implementation constrains this
     static const int64_t maxTimestamp = std::numeric_limits<int64_t>::max() / 1000000000;
     if (timestamp < 0 || (timestamp > maxTimestamp)) {
         return Status::Error("Invalid timestamp type");

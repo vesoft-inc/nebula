@@ -95,7 +95,7 @@ Status FetchExecutor::getOutputSchema(
         const RowReader *reader,
         SchemaWriter *outputSchema) const {
     if (expCtx_ == nullptr || resultColNames_.empty()) {
-        return Status::Error("Input error");
+        LOG(FATAL) << "Input is empty";
     }
     auto collector = std::make_unique<Collector>(schema);
     auto &getters = expCtx_->getters();

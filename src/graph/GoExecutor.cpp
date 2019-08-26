@@ -708,12 +708,12 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             auto iter = rsReader.begin();
             while (iter) {
                 std::vector<SupportedType> colTypes;
-                bool pushFlag = false;
+                bool saveTypeFlag = false;
                 auto &getters = expCtx_->getters();
                 getters.getAliasProp = [&](const std::string &,
                                            const std::string &prop) -> OptVariantType {
                     auto res = RowReader::getPropByName(&*iter, prop);
-                    if (pushFlag) {
+                    if (saveTypeFlag) {
                         colTypes.back() = iter->getSchema()->getFieldType(prop).type;
                     }
                     if (ok(res)) {
@@ -738,7 +738,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         LOG(ERROR) << msg;
                         return Status::Error(msg);
                     }
-                    if (pushFlag) {
+                    if (saveTypeFlag) {
                         colTypes.back() = type.type;
                     }
 
@@ -761,20 +761,20 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         return Status::Error(msg);
                     }
                     auto index = tagIter->second;
-                    if (pushFlag) {
+                    if (saveTypeFlag) {
                         SupportedType type = vertexHolder_->getType(index);
                         colTypes.back() = type;
                     }
                     return vertexHolder_->get(boost::get<int64_t>(dst), index);
                 };
                 getters.getVariableProp = [&] (const std::string &prop) {
-                    if (pushFlag) {
+                    if (saveTypeFlag) {
                         colTypes.back() = getPropTypeFromInterim(prop);
                     }
                     return getPropFromInterim(vdata.get_vertex_id(), prop);
                 };
                 getters.getInputProp = [&] (const std::string &prop) {
-                    if (pushFlag) {
+                    if (saveTypeFlag) {
                         colTypes.back() = getPropTypeFromInterim(prop);
                     }
                     return getPropFromInterim(vdata.get_vertex_id(), prop);
@@ -793,7 +793,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 }
                 std::vector<VariantType> record;
                 record.reserve(yields_.size());
-                pushFlag = true;
+                saveTypeFlag = true;
                 for (auto *column : yields_) {
                     colTypes.emplace_back(SupportedType::UNKNOWN);
                     auto *expr = column->expr();

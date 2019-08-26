@@ -172,7 +172,7 @@ private:
         // eg: get 3 vertexex, vertex A has tag1.prop1, vertex B has tag2.prop2,
         // vertex C has tag3.prop3,
         // and the schema is {[tag1.prop1, type], [tag2.prop2, type], [tag3.prop3, type]}
-        std::shared_ptr<ResultSchemaProvider>       schema_{nullptr};
+        std::shared_ptr<ResultSchemaProvider>       schema_;
         std::unordered_map<VertexID, std::string>   data_;
     };
 
@@ -221,14 +221,14 @@ private:
     std::vector<YieldColumn*>                   yields_;
     bool                                        distinct_{false};
     bool                                        distinctPushDown_{false};
-    std::unique_ptr<InterimResult>              inputs_{nullptr};
+    std::unique_ptr<InterimResult>              inputs_;
     using InterimIndex = InterimResult::InterimResultIndex;
-    std::unique_ptr<InterimIndex>               index_{nullptr};
-    std::unique_ptr<ExpressionContext>          expCtx_{nullptr};
+    std::unique_ptr<InterimIndex>               index_;
+    std::unique_ptr<ExpressionContext>          expCtx_;
     std::vector<VertexID>                       starts_;
-    std::unique_ptr<VertexHolder>               vertexHolder_{nullptr};
-    std::unique_ptr<VertexBackTracker>          backTracker_{nullptr};
-    std::unique_ptr<cpp2::ExecutionResponse>    resp_{nullptr};
+    std::unique_ptr<VertexHolder>               vertexHolder_;
+    std::unique_ptr<VertexBackTracker>          backTracker_;
+    std::unique_ptr<cpp2::ExecutionResponse>    resp_;
     // The name of Tag or Edge, index of prop in data
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
     SchemaPropIndex                              srcTagProps_;
