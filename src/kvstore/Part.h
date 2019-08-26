@@ -24,7 +24,9 @@ public:
          KVEngine* engine,
          std::shared_ptr<folly::IOThreadPoolExecutor> pool,
          std::shared_ptr<thread::GenericThreadPool> workers,
-         wal::BufferFlusher* flusher);
+         wal::BufferFlusher* flusher,
+         std::shared_ptr<folly::Executor> handlers);
+
 
     virtual ~Part() {
         LOG(INFO) << idStr_ << "~Part()";
@@ -44,17 +46,17 @@ public:
                           folly::StringPiece end,
                           KVCallback cb);
 
+    void asyncAtomicOp(raftex::AtomicOp op, KVCallback cb);
+
     void asyncAddLearner(const HostAddr& learner, KVCallback cb);
     /**
      * Methods inherited from RaftPart
      */
-    LogID lastCommittedLogId() override;
+    std::pair<LogID, TermID> lastCommittedLogId() override;
 
     void onLostLeadership(TermID term) override;
 
     void onElected(TermID term) override;
-
-    std::string compareAndSet(const std::string& log) override;
 
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 

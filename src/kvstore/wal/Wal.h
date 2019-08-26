@@ -41,6 +41,11 @@ public:
     // Rollback to the given id, all logs after the id will be discarded
     virtual bool rollbackToLog(LogID id) = 0;
 
+    // Clean all wal files
+    virtual bool reset() = 0;
+
+    virtual void cleanWAL() = 0;
+
     // Scan [firstLogId, lastLogId]
     virtual std::unique_ptr<LogIterator> iterator(LogID firstLogId,
                                                   LogID lastLogId) = 0;

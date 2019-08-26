@@ -17,6 +17,8 @@
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
 
+DECLARE_int32(meta_client_retry_times);
+
 namespace nebula {
 namespace meta {
 
@@ -92,6 +94,7 @@ public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                         std::vector<HostAddr> addrs,
                         HostAddr localHost = HostAddr(0, 0),
+                        ClusterID clusterId = 0,
                         bool sendHeartBeat = false);
 
     virtual ~MetaClient();
@@ -99,6 +102,8 @@ public:
     bool isMetadReady();
 
     bool waitForMetadReady(int count = -1, int retryIntervalSecs = 2);
+
+    void stop();
 
     void registerListener(MetaChangedListener* listener) {
         folly::RWSpinLock::WriteHolder holder(listenerLock_);
@@ -321,9 +326,14 @@ protected:
 
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
-    void updateHost() {
+    void updateActive() {
         folly::RWSpinLock::WriteHolder holder(hostLock_);
-        leader_ = active_ = addrs_[folly::Random::rand64(addrs_.size())];
+        active_ = addrs_[folly::Random::rand64(addrs_.size())];
+    }
+
+    void updateLeader() {
+        folly::RWSpinLock::WriteHolder holder(hostLock_);
+        leader_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
     void diff(const LocalCache& oldCache, const LocalCache& newCache);
@@ -341,10 +351,13 @@ protected:
              class Response =
                 typename std::result_of<RespGenerator(RpcResponse)>::type
     >
-    folly::Future<StatusOr<Response>> getResponse(Request req,
-                                                  RemoteFunc remoteFunc,
-                                                  RespGenerator respGen,
-                                                  bool toLeader = false);
+    void getResponse(Request req,
+                     RemoteFunc remoteFunc,
+                     RespGenerator respGen,
+                     folly::Promise<StatusOr<Response>> pro,
+                     bool toLeader = false,
+                     int32_t retry = 0,
+                     int32_t retryLimit = FLAGS_meta_client_retry_times);
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
@@ -368,7 +381,8 @@ private:
     HostAddr active_;
     HostAddr leader_;
     HostAddr localHost_;
-    thread::GenericWorker bgThread_;
+
+    std::unique_ptr<thread::GenericWorker> bgThread_;
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
@@ -377,7 +391,9 @@ private:
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
     folly::RWSpinLock     listenerLock_;
-    bool                  sendHeartBeat_ = false;
+    std::atomic<ClusterID> clusterId_{0};
+    bool                  isRunning_{false};
+    bool                  sendHeartBeat_{false};
     std::atomic_bool      ready_{false};
     MetaConfigMap         metaConfigMap_;
     folly::RWSpinLock     configCacheLock_;

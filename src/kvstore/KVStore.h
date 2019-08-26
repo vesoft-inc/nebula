@@ -10,6 +10,7 @@
 #include "base/Base.h"
 #include <rocksdb/merge_operator.h>
 #include <rocksdb/compaction_filter.h>
+#include "kvstore/raftex/RaftPart.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/PartManager.h"
@@ -135,6 +136,13 @@ public:
                                    PartitionID partId,
                                    const std::string& prefix,
                                    KVCallback cb) = 0;
+
+    virtual void asyncAtomicOp(GraphSpaceID spaceId,
+                               PartitionID partId,
+                               raftex::AtomicOp op,
+                               KVCallback cb) = 0;
+
+    virtual ResultCode ingest(GraphSpaceID spaceId) = 0;
 
     virtual ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
                                                             PartitionID partId) = 0;

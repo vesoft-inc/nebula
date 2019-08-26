@@ -16,7 +16,7 @@
 #include "kvstore/raftex/test/RaftexTestBase.h"
 #include "kvstore/raftex/test/TestShard.h"
 
-DECLARE_uint32(heartbeat_interval);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 
 namespace nebula {
@@ -41,7 +41,7 @@ TEST_F(LogCommandTest, StartWithCommandLog) {
 }
 
 TEST_F(LogCommandTest, CommandInMiddle) {
-    FLAGS_heartbeat_interval = 1;
+    FLAGS_raft_heartbeat_interval_secs = 1;
     // Append logs
     LOG(INFO) << "=====> Start appending logs";
     std::vector<std::string> msgs;
@@ -99,16 +99,16 @@ TEST_F(LogCommandTest, MixedLogs) {
     leader_->sendCommandAsync("Command log 1");
     msgs.emplace_back("Command log 1");
 
-    leader_->casAsync("TCAS Log Message 2");
+    leader_->atomicOpAsync([] () { return test::compareAndSet("TCAS Log Message 2");});
     msgs.emplace_back("CAS Log Message 2");
 
     leader_->appendAsync(0, "Normal log Message 3");
     msgs.emplace_back("Normal log Message 3");
 
-    leader_->casAsync("TCAS Log Message 4");
+    leader_->atomicOpAsync([] () { return test::compareAndSet("TCAS Log Message 4");});
     msgs.emplace_back("CAS Log Message 4");
 
-    leader_->casAsync("TCAS Log Message 5");
+    leader_->atomicOpAsync([] () { return test::compareAndSet("TCAS Log Message 5");});
     msgs.emplace_back("CAS Log Message 5");
 
     leader_->sendCommandAsync("Command log 6");
@@ -120,7 +120,7 @@ TEST_F(LogCommandTest, MixedLogs) {
     leader_->appendAsync(0, "Normal log Message 8");
     msgs.emplace_back("Normal log Message 8");
 
-    leader_->casAsync("FCAS Log Message");
+    leader_->atomicOpAsync([] () { return test::compareAndSet("FCAS Log Message");});
 
     leader_->sendCommandAsync("Command log 9");
     msgs.emplace_back("Command log 9");
@@ -128,7 +128,7 @@ TEST_F(LogCommandTest, MixedLogs) {
     auto f = leader_->appendAsync(0, "Normal log Message 10");
     msgs.emplace_back("Normal log Message 10");
 
-    leader_->casAsync("FCAS Log Message");
+    leader_->atomicOpAsync([] () { return test::compareAndSet("FCAS Log Message");});
 
     f.wait();
     LOG(INFO) << "<===== Finish appending logs";

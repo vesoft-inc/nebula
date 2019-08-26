@@ -30,6 +30,15 @@ HostAddr decodeLearner(const folly::StringPiece& log) {
     return learner;
 }
 
+std::string compareAndSet(const std::string& log) {
+    switch (log[0]) {
+        case 'T':
+            return log.substr(1);
+        default:
+            return std::string();
+    }
+}
+
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
@@ -38,6 +47,7 @@ TestShard::TestShard(size_t idx,
                      wal::BufferFlusher* flusher,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,
+                     std::shared_ptr<folly::Executor> handlersPool,
                      std::function<void(size_t idx, const char*, TermID)>
                         leadershipLostCB,
                      std::function<void(size_t idx, const char*, TermID)>
@@ -49,7 +59,8 @@ TestShard::TestShard(size_t idx,
                    walRoot,
                    flusher,
                    ioPool,
-                   workers)
+                   workers,
+                   handlersPool)
         , idx_(idx)
         , service_(svc)
         , leadershipLostCB_(leadershipLostCB)
@@ -68,14 +79,6 @@ void TestShard::onElected(TermID term) {
     }
 }
 
-std::string TestShard::compareAndSet(const std::string& log) {
-    switch (log[0]) {
-        case 'T':
-            return log.substr(1);
-        default:
-            return std::string();
-    }
-}
 
 bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
     LogID firstId = -1;

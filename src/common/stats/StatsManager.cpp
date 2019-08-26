@@ -138,14 +138,14 @@ void StatsManager::addValue(int32_t index, VT value) {
         folly::RWSpinLock::ReadHolder rh(sm.statsLock_);
         DCHECK_LT(index, sm.stats_.size());
         std::lock_guard<std::mutex> g(*(sm.stats_[index].first));
-        sm.stats_[index].second->addValue(Clock::now(), value);
+        sm.stats_[index].second->addValue(seconds(time::WallClock::fastNowInSec()), value);
     } else {
         // Histogram
         index = - (index + 1);
         folly::RWSpinLock::ReadHolder rh(sm.histogramsLock_);
         DCHECK_LT(index, sm.histograms_.size());
         std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
-        sm.histograms_[index].second->addValue(Clock::now(), value);
+        sm.histograms_[index].second->addValue(seconds(time::WallClock::fastNowInSec()), value);
     }
 }
 
@@ -262,7 +262,9 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
 StatsManager::VT StatsManager::readStats(int32_t index,
                                          StatsManager::TimeRange range,
                                          StatsManager::StatsMethod method) {
+    using std::chrono::seconds;
     auto& sm = get();
+
 
     CHECK_NE(index, 0);
 
@@ -271,14 +273,14 @@ StatsManager::VT StatsManager::readStats(int32_t index,
         --index;
         DCHECK_LT(index, sm.stats_.size());
         std::lock_guard<std::mutex> g(*(sm.stats_[index].first));
-        sm.stats_[index].second->update(Clock::now());
+        sm.stats_[index].second->update(seconds(time::WallClock::fastNowInSec()));
         return readValue(*(sm.stats_[index].second), range, method);
     } else {
         // histograms_
         index = - (index + 1);
         DCHECK_LT(index, sm.histograms_.size());
         std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
-        sm.histograms_[index].second->update(Clock::now());
+        sm.histograms_[index].second->update(seconds(time::WallClock::fastNowInSec()));
         return readValue(*(sm.histograms_[index].second), range, method);
     }
 }
@@ -312,6 +314,7 @@ StatsManager::VT StatsManager::readStats(const std::string& counterName,
 StatsManager::VT StatsManager::readHisto(const std::string& counterName,
                                          StatsManager::TimeRange range,
                                          double pct) {
+    using std::chrono::seconds;
     auto& sm = get();
 
     // Look up the counter name
@@ -332,7 +335,7 @@ StatsManager::VT StatsManager::readHisto(const std::string& counterName,
     DCHECK_LT(index, sm.histograms_.size());
 
     std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
-    sm.histograms_[index].second->update(Clock::now());
+    sm.histograms_[index].second->update(seconds(time::WallClock::fastNowInSec()));
     auto level = static_cast<size_t>(range);
     return sm.histograms_[index].second->getPercentileEstimate(pct, level);
 }

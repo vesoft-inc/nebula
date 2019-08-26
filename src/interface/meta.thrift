@@ -31,10 +31,11 @@ enum ErrorCode {
     E_CONFIG_IMMUTABLE = -28,
     E_CONFLICT         = -29,
     E_INVALID_PARM     = -30,
+    E_WRONGCLUSTER     = -31,
 
     // KV Failure
-    E_STORE_FAILURE          = -31,
-    E_STORE_SEGMENT_ILLEGAL  = -32,
+    E_STORE_FAILURE          = -32,
+    E_STORE_SEGMENT_ILLEGAL  = -33,
 
     E_INVALID_PASSWORD       = -41,
     E_INPROPER_ROLE          = -42,
@@ -71,6 +72,7 @@ union ID {
     4: common.TagIndexID    tag_index_id,
     5: common.EdgeIndexID   edge_index_id,
     6: common.UserID        user_id,
+    7: common.ClusterID     cluster_id,
 }
 
 struct IdName {
@@ -365,10 +367,12 @@ struct ScanResp {
 struct HBResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
+    3: common.ClusterID cluster_id,
 }
 
 struct HBReq {
     1: common.HostAddr host,
+    2: common.ClusterID cluster_id,
 }
 
 struct CreateTagIndexReq {

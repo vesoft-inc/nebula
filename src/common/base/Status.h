@@ -60,6 +60,10 @@ public:
         return code() == rhs.code();
     }
 
+    bool operator!=(const Status &rhs) const {
+        return !(*this == rhs);
+    }
+
     bool ok() const {
         return state_ == nullptr;
     }
@@ -111,6 +115,7 @@ public:
     STATUS_GENERATOR(CfgRegistered);
     STATUS_GENERATOR(CfgErrorType);
     STATUS_GENERATOR(CfgImmutable);
+    STATUS_GENERATOR(LeaderChanged);
 
 #undef STATUS_GENERATOR
 
@@ -145,6 +150,7 @@ public:
         kCfgImmutable           = 412,
         kTagIndexNotFound       = 413,
         kEdgeIndexNotFound      = 414,
+        kLeaderChanged          = 415,
     };
 
     Code code() const {

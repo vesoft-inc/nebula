@@ -165,31 +165,31 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
         }
         case Expression::kSourceProp: {
             auto* sourceExp = static_cast<const SourcePropertyExpression*>(exp);
-            const auto& tagName = sourceExp->tag();
-            const auto& propName = sourceExp->prop();
-            auto tagRet = this->schemaMan_->toTagID(spaceId_, tagName);
+            const auto* tagName = sourceExp->alias();
+            const auto* propName = sourceExp->prop();
+            auto tagRet = this->schemaMan_->toTagID(spaceId_, *tagName);
             if (!tagRet.ok()) {
-                VLOG(1) << "Can't find tag " << tagName << ", in space " << spaceId_;
+                VLOG(1) << "Can't find tag " << *tagName << ", in space " << spaceId_;
                 return false;
             }
             auto tagId = tagRet.value();
             // TODO(heng): Now we use the latest version.
             auto schema = this->schemaMan_->getTagSchema(spaceId_, tagId);
             CHECK(!!schema);
-            auto field = schema->field(propName);
+            auto field = schema->field(*propName);
             if (field == nullptr) {
-                VLOG(1) << "Can't find related prop " << propName << " on tag " << tagName;
+                VLOG(1) << "Can't find related prop " << *propName << " on tag " << tagName;
                 return false;
             }
             // TODO(heng): Now we have to scan the whole array to find related tagId,
             // maybe we could find a better way to solve it.
             for (auto& tc : tagContexts_) {
                 if (tc.tagId_ == tagId) {
-                    auto* prop = tc.findProp(propName);
+                    auto* prop = tc.findProp(*propName);
                     if (prop == nullptr) {
-                        tc.pushFilterProp(tagName, propName, field->getType());
+                        tc.pushFilterProp(*tagName, *propName, field->getType());
                     } else if (!prop->filtered()) {
-                        prop->setTagOrEdgeName(tagName);
+                        prop->setTagOrEdgeName(*tagName);
                     }
                     return true;
                 }
@@ -197,7 +197,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
             VLOG(1) << "There is no related tag existed in tagContexts!";
             TagContext tc;
             tc.tagId_ = tagId;
-            tc.pushFilterProp(tagName, propName, field->getType());
+            tc.pushFilterProp(*tagName, *propName, field->getType());
             tagContexts_.emplace_back(std::move(tc));
             return true;
         }
@@ -207,6 +207,7 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
         case Expression::kEdgeType: {
             return true;
         }
+        case Expression::kAliasProp:
         case Expression::kEdgeProp: {
             if (type_ != BoundType::OUT_BOUND) {
                 VLOG(1) << "Only support filter on out bound props";
@@ -216,17 +217,17 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
                 VLOG(1) << "No edge requested!";
                 return false;
             }
-            auto* edgeExp = static_cast<const EdgePropertyExpression*>(exp);
-            const auto& propName = edgeExp->prop();
+            auto* edgeExp = static_cast<const AliasPropertyExpression*>(exp);
+            const auto* propName = edgeExp->prop();
             auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeContext_.edgeType_);
             if (!schema) {
                 VLOG(1) << "Cant find edgeType " << edgeContext_.edgeType_;
                 return false;
             }
-            auto field = schema->field(propName);
+            auto field = schema->field(*propName);
             if (field == nullptr) {
                 VLOG(1) << "Can't find related prop "
-                        << propName << " on edge " << edgeExp->alias();
+                        << *propName << " on edge " << *(edgeExp->alias());
                 return false;
             }
             return true;
@@ -366,24 +367,29 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 // TODO(heng): We could remove the lock with one filter one bucket.
                 std::lock_guard<std::mutex> lg(this->lock_);
                 auto& getters = expCtx_->getters();
-                getters.getEdgeProp = [&] (const std::string &prop) -> VariantType {
+                getters.getAliasProp =
+                    [&] (const std::string&, const std::string &prop) -> OptVariantType {
                     auto res = RowReader::getPropByName(reader.get(), prop);
-                    CHECK(ok(res));
+                    if (!ok(res)) {
+                        return Status::Error("Invalid Prop");
+                    }
                     return value(std::move(res));
                 };
                 getters.getEdgeRank = [&] () -> VariantType {
                     return rank;
                 };
-                getters.getSrcTagProp = [&, this] (const std::string& tag,
-                                                   const std::string& prop) -> VariantType {
+                getters.getSrcTagProp = [&fcontext] (const std::string& tag,
+                                                     const std::string& prop) -> OptVariantType {
                     auto it = fcontext->tagFilters_.find(std::make_pair(tag, prop));
-                    CHECK(it != fcontext->tagFilters_.end());
+                    if (it == fcontext->tagFilters_.end()) {
+                        return Status::Error("Invalid Tag Filter");
+                    }
                     VLOG(1) << "Hit srcProp filter for tag " << tag << ", prop "
                             << prop << ", value " << it->second;
                     return it->second;
                 };
                 auto value = exp_->eval();
-                if (!Expression::asBool(value)) {
+                if (value.ok() && !Expression::asBool(value.value())) {
                     VLOG(1) << "Filter the edge "
                             << vId << "-> " << dstId << "@" << rank << ":" << edgeType;
                     continue;

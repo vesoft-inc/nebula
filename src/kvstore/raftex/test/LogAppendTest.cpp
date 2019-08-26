@@ -16,8 +16,8 @@
 #include "kvstore/raftex/test/RaftexTestBase.h"
 #include "kvstore/raftex/test/TestShard.h"
 
-DECLARE_uint32(heartbeat_interval);
-
+DECLARE_uint32(raft_heartbeat_interval_secs);
+DECLARE_uint32(max_batch_size);
 
 namespace nebula {
 namespace raftex {
@@ -84,18 +84,17 @@ TEST(LogAppend, MultiThreadAppend) {
     LOG(INFO) << "=====> Start multi-thread appending logs";
     const int numThreads = 4;
     const int numLogs = 100;
+    FLAGS_max_batch_size = numThreads * numLogs + 1;
     std::vector<std::thread> threads;
     for (int i = 0; i < numThreads; ++i) {
-        threads.emplace_back(std::thread([i, numLogs, leader] {
+        threads.emplace_back(std::thread([i, leader] {
             for (int j = 1; j <= numLogs; ++j) {
                 do {
                     auto fut = leader->appendAsync(
                         0, folly::stringPrintf("Log %03d for t%d", j, i));
                     if (fut.isReady() &&
                         fut.value() == AppendLogResult::E_BUFFER_OVERFLOW) {
-                        // Buffer overflow, while a little
-                        usleep(5000);
-                        continue;
+                        LOG(FATAL) << "Should not reach here";
                     } else if (j == numLogs) {
                         // Only wait on the last log messaage
                         ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
@@ -113,9 +112,9 @@ TEST(LogAppend, MultiThreadAppend) {
 
     LOG(INFO) << "<===== Finish multi-thread appending logs";
 
-    // Sleep a while to make sure the lat log has been committed on
+    // Sleep a while to make sure the last log has been committed on
     // followers
-    sleep(FLAGS_heartbeat_interval);
+    sleep(FLAGS_raft_heartbeat_interval_secs);
 
     // Check every copy
     for (auto& c : copies) {
@@ -152,5 +151,3 @@ int main(int argc, char** argv) {
 
     return RUN_ALL_TESTS();
 }
-
-

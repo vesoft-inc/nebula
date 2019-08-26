@@ -26,7 +26,7 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
     req.set_new_leader(to(dst));
     return getResponse(leader, std::move(req), [] (auto client, auto request) {
                return client->future_transLeader(request);
-           }, [this] (auto&& resp) -> Status {
+           }, [] (auto&& resp) -> Status {
                switch (resp.get_code()) {
                    case storage::cpp2::ErrorCode::SUCCEEDED:
                    case storage::cpp2::ErrorCode::E_LEADER_CHANGED: {
@@ -52,7 +52,7 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
     req.set_as_learner(asLearner);
     return getResponse(host, std::move(req), [] (auto client, auto request) {
                return client->future_addPart(request);
-           }, [this] (auto&& resp) -> Status {
+           }, [] (auto&& resp) -> Status {
                if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
                    return Status::OK();
                } else {
@@ -150,7 +150,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
     kv_->asyncMultiPut(kDefaultSpaceId,
                        kDefaultPartId,
                        std::move(data),
-                       [this, p = std::move(pro)] (kvstore::ResultCode code) mutable {
+                       [p = std::move(pro)] (kvstore::ResultCode code) mutable {
         if (code == kvstore::ResultCode::SUCCEEDED) {
             p.setValue(Status::OK());
         } else {
@@ -171,7 +171,7 @@ folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
     req.set_part_id(partId);
     return getResponse(host, std::move(req), [] (auto client, auto request) {
                return client->future_removePart(request);
-           }, [this] (auto&& resp) -> Status {
+           }, [] (auto&& resp) -> Status {
                if (resp.get_code() == storage::cpp2::ErrorCode::SUCCEEDED) {
                    return Status::OK();
                } else {
@@ -195,8 +195,7 @@ folly::Future<Status> AdminClient::getResponse(
     auto client = clientsMan_->client(host, evb);
     remoteFunc(client, std::move(req))
         .then(evb, [p = std::move(pro),
-                    respGen,
-                    this] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
+                    respGen] (folly::Try<storage::cpp2::AdminExecResp>&& t) mutable {
         // exception occurred during RPC
         if (t.hasException()) {
             p.setValue(Status::Error(folly::stringPrintf("RPC failure in MetaClient: %s",
@@ -337,4 +336,3 @@ StatusOr<std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId, Part
 
 }  // namespace meta
 }  // namespace nebula
-

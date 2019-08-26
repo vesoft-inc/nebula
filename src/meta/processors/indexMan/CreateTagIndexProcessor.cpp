@@ -59,7 +59,15 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     std::vector<kvstore::KV> data;
-    auto tagIndex = autoIncrementId();
+    auto tagIndexRet = autoIncrementId();
+    if (!nebula::ok(tagIndexRet)) {
+        LOG(ERROR) << "Create tag index failed : Get tag index ID failed";
+        resp_.set_code(nebula::error(tagIndexRet));
+        onFinished();
+        return;
+    }
+
+    auto tagIndex = nebula::value(tagIndexRet);
     data.emplace_back(MetaServiceUtils::indexTagIndexKey(spaceID, indexName),
                       std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(TagIndexID)));
     data.emplace_back(MetaServiceUtils::tagIndexKey(spaceID, tagIndex),

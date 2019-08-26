@@ -59,7 +59,15 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
 
     std::vector<kvstore::KV> data;
-    EdgeIndexID edgeIndex = autoIncrementId();
+    auto edgeIndexRet = autoIncrementId();
+    if (!nebula::ok(edgeIndexRet)) {
+        LOG(ERROR) << "Create edge index failed: Get edge index ID failed";
+        resp_.set_code(nebula::error(edgeIndexRet));
+        onFinished();
+        return;
+    }
+
+    auto edgeIndex = nebula::value(edgeIndexRet);
     data.emplace_back(MetaServiceUtils::indexEdgeIndexKey(spaceID, indexName),
                       std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(EdgeIndexID)));
     data.emplace_back(MetaServiceUtils::edgeIndexKey(spaceID, edgeIndex),

@@ -76,7 +76,6 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     doPut(std::move(data));
 }
 
-
 }  // namespace meta
 }  // namespace nebula
 

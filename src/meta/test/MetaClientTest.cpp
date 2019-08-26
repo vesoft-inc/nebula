@@ -48,9 +48,7 @@ TEST(MetaClientTest, InterfacesTest) {
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-        auto r = client->addHosts(hosts).get();
-        ASSERT_TRUE(r.ok());
-        TestUtils::registerHB(hosts);
+        TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
@@ -307,13 +305,11 @@ TEST(MetaClientTest, TagTest) {
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
     network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
-    auto client = std::make_shared<MetaClient>(threadPool,
-        std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    auto localhosts = std::vector<HostAddr>{HostAddr(localIp, sc->port_)};
+    auto client = std::make_shared<MetaClient>(threadPool, localhosts);
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
-    auto r = client->addHosts(hosts).get();
-    ASSERT_TRUE(r.ok());
     client->waitForMetadReady();
-    TestUtils::registerHB(hosts);
+    TestUtils::registerHB(sc->kvStore_.get(), hosts);
     auto ret = client->createSpace("default_space", 9, 3).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     GraphSpaceID spaceId = ret.value();
@@ -387,7 +383,7 @@ TEST(MetaClientTest, EdgeTest) {
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
     ASSERT_TRUE(r.ok());
-    TestUtils::registerHB(hosts);
+    TestUtils::registerHB(sc->kvStore_.get(), hosts);
     auto ret = client->createSpace("default_space", 9, 3).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     GraphSpaceID spaceId = ret.value();
@@ -595,7 +591,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     std::vector<HostAddr> hosts = {{0, 0}, {1, 1}, {2, 2}, {3, 3}};
     auto r = client->addHosts(hosts).get();
     ASSERT_TRUE(r.ok());
-    TestUtils::registerHB(hosts);
+    TestUtils::registerHB(sc->kvStore_.get(), hosts);
     auto ret = client->createSpace("default_space", 8, 3).get();
     GraphSpaceID spaceId = ret.value();
     {
@@ -761,9 +757,7 @@ TEST(MetaClientTest, DiffTest) {
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {{0, 0}};
-        auto r = client->addHosts(hosts).get();
-        ASSERT_TRUE(r.ok());
-        TestUtils::registerHB(hosts);
+        TestUtils::registerHB(sc->kvStore_.get(), hosts);
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
@@ -796,11 +790,11 @@ TEST(MetaClientTest, DiffTest) {
 }
 
 TEST(MetaClientTest, HeartbeatTest) {
-    ActiveHostsMan::instance()->reset();
     FLAGS_load_data_interval_secs = 5;
     FLAGS_heartbeat_interval_secs = 1;
+    const nebula::ClusterID kClusterId = 10;
     fs::TempDir rootPath("/tmp/MetaClientTest.XXXXXX");
-    auto sc = TestUtils::mockMetaServer(10001, rootPath.path());
+    auto sc = TestUtils::mockMetaServer(10001, rootPath.path(), kClusterId);
 
     auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
     IPv4 localIp;
@@ -808,18 +802,17 @@ TEST(MetaClientTest, HeartbeatTest) {
     auto listener = std::make_unique<TestListener>();
     auto clientPort = network::NetworkUtils::getAvailablePort();
     HostAddr localHost{localIp, clientPort};
+
     auto client = std::make_shared<MetaClient>(threadPool,
                                                std::vector<HostAddr>{HostAddr(localIp, 10001)},
                                                localHost,
+                                               kClusterId,
                                                true);  // send heartbeat
-    client->addHosts({localHost});
     client->waitForMetadReady();
     client->registerListener(listener.get());
     {
         // Test addHost, listHosts interface.
         std::vector<HostAddr> hosts = {localHost};
-        auto r = client->addHosts(hosts).get();
-        ASSERT_TRUE(r.ok());
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
@@ -827,7 +820,179 @@ TEST(MetaClientTest, HeartbeatTest) {
         }
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);
-    ASSERT_EQ(1, ActiveHostsMan::instance()->getActiveHosts().size());
+    ASSERT_EQ(1, ActiveHostsMan::getActiveHosts(sc->kvStore_.get()).size());
+}
+
+class TestMetaService : public cpp2::MetaServiceSvIf {
+public:
+    folly::Future<cpp2::ExecResp>
+    future_addHosts(const cpp2::AddHostsReq& req) override {
+        UNUSED(req);
+        folly::Promise<cpp2::ExecResp> pro;
+        auto f = pro.getFuture();
+        cpp2::ExecResp resp;
+        resp.set_code(cpp2::ErrorCode::SUCCEEDED);
+        pro.setValue(std::move(resp));
+        return f;
+    }
+};
+
+class TestMetaServiceRetry : public cpp2::MetaServiceSvIf {
+public:
+    void setLeader(HostAddr leader) {
+        leader_.set_ip(leader.first);
+        leader_.set_port(leader.second);
+    }
+
+    void setAddr(HostAddr addr) {
+        addr_.set_ip(addr.first);
+        addr_.set_port(addr.second);
+    }
+
+    folly::Future<cpp2::ExecResp>
+    future_addHosts(const cpp2::AddHostsReq& req) override {
+        UNUSED(req);
+        folly::Promise<cpp2::ExecResp> pro;
+        auto f = pro.getFuture();
+        cpp2::ExecResp resp;
+        if (addr_ == leader_) {
+            resp.set_code(cpp2::ErrorCode::SUCCEEDED);
+        } else {
+            resp.set_code(cpp2::ErrorCode::E_LEADER_CHANGED);
+            resp.set_leader(leader_);
+        }
+        pro.setValue(std::move(resp));
+        return f;
+    }
+
+private:
+    nebula::cpp2::HostAddr leader_;
+    nebula::cpp2::HostAddr addr_;
+};
+
+TEST(MetaClientTest, SimpleTest) {
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    auto sc = std::make_unique<test::ServerContext>();
+    auto handler = std::make_shared<TestMetaService>();
+    sc->mockCommon("meta", 0, handler);
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    auto clientPort = network::NetworkUtils::getAvailablePort();
+    HostAddr localHost{localIp, clientPort};
+    auto client = std::make_shared<MetaClient>(threadPool,
+                                               std::vector<HostAddr>{HostAddr(localIp, sc->port_)},
+                                               localHost);
+    {
+        LOG(INFO) << "Test add hosts...";
+        folly::Baton<true, std::atomic> baton;
+        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+            ASSERT_TRUE(status.ok());
+            baton.post();
+        });
+        baton.wait();
+    }
+}
+
+TEST(MetaClientTest, RetryWithExceptioniTest) {
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    auto clientPort = network::NetworkUtils::getAvailablePort();
+    HostAddr localHost{localIp, clientPort};
+    auto client = std::make_shared<MetaClient>(threadPool,
+                                               std::vector<HostAddr>{HostAddr(0, 0)},
+                                               localHost);
+    // Retry with exception, thenfailed
+    {
+        LOG(INFO) << "Test add hosts...";
+        folly::Baton<true, std::atomic> baton;
+        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+            ASSERT_TRUE(!status.ok());
+            baton.post();
+        });
+        baton.wait();
+    }
+}
+
+
+TEST(MetaClientTest, RetryOnceTest) {
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    std::vector<std::unique_ptr<test::ServerContext>> contexts;
+    std::vector<std::shared_ptr<TestMetaServiceRetry>> handlers;
+    std::vector<HostAddr> addrs;
+    for (size_t i = 0; i < 3; i++) {
+        auto sc = std::make_unique<test::ServerContext>();
+        auto handler = std::make_shared<TestMetaServiceRetry>();
+        sc->mockCommon("meta", 0, handler);
+        addrs.emplace_back(localIp, sc->port_);
+        contexts.emplace_back(std::move(sc));
+        handlers.emplace_back(handler);
+    }
+    // set leaders to first service
+    for (size_t i = 0; i < addrs.size(); i++) {
+        handlers[i]->setLeader(addrs[0]);
+        handlers[i]->setAddr(addrs[i]);
+    }
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    auto clientPort = network::NetworkUtils::getAvailablePort();
+    HostAddr localHost{localIp, clientPort};
+    auto client = std::make_shared<MetaClient>(threadPool,
+                                               std::vector<HostAddr>{addrs[1]},
+                                               localHost);
+    // First get leader changed and then succeeded
+    {
+        LOG(INFO) << "Test add hosts...";
+        folly::Baton<true, std::atomic> baton;
+        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+            ASSERT_TRUE(status.ok());
+            baton.post();
+        });
+        baton.wait();
+    }
+}
+
+TEST(MetaClientTest, RetryUntilLimitTest) {
+    IPv4 localIp;
+    network::NetworkUtils::ipv4ToInt("127.0.0.1", localIp);
+
+    std::vector<std::unique_ptr<test::ServerContext>> contexts;
+    std::vector<std::shared_ptr<TestMetaServiceRetry>> handlers;
+    std::vector<HostAddr> addrs;
+    for (size_t i = 0; i < 3; i++) {
+        auto sc = std::make_unique<test::ServerContext>();
+        auto handler = std::make_shared<TestMetaServiceRetry>();
+        sc->mockCommon("meta", 0, handler);
+        addrs.emplace_back(localIp, sc->port_);
+        contexts.emplace_back(std::move(sc));
+        handlers.emplace_back(handler);
+    }
+    for (size_t i = 0; i < addrs.size(); i++) {
+        handlers[i]->setLeader(addrs[(i + 1) % addrs.size()]);
+        handlers[i]->setAddr(addrs[i]);
+    }
+
+    auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
+    auto clientPort = network::NetworkUtils::getAvailablePort();
+    HostAddr localHost{localIp, clientPort};
+    auto client = std::make_shared<MetaClient>(threadPool,
+                                               std::vector<HostAddr>{addrs[1]},
+                                               localHost);
+    // always get response of leader changed, then failed
+    {
+        LOG(INFO) << "Test add hosts...";
+        folly::Baton<true, std::atomic> baton;
+        client->addHosts({{0, 0}}).then([&baton] (auto&& status) {
+            ASSERT_TRUE(!status.ok());
+            baton.post();
+        });
+        baton.wait();
+    }
 }
 
 }  // namespace meta

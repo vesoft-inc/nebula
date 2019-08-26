@@ -75,6 +75,8 @@ protected:
             return cpp2::ErrorCode::SUCCEEDED;
         case kvstore::ResultCode::ERR_KEY_NOT_FOUND:
             return cpp2::ErrorCode::E_NOT_FOUND;
+        case kvstore::ResultCode::ERR_LEADER_CHANGED:
+            return cpp2::ErrorCode::E_LEADER_CHANGED;
         default:
             return cpp2::ErrorCode::E_UNKNOWN;
         }
@@ -176,7 +178,7 @@ protected:
     /**
      * Get one auto-increment Id.
      * */
-    int32_t autoIncrementId();
+    ErrorOr<cpp2::ErrorCode, int32_t> autoIncrementId();
 
     /**
      * Check spaceId exist or not.

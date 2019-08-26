@@ -139,28 +139,38 @@ StatusOr<std::vector<nebula::cpp2::HostAddr>> BaseProcessor<RESP>::allHosts() {
 
 
 template<typename RESP>
-int32_t BaseProcessor<RESP>::autoIncrementId() {
+ErrorOr<cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
     folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
     static const std::string kIdKey = "__id__";
     int32_t id;
-    auto ret = doGet(kIdKey);
-    if (!ret.ok()) {
-        CHECK_EQ(Status::Error("Key Not Found"), ret.status());
+    std::string val;
+    auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, kIdKey, &val);
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        if (ret != kvstore::ResultCode::ERR_KEY_NOT_FOUND) {
+            return to(ret);
+        }
         id = 1;
     } else {
-        id = *reinterpret_cast<const int32_t*>(ret.value().c_str()) + 1;
+        id = *reinterpret_cast<const int32_t*>(val.c_str()) + 1;
     }
 
     std::vector<kvstore::KV> data;
     data.emplace_back(kIdKey,
                       std::string(reinterpret_cast<const char*>(&id), sizeof(id)));
+    folly::Baton<true, std::atomic> baton;
     kvstore_->asyncMultiPut(kDefaultSpaceId,
                             kDefaultPartId,
                             std::move(data),
-                            [this] (kvstore::ResultCode code) {
-        CHECK_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                            [&] (kvstore::ResultCode code) {
+        ret = code;
+        baton.post();
     });
-    return id;
+    baton.wait();
+    if (ret != kvstore::ResultCode::SUCCEEDED) {
+        return to(ret);
+    } else {
+        return id;
+    }
 }
 
 
