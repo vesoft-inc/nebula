@@ -82,12 +82,12 @@ function package {
     [[ $strip_enable == TRUE ]] && args="-D CPACK_STRIP_FILES=TRUE -D CPACK_RPM_SPEC_MORE_DEFINE="
     if !( cpack -G ${pType} --verbose $args ); then
         echo ">>> package nebula failed <<<"
-        exit -1    
+        exit -1
     fi
 
     systemVersion=""
     tagetPackageName=""
-    
+
     if [[ ${pType} == RPM ]]; then
         # rename rpm file
         if [[ `cat /etc/redhat-release | grep 7.5` == "" ]]; then
