@@ -148,6 +148,7 @@ public:
      */
     static StatusOr<std::unique_ptr<Expression>> decode(folly::StringPiece buffer) noexcept;
 
+    // Procedures used to do type conversions only between compatible ones.
     static int64_t asInt(const VariantType &value) {
         return boost::get<int64_t>(value);
     }
@@ -202,6 +203,57 @@ public:
     static bool almostEqual(double left, double right) {
         constexpr auto EPSILON = 1e-8;
         return std::abs(left - right) < EPSILON;
+    }
+
+    // Procedures used to do type casting
+    static std::string toString(const VariantType &value) {
+        char buf[1024];
+        switch (value.which()) {
+            case 0:
+                return folly::to<std::string>(boost::get<int64_t>(value));
+            case 1:
+                return folly::to<std::string>(boost::get<double>(value));
+            case 2:
+                snprintf(buf, sizeof(buf), "%s", boost::get<bool>(value) ? "true" : "false");
+                return buf;
+            case 3:
+                return boost::get<std::string>(value);
+        }
+        LOG(FATAL) << "unknown type: " << value.which();
+    }
+
+    static bool toBool(const VariantType &value) {
+        return asBool(value);
+    }
+
+    static double toDouble(const VariantType &value) {
+        switch (value.which()) {
+            case 0:
+                return static_cast<double>(boost::get<int64_t>(value));
+            case 1:
+                return boost::get<double>(value);
+            case 2:
+                return boost::get<bool>(value) ? 1.0 : 0.0;
+            case 3:
+                // TODO(dutor) error handling
+                return folly::to<double>(boost::get<std::string>(value));
+        }
+        LOG(FATAL) << "unknown type: " << value.which();
+    }
+
+    static int64_t toInt(const VariantType &value) {
+        switch (value.which()) {
+            case 0:
+                return boost::get<int64_t>(value);
+            case 1:
+                return static_cast<int64_t>(boost::get<double>(value));
+            case 2:
+                return boost::get<bool>(value) ? 1.0 : 0.0;
+            case 3:
+                // TODO(dutor) error handling
+                return folly::to<int64_t>(boost::get<std::string>(value));
+        }
+        LOG(FATAL) << "unknown type: " << value.which();
     }
 
     static void print(const VariantType &value);

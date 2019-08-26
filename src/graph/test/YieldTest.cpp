@@ -40,11 +40,11 @@ TEST_F(YieldTest, Basic) {
     }
     {
         cpp2::ExecutionResponse resp;
-        std::string query = "YIELD 1+1";
+        std::string query = "YIELD 1+1, '1+1', (int)3.14, (string)(1+1), (string)true";
         auto code = client->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<int64_t>> expected{
-            {2}
+        std::vector<std::tuple<int64_t, std::string, int64_t, std::string, std::string>> expected{
+            {2, "1+1", 3, "2", "true"}
         };
         ASSERT_TRUE(verifyResult(resp, expected));
     }
