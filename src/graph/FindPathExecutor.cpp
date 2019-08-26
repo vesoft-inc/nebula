@@ -132,9 +132,9 @@ void FindPathExecutor::execute() {
 
 void FindPathExecutor::findPath() {
     VLOG(3) << "find path.";
-    std::unordered_set<VertexID> visited;
     std::multimap<VertexID, Path> paths;
 
+    visitedFrom_.clear();
     for (auto &frontier : fromFrontiers_.second) {
         // Notice: we treat edges with different ranking
         // between two vertices as different path
@@ -148,44 +148,32 @@ void FindPathExecutor::findPath() {
                 meetOddPath(frontier.first, dstId, neighbor);
             }
 
-            // if we found dst have been visited,
-            // that means we have already found a shorter path
-            if ((visitedFrom_.count(dstId) == 1) && shortest_) {
-                continue;
-            }
             // update the path to frontiers
             updatePath(frontier.first, pathFrom_, neighbor, paths, VisitedBy::FROM);
-            visited.emplace(dstId);
+            visitedFrom_.emplace(dstId);
         }  // for `frontier'
     }  // for `neighbor'
     pathFrom_.insert(std::make_move_iterator(paths.begin()),
                      std::make_move_iterator(paths.end()));
-    fromVids_.reserve(visited.size());
-    std::copy(visited.begin(), visited.end(), std::back_inserter(fromVids_));
-    visitedFrom_.insert(std::make_move_iterator(visited.begin()),
-                        std::make_move_iterator(visited.end()));
+    fromVids_.reserve(visitedFrom_.size());
+    std::copy(visitedFrom_.begin(),
+              visitedFrom_.end(), std::back_inserter(fromVids_));
 
-    visited.clear();
+    visitedTo_.clear();
     paths.clear();
     for (auto &frontier : toFrontiers_.second) {
         for (auto &neighbor : frontier.second) {
             auto dstId = std::get<0>(neighbor);
-            // if we found dst have been visited,
-            // that means we have already found a shorter path
-            if ((visitedTo_.count(dstId) == 1) && shortest_) {
-                continue;
-            }
             // update the path to frontiers
             updatePath(frontier.first, pathTo_, neighbor, paths, VisitedBy::TO);
-            visited.emplace(dstId);
+            visitedTo_.emplace(dstId);
         }  // for `frontier'
     }  // for `neighbor'
     pathTo_.insert(std::make_move_iterator(paths.begin()),
                    std::make_move_iterator(paths.end()));
-    toVids_.reserve(visited.size());
-    std::copy(visited.begin(), visited.end(), std::back_inserter(toVids_));
-    visitedTo_.insert(std::make_move_iterator(visited.begin()),
-                      std::make_move_iterator(visited.end()));
+    toVids_.reserve(visitedTo_.size());
+    std::copy(visitedTo_.begin(),
+              visitedTo_.end(), std::back_inserter(toVids_));
 
     std::sort(fromVids_.begin(), fromVids_.end());
     std::sort(toVids_.begin(), toVids_.end());
@@ -233,11 +221,18 @@ inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &
             // if we erase targetNotFound_ fail,
             // that means the target had found by another path
             auto target = std::get<0>(path.back());
-            if (targetNotFound_.erase(target) == 0 && shortest_) {
-                continue;
+            if (shortest_) {
+                targetNotFound_.erase(target);
+                if (finalPath_.count(target) > 0) {
+                    // already found a shorter path
+                    continue;
+                } else {
+                    finalPath_.emplace(target, std::move(path));
+                }
+            } else {
+                VLOG(1) << "Found path: " << buildPathString(path);
+                finalPath_.emplace(target, std::move(path));
             }
-            VLOG(1) << "Found path: " << buildPathString(path);
-            finalPath_.emplace_back(std::move(path));
         }  // for `j'
     }  // for `i'
 }
@@ -275,11 +270,18 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
             VLOG(1) << "PathT: " << buildPathString(j->second);
             path.insert(path.end(), j->second.begin(), j->second.end());
             auto target = std::get<0>(path.back());
-            if (targetNotFound_.erase(target) == 0 && shortest_) {
-                continue;
+            if (shortest_) {
+                if (finalPath_.count(target) > 0) {
+                    // already found a shorter path
+                    continue;
+                } else {
+                    targetNotFound_.erase(target);
+                    finalPath_.emplace(target, std::move(path));
+                }
+            } else {
+                VLOG(1) << "Found path: " << buildPathString(path);
+                finalPath_.emplace(target, std::move(path));
             }
-            VLOG(1) << "Found path: " << buildPathString(path);
-            finalPath_.emplace_back(std::move(path));
         }
     }
 }
@@ -584,7 +586,7 @@ std::string FindPathExecutor::buildPathString(Path &path) {
 void FindPathExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     UNUSED(resp);
     for (auto &path : finalPath_) {
-        VLOG(0) << buildPathString(path);
+        VLOG(0) << buildPathString(path.second);
     }
 }
 }  // namespace graph

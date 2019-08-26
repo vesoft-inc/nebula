@@ -53,19 +53,6 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-/*
-    Status prepareFrom();
-
-    Status prepareTo();
-
-    void prepareVids(Expression *expr, Vertices &vertices);
-
-    Status prepareOver();
-
-    Status prepareStep();
-
-    Status prepareWhere();
-*/
     // Do some prepare work that can not do in prepare()
     Status beforeExecute();
 
@@ -120,7 +107,7 @@ private:
     Status                                      fStatus_;
     Status                                      tStatus_;
     std::unordered_set<VertexID>                targetNotFound_;
-    // visited vertices
+    // next step starting vertices
     std::unordered_set<VertexID>                visitedFrom_;
     std::unordered_set<VertexID>                visitedTo_;
     // next step starting vertices
@@ -133,7 +120,7 @@ private:
     std::multimap<VertexID, Path>               pathFrom_;
     std::multimap<VertexID, Path>               pathTo_;
     // final path(shortest or all)
-    std::vector<Path>                           finalPath_;
+    std::multimap<VertexID, Path>               finalPath_;
     uint64_t                                    currentStep_{0};
 };
 }  // namespace graph
