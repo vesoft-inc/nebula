@@ -19,117 +19,70 @@ Status FindPathExecutor::prepare() {
     Status status;
     expCtx_ = std::make_unique<ExpressionContext>();
     do {
-        status = prepareFrom();
-        if (!status.ok()) {
-            break;
+        if (sentence_->from() != nullptr) {
+            status = sentence_->from()->prepare(from_);
+            if (!status.ok()) {
+                break;
+            }
         }
-        status = prepareTo();
-        if (!status.ok()) {
-            break;
+        if (sentence_->to() != nullptr) {
+            status = sentence_->to()->prepare(to_);
+            if (!status.ok()) {
+                break;
+            }
         }
-        status = prepareOver();
-        if (!status.ok()) {
-            break;
+        if (sentence_->over() != nullptr) {
+            status = sentence_->over()->prepare(over_);
+            if (!status.ok()) {
+                break;
+            }
         }
-        status = prepareStep();
-        if (!status.ok()) {
-            break;
+        if (sentence_->step() != nullptr) {
+            status = sentence_->step()->prepare(step_);
+            if (!status.ok()) {
+                break;
+            }
         }
-        status = prepareWhere();
-        if (!status.ok()) {
-            break;
+        if (sentence_->where() != nullptr) {
+            status = sentence_->where()->prepare(where_);
+            if (!status.ok()) {
+                break;
+            }
         }
         shortest_ = sentence_->isShortest();
     } while (false);
     return status;
 }
 
-Status FindPathExecutor::prepareFrom() {
-    auto *clause = sentence_->from();
-    if (clause->isRef()) {
-        prepareVids(clause->ref(), from_);
-    }
-    return Status::OK();
-}
-
-Status FindPathExecutor::prepareTo() {
-    auto *clause = sentence_->to();
-    if (clause->isRef()) {
-        prepareVids(clause->ref(), to_);
-    }
-    return Status::OK();
-}
-
-void FindPathExecutor::prepareVids(Expression *expr, Vertices &vertices) {
-    if (expr->isInputExpression()) {
-        auto *iexpr = static_cast<InputPropertyExpression*>(expr);
-        vertices.colname_ = iexpr->prop();
-    } else if (expr->isVariableExpression()) {
-        auto *vexpr = static_cast<VariablePropertyExpression*>(expr);
-        vertices.varname_ = vexpr->alias();
-        vertices.colname_ = vexpr->prop();
-    } else {
-        //  should never come to here.
-        //  only support input and variable yet.
-        LOG(FATAL) << "Unknown kind of expression.";
-    }
-}
-
-Status FindPathExecutor::prepareOver() {
-    Status status = Status::OK();
-    auto *clause = sentence_->over();
+Status FindPathExecutor::beforeExecute() {
+    Status status;
     do {
-        if (clause == nullptr) {
-            LOG(FATAL) << "Over clause shall never be null";
+        status = checkIfGraphSpaceChosen();
+        if (!status.ok()) {
+            break;;
         }
-        // TODO move this to execute
-        auto spaceId = ectx()->rctx()->session()->space();
-        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId, *clause->edge());
+        spaceId_ = ectx()->rctx()->session()->space();
+
+        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *(over_.edge_));
         if (!edgeStatus.ok()) {
-            status = edgeStatus.status();
+            status = std::move(edgeStatus).status();
             break;
         }
-        over_.edge_ = clause->edge();
-        over_.edgeType_ = edgeStatus.value();
-        over_.reversely_ = clause->isReversely();
-    } while (false);
+        over_.edgeType_ = std::move(edgeStatus).value();
 
-    return status;
-}
-
-Status FindPathExecutor::prepareStep() {
-    auto *clause = sentence_->step();
-    if (clause != nullptr) {
-        step_.steps_ = clause->steps();
-        step_.upto_ = clause->isUpto();
-    }
-    return Status::OK();
-}
-
-Status FindPathExecutor::prepareWhere() {
-    auto *clause = sentence_->where();
-    if (clause != nullptr) {
-        auto *filter = clause->filter();
-        filter->setContext(expCtx_.get());
-        auto status = filter->prepare();
+        status = setupVids();
         if (!status.ok()) {
-            return status;
+            break;
         }
-    }
-    return Status::OK();
+    } while (false);
+    return status;
 }
 
 void FindPathExecutor::execute() {
     DCHECK(onError_);
     DCHECK(onFinish_);
-    auto status = checkIfGraphSpaceChosen();
-    if (!status.ok()) {
-        onError_(std::move(status));
-        return;
-    }
-    spaceId_ = ectx()->rctx()->session()->space();
 
-    status = setupVids();
+    auto status = beforeExecute();
     if (!status.ok()) {
         onError_(std::move(status));
         return;
@@ -247,7 +200,7 @@ void FindPathExecutor::findPath() {
         }
         for (auto intersectId : intersect) {
             meetEvenPath(intersectId);
-        }  // 'intersectId`
+        }  // `intersectId'
     }
 }
 
@@ -345,8 +298,8 @@ inline void FindPathExecutor::updatePath(
         // Build path:
         // i->second + (src,type,ranking)
         Path path = i->second;
-        VLOG(1) << "Interim pathF before :" << buildPathString(path);
-        VLOG(1) << "Interim pathF length before:" << path.size();
+        VLOG(1) << "Interim path before :" << buildPathString(path);
+        VLOG(1) << "Interim path length before:" << path.size();
         StepOut s0(neighbor);
         std::get<0>(s0) = src;
         if (visitedBy == VisitedBy::FROM) {
@@ -354,8 +307,9 @@ inline void FindPathExecutor::updatePath(
         } else {
             path.emplace(path.begin(), s0);
         }
-        VLOG(1) << "Interim pathF:" << buildPathString(path);
-        VLOG(1) << "Interim pathF length:" << path.size();
+        VLOG(1) << "Neighbor: " << std::get<0>(neighbor);
+        VLOG(1) << "Interim path:" << buildPathString(path);
+        VLOG(1) << "Interim path length:" << path.size();
         pathToNeighbor.emplace(std::get<0>(neighbor), std::move(path));
     }  // for `i'
 }
@@ -368,20 +322,10 @@ Status FindPathExecutor::setupVids() {
             if (!status.ok()) {
                 break;
             }
-        } else {
-            status = setupVidsFromExpr(sentence_->from()->vidList(), from_);
-            if (!status.ok()) {
-                break;
-            }
         }
 
         if (sentence_->to()->isRef()) {
             status = setupVidsFromRef(to_);
-            if (!status.ok()) {
-                break;
-            }
-        } else {
-            status = setupVidsFromExpr(sentence_->to()->vidList(), to_);
             if (!status.ok()) {
                 break;
             }
@@ -391,36 +335,7 @@ Status FindPathExecutor::setupVids() {
     return status;
 }
 
-Status FindPathExecutor::setupVidsFromExpr(std::vector<Expression*> &&vidList, Vertices &vertices) {
-    Status status = Status::OK();
-    auto uniqID = std::make_unique<std::unordered_set<VertexID>>();
-    vertices.vids_.reserve(vidList.size());
-    for (auto *expr : vidList) {
-        status = expr->prepare();
-        if (!status.ok()) {
-            break;
-        }
-        auto value = expr->eval();
-        if (!value.ok()) {
-            return value.status();
-        }
-        auto v = value.value();
-        if (!Expression::isInt(v)) {
-            status = Status::Error("Vertex ID should be of type integer");
-            break;
-        }
-
-        auto valInt = Expression::asInt(v);
-        auto result = uniqID->emplace(valInt);
-        if (result.second) {
-            vertices.vids_.emplace_back(valInt);
-        }
-    }
-
-    return status;
-}
-
-Status FindPathExecutor::setupVidsFromRef(Vertices &vertices) {
+Status FindPathExecutor::setupVidsFromRef(Clause::Vertices &vertices) {
     const InterimResult *inputs;
     if (vertices.varname_ == nullptr) {
         inputs = inputs_.get();

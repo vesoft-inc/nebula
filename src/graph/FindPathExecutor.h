@@ -53,28 +53,7 @@ public:
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
 private:
-    struct Vertices {
-        std::string             *colname_{nullptr};
-        std::string             *varname_{nullptr};
-        std::vector<VertexID>    vids_;
-    };
-
-    struct Over {
-        std::string *edge_{nullptr};
-        EdgeType     edgeType_{INT_MIN};
-        bool         reversely_{false};
-    };
-
-    struct Step {
-        uint32_t steps_{0};
-        bool     upto_{false};
-    };
-
-    struct Where {
-        Expression *filter_{nullptr};
-    };
-
-
+/*
     Status prepareFrom();
 
     Status prepareTo();
@@ -86,6 +65,9 @@ private:
     Status prepareStep();
 
     Status prepareWhere();
+*/
+    // Do some prepare work that can not do in prepare()
+    Status beforeExecute();
 
     void getFromFrontiers(std::vector<storage::cpp2::PropDef> props);
 
@@ -106,9 +88,7 @@ private:
 
     Status setupVids();
 
-    Status setupVidsFromRef(Vertices &vertices);
-
-    Status setupVidsFromExpr(std::vector<Expression*> &&vidList, Vertices &vertices);
+    Status setupVidsFromRef(Clause::Vertices &vertices);
 
     Status doFilter(
             storage::StorageRpcResponse<storage::cpp2::QueryResponse> &&result,
@@ -126,11 +106,11 @@ private:
     FindPathSentence                           *sentence_{nullptr};
     std::unique_ptr<ExpressionContext>          expCtx_;
     GraphSpaceID                                spaceId_{INT_MIN};
-    Vertices                                    from_;
-    Vertices                                    to_;
-    Over                                        over_;
-    Step                                        step_;
-    Where                                       where_;
+    Clause::Vertices                            from_;
+    Clause::Vertices                            to_;
+    Clause::Over                                over_;
+    Clause::Step                                step_;
+    Clause::Where                               where_;
     bool                                        shortest_{false};
     std::unique_ptr<InterimResult>              inputs_;
     using SchemaPropIndex = std::unordered_map<std::pair<std::string, std::string>, int64_t>;
