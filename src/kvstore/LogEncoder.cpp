@@ -171,7 +171,7 @@ HostAddr decodeLearner(const std::string& encoded) {
     return addr;
 }
 
-std::string encodeTransLeader(const HostAddr& learner) {
+std::string encodeTransLeader(const HostAddr& targetAddr) {
     std::string encoded;
     encoded.reserve(kHeadLen + sizeof(HostAddr));
     // Timestamp (8 bytes)
@@ -184,7 +184,7 @@ std::string encodeTransLeader(const HostAddr& learner) {
     uint32_t len = static_cast<uint32_t>(sizeof(HostAddr));
     encoded.append(reinterpret_cast<char*>(&len), sizeof(len));
     // Target addr
-    encoded.append(reinterpret_cast<const char*>(&learner), sizeof(HostAddr));
+    encoded.append(reinterpret_cast<const char*>(&targetAddr), sizeof(HostAddr));
     return encoded;
 }
 

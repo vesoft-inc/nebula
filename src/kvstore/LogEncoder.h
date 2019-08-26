@@ -37,7 +37,7 @@ std::vector<folly::StringPiece> decodeMultiValues(folly::StringPiece encoded);
 std::string encodeLearner(const HostAddr& learner);
 HostAddr decodeLearner(const std::string& encoded);
 
-std::string encodeTransLeader(const HostAddr& learner);
+std::string encodeTransLeader(const HostAddr& targetAddr);
 HostAddr decodeTransLeader(folly::StringPiece encoded);
 }  // namespace kvstore
 }  // namespace nebula

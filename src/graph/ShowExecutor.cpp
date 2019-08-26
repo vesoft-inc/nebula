@@ -112,6 +112,10 @@ void ShowExecutor::showHosts() {
                 leaders += "space " + folly::to<std::string>(spaceEntry.first) + ": " +
                            folly::to<std::string>(spaceEntry.second.size()) + ", ";
             }
+            if (!leaders.empty()) {
+                leaders.resize(leaders.size() - 2);
+            }
+
             row[3].set_integer(leaderCount);
             row[4].set_str(leaders);
 
@@ -119,6 +123,9 @@ void ShowExecutor::showHosts() {
             for (auto& spaceEntry : item.get_all_parts()) {
                 parts += "space " + folly::to<std::string>(spaceEntry.first) + ": " +
                            folly::to<std::string>(spaceEntry.second.size()) + ", ";
+            }
+            if (!parts.empty()) {
+                parts.resize(parts.size() - 2);
             }
             row[5].set_str(parts);
 
