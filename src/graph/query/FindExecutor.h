@@ -8,7 +8,7 @@
 #define GRAPH_QUERY_FINDEXECUTOR_H_
 
 #include "base/Base.h"
-#include "graph/TraverseExecutor.h"
+#include "graph/query/TraverseExecutor.h"
 
 namespace nebula {
 namespace graph {
