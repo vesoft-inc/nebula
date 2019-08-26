@@ -58,7 +58,6 @@ metas， storages 和 graphs 包含其自身的 hosts。
 `part_man_type`             | memory                   | memory，meta
 `pid_file`                  | "pids/nebula-metad.pid"  | 存储进程 ID 的文件
 `daemonize`                 | true                     | 作为 daemon 进程运行
-`cluster_id`                | 0                        | 每个集群都惟一的 ID
 `load_config_interval_secs` | 2 * 60                   | 加载配置间隔
 `meta_ingest_thread_num`    | 3.                       | Meta daemon的 ingest 线程数
 

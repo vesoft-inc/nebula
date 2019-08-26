@@ -141,7 +141,7 @@ bash> sudo make install
     bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static maven java-1.8.0-openjdk
     ```
 
-    和通过 vesoft offer
+    和通过 vesoft 提供的包
 
     ```
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-6.5.tar.gz
