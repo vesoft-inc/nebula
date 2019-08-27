@@ -219,7 +219,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
     client->waitForMetadReady();
-    client->setGflagsModule(module);
+    client->gflagsModule_ = module;
 
     ClientBasedGflagsManager cfgMan(client.get());
     // mock some test gflags to meta
@@ -382,7 +382,7 @@ TEST(ConfigManTest, MockConfigTest) {
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
     client->waitForMetadReady();
-    client->setGflagsModule(module);
+    client->gflagsModule_ = module;
     ClientBasedGflagsManager clientCfgMan(client.get());
 
     std::vector<cpp2::ConfigItem> configItems;

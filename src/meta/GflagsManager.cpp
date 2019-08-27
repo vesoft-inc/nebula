@@ -8,6 +8,10 @@
 #include "base/Configuration.h"
 #include "fs/FileUtils.h"
 
+DEFINE_string(graphd_gflags_json, "share/resources/gflags.json", "gflags mode json for graph");
+DEFINE_string(metad_gflags_json, "share/resources/gflags.json", "gflags mode json for metad");
+DEFINE_string(storaged_gflags_json, "share/resources/gflags.json", "gflags mode json for storaged");
+
 namespace nebula {
 namespace meta {
 
@@ -25,12 +29,11 @@ std::string GflagsManager::gflagsValueToThriftValue<std::string>(
     return flag.current_value;
 }
 
-std::unordered_map<std::string, cpp2::ConfigMode> GflagsManager::parseConfigJson() {
-    auto path = fs::FileUtils::readLink("/proc/self/exe").value();
-    auto json = fs::FileUtils::dirname(path.c_str()) + "/../share/resources/gflags.json";
+std::unordered_map<std::string, cpp2::ConfigMode>
+GflagsManager::parseConfigJson(const std::string& path) {
     std::unordered_map<std::string, cpp2::ConfigMode> configModeMap;
     Configuration conf;
-    if (!conf.parseFromFile(json).ok()) {
+    if (!conf.parseFromFile(path).ok()) {
         LOG(ERROR) << "Load gflags json failed";
         return configModeMap;
     }
@@ -52,12 +55,13 @@ std::unordered_map<std::string, cpp2::ConfigMode> GflagsManager::parseConfigJson
     return configModeMap;
 }
 
-std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigModule& module) {
+std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigModule& module,
+                                                           const std::string& jsonPath) {
     std::vector<cpp2::ConfigItem> configItems;
     if (module == cpp2::ConfigModule::UNKNOWN) {
         return configItems;
     }
-    auto configModeMap = parseConfigJson();
+    auto configModeMap = parseConfigJson(jsonPath);
     std::vector<gflags::CommandLineFlagInfo> flags;
     gflags::GetAllFlags(&flags);
     for (auto& flag : flags) {
@@ -107,6 +111,28 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
     }
     LOG(INFO) << "Prepare to register " << configItems.size() << " gflags to meta";
     return configItems;
+}
+
+void GflagsManager::getGflagsModule(cpp2::ConfigModule& gflagsModule, std::string& jsonPath) {
+    // get current process according to gflags pid_file
+    gflags::CommandLineFlagInfo pid;
+    if (gflags::GetCommandLineFlagInfo("pid_file", &pid)) {
+        auto defaultPid = pid.default_value;
+        if (defaultPid.find("nebula-graphd") != std::string::npos) {
+            gflagsModule = cpp2::ConfigModule::GRAPH;
+            jsonPath = FLAGS_graphd_gflags_json;
+        } else if (defaultPid.find("nebula-storaged") != std::string::npos) {
+            gflagsModule = cpp2::ConfigModule::STORAGE;
+            jsonPath = FLAGS_storaged_gflags_json;
+        } else if (defaultPid.find("nebula-metad") != std::string::npos) {
+            gflagsModule = cpp2::ConfigModule::META;
+            jsonPath = FLAGS_metad_gflags_json;
+        } else {
+            LOG(ERROR) << "Should not reach here";
+        }
+    } else {
+        LOG(INFO) << "Unknown config module";
+    }
 }
 
 std::string toThriftValueStr(const cpp2::ConfigType& type, const VariantType& value) {

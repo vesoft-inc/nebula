@@ -21,9 +21,11 @@ KVBasedGflagsManager::~KVBasedGflagsManager() {
 }
 
 Status KVBasedGflagsManager::init() {
-    getGflagsModule();
-    auto gflagsDeclared = declareGflags(module_);
-    return registerGflags(std::move(gflagsDeclared));
+    auto gflagsModule = cpp2::ConfigModule::UNKNOWN;
+    std::string gflagsJsonPath;
+    getGflagsModule(gflagsModule, gflagsJsonPath);
+    gflagsDeclared_ = declareGflags(gflagsModule, gflagsJsonPath);
+    return registerGflags(gflagsDeclared_);
 }
 
 folly::Future<StatusOr<bool>>
@@ -46,23 +48,6 @@ KVBasedGflagsManager::listConfigs(const cpp2::ConfigModule& module) {
     UNUSED(module);
     LOG(FATAL) << "Unimplement!";
     return Status::NotSupported();
-}
-
-void KVBasedGflagsManager::getGflagsModule() {
-    // get current process according to gflags pid_file
-    gflags::CommandLineFlagInfo pid;
-    if (gflags::GetCommandLineFlagInfo("pid_file", &pid)) {
-        auto defaultPid = pid.default_value;
-        if (defaultPid.find("nebula-graphd") != std::string::npos) {
-            module_ = cpp2::ConfigModule::GRAPH;
-        } else if (defaultPid.find("nebula-storaged") != std::string::npos) {
-            module_ = cpp2::ConfigModule::STORAGE;
-        } else if (defaultPid.find("nebula-metad") != std::string::npos) {
-            module_ = cpp2::ConfigModule::META;
-        } else {
-            LOG(ERROR) << "Should not reach here";
-        }
-    }
 }
 
 Status KVBasedGflagsManager::registerGflags(const std::vector<cpp2::ConfigItem>& gflagsDeclared) {

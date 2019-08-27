@@ -16,6 +16,9 @@ DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
+DECLARE_string(graphd_gflags_json);
+DECLARE_string(metad_gflags_json);
+DECLARE_string(storaged_gflags_json);
 
 namespace nebula {
 namespace meta {
@@ -64,7 +67,9 @@ bool MetaClient::isMetadReady() {
 }
 
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
-    setGflagsModule();
+    std::string gflagsJsonPath;
+    GflagsManager::getGflagsModule(gflagsModule_, gflagsJsonPath);
+    gflagsDeclared_ = GflagsManager::declareGflags(gflagsModule_, gflagsJsonPath);
     isRunning_ = true;
     int tryCount = count;
     while (!isMetadReady() && ((count == -1) || (tryCount > 0)) && isRunning_) {
@@ -1215,29 +1220,6 @@ MetaClient::listConfigs(const cpp2::ConfigModule& module) {
                     return std::move(resp).get_items();
                 }, std::move(promise));
     return future;
-}
-
-void MetaClient::setGflagsModule(const cpp2::ConfigModule& module) {
-    if (module != cpp2::ConfigModule::UNKNOWN) {
-        gflagsModule_ = module;
-        return;
-    }
-
-    // get current process according to gflags pid_file
-    gflags::CommandLineFlagInfo pid;
-    if (gflags::GetCommandLineFlagInfo("pid_file", &pid)) {
-        auto defaultPid = pid.default_value;
-        if (defaultPid.find("nebula-graphd") != std::string::npos) {
-            gflagsModule_ = cpp2::ConfigModule::GRAPH;
-        } else if (defaultPid.find("nebula-storaged") != std::string::npos) {
-            gflagsModule_ = cpp2::ConfigModule::STORAGE;
-        } else if (defaultPid.find("nebula-metad") != std::string::npos) {
-            gflagsModule_ = cpp2::ConfigModule::META;
-        } else {
-            LOG(ERROR) << "Should not reach here";
-        }
-        gflagsDeclared_ = GflagsManager::declareGflags(gflagsModule_);
-    }
 }
 
 void MetaClient::loadCfgThreadFunc() {

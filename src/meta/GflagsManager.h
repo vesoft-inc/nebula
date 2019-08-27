@@ -29,12 +29,16 @@ public:
     virtual folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module) = 0;
 
-    static std::vector<cpp2::ConfigItem> declareGflags(const cpp2::ConfigModule& module);
+    static void getGflagsModule(cpp2::ConfigModule& gflagsModule, std::string& jsonPath);
+
+    static std::vector<cpp2::ConfigItem> declareGflags(const cpp2::ConfigModule& module,
+                                                       const std::string& jsonPath);
 
 protected:
     virtual ~GflagsManager() = default;
 
-    static std::unordered_map<std::string, cpp2::ConfigMode> parseConfigJson();
+    static std::unordered_map<std::string, cpp2::ConfigMode>
+           parseConfigJson(const std::string& json);
 
     template<typename ValueType>
     static std::string gflagsValueToThriftValue(const gflags::CommandLineFlagInfo& flag);

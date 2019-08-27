@@ -32,6 +32,17 @@
         "stop_logging_if_full_disk",
         "symbolize_stacktrace",
         "vmodule",
-        "v"
+        "v",
+        "help",
+        "helpon",
+        "helpxml",
+        "helpfull",
+        "helpmatch",
+        "helpshort",
+        "alsologtoemail",
+        "version",
+        "graphd_gflags_json",
+        "metad_gflags_json",
+        "storaged_gflags_json"
     ]
 }

@@ -37,10 +37,6 @@ public:
 private:
     Status registerGflags(const std::vector<cpp2::ConfigItem>& gflagsDeclared);
 
-    void getGflagsModule();
-
-    cpp2::ConfigModule module_{cpp2::ConfigModule::UNKNOWN};
-
     std::vector<cpp2::ConfigItem> gflagsDeclared_;
 
     kvstore::NebulaStore* kvstore_ = nullptr;

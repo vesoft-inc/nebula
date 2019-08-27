@@ -8,7 +8,6 @@
 #define META_CLIENTBASEDGFLAGSMANAGER_H_
 
 #include "base/Base.h"
-#include <gtest/gtest_prod.h>
 #include "meta/GflagsManager.h"
 #include "meta/client/MetaClient.h"
 
@@ -16,9 +15,6 @@ namespace nebula {
 namespace meta {
 
 class ClientBasedGflagsManager : public GflagsManager {
-    FRIEND_TEST(ConfigManTest, MetaConfigManTest);
-    FRIEND_TEST(ConfigManTest, MockConfigTest);
-
 public:
     explicit ClientBasedGflagsManager(MetaClient *metaClient);
 
