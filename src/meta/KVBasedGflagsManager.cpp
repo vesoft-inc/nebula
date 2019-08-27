@@ -22,9 +22,8 @@ KVBasedGflagsManager::~KVBasedGflagsManager() {
 
 Status KVBasedGflagsManager::init() {
     auto gflagsModule = cpp2::ConfigModule::UNKNOWN;
-    std::string gflagsJsonPath;
-    getGflagsModule(gflagsModule, gflagsJsonPath);
-    gflagsDeclared_ = declareGflags(gflagsModule, gflagsJsonPath);
+    getGflagsModule(gflagsModule);
+    gflagsDeclared_ = declareGflags(gflagsModule);
     return registerGflags(gflagsDeclared_);
 }
 

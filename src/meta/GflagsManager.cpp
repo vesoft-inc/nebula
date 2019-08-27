@@ -8,9 +8,7 @@
 #include "base/Configuration.h"
 #include "fs/FileUtils.h"
 
-DEFINE_string(graphd_gflags_json, "share/resources/gflags.json", "gflags mode json for graph");
-DEFINE_string(metad_gflags_json, "share/resources/gflags.json", "gflags mode json for metad");
-DEFINE_string(storaged_gflags_json, "share/resources/gflags.json", "gflags mode json for storaged");
+DEFINE_string(gflags_mode_json, "share/resources/gflags.json", "gflags mode json for service");
 
 namespace nebula {
 namespace meta {
@@ -55,13 +53,12 @@ GflagsManager::parseConfigJson(const std::string& path) {
     return configModeMap;
 }
 
-std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigModule& module,
-                                                           const std::string& jsonPath) {
+std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigModule& module) {
     std::vector<cpp2::ConfigItem> configItems;
     if (module == cpp2::ConfigModule::UNKNOWN) {
         return configItems;
     }
-    auto configModeMap = parseConfigJson(jsonPath);
+    auto configModeMap = parseConfigJson(FLAGS_gflags_mode_json);
     std::vector<gflags::CommandLineFlagInfo> flags;
     gflags::GetAllFlags(&flags);
     for (auto& flag : flags) {
@@ -113,20 +110,17 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
     return configItems;
 }
 
-void GflagsManager::getGflagsModule(cpp2::ConfigModule& gflagsModule, std::string& jsonPath) {
+void GflagsManager::getGflagsModule(cpp2::ConfigModule& gflagsModule) {
     // get current process according to gflags pid_file
     gflags::CommandLineFlagInfo pid;
     if (gflags::GetCommandLineFlagInfo("pid_file", &pid)) {
         auto defaultPid = pid.default_value;
         if (defaultPid.find("nebula-graphd") != std::string::npos) {
             gflagsModule = cpp2::ConfigModule::GRAPH;
-            jsonPath = FLAGS_graphd_gflags_json;
         } else if (defaultPid.find("nebula-storaged") != std::string::npos) {
             gflagsModule = cpp2::ConfigModule::STORAGE;
-            jsonPath = FLAGS_storaged_gflags_json;
         } else if (defaultPid.find("nebula-metad") != std::string::npos) {
             gflagsModule = cpp2::ConfigModule::META;
-            jsonPath = FLAGS_metad_gflags_json;
         } else {
             LOG(ERROR) << "Should not reach here";
         }

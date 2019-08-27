@@ -29,10 +29,9 @@ public:
     virtual folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module) = 0;
 
-    static void getGflagsModule(cpp2::ConfigModule& gflagsModule, std::string& jsonPath);
+    static void getGflagsModule(cpp2::ConfigModule& gflagsModule);
 
-    static std::vector<cpp2::ConfigItem> declareGflags(const cpp2::ConfigModule& module,
-                                                       const std::string& jsonPath);
+    static std::vector<cpp2::ConfigItem> declareGflags(const cpp2::ConfigModule& module);
 
 protected:
     virtual ~GflagsManager() = default;

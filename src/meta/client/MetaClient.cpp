@@ -16,9 +16,7 @@ DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
-DECLARE_string(graphd_gflags_json);
-DECLARE_string(metad_gflags_json);
-DECLARE_string(storaged_gflags_json);
+DECLARE_string(gflags_mode_json);
 
 namespace nebula {
 namespace meta {
@@ -68,8 +66,8 @@ bool MetaClient::isMetadReady() {
 
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     std::string gflagsJsonPath;
-    GflagsManager::getGflagsModule(gflagsModule_, gflagsJsonPath);
-    gflagsDeclared_ = GflagsManager::declareGflags(gflagsModule_, gflagsJsonPath);
+    GflagsManager::getGflagsModule(gflagsModule_);
+    gflagsDeclared_ = GflagsManager::declareGflags(gflagsModule_);
     isRunning_ = true;
     int tryCount = count;
     while (!isMetadReady() && ((count == -1) || (tryCount > 0)) && isRunning_) {

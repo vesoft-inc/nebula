@@ -41,8 +41,6 @@
         "helpshort",
         "alsologtoemail",
         "version",
-        "graphd_gflags_json",
-        "metad_gflags_json",
-        "storaged_gflags_json"
+        "gflags_mode_json"
     ]
 }
