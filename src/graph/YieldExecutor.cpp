@@ -131,10 +131,12 @@ Status YieldExecutor::executeInputs() {
         getters.getInputProp = [&] (const std::string &prop) {
             return Collector::getProp(inputs->schema().get(), prop, reader);
         };
-        VLOG(3) << "stub 1";
         if (filter_ != nullptr) {
             auto val = filter_->eval();
-            if (!Expression::asBool(val)) {
+            if (!val.ok()) {
+                return val.status();
+            }
+            if (!Expression::asBool(val.value())) {
                 return Status::OK();
             }
         }
@@ -143,12 +145,18 @@ Status YieldExecutor::executeInputs() {
         for (auto col : yields_) {
             auto *expr = col->expr();
             auto value = expr->eval();
-            Collector::collect(value, writer.get());
+            if (!value.ok()) {
+                return value.status();
+            }
+            Collector::collect(value.value(), writer.get());
         }
         rsWriter->addRow(*writer);
         return Status::OK();
     };
-    inputs->applyTo(visitor);
+    status = inputs->applyTo(visitor);
+    if (!status.ok()) {
+        return status;
+    }
 
     finishExecution(std::move(rsWriter));
     return Status::OK();
@@ -189,7 +197,10 @@ Status YieldExecutor::getOutputSchema(const InterimResult *inputs,
         for (auto *column : yields_) {
             auto *expr = column->expr();
             auto value = expr->eval();
-            record.emplace_back(std::move(value));
+            if (!value.ok()) {
+                return value.status();
+            }
+            record.emplace_back(std::move(value).value());
         }
         return Status::OK();
     };
@@ -208,8 +219,7 @@ Status YieldExecutor::executeConstant() {
         auto expr = col->expr();
         auto v = expr->eval();
         if (!v.ok()) {
-            onError_(v.status());
-            return;
+            return v.status();
         }
         values.emplace_back(v.value());
     }

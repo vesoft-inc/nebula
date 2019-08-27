@@ -338,7 +338,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
 
             auto &getters = expCtx_->getters();
             getters.getAliasProp = [&] (const std::string&,
-										const std::string &prop) -> OptVariantType {
+                                        const std::string &prop) -> OptVariantType {
                 return Collector::getProp(eschema.get(), prop, &*iter);
             };
             for (auto *column : yields_) {
@@ -348,7 +348,7 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
                     onError_(value.status());
                     return;
                 }
-                Collector::collect(value, writer.get());
+                Collector::collect(value.value(), writer.get());
             }
 
             // TODO Consider float/double, and need to reduce mem copy.

@@ -202,7 +202,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             auto writer = std::make_unique<RowWriter>(outputSchema);
             auto &getters = expCtx_->getters();
             getters.getAliasProp = [&] (const std::string&,
-										const std::string &prop) -> OptVariantType {
+                                        const std::string &prop) -> OptVariantType {
                 return Collector::getProp(vschema.get(), prop, vreader.get());
             };
             for (auto *column : yields_) {
@@ -212,7 +212,7 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
                     onError_(value.status());
                     return;
                 }
-                Collector::collect(value, writer.get());
+                Collector::collect(value.value(), writer.get());
             }
             // TODO Consider float/double, and need to reduce mem copy.
             std::string encode = writer->encode();

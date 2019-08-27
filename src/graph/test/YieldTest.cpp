@@ -273,6 +273,23 @@ TEST_F(YieldTest, sentenceBase) {
         }
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+
+    std::string var = " $var = GO FROM %ld OVER serve YIELD "
+                     "$^.player.name as name, serve.start_year as start, $$.team.name as team";
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| YIELD $-.team";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<std::string>> expected;
+        for (auto &serve : player.serves()) {
+            std::tuple<std::string> result(std::get<0>(serve));
+            expected.emplace_back(std::move(result));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 }   // namespace graph
 }   // namespace nebula
