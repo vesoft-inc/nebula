@@ -58,6 +58,10 @@ nebula_add_library(
     meta_client OBJECT
     client/MetaClient.cpp
 )
+add_dependencies(
+    meta_client
+    gflags_man_obj
+)
 
 add_library(
     gflags_man_obj OBJECT

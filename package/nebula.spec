@@ -81,6 +81,7 @@ Group: Applications/Databases
 %attr(0755,root,root) %{_bindir}/nebula-metad
 %attr(0644,root,root) %{_sysconfdir}/nebula-metad.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-metad.service
+%attr(0644,root,root) %{_resourcesdir}/gflags.json
 
 # After install, if config file is non-existent, copy default config file
 %post metad
@@ -94,6 +95,7 @@ fi
 %attr(0755,root,root) %{_bindir}/nebula-graphd
 %attr(0644,root,root) %config%{_sysconfdir}/nebula-graphd.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-graphd.service
+%attr(0644,root,root) %{_resourcesdir}/gflags.json
 
 %post graphd
 if [[ ! -f %{_install_dir}/etc/nebula-graphd.conf ]]; then
@@ -106,6 +108,7 @@ fi
 %attr(0755,root,root) %{_bindir}/nebula-storaged
 %attr(0644,root,root) %config%{_sysconfdir}/nebula-storaged.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-storaged.service
+%attr(0644,root,root) %{_resourcesdir}/gflags.json
 
 %post storaged
 if [[ ! -f %{_install_dir}/etc/nebula-storaged.conf ]]; then

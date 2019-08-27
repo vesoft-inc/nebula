@@ -12,7 +12,7 @@
         },
         "SHOW" : {
             "sub_keywords": [
-                "HOSTS", "TAGS", "EDGES", "SPACES", "USERS", "ROLES", "USER"
+                "HOSTS", "TAGS", "EDGES", "SPACES", "USERS", "ROLES", "USER", "VARIABLES"
             ]
         },
         "DESCRIBE" : {
@@ -76,6 +76,16 @@
         "INTERSECT": {
         },
         "UNION": {
+        },
+        "UPDATE": {
+            "sub_keywords": [
+                "VARIABLES"
+            ]
+        },
+        "GET": {
+            "sub_keywords": [
+                "VARIABLES"
+            ]
         }
     },
     "typenames": [
