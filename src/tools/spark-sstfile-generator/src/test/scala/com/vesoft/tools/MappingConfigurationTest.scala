@@ -141,7 +141,7 @@ class MappingConfigurationTest extends FlatSpec with BeforeAndAfter {
       Json.parse(expectedResult).as[MappingConfiguration]
     assert(deserializedMappingConfig == mappingConfig)
 
-    // MappingConfiguration w/ custom ken generation policy
+    // MappingConfiguration w/ custom key generation policy
     val mappingConfigWithCustomPolicy = MappingConfiguration(
       "fma",
       3,
