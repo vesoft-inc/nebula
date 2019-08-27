@@ -55,7 +55,14 @@ bool NebulaStore::init() {
             for (auto& dir : dirs) {
                 LOG(INFO) << "Scan path \"" << path << "/" << dir << "\"";
                 try {
-                    auto spaceId = folly::to<GraphSpaceID>(dir);
+                    GraphSpaceID spaceId;
+                    try {
+                        spaceId = folly::to<GraphSpaceID>(dir);
+                    } catch (const std::exception& ex) {
+                        LOG(ERROR) << "Data path invalid: " << dir;
+                        return false;
+                    }
+
                     if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId)) {
                         // TODO We might want to have a second thought here.
                         // Removing the data directly feels a little strong
