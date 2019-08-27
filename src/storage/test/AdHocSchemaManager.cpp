@@ -177,8 +177,12 @@ StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPie
 // This interface is disabled
 StatusOr<EdgeType> AdHocSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
     UNUSED(space);
-    UNUSED(typeName);
-    LOG(FATAL) << "Unimplement";
+
+    try {
+        return folly::to<EdgeType>(typeName);
+    } catch (const std::exception& e) {
+        LOG(FATAL) << e.what();
+    }
     return -1;
 }
 

@@ -404,8 +404,14 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 // TODO(heng): We could remove the lock with one filter one bucket.
                 std::lock_guard<std::mutex> lg(this->lock_);
                 auto& getters = expCtx_->getters();
-                getters.getAliasProp =
-                    [&] (const std::string&, const std::string &prop) -> OptVariantType {
+                getters.getAliasProp = [this, edgeType, &reader](const std::string& edgeName,
+                                           const std::string& prop) -> OptVariantType {
+                    auto edgeStatus = this->schemaMan_->toEdgeType(spaceId_, edgeName);
+                    CHECK(edgeStatus.ok());
+
+                    if (edgeType != edgeStatus.value()) {
+                        return Status::Error("ignore this edge");
+                    }
                     auto res = RowReader::getPropByName(reader.get(), prop);
                     if (!ok(res)) {
                         return Status::Error("Invalid Prop");
