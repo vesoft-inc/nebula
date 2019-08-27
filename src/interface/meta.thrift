@@ -456,6 +456,7 @@ enum ConfigMode {
     IMMUTABLE   = 0x00,
     REBOOT      = 0x01,
     MUTABLE     = 0x02,
+    IGNORED     = 0x03,
 } (cpp.enum_strict)
 
 struct ConfigItem {

@@ -51,6 +51,7 @@ add_dependencies(
     graph_thrift_obj
     meta_thrift_obj
     meta_client
+    gflags_man_obj
     schema_obj
     stats_obj
     process_obj
