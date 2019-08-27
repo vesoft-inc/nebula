@@ -55,7 +55,7 @@ void buildRequest(cpp2::EdgePropRequest& req) {
         for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             for (auto dstId = 10001; dstId <= 10007; dstId++) {
                 tmpEdges[partId].emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                              vertexId, 101, dstId, dstId - 10001);
+                                              vertexId, 101, dstId - 10001, dstId);
             }
         }
     }

@@ -39,14 +39,12 @@ Part::Part(GraphSpaceID spaceId,
            KVEngine* engine,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
            std::shared_ptr<thread::GenericThreadPool> workers,
-           wal::BufferFlusher* flusher,
            std::shared_ptr<folly::Executor> handlers)
         : RaftPart(FLAGS_cluster_id,
                    spaceId,
                    partId,
                    localAddr,
                    walPath,
-                   flusher,
                    ioPool,
                    workers,
                    handlers)
@@ -136,6 +134,12 @@ void Part::asyncRemoveRange(folly::StringPiece start,
         });
 }
 
+void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
+    atomicOpAsync(std::move(op)).then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        callback(toResultCode(res));
+    });
+}
+
 void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
     std::string log = encodeLearner(learner);
     sendCommandAsync(std::move(log))
@@ -152,13 +156,6 @@ void Part::onLostLeadership(TermID term) {
 void Part::onElected(TermID term) {
     VLOG(1) << "Being elected as the leader for the term " << term;
 }
-
-
-std::string Part::compareAndSet(const std::string& log) {
-    UNUSED(log);
-    LOG(FATAL) << "To be implemented";
-}
-
 
 bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
     auto batch = engine_->startBatchWrite();

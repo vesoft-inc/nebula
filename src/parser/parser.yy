@@ -1260,6 +1260,15 @@ show_sentence
     | KW_SHOW KW_VARIABLES show_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kShow, $3);
     }
+    | KW_SHOW KW_CREATE KW_SPACE name_label {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateSpace, $4);
+    }
+    | KW_SHOW KW_CREATE KW_TAG name_label {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateTag, $4);
+    }
+    | KW_SHOW KW_CREATE KW_EDGE name_label {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdge, $4);
+    }
     ;
 
 add_hosts_sentence

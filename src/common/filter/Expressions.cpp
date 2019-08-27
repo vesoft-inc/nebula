@@ -703,12 +703,40 @@ std::string columnTypeToString(ColumnType type) {
 
 
 std::string TypeCastingExpression::toString() const {
-    return "";
+    std::string buf;
+    buf.reserve(256);
+
+    buf += "(";
+    buf += columnTypeToString(type_);
+    buf += ")";
+    buf += operand_->toString();
+
+    return buf;
 }
 
+
 OptVariantType TypeCastingExpression::eval() const {
-    return OptVariantType(toString());
+    auto result = operand_->eval();
+    if (!result.ok()) {
+        return result;
+    }
+
+    switch (type_) {
+        case INT:
+        case TIMESTAMP:
+            return Expression::toInt(result.value());
+        case STRING:
+            return Expression::toString(result.value());
+        case DOUBLE:
+            return Expression::toDouble(result.value());
+        case BOOL:
+            return Expression::toBool(result.value());
+        case BIGINT:
+            return Status::Error("Type bigint not supported yet");
+    }
+    LOG(FATAL) << "casting to unknown type: " << static_cast<int>(type_);
 }
+
 
 Status TypeCastingExpression::prepare() {
     return operand_->prepare();

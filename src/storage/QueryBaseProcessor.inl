@@ -415,8 +415,8 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 getters.getEdgeRank = [&] () -> VariantType {
                     return rank;
                 };
-                getters.getSrcTagProp = [&, this] (const std::string& tag,
-                                                   const std::string& prop) -> OptVariantType {
+                getters.getSrcTagProp = [&fcontext] (const std::string& tag,
+                                                     const std::string& prop) -> OptVariantType {
                     auto it = fcontext->tagFilters_.find(std::make_pair(tag, prop));
                     if (it == fcontext->tagFilters_.end()) {
                         return Status::Error("Invalid Tag Filter");

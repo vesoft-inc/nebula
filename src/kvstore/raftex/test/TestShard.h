@@ -25,6 +25,8 @@ std::string encodeLearner(const HostAddr& addr);
 
 HostAddr decodeLearner(const folly::StringPiece& log);
 
+std::string compareAndSet(const std::string& log);
+
 class TestShard : public RaftPart {
 public:
     TestShard(
@@ -33,7 +35,6 @@ public:
         PartitionID partId,
         HostAddr addr,
         const folly::StringPiece walRoot,
-        wal::BufferFlusher* flusher,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
         std::shared_ptr<thread::GenericThreadPool> workers,
         std::shared_ptr<folly::Executor> handlersPool,
@@ -57,7 +58,6 @@ public:
     void onLostLeadership(TermID term) override;
     void onElected(TermID term) override;
 
-    std::string compareAndSet(const std::string& log) override;
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
     bool preProcessLog(LogID,
