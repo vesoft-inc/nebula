@@ -6,7 +6,6 @@
 
 #include "base/Base.h"
 #include "kvstore/raftex/test/RaftexTestBase.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/test/TestShard.h"
 #include "thrift/ThriftClientManager.h"
@@ -18,9 +17,6 @@ namespace raftex {
 
 using network::NetworkUtils;
 using fs::FileUtils;
-using wal::BufferFlusher;
-
-std::unique_ptr<BufferFlusher> flusher;
 
 std::mutex leaderMutex;
 std::condition_variable leaderCV;
@@ -191,7 +187,6 @@ void setupRaft(
             1,  // Shard ID
             allHosts[i],
             wals[i],
-            flusher.get(),
             services[i]->getIOThreadPool(),
             workers,
             services[i]->getThreadManager(),

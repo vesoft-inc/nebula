@@ -6,18 +6,17 @@
  */
 
 #include "base/Base.h"
-#include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
-#include "meta/test/TestUtils.h"
+#include "graph/test/TestEnv.h"
 #include "meta/ClientBasedGflagsManager.h"
+#include "meta/test/TestUtils.h"
 
 DECLARE_int32(load_data_interval_secs);
-DECLARE_int32(load_config_interval_secs);
 
 namespace nebula {
 namespace graph {
 
-class ConfigTest: public TestBase {
+class ConfigTest : public TestBase {
 protected:
     void SetUp() override {
         TestBase::SetUp();
