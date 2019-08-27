@@ -86,6 +86,8 @@ private:
                                                TermID committedLogTerm,
                                                bool finished) override;
 
+    ResultCode putCommitMsg(WriteBatch* batch, LogID committedLogId, TermID committedLogTerm);
+
     void cleanup() override {
         LOG(INFO) << idStr_ << "Clean up all data, not implement!";
     }

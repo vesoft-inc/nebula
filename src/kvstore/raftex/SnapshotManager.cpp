@@ -28,6 +28,8 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
         auto spaceId = part->spaceId_;
         auto partId = part->partId_;
         auto termId = part->term_;
+        // TODO(heng):  maybe the committedLogId is less than the real one in the snapshot.
+        // It will not loss the data, but maybe some record will be committed twice.
         auto commitLogIdAndTerm = part->lastCommittedLogId();
         const auto& localhost = part->address();
         std::vector<folly::Future<raftex::cpp2::SendSnapshotResponse>> results;

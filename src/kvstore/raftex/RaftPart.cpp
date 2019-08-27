@@ -1248,7 +1248,9 @@ void RaftPart::processAppendLogRequest(
             resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
             return;
         }
-        // Append new logs
+        // TODO(heng): if we have 3 node, one is leader, one is wait snapshot and return success,
+        // the other is follower, but leader replica log to follow failed,
+        // How to deal with leader crash? At this time, no leader will be elected.
         size_t numLogs = req.get_log_str_list().size();
         LogID firstId = req.get_last_log_id_sent() + 1;
 
@@ -1272,7 +1274,7 @@ void RaftPart::processAppendLogRequest(
     }
 
     if (req.get_last_log_id_sent() < committedLogId_) {
-        LOG(INFO) << idStr_ << "The log " << req.get_last_log_id_sent()
+        LOG(INFO) << idStr_ << "Stale log! The log " << req.get_last_log_id_sent()
                   << " i had committed yet. My committedLogId is "
                   << committedLogId_;
         resp.set_error_code(cpp2::ErrorCode::E_LOG_STALE);
@@ -1298,14 +1300,12 @@ void RaftPart::processAppendLogRequest(
         resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
         return;
     } else if (req.get_last_log_id_sent() < lastLogId_) {
-        LOG(INFO) << idStr_ << "Local " << lastLogId_
-                  << " has some extra logs, which need to be rolled back to "
-                  << req.get_last_log_id_sent();
-        wal_->rollbackToLog(req.get_last_log_id_sent());
-        lastLogId_ = wal_->lastLogId();
-        lastLogTerm_ = wal_->lastLogTerm();
-        resp.set_last_log_id(lastLogId_);
-        resp.set_last_log_term(lastLogTerm_);
+        LOG(INFO) << idStr_ << "Stale log! Local lastLogId " << lastLogId_
+                  << ", lastLogTerm " << lastLogTerm_
+                  << ", lastLogIdSent " << req.get_last_log_id_sent()
+                  << ", lastLogTermSent " << req.get_last_log_term_sent();
+        resp.set_error_code(cpp2::ErrorCode::E_LOG_STALE);
+        return;
     }
 
     // Append new logs

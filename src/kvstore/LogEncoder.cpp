@@ -22,7 +22,7 @@ std::string encodeKV(const folly::StringPiece& key,
     str.append(reinterpret_cast<const char*>(&ksize), sizeof(ksize));
     str.append(reinterpret_cast<const char*>(&vsize), sizeof(vsize));
     str.append(key.data(), ksize);
-    str.append(key.data(), vsize);
+    str.append(val.data(), vsize);
     return str;
 }
 
