@@ -37,7 +37,7 @@ object SparkSstFileGenerator {
   val SSF_OUTPUT_HDFS_DIR_CONF_KEY = "nebula.graph.spark.sst.file.hdfs.dir"
 
   /**
-    * cmd line's options, whose name follow the convention: input will start with suffix "i", output with "o"
+    * cmd line's options, whose name follow the convention: input options name end with 'i', while output end with 'o'"
     */
   lazy val options: Options = {
     val dataSourceTypeInput = CliOption.builder("ti").longOpt("datasource_type_input")
