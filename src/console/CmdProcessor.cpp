@@ -335,6 +335,8 @@ void CmdProcessor::processServerCmd(folly::StringPiece cmd) {
         auto *spaceName = resp.get_space_name();
         if (spaceName && !spaceName->empty()) {
             curSpaceName_ = std::move(*spaceName);
+        } else {
+            curSpaceName_ = "(none)";
         }
         printResult(resp);
         if (resp.get_rows() != nullptr) {
