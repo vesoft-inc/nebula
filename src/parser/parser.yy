@@ -90,7 +90,7 @@ class GraphScanner;
 %destructor { delete $$; } <*>
 
 /* keywords */
-%token KW_GO KW_AS KW_TO KW_OR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
+%token KW_GO KW_AS KW_TO KW_OR KW_AND KW_XOR KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
 %token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
 %token KW_EDGE KW_EDGES KW_UPDATE KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_INT KW_BIGINT KW_DOUBLE KW_STRING KW_BOOL KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
@@ -106,7 +106,7 @@ class GraphScanner;
 %token KW_DISTINCT KW_ALL
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
-%token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
+%token PIPE OR AND XOR LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
 %token DOT COLON SEMICOLON L_ARROW R_ARROW AT
 %token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
 
@@ -117,8 +117,8 @@ class GraphScanner;
 %token <strval> STRING VARIABLE LABEL
 
 %type <strval> name_label unreserved_keyword
-%type <expr> expression logic_or_expression logic_and_expression
-%type <expr> relational_expression multiplicative_expression additive_expression
+%type <expr> expression logic_xor_expression logic_or_expression logic_and_expression
+%type <expr> relational_expression multiplicative_expression additive_expression arithmetic_xor_expression
 %type <expr> unary_expression primary_expression equality_expression
 %type <expr> src_ref_expression
 %type <expr> dst_ref_expression
@@ -347,6 +347,9 @@ unary_expression
     | NOT unary_expression {
         $$ = new UnaryExpression(UnaryExpression::NOT, $2);
     }
+    | KW_NOT unary_expression {
+        $$ = new UnaryExpression(UnaryExpression::NOT, $2);
+    }
     | L_PAREN type_spec R_PAREN unary_expression {
         $$ = new TypeCastingExpression($2, $4);
     }
@@ -361,15 +364,22 @@ type_spec
     | KW_TIMESTAMP { $$ = ColumnType::TIMESTAMP; }
     ;
 
-multiplicative_expression
+arithmetic_xor_expression
     : unary_expression { $$ = $1; }
-    | multiplicative_expression MUL unary_expression {
+    | arithmetic_xor_expression XOR unary_expression {
+        $$ = new ArithmeticExpression($1, ArithmeticExpression::XOR, $3);
+    }
+    ;
+
+multiplicative_expression
+    : arithmetic_xor_expression { $$ = $1; }
+    | multiplicative_expression MUL arithmetic_xor_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::MUL, $3);
     }
-    | multiplicative_expression DIV unary_expression {
+    | multiplicative_expression DIV arithmetic_xor_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::DIV, $3);
     }
-    | multiplicative_expression MOD unary_expression {
+    | multiplicative_expression MOD arithmetic_xor_expression {
         $$ = new ArithmeticExpression($1, ArithmeticExpression::MOD, $3);
     }
     ;
@@ -415,6 +425,9 @@ logic_and_expression
     | logic_and_expression AND equality_expression {
         $$ = new LogicalExpression($1, LogicalExpression::AND, $3);
     }
+    | logic_and_expression KW_AND equality_expression {
+        $$ = new LogicalExpression($1, LogicalExpression::AND, $3);
+    }
     ;
 
 logic_or_expression
@@ -422,10 +435,20 @@ logic_or_expression
     | logic_or_expression OR logic_and_expression {
         $$ = new LogicalExpression($1, LogicalExpression::OR, $3);
     }
+    | logic_or_expression KW_OR logic_and_expression {
+        $$ = new LogicalExpression($1, LogicalExpression::OR, $3);
+    }
+    ;
+
+logic_xor_expression
+    : logic_or_expression { $$ = $1; }
+    | logic_xor_expression KW_XOR logic_or_expression {
+        $$ = new LogicalExpression($1, LogicalExpression::XOR, $3);
+    }
     ;
 
 expression
-    : logic_or_expression { $$ = $1; }
+    : logic_xor_expression { $$ = $1; }
     ;
 
 go_sentence

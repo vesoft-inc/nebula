@@ -761,7 +761,7 @@ private:
 class ArithmeticExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        ADD, SUB, MUL, DIV, MOD
+        ADD, SUB, MUL, DIV, MOD, XOR
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 
@@ -864,7 +864,7 @@ private:
 class LogicalExpression final : public Expression {
 public:
     enum Operator : uint8_t {
-        AND, OR
+        AND, OR, XOR
     };
     static_assert(sizeof(Operator) == sizeof(uint8_t), "");
 

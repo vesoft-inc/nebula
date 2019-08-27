@@ -28,6 +28,8 @@ GO                          ([Gg][Oo])
 AS                          ([Aa][Ss])
 TO                          ([Tt][Oo])
 OR                          ([Oo][Rr])
+AND                         ([Aa][Nn][Dd])
+XOR                         ([Xx][Oo][Rr])
 USE                         ([Uu][Ss][Ee])
 SET                         ([Ss][Ee][Tt])
 FROM                        ([Ff][Rr][Oo][Mm])
@@ -130,6 +132,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {AS}                        { return TokenType::KW_AS; }
 {TO}                        { return TokenType::KW_TO; }
 {OR}                        { return TokenType::KW_OR; }
+{AND}                       { return TokenType::KW_AND; }
+{XOR}                       { return TokenType::KW_XOR; }
 {USE}                       { return TokenType::KW_USE; }
 {SET}                       { return TokenType::KW_SET; }
 {FROM}                      { return TokenType::KW_FROM; }
@@ -228,6 +232,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "/"                         { return TokenType::DIV; }
 "%"                         { return TokenType::MOD; }
 "!"                         { return TokenType::NOT; }
+"^"                         { return TokenType::XOR; }
 
 "<"                         { return TokenType::LT; }
 "<="                        { return TokenType::LE; }

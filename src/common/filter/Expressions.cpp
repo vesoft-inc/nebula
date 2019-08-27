@@ -781,6 +781,9 @@ std::string ArithmeticExpression::toString() const {
         case MOD:
             buf += '%';
             break;
+        case XOR:
+            buf += '^';
+            break;
     }
     buf.append(right_->toString());
     buf += ')';
@@ -839,8 +842,20 @@ OptVariantType ArithmeticExpression::eval() const {
             }
             break;
         case MOD:
-            if (isInt(l) && isInt(r)) {
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return fmod(asDouble(l), asDouble(r));
+                }
                 return OptVariantType(asInt(l) % asInt(r));
+            }
+            break;
+        case XOR:
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return (static_cast<int64_t>(std::round(asDouble(l)))
+                                ^ static_cast<int64_t>(std::round(asDouble(r))));
+                }
+                return OptVariantType(asInt(l) ^ asInt(r));
             }
             break;
         default:
@@ -1007,6 +1022,9 @@ std::string LogicalExpression::toString() const {
         case OR:
             buf += "||";
             break;
+        case XOR:
+            buf += "XOR";
+            break;
     }
     buf.append(right_->toString());
     buf += ')';
@@ -1030,11 +1048,16 @@ OptVariantType LogicalExpression::eval() const {
             return OptVariantType(false);
         }
         return OptVariantType(asBool(right.value()));
-    } else {
+    } else if (op_ == OR) {
         if (asBool(left.value())) {
             return OptVariantType(true);
         }
         return OptVariantType(asBool(right.value()));
+    } else {
+        if (asBool(left.value()) == asBool(right.value())) {
+            return OptVariantType(false);
+        }
+        return OptVariantType(true);
     }
 }
 
