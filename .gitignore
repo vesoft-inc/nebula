@@ -1,11 +1,16 @@
 *.swp
 *.so
+*.DS_Store
 
 build
 _build
 _build.log
 _install
 install_manifest.txt
+
+# ccls
+.ccls
+compile_commands.json
 
 src/common/base/Base.h.gch
 gen-*

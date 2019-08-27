@@ -20,7 +20,7 @@ For `Ubuntu` :
 dpkg -i nebula-{VERSION}.{SYSTEM_VERSION}.amd64.deb
 ```
 
-By default, the config files are under `/usr/local/nebula/etc`, you should modify the `meta_server_addrs` to set the Meta Server's address. 
+By default, the config files are under `/usr/local/nebula/etc`, you should modify the `meta_server_addrs` to set the Meta Server's address.
 
 In order to enable multi copy Meta service, you should set the meta addresses split by comma into `meta_server_addrs`.
 
@@ -63,7 +63,7 @@ Property Name               | Default Value            | Description
 `daemonize`                 | true                     | Whether run as a daemon process.
 `cluster_id`                | 0                        | A unique id for each cluster.
 `putTryNum`                 | 10                       | Number of attempts to generate cluster ID.
-`load_config_interval_secs` | 2 * 60                   | Load config interval.
+`load_data_interval_secs`   | 2 * 60                   | Load data interval.
 `meta_ingest_thread_num`    | 3.                       | Meta daemon's ingest thread number.
 
 **Storage Service** supports the following config properties.
@@ -145,5 +145,3 @@ Property Name            | Default Value | Description
 `p`                      | ""            | Password used to authenticate.
 `enable_history`         | false         | Whether to force saving the command history.
 `server_conn_timeout_ms` | 1000          | Connection timeout in milliseconds.
-
-

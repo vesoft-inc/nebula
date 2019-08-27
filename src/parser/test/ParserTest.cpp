@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include <gtest/gtest.h>
+#include "base/Base.h"
 #include "parser/GQLParser.h"
 
 // TODO(dutor) Inspect the internal structures to check on the syntax and semantics
@@ -884,7 +884,6 @@ TEST(Parser, UserOperation) {
     }
 }
 
-
 TEST(Parser, UnreservedKeywords) {
     {
         GQLParser parser;
@@ -921,7 +920,6 @@ TEST(Parser, UnreservedKeywords) {
         ASSERT_TRUE(result.ok()) << result.status();
     }
 }
-
 
 TEST(Parser, Annotation) {
     {
@@ -1136,13 +1134,13 @@ TEST(Parser, ConfigOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE VARIABLES load_config_interval_secs=120";
+        std::string query = "UPDATE VARIABLES load_data_interval_secs=120";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GET VARIABLES load_config_interval_secs";
+        std::string query = "GET VARIABLES load_data_interval_secs";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

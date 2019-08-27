@@ -9,7 +9,7 @@
 namespace nebula {
 namespace meta {
 
-template<typename ValueType>
+template <typename ValueType>
 std::string GflagsManager::gflagsValueToThriftValue(const gflags::CommandLineFlagInfo& flag) {
     std::string ret;
     auto value = folly::to<ValueType>(flag.current_value);
@@ -17,7 +17,7 @@ std::string GflagsManager::gflagsValueToThriftValue(const gflags::CommandLineFla
     return ret;
 }
 
-template<>
+template <>
 std::string GflagsManager::gflagsValueToThriftValue<std::string>(
         const gflags::CommandLineFlagInfo& flag) {
     return flag.current_value;
@@ -57,7 +57,7 @@ void GflagsManager::declareGflags() {
             continue;
         }
 
-        if (name == "load_data_interval_secs" || name == "load_config_interval_secs") {
+        if (name == "load_data_interval_secs") {
             mode = cpp2::ConfigMode::MUTABLE;
         }
         if (module_ == cpp2::ConfigModule::META) {
@@ -109,6 +109,5 @@ cpp2::ConfigItem toThriftConfigItem(const cpp2::ConfigModule& module,
     return item;
 }
 
-}  // namespace meta
-}  // namespace nebula
-
+}   // namespace meta
+}   // namespace nebula
