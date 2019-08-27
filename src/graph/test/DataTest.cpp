@@ -359,33 +359,31 @@ TEST_F(DataTest, InsertVertex) {
     // TODO: Test insert multi tags, and delete one of them then check other existent
 }
 
-TEST_F(DataTest, FindTest) {
+TEST_F(DataTest, InsertMultiVersionTest) {
+    // Insert multi version vertex
     {
         cpp2::ExecutionResponse resp;
-        std::string cmd = "FIND name FROM person";
-        auto code = client_->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
-    }
-}
-
-TEST_F(DataTest, MatchTest) {
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "MATCH";
-        auto code = client_->execute(cmd, resp);
-        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
-    }
-}
-
-TEST_F(DataTest, InsertSameEdges) {
-    {
-        cpp2::ExecutionResponse resp;
-        std::string cmd = "INSERT VERTEX person(name, age) "
-                          "VALUES hash(\"Tony\"):(\"Tony\", 18), hash(\"Mack\"):(\"Mack\", 19)";
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES "
+                          "hash(\"Tony\"):(\"Tony\", 18), "
+                          "hash(\"Mack\"):(\"Mack\", 19)";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }
-    // Insert the same edges with different property value
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES "
+                          "hash(\"Mack\"):(\"Mack\", 20)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES "
+                          "hash(\"Mack\"):(\"Mack\", 21)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Insert multi version edge
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
@@ -411,15 +409,33 @@ TEST_F(DataTest, InsertSameEdges) {
     {
         cpp2::ExecutionResponse resp;
         std::string cmd = "GO FROM hash(\"Tony\") OVER schoolmate "
-                          "YIELD $$.person.name, schoolmate.likeness";
+                          "YIELD $$.person.name, $$.person.age, schoolmate.likeness";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        using valueType = std::tuple<std::string, int64_t>;
-        // get the latest result
+        using valueType = std::tuple<std::string, int64_t, int64_t>;
+        // Get the latest result
         std::vector<valueType> expected{
-            {"Mack", 3},
+            {"Mack", 21, 3},
         };
         ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
+TEST_F(DataTest, FindTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "FIND name FROM person";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
+    }
+}
+
+TEST_F(DataTest, MatchTest) {
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "MATCH";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::E_EXECUTION_ERROR, code);
     }
 }
 
