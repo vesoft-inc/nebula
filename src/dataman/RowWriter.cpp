@@ -42,7 +42,7 @@ std::string RowWriter::encode() noexcept {
     encoded.reserve(sizeof(int64_t) * blockOffsets_.size() + cord_.size() + 11);
     encodeTo(encoded);
 
-    return std::move(encoded);
+    return encoded;
 }
 
 
@@ -77,7 +77,7 @@ void RowWriter::encodeTo(std::string& encoded) noexcept {
 
 Schema RowWriter::moveSchema() {
     if (schemaWriter_) {
-        return std::move(schemaWriter_->moveSchema());
+        return schemaWriter_->moveSchema();
     } else {
         return Schema();
     }
@@ -263,4 +263,3 @@ RowWriter& RowWriter::operator<<(Skip&& skip) noexcept {
 }
 
 }  // namespace nebula
-

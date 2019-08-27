@@ -2,7 +2,7 @@
 include_directories($ENV{JAVA_HOME}/include
                     $ENV{JAVA_HOME}/include/linux)
 
-add_library(nebula_native_client SHARED
+nebula_add_library(nebula_native_client SHARED
             $<TARGET_OBJECTS:dataman_obj>
             $<TARGET_OBJECTS:fs_obj>
             $<TARGET_OBJECTS:base_obj>
@@ -36,6 +36,6 @@ target_link_libraries(nebula_native_client
 
 add_custom_target(
     nebula_native_java_client ALL
-    COMMAND "./build.sh" ">" "./_build.log" "2>&1"
+    COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/build.sh" ${CMAKE_CURRENT_SOURCE_DIR} ">" "./_build.log" "2>&1"
     DEPENDS nebula_native_client
 )

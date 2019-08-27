@@ -36,11 +36,14 @@ void mockData(kvstore::KVStore* kv) {
                 data.emplace_back(std::move(key), std::move(val));
             }
         }
+        folly::Baton<true, std::atomic> baton;
         kv->asyncMultiPut(
             0, partId, std::move(data),
             [&](kvstore::ResultCode code) {
                 EXPECT_EQ(code, kvstore::ResultCode::SUCCEEDED);
+                baton.post();
             });
+        baton.wait();
     }
 }
 
@@ -52,7 +55,7 @@ void buildRequest(cpp2::EdgePropRequest& req) {
         for (auto vertexId =  partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
             for (auto dstId = 10001; dstId <= 10007; dstId++) {
                 tmpEdges[partId].emplace_back(apache::thrift::FragileConstructor::FRAGILE,
-                                              vertexId, 101, dstId, dstId - 10001);
+                                              vertexId, 101, dstId - 10001, dstId);
             }
         }
     }

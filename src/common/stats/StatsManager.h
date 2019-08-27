@@ -8,6 +8,7 @@
 #define COMMON_STATS_STATSMANAGER_H_
 
 #include "base/Base.h"
+#include "time/WallClock.h"
 #include <folly/RWSpinLock.h>
 #include <folly/stats/MultiLevelTimeSeries.h>
 #include <folly/stats/TimeseriesHistogram.h>
@@ -39,9 +40,8 @@ namespace stats {
  */
 class StatsManager final {
     using VT = int64_t;
-    using Clock = std::chrono::steady_clock;
-    using StatsType = folly::MultiLevelTimeSeries<VT, Clock>;
-    using HistogramType = folly::TimeseriesHistogram<VT, Clock>;
+    using StatsType = folly::MultiLevelTimeSeries<VT>;
+    using HistogramType = folly::TimeseriesHistogram<VT>;
 
 public:
     enum class StatsMethod {

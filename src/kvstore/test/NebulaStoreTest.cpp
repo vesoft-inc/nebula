@@ -13,13 +13,12 @@
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
 #include "network/NetworkUtils.h"
+#include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
-DECLARE_uint32(heartbeat_interval);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 namespace nebula {
 namespace kvstore {
-
-auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
 template<typename T>
 void dump(const std::vector<T>& v) {
@@ -30,10 +29,19 @@ void dump(const std::vector<T>& v) {
     VLOG(1) << ss.str();
 }
 
+std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager>
+getHandlers() {
+    auto handlersPool
+        = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+                                 1, true /*stats*/);
+    handlersPool->setNamePrefix("executor");
+    handlersPool->start();
+    return handlersPool;
+}
 
 TEST(NebulaStoreTest, SimpleTest) {
     auto partMan = std::make_unique<MemPartManager>();
-
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     // GraphSpaceID =>  {PartitionIDs}
     // 1 => {0, 1, 2, 3, 4, 5}
     // 2 => {0, 1, 2, 3, 4, 5}
@@ -58,7 +66,9 @@ TEST(NebulaStoreTest, SimpleTest) {
     HostAddr local = {0, 0};
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
-                                               local);
+                                               local,
+                                               getHandlers());
+    store->init();
     sleep(1);
     EXPECT_EQ(2, store->spaces_.size());
 
@@ -93,10 +103,12 @@ TEST(NebulaStoreTest, SimpleTest) {
                                                sizeof(int32_t)),
                           folly::stringPrintf("val_%d", i));
     }
-    store->asyncMultiPut(1, 1, std::move(data), [](ResultCode code){
+    folly::Baton<true, std::atomic> baton;
+    store->asyncMultiPut(1, 1, std::move(data), [&] (ResultCode code) {
         EXPECT_EQ(ResultCode::SUCCEEDED, code);
+        baton.post();
     });
-
+    baton.wait();
     int32_t start = 0;
     int32_t end = 100;
     std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
@@ -120,6 +132,7 @@ TEST(NebulaStoreTest, SimpleTest) {
 
 TEST(NebulaStoreTest, PartsTest) {
     fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
     auto partMan = std::make_unique<MemPartManager>();
 
     // GraphSpaceID =>  {PartitionIDs}
@@ -154,8 +167,9 @@ TEST(NebulaStoreTest, PartsTest) {
     HostAddr local = {0, 0};
     auto store = std::make_unique<NebulaStore>(std::move(options),
                                                ioThreadPool,
-                                               local);
-
+                                               local,
+                                               getHandlers());
+    store->init();
     auto check = [&](GraphSpaceID spaceId) {
         for (auto i = 0; i < 2; i++) {
             ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/%d",
@@ -190,7 +204,7 @@ TEST(NebulaStoreTest, PartsTest) {
         ASSERT_EQ(9, parts[4]);
     }
 
-    auto* pm = dynamic_cast<MemPartManager*>(store->partMan_.get());
+    auto* pm = dynamic_cast<MemPartManager*>(store->options_.partMan_.get());
     // Let's create another space with 10 parts.
     for (auto partId = 0; partId < 10; partId++) {
         pm->addPart(1, partId);
@@ -257,7 +271,8 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         HostAddr local = peers[index];
         return std::make_unique<NebulaStore>(std::move(options),
                                              sIoThreadPool,
-                                             local);
+                                             local,
+                                             getHandlers());
     };
     int32_t replicas = 3;
     IPv4 ip;
@@ -270,6 +285,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
     std::vector<std::unique_ptr<NebulaStore>> stores;
     for (int i = 0; i < replicas; i++) {
         stores.emplace_back(initNebulaStore(peers, i, rootPath.path()));
+        stores.back()->init();
     }
     LOG(INFO) << "Waiting for all leaders elected!";
     int from = 0;
@@ -318,15 +334,14 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
         auto index = findStoreIndex(leader);
         {
             folly::Baton<true, std::atomic> baton;
-            stores[index]->asyncMultiPut(0, part, std::move(data), [&baton](ResultCode code){
+            stores[index]->asyncMultiPut(0, part, std::move(data), [&baton](ResultCode code) {
                 EXPECT_EQ(ResultCode::SUCCEEDED, code);
                 baton.post();
             });
             baton.wait();
         }
-        sleep(FLAGS_heartbeat_interval);
+        sleep(FLAGS_raft_heartbeat_interval_secs);
         {
-            LOG(INFO) << "Check the data on all peers...";
             int32_t start = 0;
             int32_t end = 100;
             std::string s(reinterpret_cast<const char*>(&start), sizeof(int32_t));
@@ -334,22 +349,23 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
             s = prefix + s;
             e = prefix + e;
             for (int i = 0; i < replicas; i++) {
+                LOG(INFO) << "Check the data on " << stores[i]->raftAddr_ << " for part " << part;
                 auto ret = stores[i]->engine(0, part);
                 ASSERT(ok(ret));
                 auto* engine = value(std::move(ret));
                 std::unique_ptr<KVIterator> iter;
-                EXPECT_EQ(ResultCode::SUCCEEDED, engine->range(s, e, &iter));
+                ASSERT_EQ(ResultCode::SUCCEEDED, engine->range(s, e, &iter));
                 int num = 0;
                 auto prefixLen = prefix.size();
                 while (iter->valid()) {
                     auto key = *reinterpret_cast<const int32_t*>(iter->key().data() + prefixLen);
                     auto val = iter->val();
-                    EXPECT_EQ(num, key);
-                    EXPECT_EQ(folly::stringPrintf("val_%d_%d", part, num), val);
+                    ASSERT_EQ(num, key);
+                    ASSERT_EQ(folly::stringPrintf("val_%d_%d", part, num), val);
                     iter->next();
                     num++;
                 }
-                EXPECT_EQ(100, num);
+                ASSERT_EQ(100, num);
             }
         }
         // Let's try to write data on follower;
@@ -377,8 +393,5 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     folly::init(&argc, &argv, true);
     google::SetStderrLogging(google::INFO);
-
     return RUN_ALL_TESTS();
 }
-
-

@@ -5,6 +5,9 @@
  */
 
 #include "meta/processors/partsMan/ListHostsProcessor.h"
+#include "meta/ActiveHostsMan.h"
+
+DECLARE_int32(expired_threshold_sec);
 
 namespace nebula {
 namespace meta {
@@ -32,13 +35,15 @@ StatusOr<std::vector<cpp2::HostItem>> ListHostsProcessor::allHostsWithStatus() {
         return Status::Error("Can't find any hosts");
     }
 
+    auto now = time::WallClock::fastNowInSec();
     while (iter->valid()) {
         cpp2::HostItem item;
         nebula::cpp2::HostAddr host;
         auto hostAddrPiece = iter->key().subpiece(prefix.size());
         memcpy(&host, hostAddrPiece.data(), hostAddrPiece.size());
         item.set_hostAddr(host);
-        if (iter->val() == MetaServiceUtils::hostValOnline()) {
+        HostInfo info = HostInfo::decode(iter->val());
+        if (now - info.lastHBTimeInSec_ < FLAGS_expired_threshold_sec) {
             item.set_status(cpp2::HostStatus::ONLINE);
         } else {
             item.set_status(cpp2::HostStatus::OFFLINE);

@@ -214,7 +214,7 @@ ResultCode RocksEngine::put(std::string key, std::string value) {
 
 
 ResultCode RocksEngine::multiPut(std::vector<KV> keyValues) {
-    rocksdb::WriteBatch updates(FLAGS_batch_reserved_bytes);
+    rocksdb::WriteBatch updates(FLAGS_rocksdb_batch_size);
     for (size_t i = 0; i < keyValues.size(); i++) {
         updates.Put(keyValues[i].first, keyValues[i].second);
     }
@@ -244,7 +244,7 @@ ResultCode RocksEngine::remove(const std::string& key) {
 
 
 ResultCode RocksEngine::multiRemove(std::vector<std::string> keys) {
-    rocksdb::WriteBatch deletes(FLAGS_batch_reserved_bytes);
+    rocksdb::WriteBatch deletes(FLAGS_rocksdb_batch_size);
     for (size_t i = 0; i < keys.size(); i++) {
         deletes.Delete(keys[i]);
     }
@@ -402,13 +402,24 @@ ResultCode RocksEngine::setDBOption(const std::string& configKey,
 }
 
 
-ResultCode RocksEngine::compactAll() {
+ResultCode RocksEngine::compact() {
     rocksdb::CompactRangeOptions options;
     rocksdb::Status status = db_->CompactRange(options, nullptr, nullptr);
     if (status.ok()) {
         return ResultCode::SUCCEEDED;
     } else {
         LOG(ERROR) << "CompactAll Failed: " << status.ToString();
+        return ResultCode::ERR_UNKNOWN;
+    }
+}
+
+ResultCode RocksEngine::flush() {
+    rocksdb::FlushOptions options;
+    rocksdb::Status status = db_->Flush(options);
+    if (status.ok()) {
+        return ResultCode::SUCCEEDED;
+    } else {
+        LOG(ERROR) << "Flush Failed: " << status.ToString();
         return ResultCode::ERR_UNKNOWN;
     }
 }

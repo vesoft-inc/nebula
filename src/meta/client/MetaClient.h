@@ -17,6 +17,8 @@
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
 
+DECLARE_int32(meta_client_retry_times);
+
 namespace nebula {
 namespace meta {
 
@@ -50,6 +52,29 @@ using SpaceNewestTagVerMap = std::unordered_map<std::pair<GraphSpaceID, TagID>, 
 // get latest edge version via spaceId and edgeType
 using SpaceNewestEdgeVerMap = std::unordered_map<std::pair<GraphSpaceID, EdgeType>, SchemaVer>;
 
+struct ConfigItem {
+    ConfigItem() {}
+
+    ConfigItem(const cpp2::ConfigModule& module, const std::string& name,
+               const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
+               const VariantType& value)
+        : module_(module)
+        , name_(name)
+        , type_(type)
+        , mode_(mode)
+        , value_(value) {
+    }
+
+    cpp2::ConfigModule  module_;
+    std::string         name_;
+    cpp2::ConfigType    type_;
+    cpp2::ConfigMode    mode_;
+    VariantType         value_;
+};
+
+// config cahce, get config via module and name
+using MetaConfigMap = std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, ConfigItem>;
+
 class MetaChangedListener {
 public:
     virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
@@ -57,21 +82,33 @@ public:
     virtual void onPartAdded(const PartMeta& partMeta) = 0;
     virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) = 0;
     virtual void onPartUpdated(const PartMeta& partMeta) = 0;
-    virtual HostAddr getLocalHost() = 0;
 };
 
 class MetaClient {
 public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                         std::vector<HostAddr> addrs,
+                        HostAddr localHost = HostAddr(0, 0),
+                        ClusterID clusterId = 0,
                         bool sendHeartBeat = false);
 
     virtual ~MetaClient();
 
-    void init();
+    bool isMetadReady();
+
+    bool waitForMetadReady(int count = -1, int retryIntervalSecs = 2);
+
+    void stop();
 
     void registerListener(MetaChangedListener* listener) {
+        folly::RWSpinLock::WriteHolder holder(listenerLock_);
+        CHECK(listener_ == nullptr);
         listener_ = listener;
+    }
+
+    void unRegisterListener() {
+        folly::RWSpinLock::WriteHolder holder(listenerLock_);
+        listener_ = nullptr;
     }
 
     // Operations for parts
@@ -165,6 +202,24 @@ public:
     folly::Future<StatusOr<int64_t>>
     balance();
 
+    // Operations for config
+    folly::Future<StatusOr<bool>>
+    regConfig(const std::vector<cpp2::ConfigItem>& items);
+
+    folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
+    getConfig(const cpp2::ConfigModule& module, const std::string& name);
+
+    folly::Future<StatusOr<bool>>
+    setConfig(const cpp2::ConfigModule& module, const std::string& name,
+              const cpp2::ConfigType& type, const std::string& value);
+
+    folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
+    listConfigs(const cpp2::ConfigModule& module);
+
+    cpp2::ConfigModule& getGflagsModule() {return gflagsModule_;}
+
+    void setGflagsModule(const cpp2::ConfigModule& module = cpp2::ConfigModule::UNKNOWN);
+
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
@@ -201,8 +256,15 @@ public:
 
 protected:
     void loadDataThreadFunc();
+    void loadData();
+    void addLoadDataTask();
 
     void heartBeatThreadFunc();
+
+    void loadCfgThreadFunc();
+    void loadCfg();
+    void addLoadCfgTask();
+    void updateGflagsValue(const ConfigItem& item);
 
     bool loadSchemas(GraphSpaceID spaceId,
                      std::shared_ptr<SpaceInfoCache> spaceInfoCache,
@@ -215,9 +277,14 @@ protected:
 
     std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
-    void updateHost() {
+    void updateActive() {
         folly::RWSpinLock::WriteHolder holder(hostLock_);
-        leader_ = active_ = addrs_[folly::Random::rand64(addrs_.size())];
+        active_ = addrs_[folly::Random::rand64(addrs_.size())];
+    }
+
+    void updateLeader() {
+        folly::RWSpinLock::WriteHolder holder(hostLock_);
+        leader_ = addrs_[folly::Random::rand64(addrs_.size())];
     }
 
     void diff(const LocalCache& oldCache, const LocalCache& newCache);
@@ -235,16 +302,21 @@ protected:
              class Response =
                 typename std::result_of<RespGenerator(RpcResponse)>::type
     >
-    folly::Future<StatusOr<Response>> getResponse(Request req,
-                                                  RemoteFunc remoteFunc,
-                                                  RespGenerator respGen,
-                                                  bool toLeader = false);
+    void getResponse(Request req,
+                     RemoteFunc remoteFunc,
+                     RespGenerator respGen,
+                     folly::Promise<StatusOr<Response>> pro,
+                     bool toLeader = false,
+                     int32_t retry = 0,
+                     int32_t retryLimit = FLAGS_meta_client_retry_times);
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
 
     std::vector<HostStatus> toHostStatus(const std::vector<cpp2::HostItem>& thosts);
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
+
+    ConfigItem toConfigItem(const cpp2::ConfigItem& item);
 
     PartsMap doGetPartsMap(const HostAddr& host,
                            const LocalCache& localCache);
@@ -259,7 +331,9 @@ private:
     folly::RWSpinLock hostLock_;
     HostAddr active_;
     HostAddr leader_;
-    thread::GenericWorker bgThread_;
+    HostAddr localHost_;
+
+    std::unique_ptr<thread::GenericWorker> bgThread_;
     SpaceNameIdMap        spaceIndexByName_;
     SpaceTagNameIdMap     spaceTagIndexByName_;
     SpaceEdgeNameTypeMap  spaceEdgeIndexByName_;
@@ -267,8 +341,14 @@ private:
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     folly::RWSpinLock     localCacheLock_;
     MetaChangedListener*  listener_{nullptr};
-    bool                  sendHeartBeat_ = false;
+    folly::RWSpinLock     listenerLock_;
+    std::atomic<ClusterID> clusterId_{0};
+    bool                  isRunning_{false};
+    bool                  sendHeartBeat_{false};
     std::atomic_bool      ready_{false};
+    MetaConfigMap         metaConfigMap_;
+    folly::RWSpinLock     configCacheLock_;
+    cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
 };
 
 }  // namespace meta

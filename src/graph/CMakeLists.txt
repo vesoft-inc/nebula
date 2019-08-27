@@ -35,7 +35,15 @@ add_library(
     YieldExecutor.cpp
     DownloadExecutor.cpp
     OrderByExecutor.cpp
+    IngestExecutor.cpp
+    ConfigExecutor.cpp
     SchemaHelper.cpp
+    FetchVerticesExecutor.cpp
+    FetchEdgesExecutor.cpp
+    FetchExecutor.cpp
+    SetExecutor.cpp
+    FindExecutor.cpp
+    MatchExecutor.cpp
 )
 add_dependencies(
     graph_obj

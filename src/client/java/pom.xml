@@ -6,13 +6,10 @@
 
     <groupId>nebula-graph</groupId>
     <artifactId>graph-client</artifactId>
-    <version>0.0.1</version>
+    <version>0.1.0</version>
 
     <properties>
         <project.root.dir>../../..</project.root.dir>
-        <fbthrift.root.dir>../../../third-party/fbthrift</fbthrift.root.dir>
-        <fbthrift.biuld.dir>_build/fbthrift-2018.08.20.00</fbthrift.biuld.dir>
-        <fbthrift.target.dir>thrift/lib/java/thrift/target</fbthrift.target.dir>
     </properties>
 
     <build>
@@ -75,9 +72,7 @@
             <artifactId>thrift</artifactId>
             <version>1.0.0-SNAPSHORT</version>
             <scope>system</scope>
-            <systemPath>
-                ${project.basedir}/${fbthrift.root.dir}/${fbthrift.biuld.dir}/${fbthrift.target.dir}/thrift-1.0-SNAPSHOT.jar
-            </systemPath>
+            <systemPath>${JAVA_FBTHRIFT_JAR}</systemPath>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
