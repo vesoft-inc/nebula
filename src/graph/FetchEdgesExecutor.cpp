@@ -185,12 +185,12 @@ Status FetchEdgesExecutor::setupEdgeKeysFromExpr() {
         if (!status.ok()) {
             break;
         }
-        auto value = srcExpr->eval();
+        auto value = Expression::eval(srcExpr);
         if (!value.ok()) {
             return value.status();
         }
         auto srcid = value.value();
-        value = dstExpr->eval();
+        value = Expression::eval(dstExpr);
         if (!value.ok()) {
             return value.status();
         }
@@ -290,12 +290,12 @@ void FetchEdgesExecutor::processResult(RpcResponse &&result) {
 
             auto &getters = expCtx_->getters();
             getters.getAliasProp = [&](const std::string &,
-                                       const std::string &prop) -> OptVariantType {
+                                       const std::string &prop) -> VariantType {
                 return collector->getProp(prop, &*iter);
             };
             for (auto *column : yields_) {
                 auto *expr = column->expr();
-                auto value = expr->eval();
+                auto value = Expression::eval(expr);
                 if (!value.ok()) {
                     onError_(value.status());
                     return;

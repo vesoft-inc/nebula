@@ -85,7 +85,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
         if (!status.ok()) {
             return status;
         }
-        auto ovalue = rid->eval();
+        auto ovalue = Expression::eval(rid);
         if (!ovalue.ok()) {
             return ovalue.status();
         }
@@ -100,7 +100,7 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
         std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
-            ovalue = expr->eval();
+            ovalue = Expression::eval(expr);
             if (!ovalue.ok()) {
                 return ovalue.status();
             }

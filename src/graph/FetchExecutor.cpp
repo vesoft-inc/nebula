@@ -99,7 +99,7 @@ void FetchExecutor::getOutputSchema(
     std::vector<VariantType> record;
     for (auto *column : yields_) {
         auto *expr = column->expr();
-        auto value = expr->eval();
+        auto value = Expression::eval(expr);
         if (!value.ok()) {
             onError_(value.status());
             return;

@@ -22,21 +22,18 @@
 namespace nebula {
 
 
-void Expression::print(const VariantType &value) {
+std::string Expression::variantToStr(const VariantType &value) {
     switch (value.which()) {
-        case 0:
-            fprintf(stderr, "%ld\n", asInt(value));
-            break;
-        case 1:
-            fprintf(stderr, "%lf\n", asDouble(value));
-            break;
-        case 2:
-            fprintf(stderr, "%d\n", asBool(value));
-            break;
-        case 3:
-            fprintf(stderr, "%s\n", asString(value).c_str());
-            break;
+        case VAR_INT64:
+            return folly::to<std::string>(boost::get<int64_t>(value));
+        case VAR_DOUBLE:
+            return folly::to<std::string>(boost::get<double>(value));
+        case VAR_BOOL:
+            return boost::get<bool>(value) ? "true" : "false";
+        case VAR_STR:
+            return boost::get<std::string>(value);
     }
+    LOG(FATAL) << "BUG on impossible variant type: " << value.which();
 }
 
 
@@ -81,6 +78,20 @@ std::unique_ptr<Expression> Expression::makeExpr(uint8_t kind) {
 
 
 // static
+OptVariantType Expression::eval(const Expression *expr) noexcept {
+    try {
+        return expr->eval();
+    } catch (const Status &status) {
+        return status;
+    } catch (std::exception &e) {
+        return Status::Error("Unexpected exception caught: %s", e.what());
+    } catch (...) {
+        LOG(FATAL) << "Unknown exception caught";
+    }
+}
+
+
+// static
 std::string Expression::encode(Expression *expr) noexcept {
     Cord cord(1024);
     expr->encode(cord);
@@ -118,7 +129,7 @@ std::string AliasPropertyExpression::toString() const {
     return buf;
 }
 
-OptVariantType AliasPropertyExpression::eval() const {
+VariantType AliasPropertyExpression::eval() const {
     return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
@@ -165,7 +176,7 @@ Status InputPropertyExpression::prepare() {
 }
 
 
-OptVariantType InputPropertyExpression::eval() const {
+VariantType InputPropertyExpression::eval() const {
     return context_->getters().getInputProp(*prop_);
 }
 
@@ -190,7 +201,7 @@ const char* InputPropertyExpression::decode(const char *pos, const char *end) {
 }
 
 
-OptVariantType DestPropertyExpression::eval() const {
+VariantType DestPropertyExpression::eval() const {
     return context_->getters().getDstTagProp(*alias_, *prop_);
 }
 
@@ -234,7 +245,7 @@ const char* DestPropertyExpression::decode(const char *pos, const char *end) {
 }
 
 
-OptVariantType VariablePropertyExpression::eval() const {
+VariantType VariablePropertyExpression::eval() const {
     return context_->getters().getVariableProp(*prop_);
 }
 
@@ -277,7 +288,7 @@ const char* VariablePropertyExpression::decode(const char *pos, const char *end)
 }
 
 
-OptVariantType EdgeTypeExpression::eval() const {
+VariantType EdgeTypeExpression::eval() const {
     return *alias_;
 }
 
@@ -308,7 +319,7 @@ const char* EdgeTypeExpression::decode(const char *pos, const char *end) {
 }
 
 
-OptVariantType EdgeSrcIdExpression::eval() const {
+VariantType EdgeSrcIdExpression::eval() const {
     return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
@@ -339,7 +350,7 @@ const char* EdgeSrcIdExpression::decode(const char *pos, const char *end) {
 }
 
 
-OptVariantType EdgeDstIdExpression::eval() const {
+VariantType EdgeDstIdExpression::eval() const {
     return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
@@ -370,7 +381,7 @@ const char* EdgeDstIdExpression::decode(const char *pos, const char *end) {
 }
 
 
-OptVariantType EdgeRankExpression::eval() const {
+VariantType EdgeRankExpression::eval() const {
     return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
@@ -401,7 +412,7 @@ const char* EdgeRankExpression::decode(const char *pos, const char *end) {
 }
 
 
-OptVariantType SourcePropertyExpression::eval() const {
+VariantType SourcePropertyExpression::eval() const {
     return context_->getters().getSrcTagProp(*alias_, *prop_);
 }
 
@@ -462,7 +473,7 @@ std::string PrimaryExpression::toString() const {
     return buf;
 }
 
-OptVariantType PrimaryExpression::eval() const {
+VariantType PrimaryExpression::eval() const {
     switch (operand_.which()) {
         case VAR_INT64:
             return boost::get<int64_t>(operand_);
@@ -477,7 +488,7 @@ OptVariantType PrimaryExpression::eval() const {
             return boost::get<std::string>(operand_);
     }
 
-    return OptVariantType(Status::Error("Unknown type"));
+    LOG(FATAL) << "BUG on impossible type of primary expression: " << operand_.which();
 }
 
 Status PrimaryExpression::prepare() {
@@ -561,20 +572,14 @@ std::string FunctionCallExpression::toString() const {
     return buf;
 }
 
-OptVariantType FunctionCallExpression::eval() const {
+VariantType FunctionCallExpression::eval() const {
     std::vector<VariantType> args;
 
     for (auto it = args_.cbegin(); it != args_.cend(); ++it) {
-        auto result = (*it)->eval();
-        if (!result.ok()) {
-            return result;
-        }
-        args.push_back(std::move(result.value()));
+        args.push_back((*it)->eval());
     }
 
-    // TODO(simon.liu)
-    auto r = function_(args);
-    return OptVariantType(r);
+    return function_(args);
 }
 
 Status FunctionCallExpression::prepare() {
@@ -652,24 +657,25 @@ std::string UnaryExpression::toString() const {
     return buf;
 }
 
-OptVariantType UnaryExpression::eval() const {
+VariantType UnaryExpression::eval() const {
     auto value = operand_->eval();
-    if (value.ok()) {
-        if (op_ == PLUS) {
-            return value;
-        } else if (op_ == NEGATE) {
-            if (isInt(value.value())) {
-                return OptVariantType(-asInt(value.value()));
-            } else if (isDouble(value.value())) {
-                return OptVariantType(-asDouble(value.value()));
-            }
-        } else {
-            return OptVariantType(!asBool(value.value()));
-        }
+
+    if ((op_ == PLUS || op_ == NEGATE) && !Expression::isArithmetic(value)) {
+        throw Status::Error("`+' or `-' can only be applied on arithmetic expressions");
     }
 
-    return OptVariantType(Status::Error(folly::sformat(
-        "attempt to perform unary arithmetic on a {}", value.value().type().name())));
+    if (op_ == PLUS) {
+        return value;
+    } else if (op_ == NEGATE) {
+        if (isInt(value)) {
+            return -asInt(value);
+        } else if (isDouble(value)) {
+            return -asDouble(value);
+        }
+        LOG(FATAL) << "BUG on impossible unary operator: " << static_cast<int>(op_);
+    } else {
+        return !asBool(value);
+    }
 }
 
 Status UnaryExpression::prepare() {
@@ -727,26 +733,23 @@ std::string TypeCastingExpression::toString() const {
 }
 
 
-OptVariantType TypeCastingExpression::eval() const {
+VariantType TypeCastingExpression::eval() const {
     auto result = operand_->eval();
-    if (!result.ok()) {
-        return result;
-    }
 
     switch (type_) {
         case INT:
         case TIMESTAMP:
-            return Expression::toInt(result.value());
+            return Expression::toInt(result);
         case STRING:
-            return Expression::toString(result.value());
+            return Expression::toString(result);
         case DOUBLE:
-            return Expression::toDouble(result.value());
+            return Expression::toDouble(result);
         case BOOL:
-            return Expression::toBool(result.value());
+            return Expression::toBool(result);
         case BIGINT:
-            return Status::Error("Type bigint not supported yet");
+            throw Status::Error("Type bigint not supported yet");
     }
-    LOG(FATAL) << "casting to unknown type: " << static_cast<int>(type_);
+    LOG(FATAL) << "BUG on casting to unknown type: " << static_cast<uint8_t>(type_);
 }
 
 
@@ -765,90 +768,62 @@ std::string ArithmeticExpression::toString() const {
     buf.reserve(256);
     buf += '(';
     buf.append(left_->toString());
-    switch (op_) {
-        case ADD:
-            buf += '+';
-            break;
-        case SUB:
-            buf += '-';
-            break;
-        case MUL:
-            buf += '*';
-            break;
-        case DIV:
-            buf += '/';
-            break;
-        case MOD:
-            buf += '%';
-            break;
-    }
+    buf.append(opToStr(op_));
     buf.append(right_->toString());
     buf += ')';
     return buf;
 }
 
-OptVariantType ArithmeticExpression::eval() const {
-    auto left = left_->eval();
-    auto right = right_->eval();
-    if (!left.ok()) {
-        return left;
-    }
-
-    if (!right.ok()) {
-        return right;
-    }
-
-    auto l = left.value();
-    auto r = right.value();
+VariantType ArithmeticExpression::eval() const {
+    auto l = left_->eval();
+    auto r = right_->eval();
 
     switch (op_) {
         case ADD:
             if (isArithmetic(l) && isArithmetic(r)) {
                 if (isDouble(l) || isDouble(r)) {
-                    return OptVariantType(asDouble(l) + asDouble(r));
+                    return asDouble(l) + asDouble(r);
                 }
-                return OptVariantType(asInt(l) + asInt(r));
+                return asInt(l) + asInt(r);
             }
 
             if (isString(l) && isString(r)) {
-                return OptVariantType(asString(l) + asString(r));
+                return asString(l) + asString(r);
             }
             break;
         case SUB:
             if (isArithmetic(l) && isArithmetic(r)) {
                 if (isDouble(l) || isDouble(r)) {
-                    return OptVariantType(asDouble(l) - asDouble(r));
+                    return asDouble(l) - asDouble(r);
                 }
-                return OptVariantType(asInt(l) - asInt(r));
+                return asInt(l) - asInt(r);
             }
             break;
         case MUL:
             if (isArithmetic(l) && isArithmetic(r)) {
                 if (isDouble(l) || isDouble(r)) {
-                    return OptVariantType(asDouble(l) * asDouble(r));
+                    return asDouble(l) * asDouble(r);
                 }
-                return OptVariantType(asInt(l) * asInt(r));
+                return asInt(l) * asInt(r);
             }
             break;
         case DIV:
             if (isArithmetic(l) && isArithmetic(r)) {
                 if (isDouble(l) || isDouble(r)) {
-                    return OptVariantType(asDouble(l) / asDouble(r));
+                    return asDouble(l) / asDouble(r);
                 }
-                return OptVariantType(asInt(l) / asInt(r));
+                return asInt(l) / asInt(r);
             }
             break;
         case MOD:
             if (isInt(l) && isInt(r)) {
-                return OptVariantType(asInt(l) % asInt(r));
+                return asInt(l) % asInt(r);
             }
             break;
-        default:
-            DCHECK(false);
     }
 
-    return OptVariantType(Status::Error(folly::sformat(
-        "attempt to perform arithmetic on {} with {}", l.type().name(), r.type().name())));
+    throw Status::Error("Illegal arithmetic operator `%s' on %s and %s",
+                        opToStr(op_), l.type().name(), r.type().name());
 }
 
 Status ArithmeticExpression::prepare() {
@@ -886,78 +861,70 @@ const char* ArithmeticExpression::decode(const char *pos, const char *end) {
 }
 
 
+const char* ArithmeticExpression::opToStr(Operator op) const {
+    switch (op) {
+        case ADD:
+            return "+";
+        case SUB:
+            return "-";
+        case MUL:
+            return "*";
+        case DIV:
+            return "/";
+        case MOD:
+            return "%";
+    }
+    LOG(FATAL) << "BUG on impossible operator: " << static_cast<uint8_t>(op);
+}
+
+
 std::string RelationalExpression::toString() const {
     std::string buf;
     buf.reserve(256);
     buf += '(';
     buf.append(left_->toString());
-    switch (op_) {
-        case LT:
-            buf += '<';
-            break;
-        case LE:
-            buf += "<=";
-            break;
-        case GT:
-            buf += '>';
-            break;
-        case GE:
-            buf += ">=";
-            break;
-        case EQ:
-            buf += "==";
-            break;
-        case NE:
-            buf += "!=";
-            break;
-    }
+    buf.append(opToStr(op_));
     buf.append(right_->toString());
     buf += ')';
     return buf;
 }
 
-OptVariantType RelationalExpression::eval() const {
-    auto left = left_->eval();
-    auto right = right_->eval();
 
-    if (!left.ok()) {
-        return left;
-    }
+VariantType RelationalExpression::eval() const {
+    auto l = left_->eval();
+    auto r = right_->eval();
 
-    if (!right.ok()) {
-        return right;
-    }
-
-    auto l = left.value();
-    auto r = right.value();
+    // TODO(dutor & sherman) We shall implement our own representations to express
+    // various concepts, such as Nullable, Comparable, Arithmetic, etc.
+    // At the same time, we shall implement the specific operations, such as + - * / > ==,
+    // on the type of the representation their own, instead of scattering them
+    // all over the projects as now.
     switch (op_) {
         case LT:
-            return OptVariantType(l < r);
+            return l < r;
         case LE:
-            return OptVariantType(l <= r);
+            return l <= r;
         case GT:
-            return OptVariantType(l > r);
+            return l > r;
         case GE:
-            return OptVariantType(l >= r);
+            return l >= r;
         case EQ:
             if (isArithmetic(l) && isArithmetic(r)) {
                 if (isDouble(l) || isDouble(r)) {
-                    return OptVariantType(
-                        almostEqual(asDouble(l), asDouble(r)));
+                    return almostEqual(asDouble(l), asDouble(r));
                 }
             }
-            return OptVariantType(l == r);
+            return l == r;
         case NE:
             if (isArithmetic(l) && isArithmetic(r)) {
                 if (isDouble(l) || isDouble(r)) {
-                    return OptVariantType(
-                        !almostEqual(asDouble(l), asDouble(r)));
+                    return !almostEqual(asDouble(l), asDouble(r));
                 }
             }
-            return OptVariantType(l != r);
+            return l != r;
     }
 
-    return OptVariantType(Status::Error("Wrong operator"));
+    LOG(FATAL) << "BUG on impossible operator: " << static_cast<int>(op_);
 }
 
 Status RelationalExpression::prepare() {
@@ -995,6 +962,25 @@ const char* RelationalExpression::decode(const char *pos, const char *end) {
 }
 
 
+const char* RelationalExpression::opToStr(Operator op) const {
+    switch (op) {
+        case LT:
+            return "<";
+        case LE:
+            return "<=";
+        case GT:
+            return ">";
+        case GE:
+            return ">=";
+        case EQ:
+            return "==";
+        case NE:
+            return "!=";
+    }
+    LOG(FATAL) << "BUG on impossible operator: " << static_cast<uint8_t>(op);
+}
+
+
 std::string LogicalExpression::toString() const {
     std::string buf;
     buf.reserve(256);
@@ -1013,28 +999,23 @@ std::string LogicalExpression::toString() const {
     return buf;
 }
 
-OptVariantType LogicalExpression::eval() const {
+
+VariantType LogicalExpression::eval() const {
+    // NOTE Logical expressions apply to short-circuiting evaluation
     auto left = left_->eval();
-    auto right = right_->eval();
-
-    if (!left.ok()) {
-        return left;
-    }
-
-    if (!right.ok()) {
-        return right;
-    }
 
     if (op_ == AND) {
-        if (!asBool(left.value())) {
-            return OptVariantType(false);
+        if (!asBool(left)) {
+            return false;
         }
-        return OptVariantType(asBool(right.value()));
+        auto right = right_->eval();
+        return asBool(right);
     } else {
-        if (asBool(left.value())) {
-            return OptVariantType(true);
+        if (asBool(left)) {
+            return true;
         }
-        return OptVariantType(asBool(right.value()));
+        auto right = right_->eval();
+        return asBool(right);
     }
 }
 

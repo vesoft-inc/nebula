@@ -89,12 +89,12 @@ public:
     }
 
     struct Getters {
-        std::function<OptVariantType()> getEdgeRank;
-        std::function<OptVariantType(const std::string&)> getInputProp;
-        std::function<OptVariantType(const std::string&)> getVariableProp;
-        std::function<OptVariantType(const std::string&, const std::string&)> getSrcTagProp;
-        std::function<OptVariantType(const std::string&, const std::string&)> getDstTagProp;
-        std::function<OptVariantType(const std::string&, const std::string&)> getAliasProp;
+        std::function<VariantType()> getEdgeRank;
+        std::function<VariantType(const std::string&)> getInputProp;
+        std::function<VariantType(const std::string&)> getVariableProp;
+        std::function<VariantType(const std::string&, const std::string&)> getSrcTagProp;
+        std::function<VariantType(const std::string&, const std::string&)> getDstTagProp;
+        std::function<VariantType(const std::string&, const std::string&)> getAliasProp;
     };
 
     Getters& getters() {
@@ -126,7 +126,7 @@ public:
 
     virtual Status MUST_USE_RESULT prepare() = 0;
 
-    virtual OptVariantType eval() const = 0;
+    static OptVariantType eval(const Expression *expr) noexcept;
 
     virtual bool isInputExpression() const {
         return kind_ == kInputProp;
@@ -154,7 +154,7 @@ public:
     }
 
     static double asDouble(const VariantType &value) {
-        if (value.which() == 0) {
+        if (value.which() == VAR_INT64) {
             return static_cast<double>(boost::get<int64_t>(value));
         }
         return boost::get<double>(value);
@@ -162,18 +162,16 @@ public:
 
     static bool asBool(const VariantType &value) {
         switch (value.which()) {
-            case 0:
-                return asInt(value) != 0;
-            case 1:
-                return asDouble(value) != 0.0;
-            case 2:
+            case VAR_INT64:
+                return boost::get<int64_t>(value) != 0;
+            case VAR_DOUBLE:
+                return almostEqual(boost::get<double>(value), 0.0);
+            case VAR_BOOL:
                 return boost::get<bool>(value);
-            case 3:
-                return asString(value).empty();
-            default:
-                DCHECK(false);
+            case VAR_STR:
+                return boost::get<std::string>(value).empty();
         }
-        return false;
+        LOG(FATAL) << "BUG on impossible variant type: " << value.which();
     }
 
     static const std::string& asString(const VariantType &value) {
@@ -181,19 +179,19 @@ public:
     }
 
     static bool isInt(const VariantType &value) {
-        return value.which() == 0;
+        return value.which() == VAR_INT64;
     }
 
     static bool isDouble(const VariantType &value) {
-        return value.which() == 1;
+        return value.which() == VAR_DOUBLE;
     }
 
     static bool isBool(const VariantType &value) {
-        return value.which() == 2;
+        return value.which() == VAR_BOOL;
     }
 
     static bool isString(const VariantType &value) {
-        return value.which() == 3;
+        return value.which() == VAR_STR;
     }
 
     static bool isArithmetic(const VariantType &value) {
@@ -205,58 +203,7 @@ public:
         return std::abs(left - right) < EPSILON;
     }
 
-    // Procedures used to do type casting
-    static std::string toString(const VariantType &value) {
-        char buf[1024];
-        switch (value.which()) {
-            case 0:
-                return folly::to<std::string>(boost::get<int64_t>(value));
-            case 1:
-                return folly::to<std::string>(boost::get<double>(value));
-            case 2:
-                snprintf(buf, sizeof(buf), "%s", boost::get<bool>(value) ? "true" : "false");
-                return buf;
-            case 3:
-                return boost::get<std::string>(value);
-        }
-        LOG(FATAL) << "unknown type: " << value.which();
-    }
-
-    static bool toBool(const VariantType &value) {
-        return asBool(value);
-    }
-
-    static double toDouble(const VariantType &value) {
-        switch (value.which()) {
-            case 0:
-                return static_cast<double>(boost::get<int64_t>(value));
-            case 1:
-                return boost::get<double>(value);
-            case 2:
-                return boost::get<bool>(value) ? 1.0 : 0.0;
-            case 3:
-                // TODO(dutor) error handling
-                return folly::to<double>(boost::get<std::string>(value));
-        }
-        LOG(FATAL) << "unknown type: " << value.which();
-    }
-
-    static int64_t toInt(const VariantType &value) {
-        switch (value.which()) {
-            case 0:
-                return boost::get<int64_t>(value);
-            case 1:
-                return static_cast<int64_t>(boost::get<double>(value));
-            case 2:
-                return boost::get<bool>(value) ? 1.0 : 0.0;
-            case 3:
-                // TODO(dutor) error handling
-                return folly::to<int64_t>(boost::get<std::string>(value));
-        }
-        LOG(FATAL) << "unknown type: " << value.which();
-    }
-
-    static void print(const VariantType &value);
+    static std::string variantToStr(const VariantType &value);
 
     enum Kind : uint8_t {
         kUnknown = 0,
@@ -299,8 +246,73 @@ protected:
 
     static std::unique_ptr<Expression> makeExpr(uint8_t kind);
 
+    // Procedures used to do type casting
+    static std::string toString(const VariantType &value) {
+        char buf[1024];
+        try {
+            switch (value.which()) {
+                case VAR_INT64:
+                    return folly::to<std::string>(boost::get<int64_t>(value));
+                case VAR_DOUBLE:
+                    return folly::to<std::string>(boost::get<double>(value));
+                case VAR_BOOL:
+                    snprintf(buf, sizeof(buf), "%s", boost::get<bool>(value) ? "true" : "false");
+                    return buf;
+                case VAR_STR:
+                    return boost::get<std::string>(value);
+            }
+        } catch (std::exception &e) {
+            throw Status::Error("Failed to cast `%s' to double: %s",
+                                variantToStr(value).c_str(), e.what());
+        }
+        LOG(FATAL) << "BUG on impossible variant type: " << value.which();
+    }
+
+    static bool toBool(const VariantType &value) {
+        // This shall always succeed
+        return asBool(value);
+    }
+
+    static double toDouble(const VariantType &value) {
+        try {
+            switch (value.which()) {
+                case VAR_INT64:
+                    return static_cast<double>(boost::get<int64_t>(value));
+                case VAR_DOUBLE:
+                    return boost::get<double>(value);
+                case VAR_BOOL:
+                    return boost::get<bool>(value) ? 1.0 : 0.0;
+                case VAR_STR:
+                    return folly::to<double>(boost::get<std::string>(value));
+            }
+        } catch (std::exception &e) {
+            throw Status::Error("Failed to cast `%s' to double: %s",
+                                variantToStr(value).c_str(), e.what());
+        }
+        LOG(FATAL) << "BUG on impossible variant type: " << value.which();
+    }
+
+    static int64_t toInt(const VariantType &value) {
+        try {
+            switch (value.which()) {
+                case VAR_INT64:
+                    return boost::get<int64_t>(value);
+                case VAR_DOUBLE:
+                    return static_cast<int64_t>(boost::get<double>(value));
+                case VAR_BOOL:
+                    return boost::get<bool>(value) ? 1.0 : 0.0;
+                case VAR_STR:
+                    return folly::to<int64_t>(boost::get<std::string>(value));
+            }
+        } catch (std::exception &e) {
+            throw Status::Error("Failed to cast `%s' to integer: %s",
+                                variantToStr(value).c_str(), e.what());
+        }
+        LOG(FATAL) << "BUG on impossible variant type: " << value.which();
+    }
+
 private:
-    // Make friend to derived classes,
+    // Make friends with derived classes,
     // to allow them to call private encode/decode on each other.
     friend class PrimaryExpression;
     friend class UnaryExpression;
@@ -326,6 +338,8 @@ private:
      */
     virtual const char* decode(const char *pos, const char *end) = 0;
 
+    virtual VariantType eval() const = 0;
+
 
 protected:
     ExpressionContext                          *context_{nullptr};
@@ -350,7 +364,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -386,7 +400,7 @@ public:
         prop_.reset(prop);
     }
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -411,7 +425,7 @@ public:
         prop_.reset(prop);
     }
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -436,7 +450,7 @@ public:
         prop_.reset(prop);
     }
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -461,7 +475,7 @@ public:
         prop_.reset(new std::string("_type"));
     }
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -486,7 +500,7 @@ public:
         prop_.reset(new std::string("_src"));
     }
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -511,7 +525,7 @@ public:
         prop_.reset(new std::string("_dst"));
     }
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -536,7 +550,7 @@ public:
         prop_.reset(new std::string("_rank"));
     }
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -561,7 +575,7 @@ public:
         prop_.reset(prop);
     }
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -601,7 +615,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -647,7 +661,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -690,7 +704,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -729,7 +743,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -778,7 +792,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -800,6 +814,8 @@ private:
     void encode(Cord &cord) const override;
 
     const char* decode(const char *pos, const char *end) override;
+
+    const char* opToStr(Operator op) const;
 
 private:
     Operator                                    op_;
@@ -829,7 +845,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 
@@ -852,6 +868,7 @@ private:
 
     const char* decode(const char *pos, const char *end) override;
 
+    const char* opToStr(Operator op) const;
 
 private:
     Operator                                    op_;
@@ -881,7 +898,7 @@ public:
 
     std::string toString() const override;
 
-    OptVariantType eval() const override;
+    VariantType eval() const override;
 
     Status MUST_USE_RESULT prepare() override;
 

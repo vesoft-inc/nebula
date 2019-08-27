@@ -368,27 +368,27 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 std::lock_guard<std::mutex> lg(this->lock_);
                 auto& getters = expCtx_->getters();
                 getters.getAliasProp =
-                    [&] (const std::string&, const std::string &prop) -> OptVariantType {
+                    [&] (const std::string&, const std::string &prop) -> VariantType {
                         auto res = RowReader::getPropByName(reader.get(), prop);
                         if (!ok(res)) {
-                            return Status::Error("Invalid Prop");
+                            throw Status::Error("Invalid Prop");
                         }
                         return value(std::move(res));
-                    };
+                };
                 getters.getEdgeRank = [&] () -> VariantType {
                     return rank;
                 };
                 getters.getSrcTagProp = [&fcontext] (const std::string& tag,
-                                                     const std::string& prop) -> OptVariantType {
+                                                     const std::string& prop) -> VariantType {
                     auto it = fcontext->tagFilters_.find(std::make_pair(tag, prop));
                     if (it == fcontext->tagFilters_.end()) {
-                        return Status::Error("Invalid Tag Filter");
+                        throw Status::Error("Invalid Tag Filter");
                     }
                     VLOG(1) << "Hit srcProp filter for tag " << tag << ", prop "
                             << prop << ", value " << it->second;
                     return it->second;
                 };
-                auto value = exp_->eval();
+                auto value = Expression::eval(exp_.get());
                 if (value.ok() && !Expression::asBool(value.value())) {
                     VLOG(1) << "Filter the edge "
                             << vId << "-> " << dstId << "@" << rank << ":" << edgeType;

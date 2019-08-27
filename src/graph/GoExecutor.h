@@ -156,7 +156,7 @@ private:
      */
     class VertexHolder final {
     public:
-        OptVariantType get(VertexID id, int64_t index) const;
+        VariantType get(VertexID id, int64_t index) const;
         void add(const storage::cpp2::QueryResponse &resp);
         const auto* schema() const {
             return schema_.get();

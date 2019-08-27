@@ -162,7 +162,7 @@ Status GoExecutor::prepareFrom() {
             if (!status.ok()) {
                 break;
             }
-            auto value = expr->eval();
+            auto value = Expression::eval(expr);
             if (!value.ok()) {
                 status = Status::Error();
                 break;
@@ -699,21 +699,21 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             while (iter) {
                 auto &getters = expCtx_->getters();
                 getters.getAliasProp = [&](const std::string &,
-                                           const std::string &prop) -> OptVariantType {
+                                           const std::string &prop) -> VariantType {
                     auto res = RowReader::getPropByName(&*iter, prop);
                     if (ok(res)) {
                         return value(res);
                     }
-                    return Status::Error("get edge prop failed");
+                    throw Status::Error("get edge prop failed");
                 };
                 getters.getSrcTagProp = [&](const std::string &tagName,
-                                            const std::string &prop) -> OptVariantType {
+                                            const std::string &prop) -> VariantType {
                     auto tagIter = this->srcTagProps_.find(std::make_pair(tagName, prop));
                     if (tagIter == this->srcTagProps_.end()) {
                         auto msg = folly::sformat(
                             "Src tagName : {} , propName : {} is not exist", tagName, prop);
                         LOG(ERROR) << msg;
-                        return Status::Error(msg);
+                        throw Status::Error(msg);
                     }
                     auto index = tagIter->second;
                     const nebula::cpp2::ValueType &type = vschema->getFieldType(index);
@@ -721,16 +721,16 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         auto msg =
                             folly::sformat("Tag: {} no schema for the index {}", tagName, index);
                         LOG(ERROR) << msg;
-                        return Status::Error(msg);
+                        throw Status::Error(msg);
                     }
                     auto res = RowReader::getPropByIndex(vreader.get(), index);
                     if (ok(res)) {
                         return value(std::move(res));
                     }
-                    return Status::Error(folly::sformat("{}.{} was not exist", tagName, prop));
+                    throw Status::Error(folly::sformat("{}.{} was not exist", tagName, prop));
                 };
                 getters.getDstTagProp = [&](const std::string &tagName,
-                                            const std::string &prop) -> OptVariantType {
+                                            const std::string &prop) -> VariantType {
                     auto res = RowReader::getPropByName(&*iter, "_dst");
                     CHECK(ok(res));
                     auto dst = value(std::move(res));
@@ -739,7 +739,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         auto msg = folly::sformat(
                             "Src tagName : {} , propName : {} is not exist", tagName, prop);
                         LOG(ERROR) << msg;
-                        return Status::Error(msg);
+                        throw Status::Error(msg);
                     }
                     auto index = tagIter->second;
                     return vertexHolder_->get(boost::get<int64_t>(dst), index);
@@ -752,7 +752,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 };
                 // Evaluate filter
                 if (filter_ != nullptr) {
-                    auto value = filter_->eval();
+                    auto value = Expression::eval(filter_);
                     if (!value.ok()) {
                         onError_(value.status());
                         return false;
@@ -766,7 +766,7 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                 record.reserve(yields_.size());
                 for (auto *column : yields_) {
                     auto *expr = column->expr();
-                    auto value = expr->eval();
+                    auto value = Expression::eval(expr);
                     if (!value.ok()) {
                         onError_(value.status());
                         return false;
@@ -782,19 +782,19 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
 }
 
 
-OptVariantType GoExecutor::VertexHolder::get(VertexID id, int64_t index) const {
+VariantType GoExecutor::VertexHolder::get(VertexID id, int64_t index) const {
     DCHECK(schema_ != nullptr);
     auto iter = data_.find(id);
 
     if (iter == data_.end()) {
-        return Status::Error("vertex was not found %ld", id);
+        throw Status::Error("vertex was not found %ld", id);
     }
 
     auto reader = RowReader::getRowReader(iter->second, schema_);
 
     auto res = RowReader::getPropByIndex(reader.get(), index);
     if (!ok(res)) {
-        return Status::Error("get prop failed");
+        throw Status::Error("get prop failed");
     }
 
     return value(std::move(res));

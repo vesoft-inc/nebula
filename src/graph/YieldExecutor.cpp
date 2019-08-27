@@ -38,7 +38,7 @@ void YieldExecutor::execute() {
 
     for (auto *col : yields_) {
         auto expr = col->expr();
-        auto v = expr->eval();
+        auto v = Expression::eval(expr);
         if (!v.ok()) {
             onError_(v.status());
             return;
