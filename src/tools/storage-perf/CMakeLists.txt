@@ -23,6 +23,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

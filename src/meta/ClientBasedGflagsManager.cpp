@@ -18,12 +18,6 @@ ClientBasedGflagsManager::~ClientBasedGflagsManager() {
     metaClient_ = nullptr;
 }
 
-Status ClientBasedGflagsManager::init() {
-    module_ = metaClient_->getGflagsModule();
-    declareGflags();
-    return registerGflags();
-}
-
 template<typename ValueType>
 folly::Future<StatusOr<bool>> ClientBasedGflagsManager::set(const cpp2::ConfigModule& module,
                                                             const std::string& name,
@@ -70,20 +64,10 @@ ClientBasedGflagsManager::listConfigs(const cpp2::ConfigModule& module) {
     return metaClient_->listConfigs(module);
 }
 
-folly::Future<StatusOr<bool>>
-ClientBasedGflagsManager::registerConfig(const cpp2::ConfigModule& module, const std::string& name,
-                                         const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
-                                         const std::string& value) {
-    auto item = toThriftConfigItem(module, name, type, mode, value);
-    std::vector<cpp2::ConfigItem> items;
-    items.emplace_back(std::move(item));
-    return metaClient_->regConfig(items);
-}
-
-Status ClientBasedGflagsManager::registerGflags() {
-    auto status = metaClient_->regConfig(gflagsDeclared_).get();
+Status ClientBasedGflagsManager::registerGflags(const std::vector<cpp2::ConfigItem>& items) {
+    auto status = metaClient_->regConfig(items).get();
     if (status.ok()) {
-        LOG(INFO) << "Register gflags ok " << gflagsDeclared_.size();
+        LOG(INFO) << "Register gflags ok " << items.size();
         return Status::OK();
     }
     return Status::Error("Register gflags failed");

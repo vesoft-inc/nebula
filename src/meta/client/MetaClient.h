@@ -10,12 +10,14 @@
 #include "base/Base.h"
 #include <folly/executors/IOThreadPoolExecutor.h>
 #include <folly/RWSpinLock.h>
+#include <gtest/gtest_prod.h>
 #include "gen-cpp2/MetaServiceAsyncClient.h"
 #include "base/Status.h"
 #include "base/StatusOr.h"
 #include "thread/GenericWorker.h"
 #include "thrift/ThriftClientManager.h"
 #include "meta/SchemaProviderIf.h"
+#include "meta/GflagsManager.h"
 
 DECLARE_int32(meta_client_retry_times);
 
@@ -85,6 +87,9 @@ public:
 };
 
 class MetaClient {
+    FRIEND_TEST(ConfigManTest, MetaConfigManTest);
+    FRIEND_TEST(ConfigManTest, MockConfigTest);
+
 public:
     explicit MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                         std::vector<HostAddr> addrs,
@@ -216,10 +221,6 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module);
 
-    cpp2::ConfigModule& getGflagsModule() {return gflagsModule_;}
-
-    void setGflagsModule(const cpp2::ConfigModule& module = cpp2::ConfigModule::UNKNOWN);
-
     // Opeartions for cache.
     StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
@@ -263,6 +264,7 @@ protected:
 
     void loadCfgThreadFunc();
     void loadCfg();
+    bool registerCfg();
     void addLoadCfgTask();
     void updateGflagsValue(const ConfigItem& item);
 
@@ -349,6 +351,8 @@ private:
     MetaConfigMap         metaConfigMap_;
     folly::RWSpinLock     configCacheLock_;
     cpp2::ConfigModule    gflagsModule_{cpp2::ConfigModule::UNKNOWN};
+    std::atomic_bool      configReady_{false};
+    std::vector<cpp2::ConfigItem> gflagsDeclared_;
 };
 
 }  // namespace meta
