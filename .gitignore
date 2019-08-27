@@ -1,6 +1,7 @@
 *.swp
 *.so
 
+build
 _build
 _build.log
 _install

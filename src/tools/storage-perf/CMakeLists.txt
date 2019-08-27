@@ -30,3 +30,9 @@ nebula_add_executable(
         gtest
 )
 
+install(
+    TARGETS
+        storage_perf
+    DESTINATION
+        bin
+)
