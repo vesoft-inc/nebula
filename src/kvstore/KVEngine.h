@@ -86,6 +86,7 @@ public:
     // Remove partId from current storage engine.
     virtual void removePart(PartitionID partId) = 0;
 
+
     // Return all partIds current storage engine holds.
     virtual std::vector<PartitionID> allParts() = 0;
 

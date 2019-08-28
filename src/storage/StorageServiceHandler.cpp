@@ -96,5 +96,11 @@ StorageServiceHandler::future_memberChange(const cpp2::MemberChangeReq& req) {
     RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::GetLeaderResp>
+StorageServiceHandler::future_getLeaderPart(const cpp2::GetLeaderReq& req) {
+    auto* processor = GetLeaderProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
 }  // namespace storage
 }  // namespace nebula

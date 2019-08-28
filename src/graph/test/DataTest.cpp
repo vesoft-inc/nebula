@@ -359,6 +359,68 @@ TEST_F(DataTest, InsertVertex) {
     // TODO: Test insert multi tags, and delete one of them then check other existent
 }
 
+TEST_F(DataTest, InsertMultiVersionTest) {
+    // Insert multi version vertex
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES "
+                          "hash(\"Tony\"):(\"Tony\", 18), "
+                          "hash(\"Mack\"):(\"Mack\", 19)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES "
+                          "hash(\"Mack\"):(\"Mack\", 20)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT VERTEX person(name, age) VALUES "
+                          "hash(\"Mack\"):(\"Mack\", 21)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Insert multi version edge
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "hash(\"Tony\")->hash(\"Mack\")@1:(1)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "hash(\"Tony\")->hash(\"Mack\")@1:(2)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "INSERT EDGE schoolmate(likeness) VALUES "
+                          "hash(\"Tony\")->hash(\"Mack\")@1:(3)";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+    }
+    // Get result
+    {
+        cpp2::ExecutionResponse resp;
+        std::string cmd = "GO FROM hash(\"Tony\") OVER schoolmate "
+                          "YIELD $$.person.name, $$.person.age, schoolmate.likeness";
+        auto code = client_->execute(cmd, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+        using valueType = std::tuple<std::string, int64_t, int64_t>;
+        // Get the latest result
+        std::vector<valueType> expected{
+            {"Mack", 21, 3},
+        };
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
+
 TEST_F(DataTest, FindTest) {
     {
         cpp2::ExecutionResponse resp;
