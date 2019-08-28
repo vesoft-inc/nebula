@@ -451,8 +451,18 @@ go_sentence
 
 step_clause
     : %empty { $$ = new StepClause(); }
-    | INTEGER KW_STEPS { $$ = new StepClause($1); }
-    | KW_UPTO INTEGER KW_STEPS { $$ = new StepClause($2, true); }
+    | INTEGER KW_STEPS {
+        if ((uint64_t)$1 == 9223372036854775808ULL) {
+            LOG(ERROR) << "Integer overflow";
+        }
+        $$ = new StepClause($1);
+    }
+    | KW_UPTO INTEGER KW_STEPS {
+        if ((uint64_t)$2 == 9223372036854775808ULL) {
+            LOG(ERROR) << "Integer overflow";
+        }
+        $$ = new StepClause($2, true);
+    }
     ;
 
 from_clause
@@ -486,12 +496,18 @@ vid
 
 unary_integer
     : PLUS INTEGER {
+        if ((uint64_t)$2 == 9223372036854775808ULL) {
+            LOG(ERROR) << "Integer overflow";
+        }
         $$ = $2;
     }
     | MINUS INTEGER {
         $$ = -$2;
     }
     | INTEGER {
+        if ((uint64_t)$1 == 9223372036854775808ULL) {
+            LOG(ERROR) << "Integer overflow";
+        }
         $$ = $1;
     }
     ;
@@ -1269,7 +1285,14 @@ host_item
     /* TODO(dutor) Support hostname and IPv6 */
     ;
 
-port : INTEGER { $$ = $1; }
+port
+    : INTEGER {
+        if ((uint64_t)$1 == 9223372036854775808ULL) {
+            LOG(ERROR) << "Integer overflow";
+        }
+        $$ = $1;
+    }
+    ;
 
 config_module_enum
     : KW_GRAPH      { $$ = ConfigModule::GRAPH; }
@@ -1339,11 +1362,17 @@ space_opt_list
     }
     ;
 
- space_opt_item
+space_opt_item
     : KW_PARTITION_NUM ASSIGN INTEGER {
+        if ((uint64_t)$3 == 9223372036854775808ULL) {
+            LOG(ERROR) << "Integer overflow";
+        }
         $$ = new SpaceOptItem(SpaceOptItem::PARTITION_NUM, $3);
     }
     | KW_REPLICA_FACTOR ASSIGN INTEGER {
+        if ((uint64_t)$3 == 9223372036854775808ULL) {
+            LOG(ERROR) << "Integer overflow";
+        }
         $$ = new SpaceOptItem(SpaceOptItem::REPLICA_FACTOR, $3);
     }
     // TODO(YT) Create Spaces for different engines

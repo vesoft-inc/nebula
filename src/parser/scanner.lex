@@ -285,8 +285,11 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                         yyterminate();
                                     }
                                 }
-                                int64_t val = 0;
+                                uint64_t val = 0;
                                 sscanf(yytext, "%lx", &val);
+                                if (val > 0x8000000000000000) {
+                                    yyterminate();
+                                }
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
@@ -302,15 +305,22 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                         yyterminate();
                                     }
                                 }
-                                int64_t val = 0;
+                                uint64_t val = 0;
                                 sscanf(yytext, "%lo", &val);
+                                if (val > 01000000000000000000000) {
+                                    yyterminate();
+                                }
                                 yylval->intval = val;
                                 return TokenType::INTEGER;
                             }
 {DEC}+                      {
                                 try {
                                     folly::StringPiece text(yytext, yyleng);
-                                    yylval->intval = folly::to<int64_t>(text);
+                                    uint64_t val = folly::to<uint64_t>(text);
+                                    if (val > 9223372036854775808ULL) {
+                                        yyterminate();
+                                    }
+                                    yylval->intval = val;
                                 } catch (...) {
                                     yyterminate();
                                 }
