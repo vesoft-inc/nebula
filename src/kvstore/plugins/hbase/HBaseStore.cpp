@@ -384,6 +384,12 @@ ResultCode HBaseStore::ingest(GraphSpaceID spaceId) {
     return ResultCode::ERR_UNSUPPORTED;
 }
 
+int32_t HBaseStore::allLeader(std::unordered_map<GraphSpaceID,
+                                                 std::vector<PartitionID>>& leaderIds) {
+    UNUSED(leaderIds);
+    LOG(FATAL) << "Unimplement";
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 

@@ -18,6 +18,9 @@
 
 namespace nebula {
 namespace meta {
+
+using LeaderBalancePlan = std::vector<std::tuple<GraphSpaceID, PartitionID, HostAddr, HostAddr>>;
+
 /**
 There are two interfaces public:
  * Balance:  it will construct a balance plan and invoked it. If last balance plan is not succeeded, it will
@@ -41,10 +44,16 @@ class Balancer {
     FRIEND_TEST(BalanceTest, BalancePartsTest);
     FRIEND_TEST(BalanceTest, NormalTest);
     FRIEND_TEST(BalanceTest, RecoveryTest);
+    FRIEND_TEST(BalanceTest, LeaderBalancePlanTest);
+    FRIEND_TEST(BalanceTest, SimpleLeaderBalancePlanTest);
+    FRIEND_TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest);
+    FRIEND_TEST(BalanceTest, LeaderBalanceTest);
+    FRIEND_TEST(BalanceTest, ManyHostsLeaderBalancePlanTest);
+    FRIEND_TEST(BalanceIntegrationTest, LeaderBalanceTest);
 
 public:
     static Balancer* instance(kvstore::KVStore* kv) {
-        static std::unique_ptr<AdminClient> client(new AdminClient());
+        static std::unique_ptr<AdminClient> client(new AdminClient(kv));
         static std::unique_ptr<Balancer> balancer(new Balancer(kv, std::move(client)));
         return balancer.get();
     }
@@ -85,6 +94,8 @@ public:
         UNUSED(id);
         return Status::Error("Unsupport it yet!");
     }
+
+    cpp2::ErrorCode leaderBalance();
 
 private:
     Balancer(kvstore::KVStore* kv, std::unique_ptr<AdminClient> client)
@@ -127,6 +138,31 @@ private:
     std::vector<std::pair<HostAddr, int32_t>>
     sortedHostsByParts(const std::unordered_map<HostAddr, std::vector<PartitionID>>& hostParts);
 
+    bool getAllSpaces(std::vector<GraphSpaceID>& spaces, kvstore::ResultCode& retCode);
+
+    std::unordered_map<HostAddr, std::vector<PartitionID>>
+    buildLeaderBalancePlan(HostLeaderMap* hostLeaderMap, GraphSpaceID spaceId,
+                           LeaderBalancePlan& plan, bool useDeviation = true);
+
+    void simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
+
+    int32_t acquireLeaders(std::unordered_map<HostAddr, std::vector<PartitionID>>& allHostParts,
+                           std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
+                           std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
+                           std::unordered_set<HostAddr>& activeHosts,
+                           HostAddr to,
+                           size_t maxLoad,
+                           LeaderBalancePlan& plan,
+                           GraphSpaceID spaceId);
+
+    int32_t giveupLeaders(std::unordered_map<HostAddr, std::vector<PartitionID>>& leaderHostParts,
+                          std::unordered_map<PartitionID, std::vector<HostAddr>>& peersMap,
+                          std::unordered_set<HostAddr>& activeHosts,
+                          HostAddr from,
+                          size_t maxLoad,
+                          LeaderBalancePlan& plan,
+                          GraphSpaceID spaceId);
+
 private:
     std::atomic_bool  running_{false};
     kvstore::KVStore* kv_ = nullptr;
@@ -134,6 +170,8 @@ private:
     // Current running plan.
     std::unique_ptr<BalancePlan> plan_{nullptr};
     std::unique_ptr<folly::Executor> executor_;
+    std::atomic_bool  inLeaderBalance_{false};
+    std::unique_ptr<HostLeaderMap> hostLeaderMap_;
 };
 
 }  // namespace meta

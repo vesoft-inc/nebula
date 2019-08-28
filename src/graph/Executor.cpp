@@ -41,6 +41,7 @@
 #include "graph/SetExecutor.h"
 #include "graph/FindExecutor.h"
 #include "graph/MatchExecutor.h"
+#include "graph/BalanceExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -138,6 +139,9 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
             break;
         case Sentence::Kind::kFind:
             executor = std::make_unique<FindExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kBalance:
+            executor = std::make_unique<BalanceExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";

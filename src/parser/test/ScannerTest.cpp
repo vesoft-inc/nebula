@@ -360,6 +360,12 @@ TEST(Scanner, Basic) {
         CHECK_SEMANTIC_TYPE("Variables", TokenType::KW_VARIABLES),
         CHECK_SEMANTIC_TYPE("ALL", TokenType::KW_ALL),
         CHECK_SEMANTIC_TYPE("all", TokenType::KW_ALL),
+        CHECK_SEMANTIC_TYPE("BALANCE", TokenType::KW_BALANCE),
+        CHECK_SEMANTIC_TYPE("Balance", TokenType::KW_BALANCE),
+        CHECK_SEMANTIC_TYPE("balance", TokenType::KW_BALANCE),
+        CHECK_SEMANTIC_TYPE("LEADER", TokenType::KW_LEADER),
+        CHECK_SEMANTIC_TYPE("Leader", TokenType::KW_LEADER),
+        CHECK_SEMANTIC_TYPE("leader", TokenType::KW_LEADER),
 
         CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
         CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

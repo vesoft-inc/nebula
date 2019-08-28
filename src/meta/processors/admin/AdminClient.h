@@ -17,6 +17,10 @@
 namespace nebula {
 namespace meta {
 
+using HostLeaderMap = std::unordered_map<HostAddr,
+                                         std::unordered_map<GraphSpaceID,
+                                                            std::vector<PartitionID>>>;
+
 class FaultInjector {
 public:
     virtual ~FaultInjector() = default;
@@ -27,6 +31,7 @@ public:
     virtual folly::Future<Status> memberChange() = 0;
     virtual folly::Future<Status> updateMeta() = 0;
     virtual folly::Future<Status> removePart() = 0;
+    virtual folly::Future<Status> getLeaderDist(HostLeaderMap* hostLeaderMap) = 0;
 };
 
 static const HostAddr kRandomPeer(0, 0);
@@ -73,6 +78,8 @@ public:
     folly::Future<Status> removePart(GraphSpaceID spaceId,
                                      PartitionID partId,
                                      const HostAddr& host);
+
+    folly::Future<Status> getLeaderDist(HostLeaderMap* result);
 
     FaultInjector* faultInjector() {
         return injector_.get();
