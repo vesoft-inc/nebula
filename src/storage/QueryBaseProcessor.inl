@@ -369,12 +369,12 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 auto& getters = expCtx_->getters();
                 getters.getAliasProp =
                     [&] (const std::string&, const std::string &prop) -> OptVariantType {
-                    auto res = RowReader::getPropByName(reader.get(), prop);
-                    if (!ok(res)) {
-                        return Status::Error("Invalid Prop");
-                    }
-                    return value(std::move(res));
-                };
+                        auto res = RowReader::getPropByName(reader.get(), prop);
+                        if (!ok(res)) {
+                            return Status::Error("Invalid Prop");
+                        }
+                        return value(std::move(res));
+                    };
                 getters.getEdgeRank = [&] () -> VariantType {
                     return rank;
                 };
