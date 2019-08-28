@@ -192,7 +192,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                 self->setResponse(r);
             }
             self->noMoreRequestCV_.notify_all();
-            return r;
+            return;
         }
 
         cpp2::AppendLogResponse resp = std::move(t).value();
@@ -208,7 +208,6 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                         << "AppendLog request sent successfully";
 
                 std::shared_ptr<cpp2::AppendLogRequest> newReq;
-                cpp2::AppendLogResponse r;
                 {
                     std::lock_guard<std::mutex> g(self->lock_);
                     auto res = self->checkStatus();
@@ -216,6 +215,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                         VLOG(2) << self->idStr_
                                 << "The host is not in a proper status,"
                                    " just return";
+                        cpp2::AppendLogResponse r;
                         r.set_error_code(res);
                         self->setResponse(r);
                     } else {
@@ -251,8 +251,6 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                                 self->pendingReq_ = std::make_tuple(0, 0, 0);
                             }
                         }
-
-                        r = std::move(resp);
                     }
                 }
 
@@ -261,13 +259,12 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                 } else {
                     self->noMoreRequestCV_.notify_all();
                 }
-                return r;
+                return;
             }
             case cpp2::ErrorCode::E_LOG_GAP: {
                 VLOG(2) << self->idStr_
                         << "The host's log is behind, need to catch up";
                 std::shared_ptr<cpp2::AppendLogRequest> newReq;
-                cpp2::AppendLogResponse r;
                 {
                     std::lock_guard<std::mutex> g(self->lock_);
                     auto res = self->checkStatus();
@@ -275,13 +272,13 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                         VLOG(2) << self->idStr_
                                 << "The host is not in a proper status,"
                                    " skip catching up the gap";
+                        cpp2::AppendLogResponse r;
                         r.set_error_code(res);
                         self->setResponse(r);
                     } else {
                         self->lastLogIdSent_ = resp.get_last_log_id();
                         self->lastLogTermSent_ = resp.get_last_log_term();
                         newReq = self->prepareAppendLogRequest();
-                        r = std::move(resp);
                     }
                 }
                 if (newReq) {
@@ -289,14 +286,13 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                 } else {
                     self->noMoreRequestCV_.notify_all();
                 }
-                return r;
+                return;
             }
             case cpp2::ErrorCode::E_WAITING_SNAPSHOT: {
                 VLOG(2) << self->idStr_
                         << "The host is waiting for the snapshot, so we need to send log from "
                         << " current committedLogId " << self->committedLogId_;
                 std::shared_ptr<cpp2::AppendLogRequest> newReq;
-                cpp2::AppendLogResponse r;
                 {
                     std::lock_guard<std::mutex> g(self->lock_);
                     auto res = self->checkStatus();
@@ -304,13 +300,13 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                         VLOG(2) << self->idStr_
                                 << "The host is not in a proper status,"
                                    " skip waiting the snapshot";
+                        cpp2::AppendLogResponse r;
                         r.set_error_code(res);
                         self->setResponse(r);
                     } else {
                         self->lastLogIdSent_ = self->committedLogId_;
                         self->lastLogTermSent_ = self->logTermToSend_;
                         newReq = self->prepareAppendLogRequest();
-                        r = std::move(resp);
                     }
                 }
                 if (newReq) {
@@ -318,7 +314,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                 } else {
                     self->noMoreRequestCV_.notify_all();
                 }
-                return r;
+                return;
             }
             case cpp2::ErrorCode::E_LOG_STALE: {
                 VLOG(2) << self->idStr_ << "Log stale, reset lastLogIdSent " << self->lastLogIdSent_
@@ -330,7 +326,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                     self->setResponse(resp);
                 }
                 self->noMoreRequestCV_.notify_all();
-                return resp;
+                return;
             }
             default: {
                 PLOG_EVERY_N(ERROR, 100)
@@ -343,7 +339,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
                     self->setResponse(resp);
                 }
                 self->noMoreRequestCV_.notify_all();
-                return resp;
+                return;
             }
         }
     });

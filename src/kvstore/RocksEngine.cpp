@@ -116,7 +116,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
         options.compaction_filter_factory = cfFactory;
     }
     status = rocksdb::DB::Open(options, path, &db);
-    CHECK(status.ok());
+    CHECK(status.ok()) << status.ToString();
     db_.reset(db);
     partsNum_ = allParts().size();
 }
