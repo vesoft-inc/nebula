@@ -135,7 +135,7 @@ public:
     folly::Future<StatusOr<bool>>
     addHosts(const std::vector<HostAddr>& hosts);
 
-    folly::Future<StatusOr<std::vector<HostStatus>>>
+    folly::Future<StatusOr<std::vector<cpp2::HostItem>>>
     listHosts();
 
     folly::Future<StatusOr<bool>>
@@ -206,6 +206,8 @@ public:
     // Operations for admin
     folly::Future<StatusOr<int64_t>>
     balance();
+
+    folly::Future<StatusOr<bool>> balanceLeader();
 
     // Operations for config
     folly::Future<StatusOr<bool>>
@@ -313,8 +315,6 @@ protected:
                      int32_t retryLimit = FLAGS_meta_client_retry_times);
 
     std::vector<HostAddr> to(const std::vector<nebula::cpp2::HostAddr>& hosts);
-
-    std::vector<HostStatus> toHostStatus(const std::vector<cpp2::HostItem>& thosts);
 
     std::vector<SpaceIdName> toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames);
 

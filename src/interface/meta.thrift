@@ -121,6 +121,8 @@ enum HostStatus {
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
+    3: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
+    4: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
 }
 
 struct UserItem {
@@ -437,6 +439,9 @@ struct BalanceResp {
     3: common.HostAddr  leader,
 }
 
+struct LeaderBalanceReq {
+}
+
 enum ConfigModule {
     UNKNOWN = 0x00,
     ALL     = 0x01,
@@ -540,6 +545,7 @@ service MetaService {
 
     HBResp           heartBeat(1: HBReq req);
     BalanceResp      balance(1: BalanceReq req);
+    ExecResp         leaderBalance(1: LeaderBalanceReq req);
 
     ExecResp regConfig(1: RegConfigReq req);
     GetConfigResp getConfig(1: GetConfigReq req);

@@ -82,18 +82,53 @@ void ShowExecutor::showHosts() {
             return;
         }
 
-        auto retShowHosts = std::move(resp).value();
+        auto hostItems = std::move(resp).value();
         std::vector<cpp2::RowValue> rows;
-        std::vector<std::string> header{"Ip", "Port", "Status"};
+        std::vector<std::string> header{"Ip", "Port", "Status", "Leader count",
+                                        "Leader distribution", "Partition distribution"};
         resp_ = std::make_unique<cpp2::ExecutionResponse>();
         resp_->set_column_names(std::move(header));
 
-        for (auto &status : retShowHosts) {
+        for (auto& item : hostItems) {
             std::vector<cpp2::ColumnValue> row;
-            row.resize(3);
-            row[0].set_str(NetworkUtils::ipFromHostAddr(status.first));
-            row[1].set_str(folly::to<std::string>(NetworkUtils::portFromHostAddr(status.first)));
-            row[2].set_str(status.second);
+            row.resize(6);
+            auto hostAddr = HostAddr(item.hostAddr.ip, item.hostAddr.port);
+            row[0].set_str(NetworkUtils::ipFromHostAddr(hostAddr));
+            row[1].set_str(folly::to<std::string>(NetworkUtils::portFromHostAddr(hostAddr)));
+            switch (item.get_status()) {
+                case meta::cpp2::HostStatus::ONLINE:
+                    row[2].set_str("online");
+                    break;
+                case meta::cpp2::HostStatus::OFFLINE:
+                case meta::cpp2::HostStatus::UNKNOWN:
+                    row[2].set_str("offline");
+                    break;
+            }
+
+            int32_t leaderCount = 0;
+            std::string leaders;
+            for (auto& spaceEntry : item.get_leader_parts()) {
+                leaderCount += spaceEntry.second.size();
+                leaders += "space " + folly::to<std::string>(spaceEntry.first) + ": " +
+                           folly::to<std::string>(spaceEntry.second.size()) + ", ";
+            }
+            if (!leaders.empty()) {
+                leaders.resize(leaders.size() - 2);
+            }
+
+            row[3].set_integer(leaderCount);
+            row[4].set_str(leaders);
+
+            std::string parts;
+            for (auto& spaceEntry : item.get_all_parts()) {
+                parts += "space " + folly::to<std::string>(spaceEntry.first) + ": " +
+                           folly::to<std::string>(spaceEntry.second.size()) + ", ";
+            }
+            if (!parts.empty()) {
+                parts.resize(parts.size() - 2);
+            }
+            row[5].set_str(parts);
+
             rows.emplace_back();
             rows.back().set_columns(std::move(row));
         }

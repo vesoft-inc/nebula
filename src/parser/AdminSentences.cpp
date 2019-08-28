@@ -145,4 +145,14 @@ std::string ConfigSentence::toString() const {
     return "Unknown";
 }
 
+std::string BalanceSentence::toString() const {
+    switch (subType_) {
+        case SubType::kLeader:
+            return std::string("BALANCE LEADER");
+        default:
+            FLOG_FATAL("Type illegal");
+    }
+    return "Unknown";
+}
+
 }   // namespace nebula
