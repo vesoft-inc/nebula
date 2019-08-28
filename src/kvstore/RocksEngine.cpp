@@ -214,7 +214,7 @@ ResultCode RocksEngine::put(std::string key, std::string value) {
 
 
 ResultCode RocksEngine::multiPut(std::vector<KV> keyValues) {
-    rocksdb::WriteBatch updates(FLAGS_batch_reserved_bytes);
+    rocksdb::WriteBatch updates(FLAGS_rocksdb_batch_size);
     for (size_t i = 0; i < keyValues.size(); i++) {
         updates.Put(keyValues[i].first, keyValues[i].second);
     }
@@ -244,7 +244,7 @@ ResultCode RocksEngine::remove(const std::string& key) {
 
 
 ResultCode RocksEngine::multiRemove(std::vector<std::string> keys) {
-    rocksdb::WriteBatch deletes(FLAGS_batch_reserved_bytes);
+    rocksdb::WriteBatch deletes(FLAGS_rocksdb_batch_size);
     for (size_t i = 0; i < keys.size(); i++) {
         deletes.Delete(keys[i]);
     }

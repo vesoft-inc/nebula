@@ -189,7 +189,6 @@ std::string* EdgeKeyRef::dstid() {
     }
 }
 
-
 std::string* EdgeKeyRef::rank() {
     if (rank_ == nullptr) {
         return nullptr;
@@ -215,8 +214,7 @@ StatusOr<std::string> EdgeKeyRef::varname() const {
     }
 
     if (uniqVar_.size() != 1) {
-        return Status::SyntaxError(
-            "Near %s, Only support single data source.", toString());
+        return Status::SyntaxError("Near %s, Only support single data source.", toString().c_str());
     }
 
     for (auto &var : uniqVar_) {

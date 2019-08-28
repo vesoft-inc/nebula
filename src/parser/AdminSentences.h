@@ -26,18 +26,23 @@ public:
         kShowEdges,
         kShowUsers,
         kShowUser,
-        kShowRoles
+        kShowRoles,
+        kShowCreateSpace,
+        kShowCreateTag,
+        kShowCreateEdge
     };
 
     explicit ShowSentence(ShowType sType) {
         kind_ = Kind::kShow;
         showType_ = std::move(sType);
     }
+
     ShowSentence(ShowType sType, std::string *name) {
         kind_ = Kind::kShow;
         name_.reset(name);
         showType_ = std::move(sType);
     }
+
     std::string toString() const override;
 
     ShowType showType() const {
@@ -347,6 +352,29 @@ public:
 private:
     SubType                         subType_{SubType::kUnknown};
     std::unique_ptr<ConfigRowItem>  configItem_;
+};
+
+class BalanceSentence final : public Sentence {
+public:
+    enum class SubType : uint32_t {
+        kUnknown,
+        kLeader,
+    };
+
+    // TODO: add more subtype for balance
+    explicit BalanceSentence(SubType subType) {
+        kind_ = Kind::kBalance;
+        subType_ = std::move(subType);
+    }
+
+    std::string toString() const override;
+
+    SubType subType() const {
+        return subType_;
+    }
+
+private:
+    SubType                         subType_{SubType::kUnknown};
 };
 
 }   // namespace nebula

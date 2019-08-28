@@ -8,8 +8,6 @@
 #include "meta/processors/Common.h"
 #include "meta/MetaServiceUtils.h"
 
-DECLARE_int32(load_config_interval_secs);
-
 namespace nebula {
 namespace meta {
 
@@ -23,9 +21,10 @@ KVBasedGflagsManager::~KVBasedGflagsManager() {
 }
 
 Status KVBasedGflagsManager::init() {
-    getGflagsModule();
-    declareGflags();
-    return registerGflags();
+    auto gflagsModule = cpp2::ConfigModule::UNKNOWN;
+    getGflagsModule(gflagsModule);
+    gflagsDeclared_ = declareGflags(gflagsModule);
+    return registerGflags(gflagsDeclared_);
 }
 
 folly::Future<StatusOr<bool>>
@@ -50,41 +49,13 @@ KVBasedGflagsManager::listConfigs(const cpp2::ConfigModule& module) {
     return Status::NotSupported();
 }
 
-folly::Future<StatusOr<bool>>
-KVBasedGflagsManager::registerConfig(const cpp2::ConfigModule& module, const std::string& name,
-                                     const cpp2::ConfigType& type, const cpp2::ConfigMode& mode,
-                                     const std::string& value) {
-    UNUSED(module); UNUSED(name); UNUSED(type); UNUSED(mode); UNUSED(value);
-    LOG(FATAL) << "Unimplement!";
-    return Status::NotSupported();
-}
-
-void KVBasedGflagsManager::getGflagsModule() {
-    // get current process according to gflags pid_file
-    gflags::CommandLineFlagInfo pid;
-    if (gflags::GetCommandLineFlagInfo("pid_file", &pid)) {
-        auto defaultPid = pid.default_value;
-        if (defaultPid.find("nebula-graphd") != std::string::npos) {
-            module_ = cpp2::ConfigModule::GRAPH;
-        } else if (defaultPid.find("nebula-storaged") != std::string::npos) {
-            module_ = cpp2::ConfigModule::STORAGE;
-        } else if (defaultPid.find("nebula-metad") != std::string::npos) {
-            module_ = cpp2::ConfigModule::META;
-        } else {
-            LOG(ERROR) << "Should not reach here";
-        }
-    } else {
-        LOG(ERROR) << "Should not reach here";
-    }
-}
-
-Status KVBasedGflagsManager::registerGflags() {
+Status KVBasedGflagsManager::registerGflags(const std::vector<cpp2::ConfigItem>& gflagsDeclared) {
     // based on kv, so we will retry until register config successfully
     bool succeeded = false;
     while (!succeeded) {
         std::vector<kvstore::KV> data;
         folly::SharedMutex::WriteHolder wHolder(LockUtils::configLock());
-        for (const auto& item : gflagsDeclared_) {
+        for (const auto& item : gflagsDeclared) {
             auto module = item.get_module();
             auto name = item.get_name();
             auto type = item.get_type();

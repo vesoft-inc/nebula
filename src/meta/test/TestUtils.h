@@ -102,11 +102,10 @@ public:
         return column;
     }
 
-    static void registerHB(const std::vector<HostAddr>& hosts) {
-         ActiveHostsMan::instance()->reset();
+    static void registerHB(kvstore::KVStore* kv, const std::vector<HostAddr>& hosts) {
          auto now = time::WallClock::fastNowInSec();
          for (auto& h : hosts) {
-             ActiveHostsMan::instance()->updateHostInfo(h, HostInfo(now));
+             ActiveHostsMan::updateHostInfo(kv, h, HostInfo(now));
          }
      }
 
@@ -130,7 +129,7 @@ public:
             auto resp = std::move(f).get();
             EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, resp.code);
         }
-        registerHB(hosts);
+        registerHB(kv, hosts);
         {
             cpp2::ListHostsReq req;
             auto* processor = ListHostsProcessor::instance(kv);
@@ -146,13 +145,29 @@ public:
         return hosts.size();
     }
 
-    static bool assembleSpace(kvstore::KVStore* kv, GraphSpaceID id, int32_t partitionNum) {
+    static bool assembleSpace(kvstore::KVStore* kv, GraphSpaceID id, int32_t partitionNum,
+                              int32_t replica = 1, int32_t totalHost = 1) {
+        // mock the part distribution like create space
         bool ret = false;
+        cpp2::SpaceProperties properties;
+        properties.set_space_name("test_space");
+        properties.set_partition_num(partitionNum);
+        properties.set_replica_factor(replica);
+        auto spaceVal = MetaServiceUtils::spaceVal(properties);
         std::vector<nebula::kvstore::KV> data;
-        data.emplace_back(MetaServiceUtils::spaceKey(id), "test_space");
+        data.emplace_back(MetaServiceUtils::spaceKey(id), MetaServiceUtils::spaceVal(properties));
+
+        std::vector<nebula::cpp2::HostAddr> allHosts;
+        for (int i = 0; i < totalHost; i++) {
+            allHosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, i, i);
+        }
+
         for (auto partId = 1; partId <= partitionNum; partId++) {
             std::vector<nebula::cpp2::HostAddr> hosts;
-            hosts.emplace_back(apache::thrift::FragileConstructor::FRAGILE, 0, 0);
+            size_t idx = partId;
+            for (int32_t i = 0; i < replica; i++, idx++) {
+                hosts.emplace_back(allHosts[idx % totalHost]);
+            }
             data.emplace_back(MetaServiceUtils::partKey(id, partId),
                               MetaServiceUtils::partVal(hosts));
         }

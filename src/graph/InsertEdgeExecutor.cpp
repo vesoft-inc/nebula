@@ -18,72 +18,71 @@ InsertEdgeExecutor::InsertEdgeExecutor(Sentence *sentence,
 
 
 Status InsertEdgeExecutor::prepare() {
-    Status status;
-    do {
-        status = checkIfGraphSpaceChosen();
-        if (!status.ok()) {
-            LOG(ERROR) << "Please choose the space before insert edge";
-            break;
-        }
+    return Status::OK();
+}
 
-        spaceId_ = ectx()->rctx()->session()->space();
-        overwritable_ = sentence_->overwritable();
-        auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *sentence_->edge());
-        if (!edgeStatus.ok()) {
-            status = edgeStatus.status();
-            break;
-        }
-        edgeType_ = edgeStatus.value();
-        props_ = sentence_->properties();
-        rows_ = sentence_->rows();
 
-        schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
-        if (schema_ == nullptr) {
-            LOG(ERROR) << "No schema found for " << sentence_->edge();
-            status = Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
-            break;
-        }
+Status InsertEdgeExecutor::check() {
+    Status status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        LOG(ERROR) << "Please choose the space before insert edge";
+        return status;
+    }
 
-        if (props_.size() > schema_->getNumFields()) {
-            LOG(ERROR) << "Input props number " << props_.size()
-                       << ", schema fields number " << schema_->getNumFields();
-            status = Status::Error("Wrong number of props");
-            break;
-        }
+    spaceId_ = ectx()->rctx()->session()->space();
+    overwritable_ = sentence_->overwritable();
+    auto edgeStatus = ectx()->schemaManager()->toEdgeType(spaceId_, *sentence_->edge());
+    if (!edgeStatus.ok()) {
+        status = edgeStatus.status();
+        return status;
+    }
+    edgeType_ = edgeStatus.value();
+    props_ = sentence_->properties();
+    rows_ = sentence_->rows();
 
-        if (props_.size() != schema_->getNumFields()) {
-            auto *mc = ectx()->getMetaClient();
+    schema_ = ectx()->schemaManager()->getEdgeSchema(spaceId_, edgeType_);
+    if (schema_ == nullptr) {
+        LOG(ERROR) << "No schema found for " << sentence_->edge();
+        return Status::Error("No schema found for `%s'", sentence_->edge()->c_str());
+    }
 
-            for (size_t i = 0; i < schema_->getNumFields(); i++) {
-                std::string name = schema_->getFieldName(i);
-                auto it = std::find_if(props_.begin(), props_.end(),
-                                       [name](std::string *prop) { return *prop == name;});
+    if (props_.size() > schema_->getNumFields()) {
+        LOG(ERROR) << "Input props number " << props_.size()
+                   << ", schema fields number " << schema_->getNumFields();
+        return Status::Error("Wrong number of props");
+    }
 
-                if (it == props_.end() && defaultValues_.find(name) == defaultValues_.end()) {
-                    auto valueResult = mc->getEdgeDefaultValue(spaceId_, edgeType_, name).get();
+    if (props_.size() != schema_->getNumFields()) {
+        auto *mc = ectx()->getMetaClient();
 
-                    if (!valueResult.ok()) {
-                        LOG(ERROR) << "Not exist default value: " << name;
-                        return Status::Error("Not exist default value");
-                    } else {
-                        VLOG(3) << "Default Value: " << name
-                                << ":" << valueResult.value();
-                        defaultValues_.emplace(name, valueResult.value());
-                    }
+        for (size_t i = 0; i < schema_->getNumFields(); i++) {
+            std::string name = schema_->getFieldName(i);
+            auto it = std::find_if(props_.begin(), props_.end(),
+                                   [name](std::string *prop) { return *prop == name;});
+
+            if (it == props_.end() && defaultValues_.find(name) == defaultValues_.end()) {
+                auto valueResult = mc->getEdgeDefaultValue(spaceId_, edgeType_, name).get();
+
+                if (!valueResult.ok()) {
+                    LOG(ERROR) << "Not exist default value: " << name;
+                    return Status::Error("Not exist default value");
+                } else {
+                    VLOG(3) << "Default Value: " << name
+                            << ":" << valueResult.value();
+                    defaultValues_.emplace(name, valueResult.value());
                 }
             }
-        } else {
-            // Check field name
-            auto checkStatus = checkFieldName(schema_, props_);
-            if (!checkStatus.ok()) {
-                LOG(ERROR) << "Check Status Failed: " << checkStatus;
-                status = checkStatus;
-                break;
-            }
         }
-    } while (false);
+    } else {
+        // Check field name
+        auto checkStatus = checkFieldName(schema_, props_);
+        if (!checkStatus.ok()) {
+            LOG(ERROR) << "Check Status Failed: " << checkStatus;
+            return checkStatus;
+        }
+    }
 
-    return status;
+    return Status::OK();
 }
 
 
@@ -92,20 +91,33 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
     auto index = 0;
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
-        auto status = row->srcid()->prepare();
+        auto sid = row->srcid();
+        auto status = sid->prepare();
         if (!status.ok()) {
             return status;
         }
-        auto v = row->srcid()->eval();
+        auto ovalue = sid->eval();
+        if (!ovalue.ok()) {
+            return ovalue.status();
+        }
+
+        auto v = ovalue.value();
         if (!Expression::isInt(v)) {
             return Status::Error("Vertex ID should be of type integer");
         }
         auto src = Expression::asInt(v);
-        status = row->dstid()->prepare();
+
+        auto did = row->dstid();
+        status = did->prepare();
         if (!status.ok()) {
             return status;
         }
-        v = row->dstid()->eval();
+        ovalue = did->eval();
+        if (!ovalue.ok()) {
+            return ovalue.status();
+        }
+
+        v = ovalue.value();
         if (!Expression::isInt(v)) {
             return Status::Error("Vertex ID should be of type integer");
         }
@@ -118,7 +130,11 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
-            values.emplace_back(expr->eval());
+            ovalue = expr->eval();
+            if (!ovalue.ok()) {
+                return ovalue.status();
+            }
+            values.emplace_back(ovalue.value());
         }
 
         if (expressions.size() != schema_->getNumFields()) {
@@ -236,6 +252,13 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
 
 
 void InsertEdgeExecutor::execute() {
+    auto status = check();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
     auto result = prepareEdges();
     if (!result.ok()) {
         DCHECK(onError_);

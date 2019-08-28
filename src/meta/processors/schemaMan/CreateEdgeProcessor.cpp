@@ -35,8 +35,15 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
         return;
     }
 
+    auto edgeTypeRet = autoIncrementId();
+    if (!nebula::ok(edgeTypeRet)) {
+        LOG(ERROR) << "Create edge failed : Get edge type id failed";
+        resp_.set_code(nebula::error(edgeTypeRet));
+        onFinished();
+        return;
+    }
+    auto edgeType = nebula::value(edgeTypeRet);
     std::vector<kvstore::KV> data;
-    EdgeType edgeType = autoIncrementId();
     data.emplace_back(MetaServiceUtils::indexEdgeKey(req.get_space_id(), req.get_edge_name()),
                       std::string(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType)));
     data.emplace_back(MetaServiceUtils::schemaEdgeKey(req.get_space_id(), edgeType, 0),

@@ -14,7 +14,6 @@
 #include "dataman/RowWriter.h"
 #include "dataman/RowSetReader.h"
 #include "network/NetworkUtils.h"
-#include "meta/ClusterManager.h"
 
 DECLARE_string(meta_server_addrs);
 DECLARE_int32(load_data_interval_secs);
@@ -50,12 +49,10 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     uint32_t localDataPort = network::NetworkUtils::getAvailablePort();
     auto hostRet = nebula::network::NetworkUtils::toHostAddr("127.0.0.1", localDataPort);
     auto& localHost = hostRet.value();
-    auto clusterMan
-        = std::make_unique<nebula::meta::ClusterManager>("", "");
     auto mClient = std::make_unique<meta::MetaClient>(threadPool,
                                                       std::move(addrs),
                                                       localHost,
-                                                      clusterMan.get(),
+                                                      kClusterId,
                                                       true);
     LOG(INFO) << "Add hosts and create space....";
     auto r = mClient->addHosts({HostAddr(localIp, localDataPort)}).get();
@@ -273,11 +270,11 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         }
         EXPECT_EQ(it, rsReader.end());
     }
+    LOG(INFO) << "Stop meta client";
+    mClient->stop();
     LOG(INFO) << "Stop data server...";
     sc.reset();
     LOG(INFO) << "Stop data client...";
-    threadPool->stop();
-    threadPool->join();
     client.reset();
     LOG(INFO) << "Stop meta server...";
     metaServerContext.reset();

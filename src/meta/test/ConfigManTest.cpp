@@ -7,6 +7,7 @@
 #include "base/Base.h"
 #include <gtest/gtest.h>
 #include <folly/String.h>
+#include "base/Configuration.h"
 #include "fs/TempDir.h"
 #include "meta/test/TestUtils.h"
 #include "meta/GflagsManager.h"
@@ -18,7 +19,6 @@
 #include "meta/processors/configMan/RegConfigProcessor.h"
 
 DECLARE_int32(load_data_interval_secs);
-DECLARE_int32(load_config_interval_secs);
 
 // some gflags to register
 DEFINE_int64(int64_key_immutable, 100, "test");
@@ -206,7 +206,6 @@ ConfigItem toConfigItem(const cpp2::ConfigItem& item) {
 
 TEST(ConfigManTest, MetaConfigManTest) {
     FLAGS_load_data_interval_secs = 1;
-    FLAGS_load_config_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MetaConfigManTest.XXXXXX");
     uint32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
@@ -220,30 +219,30 @@ TEST(ConfigManTest, MetaConfigManTest) {
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
     client->waitForMetadReady();
-    client->setGflagsModule(module);
+    client->gflagsModule_ = module;
 
     ClientBasedGflagsManager cfgMan(client.get());
-    cfgMan.module_ = module;
     // mock some test gflags to meta
     {
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
-        cfgMan.gflagsDeclared_.emplace_back(toThriftConfigItem(
+        std::vector<cpp2::ConfigItem> configItems;
+        configItems.emplace_back(toThriftConfigItem(
             module, "int64_key_immutable", cpp2::ConfigType::INT64, cpp2::ConfigMode::IMMUTABLE,
             toThriftValueStr(cpp2::ConfigType::INT64, 100L)));
-        cfgMan.gflagsDeclared_.emplace_back(toThriftConfigItem(
+        configItems.emplace_back(toThriftConfigItem(
             module, "int64_key", cpp2::ConfigType::INT64,
             mode, toThriftValueStr(cpp2::ConfigType::INT64, 101L)));
-        cfgMan.gflagsDeclared_.emplace_back(toThriftConfigItem(
+        configItems.emplace_back(toThriftConfigItem(
             module, "bool_key", cpp2::ConfigType::BOOL,
             mode, toThriftValueStr(cpp2::ConfigType::BOOL, false)));
-        cfgMan.gflagsDeclared_.emplace_back(toThriftConfigItem(
+        configItems.emplace_back(toThriftConfigItem(
             module, "double_key", cpp2::ConfigType::DOUBLE,
             mode, toThriftValueStr(cpp2::ConfigType::DOUBLE, 1.23)));
         std::string defaultValue = "something";
-        cfgMan.gflagsDeclared_.emplace_back(toThriftConfigItem(
+        configItems.emplace_back(toThriftConfigItem(
             module, "string_key", cpp2::ConfigType::STRING,
             mode, toThriftValueStr(cpp2::ConfigType::STRING, defaultValue)));
-        cfgMan.registerGflags();
+        cfgMan.registerGflags(configItems);
     }
 
     // try to set/get config not registered
@@ -251,7 +250,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         std::string name = "not_existed";
         auto type = cpp2::ConfigType::INT64;
 
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         // get/set without register
         auto setRet = cfgMan.setConfig(module, name, type, 101l).get();
         ASSERT_FALSE(setRet.ok());
@@ -274,7 +273,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         auto value = boost::get<int64_t>(item.value_);
         ASSERT_EQ(value, 100);
 
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_int64_key_immutable, 100);
     }
     // mutable config
@@ -295,7 +294,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, 102);
 
         // get from cache
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_int64_key, 102);
     }
     {
@@ -315,7 +314,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, true);
 
         // get from cache
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_bool_key, true);
     }
     {
@@ -335,7 +334,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, 3.14);
 
         // get from cache
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_double_key, 3.14);
     }
     {
@@ -356,7 +355,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
         ASSERT_EQ(value, "abc");
 
         // get from cache
-        sleep(FLAGS_load_config_interval_secs + 1);
+        sleep(FLAGS_load_data_interval_secs + 1);
         ASSERT_EQ(FLAGS_string_key, "abc");
     }
     {
@@ -367,7 +366,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
 }
 
 TEST(ConfigManTest, MockConfigTest) {
-    FLAGS_load_config_interval_secs = 1;
+    FLAGS_load_data_interval_secs = 1;
     fs::TempDir rootPath("/tmp/MockConfigTest.XXXXXX");
     uint32_t localMetaPort = 0;
     auto sc = TestUtils::mockMetaServer(localMetaPort, rootPath.path());
@@ -383,20 +382,20 @@ TEST(ConfigManTest, MockConfigTest) {
     auto client = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
     client->waitForMetadReady();
-    client->setGflagsModule(module);
+    client->gflagsModule_ = module;
     ClientBasedGflagsManager clientCfgMan(client.get());
-    clientCfgMan.module_ = module;
 
+    std::vector<cpp2::ConfigItem> configItems;
     for (int i = 0; i < 5; i++) {
         std::string name = "test" + std::to_string(i);
         std::string value = "v" + std::to_string(i);
-        clientCfgMan.gflagsDeclared_.emplace_back(
-                toThriftConfigItem(module, name, type, mode, value));
+        configItems.emplace_back(toThriftConfigItem(module, name, type, mode, value));
     }
-    clientCfgMan.registerGflags();
+    clientCfgMan.registerGflags(configItems);
 
     auto consoleClient = std::make_shared<MetaClient>(threadPool,
         std::vector<HostAddr>{HostAddr(localIp, sc->port_)});
+    consoleClient->waitForMetadReady();
     ClientBasedGflagsManager console(consoleClient.get());
     // update in console
     for (int i = 0; i < 5; i++) {
@@ -417,7 +416,7 @@ TEST(ConfigManTest, MockConfigTest) {
     }
 
     // check values in ClientBaseGflagsManager
-    sleep(FLAGS_load_config_interval_secs + 1);
+    sleep(FLAGS_load_data_interval_secs + 1);
     ASSERT_EQ(FLAGS_test0, "updated0");
     ASSERT_EQ(FLAGS_test1, "updated1");
     ASSERT_EQ(FLAGS_test2, "updated2");

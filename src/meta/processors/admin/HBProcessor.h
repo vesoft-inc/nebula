@@ -8,7 +8,6 @@
 #define META_HBPROCESSOR_H_
 
 #include <gtest/gtest_prod.h>
-#include "meta/ClusterManager.h"
 #include "meta/processors/BaseProcessor.h"
 
 

@@ -32,14 +32,14 @@ Status ExecutionEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExec
     // load data try 3 time
     bool loadDataOk = metaClient_->waitForMetadReady(3);
     if (!loadDataOk) {
-        return Status::Error("ExecutionEngine::init loadData by thread error!");
+        // Resort to retrying in the background
+        LOG(WARNING) << "Failed to synchronously wait for meta service ready";
     }
 
     schemaManager_ = meta::SchemaManager::create();
     schemaManager_->init(metaClient_.get());
 
     gflagsManager_ = std::make_unique<meta::ClientBasedGflagsManager>(metaClient_.get());
-    gflagsManager_->init();
 
     storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
     return Status::OK();

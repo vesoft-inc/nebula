@@ -15,6 +15,7 @@
 namespace nebula {
 namespace kvstore {
 
+
 class Part : public raftex::RaftPart {
 public:
     Part(GraphSpaceID spaceId,
@@ -24,9 +25,7 @@ public:
          KVEngine* engine,
          std::shared_ptr<folly::IOThreadPoolExecutor> pool,
          std::shared_ptr<thread::GenericThreadPool> workers,
-         wal::BufferFlusher* flusher,
          std::shared_ptr<folly::Executor> handlers);
-
 
     virtual ~Part() {
         LOG(INFO) << idStr_ << "~Part()";
@@ -46,7 +45,21 @@ public:
                           folly::StringPiece end,
                           KVCallback cb);
 
+    void asyncAtomicOp(raftex::AtomicOp op, KVCallback cb);
+
     void asyncAddLearner(const HostAddr& learner, KVCallback cb);
+
+    void asyncTransferLeader(const HostAddr& target, KVCallback cb);
+
+    void registerNewLeaderCb(NewLeaderCallback cb) {
+        newLeaderCb_ = std::move(cb);
+    }
+
+    void unRegisterNewLeaderCb() {
+        newLeaderCb_ = nullptr;
+    }
+
+private:
     /**
      * Methods inherited from RaftPart
      */
@@ -56,7 +69,7 @@ public:
 
     void onElected(TermID term) override;
 
-    std::string compareAndSet(const std::string& log) override;
+    void onDiscoverNewLeader(HostAddr nLeader) override;
 
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
@@ -70,6 +83,7 @@ protected:
     PartitionID partId_;
     std::string walPath_;
     KVEngine* engine_ = nullptr;
+    NewLeaderCallback newLeaderCb_ = nullptr;
 };
 
 }  // namespace kvstore

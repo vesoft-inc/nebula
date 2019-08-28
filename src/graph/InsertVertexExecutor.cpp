@@ -19,84 +19,84 @@ InsertVertexExecutor::InsertVertexExecutor(Sentence *sentence,
 
 
 Status InsertVertexExecutor::prepare() {
-    Status status;
-    do {
-        status = checkIfGraphSpaceChosen();
-        if (!status.ok()) {
-            break;
+    return Status::OK();
+}
+
+
+Status InsertVertexExecutor::check() {
+    auto status = checkIfGraphSpaceChosen();
+    if (!status.ok()) {
+        return status;
+    }
+
+    rows_ = sentence_->rows();
+    if (rows_.empty()) {
+        return Status::Error("VALUES cannot be empty");
+    }
+
+    auto tagItems = sentence_->tagItems();
+    overwritable_ = sentence_->overwritable();
+    spaceId_ = ectx()->rctx()->session()->space();
+
+    tagIds_.reserve(tagItems.size());
+    schemas_.reserve(tagItems.size());
+    tagProps_.reserve(tagItems.size());
+
+    for (auto& item : tagItems) {
+        auto *tagName = item->tagName();
+        auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
+        if (!tagStatus.ok()) {
+            LOG(ERROR) << "No schema found for " << tagName;
+            return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
-        rows_ = sentence_->rows();
-        if (rows_.empty()) {
-            status = Status::Error("VALUES cannot be empty");
-            break;
+        auto tagId = tagStatus.value();
+        auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
+        if (schema == nullptr) {
+            LOG(ERROR) << "No schema found for " << tagName;
+            return Status::Error("No schema found for `%s'", tagName->c_str());
         }
 
-        auto tagItems = sentence_->tagItems();
-        overwritable_ = sentence_->overwritable();
-        spaceId_ = ectx()->rctx()->session()->space();
+        auto props = item->properties();
+        if (props.size() > schema->getNumFields()) {
+            LOG(ERROR) << "Input props number " << props.size()
+                << ", schema fields number " << schema->getNumFields();
+            return Status::Error("Wrong number of props");
+        }
 
-        tagIds_.reserve(tagItems.size());
-        schemas_.reserve(tagItems.size());
-        tagProps_.reserve(tagItems.size());
+        if (schema->getNumFields() != props.size()) {
+            auto *mc = ectx()->getMetaClient();
 
-        for (auto& item : tagItems) {
-            auto *tagName = item->tagName();
-            auto tagStatus = ectx()->schemaManager()->toTagID(spaceId_, *tagName);
-            if (!tagStatus.ok()) {
-                LOG(ERROR) << "No schema found for " << tagName;
-                return Status::Error("No schema found for `%s'", tagName->c_str());
-            }
+            for (size_t i = 0; i < schema->getNumFields(); i++) {
+                std::string name = schema->getFieldName(i);
+                auto it = std::find_if(props.begin(), props.end(),
+                                       [name](std::string *prop) { return *prop == name;});
 
-            auto tagId = tagStatus.value();
-            auto schema = ectx()->schemaManager()->getTagSchema(spaceId_, tagId);
-            if (schema == nullptr) {
-                LOG(ERROR) << "No schema found for " << tagName;
-                return Status::Error("No schema found for `%s'", tagName->c_str());
-            }
-
-            auto props = item->properties();
-            if (props.size() > schema->getNumFields()) {
-                LOG(ERROR) << "Input props number " << props.size()
-                    << ", schema fields number " << schema->getNumFields();
-                return Status::Error("Wrong number of props");
-            }
-
-            if (schema->getNumFields() != props.size()) {
-                auto *mc = ectx()->getMetaClient();
-
-                for (size_t i = 0; i < schema->getNumFields(); i++) {
-                    std::string name = schema->getFieldName(i);
-                    auto it = std::find_if(props.begin(), props.end(),
-                                           [name](std::string *prop) { return *prop == name;});
-
-                    if (it == props.end() && defaultValues_.find(name) == defaultValues_.end()) {
-                        auto valueResult = mc->getTagDefaultValue(spaceId_, tagId, name).get();
-                        if (!valueResult.ok()) {
-                            LOG(ERROR) << "Not exist default value: " << name;
-                            return Status::Error("Not exist default value");
-                        } else {
-                            VLOG(3) << "Default Value: " << name << ":" << valueResult.value();
-                            defaultValues_.emplace(name, valueResult.value());
-                        }
+                if (it == props.end() && defaultValues_.find(name) == defaultValues_.end()) {
+                    auto valueResult = mc->getTagDefaultValue(spaceId_, tagId, name).get();
+                    if (!valueResult.ok()) {
+                        LOG(ERROR) << "Not exist default value: " << name;
+                        return Status::Error("Not exist default value");
+                    } else {
+                        VLOG(3) << "Default Value: " << name << ":" << valueResult.value();
+                        defaultValues_.emplace(name, valueResult.value());
                     }
                 }
-            } else {
-                // Check field name
-                auto checkStatus = checkFieldName(schema, props);
-                if (!checkStatus.ok()) {
-                    LOG(ERROR) << "Check Status Failed: " << checkStatus;
-                    return checkStatus;
-                }
             }
-
-            tagIds_.emplace_back(tagId);
-            schemas_.emplace_back(schema);
-            tagProps_.emplace_back(props);
+        } else {
+            // Check field name
+            auto checkStatus = checkFieldName(schema, props);
+            if (!checkStatus.ok()) {
+                LOG(ERROR) << "Check Status Failed: " << checkStatus;
+                return checkStatus;
+            }
         }
-    } while (false);
 
-    return status;
+        tagIds_.emplace_back(tagId);
+        schemas_.emplace_back(schema);
+        tagProps_.emplace_back(props);
+    }
+    return Status::OK();
 }
 
 
@@ -104,11 +104,17 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
     std::vector<storage::cpp2::Vertex> vertices(rows_.size());
     for (auto i = 0u; i < rows_.size(); i++) {
         auto *row = rows_[i];
-        auto status = row->id()->prepare();
+        auto rid = row->id();
+        auto status = rid->prepare();
         if (!status.ok()) {
             return status;
         }
-        auto v = row->id()->eval();
+        auto ovalue = rid->eval();
+        if (!ovalue.ok()) {
+            return ovalue.status();
+        }
+
+        auto v = ovalue.value();
         if (!Expression::isInt(v)) {
             return Status::Error("Vertex ID should be of type integer");
         }
@@ -118,7 +124,11 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
         std::vector<VariantType> values;
         values.reserve(expressions.size());
         for (auto *expr : expressions) {
-            values.emplace_back(expr->eval());
+            ovalue = expr->eval();
+            if (!ovalue.ok()) {
+                return ovalue.status();
+            }
+            values.emplace_back(ovalue.value());
         }
 
         storage::cpp2::Vertex vertex;
@@ -231,6 +241,13 @@ StatusOr<std::vector<storage::cpp2::Vertex>> InsertVertexExecutor::prepareVertic
 
 
 void InsertVertexExecutor::execute() {
+    auto status = check();
+    if (!status.ok()) {
+        DCHECK(onError_);
+        onError_(std::move(status));
+        return;
+    }
+
     auto result = prepareVertices();
     if (!result.ok()) {
         DCHECK(onError_);

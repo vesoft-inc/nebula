@@ -6,18 +6,17 @@
  */
 
 #include "base/Base.h"
-#include "graph/test/TestEnv.h"
 #include "graph/test/TestBase.h"
-#include "meta/test/TestUtils.h"
+#include "graph/test/TestEnv.h"
 #include "meta/ClientBasedGflagsManager.h"
+#include "meta/test/TestUtils.h"
 
 DECLARE_int32(load_data_interval_secs);
-DECLARE_int32(load_config_interval_secs);
 
 namespace nebula {
 namespace graph {
 
-class ConfigTest: public TestBase {
+class ConfigTest : public TestBase {
 protected:
     void SetUp() override {
         TestBase::SetUp();
@@ -30,55 +29,64 @@ protected:
     }
 };
 
-void mockRegisterGflags(meta::ClientBasedGflagsManager* cfgMan) {
+std::vector<meta::cpp2::ConfigItem> mockRegisterGflags() {
+    std::vector<meta::cpp2::ConfigItem> configItems;
     {
         auto module = meta::cpp2::ConfigModule::STORAGE;
         auto type = meta::cpp2::ConfigType::INT64;
         int64_t value = 0L;
-        cfgMan->registerConfig(module, "k0", type, meta::cpp2::ConfigMode::IMMUTABLE,
-                               meta::toThriftValueStr(type, value));
-        cfgMan->registerConfig(module, "k1", type, meta::cpp2::ConfigMode::MUTABLE,
-                               meta::toThriftValueStr(type, value));
+        configItems.emplace_back(meta::toThriftConfigItem(module, "k0", type,
+                                 meta::cpp2::ConfigMode::IMMUTABLE,
+                                 meta::toThriftValueStr(type, value)));
+        configItems.emplace_back(meta::toThriftConfigItem(module, "k1", type,
+                                 meta::cpp2::ConfigMode::MUTABLE,
+                                 meta::toThriftValueStr(type, value)));
     }
     {
         auto module = meta::cpp2::ConfigModule::STORAGE;
         auto type = meta::cpp2::ConfigType::BOOL;
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
         bool value = false;
-        cfgMan->registerConfig(module, "k2", type, mode, meta::toThriftValueStr(type, value));
+        configItems.emplace_back(meta::toThriftConfigItem(module, "k2", type, mode,
+                                 meta::toThriftValueStr(type, value)));
     }
     {
         auto module = meta::cpp2::ConfigModule::META;
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
         auto type = meta::cpp2::ConfigType::DOUBLE;
         double value = 1.0;
-        cfgMan->registerConfig(module, "k1", type, mode, meta::toThriftValueStr(type, value));
+        configItems.emplace_back(meta::toThriftConfigItem(module, "k1", type, mode,
+                                 meta::toThriftValueStr(type, value)));
     }
     {
         auto module = meta::cpp2::ConfigModule::META;
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
         auto type = meta::cpp2::ConfigType::STRING;
         std::string value = "nebula";
-        cfgMan->registerConfig(module, "k2", type, mode, meta::toThriftValueStr(type, value));
+        configItems.emplace_back(meta::toThriftConfigItem(module, "k2", type, mode,
+                                 meta::toThriftValueStr(type, value)));
     }
     {
         auto type = meta::cpp2::ConfigType::STRING;
         auto mode = meta::cpp2::ConfigMode::MUTABLE;
         std::string value = "nebula";
-        cfgMan->registerConfig(meta::cpp2::ConfigModule::GRAPH, "k3",
-                               type, mode, meta::toThriftValueStr(type, value));
-        cfgMan->registerConfig(meta::cpp2::ConfigModule::META, "k3",
-                               type, mode, meta::toThriftValueStr(type, value));
-        cfgMan->registerConfig(meta::cpp2::ConfigModule::STORAGE, "k3",
-                               type, mode, meta::toThriftValueStr(type, value));
+        configItems.emplace_back(meta::toThriftConfigItem(meta::cpp2::ConfigModule::GRAPH, "k3",
+                                 type, mode, meta::toThriftValueStr(type, value)));
+        configItems.emplace_back(meta::toThriftConfigItem(meta::cpp2::ConfigModule::META, "k3",
+                                 type, mode, meta::toThriftValueStr(type, value)));
+        configItems.emplace_back(meta::toThriftConfigItem(meta::cpp2::ConfigModule::STORAGE, "k3",
+                                 type, mode, meta::toThriftValueStr(type, value)));
     }
+    return configItems;
 }
 
 TEST_F(ConfigTest, ConfigTest) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
 
-    mockRegisterGflags(gEnv->gflagsManager());
+    auto configItems = mockRegisterGflags();
+    auto ret = gEnv->gflagsManager()->registerGflags(std::move(configItems));
+    ASSERT_TRUE(ret.ok());
 
     // set/get without declaration
     {

@@ -21,9 +21,15 @@ std::string ShowSentence::toString() const {
         case ShowType::kShowUsers:
             return std::string("SHOW USERS");
         case ShowType::kShowUser:
-            return folly::stringPrintf("SHOW USER %s", name_.get()->data());
+            return folly::stringPrintf("SHOW USER %s", name_.get()->c_str());
         case ShowType::kShowRoles:
-            return folly::stringPrintf("SHOW ROLES IN %s", name_.get()->data());
+            return folly::stringPrintf("SHOW ROLES IN %s", name_.get()->c_str());
+        case ShowType::kShowCreateSpace:
+            return folly::stringPrintf("SHOW CREATE SPACE %s", name_.get()->c_str());
+        case ShowType::kShowCreateTag:
+            return folly::stringPrintf("SHOW CREATE TAG %s", name_.get()->c_str());
+        case ShowType::kShowCreateEdge:
+            return folly::stringPrintf("SHOW CREATE EDGE %s", name_.get()->c_str());
         case ShowType::kUnknown:
         default:
             FLOG_FATAL("Type illegal");
@@ -96,12 +102,14 @@ std::string CreateSpaceSentence::toString() const {
     return buf;
 }
 
+
 std::string DropSpaceSentence::toString() const {
-    return folly::stringPrintf("DROP SPACE  %s", spaceName_.get()->c_str());
+    return folly::stringPrintf("DROP SPACE %s", spaceName_.get()->c_str());
 }
 
+
 std::string DescribeSpaceSentence::toString() const {
-    return folly::stringPrintf("DESCRIBE SPACE  %s", spaceName_.get()->c_str());
+    return folly::stringPrintf("DESCRIBE SPACE %s", spaceName_.get()->c_str());
 }
 
 std::string ConfigRowItem::toString() const {
@@ -113,7 +121,12 @@ std::string ConfigRowItem::toString() const {
         ss << *name_;
     }
     if (value_ != nullptr) {
-        ss << "=" << value_->eval();
+        auto v = value_->eval();
+        if (!v.ok()) {
+            ss << "= ";
+        } else {
+            ss << "=" << v.value();
+        }
     }
     return ss.str();
 }
@@ -126,6 +139,16 @@ std::string ConfigSentence::toString() const {
             return std::string("SET VARIABLES ") + configItem_->toString();
         case SubType::kGet:
             return std::string("GET VARIABLES ") + configItem_->toString();
+        default:
+            FLOG_FATAL("Type illegal");
+    }
+    return "Unknown";
+}
+
+std::string BalanceSentence::toString() const {
+    switch (subType_) {
+        case SubType::kLeader:
+            return std::string("BALANCE LEADER");
         default:
             FLOG_FATAL("Type illegal");
     }

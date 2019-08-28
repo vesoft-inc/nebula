@@ -121,6 +121,8 @@ enum HostStatus {
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
+    3: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
+    4: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
 }
 
 struct UserItem {
@@ -350,12 +352,12 @@ struct ScanResp {
 struct HBResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
-    3: common.ClusterID clusterId,
+    3: common.ClusterID cluster_id,
 }
 
 struct HBReq {
     1: common.HostAddr host,
-    2: common.ClusterID clusterId,
+    2: common.ClusterID cluster_id,
 }
 
 struct CreateUserReq {
@@ -437,6 +439,9 @@ struct BalanceResp {
     3: common.HostAddr  leader,
 }
 
+struct LeaderBalanceReq {
+}
+
 enum ConfigModule {
     UNKNOWN = 0x00,
     ALL     = 0x01,
@@ -456,6 +461,7 @@ enum ConfigMode {
     IMMUTABLE   = 0x00,
     REBOOT      = 0x01,
     MUTABLE     = 0x02,
+    IGNORED     = 0x03,
 } (cpp.enum_strict)
 
 struct ConfigItem {
@@ -539,6 +545,7 @@ service MetaService {
 
     HBResp           heartBeat(1: HBReq req);
     BalanceResp      balance(1: BalanceReq req);
+    ExecResp         leaderBalance(1: LeaderBalanceReq req);
 
     ExecResp regConfig(1: RegConfigReq req);
     GetConfigResp getConfig(1: GetConfigReq req);

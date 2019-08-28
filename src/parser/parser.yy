@@ -102,8 +102,9 @@ class GraphScanner;
 %token KW_TTL_DURATION KW_TTL_COL KW_DEFAULT
 %token KW_VARIABLES KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_ORDER KW_ASC
-%token KW_DISTINCT
 %token KW_FETCH KW_PROP
+%token KW_DISTINCT KW_ALL
+%token KW_BALANCE KW_LEADER
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
 %token PIPE OR AND LT LE GT GE EQ NE PLUS MINUS MUL DIV MOD NOT NEG ASSIGN
@@ -195,7 +196,7 @@ class GraphScanner;
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
 %type <sentence> grant_sentence revoke_sentence
 %type <sentence> download_sentence
-%type <sentence> set_config_sentence get_config_sentence
+%type <sentence> set_config_sentence get_config_sentence balance_sentence
 %type <sentence> sentence
 %type <sentences> sentences
 
@@ -902,19 +903,42 @@ traverse_sentence
     | find_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
+    | L_PAREN piped_sentence R_PAREN { $$ = $2; }
+    | L_PAREN set_sentence R_PAREN { $$ = $2; }
     ;
 
 set_sentence
-    : traverse_sentence { $$ = $1; }
-    | set_sentence KW_UNION traverse_sentence { $$ = new SetSentence($1, SetSentence::UNION, $3); }
-    | set_sentence KW_INTERSECT traverse_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
-    | set_sentence KW_MINUS traverse_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
-    | L_PAREN piped_sentence R_PAREN { $$ = $2; }
+    : piped_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
+    | piped_sentence KW_UNION piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $3);
+        s->setDistinct();
+        $$ = s;
+    }
+    | piped_sentence KW_UNION KW_DISTINCT piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $4);
+        s->setDistinct();
+        $$ = s;
+    }
+    | piped_sentence KW_INTERSECT piped_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | piped_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
+    | set_sentence KW_UNION KW_ALL piped_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
+    | set_sentence KW_UNION piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $3);
+        s->setDistinct();
+        $$ = s;
+    }
+    | set_sentence KW_UNION KW_DISTINCT piped_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $4);
+        s->setDistinct();
+        $$ = s;
+    }
+    | set_sentence KW_INTERSECT piped_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | set_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
     ;
 
 piped_sentence
-    : set_sentence { $$ = $1; }
-    | piped_sentence PIPE set_sentence { $$ = new PipedSentence($1, $3); }
+    : traverse_sentence { $$ = $1; }
+    | piped_sentence PIPE traverse_sentence { $$ = new PipedSentence($1, $3); }
     ;
 
 assignment_sentence
@@ -1212,6 +1236,15 @@ show_sentence
     | KW_SHOW KW_VARIABLES show_config_item {
         $$ = new ConfigSentence(ConfigSentence::SubType::kShow, $3);
     }
+    | KW_SHOW KW_CREATE KW_SPACE name_label {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateSpace, $4);
+    }
+    | KW_SHOW KW_CREATE KW_TAG name_label {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateTag, $4);
+    }
+    | KW_SHOW KW_CREATE KW_EDGE name_label {
+        $$ = new ShowSentence(ShowSentence::ShowType::kShowCreateEdge, $4);
+    }
     ;
 
 add_hosts_sentence
@@ -1467,6 +1500,12 @@ set_config_sentence
     }
     ;
 
+balance_sentence
+    : KW_BALANCE KW_LEADER {
+        $$ = new BalanceSentence(BalanceSentence::SubType::kLeader);
+    }
+    ;
+
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
@@ -1507,11 +1546,13 @@ maintain_sentence
     | revoke_sentence { $$ = $1; }
     | get_config_sentence { $$ = $1; }
     | set_config_sentence { $$ = $1; }
+    | balance_sentence { $$ = $1; }
     ;
 
 sentence
     : maintain_sentence { $$ = $1; }
     | use_sentence { $$ = $1; }
+    | set_sentence { $$ = $1; }
     | piped_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }

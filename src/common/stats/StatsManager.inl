@@ -19,9 +19,9 @@ StatsManager::VT StatsManager::readValue(StatsHolder& stats,
         case StatsMethod::COUNT:
             return stats.count(level);
         case StatsMethod::AVG:
-            return stats.avg(level);
+            return stats.template avg<VT>(level);
         case StatsMethod::RATE:
-            return stats.rate(level);
+            return stats.template rate<VT>(level);
     }
 
     LOG(FATAL) << "Unknown statistic method";

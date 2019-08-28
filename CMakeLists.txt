@@ -32,7 +32,7 @@ project("Nebula Graph" C CXX)
 
 set(CMAKE_SKIP_RPATH TRUE)
 
-option(SKIP_JAVA_CLIENT "Whether to skip building the java client" OFF)
+option(SKIP_JAVA_CLIENT "Whether to skip building the java client" ON)
 option(ENABLE_JEMALLOC "Whether to link jemalloc to all executables" ON)
 option(ENABLE_NATIVE "Whether to build native client" OFF)
 option(ENABLE_CCACHE "Whether to use ccache to speed up compiling" ON)
@@ -98,6 +98,11 @@ add_definitions(-DNEBULA_HOME=${NEBULA_HOME})
 if (NEBULA_BUILD_VERSION)
     add_definitions(-DNEBULA_BUILD_VERSION=${NEBULA_BUILD_VERSION})
 endif()
+
+if (${CMAKE_INSTALL_PREFIX} STREQUAL "/usr/local")
+    set(CMAKE_INSTALL_PREFIX "/usr/local/nebula")
+endif()
+message(STATUS "CMAKE_INSTALL_PREFIX: " ${CMAKE_INSTALL_PREFIX})
 
 find_package(Git)
 if (GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
@@ -299,8 +304,18 @@ add_compile_options(-Werror)
 add_compile_options(-Wunused-parameter)
 add_compile_options(-Wshadow)
 
-# This requries GCC 5.1+
-add_compile_options(-Wsuggest-override)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    # This requries GCC 5.1+
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.1)
+        add_compile_options(-Wsuggest-override)
+    endif()
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  add_compile_options(-Wno-overloaded-virtual)
+  add_compile_options(-Wno-self-assign-overloaded)
+  add_compile_options(-Wno-self-move)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -latomic")
+endif()
+
 
 if(ENABLE_ASAN)
     add_definitions(-DBUILT_WITH_SANITIZER)

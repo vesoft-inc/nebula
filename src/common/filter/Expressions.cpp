@@ -118,7 +118,7 @@ std::string AliasPropertyExpression::toString() const {
     return buf;
 }
 
-VariantType AliasPropertyExpression::eval() const {
+OptVariantType AliasPropertyExpression::eval() const {
     return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
@@ -165,7 +165,7 @@ Status InputPropertyExpression::prepare() {
 }
 
 
-VariantType InputPropertyExpression::eval() const {
+OptVariantType InputPropertyExpression::eval() const {
     return context_->getters().getInputProp(*prop_);
 }
 
@@ -190,7 +190,7 @@ const char* InputPropertyExpression::decode(const char *pos, const char *end) {
 }
 
 
-VariantType DestPropertyExpression::eval() const {
+OptVariantType DestPropertyExpression::eval() const {
     return context_->getters().getDstTagProp(*alias_, *prop_);
 }
 
@@ -234,10 +234,9 @@ const char* DestPropertyExpression::decode(const char *pos, const char *end) {
 }
 
 
-VariantType VariablePropertyExpression::eval() const {
+OptVariantType VariablePropertyExpression::eval() const {
     return context_->getters().getVariableProp(*prop_);
 }
-
 
 Status VariablePropertyExpression::prepare() {
     context_->addVariableProp(*alias_, *prop_);
@@ -278,7 +277,7 @@ const char* VariablePropertyExpression::decode(const char *pos, const char *end)
 }
 
 
-VariantType EdgeTypeExpression::eval() const {
+OptVariantType EdgeTypeExpression::eval() const {
     return *alias_;
 }
 
@@ -309,7 +308,7 @@ const char* EdgeTypeExpression::decode(const char *pos, const char *end) {
 }
 
 
-VariantType EdgeSrcIdExpression::eval() const {
+OptVariantType EdgeSrcIdExpression::eval() const {
     return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
@@ -340,7 +339,7 @@ const char* EdgeSrcIdExpression::decode(const char *pos, const char *end) {
 }
 
 
-VariantType EdgeDstIdExpression::eval() const {
+OptVariantType EdgeDstIdExpression::eval() const {
     return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
@@ -371,7 +370,7 @@ const char* EdgeDstIdExpression::decode(const char *pos, const char *end) {
 }
 
 
-VariantType EdgeRankExpression::eval() const {
+OptVariantType EdgeRankExpression::eval() const {
     return context_->getters().getAliasProp(*alias_, *prop_);
 }
 
@@ -402,7 +401,7 @@ const char* EdgeRankExpression::decode(const char *pos, const char *end) {
 }
 
 
-VariantType SourcePropertyExpression::eval() const {
+OptVariantType SourcePropertyExpression::eval() const {
     return context_->getters().getSrcTagProp(*alias_, *prop_);
 }
 
@@ -463,8 +462,7 @@ std::string PrimaryExpression::toString() const {
     return buf;
 }
 
-
-VariantType PrimaryExpression::eval() const {
+OptVariantType PrimaryExpression::eval() const {
     switch (operand_.which()) {
         case VAR_INT64:
             return boost::get<int64_t>(operand_);
@@ -478,9 +476,9 @@ VariantType PrimaryExpression::eval() const {
         case VAR_STR:
             return boost::get<std::string>(operand_);
     }
-    return std::string("Unknown");
-}
 
+    return OptVariantType(Status::Error("Unknown type"));
+}
 
 Status PrimaryExpression::prepare() {
     return Status::OK();
@@ -563,17 +561,21 @@ std::string FunctionCallExpression::toString() const {
     return buf;
 }
 
-
-VariantType FunctionCallExpression::eval() const {
+OptVariantType FunctionCallExpression::eval() const {
     std::vector<VariantType> args;
-    args.resize(args_.size());
-    auto eval = [] (auto &expr) {
-        return expr->eval();
-    };
-    std::transform(args_.begin(), args_.end(), args.begin(), eval);
-    return function_(args);
-}
 
+    for (auto it = args_.cbegin(); it != args_.cend(); ++it) {
+        auto result = (*it)->eval();
+        if (!result.ok()) {
+            return result;
+        }
+        args.push_back(std::move(result.value()));
+    }
+
+    // TODO(simon.liu)
+    auto r = function_(args);
+    return OptVariantType(r);
+}
 
 Status FunctionCallExpression::prepare() {
     auto result = FunctionManager::get(*name_, args_.size());
@@ -650,23 +652,25 @@ std::string UnaryExpression::toString() const {
     return buf;
 }
 
-
-VariantType UnaryExpression::eval() const {
+OptVariantType UnaryExpression::eval() const {
     auto value = operand_->eval();
-    if (op_ == PLUS) {
-        return value;
-    } else if (op_ == NEGATE) {
-        if (isInt(value)) {
-            return -asInt(value);
-        } else if (isDouble(value)) {
-            return -asDouble(value);
+    if (value.ok()) {
+        if (op_ == PLUS) {
+            return value;
+        } else if (op_ == NEGATE) {
+            if (isInt(value.value())) {
+                return OptVariantType(-asInt(value.value()));
+            } else if (isDouble(value.value())) {
+                return OptVariantType(-asDouble(value.value()));
+            }
+        } else {
+            return OptVariantType(!asBool(value.value()));
         }
-    } else {
-        return !asBool(value);
     }
-    return value;
-}
 
+    return OptVariantType(Status::Error(folly::sformat(
+        "attempt to perform unary arithmetic on a {}", value.value().type().name())));
+}
 
 Status UnaryExpression::prepare() {
     return operand_->prepare();
@@ -711,12 +715,38 @@ std::string columnTypeToString(ColumnType type) {
 
 
 std::string TypeCastingExpression::toString() const {
-    return "";
+    std::string buf;
+    buf.reserve(256);
+
+    buf += "(";
+    buf += columnTypeToString(type_);
+    buf += ")";
+    buf += operand_->toString();
+
+    return buf;
 }
 
 
-VariantType TypeCastingExpression::eval() const {
-    return toString();
+OptVariantType TypeCastingExpression::eval() const {
+    auto result = operand_->eval();
+    if (!result.ok()) {
+        return result;
+    }
+
+    switch (type_) {
+        case INT:
+        case TIMESTAMP:
+            return Expression::toInt(result.value());
+        case STRING:
+            return Expression::toString(result.value());
+        case DOUBLE:
+            return Expression::toDouble(result.value());
+        case BOOL:
+            return Expression::toBool(result.value());
+        case BIGINT:
+            return Status::Error("Type bigint not supported yet");
+    }
+    LOG(FATAL) << "casting to unknown type: " << static_cast<int>(type_);
 }
 
 
@@ -757,48 +787,69 @@ std::string ArithmeticExpression::toString() const {
     return buf;
 }
 
-
-VariantType ArithmeticExpression::eval() const {
+OptVariantType ArithmeticExpression::eval() const {
     auto left = left_->eval();
     auto right = right_->eval();
-    switch (op_) {
-    case ADD:
-        assert((isArithmetic(left) && isArithmetic(right))
-                || (isString(left) && isString(right)));
-        if (isArithmetic(left) && isArithmetic(right)) {
-            if (isDouble(left) || isDouble(right)) {
-                return asDouble(left) + asDouble(right);
-            }
-            return asInt(left) + asInt(right);
-        }
-        return asString(left) + asString(right);
-    case SUB:
-        assert(isArithmetic(left) && isArithmetic(right));
-        if (isDouble(left) || isDouble(right)) {
-            return asDouble(left) - asDouble(right);
-        }
-        return asInt(left) - asInt(right);
-    case MUL:
-        assert(isArithmetic(left) && isArithmetic(right));
-        if (isDouble(left) || isDouble(right)) {
-            return asDouble(left) * asDouble(right);
-        }
-        return asInt(left) * asInt(right);
-    case DIV:
-        assert(isArithmetic(left) && isArithmetic(right));
-        if (isDouble(left) || isDouble(right)) {
-            return asDouble(left) / asDouble(right);
-        }
-        return asInt(left) / asInt(right);
-    case MOD:
-        assert(isInt(left) && isInt(right));
-        return asInt(left) % asInt(right);
-    default:
-        DCHECK(false);
+    if (!left.ok()) {
+        return left;
     }
-    return false;
-}
 
+    if (!right.ok()) {
+        return right;
+    }
+
+    auto l = left.value();
+    auto r = right.value();
+
+    switch (op_) {
+        case ADD:
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(asDouble(l) + asDouble(r));
+                }
+                return OptVariantType(asInt(l) + asInt(r));
+            }
+
+            if (isString(l) && isString(r)) {
+                return OptVariantType(asString(l) + asString(r));
+            }
+            break;
+        case SUB:
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(asDouble(l) - asDouble(r));
+                }
+                return OptVariantType(asInt(l) - asInt(r));
+            }
+            break;
+        case MUL:
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(asDouble(l) * asDouble(r));
+                }
+                return OptVariantType(asInt(l) * asInt(r));
+            }
+            break;
+        case DIV:
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(asDouble(l) / asDouble(r));
+                }
+                return OptVariantType(asInt(l) / asInt(r));
+            }
+            break;
+        case MOD:
+            if (isInt(l) && isInt(r)) {
+                return OptVariantType(asInt(l) % asInt(r));
+            }
+            break;
+        default:
+            DCHECK(false);
+    }
+
+    return OptVariantType(Status::Error(folly::sformat(
+        "attempt to perform arithmetic on {} with {}", l.type().name(), r.type().name())));
+}
 
 Status ArithmeticExpression::prepare() {
     auto status = left_->prepare();
@@ -865,33 +916,49 @@ std::string RelationalExpression::toString() const {
     return buf;
 }
 
-
-VariantType RelationalExpression::eval() const {
+OptVariantType RelationalExpression::eval() const {
     auto left = left_->eval();
     auto right = right_->eval();
+
+    if (!left.ok()) {
+        return left;
+    }
+
+    if (!right.ok()) {
+        return right;
+    }
+
+    auto l = left.value();
+    auto r = right.value();
     switch (op_) {
         case LT:
-            return left < right;
+            return OptVariantType(l < r);
         case LE:
-            return left <= right;
+            return OptVariantType(l <= r);
         case GT:
-            return left > right;
+            return OptVariantType(l > r);
         case GE:
-            return left >= right;
+            return OptVariantType(l >= r);
         case EQ:
-            if (isDouble(left) || isDouble(right)) {
-                return almostEqual(asDouble(left), asDouble(right));
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(
+                        almostEqual(asDouble(l), asDouble(r)));
+                }
             }
-            return left == right;
+            return OptVariantType(l == r);
         case NE:
-            if (isDouble(left) || isDouble(right)) {
-                return !almostEqual(asDouble(left), asDouble(right));
+            if (isArithmetic(l) && isArithmetic(r)) {
+                if (isDouble(l) || isDouble(r)) {
+                    return OptVariantType(
+                        !almostEqual(asDouble(l), asDouble(r)));
+                }
             }
-            return left != right;
+            return OptVariantType(l != r);
     }
-    return false;
-}
 
+    return OptVariantType(Status::Error("Wrong operator"));
+}
 
 Status RelationalExpression::prepare() {
     auto status = left_->prepare();
@@ -946,21 +1013,30 @@ std::string LogicalExpression::toString() const {
     return buf;
 }
 
+OptVariantType LogicalExpression::eval() const {
+    auto left = left_->eval();
+    auto right = right_->eval();
 
-VariantType LogicalExpression::eval() const {
+    if (!left.ok()) {
+        return left;
+    }
+
+    if (!right.ok()) {
+        return right;
+    }
+
     if (op_ == AND) {
-        if (!asBool(left_->eval())) {
-            return false;
+        if (!asBool(left.value())) {
+            return OptVariantType(false);
         }
-        return asBool(right_->eval());
+        return OptVariantType(asBool(right.value()));
     } else {
-        if (asBool(left_->eval())) {
-            return true;
+        if (asBool(left.value())) {
+            return OptVariantType(true);
         }
-        return asBool(right_->eval());
+        return OptVariantType(asBool(right.value()));
     }
 }
-
 
 Status LogicalExpression::prepare() {
     auto status = left_->prepare();

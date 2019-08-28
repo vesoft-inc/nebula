@@ -13,6 +13,7 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:gflags_man_obj>
 )
 
 nebula_add_test(

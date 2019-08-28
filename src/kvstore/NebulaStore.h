@@ -11,7 +11,6 @@
 #include <gtest/gtest_prod.h>
 #include <folly/RWSpinLock.h>
 #include "kvstore/raftex/RaftexService.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/Part.h"
@@ -31,20 +30,20 @@ struct SpacePartInfo {
     std::vector<std::unique_ptr<KVEngine>> engines_;
 };
 
-
 class NebulaStore : public KVStore, public Handler {
     FRIEND_TEST(NebulaStoreTest, SimpleTest);
     FRIEND_TEST(NebulaStoreTest, PartsTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
+    FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
 
 public:
     NebulaStore(KVOptions options,
                 std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                 HostAddr serviceAddr,
-                std::shared_ptr<folly::Executor> handlersPool)
+                std::shared_ptr<folly::Executor> workers)
             : ioPool_(ioPool)
             , storeSvcAddr_(serviceAddr)
-            , handlersPool_(handlersPool)
+            , workers_(workers)
             , raftAddr_(getRaftAddr(serviceAddr))
             , options_(std::move(options)) {
     }
@@ -139,6 +138,11 @@ public:
                            const std::string& prefix,
                            KVCallback cb) override;
 
+    void asyncAtomicOp(GraphSpaceID spaceId,
+                       PartitionID partId,
+                       raftex::AtomicOp op,
+                       KVCallback cb) override;
+
     ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
                                                     PartitionID partId) override;
 
@@ -155,6 +159,9 @@ public:
     ResultCode compact(GraphSpaceID spaceId) override;
 
     ResultCode flush(GraphSpaceID spaceId) override;
+
+    int32_t allLeader(std::unordered_map<GraphSpaceID,
+                                         std::vector<PartitionID>>& leaderIds) override;
 
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 
@@ -188,12 +195,11 @@ private:
     std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;
     std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
     HostAddr storeSvcAddr_;
-    std::shared_ptr<folly::Executor> handlersPool_;
+    std::shared_ptr<folly::Executor> workers_;
     HostAddr raftAddr_;
     KVOptions options_;
 
     std::shared_ptr<raftex::RaftexService> raftService_;
-    std::unique_ptr<wal::BufferFlusher> flusher_;
 };
 
 }  // namespace kvstore

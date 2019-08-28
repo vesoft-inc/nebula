@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "base/Base.h"
 #include <gtest/gtest.h>
+#include "base/Base.h"
 #include "parser/GQLParser.h"
 
 // TODO(dutor) Inspect the internal structures to check on the syntax and semantics
@@ -136,6 +136,12 @@ TEST(Parser, SpaceOperation) {
     }
     {
         GQLParser parser;
+        std::string query = "SHOW CREATE SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
         std::string query = "DROP SPACE default_space";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
@@ -229,7 +235,7 @@ TEST(Parser, TagOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "DESCRIBE TAG person";
+        std::string query = "SHOW CREATE TAG person";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -319,7 +325,7 @@ TEST(Parser, EdgeOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "DESCRIBE EDGE e1";
+        std::string query = "SHOW CREATE EDGE e1";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -428,7 +434,33 @@ TEST(Parser, Set) {
         GQLParser parser;
         std::string query = "GO FROM 1 OVER friend MINUS "
                             "GO FROM 2 OVER friend UNION "
+                            "GO FROM 2 OVER friend INTERSECT "
                             "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "(GO FROM 1 OVER friend | "
+                            "GO FROM 2 OVER friend) UNION "
+                            "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        // pipe have priority over set
+        std::string query = "GO FROM 1 OVER friend | "
+                            "GO FROM 2 OVER friend UNION "
+                            "GO FROM 3 OVER friend";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "(GO FROM 1 OVER friend UNION "
+                            "GO FROM 2 OVER friend) | "
+                            "GO FROM $- OVER friend";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
@@ -762,6 +794,24 @@ TEST(Parser, AdminOperation) {
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE SPACE default_space";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE TAG person";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+    {
+        GQLParser parser;
+        std::string query = "SHOW CREATE EDGE e1";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
 }
 
 TEST(Parser, UserOperation) {
@@ -857,7 +907,6 @@ TEST(Parser, UserOperation) {
     }
 }
 
-
 TEST(Parser, UnreservedKeywords) {
     {
         GQLParser parser;
@@ -894,7 +943,6 @@ TEST(Parser, UnreservedKeywords) {
         ASSERT_TRUE(result.ok()) << result.status();
     }
 }
-
 
 TEST(Parser, Annotation) {
     {
@@ -1109,13 +1157,22 @@ TEST(Parser, ConfigOperation) {
     }
     {
         GQLParser parser;
-        std::string query = "UPDATE VARIABLES load_config_interval_secs=120";
+        std::string query = "UPDATE VARIABLES load_data_interval_secs=120";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }
     {
         GQLParser parser;
-        std::string query = "GET VARIABLES load_config_interval_secs";
+        std::string query = "GET VARIABLES load_data_interval_secs";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
+TEST(Parser, BalanceOperation) {
+    {
+        GQLParser parser;
+        std::string query = "BALANCE LEADER";
         auto result = parser.parse(query);
         ASSERT_TRUE(result.ok()) << result.status();
     }

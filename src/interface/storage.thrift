@@ -113,8 +113,8 @@ struct EdgeKey {
     // When edge_type > 0, it's an out-edge, otherwise, it's an in-edge
     // When query edge props, the field could be unset.
     2: common.EdgeType edge_type,
-    3: common.VertexID dst,
-    4: common.EdgeRanking ranking,
+    3: common.EdgeRanking ranking,
+    4: common.VertexID dst,
 }
 
 struct Edge {
@@ -199,8 +199,16 @@ struct AddLearnerReq {
 
 struct CatchUpDataReq {
     1: common.GraphSpaceID space_id,
-    2: common.GraphSpaceID part_id,
+    2: common.PartitionID  part_id,
     3: common.HostAddr     target,
+}
+
+struct GetLeaderReq {
+}
+
+struct GetLeaderResp {
+    1: ErrorCode                 code,
+    2: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts;
 }
 
 
@@ -225,5 +233,6 @@ service StorageService {
     AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
+    GetLeaderResp getLeaderPart(1: GetLeaderReq req);
 }
 

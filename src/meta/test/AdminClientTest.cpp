@@ -176,7 +176,7 @@ TEST(AdminClientTest, RetryTest) {
         kv->asyncMultiPut(kDefaultSpaceId,
                           kDefaultPartId,
                           std::move(data),
-                          [this, &baton] (kvstore::ResultCode code) {
+                          [&baton] (kvstore::ResultCode code) {
             CHECK_EQ(kvstore::ResultCode::SUCCEEDED, code);
             baton.post();
         });
@@ -259,5 +259,3 @@ int main(int argc, char** argv) {
     google::SetStderrLogging(google::INFO);
     return RUN_ALL_TESTS();
 }
-
-
