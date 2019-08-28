@@ -233,6 +233,7 @@ template <typename T>
 void checkTagData(const std::vector<cpp2::TagData>& data,
                   TagID tid,
                   const std::string col_name,
+                  const std::unordered_map<TagID, nebula::cpp2::Schema> *schema,
                   T expected) {
     auto it = std::find_if(data.cbegin(), data.cend(), [tid](auto& td) {
         if (td.tag_id == tid) {
@@ -241,8 +242,10 @@ void checkTagData(const std::vector<cpp2::TagData>& data,
         return false;
     });
     DCHECK(it != data.cend());
-    auto tagProvider = std::make_shared<ResultSchemaProvider>(it->schema);
-    auto tagReader   = RowReader::getRowReader(it->vertex_data, tagProvider);
+    auto it2 = schema->find(tid);
+    DCHECK(it2 != schema->end());
+    auto tagProvider = std::make_shared<ResultSchemaProvider>(it2->second);
+    auto tagReader   = RowReader::getRowReader(it->data, tagProvider);
     auto r = RowReader::getPropByName(tagReader.get(), col_name);
     CHECK(ok(r));
     auto col = boost::get<T>(value(r));

@@ -118,23 +118,43 @@ void checkResponse(cpp2::QueryResponse& resp,
     EXPECT_EQ(0, resp.result.failed_codes.size());
 
     EXPECT_EQ(vertexNum, resp.vertices.size());
+
+    auto* vschema = resp.get_vertex_schema();
+    DCHECK(vschema != nullptr);
+
+    auto* eschema = resp.get_edge_schema();
+    DCHECK(eschema != nullptr);
+
+    std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> schema;
+
+    std::transform(
+        eschema->cbegin(), eschema->cend(), std::inserter(schema, schema.begin()), [](auto& s) {
+            return std::make_pair(s.first, std::make_shared<ResultSchemaProvider>(s.second));
+        });
+
     for (auto& vp : resp.vertices) {
         VLOG(1) << "Check vertex props...";
-        auto size =
-            std::accumulate(vp.tag_data.cbegin(), vp.tag_data.cend(), 0, [](int acc, auto& td) {
-                return acc + td.schema.columns.size();
-            });
+        auto size = std::accumulate(vp.tag_data.cbegin(), vp.tag_data.cend(), 0,
+                                    [vschema](int acc, auto& td) {
+                                        auto it = vschema->find(td.tag_id);
+                                        DCHECK(it != vschema->end());
+                                        return acc + it->second.columns.size();
+                                    });
 
         EXPECT_EQ(3, size);
 
-        checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", vp.vertex_id + 3001);
-        checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vp.vertex_id + 3003 + 2);
-        checkTagData<std::string>(
-            vp.tag_data, 3005, "tag_3005_col_4", folly::stringPrintf("tag_string_col_4"));
+        checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", vschema, vp.vertex_id + 3001);
+        checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vschema,
+                              vp.vertex_id + 3003 + 2);
+        checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", vschema,
+                                  folly::stringPrintf("tag_string_col_4"));
 
         for (auto& ep : vp.edge_data) {
-            EXPECT_EQ(edgeFields, ep.schema.columns.size());
-            auto provider = std::make_shared<ResultSchemaProvider>(ep.schema);
+            auto it2 = schema.find(ep.type);
+            DCHECK(it2 != schema.end());
+            auto it3 = eschema->find(ep.type);
+            EXPECT_EQ(edgeFields, it3->second.columns.size());
+            auto provider = it2->second;
             VLOG(1) << "Check edge props...";
             RowSetReader rsReader(provider, ep.data);
             auto it = rsReader.begin();

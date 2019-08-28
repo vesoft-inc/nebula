@@ -136,14 +136,27 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
         if (!resp.__isset.vertices) {
             continue;
         }
+
+        auto *schema = resp.get_vertex_schema();
+        if (schema == nullptr) {
+            continue;
+        }
+
+        std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> tagSchema;
+        std::transform(schema->cbegin(), schema->cend(),
+                       std::inserter(tagSchema, tagSchema.begin()), [](auto &s) {
+                           return std::make_pair(
+                               s.first, std::make_shared<ResultSchemaProvider>(s.second));
+                       });
+
         for (auto &vdata : resp.vertices) {
             std::unique_ptr<RowReader> vreader;
             if (!vdata.__isset.tag_data || vdata.tag_data.empty()) {
                 continue;
             }
 
-            auto vschema = std::make_shared<ResultSchemaProvider>(vdata.tag_data[0].schema);
-            vreader      = RowReader::getRowReader(vdata.tag_data[0].vertex_data, vschema);
+            auto vschema = tagSchema[vdata.tag_data[0].tag_id];
+            vreader = RowReader::getRowReader(vdata.tag_data[0].data, vschema);
             if (outputSchema == nullptr) {
                 outputSchema = std::make_shared<SchemaWriter>();
                 getOutputSchema(vschema.get(), vreader.get(), outputSchema.get());
@@ -151,9 +164,9 @@ void FetchVerticesExecutor::processResult(RpcResponse &&result) {
             }
 
             auto collector = std::make_unique<Collector>(vschema.get());
-            auto writer    = std::make_unique<RowWriter>(outputSchema);
+            auto writer = std::make_unique<RowWriter>(outputSchema);
 
-            auto &getters        = expCtx_->getters();
+            auto &getters = expCtx_->getters();
             getters.getAliasProp = [&](const std::string &,
                                        const std::string &prop) -> OptVariantType {
                 return collector->getProp(prop, vreader.get());

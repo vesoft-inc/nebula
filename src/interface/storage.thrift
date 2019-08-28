@@ -68,14 +68,12 @@ struct ResultCode {
 
 struct EdgeData {
     1: common.EdgeType type,
-    2: common.Schema   schema,
-    3: binary          data,   // decode according to edge_schema.
+    2: binary          data,   // decode according to edge_schema.
 }
 
 struct TagData {
     1: common.TagID          tag_id,
-    2: common.Schema         schema,
-    3: binary                vertex_data,
+    2: binary                data,
 }
 
 struct VertexData {
@@ -93,7 +91,9 @@ struct ResponseCommon {
 
 struct QueryResponse {
     1: required ResponseCommon result,
-    2: optional list<VertexData> vertices,
+    2: optional map<common.TagID, common.Schema>(cpp.template = "std::unordered_map")       vertex_schema,
+    3: optional map<common.EdgeType, common.Schema>(cpp.template = "std::unordered_map")    edge_schema,
+    4: optional list<VertexData> vertices,
 }
 
 struct ExecResponse {

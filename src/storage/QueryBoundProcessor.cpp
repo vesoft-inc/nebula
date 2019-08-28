@@ -33,18 +33,8 @@ kvstore::ResultCode QueryBoundProcessor::processEdgeImpl(const PartitionID partI
     }
 
     if (!rsWriter.data().empty()) {
-        nebula::cpp2::Schema edgeSchema;
-        decltype(edgeSchema.columns) cols;
-        cols.reserve(props.size());
-        for (auto& p : props) {
-            cols.emplace_back(columnDef(p.prop_.name, p.type_.type));
-        }
-
-        if (!cols.empty()) {
-            edgeSchema.set_columns(cols);
-            vdata.edge_data.emplace_back(apache::thrift::FragileConstructor::FRAGILE, edgeType,
-                                         edgeSchema, std::move(rsWriter.data()));
-        }
+        vdata.edge_data.emplace_back(apache::thrift::FragileConstructor::FRAGILE, edgeType,
+                                     std::move(rsWriter.data()));
     }
 
     return ret;
@@ -77,9 +67,7 @@ kvstore::ResultCode QueryBoundProcessor::processAllEdge(PartitionID partId, Vert
 
             edgeTypes.emplace(edgeType);
             auto it = edgeContexts_.find(edgeType);
-            if (it != edgeContexts_.end()) {
-                props = std::move(it->second);
-            } else {
+            if (it == edgeContexts_.end()) {
                 PropContext pc;
                 cpp2::PropDef pd;
                 pc.pikType_ = PropContext::PropInKeyType::DST;
@@ -89,8 +77,11 @@ kvstore::ResultCode QueryBoundProcessor::processAllEdge(PartitionID partId, Vert
                 pc.prop_ = std::move(pd);
                 pc.returned_ = true;
                 props.emplace_back(pc);
+                auto pair = edgeContexts_.emplace(edgeType, props);
+                it = pair.first;
             }
-            ret = processEdgeImpl(partId, vId, edgeType, props, fcontext, vdata);
+
+            ret = processEdgeImpl(partId, vId, edgeType, it->second, fcontext, vdata);
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
             }
@@ -139,16 +130,9 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
             if (ret != kvstore::ResultCode::SUCCEEDED) {
                 return ret;
             }
-            nebula::cpp2::Schema respTag;
-            for (auto& prop : tc.props_) {
-                if (prop.returned_) {
-                    respTag.columns.emplace_back(columnDef(prop.prop_.name, prop.type_.type));
-                }
-            }
-            if (!respTag.get_columns().empty() && writer.size() > 1) {
+            if (writer.size() > 1) {
                 td.emplace_back(apache::thrift::FragileConstructor::FRAGILE,
                                 tc.tagId_,
-                                std::move(respTag),
                                 writer.encode());
             }
         }
@@ -184,6 +168,51 @@ kvstore::ResultCode QueryBoundProcessor::processVertex(PartitionID partId, Verte
 void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
     (void)retNum;
     resp_.set_vertices(std::move(vertices_));
+    std::unordered_map<TagID, nebula::cpp2::Schema> vertexSchema;
+    if (!this->tagContexts_.empty()) {
+        for (auto& tc : this->tagContexts_) {
+            nebula::cpp2::Schema respTag;
+            for (auto& prop : tc.props_) {
+                if (prop.returned_) {
+                    respTag.columns.emplace_back(
+                        columnDef(std::move(prop.prop_.name), prop.type_.type));
+                }
+            }
+
+            if (!respTag.columns.empty()) {
+                auto it = vertexSchema.find(tc.tagId_);
+                if (it == vertexSchema.end()) {
+                    vertexSchema.emplace(tc.tagId_, respTag);
+                }
+            }
+        }
+        if (!vertexSchema.empty()) {
+            resp_.set_vertex_schema(std::move(vertexSchema));
+        }
+    }
+
+    std::unordered_map<EdgeType, nebula::cpp2::Schema> edgeSchema;
+    if (!edgeContexts_.empty()) {
+        for (const auto& ec : edgeContexts_) {
+            nebula::cpp2::Schema respEdge;
+            RowSetWriter rsWriter;
+            auto& props = ec.second;
+            for (auto& p : props) {
+                respEdge.columns.emplace_back(columnDef(std::move(p.prop_.name), p.type_.type));
+            }
+
+            if (!respEdge.columns.empty()) {
+                auto it = edgeSchema.find(ec.first);
+                if (it == edgeSchema.end()) {
+                    edgeSchema.emplace(ec.first, std::move(respEdge));
+                }
+            }
+        }
+
+        if (!edgeSchema.empty()) {
+            resp_.set_edge_schema(std::move(edgeSchema));
+        }
+    }
 }
 
 }  // namespace storage

@@ -145,7 +145,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             retCols.emplace_back(TestUtils::vetexPropDef(
                 folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
         }
-        auto f    = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
+        auto f = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
         auto resp = std::move(f).get();
         if (VLOG_IS_ON(2)) {
             if (!resp.succeeded()) {
@@ -163,18 +163,23 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         EXPECT_EQ(0, results[0].result.failed_codes.size());
 
         EXPECT_EQ(10, results[0].vertices.size());
+
+        auto* vschema = results[0].get_vertex_schema();
+        DCHECK(vschema != nullptr);
         for (auto& vp : results[0].vertices) {
-            auto size =
-                std::accumulate(vp.tag_data.cbegin(), vp.tag_data.cend(), 0, [](int acc, auto& td) {
-                    return acc + td.schema.columns.size();
-                });
+            auto size = std::accumulate(vp.tag_data.cbegin(), vp.tag_data.cend(), 0,
+                                        [vschema](int acc, auto& td) {
+                                            auto it = vschema->find(td.tag_id);
+                                            DCHECK(it != vschema->end());
+                                            return acc + it->second.columns.size();
+                                        });
 
             EXPECT_EQ(3, size);
 
-            checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", 0);
-            checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", 2);
-            checkTagData<std::string>(
-                vp.tag_data, 3005, "tag_3005_col_4", folly::stringPrintf("tag_string_col_4"));
+            checkTagData<int64_t>(vp.tag_data, 3001, "tag_3001_col_0", vschema, 0);
+            checkTagData<int64_t>(vp.tag_data, 3003, "tag_3003_col_2", vschema, 2);
+            checkTagData<std::string>(vp.tag_data, 3005, "tag_3005_col_4", vschema,
+                                      folly::stringPrintf("tag_string_col_4"));
         }
     }
 

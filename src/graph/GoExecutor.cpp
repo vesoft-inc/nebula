@@ -452,10 +452,23 @@ std::vector<VertexID> GoExecutor::getDstIdsFromResp(RpcResponse &rpcResp) const 
             continue;
         }
 
+        auto *eschema = resp.get_edge_schema();
+        if (eschema == nullptr) {
+            continue;
+        }
+        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> schema;
+
+        std::transform(eschema->cbegin(), eschema->cend(), std::inserter(schema, schema.begin()),
+                       [](auto &s) {
+                           return std::make_pair(
+                               s.first, std::make_shared<ResultSchemaProvider>(s.second));
+                       });
+
         for (auto &vdata : *vertices) {
             for (auto &edata : vdata.edge_data) {
-                auto schema = std::make_shared<ResultSchemaProvider>(edata.schema);
-                RowSetReader rsReader(schema, edata.data);
+                auto it = schema.find(edata.type);
+                DCHECK(it != schema.end());
+                RowSetReader rsReader(it->second, edata.data);
                 auto iter = rsReader.begin();
                 while (iter) {
                     VertexID dst;
@@ -732,21 +745,40 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
             continue;
         }
 
+        std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> tagSchema;
+        auto *vschema = resp.get_vertex_schema();
+        if (vschema != nullptr) {
+            std::transform(vschema->cbegin(), vschema->cend(),
+                           std::inserter(tagSchema, tagSchema.begin()), [](auto &schema) {
+                               return std::make_pair(
+                                   schema.first,
+                                   std::make_shared<ResultSchemaProvider>(schema.second));
+                           });
+        }
+
+        std::unordered_map<EdgeType, std::shared_ptr<ResultSchemaProvider>> edgeSchema;
+        auto *eschema = resp.get_edge_schema();
+        if (eschema != nullptr) {
+            std::transform(eschema->cbegin(), eschema->cend(),
+                           std::inserter(edgeSchema, edgeSchema.begin()), [](auto &schema) {
+                               return std::make_pair(
+                                   schema.first,
+                                   std::make_shared<ResultSchemaProvider>(schema.second));
+                           });
+        }
+
+        if (tagSchema.empty() && edgeSchema.empty()) {
+            continue;
+        }
+
         for (auto &vdata : resp.vertices) {
-            std::unordered_map<TagID, std::shared_ptr<ResultSchemaProvider>> schemas;
-            auto tagData = vdata.tag_data;
-            for (auto &td : tagData) {
-                schemas[td.tag_id] = std::make_shared<ResultSchemaProvider>(td.schema);
-            }
             DCHECK(vdata.__isset.edge_data);
+            auto tagData = vdata.get_tag_data();
             for (auto &edata : vdata.edge_data) {
-                std::shared_ptr<ResultSchemaProvider> eschema;
-
-                eschema = std::make_shared<ResultSchemaProvider>(edata.schema);
-
-                DCHECK(eschema != nullptr);
-                RowSetReader rsReader(eschema, edata.data);
-                auto iter     = rsReader.begin();
+                auto it = edgeSchema.find(edata.type);
+                DCHECK(it != edgeSchema.end());
+                RowSetReader rsReader(it->second, edata.data);
+                auto iter = rsReader.begin();
                 auto edgeType = edata.type;
                 while (iter) {
                     auto &getters = expCtx_->getters();
@@ -767,13 +799,13 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         }
                         return value(std::move(res));
                     };
-                    getters.getSrcTagProp = [&iter, &spaceId, &tagData, &schemas, this](
+                    getters.getSrcTagProp = [&iter, &spaceId, &tagData, &tagSchema, this](
                                                 const std::string &tag,
                                                 const std::string &prop) -> OptVariantType {
                         auto status = ectx()->schemaManager()->toTagID(spaceId, tag);
                         CHECK(status.ok());
                         auto tagId = status.value();
-                        auto it =
+                        auto it2 =
                             std::find_if(tagData.cbegin(), tagData.cend(), [&tagId](auto &td) {
                                 if (td.tag_id == tagId) {
                                     return true;
@@ -781,11 +813,11 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
 
                                 return false;
                             });
-                        if (it == tagData.cend()) {
+                        if (it2 == tagData.cend()) {
                             return RowReader::getDefaultProp(iter->getSchema(), prop);
                         }
-                        DCHECK(it->__isset.vertex_data);
-                        auto vreader = RowReader::getRowReader(it->vertex_data, schemas[tagId]);
+                        DCHECK(it2->__isset.data);
+                        auto vreader = RowReader::getRowReader(it2->data, tagSchema[tagId]);
                         auto res = RowReader::getPropByName(vreader.get(), prop);
                         if (!ok(res)) {
                             return Status::Error(
@@ -883,11 +915,17 @@ void GoExecutor::VertexHolder::add(const storage::cpp2::QueryResponse &resp) {
         return;
     }
 
+    auto *vertexSchema = resp.get_vertex_schema();
+    if (vertexSchema == nullptr) {
+        return;
+    }
     for (auto &vdata : *vertices) {
         std::unordered_map<TagID, VData> m;
         for (auto &td : vdata.tag_data) {
-            DCHECK(td.__isset.vertex_data);
-            m[td.tag_id] = {std::make_shared<ResultSchemaProvider>(td.schema), td.vertex_data};
+            DCHECK(td.__isset.data);
+            auto it = vertexSchema->find(td.tag_id);
+            DCHECK(it != vertexSchema->end());
+            m[td.tag_id] = {std::make_shared<ResultSchemaProvider>(it->second), td.data};
         }
         data_[vdata.vertex_id] = std::move(m);
     }
