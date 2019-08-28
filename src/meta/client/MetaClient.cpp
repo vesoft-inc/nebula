@@ -346,22 +346,6 @@ std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& 
     return hosts;
 }
 
-std::vector<HostStatus> MetaClient::toHostStatus(const std::vector<cpp2::HostItem>& tHosts) {
-    std::vector<HostStatus> hosts;
-    hosts.resize(tHosts.size());
-    std::transform(tHosts.begin(), tHosts.end(), hosts.begin(), [](const auto& h) {
-        switch (h.get_status()) {
-            case cpp2::HostStatus::ONLINE:
-                return HostStatus(HostAddr(h.hostAddr.get_ip(), h.hostAddr.get_port()), "online");
-            case cpp2::HostStatus::OFFLINE:
-                return HostStatus(HostAddr(h.hostAddr.get_ip(), h.hostAddr.get_port()), "offline");
-            default:
-                return HostStatus(HostAddr(h.hostAddr.get_ip(), h.hostAddr.get_port()), "unknown");
-        }
-    });
-    return hosts;
-}
-
 std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames) {
     std::vector<SpaceIdName> idNames;
     idNames.resize(tIdNames.size());
@@ -567,14 +551,14 @@ folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& 
     return future;
 }
 
-folly::Future<StatusOr<std::vector<HostStatus>>> MetaClient::listHosts() {
+folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
     cpp2::ListHostsReq req;
-    folly::Promise<StatusOr<std::vector<HostStatus>>> promise;
+    folly::Promise<StatusOr<std::vector<cpp2::HostItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_listHosts(request);
                 }, [this] (cpp2::ListHostsResp&& resp) -> decltype(auto) {
-                    return this->toHostStatus(resp.hosts);
+                    return resp.hosts;
                 }, std::move(promise));
     return future;
 }
@@ -1140,6 +1124,18 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance() {
                     return client->future_balance(request);
                 }, [] (cpp2::BalanceResp&& resp) -> int64_t {
                     return resp.id;
+                }, std::move(promise), true);
+    return future;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
+    cpp2::LeaderBalanceReq req;
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_leaderBalance(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
                 }, std::move(promise), true);
     return future;
 }
