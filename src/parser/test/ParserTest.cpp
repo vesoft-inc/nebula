@@ -1146,4 +1146,13 @@ TEST(Parser, ConfigOperation) {
     }
 }
 
+TEST(Parser, BalanceOperation) {
+    {
+        GQLParser parser;
+        std::string query = "BALANCE LEADER";
+        auto result = parser.parse(query);
+        ASSERT_TRUE(result.ok()) << result.status();
+    }
+}
+
 }   // namespace nebula

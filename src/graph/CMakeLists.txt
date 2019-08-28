@@ -37,6 +37,7 @@ add_library(
     OrderByExecutor.cpp
     IngestExecutor.cpp
     ConfigExecutor.cpp
+    BalanceExecutor.cpp
     SchemaHelper.cpp
     FetchVerticesExecutor.cpp
     FetchEdgesExecutor.cpp
