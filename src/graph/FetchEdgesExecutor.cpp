@@ -71,22 +71,32 @@ Status FetchEdgesExecutor::prepareClauses() {
 
 Status FetchEdgesExecutor::prepareEdgeKeys() {
     Status status = Status::OK();
-    if (sentence_->isRef()) {
-        auto *edgeKeyRef = sentence_->ref();
+    do {
+        if (sentence_->isRef()) {
+            auto *edgeKeyRef = sentence_->ref();
 
-        srcid_ = edgeKeyRef->srcid();
-        DCHECK_NOTNULL(srcid_);
+            srcid_ = edgeKeyRef->srcid();
+            DCHECK_NOTNULL(srcid_);
 
-        dstid_ = edgeKeyRef->dstid();
-        DCHECK_NOTNULL(dstid_);
+            dstid_ = edgeKeyRef->dstid();
+            DCHECK_NOTNULL(dstid_);
 
-        rank_ = edgeKeyRef->rank();
-        auto ret = edgeKeyRef->varname();
-        if (!ret.ok()) {
-            status = std::move(ret).status();
+            rank_ = edgeKeyRef->rank();
+
+            auto ret = edgeKeyRef->varname();
+            if (!ret.ok()) {
+                status = std::move(ret).status();
+                break;
+            }
+            if ((srcid_ != nullptr && *srcid_ == "*")
+                    || (dstid_ != nullptr && *dstid_ == "*")
+                    || (rank_ != nullptr && *rank_ == "*")) {
+                status = Status::Error("Can not use `*' to reference a vertex id column.");
+                break;
+            }
+            varname_ = ret.value();
         }
-        varname_ = ret.value();
-    }
+    } while (false);
 
     return status;
 }

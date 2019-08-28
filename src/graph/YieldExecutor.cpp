@@ -59,9 +59,10 @@ Status YieldExecutor::prepareYield() {
             auto *colName = variableExpr->prop();
             if (*colName == "*") {
                 bool existing = false;
-                auto varInputs = ectx()->variableHolder()->get(varname_, &existing);
+                auto *varname = variableExpr->alias();
+                auto varInputs = ectx()->variableHolder()->get(*varname, &existing);
                 if (varInputs == nullptr && !existing) {
-                    return Status::Error("Variable `%s' not defined.", varname_.c_str());
+                    return Status::Error("Variable `%s' not defined.", varname->c_str());
                 }
                 auto schema = varInputs->schema();
                 auto iter = schema->begin();
@@ -135,12 +136,19 @@ Status YieldExecutor::syntaxCheck() {
 }
 
 void YieldExecutor::execute() {
-    auto status = beforeExecute();
-    if (expCtx_->hasVariableProp() || expCtx_->hasInputProp()) {
-        status = executeInputs();
-    } else {
-        status = executeConstant();
-    }
+    Status status;
+    do {
+        status = beforeExecute();
+        if (!status.ok()) {
+            break;
+        }
+        if (expCtx_->hasVariableProp() || expCtx_->hasInputProp()) {
+            status = executeInputs();
+        } else {
+            status = executeConstant();
+        }
+    } while (false);
+
     if (!status.ok()) {
         LOG(INFO) << status.toString();
         DCHECK(onError_);

@@ -26,7 +26,7 @@ protected:
 };
 
 
-TEST_F(YieldTest, Basic) {
+TEST_F(YieldTest, basic) {
     auto client = gEnv->getClient();
     ASSERT_NE(nullptr, client);
     {
@@ -225,7 +225,7 @@ TEST_F(YieldTest, inCall) {
     }
 }
 
-TEST_F(YieldTest, sentenceBase) {
+TEST_F(YieldTest, yieldPipe) {
     std::string go = "GO FROM %ld OVER serve YIELD "
                      "$^.player.name as name, serve.start_year as start, $$.team.name as team";
     {
@@ -276,19 +276,58 @@ TEST_F(YieldTest, sentenceBase) {
     {
         cpp2::ExecutionResponse resp;
         auto &player = players_["Boris Diaw"];
-        auto fmt = go + "| YIELD $-.team, $-.*";
+        auto fmt = go + "| YIELD $-.*";
         auto query = folly::stringPrintf(fmt.c_str(), player.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
-        std::vector<std::tuple<std::string, std::string, int64_t, std::string>> expected;
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
         for (auto &serve : player.serves()) {
-            std::tuple<std::string, std::string, int64_t, std::string> result(
-                    std::get<0>(serve), player.name(), std::get<1>(serve), std::get<0>(serve));
+            std::tuple<std::string, int64_t, std::string> result(
+                    player.name(), std::get<1>(serve), std::get<0>(serve));
             expected.emplace_back(std::move(result));
         }
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| YIELD $-.* WHERE $-.start > 2005";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &serve : player.serves()) {
+            if (std::get<1>(serve) <= 2005) {
+                continue;
+            }
+            std::tuple<std::string, int64_t, std::string> result(
+                    player.name(), std::get<1>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(result));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = go + "| YIELD $-.*,hash(123) as hash WHERE $-.start > 2005";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<std::string, int64_t, std::string, int64_t>> expected;
+        for (auto &serve : player.serves()) {
+            if (std::get<1>(serve) <= 2005) {
+                continue;
+            }
+            std::tuple<std::string, int64_t, std::string, int64_t> result(
+                    player.name(), std::get<1>(serve),
+                    std::get<0>(serve), std::hash<int32_t>{}(123));
+            expected.emplace_back(std::move(result));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+}
 
+TEST_F(YieldTest, yieldVar) {
     std::string var = " $var = GO FROM %ld OVER serve YIELD "
                      "$^.player.name as name, serve.start_year as start, $$.team.name as team;";
     {
@@ -336,9 +375,61 @@ TEST_F(YieldTest, sentenceBase) {
         }
         ASSERT_TRUE(verifyResult(resp, expected));
     }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = var + "YIELD $var.*";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &serve : player.serves()) {
+            std::tuple<std::string, int64_t, std::string> result(
+                    player.name(), std::get<1>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(result));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = var + "YIELD $var.* WHERE $var.start > 2005";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<std::string, int64_t, std::string>> expected;
+        for (auto &serve : player.serves()) {
+            if (std::get<1>(serve) <= 2005) {
+                continue;
+            }
+            std::tuple<std::string, int64_t, std::string> result(
+                    player.name(), std::get<1>(serve), std::get<0>(serve));
+            expected.emplace_back(std::move(result));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
+    {
+        cpp2::ExecutionResponse resp;
+        auto &player = players_["Boris Diaw"];
+        auto fmt = var + "YIELD $var.*, hash(123) as hash WHERE $var.start > 2005";
+        auto query = folly::stringPrintf(fmt.c_str(), player.vid());
+        auto code = client_->execute(query, resp);
+        ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::tuple<std::string, int64_t, std::string, int64_t>> expected;
+        for (auto &serve : player.serves()) {
+            if (std::get<1>(serve) <= 2005) {
+                continue;
+            }
+            std::tuple<std::string, int64_t, std::string, int64_t> result(
+                    player.name(), std::get<1>(serve),
+                    std::get<0>(serve), std::hash<int32_t>{}(123));
+            expected.emplace_back(std::move(result));
+        }
+        ASSERT_TRUE(verifyResult(resp, expected));
+    }
 }
 
-TEST_F(YieldTest, Error) {
+TEST_F(YieldTest, error) {
     {
         cpp2::ExecutionResponse resp;
         auto query = "yield $-";

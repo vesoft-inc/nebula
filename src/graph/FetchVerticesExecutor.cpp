@@ -49,8 +49,10 @@ Status FetchVerticesExecutor::prepareClauses() {
             break;
         }
 
-        prepareVids();
-
+        status = prepareVids();
+        if (!status.ok()) {
+            break;
+        }
         status = prepareYield();
         if (!status.ok()) {
             break;
@@ -71,7 +73,7 @@ Status FetchVerticesExecutor::prepareClauses() {
     return status;
 }
 
-void FetchVerticesExecutor::prepareVids() {
+Status FetchVerticesExecutor::prepareVids() {
     if (sentence_->isRef()) {
         auto *expr = sentence_->ref();
         if (expr->isInputExpression()) {
@@ -86,7 +88,11 @@ void FetchVerticesExecutor::prepareVids() {
             //  only support input and variable yet.
             LOG(FATAL) << "Unknown kind of expression.";
         }
+        if (colname_ != nullptr && *colname_ == "*") {
+            return Status::Error("Cant not use `*' to reference a vertex id column.");
+        }
     }
+    return Status::OK();
 }
 
 void FetchVerticesExecutor::execute() {

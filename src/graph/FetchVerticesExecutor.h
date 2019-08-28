@@ -30,7 +30,7 @@ public:
 private:
     Status prepareClauses();
 
-    void prepareVids();
+    Status prepareVids();
 
     Status setupVids();
 

@@ -155,6 +155,11 @@ Status GoExecutor::prepareFrom() {
                 // No way to happen except memory corruption
                 LOG(FATAL) << "Unknown kind of expression";
             }
+
+            if (colname_ != nullptr && *colname_ == "*") {
+                status = Status::Error("Can not use `*' to reference a vertex id column.");
+                break;
+            }
             break;
         }
 
