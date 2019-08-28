@@ -20,14 +20,8 @@ Status YieldExecutor::prepare() {
     Status status = Status::OK();
     expCtx_ = std::make_unique<ExpressionContext>();
     do {
-        status = prepareYield();
-        if (!status.ok()) {
-            LOG(INFO) << status.toString();
-            break;
-        }
         status = prepareWhere();
         if (!status.ok()) {
-            LOG(INFO) << status.toString();
             break;
         }
     } while (false);
@@ -36,7 +30,57 @@ Status YieldExecutor::prepare() {
 }
 
 Status YieldExecutor::prepareYield() {
-    yields_ = sentence_->columns();
+    auto cols = sentence_->columns();
+    yieldColsHolder_ = std::make_unique<YieldColumns>();
+    for (auto *col : cols) {
+        if (col->expr()->isInputExpression()) {
+            auto *inputExpr = static_cast<InputPropertyExpression*>(col->expr());
+            auto *colName = inputExpr->prop();
+            if (*colName == "*") {
+                if (inputs_ != nullptr) {
+                    auto schema = inputs_->schema();
+                    auto iter = schema->begin();
+                    while (iter) {
+                        auto *prop = iter->getName();
+                        Expression *expr =
+                            new InputPropertyExpression(new std::string(prop));
+                        YieldColumn *column = new YieldColumn(expr);
+                        yieldColsHolder_->addColumn(column);
+                        yields_.emplace_back(column);
+                        ++iter;
+                    }
+                }
+                continue;
+            }
+        }
+
+        if (col->expr()->isVariableExpression()) {
+            auto *variableExpr = static_cast<VariablePropertyExpression*>(col->expr());
+            auto *colName = variableExpr->prop();
+            if (*colName == "*") {
+                bool existing = false;
+                auto varInputs = ectx()->variableHolder()->get(varname_, &existing);
+                if (varInputs == nullptr && !existing) {
+                    return Status::Error("Variable `%s' not defined.", varname_.c_str());
+                }
+                auto schema = varInputs->schema();
+                auto iter = schema->begin();
+                while (iter) {
+                    auto *alias = new std::string(*(variableExpr->alias()));
+                    auto *prop = iter->getName();
+                    Expression *expr =
+                            new VariablePropertyExpression(alias, new std::string(prop));
+                    YieldColumn *column = new YieldColumn(expr);
+                    yieldColsHolder_->addColumn(column);
+                    yields_.emplace_back(column);
+                    ++iter;
+                }
+                continue;
+            }
+        }
+        yields_.emplace_back(col);
+    }
+
     for (auto *col : yields_) {
         col->expr()->setContext(expCtx_.get());
         auto status = col->expr()->prepare();
@@ -50,6 +94,23 @@ Status YieldExecutor::prepareYield() {
         }
     }
 
+    return Status::OK();
+}
+
+Status YieldExecutor::prepareWhere() {
+    Status status;
+    auto *clause = sentence_->whereClause();
+    if (clause != nullptr) {
+        filter_ = clause->filter();
+    }
+    if (filter_ != nullptr) {
+        filter_->setContext(expCtx_.get());
+        status = filter_->prepare();
+    }
+    return status;
+}
+
+Status YieldExecutor::syntaxCheck() {
     if (expCtx_->hasSrcTagProp()
             || expCtx_->hasDstTagProp()
             || expCtx_->hasEdgeProp()) {
@@ -69,24 +130,12 @@ Status YieldExecutor::prepareYield() {
 
         varname_ = *variables.begin();
     }
+
     return Status::OK();
 }
 
-Status YieldExecutor::prepareWhere() {
-    Status status;
-    auto *clause = sentence_->whereClause();
-    if (clause != nullptr) {
-        filter_ = clause->filter();
-    }
-    if (filter_ != nullptr) {
-        filter_->setContext(expCtx_.get());
-        status = filter_->prepare();
-    }
-    return status;
-}
-
 void YieldExecutor::execute() {
-    Status status = Status::OK();
+    auto status = beforeExecute();
     if (expCtx_->hasVariableProp() || expCtx_->hasInputProp()) {
         status = executeInputs();
     } else {
@@ -98,6 +147,21 @@ void YieldExecutor::execute() {
         onError_(std::move(status));
         return;
     }
+}
+
+Status YieldExecutor::beforeExecute() {
+    Status status;
+    do {
+        status = prepareYield();
+        if (!status.ok()) {
+            break;
+        }
+        status = syntaxCheck();
+        if (!status.ok()) {
+            break;
+        }
+    } while (false);
+    return status;
 }
 
 Status YieldExecutor::executeInputs() {

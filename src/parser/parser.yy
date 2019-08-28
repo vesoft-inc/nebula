@@ -290,6 +290,9 @@ input_ref_expression
         // To reference the `id' column implicitly
         $$ = new InputPropertyExpression(new std::string("id"));
     }
+    | INPUT_REF DOT MUL {
+        $$ = new InputPropertyExpression(new std::string("*"));
+    }
     ;
 
 src_ref_expression
@@ -310,6 +313,9 @@ var_ref_expression
     }
     | VARIABLE {
         $$ = new VariablePropertyExpression($1, new std::string("id"));
+    }
+    | VARIABLE DOT MUL {
+        $$ = new VariablePropertyExpression($1, new std::string("*"));
     }
     ;
 

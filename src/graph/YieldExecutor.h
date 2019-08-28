@@ -35,6 +35,10 @@ private:
 
     Status prepareWhere();
 
+    Status syntaxCheck();
+
+    Status beforeExecute();
+
     Status executeInputs();
 
     Status getOutputSchema(const InterimResult *inputs, SchemaWriter *outputSchema) const;
@@ -46,6 +50,7 @@ private:
 private:
     YieldSentence                              *sentence_;
     std::vector<YieldColumn*>                   yields_;
+    std::unique_ptr<YieldColumns>               yieldColsHolder_;
     std::unique_ptr<ExpressionContext>          expCtx_;
     Expression                                 *filter_{nullptr};
     std::unique_ptr<InterimResult>              inputs_;
