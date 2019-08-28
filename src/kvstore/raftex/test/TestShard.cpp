@@ -38,6 +38,21 @@ std::string compareAndSet(const std::string& log) {
     }
 }
 
+std::string encodeTransferLeader(const HostAddr& addr) {
+    std::string str;
+    CommandType type = CommandType::TRANSFER_LEADER;
+    str.append(reinterpret_cast<const char*>(&type), 1);
+    str.append(reinterpret_cast<const char*>(&addr), sizeof(HostAddr));
+    return str;
+}
+
+HostAddr decodeTransferLeader(const folly::StringPiece& log) {
+    HostAddr leader;
+    memcpy(&leader.first, log.begin() + 1, sizeof(leader.first));
+    memcpy(&leader.second, log.begin() + 1 + sizeof(leader.first), sizeof(leader.second));
+    return leader;
+}
+
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
@@ -89,6 +104,11 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
         auto log = iter->logMsg();
         if (!log.empty()) {
             switch (static_cast<CommandType>(log[0])) {
+                case CommandType::TRANSFER_LEADER: {
+                    auto nLeader = decodeTransferLeader(log);
+                    commitTransLeader(nLeader);
+                    break;
+                }
                 case CommandType::ADD_LEARNER: {
                     break;
                 }

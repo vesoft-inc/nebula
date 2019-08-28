@@ -113,6 +113,8 @@ STORAGE                     ([Ss][Tt][Oo][Rr][Aa][Gg][Ee])
 FETCH                       ([Ff][Ee][Tt][Cc][Hh])
 PROP                        ([Pp][Rr][Oo][Pp])
 ALL                         ([Aa][Ll][Ll])
+BALANCE                     ([Bb][Aa][Ll][Aa][Nn][Cc][Ee])
+LEADER                      ([Ll][Ee][Aa][Dd][Ee][Rr])
 
 LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
@@ -215,6 +217,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 {FETCH}                     { return TokenType::KW_FETCH; }
 {PROP}                      { return TokenType::KW_PROP; }
 {ALL}                       { return TokenType::KW_ALL; }
+{BALANCE}                   { return TokenType::KW_BALANCE; }
+{LEADER}                    { return TokenType::KW_LEADER; }
 
 "."                         { return TokenType::DOT; }
 ","                         { return TokenType::COMMA; }
