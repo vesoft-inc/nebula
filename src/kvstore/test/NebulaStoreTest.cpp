@@ -384,7 +384,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
     }
 }
 
-TEST(NebulaStoreTest, TransLeaderTest) {
+TEST(NebulaStoreTest, DISABLED_TransLeaderTest) {
     fs::TempDir rootPath("/tmp/trans_leader_test.XXXXXX");
     auto initNebulaStore = [](const std::vector<HostAddr>& peers,
                               int32_t index,
