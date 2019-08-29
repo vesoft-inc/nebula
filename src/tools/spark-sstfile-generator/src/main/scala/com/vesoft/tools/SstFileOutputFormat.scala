@@ -167,8 +167,6 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
       options = new Options()
         .setCreateIfMissing(true)
         .setCreateMissingColumnFamilies(true)
-        .setWritableFileMaxBufferSize(1024 * 100)
-        .setMaxBackgroundFlushes(5)
         .prepareForBulkLoad()
       sstFileWriter = new SstFileWriter(env, options)
 
@@ -253,6 +251,12 @@ class SstRecordWriter(localSstFileOutput: String, configuration: Configuration)
       hdfsDirectory: String
   ) = {
     var hadoopHome = System.getenv("HADOOP_HOME")
+
+    //TODO: default hadoop home should be customizable
+    if (hadoopHome == null) {
+      hadoopHome = "/soft/hadoop"
+    }
+
     while (hadoopHome.endsWith("/")) {
       hadoopHome = hadoopHome.stripSuffix("/")
     }
