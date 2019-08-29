@@ -50,6 +50,12 @@ Status FetchExecutor::prepareYield() {
                     "tag.prop and edgetype.prop are supported in fetch sentence.");
     }
 
+    if (expCtx_->hasInputProp() || expCtx_->hasVariableProp()) {
+        // TODO: support yield input and variable props
+        return Status::SyntaxError(
+                    "`$-' and `$variable' not supported in fetch yet.");
+    }
+
     auto aliasProps = expCtx_->aliasProps();
     for (auto pair : aliasProps) {
         if (pair.first != *labelName_) {

@@ -16,22 +16,6 @@ namespace graph {
 
 class YieldExecutor final : public TraverseExecutor {
 public:
-    class YieldClauseWrapper final {
-    public:
-        explicit YieldClauseWrapper(YieldClause *clause) {
-            clause_ = clause;
-        }
-
-        Status prepare(InterimResult *inputs,
-                       VariableHolder *varHolder,
-                       std::vector<YieldColumn*> &yields);
-
-    private:
-        YieldClause                    *clause_;
-        std::unique_ptr<YieldColumns>   yieldColsHolder_;
-    };
-
-public:
     YieldExecutor(Sentence *sentence, ExecutionContext *ectx);
 
     const char* name() const override {

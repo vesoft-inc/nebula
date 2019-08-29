@@ -66,6 +66,21 @@ public:
                           SchemaWriter *outputSchema);
 };
 
+class YieldClauseWrapper final {
+public:
+    explicit YieldClauseWrapper(const YieldClause *clause) {
+        clause_ = clause;
+    }
+
+    Status prepare(InterimResult *inputs,
+                   VariableHolder *varHolder,
+                   std::vector<YieldColumn*> &yields);
+
+private:
+    const YieldClause              *clause_;
+    std::unique_ptr<YieldColumns>   yieldColsHolder_;
+};
+
 class TraverseExecutor : public Executor {
 public:
     explicit TraverseExecutor(ExecutionContext *ectx) : Executor(ectx) {}

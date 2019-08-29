@@ -27,6 +27,7 @@ Status FetchEdgesExecutor::prepareClauses() {
         if (!status.ok()) {
             break;
         }
+
         expCtx_ = std::make_unique<ExpressionContext>();
         expCtx_->setStorageClient(ectx()->getStorageClient());
         spaceId_ = ectx()->rctx()->session()->space();
@@ -102,16 +103,15 @@ Status FetchEdgesExecutor::prepareEdgeKeys() {
 }
 
 void FetchEdgesExecutor::execute() {
+    DCHECK(onError_);
     FLOG_INFO("Executing FetchEdges: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
-        DCHECK(onError_);
         onError_(std::move(status));
         return;
     }
     status = setupEdgeKeys();
     if (!status.ok()) {
-        DCHECK(onError_);
         onError_(std::move(status));
         return;
     }

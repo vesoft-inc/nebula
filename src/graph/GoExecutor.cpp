@@ -273,8 +273,18 @@ Status GoExecutor::prepareWhere() {
 
 Status GoExecutor::prepareYield() {
     auto *clause = sentence_->yieldClause();
+    // this preparation depends on interim result,
+    // it can only be called after getting results of the previous executor,
+    // but if we can do the semantic analysis before execution,
+    // then we can do the preparation before execution
+    // TODO: make it possible that this preparation not depends on interim result
     if (clause != nullptr) {
-        yields_ = clause->columns();
+        yieldClauseWrapper_ = std::make_unique<YieldClauseWrapper>(clause);
+        auto *varHolder = ectx()->variableHolder();
+        auto status = yieldClauseWrapper_->prepare(inputs_.get(), varHolder, yields_);
+        if (!status.ok()) {
+            return status;
+        }
     }
     return Status::OK();
 }

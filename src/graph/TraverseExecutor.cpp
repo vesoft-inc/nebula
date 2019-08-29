@@ -188,5 +188,63 @@ void Collector::getSchema(const std::vector<VariantType> &vals,
     }
 }
 
+Status YieldClauseWrapper::prepare(
+        InterimResult *inputs,
+        VariableHolder *varHolder,
+        std::vector<YieldColumn*> &yields) {
+    auto cols = clause_->columns();
+    yieldColsHolder_ = std::make_unique<YieldColumns>();
+    for (auto *col : cols) {
+        if (col->expr()->isInputExpression()) {
+            auto *inputExpr = static_cast<InputPropertyExpression*>(col->expr());
+            auto *colName = inputExpr->prop();
+            if (*colName == "*") {
+                if (inputs != nullptr) {
+                    auto schema = inputs->schema();
+                    auto iter = schema->begin();
+                    while (iter) {
+                        auto *prop = iter->getName();
+                        Expression *expr =
+                            new InputPropertyExpression(new std::string(prop));
+                        YieldColumn *column = new YieldColumn(expr);
+                        yieldColsHolder_->addColumn(column);
+                        yields.emplace_back(column);
+                        ++iter;
+                    }
+                }
+                continue;
+            }
+        }
+
+        if (col->expr()->isVariableExpression()) {
+            auto *variableExpr = static_cast<VariablePropertyExpression*>(col->expr());
+            auto *colName = variableExpr->prop();
+            if (*colName == "*") {
+                bool existing = false;
+                auto *varname = variableExpr->alias();
+                auto varInputs = varHolder->get(*varname, &existing);
+                if (varInputs == nullptr && !existing) {
+                    return Status::Error("Variable `%s' not defined.", varname->c_str());
+                }
+                auto schema = varInputs->schema();
+                auto iter = schema->begin();
+                while (iter) {
+                    auto *alias = new std::string(*(variableExpr->alias()));
+                    auto *prop = iter->getName();
+                    Expression *expr =
+                            new VariablePropertyExpression(alias, new std::string(prop));
+                    YieldColumn *column = new YieldColumn(expr);
+                    yieldColsHolder_->addColumn(column);
+                    yields.emplace_back(column);
+                    ++iter;
+                }
+                continue;
+            }
+        }
+        yields.emplace_back(col);
+    }
+
+    return Status::OK();
+}
 }   // namespace graph
 }   // namespace nebula

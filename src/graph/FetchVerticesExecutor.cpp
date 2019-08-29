@@ -96,6 +96,7 @@ Status FetchVerticesExecutor::prepareVids() {
 }
 
 void FetchVerticesExecutor::execute() {
+    DCHECK(onError_);
     FLOG_INFO("Executing FetchVertices: %s", sentence_->toString().c_str());
     auto status = prepareClauses();
     if (!status.ok()) {
