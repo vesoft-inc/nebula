@@ -21,7 +21,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
 
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
@@ -42,7 +42,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(0, resp.result.partition_codes.size());
     }
 
     LOG(INFO) << "Check data in kv store...";
@@ -74,7 +74,7 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
                 auto fut = processor->getFuture();
                 processor->process(req);
                 auto resp = std::move(fut).get();
-                EXPECT_EQ(0, resp.result.failed_codes.size());
+                EXPECT_EQ(0, resp.result.partition_codes.size());
                 CHECK_EQ(1, resp.edge_keys.size());
                 auto edge = resp.edge_keys[0];
                 CHECK_EQ(srcId, edge.get_src());

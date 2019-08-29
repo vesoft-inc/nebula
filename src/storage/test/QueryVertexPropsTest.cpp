@@ -76,13 +76,14 @@ TEST(QueryVertexPropsTest, SimpleTest) {
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
     auto* processor = QueryVertexPropsProcessor::instance(kv.get(),
                                                           schemaMan.get(),
+                                                          nullptr,
                                                           executor.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
 
     LOG(INFO) << "Check the results...";
-    EXPECT_EQ(0, resp.result.failed_codes.size());
+    EXPECT_EQ(0, resp.result.partition_codes.size());
 
     EXPECT_EQ(30, resp.vertices.size());
 

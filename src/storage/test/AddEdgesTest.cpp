@@ -18,7 +18,7 @@ namespace storage {
 TEST(AddEdgesTest, SimpleTest) {
     fs::TempDir rootPath("/tmp/AddEdgesTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
-    auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
+    auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
 
     LOG(INFO) << "Build AddEdgesRequest...";
     cpp2::AddEdgesRequest req;
@@ -41,7 +41,7 @@ TEST(AddEdgesTest, SimpleTest) {
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
-    EXPECT_EQ(0, resp.result.failed_codes.size());
+    EXPECT_EQ(0, resp.result.partition_codes.size());
 
     LOG(INFO) << "Check data in kv store...";
     for (auto partId = 0; partId < 3; partId++) {

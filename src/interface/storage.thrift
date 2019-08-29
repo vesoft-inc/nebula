@@ -92,8 +92,10 @@ struct VertexData {
 }
 
 struct ResponseCommon {
-    // Only contains the partition that returns error
-    1: required list<ResultCode> failed_codes,
+    // For those operations that affect multiple partitions, partition_codes only contains result of the partitions
+    // which return error. As for operations that only affect single partition (e.g. AdminExecResp), partition_codes
+    // only contains one result of the target partition
+    1: required list<ResultCode> partition_codes,
     // Query latency from storage service
     2: required i32 latency_in_us,
 }
@@ -210,9 +212,7 @@ struct DeleteEdgesRequest {
 }
 
 struct AdminExecResp {
-    1: ErrorCode code,
-    // Only valid when code is E_LEADER_CHANAGED.
-    2: common.HostAddr  leader,
+    1: required ResponseCommon result,
 }
 
 struct AddPartReq {
@@ -256,7 +256,7 @@ struct GetLeaderReq {
 }
 
 struct GetLeaderResp {
-    1: ErrorCode                 code,
+    1: required ResponseCommon result,
     2: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts;
 }
 

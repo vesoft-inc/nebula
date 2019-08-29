@@ -261,7 +261,11 @@ folly::Future<Status> AdminClient::getResponse(
                                                                  t.exception().what().c_str())));
                     return;
                 }
-                auto&& resp = std::move(t).value();
+                auto&& result = std::move(t).value().get_result();
+                if (result.get_partition_codes().empty()) {
+                    p.setValue(Status::Error("Illegal response"));
+                }
+                auto resp = result.get_partition_codes().front();
                 p.setValue(respGen(std::move(resp)));
             });
     });
@@ -308,7 +312,11 @@ void AdminClient::getResponse(
                                                              t.exception().what().c_str())));
                 return;
             }
-            auto resp = std::move(t).value();
+            auto&& result = std::move(t).value().get_result();
+            if (result.get_partition_codes().empty()) {
+                p.setValue(Status::Error("Illegal response"));
+            }
+            auto resp = result.get_partition_codes().front();
             switch (resp.get_code()) {
                 case storage::cpp2::ErrorCode::SUCCEEDED: {
                     p.setValue(Status::OK());

@@ -71,7 +71,9 @@ void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
             }
         }
         // TODO handle failures
-        this->pushResultCode(this->to(ret), partId);
+        if (ret != kvstore::ResultCode::SUCCEEDED) {
+            this->pushResultCode(this->to(ret), partId);
+        }
     });
     resp_.set_data(std::move(rsWriter.data()));
 

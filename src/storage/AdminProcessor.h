@@ -53,7 +53,7 @@ public:
 
 private:
     explicit TransLeaderProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr) {}
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
@@ -87,7 +87,7 @@ public:
 
 private:
     explicit AddPartProcessor(kvstore::KVStore* kvstore, meta::MetaClient* mClient)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr)
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr)
             , mClient_(mClient) {}
 
 private:
@@ -112,7 +112,7 @@ public:
 
 private:
     explicit RemovePartProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr) {}
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
@@ -156,7 +156,7 @@ public:
 
 private:
     explicit MemberChangeProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr) {}
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class AddLearnerProcessor : public BaseProcessor<cpp2::AdminExecResp> {
@@ -191,7 +191,7 @@ public:
 
 private:
     explicit AddLearnerProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr) {}
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp> {
@@ -253,7 +253,7 @@ public:
 
 private:
     explicit WaitingForCatchUpDataProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr) {}
+            : BaseProcessor<cpp2::AdminExecResp>(kvstore, nullptr, nullptr) {}
 };
 
 class GetLeaderProcessor : public BaseProcessor<cpp2::GetLeaderResp> {
@@ -267,15 +267,13 @@ public:
         CHECK_NOTNULL(kvstore_);
         std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
         kvstore_->allLeader(leaderIds);
-        resp_.set_code(to(kvstore::ResultCode::SUCCEEDED));
         resp_.set_leader_parts(std::move(leaderIds));
-        promise_.setValue(std::move(resp_));
-        delete this;
+        this->onFinished();
     }
 
 private:
     explicit GetLeaderProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::GetLeaderResp>(kvstore, nullptr) {}
+            : BaseProcessor<cpp2::GetLeaderResp>(kvstore, nullptr, nullptr) {}
 };
 
 }  // namespace storage

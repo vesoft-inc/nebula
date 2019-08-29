@@ -71,7 +71,7 @@ void buildRequest(cpp2::EdgePropRequest& req) {
 
 
 void checkResponse(cpp2::EdgePropResponse& resp) {
-    EXPECT_EQ(0, resp.result.failed_codes.size());
+    EXPECT_EQ(0, resp.result.partition_codes.size());
     EXPECT_EQ(13, resp.schema.columns.size());
     auto provider = std::make_shared<ResultSchemaProvider>(resp.schema);
     LOG(INFO) << "Check edge props...";
@@ -133,7 +133,7 @@ TEST(QueryEdgePropsTest, SimpleTest) {
     buildRequest(req);
 
     LOG(INFO) << "Test QueryEdgePropsRequest...";
-    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMan.get());
+    auto* processor = QueryEdgePropsProcessor::instance(kv.get(), schemaMan.get(), nullptr);
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

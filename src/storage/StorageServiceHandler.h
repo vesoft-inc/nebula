@@ -12,6 +12,8 @@
 #include "interface/gen-cpp2/StorageService.h"
 #include "kvstore/KVStore.h"
 #include "meta/SchemaManager.h"
+#include "stats/StatsManager.h"
+#include "storage/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -25,7 +27,15 @@ public:
                           meta::MetaClient* client)
         : kvstore_(kvstore)
         , schemaMan_(schemaMan)
-        , metaClient_(client) {}
+        , metaClient_(client) {
+        getBoundQpsStat_ = StorageStats("get_bound");
+        boundStatsQpsStat_ = StorageStats("bound_stats");
+        vertexPropsQpsStat_ = StorageStats("vertex_props");
+        edgePropsQpsStat_ = StorageStats("edge_props");
+        addVertexQpsStat_ = StorageStats("add_vertex");
+        addEdgeQpsStat_ = StorageStats("add_edge");
+        delVertexQpsStat_ = StorageStats("del_vertex");
+    }
 
     folly::Future<cpp2::QueryResponse>
     future_getBound(const cpp2::GetNeighborsRequest& req) override;
@@ -93,8 +103,19 @@ public:
 
 private:
     kvstore::KVStore* kvstore_ = nullptr;
+<<<<<<< HEAD
     meta::SchemaManager* schemaMan_ = nullptr;
     meta::MetaClient* metaClient_ = nullptr;
+=======
+    meta::SchemaManager* schemaMan_;
+    StorageStats getBoundQpsStat_;
+    StorageStats boundStatsQpsStat_;
+    StorageStats vertexPropsQpsStat_;
+    StorageStats edgePropsQpsStat_;
+    StorageStats addVertexQpsStat_;
+    StorageStats addEdgeQpsStat_;
+    StorageStats delVertexQpsStat_;
+>>>>>>> e90ebb6... integrity tool
 };
 
 }  // namespace storage

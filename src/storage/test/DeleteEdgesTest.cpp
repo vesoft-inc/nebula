@@ -22,7 +22,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
     std::unique_ptr<kvstore::KVStore> kv(TestUtils::initKV(rootPath.path()));
     // Add edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -45,11 +45,11 @@ TEST(DeleteEdgesTest, SimpleTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(0, resp.result.partition_codes.size());
     }
     // Add multi version edges
     {
-        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr);
+        auto* processor = AddEdgesProcessor::instance(kv.get(), nullptr, nullptr);
         cpp2::AddEdgesRequest req;
         req.space_id = 0;
         req.overwritable = true;
@@ -70,7 +70,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(0, resp.result.partition_codes.size());
     }
 
     for (auto partId = 0; partId < 3; partId++) {
@@ -110,7 +110,7 @@ TEST(DeleteEdgesTest, SimpleTest) {
         auto fut = processor->getFuture();
         processor->process(req);
         auto resp = std::move(fut).get();
-        EXPECT_EQ(0, resp.result.failed_codes.size());
+        EXPECT_EQ(0, resp.result.partition_codes.size());
     }
 
     for (auto partId = 0; partId < 3; partId++) {

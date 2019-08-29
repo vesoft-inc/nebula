@@ -34,7 +34,7 @@ TEST(StorageServiceHandlerTest, FutureAddVerticesTest) {
     EXPECT_EQ(typeid(cpp2::ExecResponse).name() , typeid(resp).name());
 
     LOG(INFO) << "Check ErrorCode of AddVerticesProcessor...";
-    ASSERT_EQ(0, resp.result.failed_codes.size());
+    ASSERT_EQ(0, resp.result.partition_codes.size());
 
     LOG(INFO) << "Verify the vertices data...";
     auto prefix = NebulaKeyUtils::vertexPrefix(1, 19);

@@ -20,6 +20,8 @@
 #include "storage/Collector.h"
 #include "meta/SchemaManager.h"
 #include "time/Duration.h"
+#include "stats/StatsManager.h"
+#include "storage/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -29,9 +31,11 @@ using PartCode = std::pair<PartitionID, kvstore::ResultCode>;
 template<typename RESP>
 class BaseProcessor {
 public:
-    explicit BaseProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan)
+    explicit BaseProcessor(kvstore::KVStore* kvstore, meta::SchemaManager* schemaMan,
+                           StorageStats* stats = nullptr)
             : kvstore_(kvstore)
-            , schemaMan_(schemaMan) {}
+            , schemaMan_(schemaMan)
+            , stats_(stats) {}
 
     virtual ~BaseProcessor() = default;
 
@@ -40,13 +44,20 @@ public:
     }
 
 protected:
-    /**
-     * Destroy current instance when finished.
-     * */
-    void onFinished() {
-        result_.set_latency_in_us(duration_.elapsedInUSec());
-        resp_.set_result(std::move(result_));
-        promise_.setValue(std::move(resp_));
+    virtual void onFinished() {
+        if (this->stats_ != nullptr) {
+            stats::StatsManager::addValue(this->stats_->latencyStatId_,
+                                          this->duration_.elapsedInUSec());
+            if (this->result_.get_partition_codes().empty()) {
+                stats::StatsManager::addValue(this->stats_->qpsStatId_, 1);
+            } else {
+                stats::StatsManager::addValue(this->stats_->errorQpsStatId_, 1);
+            }
+        }
+        this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
+        this->result_.set_partition_codes(this->codes_);
+        this->resp_.set_result(std::move(this->result_));
+        this->promise_.setValue(std::move(this->resp_));
         delete this;
     }
 
@@ -77,12 +88,18 @@ protected:
     cpp2::ErrorCode to(kvstore::ResultCode code);
 
     void pushResultCode(cpp2::ErrorCode code, PartitionID partId) {
-        if (code != cpp2::ErrorCode::SUCCEEDED) {
-            cpp2::ResultCode thriftRet;
-            thriftRet.set_code(code);
-            thriftRet.set_part_id(partId);
-            result_.failed_codes.emplace_back(std::move(thriftRet));
-        }
+        cpp2::ResultCode thriftRet;
+        thriftRet.set_code(code);
+        thriftRet.set_part_id(partId);
+        codes_.emplace_back(std::move(thriftRet));
+    }
+
+    void pushResultCode(cpp2::ErrorCode code, PartitionID partId, HostAddr leader) {
+        cpp2::ResultCode thriftRet;
+        thriftRet.set_code(code);
+        thriftRet.set_part_id(partId);
+        thriftRet.set_leader(toThriftHost(leader));
+        codes_.emplace_back(std::move(thriftRet));
     }
 
     void pushResultCode(cpp2::ErrorCode code, PartitionID partId, HostAddr leader) {

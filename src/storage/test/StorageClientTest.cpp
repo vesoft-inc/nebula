@@ -160,7 +160,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
 
         auto& results = resp.responses();
         ASSERT_EQ(1, results.size());
-        EXPECT_EQ(0, results[0].result.failed_codes.size());
+        EXPECT_EQ(0, results[0].result.partition_codes.size());
 
         EXPECT_EQ(10, results[0].vertices.size());
 
@@ -234,7 +234,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
 
         auto& results = resp.responses();
         ASSERT_EQ(1, results.size());
-        EXPECT_EQ(0, results[0].result.failed_codes.size());
+        EXPECT_EQ(0, results[0].result.partition_codes.size());
         EXPECT_EQ(3 + 20, results[0].schema.columns.size());
 
         auto edgeProvider = std::make_shared<ResultSchemaProvider>(results[0].schema);
@@ -275,7 +275,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 ASSERT_TRUE(resp.ok());
                 auto edgeKeyResp =  std::move(resp).value();
                 auto& result = edgeKeyResp.get_result();
-                ASSERT_EQ(0, result.get_failed_codes().size());
+                ASSERT_EQ(0, result.get_partition_codes().size());
                 edgeKeys = *(edgeKeyResp.get_edge_keys());
 
                 // Check edgeKeys
@@ -298,7 +298,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 ASSERT_TRUE(cresp.ok());
                 auto edgeKeyResp =  std::move(cresp).value();
                 auto& result = edgeKeyResp.get_result();
-                ASSERT_EQ(0, result.get_failed_codes().size());
+                ASSERT_EQ(0, result.get_partition_codes().size());
                 ASSERT_EQ(0, edgeKeyResp.get_edge_keys()->size());
             }
             // Delete a vertex
@@ -308,7 +308,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 ASSERT_TRUE(resp.ok());
                 auto  execResp = std::move(resp).value();
                 auto& result = execResp.get_result();
-                ASSERT_EQ(0, result.get_failed_codes().size());
+                ASSERT_EQ(0, result.get_partition_codes().size());
 
                 // Check that this vertex has been successfully deleted
                 std::vector<VertexID> vIds{srcId};
@@ -320,7 +320,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 ASSERT_TRUE(cresp.succeeded());
                 auto& results = cresp.responses();
                 ASSERT_EQ(1, results.size());
-                EXPECT_EQ(0, results[0].result.failed_codes.size());
+                EXPECT_EQ(0, results[0].result.partition_codes.size());
                 // TODO bug: the results[0].vertices.size should be equal 0
                 EXPECT_EQ(1, results[0].vertices.size());
                 EXPECT_EQ(0, results[0].vertices[0].tag_data.size());
@@ -363,8 +363,8 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
         auto f = pro.getFuture(); \
         storage::cpp2::QueryResponse resp; \
         storage::cpp2::ResponseCommon rc; \
-        rc.failed_codes.emplace_back(); \
-        auto& code = rc.failed_codes.back(); \
+        rc.partition_codes.emplace_back(); \
+        auto& code = rc.partition_codes.back(); \
         code.set_part_id(1); \
         code.set_code(storage::cpp2::ErrorCode::E_LEADER_CHANGED); \
         code.set_leader(leader); \

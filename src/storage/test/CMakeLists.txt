@@ -19,6 +19,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:gflags_man_obj>
+    $<TARGET_OBJECTS:stats_obj>
 )
 
 
