@@ -8,7 +8,6 @@
 #include "kvstore/raftex/test/TestShard.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/wal/FileBasedWal.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/raftex/Host.h"
 
 namespace nebula {
@@ -30,12 +29,35 @@ HostAddr decodeLearner(const folly::StringPiece& log) {
     return learner;
 }
 
+std::string compareAndSet(const std::string& log) {
+    switch (log[0]) {
+        case 'T':
+            return log.substr(1);
+        default:
+            return std::string();
+    }
+}
+
+std::string encodeTransferLeader(const HostAddr& addr) {
+    std::string str;
+    CommandType type = CommandType::TRANSFER_LEADER;
+    str.append(reinterpret_cast<const char*>(&type), 1);
+    str.append(reinterpret_cast<const char*>(&addr), sizeof(HostAddr));
+    return str;
+}
+
+HostAddr decodeTransferLeader(const folly::StringPiece& log) {
+    HostAddr leader;
+    memcpy(&leader.first, log.begin() + 1, sizeof(leader.first));
+    memcpy(&leader.second, log.begin() + 1 + sizeof(leader.first), sizeof(leader.second));
+    return leader;
+}
+
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
                      HostAddr addr,
                      const folly::StringPiece walRoot,
-                     wal::BufferFlusher* flusher,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,
                      std::shared_ptr<folly::Executor> handlersPool,
@@ -48,7 +70,6 @@ TestShard::TestShard(size_t idx,
                    partId,
                    addr,
                    walRoot,
-                   flusher,
                    ioPool,
                    workers,
                    handlersPool)
@@ -70,14 +91,6 @@ void TestShard::onElected(TermID term) {
     }
 }
 
-std::string TestShard::compareAndSet(const std::string& log) {
-    switch (log[0]) {
-        case 'T':
-            return log.substr(1);
-        default:
-            return std::string();
-    }
-}
 
 bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
     LogID firstId = -1;
@@ -91,6 +104,11 @@ bool TestShard::commitLogs(std::unique_ptr<LogIterator> iter) {
         auto log = iter->logMsg();
         if (!log.empty()) {
             switch (static_cast<CommandType>(log[0])) {
+                case CommandType::TRANSFER_LEADER: {
+                    auto nLeader = decodeTransferLeader(log);
+                    commitTransLeader(nLeader);
+                    break;
+                }
                 case CommandType::ADD_LEARNER: {
                     break;
                 }

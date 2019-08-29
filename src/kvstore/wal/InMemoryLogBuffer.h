@@ -48,32 +48,12 @@ public:
                            ClusterID,
                            const std::string&)> fn) const;
 
-    // Mark the buffer ready for persistence
-    bool freeze();
-
-    void rollover();
-    bool needToRollover() const;
-
-    bool invalid() const;
-    void markInvalid();
-
 private:
     mutable folly::RWSpinLock accessLock_;
 
     std::vector<std::tuple<TermID, ClusterID, std::string>> logs_;
     LogID firstLogId_{-1};
     size_t totalLen_{0};
-
-    // If this is true, the previous wal file will be closed first.
-    // A new file will be created for this buffer
-    bool rollover_{false};
-
-    // When a buffer is frozen, no further write will be allowed.
-    // It's ready to be flushed out
-    std::atomic<bool> frozen_{false};
-
-    // If the buffer marked invalid, it means we should not flush it.
-    bool invalid_{false};
 };
 
 

@@ -33,6 +33,7 @@
 #include "meta/processors/admin/HBProcessor.h"
 #include "meta/processors/usersMan/AuthenticationProcessor.h"
 #include "meta/processors/admin/BalanceProcessor.h"
+#include "meta/processors/admin/LeaderBalanceProcessor.h"
 #include "meta/processors/configMan/RegConfigProcessor.h"
 #include "meta/processors/configMan/GetConfigProcessor.h"
 #include "meta/processors/configMan/SetConfigProcessor.h"
@@ -78,7 +79,7 @@ MetaServiceHandler::future_addHosts(const cpp2::AddHostsReq& req) {
 
 folly::Future<cpp2::ListHostsResp>
 MetaServiceHandler::future_listHosts(const cpp2::ListHostsReq& req) {
-    auto* processor = ListHostsProcessor::instance(kvstore_);
+    auto* processor = ListHostsProcessor::instance(kvstore_, adminClient_.get());
     RETURN_FUTURE(processor);
 }
 
@@ -259,6 +260,12 @@ MetaServiceHandler::future_checkPassword(const cpp2::CheckPasswordReq& req) {
 folly::Future<cpp2::BalanceResp>
 MetaServiceHandler::future_balance(const cpp2::BalanceReq& req) {
     auto* processor = BalanceProcessor::instance(kvstore_);
+    RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp>
+MetaServiceHandler::future_leaderBalance(const cpp2::LeaderBalanceReq& req) {
+    auto* processor = LeaderBalanceProcessor::instance(kvstore_);
     RETURN_FUTURE(processor);
 }
 

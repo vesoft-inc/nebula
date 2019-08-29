@@ -15,7 +15,6 @@
 #include "network/NetworkUtils.h"
 #include "thread/NamedThread.h"
 #include "kvstore/wal/FileBasedWal.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/raftex/LogStrListIterator.h"
 #include "kvstore/raftex/Host.h"
 
@@ -26,6 +25,11 @@ DEFINE_uint32(raft_heartbeat_interval_secs, 5,
              "Seconds between each heartbeat");
 DEFINE_uint32(max_batch_size, 256, "The max number of logs in a batch");
 
+DEFINE_int32(wal_ttl, 86400, "Default wal ttl");
+DEFINE_int64(wal_file_size, 128 * 1024 * 1024, "Default wal file size");
+DEFINE_int32(wal_buffer_size, 8 * 1024 * 1024, "Default wal buffer size");
+DEFINE_int32(wal_buffer_num, 4, "Default wal buffer number");
+
 
 namespace nebula {
 namespace raftex {
@@ -34,22 +38,21 @@ using nebula::network::NetworkUtils;
 using nebula::thrift::ThriftClientManager;
 using nebula::wal::FileBasedWal;
 using nebula::wal::FileBasedWalPolicy;
-using nebula::wal::BufferFlusher;
 
 class AppendLogsIterator final : public LogIterator {
 public:
     AppendLogsIterator(LogID firstLogId,
                        TermID termId,
                        RaftPart::LogCache logs,
-                       std::function<std::string(const std::string&)> casCB)
+                       folly::Function<std::string(AtomicOp op)> opCB)
             : firstLogId_(firstLogId)
             , termId_(termId)
             , logId_(firstLogId)
             , logs_(std::move(logs))
-            , casCB_(std::move(casCB)) {
-        leadByCAS_ = processCAS();
+            , opCB_(std::move(opCB)) {
+        leadByAtomicOp_ = processAtomicOp();
         valid_ = idx_ < logs_.size();
-        hasNonCASLogs_ = !leadByCAS_ && valid_;
+        hasNonAtomicOpLogs_ = !leadByAtomicOp_ && valid_;
         if (valid_) {
             currLogType_ = lastLogType_ = logType();
         }
@@ -61,36 +64,36 @@ public:
     AppendLogsIterator& operator=(const AppendLogsIterator&) = delete;
     AppendLogsIterator& operator=(AppendLogsIterator&&) = default;
 
-    bool leadByCAS() const {
-        return leadByCAS_;
+    bool leadByAtomicOp() const {
+        return leadByAtomicOp_;
     }
 
-    bool hasNonCASLogs() const {
-        return hasNonCASLogs_;
+    bool hasNonAtomicOpLogs() const {
+        return hasNonAtomicOpLogs_;
     }
 
     LogID firstLogId() const {
         return firstLogId_;
     }
 
-    // Return true if the current log is a CAS, otherwise return false
-    bool processCAS() {
+    // Return true if the current log is a AtomicOp, otherwise return false
+    bool processAtomicOp() {
         while (idx_ < logs_.size()) {
             auto& tup = logs_.at(idx_);
             auto logType = std::get<1>(tup);
-            if (logType != LogType::CAS) {
-                // Not a CAS
+            if (logType != LogType::ATOMIC_OP) {
+                // Not a AtomicOp
                 return false;
             }
 
-            // Process CAS log
-            CHECK(!!casCB_);
-            casResult_ = casCB_(std::get<2>(tup));
-            if (casResult_.size() > 0) {
-                // CAS Succeeded
+            // Process AtomicOp log
+            CHECK(!!opCB_);
+            opResult_ = opCB_(std::move(std::get<3>(tup)));
+            if (opResult_.size() > 0) {
+                // AtomicOp Succeeded
                 return true;
             } else {
-                // CAS failed, move to the next log, but do not increment the logId_
+                // AtomicOp failed, move to the next log, but do not increment the logId_
                 ++idx_;
             }
         }
@@ -104,9 +107,9 @@ public:
         ++logId_;
         if (idx_ < logs_.size()) {
             currLogType_ = logType();
-            valid_ = currLogType_ != LogType::CAS;
+            valid_ = currLogType_ != LogType::ATOMIC_OP;
             if (valid_) {
-                hasNonCASLogs_ = true;
+                hasNonAtomicOpLogs_ = true;
             }
             valid_ = valid_ && lastLogType_ != LogType::COMMAND;
             lastLogType_ = currLogType_;
@@ -117,7 +120,7 @@ public:
     }
 
     // The iterator becomes invalid when exhausting the logs
-    // **OR** running into a CAS log
+    // **OR** running into a AtomicOp log
     bool valid() const override {
         return valid_;
     }
@@ -138,8 +141,8 @@ public:
 
     folly::StringPiece logMsg() const override {
         DCHECK(valid());
-        if (currLogType_ == LogType::CAS) {
-            return casResult_;
+        if (currLogType_ == LogType::ATOMIC_OP) {
+            return opResult_;
         } else {
             return std::get<2>(logs_.at(idx_));
         }
@@ -154,9 +157,9 @@ public:
     void resume() {
         CHECK(!valid_);
         if (!empty()) {
-            leadByCAS_ = processCAS();
+            leadByAtomicOp_ = processAtomicOp();
             valid_ = idx_ < logs_.size();
-            hasNonCASLogs_ = !leadByCAS_ && valid_;
+            hasNonAtomicOpLogs_ = !leadByAtomicOp_ && valid_;
             if (valid_) {
                 currLogType_ = lastLogType_ = logType();
             }
@@ -169,17 +172,17 @@ public:
 
 private:
     size_t idx_{0};
-    bool leadByCAS_{false};
-    bool hasNonCASLogs_{false};
+    bool leadByAtomicOp_{false};
+    bool hasNonAtomicOpLogs_{false};
     bool valid_{true};
     LogType lastLogType_{LogType::NORMAL};
     LogType currLogType_{LogType::NORMAL};
-    std::string casResult_;
+    std::string opResult_;
     LogID firstLogId_;
     TermID termId_;
     LogID logId_;
     RaftPart::LogCache logs_;
-    std::function<std::string(const std::string&)> casCB_;
+    folly::Function<std::string(AtomicOp op)> opCB_;
 };
 
 
@@ -193,7 +196,6 @@ RaftPart::RaftPart(ClusterID clusterId,
                    PartitionID partId,
                    HostAddr localAddr,
                    const folly::StringPiece walRoot,
-                   BufferFlusher* flusher,
                    std::shared_ptr<folly::IOThreadPoolExecutor> pool,
                    std::shared_ptr<thread::GenericThreadPool> workers,
                    std::shared_ptr<folly::Executor> executor)
@@ -209,10 +211,13 @@ RaftPart::RaftPart(ClusterID clusterId,
         , ioThreadPool_{pool}
         , bgWorkers_{workers}
         , executor_(executor) {
-    // TODO Configure the wal policy
+    FileBasedWalPolicy policy;
+    policy.ttl = FLAGS_wal_ttl;
+    policy.fileSize = FLAGS_wal_file_size;
+    policy.bufferSize = FLAGS_wal_buffer_size;
+    policy.numBuffers = FLAGS_wal_buffer_num;
     wal_ = FileBasedWal::getWal(walRoot,
-                                FileBasedWalPolicy(),
-                                flusher,
+                                policy,
                                 [this] (LogID logId,
                                         TermID logTermId,
                                         ClusterID logClusterId,
@@ -361,6 +366,55 @@ void RaftPart::addLearner(const HostAddr& addr) {
     }
 }
 
+void RaftPart::preProcessTransLeader(const HostAddr& target) {
+    CHECK(!raftLock_.try_lock());
+    LOG(INFO) << idStr_ << "Commit transfer leader to " << target;
+    switch (role_) {
+        case Role::FOLLOWER: {
+            if (target != addr_ && target != HostAddr(0, 0)) {
+                LOG(INFO) << idStr_ << "I am follower, just wait for the new leader.";
+            } else {
+                LOG(INFO) << idStr_ << "I will be the new leader, trigger leader election now!";
+                role_ = Role::CANDIDATE;
+                bgWorkers_->addTask([self = shared_from_this()] {
+                    self->leaderElection();
+                });
+            }
+            break;
+        }
+        default: {
+            LOG(INFO) << idStr_ << "My role is " << roleStr(role_)
+                      << ", so do nothing when pre process transfer leader";
+            break;
+        }
+    }
+}
+
+void RaftPart::commitTransLeader(const HostAddr& target) {
+    CHECK(!raftLock_.try_lock());
+    LOG(INFO) << idStr_ << "Commit transfer leader to " << target;
+    switch (role_) {
+        case Role::LEADER: {
+            if (target != addr_) {
+                lastMsgRecvDur_.reset();
+                role_ = Role::FOLLOWER;
+                leader_ = HostAddr(0, 0);
+                LOG(INFO) << idStr_ << "Give up my leadership!";
+            } else {
+                LOG(INFO) << idStr_ << "I am already the leader!";
+            }
+            break;
+        }
+        case Role::FOLLOWER:
+        case Role::CANDIDATE:
+        case Role::LEARNER: {
+            CHECK(target != addr_);
+            LOG(INFO) << idStr_ << "I am " << roleStr(role_) << ", just wait for the new leader!";
+            break;
+        }
+    }
+}
+
 folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source,
                                                      std::string log) {
     if (source < 0) {
@@ -370,8 +424,8 @@ folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source,
 }
 
 
-folly::Future<AppendLogResult> RaftPart::casAsync(std::string log) {
-    return appendLogAsync(clusterId_, LogType::CAS, std::move(log));
+folly::Future<AppendLogResult> RaftPart::atomicOpAsync(AtomicOp op) {
+    return appendLogAsync(clusterId_, LogType::ATOMIC_OP, "", std::move(op));
 }
 
 folly::Future<AppendLogResult> RaftPart::sendCommandAsync(std::string log) {
@@ -380,7 +434,8 @@ folly::Future<AppendLogResult> RaftPart::sendCommandAsync(std::string log) {
 
 folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                                                         LogType logType,
-                                                        std::string log) {
+                                                        std::string log,
+                                                        AtomicOp op) {
     LogCache swappedOutLogs;
     auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
 
@@ -410,9 +465,9 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
 
         // Append new logs to the buffer
         DCHECK_GE(source, 0);
-        logs_.emplace_back(source, logType, std::move(log));
+        logs_.emplace_back(source, logType, std::move(log), std::move(op));
         switch (logType) {
-            case LogType::CAS:
+            case LogType::ATOMIC_OP:
                 retFuture = cachingPromise_.getSingleFuture();
                 break;
             case LogType::COMMAND:
@@ -465,13 +520,14 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
         firstId,
         termId,
         std::move(swappedOutLogs),
-        [this] (const std::string& msg) -> std::string {
-            auto casRet = compareAndSet(msg);
-            if (casRet.empty()) {
+        [this] (AtomicOp opCB) -> std::string {
+            CHECK(opCB != nullptr);
+            auto opRet = opCB();
+            if (opRet.empty()) {
                 // Failed
-                sendingPromise_.setOneSingleValue(AppendLogResult::E_CAS_FAILURE);
+                sendingPromise_.setOneSingleValue(AppendLogResult::E_ATOMIC_OP_FAILURE);
             }
-            return casRet;
+            return opRet;
         });
     appendLogsInternal(std::move(it), termId);
 
@@ -489,7 +545,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
                 << iter.logId() << " (Current term is "
                 << currTerm << ")";
     } else {
-        LOG(ERROR) << idStr_ << "Only happend when CAS failed";
+        LOG(ERROR) << idStr_ << "Only happend when Atomic op failed";
         replicatingLogs_ = false;
         return;
     }
@@ -706,10 +762,10 @@ void RaftPart::processAppendLogResponses(
             return;
         }
         // Step 4: Fulfill the promise
-        if (iter.hasNonCASLogs()) {
+        if (iter.hasNonAtomicOpLogs()) {
             sendingPromise_.setOneSharedValue(AppendLogResult::SUCCEEDED);
         }
-        if (iter.leadByCAS()) {
+        if (iter.leadByAtomicOp()) {
             sendingPromise_.setOneSingleValue(AppendLogResult::SUCCEEDED);
         }
         // Step 5: Check whether need to continue
@@ -728,14 +784,14 @@ void RaftPart::processAppendLogResponses(
                     firstLogId,
                     currTerm,
                     std::move(logs_),
-                    [this] (const std::string& log) -> std::string {
-                        auto casRet = compareAndSet(log);
-                        if (casRet.empty()) {
+                    [this] (AtomicOp op) -> std::string {
+                        auto opRet = op();
+                        if (opRet.empty()) {
                             // Failed
                             sendingPromise_.setOneSingleValue(
-                                AppendLogResult::E_CAS_FAILURE);
+                                AppendLogResult::E_ATOMIC_OP_FAILURE);
                         }
-                        return casRet;
+                        return opRet;
                     });
                 logs_.clear();
                 bufferOverFlow_ = false;
@@ -777,6 +833,9 @@ bool RaftPart::needToStartElection() {
         (lastMsgRecvDur_.elapsedInSec() >= FLAGS_raft_heartbeat_interval_secs ||
          term_ == 0)) {
         role_ = Role::CANDIDATE;
+        LOG(INFO) << idStr_
+                  << "needToStartElection: lastMsgRecvDur " << lastMsgRecvDur_.elapsedInSec()
+                  << ", term_ " << term_;
     }
 
     return role_ == Role::CANDIDATE;
@@ -970,7 +1029,7 @@ void RaftPart::statusPolling() {
         VLOG(2) << idStr_ << "Need to send heartbeat";
         sendHeartbeat();
     }
-
+    wal_->cleanWAL();
     {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING) {
@@ -1071,6 +1130,11 @@ void RaftPart::processAskForVoteRequest(
             });
     }
 
+    LOG(INFO) << idStr_ << "I was " << roleStr(oldRole)
+              << ", discover the new leader " << leader_;
+    bgWorkers_->addTask([self = shared_from_this()] {
+        self->onDiscoverNewLeader(self->leader_);
+    });
     return;
 }
 
@@ -1121,10 +1185,6 @@ void RaftPart::processAppendLogRequest(
         resp.set_error_code(cpp2::ErrorCode::E_NOT_READY);
         return;
     }
-
-    TermID oldTerm = term_;
-    Role oldRole = role_;
-
     // Check leadership
     cpp2::ErrorCode err = verifyLeader(req, g);
     if (err != cpp2::ErrorCode::SUCCEEDED) {
@@ -1231,14 +1291,6 @@ void RaftPart::processAppendLogRequest(
     }
 
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
-
-    if (oldRole == Role::LEADER) {
-        // Need to invoke onLostLeadership callback
-        VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
-        bgWorkers_->addTask([self = shared_from_this(), oldTerm] {
-            self->onLostLeadership(oldTerm);
-        });
-    }
 }
 
 
@@ -1287,6 +1339,8 @@ cpp2::ErrorCode RaftPart::verifyLeader(
         }
     }
 
+    Role oldRole = role_;
+    TermID oldTerm = term_;
     // Ok, no reason to refuse, just follow the leader
     LOG(INFO) << idStr_ << "The current role is " << roleStr(role_)
               << ". Will follow the new leader "
@@ -1300,7 +1354,17 @@ cpp2::ErrorCode RaftPart::verifyLeader(
     leader_ = std::make_pair(req.get_leader_ip(),
                              req.get_leader_port());
     term_ = proposedTerm_ = req.get_current_term();
+    if (oldRole == Role::LEADER) {
+        // Need to invoke onLostLeadership callback
+        VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
+        bgWorkers_->addTask([self = shared_from_this(), oldTerm] {
+            self->onLostLeadership(oldTerm);
+        });
+    }
 
+    bgWorkers_->addTask([self = shared_from_this()] {
+        self->onDiscoverNewLeader(self->leader_);
+    });
     return cpp2::ErrorCode::SUCCEEDED;
 }
 

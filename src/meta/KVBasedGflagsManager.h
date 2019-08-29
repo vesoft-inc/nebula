@@ -32,18 +32,12 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module) override;
 
-    folly::Future<StatusOr<bool>> registerConfig(const cpp2::ConfigModule& module,
-                                                 const std::string& name,
-                                                 const cpp2::ConfigType& type,
-                                                 const cpp2::ConfigMode& mode,
-                                                 const std::string& defaultValue) override;
-
-    Status init() override;
+    Status init();
 
 private:
-    Status registerGflags();
+    Status registerGflags(const std::vector<cpp2::ConfigItem>& gflagsDeclared);
 
-    void getGflagsModule();
+    std::vector<cpp2::ConfigItem> gflagsDeclared_;
 
     kvstore::NebulaStore* kvstore_ = nullptr;
 };

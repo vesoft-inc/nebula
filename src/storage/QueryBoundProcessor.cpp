@@ -81,7 +81,7 @@ void QueryBoundProcessor::onProcessFinished(int32_t retNum) {
             for (auto& prop : tc.props_) {
                 if (prop.returned_) {
                     respTag.columns.emplace_back(columnDef(std::move(prop.prop_.name),
-                                                            prop.type_.type));
+                                                                     prop.type_.type));
                 }
             }
         }

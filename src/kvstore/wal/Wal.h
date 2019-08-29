@@ -42,7 +42,10 @@ public:
     virtual bool rollbackToLog(LogID id) = 0;
 
     // Clean all wal files
+    // This method is *NOT* thread safe
     virtual bool reset() = 0;
+
+    virtual void cleanWAL() = 0;
 
     // Scan [firstLogId, lastLogId]
     virtual std::unique_ptr<LogIterator> iterator(LogID firstLogId,

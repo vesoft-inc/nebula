@@ -369,17 +369,17 @@ kvstore::ResultCode QueryBaseProcessor<REQ, RESP>::collectEdgeProps(
                 auto& getters = expCtx_->getters();
                 getters.getAliasProp =
                     [&] (const std::string&, const std::string &prop) -> OptVariantType {
-                    auto res = RowReader::getPropByName(reader.get(), prop);
-                    if (!ok(res)) {
-                        return Status::Error("Invalid Prop");
-                    }
-                    return value(std::move(res));
-                };
+                        auto res = RowReader::getPropByName(reader.get(), prop);
+                        if (!ok(res)) {
+                            return Status::Error("Invalid Prop");
+                        }
+                        return value(std::move(res));
+                    };
                 getters.getEdgeRank = [&] () -> VariantType {
                     return rank;
                 };
-                getters.getSrcTagProp = [&, this] (const std::string& tag,
-                                                   const std::string& prop) -> OptVariantType {
+                getters.getSrcTagProp = [&fcontext] (const std::string& tag,
+                                                     const std::string& prop) -> OptVariantType {
                     auto it = fcontext->tagFilters_.find(std::make_pair(tag, prop));
                     if (it == fcontext->tagFilters_.end()) {
                         return Status::Error("Invalid Tag Filter");

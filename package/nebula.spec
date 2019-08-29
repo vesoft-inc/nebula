@@ -74,12 +74,14 @@ Group: Applications/Databases
 %files
 %attr(0755,root,root) %{_datadir}/nebula.service
 %attr(0755,root,root) %{_datadir}/utils.sh
+%attr(0755,root,root) %{_datadir}/services.sh
 
 # metad rpm include files
 %files metad
 %attr(0755,root,root) %{_bindir}/nebula-metad
 %attr(0644,root,root) %{_sysconfdir}/nebula-metad.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-metad.service
+%attr(0644,root,root) %{_resourcesdir}/gflags.json
 
 # After install, if config file is non-existent, copy default config file
 %post metad
@@ -93,6 +95,7 @@ fi
 %attr(0755,root,root) %{_bindir}/nebula-graphd
 %attr(0644,root,root) %config%{_sysconfdir}/nebula-graphd.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-graphd.service
+%attr(0644,root,root) %{_resourcesdir}/gflags.json
 
 %post graphd
 if [[ ! -f %{_install_dir}/etc/nebula-graphd.conf ]]; then
@@ -105,6 +108,7 @@ fi
 %attr(0755,root,root) %{_bindir}/nebula-storaged
 %attr(0644,root,root) %config%{_sysconfdir}/nebula-storaged.conf.default
 %attr(0755,root,root) %{_datadir}/nebula-storaged.service
+%attr(0644,root,root) %{_resourcesdir}/gflags.json
 
 %post storaged
 if [[ ! -f %{_install_dir}/etc/nebula-storaged.conf ]]; then
@@ -118,9 +122,8 @@ fi
 
 
 # storage_perf rpm
-#%%files storage_perf
-#%%defattr(-,root,root,-)
-#%%{_bindir}/storage_perf
+%files storage_perf
+%attr(0755,root,root) %{_bindir}/storage_perf
 
 %debug_package
 
