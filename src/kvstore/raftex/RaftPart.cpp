@@ -1149,8 +1149,13 @@ void RaftPart::processAskForVoteRequest(
 
     // If the partition used to be a leader, need to fire the callback
     if (oldRole == Role::LEADER) {
-        // Need to invoke the onLostLeadership callback
         LOG(INFO) << idStr_ << "Was a leader, need to do some clean-up";
+        if (wal_->lastLogId() > lastLogId_) {
+            LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
+                      << " i did not commit when i was leader, rollback to " << lastLogId_;
+            wal_->rollbackToLog(lastLogId_);
+        }
+        // Need to invoke the onLostLeadership callback
         bgWorkers_->addTask(
             [self = shared_from_this(), oldTerm] {
                 self->onLostLeadership(oldTerm);
@@ -1408,8 +1413,13 @@ cpp2::ErrorCode RaftPart::verifyLeader(
                              req.get_leader_port());
     term_ = proposedTerm_ = req.get_current_term();
     if (oldRole == Role::LEADER) {
-        // Need to invoke onLostLeadership callback
         VLOG(2) << idStr_ << "Was a leader, need to do some clean-up";
+        if (wal_->lastLogId() > lastLogId_) {
+            LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
+                      << " i did not commit when i was leader, rollback to " << lastLogId_;
+            wal_->rollbackToLog(lastLogId_);
+        }
+        // Need to invoke onLostLeadership callback
         bgWorkers_->addTask([self = shared_from_this(), oldTerm] {
             self->onLostLeadership(oldTerm);
         });
