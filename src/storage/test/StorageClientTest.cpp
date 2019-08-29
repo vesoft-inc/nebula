@@ -102,7 +102,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     {
         LOG(INFO) << "Prepare vertices data...";
         std::vector<storage::cpp2::Vertex> vertices;
-        for (int32_t vId = 0; vId < 10; vId++) {
+        for (int64_t vId = 0; vId < 10; vId++) {
             cpp2::Vertex v;
             v.set_id(vId);
             decltype(v.tags) tags;
@@ -190,7 +190,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     {
         LOG(INFO) << "Prepare edges data...";
         std::vector<storage::cpp2::Edge> edges;
-        for (uint64_t srcId = 0; srcId < 10; srcId++) {
+        for (int64_t srcId = 0; srcId < 10; srcId++) {
             cpp2::Edge edge;
             // Set the edge key.
             decltype(edge.key) edgeKey;
@@ -219,7 +219,7 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
     {
         std::vector<storage::cpp2::EdgeKey> edgeKeys;
         std::vector<cpp2::PropDef> retCols;
-        for (uint64_t srcId = 0; srcId < 10; srcId++) {
+        for (int64_t srcId = 0; srcId < 10; srcId++) {
             // Set the edge key.
             cpp2::EdgeKey edgeKey;
             edgeKey.set_src(srcId);
@@ -269,6 +269,76 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
             ++it;
         }
         EXPECT_EQ(it, rsReader.end());
+    }
+    {
+        for (int64_t srcId = 0; srcId < 10; srcId++) {
+            std::vector<cpp2::EdgeKey>* edgeKeys;
+            // Get all edgeKeys of a vertex
+            {
+                auto f = client->getEdgeKeys(spaceId, srcId);
+                auto resp = std::move(f).get();
+                ASSERT_TRUE(resp.ok());
+                auto edgeKeyResp =  std::move(resp).value();
+                auto& result = edgeKeyResp.get_result();
+                ASSERT_EQ(0, result.get_failed_codes().size());
+                edgeKeys = edgeKeyResp.get_edge_keys();
+
+                // Check edgeKeys
+                CHECK_EQ(2, edgeKeys->size());
+                auto& outEdge = (*edgeKeys)[0];
+                CHECK_EQ(srcId, outEdge.get_src());
+                CHECK_EQ(101, outEdge.get_edge_type());
+                CHECK_EQ(srcId*100 + 3, outEdge.get_ranking());
+                CHECK_EQ(srcId*100 + 2, outEdge.get_dst());
+                auto& inEdge = (*edgeKeys)[1];
+                CHECK_EQ(srcId*100 + 2, inEdge.get_src());
+                CHECK_EQ(-101, inEdge.get_edge_type());
+                CHECK_EQ(srcId*100 + 3, inEdge.get_ranking());
+                CHECK_EQ(srcId, inEdge.get_dst());
+            }
+            // Delete all edges of a vertex
+            {
+                auto f = client->deleteEdges(spaceId, *edgeKeys);
+                auto resp = std::move(f).get();
+                ASSERT_TRUE(resp.succeeded());
+
+                // Check that edges have been successfully deleted
+                auto cf = client->getEdgeKeys(spaceId, srcId);
+                auto cresp = std::move(cf).get();
+                ASSERT_TRUE(cresp.ok());
+                auto edgeKeyResp =  std::move(cresp).value();
+                auto& result = edgeKeyResp.get_result();
+                ASSERT_EQ(0, result.get_failed_codes().size());
+                ASSERT_EQ(0, edgeKeyResp.get_edge_keys()->size());
+            }
+            // Delete a vertex
+            {
+                auto f = client->deleteVertex(spaceId, srcId);
+                auto resp = std::move(f).get();
+                ASSERT_TRUE(resp.ok());
+                auto  execResp = std::move(resp).value();
+                auto& result = execResp.get_result();
+                ASSERT_EQ(0, result.get_failed_codes().size());
+
+                // Check that this vertex has been successfully deleted
+                std::vector<VertexID> vIds{srcId};
+                std::vector<cpp2::PropDef> retCols;
+                retCols.emplace_back(
+                    TestUtils::propDef(cpp2::PropOwner::SOURCE,
+                                       folly::stringPrintf("tag_%d_col_%d", 3001, 0),
+                                       3001));
+                auto cf = client->getVertexProps(spaceId, std::move(vIds), std::move(retCols));
+                auto cresp = std::move(cf).get();
+                ASSERT_TRUE(cresp.succeeded());
+                auto& results = cresp.responses();
+                ASSERT_EQ(1, results.size());
+                EXPECT_EQ(0, results[0].result.failed_codes.size());
+                auto tagProvider = std::make_shared<ResultSchemaProvider>(results[0].vertex_schema);
+                // TODO bug: the results[0].vertices.size should be equal 0
+                EXPECT_EQ(1, results[0].vertices.size());
+                EXPECT_EQ("", results[0].vertices[0].vertex_data);
+            }
+        }
     }
     LOG(INFO) << "Stop meta client";
     mClient->stop();
