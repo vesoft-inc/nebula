@@ -72,14 +72,15 @@ Like Mysql, **Nebula Graph** is a strong typed database. The property name and d
 
 ### Edge, edge type and the corresponding edge properties
 
-**Edges in Nebula Graph always have a type, a start (src)and an end vertex (dst), and a direction.** The direction is implicitly defined by the source and destination vertices. Edges can be self-referencing/looping but can never be dangling (missing a start or end vertex). Each edge in **Nebula Graph** is always of an edge type, has a source and a destination vertices, and carries a ranking number (optional).
+**Edges in Nebula Graph always have a type, a start (src) and an end vertex (dst), and a direction.** The direction is implicitly defined by the source and destination vertices. Edges can be self-referencing/looping.
+<!-- but can never be dangling (missing a start or end vertex). -->
+ Each edge in **Nebula Graph** is always of an edge type, has a source and a destination vertices, and carries a ranking number (optional).
 
-In the preceding example, there are two kinds of edges, one is **like** pointing
-from player to player, the property is likeness (double); the other is **serve**,
+In the preceding example, there are two kinds of edges, one is **_like_** pointing
+from player to player, the property is likeness (double); the other is **_serve_**,
 pointing from player to team, the properties are start_year(int) and end_year(int).
 
-It should be noted that there may be **multiple edges of the same or different types
-at the same time** between any two vertices.
+It should be noted that there may be **multiple edges of the same or different types at the same time** between any two vertices.
 
 
 
@@ -100,7 +101,7 @@ In applications such as social networks, or business traction networks, the numb
 Data is stored as key-value pairs in **Nebula Graph**. For vertices, as illustrated in the diagram above, the key consists of four parts: partID (4 bytes), vertexID (8 bytes), tagID (4 bytes) and Version (8 bytes). And they are spread across various partitions based on the hash of their vertexIds (vid).
 
 
-Each edge in **Nebula Graph** is stored twice. One is stored in the same partition as the source vertex, namely out-edge. The other one is stored in the same partition as the destination vertex, namely in-edge. Only the out-edge carries the properties.
+Each edge in **Nebula Graph** is stored as two keys. One is stored in the same partition as the source vertex, namely out-edge. The other one is stored in the same partition as the destination vertex, namely in-edge. Only the out-edge carries the properties.
 
 The key format for the out-edge is: partID (4 bytes), sourceVertexID (8 bytes), edgeType (4 bytes), ranking (8 bytes), destinationVertexID (8 bytes)
 
@@ -156,15 +157,15 @@ The binary of the meta service is nebula-metad. Here is the list of its main fun
 
 -  User management
 
-      In **Nebula Graph** different roles are assigned diverse privileges. We provide the following native roles: Global Admin, Graph Space Admin, User, Guest.
+  In **Nebula Graph** different roles are assigned diverse privileges. We provide the following native roles: Global Admin, Graph Space Admin, User, Guest.
 
 - Cluster configuration management
 
-      Meta service manages the servers and partitions in the cluster, e.g. records location of the partitions, receives heartbeat from servers, etc. It balances the partitions and manages the communication traffic in case of server failure.
+  Meta service manages the servers and partitions in the cluster, e.g. records location of the partitions, receives heartbeat from servers, etc. It balances the partitions and manages the communication traffic in case of server failure.
 
 - Graph space management
 
-      **Nebula Graph** supports multiple graph spaces. The data in different graph space are physically isolated. Meta service stores the metadata of all spaces in the cluster and tracks changes that take place in these spaces, like adding, dropping space, modifying graph space configuration (Raft copies).
+  **Nebula Graph** supports multiple graph spaces. The data in different graph space are physically isolated. Meta service stores the metadata of all spaces in the cluster and tracks changes that take place in these spaces, like adding, dropping space, modifying graph space configuration (Raft copies).
 
 -   Schema management
 
@@ -184,7 +185,7 @@ The meta service is stateful, and just like the storage service, it persists dat
 
 ### Query Engine & Query Language (nGQL)
 
-The binary of the query engine is nebula-graphd. Each nebula-graphd instance is stateless and never talks to other nebula-graphd. nebula-graphd only talks to the storage service and the meta service. That makes it trivial to expand or shrink the query engine cluster.
+The binary of the query engine is **nebula-graphd**. Each nebula-graphd instance is stateless and never talks to other nebula-graphd. nebula-graphd only talks to the storage service and the meta service. That makes it trivial to expand or shrink the query engine cluster.
 
 The query engine accepts the message from the client and generates the execution plan after the lexical parsing (Lexer), semantic analysis (Parser) and the query optimization. Then the execution plan will be passed to the execution engine. The query execution engine takes the query plans and interacts with meta server and the storage engine to retrieve the schema and data.
 
