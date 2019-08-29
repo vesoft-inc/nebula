@@ -236,6 +236,9 @@ protected:
     // Clean up all data about current part in storage.
     virtual void cleanup() = 0;
 
+    // Reset the part, clean up all data and WALs.
+    void reset();
+
 private:
     enum class Status {
         STARTING = 0,   // The part is starting, not ready for service

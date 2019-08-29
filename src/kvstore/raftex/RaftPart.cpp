@@ -1066,10 +1066,7 @@ bool RaftPart::needToCleanupSnapshot() {
 void RaftPart::cleanupSnapshot() {
     LOG(INFO) << idStr_ << "Clean up the snapshot";
     std::lock_guard<std::mutex> g(raftLock_);
-    wal_->reset();
-    cleanup();
-    lastLogId_ = committedLogId_ = 0;
-    lastTotalCount_ = lastTotalSize_ = 0;
+    reset();
     status_ = Status::RUNNING;
 }
 
@@ -1226,10 +1223,7 @@ void RaftPart::processAppendLogRequest(
 
     if (req.get_sending_snapshot() && status_ != Status::WAITING_SNAPSHOT) {
         LOG(INFO) << idStr_ << "Begin to wait for the snapshot";
-        wal_->reset();
-        cleanup();
-        lastLogId_ = committedLogId_ = 0;
-        lastTotalCount_ = lastTotalSize_ = 0;
+        reset();
         status_ = Status::WAITING_SNAPSHOT;
         resp.set_error_code(cpp2::ErrorCode::E_WAITING_SNAPSHOT);
         return;
@@ -1448,11 +1442,7 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     }
     if (status_ != Status::WAITING_SNAPSHOT) {
         LOG(INFO) << idStr_ << "Begin to receive the snapshot";
-        wal_->reset();
-        cleanup();
-        lastLogId_ = committedLogId_ = 0;
-        lastTotalCount_ = 0;
-        lastTotalSize_ = 0;
+        reset();
         status_ = Status::WAITING_SNAPSHOT;
     }
     lastSnapshotRecvDur_.reset();
@@ -1509,6 +1499,14 @@ bool RaftPart::checkAppendLogResult(AppendLogResult res) {
     return true;
 }
 
+void RaftPart::reset() {
+    CHECK(!raftLock_.try_lock());
+    wal_->reset();
+    cleanup();
+    lastLogId_ = committedLogId_ = 0;
+    lastTotalCount_ = 0;
+    lastTotalSize_ = 0;
+}
 
 }  // namespace raftex
 }  // namespace nebula
