@@ -319,6 +319,9 @@ public:
 private:
     std::unique_ptr<YieldColumns>               yieldColumns_;
     bool                                        distinct_;
+    // this member will hold the reference
+    // which is expand by *
+    std::unique_ptr<YieldColumns>               yieldColHolder_;
 };
 }   // namespace nebula
 #endif  // PARSER_CLAUSES_H_

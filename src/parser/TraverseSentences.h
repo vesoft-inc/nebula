@@ -570,26 +570,31 @@ public:
 class YieldSentence final : public Sentence {
 public:
     explicit YieldSentence(YieldColumns *fields) {
-        yieldColumns_.reset(fields);
+        DCHECK(fields != nullptr);
+        yieldClause_ = std::make_unique<YieldClause>(fields);
         kind_ = Kind::kYield;
     }
 
     std::vector<YieldColumn*> columns() const {
-        return yieldColumns_->columns();
+        return yieldClause_->columns();
     }
 
     void setWhereClause(WhereClause *clause) {
         whereClause_.reset(clause);
     }
 
-    WhereClause* whereClause() {
+    WhereClause* where() {
         return whereClause_.get();
+    }
+
+    YieldClause* yield() {
+        return yieldClause_.get();
     }
 
     std::string toString() const override;
 
 private:
-    std::unique_ptr<YieldColumns>              yieldColumns_;
+    std::unique_ptr<YieldClause>               yieldClause_;
     std::unique_ptr<WhereClause>               whereClause_;
 };
 }   // namespace nebula

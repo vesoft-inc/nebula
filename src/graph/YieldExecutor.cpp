@@ -30,61 +30,19 @@ Status YieldExecutor::prepare() {
 }
 
 Status YieldExecutor::prepareYield() {
-    auto cols = sentence_->columns();
-    yieldColsHolder_ = std::make_unique<YieldColumns>();
-    for (auto *col : cols) {
-        if (col->expr()->isInputExpression()) {
-            auto *inputExpr = static_cast<InputPropertyExpression*>(col->expr());
-            auto *colName = inputExpr->prop();
-            if (*colName == "*") {
-                if (inputs_ != nullptr) {
-                    auto schema = inputs_->schema();
-                    auto iter = schema->begin();
-                    while (iter) {
-                        auto *prop = iter->getName();
-                        Expression *expr =
-                            new InputPropertyExpression(new std::string(prop));
-                        YieldColumn *column = new YieldColumn(expr);
-                        yieldColsHolder_->addColumn(column);
-                        yields_.emplace_back(column);
-                        ++iter;
-                    }
-                }
-                continue;
-            }
-        }
-
-        if (col->expr()->isVariableExpression()) {
-            auto *variableExpr = static_cast<VariablePropertyExpression*>(col->expr());
-            auto *colName = variableExpr->prop();
-            if (*colName == "*") {
-                bool existing = false;
-                auto *varname = variableExpr->alias();
-                auto varInputs = ectx()->variableHolder()->get(*varname, &existing);
-                if (varInputs == nullptr && !existing) {
-                    return Status::Error("Variable `%s' not defined.", varname->c_str());
-                }
-                auto schema = varInputs->schema();
-                auto iter = schema->begin();
-                while (iter) {
-                    auto *alias = new std::string(*(variableExpr->alias()));
-                    auto *prop = iter->getName();
-                    Expression *expr =
-                            new VariablePropertyExpression(alias, new std::string(prop));
-                    YieldColumn *column = new YieldColumn(expr);
-                    yieldColsHolder_->addColumn(column);
-                    yields_.emplace_back(column);
-                    ++iter;
-                }
-                continue;
-            }
-        }
-        yields_.emplace_back(col);
+    // this prepare depends on interim result,
+    // it can only be execute after get the result
+    auto *clause = sentence_->yield();
+    yieldClauseWrapper_ = std::make_unique<YieldClauseWrapper>(clause);
+    auto *varHolder = ectx()->variableHolder();
+    auto status = yieldClauseWrapper_->prepare(inputs_.get(), varHolder, yields_);
+    if (!status.ok()) {
+        return status;
     }
 
     for (auto *col : yields_) {
         col->expr()->setContext(expCtx_.get());
-        auto status = col->expr()->prepare();
+        status = col->expr()->prepare();
         if (!status.ok()) {
             return status;
         }
@@ -100,7 +58,7 @@ Status YieldExecutor::prepareYield() {
 
 Status YieldExecutor::prepareWhere() {
     Status status;
-    auto *clause = sentence_->whereClause();
+    auto *clause = sentence_->where();
     if (clause != nullptr) {
         filter_ = clause->filter();
     }
@@ -136,6 +94,7 @@ Status YieldExecutor::syntaxCheck() {
 }
 
 void YieldExecutor::execute() {
+    FLOG_INFO("Executing YIELD: %s", sentence_->toString().c_str());
     Status status;
     do {
         status = beforeExecute();
@@ -336,6 +295,65 @@ void YieldExecutor::feedResult(std::unique_ptr<InterimResult> result) {
 void YieldExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
     CHECK(resp_ != nullptr);
     resp = std::move(*resp_);
+}
+
+Status YieldExecutor::YieldClauseWrapper::prepare(
+        InterimResult *inputs,
+        VariableHolder *varHolder,
+        std::vector<YieldColumn*> &yields) {
+    auto cols = clause_->columns();
+    yieldColsHolder_ = std::make_unique<YieldColumns>();
+    for (auto *col : cols) {
+        if (col->expr()->isInputExpression()) {
+            auto *inputExpr = static_cast<InputPropertyExpression*>(col->expr());
+            auto *colName = inputExpr->prop();
+            if (*colName == "*") {
+                if (inputs != nullptr) {
+                    auto schema = inputs->schema();
+                    auto iter = schema->begin();
+                    while (iter) {
+                        auto *prop = iter->getName();
+                        Expression *expr =
+                            new InputPropertyExpression(new std::string(prop));
+                        YieldColumn *column = new YieldColumn(expr);
+                        yieldColsHolder_->addColumn(column);
+                        yields.emplace_back(column);
+                        ++iter;
+                    }
+                }
+                continue;
+            }
+        }
+
+        if (col->expr()->isVariableExpression()) {
+            auto *variableExpr = static_cast<VariablePropertyExpression*>(col->expr());
+            auto *colName = variableExpr->prop();
+            if (*colName == "*") {
+                bool existing = false;
+                auto *varname = variableExpr->alias();
+                auto varInputs = varHolder->get(*varname, &existing);
+                if (varInputs == nullptr && !existing) {
+                    return Status::Error("Variable `%s' not defined.", varname->c_str());
+                }
+                auto schema = varInputs->schema();
+                auto iter = schema->begin();
+                while (iter) {
+                    auto *alias = new std::string(*(variableExpr->alias()));
+                    auto *prop = iter->getName();
+                    Expression *expr =
+                            new VariablePropertyExpression(alias, new std::string(prop));
+                    YieldColumn *column = new YieldColumn(expr);
+                    yieldColsHolder_->addColumn(column);
+                    yields.emplace_back(column);
+                    ++iter;
+                }
+                continue;
+            }
+        }
+        yields.emplace_back(col);
+    }
+
+    return Status::OK();
 }
 }   // namespace graph
 }   // namespace nebula
