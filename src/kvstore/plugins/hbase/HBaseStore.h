@@ -135,6 +135,9 @@ public:
 
     ResultCode ingest(GraphSpaceID spaceId) override;
 
+    int32_t allLeader(std::unordered_map<GraphSpaceID,
+                                         std::vector<PartitionID>>& leaderIds) override;
+
     ErrorOr<ResultCode, std::shared_ptr<Part>> part(GraphSpaceID,
                                                     PartitionID) override {
         return ResultCode::ERR_UNSUPPORTED;

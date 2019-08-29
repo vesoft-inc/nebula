@@ -10,13 +10,13 @@ namespace nebula {
 
 // static
 std::string NebulaKeyUtils::vertexKey(PartitionID partId, VertexID vId,
-                                      TagID tagId, TagVersion ts) {
+                                      TagID tagId, TagVersion tv) {
     std::string key;
     key.reserve(kVertexLen);
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
        .append(reinterpret_cast<const char*>(&vId), sizeof(VertexID))
        .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID))
-       .append(reinterpret_cast<const char*>(&ts), sizeof(TagVersion));
+       .append(reinterpret_cast<const char*>(&tv), sizeof(TagVersion));
     return key;
 }
 
@@ -26,7 +26,7 @@ std::string NebulaKeyUtils::edgeKey(PartitionID partId,
                                     EdgeType type,
                                     EdgeRanking rank,
                                     VertexID dstId,
-                                    EdgeVersion ts) {
+                                    EdgeVersion ev) {
     std::string key;
     key.reserve(kEdgeLen);
     key.append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
@@ -34,7 +34,7 @@ std::string NebulaKeyUtils::edgeKey(PartitionID partId,
        .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType))
        .append(reinterpret_cast<const char*>(&rank), sizeof(EdgeRanking))
        .append(reinterpret_cast<const char*>(&dstId), sizeof(VertexID))
-       .append(reinterpret_cast<const char*>(&ts), sizeof(EdgeVersion));
+       .append(reinterpret_cast<const char*>(&ev), sizeof(EdgeVersion));
     return key;
 }
 

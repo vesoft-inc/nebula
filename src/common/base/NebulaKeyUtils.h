@@ -30,14 +30,14 @@ public:
      * Generate vertex key for kv store
      * */
     static std::string vertexKey(PartitionID partId, VertexID vId,
-                                 TagID tagId, TagVersion ts);
+                                 TagID tagId, TagVersion tv);
 
     /**
      * Generate edge key for kv store
      * */
     static std::string edgeKey(PartitionID partId, VertexID srcId,
                                EdgeType type, EdgeRanking rank,
-                               VertexID dstId, EdgeVersion ts);
+                               VertexID dstId, EdgeVersion ev);
 
     /**
      * Prefix for srcId edges with some edgeType

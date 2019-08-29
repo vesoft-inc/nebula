@@ -11,7 +11,6 @@
 #include <gtest/gtest_prod.h>
 #include <folly/RWSpinLock.h>
 #include "kvstore/raftex/RaftexService.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/Part.h"
@@ -31,11 +30,11 @@ struct SpacePartInfo {
     std::vector<std::unique_ptr<KVEngine>> engines_;
 };
 
-
 class NebulaStore : public KVStore, public Handler {
     FRIEND_TEST(NebulaStoreTest, SimpleTest);
     FRIEND_TEST(NebulaStoreTest, PartsTest);
     FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
+    FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
 
 public:
     NebulaStore(KVOptions options,
@@ -161,6 +160,9 @@ public:
 
     ResultCode flush(GraphSpaceID spaceId) override;
 
+    int32_t allLeader(std::unordered_map<GraphSpaceID,
+                                         std::vector<PartitionID>>& leaderIds) override;
+
     bool isLeader(GraphSpaceID spaceId, PartitionID partId);
 
 private:
@@ -198,7 +200,6 @@ private:
     KVOptions options_;
 
     std::shared_ptr<raftex::RaftexService> raftService_;
-    std::unique_ptr<wal::BufferFlusher> flusher_;
 };
 
 }  // namespace kvstore
