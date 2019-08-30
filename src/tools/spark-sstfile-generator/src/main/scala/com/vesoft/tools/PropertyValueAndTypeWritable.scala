@@ -22,7 +22,7 @@ object VertexOrEdgeEnum extends Enumeration {
   * composite value for SstRecordWriter
   *
   * @param values           encoded values by nebula native client
-  * @param vertexOrEdgeEnum which indicate what the encoded <code>values</code> represents, a vertex or an edge, default=vertex
+  * @param vertexOrEdgeEnum which indicate what the encoded <code>values</code> represents, be it a vertex or an edge, default=vertex
   */
 class PropertyValueAndTypeWritable(
     var values: BytesWritable,
