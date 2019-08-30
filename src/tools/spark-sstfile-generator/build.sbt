@@ -8,7 +8,7 @@ scalaVersion := "2.10.5"
 // scalaVersion := "2.11.8"
 
 name := "nebula-spark-sstfile-generator"
-version := "0.1.0"
+version := "1.0.0-beta"
 
 test in assembly in ThisBuild := {}
 

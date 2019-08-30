@@ -485,10 +485,7 @@ bool FileBasedWal::appendLogs(LogIterator& iter) {
 
 std::unique_ptr<LogIterator> FileBasedWal::iterator(LogID firstLogId,
                                                     LogID lastLogId) {
-    return std::unique_ptr<LogIterator>(
-        new FileBasedWalIterator(shared_from_this(),
-                                 firstLogId,
-                                 lastLogId));
+    return std::make_unique<FileBasedWalIterator>(shared_from_this(), firstLogId, lastLogId);
 }
 
 
@@ -645,4 +642,3 @@ size_t FileBasedWal::accessAllBuffers(std::function<bool(BufferPtr buffer)> fn) 
 
 }  // namespace wal
 }  // namespace nebula
-
