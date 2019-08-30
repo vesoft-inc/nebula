@@ -153,6 +153,7 @@ void FindPathExecutor::findPath() {
             visitedFrom_.emplace(dstId);
         }  // for `frontier'
     }  // for `neighbor'
+    pathFrom_.clear();
     pathFrom_.insert(std::make_move_iterator(paths.begin()),
                      std::make_move_iterator(paths.end()));
     fromVids_.reserve(visitedFrom_.size());
@@ -169,6 +170,7 @@ void FindPathExecutor::findPath() {
             visitedTo_.emplace(dstId);
         }  // for `frontier'
     }  // for `neighbor'
+    pathTo_.clear();
     pathTo_.insert(std::make_move_iterator(paths.begin()),
                    std::make_move_iterator(paths.end()));
     toVids_.reserve(visitedTo_.size());
@@ -195,14 +197,8 @@ void FindPathExecutor::findPath() {
 inline void FindPathExecutor::meetOddPath(VertexID src, VertexID dst, Neighbor &neighbor) {
     auto rangeF = pathFrom_.equal_range(src);
     for (auto i = rangeF.first; i != rangeF.second; ++i) {
-        if (i->second.size() != currentStep_) {
-            continue;
-        }
         auto rangeT = pathTo_.equal_range(dst);
         for (auto j = rangeT.first; j != rangeT.second; ++j) {
-            if (j->second.size() != currentStep_) {
-                continue;
-            }
             if (j->second.size() + i->second.size() > step_.steps_) {
                 continue;
             }
@@ -241,13 +237,7 @@ inline void FindPathExecutor::meetEvenPath(VertexID intersectId) {
             auto rangeF = pathFrom_.equal_range(intersectId);
             auto rangeT = pathTo_.equal_range(intersectId);
     for (auto i = rangeF.first; i != rangeF.second; ++i) {
-        if (i->second.size() != (currentStep_ + 1)) {
-            continue;
-        }
         for (auto j = rangeT.first; j != rangeT.second; ++j) {
-            if (j->second.size() != (currentStep_ + 1)) {
-                continue;
-            }
             if (j->second.size() + i->second.size() > step_.steps_) {
                 continue;
             }
@@ -294,9 +284,6 @@ inline void FindPathExecutor::updatePath(
             VisitedBy visitedBy) {
     auto range = pathToSrc.equal_range(src);
     for (auto i = range.first; i != range.second; ++i) {
-        if (i->second.size() != currentStep_) {
-            continue;
-        }
         // Build path:
         // i->second + (src,type,ranking)
         Path path = i->second;
