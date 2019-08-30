@@ -1433,21 +1433,33 @@ cpp2::ErrorCode RaftPart::verifyLeader(
 
 void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
                                           cpp2::SendSnapshotResponse& resp) {
-    LOG(INFO) << idStr_ << "Receive snapshot, total rows " << req.get_rows().size()
-              << ", total count received " << req.get_total_count()
-              << ", total size received " << req.get_total_size()
-              << ", finished " << req.get_done();
+    VLOG(1) << idStr_ << "Receive snapshot, total rows " << req.get_rows().size()
+            << ", total count received " << req.get_total_count()
+            << ", total size received " << req.get_total_size()
+            << ", finished " << req.get_done();
     std::lock_guard<std::mutex> g(raftLock_);
     // Check status
     if (UNLIKELY(status_ == Status::STOPPED)) {
-        VLOG(2) << idStr_
-                << "The part has been stopped, skip the request";
+        LOG(ERROR) << idStr_
+                  << "The part has been stopped, skip the request";
         resp.set_error_code(cpp2::ErrorCode::E_BAD_STATE);
         return;
     }
     if (UNLIKELY(status_ == Status::STARTING)) {
-        VLOG(2) << idStr_ << "The partition is still starting";
+        LOG(ERROR) << idStr_ << "The partition is still starting";
         resp.set_error_code(cpp2::ErrorCode::E_NOT_READY);
+        return;
+    }
+    if (UNLIKELY(role_ != Role::FOLLOWER && role_ != Role::LEARNER)) {
+        LOG(ERROR) << idStr_ << "Bad role " << roleStr(role_);
+        resp.set_error_code(cpp2::ErrorCode::E_BAD_STATE);
+        return;
+    }
+    if (UNLIKELY(leader_ != HostAddr(req.get_leader_ip(), req.get_leader_port())
+            || term_ != req.get_term())) {
+        LOG(ERROR) << idStr_ << "Term out of date, current term " << term_
+                   << ", received term " << req.get_term();
+        resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
         return;
     }
     if (status_ != Status::WAITING_SNAPSHOT) {
@@ -1457,15 +1469,21 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     }
     lastSnapshotRecvDur_.reset();
     // TODO(heng): Maybe we should save them into one sst firstly?
-    // And before commit the snapshot, we should clean up all data.
     auto ret = commitSnapshot(req.get_rows(),
                               req.get_committed_log_id(),
                               req.get_committed_log_term(),
                               req.get_done());
     lastTotalCount_ += ret.first;
     lastTotalSize_ += ret.second;
-    CHECK_EQ(lastTotalCount_, req.get_total_count());
-    CHECK_EQ(lastTotalSize_, req.get_total_size());
+    if (lastTotalCount_ != req.get_total_count()
+            || lastTotalSize_ != req.get_total_size()) {
+        LOG(ERROR) << idStr_ << "Bad snapshot, total rows received " << lastTotalCount_
+                   << ", total rows sended " << req.get_total_count()
+                   << ", total size received " << lastTotalSize_
+                   << ", total size sended " << req.get_total_size();
+        resp.set_error_code(cpp2::ErrorCode::E_PERSIST_SNAPSHOT_FAILED);
+        return;
+    }
     if (req.get_done()) {
         committedLogId_ = req.get_committed_log_id();
         status_ = Status::RUNNING;

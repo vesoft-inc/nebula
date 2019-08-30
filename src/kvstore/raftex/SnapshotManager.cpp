@@ -58,7 +58,7 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
                 try {
                     auto resp  = std::move(f).get();
                     if (resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
-                        LOG(INFO) << part->idStr_ << "has sended count " << totalCount;
+                        VLOG(1) << part->idStr_ << "has sended count " << totalCount;
                         if (finished) {
                             LOG(INFO) << part->idStr_ << "Finished, totalCount " << totalCount
                                                       << ", totalSize " << totalSize;

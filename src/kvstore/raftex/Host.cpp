@@ -318,7 +318,7 @@ void Host::appendLogsInternal(folly::EventBase* eb,
             }
             case cpp2::ErrorCode::E_LOG_STALE: {
                 VLOG(2) << self->idStr_ << "Log stale, reset lastLogIdSent " << self->lastLogIdSent_
-                        << " to the followers lastLodId" << resp.get_last_log_id();
+                        << " to the followers lastLodId " << resp.get_last_log_id();
                 {
                     std::lock_guard<std::mutex> g(self->lock_);
                     self->lastLogIdSent_ = resp.get_last_log_id();
@@ -426,7 +426,7 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
     VLOG(1) << idStr_ << "Sending request space " << req->get_space()
               << ", part " << req->get_part()
               << ", current term " << req->get_current_term()
-              << ", last_log_id" << req->get_last_log_id()
+              << ", last_log_id " << req->get_last_log_id()
               << ", committed_id " << req->get_committed_log_id()
               << ", last_log_term_sent" << req->get_last_log_term_sent()
               << ", last_log_id_sent " << req->get_last_log_id_sent();
