@@ -52,7 +52,9 @@ TEST(MetaClientTest, InterfacesTest) {
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
-            ASSERT_EQ(hosts[i], ret.value()[i].first);
+            auto tHost = ret.value()[i].hostAddr;
+            auto hostAddr = HostAddr(tHost.ip, tHost.port);
+            ASSERT_EQ(hosts[i], hostAddr);
         }
     }
     {
@@ -421,7 +423,9 @@ TEST(MetaClientTest, DiffTest) {
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
-            ASSERT_EQ(hosts[i], ret.value()[i].first);
+            auto tHost = ret.value()[i].hostAddr;
+            auto hostAddr = HostAddr(tHost.ip, tHost.port);
+            ASSERT_EQ(hosts[i], hostAddr);
         }
     }
     {
@@ -476,7 +480,9 @@ TEST(MetaClientTest, HeartbeatTest) {
         auto ret = client->listHosts().get();
         ASSERT_TRUE(ret.ok());
         for (auto i = 0u; i < hosts.size(); i++) {
-            ASSERT_EQ(hosts[i], ret.value()[i].first);
+            auto tHost = ret.value()[i].hostAddr;
+            auto hostAddr = HostAddr(tHost.ip, tHost.port);
+            ASSERT_EQ(hosts[i], hostAddr);
         }
     }
     sleep(FLAGS_heartbeat_interval_secs + 1);

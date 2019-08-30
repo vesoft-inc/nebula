@@ -9,12 +9,14 @@
 #include "network/NetworkUtils.h"
 #include "meta/NebulaSchemaProvider.h"
 #include "meta/ClusterIdMan.h"
+#include "meta/GflagsManager.h"
 
 DEFINE_int32(load_data_interval_secs, 2 * 60, "Load data interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
+DECLARE_string(gflags_mode_json);
 
 namespace nebula {
 namespace meta {
@@ -63,7 +65,9 @@ bool MetaClient::isMetadReady() {
 }
 
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
-    setGflagsModule();
+    std::string gflagsJsonPath;
+    GflagsManager::getGflagsModule(gflagsModule_);
+    gflagsDeclared_ = GflagsManager::declareGflags(gflagsModule_);
     isRunning_ = true;
     int tryCount = count;
     while (!isMetadReady() && ((count == -1) || (tryCount > 0)) && isRunning_) {
@@ -342,22 +346,6 @@ std::vector<HostAddr> MetaClient::to(const std::vector<nebula::cpp2::HostAddr>& 
     return hosts;
 }
 
-std::vector<HostStatus> MetaClient::toHostStatus(const std::vector<cpp2::HostItem>& tHosts) {
-    std::vector<HostStatus> hosts;
-    hosts.resize(tHosts.size());
-    std::transform(tHosts.begin(), tHosts.end(), hosts.begin(), [](const auto& h) {
-        switch (h.get_status()) {
-            case cpp2::HostStatus::ONLINE:
-                return HostStatus(HostAddr(h.hostAddr.get_ip(), h.hostAddr.get_port()), "online");
-            case cpp2::HostStatus::OFFLINE:
-                return HostStatus(HostAddr(h.hostAddr.get_ip(), h.hostAddr.get_port()), "offline");
-            default:
-                return HostStatus(HostAddr(h.hostAddr.get_ip(), h.hostAddr.get_port()), "unknown");
-        }
-    });
-    return hosts;
-}
-
 std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames) {
     std::vector<SpaceIdName> idNames;
     idNames.resize(tIdNames.size());
@@ -563,14 +551,14 @@ folly::Future<StatusOr<bool>> MetaClient::addHosts(const std::vector<HostAddr>& 
     return future;
 }
 
-folly::Future<StatusOr<std::vector<HostStatus>>> MetaClient::listHosts() {
+folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts() {
     cpp2::ListHostsReq req;
-    folly::Promise<StatusOr<std::vector<HostStatus>>> promise;
+    folly::Promise<StatusOr<std::vector<cpp2::HostItem>>> promise;
     auto future = promise.getFuture();
     getResponse(std::move(req), [] (auto client, auto request) {
                     return client->future_listHosts(request);
                 }, [this] (cpp2::ListHostsResp&& resp) -> decltype(auto) {
-                    return this->toHostStatus(resp.hosts);
+                    return resp.hosts;
                 }, std::move(promise));
     return future;
 }
@@ -1140,6 +1128,18 @@ folly::Future<StatusOr<int64_t>> MetaClient::balance() {
     return future;
 }
 
+folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
+    cpp2::LeaderBalanceReq req;
+    folly::Promise<StatusOr<bool>> promise;
+    auto future = promise.getFuture();
+    getResponse(std::move(req), [] (auto client, auto request) {
+                    return client->future_leaderBalance(request);
+                }, [] (cpp2::ExecResp&& resp) -> bool {
+                    return resp.code == cpp2::ErrorCode::SUCCEEDED;
+                }, std::move(promise), true);
+    return future;
+}
+
 folly::Future<StatusOr<bool>>
 MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
     cpp2::RegConfigReq req;
@@ -1156,6 +1156,9 @@ MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name) {
+    if (!configReady_) {
+        return Status::Error("Not ready!");
+    }
     cpp2::ConfigItem item;
     item.set_module(module);
     item.set_name(name);
@@ -1174,6 +1177,9 @@ MetaClient::getConfig(const cpp2::ConfigModule& module, const std::string& name)
 folly::Future<StatusOr<bool>>
 MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
                       const cpp2::ConfigType& type, const std::string& value) {
+    if (!configReady_) {
+        return Status::Error("Not ready!");
+    }
     cpp2::ConfigItem item;
     item.set_module(module);
     item.set_name(name);
@@ -1195,6 +1201,9 @@ MetaClient::setConfig(const cpp2::ConfigModule& module, const std::string& name,
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
 MetaClient::listConfigs(const cpp2::ConfigModule& module) {
+    if (!configReady_) {
+        return Status::Error("Not ready!");
+    }
     cpp2::ListConfigsReq req;
     req.set_module(module);
     folly::Promise<StatusOr<std::vector<cpp2::ConfigItem>>> promise;
@@ -1207,36 +1216,24 @@ MetaClient::listConfigs(const cpp2::ConfigModule& module) {
     return future;
 }
 
-void MetaClient::setGflagsModule(const cpp2::ConfigModule& module) {
-    if (module != cpp2::ConfigModule::UNKNOWN) {
-        gflagsModule_ = module;
-        return;
-    }
-
-    // get current process according to gflags pid_file
-    gflags::CommandLineFlagInfo pid;
-    if (gflags::GetCommandLineFlagInfo("pid_file", &pid)) {
-        auto defaultPid = pid.default_value;
-        if (defaultPid.find("nebula-graphd") != std::string::npos) {
-            gflagsModule_ = cpp2::ConfigModule::GRAPH;
-        } else if (defaultPid.find("nebula-storaged") != std::string::npos) {
-            gflagsModule_ = cpp2::ConfigModule::STORAGE;
-        } else if (defaultPid.find("nebula-metad") != std::string::npos) {
-            gflagsModule_ = cpp2::ConfigModule::META;
-        } else {
-            LOG(ERROR) << "Should not reach here";
-        }
-    } else {
-        LOG(ERROR) << "Should not reach here";
-    }
-}
-
 void MetaClient::loadCfgThreadFunc() {
     loadCfg();
     addLoadCfgTask();
 }
 
+bool MetaClient::registerCfg() {
+    auto ret = regConfig(gflagsDeclared_).get();
+    if (ret.ok()) {
+        LOG(INFO) << "Register gflags ok " << gflagsDeclared_.size();
+        configReady_ = true;
+    }
+    return configReady_;
+}
+
 void MetaClient::loadCfg() {
+    if (!configReady_ && !registerCfg()) {
+        return;
+    }
     // only load current module's config is enough
     auto ret = listConfigs(gflagsModule_).get();
     if (ret.ok()) {
