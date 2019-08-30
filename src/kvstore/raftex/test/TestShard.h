@@ -17,6 +17,21 @@ class RaftexService;
 
 namespace test {
 
+enum class CommandType : int8_t {
+    ADD_LEARNER = 0x01,
+    TRANSFER_LEADER = 0x02,
+};
+
+std::string encodeLearner(const HostAddr& addr);
+
+HostAddr decodeLearner(const folly::StringPiece& log);
+
+std::string compareAndSet(const std::string& log);
+
+std::string encodeTransferLeader(const HostAddr& addr);
+
+HostAddr decodeTransferLeader(const folly::StringPiece& log);
+
 class TestShard : public RaftPart {
 public:
     TestShard(
@@ -25,16 +40,16 @@ public:
         PartitionID partId,
         HostAddr addr,
         const folly::StringPiece walRoot,
-        wal::BufferFlusher* flusher,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
         std::shared_ptr<thread::GenericThreadPool> workers,
+        std::shared_ptr<folly::Executor> handlersPool,
         std::function<void(size_t idx, const char*, TermID)>
             leadershipLostCB,
         std::function<void(size_t idx, const char*, TermID)>
             becomeLeaderCB);
 
-    LogID lastCommittedLogId() override {
-        return 0;
+    std::pair<LogID, TermID> lastCommittedLogId() override {
+        return std::make_pair(committedLogId_, term_);
     }
 
     std::shared_ptr<RaftexService> getService() const {
@@ -47,22 +62,51 @@ public:
 
     void onLostLeadership(TermID term) override;
     void onElected(TermID term) override;
+    void onDiscoverNewLeader(HostAddr) override {}
 
-    std::string compareAndSet(const std::string& log) override;
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
+    bool preProcessLog(LogID,
+                       TermID,
+                       ClusterID,
+                       const std::string& log) override {
+        if (!log.empty()) {
+            switch (static_cast<CommandType>(log[0])) {
+                case CommandType::ADD_LEARNER: {
+                    auto learner = decodeLearner(log);
+                    addLearner(learner);
+                    LOG(INFO) << idStr_ << "Add learner " << learner;
+                    break;
+                }
+                case CommandType::TRANSFER_LEADER: {
+                    auto nLeader = decodeTransferLeader(log);
+                    preProcessTransLeader(nLeader);
+                    LOG(INFO) << idStr_ << "Preprocess transleader " << nLeader;
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+        }
+        return true;
+    }
+
     size_t getNumLogs() const;
-    bool getLogMsg(LogID id, folly::StringPiece& msg) const;
+    bool getLogMsg(size_t index, folly::StringPiece& msg);
 
 public:
     int32_t commitTimes_ = 0;
-    int32_t firstCommittedLogId_ = -1;
+    int32_t currLogId_ = -1;
+    bool isRunning_ = false;
 
 private:
     const size_t idx_;
     std::shared_ptr<RaftexService> service_;
 
-    std::unordered_map<LogID, std::string> data_;
+    std::vector<std::pair<LogID, std::string>> data_;
+    LogID lastCommittedLogId_ = 0L;
+    mutable folly::RWSpinLock lock_;
 
     std::function<void(size_t idx, const char*, TermID)>
         leadershipLostCB_;

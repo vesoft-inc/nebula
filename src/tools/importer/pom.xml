@@ -12,14 +12,12 @@
 
     <groupId>com.vesoft.nebula</groupId>
     <artifactId>importer</artifactId>
-    <version>0.0.1</version>
+    <version>1.0.0-beta</version>
 
     <properties>
         <project.root.dir>../../..</project.root.dir>
-        <fbthrift.root.dir>../../../third-party/fbthrift</fbthrift.root.dir>
-        <fbthrift.biuld.dir>_build/fbthrift-2018.08.20.00</fbthrift.biuld.dir>
-        <fbthrift.target.dir>thrift/lib/java/thrift/target</fbthrift.target.dir>
         <nebula-client.target.dir>../../../src/client/java/target/</nebula-client.target.dir>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <build>
@@ -27,6 +25,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -75,12 +74,7 @@
                 </executions>
                 <configuration>
                     <executable>java</executable>
-                    <arguments>
-                        <argument>-classpath</argument>
-                        <classpath>
-                        </classpath>
-                        <argument>com.vesoft.nebula.importer.Importer</argument>
-                    </arguments>
+                    <mainClass>com.vesoft.nebula.importer.Importer</mainClass>
                 </configuration>
             </plugin>
         </plugins>
@@ -90,16 +84,14 @@
         <dependency>
             <groupId>com.facebook</groupId>
             <artifactId>thrift</artifactId>
-            <version>1.0.0-SNAPSHORT</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/${fbthrift.root.dir}/${fbthrift.biuld.dir}/${fbthrift.target.dir}/thrift-1.0-SNAPSHOT.jar</systemPath>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>nebula-graph</groupId>
             <artifactId>graph-client</artifactId>
-            <version>0.0.1</version>
+            <version>0.1.0</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/${nebula-client.target.dir}/graph-client-0.0.1.jar</systemPath>
+            <systemPath>${pom.basedir}/${nebula-client.target.dir}/graph-client-1.0.0-beta.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
@@ -112,6 +104,11 @@
             <version>3.8</version>
         </dependency>
         <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.7.25</version>
@@ -120,6 +117,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
             <version>1.7.25</version>
         </dependency>
         <dependency>

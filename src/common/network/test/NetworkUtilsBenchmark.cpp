@@ -10,7 +10,7 @@
 
 using nebula::network::NetworkUtils;
 
-bool ipToInt(const std::string& ipStr, uint32_t& ip) {
+bool ipToInt(const std::string& ipStr, nebula::IPv4& ip) {
     std::vector<std::string> parts;
     folly::split(".", ipStr, parts, true);
     if (parts.size() != 4) {
@@ -51,7 +51,7 @@ BENCHMARK_DRAW_LINE();
 
 BENCHMARK(shared_ipToInt, iters) {
     std::string ipStr("10.20.30.40");
-    uint32_t ipInt;
+    nebula::IPv4 ipInt;
     for (uint32_t i = 0; i < iters; i++) {
         ipToInt(ipStr, ipInt);
         folly::doNotOptimizeAway(ipInt);
@@ -59,7 +59,7 @@ BENCHMARK(shared_ipToInt, iters) {
 }
 BENCHMARK_RELATIVE(ipv4ToInt, iters) {
     std::string ipStr("10.20.30.40");
-    uint32_t ipInt;
+    nebula::IPv4 ipInt;
     for (uint32_t i = 0; i < iters; i++) {
         NetworkUtils::ipv4ToInt(ipStr, ipInt);
         folly::doNotOptimizeAway(ipInt);

@@ -11,23 +11,26 @@ namespace go nebula.meta
 include "common.thrift"
 
 enum ErrorCode {
-    SUCCEEDED = 0,
+    SUCCEEDED          = 0,
 
     // RPC Failure
-    E_DISCONNECTED = -1,
-    E_FAIL_TO_CONNECT = -2,
-    E_RPC_FAILURE = -3,
+    E_DISCONNECTED     = -1,
+    E_FAIL_TO_CONNECT  = -2,
+    E_RPC_FAILURE      = -3,
 
-    E_LEADER_CHANGED = -11,
+    E_LEADER_CHANGED   = -11,
 
     // Operation Failure
-    E_NO_HOSTS       = -21,
-    E_EXISTED        = -22,
-    E_NOT_FOUND      = -23,
-    E_INVALID_HOST   = -24,
-    E_UNSUPPORTED    = -25,
-    E_NOT_DROP       = -26,
+    E_NO_HOSTS         = -21,
+    E_EXISTED          = -22,
+    E_NOT_FOUND        = -23,
+    E_INVALID_HOST     = -24,
+    E_UNSUPPORTED      = -25,
+    E_NOT_DROP         = -26,
     E_BALANCER_RUNNING = -27,
+    E_CONFIG_IMMUTABLE = -28,
+    E_CONFLICT         = -29,
+    E_WRONGCLUSTER     = -30,
 
     // KV Failure
     E_STORE_FAILURE          = -31,
@@ -66,6 +69,7 @@ union ID {
     2: common.TagID         tag_id,
     3: common.EdgeType      edge_type,
     4: common.UserID        user_id,
+    5: common.ClusterID     cluster_id,
 }
 
 struct IdName {
@@ -117,6 +121,8 @@ enum HostStatus {
 struct HostItem {
     1: common.HostAddr      hostAddr,
     2: HostStatus           status,
+    3: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts,
+    4: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") all_parts,
 }
 
 struct UserItem {
@@ -303,7 +309,7 @@ struct GetReq {
     2: string key,
 }
 
- struct GetResp {
+struct GetResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
     3: string    value,
@@ -346,10 +352,12 @@ struct ScanResp {
 struct HBResp {
     1: ErrorCode code,
     2: common.HostAddr  leader,
+    3: common.ClusterID cluster_id,
 }
 
 struct HBReq {
     1: common.HostAddr host,
+    2: common.ClusterID cluster_id,
 }
 
 struct CreateUserReq {
@@ -431,6 +439,68 @@ struct BalanceResp {
     3: common.HostAddr  leader,
 }
 
+struct LeaderBalanceReq {
+}
+
+enum ConfigModule {
+    UNKNOWN = 0x00,
+    ALL     = 0x01,
+    GRAPH   = 0x02,
+    META    = 0x03,
+    STORAGE = 0x04,
+} (cpp.enum_strict)
+
+enum ConfigType {
+    INT64   = 0x00,
+    DOUBLE  = 0x01,
+    BOOL    = 0x02,
+    STRING  = 0x03,
+} (cpp.enum_strict)
+
+enum ConfigMode {
+    IMMUTABLE   = 0x00,
+    REBOOT      = 0x01,
+    MUTABLE     = 0x02,
+    IGNORED     = 0x03,
+} (cpp.enum_strict)
+
+struct ConfigItem {
+    1: ConfigModule         module,
+    2: string               name,
+    3: ConfigType           type,
+    4: ConfigMode           mode,
+    5: binary               value,
+}
+
+struct RegConfigReq {
+    1: list<ConfigItem>     items,
+}
+
+struct GetConfigReq {
+    1: ConfigItem item,
+}
+
+struct GetConfigResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: list<ConfigItem>     items,
+}
+
+struct SetConfigReq {
+    1: ConfigItem           item,
+}
+
+struct ListConfigsReq {
+    1: string               space,
+    2: ConfigModule         module,
+}
+
+struct ListConfigsResp {
+    1: ErrorCode            code,
+    2: common.HostAddr      leader,
+    3: list<ConfigItem>     items,
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -475,5 +545,11 @@ service MetaService {
 
     HBResp           heartBeat(1: HBReq req);
     BalanceResp      balance(1: BalanceReq req);
+    ExecResp         leaderBalance(1: LeaderBalanceReq req);
+
+    ExecResp regConfig(1: RegConfigReq req);
+    GetConfigResp getConfig(1: GetConfigReq req);
+    ExecResp setConfig(1: SetConfigReq req);
+    ListConfigsResp listConfigs(1: ListConfigsReq req);
 }
 

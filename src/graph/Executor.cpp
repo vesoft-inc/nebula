@@ -31,7 +31,17 @@
 #include "graph/DescribeSpaceExecutor.h"
 #include "graph/DropSpaceExecutor.h"
 #include "graph/YieldExecutor.h"
+#include "graph/DownloadExecutor.h"
 #include "graph/OrderByExecutor.h"
+#include "graph/IngestExecutor.h"
+#include "graph/ConfigExecutor.h"
+#include "graph/FetchVerticesExecutor.h"
+#include "graph/FetchEdgesExecutor.h"
+#include "graph/ConfigExecutor.h"
+#include "graph/SetExecutor.h"
+#include "graph/FindExecutor.h"
+#include "graph/MatchExecutor.h"
+#include "graph/BalanceExecutor.h"
 
 namespace nebula {
 namespace graph {
@@ -103,8 +113,35 @@ std::unique_ptr<Executor> Executor::makeExecutor(Sentence *sentence) {
         case Sentence::Kind::kYield:
             executor = std::make_unique<YieldExecutor>(sentence, ectx());
             break;
+        case Sentence::Kind::kDownload:
+            executor = std::make_unique<DownloadExecutor>(sentence, ectx());
+            break;
         case Sentence::Kind::kOrderBy:
             executor = std::make_unique<OrderByExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kIngest:
+            executor = std::make_unique<IngestExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kConfig:
+            executor = std::make_unique<ConfigExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kFetchVertices:
+            executor = std::make_unique<FetchVerticesExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kFetchEdges:
+            executor = std::make_unique<FetchEdgesExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kSet:
+            executor = std::make_unique<SetExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kMatch:
+            executor = std::make_unique<MatchExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kFind:
+            executor = std::make_unique<FindExecutor>(sentence, ectx());
+            break;
+        case Sentence::Kind::kBalance:
+            executor = std::make_unique<BalanceExecutor>(sentence, ectx());
             break;
         case Sentence::Kind::kUnknown:
             LOG(FATAL) << "Sentence kind unknown";
@@ -172,6 +209,9 @@ Status Executor::checkFieldName(std::shared_ptr<const meta::SchemaProviderIf> sc
                                 std::vector<std::string*> props) {
     for (auto fieldIndex = 0u; fieldIndex < schema->getNumFields(); fieldIndex++) {
         auto schemaFieldName = schema->getFieldName(fieldIndex);
+        if (UNLIKELY(nullptr == schemaFieldName)) {
+            return Status::Error("invalid field index");
+        }
         if (schemaFieldName != *props[fieldIndex]) {
             LOG(ERROR) << "Field name is wrong, schema field " << schemaFieldName
                        << ", input field " << *props[fieldIndex];

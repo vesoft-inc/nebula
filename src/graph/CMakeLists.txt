@@ -33,18 +33,30 @@ add_library(
     DescribeSpaceExecutor.cpp
     ShowExecutor.cpp
     YieldExecutor.cpp
+    DownloadExecutor.cpp
     OrderByExecutor.cpp
+    IngestExecutor.cpp
+    ConfigExecutor.cpp
+    BalanceExecutor.cpp
     SchemaHelper.cpp
+    FetchVerticesExecutor.cpp
+    FetchEdgesExecutor.cpp
+    FetchExecutor.cpp
+    SetExecutor.cpp
+    FindExecutor.cpp
+    MatchExecutor.cpp
 )
 add_dependencies(
     graph_obj
-    base_obj
     parser_obj
     graph_thrift_obj
     meta_thrift_obj
     meta_client
+    gflags_man_obj
     schema_obj
     stats_obj
+    process_obj
+    base_obj
 )
 
 add_library(

@@ -5,8 +5,11 @@
  */
 
 #include "base/Base.h"
+#include "common/base/SignalHandler.h"
 #include "network/NetworkUtils.h"
 #include <signal.h>
+#include <errno.h>
+#include <string.h>
 #include "base/Status.h"
 #include "fs/FileUtils.h"
 #include "process/ProcessUtils.h"
@@ -97,11 +100,6 @@ int main(int argc, char *argv[]) {
         localIP = std::move(result).value();
     }
 
-    if (FLAGS_num_netio_threads <= 0) {
-        LOG(WARNING) << "Number netio threads should be greater than zero";
-        return EXIT_FAILURE;
-    }
-
     LOG(INFO) << "Starting Graph HTTP Service";
     // http://127.0.0.1:XXXX/status is equivalent to http://127.0.0.1:XXXX
     nebula::WebService::registerHandler("/status", [] {
@@ -112,18 +110,28 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    if (FLAGS_num_netio_threads <= 0) {
+        LOG(WARNING) << "Number of networking IO threads should be greater than zero";
+        return EXIT_FAILURE;
+    }
+    auto threadFactory = std::make_shared<folly::NamedThreadFactory>("graph-netio");
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(
+                            FLAGS_num_netio_threads, std::move(threadFactory));
     gServer = std::make_unique<apache::thrift::ThriftServer>();
-    gServer->getIOThreadPool()->setNumThreads(FLAGS_num_netio_threads);
-    auto interface = std::make_shared<GraphService>(gServer->getIOThreadPool());
+    gServer->setIOThreadPool(ioThreadPool);
+
+    auto interface = std::make_shared<GraphService>();
+    status = interface->init(ioThreadPool);
+    if (!status.ok()) {
+        LOG(ERROR) << status;
+        return EXIT_FAILURE;
+    }
 
     gServer->setInterface(std::move(interface));
     gServer->setAddress(localIP, FLAGS_port);
     gServer->setReusePort(FLAGS_reuse_port);
     gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
-
-    // TODO(dutor) This only take effects on NORMAL priority threads
     gServer->setNumCPUWorkerThreads(FLAGS_num_worker_threads);
-
     gServer->setCPUWorkerThreadName("executor");
     gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
     gServer->setListenBacklog(FLAGS_listen_backlog);
@@ -141,10 +149,12 @@ int main(int argc, char *argv[]) {
     try {
         gServer->serve();  // Blocking wait until shut down via gServer->stop()
     } catch (const std::exception &e) {
+        nebula::WebService::stop();
         FLOG_ERROR("Exception thrown while starting the RPC server: %s", e.what());
         return EXIT_FAILURE;
     }
 
+    nebula::WebService::stop();
     FLOG_INFO("nebula-graphd on %s:%d has been stopped", localIP.c_str(), FLAGS_port);
 
     return EXIT_SUCCESS;
@@ -152,10 +162,11 @@ int main(int argc, char *argv[]) {
 
 
 Status setupSignalHandler() {
-    ::signal(SIGPIPE, SIG_IGN);
-    ::signal(SIGINT, signalHandler);
-    ::signal(SIGTERM, signalHandler);
-    return Status::OK();
+    return nebula::SignalHandler::install(
+        {SIGINT, SIGTERM},
+        [](nebula::SignalHandler::GeneralSignalInfo *info) {
+            signalHandler(info->sig());
+        });
 }
 
 
@@ -164,7 +175,6 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
             FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-            nebula::WebService::stop();
             gServer->stop();
             break;
         default:

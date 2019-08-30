@@ -33,7 +33,7 @@ std::string RowUpdater::encode() const noexcept {
     // TODO Reserve enough space so resize will not happen
     encodeTo(encoded);
 
-    return std::move(encoded);
+    return encoded;
 }
 
 
@@ -156,7 +156,7 @@ ResultType RowUpdater::setString(const folly::StringPiece name,
     switch (type.get_type()) {
         case cpp2::SupportedType::STRING:
             hash = SpookyHashV2::Hash64(name.begin(), name.size(), 0);
-            updatedFields_[hash] = std::move(v.toString());
+            updatedFields_[hash] = v.toString();
             break;
         default:
             return ResultType::E_INCOMPATIBLE_TYPE;
@@ -317,4 +317,3 @@ ResultType RowUpdater::getTimestamp(const folly::StringPiece name,
 #undef CHECK_UPDATED_FIELDS
 
 }  // namespace nebula
-

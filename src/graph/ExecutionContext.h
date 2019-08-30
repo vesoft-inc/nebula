@@ -12,6 +12,7 @@
 #include "graph/RequestContext.h"
 #include "parser/SequentialSentences.h"
 #include "meta/SchemaManager.h"
+#include "meta/ClientBasedGflagsManager.h"
 #include "graph/VariableHolder.h"
 #include "meta/client/MetaClient.h"
 
@@ -30,10 +31,12 @@ public:
     using RequestContextPtr = std::unique_ptr<RequestContext<cpp2::ExecutionResponse>>;
     ExecutionContext(RequestContextPtr rctx,
                      meta::SchemaManager *sm,
+                     meta::ClientBasedGflagsManager *gflagsManager,
                      storage::StorageClient *storage,
                      meta::MetaClient *metaClient) {
         rctx_ = std::move(rctx);
         sm_ = sm;
+        gflagsManager_ = gflagsManager;
         storage_ = storage;
         metaClient_ = metaClient;
         variableHolder_ = std::make_unique<VariableHolder>();
@@ -47,6 +50,10 @@ public:
 
     meta::SchemaManager* schemaManager() const {
         return sm_;
+    }
+
+    meta::ClientBasedGflagsManager* gflagsManager() const {
+        return gflagsManager_;
     }
 
     storage::StorageClient* storage() const {
@@ -64,6 +71,7 @@ public:
 private:
     RequestContextPtr                           rctx_;
     meta::SchemaManager                        *sm_{nullptr};
+    meta::ClientBasedGflagsManager             *gflagsManager_{nullptr};
     storage::StorageClient                     *storage_{nullptr};
     meta::MetaClient                           *metaClient_{nullptr};
     std::unique_ptr<VariableHolder>             variableHolder_;

@@ -13,9 +13,7 @@
  * SQL-like query language
 
 ## How can I get Nebula ##
-**Nebula Graph** source code is available here on [GitHub](https://github.com/vesoft-inc/nebula). The currently release is version 0.1.
-You can also download [Docker ](https://www.docker.com/get-started)image to try it.
-More details on how to get Nebula image click [Get Started](get-started/).
+Apart from installing **Nebula Graph** from source code, you can use the [official Nebula Graph image](https://hub.docker.com/r/vesoft/nebula-graph/tags). For more details on how to install Nebula Graph, see [Get Started](get-started/).
 
 ## How can I contribute ##
 As the team behind **Nebula Graph**, we fully commit to the community and all-in to the open source project. All the core features are and will be implemented in the open source repository.
@@ -33,6 +31,7 @@ click [Contribute to Nebula Graph Docs](contribute-to-documentation/)
 
 In order to prevent cloud providers monetarizing from the project without contributing back, we added [Common Clause 1.0](https://commonsclause.com/) to the project. As mentioned above, we fully commit to the open source community. We would love to hear your thoughts on the licensing model and are willing to make it more suitable for the community.
 
-## Our Community
+## Contact
 - Please use [GitHub issue tracker](https://github.com/vesoft-inc/nebula/issues) for reporting bugs or feature requests.
 - Join [![](https://img.shields.io/badge/slack-nebula-519dd9.svg)](https://nebulagraph.slack.com/archives/DJQC9P0H5/p1557815158000200).
+- Visit Nebula Graph [home page](http://nebula-graph.io/) for more features.

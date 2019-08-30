@@ -26,6 +26,7 @@ public:
     void execute() override;
 
 private:
+    Status check();
     StatusOr<std::vector<storage::cpp2::Edge>> prepareEdges();
 
 private:
