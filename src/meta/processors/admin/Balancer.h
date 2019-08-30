@@ -49,7 +49,7 @@ class Balancer {
     FRIEND_TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest);
     FRIEND_TEST(BalanceTest, LeaderBalanceTest);
     FRIEND_TEST(BalanceTest, ManyHostsLeaderBalancePlanTest);
-    FRIEND_TEST(BalanceIntegrationTest, DISABLED_LeaderBalanceTest);
+    FRIEND_TEST(BalanceIntegrationTest, LeaderBalanceTest);
 
 public:
     static Balancer* instance(kvstore::KVStore* kv) {

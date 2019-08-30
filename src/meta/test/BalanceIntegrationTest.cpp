@@ -26,7 +26,7 @@ TEST(BalanceIntegrationTest, SimpleTest) {
     LOG(INFO) << "Start storage server on " << sc->port_;
 }
 
-TEST(BalanceIntegrationTest, DISABLED_LeaderBalanceTest) {
+TEST(BalanceIntegrationTest, LeaderBalanceTest) {
     FLAGS_load_data_interval_secs = 1;
     FLAGS_heartbeat_interval_secs = 1;
     FLAGS_raft_heartbeat_interval_secs = 1;
