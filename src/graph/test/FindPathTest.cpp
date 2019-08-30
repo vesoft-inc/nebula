@@ -26,7 +26,6 @@ protected:
 
 TEST_F(FindPathTest, shortest) {
     {
-        // 5662213458193308137<5,0>-7579316172763586624
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
         auto &tim = players_["Tim Duncan"];
@@ -34,10 +33,12 @@ TEST_F(FindPathTest, shortest) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::string> expected = {
+            "5662213458193308137<5,0>-7579316172763586624",
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
     }
     {
-        // 5662213458193308137<5,0>3394245602834314645
-        // 5662213458193308137<5,0>-7579316172763586624
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld,%ld OVER like UPTO 5 STEPS";
         auto &tim = players_["Tim Duncan"];
@@ -46,9 +47,13 @@ TEST_F(FindPathTest, shortest) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid(), manu.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::string> expected = {
+            "5662213458193308137<5,0>3394245602834314645",
+            "5662213458193308137<5,0>-7579316172763586624"
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
     }
     {
-        // 5662213458193308137<5,0>-7579316172763586624<5,0>-1782445125509592239
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
         auto &tim = players_["Tim Duncan"];
@@ -56,11 +61,12 @@ TEST_F(FindPathTest, shortest) {
         auto query = folly::stringPrintf(fmt, tim.vid(), al.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::string> expected = {
+            "5662213458193308137<5,0>-7579316172763586624<5,0>-1782445125509592239"
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
     }
     {
-        // 5662213458193308137<5,0>3394245602834314645
-        // 5662213458193308137<5,0>-7579316172763586624
-        // 5662213458193308137<5,0>-7579316172763586624<5,0>-1782445125509592239
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld,%ld,%ld OVER like UPTO 5 STEPS";
         auto &tim = players_["Tim Duncan"];
@@ -70,9 +76,14 @@ TEST_F(FindPathTest, shortest) {
         auto query = folly::stringPrintf(fmt, tim.vid(), tony.vid(), manu.vid(), al.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::string> expected = {
+            "5662213458193308137<5,0>3394245602834314645",
+            "5662213458193308137<5,0>-7579316172763586624",
+            "5662213458193308137<5,0>-7579316172763586624<5,0>-1782445125509592239"
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
     }
     {
-        // -8160811731890648949<5,0>5662213458193308137<5,0>-7579316172763586624<5,0>-1782445125509592239
         cpp2::ExecutionResponse resp;
         auto *fmt = "FIND SHORTEST PATH FROM %ld TO %ld OVER like UPTO 5 STEPS";
         auto &tiago = players_["Tiago Splitter"];
@@ -80,11 +91,13 @@ TEST_F(FindPathTest, shortest) {
         auto query = folly::stringPrintf(fmt, tiago.vid(), al.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::string> expected = {
+            "-8160811731890648949<5,0>5662213458193308137<5,0>-7579316172763586624"
+                "<5,0>-1782445125509592239"
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
     }
     {
-        // 5662213458193308137<5,0>3394245602834314645
-        // 5662213458193308137<5,0>-7579316172763586624
-        // 5662213458193308137<5,0>-7579316172763586624<5,0>-1782445125509592239
         // we only find the shortest path to the dest,
         // so -8160811731890648949 to -1782445125509592239 is not in result
         cpp2::ExecutionResponse resp;
@@ -98,6 +111,12 @@ TEST_F(FindPathTest, shortest) {
                 tony.vid(), manu.vid(), al.vid());
         auto code = client_->execute(query, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code) << resp.get_error_msg();
+        std::vector<std::string> expected = {
+            "5662213458193308137<5,0>3394245602834314645",
+            "5662213458193308137<5,0>-7579316172763586624",
+            "5662213458193308137<5,0>-7579316172763586624<5,0>-1782445125509592239"
+        };
+        ASSERT_TRUE(verifyPath(resp, expected));
     }
 }
 

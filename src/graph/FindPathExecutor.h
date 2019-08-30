@@ -52,6 +52,10 @@ public:
 
     void setupResponse(cpp2::ExecutionResponse &resp) override;
 
+    static std::string buildPathString(Path &path);
+
+    static cpp2::RowValue buildPathRow(Path &path);
+
 private:
     // Do some prepare work that can not do in prepare()
     Status beforeExecute();
@@ -86,8 +90,6 @@ private:
     StatusOr<std::vector<storage::cpp2::PropDef>> getStepOutProps(bool reversely);
 
     StatusOr<std::vector<storage::cpp2::PropDef>> getDstProps();
-
-    static std::string buildPathString(Path &path);
 
 private:
     FindPathSentence                           *sentence_{nullptr};

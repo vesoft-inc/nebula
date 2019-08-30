@@ -176,6 +176,9 @@ void CmdProcessor::calColumnWidths(
                     }
                     break;
                 }
+                case cpp2::ColumnValue::Type::edge: {
+                    // TODO
+                }
             }
             ++idx;
         }
@@ -316,6 +319,9 @@ void CmdProcessor::printData(const cpp2::ExecutionResponse& resp,
                                       dt.get_millisec(),
                                       dt.get_microsec());
                     break;
+                }
+                case cpp2::ColumnValue::Type::edge: {
+                    // TODO
                 }
             }
             ++cIdx;

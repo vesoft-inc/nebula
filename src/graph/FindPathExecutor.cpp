@@ -570,11 +570,56 @@ std::string FindPathExecutor::buildPathString(Path &path) {
     return pathStr;
 }
 
-void FindPathExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
-    UNUSED(resp);
-    for (auto &path : finalPath_) {
-        VLOG(0) << buildPathString(path.second);
+cpp2::RowValue FindPathExecutor::buildPathRow(Path &path) {
+    cpp2::RowValue rowValue;
+    std::vector<cpp2::ColumnValue> row;
+    auto iter = path.begin();
+    for (; iter != path.end(); ++iter) {
+        auto step = *iter;
+        auto id = std::get<0>(step);
+        auto type = std::get<1>(step);
+        auto ranking = std::get<2>(step);
+        if (type < 0) {
+            row.emplace_back();
+            row.back().set_integer(id);
+            ++iter;
+            break;
+        }
+        cpp2::Edge edge;
+        edge.set_type(type);
+        edge.set_ranking(ranking);
+        row.emplace_back();
+        row.back().set_integer(id);
+        row.emplace_back();
+        row.back().set_edge(std::move(edge));
     }
+
+    for (; iter != path.end(); ++iter) {
+        auto step = *iter;
+        auto id = std::get<0>(step);
+        auto type = std::get<1>(step);
+        auto ranking = std::get<2>(step);
+
+        cpp2::Edge edge;
+        edge.set_type(-type);
+        edge.set_ranking(ranking);
+        row.emplace_back();
+        row.back().set_edge(std::move(edge));
+        row.emplace_back();
+        row.back().set_integer(id);
+    }
+
+    rowValue.set_columns(std::move(row));
+    return rowValue;
+}
+
+void FindPathExecutor::setupResponse(cpp2::ExecutionResponse &resp) {
+    std::vector<cpp2::RowValue> rows;
+    for (auto &path : finalPath_) {
+        auto row = buildPathRow(path.second);
+        rows.emplace_back(std::move(row));
+    }
+    resp.set_rows(std::move(rows));
 }
 }  // namespace graph
 }  // namespace nebula

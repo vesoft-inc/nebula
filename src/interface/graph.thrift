@@ -52,6 +52,10 @@ struct DateTime {
     7: i16 millisec;
     8: i16 microsec;
 }
+struct Edge {
+    1: i32 type;
+    2: i64 ranking;
+}
 
 
 union ColumnValue {
@@ -72,6 +76,7 @@ union ColumnValue {
 
     // Graph specific
     // PATH = 41;
+    42: Edge edge;
 
     // Container types
     // LIST = 101;
