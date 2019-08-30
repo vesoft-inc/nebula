@@ -261,9 +261,11 @@ Status InterimResult::castTo(cpp2::ColumnValue *col,
     using nebula::cpp2::SupportedType;
     switch (type) {
         case SupportedType::VID:
+            return castToVid(col);
         case SupportedType::INT:
-        case SupportedType::TIMESTAMP:
             return castToInt(col);
+        case SupportedType::TIMESTAMP:
+            return castToTimestamp(col);
         case SupportedType::DOUBLE:
             return castToDouble(col);
         case SupportedType::BOOL:
@@ -280,9 +282,13 @@ Status InterimResult::castTo(cpp2::ColumnValue *col,
 
 Status InterimResult::castToInt(cpp2::ColumnValue *col) {
     switch (col->getType()) {
-        case cpp2::ColumnValue::Type::id:
         case cpp2::ColumnValue::Type::integer:
+            break;
+        case cpp2::ColumnValue::Type::id:
+            col->set_integer(col->get_id());
+            break;
         case cpp2::ColumnValue::Type::timestamp:
+            col->set_integer(col->get_timestamp());
             break;
         case cpp2::ColumnValue::Type::double_precision: {
             auto d2i = static_cast<int64_t>(col->get_double_precision());
@@ -298,6 +304,80 @@ Status InterimResult::castToInt(cpp2::ColumnValue *col) {
             auto r = folly::tryTo<int64_t>(col->get_str());
             if (r.hasValue()) {
                 col->set_integer(r.value());
+                break;
+            } else {
+                return Status::Error(
+                    "Casting from string %s to double failed.", col->get_str().c_str());
+            }
+        }
+        default:
+            LOG(ERROR) << NotSupported << static_cast<int32_t>(col->getType());
+            return Status::Error(NotSupported);
+    }
+    return Status::OK();
+}
+
+Status InterimResult::castToVid(cpp2::ColumnValue *col) {
+    switch (col->getType()) {
+        case cpp2::ColumnValue::Type::id:
+            break;
+        case cpp2::ColumnValue::Type::integer:
+            col->set_id(col->get_integer());
+            break;
+        case cpp2::ColumnValue::Type::timestamp:
+            col->set_id(col->get_timestamp());
+            break;
+        case cpp2::ColumnValue::Type::double_precision: {
+            auto d2i = static_cast<int64_t>(col->get_double_precision());
+            col->set_id(d2i);
+            break;
+        }
+        case cpp2::ColumnValue::Type::bool_val: {
+            auto b2i = static_cast<int64_t>(col->get_bool_val());
+            col->set_id(b2i);
+            break;
+        }
+        case cpp2::ColumnValue::Type::str: {
+            auto r = folly::tryTo<int64_t>(col->get_str());
+            if (r.hasValue()) {
+                col->set_id(r.value());
+                break;
+            } else {
+                return Status::Error(
+                    "Casting from string %s to double failed.", col->get_str().c_str());
+            }
+        }
+        default:
+            LOG(ERROR) << NotSupported << static_cast<int32_t>(col->getType());
+            return Status::Error(NotSupported);
+    }
+    return Status::OK();
+}
+
+Status InterimResult::castToTimestamp(cpp2::ColumnValue *col) {
+    switch (col->getType()) {
+        case cpp2::ColumnValue::Type::timestamp:
+            break;
+        case cpp2::ColumnValue::Type::integer:
+            col->set_timestamp(col->get_integer());
+            break;
+        case cpp2::ColumnValue::Type::id:
+            col->set_timestamp(col->get_id());
+            break;
+        case cpp2::ColumnValue::Type::double_precision: {
+            auto d2i = static_cast<int64_t>(col->get_double_precision());
+            col->set_timestamp(d2i);
+            break;
+        }
+        case cpp2::ColumnValue::Type::bool_val: {
+            auto b2i = static_cast<int64_t>(col->get_bool_val());
+            col->set_timestamp(b2i);
+            break;
+        }
+        case cpp2::ColumnValue::Type::str: {
+            auto r = folly::tryTo<int64_t>(col->get_str());
+            if (r.hasValue()) {
+                col->set_timestamp(r.value());
                 break;
             } else {
                 return Status::Error(

@@ -802,6 +802,10 @@ bool GoExecutor::processFinalResult(RpcResponse &rpcResp, Callback cb) const {
                         onError_(value.status());
                         return false;
                     }
+                    if (column->expr()->isTypeCastingExpression()) {
+                        auto exprPtr = static_cast<TypeCastingExpression*>(column->expr());
+                        colTypes.back() = ColumnTypeToSupportedType(exprPtr->getType());
+                    }
                     record.emplace_back(std::move(value.value()));
                 }
 

@@ -120,7 +120,7 @@ StatusOr<std::vector<storage::cpp2::Edge>> InsertEdgeExecutor::prepareEdges() {
         for (auto *expr : expressions) {
             status = expr->prepare();
             if (!status.ok()) {
-                return ovalue.status();
+                return status;
             }
 
             ovalue = expr->eval();

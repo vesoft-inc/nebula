@@ -54,14 +54,15 @@ Status FetchEdgesExecutor::prepareClauses() {
         }
 
         // Save the type
+        auto iter = colTypes_.begin();
         for (auto i = 0u; i < colNames_.size(); i++) {
             auto type = labelSchema_->getFieldType(colNames_[i]);
             if (type == CommonConstants::kInvalidValueType()) {
-                // such as YIELD 1+1, it has not type in schema
-                colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
+                iter++;
                 continue;
             }
-            colTypes_.emplace_back(type.type);
+            *iter = type.type;
+            iter++;
         }
     } while (false);
     return status;

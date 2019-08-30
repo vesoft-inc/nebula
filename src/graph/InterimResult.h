@@ -37,6 +37,8 @@ public:
     static Status castTo(cpp2::ColumnValue *col,
                          const nebula::cpp2::SupportedType &type);
     static Status castToInt(cpp2::ColumnValue *col);
+    static Status castToVid(cpp2::ColumnValue *col);
+    static Status castToTimestamp(cpp2::ColumnValue *col);
     static Status castToDouble(cpp2::ColumnValue *col);
     static Status castToBool(cpp2::ColumnValue *col);
     static Status castToStr(cpp2::ColumnValue *col);

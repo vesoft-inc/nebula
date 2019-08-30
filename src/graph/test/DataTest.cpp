@@ -404,11 +404,11 @@ TEST_F(DataTest, InsertVertex) {
         cpp2::ExecutionResponse resp;
         std::string cmd = "GO FROM hash(\"Laura\") OVER study "
                           "YIELD $$.school.name, study._dst, "
-                          "$$.school.create_time, study.start_time";
+                          "$$.school.create_time, (string)study.start_time";
         auto code = client_->execute(cmd, resp);
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-        std::vector<std::tuple<std::string, int64_t, int64_t, int64_t>> expected = {
-            {"sun_school", std::hash<std::string>()("sun_school"),  1262311200, 1535760000},
+        std::vector<std::tuple<std::string, int64_t, int64_t, std::string>> expected = {
+            {"sun_school", std::hash<std::string>()("sun_school"),  1262311200, "1535760000"},
         };
         ASSERT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
     }

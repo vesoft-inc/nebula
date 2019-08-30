@@ -31,11 +31,18 @@ Status FetchExecutor::prepareYield() {
             resultColNames_.emplace_back(*col->alias());
         }
 
+        // such as YIELD 1+1, it has not type in schema, the type from the eval()
+        colTypes_.emplace_back(nebula::cpp2::SupportedType::UNKNOWN);
         if (col->expr()->isAliasExpression()) {
             colNames_.emplace_back(*static_cast<InputPropertyExpression*>(col->expr())->prop());
-        } else {
-            colNames_.emplace_back(col->expr()->toString());
+            continue;
+        } else if (col->expr()->isTypeCastingExpression()) {
+            // type cast
+            auto exprPtr = static_cast<TypeCastingExpression*>(col->expr());
+            colTypes_.back() = ColumnTypeToSupportedType(exprPtr->getType());
         }
+
+        colNames_.emplace_back(col->expr()->toString());
     }
 
     if (expCtx_->hasSrcTagProp() || expCtx_->hasDstTagProp()) {
