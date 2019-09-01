@@ -1,5 +1,7 @@
 FROM centos:centos7.5.1804
 
+WORKDIR /root
+
 RUN cd && \
     yum -y update && yum install -y git libtool autoconf \
     autoconf-archive automake perl-WWW-Curl libstdc++-static maven \
