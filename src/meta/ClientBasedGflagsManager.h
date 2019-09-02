@@ -8,7 +8,6 @@
 #define META_CLIENTBASEDGFLAGSMANAGER_H_
 
 #include "base/Base.h"
-#include <gtest/gtest_prod.h>
 #include "meta/GflagsManager.h"
 #include "meta/client/MetaClient.h"
 
@@ -16,9 +15,6 @@ namespace nebula {
 namespace meta {
 
 class ClientBasedGflagsManager : public GflagsManager {
-    FRIEND_TEST(ConfigManTest, MetaConfigManTest);
-    FRIEND_TEST(ConfigManTest, MockConfigTest);
-
 public:
     explicit ClientBasedGflagsManager(MetaClient *metaClient);
 
@@ -35,17 +31,9 @@ public:
     folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>>
     listConfigs(const cpp2::ConfigModule& module) override;
 
-    folly::Future<StatusOr<bool>> registerConfig(const cpp2::ConfigModule& module,
-                                                 const std::string& name,
-                                                 const cpp2::ConfigType& type,
-                                                 const cpp2::ConfigMode& mode,
-                                                 const std::string& defaultValue) override;
-
-    Status init() override;
+    Status registerGflags(const std::vector<cpp2::ConfigItem>& items);
 
 private:
-    Status registerGflags();
-
     template<typename ValueType>
     folly::Future<StatusOr<bool>> set(const cpp2::ConfigModule& module, const std::string& name,
                                       const cpp2::ConfigType& type, const ValueType& value);

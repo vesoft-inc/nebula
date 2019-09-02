@@ -5,6 +5,10 @@
  */
 
 #include "meta/GflagsManager.h"
+#include "base/Configuration.h"
+#include "fs/FileUtils.h"
+
+DEFINE_string(gflags_mode_json, "share/resources/gflags.json", "gflags mode json for service");
 
 namespace nebula {
 namespace meta {
@@ -23,21 +27,64 @@ std::string GflagsManager::gflagsValueToThriftValue<std::string>(
     return flag.current_value;
 }
 
-void GflagsManager::declareGflags() {
-    // declare all gflags in ClientBasedGflagsManager
+std::unordered_map<std::string, cpp2::ConfigMode>
+GflagsManager::parseConfigJson(const std::string& path) {
+    std::unordered_map<std::string, cpp2::ConfigMode> configModeMap;
+    Configuration conf;
+    if (!conf.parseFromFile(path).ok()) {
+        LOG(ERROR) << "Load gflags json failed";
+        return configModeMap;
+    }
+    static std::vector<std::string> keys = {"IMMUTABLE", "REBOOT", "MUTABLE", "IGNORED"};
+    static std::vector<cpp2::ConfigMode> modes = {cpp2::ConfigMode::IMMUTABLE,
+                                                  cpp2::ConfigMode::REBOOT,
+                                                  cpp2::ConfigMode::MUTABLE,
+                                                  cpp2::ConfigMode::IGNORED};
+    for (size_t i = 0; i < keys.size(); i++) {
+        std::vector<std::string> values;
+        if (!conf.fetchAsStringArray(keys[i].c_str(), values).ok()) {
+            continue;
+        }
+        cpp2::ConfigMode mode = modes[i];
+        for (const auto& name : values) {
+            configModeMap[name] = mode;
+        }
+    }
+    return configModeMap;
+}
+
+std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigModule& module) {
+    std::vector<cpp2::ConfigItem> configItems;
+    if (module == cpp2::ConfigModule::UNKNOWN) {
+        return configItems;
+    }
+    auto configModeMap = parseConfigJson(FLAGS_gflags_mode_json);
     std::vector<gflags::CommandLineFlagInfo> flags;
     gflags::GetAllFlags(&flags);
     for (auto& flag : flags) {
         auto& name = flag.name;
         auto& type = flag.type;
         cpp2::ConfigType cType;
-        // default config type will take effect after reboot
-        cpp2::ConfigMode mode = cpp2::ConfigMode::REBOOT;
         VariantType value;
         std::string valueStr;
 
-        // TODO: all int32 and uint32 are converted to int64
-        if (type == "uint32" || type == "int32" || type == "int64") {
+        // default config type would be immutable
+        cpp2::ConfigMode mode = cpp2::ConfigMode::IMMUTABLE;
+        auto iter = configModeMap.find(name);
+        if (iter != configModeMap.end()) {
+            mode = iter->second;
+        }
+        // ignore some useless gflags
+        if (mode == cpp2::ConfigMode::IGNORED) {
+            continue;
+        }
+        if (module == cpp2::ConfigModule::META) {
+            // all config of meta is immutable for now
+            mode = cpp2::ConfigMode::IMMUTABLE;
+        }
+
+        // TODO: all int32/uint32/uint64 gflags are converted to int64 for now
+        if (type == "uint32" || type == "int32" || type == "int64" || type == "uint64") {
             cType = cpp2::ConfigType::INT64;
             value = folly::to<int64_t>(flag.current_value);
             valueStr = gflagsValueToThriftValue<int64_t>(flag);
@@ -57,15 +104,28 @@ void GflagsManager::declareGflags() {
             continue;
         }
 
-        if (name == "load_data_interval_secs") {
-            mode = cpp2::ConfigMode::MUTABLE;
-        }
-        if (module_ == cpp2::ConfigModule::META) {
-            // all config of meta is immutable for now
-            mode = cpp2::ConfigMode::IMMUTABLE;
-        }
+        configItems.emplace_back(toThriftConfigItem(module, name, cType, mode, valueStr));
+    }
+    LOG(INFO) << "Prepare to register " << configItems.size() << " gflags to meta";
+    return configItems;
+}
 
-        gflagsDeclared_.emplace_back(toThriftConfigItem(module_, name, cType, mode, valueStr));
+void GflagsManager::getGflagsModule(cpp2::ConfigModule& gflagsModule) {
+    // get current process according to gflags pid_file
+    gflags::CommandLineFlagInfo pid;
+    if (gflags::GetCommandLineFlagInfo("pid_file", &pid)) {
+        auto defaultPid = pid.default_value;
+        if (defaultPid.find("nebula-graphd") != std::string::npos) {
+            gflagsModule = cpp2::ConfigModule::GRAPH;
+        } else if (defaultPid.find("nebula-storaged") != std::string::npos) {
+            gflagsModule = cpp2::ConfigModule::STORAGE;
+        } else if (defaultPid.find("nebula-metad") != std::string::npos) {
+            gflagsModule = cpp2::ConfigModule::META;
+        } else {
+            LOG(ERROR) << "Should not reach here";
+        }
+    } else {
+        LOG(INFO) << "Unknown config module";
     }
 }
 

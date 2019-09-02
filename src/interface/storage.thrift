@@ -199,8 +199,16 @@ struct AddLearnerReq {
 
 struct CatchUpDataReq {
     1: common.GraphSpaceID space_id,
-    2: common.GraphSpaceID part_id,
+    2: common.PartitionID  part_id,
     3: common.HostAddr     target,
+}
+
+struct GetLeaderReq {
+}
+
+struct GetLeaderResp {
+    1: ErrorCode                 code,
+    2: map<common.GraphSpaceID, list<common.PartitionID>> (cpp.template = "std::unordered_map") leader_parts;
 }
 
 
@@ -225,5 +233,6 @@ service StorageService {
     AdminExecResp waitingForCatchUpData(1: CatchUpDataReq req);
     AdminExecResp removePart(1: RemovePartReq req);
     AdminExecResp memberChange(1: MemberChangeReq req);
+    GetLeaderResp getLeaderPart(1: GetLeaderReq req);
 }
 
