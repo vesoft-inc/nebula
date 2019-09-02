@@ -213,7 +213,7 @@ bash> sudo make install
 - Install tools
 
     ```
-    bash> sudo yum -y install git git-lfs
+    bash> sudo apt-get -y install git git-lfs
     ```
 - Install dependencies
 
