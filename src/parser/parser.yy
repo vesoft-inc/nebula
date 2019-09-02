@@ -211,6 +211,7 @@ name_label
 
 unreserved_keyword
      : KW_SPACE              { $$ = new std::string("space"); }
+     | KW_VALUES             { $$ = new std::string("values"); }
      | KW_HOSTS              { $$ = new std::string("hosts"); }
      | KW_SPACES             { $$ = new std::string("spaces"); }
      | KW_FIRSTNAME          { $$ = new std::string("firstname"); }
