@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "graph/BalanceExecutor.h"
+#include "graph/admin/BalanceExecutor.h"
 
 namespace nebula {
 namespace graph {
