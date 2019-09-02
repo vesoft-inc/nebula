@@ -721,9 +721,9 @@ edge_key
     : vid R_ARROW vid AT rank {
         $$ = new EdgeKey($1, $3, $5);
     }
-	| vid R_ARROW vid {
+    | vid R_ARROW vid {
         $$ = new EdgeKey($1, $3, 0);
-	}
+    }
     ;
 
 edge_keys
@@ -773,30 +773,32 @@ fetch_sentence
     ;
 
 find_path_sentence
-	: KW_FIND KW_ALL KW_PATH from_clause to_clause over_clause find_path_upto_clause where_clause {
-		auto *s = new FindPathSentence(false);
-		s->setFrom($4);
-		s->setTo($5);
+    : KW_FIND KW_ALL KW_PATH from_clause to_clause over_clause find_path_upto_clause
+    /* where_clause */ {
+        auto *s = new FindPathSentence(false);
+        s->setFrom($4);
+        s->setTo($5);
         s->setOver($6);
-		s->setStep($7);
-		s->setWhere($8);
-		$$ = s;
-	}
-	| KW_FIND KW_SHORTEST KW_PATH from_clause to_clause over_clause find_path_upto_clause where_clause {
-		auto *s = new FindPathSentence(true);
-		s->setFrom($4);
-		s->setTo($5);
+        s->setStep($7);
+        /* s->setWhere($8); */
+        $$ = s;
+    }
+    | KW_FIND KW_SHORTEST KW_PATH from_clause to_clause over_clause find_path_upto_clause
+    /* where_clause */ {
+        auto *s = new FindPathSentence(true);
+        s->setFrom($4);
+        s->setTo($5);
         s->setOver($6);
-		s->setStep($7);
-		s->setWhere($8);
-		$$ = s;
-	}
-	;
+        s->setStep($7);
+        /* s->setWhere($8); */
+        $$ = s;
+    }
+    ;
 
 find_path_upto_clause
-	: %empty { $$ = new StepClause(5, true); }
-	| KW_UPTO INTEGER KW_STEPS { $$ = new StepClause($2, true); }
-	;
+    : %empty { $$ = new StepClause(5, true); }
+    | KW_UPTO INTEGER KW_STEPS { $$ = new StepClause($2, true); }
+    ;
 
 to_clause
     : KW_TO vid_list {
@@ -1023,7 +1025,7 @@ traverse_sentence
     | find_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
-	| find_path_sentence { $$ = $1; }
+    | find_path_sentence { $$ = $1; }
     ;
 
 set_sentence
