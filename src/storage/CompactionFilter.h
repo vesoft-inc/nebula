@@ -100,14 +100,13 @@ public:
         : schemaMan_(schemaMan) {}
 
     std::unique_ptr<kvstore::KVFilter> createKVFilter() override {
-        return std::unique_ptr<kvstore::KVFilter>(new NebulaCompactionFilter(schemaMan_));
+        return std::make_unique<NebulaCompactionFilter>(schemaMan_);
     }
 
 private:
     meta::SchemaManager* schemaMan_ = nullptr;
 };
 
-}  // namespace storage
-}  // namespace nebula
-#endif  // STORAGE_COMPACTIONFILTER_H_
-
+}   // namespace storage
+}   // namespace nebula
+#endif   // STORAGE_COMPACTIONFILTER_H_

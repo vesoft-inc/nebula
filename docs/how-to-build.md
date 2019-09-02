@@ -42,6 +42,13 @@ bash> make
 bash> sudo make install
 ```
 
+If you want to build the java client, you should run the following command:
+
+```
+cd third-party/fbthrift/thrift/lib/java/thrift
+mvn compile install
+```
+
 #### Step3: Build nebula
 The default installation directory is **/usr/local/nebula**
 
