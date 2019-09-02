@@ -2,12 +2,13 @@ FROM centos:centos7.5.1804
 
 WORKDIR /root
 
-RUN cd && \
-    yum -y update && yum install -y git libtool autoconf \
-    autoconf-archive automake perl-WWW-Curl libstdc++-static maven \
-    java-1.8.0-openjdk wget make bison ncurses-devel xz-devel curl && \
+RUN yum -y update && yum install -y git libtool autoconf autoconf-archive \
+    automake perl-WWW-Curl libstdc++-static maven java-1.8.0-openjdk \
+    wget make bison ncurses-devel xz-devel curl unzip readline-devel && \
     curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.rpm.sh | bash && \
     yum install -y git-lfs && git lfs install && \
+    wget -q https://www.rpmfind.net/linux/fedora/linux/releases/30/Everything/x86_64/os/Packages/b/bison-3.0.5-2.fc30.x86_64.rpm && \
+    rpm -U bison-3.0.5-2.fc30.x86_64.rpm && rm bison-3.0.5-2.fc30.x86_64.rpm && \
     wget -q https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz && \
     useradd -U -m -r engshare && \
     chmod -R 755 /home/engshare && \
