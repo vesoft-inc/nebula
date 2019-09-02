@@ -1,11 +1,11 @@
-# Nebula Graph R201910_beta User Manual
+# Nebula Graph User Manual
 
 ### About this manual
 
-This is the Nebula Graph User Manual. It documents Nebula Graph R201910_beta. It may include documentation of features of Nebula Graph versions that have not yet been released. For information about which versions have been released, see  Nebula Graph Release Notes.
+This is the Nebula Graph User Manual. It documents Nebula Graph R201910_beta. For information about which versions have been released, see  Nebula Graph Release Notes.
 <!-- Release Notes not added yet. -->
 
-Because this manual serves as a reference, it does not provide general instruction on  graph database concepts. It also does not teach you how to use your operating system or command-line interpreter.
+This manual presumes you understand general graph database concepts and command-line interpreter.
 
 Nebula Graph is under constant development, and the User Manual is updated frequently as well.
 
@@ -30,7 +30,7 @@ This manual uses certain typographical conventions:
 
      Keywords in syntax and code examples are almost always shown in upper case. Although shown in uppercase, you can type keywords in either uppercase or lowercase.
 
-### Overview of Nebula Graph
+<!-- ### Overview of Nebula Graph
 #### What is Nebula Graph?
 **Nebula Graph** is an open source (Apache 2.0 licensed), distributed, scalable, lightning-fast graph database. It is the only solution in the world capable to host graphs with dozens of billions of vertices (nodes) and trillions of edges, while still provides millisecond latency.
 
@@ -57,7 +57,7 @@ This section describes some of the important characteristics of Nebula Graph.
     With distributed ACID transaction support, Nebula Graph ensures data integrity.
 - Highly available
 
-    Nebula Graph guarantees high availability even in case of failures.
+    Nebula Graph guarantees high availability even in case of failures. -->
 
 <!-- ### Architectural overview
 **Nebula Graph** is composed of four components: storage service, metadata service, query engine and client. Nebula Graph's modular architecture allows it to store super large scale graphs，query complex business logic and maintain data persistency.
