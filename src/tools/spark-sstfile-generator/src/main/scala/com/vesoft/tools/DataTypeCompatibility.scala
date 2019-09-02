@@ -29,7 +29,7 @@ object DataTypeCompatibility {
     * check whether nebula data type is compatible with hive data type
     */
   def isCompatible(nebulaType: String, hiveType: String): Boolean = {
-    // all type can be converted to nebula's string
+    // all type can be converted into nebula's string type
     if (nebulaType.equalsIgnoreCase("string")) {
       true
     } else {

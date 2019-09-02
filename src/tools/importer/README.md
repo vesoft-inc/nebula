@@ -17,17 +17,17 @@ sourceID, destinationID, [ranking], value list.
 
 Property Name  | Abbreviation |  Description
 -------------- | ------------ | -------------
-help           | h            | help message.
-file           | f            | data file path.
-batch          | b            | batch insert size.
-type           | t            | data type. vertex or edge.
-name           | n            | specify the space name.
-schema         | m            | specify the schema name.
-column         | c            | vertex and edge's column.
-stat           | s            | print statistics info.
 address        | a            | thrift service address.
-retry          | r            | thrift connection retry number.
-timeout        | o            | thrift connection timeout.
-user           | u            | thrift service username.
-pswd           | p            | thrift service password.
+batch          | b            | batch insert size.
+column         | c            | vertex and edge's column.
+file           | f            | data file path.
+help           | h            | help message.
 ranking        | k            | the edge have ranking data.
+schema         | m            | specify the schema name.
+name           | n            | specify the space name.
+timeout        | o            | thrift connection timeout.
+pswd           | p            | thrift service password.
+retry          | r            | thrift connection retry number.
+stat           | s            | print statistics info.
+type           | t            | data type. vertex or edge.
+user           | u            | thrift service username.
