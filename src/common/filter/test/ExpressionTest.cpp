@@ -636,7 +636,7 @@ TEST_F(ExpressionTest, StringFunctionCall) {
         decoded.value()->setContext(ctx.get());                         \
         auto status = decoded.value()->prepare();                       \
         ASSERT_TRUE(status.ok()) << status;                             \
-        auto value = decoded.value()->eval();                           \
+        auto value = Expression::eval(decoded.value().get());           \
         ASSERT_TRUE(value.ok());                                        \
         auto v = value.value();                                         \
         ASSERT_TRUE(Expression::is##type(v));                           \
