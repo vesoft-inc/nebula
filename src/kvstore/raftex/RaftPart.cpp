@@ -469,7 +469,11 @@ void RaftPart::removePeer(const HostAddr& peer) {
     if (it == hosts_.end()) {
         LOG(INFO) << idStr_ << "The peer " << peer << " not exist!";
     } else {
-        CHECK(!(*it)->isLearner()) << idStr_ << "Peer " << peer << " should not be learner!";
+        if ((*it)->isLearner()) {
+            LOG(INFO) << idStr_ << "The peer is learner, remove it directly!";
+            hosts_.erase(it);
+            return;
+        }
         hosts_.erase(it);
         updateQuorum();
         LOG(INFO) << idStr_ << "Remove peer " << peer;

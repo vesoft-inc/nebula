@@ -176,7 +176,7 @@ std::string encodeHost(LogType type, const HostAddr& host) {
     return encoded;
 }
 
-HostAddr decodeHost(LogType type, folly::StringPiece encoded) {
+HostAddr decodeHost(LogType type, const folly::StringPiece& encoded) {
     HostAddr addr;
     CHECK_EQ(sizeof(int64_t) + 1 + sizeof(HostAddr), encoded.size());
     CHECK(encoded[sizeof(int64_t)] == type);
