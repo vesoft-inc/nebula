@@ -15,6 +15,7 @@
 #include "kvstore/PartManager.h"
 #include "kvstore/Part.h"
 #include "kvstore/KVEngine.h"
+#include "kvstore/raftex/SnapshotManager.h"
 
 namespace nebula {
 namespace kvstore {
@@ -200,6 +201,7 @@ private:
     KVOptions options_;
 
     std::shared_ptr<raftex::RaftexService> raftService_;
+    std::shared_ptr<raftex::SnapshotManager> snapshot_;
 };
 
 }  // namespace kvstore
