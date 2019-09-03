@@ -27,7 +27,7 @@ Please allow for adequate disk space. Better reserve more than **16G** of space.
 - Install dependencies
 
     ```
-    bash> sudo yum -y install autoconf automake libtool cmake bison unzip boost gperf krb5 openssl libunwind ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk
+    bash> sudo yum -y install gcc gcc-c++ libstdc++-static cmake make autoconf automake flex gperf libtool bison unzip boost boost-devel boost-static krb5-devel krb5-libs openssl openssl-devel libunwind libunwind-devel ncurses ncurses-devel readline readline-devel python java-1.8.0-openjdk java-1.8.0-openjdk-devel
     ```
 
 #### Step2: Build and install 3rd-party Libraries

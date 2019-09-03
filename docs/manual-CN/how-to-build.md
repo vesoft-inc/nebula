@@ -20,7 +20,7 @@ Nebula 在 C++14 上开发，因此它需要一个支持 C++14 的编译器。
 - 安装依赖模块
 
     ```
-    bash> sudo yum -y install autoconf automake libtool cmake bison unzip boost gperf krb5 openssl libunwind ncurses ncurses-devel readline readline-devel maven java-1.8.0-openjdk
+    bash> sudo yum -y install gcc gcc-c++ libstdc++-static cmake make autoconf automake flex gperf libtool bison unzip boost boost-devel boost-static krb5-devel krb5-libs openssl openssl-devel libunwind libunwind-devel ncurses ncurses-devel readline readline-devel python java-1.8.0-openjdk java-1.8.0-openjdk-devel
     ```
 
 #### 步骤 2: 构建和安装第三方库
