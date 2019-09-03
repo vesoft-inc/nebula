@@ -45,7 +45,6 @@ bool NebulaStore::init() {
         return false;
     }
 
-    flusher_ = std::make_unique<wal::BufferFlusher>();
     CHECK(!!options_.partMan_);
     LOG(INFO) << "Scan the local path, and init the spaces_";
     {
@@ -207,7 +206,6 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                        engine,
                                        ioPool_,
                                        bgWorkers_,
-                                       flusher_.get(),
                                        workers_);
     auto partMeta = options_.partMan_->partMeta(spaceId, partId);
     std::vector<HostAddr> peers;
@@ -378,6 +376,19 @@ void NebulaStore::asyncRemovePrefix(GraphSpaceID spaceId,
     part->asyncRemovePrefix(prefix, std::move(cb));
 }
 
+void NebulaStore::asyncAtomicOp(GraphSpaceID spaceId,
+                                PartitionID partId,
+                                raftex::AtomicOp op,
+                                KVCallback cb) {
+    auto ret = part(spaceId, partId);
+    if (!ok(ret)) {
+        cb(error(ret));
+        return;
+    }
+    auto part = nebula::value(ret);
+    part->asyncAtomicOp(std::move(op), std::move(cb));
+}
+
 ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceId,
                                                              PartitionID partId) {
     folly::RWSpinLock::ReadHolder rh(&lock_);
@@ -392,7 +403,6 @@ ErrorOr<ResultCode, std::shared_ptr<Part>> NebulaStore::part(GraphSpaceID spaceI
     }
     return partIt->second;
 }
-
 
 ResultCode NebulaStore::ingest(GraphSpaceID spaceId) {
     auto spaceRet = space(spaceId);
@@ -534,6 +544,23 @@ ErrorOr<ResultCode, std::shared_ptr<SpacePartInfo>> NebulaStore::space(GraphSpac
         return ResultCode::ERR_SPACE_NOT_FOUND;
     }
     return it->second;
+}
+
+int32_t NebulaStore::allLeader(std::unordered_map<GraphSpaceID,
+                                                  std::vector<PartitionID>>& leaderIds) {
+    folly::RWSpinLock::ReadHolder rh(&lock_);
+    int32_t count = 0;
+    for (const auto& spaceIt : spaces_) {
+        auto spaceId = spaceIt.first;
+        for (const auto& partIt : spaceIt.second->parts_) {
+            auto partId = partIt.first;
+            if (partIt.second->isLeader()) {
+                leaderIds[spaceId].emplace_back(partId);
+                ++count;
+            }
+        }
+    }
+    return count;
 }
 
 }  // namespace kvstore

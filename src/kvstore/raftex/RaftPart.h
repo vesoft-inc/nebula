@@ -9,6 +9,7 @@
 
 #include "base/Base.h"
 #include <folly/futures/SharedPromise.h>
+#include <folly/Function.h>
 #include "gen-cpp2/raftex_types.h"
 #include "time/Duration.h"
 #include "thread/GenericThreadPool.h"
@@ -23,7 +24,6 @@ namespace nebula {
 
 namespace wal {
 class FileBasedWal;
-class BufferFlusher;
 }  // namespace wal
 
 
@@ -31,7 +31,7 @@ namespace raftex {
 
 enum class AppendLogResult {
     SUCCEEDED = 0,
-    E_CAS_FAILURE = -1,
+    E_ATOMIC_OP_FAILURE = -1,
     E_NOT_A_LEADER = -2,
     E_STOPPED = -3,
     E_NOT_READY = -4,
@@ -42,13 +42,13 @@ enum class AppendLogResult {
 
 enum class LogType {
     NORMAL      = 0x00,
-    CAS         = 0x01,
+    ATOMIC_OP   = 0x01,
     /**
-      COMMAND is similar to CAS, but not the same. There are two differences:
-      1. Normal logs after CAS could be committed together. In opposite, Normal logs
+      COMMAND is similar to AtomicOp, but not the same. There are two differences:
+      1. Normal logs after AtomicOp could be committed together. In opposite, Normal logs
          after COMMAND should be hold until the COMMAND committed, but the logs before
          COMMAND could be committed together.
-      2. CAS maybe failed. So we use SinglePromise for it. But COMMAND not, so it could
+      2. AtomicOp maybe failed. So we use SinglePromise for it. But COMMAND not, so it could
          share one promise with the normal logs before it.
      * */
     COMMAND     = 0x02,
@@ -56,6 +56,13 @@ enum class LogType {
 
 class Host;
 class AppendLogsIterator;
+
+/**
+ * The operation will be atomic, if the operation failed, empty string will be returned,
+ * otherwise it will return the new operation's encoded string whick should be applied atomically.
+ * You could implement CAS, READ-MODIFY-WRITE operations though it.
+ * */
+using AtomicOp = folly::Function<std::string(void)>;
 
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
     friend class AppendLogsIterator;
@@ -115,6 +122,10 @@ public:
 
     void addLearner(const HostAddr& learner);
 
+    void commitTransLeader(const HostAddr& target);
+
+    void preProcessTransLeader(const HostAddr& target);
+
     // Change the partition status to RUNNING. This is called
     // by the inherited class, when it's ready to serve
     virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
@@ -141,14 +152,16 @@ public:
     folly::Future<AppendLogResult> appendAsync(ClusterID source, std::string log);
 
     /****************************************************************
-     * Asynchronously compare and set
+     * Run the op atomically.
      ***************************************************************/
-    folly::Future<AppendLogResult> casAsync(std::string log);
+    folly::Future<AppendLogResult> atomicOpAsync(AtomicOp op);
 
     /**
      * Asynchronously send one command.
      * */
     folly::Future<AppendLogResult> sendCommandAsync(std::string log);
+
+
 
     /*****************************************************
      *
@@ -173,7 +186,6 @@ protected:
              PartitionID partId,
              HostAddr localAddr,
              const folly::StringPiece walRoot,
-             wal::BufferFlusher* flusher,
              std::shared_ptr<folly::IOThreadPoolExecutor> pool,
              std::shared_ptr<thread::GenericThreadPool> workers,
              std::shared_ptr<folly::Executor> executor);
@@ -197,17 +209,7 @@ protected:
     // a new leader
     virtual void onElected(TermID term) = 0;
 
-    // This method is invoked when handling a CAS log. The inherited
-    // class uses this method to do the comparison and decide whether
-    // a log should be inserted
-    //
-    // The method will be guaranteed to execute in a single-threaded
-    // manner, so no need for locks
-    //
-    // If CAS succeeded, the method should return the correct log content
-    // that will be applied to the storage. Otherwise it returns an empty
-    // string
-    virtual std::string compareAndSet(const std::string& log) = 0;
+    virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
 
     // The inherited classes need to implement this method to commit
     // a batch of log messages
@@ -246,7 +248,8 @@ private:
     using LogCache = std::vector<
         std::tuple<ClusterID,
                    LogType,
-                   std::string>>;
+                   std::string,
+                   AtomicOp>>;
 
 
     /****************************************************
@@ -296,7 +299,8 @@ private:
 
     folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
                                                   LogType logType,
-                                                  std::string log);
+                                                  std::string log,
+                                                  AtomicOp cb = nullptr);
 
     void appendLogsInternal(AppendLogsIterator iter, TermID termId);
 
@@ -395,9 +399,9 @@ protected:
         // Whether the last future was returned from a shared promise
         bool rollSharedPromise_{true};
 
-        // Promises shared by continuous non-CAS logs
+        // Promises shared by continuous non atomic op logs
         std::list<folly::SharedPromise<ValueType>> sharedPromises_;
-        // A list of promises for CAS logs
+        // A list of promises for atomic op logs
         std::list<folly::Promise<ValueType>> singlePromises_;
     };
 

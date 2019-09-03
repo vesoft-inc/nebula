@@ -18,11 +18,6 @@
 
 namespace nebula {
 
-namespace wal {
-class BufferFlusher;
-}  // namespace wal
-
-
 namespace raftex {
 
 class RaftexService;
@@ -30,8 +25,6 @@ class RaftexService;
 namespace test {
 class TestShard;
 }  // namespace test
-
-extern std::unique_ptr<wal::BufferFlusher> flusher;
 
 extern std::mutex leaderMutex;
 extern std::condition_variable leaderCV;
@@ -78,8 +71,8 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
                 std::shared_ptr<thread::GenericThreadPool>& workers,
                 std::shared_ptr<test::TestShard>& leader);
 
-void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
-                     std::shared_ptr<test::TestShard>& leader);
+int32_t checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                        std::shared_ptr<test::TestShard>& leader);
 
 void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      size_t index,

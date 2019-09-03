@@ -42,6 +42,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:schema_obj>
         $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -72,6 +73,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -103,6 +105,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:schema_obj>
         $<TARGET_OBJECTS:process_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -165,6 +168,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:raftex_obj>
         $<TARGET_OBJECTS:raftex_thrift_obj>
         $<TARGET_OBJECTS:wal_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -192,7 +196,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:hdfs_helper_obj>
-         $<TARGET_OBJECTS:http_client_obj>
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:time_obj>
@@ -201,6 +205,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
@@ -240,6 +245,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
@@ -279,6 +285,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         proxygenhttpserver
         proxygenlib
@@ -309,6 +316,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -342,6 +350,8 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
+        $<TARGET_OBJECTS:adHocSchema_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -373,6 +383,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -403,6 +414,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -431,6 +443,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:schema_obj>
+        $<TARGET_OBJECTS:gflags_man_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

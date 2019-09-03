@@ -438,3 +438,13 @@ nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.nam
    ```
    nebula> UPDATE VARIABLES graph:load_data_interval_secs=1
    ```
+
+### 使用docker启动后，执行命令时报错.
+
+可能的原因是docker的IP地址和我们默认配置中的监听地址不一致(默认是172.17.0.2)，因此这里需要修改默认配置中的监听地址.
+
+1. 首先在容器中执行ifconfig命令，查看您的容器地址，这里假设您的容器地址是172.17.0.3,那么就意味着您需要修改默认配置的IP地址.
+2. 然后进入配置目录(cd /usr/local/nebula/etc), 查找所有IP地址配置的位置(grep "172.17.0.2" . -r).
+3. 修改上一步查到的所有IP地址为您的容器地址(172.17.0.3).
+4. 最后重新启动所有服务.
+

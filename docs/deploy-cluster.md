@@ -62,7 +62,6 @@ Property Name               | Default Value            | Description
 `pid_file`                  | "pids/nebula-metad.pid"  | File to hold the process id.
 `daemonize`                 | true                     | Whether run as a daemon process.
 `cluster_id`                | 0                        | A unique id for each cluster.
-`load_config_interval_secs` | 2 * 60                   | Load config interval.
 `meta_ingest_thread_num`    | 3.                       | Meta daemon's ingest thread number.
 
 **Storage Service** supports the following config properties.
@@ -146,3 +145,4 @@ Property Name            | Default Value | Description
 `server_conn_timeout_ms` | 1000          | Connection timeout in milliseconds.
 
 **Note:** Please make sure the ports are not blocked by the firewall during configuration.
+

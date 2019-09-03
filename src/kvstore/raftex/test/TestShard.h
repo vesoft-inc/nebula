@@ -19,11 +19,18 @@ namespace test {
 
 enum class CommandType : int8_t {
     ADD_LEARNER = 0x01,
+    TRANSFER_LEADER = 0x02,
 };
 
 std::string encodeLearner(const HostAddr& addr);
 
 HostAddr decodeLearner(const folly::StringPiece& log);
+
+std::string compareAndSet(const std::string& log);
+
+std::string encodeTransferLeader(const HostAddr& addr);
+
+HostAddr decodeTransferLeader(const folly::StringPiece& log);
 
 class TestShard : public RaftPart {
 public:
@@ -33,7 +40,6 @@ public:
         PartitionID partId,
         HostAddr addr,
         const folly::StringPiece walRoot,
-        wal::BufferFlusher* flusher,
         std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
         std::shared_ptr<thread::GenericThreadPool> workers,
         std::shared_ptr<folly::Executor> handlersPool,
@@ -56,8 +62,8 @@ public:
 
     void onLostLeadership(TermID term) override;
     void onElected(TermID term) override;
+    void onDiscoverNewLeader(HostAddr) override {}
 
-    std::string compareAndSet(const std::string& log) override;
     bool commitLogs(std::unique_ptr<LogIterator> iter) override;
 
     bool preProcessLog(LogID,
@@ -70,6 +76,12 @@ public:
                     auto learner = decodeLearner(log);
                     addLearner(learner);
                     LOG(INFO) << idStr_ << "Add learner " << learner;
+                    break;
+                }
+                case CommandType::TRANSFER_LEADER: {
+                    auto nLeader = decodeTransferLeader(log);
+                    preProcessTransLeader(nLeader);
+                    LOG(INFO) << idStr_ << "Preprocess transleader " << nLeader;
                     break;
                 }
                 default: {
