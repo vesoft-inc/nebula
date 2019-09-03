@@ -72,7 +72,7 @@ Run
 to connect to the graph server. -->
 
 **Connect to Nebula Graph**
- 
+
 connect to Nebula:
 
 ```
@@ -154,6 +154,7 @@ Then run the following command:
    - port
    - ws_http_port: metaservice HTTP port
    - ws_h2_port: metaservice HTTP2 port
+   - meta_server_addrs: List of meta server addresses, the format looks like ip1:port1, ip2:port2, ip3:port3
 
 
 * Configure nebula-storaged.conf
@@ -164,10 +165,10 @@ Then run the following command:
 
    Modify configurations in nebula-storaged.conf:
 
-   - local_ip
    - port
    - ws_http_port: storageservice HTTP port
    - ws_h2_port: storageservice HTTP2 port
+   - meta_server_addrs: List of meta server addresses, the format looks like ip1:port1, ip2:port2, ip3:port3
 
 * Configure nebula-graphd.conf
 
@@ -181,6 +182,7 @@ Then run the following command:
    - port
    - ws_http_port: graphservice HTTP port
    - ws_h2_port: graphservice HTTP2 port
+   - meta_server_addrs: List of meta server addresses, the format looks like ip1:port1, ip2:port2, ip3:port3
 
 **Start Service**
 
@@ -202,7 +204,7 @@ Make sure all the services are working
 
 * -u is to set the user name, `user` is the default Nebula user account
 * -p is to set password, `password` is the default password for account `user`
-<!-- 
+<!--
 `Add HOSTS` is to register the storage hosts:
 
 ```
