@@ -104,7 +104,7 @@ to connect to the graph server. -->
 
 ### 编译源码方式 (Linux)
 
-**第三方库**
+<!-- **第三方库**
 
 nebula 遵循 c++14 标准，依赖第三方库：
 
@@ -123,7 +123,7 @@ nebula 遵循 c++14 标准，依赖第三方库：
 -	readline
 -  flex
 
-建议安装 g++ 5 以上 Linux 系统, 比如 Fedora 29。目前，nebula 使用 `git-lfs` 存储第三方库，请确保获取源代码之前已安装 `git-lfs` 。
+建议安装 g++ 5 以上 Linux 系统, 比如 Fedora 29。目前，nebula 使用 `git-lfs` 存储第三方库，请确保获取源代码之前已安装 `git-lfs` 。 -->
 
 **编译**
 
@@ -447,4 +447,3 @@ nebula> $a=GO FROM 201 OVER like; GO FROM $a.id OVER select YIELD $^.student.nam
 2. 然后进入配置目录(cd /usr/local/nebula/etc), 查找所有IP地址配置的位置(grep "172.17.0.2" . -r).
 3. 修改上一步查到的所有IP地址为您的容器地址(172.17.0.3).
 4. 最后重新启动所有服务.
-

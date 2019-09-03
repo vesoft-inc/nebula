@@ -86,7 +86,7 @@ If you have any questions or concerns about the deployment procedures, please do
 
 ### From Source(Linux)
 
-**Prerequisite Tools**
+<!-- **Prerequisite Tools**
 
 Nebula Graph is written in C++14, so it requires a compiler supporting C++14 features.
 
@@ -109,7 +109,7 @@ Nebula Graph is written in C++14, so it requires a compiler supporting C++14 fea
 
 It is recommended to install g++ 5 or higher Linux system, such as Fedora 29.
 Currently, we are using `git-lfs` to store the 3rd-party libraries so make sure
-`git-lfs` have been installed before fetching the source code.
+`git-lfs` have been installed before fetching the source code. -->
 
 **Fetch from GitHub**
 
@@ -119,7 +119,7 @@ Currently, we are using `git-lfs` to store the 3rd-party libraries so make sure
 
 **Compiling**
 
-Click [here](https://github.com/vesoft-inc/nebula/blob/master/docs/how-to-build.md) to compile **Nebula Graph**.
+Click [how to build](https://github.com/vesoft-inc/nebula/blob/master/docs/how-to-build.md) to compile **Nebula Graph**.
 
 <!-- ```
 > cmake ./
