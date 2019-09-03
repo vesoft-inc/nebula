@@ -42,28 +42,32 @@ void mockData(kvstore::KVStore* kv) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", dst " << dstId;
                 // Write multi versions,  we should get the latest version.
                 for (auto version = 0; version < 3; version++) {
-                    auto key = NebulaKeyUtils::edgeKey(partId, vertexId, 101,
-                                                       0, dstId,
-                                                       std::numeric_limits<int>::max() - version);
-                    RowWriter writer(nullptr);
-                    for (uint64_t numInt = 0; numInt < 10; numInt++) {
-                        writer << (dstId + numInt);
+                    for (auto edgeType = 101; edgeType < 110; edgeType++) {
+                        auto key =
+                            NebulaKeyUtils::edgeKey(partId, vertexId, edgeType, 0, dstId,
+                                                    std::numeric_limits<int>::max() - version);
+                        RowWriter writer(nullptr);
+                        for (uint64_t numInt = 0; numInt < 10; numInt++) {
+                            writer << (dstId + numInt);
+                        }
+                        for (auto numString = 10; numString < 20; numString++) {
+                            writer << folly::stringPrintf("string_col_%d_%d", numString, version);
+                        }
+                        auto val = writer.encode();
+                        data.emplace_back(std::move(key), std::move(val));
                     }
-                    for (auto numString = 10; numString < 20; numString++) {
-                        writer << folly::stringPrintf("string_col_%d_%d", numString, version);
-                    }
-                    auto val = writer.encode();
-                    data.emplace_back(std::move(key), std::move(val));
                 }
             }
             // Generate 5 in-edges for each edgeType, the edgeType is negative
             for (auto srcId = 20001; srcId <= 20005; srcId++) {
                 VLOG(3) << "Write part " << partId << ", vertex " << vertexId << ", src " << srcId;
                 for (auto version = 0; version < 3; version++) {
-                    auto key = NebulaKeyUtils::edgeKey(partId, vertexId, -101,
-                                                       0, srcId,
-                                                       std::numeric_limits<int>::max() - version);
-                    data.emplace_back(std::move(key), "");
+                    for (auto edgeType = 101; edgeType < 110; edgeType++) {
+                        auto key =
+                            NebulaKeyUtils::edgeKey(partId, vertexId, -edgeType, 0, srcId,
+                                                    std::numeric_limits<int>::max() - version);
+                        data.emplace_back(std::move(key), "");
+                    }
                 }
             }
         }
@@ -78,8 +82,7 @@ void mockData(kvstore::KVStore* kv) {
     }
 }
 
-
-void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
+void buildRequest(cpp2::GetNeighborsRequest& req, const std::vector<EdgeType>& et) {
     req.set_space_id(0);
     decltype(req.parts) tmpIds;
     for (auto partId = 0; partId < 3; partId++) {
@@ -88,8 +91,6 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
         }
     }
     req.set_parts(std::move(tmpIds));
-    auto edge_type = outBound ? 101 : -101;
-    std::vector<EdgeType> et = {edge_type};
     req.set_edge_types(et);
 
     // Return tag props col_0, col_2, col_4
@@ -99,12 +100,16 @@ void buildRequest(cpp2::GetNeighborsRequest& req, bool outBound = true) {
             folly::stringPrintf("tag_%d_col_%d", 3001 + i * 2, i * 2), 3001 + i * 2));
     }
 
-    tmpColumns.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("_dst"), edge_type));
-    tmpColumns.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("_rank"), edge_type));
+    for (auto& e : et) {
+        tmpColumns.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("_dst"), e));
+        tmpColumns.emplace_back(TestUtils::edgePropDef(folly::stringPrintf("_rank"), e));
+    }
     // Return edge props col_0, col_2, col_4 ... col_18
     for (int i = 0; i < 10; i++) {
-        tmpColumns.emplace_back(
-            TestUtils::edgePropDef(folly::stringPrintf("col_%d", i * 2), edge_type));
+        for (auto& e : et) {
+            tmpColumns.emplace_back(
+                TestUtils::edgePropDef(folly::stringPrintf("col_%d", i * 2), e));
+        }
     }
     req.set_return_columns(std::move(tmpColumns));
 }
@@ -206,7 +211,8 @@ TEST(QueryBoundTest, OutBoundSimpleTest) {
     mockData(kv.get());
 
     cpp2::GetNeighborsRequest req;
-    buildRequest(req);
+    std::vector<EdgeType> et = {101};
+    buildRequest(req, et);
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
@@ -229,7 +235,8 @@ TEST(QueryBoundTest, inBoundSimpleTest) {
     mockData(kv.get());
 
     cpp2::GetNeighborsRequest req;
-    buildRequest(req, false);
+    std::vector<EdgeType> et = {-101};
+    buildRequest(req, et);
 
     LOG(INFO) << "Test QueryInBoundRequest...";
     auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
@@ -259,7 +266,8 @@ TEST(QueryBoundTest, FilterTest_OnlyEdgeFilter) {
                                                          RelationalExpression::Operator::GE,
                                                          priExp);
     cpp2::GetNeighborsRequest req;
-    buildRequest(req);
+    std::vector<EdgeType> et = {101};
+    buildRequest(req, et);
     req.set_filter(Expression::encode(relExp.get()));
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
@@ -291,7 +299,8 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
                                                          RelationalExpression::Operator::GE,
                                                          priExp);
     cpp2::GetNeighborsRequest req;
-    buildRequest(req);
+    std::vector<EdgeType> et = {101};
+    buildRequest(req, et);
     req.set_filter(Expression::encode(relExp.get()));
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
@@ -310,7 +319,8 @@ TEST(QueryBoundTest, FilterTest_OnlyTagFilter) {
 TEST(QueryBoundTest,  GenBucketsTest) {
     {
         cpp2::GetNeighborsRequest req;
-        buildRequest(req, false);
+        std::vector<EdgeType> et = {-101};
+        buildRequest(req, et);
         QueryBoundProcessor pro(nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(10, buckets.size());
@@ -322,7 +332,8 @@ TEST(QueryBoundTest,  GenBucketsTest) {
         FLAGS_max_handlers_per_req = 9;
         FLAGS_min_vertices_per_bucket = 3;
         cpp2::GetNeighborsRequest req;
-        buildRequest(req, false);
+        std::vector<EdgeType> et = {-101};
+        buildRequest(req, et);
         QueryBoundProcessor pro(nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(9, buckets.size());
@@ -337,7 +348,8 @@ TEST(QueryBoundTest,  GenBucketsTest) {
         FLAGS_max_handlers_per_req = 40;
         FLAGS_min_vertices_per_bucket = 4;
         cpp2::GetNeighborsRequest req;
-        buildRequest(req, false);
+        std::vector<EdgeType> et = {-101};
+        buildRequest(req, et);
         QueryBoundProcessor pro(nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(7, buckets.size());
@@ -351,7 +363,8 @@ TEST(QueryBoundTest,  GenBucketsTest) {
     {
         FLAGS_min_vertices_per_bucket = 40;
         cpp2::GetNeighborsRequest req;
-        buildRequest(req, false);
+        std::vector<EdgeType> et = {-101};
+        buildRequest(req, et);
         QueryBoundProcessor pro(nullptr, nullptr, nullptr);
         auto buckets = pro.genBuckets(req);
         ASSERT_EQ(1, buckets.size());
@@ -384,7 +397,8 @@ TEST(QueryBoundTest, FilterTest_TagAndEdgeFilter) {
     auto logExp = std::make_unique<LogicalExpression>(left, LogicalExpression::AND, right);
 
     cpp2::GetNeighborsRequest req;
-    buildRequest(req);
+    std::vector<EdgeType> et = {101};
+    buildRequest(req, et);
     req.set_filter(Expression::encode(logExp.get()));
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
@@ -412,7 +426,8 @@ TEST(QueryBoundTest, FilterTest_InvalidFilter) {
     auto inputExp = std::make_unique<InputPropertyExpression>(prop);
 
     cpp2::GetNeighborsRequest req;
-    buildRequest(req);
+    std::vector<EdgeType> et = {101};
+    buildRequest(req, et);
     req.set_filter(Expression::encode(inputExp.get()));
 
     LOG(INFO) << "Test QueryOutBoundRequest...";
@@ -429,6 +444,30 @@ TEST(QueryBoundTest, FilterTest_InvalidFilter) {
     EXPECT_TRUE(nebula::storage::cpp2::ErrorCode::E_INVALID_FILTER
                     == resp.result.failed_codes[0].code);
 }
+
+TEST(QueryBoundTest, MultiEdgeQueryTest) {
+    fs::TempDir rootPath("/tmp/QueryBoundTest.XXXXXX");
+    std::unique_ptr<kvstore::KVStore> kv = TestUtils::initKV(rootPath.path());
+
+    LOG(INFO) << "Prepare meta...";
+    auto schemaMan = TestUtils::mockSchemaMan();
+    mockData(kv.get());
+
+    cpp2::GetNeighborsRequest req;
+    std::vector<EdgeType> et = {101, 102, 103};
+    buildRequest(req, et);
+
+    LOG(INFO) << "Test QueryOutBoundRequest...";
+    auto executor = std::make_unique<folly::CPUThreadPoolExecutor>(3);
+    auto* processor = QueryBoundProcessor::instance(kv.get(), schemaMan.get(), executor.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    LOG(INFO) << "Check the results...";
+    checkResponse(resp, 30, 12, 10001, 7, true);
+}
+
 }  // namespace storage
 }  // namespace nebula
 

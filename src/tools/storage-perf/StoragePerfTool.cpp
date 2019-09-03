@@ -216,7 +216,7 @@ private:
         auto* evb = threadPool_->getEventBase();
         std::vector<EdgeType> e(edgeType_);
         auto f =
-            client_->getNeighbors(spaceId_, randomVertices(), e, "", randomCols())
+          client_->getNeighbors(spaceId_, randomVertices(), std::move(e), "", randomCols())
                 .via(evb)
                 .then([this](auto&& resps) {
                     if (!resps.succeeded()) {

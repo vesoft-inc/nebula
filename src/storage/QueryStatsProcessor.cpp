@@ -115,6 +115,7 @@ void QueryStatsProcessor::onProcessFinished(int32_t retNum) {
     for (auto& ec : this->edgeContexts_) {
         auto p = ec.second;
         for (auto& prop : p) {
+            CHECK(prop.returned_);
             props.emplace_back(std::move(prop));
         }
     }

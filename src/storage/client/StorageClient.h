@@ -99,8 +99,8 @@ public:
 
     folly::SemiFuture<StorageRpcResponse<storage::cpp2::QueryResponse>> getNeighbors(
         GraphSpaceID space,
-        std::vector<VertexID> vertices,
-        std::vector<EdgeType> edgeTypes,
+        const std::vector<VertexID> &vertices,
+        const std::vector<EdgeType> &edgeTypes,
         std::string filter,
         std::vector<storage::cpp2::PropDef> returnCols,
         bool overAll = false,

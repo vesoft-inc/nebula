@@ -41,7 +41,6 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
 
 void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     spaceId_ = req.get_space_id();
-    //    initContext(req.edge_types, true);
     auto retCode = this->checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {
         for (auto& p : req.get_parts()) {

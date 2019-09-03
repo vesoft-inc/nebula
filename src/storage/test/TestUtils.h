@@ -79,8 +79,10 @@ public:
 
     static std::unique_ptr<meta::SchemaManager> mockSchemaMan(GraphSpaceID spaceId = 0) {
         auto* schemaMan = new AdHocSchemaManager();
-        schemaMan->addEdgeSchema(
-            spaceId /*space id*/, 101 /*edge type*/, TestUtils::genEdgeSchemaProvider(10, 10));
+        for (auto edgeType = 101; edgeType < 110; edgeType++) {
+            schemaMan->addEdgeSchema(spaceId /*space id*/, edgeType /*edge type*/,
+                                     TestUtils::genEdgeSchemaProvider(10, 10));
+        }
         for (auto tagId = 3001; tagId < 3010; tagId++) {
             schemaMan->addTagSchema(
                 spaceId /*space id*/, tagId, TestUtils::genTagSchemaProvider(tagId, 3, 3));

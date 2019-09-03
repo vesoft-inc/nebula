@@ -35,22 +35,11 @@ bool QueryBaseProcessor<REQ, RESP>::validOperation(nebula::cpp2::SupportedType v
 }
 
 template <typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::addDefaultProps(std::vector<PropContext>& p, EdgeType eType) {
-    p.emplace_back("_src", eType, 0, PropContext::PropInKeyType::SRC);
-    p.emplace_back("_rank", eType, 1, PropContext::PropInKeyType::RANK);
-    p.emplace_back("_dst", eType, 2, PropContext::PropInKeyType::DST);
-}
-
-template <typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::initContext(const std::vector<EdgeType>& eTypes,
-                                                bool need_default_props) {
+void QueryBaseProcessor<REQ, RESP>::initEdgeContext(const std::vector<EdgeType>& eTypes) {
     std::transform(eTypes.cbegin(), eTypes.cend(),
                    std::inserter(edgeContexts_, edgeContexts_.end()),
-                   [this, need_default_props](const auto& ec) {
+                   [this](const auto& ec) {
                        std::vector<PropContext> prop;
-                       if (need_default_props) {
-                           addDefaultProps(prop, ec);
-                       }
                        return std::make_pair(ec, std::move(prop));
                    });
 }
@@ -242,31 +231,35 @@ bool QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp) {
                 return false;
             }
 
-            bool processed = false;
-            for (auto& ec : edgeContexts_) {
-                auto edgeType = ec.first;
+            auto* edgeExp = static_cast<const AliasPropertyExpression*>(exp);
 
-                if (edgeType < 0) {
-                    VLOG(1) << "Only support filter on out bound props";
-                    continue;
-                }
-
-                auto* edgeExp = static_cast<const AliasPropertyExpression*>(exp);
-                const auto* propName = edgeExp->prop();
-                auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeType);
-                if (!schema) {
-                    VLOG(1) << "Cant find edgeType " << edgeType;
-                    continue;
-                }
-                auto field = schema->field(*propName);
-                if (field == nullptr) {
-                    VLOG(1) << "Can't find related prop " << *propName << " on edge "
-                            << *(edgeExp->alias());
-                    continue;
-                }
-                processed = true;
+            // TODO(simon.liu) we need handle rename.
+            auto edgeStatus = this->schemaMan_->toEdgeType(spaceId_, *edgeExp->alias());
+            if (!edgeStatus.ok()) {
+                VLOG(1) << "Can't find edge " << *(edgeExp->alias());
+                return false;
             }
-            return processed;
+
+            auto edgeType = edgeStatus.value();
+            if (edgeType < 0) {
+                VLOG(1) << "Only support filter on out bound props";
+                return false;
+            }
+
+            auto schema = this->schemaMan_->getEdgeSchema(spaceId_, edgeType);
+            if (!schema) {
+                VLOG(1) << "Cant find edgeType " << edgeType;
+                return false;
+            }
+
+            const auto* propName = edgeExp->prop();
+            auto field           = schema->field(*propName);
+            if (field == nullptr) {
+                VLOG(1) << "Can't find related prop " << *propName << " on edge "
+                        << *(edgeExp->alias());
+                return false;
+            }
+            return true;
         }
         case Expression::kVariableProp:
         case Expression::kDestProp:
@@ -511,7 +504,7 @@ void QueryBaseProcessor<REQ, RESP>::process(const cpp2::GetNeighborsRequest& req
     tagContexts_.reserve(returnColumnsNum);
 
     if (req.__isset.edge_types) {
-        initContext(req.edge_types);
+        initEdgeContext(req.edge_types);
     }
 
     auto retCode = checkAndBuildContexts(req);
