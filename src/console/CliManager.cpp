@@ -26,8 +26,6 @@ const int32_t kMaxUsernameLen = 16;
 const int32_t kMaxPasswordLen = 24;
 
 CliManager::CliManager() {
-    curSpaceName_ = std::string("(none)");
-
     if (!fs::FileUtils::isStdinTTY()) {
         enableHistroy_ = false;
         isInteractive_ = false;
@@ -159,9 +157,6 @@ void CliManager::loop() {
             break;
         }
 
-        if (!cmdProcessor_->getSpaceName().empty()) {
-            curSpaceName_ = cmdProcessor_->getSpaceName();
-        }
         cmd.clear();
     }
     saveHistory();
@@ -182,7 +177,7 @@ bool CliManager::readLine(std::string &line, bool linebreak) {
                    "\033[0m"           // restore color code
                    "\002",             // RL_PROMPT_END_IGNORE
                    color++ % 6 + 31, username_.c_str(),
-                   addr_.c_str(), curSpaceName_.c_str());
+                   addr_.c_str(), cmdProcessor_->getSpaceName().c_str());
     } else {
         prompt[0] = '\0';   // prompt
     }
