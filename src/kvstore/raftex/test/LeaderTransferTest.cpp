@@ -70,11 +70,13 @@ TEST(LeaderTransferTest, ChangeLeaderServalTimesTest) {
     auto nLeaderIndex = checkLeadership(copies, leader);
     int32_t times = 0;
     while (++times <= 10) {
+        auto leaderIndex = nLeaderIndex;
         nLeaderIndex = (nLeaderIndex + 1) % 3;
         LOG(INFO) << times << " ===== Let's transfer the leader to " << allHosts[nLeaderIndex];
-        auto f = leader->sendCommandAsync(test::encodeTransferLeader(allHosts[nLeaderIndex]));
-        f.wait();
         leader.reset();
+        auto f = copies[leaderIndex]->sendCommandAsync(
+                                test::encodeTransferLeader(allHosts[nLeaderIndex]));
+        f.wait();
         waitUntilLeaderElected(copies, leader);
         checkLeadership(copies, nLeaderIndex, leader);
     }

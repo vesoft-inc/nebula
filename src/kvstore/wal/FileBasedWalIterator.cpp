@@ -25,12 +25,14 @@ FileBasedWalIterator::FileBasedWalIterator(
     }
 
     if (currId_ > lastId_) {
+        LOG(ERROR) << wal_->idStr_ << "The log " << currId_
+                   << " is out of range, the lastLogId is " << lastId_;
         return;
     }
 
     if (startId < wal_->firstLogId()) {
-        LOG(ERROR) << "The given log id " << startId
-                   << " is out of the range";
+        LOG(ERROR) << wal_->idStr_ << "The given log id " << startId
+                   << " is out of the range, the wal firstLogId is " << wal_->firstLogId();
         currId_ = lastId_ + 1;
         return;
     } else {
