@@ -81,18 +81,12 @@ TEST(QueryEdgeKeysTest, SimpleTest) {
                 processor->process(req);
                 auto resp = std::move(fut).get();
                 EXPECT_EQ(0, resp.result.failed_codes.size());
-                CHECK_EQ(2, resp.edge_keys.size());
-                auto outEdge = resp.edge_keys[0];
-                CHECK_EQ(srcId, outEdge.get_src());
-                CHECK_EQ(srcId*100 + 1, outEdge.get_edge_type());
-                CHECK_EQ(srcId*100 + 2, outEdge.get_ranking());
-                CHECK_EQ(srcId*100 + 3, outEdge.get_dst());
-
-                auto inEdge = resp.edge_keys[1];
-                CHECK_EQ(srcId*100 + 3, inEdge.get_src());
-                CHECK_EQ(-(srcId*100 + 1), inEdge.get_edge_type());
-                CHECK_EQ(srcId*100 + 2, inEdge.get_ranking());
-                CHECK_EQ(srcId, inEdge.get_dst());
+                CHECK_EQ(1, resp.edge_keys.size());
+                auto edge = resp.edge_keys[0];
+                CHECK_EQ(srcId, edge.get_src());
+                CHECK_EQ(srcId*100 + 1, edge.get_edge_type());
+                CHECK_EQ(srcId*100 + 2, edge.get_ranking());
+                CHECK_EQ(srcId*100 + 3, edge.get_dst());
             }
         }
     }

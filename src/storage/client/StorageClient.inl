@@ -182,7 +182,7 @@ folly::Future<StatusOr<Response>> StorageClient::getResponse(
                                                          t.exception().what().c_str())));
             return;
         }
-        auto&& resp = t.value();
+        auto&& resp = std::move(t.value());
         // leader changed
         auto& result = resp.get_result();
         for (auto& code : result.get_failed_codes()) {

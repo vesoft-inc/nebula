@@ -27,15 +27,28 @@ Status DeleteVertexExecutor::prepare() {
 
 void DeleteVertexExecutor::execute() {
     GraphSpaceID space = ectx()->rctx()->session()->space();
+    // TODO(zlcook) Get edgeKes of a vertex by Go
     auto future = ectx()->storage()->getEdgeKeys(space, vid_);
     auto *runner = ectx()->rctx()->runner();
     auto cb = [this] (auto &&resp) {
         if (!resp.ok()) {
             DCHECK(onError_);
             onError_(Status::Error("Internal Error"));
+            return;
         }
         auto rpcResp = std::move(resp).value();
-        deleteEdges(rpcResp.get_edge_keys());
+        std::vector<storage::cpp2::EdgeKey> allEdges;
+        for (auto& edge : *rpcResp.get_edge_keys()) {
+            allEdges.emplace_back(edge);
+            auto reverseEdge = storage::cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
+                                                      edge.get_dst(),
+                                                      -(edge.get_edge_type()),
+                                                      edge.get_ranking(),
+                                                      edge.get_src());
+            allEdges.emplace_back(std::move(edge));
+            allEdges.emplace_back(std::move(reverseEdge));
+        }
+        deleteEdges(&allEdges);
         return;
     };
 
@@ -57,6 +70,7 @@ void DeleteVertexExecutor::deleteEdges(std::vector<storage::cpp2::EdgeKey>* edge
         if (completeness != 100) {
             DCHECK(onError_);
             onError_(Status::Error("Internal Error"));
+            return;
         }
         deleteVertex();
         return;
@@ -79,6 +93,7 @@ void DeleteVertexExecutor::deleteVertex() {
         if (!resp.ok()) {
             DCHECK(onError_);
             onError_(Status::Error("Internal Error"));
+            return;
         }
         DCHECK(onFinish_);
         onFinish_();

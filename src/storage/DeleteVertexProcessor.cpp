@@ -16,29 +16,35 @@ void DeleteVertexProcessor::process(const cpp2::DeleteVertexRequest& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
     auto vId = req.get_vid();
-    callingNum_ = 1;
-    CHECK_NOTNULL(kvstore_);
 
-    std::vector<std::string> deleteKeys;
     auto prefix = NebulaKeyUtils::prefix(partId, vId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = this->kvstore_->prefix(spaceId, partId, prefix, &iter);
-    if (ret != kvstore::ResultCode::SUCCEEDED) {
-        VLOG(3) << "Error! ret = " << static_cast<int32_t>(ret) << ", spaceId = " << spaceId
-                << ", partId =  " << partId << ", vertexId = " << vId;
-        this->pushResultCode(this->to(ret), partId);
-        this->onFinished();
-        return;
-    }
-    while (iter->valid()) {
-        auto key = iter->key();
-        if (NebulaKeyUtils::isVertex(key)) {
-            deleteKeys.emplace_back(key);
-        }
-        iter->next();
-    }
+    this->kvstore_->asyncRemovePrefix(spaceId,
+                                      partId,
+                                      prefix,
+                                      [spaceId, partId, this](kvstore::ResultCode code) {
+        VLOG(3) << "partId:" << partId << ", code:" << static_cast<int32_t>(code);
 
-    doRemove(spaceId, partId, deleteKeys);
+        cpp2::ResultCode thriftResult;
+        thriftResult.set_code(to(code));
+        thriftResult.set_part_id(partId);
+        if (code == kvstore::ResultCode::ERR_LEADER_CHANGED) {
+            nebula::cpp2::HostAddr leader;
+            auto addrRet = kvstore_->partLeader(spaceId, partId);
+            CHECK(ok(addrRet));
+            auto addr = value(std::move(addrRet));
+            leader.set_ip(addr.first);
+            leader.set_port(addr.second);
+            thriftResult.set_leader(leader);
+        }
+        {
+            std::lock_guard<std::mutex> lg(this->lock_);
+            if (thriftResult.code != cpp2::ErrorCode::SUCCEEDED) {
+                this->codes_.emplace_back(std::move(thriftResult));
+            }
+            result_.set_failed_codes(std::move(this->codes_));
+        }
+        this->onFinished();
+    });
 }
 
 }  // namespace storage

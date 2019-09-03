@@ -284,17 +284,12 @@ TEST(StorageClientTest, VerticesInterfacesTest) {
                 edgeKeys = edgeKeyResp.get_edge_keys();
 
                 // Check edgeKeys
-                CHECK_EQ(2, edgeKeys->size());
-                auto& outEdge = (*edgeKeys)[0];
-                CHECK_EQ(srcId, outEdge.get_src());
-                CHECK_EQ(101, outEdge.get_edge_type());
-                CHECK_EQ(srcId*100 + 3, outEdge.get_ranking());
-                CHECK_EQ(srcId*100 + 2, outEdge.get_dst());
-                auto& inEdge = (*edgeKeys)[1];
-                CHECK_EQ(srcId*100 + 2, inEdge.get_src());
-                CHECK_EQ(-101, inEdge.get_edge_type());
-                CHECK_EQ(srcId*100 + 3, inEdge.get_ranking());
-                CHECK_EQ(srcId, inEdge.get_dst());
+                CHECK_EQ(1, edgeKeys->size());
+                auto& edge = (*edgeKeys)[0];
+                CHECK_EQ(srcId, edge.get_src());
+                CHECK_EQ(101, edge.get_edge_type());
+                CHECK_EQ(srcId*100 + 3, edge.get_ranking());
+                CHECK_EQ(srcId*100 + 2, edge.get_dst());
             }
             // Delete all edges of a vertex
             {

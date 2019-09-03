@@ -244,7 +244,7 @@ folly::Future<StatusOr<cpp2::EdgeKeyResponse>> StorageClient::getEdgeKeys(
     auto partMeta = getPartMeta(space, part);
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& leader = this->leader(partMeta);
-    request.first = std::move(leader);
+    request.first = leader;
 
     cpp2::EdgeKeyRequest req;
     req.set_space_id(space);
@@ -299,7 +299,7 @@ folly::Future<StatusOr<cpp2::ExecResponse>> StorageClient::deleteVertex(
     auto partMeta = getPartMeta(space, part);
     CHECK_GT(partMeta.peers_.size(), 0U);
     const auto& leader = this->leader(partMeta);
-    request.first = std::move(leader);
+    request.first = leader;
 
     cpp2::DeleteVertexRequest req;
     req.set_space_id(space);

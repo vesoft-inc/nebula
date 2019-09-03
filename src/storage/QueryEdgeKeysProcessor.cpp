@@ -35,12 +35,9 @@ void QueryEdgeKeysProcessor::process(const cpp2::EdgeKeyRequest& req) {
             auto dst = NebulaKeyUtils::getDstId(key);
             auto edgeType = NebulaKeyUtils::getEdgeType(key);
             auto rank = NebulaKeyUtils::getRank(key);
-            auto outEdge = cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                        src, edgeType, rank, dst);
-            auto inEdge = cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
-                                        dst, -edgeType, rank, src);
-            edges.emplace_back(std::move(outEdge));
-            edges.emplace_back(std::move(inEdge));
+            auto edge = cpp2::EdgeKey(apache::thrift::FragileConstructor::FRAGILE,
+                                      src, edgeType, rank, dst);
+            edges.emplace_back(std::move(edge));
         }
         iter->next();
     }
