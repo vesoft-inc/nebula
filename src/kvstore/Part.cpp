@@ -39,14 +39,12 @@ Part::Part(GraphSpaceID spaceId,
            KVEngine* engine,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
            std::shared_ptr<thread::GenericThreadPool> workers,
-           wal::BufferFlusher* flusher,
            std::shared_ptr<folly::Executor> handlers)
         : RaftPart(FLAGS_cluster_id,
                    spaceId,
                    partId,
                    localAddr,
                    walPath,
-                   flusher,
                    ioPool,
                    workers,
                    handlers)
@@ -150,6 +148,14 @@ void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
     });
 }
 
+void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
+    std::string log = encodeTransLeader(target);
+    sendCommandAsync(std::move(log))
+        .then([callback = std::move(cb)] (AppendLogResult res) mutable {
+        callback(toResultCode(res));
+    });
+}
+
 void Part::onLostLeadership(TermID term) {
     VLOG(1) << "Lost the leadership for the term " << term;
 }
@@ -157,6 +163,13 @@ void Part::onLostLeadership(TermID term) {
 
 void Part::onElected(TermID term) {
     VLOG(1) << "Being elected as the leader for the term " << term;
+}
+
+void Part::onDiscoverNewLeader(HostAddr nLeader) {
+    LOG(INFO) << idStr_ << "Find the new leader " << nLeader;
+    if (newLeaderCb_) {
+        newLeaderCb_(nLeader);
+    }
 }
 
 bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
@@ -234,6 +247,12 @@ bool Part::commitLogs(std::unique_ptr<LogIterator> iter) {
         case OP_ADD_LEARNER: {
             break;
         }
+        case OP_TRANS_LEADER: {
+            auto newLeader = decodeTransLeader(log);
+            commitTransLeader(newLeader);
+            LOG(INFO) << idStr_ << "Transfer leader to " << newLeader;
+            break;
+        }
         default: {
             LOG(FATAL) << "Unknown operation: " << static_cast<uint8_t>(log[0]);
         }
@@ -265,7 +284,13 @@ bool Part::preProcessLog(LogID logId,
             case OP_ADD_LEARNER: {
                 auto learner = decodeLearner(log);
                 addLearner(learner);
-                LOG(INFO) << idStr_ << "Add learner " << learner;
+                LOG(INFO) << idStr_ << "Preprocess add learner " << learner;
+                break;
+            }
+            case OP_TRANS_LEADER: {
+                auto newLeader = decodeTransLeader(log);
+                preProcessTransLeader(newLeader);
+                LOG(INFO) << idStr_ << "Preprocess transfer leader to " << newLeader;
                 break;
             }
             default: {

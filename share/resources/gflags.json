@@ -1,0 +1,46 @@
+{
+    "IMMUTABLE": [
+    ],
+    "REBOOT": [
+    ],
+    "MUTABLE": [
+        "load_data_interval_secs"
+    ],
+    "IGNORED": [
+        "logging",
+        "flagfile",
+        "fromenv",
+        "tryfromenv",
+        "undefok",
+        "tab_completion_columns",
+        "tab_completion_word",
+        "alsologtostderr",
+        "drop_log_memory",
+        "log_backtrace_at",
+        "log_dir",
+        "log_link",
+        "log_prefix",
+        "logbuflevel",
+        "logbufsecs",
+        "logemaillevel",
+        "logfile_mode",
+        "logmailer",
+        "logtostderr",
+        "max_log_size",
+        "minloglevel",
+        "stderrthreshold",
+        "stop_logging_if_full_disk",
+        "symbolize_stacktrace",
+        "vmodule",
+        "v",
+        "help",
+        "helpon",
+        "helpxml",
+        "helpfull",
+        "helpmatch",
+        "helpshort",
+        "alsologtoemail",
+        "version",
+        "gflags_mode_json"
+    ]
+}

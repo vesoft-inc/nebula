@@ -7,7 +7,6 @@
 #include "base/Base.h"
 #include "kvstore/wal/FileBasedWal.h"
 #include "kvstore/wal/FileBasedWalIterator.h"
-#include "kvstore/wal/BufferFlusher.h"
 #include "fs/FileUtils.h"
 #include "time/WallClock.h"
 
@@ -25,19 +24,16 @@ using nebula::fs::FileUtils;
 std::shared_ptr<FileBasedWal> FileBasedWal::getWal(
         const folly::StringPiece dir,
         FileBasedWalPolicy policy,
-        BufferFlusher* flusher,
         PreProcessor preProcessor) {
     return std::shared_ptr<FileBasedWal>(
-        new FileBasedWal(dir, std::move(policy), flusher, std::move(preProcessor)));
+        new FileBasedWal(dir, std::move(policy), std::move(preProcessor)));
 }
 
 
 FileBasedWal::FileBasedWal(const folly::StringPiece dir,
                            FileBasedWalPolicy policy,
-                           BufferFlusher* flusher,
                            PreProcessor preProcessor)
-        : flusher_(flusher)
-        , dir_(dir.toString())
+        : dir_(dir.toString())
         , policy_(std::move(policy))
         , maxFileSize_(policy_.fileSize)
         , maxBufferSize_(policy_.bufferSize)
@@ -49,10 +45,17 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
 
     scanAllWalFiles();
     if (!walFiles_.empty()) {
-        auto& info = walFiles_.rbegin()->second;
         firstLogId_ = walFiles_.begin()->second->firstId();
-        lastLogId_ = info->lastId();
-        lastLogTerm_ = info->lastTerm();
+        auto& info = walFiles_.rbegin()->second;
+        if (info->lastId() <= 0 && walFiles_.size() > 1) {
+            auto it = walFiles_.rbegin();
+            it++;
+            lastLogId_ = info->firstId() - 1;
+            lastLogTerm_ = readTermId(it->second->path(), lastLogId_);
+        } else {
+            lastLogId_ = info->lastId();
+            lastLogTerm_ = info->lastTerm();
+        }
         currFd_ = open(info->path(), O_WRONLY | O_APPEND);
         currInfo_ = info;
         CHECK_GE(currFd_, 0);
@@ -63,17 +66,6 @@ FileBasedWal::FileBasedWal(const folly::StringPiece dir,
 FileBasedWal::~FileBasedWal() {
     // FileBasedWal inherits from std::enable_shared_from_this, so at this
     // moment, there should have no other thread holding this WAL object
-    while (onGoingBuffersNum_ > 0) {
-        LOG(INFO) << "Waiting for the buffer flushed, remaining " << onGoingBuffersNum_.load();
-        usleep(50000);
-    }
-    if (!buffers_.empty()) {
-        // There should be only one left
-        CHECK_EQ(buffers_.size(), 1UL);
-        if (buffers_.back()->freeze()) {
-            flushBuffer(buffers_.back());
-        }
-    }
 
     // Close the last file
     closeCurrFile();
@@ -117,8 +109,11 @@ void FileBasedWal::scanAllWalFiles() {
         info->setMTime(st.st_mtime);
 
         if (info->size() == 0) {
-            LOG(ERROR) << "Found empty wal file \"" << fn
-                       << "\", ignore it";
+            // Found an empty WAL file
+            LOG(WARNING) << "Found empty wal file \"" << fn << "\"";
+            info->setLastId(0);
+            info->setLastTerm(0);
+            walFiles_.insert(std::make_pair(startIdFromName, info));
             continue;
         }
 
@@ -292,8 +287,6 @@ void FileBasedWal::closeCurrFile() {
 
 
 void FileBasedWal::prepareNewFile(LogID startLogId) {
-    std::lock_guard<std::mutex> g(walFilesMutex_);
-
     CHECK_LT(currFd_, 0)
         << "The current file needs to be closed first";
 
@@ -319,126 +312,82 @@ void FileBasedWal::prepareNewFile(LogID startLogId) {
 }
 
 
-void FileBasedWal::dumpCord(Cord& cord,
-                            LogID firstId,
-                            LogID lastId,
-                            TermID lastTerm) {
-    if (cord.size() <= 0) {
-        return;
+TermID FileBasedWal::readTermId(const char* path, LogID logId) {
+    int32_t fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        LOG(FATAL) << "Failed to open file \"" << path
+                   << "\" (errno: " << errno << "): "
+                   << strerror(errno);
     }
 
-    if (currFd_ < 0) {
-        // Need to prepare a new file
-        prepareNewFile(firstId);
-    }
-
-    auto cb = [this](const char* p, int32_t s) -> bool {
-        const char* start = p;
-        int32_t size = s;
-        do {
-            ssize_t res = write(currFd_, start, size);
-            if (res < 0) {
-                LOG(ERROR) << "Failed to write wal file (" << errno
-                           << "): " << strerror(errno) << ", fd " << currFd_;
-                return false;
-            }
-            size -= res;
-            start += res;
-        } while (size > 0);
-        return true;
-    };
-    if (!cord.applyTo(cb)) {
-        LOG(FATAL) << "Failed to flush the wal file";
-    } else {
-        // Succeeded writing all buffered content, adjust the file size
-        currInfo_->setSize(currInfo_->size() + cord.size());
-        currInfo_->setLastId(lastId);
-        currInfo_->setLastTerm(lastTerm);
-    }
-}
-
-
-void FileBasedWal::flushBuffer(BufferPtr buffer) {
-    std::lock_guard<std::mutex> flushGuard(flushMutex_);
-    if (!buffer || buffer->empty() || buffer->invalid()) {
-        onGoingBuffersNum_--;
-        return;
-    }
-
-    // Rollover if required
-    if (buffer->needToRollover()) {
-        closeCurrFile();
-    }
-
-    Cord cord;
-    LogID firstIdInCord = buffer->firstLogId();
-    auto accessFn = [&cord, &firstIdInCord, this] (
-            LogID id,
-            TermID term,
-            ClusterID cluster,
-            const std::string& log) {
-        cord << id << term << int32_t(log.size()) << cluster;
-        cord.write(log.data(), log.size());
-        cord << int32_t(log.size());
-
-        size_t currSize = currFd_ >= 0 ? currInfo_->size() : 0;
-        if (currSize + cord.size() > maxFileSize_) {
-            dumpCord(cord, firstIdInCord, id, term);
-            // Reset the cord
-            cord.clear();
-            firstIdInCord = id + 1;
-
-            // Need to close the current file and create a new file
-            closeCurrFile();
+    size_t pos = 0;
+    while (true) {
+        // Read the log Id
+        LogID id = 0;
+        if (pread(fd, &id, sizeof(LogID), pos) != sizeof(LogID)) {
+            LOG(ERROR) << "Failed to read the log id (errno "
+                       << errno << "): " << strerror(errno);
+            close(fd);
+            return 0;
         }
-    };
 
-    // Dump the buffer to file
-    auto lastLog = buffer->accessAllLogs(accessFn);
+        // Read the term Id
+        TermID term = 0;
+        if (pread(fd, &term, sizeof(TermID), pos + sizeof(LogID)) != sizeof(TermID)) {
+            LOG(ERROR) << "Failed to read the term id (errno "
+                       << errno << "): " << strerror(errno);
+            close(fd);
+            return 0;
+        }
 
-    // Dump the rest if any
-    if (!cord.empty()) {
-        dumpCord(cord, firstIdInCord, lastLog.first, lastLog.second);
+        if (id == logId) {
+            // Found
+            close(fd);
+            return term;
+        }
+
+        // Read the message length
+        int32_t len;
+        if (pread(fd, &len, sizeof(int32_t), pos + sizeof(LogID) + sizeof(TermID))
+                != sizeof(int32_t)) {
+            LOG(ERROR) << "Failed to read the message length (errno "
+                       << errno << "): " << strerror(errno);
+            close(fd);
+            return 0;
+        }
+
+        // Move to the next log
+        pos += sizeof(LogID)
+               + sizeof(TermID)
+               + sizeof(ClusterID)
+               + 2 * sizeof(int32_t)
+               + len;
     }
 
-    // Flush the wal file
-    if (currFd_ >= 0) {
-        CHECK_EQ(fsync(currFd_), 0);
-    }
-
-    // Remove the buffer from the list
-    {
-        std::lock_guard<std::mutex> g(buffersMutex_);
-
-        CHECK_EQ(buffer.get(), buffers_.front().get());
-        buffers_.pop_front();
-    }
-    onGoingBuffersNum_--;
-    slotReadyCV_.notify_one();
+    LOG(FATAL) << "Should never reach here";
 }
 
 
-BufferPtr FileBasedWal::createNewBuffer(
-        LogID firstId,
-        std::unique_lock<std::mutex>& guard) {
-    if (buffers_.size() >= policy_.numBuffers) {
-        // Log appending is way too fast
-        LOG(WARNING) << "Write buffer is exhausted,"
-                        " need to wait for vacancy";
-        // TODO: Output a counter here
-        // Need to wait for a vacant slot
-        slotReadyCV_.wait(guard, [self = shared_from_this()] {
-            return self->buffers_.size() < self->policy_.numBuffers;
-        });
-    }
+BufferPtr FileBasedWal::getLastBuffer(LogID id, size_t expectedToWrite) {
+    std::unique_lock<std::mutex> g(buffersMutex_);
+    if (!buffers_.empty()) {
+        if (buffers_.back()->size() + expectedToWrite <= maxBufferSize_) {
+            return buffers_.back();
+        }
 
-    // Create a new buffer to use
-    buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(firstId));
+        // Need to rollover to a new buffer
+        if (buffers_.size() == policy_.numBuffers) {
+            // Need to pop the first one
+            buffers_.pop_front();
+        }
+        CHECK_LT(buffers_.size(), policy_.numBuffers);
+    }
+    buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id));
     return buffers_.back();
 }
 
-bool FileBasedWal::appendLogInternal(BufferPtr& buffer,
-                                     LogID id,
+
+bool FileBasedWal::appendLogInternal(LogID id,
                                      TermID term,
                                      ClusterID cluster,
                                      std::string msg) {
@@ -459,70 +408,68 @@ bool FileBasedWal::appendLogInternal(BufferPtr& buffer,
         return false;
     }
 
-    if (buffer &&
-        (buffer->size() +
-         msg.size() +
-         sizeof(ClusterID) +
-         sizeof(TermID) +
-         sizeof(LogID) > maxBufferSize_)) {
-        // Freeze the current buffer
-        if (buffer->freeze()) {
-            onGoingBuffersNum_++;
-            flusher_->flushBuffer(shared_from_this(), buffer);
-        }
-        buffer.reset();
+    // Write to the WAL file first
+    std::string strBuf;
+    strBuf.reserve(sizeof(LogID)
+                    + sizeof(TermID)
+                    + sizeof(ClusterID)
+                    + msg.size()
+                    + 2 * sizeof(int32_t));
+    strBuf.append(reinterpret_cast<char*>(&id), sizeof(LogID));
+    strBuf.append(reinterpret_cast<char*>(&term), sizeof(TermID));
+    int32_t len = msg.size();
+    strBuf.append(reinterpret_cast<char*>(&len), sizeof(int32_t));
+    strBuf.append(reinterpret_cast<char*>(&cluster), sizeof(ClusterID));
+    strBuf.append(reinterpret_cast<const char*>(msg.data()), msg.size());
+    strBuf.append(reinterpret_cast<char*>(&len), sizeof(int32_t));
+
+    // Prepare the WAL file if it's not opened
+    if (currFd_ < 0) {
+        prepareNewFile(id);
+    } else if (currInfo_->size() + strBuf.size() > maxFileSize_) {
+        // Need to roll over
+        closeCurrFile();
+
+        std::lock_guard<std::mutex> g(walFilesMutex_);
+        prepareNewFile(id);
     }
 
-    // Create a new buffer if needed
-    if (!buffer) {
-        std::unique_lock<std::mutex> guard(buffersMutex_);
-        buffer = createNewBuffer(id, guard);
-    }
+    ssize_t bytesWritten = write(currFd_, strBuf.data(), strBuf.size());
+    CHECK_EQ(bytesWritten, strBuf.size());
+    currInfo_->setSize(currInfo_->size() + strBuf.size());
+    currInfo_->setLastId(id);
+    currInfo_->setLastTerm(term);
 
-    DCHECK_EQ(
-        id,
-        static_cast<int64_t>(buffer->firstLogId() + buffer->numLogs()));
-    buffer->push(term, cluster, std::move(msg));
     lastLogId_ = id;
     lastLogTerm_ = term;
     if (firstLogId_ == 0) {
         firstLogId_ = id;
     }
 
+    // Append to the in-memory buffer
+    auto buffer = getLastBuffer(id, strBuf.size());
+    DCHECK_EQ(id, static_cast<int64_t>(buffer->firstLogId() + buffer->numLogs()));
+    buffer->push(term, cluster, std::move(msg));
+
     return true;
 }
+
 
 bool FileBasedWal::appendLog(LogID id,
                              TermID term,
                              ClusterID cluster,
                              std::string msg) {
-    BufferPtr buffer;
-    {
-        std::lock_guard<std::mutex> g(buffersMutex_);
-        if (!buffers_.empty()) {
-            buffer = buffers_.back();
-        }
-    }
-
-    if (!appendLogInternal(buffer, id, term, cluster, std::move(msg))) {
+    if (!appendLogInternal(id, term, cluster, std::move(msg))) {
         LOG(ERROR) << "Failed to append log for logId " << id;
         return false;
     }
     return true;
 }
 
-bool FileBasedWal::appendLogs(LogIterator& iter) {
-    BufferPtr buffer;
-    {
-        std::lock_guard<std::mutex> g(buffersMutex_);
-        if (!buffers_.empty()) {
-            buffer = buffers_.back();
-        }
-    }
 
+bool FileBasedWal::appendLogs(LogIterator& iter) {
     for (; iter.valid(); ++iter) {
-        if (!appendLogInternal(buffer,
-                               iter.logId(),
+        if (!appendLogInternal(iter.logId(),
                                iter.logTerm(),
                                iter.logSource(),
                                iter.logMsg().toString())) {
@@ -538,16 +485,11 @@ bool FileBasedWal::appendLogs(LogIterator& iter) {
 
 std::unique_ptr<LogIterator> FileBasedWal::iterator(LogID firstLogId,
                                                     LogID lastLogId) {
-    return std::unique_ptr<LogIterator>(
-        new FileBasedWalIterator(shared_from_this(),
-                                 firstLogId,
-                                 lastLogId));
+    return std::make_unique<FileBasedWalIterator>(shared_from_this(), firstLogId, lastLogId);
 }
 
 
 bool FileBasedWal::rollbackToLog(LogID id) {
-    std::lock_guard<std::mutex> flushGuard(flushMutex_);
-    bool foundTarget{false};
     if (id < firstLogId_ - 1 || id > lastLogId_) {
         LOG(ERROR) << "Rollback target id " << id
                    << " is not in the range of ["
@@ -556,7 +498,49 @@ bool FileBasedWal::rollbackToLog(LogID id) {
         return false;
     }
 
-    BufferPtr buf = nullptr;
+    //-----------------------
+    // 1. Roll back WAL files
+    //-----------------------
+
+    // First close the current file
+    closeCurrFile();
+
+    {
+        std::lock_guard<std::mutex> g(walFilesMutex_);
+
+        if (!walFiles_.empty()) {
+            auto it = walFiles_.upper_bound(id);
+            // We need to remove wal files whose entire log range
+            // are rolled back
+            while (it != walFiles_.end()) {
+                // Need to remove the file
+                VLOG(1) << "Removing file " << it->second->path();
+                unlink(it->second->path());
+                it = walFiles_.erase(it);
+            }
+        }
+
+        if (walFiles_.empty()) {
+            // All WAL files are gone
+            CHECK(id == firstLogId_ - 1 || id == 0);
+            firstLogId_ = 0;
+            lastLogId_ = 0;
+            lastLogTerm_ = 0;
+        } else {
+            VLOG(1) << "Roll back to log " << id
+                    << ", the last WAL file is now \""
+                    << walFiles_.rbegin()->second->path() << "\"";
+            lastLogId_ = id;
+            lastLogTerm_ = readTermId(walFiles_.rbegin()->second->path(), lastLogId_);
+        }
+
+        // Create the next WAL file
+        prepareNewFile(lastLogId_ + 1);
+    }
+
+    //------------------------------
+    // 2. Roll back in-memory buffers
+    //------------------------------
     {
         // First rollback from buffers
         std::unique_lock<std::mutex> g(buffersMutex_);
@@ -564,125 +548,25 @@ bool FileBasedWal::rollbackToLog(LogID id) {
         // Remove all buffers that are rolled back
         auto it = buffers_.begin();
         while (it != buffers_.end() && (*it)->firstLogId() <= id) {
-            ++it;
+            it++;
         }
         while (it != buffers_.end()) {
-            (*it)->markInvalid();
             it = buffers_.erase(it);
         }
 
-        if (!buffers_.empty()) {
-            // Found the target log id
-            buf = buffers_.back();
-            foundTarget = true;
-            lastLogId_ = id;
-            lastLogTerm_ = buf->getTerm(lastLogId_ - buf->firstLogId());
-
-            // Create a new buffer starting from id + 1
-            createNewBuffer(id + 1, g);
-            // Since the log id is rolled back, we need to close
-            // the previous wal file
-            buffers_.back()->rollover();
+        // Need to rollover to a new buffer
+        if (buffers_.size() == policy_.numBuffers) {
+            // Need to pop the first one
+            buffers_.pop_front();
         }
+        buffers_.emplace_back(std::make_shared<InMemoryLogBuffer>(id + 1));
     }
-
-    if (foundTarget) {
-        CHECK(buf != nullptr);
-       if (buf->freeze()) {
-            // Flush the incomplete buffer which the target log id resides in
-            onGoingBuffersNum_++;
-            flusher_->flushBuffer(shared_from_this(), buf);
-        }
-    }
-
-    int fd{-1};
-    while (!foundTarget) {
-        LOG(WARNING) << "Need to rollback from files."
-                        " This is an expensive operation."
-                        " Please make sure it is correct and necessary";
-
-        // Close the current file fist
-        closeCurrFile();
-
-        std::lock_guard<std::mutex> g(walFilesMutex_);
-        if (walFiles_.empty()) {
-            CHECK_EQ(id, 0);
-            foundTarget = true;
-            lastLogId_ = 0;
-            break;
-        }
-
-        auto it = walFiles_.upper_bound(id);
-
-        // We need to remove wal files whose entire log range
-        // are rolled back
-        while (it != walFiles_.end()) {
-            // Need to remove the file
-            VLOG(2) << "Removing file " << it->second->path();
-            unlink(it->second->path());
-            it = walFiles_.erase(it);
-        }
-
-        if (walFiles_.empty()) {
-            CHECK_EQ(id, 0);
-            foundTarget = true;
-            lastLogId_ = 0;
-            break;
-        }
-
-        fd = open(walFiles_.rbegin()->second->path(), O_RDONLY);
-        CHECK_GE(fd, 0) << "Failed to open file \""
-                        << walFiles_.rbegin()->second->path()
-                        << "\" (" << errno << "): "
-                        << strerror(errno);
-        lastLogId_ = id;
-        break;
-    }
-
-    // Find the current log entry
-    if (fd >= 0) {
-        size_t pos = 0;
-        while (true) {
-            LogID logId;
-            // Read the logID
-            CHECK_EQ(pread(fd,
-                           reinterpret_cast<char*>(&logId),
-                           sizeof(LogID),
-                           pos),
-                     static_cast<ssize_t>(sizeof(LogID)));
-            // Read the termID
-            CHECK_EQ(pread(fd,
-                           reinterpret_cast<char*>(&lastLogTerm_),
-                           sizeof(TermID),
-                           pos + sizeof(LogID)),
-                     static_cast<ssize_t>(sizeof(TermID)));
-            // Read the log length
-            int32_t msgLen = 0;
-            CHECK_EQ(pread(fd,
-                           reinterpret_cast<char*>(&msgLen),
-                           sizeof(int32_t),
-                           pos + sizeof(LogID) + sizeof(TermID)),
-                     static_cast<ssize_t>(sizeof(int32_t)));
-            if (logId == lastLogId_) {
-                foundTarget = true;
-                break;
-            }
-            pos += sizeof(LogID)
-                   + sizeof(TermID)
-                   + sizeof(int32_t) * 2
-                   + msgLen
-                   + sizeof(ClusterID);
-        }
-        close(fd);
-    }
-
-    CHECK(foundTarget);
 
     return true;
 }
 
+
 bool FileBasedWal::reset() {
-    std::lock_guard<std::mutex> flushGuard(flushMutex_);
     closeCurrFile();
     {
         std::lock_guard<std::mutex> g(buffersMutex_);
@@ -702,6 +586,7 @@ bool FileBasedWal::reset() {
     lastLogId_ = firstLogId_ = 0;
     return true;
 }
+
 
 void FileBasedWal::cleanWAL() {
     std::lock_guard<std::mutex> g(walFilesMutex_);
@@ -724,6 +609,7 @@ void FileBasedWal::cleanWAL() {
     }
     firstLogId_ = walFiles_.begin()->second->firstId();
 }
+
 
 size_t FileBasedWal::accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> fn) const {
     std::lock_guard<std::mutex> g(walFilesMutex_);
@@ -756,4 +642,3 @@ size_t FileBasedWal::accessAllBuffers(std::function<bool(BufferPtr buffer)> fn) 
 
 }  // namespace wal
 }  // namespace nebula
-

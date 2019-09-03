@@ -1,7 +1,7 @@
 
 ### 编译器
 
-Nebula 在 C++14 上开发，因此它需要一个支持 C++14 的编译器。 
+Nebula 在 C++14 上开发，因此它需要一个支持 C++14 的编译器。
 
 ### 支持系统版本
 - Fedora29, 30
@@ -58,45 +58,45 @@ bash> sudo make install
 - 安装依赖模块
 
     通过 yum install
-    
+
     ```
     bash> sudo yum install -y libtool autoconf autoconf-archive automake perl-WWW-Curl libstdc++-static maven java-1.8.0-openjdk
     ```
 
-    和通过 vesoft offer
-    
+    和通过 vesoft 提供的包
+
     ```
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-7.5-1804.tar.gz
     ```
 
     1) 建立一个系统用户, 并将其 home 目录设置为共享目录
-    
+
     ```
     bash> sudo adduser --system --group --home /home/engshare engshare
     ```
-    
+
     2) 确保 home 目录 **/home/engshare** 对全用户可读
-    
+
     ```
     bash> chmod -R 755 /home/engshare
     ```
-    
+
     3) 在此目录下安装所有需要的 rpm 包
-    
+
     ```
     bash> tar xf centos-7.5-1804.tar.gz && cd centos-7.5-1804/
     bash> rpm -ivh *.rpm
     ```
 
     4) 在 **~/.bashrc** 末添加如下几行
-    
+
     ```
     alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind'
-    
+
     alias ctest='/home/engshare/cmake/bin/ctest'
     ```
     5) 应用 **~/.bashrc** 修改
-    
+
     ```
     bash> source ~/.bashrc
     ```
@@ -136,35 +136,35 @@ bash> sudo make install
 - 安装依赖模块
 
     通过 yum install
-    
+
     ```
     bash> sudo yum -y install libtool autoconf autoconf-archive automake perl-WWW-Curl perl-YAML perl-CGI glibc-devel libstdc++-static maven java-1.8.0-openjdk
     ```
-    
-    和通过 vesoft offer
-    
+
+    和通过 vesoft 提供的包
+
     ```
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/centos-6.5.tar.gz
     ```
 
     1) 在此目录下安装所有需要的 rpm 包
-    
+
     ```
     bash> tar xf centos-6.5.tar.gz && cd centos-6.5/
     bash> sudo rpm -ivh *.rpm
     ```
-    
+
     2) 在 **~/.bashrc** 末添加如下几行
-    
+
     ```
     export PATH=/opt/nebula/autoconf/bin:/opt/nebula/automake/bin:/opt/nebula/libtool/bin:/opt/nebula/git/bin:/opt/nebula/gettext/bin:/opt/nebula/flex/bin:/opt/nebula/bison/bin:/opt/nebula/binutils/bin:$PATH
     export ACLOCAL_PATH=/opt/nebula/automake/share/aclocal-1.15:/opt/nebula/libtool/share/aclocal:/opt/nebula/autoconf-archive/share/aclocal
-    
+
     alias cmake='/opt/nebula/cmake/bin/cmake -DCMAKE_C_COMPILER=/opt/nebula/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/opt/nebula/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/opt/nebula/gperf/bin -DNEBULA_FLEX_ROOT=/opt/nebula/flex -DNEBULA_BISON_ROOT=/opt/nebula/bison -DNEBULA_BOOST_ROOT=/opt/nebula/boost -DNEBULA_OPENSSL_ROOT=/opt/nebula/openssl -DNEBULA_KRB5_ROOT=/opt/nebula/krb5 -DNEBULA_LIBUNWIND_ROOT=/opt/nebula/libunwind -DNEBULA_READLINE_ROOT=/opt/nebula/readline -DNEBULA_NCURSES_ROOT=/opt/nebula/ncurses'
     alias ctest='/opt/nebula/cmake/bin/ctest'
     ```
     3) 应用 **~/.bashrc** 修改
-    
+
     ```
     bash> source ~/.bashrc
     ```
@@ -204,45 +204,45 @@ bash> sudo make install
 - 安装依赖模块
 
     通过 apt-get install
-    
+
     ```
     bash> sudo apt-get -y install gcc-multilib libtool autoconf autoconf-archive automake python maven java-1.8.0-openjdk
     ```
-    
-    通过 vesoft offer
-    
+
+    通过 vesoft 提供的包
+
     ```
     bash> wget https://nebula-graph.oss-cn-hangzhou.aliyuncs.com/build-deb/ubuntu1804.tar.gz
     ```
-    
+
     1) 建立一个系统用户, 并将其 home 目录设置为共享目录
-    
+
     ```
     bash> sudo adduser --system --group --home /home/engshare engshare
     ```
-    
+
     2) 确保 home 目录 **/home/engshare** 对全用户可读
-    
+
     ```
     bash> chmod -R 755 /home/engshare
     ```
-    
+
     3) 在此目录下安装所有需要的 deb 包
-    
+
     ```
     bash> tar xf ubuntu1804.tar.gz && cd ubuntu1804/
     bash> sudo dpkg -i *.deb
     ```
-    
+
     4)  在 **~/.bashrc** 末添加如下几行
-    
+
     ```
     alias cmake='/home/engshare/cmake/bin/cmake -DCMAKE_C_COMPILER=/home/engshare/gcc/bin/gcc -DCMAKE_CXX_COMPILER=/home/engshare/gcc/bin/g++ -DNEBULA_GPERF_BIN_DIR=/home/engshare/gperf/bin -DNEBULA_FLEX_ROOT=/home/engshare/flex -DNEBULA_BOOST_ROOT=/home/engshare/boost -DNEBULA_OPENSSL_ROOT=/home/engshare/openssl -DNEBULA_KRB5_ROOT=/home/engshare/krb5 -DNEBULA_LIBUNWIND_ROOT=/home/engshare/libunwind -DNEBULA_READLINE_ROOT=/home/engshare/readline -DNEBULA_NCURSES_ROOT=/home/engshare/ncurses'
-    
+
     alias ctest='/home/engshare/cmake/bin/ctest'
     ```
     5) 应用 **~/.bashrc** 修改
-    
+
     ```
     bash> source ~/.bashrc
     ```
@@ -276,7 +276,7 @@ bash> sudo make install
 
     ```
     [100%] Built target ....
-    ``` 
+    ```
     **编译成功！**
 - 在安装目录 **/usr/local/nebula** 下有如下四个子目录 **etc/**, **bin/**, **scripts/** **share/**
 
@@ -294,13 +294,13 @@ bash> sudo make install
   **解决方案**:
 
     **步骤 1**: 在 **~/.bashrc** 末添加如下行
-    
+
     ```
     export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LIBRARY_PATH
     ```
-    
+
     **步骤 2**: 应用 **~/.bashrc** 修改
-    
+
     ```
     bash> source ~/.bashrc
     ```
@@ -308,25 +308,25 @@ bash> sudo make install
 - **错误信息**: `bison verson less than 3.0.5`
 
     **解决方案**:
-    
+
     1) 下载 bison-3.0.5.tar.gz
-    
+
     ```
     bash> wget http://ftp.gnu.org/gnu/bison/bison-3.0.5.tar.gz
     ```
-    
+
     2) 构建和安装
-    
+
     ```
     bash> ./configure
     bash> make && make install
-    
+
     ```
 
 - **错误信息**: 构建第三方库失败, 并且 _build.log 提示 `No such file or directory`
 
     **解决方案**:
-    
+
     ```
     bash> cd nebula-3rdparty/
     bash> git-lfs pull
