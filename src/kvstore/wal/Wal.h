@@ -45,7 +45,7 @@ public:
     // This method is *NOT* thread safe
     virtual bool reset() = 0;
 
-    virtual void cleanWAL() = 0;
+    virtual void cleanWAL(int32_t ttl = 0) = 0;
 
     // Scan [firstLogId, lastLogId]
     virtual std::unique_ptr<LogIterator> iterator(LogID firstLogId,
