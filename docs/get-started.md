@@ -119,7 +119,9 @@ Currently, we are using `git-lfs` to store the 3rd-party libraries so make sure
 
 **Compiling**
 
-```
+Click [here](https://github.com/vesoft-inc/nebula/blob/master/docs/how-to-build.md) to compile **Nebula Graph**.
+
+<!-- ```
 > cmake ./
 ```
 
@@ -136,7 +138,7 @@ Then run the following command:
 
 ```
 > make && make install
-```
+``` -->
 
 **Running**
 
