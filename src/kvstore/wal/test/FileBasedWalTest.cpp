@@ -361,10 +361,6 @@ TEST(FileBasedWal, TTLTest) {
             wal->appendLog(i /*id*/, 1 /*term*/, 0 /*cluster*/,
                            folly::stringPrintf("Test string %02d", i)));
     }
-    // Wait for the buffer flushed.
-    while (wal->onGoingBuffersNum_ > 0) {
-        sleep(1);
-    }
     auto startIdAfterGC
         = static_cast<FileBasedWal*>(wal.get())->walFiles_.rbegin()->second->firstId();
     auto expiredFilesNum = static_cast<FileBasedWal*>(wal.get())->walFiles_.size() - 1;
@@ -375,10 +371,6 @@ TEST(FileBasedWal, TTLTest) {
                            folly::stringPrintf("Test string %02d", i)));
     }
     EXPECT_EQ(200, wal->lastLogId());
-    // Wait for the flusher finished!
-    while (wal->onGoingBuffersNum_ > 0) {
-        sleep(1);
-    }
     // Close the wal
     wal.reset();
 
