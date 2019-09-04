@@ -104,27 +104,6 @@ to connect to the graph server. -->
 
 ### 编译源码方式 (Linux)
 
-<!-- **第三方库**
-
-nebula 遵循 c++14 标准，依赖第三方库：
-
--	autoconf
--	automake
--	libtool
--	cmake
--	bison
--	unzip
--	boost
--	gperf
--	krb5
--	openssl
--	libunwind
--	ncurses
--	readline
--  flex
-
-建议安装 g++ 5 以上 Linux 系统, 比如 Fedora 29。目前，nebula 使用 `git-lfs` 存储第三方库，请确保获取源代码之前已安装 `git-lfs` 。 -->
-
 **编译**
 
 请参见 [how-to-build.md](./how-to-build.md)
@@ -133,7 +112,7 @@ nebula 遵循 c++14 标准，依赖第三方库：
 
 * 配置 nebula-metad.conf
 
-   在 nebula 安装目录下，运行以下命令：
+   在 nebula 安装目录(/usr/local/nebula/)下，运行以下命令：
 
    ```
    > cp etc/nebula-metad.conf.default etc/nebula-metad.conf
