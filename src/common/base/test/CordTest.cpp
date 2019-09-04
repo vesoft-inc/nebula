@@ -20,8 +20,7 @@ TEST(Cord, empty) {
     cord.appendTo(b);
     EXPECT_EQ(a, b);
     EXPECT_TRUE(cord.applyTo([](const char* s, int32_t len) -> bool {
-        UNUSED(len);
-        return s == nullptr;
+        return s == nullptr && len == 0;
     }));
     cord.clear();
 }
