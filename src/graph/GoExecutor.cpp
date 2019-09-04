@@ -663,17 +663,17 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
             for (auto i = 0u; i < record.size(); i++) {
                 SupportedType type;
                 switch (record[i].which()) {
-                    case 0:
+                    case VAR_INT64:
                         // all integers in InterimResult are regarded as type of VID
                         type = SupportedType::VID;
                         break;
-                    case 1:
+                    case VAR_DOUBLE:
                         type = SupportedType::DOUBLE;
                         break;
-                    case 2:
+                    case VAR_BOOL:
                         type = SupportedType::BOOL;
                         break;
-                    case 3:
+                    case VAR_STR:
                         type = SupportedType::STRING;
                         break;
                     default:
@@ -687,20 +687,17 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
         RowWriter writer(schema);
         for (auto &column : record) {
             switch (column.which()) {
-                case 0:
+                case VAR_INT64:
                     writer << boost::get<int64_t>(column);
                     break;
-                case 1:
+                case VAR_DOUBLE:
                     writer << boost::get<double>(column);
                     break;
-                case 2:
+                case VAR_BOOL:
                     writer << boost::get<bool>(column);
                     break;
-                case 3:
+                case VAR_STR:
                     writer << boost::get<std::string>(column);
-                    break;
-                case 4:
-                    writer << "";
                     break;
                 default:
                     LOG(FATAL) << "Unknown VariantType: " << column.which();
