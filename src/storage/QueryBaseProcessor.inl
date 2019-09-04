@@ -35,11 +35,22 @@ bool QueryBaseProcessor<REQ, RESP>::validOperation(nebula::cpp2::SupportedType v
 }
 
 template <typename REQ, typename RESP>
-void QueryBaseProcessor<REQ, RESP>::initEdgeContext(const std::vector<EdgeType>& eTypes) {
+void QueryBaseProcessor<REQ, RESP>::addDefaultProps(std::vector<PropContext>& p, EdgeType eType) {
+    p.emplace_back("_src", eType, 0, PropContext::PropInKeyType::SRC);
+    p.emplace_back("_rank", eType, 1, PropContext::PropInKeyType::RANK);
+    p.emplace_back("_dst", eType, 2, PropContext::PropInKeyType::DST);
+}
+
+template <typename REQ, typename RESP>
+void QueryBaseProcessor<REQ, RESP>::initEdgeContext(const std::vector<EdgeType>& eTypes,
+                                                    bool need_default_props) {
     std::transform(eTypes.cbegin(), eTypes.cend(),
                    std::inserter(edgeContexts_, edgeContexts_.end()),
-                   [this](const auto& ec) {
+                   [this, need_default_props](const auto& ec) {
                        std::vector<PropContext> prop;
+                       if (need_default_props) {
+                           addDefaultProps(prop, ec);
+                       }
                        return std::make_pair(ec, std::move(prop));
                    });
 }

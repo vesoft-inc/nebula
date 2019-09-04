@@ -701,6 +701,7 @@ bool GoExecutor::setupInterimResult(RpcResponse &&rpcResp, std::unique_ptr<Inter
                     break;
                 case 4:
                     writer << "";
+                    break;
                 default:
                     LOG(FATAL) << "Unknown VariantType: " << column.which();
             }

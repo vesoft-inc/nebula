@@ -96,9 +96,9 @@ public:
             case nebula::cpp2::SupportedType::BOOL: {
                 return false;
             }
-            case nebula::cpp2::SupportedType::INT: {
+            case nebula::cpp2::SupportedType::TIMESTAMP:
+            case nebula::cpp2::SupportedType::INT:
                 return static_cast<int64_t>(0);
-            }
             case nebula::cpp2::SupportedType::VID: {
                 return static_cast<VertexID>(0);
             }

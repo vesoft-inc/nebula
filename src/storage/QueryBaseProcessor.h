@@ -52,10 +52,11 @@ protected:
      * */
     bool validOperation(nebula::cpp2::SupportedType vType, cpp2::StatType statType);
 
+    void addDefaultProps(std::vector<PropContext>& p, EdgeType eType);
     /**
      * init edge context
      **/
-    void initEdgeContext(const std::vector<EdgeType> &eTypes);
+    void initEdgeContext(const std::vector<EdgeType> &eTypes, bool need_default_props = false);
 
     /**
      * Check request meta is illegal or not and build contexts for tag and edge.

@@ -449,7 +449,6 @@ go_sentence
                 }
                 auto *edge  = new std::string(*e->edge());
                 auto *expr  = new EdgeDstIdExpression(edge);
-//                auto *alias = new std::string(*edge + "_id");
                 auto *col   = new YieldColumn(expr);
                 cols->addColumn(col);
             }
