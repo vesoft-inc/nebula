@@ -124,7 +124,7 @@ The key format for the in-edge is: partID (4 bytes), destinationVertexID (8 byte
 
 ### Storage service
 
-The corresponding process of storage service is nebula-storaged, which provides a key-value store. Separated storage and computing makes storage service flexible, and multiple storage engines like RocksDB and HBase are supported, with RocksDB set as default engine. To build a resilient distributed system, [Raft](https://raft.github.io/) is implemented as the consensus algorithm. Currently **Nebula Graph** supports
+The corresponding process of storage service is **nebula-storaged**, which provides a key-value store. Separating storage and computing makes storage service flexible, and multiple storage engines like RocksDB and HBase are supported, with RocksDB set as default engine. To build a resilient distributed system, [Raft](https://raft.github.io/) is implemented as the consensus algorithm. Currently **Nebula Graph** supports
 multiple storage engines like Rocksdb and HBase, etc.
 
 Raft achieves data consensus via an elected leader. Based on that, nebula-storaged makes the following optimizations:
@@ -153,7 +153,7 @@ Raft achieves data consensus via an elected leader. Based on that, nebula-storag
 
 ### Meta service
 
-The binary of the meta service is nebula-metad. Here is the list of its main functionalities:
+The binary of the meta service is **nebula-metad**. Here is the list of its main functionalities:
 
 -  User management
 
@@ -165,7 +165,7 @@ The binary of the meta service is nebula-metad. Here is the list of its main fun
 
 - Graph space management
 
-  **Nebula Graph** supports multiple graph spaces. The data in different graph space are physically isolated. Meta service stores the metadata of all spaces in the cluster and tracks changes that take place in these spaces, like adding, dropping space, modifying graph space configuration (Raft copies).
+  **Nebula Graph** supports multiple graph spaces. Data in different graph spaces are physically isolated. Meta service stores the metadata of all spaces in the cluster and tracks changes that take place in these spaces, like adding, dropping space, modifying graph space configuration (Raft copies).
 
 -   Schema management
 
