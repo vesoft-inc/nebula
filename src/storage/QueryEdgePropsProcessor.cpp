@@ -42,13 +42,8 @@ kvstore::ResultCode QueryEdgePropsProcessor::collectEdgesProps(
 void QueryEdgePropsProcessor::process(const cpp2::EdgePropRequest& req) {
     spaceId_ = req.get_space_id();
 
-    for (auto& p : req.parts) {
-        // The current fetch edge prop only supports a single edge, so the processing is relatively
-        // simple
-        std::vector<EdgeType> e = {p.second[0].edge_type};
-        initEdgeContext(e, true);
-        break;
-    }
+    std::vector<EdgeType> e = {req.edge_type};
+    initEdgeContext(e, true);
 
     auto retCode = this->checkAndBuildContexts(req);
     if (retCode != cpp2::ErrorCode::SUCCEEDED) {

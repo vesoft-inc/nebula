@@ -158,9 +158,10 @@ struct EdgePropRequest {
     1: common.GraphSpaceID space_id,
     // partId => edges
     2: map<common.PartitionID, list<EdgeKey>>(cpp.template = "std::unordered_map") parts,
-    3: binary filter,
-    4: list<PropDef> return_columns,
-    5: bool over_all_edges,
+    3: common.EdgeType edge_type,
+    4: binary filter,
+    5: list<PropDef> return_columns,
+    6: bool over_all_edges,
 }
 
 struct AddVerticesRequest {
